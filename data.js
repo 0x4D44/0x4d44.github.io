@@ -97,6 +97,32 @@ window.ESSAYS = [
     tag: "comic",
     real: true,
   },
+  {
+    slug: "azuma",
+    title: "Azuma",
+    tagline: "A data dump on LNER's Class 800/801 fleet.",
+    url: "https://0x4d44.github.io/azuma/",
+    illustration: "ill-emu",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 31,
+    words: 6223,
+    tag: "rail",
+    real: true,
+  },
+  {
+    slug: "picoem",
+    title: "picoem",
+    tagline: "Cycle-accurate Raspberry Pi RP2350 / RP2040 emulators in Rust.",
+    url: "https://0x4d44.github.io/picoem/",
+    illustration: "ill-chip",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 14,
+    words: 2822,
+    tag: "software",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
