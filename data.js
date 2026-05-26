@@ -58,10 +58,49 @@ window.ESSAYS = [
     tag: "software",
     real: true,
   },
+  {
+    slug: "readex",
+    title: "readex",
+    tagline: "HTML main-content extraction for Rust.",
+    url: "https://0x4d44.github.io/readex/",
+    illustration: "ill-extract",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 8,
+    words: 1554,
+    tag: "software",
+    real: true,
+  },
+  {
+    slug: "ropus",
+    title: "ropus",
+    tagline: "The Opus audio codec, ported to safe Rust — bit-exact against the C reference.",
+    url: "https://0x4d44.github.io/ropus/",
+    illustration: "ill-wave",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 12,
+    words: 2331,
+    tag: "software",
+    real: true,
+  },
+  {
+    slug: "mr-poop",
+    title: "The Day Mr Poop Got His Name",
+    tagline: "A Bumbleworth Paper Co. comic.",
+    url: "https://0x4d44.github.io/mr-poop/",
+    illustration: "ill-comic",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 2,
+    words: 395,
+    tag: "comic",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "fiction", "software"];
+window.TAGS = ["all", "rail", "fiction", "software", "comic"];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);
