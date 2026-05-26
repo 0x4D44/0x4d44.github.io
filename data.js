@@ -149,10 +149,36 @@ window.ESSAYS = [
     tag: "software",
     real: true,
   },
+  {
+    slug: "east-coast-main-line",
+    title: "The East Coast Main Line",
+    tagline: "An interactive history of Britain's East Coast Main Line, 1825–1991.",
+    url: "https://0x4d44.github.io/ecml/",
+    illustration: "ill-signal",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 13,
+    words: 2670,
+    tag: "rail",
+    real: true,
+  },
+  {
+    slug: "hydro",
+    title: "The Hydro",
+    tagline: "A century of Scottish water power.",
+    url: "https://0x4d44.github.io/hydro/",
+    illustration: "ill-hydro",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 12,
+    words: 2311,
+    tag: "history",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "fiction", "software", "comic"];
+window.TAGS = ["all", "rail", "fiction", "software", "comic", "history"];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);
