@@ -123,6 +123,32 @@ window.ESSAYS = [
     tag: "software",
     real: true,
   },
+  {
+    slug: "token-predictor",
+    title: "Token Predictor",
+    tagline: "A visceral look at how fast an LLM actually generates text.",
+    url: "https://0x4d44.github.io/token-predictor/",
+    illustration: "ill-tokens",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 3,
+    words: 600,
+    tag: "software",
+    real: true,
+  },
+  {
+    slug: "mddskimg",
+    title: "mddskimg",
+    tagline: "Browse, extract and rewrite raw disk images — no loop mounts, root, or OS drivers.",
+    url: "https://0x4d44.github.io/mddskimg/",
+    illustration: "ill-disk",
+    date: "2026-05-26",
+    year: 2026,
+    readingMin: 12,
+    words: 2332,
+    tag: "software",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
