@@ -175,6 +175,32 @@ window.ESSAYS = [
     tag: "history",
     real: true,
   },
+  {
+    slug: "mdmdview",
+    title: "mdmdview",
+    tagline: "A markdown viewer built for speed.",
+    url: "https://0x4d44.github.io/mdmdview/",
+    illustration: "ill-markdown",
+    date: "2026-05-27",
+    year: 2026,
+    readingMin: 9,
+    words: 1734,
+    tag: "software",
+    real: true,
+  },
+  {
+    slug: "mercury-arc-rectifiers",
+    title: "Mercury Arc Rectifiers",
+    tagline: "A technical primer on the glass-bulb rectifiers that turned AC into DC.",
+    url: "https://0x4d44.github.io/mercury-arc-rectifiers/",
+    illustration: "ill-rectifier",
+    date: "2026-05-27",
+    year: 2026,
+    readingMin: 19,
+    words: 3769,
+    tag: "history",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
