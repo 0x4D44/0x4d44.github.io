@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>About — 0x4D44</title>
+<meta name="description" content="About 0x4D44 — a small, growing collection of standalone documents and essays." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="paper-bg" aria-hidden="true"></div>
+<div class="scan-bg" aria-hidden="true"></div>
+<div class="noise-bg" aria-hidden="true"></div>
+
+<main class="wrap">
+
+  <a href="index.html" class="back-btn">← $ cd ..</a>
+
+  <header class="masthead">
+    <div class="kicker">── $ whoami ──</div>
+    <h1 class="title"><span class="amber">&gt;</span> 0x4D44</h1>
+  </header>
+
+  <div class="about-grid">
+    <div class="about-body">
+      <p>
+        <span class="prompt">$&nbsp;</span>
+        0x4D44 is &ldquo;MD&rdquo; in hexadecimal &mdash; a small joke for an
+        audience of mostly programmers and railway historians.
+      </p>
+      <p>
+        The almanac collects standalone documents written on the side: long
+        arguments about railways, short pieces of fiction, the occasional
+        almanac entry. Drafts are kept in the open and marked accordingly.
+      </p>
+      <p>
+        Pieces are served as static HTML from a single GitHub repository.
+        Filing, indexing, and accessioning are done by hand.
+      </p>
+
+      <div class="channels">
+        <div class="channels-label">// channels</div>
+        <a href="https://github.com/0x4d44" target="_blank" rel="noopener">→ github.com/0x4d44</a>
+        <!-- Add or remove channels as you like. -->
+      </div>
+    </div>
+
+    <aside class="about-aside">
+      <div class="frame">
+        <div class="frame-title">┌── ps -ef | grep md ──</div>
+        <div class="kv">
+          <span class="k">handle</span><span>0x4D44 (&ldquo;md&rdquo;)</span>
+          <span class="k">interests</span><span>rail, software, history</span>
+          <span class="k">writes</span><span>essays, fiction, timelines</span>
+          <span class="k">entries</span><span id="about-entries">—</span>
+          <span class="k">words</span><span id="about-words">—</span>
+          <span class="k">updated</span><span id="about-updated">—</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="page-footer">
+    <span>$ end-of-stream</span>
+    <span>// hosted on <a href="https://pages.github.com/">github pages</a></span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<script src="data.js"></script>
+<script>
+  (function () {
+    const essays = window.ESSAYS || [];
+    const words = essays.reduce((s, e) => s + (e.words || 0), 0);
+    const last = essays.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
+    document.getElementById("about-entries").textContent = String(essays.length);
+    document.getElementById("about-words").textContent = words.toLocaleString();
+    document.getElementById("about-updated").textContent = last ? window.fmtDate(last.date) : "—";
+  })();
+</script>
+</body>
+</html>

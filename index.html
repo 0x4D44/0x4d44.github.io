@@ -1,107 +1,153 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>0x4D44 — Documents</title>
-  <meta name="description" content="A small collection of standalone documents and essays.">
-  <style>
-    :root {
-      --bg: #f7f7f5;
-      --fg: #1a1a1a;
-      --muted: #6b6b6b;
-      --card: #ffffff;
-      --border: #e3e3df;
-      --accent: #1a56db;
-      --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
-    }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #121212;
-        --fg: #ededed;
-        --muted: #9a9a9a;
-        --card: #1c1c1c;
-        --border: #2c2c2c;
-        --accent: #6ea8fe;
-        --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.4);
-      }
-    }
-    * { box-sizing: border-box; }
-    html { -webkit-text-size-adjust: 100%; }
-    body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--fg);
-      font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-font-smoothing: antialiased;
-    }
-    .wrap { max-width: 760px; margin: 0 auto; padding: 7vh 24px 12vh; }
-    header { margin-bottom: 3rem; }
-    .wordmark {
-      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
-      font-size: .8rem; letter-spacing: .12em; text-transform: uppercase;
-      color: var(--muted); margin: 0 0 .75rem;
-    }
-    h1 { font-size: clamp(1.6rem, 4vw, 2.1rem); line-height: 1.2; margin: 0 0 .5rem; letter-spacing: -.02em; }
-    .lede { color: var(--muted); margin: 0; font-size: 1.05rem; }
-    .grid { display: grid; gap: 1rem; }
-    .card {
-      display: block; text-decoration: none; color: inherit;
-      background: var(--card); border: 1px solid var(--border); border-radius: 14px;
-      padding: 1.4rem 1.5rem; box-shadow: var(--shadow);
-      transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
-    }
-    .card:hover, .card:focus-visible {
-      transform: translateY(-2px);
-      border-color: var(--accent);
-      box-shadow: 0 2px 4px rgba(0,0,0,.06), 0 14px 34px rgba(0,0,0,.09);
-    }
-    .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-    .card h2 { font-size: 1.2rem; margin: 0 0 .35rem; letter-spacing: -.01em; }
-    .card p { margin: 0; color: var(--muted); font-size: .97rem; }
-    .card .go { display: inline-block; margin-top: .9rem; font-size: .85rem; color: var(--accent); font-weight: 600; }
-    .card .go::after { content: " \2192"; }
-    footer { margin-top: 3.5rem; color: var(--muted); font-size: .82rem; }
-    footer a { color: inherit; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>0x4D44 — Documents</title>
+<meta name="description" content="A small, growing collection of standalone documents and essays by 0x4D44." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <main class="wrap">
-    <header>
-      <p class="wordmark">0x4D44</p>
-      <h1>Documents</h1>
-      <p class="lede">A small collection of standalone pieces.</p>
-    </header>
 
-    <div class="grid">
-      <a class="card" href="./br1955/">
-        <h2>BR Modernisation Program</h2>
-        <p>British Railways' 1955 Modernisation Plan — a fleet that solved the wrong problem.</p>
-        <span class="go">Read</span>
-      </a>
+<div class="paper-bg" aria-hidden="true"></div>
+<div class="scan-bg" aria-hidden="true"></div>
+<div class="noise-bg" aria-hidden="true"></div>
 
-      <a class="card" href="./the-ai-who-watched/">
-        <h2>The AI Who Watched</h2>
-        <p>&ldquo;Watch the cat,&rdquo; she said. It watched. A fable on the gap between what we tell an AI and what we mean.</p>
-        <span class="go">Read</span>
-      </a>
+<main class="wrap">
 
-      <a class="card" href="./ecml-timeline/">
-        <h2>The Long Run</h2>
-        <p>A timeline of the East Coast Main Line, 1862&ndash;2025.</p>
-        <span class="go">Read</span>
-      </a>
+  <header class="masthead">
+    <div class="kicker">─── 0x4D44 :: ALMANAC ─── BUILT <span id="build-date">2026</span> ──</div>
+    <h1 class="title">
+      <span class="amber">$</span> documents <span class="amber">--list</span>
+    </h1>
+    <p class="lede">
+      A small, growing collection of standalone pieces. Filed by hand,
+      indexed by machine, served as static HTML.
+    </p>
+    <a href="about.html" class="whoami">$ whoami →</a>
+  </header>
 
-      <a class="card" href="./vernier/">
-        <h2>Vernier</h2>
-        <p>A field guide to quality, testing &amp; agents.</p>
-        <span class="go">Read</span>
-      </a>
+  <div class="statusbar" id="statusbar">
+    <span id="stat-tot"></span>
+    <span id="stat-last"></span>
+    <span class="online">● online</span>
+  </div>
+
+  <section class="controls">
+    <div class="frame">
+      <div class="frame-title">┌── filter:tag ──</div>
+      <div class="btn-row" id="filter-row"></div>
     </div>
+    <div class="frame">
+      <div class="frame-title">┌── sort:by ──</div>
+      <div class="btn-row" id="sort-row"></div>
+    </div>
+    <div class="frame">
+      <div class="frame-title">┌── view:layout ──</div>
+      <div class="btn-row" id="layout-row"></div>
+    </div>
+  </section>
 
-    <footer>
-      Hosted on <a href="https://pages.github.com/">GitHub Pages</a>.
-    </footer>
-  </main>
+  <section class="listing" id="listing" aria-live="polite"></section>
+
+  <footer class="page-footer">
+    <span>$ end-of-stream</span>
+    <span>// hosted on <a href="https://pages.github.com/">github pages</a></span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<!-- ============================================================ -->
+<!-- SVG illustration sprite — line-art icons keyed per document  -->
+<!-- ============================================================ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- diesel -->
+    <symbol id="ill-diesel" viewBox="0 0 200 90" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 56 L26 30 L60 24 L168 24 L182 32 L186 56 Z"/>
+      <rect x="68" y="32" width="20" height="14"/>
+      <rect x="96" y="32" width="20" height="14"/>
+      <rect x="124" y="32" width="20" height="14"/>
+      <rect x="152" y="32" width="14" height="14"/>
+      <path d="M30 30 L40 30 L40 22 L52 22 L52 26"/>
+      <line x1="8" y1="58" x2="192" y2="58"/>
+      <circle cx="40" cy="68" r="8"/>
+      <circle cx="64" cy="68" r="8"/>
+      <circle cx="136" cy="68" r="8"/>
+      <circle cx="160" cy="68" r="8"/>
+      <line x1="6" y1="84" x2="194" y2="84"/>
+      <line x1="6" y1="86.5" x2="194" y2="86.5" stroke-dasharray="4 4"/>
+    </symbol>
+    <!-- eye -->
+    <symbol id="ill-eye" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 60 Q100 -10 190 60 Q100 130 10 60 Z"/>
+      <circle cx="100" cy="60" r="28"/>
+      <circle cx="100" cy="60" r="14"/>
+      <circle cx="100" cy="60" r="4" fill="currentColor"/>
+      <path d="M100 32 L100 22 L120 22"/>
+      <path d="M128 60 L138 60 L138 78"/>
+      <path d="M100 88 L100 98 L84 98"/>
+      <path d="M72 60 L62 60 L62 44"/>
+      <circle cx="120" cy="22" r="2"/>
+      <circle cx="138" cy="78" r="2"/>
+      <circle cx="84" cy="98" r="2"/>
+      <circle cx="62" cy="44" r="2"/>
+      <line x1="100" y1="6" x2="100" y2="14"/>
+      <line x1="60" y1="14" x2="64" y2="22"/>
+      <line x1="140" y1="14" x2="136" y2="22"/>
+    </symbol>
+    <!-- map (ECML) -->
+    <symbol id="ill-map" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 90 Q40 70 60 80 T110 60 T160 50 T192 30"/>
+      <g font-family="JetBrains Mono, ui-monospace, monospace" font-size="7" fill="currentColor" stroke="none">
+        <circle cx="60" cy="80" r="3" fill="currentColor"/><text x="65" y="75">Edinburgh</text>
+        <circle cx="110" cy="60" r="3" fill="currentColor"/><text x="115" y="55">Newcastle</text>
+        <circle cx="160" cy="50" r="3" fill="currentColor"/><text x="165" y="45">York</text>
+        <circle cx="192" cy="30" r="3" fill="currentColor"/><text x="170" y="22">London</text>
+      </g>
+      <g transform="translate(20 24)">
+        <circle r="10"/>
+        <path d="M0 -7 L4 7 L0 3 L-4 7 Z" fill="currentColor"/>
+        <text y="-13" font-size="6" text-anchor="middle" fill="currentColor" stroke="none" font-family="JetBrains Mono, monospace">N</text>
+      </g>
+    </symbol>
+    <!-- caliper (Vernier) -->
+    <symbol id="ill-caliper" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- main beam -->
+      <rect x="24" y="58" width="162" height="12"/>
+      <!-- depth rod off the right end -->
+      <line x1="186" y1="64" x2="198" y2="64"/>
+      <!-- main scale ticks -->
+      <g stroke-width="0.8">
+        <line x1="36" y1="58" x2="36" y2="64"/>
+        <line x1="48" y1="58" x2="48" y2="61"/>
+        <line x1="60" y1="58" x2="60" y2="61"/>
+        <line x1="72" y1="58" x2="72" y2="64"/>
+        <line x1="84" y1="58" x2="84" y2="61"/>
+        <line x1="138" y1="58" x2="138" y2="61"/>
+        <line x1="150" y1="58" x2="150" y2="64"/>
+        <line x1="162" y1="58" x2="162" y2="61"/>
+        <line x1="174" y1="58" x2="174" y2="61"/>
+      </g>
+      <!-- fixed jaws (left): internal jaw up, external jaw down -->
+      <path d="M24 58 L24 34 L33 34 L33 58"/>
+      <path d="M24 70 L24 100 L35 100 L35 70"/>
+      <!-- sliding vernier frame around the beam -->
+      <rect x="98" y="52" width="26" height="24"/>
+      <!-- sliding jaws -->
+      <path d="M104 52 L104 38 L112 38 L112 52"/>
+      <path d="M104 76 L104 96 L114 96 L114 76"/>
+      <!-- thumb screw on the frame -->
+      <circle cx="118" cy="64" r="3"/>
+    </symbol>
+  </defs>
+</svg>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
