@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mddosem — a hardware-accurate PC emulator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:        oklch(0.155 0.015 250);
+    --bg-elev:   oklch(0.205 0.018 250);
+    --bg-card:   oklch(0.235 0.020 250);
+    --bg-card-2: oklch(0.275 0.022 250);
+    --border:    oklch(0.34  0.022 250);
+    --border-2:  oklch(0.45  0.025 250);
+    --text:      oklch(0.945 0.008 85);
+    --text-dim:  oklch(0.70  0.012 85);
+    --text-dimmer: oklch(0.55 0.012 85);
+    --amber:     oklch(0.82  0.155 75);
+    --amber-soft:oklch(0.82  0.155 75 / 0.15);
+    --cyan:      oklch(0.82  0.115 205);
+    --cyan-soft: oklch(0.82  0.115 205 / 0.15);
+    --magenta:   oklch(0.72  0.14 340);
+    --mono: "IBM Plex Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+    --sans: "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
+  html { background: var(--bg); }
+  body {
+    font-family: var(--sans);
+    color: var(--text);
+    background: var(--bg);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+  /* Subtle scanline overlay — purely cosmetic, fixed */
+  body::before {
+    content:"";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      oklch(1 0 0 / 0.012) 3px,
+      transparent 4px
+    );
+    z-index: 1000;
+    mix-blend-mode: overlay;
+  }
+  /* Vignette */
+  body::after {
+    content:"";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 50%, oklch(0 0 0 / 0.35) 100%);
+    z-index: 999;
+  }
+  a { color: var(--amber); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  code, .mono { font-family: var(--mono); }
+  ::selection { background: var(--amber); color: var(--bg); }
+  /* App root */
+  #app { position: relative; z-index: 1; }
+  /* Reusable */
+  .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--amber);
+    opacity: 0.85;
+  }
+  .section-title {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: clamp(28px, 3.4vw, 44px);
+    line-height: 1.1;
+    margin: 12px 0 8px;
+    letter-spacing: -0.02em;
+  }
+  .section-lede {
+    color: var(--text-dim);
+    font-size: 17px;
+    max-width: 64ch;
+    margin: 0;
+  }
+  section { padding: 96px 0; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: 0; }
+  hr.divider { border: 0; border-top: 1px dashed var(--border); margin: 32px 0; }
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 16px;
+    font-family: var(--mono); font-size: 13px; letter-spacing: 0.04em;
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border-2); border-radius: 2px;
+    cursor: pointer; transition: all .15s ease;
+  }
+  .btn:hover { border-color: var(--amber); color: var(--amber); }
+  .btn.primary { background: var(--amber); color: var(--bg); border-color: var(--amber); font-weight: 600; }
+  .btn.primary:hover { background: oklch(0.88 0.155 75); }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 8px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em;
+    color: var(--text-dim);
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+  .chip .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--amber);
+  }
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--amber); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="src/data.jsx"></script>
+<script type="text/babel" src="src/components.jsx"></script>
+<script type="text/babel" src="src/sections.jsx"></script>
+<script type="text/babel" src="src/app.jsx"></script>
+</body>
+</html>

@@ -240,6 +240,19 @@ window.ESSAYS = [
     tag: "history",
     real: true,
   },
+  {
+    slug: "mddosem",
+    title: "mddosem",
+    tagline: "A hardware-accurate 1990s PC, emulated in Rust.",
+    url: "https://0x4d44.github.io/mddosem/",
+    illustration: "ill-pc",
+    date: "2026-05-27",
+    year: 2026,
+    readingMin: 15,
+    words: 3057,
+    tag: "software",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
