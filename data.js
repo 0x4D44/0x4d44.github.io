@@ -201,6 +201,32 @@ window.ESSAYS = [
     tag: "history",
     real: true,
   },
+  {
+    slug: "mdminecraft",
+    title: "mdminecraft",
+    tagline: "A deterministic voxel sandbox engine, in Rust.",
+    url: "https://0x4d44.github.io/mdminecraft/",
+    illustration: "ill-voxel",
+    date: "2026-05-27",
+    year: 2026,
+    readingMin: 11,
+    words: 2281,
+    tag: "software",
+    real: true,
+  },
+  {
+    slug: "mdkloc",
+    title: "mdkloc",
+    tagline: "A field guide to counting lines of code.",
+    url: "https://0x4d44.github.io/mdkloc/",
+    illustration: "ill-loc",
+    date: "2026-05-27",
+    year: 2026,
+    readingMin: 10,
+    words: 2063,
+    tag: "software",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.

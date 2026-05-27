@@ -1,0 +1,1470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>mdkloc — a field guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #100e0b;
+    --bg-2: #15120e;
+    --panel: #1a1611;
+    --line: #2a241c;
+    --line-2: #3a3128;
+    --ink: #ece8df;
+    --ink-2: #c9c2b3;
+    --muted: #807868;
+    --dim: #524a3d;
+    --code:    oklch(0.82 0.13 60);   /* amber */
+    --comment: oklch(0.78 0.09 200);  /* teal */
+    --blank:   oklch(0.56 0.02 60);   /* warm gray */
+    --accent:  oklch(0.78 0.16 25);   /* coral */
+    --rust:    oklch(0.74 0.13 40);
+    --green:   oklch(0.74 0.13 145);
+    --violet:  oklch(0.74 0.13 290);
+    --serif: "Instrument Serif", "Cambria", serif;
+    --sans: "Space Grotesk", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  ::selection { background: var(--accent); color: #1a0e08; }
+  a { color: inherit; }
+
+  /* ===== Layout ===== */
+  .page { max-width: 1240px; margin: 0 auto; padding: 0 36px; }
+  section { padding: 96px 0; border-top: 1px solid var(--line); position: relative; }
+  section:first-of-type { border-top: 0; }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    display: inline-flex; gap: 10px; align-items: center;
+  }
+  .eyebrow::before {
+    content: ""; width: 28px; height: 1px; background: var(--line-2);
+  }
+  h1, h2, h3, h4 { font-weight: 500; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(36px, 4.6vw, 64px); line-height: 1.02; margin: 18px 0 14px; }
+  h3 { font-size: 22px; margin: 0 0 8px; }
+  h4 { font-size: 14px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin: 0 0 10px; font-weight: 500; font-family: var(--mono); }
+  .lede { font-family: var(--serif); font-size: clamp(22px, 2.2vw, 28px); line-height: 1.35; color: var(--ink-2); max-width: 720px; }
+  .lede em { color: var(--ink); font-style: italic; }
+
+  /* ===== Top nav ===== */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(14px) saturate(140%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%);
+    background: color-mix(in oklab, var(--bg) 78%, transparent);
+    border-bottom: 1px solid var(--line);
+  }
+  .nav-inner {
+    max-width: 1240px; margin: 0 auto; padding: 14px 36px;
+    display: flex; align-items: center; justify-content: space-between; gap: 32px;
+  }
+  .brand {
+    font-family: var(--mono); font-weight: 600; font-size: 14px; letter-spacing: -0.01em;
+    display: inline-flex; gap: 8px; align-items: baseline;
+  }
+  .brand .dot { color: var(--accent); }
+  .brand .v { color: var(--muted); font-weight: 400; }
+  .nav-links {
+    display: flex; gap: 22px;
+    font-family: var(--mono); font-size: 12px;
+    color: var(--ink-2);
+  }
+  .nav-links a { text-decoration: none; color: var(--ink-2); transition: color .15s; }
+  .nav-links a:hover { color: var(--accent); }
+  @media (max-width: 800px) { .nav-links { display: none; } }
+
+  /* ===== Hero ===== */
+  .hero { padding: 80px 0 60px; }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 56px;
+    align-items: start;
+  }
+  @media (max-width: 980px) { .hero-grid { grid-template-columns: 1fr; gap: 40px; } }
+  .wordmark {
+    font-family: var(--serif);
+    font-size: clamp(96px, 16vw, 220px);
+    line-height: 0.86;
+    letter-spacing: -0.04em;
+    margin: 8px 0 12px;
+    color: var(--ink);
+  }
+  .wordmark em { font-style: italic; color: var(--accent); }
+  .wordmark .dot { color: var(--accent); font-style: normal; }
+  .tagline {
+    font-family: var(--serif);
+    font-size: clamp(24px, 3vw, 38px);
+    line-height: 1.18; max-width: 540px;
+    color: var(--ink-2); margin: 0 0 28px;
+  }
+  .meta-strip {
+    display: flex; gap: 28px; flex-wrap: wrap; padding-top: 22px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono); font-size: 12px; color: var(--muted);
+  }
+  .meta-strip b { color: var(--ink); font-weight: 500; display: block; font-size: 22px; font-family: var(--sans); margin-bottom: 2px; }
+
+  /* ===== Terminal ===== */
+  .terminal {
+    background: #0b0907;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.02) inset, 0 30px 60px -30px rgba(0,0,0,0.6);
+    font-family: var(--mono);
+    font-size: 12.5px;
+    overflow: hidden;
+    height: 460px; display: flex; flex-direction: column;
+  }
+  .term-bar {
+    display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+    border-bottom: 1px solid var(--line); background: #0f0c08;
+  }
+  .term-bar .dots { display: flex; gap: 6px; }
+  .term-bar .dots i { width: 10px; height: 10px; border-radius: 50%; background: #2a241c; display: block; }
+  .term-bar .title { color: var(--muted); font-size: 11px; margin-left: 12px; letter-spacing: 0.04em; }
+  .term-body { padding: 16px 18px; overflow: hidden; flex: 1; position: relative; }
+  .term-row { white-space: pre; color: var(--ink-2); margin: 0; }
+  .term-row .prompt { color: var(--accent); }
+  .term-row .arg { color: var(--ink); }
+  .term-row .progress { color: var(--muted); }
+  .term-row .lang { color: var(--code); }
+  .term-row .code-c { color: var(--code); }
+  .term-row .com-c  { color: var(--comment); }
+  .term-row .blk-c  { color: var(--blank); }
+  .term-row .dim    { color: var(--dim); }
+  .term-row .hdr    { color: var(--muted); }
+  .cursor { display: inline-block; width: 8px; height: 14px; background: var(--ink-2); vertical-align: text-bottom; animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ===== Cards / panels ===== */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 24px;
+  }
+  .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 900px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 560px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* ===== Pipeline ===== */
+  .pipeline { display: grid; grid-template-columns: 220px 1fr; gap: 32px; align-items: start; }
+  @media (max-width: 900px) { .pipeline { grid-template-columns: 1fr; } }
+  .stages { display: flex; flex-direction: column; gap: 2px; }
+  .stage {
+    display: flex; gap: 14px; padding: 14px 16px; align-items: flex-start;
+    border: 1px solid transparent; border-radius: 8px;
+    cursor: pointer; text-align: left; background: transparent; color: var(--ink-2);
+    font: inherit;
+    transition: background .15s, border-color .15s, color .15s;
+  }
+  .stage:hover { background: rgba(255,255,255,0.02); }
+  .stage.active { background: var(--panel); border-color: var(--line); color: var(--ink); }
+  .stage .num { font-family: var(--mono); font-size: 11px; color: var(--muted); width: 22px; flex-shrink: 0; padding-top: 2px; }
+  .stage .label { display: block; font-weight: 500; font-size: 15px; }
+  .stage .sub { display: block; font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .stage.active .num { color: var(--accent); }
+  .stage-detail {
+    min-height: 360px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 28px 32px;
+  }
+  .stage-detail h3 { font-family: var(--serif); font-size: 30px; font-weight: 400; }
+  .stage-detail p { color: var(--ink-2); max-width: 60ch; }
+  .stage-detail code, .stage-detail pre { font-family: var(--mono); font-size: 12.5px; color: var(--code); }
+  .stage-detail pre { background: #0b0907; border: 1px solid var(--line); border-radius: 6px; padding: 14px 16px; overflow: auto; }
+  .stage-detail .kv { display: grid; grid-template-columns: 140px 1fr; row-gap: 8px; column-gap: 18px; margin-top: 16px; font-family: var(--mono); font-size: 12px; }
+  .stage-detail .kv .k { color: var(--muted); }
+  .stage-detail .kv .v { color: var(--ink-2); }
+
+  /* ===== Language atlas ===== */
+  .atlas-controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 28px; }
+  .pill {
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase;
+    padding: 7px 12px; border-radius: 999px; border: 1px solid var(--line);
+    background: transparent; color: var(--ink-2); cursor: pointer; transition: all .15s;
+  }
+  .pill:hover { border-color: var(--line-2); color: var(--ink); }
+  .pill.active { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+  .lang-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  }
+  @media (max-width: 980px) { .lang-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 720px) { .lang-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 480px) { .lang-grid { grid-template-columns: 1fr; } }
+  .lang-card {
+    border: 1px solid var(--line);
+    background: var(--panel);
+    border-radius: 8px;
+    padding: 16px 16px 14px;
+    position: relative;
+    transition: border-color .15s, transform .15s;
+  }
+  .lang-card:hover { border-color: var(--line-2); transform: translateY(-1px); }
+  .lang-card .name { font-weight: 500; font-size: 16px; margin-bottom: 4px; }
+  .lang-card .ext { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-bottom: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lang-card .styles { display: flex; flex-wrap: wrap; gap: 4px; }
+  .chip {
+    font-family: var(--mono); font-size: 10.5px;
+    padding: 3px 7px; border-radius: 4px;
+    border: 1px solid var(--line-2);
+    color: var(--ink-2); background: rgba(255,255,255,0.02);
+  }
+  .chip.line { color: var(--comment); border-color: color-mix(in oklab, var(--comment) 30%, var(--line-2)); }
+  .chip.block { color: var(--code); border-color: color-mix(in oklab, var(--code) 30%, var(--line-2)); }
+  .chip.doc { color: var(--violet); border-color: color-mix(in oklab, var(--violet) 30%, var(--line-2)); }
+  .chip.special { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 30%, var(--line-2)); }
+  .chip.none { color: var(--muted); border-style: dashed; }
+  .lang-card .group {
+    position: absolute; top: 12px; right: 12px;
+    font-family: var(--mono); font-size: 10px; color: var(--dim); letter-spacing: 0.06em;
+  }
+
+  /* ===== Demo / try it ===== */
+  .demo-wrap {
+    display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 18px;
+  }
+  @media (max-width: 980px) { .demo-wrap { grid-template-columns: 1fr; } }
+  .demo-input {
+    background: #0b0907; border: 1px solid var(--line); border-radius: 10px;
+    display: flex; flex-direction: column; min-height: 460px;
+  }
+  .demo-head {
+    padding: 12px 14px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .demo-head select, .demo-head button {
+    font-family: var(--mono); font-size: 12px;
+    background: #15120e; color: var(--ink); border: 1px solid var(--line-2);
+    padding: 6px 10px; border-radius: 5px; cursor: pointer;
+  }
+  .demo-head select:hover, .demo-head button:hover { border-color: var(--accent); }
+  .demo-head .grow { flex: 1; }
+  .demo-tag { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  textarea#demo-code {
+    flex: 1;
+    font-family: var(--mono); font-size: 12.5px;
+    background: transparent; color: var(--ink);
+    border: none; outline: none; padding: 14px 16px;
+    resize: none; line-height: 1.6; tab-size: 2;
+  }
+  .demo-output {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    display: flex; flex-direction: column;
+  }
+  .demo-stats {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid var(--line);
+  }
+  .demo-stat {
+    padding: 18px 16px; border-right: 1px solid var(--line);
+    text-align: left;
+  }
+  .demo-stat:last-child { border-right: 0; }
+  .demo-stat .lbl { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+  .demo-stat .val { font-family: var(--serif); font-size: 32px; line-height: 1; margin-top: 6px; }
+  .demo-stat.code .val { color: var(--code); }
+  .demo-stat.comment .val { color: var(--comment); }
+  .demo-stat.blank .val { color: var(--blank); }
+  .demo-lines {
+    flex: 1; overflow: auto; font-family: var(--mono); font-size: 12px;
+    padding: 10px 0;
+  }
+  .demo-lines .row {
+    display: grid; grid-template-columns: 38px 14px 1fr;
+    gap: 8px; padding: 1px 16px 1px 12px; align-items: center;
+  }
+  .demo-lines .row:hover { background: rgba(255,255,255,0.02); }
+  .demo-lines .ln { color: var(--dim); text-align: right; user-select: none; }
+  .demo-lines .pip { width: 6px; height: 6px; border-radius: 50%; justify-self: center; }
+  .demo-lines .pip.code { background: var(--code); }
+  .demo-lines .pip.comment { background: var(--comment); }
+  .demo-lines .pip.blank { background: transparent; border: 1px solid var(--dim); }
+  .demo-lines .src { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .demo-lines .row.code .src { color: var(--ink); }
+  .demo-lines .row.comment .src { color: var(--comment); }
+  .demo-lines .row.blank .src { color: var(--dim); }
+
+  /* ===== CLI explorer ===== */
+  .cli {
+    display: grid; grid-template-columns: 320px 1fr; gap: 24px;
+  }
+  @media (max-width: 900px) { .cli { grid-template-columns: 1fr; } }
+  .flag-list { display: flex; flex-direction: column; gap: 4px; }
+  .flag-btn {
+    text-align: left; background: transparent; border: 1px solid transparent;
+    color: var(--ink-2); padding: 12px 14px; border-radius: 7px;
+    font: inherit; cursor: pointer; transition: all .15s;
+    display: flex; gap: 10px; align-items: baseline;
+  }
+  .flag-btn:hover { background: rgba(255,255,255,0.02); }
+  .flag-btn.active { background: var(--panel); border-color: var(--line); }
+  .flag-btn .short { font-family: var(--mono); color: var(--accent); font-size: 12px; min-width: 28px; }
+  .flag-btn .name { font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  .flag-btn .hint { font-size: 12px; color: var(--muted); margin-left: 8px; }
+  .cli-detail {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 24px 26px;
+  }
+  .cli-detail h3 { font-family: var(--serif); font-weight: 400; font-size: 28px; }
+  .cli-detail .desc { color: var(--ink-2); margin: 8px 0 18px; max-width: 60ch; }
+  .cli-detail pre {
+    background: #0b0907; border: 1px solid var(--line); border-radius: 6px;
+    padding: 14px 16px; font-family: var(--mono); font-size: 12.5px;
+    overflow: auto; color: var(--ink-2); white-space: pre;
+  }
+  .cli-detail pre .c { color: var(--accent); }
+  .cli-detail pre .m { color: var(--muted); }
+  .cli-detail pre .h { color: var(--ink); }
+
+  /* ===== Output anatomy ===== */
+  .anatomy {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 28px;
+    display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 32px;
+  }
+  @media (max-width: 900px) { .anatomy { grid-template-columns: 1fr; } }
+  .anatomy pre {
+    font-family: var(--mono); font-size: 12px; line-height: 1.7;
+    background: #0b0907; border: 1px solid var(--line);
+    border-radius: 8px; padding: 18px; margin: 0;
+    color: var(--ink-2); white-space: pre; overflow: auto;
+  }
+  .anatomy pre .hi { background: rgba(245, 158, 95, 0.10); padding: 0 4px; border-radius: 3px; transition: background .15s; }
+  .anatomy pre .hi.on { background: rgba(245, 158, 95, 0.28); color: var(--ink); outline: 1px solid var(--accent); }
+  .anatomy .legend { display: flex; flex-direction: column; gap: 4px; }
+  .leg-row {
+    text-align: left; padding: 14px 16px; border: 1px solid transparent; border-radius: 7px;
+    background: transparent; color: var(--ink-2); font: inherit; cursor: pointer;
+  }
+  .leg-row:hover { background: rgba(255,255,255,0.02); }
+  .leg-row.active { background: var(--bg-2); border-color: var(--line); color: var(--ink); }
+  .leg-row .ltl { font-weight: 500; }
+  .leg-row .ltd { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  /* ===== Coverage bars ===== */
+  .cov-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 24px;
+  }
+  @media (max-width: 720px) { .cov-grid { grid-template-columns: 1fr; } }
+  .cov {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 22px;
+  }
+  .cov h4 { color: var(--muted); }
+  .cov .num { font-family: var(--serif); font-size: 48px; line-height: 1; }
+  .cov .num .pct { font-size: 22px; color: var(--muted); }
+  .cov .bar {
+    height: 4px; background: var(--line); border-radius: 4px; margin-top: 16px; overflow: hidden;
+    position: relative;
+  }
+  .cov .bar i {
+    position: absolute; left: 0; top: 0; bottom: 0; width: 0%;
+    background: linear-gradient(90deg, var(--accent), color-mix(in oklab, var(--accent) 60%, var(--code)));
+    transition: width 1s cubic-bezier(.2,.7,.2,1);
+  }
+  .cov .target { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 10px; }
+  .cov .target b { color: var(--ink-2); font-weight: 500; }
+
+  /* ===== Roadmap timeline ===== */
+  .timeline { position: relative; padding-left: 28px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 6px; top: 6px; bottom: 6px;
+    width: 1px; background: var(--line-2);
+  }
+  .vrow { position: relative; padding: 10px 0 32px; }
+  .vrow::before {
+    content: ""; position: absolute; left: -28px; top: 16px;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--accent);
+  }
+  .vrow.minor::before { border-color: var(--line-2); width: 9px; height: 9px; top: 18px; left: -26px; }
+  .vrow .ver { font-family: var(--mono); font-size: 12px; color: var(--accent); margin-bottom: 4px; }
+  .vrow .ttl { font-family: var(--serif); font-size: 22px; line-height: 1.2; margin-bottom: 4px; }
+  .vrow .det { color: var(--ink-2); max-width: 64ch; }
+
+  /* ===== Community / footer ===== */
+  .fact-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .fact-grid { grid-template-columns: repeat(2, 1fr); } }
+  .fact { padding: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+  .fact .big { font-family: var(--serif); font-size: 44px; line-height: 1; }
+  .fact .lbl { font-family: var(--mono); font-size: 11px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 8px; }
+
+  .footer {
+    border-top: 1px solid var(--line);
+    padding: 36px 0 60px;
+    color: var(--muted); font-family: var(--mono); font-size: 12px;
+    display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap;
+  }
+  .footer a { color: var(--ink-2); text-decoration: none; }
+  .footer a:hover { color: var(--accent); }
+
+  /* ===== Misc ===== */
+  .row-flex { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .kbd {
+    font-family: var(--mono); font-size: 11px;
+    padding: 2px 6px; border: 1px solid var(--line-2); border-radius: 4px;
+    background: var(--panel); color: var(--ink-2);
+  }
+  hr.spacer { border: 0; height: 28px; }
+  .mono { font-family: var(--mono); }
+  .muted { color: var(--muted); }
+
+  /* Reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(12px); transition: opacity .6s, transform .6s; }
+  .reveal.in { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="primary">
+  <div class="nav-inner">
+    <span class="brand">mdkloc<span class="dot">.</span><span class="v">&nbsp;v2.7.0</span></span>
+    <div class="nav-links">
+      <a href="#what">What</a>
+      <a href="#how">How it works</a>
+      <a href="#langs">Languages</a>
+      <a href="#try">Try it</a>
+      <a href="#cli">CLI</a>
+      <a href="#testing">Testing</a>
+      <a href="#history">History</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page">
+
+<!-- ===== HERO ===== -->
+<section class="hero" id="top">
+  <div class="hero-grid">
+    <div>
+      <span class="eyebrow">A field guide</span>
+      <h1 class="wordmark">md<em>kloc</em><span class="dot">.</span></h1>
+      <p class="tagline">A fast, multi-language lines&#8209;of&#8209;code analyzer that knows the difference between code, a comment, and a blank line — in 38 languages and counting.</p>
+
+      <div class="meta-strip">
+        <div><b>38</b>languages parsed</div>
+        <div><b>~3.3k</b>lines of Rust</div>
+        <div><b>~280</b>tests</div>
+        <div><b>98/95/96</b>cov targets · L/R/F %</div>
+        <div><b>GPL&#8209;3.0</b>license</div>
+      </div>
+    </div>
+
+    <div class="terminal" aria-hidden="true">
+      <div class="term-bar">
+        <span class="dots"><i></i><i></i><i></i></span>
+        <span class="title">~/projects/mdkloc &nbsp;—&nbsp;  mdkloc .</span>
+      </div>
+      <div class="term-body" id="term-body"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== WHAT ===== -->
+<section id="what">
+  <span class="eyebrow">01 — Purpose</span>
+  <h2>Count what counts.</h2>
+  <p class="lede">mdkloc walks a directory tree, sniffs each file's language from its extension or shebang-ish filename, then runs a language-aware mini-parser that decides for every line: is this <em>code</em>, a <em>comment</em>, or simply <em>blank</em>? It then rolls those numbers up by directory and by language, and prints a report you can compare against <span class="mono">tokei</span>.</p>
+
+  <hr class="spacer" />
+
+  <div class="grid-3">
+    <div class="panel">
+      <h4>Why it exists</h4>
+      <p>Most counters either give you one global number, or a per-language number with no idea where in the tree it came from. mdkloc keeps the directory shape — useful when you're auditing a monorepo, or splitting code from tests.</p>
+    </div>
+    <div class="panel">
+      <h4>What it isn't</h4>
+      <p>mdkloc is not a complexity tool. There's no cyclomatic anything, no function counts, no churn analysis. The unit of measurement is the line. The unit of trust is "is this readable to a human as code".</p>
+    </div>
+    <div class="panel">
+      <h4>Design stance</h4>
+      <p>Single Rust binary. No network. No telemetry. Stream files line by line with lossy UTF&#8209;8 so a stray byte never crashes the run. Bounded by <span class="mono">--max-entries</span> and <span class="mono">--max-depth</span> so a runaway symlink can't take down the host.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== HOW IT WORKS ===== -->
+<section id="how">
+  <span class="eyebrow">02 — How it works</span>
+  <h2>The pipeline, one stage at a time.</h2>
+  <p class="lede">Click a stage to see what it actually does.</p>
+
+  <hr class="spacer" />
+
+  <div class="pipeline">
+    <div class="stages" id="stages"></div>
+    <div class="stage-detail" id="stage-detail"></div>
+  </div>
+</section>
+
+<!-- ===== LANGUAGES ===== -->
+<section id="langs">
+  <span class="eyebrow">03 — Languages</span>
+  <h2>An atlas of comment grammars.</h2>
+  <p class="lede">Every language has a private theory of what counts as a comment. mdkloc bundles one for each. Filter by family to see the shape.</p>
+
+  <div class="atlas-controls" id="atlas-controls"></div>
+  <div class="lang-grid" id="lang-grid"></div>
+
+  <hr class="spacer" />
+  <div class="row-flex" style="font-family: var(--mono); font-size: 12px; color: var(--muted); gap: 14px;">
+    <span><i class="chip line">//</i> line comment</span>
+    <span><i class="chip block">/* */</i> block comment</span>
+    <span><i class="chip doc">///</i> doc comment</span>
+    <span><i class="chip special">special</i> dialect quirk</span>
+    <span><i class="chip none">none</i> no comments at all</span>
+  </div>
+</section>
+
+<!-- ===== TRY IT ===== -->
+<section id="try">
+  <span class="eyebrow">04 — Try it</span>
+  <h2>Paste some code. Watch mdkloc think.</h2>
+  <p class="lede">The classifier below is a faithful port of mdkloc's per-language scanners — same precedence rules, same edge cases for nested block comments, doc strings, and shebangs.</p>
+
+  <hr class="spacer" />
+
+  <div class="demo-wrap">
+    <div class="demo-input">
+      <div class="demo-head">
+        <span class="demo-tag">LANG</span>
+        <select id="demo-lang">
+          <option value="rust">Rust</option>
+          <option value="python">Python</option>
+          <option value="cstyle">C / C++ / Java / Go</option>
+          <option value="js">JavaScript / TypeScript</option>
+          <option value="shell">Shell</option>
+          <option value="yaml">YAML</option>
+          <option value="json">JSON</option>
+          <option value="xml">HTML / XML</option>
+          <option value="cobol">COBOL</option>
+          <option value="fortran">Fortran</option>
+        </select>
+        <button id="demo-sample">Load sample</button>
+        <button id="demo-clear">Clear</button>
+        <span class="grow"></span>
+        <span class="demo-tag" id="demo-bytes">0 B</span>
+      </div>
+      <textarea id="demo-code" spellcheck="false"></textarea>
+    </div>
+
+    <div class="demo-output">
+      <div class="demo-stats">
+        <div class="demo-stat code"><div class="lbl">Code</div><div class="val" id="stat-code">0</div></div>
+        <div class="demo-stat comment"><div class="lbl">Comment</div><div class="val" id="stat-comment">0</div></div>
+        <div class="demo-stat blank"><div class="lbl">Blank</div><div class="val" id="stat-blank">0</div></div>
+        <div class="demo-stat"><div class="lbl">Total</div><div class="val" id="stat-total">0</div></div>
+      </div>
+      <div class="demo-lines" id="demo-lines"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CLI ===== -->
+<section id="cli">
+  <span class="eyebrow">05 — Command line</span>
+  <h2>Eight flags, one binary.</h2>
+  <p class="lede">mdkloc's CLI is intentionally small — every flag earns its keep. Select one to see what it does and what the output looks like.</p>
+
+  <hr class="spacer" />
+
+  <div class="cli">
+    <div class="flag-list" id="flag-list"></div>
+    <div class="cli-detail" id="cli-detail"></div>
+  </div>
+</section>
+
+<!-- ===== OUTPUT ANATOMY ===== -->
+<section id="output">
+  <span class="eyebrow">06 — Anatomy of a report</span>
+  <h2>What you see when it finishes.</h2>
+  <p class="lede">Hover the legend on the right to highlight the matching part of the output.</p>
+
+  <hr class="spacer" />
+
+  <div class="anatomy">
+<pre id="anatomy-pre">Processed 312 files (124.6 files/sec) and 48,920 lines (19,540.0 lines/sec)...   <span class="hi" data-key="progress"></span>
+
+Detailed source code analysis
+<span class="hi" data-key="header">--------------------------------------------------------------------------------
+Directory                                 Language     Files      Code  Comments     Blank
+--------------------------------------------------------------------------------</span>
+<span class="hi" data-key="row">./src                                    Rust             2      3340       712       413</span>
+./tests                                  Rust            17      4180       190       498
+./docs                                   ReStructured     0         0         0         0
+./scripts                                PowerShell       1        88        21        12
+
+<span class="hi" data-key="totals">Totals by language:
+                                         Rust            19      7520       902       911
+                                         PowerShell      1        88        21        12</span>
+
+<span class="hi" data-key="summary">Overall Summary:
+Total files processed: 20
+Total lines processed: 9,454
+Code lines:    7,608 (80.5%)
+Comment lines: 923 (9.8%)
+Blank lines:   923 (9.8%)</span>
+</pre>
+    <div class="legend">
+      <button class="leg-row active" data-key="progress"><div class="ltl">Progress line</div><div class="ltd">Streamed while scanning. Throttled to about one update per second so you see the run breathing without flooding the terminal.</div></button>
+      <button class="leg-row" data-key="header"><div class="ltl">Detailed table header</div><div class="ltd">Fixed-width columns sized to a 40-char directory and 16-char language. Anything longer gets truncated from the left with an ellipsis, so the project's tail stays readable.</div></button>
+      <button class="leg-row" data-key="row"><div class="ltl">Per-directory row</div><div class="ltd">One row per (directory, language) pair. Rolled up bottom-up so parent directories include their children unless filters say otherwise.</div></button>
+      <button class="leg-row" data-key="totals"><div class="ltl">Per-language totals</div><div class="ltd">Aggregates across the whole tree. This is the column to compare against tokei or cloc when you're sanity-checking.</div></button>
+      <button class="leg-row" data-key="summary"><div class="ltl">Overall summary</div><div class="ltd">Final headline numbers and percentages. The three percentages always sum to 100 because every counted line lands in exactly one bucket.</div></button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== ROLE BREAKDOWN ===== -->
+<section id="roles">
+  <span class="eyebrow">07 — Mainline vs. test</span>
+  <h2>Code that ships, code that proves.</h2>
+  <div class="grid-2">
+    <div>
+      <p class="lede">Pass <span class="mono">--role-breakdown</span> and mdkloc splits its tables in two: code that ships to production, and code that proves it. Today it's fully wired for Rust; Go's <span class="mono">*_test.go</span>, Python's <span class="mono">test_*.py</span>, and JS's <span class="mono">*.spec.ts</span> are on the roadmap.</p>
+      <p style="color:var(--ink-2); max-width: 60ch;">The Rust splitter is not just a filename heuristic. It walks the file token by token, tracking <span class="mono">{ }</span> scopes and watching for <span class="mono">#[test]</span>, <span class="mono">#[cfg(test)]</span>, or anything ending <span class="mono">::test]</span>. The scope opened by a test attribute — and everything nested inside it — counts as test code. Everything else, mainline.</p>
+    </div>
+    <div class="panel" style="padding: 0;">
+<pre style="font-family: var(--mono); font-size: 12px; padding: 22px; margin: 0; white-space: pre; overflow: auto; color: var(--ink-2);"><span style="color:var(--muted)">Role breakdown (Mainline)</span>
+<span style="color:var(--muted)">--------------------------------------------------------------------------------</span>
+Directory                  Language     Files  Code  Comments  Blank
+<span style="color:var(--muted)">--------------------------------------------------------------------------------</span>
+./src                      Rust             1  2418       512     281
+
+<span style="color:var(--muted)">Role breakdown (Test)</span>
+<span style="color:var(--muted)">--------------------------------------------------------------------------------</span>
+./src                      Rust             1   922       200     132
+./tests                    Rust            17  4180       190     498</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===== TESTING ===== -->
+<section id="testing">
+  <span class="eyebrow">08 — Testing</span>
+  <h2>How mdkloc tests itself.</h2>
+  <p class="lede">~280 tests live in two places: inline <span class="mono">#[cfg(test)]</span> modules next to the code they cover, and integration tests under <span class="mono">tests/</span> that drive the compiled binary against temp directories on disk.</p>
+
+  <div class="cov-grid">
+    <div class="cov">
+      <h4>Lines</h4>
+      <div class="num">98<span class="pct">%</span></div>
+      <div class="bar"><i data-w="98"></i></div>
+      <div class="target"><b>Floor: 98%.</b> Enforced by <span class="mono">cargo llvm-cov --fail-under-lines 98</span>.</div>
+    </div>
+    <div class="cov">
+      <h4>Regions</h4>
+      <div class="num">95<span class="pct">%</span></div>
+      <div class="bar"><i data-w="95"></i></div>
+      <div class="target"><b>Floor: 95%.</b> Branches inside expressions — much harder than lines.</div>
+    </div>
+    <div class="cov">
+      <h4>Functions</h4>
+      <div class="num">96<span class="pct">%</span></div>
+      <div class="bar"><i data-w="96"></i></div>
+      <div class="target"><b>Floor: 96%.</b> Tracked separately because some helpers fire only on rare error paths.</div>
+    </div>
+  </div>
+
+  <hr class="spacer" />
+
+  <div class="grid-3">
+    <div class="panel">
+      <h4>Integration suites</h4>
+      <p style="color:var(--ink-2)">Eighteen <span class="mono">cli_*.rs</span> files under <span class="mono">tests/</span> — smoke tests, language-by-language totals, regions and edge cases, dotfiles, legacy languages, role breakdown. Each spins up a real temp directory with <span class="mono">tempfile</span>, writes fixtures, runs the binary via <span class="mono">CARGO_BIN_EXE_mdkloc</span>, and asserts on the resulting stdout.</p>
+    </div>
+    <div class="panel">
+      <h4>Fault injection</h4>
+      <p style="color:var(--ink-2)">In debug builds — or when <span class="mono">MDKLOC_ENABLE_FAULTS</span> is set — sentinel filenames like <span class="mono">__mdkloc_metadata_fail__</span> deliberately trigger I/O errors so the error-handling branches are exercised. This is how mdkloc hits 95% region coverage on a tool that mostly does filesystem work.</p>
+    </div>
+    <div class="panel">
+      <h4>The pre-PR checklist</h4>
+      <p style="color:var(--ink-2); margin-bottom: 8px;">Run these four, in this order, before opening a pull request:</p>
+<pre style="font-family: var(--mono); font-size: 11.5px; margin: 0; color: var(--ink-2); white-space: pre;">cargo fmt
+cargo clippy -- -D warnings
+cargo test
+cargo llvm-cov --workspace</pre>
+    </div>
+  </div>
+</section>
+
+<!-- ===== VERSION JOURNEY ===== -->
+<section id="history">
+  <span class="eyebrow">09 — Version journey</span>
+  <h2>A year of widening the net.</h2>
+  <p class="lede">mdkloc started as a Rust-and-friends counter. Each release has been about teaching it a new dialect — or a new way to be careful.</p>
+
+  <hr class="spacer" />
+
+  <div class="timeline">
+    <div class="vrow">
+      <div class="ver">v2.7.0 — current</div>
+      <div class="ttl">Tidying, hardening, and the mdhavers cameo.</div>
+      <div class="det">A small Easter egg: <span class="mono">.braw</span> files (the author's other project, a Scots programming language called mdhavers) get their own counter. Hash comments, like Python — but it's the first language mdkloc supports that's named after a Scots word for "nonsense talk".</div>
+    </div>
+    <div class="vrow">
+      <div class="ver">v2.5.0</div>
+      <div class="ttl">Dart joins the fold.</div>
+      <div class="det">Full Dart/Flutter support, including doc comments. Useful for the mobile-app monorepos that used to show up as undifferentiated C-style noise.</div>
+    </div>
+    <div class="vrow">
+      <div class="ver">v2.3.0</div>
+      <div class="ttl">Test coverage to ~280 tests; modern Rust idioms.</div>
+      <div class="det">The big internal cleanup. Coverage thresholds were raised and CI started failing under them — so the codebase stopped drifting.</div>
+    </div>
+    <div class="vrow">
+      <div class="ver">v2.0.0</div>
+      <div class="ttl">The great language expansion.</div>
+      <div class="det">Added Scala, YAML, JSON, XML (incl. SVG/XSL), HTML, TOML, CMake, Dockerfile, Makefile, INI, HCL/Terraform, ReStructuredText, Velocity, Mustache, Protobuf — plus the classics: Algol, COBOL, Fortran, x86 Assembly, DCL (OpenVMS), and IPLAN (PSS/E). Special-filename detection for <span class="mono">Dockerfile</span>, <span class="mono">Makefile</span>, <span class="mono">CMakeLists.txt</span>. New CLI: <span class="mono">--max-depth</span>, <span class="mono">--non-recursive</span>, <span class="mono">--filespec</span>, colored output.</div>
+    </div>
+    <div class="vrow minor">
+      <div class="ver">v1.x</div>
+      <div class="ttl">The early years.</div>
+      <div class="det">Rust, Go, Python, Java, C/C++, C#, JS/TS, PHP, Perl, Ruby, Shell, Pascal. Enough to scan most real-world repos already.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== COMMUNITY ===== -->
+<section id="community">
+  <span class="eyebrow">10 — Community</span>
+  <h2>Where it sits in the ecosystem.</h2>
+
+  <div class="fact-grid">
+    <div class="fact">
+      <div class="big">vs.</div>
+      <div class="lbl">tokei &amp; cloc</div>
+      <p style="color: var(--ink-2); margin-top: 14px;">mdkloc's Code column is calibrated against tokei. Where the two disagree, it's usually because one tool decided a line of attributes (<span class="mono">#[derive(...)]</span>) is code and the other called it metadata. mdkloc calls it code.</p>
+    </div>
+    <div class="fact">
+      <div class="big">GPL-3.0</div>
+      <div class="lbl">License</div>
+      <p style="color: var(--ink-2); margin-top: 14px;">Source-available, copyleft. Bundled binary distributions must remain under GPL-3.0 too. A WiX installer lives under <span class="mono">wix/</span> for Windows packaging.</p>
+    </div>
+    <div class="fact">
+      <div class="big">38</div>
+      <div class="lbl">Languages supported</div>
+      <p style="color: var(--ink-2); margin-top: 14px;">From Rust and Go to Algol-60 and IPLAN. The legacy-language coverage is unusual: most modern counters skip mainframe dialects entirely.</p>
+    </div>
+    <div class="fact">
+      <div class="big">PRs?</div>
+      <div class="lbl">Welcome</div>
+      <p style="color: var(--ink-2); margin-top: 14px;">Add a language, sharpen a parser, or extend role detection to Go and Python. Every PR must pass <span class="mono">fmt</span>, <span class="mono">clippy -D warnings</span>, the test suite, and the coverage gate.</p>
+    </div>
+  </div>
+
+  <hr class="spacer" />
+
+  <div class="grid-2">
+    <div class="panel">
+      <h4>Contributing — the road already mapped</h4>
+      <p style="color: var(--ink-2)">The <span class="mono">docs/</span> folder is a public lab notebook. Coverage recovery plans, repository reviews, remediation roadmaps — all dated, all numbered. A new contributor can read the last review and pick up exactly where the project paused.</p>
+    </div>
+    <div class="panel">
+      <h4>Repo guidelines (the short version)</h4>
+      <p style="color: var(--ink-2)">Edit <span class="mono">Cargo.toml</span> only when a dependency genuinely changes. Keep functions compact. Reach for <span class="mono">Result&lt;T,&nbsp;E&gt;</span> and <span class="mono">?</span>; reserve <span class="mono">unwrap()</span> for tests. No secrets, no network calls, no license headers in source files.</p>
+    </div>
+  </div>
+</section>
+
+<div class="footer">
+  <div>mdkloc — multi-language LOC analyzer · Rust 2021 · GPL-3.0-only</div>
+  <div>field guide compiled from the source tree, journals, and docs/</div>
+</div>
+
+</div><!-- /.page -->
+
+<!-- ===== Data ===== -->
+<script>
+/* ------- Pipeline stages ------- */
+const STAGES = [
+  {
+    title: "Walk the tree",
+    sub: "scan_directory",
+    body: `<h3>Walk the tree</h3>
+      <p>mdkloc starts at the path you give it (or <span class="mono">.</span>). It iterates entries with a streaming reader, keeping a running counter against <span class="mono">--max-entries</span> so a runaway filesystem can never exhaust memory.</p>
+      <pre><span style="color:var(--accent)">mdkloc</span> ./src <span style="color:var(--muted)">--max-depth</span> 4 <span style="color:var(--muted)">--ignore</span> target</pre>
+      <div class="kv">
+        <div class="k">auto-ignored</div><div class="v">target, node_modules, build, dist, .git, venv, __pycache__, bin, obj</div>
+        <div class="k">symlinks</div><div class="v">silently skipped — symlinked files and directories never double-count</div>
+        <div class="k">limits</div><div class="v">--max-entries (default 1,000,000) and --max-depth (default 100)</div>
+      </div>`
+  },
+  {
+    title: "Identify the language",
+    sub: "get_language_from_extension",
+    body: `<h3>Identify the language</h3>
+      <p>The file name is lowercased once. Special names are matched first — <span class="mono">Dockerfile</span>, every flavour of <span class="mono">Makefile</span>, <span class="mono">CMakeLists.txt</span>, the usual shell dotfiles — then the extension is looked up in a single static <span class="mono">match</span> arm.</p>
+      <pre>".rs"  → Rust          ".braw" → mdhavers
+".py"  → Python        ".tf"   → HCL / Terraform
+".cob" → COBOL         ".f90"  → Fortran
+".com" → DCL (OpenVMS) ".ipl"  → IPLAN (PSS/E)</pre>
+      <p>Returns a <span class="mono">&amp;'static str</span> so the hot loop never allocates just to ask "what is this file?".</p>`
+  },
+  {
+    title: "Pick the right counter",
+    sub: "count_lines_with_stats",
+    body: `<h3>Pick the right counter</h3>
+      <p>A second <span class="mono">match</span> dispatches to a per-family counter. Languages with the same comment grammar share an implementation; languages with unique quirks get their own.</p>
+      <div class="kv">
+        <div class="k">count_rust_lines</div><div class="v">// /* */ /// //! plus attribute-as-code</div>
+        <div class="k">count_c_style_lines</div><div class="v">C, C++, Java, C#, Go, Dart, Scala, Protobuf</div>
+        <div class="k">count_javascript_lines</div><div class="v">JS/TS/JSX/TSX with HTML-comment awareness</div>
+        <div class="k">count_python_lines</div><div class="v"># plus triple-quoted multiline strings</div>
+        <div class="k">count_hash_*_lines</div><div class="v">YAML, TOML, Makefile, Dockerfile, INI, CMake</div>
+        <div class="k">count_xml_like_lines</div><div class="v">XML, HTML, SVG, XSL — <!-- … --> only</div>
+        <div class="k">count_cobol_lines</div><div class="v">column-7 indicator (fixed form) plus free form</div>
+        <div class="k">count_fortran_lines</div><div class="v">! anywhere, plus column-1 fixed-form indicators</div>
+      </div>`
+  },
+  {
+    title: "Read line by line",
+    sub: "read_file_lines_lossy",
+    body: `<h3>Read line by line</h3>
+      <p>Every file is read through a buffered <span class="mono">BufReader</span> with lossy UTF&#8209;8 decoding. Invalid byte sequences become <span class="mono">U+FFFD</span> rather than killing the run — useful when scanning third-party trees that contain stray Latin&#8209;1 in old headers.</p>
+      <pre>BufReader::new(File) → for line in .lines() {
+    total_lines += 1;
+    let trimmed = line.trim();
+    if trimmed.is_empty() { stats.blank_lines += 1; continue; }
+    // … language-specific comment logic …
+    stats.code_lines += 1;
+}</pre>`
+  },
+  {
+    title: "Aggregate by directory",
+    sub: "DirectoryStats &amp; LanguageEntry",
+    body: `<h3>Aggregate by directory</h3>
+      <p>Each scanned file emits a <span class="mono">LanguageStats</span> bundle: code, comment, blank, plus an overlap counter for lines that straddle multiple roles. These are absorbed into a <span class="mono">LanguageEntry</span> per (directory, language), which is in turn merged into the parent directory as the walk unwinds.</p>
+      <p>If <span class="mono">--role-breakdown</span> is set, each <span class="mono">LanguageEntry</span> carries a fixed-size array indexed by <span class="mono">CodeRole</span> — <span class="mono">Mainline (0)</span> or <span class="mono">Test (1)</span> — so the same row can split itself cleanly when the report is built.</p>`
+  },
+  {
+    title: "Render the report",
+    sub: "build_analysis_report",
+    body: `<h3>Render the report</h3>
+      <p>The renderer measures the terminal once with <span class="mono">terminal_size</span>, picks a row format with a 40-char directory column and 16-char language column, and writes the table. Numbers are formatted with thousand-separator commas; anything over 100,000,000 flips to scientific notation so columns can't overflow.</p>
+      <p>The <span class="mono">colored</span> crate paints the bands: directory names neutral, languages bold, code amber, comments teal, blanks dim. Pipe the output to a file and the colors fall away automatically.</p>`
+  }
+];
+
+const stagesEl = document.getElementById('stages');
+const stageDetail = document.getElementById('stage-detail');
+STAGES.forEach((s, i) => {
+  const b = document.createElement('button');
+  b.className = 'stage' + (i === 0 ? ' active' : '');
+  b.innerHTML = `<span class="num">${String(i+1).padStart(2,'0')}</span><span><span class="label">${s.title}</span><span class="sub">${s.sub}</span></span>`;
+  b.addEventListener('click', () => {
+    [...stagesEl.children].forEach(c => c.classList.remove('active'));
+    b.classList.add('active');
+    stageDetail.innerHTML = s.body;
+  });
+  stagesEl.appendChild(b);
+});
+stageDetail.innerHTML = STAGES[0].body;
+
+/* ------- Languages ------- */
+const LANGS = [
+  // Core
+  { n:'Rust',        e:'.rs',                       g:'core',    s:[['line','//'],['block','/* */'],['doc','/// //!'],['special','attrs as code']] },
+  { n:'Go',          e:'.go',                       g:'core',    s:[['line','//'],['block','/* */']] },
+  { n:'Dart',        e:'.dart',                     g:'core',    s:[['line','//'],['block','/* */'],['doc','///']] },
+  { n:'Python',      e:'.py',                       g:'core',    s:[['line','#'],['special','""" multiline"""']] },
+  { n:'Java',        e:'.java',                     g:'core',    s:[['line','//'],['block','/* */']] },
+  { n:'C / C++',     e:'.c .cpp .h .hpp',           g:'core',    s:[['line','//'],['block','/* */']] },
+  { n:'C#',          e:'.cs',                       g:'core',    s:[['line','//'],['block','/* */']] },
+  { n:'JavaScript',  e:'.js',                       g:'core',    s:[['line','//'],['block','/* */'],['special','<!-- --> JSX']] },
+  { n:'TypeScript',  e:'.ts',                       g:'core',    s:[['line','//'],['block','/* */']] },
+  { n:'JSX',         e:'.jsx',                      g:'core',    s:[['line','//'],['block','/* */'],['special','<!-- -->']] },
+  { n:'TSX',         e:'.tsx',                      g:'core',    s:[['line','//'],['block','/* */'],['special','<!-- -->']] },
+  { n:'PHP',         e:'.php',                      g:'core',    s:[['line','// #'],['block','/* */']] },
+  { n:'Perl',        e:'.pl .pm .t',                g:'core',    s:[['line','#'],['special','=pod … =cut']] },
+  { n:'Ruby',        e:'.rb',                       g:'core',    s:[['line','#'],['special','=begin … =end']] },
+  { n:'Shell',       e:'.sh + dotfiles',            g:'core',    s:[['line','#'],['special','shebang']] },
+  { n:'Pascal',      e:'.pas',                      g:'core',    s:[['line','//'],['block','{ } (* *)']] },
+  { n:'Scala',       e:'.scala .sbt',               g:'core',    s:[['line','//'],['block','/* */']] },
+
+  // Config / markup
+  { n:'YAML',        e:'.yaml .yml',                g:'config',  s:[['line','#']] },
+  { n:'JSON',        e:'.json',                     g:'config',  s:[['none','no comments']] },
+  { n:'XML',         e:'.xml .xsd',                 g:'config',  s:[['block','<!-- -->']] },
+  { n:'HTML',        e:'.html .htm .xhtml',         g:'config',  s:[['block','<!-- -->']] },
+  { n:'SVG',         e:'.svg',                      g:'config',  s:[['block','<!-- -->']] },
+  { n:'XSL',         e:'.xsl .xslt',                g:'config',  s:[['block','<!-- -->']] },
+  { n:'TOML',        e:'.toml',                     g:'config',  s:[['line','#']] },
+  { n:'INI',         e:'.ini .cfg .conf .properties', g:'config',s:[['line','# ;']] },
+  { n:'Makefile',    e:'Makefile .mk .mak',         g:'config',  s:[['line','#'],['special','special filename']] },
+  { n:'Dockerfile',  e:'Dockerfile*',               g:'config',  s:[['line','#'],['special','special filename']] },
+  { n:'CMake',       e:'CMakeLists.txt .cmake',     g:'config',  s:[['line','#']] },
+  { n:'HCL',         e:'.hcl .tf .tfvars',          g:'config',  s:[['line','// #'],['block','/* */']] },
+  { n:'Protobuf',    e:'.proto',                    g:'config',  s:[['line','//'],['block','/* */']] },
+  { n:'ReStructured',e:'.rst .rest',                g:'config',  s:[['line','..'],['special','directive']] },
+  { n:'Velocity',    e:'.vm .vtl',                  g:'config',  s:[['line','##'],['block','#* *#']] },
+  { n:'Mustache',    e:'.mustache',                 g:'config',  s:[['special','{{! … }}']] },
+
+  // Scripting
+  { n:'PowerShell',  e:'.ps1 .psm1 .psd1',          g:'shell',   s:[['line','#'],['block','<# #>']] },
+  { n:'Batch',       e:'.bat .cmd',                 g:'shell',   s:[['line','REM ::']] },
+  { n:'TCL',         e:'.tcl',                      g:'shell',   s:[['line','#']] },
+  { n:'mdhavers',    e:'.braw',                     g:'shell',   s:[['line','#'],['special','Scots lang']] },
+
+  // Legacy
+  { n:'Algol',       e:'.alg .a60 .a68',            g:'legacy',  s:[['special','COMMENT … ;']] },
+  { n:'COBOL',       e:'.cob .cbl .cpy',            g:'legacy',  s:[['special','col-7 *'],['special','*> free form']] },
+  { n:'Fortran',     e:'.f .f90 .f95 .f03 .f08',    g:'legacy',  s:[['line','!'],['special','col-1 C/c/*']] },
+  { n:'Assembly',    e:'.asm .s',                   g:'legacy',  s:[['line','; #']] },
+  { n:'DCL',         e:'.com  (OpenVMS)',           g:'legacy',  s:[['line','! $!']] },
+  { n:'IPLAN',       e:'.ipl  (PSS/E)',             g:'legacy',  s:[['line','!'],['block','/* */']] }
+];
+
+const FILTERS = [
+  { id:'all', label:'All 41' },
+  { id:'core', label:'Core' },
+  { id:'config', label:'Config / Markup' },
+  { id:'shell', label:'Scripting' },
+  { id:'legacy', label:'Legacy / Classic' }
+];
+
+const atlasCtrls = document.getElementById('atlas-controls');
+const langGrid = document.getElementById('lang-grid');
+
+FILTERS.forEach((f, i) => {
+  const b = document.createElement('button');
+  b.className = 'pill' + (i === 0 ? ' active' : '');
+  b.textContent = f.label;
+  b.dataset.filter = f.id;
+  b.addEventListener('click', () => {
+    [...atlasCtrls.children].forEach(c => c.classList.remove('active'));
+    b.classList.add('active');
+    renderLangs(f.id);
+  });
+  atlasCtrls.appendChild(b);
+});
+
+function renderLangs(filter) {
+  langGrid.innerHTML = '';
+  LANGS.filter(l => filter === 'all' || l.g === filter).forEach(l => {
+    const c = document.createElement('div');
+    c.className = 'lang-card';
+    const chips = l.s.map(([kind, text]) => `<span class="chip ${kind}">${escapeHTML(text)}</span>`).join('');
+    c.innerHTML = `
+      <div class="group">${l.g.toUpperCase()}</div>
+      <div class="name">${l.n}</div>
+      <div class="ext">${l.e}</div>
+      <div class="styles">${chips}</div>
+    `;
+    langGrid.appendChild(c);
+  });
+}
+renderLangs('all');
+
+function escapeHTML(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ------- Demo classifier (faithful to mdkloc's scanners) ------- */
+const CLASSIFIERS = {
+  rust(lines) {
+    const out = []; let inBlock = false;
+    for (const raw of lines) {
+      const t = raw.trim();
+      if (t === '') { out.push('blank'); continue; }
+      if (inBlock) {
+        out.push('comment');
+        if (t.includes('*/')) {
+          inBlock = false;
+          const after = t.split('*/').slice(1).join('*/').trim();
+          if (after && !after.startsWith('//')) out[out.length-1] = 'code'; // overlap: trailing code
+        }
+        continue;
+      }
+      if (t.startsWith('#[')) { out.push('code'); continue; }
+      if (t.includes('/*')) {
+        out.push('comment');
+        const before = t.split('/*')[0];
+        if (before.trim() !== '') out[out.length-1] = 'code';
+        if (!t.includes('*/')) inBlock = true;
+        continue;
+      }
+      if (t.startsWith('///') || t.startsWith('//!') || t.startsWith('//')) { out.push('comment'); continue; }
+      out.push('code');
+    }
+    return out;
+  },
+  cstyle(lines) {
+    const out = []; let inBlock = false;
+    for (const raw of lines) {
+      const t = raw.trim();
+      if (t === '') { out.push('blank'); continue; }
+      let role = 'code', s = t, sawComment = false, sawCode = false;
+      while (true) {
+        if (inBlock) {
+          sawComment = true;
+          const end = s.indexOf('*/');
+          if (end >= 0) { s = s.slice(end + 2); inBlock = false; if (s.trim() === '') break; else continue; }
+          break;
+        }
+        const pl = s.indexOf('//'); const pb = s.indexOf('/*');
+        if (pl < 0 && pb < 0) { if (s.trim() !== '') sawCode = true; break; }
+        if (pl >= 0 && (pb < 0 || pl < pb)) { if (s.slice(0,pl).trim() !== '') sawCode = true; sawComment = true; break; }
+        if (pb >= 0) {
+          if (s.slice(0,pb).trim() !== '') sawCode = true;
+          sawComment = true; s = s.slice(pb + 2);
+          const end = s.indexOf('*/');
+          if (end >= 0) { s = s.slice(end + 2); if (s.trim() === '') break; else continue; }
+          inBlock = true; break;
+        }
+      }
+      role = sawCode ? 'code' : (sawComment ? 'comment' : 'code');
+      out.push(role);
+    }
+    return out;
+  },
+  js(lines) { return CLASSIFIERS.cstyle(lines); }, // close enough for demo
+  python(lines) {
+    const out = []; let inStr = false; let q = '"';
+    for (const raw of lines) {
+      const t = raw.trim();
+      if (t === '') { out.push('blank'); continue; }
+      if (inStr) {
+        out.push('comment');
+        const quote = q.repeat(3);
+        if (t.includes(quote)) { inStr = false; }
+        continue;
+      }
+      if (t.startsWith('#')) { out.push('comment'); continue; }
+      if (t.startsWith('"""') || t.startsWith("'''")) {
+        const qq = t.slice(0,3);
+        if (t.length >= 6 && t.slice(3).includes(qq)) { out.push('comment'); continue; }
+        inStr = true; q = qq[0]; out.push('comment'); continue;
+      }
+      out.push('code');
+    }
+    return out;
+  },
+  shell(lines) {
+    return lines.map(raw => {
+      const t = raw.trim();
+      if (t === '') return 'blank';
+      if (t.startsWith('#')) return 'comment';
+      return 'code';
+    });
+  },
+  yaml(lines) {
+    return lines.map(raw => {
+      const t = raw.trim();
+      if (t === '') return 'blank';
+      if (t.startsWith('#')) return 'comment';
+      return 'code';
+    });
+  },
+  json(lines) {
+    return lines.map(raw => raw.trim() === '' ? 'blank' : 'code');
+  },
+  xml(lines) {
+    const out = []; let inBlock = false;
+    for (const raw of lines) {
+      const t = raw.trim();
+      if (t === '') { out.push('blank'); continue; }
+      if (inBlock) {
+        out.push('comment');
+        if (t.includes('-->')) inBlock = false;
+        continue;
+      }
+      if (t.startsWith('<!--')) {
+        out.push('comment');
+        if (!t.includes('-->')) inBlock = true;
+        continue;
+      }
+      out.push('code');
+    }
+    return out;
+  },
+  cobol(lines) {
+    return lines.map(raw => {
+      const t = raw.trim();
+      if (t === '') return 'blank';
+      // Column 7 indicator: * or / means comment in fixed-form COBOL
+      if (raw.length >= 7 && (raw[6] === '*' || raw[6] === '/')) return 'comment';
+      if (t.startsWith('*>')) return 'comment'; // free form
+      return 'code';
+    });
+  },
+  fortran(lines) {
+    return lines.map(raw => {
+      const t = raw.trim();
+      if (t === '') return 'blank';
+      // Fixed-form column-1 indicators
+      const c0 = raw[0];
+      if (c0 === 'C' || c0 === 'c' || c0 === '*' || c0 === '!') return 'comment';
+      if (t.startsWith('!')) return 'comment';
+      return 'code';
+    });
+  }
+};
+
+const SAMPLES = {
+  rust: `//! mdkloc: a multi-language LOC analyzer.
+use std::path::Path;
+
+/// Count lines for a Rust file, attribute-aware.
+fn count_rust(p: &Path) -> std::io::Result<()> {
+    let mut total = 0;
+    /* this whole comment
+       spans several lines */
+    #[allow(unused)]
+    let x = 1;  // trailing comment
+    Ok(())
+}
+`,
+  cstyle: `#include <stdio.h>
+
+/* greet the world.
+   nothing fancy. */
+int main(void) {
+    // print one line
+    printf("hello\\n");
+    return 0;
+}
+`,
+  js: `// React component
+import { useState } from "react";
+
+/* multi-line
+   block comment */
+export function Counter() {
+  const [n, setN] = useState(0); // state hook
+  return <button>{n}</button>;
+}
+`,
+  python: `#!/usr/bin/env python3
+"""mdkloc demo
+multi-line module docstring.
+"""
+
+def greet(name):
+    # cordial
+    print(f"hi, {name}")
+
+if __name__ == "__main__":
+    greet("world")
+`,
+  shell: `#!/bin/bash
+# build script
+
+set -euo pipefail
+
+# resolve repo root
+cd "$(dirname "$0")/.."
+
+cargo fmt
+cargo clippy -- -D warnings
+cargo test
+`,
+  yaml: `# CI config
+name: ci
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test
+`,
+  json: `{
+  "name": "mdkloc",
+  "version": "2.7.0",
+
+  "license": "GPL-3.0-only"
+}
+`,
+  xml: `<!-- top-level config -->
+<config>
+  <!-- a comment
+       that spans -->
+  <key value="42" />
+</config>
+`,
+  cobol: `       IDENTIFICATION DIVISION.
+       PROGRAM-ID. HELLO.
+      * column-7 comment
+       PROCEDURE DIVISION.
+           DISPLAY "Hello, world!"
+           STOP RUN.
+`,
+  fortran: `      PROGRAM HELLO
+C     column-1 comment
+!     free-form comment
+      PRINT *, "Hello, world!"
+      END PROGRAM HELLO
+`
+};
+
+const codeEl = document.getElementById('demo-code');
+const langSel = document.getElementById('demo-lang');
+const linesEl = document.getElementById('demo-lines');
+const bytesEl = document.getElementById('demo-bytes');
+const sC = document.getElementById('stat-code');
+const sCm = document.getElementById('stat-comment');
+const sB = document.getElementById('stat-blank');
+const sT = document.getElementById('stat-total');
+
+function loadSample() {
+  codeEl.value = SAMPLES[langSel.value] || '';
+  classify();
+}
+function classify() {
+  const text = codeEl.value;
+  bytesEl.textContent = new Blob([text]).size + ' B';
+  const lines = text.length === 0 ? [] : text.replace(/\n$/, '').split('\n');
+  const fn = CLASSIFIERS[langSel.value] || CLASSIFIERS.cstyle;
+  const tags = fn(lines);
+  let c=0, cm=0, b=0;
+  const rows = lines.map((line, i) => {
+    const role = tags[i];
+    if (role === 'code') c++;
+    else if (role === 'comment') cm++;
+    else b++;
+    const display = line === '' ? ' ' : line.replace(/</g,'&lt;');
+    return `<div class="row ${role}">
+      <span class="ln">${i+1}</span>
+      <span class="pip ${role}"></span>
+      <span class="src">${display}</span>
+    </div>`;
+  }).join('');
+  linesEl.innerHTML = rows || `<div class="row blank" style="padding:14px 16px;color:var(--dim)">Paste some code above to see how mdkloc would classify each line.</div>`;
+  sC.textContent = c; sCm.textContent = cm; sB.textContent = b; sT.textContent = lines.length;
+}
+
+langSel.addEventListener('change', loadSample);
+codeEl.addEventListener('input', classify);
+document.getElementById('demo-sample').addEventListener('click', loadSample);
+document.getElementById('demo-clear').addEventListener('click', () => { codeEl.value = ''; classify(); });
+loadSample();
+
+/* ------- CLI explorer ------- */
+const FLAGS = [
+  {
+    short: '', name: '[PATH]', hint: 'positional',
+    desc: 'The directory mdkloc should walk. Defaults to the current working directory. Pass a single path; mdkloc follows symlinked files at most once and silently skips symlinked directories.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> ./src
+
+Processed 42 files (140.0 files/sec) and 3,340 lines...
+./src       Rust       2     3340     712      413`
+  },
+  {
+    short: '-i', name: '--ignore', hint: 'repeat for multiple',
+    desc: 'Skip a named directory anywhere in the walk. Composes with the default auto-ignore list (target, node_modules, build, dist, .git, venv, __pycache__, bin, obj). Pass --ignore as many times as you like.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> . <span class="c">--ignore</span> vendor <span class="c">--ignore</span> generated
+
+<span class="m"># 'vendor/' and 'generated/' will never appear in the report,</span>
+<span class="m"># in addition to the built-in ignore list.</span>`
+  },
+  {
+    short: '-v', name: '--verbose', hint: 'per-file output',
+    desc: 'Print one File: line per file as the walk progresses. Useful for diagnosing why a directory has unexpected totals — mdkloc tells you exactly which files it considered.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> ./src <span class="c">--verbose</span>
+
+File: ./src/main.rs (Rust): 3340 lines [code: 2418, comments: 712, blank: 210]
+File: ./src/tests_included.rs (Rust): 932 lines [code: 720, comments: 80, blank: 132]
+Processed 2 files (40.0 files/sec) and 4,272 lines...`
+  },
+  {
+    short: '-m', name: '--max-entries', hint: 'default 1,000,000',
+    desc: 'Hard cap on the number of files considered. Stops the walk early if a hostile or accidental filesystem layout would otherwise process too many. The cap is a safety valve, not a sampling tool — when reached, mdkloc aborts with a clear error.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> /huge/repo <span class="c">--max-entries</span> 50000
+
+<span class="m"># mdkloc stops cleanly once it has considered 50,000 entries.</span>`
+  },
+  {
+    short: '-d', name: '--max-depth', hint: 'default 100',
+    desc: 'Limit how deep mdkloc recurses. Depth 0 is the path itself, depth 1 is its direct children, and so on. Pairs naturally with --filespec for quick top-N-level audits.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> . <span class="c">--max-depth</span> 2
+
+<span class="m"># Only the path and its top two levels of children are scanned.</span>`
+  },
+  {
+    short: '-n', name: '--non-recursive', hint: 'flat scan',
+    desc: 'Equivalent to --max-depth 0 but more explicit. Only files directly inside the given path are considered; subdirectories are not entered.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> ./scripts <span class="c">--non-recursive</span>
+
+./scripts   PowerShell  1   88   21   12`
+  },
+  {
+    short: '-f', name: '--filespec', hint: 'glob filter',
+    desc: 'Only files whose names match the glob are counted. The pattern is matched against the file name (not its full path). Combine with --ignore to slice a tree along two axes at once.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> . <span class="c">--filespec</span> "*.rs"
+
+<span class="m"># Counts only Rust files. Everything else is invisible to the totals.</span>`
+  },
+  {
+    short: '-r', name: '--role-breakdown', hint: 'split mainline/test',
+    desc: 'Add two extra tables to the report: one for mainline code, one for test code. Currently full-fidelity for Rust; other languages report everything as mainline until their splitters are landed.',
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> . <span class="c">--role-breakdown</span>
+
+<span class="h">Role breakdown (Mainline)</span>
+./src     Rust    1   2418   512   281
+
+<span class="h">Role breakdown (Test)</span>
+./src     Rust    1    922   200   132
+./tests   Rust   17   4180   190   498`
+  },
+  {
+    short: '-l', name: '--languages', hint: 'just list them',
+    desc: "Print mdkloc's table of supported languages and their comment styles, then exit. Useful in scripts that need to assert a particular language is known before invoking the tool.",
+    sample: `<span class="m">$</span> <span class="c">mdkloc</span> <span class="c">--languages</span>
+
+Rust          .rs                       // /* */ /// //!
+Go            .go                       // /* */
+Python        .py                       # """..."""
+…`
+  }
+];
+
+const flagList = document.getElementById('flag-list');
+const cliDetail = document.getElementById('cli-detail');
+FLAGS.forEach((f, i) => {
+  const b = document.createElement('button');
+  b.className = 'flag-btn' + (i === 0 ? ' active' : '');
+  b.innerHTML = `<span class="short">${f.short || ''}</span><span><span class="name">${f.name}</span><span class="hint">${f.hint}</span></span>`;
+  b.addEventListener('click', () => {
+    [...flagList.children].forEach(c => c.classList.remove('active'));
+    b.classList.add('active');
+    renderFlag(f);
+  });
+  flagList.appendChild(b);
+});
+function renderFlag(f) {
+  cliDetail.innerHTML = `
+    <h3><span class="mono" style="color:var(--accent)">${f.name}</span> <span class="muted mono" style="font-size:14px;">${f.short || ''}</span></h3>
+    <p class="desc">${f.desc}</p>
+    <pre>${f.sample}</pre>
+  `;
+}
+renderFlag(FLAGS[0]);
+
+/* ------- Output anatomy legend ------- */
+const anatomyPre = document.getElementById('anatomy-pre');
+const legend = document.querySelectorAll('.leg-row');
+function highlight(key) {
+  anatomyPre.querySelectorAll('.hi').forEach(el => el.classList.toggle('on', el.dataset.key === key));
+  legend.forEach(l => l.classList.toggle('active', l.dataset.key === key));
+}
+legend.forEach(l => {
+  l.addEventListener('mouseenter', () => highlight(l.dataset.key));
+  l.addEventListener('click', () => highlight(l.dataset.key));
+});
+highlight('progress');
+
+/* ------- Hero terminal animation ------- */
+const termBody = document.getElementById('term-body');
+const TERM_LINES = [
+  `<span class="prompt">$</span> <span class="arg">mdkloc .</span>`,
+  '',
+  `<span class="progress">Processed   12 files (60.0 files/sec) and  1,420 lines (7,100.0 lines/sec)...</span>`,
+  `<span class="progress">Processed   78 files (78.0 files/sec) and 11,940 lines (11,940.0 lines/sec)...</span>`,
+  `<span class="progress">Processed  214 files (89.2 files/sec) and 34,118 lines (14,216.0 lines/sec)...</span>`,
+  `<span class="progress">Processed  312 files (124.6 files/sec) and 48,920 lines (19,540.0 lines/sec)...</span>`,
+  '',
+  `<span class="hdr">Detailed source code analysis</span>`,
+  `<span class="dim">--------------------------------------------------------------------------------</span>`,
+  `<span class="hdr">Directory                                 Language     Files      Code  Comments     Blank</span>`,
+  `<span class="dim">--------------------------------------------------------------------------------</span>`,
+  `./src                                    <span class="lang">Rust         </span>    2 <span class="code-c">    3,340</span> <span class="com-c">     712</span> <span class="blk-c">     413</span>`,
+  `./tests                                  <span class="lang">Rust         </span>   17 <span class="code-c">    4,180</span> <span class="com-c">     190</span> <span class="blk-c">     498</span>`,
+  `./scripts                                <span class="lang">PowerShell   </span>    1 <span class="code-c">       88</span> <span class="com-c">      21</span> <span class="blk-c">      12</span>`,
+  '',
+  `<span class="hdr">Overall Summary:</span>`,
+  `Total files processed:  20`,
+  `Total lines processed: 9,454`,
+  `<span class="code-c">Code lines:    7,608 (80.5%)</span>`,
+  `<span class="com-c">Comment lines:   923 (9.8%)</span>`,
+  `<span class="blk-c">Blank lines:     923 (9.8%)</span>`,
+  ''
+];
+let termIdx = 0;
+function termTick() {
+  if (termIdx >= TERM_LINES.length) {
+    // restart after a beat
+    setTimeout(() => {
+      termIdx = 0;
+      termBody.innerHTML = '';
+      termTick();
+    }, 3500);
+    return;
+  }
+  const row = document.createElement('div');
+  row.className = 'term-row';
+  row.innerHTML = TERM_LINES[termIdx] || '&nbsp;';
+  termBody.appendChild(row);
+  termBody.scrollTop = termBody.scrollHeight;
+  termIdx++;
+  // variable pacing so progress lines tick fast, table draws steadily
+  const delay = TERM_LINES[termIdx-1].includes('Processed') ? 250 :
+                TERM_LINES[termIdx-1].includes('Summary') ? 350 :
+                TERM_LINES[termIdx-1].includes('---') ? 120 :
+                180;
+  setTimeout(termTick, delay);
+}
+termTick();
+
+/* ------- Reveal on scroll ------- */
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('in'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('section').forEach(s => { s.classList.add('reveal'); io.observe(s); });
+
+/* ------- Coverage bars (animate when in view) ------- */
+const covIO = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      document.querySelectorAll('.bar i').forEach(i => { i.style.width = i.dataset.w + '%'; });
+    }
+  });
+}, { threshold: 0.3 });
+document.querySelectorAll('#testing').forEach(s => covIO.observe(s));
+
+/* ------- Smooth scroll for nav ------- */
+document.querySelectorAll('.nav-links a').forEach(a => {
+  a.addEventListener('click', (e) => {
+    const id = a.getAttribute('href').slice(1);
+    const t = document.getElementById(id);
+    if (t) {
+      e.preventDefault();
+      const y = t.getBoundingClientRect().top + window.scrollY - 60;
+      window.scrollTo({ top: y, behavior: 'smooth' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
