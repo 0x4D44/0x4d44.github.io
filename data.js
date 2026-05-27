@@ -227,6 +227,19 @@ window.ESSAYS = [
     tag: "software",
     real: true,
   },
+  {
+    slug: "netmeeting",
+    title: "NetMeeting",
+    tagline: "A deep dive into Microsoft's forgotten conferencing pioneer.",
+    url: "https://0x4d44.github.io/netmeeting/",
+    illustration: "ill-call",
+    date: "2026-05-27",
+    year: 2026,
+    readingMin: 19,
+    words: 3764,
+    tag: "history",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
