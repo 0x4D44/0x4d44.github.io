@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · AC Systems — TRACTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="03">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch3 hero">
+  <div class="kicker">Chapter 03</div>
+  <div class="num">03</div>
+  <h2 style="margin-top:18px;max-width:20ch">AC systems: the transformer, and the frequency problem it created.</h2>
+  <p class="lead" style="max-width:55ch;margin-top:22px">Alternating current brought one decisive gift — the transformer — and one stubborn curse: the commutator motor hates AC. Half a century of traction engineering is the story of reconciling the two.</p>
+  <div class="meta">
+    <div><div class="k">The gift</div><div class="v">High-voltage catenary via transformer</div></div>
+    <div><div class="k">The curse</div><div class="v">AC ruins commutation</div></div>
+    <div><div class="k">The fixes</div><div class="v">Low frequency · or rectify to DC</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#gift">The transformer advantage</a>
+    <a href="#volts">Live: voltage & wire</a>
+    <a href="#curse">Why AC hurts the motor</a>
+    <a href="#freq">Live: why 16⅔ Hz</a>
+    <a href="#threephase">Three-phase: elegant dead-end</a>
+    <a href="#rectifier">The 50 Hz answer</a>
+  </nav>
+
+  <div>
+    <!-- TRANSFORMER -->
+    <section id="gift" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The gift</div>
+      <h3>A transformer can only work on AC — and that one fact reshaped the railway.</h3>
+      <p style="margin-top:18px">To send power down a catenary you want <strong>high voltage and low current</strong>: current is what heats and wastes in the wire (loss ∝ I²R), so for a given power, raising the voltage lets you use a thinner conductor, space the feeder substations far apart, and lose less along the way. Transmission engineers learned this lesson with the grid.</p>
+      <p>But a DC motor needs a few hundred volts, not tens of thousands. On DC there is no simple way to step voltage down, so DC railways are stuck at low catenary voltages (600–3000 V) with heavy conductors and substations every few kilometres. On <strong>AC</strong>, a transformer on the locomotive steps the catenary down to whatever the traction equipment needs — and a <strong>tap-changer</strong> on that transformer gives smooth, near-lossless voltage control, replacing the wasteful starting resistors of Chapter 02.</p>
+    </section>
+
+    <!-- VOLTAGE SLIDER -->
+    <section id="volts" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 3.1</div>
+      <h3>Pick a catenary voltage. Watch the wire shrink.</h3>
+      <p style="margin-top:18px">Hold the delivered power fixed and slide the catenary voltage. Current — and the copper, the losses, and the substation density it forces — fall away as voltage climbs. This is the whole economic case for AC.</p>
+
+      <figure class="figure" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 3.1</span><span>CATENARY VOLTAGE vs CURRENT — FIXED 5 MW LOAD</span><span class="dim" id="vsys">—</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 720 250" style="width:100%;height:auto" id="lineSvg">
+            <!-- substations -->
+            <g id="subs"></g>
+            <!-- catenary wire (thickness varies) -->
+            <line x1="20" y1="60" x2="700" y2="60" id="cat" stroke="var(--ink)" stroke-width="10"/>
+            <!-- poles -->
+            <g stroke="var(--line)" stroke-width="2"><line x1="60" y1="40" x2="60" y2="170"/><line x1="360" y1="40" x2="360" y2="170"/><line x1="660" y1="40" x2="660" y2="170"/></g>
+            <!-- rail -->
+            <line x1="20" y1="172" x2="700" y2="172" stroke="var(--ink)" stroke-width="2"/>
+            <!-- loco -->
+            <g id="loco"><rect x="300" y="120" width="120" height="44" rx="5" fill="var(--paper-card)" stroke="var(--ink)" stroke-width="2"/><line x1="360" y1="120" x2="360" y2="62" stroke="var(--signal)" stroke-width="2"/><path d="M348 62 L372 62 L360 74 Z" fill="var(--signal)"/><circle cx="322" cy="166" r="7" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="398" cy="166" r="7" fill="none" stroke="var(--ink)" stroke-width="2"/><text x="360" y="146" text-anchor="middle" font-size="11" fill="var(--ink-soft)">5 MW</text></g>
+          </svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <div><div class="tag">Voltage</div><div class="readout" style="font-size:1.3rem"><b id="rV" class="sig">—</b></div></div>
+          <div><div class="tag">Line current</div><div class="readout" style="font-size:1.3rem"><b id="rI">—</b></div></div>
+          <div><div class="tag">Conductor</div><div class="readout" style="font-size:1.3rem"><b id="rA">—</b></div></div>
+          <div><div class="tag">Substation gap</div><div class="readout" style="font-size:1.3rem"><b id="rD">—</b></div></div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--line);padding-top:16px">
+          <input id="volt" type="range" min="0" max="6" value="0" step="1" style="width:100%">
+          <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.62rem;color:var(--ink-faint);margin-top:6px">
+            <span>600 V DC</span><span>1.5 kV</span><span>3 kV</span><span>11 kV</span><span>15 kV</span><span>25 kV</span><span>50 kV</span>
+          </div>
+          <div id="vnote" class="readout" style="margin-top:14px;color:var(--ink-faint)"></div>
+        </div>
+        <div class="figure-cap"><b>Why DC railways are low-voltage and AC railways are high-voltage.</b> Without a transformer the motor voltage <em>is</em> the line voltage, so DC stays low and pays for it in copper and substations. AC decouples the two: transmit high, use low.</div>
+      </figure>
+    </section>
+
+    <!-- CURSE -->
+    <section id="curse" class="section">
+      <div class="kicker">The curse</div>
+      <h3>Feed alternating current to a commutator motor and it fights back.</h3>
+      <p style="margin-top:18px">You can build an AC version of the series motor — laminate the whole magnetic circuit so the alternating flux doesn't cook it with eddy currents, and because field and armature current reverse together, torque stays one-way. Such <strong>AC series (commutator) motors</strong> were built in large numbers. But AC attacks the commutator in two ways that DC never did:</p>
+      <ul class="spec">
+        <li><strong>Transformer EMF.</strong> The coil briefly short-circuited by a brush as it commutates is wrapped around the pole — so it behaves like the <em>secondary of a transformer</em> linked to the alternating main flux. That induces a voltage in the shorted coil proportional to frequency, driving a heavy circulating current and vicious sparking at the brush.</li>
+        <li><strong>Reactance &amp; power factor.</strong> The windings are inductive; their reactance X = 2πfL rises with frequency. Higher frequency means a larger reactive voltage drop, a poorer power factor, and more volt-amps demanded from the supply for the same useful power.</li>
+      </ul>
+      <p>Both problems scale with frequency, and both vanish at DC. So if you are committed to a commutator motor but want the transformer, the obvious move is to make the frequency <strong>as low as you practically can</strong>.</p>
+    </section>
+
+    <!-- FREQUENCY SLIDER -->
+    <section id="freq" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 3.2</div>
+      <h3>Why 16⅔ hertz?</h3>
+      <p style="margin-top:18px">Slide the supply frequency from DC up to industrial 50 Hz and watch what it does to the commutator. The sweet spot is a compromise: low enough that the commutator motor survives, but still AC so the transformer works — and a tidy <strong>one-third of 50 Hz</strong>, so it could be generated by rotary converters from the public grid.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 3.2</span><span id="fTitle">SUPPLY FREQUENCY — 0 Hz (DC)</span><span class="dim" style="color:var(--cyan-soft)">COMMUTATION VIEW</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 280px;gap:22px;align-items:center">
+          <svg viewBox="0 0 420 300" style="width:100%;height:auto" id="commSvg">
+            <!-- commutator drum -->
+            <circle cx="180" cy="150" r="92" fill="none" stroke="var(--cyan)" stroke-width="2"/>
+            <g id="commBars"></g>
+            <circle cx="180" cy="150" r="26" fill="var(--plate-2)" stroke="var(--cyan)" stroke-width="1.6"/>
+            <!-- brush -->
+            <rect x="172" y="40" width="16" height="26" fill="var(--signal)"/>
+            <line x1="180" y1="40" x2="180" y2="16" stroke="var(--signal)" stroke-width="2"/>
+            <!-- spark zone -->
+            <g id="sparks"></g>
+            <text x="180" y="292" text-anchor="middle" font-size="11" fill="var(--cyan-soft)">BRUSH ON COMMUTATOR</text>
+          </svg>
+          <div>
+            <div class="tag" style="color:var(--cyan-soft)">Transformer EMF (sparking)</div>
+            <div class="meter"><div id="mEMF" class="meterfill"></div></div>
+            <div class="tag" style="color:var(--cyan-soft);margin-top:14px">Reactance / poor power factor</div>
+            <div class="meter"><div id="mX" class="meterfill" style="background:var(--signal-2)"></div></div>
+            <div class="tag" style="color:var(--cyan-soft);margin-top:14px">Transformer usable?</div>
+            <div id="mXfmr" class="readout" style="font-size:1.05rem;margin-top:4px;color:var(--cyan)">—</div>
+            <div id="fVerdict" class="readout" style="margin-top:16px;color:var(--paper-on-plate);min-height:4.5em;font-size:.84rem"></div>
+          </div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);padding-top:16px">
+          <input id="freq" type="range" min="0" max="50" value="0" step="1" style="width:100%">
+          <div id="freqMarks" style="position:relative;height:18px;margin-top:4px;font-family:var(--font-mono);font-size:.62rem;color:var(--cyan-soft)"></div>
+        </div>
+        <div class="figure-cap"><b>DC (left) is perfect for commutation but useless for a transformer.</b> 50 Hz (right) is what the grid offers but tears the commutator apart. <b>16⅔ Hz</b> and <b>25 Hz</b> are the historical compromises — low enough to commutate, high enough to transform, and simple fractions of 50/60 Hz so they could be generated.</div>
+      </figure>
+
+      <div class="note">
+        <span class="tag">The price of low frequency</span>
+        <p>It is not free. A 16⅔ Hz supply needs its <strong>own generation and distribution</strong> — separate power stations, or converter stations turning grid power into railway power — a parallel electricity network. And transformers and motors at low frequency are physically <strong>larger and heavier</strong> for the same power, because magnetic components scale inversely with frequency. Several countries (Germany, Austria, Switzerland, Sweden, Norway) judged it worth building anyway, and run 15 kV 16⅔ Hz to this day.</p>
+      </div>
+    </section>
+
+    <!-- THREE PHASE -->
+    <section id="threephase" class="section">
+      <div class="kicker">The road not taken</div>
+      <h3>Three-phase: brushless decades early, and abandoned anyway.</h3>
+      <p style="margin-top:18px">There was always another way to use AC: the <strong>three-phase induction motor</strong> — rugged, brushless, no commutator at all. Early Italian and other mountain railways ran it, and it offered something remarkable for its day: easy <strong>regenerative braking</strong> down the long descents, feeding energy back into the supply.</p>
+      <p>But before power electronics it had crippling drawbacks. An induction motor's speed is set by the supply frequency, which was fixed — so you got only a <strong>few fixed speeds</strong>, changed clumsily by switching pole numbers or cascading machines. Worse, three phases down a railway needed <strong>two overhead wires</strong> plus the rail, with complicated crossings and junctions. The idea was sound but a century too early; it was abandoned — and then reborn triumphantly once the inverter could synthesise a variable frequency on board (Chapter 04).</p>
+    </section>
+
+    <!-- RECTIFIER -->
+    <section id="rectifier" class="section">
+      <div class="kicker">The 50 Hz answer</div>
+      <h3>If you can't beat the commutator's hatred of AC — convert the AC.</h3>
+      <p style="margin-top:18px">The breakthrough that opened up cheap, standard <strong>50 Hz industrial frequency</strong> traction was to stop asking the motor to run on AC at all. Take 25 kV 50 Hz straight off the public grid, step it down with the on-board transformer and tap-changer, then <strong>rectify</strong> it to DC and feed a conventional, well-understood DC series motor. Pioneered in France in the 1950s, 25 kV 50 Hz became the global standard for new electrification.</p>
+      <p>The rectifier itself evolved through three generations:</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:24px 0">
+        <div style="background:var(--paper-card);padding:20px"><div class="tag tag-sig">1st</div><h4 style="margin:6px 0">Mercury-arc / ignitron</h4><p style="font-size:.86rem;margin:0">Glass or steel tubes of mercury vapour. Effective but delicate, needing careful temperature control — sometimes water-cooled — and hazardous to maintain.</p></div>
+        <div style="background:var(--paper-card);padding:20px"><div class="tag tag-sig">2nd</div><h4 style="margin:6px 0">Silicon diode</h4><p style="font-size:.86rem;margin:0">Solid-state diodes: robust, compact, maintenance-free. They made the rectifier locomotive simple and reliable, and dominated through the 1960s–70s.</p></div>
+        <div style="background:var(--paper-card);padding:20px"><div class="tag tag-sig">3rd</div><h4 style="margin:6px 0">Thyristor</h4><p style="font-size:.86rem;margin:0">Controllable rectifiers let you vary the DC voltage <em>electronically</em>, finally retiring the tap-changer and resistors — the doorway to the inverter age.</p></div>
+      </div>
+      <p>The rectifier locomotive was a brilliant bridge: the transmission economics of high-voltage AC married to the proven, well-loved DC traction motor. But it still carried that motor's commutator and brushes. The last barrier — getting rid of the commutator entirely — would fall only when electronics could build a variable-frequency supply for a brushless motor.</p>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>TRACTION · Ch. 03 — AC systems</span>
+  <span>Fig. 3.1–3.2 · schematic</span>
+</div></footer>
+
+<style>
+.meter{ height:12px; background:rgba(255,255,255,.08); margin-top:6px; }
+.meterfill{ height:100%; width:0; background:var(--signal); transition:.18s; }
+</style>
+
+<script>
+/* ===== 3.1 voltage/wire ===== */
+(function(){
+  const P=5e6; // 5 MW
+  const SYS=[
+    {v:600,  label:'600 V DC',  kind:'DC'},
+    {v:1500, label:'1.5 kV DC', kind:'DC'},
+    {v:3000, label:'3 kV DC',   kind:'DC'},
+    {v:11000,label:'11 kV AC',  kind:'AC'},
+    {v:15000,label:'15 kV AC 16⅔Hz', kind:'AC'},
+    {v:25000,label:'25 kV AC 50Hz',  kind:'AC'},
+    {v:50000,label:'50 kV AC',  kind:'AC'},
+  ];
+  const slider=document.getElementById('volt');
+  const cat=document.getElementById('cat'), subs=document.getElementById('subs');
+  function fmtI(i){ return i>=1000?(i/1000).toFixed(1)+' kA':i.toFixed(0)+' A'; }
+  function upd(){
+    const s=SYS[+slider.value]; const I=P/s.v;
+    // conductor area ∝ current (keep current density const), normalise
+    const area = Math.max(40, I/8); // mm² rough
+    const thick = Math.max(1.5, Math.min(12, area/40));
+    cat.setAttribute('stroke-width', thick.toFixed(1));
+    cat.setAttribute('stroke', s.kind==='AC'?'var(--annot)':'var(--ink)');
+    // substation spacing ∝ voltage
+    const gapKm = Math.round(Math.min(80, 3 + s.v/700));
+    const n = Math.max(2, Math.round(680/ (gapKm*4) )+1);
+    let g=''; for(let k=0;k<=n;k++){ const x=20+k*(680/n); g+=`<g><rect x="${x-7}" y="76" width="14" height="22" fill="none" stroke="var(--signal)" stroke-width="1.6"/><line x1="${x}" y1="60" x2="${x}" y2="76" stroke="var(--signal)" stroke-width="1.4"/></g>`; }
+    subs.innerHTML=g;
+    document.getElementById('rV').textContent=s.v>=1000?(s.v/1000)+' kV':s.v+' V';
+    document.getElementById('rI').textContent=fmtI(I);
+    document.getElementById('rA').textContent='≈'+Math.round(area)+' mm²';
+    document.getElementById('rD').textContent='≈'+gapKm+' km';
+    document.getElementById('vsys').textContent=s.label;
+    document.getElementById('vnote').textContent = s.kind==='DC'
+      ? '◼ DC — no on-board transformer possible, so motor voltage = line voltage. Heavy copper, substations packed close, big I²R losses.'
+      : '◼ AC — a locomotive transformer steps this down to the motors. Thin wire, sparse substations, low loss. The tap-changer replaces the starting resistors.';
+  }
+  slider.addEventListener('input',upd); upd();
+})();
+
+/* ===== 3.2 frequency / commutation ===== */
+(function(){
+  const svg=document.getElementById('commSvg'), barsG=document.getElementById('commBars'), sparkG=document.getElementById('sparks');
+  // commutator bars
+  let b=''; for(let k=0;k<36;k++){ const a=k*10*Math.PI/180; b+=`<line x1="${180+Math.cos(a)*92}" y1="${150+Math.sin(a)*92}" x2="${180+Math.cos(a)*26}" y2="${150+Math.sin(a)*26}" stroke="var(--plate-line)" stroke-width="1"/>`; }
+  barsG.innerHTML=b;
+  const fr=document.getElementById('freq');
+  // marks
+  const marks=[{f:0,t:'DC'},{f:16.67,t:'16⅔'},{f:25,t:'25'},{f:50,t:'50 Hz'}];
+  document.getElementById('freqMarks').innerHTML=marks.map(m=>`<span style="position:absolute;left:${m.f/50*100}%;transform:translateX(-50%)">▏${m.t}</span>`).join('');
+  let raf=null;
+  function draw(){
+    const f=+fr.value;
+    const emf=f/50, X=f/50;
+    document.getElementById('mEMF').style.width=(emf*100)+'%';
+    document.getElementById('mX').style.width=(X*100)+'%';
+    document.getElementById('fTitle').textContent = f===0?'SUPPLY FREQUENCY — 0 Hz (DC)':`SUPPLY FREQUENCY — ${f} Hz`;
+    document.getElementById('mXfmr').textContent = f===0?'NO — transformer needs AC':'YES';
+    document.getElementById('mXfmr').style.color = f===0?'var(--signal)':'var(--cyan)';
+    // sparks ∝ f
+    const n=Math.round(emf*14);
+    let s='';
+    for(let i=0;i<n;i++){ const dx=(Math.random()-.5)*30, dy=(Math.random())*-22-4, len=4+Math.random()*emf*16;
+      s+=`<line x1="${180+dx*0.5}" y1="66" x2="${180+dx}" y2="${66+dy-len*0.2}" stroke="var(--signal)" stroke-width="${1+Math.random()*1.5}" opacity="${0.4+Math.random()*0.6}"/>`; }
+    sparkG.innerHTML=s;
+    // verdict
+    let v;
+    if(f===0) v='✔ PERFECT COMMUTATION — no transformer EMF, no reactance. But f=0 means no transformer: you are back to a plain DC railway, low-voltage and substation-heavy.';
+    else if(f<=17) v='✔ THE COMPROMISE — 16⅔ Hz. Commutation is manageable and the transformer works. Cost: a dedicated low-frequency power network and bulkier magnetics.';
+    else if(f<=25) v='△ MARGINAL — 25 Hz, used early in the USA. Workable with heavy brushgear, but commutation losses and power factor are getting awkward.';
+    else if(f<40) v='✖ POOR — sparking and reactance now severe. A commutator motor here needs huge interpoles and still wears fast.';
+    else v='✖ 50 Hz — industrial frequency, free off the grid, but commutation is impractical. The answer is not a better motor — it is to RECTIFY to DC (see below).';
+    document.getElementById('fVerdict').textContent=v;
+    // brush colour
+    document.querySelector('#commSvg rect').setAttribute('fill', emf>0.4?'#ff7a3d':'var(--signal)');
+  }
+  fr.addEventListener('input',()=>{ draw(); });
+  // gentle spark flicker when AC
+  setInterval(()=>{ if(+fr.value>0) draw(); }, 220);
+  draw();
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

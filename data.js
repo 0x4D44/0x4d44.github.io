@@ -1,7 +1,12 @@
 // ============================================================
 // 0x4D44 — document catalog
 // Add/edit entries here. Each entry needs at minimum: title,
-// tagline, url, date (YYYY-MM-DD), year (subject year), tag.
+// tagline, url, date, year (subject year), and a tag.
+// Use `tag: "x"` for one subject, or `tags: ["x", "y"]` for several
+// (the page then appears under each of those filters).
+// `date` is ISO 8601 and is the sort key. Use a full timestamp
+// (e.g. "2026-05-28T18:54:00") so multiple entries published on the
+// same day sort in the right order; a bare "YYYY-MM-DD" also works.
 // readingMin and words are optional but shown when present.
 // ============================================================
 
@@ -259,7 +264,7 @@ window.ESSAYS = [
     tagline: "Two questions about change — an interactive field guide to calculus.",
     url: "https://0x4d44.github.io/calculus/",
     illustration: "ill-calculus",
-    date: "2026-05-28",
+    date: "2026-05-28T00:48:36",
     year: 2026,
     readingMin: 10,
     words: 2224,
@@ -272,7 +277,7 @@ window.ESSAYS = [
     tagline: "A code tour of an embedded data logger: three chips, four sensors, one protocol.",
     url: "https://0x4d44.github.io/data-logger/",
     illustration: "ill-logger",
-    date: "2026-05-28",
+    date: "2026-05-28T00:48:31",
     year: 2026,
     readingMin: 4,
     words: 931,
@@ -285,7 +290,7 @@ window.ESSAYS = [
     tagline: "A guided tour through a 3,952-line Pascal implementation of Estimation Whist.",
     url: "https://0x4d44.github.io/estimation-whist/",
     illustration: "ill-cards",
-    date: "2026-05-28",
+    date: "2026-05-28T00:56:58",
     year: 2026,
     readingMin: 26,
     words: 6057,
@@ -298,7 +303,7 @@ window.ESSAYS = [
     tagline: "A codebase walkthrough of a nonogram (picross) puzzle solver.",
     url: "https://0x4d44.github.io/nonogram/",
     illustration: "ill-nonogram",
-    date: "2026-05-28",
+    date: "2026-05-28T00:58:10",
     year: 2026,
     readingMin: 14,
     words: 3210,
@@ -311,7 +316,7 @@ window.ESSAYS = [
     tagline: "A codebase explainer for a railway signalling & train-routing simulator.",
     url: "https://0x4d44.github.io/rail-control/",
     illustration: "ill-railctrl",
-    date: "2026-05-28",
+    date: "2026-05-28T00:57:01",
     year: 2026,
     readingMin: 22,
     words: 5096,
@@ -324,7 +329,7 @@ window.ESSAYS = [
     tagline: "A field guide to Rust — ownership, editions, and where the language is headed.",
     url: "https://0x4d44.github.io/rust-field-guide/",
     illustration: "ill-rust",
-    date: "2026-05-28",
+    date: "2026-05-28T00:58:09",
     year: 2026,
     readingMin: 13,
     words: 3036,
@@ -337,7 +342,7 @@ window.ESSAYS = [
     tagline: "A 1996 spectrum-analyser codebase, explained — FFTs and all.",
     url: "https://0x4d44.github.io/spectrum-analyzer/",
     illustration: "ill-spectrum",
-    date: "2026-05-28",
+    date: "2026-05-28T01:20:55",
     year: 1996,
     readingMin: 15,
     words: 3364,
@@ -350,7 +355,7 @@ window.ESSAYS = [
     tagline: "From magnetic flux to a mountable filesystem — decoding MFM and RLL disk encodings.",
     url: "https://0x4d44.github.io/mdrll/",
     illustration: "ill-flux",
-    date: "2026-05-28",
+    date: "2026-05-28T01:56:54",
     year: 2026,
     readingMin: 42,
     words: 9554,
@@ -363,7 +368,7 @@ window.ESSAYS = [
     tagline: "A 5,100-line C89 SCUMM-style adventure engine for 386 + VGA + Sound Blaster.",
     url: "https://0x4d44.github.io/lighthouse/",
     illustration: "ill-lighthouse",
-    date: "2026-05-28",
+    date: "2026-05-28T01:57:02",
     year: 2026,
     readingMin: 19,
     words: 4477,
@@ -376,7 +381,7 @@ window.ESSAYS = [
     tagline: "DCC, I²C and back-EMF — a codebase deep dive into a model-railway control system.",
     url: "https://0x4d44.github.io/model-railway/",
     illustration: "ill-modelrail",
-    date: "2026-05-28",
+    date: "2026-05-28T01:59:04",
     year: 2026,
     readingMin: 15,
     words: 3431,
@@ -389,7 +394,7 @@ window.ESSAYS = [
     tagline: "Inside STOPBUS — a 1994 four-player card game with three AI opponents.",
     url: "https://0x4d44.github.io/stop-the-bus/",
     illustration: "ill-bus",
-    date: "2026-05-28",
+    date: "2026-05-28T18:51:51",
     year: 1994,
     readingMin: 30,
     words: 6985,
@@ -402,7 +407,7 @@ window.ESSAYS = [
     tagline: "A Rust MCP server that hands an LLM your command-line tools — behind a policy gate.",
     url: "https://0x4d44.github.io/mdmcp/",
     illustration: "ill-mcp",
-    date: "2026-05-28",
+    date: "2026-05-28T18:51:48",
     year: 2026,
     readingMin: 18,
     words: 4192,
@@ -415,17 +420,30 @@ window.ESSAYS = [
     tagline: "A first-year survival guide to Biological Sciences at the University of Edinburgh.",
     url: "https://0x4d44.github.io/edinburgh-biosci/",
     illustration: "ill-dna",
-    date: "2026-05-28",
+    date: "2026-05-28T18:54:17",
     year: 2026,
     readingMin: 13,
     words: 3072,
     tag: "science",
     real: true,
   },
+  {
+    slug: "traction-motors",
+    title: "Electric Traction Motors",
+    tagline: "An interactive study — from DC series motors to inverter-fed induction drives.",
+    url: "https://0x4d44.github.io/traction-motors/",
+    illustration: "ill-motor",
+    date: "2026-05-28T19:40:37",
+    year: 2026,
+    readingMin: 51,
+    words: 11670,
+    tags: ["rail", "engineering"],
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "fiction", "software", "comic", "history", "math", "science"];
+window.TAGS = ["all", "rail", "fiction", "software", "comic", "history", "math", "science", "engineering"];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);

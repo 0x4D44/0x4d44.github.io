@@ -21,6 +21,8 @@
 
   const state = loadState();
   const essays = window.ESSAYS || [];
+  // A page may carry one `tag` (string) or several via `tags` (array).
+  const tagsOf = (e) => e.tags || (e.tag ? [e.tag] : []);
 
   function el(tag, attrs, children) {
     const e = document.createElement(tag);
@@ -53,7 +55,7 @@
   function buildStatusbar() {
     const tot = essays.length;
     const words = essays.reduce((s, e) => s + (e.words || 0), 0);
-    const subjects = new Set(essays.map(e => e.tag)).size;
+    const subjects = new Set(essays.flatMap(tagsOf)).size;
     const last = essays.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
     document.getElementById("stat-tot").textContent =
       `tot=${tot}  words=${words.toLocaleString()}  subjects=${subjects}`;
@@ -110,7 +112,7 @@
   // ---------- listing ----------
   function sortedFiltered() {
     let list = essays.slice();
-    if (state.filter !== "all") list = list.filter(e => e.tag === state.filter);
+    if (state.filter !== "all") list = list.filter(e => tagsOf(e).includes(state.filter));
     if (state.sort === "recent") list.sort((a, b) => b.date.localeCompare(a.date));
     if (state.sort === "oldest") list.sort((a, b) => a.date.localeCompare(b.date));
     if (state.sort === "length") list.sort((a, b) => (b.words || 0) - (a.words || 0));
@@ -132,7 +134,7 @@
       el("div", { class: "row-meta-mobile" }, [
         el("span", null, `${essay.readingMin}m`),
         el("span", null, `${(essay.words/1000).toFixed(1)}k w`),
-        el("span", null, essay.tag),
+        el("span", null, tagsOf(essay).join(" · ")),
         el("span", null, String(essay.year)),
         el("span", { class: essay.real ? "pub" : "drf" }, essay.real ? "[PUB]" : "[DRAFT]"),
       ]),
@@ -140,7 +142,7 @@
     wrapper.appendChild(el("span", { class: "row-num" }, String(idx + 1).padStart(3, "0")));
     wrapper.appendChild(fig);
     wrapper.appendChild(titleBlock);
-    wrapper.appendChild(el("span", { class: "row-tag" }, essay.tag));
+    wrapper.appendChild(el("span", { class: "row-tag" }, tagsOf(essay).join(" · ")));
     wrapper.appendChild(el("span", { class: "row-size" }, `${essay.readingMin}m · ${(essay.words/1000).toFixed(1)}k`));
     wrapper.appendChild(el("span", { class: "row-year" }, String(essay.year)));
     wrapper.appendChild(el("span", {
@@ -158,7 +160,7 @@
     });
     wrapper.appendChild(el("div", { class: "card-head" }, [
       el("span", null, String(idx + 1).padStart(3, "0")),
-      el("span", null, essay.tag.toUpperCase()),
+      el("span", null, tagsOf(essay).map(t => t.toUpperCase()).join(" · ")),
     ]));
     wrapper.appendChild(el("div", { class: "card-fig" }, [svgUse(essay.illustration || "ill-diesel")]));
     wrapper.appendChild(el("div", { class: "card-title" }, essay.title));

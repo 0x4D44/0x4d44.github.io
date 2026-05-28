@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Case Studies — TRACTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="06">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch6 hero">
+  <div class="kicker">Chapter 06</div>
+  <div class="num">06</div>
+  <h2 style="margin-top:18px;max-width:20ch">Case studies: where the theory met the rail.</h2>
+  <p class="lead" style="max-width:55ch;margin-top:22px">Every idea in the previous chapters was a bet placed by real engineers, in steel, for decades of service. Some bets won handsomely. Some were brilliant and doomed. A few failures taught the industry more than any success.</p>
+  <div class="meta">
+    <div><div class="k">Span</div><div class="v">1900 → today</div></div>
+    <div><div class="k">Survivors</div><div class="v">Four electrification standards</div></div>
+    <div><div class="k">Lesson</div><div class="v">Buildability beats elegance</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#timeline">Interactive timeline</a>
+    <a href="#gg1">Featured: the GG1</a>
+    <a href="#cases">Six bets</a>
+    <a href="#synthesis">What survived, and why</a>
+  </nav>
+
+  <div>
+    <!-- TIMELINE -->
+    <section id="timeline" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker tag-sig">Interactive · Fig. 6.1</div>
+      <h3>A century of traction, one click at a time.</h3>
+      <p style="margin-top:18px">Click a milestone to see what motor and control technology defined it — and how the thread runs from resistance-controlled DC to the brushless inverter.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 6.1</span><span id="tlTitle">SELECT A MILESTONE</span><span class="dim" style="color:var(--cyan-soft)">1900 – 2020</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 760 130" style="width:100%;height:auto" id="tlSvg">
+            <line x1="30" y1="80" x2="730" y2="80" stroke="var(--cyan)" stroke-width="1.6"/>
+            <g id="tlTicks"></g>
+            <g id="tlDots"></g>
+          </svg>
+          <div id="tlPanel" style="border-top:1px solid var(--plate-line);padding-top:18px;min-height:120px">
+            <div class="readout dim" style="color:var(--cyan-soft)">Pick a point on the line above.</div>
+          </div>
+        </div>
+      </figure>
+    </section>
+
+    <!-- FEATURED GG1 -->
+    <section id="gg1" class="section">
+      <div class="kicker">Featured · success</div>
+      <h3>The Pennsylvania GG1 — the AC commutator motor at its zenith.</h3>
+      <div style="display:grid;grid-template-columns:1fr 300px;gap:30px;align-items:start;margin-top:20px">
+        <div>
+          <p>The GG1 is the proof that the awkward single-phase AC commutator motor, done with enough care, could be magnificent. It drew <strong>11 kV, 25 Hz</strong> AC through a pantograph, stepped it down with a central transformer, and controlled speed with a <strong>21-position tap-changer</strong> — no starting resistors. Twelve <strong>six-pole, 400 V, 25 Hz commutator motors</strong>, mounted in pairs over each of six axles, fed their torque through <strong>quill drives</strong> to the wheels.</p>
+          <p>Two decisions from earlier chapters meet here. The <strong>25 Hz</strong> frequency (Ch. 03) was low enough to let an ordinary-style series commutator motor run on AC. And the <strong>frame-mounted quill drive</strong> (Ch. 05) carried the motors on the sprung frame, keeping unsprung mass low so a long, heavy locomotive could run smoothly at 100 mph. Built from 1934, GG1s ran into the <strong>1980s</strong> — one of the longest careers of any locomotive design.</p>
+          <div class="note annot">
+            <span class="tag">The cautionary footnote</span>
+            <p>In a 1958 blizzard, exceptionally fine snow blew straight through the traction-motor air filters; when it melted it short-circuited the windings and disabled nearly half the fleet. A vivid reminder of Chapter 05's lesson — a traction motor lives or dies by how it <strong>breathes</strong>, and forced-air cooling is also a path for the weather to get in.</p>
+          </div>
+        </div>
+        <figure class="figure" style="margin:0">
+          <div class="figure-bar"><span class="fno">FIG. 6.2</span><span>QUILL DRIVE</span></div>
+          <div class="figure-body">
+            <svg viewBox="0 0 260 240" style="width:100%;height:auto">
+              <!-- two motors over axle -->
+              <circle cx="80" cy="70" r="34" fill="none" stroke="var(--ink)" stroke-width="1.8"/><text x="80" y="75" text-anchor="middle" font-size="12" fill="var(--ink-soft)">M</text>
+              <circle cx="180" cy="70" r="34" fill="none" stroke="var(--ink)" stroke-width="1.8"/><text x="180" y="75" text-anchor="middle" font-size="12" fill="var(--ink-soft)">M</text>
+              <!-- pinions -->
+              <circle cx="80" cy="118" r="12" fill="none" stroke="var(--signal-2)" stroke-width="1.6"/>
+              <circle cx="180" cy="118" r="12" fill="none" stroke="var(--signal-2)" stroke-width="1.6"/>
+              <!-- bull gear / quill -->
+              <circle cx="130" cy="150" r="40" fill="none" stroke="var(--signal)" stroke-width="2"/>
+              <circle cx="130" cy="150" r="22" fill="none" stroke="var(--annot)" stroke-width="1.6" stroke-dasharray="3 3"/>
+              <!-- axle through quill -->
+              <line x1="20" y1="150" x2="240" y2="150" stroke="var(--ink)" stroke-width="3"/>
+              <circle cx="40" cy="150" r="22" fill="none" stroke="var(--ink)" stroke-width="1.6" opacity=".5"/>
+              <circle cx="220" cy="150" r="22" fill="none" stroke="var(--ink)" stroke-width="1.6" opacity=".5"/>
+              <!-- spring cup link -->
+              <path d="M130 188 q8 18 -10 28 M130 188 q-8 18 10 28" stroke="var(--good)" stroke-width="1.4" fill="none"/>
+              <g font-size="9.5" fill="var(--ink-faint)">
+                <text x="130" y="222" text-anchor="middle">quill + spring drive</text>
+                <text x="130" y="110" text-anchor="middle" fill="var(--signal)">bull gear</text>
+              </g>
+            </svg>
+          </div>
+          <div class="figure-cap">Two motors per axle drive a hollow quill around the axle through spring links — frame-mounted, low unsprung mass.</div>
+        </figure>
+      </div>
+    </section>
+
+    <!-- CASE GRID -->
+    <section id="cases" class="section">
+      <div class="kicker">Six bets</div>
+      <h3>Successes, dead-ends, and instructive failures.</h3>
+      <div id="caseGrid" class="casegrid" style="margin-top:24px"></div>
+    </section>
+
+    <!-- SYNTHESIS -->
+    <section id="synthesis" class="section">
+      <div class="kicker">The verdict of history</div>
+      <h3>Four standards survived. The motor under them changed completely.</h3>
+      <p style="margin-top:18px">For all the variety, the industry converged on just four electrification standards — <strong>1.5 kV DC, 3 kV DC, 15 kV 16⅔ Hz, and 25 kV 50/60 Hz</strong> — and they coexist to this day. What is striking is that the <em>wire</em> proved more permanent than the <em>machine</em>. A 16⅔ Hz line strung for AC commutator motors in 1912 now feeds brushless inverter trains; a 1.5 kV DC line built for resistance-controlled series motors now runs IGBT-driven induction motors.</p>
+      <p>That is the real throughline of this study. The supply, the substations and the catenary are civil engineering that lasts a century. The traction motor and its control are where the relentless progress happened — from burning energy in resistor grids, through the delicate compromise of low-frequency commutation, to silicon switches synthesising perfect three-phase power for a motor with nothing to wear out. The job never changed. The cleverness with which we did it changed beyond recognition.</p>
+      <div class="note">
+        <span class="tag">One sentence</span>
+        <p>The history of the electric traction motor is the history of moving the cleverness <strong>out of the iron and into the electronics</strong> — until the motor could finally be the simplest, toughest thing in the system.</p>
+      </div>
+      <div style="margin-top:30px"><a href="index.html" class="btn">◂ Back to contents</a></div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>TRACTION · Ch. 06 — Case studies</span>
+  <span>Fig. 6.1–6.2 · schematic · historical details from public sources</span>
+</div></footer>
+
+<style>
+.casegrid{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); }
+@media(max-width:760px){ .casegrid{ grid-template-columns:1fr; } }
+.case{ background:var(--paper-card); padding:24px; }
+.case .yr{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.1em; color:var(--ink-faint); }
+.case h4{ margin:6px 0 4px; font-size:1.22rem; }
+.case .sys{ font-family:var(--font-mono); font-size:.74rem; color:var(--annot); margin-bottom:12px; }
+.case p{ font-size:.9rem; line-height:1.5; margin:0 0 12px; }
+</style>
+
+<script>
+/* ===== 6.1 timeline ===== */
+(function(){
+  const M=[
+    {y:1902,x:0.04,t:'Three-phase mountain railways',c:'Italy / Kandó',
+     b:'Brushless induction motors fed from twin overhead wires. Easy regenerative braking on descents, but only a few fixed speeds and a nightmare of double catenary. Visionary — and a century too early.'},
+    {y:1915,x:0.16,t:'High-voltage DC mainlines',c:'1.5–3 kV DC',
+     b:'DC series motors, resistance + series/parallel control. Simple, rugged, no on-board transformer. Cheap to build, heavy on copper and substations. Two of the four surviving standards.'},
+    {y:1912,x:0.10,t:'Low-frequency AC networks',c:'15 kV 16⅔ Hz',
+     b:'Germany, Switzerland, Austria, Sweden, Norway build dedicated 16⅔ Hz networks so AC commutator motors can run with a transformer. Still in daily use over a century later.'},
+    {y:1934,x:0.30,t:'PRR GG1',c:'11 kV 25 Hz AC',
+     b:'The AC commutator motor at its peak: 12 six-pole motors, quill drive, tap-changer control, 100 mph, fifty-year career. Proof the compromise could be world-class.'},
+    {y:1936,x:0.34,t:'Höllentalbahn 50 Hz experiment',c:'20 kV 50 Hz',
+     b:'Germany tests industrial-frequency AC with assorted rectifiers and commutator motors on E244 locomotives. The experiment that proved 50 Hz needed rectification — and seeded the world standard.'},
+    {y:1955,x:0.55,t:'France adopts 25 kV 50 Hz',c:'rectifier locomotives',
+     b:'Transformer + tap-changer + rectifier → DC series motor. Standard grid power, thin wire, sparse substations. The bet that became the global high-speed standard.'},
+    {y:1979,x:0.78,t:'Brushless inverter traction',c:'GTO → IGBT, induction',
+     b:'Power electronics synthesise variable-frequency three-phase, freeing the brushless induction motor to run on any supply. Resistors, tap-changers and commutators all retired.'},
+    {y:2007,x:0.95,t:'PMSM high-speed & metro',c:'permanent-magnet, SiC',
+     b:'Permanent-magnet synchronous motors push efficiency and power density further, enabling gearless drives. The motor becomes the simplest, most reliable part of the train.'},
+  ];
+  const tl=document.getElementById('tlSvg');
+  const ticks=document.getElementById('tlTicks'), dots=document.getElementById('tlDots');
+  [1900,1920,1940,1960,1980,2000,2020].forEach(y=>{
+    const x=30+ (y-1900)/120*700;
+    ticks.innerHTML+=`<line x1="${x}" y1="76" x2="${x}" y2="84" stroke="var(--plate-line)" stroke-width="1"/><text x="${x}" y="104" text-anchor="middle" font-size="9" fill="var(--cyan-soft)">${y}</text>`;
+  });
+  M.forEach((m,i)=>{
+    const x=30+(m.y-1900)/120*700; const up=i%2===0; const y=up?56:80;
+    dots.innerHTML+=`<g class="tldot" data-i="${i}" style="cursor:pointer">
+      <line x1="${x}" y1="${up?56:80}" x2="${x}" y2="${up?40:80}" stroke="var(--plate-line)" stroke-width="1"/>
+      <circle cx="${x}" cy="80" r="6" fill="var(--plate)" stroke="var(--signal)" stroke-width="2"/></g>`;
+  });
+  function sel(i){
+    const m=M[i];
+    document.querySelectorAll('.tldot circle').forEach((c,k)=>{ c.setAttribute('fill',k===i?'var(--signal)':'var(--plate)'); c.setAttribute('r',k===i?7:6); });
+    document.getElementById('tlTitle').textContent=`${m.y} — ${m.t.toUpperCase()}`;
+    document.getElementById('tlPanel').innerHTML=`<div class="tag tag-sig">${m.y} · ${m.c}</div>
+      <div style="font-family:var(--font-display);font-weight:600;font-size:1.35rem;color:var(--cyan-soft);margin:6px 0">${m.t}</div>
+      <p style="color:var(--paper-on-plate);margin:0;max-width:62ch">${m.b}</p>`;
+  }
+  tl.querySelectorAll('.tldot').forEach(d=>d.addEventListener('click',()=>sel(+d.dataset.i)));
+  sel(3);
+})();
+
+/* ===== 6 case grid ===== */
+(function(){
+  const C=[
+    {y:'1902 – 1976',v:'mixed',name:'Three-phase Italy & Kandó',sys:'3-phase induction · twin wire',
+     b:'Brushless induction motors decades before the inverter, with regenerative braking down the Alps. But fixed-frequency supply gave only a handful of speeds, and three phases meant two overhead wires and fiendish junctions.',
+     out:'A genuinely advanced idea defeated by the lack of variable-frequency electronics. Abandoned — then vindicated 70 years later.'},
+    {y:'1912 – today',v:'win',name:'The 16⅔ Hz networks',sys:'15 kV 16⅔ Hz AC',
+     b:'Germany, Switzerland, Austria, Sweden and Norway committed to a dedicated low-frequency network so AC commutator motors could enjoy the transformer. It meant building separate generation and converters.',
+     out:'The infrastructure bet paid off for a century: the same wires now feed modern inverter trains. Still a live standard.'},
+    {y:'1934 – 1980s',v:'win',name:'PRR GG1',sys:'11 kV 25 Hz AC commutator',
+     b:'Twelve six-pole AC commutator motors, quill drive, tap-changer control. The frame-mounted drive tamed unsprung mass; the low frequency tamed commutation.',
+     out:'A landmark success — fast, reliable and beloved across a fifty-year career. The AC commutator motor’s finest hour.'},
+    {y:'1936 → 1960',v:'lesson',name:'Höllentalbahn 50 Hz test',sys:'20 kV 50 Hz experiment',
+     b:'Germany electrified a Black-Forest line at industrial frequency and tried assorted commutator motors and rectifiers on its E244 locomotives, hunting for a way to use ordinary grid power.',
+     out:'It proved 50 Hz commutator motors were impractical and rectification was the answer — directly seeding France’s world-standard 25 kV system. The line itself was later converted to 16⅔ Hz.'},
+    {y:'1955 → now',v:'win',name:'France 25 kV 50 Hz',sys:'rectifier → DC series motor',
+     b:'Take standard 50 Hz grid power, step down, rectify, and feed a proven DC series motor. Combined the transmission economics of high-voltage AC with the well-understood DC machine.',
+     out:'The decisive winner: 25 kV 50 Hz became the global standard for new electrification, including almost all high-speed rail.'},
+    {y:'1979 → now',v:'win',name:'The brushless inverter era',sys:'VVVF · induction / PMSM',
+     b:'GTO, then IGBT, then SiC inverters synthesise variable-frequency three-phase from a DC link, running rugged brushless motors on any supply, with routine regenerative braking.',
+     out:'Total victory. Resistors, tap-changers, commutators and brushes are gone; the motor is now the simplest part of the train.'},
+  ];
+  const VB={win:['Success','ok'],mixed:['Visionary dead-end',''],lesson:['Instructive failure','no']};
+  document.getElementById('caseGrid').innerHTML=C.map(c=>{
+    const vb=VB[c.v];
+    return `<div class="case">
+      <div class="yr">${c.y}</div>
+      <h4>${c.name}</h4>
+      <div class="sys">${c.sys}</div>
+      <p>${c.b}</p>
+      <p style="color:var(--ink)"><strong>Outcome.</strong> ${c.out}</p>
+      <span class="badge ${vb[1]}">${vb[0]}</span>
+    </div>`;
+  }).join('');
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

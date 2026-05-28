@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · The DC Series Motor — TRACTION</title>
+<link rel="stylesheet" href="assets/site.css">
+<style>
+  /* Cutaway (Fig 1.2): make the whole shape clickable, not just the stroke.
+     pointer-events:all hit-tests the interior even though fill is "none". */
+  #cut .part, #cut .part *{ pointer-events:all; cursor:pointer; }
+</style>
+</head>
+<body data-chapter="01">
+<div id="topbar"></div>
+
+<!-- HERO -->
+<section class="wrap chero" data-screen-label="Ch1 hero">
+  <div class="kicker">Chapter 01</div>
+  <div class="num">01</div>
+  <h2 style="margin-top:18px;max-width:18ch">The DC series motor: born for the rail.</h2>
+  <p class="lead" style="max-width:52ch;margin-top:22px">For the first eighty years of electric traction, one machine did almost all the work. Not because it was elegant — because its torque appeared exactly where a train needs it: at a standstill, under maximum load.</p>
+  <div class="meta">
+    <div><div class="k">Type</div><div class="v">Series-wound commutator DC</div></div>
+    <div><div class="k">Defining trait</div><div class="v">Torque ∝ current²</div></div>
+    <div><div class="k">Era</div><div class="v">1880s → present (DC fleets)</div></div>
+    <div><div class="k">Wear items</div><div class="v">Brushes, commutator</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <!-- RAIL -->
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#demand">The demand curve</a>
+    <a href="#whyseries">Why series-wound</a>
+    <a href="#curve">Live: torque & speed</a>
+    <a href="#runaway">The runaway danger</a>
+    <a href="#build">Inside the machine</a>
+    <a href="#commutation">Commutation & interpoles</a>
+  </nav>
+
+  <!-- MAIN -->
+  <div>
+    <!-- DEMAND -->
+    <section id="demand" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The problem</div>
+      <h3>A train asks for the opposite of what a motor likes to give.</h3>
+      <p style="margin-top:18px">To accelerate a heavy train you need enormous force at zero speed — to overcome inertia, gradient and the high "breakaway" friction of a standing train. Once moving, the force required <em>falls</em>: at cruising speed you only fight rolling resistance and air. So the ideal traction machine produces <strong>huge torque at a standstill</strong> and progressively less as it speeds up, naturally tapering to a constant-power haul at line speed.</p>
+      <div class="facts">
+        <div><div class="big">×3–4</div><div class="lbl">Starting tractive effort vs. running</div></div>
+        <div><div class="big">10:1</div><div class="lbl">Typical speed range, stand to top</div></div>
+        <div><div class="big">~⅓</div><div class="lbl">Of adhesion weight — the slip limit on effort</div></div>
+      </div>
+      <p>A motor whose torque <em>rose</em> with current — and whose speed <em>fell</em> off as you loaded it — would match this demand almost for free. That motor is the series-wound DC machine.</p>
+    </section>
+
+    <!-- WHY SERIES -->
+    <section id="whyseries" class="section">
+      <div class="kicker">Why series-wound</div>
+      <h3>Field and armature share one current. That one decision explains everything.</h3>
+      <p style="margin-top:18px">In any DC motor, torque is the product of the magnetic <strong>field flux Φ</strong> and the <strong>armature current Iₐ</strong>:</p>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin:24px 0">
+        <div style="background:var(--paper-card);padding:24px">
+          <div class="tag tag-sig">Torque</div>
+          <div style="font-family:var(--font-display);font-weight:600;font-size:1.9rem;margin:8px 0">T = k · Φ · Iₐ</div>
+          <p style="font-size:.92rem;margin:0">In a <strong>series</strong> motor the field winding is wired in series with the armature, so the same current makes the field. Below magnetic saturation Φ ∝ Iₐ, therefore <strong class="hl">T ∝ Iₐ²</strong>. Double the current, quadruple the pull.</p>
+        </div>
+        <div style="background:var(--paper-card);padding:24px">
+          <div class="tag tag-annot">Speed</div>
+          <div style="font-family:var(--font-display);font-weight:600;font-size:1.9rem;margin:8px 0">N ∝ (V − IₐR) / Φ</div>
+          <p style="font-size:.92rem;margin:0">Speed follows the back-EMF divided by flux. As load (and so current) rises, Φ rises and the numerator falls — speed <strong>drops steeply</strong>. The motor automatically slows under load and races when light.</p>
+        </div>
+      </div>
+
+      <p>This gives the series motor its famously <strong>"soft" characteristic</strong>: a hyperbola of speed against torque. At a standstill — where back-EMF is zero and current is huge — torque is at its maximum. As the train accelerates, back-EMF builds, current falls, and torque eases off exactly as the demand does. The motor is, in effect, <strong>self-regulating</strong>: it shares load gracefully between motors on different-diameter wheels, and it cannot easily stall a supply.</p>
+
+      <div class="note annot">
+        <span class="tag">Compare — the shunt motor</span>
+        <p>Wire the field across the line instead (a <strong>shunt</strong> motor) and Φ is fixed by line voltage. Torque becomes merely proportional to current, and speed stays nearly constant regardless of load — wonderful for a lathe, useless for starting a train, which is why shunt and compound motors stayed rare in traction.</p>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE CURVE -->
+    <section id="curve" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 1.1</div>
+      <h3>Drive the characteristic yourself.</h3>
+      <p style="margin-top:18px">Drag the load. Everything downstream — flux, torque, speed, back-EMF — follows from that single armature current, just as it does in the real machine.</p>
+
+      <figure class="figure" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 1.1</span><span>SERIES MOTOR CHARACTERISTIC — DRAG THE LOAD</span><span class="dim">FULL FIELD · V = 100%</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 720 360" style="width:100%;height:auto" id="cv">
+            <!-- axes -->
+            <line x1="70" y1="20" x2="70" y2="310" class="s-ink" stroke-width="1.4"/>
+            <line x1="70" y1="310" x2="680" y2="310" class="s-ink" stroke-width="1.4"/>
+            <text x="60" y="26" text-anchor="end" font-size="11">SPEED / TORQUE</text>
+            <text x="676" y="334" text-anchor="end" font-size="11">ARMATURE CURRENT  Iₐ  →</text>
+            <!-- gridlines -->
+            <g stroke="var(--line-soft)" stroke-width="1">
+              <line x1="70" y1="92" x2="680" y2="92"/><line x1="70" y1="165" x2="680" y2="165"/><line x1="70" y1="238" x2="680" y2="238"/>
+            </g>
+            <!-- curves -->
+            <polyline id="speedCurve" fill="none" stroke="var(--annot)" stroke-width="2.4"/>
+            <polyline id="torqueCurve" fill="none" stroke="var(--signal)" stroke-width="2.4"/>
+            <!-- saturation marker -->
+            <line id="satLine" y1="20" y2="310" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="3 4"/>
+            <text id="satTxt" font-size="10" fill="var(--ink-faint)" text-anchor="middle">FIELD SATURATES</text>
+            <!-- operating handle -->
+            <line id="opLine" y1="20" y2="310" stroke="var(--ink)" stroke-width="1.4"/>
+            <circle id="opSpeed" r="6" fill="var(--annot)" stroke="var(--paper)" stroke-width="2"/>
+            <circle id="opTorque" r="6" fill="var(--signal)" stroke="var(--paper)" stroke-width="2"/>
+            <circle id="opGrab" r="15" fill="transparent" style="cursor:ew-resize"/>
+            <!-- legend -->
+            <g font-size="11"><rect x="500" y="26" width="16" height="3" fill="var(--annot)"/><text x="522" y="31">SPEED  N</text>
+            <rect x="500" y="44" width="16" height="3" fill="var(--signal)"/><text x="522" y="49">TORQUE  T</text></g>
+          </svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--line);padding-top:16px">
+          <div class="ctrl-row" style="justify-content:space-between">
+            <div class="readout">Armature current <b id="rIa">—</b> · Flux Φ <b id="rPhi">—</b></div>
+            <div class="readout">Tractive effort <span class="sig" id="rT">—</span> · Speed <b id="rN">—</b></div>
+          </div>
+          <input id="load" type="range" min="6" max="100" value="78" style="width:100%;margin-top:14px">
+          <div id="opNote" class="readout" style="margin-top:12px;color:var(--ink-faint)"></div>
+        </div>
+        <div class="figure-cap"><b>Read it like a driver.</b> Far right (high current) is the moment of starting — maximum effort, crawling speed. Slide left as the train accelerates: effort falls away while speed climbs. The torque curve bends from a steep parabola (T ∝ Iₐ²) to a gentler slope once the iron <b>saturates</b> and flux can grow no further.</div>
+      </figure>
+    </section>
+
+    <!-- RUNAWAY -->
+    <section id="runaway" class="section">
+      <div class="kicker">The catch</div>
+      <h3>Take the load away and it will tear itself apart.</h3>
+      <p style="margin-top:18px">Look at the left edge of the curve: as current approaches zero, flux approaches zero, and speed (N ∝ 1/Φ) shoots toward infinity. An <strong>unloaded series motor runs away</strong> — it can over-speed until centrifugal force throws the armature windings out of their slots.</p>
+      <p>Traction gets away with it because a motor geared to an axle is <em>never</em> truly unloaded: bearing drag, gear losses and the train itself always present a load. But it is why series motors are bolted to their gearing, never belt-driven, and why a snapped coupling or a wildly slipping wheel was historically a real hazard.</p>
+    </section>
+
+    <!-- CONSTRUCTION / CUTAWAY -->
+    <section id="build" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 1.2</div>
+      <h3>Inside the machine.</h3>
+      <p style="margin-top:18px">A traction motor is built to survive water, dust, vibration and overload in a box under a swaying locomotive. Click each part to see what it does and why it is shaped the way it is.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 1.2</span><span>4-POLE DC TRACTION MOTOR — END SECTION</span><span class="dim" style="color:var(--cyan-soft)">CLICK PARTS</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 300px;gap:22px;align-items:center">
+          <svg viewBox="0 0 460 460" style="width:100%;height:auto" id="cut">
+            <!-- yoke / frame -->
+            <g class="part" data-k="yoke" style="cursor:pointer">
+              <circle cx="230" cy="230" r="210" fill="none" stroke="var(--cyan)" stroke-width="3"/>
+              <circle cx="230" cy="230" r="196" fill="none" stroke="var(--plate-line)" stroke-width="1.2"/>
+            </g>
+            <!-- main poles (4) with field windings -->
+            <g class="part" data-k="field" style="cursor:pointer">
+              <g id="poles"></g>
+            </g>
+            <!-- interpoles (commutating poles) between mains -->
+            <g class="part" data-k="interpole" style="cursor:pointer">
+              <g id="interpoles"></g>
+            </g>
+            <!-- armature core -->
+            <g class="part" data-k="armature" style="cursor:pointer">
+              <circle cx="230" cy="230" r="120" fill="none" stroke="var(--cyan)" stroke-width="2.4"/>
+              <g id="slots"></g>
+            </g>
+            <!-- commutator + shaft -->
+            <g class="part" data-k="commutator" style="cursor:pointer">
+              <circle cx="230" cy="230" r="48" fill="none" stroke="var(--cyan)" stroke-width="2"/>
+              <g id="bars"></g>
+              <circle cx="230" cy="230" r="16" fill="var(--plate-2)" stroke="var(--cyan)" stroke-width="2"/>
+            </g>
+            <!-- brushes -->
+            <g class="part" data-k="brush" style="cursor:pointer">
+              <rect x="222" y="166" width="16" height="26" fill="var(--signal)" stroke="none" opacity=".9"/>
+              <rect x="222" y="268" width="16" height="26" fill="var(--signal)" stroke="none" opacity=".9"/>
+              <line x1="230" y1="166" x2="230" y2="120" stroke="var(--signal)" stroke-width="1.6"/>
+              <line x1="230" y1="294" x2="230" y2="340" stroke="var(--signal)" stroke-width="1.6"/>
+            </g>
+          </svg>
+          <div>
+            <div id="partTitle" style="font-family:var(--font-display);font-weight:600;font-size:1.4rem;color:var(--cyan-soft)">Select a part</div>
+            <div id="partBadge" class="tag" style="margin:8px 0;color:var(--signal-2)">— · —</div>
+            <p id="partBody" style="font-size:.92rem;line-height:1.55">Click any element of the section drawing to learn its job, its failure modes, and the design thinking behind it.</p>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Four main poles, four interpoles.</b> The armature spins inside the field; current reaches it through carbon brushes pressing on the rotating commutator. Everything is sized for thermal survival, not efficiency.</div>
+      </figure>
+    </section>
+
+    <!-- COMMUTATION -->
+    <section id="commutation" class="section">
+      <div class="kicker">The hardest part</div>
+      <h3>Commutation: reversing current in a moving coil, thousands of times a second.</h3>
+      <p style="margin-top:18px">The commutator's job is to keep reversing the current in each armature coil at the instant it passes between poles, so torque always pushes the same way. But reversing current in a coil that has <strong>inductance</strong>, while it is briefly <strong>short-circuited by the brush</strong>, is genuinely difficult — do it badly and you get sparking, burnt commutator bars, and ultimately a destructive <strong>flashover</strong> across the whole commutator.</p>
+      <p>Two refinements make it survivable, and both appear in the drawing above:</p>
+      <ul class="spec">
+        <li><strong>Interpoles (commutating poles).</strong> Small poles set between the main poles, carrying armature current. They induce just enough voltage in the commutating coil to cancel its self-inductance and drive the current cleanly to zero and back — automatically scaling with load.</li>
+        <li><strong>Compensating windings.</strong> Conductors bedded into the main pole faces, again carrying armature current, that cancel the distorting effect of <strong>armature reaction</strong> — the way the armature's own magnetism skews the main field and pushes the "neutral" commutating zone out of position under heavy load.</li>
+      </ul>
+      <div class="note">
+        <span class="tag">Why this matters for everything that follows</span>
+        <p>Commutation is the Achilles' heel of the DC motor. It limits how much current you can push, demands constant brush and commutator maintenance, and — crucially — gets dramatically worse on <strong>alternating current</strong>. That single weakness drives the entire story of AC traction in Chapter 03.</p>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>TRACTION · Ch. 01 — The DC series motor</span>
+  <span>Fig. 1.1–1.2 · schematic</span>
+</div></footer>
+
+<script>
+/* ---------- 1.1 characteristic curve ---------- */
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const X0=70,X1=680,Y0=20,Y1=310, R=0.07, Vsup=1, Isat=0.55;
+  // flux model: linear then saturating
+  const phi = i => i<=Isat ? i : Isat + (i-Isat)*0.18;
+  const Tq  = i => phi(i)*i;
+  const Spd = i => Math.max(0,(Vsup - i*R))/phi(i);
+  // build sample arrays, find scaling
+  const xs=[]; for(let i=0.05;i<=1.001;i+=0.01) xs.push(i);
+  const Tmax=Tq(1), Smax=Spd(0.06);
+  const px = i => X0 + (i-0.05)/(0.95)*(X1-X0);
+  const pyT = i => Y1 - (Tq(i)/Tmax)*(Y1-Y0)*0.96;
+  const pyS = i => Y1 - (Math.min(Spd(i),Smax)/Smax)*(Y1-Y0)*0.96;
+  const sc = document.getElementById('speedCurve'), tc=document.getElementById('torqueCurve');
+  sc.setAttribute('points', xs.map(i=>`${px(i).toFixed(1)},${pyS(i).toFixed(1)}`).join(' '));
+  tc.setAttribute('points', xs.map(i=>`${px(i).toFixed(1)},${pyT(i).toFixed(1)}`).join(' '));
+  // saturation marker
+  document.getElementById('satLine').setAttribute('x1',px(Isat)); document.getElementById('satLine').setAttribute('x2',px(Isat));
+  document.getElementById('satTxt').setAttribute('x',px(Isat)); document.getElementById('satTxt').setAttribute('y',16);
+  const opLine=document.getElementById('opLine'),opS=document.getElementById('opSpeed'),opT=document.getElementById('opTorque'),grab=document.getElementById('opGrab');
+  const load=document.getElementById('load');
+  function upd(){
+    const i = load.value/100;
+    const x=px(i);
+    opLine.setAttribute('x1',x);opLine.setAttribute('x2',x);
+    opS.setAttribute('cx',x);opS.setAttribute('cy',pyS(i));
+    opT.setAttribute('cx',x);opT.setAttribute('cy',pyT(i));
+    grab.setAttribute('cx',x);grab.setAttribute('cy',(pyS(i)+pyT(i))/2);
+    document.getElementById('rIa').textContent=(i*100).toFixed(0)+'%';
+    document.getElementById('rPhi').textContent=(phi(i)/phi(1)*100).toFixed(0)+'%';
+    document.getElementById('rT').textContent=(Tq(i)/Tmax*100).toFixed(0)+'%';
+    document.getElementById('rN').textContent=(Math.min(Spd(i),Smax)/Spd(1)).toFixed(1)+'×';
+    let n='';
+    if(i>0.85) n='▶ STARTING — maximum tractive effort, the train is barely moving. Resistance is in circuit (Ch. 02) to survive this current.';
+    else if(i>0.45) n='▶ ACCELERATING — effort and speed trading off along the hyperbola.';
+    else if(i>0.18) n='▶ CRUISING — light load, high speed. The motor regulates itself.';
+    else n='⚠ NEAR NO-LOAD — speed climbing fast. On a real motor this is the runaway region.';
+    document.getElementById('opNote').textContent=n;
+  }
+  load.addEventListener('input',upd);
+  // drag the handle horizontally
+  const svg=document.getElementById('cv');
+  let drag=false;
+  function setFromX(clientX){
+    const r=svg.getBoundingClientRect();
+    const sx=(clientX-r.left)/r.width*720;
+    let i=0.05+(sx-X0)/(X1-X0)*0.95; i=Math.max(0.06,Math.min(1,i));
+    load.value=Math.round(i*100); upd();
+  }
+  grab.addEventListener('pointerdown',e=>{drag=true;grab.setPointerCapture(e.pointerId);});
+  grab.addEventListener('pointermove',e=>{if(drag)setFromX(e.clientX);});
+  grab.addEventListener('pointerup',()=>drag=false);
+  svg.addEventListener('pointerdown',e=>{ if(e.target===grab)return; setFromX(e.clientX); });
+  upd();
+})();
+
+/* ---------- 1.2 cutaway ---------- */
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const cx=230,cy=230;
+  function poles(g,r,w,len,color,n,off){
+    let s='';
+    for(let k=0;k<n;k++){
+      const a=(off + k*360/n)*Math.PI/180;
+      const x=cx+Math.cos(a), y=cy+Math.sin(a);
+      // a pole = trapezoid pointing inward at radius r
+      const r2=r-len;
+      const ax=cx+Math.cos(a)*r, ay=cy+Math.sin(a)*r;
+      const bx=cx+Math.cos(a)*r2, by=cy+Math.sin(a)*r2;
+      const pa=a+w, pb=a-w;
+      s+=`<path d="M${cx+Math.cos(pb)*r} ${cy+Math.sin(pb)*r} L${cx+Math.cos(pb)*r2} ${cy+Math.sin(pb)*r2} L${cx+Math.cos(pa)*r2} ${cy+Math.sin(pa)*r2} L${cx+Math.cos(pa)*r} ${cy+Math.sin(pa)*r} Z" fill="none" stroke="${color}" stroke-width="1.6"/>`;
+      // winding hatching
+      s+=`<line x1="${cx+Math.cos(pb)*(r-6)}" y1="${cy+Math.sin(pb)*(r-6)}" x2="${cx+Math.cos(pb)*(r2+6)}" y2="${cy+Math.sin(pb)*(r2+6)}" stroke="${color}" stroke-width="3" opacity=".4"/>`;
+      s+=`<line x1="${cx+Math.cos(pa)*(r-6)}" y1="${cy+Math.sin(pa)*(r-6)}" x2="${cx+Math.cos(pa)*(r2+6)}" y2="${cy+Math.sin(pa)*(r2+6)}" stroke="${color}" stroke-width="3" opacity=".4"/>`;
+    }
+    g.innerHTML=s;
+  }
+  poles(document.getElementById('poles'),188,0.28,56,'var(--cyan)',4,90);
+  poles(document.getElementById('interpoles'),186,0.10,40,'var(--signal-2)',4,45);
+  // armature slots
+  let ss='';
+  for(let k=0;k<28;k++){ const a=k*360/28*Math.PI/180; ss+=`<line x1="${cx+Math.cos(a)*120}" y1="${cy+Math.sin(a)*120}" x2="${cx+Math.cos(a)*104}" y2="${cy+Math.sin(a)*104}" stroke="var(--plate-line)" stroke-width="1.4"/>`; }
+  document.getElementById('slots').innerHTML=ss;
+  // commutator bars
+  let bs=''; for(let k=0;k<40;k++){ const a=k*9*Math.PI/180; bs+=`<line x1="${cx+Math.cos(a)*48}" y1="${cy+Math.sin(a)*48}" x2="${cx+Math.cos(a)*32}" y2="${cy+Math.sin(a)*32}" stroke="var(--cyan)" stroke-width="1" opacity=".7"/>`; }
+  document.getElementById('bars').innerHTML=bs;
+
+  const INFO={
+    yoke:{t:"Yoke / frame",b:"BODY · CAST OR FABRICATED STEEL",p:"The cylindrical steel shell is both the structure and a magnetic path — it carries the flux from one pole to the next. It must take the full weight transfer of a nose-suspended motor and stay rigid under shock, so it is heavy and thick. Inspection covers in the side give access to the brushes."},
+    field:{t:"Main field poles & series winding",b:"4 POLES · HEAVY-GAUGE COIL",p:"Four salient poles project inward, each wrapped with a few turns of thick copper — the series field. Because it carries the full armature current (hundreds of amps) the winding is heavy bar, not fine wire. These poles set the working flux Φ; their number is a trade between iron weight and flux-path length."},
+    interpole:{t:"Interpoles (commutating poles)",b:"4 NARROW POLES · BETWEEN MAINS",p:"The slim poles sitting on the neutral axis between the main poles. They carry armature current too, and exist solely to inject a corrective voltage into each coil as it commutates — cancelling its inductance so the current reverses without sparking. Without them, heavy-current traction commutation is impossible."},
+    armature:{t:"Armature core & winding",b:"LAMINATED IRON · SLOTTED",p:"The rotating member: a stack of insulated iron laminations (to limit eddy currents) with copper coils set in slots. It produces the reaction field that interacts with Φ to make torque. Overhang banding holds the end windings against the centrifugal force that would otherwise hurl them out — the runaway failure mode."},
+    commutator:{t:"Commutator",b:"COPPER BARS · MICA INSULATED",p:"A drum of tapered copper bars, insulated from each other by mica, connected to the armature coils. As it rotates it acts as a mechanical rectifier, switching which coils are energised so torque is always one-way. It wears, gets dirty, and must be skimmed true periodically — a major maintenance item."},
+    brush:{t:"Carbon brushes & brushgear",b:"CARBON BLOCKS · SPRING-LOADED",p:"Spring-loaded carbon blocks press on the spinning commutator to feed current in and out. They are deliberately the sacrificial wear part — softer than copper, so they wear instead of the commutator. They spark, throw carbon dust, and need regular inspection and replacement; access to the brushgear governs much of the motor's maintenance design (Ch. 05)."},
+  };
+  let cur=null;
+  document.querySelectorAll('#cut .part').forEach(g=>{
+    g.addEventListener('click',()=>{
+      const k=g.getAttribute('data-k'); const d=INFO[k]; if(!d)return;
+      document.querySelectorAll('#cut .part').forEach(x=>x.style.opacity=.35);
+      g.style.opacity=1; cur=g;
+      document.getElementById('partTitle').textContent=d.t;
+      document.getElementById('partTitle').style.color='var(--signal-2)';
+      document.getElementById('partBadge').textContent=d.b;
+      document.getElementById('partBody').textContent=d.p;
+    });
+  });
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

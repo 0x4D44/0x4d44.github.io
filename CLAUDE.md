@@ -21,8 +21,11 @@ served verbatim (`.nojekyll` disables Jekyll processing).
   persists to `localStorage` under key `0x4d44.listing.v1`.
 - Each `ESSAYS` entry: `slug`, `title`, `tagline`, `url` (absolute,
   `https://0x4d44.github.io/<slug>/`), `illustration` (an SVG symbol id),
-  `date` (ISO `YYYY-MM-DD`, used as the sort key), `year` (the *subject's* year,
-  not publish date), `readingMin`, `words`, `tag`, `real` (`true` → `[PUB]`,
+  `date` (ISO 8601, the sort key — use a full timestamp like
+  `2026-05-28T18:54:00` so multiple same-day entries sort correctly; a bare
+  `YYYY-MM-DD` also works), `year` (the *subject's* year,
+  not publish date), `readingMin`, `words`, `tag` (or `tags: ["x", "y"]` for
+  several — the page then shows under each filter), `real` (`true` → `[PUB]`,
   `false` → `[DRAFT]`).
 - Illustrations are inline `<symbol id="ill-…">` elements in the SVG sprite at
   the bottom of `index.html`. `app.js` falls back to `ill-diesel` if the id is

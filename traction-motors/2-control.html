@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Control — TRACTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="02">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch2 hero">
+  <div class="kicker">Chapter 02</div>
+  <div class="num">02</div>
+  <h2 style="margin-top:18px;max-width:20ch">Controlling it: resistance, grouping, and weakening the field.</h2>
+  <p class="lead" style="max-width:54ch;margin-top:22px">A DC series motor on full line voltage from a standstill would draw a current that welds the rails. The whole art of pre-electronic control is getting voltage onto the motors <em>gradually</em> — and doing it without simply burning the surplus as heat.</p>
+  <div class="meta">
+    <div><div class="k">The three tools</div><div class="v">Resistance · grouping · field weakening</div></div>
+    <div><div class="k">Era</div><div class="v">1900s → 1980s (and live DC fleets)</div></div>
+    <div><div class="k">Operated by</div><div class="v">Camshaft / tap controller notches</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#why">The starting problem</a>
+    <a href="#controller">Live: the controller</a>
+    <a href="#resistance">Why resistance wastes</a>
+    <a href="#grouping">Series / parallel economy</a>
+    <a href="#field">Field weakening — why?</a>
+  </nav>
+
+  <div>
+    <section id="why" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The starting problem</div>
+      <h3>At a standstill there is no back-EMF to hold the current down.</h3>
+      <p style="margin-top:18px">Recall N ∝ (V − IₐR) / Φ. The term IₐR is tiny because armature resistance R is deliberately small. So at the instant of starting, with the motor stationary and producing <strong>zero back-EMF</strong>, almost the entire line voltage tries to push current through that small resistance. The result is an inrush of many times the normal current — enough to flash the commutator, strip the gear teeth, and trip the supply.</p>
+      <p>You must <strong>limit the starting current</strong> until the motor turns fast enough to generate its own back-EMF. There are three ways to control the voltage the motors actually see, and a good controller uses all three in sequence.</p>
+    </section>
+
+    <!-- ===== CONTROLLER SIM ===== -->
+    <section id="controller" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 2.1</div>
+      <h3>Drive the controller through its notches.</h3>
+      <p style="margin-top:18px">Four motors, one line. Advance the handle and watch the controller do its job: cut out resistance, then re-group the motors series → series-parallel → parallel, then weaken the field. The <span style="color:var(--signal)">rheostat-heat</span> bar shows energy being thrown away as heat — note how it falls to zero at the <strong>running notches</strong>.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 2.1</span><span id="cbarTitle">NOTCH 0 — OFF</span><span class="dim" style="color:var(--cyan-soft)" id="cbarGroup">—</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 760 300" style="width:100%;height:auto" id="circ"></svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:18px">
+          <div><div class="tag" style="color:var(--cyan-soft)">Volts / motor</div><div class="readout" style="font-size:1.4rem;color:var(--paper-on-plate)"><b id="rVm" style="color:var(--cyan)">—</b></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Field flux</div><div class="readout" style="font-size:1.4rem"><b id="rFf" style="color:var(--signal-2)">100%</b></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Speed</div><div class="readout" style="font-size:1.4rem"><b id="rSp" style="color:var(--paper-on-plate)">0</b></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Rheostat heat</div>
+            <div style="height:10px;background:rgba(255,255,255,.08);margin-top:8px"><div id="heatBar" style="height:100%;width:0;background:var(--signal);transition:.25s"></div></div>
+          </div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);padding-top:16px">
+          <div class="ctrl-row" style="justify-content:space-between;align-items:center">
+            <div class="readout" style="color:var(--cyan-soft)">Controller handle</div>
+            <div class="ctrl-row">
+              <button class="btn" id="back">◂ NOTCH</button>
+              <button class="btn on" id="auto">▶ AUTO</button>
+              <button class="btn" id="fwd">NOTCH ▸</button>
+            </div>
+          </div>
+          <input id="notch" type="range" min="0" max="16" value="0" step="1" style="width:100%;margin-top:14px">
+          <div id="notchTicks" style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.6rem;color:var(--cyan-soft);margin-top:6px;opacity:.7"></div>
+          <div id="cnote" class="readout" style="margin-top:14px;color:var(--paper-on-plate);min-height:2.6em"></div>
+        </div>
+        <div class="figure-cap"><b>Three regions, one handle.</b> Notches 1–4, 6–8 and 10–12 are <b>resistance steps</b> — transient positions you accelerate through, dumping heat. Notches 5, 9 and 13 are the <b>economical running notches</b> (¼, ½, full voltage). Notches 14–16 weaken the field for extra speed.</div>
+      </figure>
+    </section>
+
+    <!-- RESISTANCE -->
+    <section id="resistance" class="section">
+      <div class="kicker">Tool 1 — series resistance</div>
+      <h3>Crude, reliable, and wasteful by design.</h3>
+      <p style="margin-top:18px">Put a bank of resistors in series with the motors and the surplus voltage drops across them instead of forcing current through the armature. As the train accelerates and back-EMF rises, you <strong>cut the resistors out a step at a time</strong>, keeping current — and so tractive effort — roughly constant. This is the sawtooth you feel as a series of jerks in an old electric train.</p>
+      <div class="note">
+        <span class="tag">The cost</span>
+        <p>Every watt dropped across a starting resistor becomes heat in a roof-top or underfloor grid — pure loss. Accelerating a heavy train through resistance can waste a large fraction of the energy used, which is exactly why the resistors are only ever a <strong>transient</strong> measure and why engineers worked so hard to minimise time spent on them. Eliminating resistance control entirely was one of the prizes of power electronics (Ch. 04).</p>
+      </div>
+      <p>Resistance alone could in principle give full control — but it would waste enormous energy at the lower running speeds. So it is paired with a cleverer, loss-free trick: changing how the motors are connected.</p>
+    </section>
+
+    <!-- GROUPING -->
+    <section id="grouping" class="section">
+      <div class="kicker">Tool 2 — series / parallel grouping</div>
+      <h3>Re-wiring the motors gives free voltage steps.</h3>
+      <p style="margin-top:18px">With four identical motors you can share the line voltage between them in three tidy ratios — <strong>without any resistor</strong>. Each gives a stable, efficient running speed; the resistors are only needed to bridge the gaps <em>between</em> these steps and during the switchover.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin:24px 0">
+        <div style="background:var(--paper-card);padding:20px"><div class="tag tag-sig">All series</div><div style="font-family:var(--font-display);font-weight:700;font-size:1.7rem;margin:6px 0">¼ V</div><p style="font-size:.88rem;margin:0">All four in one chain. Line volts split four ways — lowest running speed.</p></div>
+        <div style="background:var(--paper-card);padding:20px"><div class="tag tag-sig">Series-parallel</div><div style="font-family:var(--font-display);font-weight:700;font-size:1.7rem;margin:6px 0">½ V</div><p style="font-size:.88rem;margin:0">Two pairs side by side. Each motor sees half the line — middle running speed.</p></div>
+        <div style="background:var(--paper-card);padding:20px"><div class="tag tag-sig">All parallel</div><div style="font-family:var(--font-display);font-weight:700;font-size:1.7rem;margin:6px 0">1 V</div><p style="font-size:.88rem;margin:0">All four across the line. Full voltage each — highest plain-field speed.</p></div>
+      </div>
+      <p>The transition between groupings must happen without breaking tractive effort or open-circuiting the motors — handled by <strong>bridge</strong> or <strong>shunt-transition</strong> switching sequences buried in the camshaft controller. Three loss-free running speeds from four motors and a switch: a beautifully economical idea, and the backbone of DC traction control for a century.</p>
+    </section>
+
+    <!-- FIELD WEAKENING -->
+    <section id="field" class="section">
+      <div class="kicker">Tool 3 — field weakening</div>
+      <h3>Why weaken the field? Because you have run out of voltage.</h3>
+      <p style="margin-top:18px">At the top running notch the motors are across the full line, with no resistance left and the field at full strength. You are at <strong>base speed</strong> — and you have used up every voltage trick available. The supply cannot give more than line voltage. So how do you go faster?</p>
+      <p>Return to N ∝ (V − IₐR) / Φ. If V is pinned at maximum, the only remaining variable is the flux Φ in the denominator. <strong>Reduce the flux and the speed must rise.</strong> You do it by diverting some field current through a parallel "diverter" resistor, so the series field carries less current and produces less flux.</p>
+
+      <figure class="figure" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 2.2</span><span>TRACTIVE EFFORT & POWER vs SPEED</span><span class="dim">CONSTANT-TORQUE → CONSTANT-POWER</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 720 320" style="width:100%;height:auto">
+            <line x1="64" y1="20" x2="64" y2="270" class="s-ink" stroke-width="1.4"/>
+            <line x1="64" y1="270" x2="690" y2="270" class="s-ink" stroke-width="1.4"/>
+            <text x="56" y="24" text-anchor="end" font-size="11">EFFORT / POWER</text>
+            <text x="686" y="294" text-anchor="end" font-size="11">SPEED →</text>
+            <!-- base speed divider -->
+            <line x1="360" y1="20" x2="360" y2="270" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="3 4"/>
+            <text x="360" y="14" text-anchor="middle" font-size="10.5" fill="var(--ink-faint)">BASE SPEED</text>
+            <!-- region labels -->
+            <text x="210" y="52" text-anchor="middle" font-size="11" fill="var(--ink-faint)">FULL FIELD · raising voltage</text>
+            <text x="530" y="52" text-anchor="middle" font-size="11" fill="var(--signal)">FIELD WEAKENING</text>
+            <!-- TORQUE: flat then 1/x decay -->
+            <path d="M64 90 L360 90 C440 90 470 150 520 190 C570 225 630 245 690 252" fill="none" stroke="var(--signal)" stroke-width="2.6"/>
+            <!-- POWER: rises linearly then flat -->
+            <path d="M64 270 L360 120 L690 120" fill="none" stroke="var(--annot)" stroke-width="2.6"/>
+            <g font-size="11">
+              <rect x="96" y="232" width="16" height="3" fill="var(--signal)"/><text x="118" y="237">TRACTIVE EFFORT (torque)</text>
+              <rect x="96" y="250" width="16" height="3" fill="var(--annot)"/><text x="118" y="255">POWER</text>
+            </g>
+          </svg>
+        </div>
+        <div class="figure-cap"><b>Two regions.</b> Below base speed, effort is held roughly constant while power climbs — this is the resistance-and-grouping region. Above base speed, <b>power is held constant</b> (you have all the volts and amps the system allows) and field weakening trades falling effort for rising speed. Trains need little effort at high speed, so the trade is exactly right.</div>
+      </figure>
+
+      <div class="note annot">
+        <span class="tag">Limits</span>
+        <p>You cannot weaken indefinitely. Too little flux and the same torque demands too much armature current; commutation worsens and armature reaction can cause flashover. Practical weakening reaches perhaps 50–60% field, extending top speed by a useful margin — typically 30–50% above base speed.</p>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>TRACTION · Ch. 02 — Control</span>
+  <span>Fig. 2.1–2.2 · schematic</span>
+</div></footer>
+
+<script>
+/* ===== 2.1 controller simulator ===== */
+(function(){
+  // notch table: grouping, resistor steps in circuit, field
+  const N=[];
+  N.push({g:'off',r:0,f:1,sp:0});
+  // series, res 4..0  (notch 1..5)
+  [4,3,2,1,0].forEach(r=>N.push({g:'S',r,f:1}));
+  // series-parallel, res 3..0 (notch 6..9)
+  [3,2,1,0].forEach(r=>N.push({g:'SP',r,f:1}));
+  // parallel, res 3..0 (notch 10..13)
+  [3,2,1,0].forEach(r=>N.push({g:'P',r,f:1}));
+  // field weakening (notch 14..16)
+  [0.85,0.70,0.58].forEach(f=>N.push({g:'P',r:0,f}));
+  const VG={off:0,S:0.25,SP:0.5,P:1};
+  const GNAME={off:'OFF',S:'ALL SERIES — ¼ V',SP:'SERIES-PARALLEL — ½ V',P:'ALL PARALLEL — FULL V'};
+  // speed proxy = voltsPerMotor / field, normalised so notch16 ~ top
+  N.forEach(n=> n.speed = n.g==='off'?0 : VG[n.g]/n.f );
+  const SPMAX = Math.max(...N.map(n=>n.speed));
+
+  const svg=document.getElementById('circ');
+  const motor=(x,y,r=20)=>`<g><circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="var(--cyan)" stroke-width="2"/><text x="${x}" y="${y+5}" text-anchor="middle" font-size="15" fill="var(--cyan-soft)">M</text><path d="M${x-r-9} ${y} a4 4 0 0 1 4 -4 a4 4 0 0 1 0 8 a4 4 0 0 1 -4 -4" fill="none" stroke="var(--signal-2)" stroke-width="1.6"/></g>`;
+  const wire=(d,c='var(--cyan)',w=2)=>`<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}"/>`;
+
+  function resBank(steps,x,y){ // 4 elements, 'steps' of them in (hot)
+    let s=`<text x="${x+44}" y="${y-22}" text-anchor="middle" font-size="10" fill="var(--cyan-soft)">RHEOSTAT</text>`;
+    for(let i=0;i<4;i++){
+      const ix=x+i*22, hot=i<steps;
+      const col=hot?'var(--signal)':'var(--plate-line)';
+      s+=`<path d="M${ix} ${y} l3 -7 l4 14 l4 -14 l4 14 l3 -7" fill="none" stroke="${col}" stroke-width="${hot?2.2:1.2}" ${hot?'':'opacity=".5"'}/>`;
+      if(!hot) s+=`<path d="M${ix} ${y-13} l18 0" stroke="var(--cyan)" stroke-width="1.5" stroke-dasharray="2 2"/>`; // bypass
+    }
+    return s;
+  }
+
+  function render(n){
+    const st=N[n];
+    let s='';
+    // supply rail (left) + return (bottom)
+    s+=`<text x="34" y="40" font-size="11" fill="var(--signal-2)">LINE +</text>`;
+    s+=wire('M40 50 L40 60',`var(--cyan)`);
+    s+=`<circle cx="40" cy="50" r="5" fill="none" stroke="var(--signal-2)" stroke-width="2"/>`;
+    s+=wire('M40 60 L40 150 L100 150'); // down then right into rheostat
+    // rheostat at x100
+    s+=st.g==='off'?'' : resBank(st.r,108,150);
+    s+=wire('M196 150 L260 150'); // out of rheostat to motor block
+    // motors per grouping
+    if(st.g==='off'){
+      s+=`<text x="430" y="155" text-anchor="middle" font-size="13" fill="var(--cyan-soft)" opacity=".6">— power off —</text>`;
+    } else if(st.g==='S'){
+      const ys=150, xs=[320,430,540,650];
+      s+=wire(`M260 ${ys} L${xs[0]-20} ${ys}`);
+      xs.forEach((x,i)=>{ s+=motor(x,ys); if(i<3) s+=wire(`M${x+20} ${ys} L${xs[i+1]-20} ${ys}`); });
+      s+=wire(`M${xs[3]+20} ${ys} L720 ${ys} L720 250`);
+    } else if(st.g==='SP'){
+      s+=wire('M260 150 L300 150 L300 95 L360 95'); s+=wire('M300 150 L300 205 L360 205');
+      s+=motor(390,95); s+=wire('M410 95 L500 95'); s+=motor(530,95);
+      s+=motor(390,205); s+=wire('M410 205 L500 205'); s+=motor(530,205);
+      s+=wire('M550 95 L610 95 L610 150'); s+=wire('M550 205 L610 205 L610 150'); s+=wire('M610 150 L720 150 L720 250');
+    } else { // parallel
+      s+=wire('M260 150 L300 150 L300 70 L300 230'); // bus left
+      const ys=[70,130,190,250];
+      ys.forEach(y=>{ s+=wire(`M300 ${y} L360 ${y}`); s+=motor(390,y,16); s+=wire(`M406 ${y} L660 ${y}`); });
+      s+=wire('M660 70 L660 250'); s+=wire('M660 150 L720 150 L720 250'); // bus right
+    }
+    // return rail
+    s+=wire('M720 250 L40 250 L40 60','var(--cyan)',2);
+    s+=`<text x="34" y="270" font-size="11" fill="var(--cyan-soft)">RETURN −</text>`;
+    svg.innerHTML=s;
+
+    // readouts
+    document.getElementById('rVm').textContent = st.g==='off'?'0%':(VG[st.g]*100).toFixed(0)+'%';
+    document.getElementById('rFf').textContent = (st.f*100).toFixed(0)+'%';
+    document.getElementById('rSp').textContent = (st.speed/SPMAX*100).toFixed(0)+'%';
+    document.getElementById('cbarTitle').textContent = n===0?'NOTCH 0 — OFF':`NOTCH ${n} — ${GNAME[st.g]}`;
+    document.getElementById('cbarGroup').textContent = st.g==='off'?'—':(st.r>0?`${st.r} RESISTOR STEP${st.r>1?'S':''} IN`:(st.f<1?`FIELD ${(st.f*100).toFixed(0)}%`:'RUNNING NOTCH'));
+    // heat ∝ resistor steps in
+    document.getElementById('heatBar').style.width = (st.r/4*100)+'%';
+    // note
+    let note='';
+    if(st.g==='off') note='Handle at zero. No voltage on the motors.';
+    else if(st.r>0) note='⚡ RESISTANCE STEP — surplus voltage is being burned in the rheostat to limit current. A transient position: keep advancing as the train picks up speed.';
+    else if(st.f<1) note='△ FIELD WEAKENING — full voltage reached, so flux is reduced to push speed higher. Effort falls, power stays constant.';
+    else note='✔ RUNNING NOTCH — no resistor in circuit, no wasted heat. The motors sit at a stable, economical speed for this grouping.';
+    document.getElementById('cnote').textContent=note;
+  }
+
+  const slider=document.getElementById('notch');
+  const ticks=document.getElementById('notchTicks');
+  ticks.innerHTML=['0','S','','','','R1','SP','','','R2','P','','','R3','fw','','fw'].map(t=>`<span>${t}</span>`).join('');
+  let auto=null;
+  function go(v){ v=Math.max(0,Math.min(16,v)); slider.value=v; render(v); }
+  slider.addEventListener('input',()=>{ render(+slider.value); stopAuto(); });
+  document.getElementById('fwd').onclick=()=>{ go(+slider.value+1); stopAuto(); };
+  document.getElementById('back').onclick=()=>{ go(+slider.value-1); stopAuto(); };
+  function stopAuto(){ if(auto){clearInterval(auto);auto=null;document.getElementById('auto').classList.remove('on');document.getElementById('auto').textContent='▶ AUTO';} }
+  document.getElementById('auto').onclick=function(){
+    if(auto){ stopAuto(); return; }
+    this.classList.add('on'); this.textContent='❚❚ STOP';
+    if(+slider.value>=16) go(0);
+    auto=setInterval(()=>{ if(+slider.value>=16){ stopAuto(); } else go(+slider.value+1); },900);
+  };
+  render(0);
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

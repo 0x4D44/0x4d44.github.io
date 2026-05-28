@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TRACTION — An Interactive Study of Electric Traction Motors</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="00">
+<div id="topbar"></div>
+
+<!-- ===================== HERO ===================== -->
+<section class="wrap" style="padding:70px 32px 30px">
+  <div class="kicker">An interactive study · 6 chapters</div>
+  <div style="display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:end">
+    <div>
+      <h1>The machines that<br>move the railway.</h1>
+      <p class="lead" style="margin-top:24px;max-width:34ch">From the brush-sparking DC series motor to the brushless inverter drive — how electric traction motors work, why they were built the way they were, and the compromises behind every design.</p>
+    </div>
+    <div>
+      <p class="dim" style="font-family:var(--font-mono);font-size:.82rem;line-height:1.7">A traction motor must start a 1,000-tonne train from rest, haul it up a 1-in-37 bank, then spin to 200&nbsp;km/h — all from a single shaft geared to an axle. No other motor is asked to do quite so much. This study takes the machine apart, electrically and mechanically.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HERO PLATE: side elevation ===================== -->
+<section class="wrap" style="padding:18px 32px 40px">
+  <figure class="figure plate">
+    <div class="figure-bar"><span class="fno">FIG. 00</span><span>NOSE-SUSPENDED TRACTION MOTOR — SIDE ELEVATION</span><span class="dim" style="color:var(--cyan-soft)">SCALE — N.T.S.</span></div>
+    <div class="figure-body" style="padding:10px 8px">
+      <svg viewBox="0 0 1100 360" style="width:100%;height:auto;display:block" id="heroSvg">
+        <defs>
+          <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--cyan)" stroke-width="1"/></marker>
+        </defs>
+        <!-- rail -->
+        <line x1="40" y1="320" x2="1060" y2="320" stroke="var(--cyan)" stroke-width="2"/>
+        <line x1="40" y1="326" x2="1060" y2="326" stroke="var(--plate-line)" stroke-width="1"/>
+        <g stroke="var(--plate-line)" stroke-width="1"><path d="M70 326 l-14 18 M170 326 l-14 18 M270 326 l-14 18 M370 326 l-14 18 M470 326 l-14 18 M570 326 l-14 18 M670 326 l-14 18 M770 326 l-14 18 M870 326 l-14 18 M970 326 l-14 18"/></g>
+
+        <!-- driving wheel + axle -->
+        <g id="wheelSpin" style="transform-origin:330px 230px">
+          <circle cx="330" cy="230" r="86" fill="none" stroke="var(--cyan)" stroke-width="2.5"/>
+          <circle cx="330" cy="230" r="78" fill="none" stroke="var(--plate-line)" stroke-width="1"/>
+          <circle cx="330" cy="230" r="14" fill="none" stroke="var(--cyan)" stroke-width="2"/>
+          <g stroke="var(--plate-line)" stroke-width="1.4">
+            <line x1="330" y1="230" x2="330" y2="148"/><line x1="330" y1="230" x2="330" y2="312"/>
+            <line x1="330" y1="230" x2="248" y2="230"/><line x1="330" y1="230" x2="412" y2="230"/>
+            <line x1="330" y1="230" x2="272" y2="172"/><line x1="330" y1="230" x2="388" y2="288"/>
+            <line x1="330" y1="230" x2="388" y2="172"/><line x1="330" y1="230" x2="272" y2="288"/>
+          </g>
+        </g>
+        <circle cx="330" cy="320" r="3" fill="var(--cyan)"/>
+
+        <!-- gear pinion + gearwheel mesh -->
+        <circle cx="330" cy="230" r="34" fill="none" stroke="var(--signal-2)" stroke-width="1.6" stroke-dasharray="3 4"/>
+        <circle cx="452" cy="230" r="30" fill="none" stroke="var(--signal-2)" stroke-width="1.6"/>
+        <circle cx="452" cy="230" r="20" fill="none" stroke="var(--signal-2)" stroke-width="1" stroke-dasharray="3 4"/>
+
+        <!-- motor body (the round-frame DC motor) -->
+        <g>
+          <rect x="470" y="150" width="220" height="160" rx="14" fill="none" stroke="var(--cyan)" stroke-width="2.5"/>
+          <circle cx="580" cy="230" r="66" fill="none" stroke="var(--cyan)" stroke-width="2"/>
+          <circle cx="580" cy="230" r="40" fill="none" stroke="var(--plate-line)" stroke-width="1.2"/>
+          <circle cx="580" cy="230" r="10" fill="none" stroke="var(--cyan)" stroke-width="2"/>
+          <!-- field poles -->
+          <g fill="none" stroke="var(--plate-line)" stroke-width="1.2">
+            <path d="M580 164 a66 66 0 0 1 30 8 l-10 26 a40 40 0 0 0 -20 -6 z"/>
+            <path d="M580 296 a66 66 0 0 1 -30 -8 l10 -26 a40 40 0 0 0 20 6 z"/>
+          </g>
+          <!-- brush leads -->
+          <line x1="580" y1="150" x2="580" y2="120" stroke="var(--signal)" stroke-width="1.6"/>
+          <line x1="525" y1="160" x2="525" y2="120" stroke="var(--signal)" stroke-width="1.6"/>
+        </g>
+        <!-- motor nose suspension (to bogie frame) -->
+        <rect x="690" y="190" width="120" height="48" rx="6" fill="none" stroke="var(--plate-line)" stroke-width="1.2"/>
+        <line x1="810" y1="214" x2="900" y2="214" stroke="var(--plate-line)" stroke-width="1.4"/>
+        <rect x="860" y="120" width="60" height="120" fill="none" stroke="var(--plate-line)" stroke-width="1" stroke-dasharray="4 4"/>
+        <text x="890" y="112" fill="var(--cyan-soft)" font-size="11" text-anchor="middle">BOGIE FRAME</text>
+
+        <!-- callouts -->
+        <g stroke="var(--cyan)" stroke-width="1" fill="none">
+          <path d="M330 144 V70 H210" marker-end="url(#ar)"/>
+          <path d="M452 200 V96 H560" marker-end="url(#ar)"/>
+          <path d="M580 296 V340 H470" marker-end="url(#ar)"/>
+          <path d="M553 120 H470" />
+        </g>
+        <g font-size="12.5" fill="var(--cyan-soft)" font-family="var(--font-mono)">
+          <text x="206" y="74" text-anchor="end">DRIVING WHEEL · AXLE</text>
+          <text x="566" y="92">REDUCTION GEAR — PINION + WHEEL</text>
+          <text x="466" y="344" text-anchor="end">FIELD POLES & ARMATURE</text>
+          <text x="466" y="116" text-anchor="end">BRUSH LEADS (±)</text>
+        </g>
+        <!-- weight transfer note -->
+        <text x="408" y="232" font-size="11" fill="var(--signal-2)">PINION MESH</text>
+      </svg>
+    </div>
+    <div class="figure-cap"><b>The classic arrangement.</b> One end of the motor rests on bearings around the axle; the other is slung from the bogie frame on a "nose". The motor turns the axle through a single reduction gear. Simple and cheap — but half the motor's mass rides directly on the axle as <b>unsprung weight</b>, the central compromise we return to in Ch. 05.</div>
+  </figure>
+</section>
+
+<!-- ===================== ORIENTATION FACTS ===================== -->
+<section class="wrap" style="padding:20px 32px 10px">
+  <div class="facts">
+    <div><div class="big">I²<span class="u">∝ T</span></div><div class="lbl">Series motor torque law</div></div>
+    <div><div class="big">16⅔<span class="u">Hz</span></div><div class="lbl">The frequency chosen to tame commutation</div></div>
+    <div><div class="big">25<span class="u">kV</span></div><div class="lbl">Modern AC catenary — thin wire, few substations</div></div>
+    <div><div class="big">0<span class="u">brushes</span></div><div class="lbl">The inverter-fed induction motor</div></div>
+  </div>
+</section>
+
+<!-- ===================== READING / SYSTEM NOTE ===================== -->
+<section class="section wrap">
+  <div class="cols2">
+    <div>
+      <div class="kicker">How to read this study</div>
+      <h2>One question, asked six ways.</h2>
+    </div>
+    <div>
+      <p>Every chapter circles the same engineering problem: <strong>how do you get usable, controllable torque to a steel wheel on a steel rail, across a 10-to-1 speed range, reliably, for thirty years?</strong></p>
+      <p>The answer changed completely between 1890 and today — not because the physics changed, but because what was <em>buildable</em> changed. Resistors gave way to tap-changers; mercury arcs to thyristors; commutators to silicon. We follow that thread, and stop often to look at the real locomotives where each idea succeeded or failed.</p>
+      <p class="dim mono" style="font-size:.82rem">Diagrams are interactive where you see the <span class="sig">orange</span> signal colour — drag, toggle, and drive the models. All figures are schematic.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONTENTS ===================== -->
+<section class="section wrap" id="contents">
+  <div class="kicker">Contents</div>
+  <h2 style="margin-bottom:34px">Six chapters.</h2>
+  <div id="chapGrid" class="chapgrid"></div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>TRACTION — an interactive study of electric traction motors</span>
+  <span>Schematic diagrams · not to scale · educational</span>
+</div></footer>
+
+<style>
+.chapgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+@media(max-width:920px){ .chapgrid{ grid-template-columns:1fr 1fr; } }
+@media(max-width:600px){ .chapgrid{ grid-template-columns:1fr; } }
+.chapcard{ background:var(--paper-card); padding:24px 22px 26px; display:flex; flex-direction:column; gap:14px; min-height:230px; transition:.14s; position:relative; }
+.chapcard:hover{ background:var(--paper); text-decoration:none; }
+.chapcard:hover .chapcard-go{ color:var(--signal); }
+.chapcard .cn{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.14em; color:var(--signal); }
+.chapcard h3{ color:var(--ink); }
+.chapcard p{ font-size:.92rem; line-height:1.55; margin:0; color:var(--ink-soft); flex:1; }
+.chapcard-ico{ height:46px; }
+.chapcard-go{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.1em; color:var(--ink-faint); transition:.14s; }
+</style>
+
+<script>
+const CHAPTERS = [
+  {n:"01", t:"The DC series motor", href:"1-dc-series-motor.html",
+   d:"Why traction settled on the series-wound DC motor: torque proportional to current squared, self-regulating speed, and a construction built for abuse — poles, armature, commutator, brushes and interpoles.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><circle cx="23" cy="23" r="18"/><circle cx="23" cy="23" r="6"/><path d="M23 5v8M23 33v8M5 23h8M33 23h8" stroke="var(--signal)"/></g>`},
+  {n:"02", t:"Controlling it", href:"2-control.html",
+   d:"Driving the motor: starting resistances notched out as the train accelerates, series/parallel grouping for economical running speeds, and field weakening to push past base speed. Three live simulators.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><path d="M5 33h36"/><path d="M9 33V21l6-8 6 10 6-14 6 18" stroke="var(--signal)"/><circle cx="9" cy="33" r="2.5" fill="var(--signal)" stroke="none"/></g>`},
+  {n:"03", t:"AC systems", href:"3-ac-systems.html",
+   d:"The transformer changed everything. Why low-frequency AC (16⅔ Hz) was invented to keep the commutator motor alive, why 50 Hz needed rectifier locomotives, and the dead-end elegance of three-phase traction.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><path d="M4 23q6-16 11 0t11 0 11 0" stroke="var(--signal)"/><path d="M4 30h37"/></g>`},
+  {n:"04", t:"Modern drives", href:"4-modern-drives.html",
+   d:"The inverter revolution: VVVF drives let a brushless induction motor run on any supply. GTO to IGBT to SiC, asynchronous vs permanent-magnet, and electronic field weakening. Compare all three eras side by side.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><rect x="6" y="10" width="14" height="26"/><path d="M9 30l3-6 3 6" stroke="var(--signal)"/><circle cx="33" cy="23" r="9"/><path d="M33 23l5-3"/></g>`},
+  {n:"05", t:"Mechanics & upkeep", href:"5-mechanics-maintenance.html",
+   d:"The physical machine: axle-hung versus frame-mounted drives and the unsprung-mass problem, forced-air cooling and continuous ratings, brush-gear access, pole counts and field windings — and what wears out.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><circle cx="23" cy="20" r="11"/><path d="M23 31v9M14 40h18" /><path d="M16 16l4 2M30 16l-4 2M23 13v4" stroke="var(--signal)"/></g>`},
+  {n:"06", t:"Case studies", href:"6-case-studies.html",
+   d:"Where theory met the rail: the GG1, the 16⅔ Hz networks still humming today, France's 50 Hz gamble, three-phase Italy, the great DC EMU fleets, and the brushless present. Successes — and instructive failures.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><rect x="5" y="8" width="32" height="30"/><path d="M5 16h32M11 23h12M11 29h18" /><path d="M28 8v30" stroke="var(--signal)"/></g>`},
+];
+document.getElementById('chapGrid').innerHTML = CHAPTERS.map(c=>`
+  <a class="chapcard" href="${c.href}">
+    <svg class="chapcard-ico" viewBox="0 0 46 46">${c.ico}</svg>
+    <div class="cn">CH. ${c.n}</div>
+    <h3>${c.t}</h3>
+    <p>${c.d}</p>
+    <div class="chapcard-go">Read chapter →</div>
+  </a>`).join('');
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>
