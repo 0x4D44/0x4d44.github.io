@@ -383,10 +383,49 @@ window.ESSAYS = [
     tag: "software",
     real: true,
   },
+  {
+    slug: "stop-the-bus",
+    title: "Stop the Bus",
+    tagline: "Inside STOPBUS — a 1994 four-player card game with three AI opponents.",
+    url: "https://0x4d44.github.io/stop-the-bus/",
+    illustration: "ill-bus",
+    date: "2026-05-28",
+    year: 1994,
+    readingMin: 30,
+    words: 6985,
+    tag: "software",
+    real: true,
+  },
+  {
+    slug: "mdmcp",
+    title: "mdmcp",
+    tagline: "A Rust MCP server that hands an LLM your command-line tools — behind a policy gate.",
+    url: "https://0x4d44.github.io/mdmcp/",
+    illustration: "ill-mcp",
+    date: "2026-05-28",
+    year: 2026,
+    readingMin: 18,
+    words: 4192,
+    tag: "software",
+    real: true,
+  },
+  {
+    slug: "edinburgh-biosci",
+    title: "First Year, Decoded",
+    tagline: "A first-year survival guide to Biological Sciences at the University of Edinburgh.",
+    url: "https://0x4d44.github.io/edinburgh-biosci/",
+    illustration: "ill-dna",
+    date: "2026-05-28",
+    year: 2026,
+    readingMin: 13,
+    words: 3072,
+    tag: "science",
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "fiction", "software", "comic", "history", "math"];
+window.TAGS = ["all", "rail", "fiction", "software", "comic", "history", "math", "science"];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);
