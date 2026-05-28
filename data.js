@@ -21,7 +21,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 34,
     words: 8600,
-    tag: "rail",
+    tags: ["rail", "history"],
     real: true,
   },
   {
@@ -47,7 +47,7 @@ window.ESSAYS = [
     year: 1955,
     readingMin: 22,
     words: 5400,
-    tag: "rail",
+    tags: ["rail", "history"],
     real: true,
   },
   {
@@ -125,7 +125,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 14,
     words: 2822,
-    tag: "software",
+    tags: ["software", "engineering"],
     real: true,
   },
   {
@@ -164,7 +164,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 13,
     words: 2670,
-    tag: "rail",
+    tags: ["rail", "history"],
     real: true,
   },
   {
@@ -177,7 +177,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 12,
     words: 2311,
-    tag: "history",
+    tags: ["history", "engineering"],
     real: true,
   },
   {
@@ -203,7 +203,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 19,
     words: 3769,
-    tag: "history",
+    tags: ["engineering", "history"],
     real: true,
   },
   {
@@ -242,7 +242,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 19,
     words: 3764,
-    tag: "history",
+    tags: ["history", "software"],
     real: true,
   },
   {
@@ -255,7 +255,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 15,
     words: 3057,
-    tag: "software",
+    tags: ["software", "engineering"],
     real: true,
   },
   {
@@ -281,7 +281,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 4,
     words: 931,
-    tag: "software",
+    tags: ["software", "engineering"],
     real: true,
   },
   {
@@ -320,7 +320,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 22,
     words: 5096,
-    tag: "software",
+    tags: ["rail", "software"],
     real: true,
   },
   {
@@ -346,7 +346,7 @@ window.ESSAYS = [
     year: 1996,
     readingMin: 15,
     words: 3364,
-    tag: "software",
+    tags: ["software", "engineering"],
     real: true,
   },
   {
@@ -359,7 +359,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 42,
     words: 9554,
-    tag: "software",
+    tags: ["software", "engineering"],
     real: true,
   },
   {
@@ -385,7 +385,7 @@ window.ESSAYS = [
     year: 2026,
     readingMin: 15,
     words: 3431,
-    tag: "software",
+    tags: ["rail", "engineering", "software"],
     real: true,
   },
   {
