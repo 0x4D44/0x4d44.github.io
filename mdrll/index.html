@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mdrll · technical deep dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ── Hero ──────────────────────────────────────────────────────────── -->
+<header class="hero shell">
+  <div class="crumbs">
+    <span class="led"></span>
+    <span>mdrll · v0.8.5 · rust 2024</span>
+    <span style="color:var(--text-faint)">·</span>
+    <span>flux transition → disk image decoder</span>
+  </div>
+  <h1 class="hero-title">Reading the<br>flux off a<br><span class="accent">dead disk.</span></h1>
+  <p class="hero-subtitle">
+    <strong style="color:var(--text)">mdrll</strong> is a Rust CLI that decodes 200 MHz flux-transition captures from
+    1980s ST-506 hard disks into raw <code class="mono" style="color:var(--amber)">.ima</code> images. Twelve controller
+    formats. Two encoding families. Six source files. Two months from blank repo to byte-exact recovery on real captures.
+  </p>
+
+  <div class="hero-meta">
+    <div class="cell"><div class="k">Source lines</div><div class="v" data-counter="15,180"></div></div>
+    <div class="cell"><div class="k">Controller formats</div><div class="v" data-counter="12"></div></div>
+    <div class="cell"><div class="k">HLD documents</div><div class="v" data-counter="64"></div></div>
+    <div class="cell"><div class="k">Probe binaries</div><div class="v" data-counter="120">+</div></div>
+  </div>
+</header>
+
+<!-- ── What it does ──────────────────────────────────────────────────── -->
+<section class="shell">
+  <div class="section-label">01 · what it does</div>
+  <h2 class="section-title">From magnetic flux to a mountable filesystem.</h2>
+  <p class="section-lede">
+    A 1985-era ST-506 disk encodes data as <em>presence-or-absence of magnetic flux transitions</em>.
+    David Gesswein's BeagleBone-based reader samples those transitions at 200 MHz and records the
+    delay between them — that's the <code class="mono" style="color:var(--amber)">.tr</code> file. <strong style="color:var(--text)">mdrll</strong>
+    turns that stream of inter-transition deltas back into the bytes that lived on the platter.
+    Click any stage below to see what happens.
+  </p>
+
+  <div class="pipeline">
+    <div class="pipeline-stages"></div>
+    <div class="pipeline-detail"></div>
+  </div>
+</section>
+
+<!-- ── Architecture ──────────────────────────────────────────────────── -->
+<section class="shell">
+  <div class="section-label">02 · architecture</div>
+  <h2 class="section-title">Six files. No traits. No subdirectories.</h2>
+  <p class="section-lede">
+    The original HLD called for a five-file crate with one streaming pipeline and no abstraction layer
+    over the two encoding variants. That structure survived two months of feature pressure and twelve
+    new controller formats — a single new file (<code class="mono" style="color:var(--amber)">tests/differential_harness.rs</code>)
+    was added; every controller plugged into the existing modules.
+  </p>
+  <div class="modules"></div>
+
+  <pre class="code" style="margin-top: 40px;">
+<span class="com">// src/lib.rs — the entire public surface</span>
+<span class="kw">pub mod</span> <span class="fn">decode</span>;     <span class="com">// signal processing, encoding detection, PLL</span>
+<span class="kw">pub mod</span> <span class="fn">image</span>;      <span class="com">// CHS-ordered output builder</span>
+<span class="kw">pub mod</span> <span class="fn">sector</span>;     <span class="com">// per-controller parsers + CRC</span>
+<span class="kw">pub mod</span> <span class="fn">tr_file</span>;    <span class="com">// .tr/.raw/.gz parser, streaming iterator</span>
+
+<span class="kw">pub enum</span> <span class="fn">DecodeError</span> { Io(io::Error), BadMagic, UnsupportedVersion { version: u32 },
+    CorruptHeader, EncodingAmbiguous, EmptyFile, CrcDetectionFailed, InvalidFormat(String) }</pre>
+</section>
+
+<!-- ── Controller zoo ────────────────────────────────────────────────── -->
+<section class="shell">
+  <div class="section-label">03 · controller zoo</div>
+  <h2 class="section-title">Twelve formats. Each its own animal.</h2>
+  <p class="section-lede">
+    The first design assumed one universal sector format. Reality: every controller in the wild
+    had its own twist on framing, sync, address marks, CRC polynomial, or all four. Each card
+    is a parser arm in <code class="mono" style="color:var(--amber)">src/sector.rs</code>. Click to expand.
+  </p>
+
+  <div class="zoo-controls">
+    <button class="zoo-filter active" data-cat="all">All 12</button>
+    <button class="zoo-filter" data-cat="mfm">MFM</button>
+    <button class="zoo-filter" data-cat="rll">RLL 2,7</button>
+  </div>
+  <div class="zoo"></div>
+</section>
+
+<!-- ── Flux histogram demo ───────────────────────────────────────────── -->
+<section class="shell">
+  <div class="section-label">04 · the encoding detector</div>
+  <h2 class="section-title">How a histogram picks MFM from RLL in one peak.</h2>
+  <p class="section-lede">
+    Step one of every decode is: <em>which encoding is this?</em> mdrll histograms the deltas in
+    the first decodable track and looks at where the second peak lands. 60 ticks → MFM. 53 → RLL 2,7.
+    The discriminator is unambiguous because the two encodings have geometrically different bit-cell
+    periods. Toggle below to compare the synthetic distributions.
+  </p>
+
+  <div class="flux-demo">
+    <div class="flux-demo-header">
+      <div>
+        <div class="section-label" style="margin-bottom: 4px;">delta histogram</div>
+        <div style="color:var(--text-dim); font-size: 14px;">First track, full revolution, all transitions binned.</div>
+      </div>
+      <div class="flux-toggle">
+        <button class="active" data-kind="mfm">MFM</button>
+        <button data-kind="rll">RLL 2,7</button>
+      </div>
+    </div>
+    <div class="histogram"></div>
+    <div class="flux-readout"></div>
+  </div>
+</section>
+
+<!-- ── Timeline ──────────────────────────────────────────────────────── -->
+<section class="shell">
+  <div class="section-label">05 · physical &amp; encoding layer</div>
+  <h2 class="section-title">A primer on what the controller actually does.</h2>
+  <p class="section-lede">
+    Behind every controller arm in <code class="mono" style="color:var(--amber)">sector.rs</code> sits four decades of magnetic-storage engineering: flux dynamics, channel coding, sync framing, polynomial error detection, Reed-Solomon ECC. Six tabs, each a different layer of the stack from physics up to ECC. mdrll has to reproduce all of it.
+  </p>
+
+  <div class="tech-primer">
+    <div class="tech-tabs"></div>
+    <div class="tech-content"></div>
+  </div>
+</section>
+
+<section class="shell">
+  <div class="section-label">06 · evolution</div>
+  <h2 class="section-title">Eight weeks. Sixty-four HLDs. One commit at a time.</h2>
+  <p class="section-lede">
+    The project starts on 28 March 2026 with four design-document revisions and zero code.
+    By 29 March the pipeline works end-to-end but produces <strong style="color:var(--red)">0% CRC pass rate</strong> on real
+    captures — the rest of the project is the climb out of that hole. Click the dots; green ones
+    are the major inflection points.
+  </p>
+
+  <div class="timeline-wrap">
+    <div class="timeline-track"></div>
+  </div>
+  <div class="timeline-detail"></div>
+</section>
+
+<!-- ── Assessment ────────────────────────────────────────────────────── -->
+<section class="shell">
+  <div class="section-label">07 · assessment</div>
+  <h2 class="section-title">What's solid, what would worry me as the next maintainer.</h2>
+  <p class="section-lede">
+    This codebase has the texture of careful, disciplined work — every magic number has a probe
+    file and an HLD behind it. The cost of that rigor is an examples folder that has become a
+    graveyard of single-use binaries, and a 7,000-line sector.rs that no further consolidation
+    can shrink without inventing the abstraction the original HLD explicitly rejected.
+  </p>
+
+  <div class="assessment">
+    <div class="assessment-col good">
+      <h3>✓ &nbsp;Genuine strengths</h3>
+      <ul></ul>
+    </div>
+    <div class="assessment-col improve">
+      <h3>△ &nbsp;Areas to watch</h3>
+      <ul></ul>
+    </div>
+  </div>
+</section>
+
+<!-- ── Numbers ───────────────────────────────────────────────────────── -->
+<section class="shell">
+  <div class="section-label">08 · by the numbers</div>
+  <h2 class="section-title">A repository denser than it looks.</h2>
+  <p class="section-lede">
+    Source code is a small fraction of what ships in this tree. The bulk is paper trail:
+    HLDs, journals, probe output, triage logs — each push opens with a hypothesis and closes
+    with calibration data.
+  </p>
+  <div class="stats-strip">
+    <div class="cell"><div class="k">src lines</div><div class="v" data-counter="15,180"></div></div>
+    <div class="cell"><div class="k">files in repo</div><div class="v" data-counter="373">+</div></div>
+    <div class="cell"><div class="k">HLDs</div><div class="v" data-counter="64"></div></div>
+    <div class="cell"><div class="k">journals</div><div class="v" data-counter="63"></div></div>
+    <div class="cell"><div class="k">probe binaries</div><div class="v" data-counter="120">+</div></div>
+    <div class="cell"><div class="k">tests</div><div class="v" data-counter="349"></div></div>
+  </div>
+
+  <div style="margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+    <div>
+      <h3 class="mono" style="color: var(--amber); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 16px 0;">Languages &amp; dependencies</h3>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-family: var(--font-mono); font-size: 13px;">
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border);"><span style="color:var(--text)">Rust 2024 edition</span><span style="color:var(--text-faint)">100%</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border);"><span style="color:var(--text)">clap 4 (CLI)</span><span style="color:var(--text-faint)">runtime dep</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border);"><span style="color:var(--text)">flate2 1 (gzip)</span><span style="color:var(--text-faint)">runtime dep</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border);"><span style="color:var(--text)">sha2 0.10</span><span style="color:var(--text-faint)">dev-dep · tests</span></div>
+        <div style="display: flex; justify-content: space-between; padding: 10px 0;"><span style="color:var(--text)">tempfile 3</span><span style="color:var(--text-faint)">dev-dep · tests</span></div>
+      </div>
+      <p style="color: var(--text-dim); font-size: 13px; margin-top: 14px; line-height: 1.55;">
+        Two runtime dependencies. All CRC implementations (CRC-16, CRC-32 with three different polynomials, CRC-24 for Wang, and a 56-bit width for WD's Reed-Solomon-style ECC) are hand-rolled in <code class="mono" style="color:var(--amber)">sector.rs</code> — about 15 lines per polynomial.
+      </p>
+    </div>
+    <div>
+      <h3 class="mono" style="color: var(--amber); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; margin: 0 0 16px 0;">Repository shape</h3>
+      <pre class="code" style="margin: 0;">
+mdrll/
+├── <span class="fn">src/</span>            <span class="com">6 files · 15k loc</span>
+├── <span class="fn">examples/</span>       <span class="com">120+ probe_*.rs binaries</span>
+├── <span class="fn">tests/</span>          <span class="com">real_data + differential</span>
+│   ├── <span class="fn">golden/</span>     <span class="com">reference .ima files</span>
+│   └── <span class="fn">common/</span>     <span class="com">shared test helpers</span>
+├── <span class="fn">notes/</span>          <span class="com">free-form analysis</span>
+├── <span class="fn">wrk_docs/</span>       <span class="com">64 HLDs · dated</span>
+├── <span class="fn">wrk_journals/</span>   <span class="com">63 push journals · dated</span>
+├── <span class="fn">wrk_tmp/</span>        <span class="com">probe outputs, triage</span>
+├── <span class="fn">AGENTS.md</span>       <span class="com">contributor guide</span>
+└── <span class="fn">Cargo.toml</span>      <span class="com">2 runtime deps, 2 dev</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ────────────────────────────────────────────────────────── -->
+<footer class="shell">
+  <div>MDRLL · TECHNICAL DEEP DIVE · GENERATED 2026.05.28</div>
+  <div style="color: var(--text-faint)">crate v0.8.5 · last commit 09a99d2 · all 349 tests passing</div>
+</footer>
+
+<script src="data.js"></script>
+<script src="diagrams.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

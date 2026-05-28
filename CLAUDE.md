@@ -47,6 +47,12 @@ print `*.pdf`. These are downloadable artifacts; the site does not reference the
    `index.html` and set the entry's `illustration` to that id.
 4. If it introduces a new category, add the tag to `window.TAGS` in `data.js`.
 
+## Do not publish
+
+**Praedex is internal — never add, deploy, or commit any Praedex files** (e.g.
+`Praedex*.zip`, `Praedex*Deep Dive*.html`, `Praedex UI.zip`) to this repo. They
+may appear in Downloads alongside publishable documents; skip them.
+
 ## Local preview
 
 Serve over HTTP (not `file://`) — the React documents fetch `.jsx` and need a

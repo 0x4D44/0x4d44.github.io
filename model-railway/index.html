@@ -1,0 +1,1854 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Model Railway · A Codebase Deep Dive</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg:        #0a1322;
+    --bg-2:      #0e1a2e;
+    --panel:     #131f37;
+    --panel-2:   #182846;
+    --line:      #243558;
+    --line-soft: #1c2a47;
+    --ink:       #f1ecde;
+    --ink-2:     #c8d0e2;
+    --muted:     #7d8aac;
+    --muted-2:   #5b6987;
+    --red:       #e5484d;
+    --amber:     #f3a929;
+    --green:     #4ec07b;
+    --cyan:      #5bb6e8;
+    --copper:    #d67c3b;
+    --paper:     #f1ecde;
+    --grid:      rgba(91,182,232,0.06);
+  }
+  * { box-sizing: border-box; }
+  html,body { background: var(--bg); color: var(--ink); margin: 0; font-family: 'IBM Plex Sans', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  body {
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+      radial-gradient(ellipse at 50% -20%, rgba(91,182,232,0.10), transparent 60%);
+    background-size: 56px 56px, 56px 56px, auto;
+  }
+  a { color: var(--cyan); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- nav ---------- */
+  .nav {
+    position: sticky; top: 0; z-index: 50;
+    backdrop-filter: blur(8px);
+    background: rgba(10,19,34,0.78);
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .nav-inner { display: flex; align-items: center; gap: 26px; padding: 14px 28px; max-width: 1180px; margin: 0 auto; }
+  .nav-brand { font-family: 'Instrument Serif', serif; font-size: 22px; letter-spacing: 0.2px; }
+  .nav-brand em { color: var(--cyan); font-style: italic; }
+  .nav-links { display: flex; gap: 18px; margin-left: auto; flex-wrap: wrap; }
+  .nav-links a { color: var(--ink-2); font-size: 13px; font-weight: 500; }
+  .nav-links a:hover { color: var(--cyan); text-decoration: none; }
+
+  /* ---------- hero ---------- */
+  .hero { padding: 78px 0 36px; }
+  .eyebrow {
+    display: inline-flex; gap: 10px; align-items: center;
+    font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.18em;
+    color: var(--cyan); text-transform: uppercase; margin-bottom: 18px;
+  }
+  .eyebrow::before { content: ""; width: 28px; height: 1px; background: var(--cyan); display: block; }
+  h1.title {
+    font-family: 'Instrument Serif', serif; font-weight: 400;
+    font-size: clamp(48px, 7vw, 92px); line-height: 1.02; letter-spacing: -1.5px;
+    margin: 0 0 20px;
+  }
+  h1.title em { font-style: italic; color: var(--copper); }
+  .lede { max-width: 760px; color: var(--ink-2); font-size: 19px; line-height: 1.55; }
+  .lede strong { color: var(--paper); font-weight: 600; }
+
+  /* ---------- stat strip ---------- */
+  .stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; margin: 56px 0 24px;
+           border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+  .stat { padding: 22px 18px; border-right: 1px solid var(--line-soft); }
+  .stat:last-child { border-right: none; }
+  .stat .num { font-family: 'Instrument Serif', serif; font-size: 44px; line-height: 1; color: var(--paper); }
+  .stat .num small { color: var(--muted); font-size: 16px; margin-left: 4px; font-family: 'JetBrains Mono', monospace; }
+  .stat .lbl { margin-top: 8px; font-size: 12px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; font-family: 'JetBrains Mono', monospace; }
+
+  /* ---------- section ---------- */
+  section { padding: 80px 0; border-top: 1px solid var(--line-soft); }
+  .sect-head { display: flex; align-items: end; justify-content: space-between; margin-bottom: 32px; flex-wrap: wrap; gap: 12px; }
+  .sect-title { font-family: 'Instrument Serif', serif; font-size: clamp(34px, 4.5vw, 52px); line-height: 1.05; letter-spacing: -0.5px; margin: 0; }
+  .sect-title em { font-style: italic; color: var(--cyan); }
+  .sect-kicker { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.2em; color: var(--copper); text-transform: uppercase; }
+  .sect-sub { max-width: 720px; color: var(--ink-2); font-size: 16px; line-height: 1.6; margin-top: 8px; }
+
+  /* ---------- architecture diagram ---------- */
+  .arch-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; position: relative; overflow: hidden; }
+  .arch-wrap::before {
+    content: ""; position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(91,182,232,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(91,182,232,0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    pointer-events: none;
+  }
+  .arch-svg { width: 100%; height: auto; display: block; position: relative; }
+  .arch-legend { display: flex; gap: 20px; flex-wrap: wrap; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); margin-top: 16px; }
+  .arch-legend span { display: inline-flex; align-items: center; gap: 8px; }
+  .arch-legend i { display: inline-block; width: 20px; height: 2px; }
+  .leg-i2c { background: var(--cyan); }
+  .leg-rf { background: var(--amber); border-top: 1px dashed; height: 0 !important; border-bottom: 1px dashed var(--amber); }
+  .leg-power { background: var(--red); }
+
+  /* node hover-detail panel */
+  .arch-detail {
+    position: absolute; right: 18px; top: 18px;
+    width: 280px; min-height: 140px;
+    background: rgba(13, 22, 40, 0.92);
+    border: 1px solid var(--line);
+    padding: 14px 16px; border-radius: 4px;
+    font-size: 13px; color: var(--ink-2);
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .arch-detail h4 { margin: 0 0 4px; font-family: 'IBM Plex Sans'; font-size: 15px; color: var(--paper); font-weight: 600; }
+  .arch-detail .role { font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-size: 11px; margin-bottom: 8px; }
+  .arch-detail p { margin: 0; line-height: 1.5; }
+
+  /* ---------- components grid ---------- */
+  .comp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 880px) { .comp-grid { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2,1fr);} .stat:nth-child(2){ border-right: none;} }
+  .comp-card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 20px; cursor: pointer; transition: border-color 0.15s, transform 0.15s;
+    position: relative;
+  }
+  .comp-card:hover { border-color: var(--cyan); }
+  .comp-card .pin {
+    position: absolute; top: 14px; right: 14px;
+    font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    color: var(--muted); letter-spacing: 0.1em;
+  }
+  .comp-card h3 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 26px; margin: 0 0 6px; letter-spacing: -0.3px; }
+  .comp-card .role { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 10px; }
+  .comp-card p { color: var(--ink-2); font-size: 14px; line-height: 1.55; margin: 0; }
+  .comp-card .meta { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line-soft);
+                     display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); }
+  .comp-card .meta strong { color: var(--paper); font-weight: 500; }
+  .comp-card .expand { display: none; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); }
+  .comp-card.open .expand { display: block; }
+  .comp-card ul { margin: 8px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 13px; line-height: 1.6; }
+  .comp-card ul li::marker { color: var(--cyan); }
+  .comp-card .libs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+  .comp-card .libs span { background: rgba(91,182,232,0.08); border: 1px solid var(--line); color: var(--cyan); padding: 3px 8px; border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 10px; }
+
+  /* ---------- DCC waveform ---------- */
+  .dcc-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 28px; }
+  .dcc-controls { display: flex; gap: 10px; margin: 18px 0 6px; flex-wrap: wrap; }
+  .btn {
+    background: var(--panel-2); border: 1px solid var(--line); color: var(--ink);
+    padding: 8px 14px; border-radius: 2px; cursor: pointer; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    transition: all 0.15s;
+  }
+  .btn:hover { border-color: var(--cyan); color: var(--cyan); }
+  .btn.active { background: var(--cyan); color: var(--bg); border-color: var(--cyan); }
+  .scope {
+    background: #06101e;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    padding: 0;
+    margin-top: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  .scope svg { display: block; width: 100%; }
+  .pkt-anno { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 18px; }
+  .pkt-anno div { background: rgba(91,182,232,0.04); border-left: 2px solid var(--cyan); padding: 8px 12px; font-size: 12px; }
+  .pkt-anno div b { display: block; font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-size: 10px; letter-spacing: 0.1em; margin-bottom: 2px; }
+
+  /* ---------- signal sim ---------- */
+  .sim-wrap { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; }
+  @media (max-width: 880px) { .sim-wrap { grid-template-columns: 1fr; } }
+  .sim-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+  .sim-side { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+  .sim-side h4 { font-family: 'Instrument Serif', serif; font-size: 22px; margin: 0 0 12px; font-weight: 400; }
+  .sim-side .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line-soft); font-size: 13px; }
+  .sim-side .row:last-child { border-bottom: none; }
+  .sim-side .row span:first-child { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 11px; }
+  .sim-side .row .val { color: var(--paper); font-weight: 500; }
+  .sim-side .row .val.aspect-red { color: var(--red); }
+  .sim-side .row .val.aspect-y { color: var(--amber); }
+  .sim-side .row .val.aspect-dy { color: var(--amber); opacity: 0.7; }
+  .sim-side .row .val.aspect-g { color: var(--green); }
+  .sim-side .hint { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 14px; }
+  .sim-side .hint kbd { font-family: 'JetBrains Mono', monospace; background: var(--panel-2); border: 1px solid var(--line); padding: 1px 5px; border-radius: 2px; font-size: 10px; }
+
+  /* ---------- timeline ---------- */
+  .tl { position: relative; padding-left: 32px; }
+  .tl::before { content: ""; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+  .tl-item { position: relative; padding: 14px 0 20px; }
+  .tl-item::before {
+    content: ""; position: absolute; left: -30px; top: 22px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--bg); border: 2px solid var(--cyan);
+  }
+  .tl-item.major::before { background: var(--copper); border-color: var(--copper); width: 14px; height: 14px; left: -31px; top: 21px; }
+  .tl-date { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--copper); letter-spacing: 0.1em; margin-bottom: 4px; }
+  .tl-title { font-family: 'Instrument Serif', serif; font-size: 22px; margin: 0 0 4px; font-weight: 400; }
+  .tl-body { color: var(--ink-2); font-size: 14px; line-height: 1.55; }
+  .tl-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--cyan); background: rgba(91,182,232,0.06); border: 1px solid var(--line); padding: 1px 6px; border-radius: 2px; margin-left: 6px; vertical-align: middle; }
+
+  /* ---------- LOC bars ---------- */
+  .loc-list { display: flex; flex-direction: column; gap: 10px; }
+  .loc-row { display: grid; grid-template-columns: 180px 1fr 60px; gap: 14px; align-items: center; font-size: 13px; }
+  .loc-row .name { font-family: 'JetBrains Mono', monospace; color: var(--paper); }
+  .loc-row .bar { height: 18px; background: var(--panel); border: 1px solid var(--line-soft); position: relative; overflow: hidden; }
+  .loc-row .bar i {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--copper));
+    transition: width 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .loc-row .v { font-family: 'JetBrains Mono', monospace; color: var(--muted); text-align: right; }
+  @media (max-width: 700px) { .loc-row { grid-template-columns: 120px 1fr 56px; } }
+
+  /* ---------- pros/cons ---------- */
+  .pc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 880px) { .pc-grid { grid-template-columns: 1fr; } }
+  .pc-col { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+  .pc-col h3 { font-family: 'Instrument Serif', serif; font-size: 28px; margin: 0 0 14px; font-weight: 400; }
+  .pc-col.good h3 em { color: var(--green); font-style: italic; }
+  .pc-col.bad h3 em { color: var(--copper); font-style: italic; }
+  .pc-col ul { margin: 0; padding-left: 0; list-style: none; }
+  .pc-col li { padding: 12px 0; border-bottom: 1px dashed var(--line-soft); color: var(--ink-2); font-size: 14px; line-height: 1.55; display: grid; grid-template-columns: 24px 1fr; gap: 10px; }
+  .pc-col li:last-child { border-bottom: none; }
+  .pc-col li::before { content: "✓"; color: var(--green); font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+  .pc-col.bad li::before { content: "⚠"; color: var(--copper); }
+  .pc-col li b { color: var(--paper); font-weight: 600; }
+
+  /* ---------- curiosities ---------- */
+  .triv-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  @media (max-width: 880px) { .triv-grid { grid-template-columns: 1fr; } }
+  .triv {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 20px 22px; position: relative;
+  }
+  .triv .num {
+    position: absolute; top: 14px; right: 18px;
+    font-family: 'Instrument Serif', serif; font-style: italic; color: var(--line);
+    font-size: 56px; line-height: 1;
+  }
+  .triv h4 { font-family: 'Instrument Serif', serif; font-size: 22px; margin: 0 0 8px; font-weight: 400; }
+  .triv p { color: var(--ink-2); font-size: 13px; line-height: 1.6; margin: 0; }
+  .triv code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-2); border: 1px solid var(--line); padding: 1px 5px; border-radius: 2px; color: var(--cyan); }
+
+  /* ---------- footer ---------- */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 40px 0 60px;
+    color: var(--muted);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  footer p { margin: 4px 0; }
+
+  /* node interactivity */
+  .node { cursor: pointer; }
+  .node rect, .node circle { transition: stroke 0.15s, fill 0.15s; }
+  .node:hover rect, .node:hover circle { stroke: var(--cyan); }
+  .node text { pointer-events: none; }
+
+  /* pulses */
+  @keyframes pulse-dash {
+    to { stroke-dashoffset: -100; }
+  }
+  .pulse-line { animation: pulse-dash 6s linear infinite; }
+
+  /* ---------- handset power ---------- */
+  .power-wrap { display: grid; grid-template-columns: 1.7fr 1fr; gap: 18px; }
+  @media (max-width: 980px) { .power-wrap { grid-template-columns: 1fr; } }
+  .power-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+  .power-controls { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .power-svg { width: 100%; height: auto; background: #06101e; border: 1px solid var(--line-soft); border-radius: 2px; }
+  .phase-rect { cursor: pointer; transition: opacity 0.15s; }
+  .phase-rect:hover, .phase-rect.active { opacity: 0.22 !important; }
+  .phase-detail { margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--line); }
+  .phase-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .phase-head h4 { font-family: 'Instrument Serif', serif; font-weight: 400; font-size: 22px; margin: 0; }
+  .phase-meta { display: flex; gap: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); }
+  .phase-meta code { color: var(--cyan); background: var(--bg-2); padding: 1px 4px; border-radius: 2px; border: 1px solid var(--line); }
+  .phase-detail p { color: var(--ink-2); font-size: 13px; line-height: 1.6; margin: 0; }
+  .power-side { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+  .power-side h4 { font-family: 'Instrument Serif', serif; font-size: 22px; margin: 0 0 14px; font-weight: 400; }
+  .fuse-block { display: grid; gap: 6px; margin-bottom: 16px; }
+  .fuse { display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 6px 10px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 2px; }
+  .fuse .k { color: var(--muted); }
+  .fuse .v { color: var(--cyan); }
+  .fuse-decode { margin: 0; padding-left: 0; list-style: none; }
+  .fuse-decode li { padding: 8px 0; border-bottom: 1px dashed var(--line-soft); color: var(--ink-2); font-size: 13px; line-height: 1.45; }
+  .fuse-decode li:last-child { border-bottom: none; }
+  .fuse-decode b { color: var(--paper); font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+  .power-side .hint { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 14px; }
+  .power-side .hint code { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--cyan); background: var(--bg-2); border: 1px solid var(--line); padding: 1px 5px; border-radius: 2px; }
+
+  .saoa-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; margin-top: 18px; }
+  .saoa-controls { display: flex; align-items: center; gap: 20px; margin: 16px 0 8px; flex-wrap: wrap; }
+  .saoa-controls label { display: flex; align-items: center; gap: 12px; color: var(--ink-2); font-family: 'JetBrains Mono', monospace; font-size: 12px; flex: 1; min-width: 220px; }
+  .saoa-controls input[type=range] { flex: 1; accent-color: var(--cyan); }
+  .saoa-readout { display: flex; gap: 18px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+  .saoa-readout b { color: var(--paper); font-weight: 500; }
+  .saoa-svg { width: 100%; height: auto; background: #06101e; border: 1px solid var(--line-soft); border-radius: 2px; }
+
+  /* ---------- level crossing ---------- */
+  .lc-wrap { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+  @media (max-width: 980px) { .lc-wrap { grid-template-columns: 1fr; } }
+  .lc-stage { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+  .lc-stage svg { display: block; width: 100%; height: auto; background: #06101e; border: 1px solid var(--line-soft); border-radius: 2px; }
+  .lc-controls { display: flex; gap: 10px; margin: 16px 0 12px; flex-wrap: wrap; align-items: center; }
+  .lc-time { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+  .lc-time b { color: var(--paper); }
+  .lc-tl { position: relative; }
+  .lc-tl-row { display: flex; gap: 4px; }
+  .lc-phase { padding: 10px 14px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 2px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); cursor: pointer; letter-spacing: 0.05em; text-align: center; transition: all 0.15s; }
+  .lc-phase:hover { color: var(--paper); border-color: var(--cyan); }
+  .lc-phase.active { background: rgba(243,169,41,0.1); border-color: var(--amber); color: var(--paper); }
+  .lc-tl-marker { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--paper); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+  .lc-side { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 24px; }
+  .lc-side h4 { font-family: 'Instrument Serif', serif; font-size: 22px; margin: 0 0 14px; font-weight: 400; }
+  .lc-detail { margin: 0; padding-left: 0; list-style: none; }
+  .lc-detail li { padding: 10px 0; border-bottom: 1px dashed var(--line-soft); color: var(--ink-2); font-size: 13px; line-height: 1.55; }
+  .lc-detail li:last-child { border-bottom: none; }
+  .lc-detail b { color: var(--paper); }
+  .lc-detail code { font-family: 'JetBrains Mono', monospace; font-size: 11px; background: var(--bg-2); color: var(--cyan); padding: 1px 5px; border-radius: 2px; border: 1px solid var(--line); }
+  .lc-probe { width: 100%; height: 80px; background: #06101e; border: 1px solid var(--line-soft); border-radius: 2px; }
+
+  @keyframes lc-pulse {
+    0%, 100% { opacity: 0.0; }
+    50% { opacity: 0.7; }
+  }
+  #lc-waves.on { animation: lc-pulse 0.5s ease-in-out infinite; }
+
+
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">Model Railway · <em>codebase deep-dive</em></div>
+    <div class="nav-links">
+      <a href="#system">System</a>
+      <a href="#components">Components</a>
+      <a href="#handset">Handset Power</a>
+      <a href="#crossing">Level Crossing</a>
+      <a href="#dcc">DCC Protocol</a>
+      <a href="#signals">Signalling</a>
+      <a href="#evolution">Evolution</a>
+      <a href="#assessment">Assessment</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">A six-year embedded project · 2013 – 2018</div>
+    <h1 class="title">Nine Arduinos, two&nbsp;radios, and a&nbsp;whole&nbsp;<em>railway</em>.</h1>
+    <p class="lede">
+      This is a hand-built control system for a model railway: a fleet of cooperating <strong>Arduino microcontrollers</strong>
+      that drive points, read track-circuit occupancy, calculate signal aspects, and beam <strong>DCC packets</strong>
+      to locomotives over a 2.4&nbsp;GHz radio. Everything is written in C, single-developer (the commit log shows
+      only “MD”), and shipped to bare-metal AVR chips with hand-tuned fuse bits and a VBScript build pipeline.
+      Below: how it’s wired, how it talks, how it evolved.
+    </p>
+    <div class="stats">
+      <div class="stat"><div class="num">9<small> firmwares</small></div><div class="lbl">cooperating boards</div></div>
+      <div class="stat"><div class="num">16,243<small> LOC</small></div><div class="lbl">of Arduino C</div></div>
+      <div class="stat"><div class="num">5+<small> years</small></div><div class="lbl">2013 → 2018</div></div>
+      <div class="stat"><div class="num">2<small> buses</small></div><div class="lbl">I²C + NRF24L01</div></div>
+      <div class="stat"><div class="num">14<small> I²C addrs</small></div><div class="lbl">on one wire pair</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ SYSTEM ARCHITECTURE ============ -->
+<section id="system">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 01 · the system</div>
+        <h2 class="sect-title">Two networks, <em>one railway</em>.</h2>
+      </div>
+    </div>
+    <p class="sect-sub">
+      The system splits cleanly into two communication fabrics. A wired <strong>I²C bus</strong>, mastered by the
+      <em>Mainboard</em>, runs the trackside infrastructure — points, track circuits, signals, the mimic-diagram
+      control panel. A wireless <strong>NRF24L01</strong> star, centred on the <em>DCC Booster</em>, carries train
+      commands from handheld controllers. The <em>Repeater</em> bridges them so the wireless side can listen in
+      on layout state. Hover any node.
+    </p>
+
+    <div class="arch-wrap">
+      <div class="arch-detail" id="arch-detail">
+        <h4>Hover a node</h4>
+        <div class="role">— —</div>
+        <p>Boards are grouped by network. Solid cyan lines are wired I²C; dashed amber lines are 2.4&nbsp;GHz NRF24L01 radio links.</p>
+      </div>
+      <svg class="arch-svg" viewBox="0 0 1100 560" xmlns="http://www.w3.org/2000/svg">
+        <!-- subtle subdivision -->
+        <text x="20" y="30" fill="#5b6987" font-family="JetBrains Mono" font-size="11" letter-spacing="2">I²C — TRACKSIDE</text>
+        <text x="600" y="30" fill="#5b6987" font-family="JetBrains Mono" font-size="11" letter-spacing="2">NRF24L01 — TRAIN CONTROL</text>
+        <line x1="540" y1="40" x2="540" y2="540" stroke="#1c2a47" stroke-dasharray="2 4"/>
+
+        <!-- I2C BUS (vertical spine) -->
+        <line x1="280" y1="90"  x2="280" y2="500" stroke="#5bb6e8" stroke-width="2" opacity="0.5"/>
+        <line x1="280" y1="90"  x2="280" y2="500" stroke="#5bb6e8" stroke-width="1.5" stroke-dasharray="3 3" class="pulse-line"/>
+
+        <!-- NRF24 hub center -->
+        <circle cx="760" cy="300" r="160" fill="none" stroke="#f3a929" stroke-width="0.8" opacity="0.18"/>
+        <circle cx="760" cy="300" r="100" fill="none" stroke="#f3a929" stroke-width="0.8" opacity="0.25"/>
+
+        <!-- Mainboard (master) -->
+        <g class="node" data-name="Mainboard" data-role="I²C master · 0x10" data-text="The brain. Arduino Nano (ATmega328) sitting on the layout. Polls track circuits, computes signal aspects, drives points sequentially through a route, and runs the keypad/LCD. 4,721 lines. Started Feb 2013.">
+          <rect x="170" y="80" width="220" height="60" fill="#182846" stroke="#5bb6e8" stroke-width="1.5" rx="3"/>
+          <text x="280" y="106" text-anchor="middle" fill="#f1ecde" font-family="Instrument Serif" font-size="20">Mainboard</text>
+          <text x="280" y="125" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">Nano · I²C master · 0x10</text>
+        </g>
+
+        <!-- I2C peripherals down the spine -->
+        <g class="node" data-name="ControlPanel" data-role="I²C slave · 0x11" data-text="Mimic diagram with route-setting buttons, 4×4 keypad, LCD, and a piezo. Originally a master in 2015; demoted to slave in Jan 2016 because two masters on one bus caused clashes.">
+          <line x1="280" y1="180" x2="160" y2="180" stroke="#5bb6e8" stroke-width="1.2"/>
+          <rect x="40" y="160" width="120" height="40" fill="#131f37" stroke="#5bb6e8" stroke-width="1" rx="3"/>
+          <text x="100" y="178" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">ControlPanel</text>
+          <text x="100" y="193" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">slave · 0x11</text>
+        </g>
+
+        <g class="node" data-name="LCD" data-role="I²C device · 0x27" data-text="2×16 character HD44780 LCD on a PCF8574 backpack. Mainboard writes status and the first error it hit; everything past the first error is suppressed.">
+          <line x1="280" y1="230" x2="430" y2="230" stroke="#5bb6e8" stroke-width="1.2"/>
+          <rect x="430" y="210" width="100" height="40" fill="#131f37" stroke="#5bb6e8" stroke-width="1" rx="3"/>
+          <text x="480" y="228" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">LCD 2×16</text>
+          <text x="480" y="243" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">0x27</text>
+        </g>
+
+        <g class="node" data-name="Point Controllers" data-role="PCA9555 · 0x20–0x23" data-text="Four 16-channel I/O expanders driving 8 points each via a relay+FET pair. Mainboard energises the relay, waits 50 ms for settle, then opens the FET for ~75 ms to throw the point — and 50 ms more to recharge the capacitor.">
+          <line x1="280" y1="280" x2="160" y2="280" stroke="#5bb6e8" stroke-width="1.2"/>
+          <rect x="40" y="260" width="120" height="40" fill="#131f37" stroke="#5bb6e8" stroke-width="1" rx="3"/>
+          <text x="100" y="278" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">Point Ctrl ×4</text>
+          <text x="100" y="293" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">PCA9555 · 0x20-3</text>
+        </g>
+
+        <g class="node" data-name="Track Circuits" data-role="PCA9554A · 0x38–0x3C" data-text="Five 8-channel input expanders read which sections of track have a train sitting on them. Read on every loop iteration and de-bounced before being fed into signalling.">
+          <line x1="280" y1="330" x2="430" y2="330" stroke="#5bb6e8" stroke-width="1.2"/>
+          <rect x="430" y="310" width="100" height="40" fill="#131f37" stroke="#5bb6e8" stroke-width="1" rx="3"/>
+          <text x="480" y="328" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">Track Circ ×5</text>
+          <text x="480" y="343" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">PCA9554A · 0x38-C</text>
+        </g>
+
+        <g class="node" data-name="IOBoard #1 / #2" data-role="I²C slaves · 0x0E / 0x0F" data-text="64-input/64-output signal-driver boards inherited from the 2003 PIC-based Strathmore railway, refitted with Arduinos. They drive the actual LEDs / lamps on every signal head.">
+          <line x1="280" y1="380" x2="160" y2="380" stroke="#5bb6e8" stroke-width="1.2"/>
+          <rect x="40" y="360" width="120" height="40" fill="#131f37" stroke="#5bb6e8" stroke-width="1" rx="3"/>
+          <text x="100" y="378" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">IOBoard ×2</text>
+          <text x="100" y="393" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">slaves · 0x0E, 0x0F</text>
+        </g>
+
+        <g class="node" data-name="Repeater" data-role="I²C slave · 0x12 + NRF24 TX" data-text="The bridge. Receives broadcast state over I²C from Mainboard and re-broadcasts it via NRF24 so wireless devices can hear what the layout is doing. Added Jun 2016.">
+          <line x1="280" y1="430" x2="430" y2="430" stroke="#5bb6e8" stroke-width="1.2"/>
+          <line x1="530" y1="430" x2="600" y2="320" stroke="#f3a929" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <rect x="430" y="410" width="100" height="40" fill="#131f37" stroke="#5bb6e8" stroke-width="1" rx="3"/>
+          <text x="480" y="428" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">Repeater</text>
+          <text x="480" y="443" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">I²C + NRF24</text>
+        </g>
+
+        <g class="node" data-name="Level Crossing" data-role="standalone Arduino" data-text="Standalone, no bus. Uses the Mozzi audio-synthesis library to generate UK-style yodalarm tones (alternating 800 Hz / 660 Hz) while driving alternating-flash red LEDs through amber → flashing-red. Built Nov 2015.">
+          <line x1="280" y1="480" x2="160" y2="480" stroke="#7d8aac" stroke-width="1.2" stroke-dasharray="2 2"/>
+          <rect x="40" y="460" width="120" height="40" fill="#131f37" stroke="#7d8aac" stroke-width="1" rx="3"/>
+          <text x="100" y="478" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">Level Crossing</text>
+          <text x="100" y="493" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">standalone</text>
+        </g>
+
+        <!-- DCC BOOSTER (NRF24 hub) -->
+        <g class="node" data-name="DCC Booster" data-role="NRF24 hub · 5 pipes" data-text="The DCC command station + booster combo. Generates the DCC bitstream on Timer2 ISR fired every 58 µs, drives an H-bridge into the track, and listens on 5 NRF24 receive pipes — one per handset.">
+          <rect x="660" y="270" width="200" height="60" fill="#182846" stroke="#f3a929" stroke-width="1.5" rx="3"/>
+          <text x="760" y="296" text-anchor="middle" fill="#f1ecde" font-family="Instrument Serif" font-size="20">DCC Booster</text>
+          <text x="760" y="315" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">Cmd station + H-bridge</text>
+        </g>
+
+        <!-- handsets in a fan around DCC -->
+        <g class="node" data-name="DCC Handset" data-role="battery NRF24 TX × up to 5" data-text="Battery-powered Pro Mini with an OLED, 4×4 keypad and speed pot. Sleeps aggressively (down to 2 MHz on brownout), wakes on input, supports F0–F20 plus emergency stop. Sends an 18-byte LOCOINFO packet up to 5× a second.">
+          <line x1="760" y1="270" x2="760" y2="170" stroke="#f3a929" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <rect x="700" y="120" width="120" height="50" fill="#131f37" stroke="#f3a929" stroke-width="1" rx="3"/>
+          <text x="760" y="140" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">DCC Handset</text>
+          <text x="760" y="156" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">×5 max · battery</text>
+        </g>
+
+        <g class="node" data-name="G-Scale Motor" data-role="NRF24 RX · L298N H-bridge" data-text="Receiver inside a G-scale locomotive. Same handset protocol as DCC, but instead of decoding DCC packets from the track it gets commands directly over NRF24 and drives an L298N H-bridge with BEMF feedback.">
+          <line x1="860" y1="300" x2="950" y2="270" stroke="#f3a929" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <rect x="940" y="240" width="130" height="50" fill="#131f37" stroke="#f3a929" stroke-width="1" rx="3"/>
+          <text x="1005" y="260" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">G-Scale Motor</text>
+          <text x="1005" y="276" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">L298N · BEMF</text>
+        </g>
+
+        <g class="node" data-name="TouchScreen" data-role="Arduino Due · NRF24 RX" data-text="Arduino DUE with a 7&quot; SainSmart TFT + XPT2046 touch controller. Listens to the repeater broadcast and was intended as the foundation for fully-automatic control. The most recent module; the most experimental.">
+          <line x1="860" y1="320" x2="950" y2="360" stroke="#f3a929" stroke-width="1.2" stroke-dasharray="3 3"/>
+          <rect x="940" y="350" width="130" height="50" fill="#131f37" stroke="#f3a929" stroke-width="1" rx="3"/>
+          <text x="1005" y="370" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">TouchScreen</text>
+          <text x="1005" y="386" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">Arduino Due · 7″</text>
+        </g>
+
+        <!-- track to DCC -->
+        <g>
+          <line x1="760" y1="330" x2="760" y2="430" stroke="#e5484d" stroke-width="1.2" opacity="0.5"/>
+          <text x="765" y="395" fill="#e5484d" font-family="JetBrains Mono" font-size="10">DCC bitstream</text>
+          <rect x="700" y="430" width="120" height="40" fill="#0e1a2e" stroke="#e5484d" stroke-width="1" rx="3"/>
+          <text x="760" y="454" text-anchor="middle" fill="#f1ecde" font-family="IBM Plex Sans" font-size="12" font-weight="600">The track ⚡</text>
+        </g>
+      </svg>
+      <div class="arch-legend">
+        <span><i class="leg-i2c"></i> I²C wired bus (100 kHz)</span>
+        <span><i class="leg-rf"></i> NRF24L01 radio (2.4 GHz, channel 120)</span>
+        <span><i class="leg-power"></i> DCC bitstream to rails</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMPONENT MATRIX ============ -->
+<section id="components">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 02 · the firmwares</div>
+        <h2 class="sect-title">Nine boards, <em>each its own brain</em>.</h2>
+      </div>
+    </div>
+    <p class="sect-sub">
+      Each board has its own <code>.ino</code> file, its own boards.txt target, and its own VBScript build invocation.
+      Click any card to expand its responsibilities, libraries, and notable details.
+    </p>
+
+    <div class="comp-grid" id="comp-grid"></div>
+  </div>
+</section>
+
+<!-- ============ HANDSET POWER ============ -->
+<section id="handset">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 02b · the handset that never turns off</div>
+        <h2 class="sect-title">A 2&nbsp;MHz cold&nbsp;boot, then <em>nothing&nbsp;but&nbsp;leakage</em>.</h2>
+      </div>
+    </div>
+    <p class="sect-sub">
+      The handset is a study in milking battery life out of an AVR. It boots <strong>slowly on purpose</strong> so it
+      can survive the voltage sag of a cold start, climbs to full speed only once a boost converter has the rail
+      at 3.3&nbsp;V, and never actually has an “off” switch. Idle handsets enter <code>SLEEP_MODE_PWR_DOWN</code> with the
+      brown-out detector and every peripheral disabled — quiescent draw drops below the natural self-discharge of
+      the NiMH cells, so leaving it on a shelf for a week costs less than the battery losing charge by sitting there.
+      Hover any phase of the timeline.
+    </p>
+
+    <div class="power-wrap">
+      <div class="power-panel">
+        <div class="power-controls">
+          <button class="btn active" data-phase="boot">1 · Cold boot @ 2&nbsp;MHz</button>
+          <button class="btn" data-phase="climb">2 · Climb to 16&nbsp;MHz</button>
+          <button class="btn" data-phase="active">3 · Active TX</button>
+          <button class="btn" data-phase="dim">4 · 5 s idle</button>
+          <button class="btn" data-phase="sleep">5 · 5 min idle → deep sleep</button>
+          <button class="btn" data-phase="wake">6 · Wake on keypress</button>
+        </div>
+
+        <svg class="power-svg" viewBox="0 0 1100 320" xmlns="http://www.w3.org/2000/svg">
+          <!-- grid -->
+          <g stroke="#162644" stroke-width="0.5">
+            <line x1="60" y1="40"  x2="1080" y2="40"/>
+            <line x1="60" y1="100" x2="1080" y2="100"/>
+            <line x1="60" y1="160" x2="1080" y2="160"/>
+            <line x1="60" y1="220" x2="1080" y2="220"/>
+            <line x1="60" y1="280" x2="1080" y2="280"/>
+          </g>
+          <!-- axis labels -->
+          <text x="55" y="44"  text-anchor="end" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">50 mA</text>
+          <text x="55" y="104" text-anchor="end" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">20 mA</text>
+          <text x="55" y="164" text-anchor="end" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">10 mA</text>
+          <text x="55" y="224" text-anchor="end" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">5 mA</text>
+          <text x="55" y="284" text-anchor="end" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">~1 µA</text>
+          <text x="60" y="310" fill="#5b6987" font-family="JetBrains Mono" font-size="10">supply current (log)  →  time →</text>
+
+          <!-- phase regions (clickable) -->
+          <g id="phase-regions">
+            <rect class="phase-rect" data-p="boot"   x="60"  y="30" width="110" height="260" fill="#5bb6e8" opacity="0.06"/>
+            <rect class="phase-rect" data-p="climb"  x="170" y="30" width="140" height="260" fill="#4ec07b" opacity="0.06"/>
+            <rect class="phase-rect" data-p="active" x="310" y="30" width="260" height="260" fill="#f3a929" opacity="0.06"/>
+            <rect class="phase-rect" data-p="dim"    x="570" y="30" width="160" height="260" fill="#d67c3b" opacity="0.06"/>
+            <rect class="phase-rect" data-p="sleep"  x="730" y="30" width="260" height="260" fill="#7d8aac" opacity="0.06"/>
+            <rect class="phase-rect" data-p="wake"   x="990" y="30" width="90"  height="260" fill="#e5484d" opacity="0.06"/>
+          </g>
+
+          <!-- phase labels -->
+          <g font-family="JetBrains Mono" font-size="9" fill="#7d8aac" text-anchor="middle">
+            <text x="115" y="22">boot</text>
+            <text x="240" y="22">climb</text>
+            <text x="440" y="22">active</text>
+            <text x="650" y="22">dim</text>
+            <text x="860" y="22">deep sleep</text>
+            <text x="1035" y="22">wake</text>
+          </g>
+
+          <!-- the current trace -->
+          <path id="power-trace"
+            d="M60,180  L170,180  L170,90  L310,90  L310,75 L350,75 L350,95 L390,95 L390,75 L430,75 L430,95 L470,95 L470,75 L510,75 L510,95 L550,95 L550,75 L570,75 L570,150 L730,150 L730,285 L990,285 L990,80 L1080,80"
+            fill="none" stroke="#5bb6e8" stroke-width="2"/>
+
+          <!-- annotations: V cc, clock -->
+          <g font-family="JetBrains Mono" font-size="10" fill="#c8d0e2">
+            <text x="115" y="305">2.6 V • 2 MHz</text>
+            <text x="240" y="305">3.3 V • → 16 MHz</text>
+            <text x="440" y="305">3.3 V • 16 MHz • RF on</text>
+            <text x="650" y="305">3.3 V • OLED dim</text>
+            <text x="860" y="305">3.3 V • CPU stopped</text>
+            <text x="1035" y="305">PCINT</text>
+          </g>
+        </svg>
+
+        <div class="phase-detail" id="phase-detail">
+          <div class="phase-head">
+            <h4 id="phase-title">Cold boot @ 2 MHz</h4>
+            <div class="phase-meta"><span>fuse: <code>CKDIV8</code></span><span>BOD: 1.8 V</span><span>F_CPU: 2 MHz</span></div>
+          </div>
+          <p id="phase-body">
+            Fuses are set so the handset starts at 2 MHz — the boost converter isn’t on yet, so the chip is
+            running directly off the raw battery (~2.6 V NiMH). That’s below the safe operating area for any
+            speed above ~4 MHz. The brown-out detector is armed at 1.8 V; if the cells are too flat the chip
+            never makes it out of reset.
+          </p>
+        </div>
+      </div>
+
+      <div class="power-side">
+        <h4>The fuse triplet</h4>
+        <div class="fuse-block">
+          <div class="fuse"><span class="k">low_fuses</span><span class="v">0x6F</span></div>
+          <div class="fuse"><span class="k">high_fuses</span><span class="v">0xDF</span></div>
+          <div class="fuse"><span class="k">extended</span><span class="v">0x06</span></div>
+        </div>
+        <ul class="fuse-decode">
+          <li><b>CKDIV8</b> divides the 16 MHz crystal by 8 → chip boots at <strong>2 MHz</strong></li>
+          <li><b>SUT0</b> ext-crystal with 4.1 ms start-up (safe because BOD covers us)</li>
+          <li><b>SPIEN</b> SPI programming enabled</li>
+          <li><b>BODLEVEL0</b> brown-out detector trips at <strong>1.8 V</strong></li>
+          <li><b>boot-reset vector</b> disabled — we don’t need bootloader on every reset</li>
+        </ul>
+        <p class="hint">
+          The very first line of <code>setup()</code> reverses CKDIV8 in software: <code>CLKPR&nbsp;=&nbsp;0x80;
+          CLKPR&nbsp;=&nbsp;0x00;</code> — unlock, then write divider = 1. By the time the OLED initialises, the
+          boost converter is running and the CPU is at 16 MHz.
+        </p>
+      </div>
+    </div>
+
+    <div class="saoa-wrap">
+      <div class="saoa-head">
+        <h3 style="font-family:'Instrument Serif',serif; font-weight:400; font-size:26px; margin:0;">ATmega328P safe operating area</h3>
+        <p class="sect-sub" style="margin:6px 0 0;">Drag the supply-voltage slider — the highlighted band shows the maximum clock the chip can be run at and stay inside spec. The dashed marks show the handset’s two operating points.</p>
+      </div>
+      <div class="saoa-controls">
+        <label>V<sub>cc</sub> <input id="vcc-slider" type="range" min="180" max="500" value="260" step="1"/></label>
+        <div class="saoa-readout">
+          <span>V<sub>cc</sub> = <b id="vcc-out">2.60</b>&nbsp;V</span>
+          <span>max clock = <b id="fmax-out">~5</b>&nbsp;MHz</span>
+        </div>
+      </div>
+      <svg class="saoa-svg" viewBox="0 0 1100 220" xmlns="http://www.w3.org/2000/svg">
+        <!-- grid -->
+        <g stroke="#162644" stroke-width="0.5">
+          <line x1="60" y1="30" x2="60" y2="180"/>
+          <line x1="1060" y1="30" x2="1060" y2="180"/>
+          <line x1="60" y1="180" x2="1060" y2="180"/>
+        </g>
+        <!-- safe area polygon (V from 1.8 → 4.5, freq 4 → 20MHz, roughly linear) -->
+        <polygon points="60,180 60,170 1060,30 1060,180" fill="#4ec07b" opacity="0.08" stroke="#4ec07b" stroke-width="1" stroke-dasharray="4 4"/>
+        <!-- safe area outline trace -->
+        <path d="M60,170 L1060,30" fill="none" stroke="#4ec07b" stroke-width="1.5" opacity="0.7"/>
+        <!-- axis ticks -->
+        <g font-family="JetBrains Mono" font-size="10" fill="#7d8aac" text-anchor="middle">
+          <text x="60"  y="198">1.8 V</text>
+          <text x="310" y="198">2.5 V</text>
+          <text x="560" y="198">3.0 V</text>
+          <text x="810" y="198">3.8 V</text>
+          <text x="1060" y="198">4.5 V</text>
+        </g>
+        <g font-family="JetBrains Mono" font-size="10" fill="#7d8aac" text-anchor="end">
+          <text x="55" y="34">20 MHz</text>
+          <text x="55" y="81">14 MHz</text>
+          <text x="55" y="128">8 MHz</text>
+          <text x="55" y="175">4 MHz</text>
+        </g>
+        <!-- handset operating-point markers -->
+        <g stroke="#5bb6e8" stroke-dasharray="3 3">
+          <line x1="346" y1="30" x2="346" y2="180"/>
+        </g>
+        <text x="346" y="24" fill="#5bb6e8" font-family="JetBrains Mono" font-size="10" text-anchor="middle">2.6 V boot • 2 MHz</text>
+
+        <g stroke="#f3a929" stroke-dasharray="3 3">
+          <line x1="764" y1="30" x2="764" y2="180"/>
+        </g>
+        <text x="764" y="24" fill="#f3a929" font-family="JetBrains Mono" font-size="10" text-anchor="middle">3.3 V boost • 16 MHz</text>
+
+        <!-- live cursor -->
+        <g id="saoa-cursor">
+          <line id="saoa-vline" x1="346" y1="30" x2="346" y2="180" stroke="#f1ecde" stroke-width="1.5"/>
+          <circle id="saoa-dot" cx="346" cy="144" r="5" fill="#f1ecde" stroke="#0a1322" stroke-width="2"/>
+        </g>
+      </svg>
+    </div>
+
+    <p class="sect-sub" style="margin-top:28px;">
+      <strong>The punchline.</strong> A NiMH cell self-discharges at roughly 1–2 % per week (low-discharge variants).
+      In <code>SLEEP_MODE_PWR_DOWN</code> with BOD switched off in software (<code>MCUCR&nbsp;=&nbsp;bit(BODS)&nbsp;|&nbsp;bit(BODSE);
+      MCUCR&nbsp;=&nbsp;bit(BODS);</code> — a strict four-clock-cycle window the code respects in-line) the ATmega328P draws
+      well under a microamp. Multiplied out, the handset bleeds the battery slower than the battery bleeds itself.
+      So the handset has no power switch. It just sleeps.
+    </p>
+  </div>
+</section>
+
+<!-- ============ LEVEL CROSSING ============ -->
+<section id="crossing">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 02c · the level crossing</div>
+        <h2 class="sect-title">Four states, two&nbsp;LEDs, <em>one yodalarm</em>.</h2>
+      </div>
+    </div>
+    <p class="sect-sub">
+      The level crossing is the smallest module and the most self-contained. A single Arduino Micro running the
+      <strong>Mozzi</strong> audio-DSP library to synthesise the UK “yodalarm” alternating tones, four GPIO pins driving
+      amber+red LEDs on PORTD, and a state machine with four states. Click <strong>START</strong> to run the whole
+      sequence; click any state in the timeline to jump there.
+    </p>
+
+    <div class="lc-wrap">
+      <div class="lc-stage">
+        <!-- the crossing illustration -->
+        <svg id="lc-svg" viewBox="0 0 640 280" xmlns="http://www.w3.org/2000/svg">
+          <!-- road -->
+          <rect x="0" y="180" width="640" height="60" fill="#1a2438"/>
+          <g stroke="#5b6987" stroke-width="2" stroke-dasharray="14 12">
+            <line x1="0" y1="210" x2="640" y2="210"/>
+          </g>
+          <!-- track -->
+          <g stroke="#5b6987" stroke-width="2">
+            <line x1="260" y1="0" x2="260" y2="280"/>
+            <line x1="380" y1="0" x2="380" y2="280"/>
+          </g>
+          <g stroke="#2a3654" stroke-width="4">
+            <line x1="245" y1="30"  x2="395" y2="30"/>
+            <line x1="245" y1="70"  x2="395" y2="70"/>
+            <line x1="245" y1="110" x2="395" y2="110"/>
+            <line x1="245" y1="150" x2="395" y2="150"/>
+            <line x1="245" y1="245" x2="395" y2="245"/>
+          </g>
+
+          <!-- left wig-wag mast -->
+          <g>
+            <line x1="170" y1="180" x2="170" y2="60" stroke="#5b6987" stroke-width="3"/>
+            <line x1="170" y1="82" x2="130" y2="82" stroke="#5b6987" stroke-width="2"/>
+            <circle id="lc-amber-L" cx="170" cy="60" r="11" fill="#2a3654" stroke="#3a4a72" stroke-width="1"/>
+            <circle id="lc-r1-L"    cx="148" cy="82" r="9" fill="#2a3654" stroke="#3a4a72" stroke-width="1"/>
+            <circle id="lc-r2-L"    cx="192" cy="82" r="9" fill="#2a3654" stroke="#3a4a72" stroke-width="1"/>
+            <line x1="192" y1="82" x2="210" y2="82" stroke="#5b6987" stroke-width="2"/>
+          </g>
+
+          <!-- right wig-wag mast -->
+          <g>
+            <line x1="470" y1="180" x2="470" y2="60" stroke="#5b6987" stroke-width="3"/>
+            <line x1="470" y1="82" x2="510" y2="82" stroke="#5b6987" stroke-width="2"/>
+            <circle id="lc-amber-R" cx="470" cy="60" r="11" fill="#2a3654" stroke="#3a4a72" stroke-width="1"/>
+            <circle id="lc-r1-R"    cx="448" cy="82" r="9" fill="#2a3654" stroke="#3a4a72" stroke-width="1"/>
+            <circle id="lc-r2-R"    cx="492" cy="82" r="9" fill="#2a3654" stroke="#3a4a72" stroke-width="1"/>
+            <line x1="448" y1="82" x2="430" y2="82" stroke="#5b6987" stroke-width="2"/>
+          </g>
+
+          <!-- speaker icon -->
+          <g id="lc-spkr" transform="translate(310, 250)">
+            <rect x="-14" y="-10" width="10" height="20" fill="#7d8aac"/>
+            <polygon points="-4,-10 14,-22 14,22 -4,10" fill="#7d8aac"/>
+          </g>
+          <g id="lc-waves" opacity="0">
+            <path d="M 332 250 Q 348 240, 348 230 Q 348 220, 332 215" fill="none" stroke="#f3a929" stroke-width="1.5"/>
+            <path d="M 340 250 Q 362 240, 362 225 Q 362 210, 340 200" fill="none" stroke="#f3a929" stroke-width="1.5" opacity="0.6"/>
+            <path d="M 348 250 Q 376 240, 376 220 Q 376 200, 348 188" fill="none" stroke="#f3a929" stroke-width="1.5" opacity="0.3"/>
+          </g>
+
+          <!-- state badge -->
+          <g>
+            <rect x="20" y="16" width="140" height="28" fill="#0e1a2e" stroke="#5bb6e8" stroke-width="1" rx="2"/>
+            <text id="lc-statelabel" x="90" y="34" text-anchor="middle" fill="#5bb6e8" font-family="JetBrains Mono" font-size="11" letter-spacing="2">IDLE</text>
+          </g>
+        </svg>
+
+        <div class="lc-controls">
+          <button class="btn" id="lc-start">▶ START sequence</button>
+          <button class="btn" id="lc-stop">■ Stop</button>
+          <button class="btn" id="lc-mute">🔇 Mute</button>
+          <span class="lc-time">t = <b id="lc-t">0.0</b> s</span>
+        </div>
+
+        <!-- timeline strip -->
+        <div class="lc-tl">
+          <div class="lc-tl-row">
+            <div class="lc-phase" data-lc="AMBER"      style="flex: 2;" data-color="#f3a929">AMBER — 2.0 s</div>
+            <div class="lc-phase" data-lc="TRANSITION" style="flex: 1.5;" data-color="#d67c3b">TRANSITION — 1.5 s</div>
+            <div class="lc-phase" data-lc="REDFLASH"   style="flex: 4;" data-color="#e5484d">RED FLASH — sustained</div>
+          </div>
+          <div class="lc-tl-marker" id="lc-marker"></div>
+        </div>
+      </div>
+
+      <div class="lc-side">
+        <h4>Implementation</h4>
+        <ul class="lc-detail">
+          <li><b>Master state machine</b> — four states: <code>IDLE</code> → <code>AMBER</code> → <code>TRANSITION</code> → <code>REDFLASH</code>. All timing uses <code>mozziMicros()</code> not <code>millis()</code> so the audio engine stays sample-accurate.</li>
+          <li><b>Charlieplexed reds</b> — the two red LEDs share lines and can’t physically be on simultaneously. To simulate “both on” the code flips between them every tick of <code>updateControl()</code> (128 Hz) — fast enough that your eye merges it. That’s the <code>gR1R2</code> variable.</li>
+          <li><b>Direct port writes</b> — pin updates use <code>PORTD = 0xC0 + (PORTD & 0x0F)</code> instead of <code>digitalWrite</code>. <code>digitalWrite</code> takes ~5 µs; the audio sample budget is ~61 µs.</li>
+          <li><b>Two-oscillator yodalarm</b> — each output sample is <code>aSin.next() + (bSin.next()>>4)</code>: dominant tone plus a 3×-harmonic mixed in 16× quieter (~–10 dB). The pair alternates between 800 Hz and 1 kHz every 250 ms.</li>
+          <li><b>16,384 Hz audio rate</b> — <code>updateAudio()</code> must return within 61 µs on every call. Comments in the source remind future-MD: “do any calculation we can in <code>updateControl()</code>, not here.”</li>
+          <li><b>Pinned to Arduino 1.0.5</b> — Mozzi’s pin-mapping macros didn’t survive the 1.0.6 toolchain bump. The source file opens with a triple-banged warning to that effect.</li>
+        </ul>
+
+        <h4 style="margin-top: 22px;">Audio probe</h4>
+        <svg class="lc-probe" viewBox="0 0 320 80" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#162644" stroke-width="0.5">
+            <line x1="0" y1="40" x2="320" y2="40"/>
+          </g>
+          <path id="lc-scope" d="" fill="none" stroke="#f3a929" stroke-width="1.5"/>
+          <text x="6" y="12" fill="#7d8aac" font-family="JetBrains Mono" font-size="9">f = <tspan id="lc-freq">800</tspan> Hz</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DCC ============ -->
+<section id="dcc">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 03 · the DCC protocol</div>
+        <h2 class="sect-title">A 58 μs heartbeat<em>, encoded in&nbsp;the&nbsp;rails</em>.</h2>
+      </div>
+    </div>
+    <p class="sect-sub">
+      Each locomotive carries a tiny decoder that listens for its address on the track. The Booster generates the
+      DCC waveform with a Timer2 compare-match interrupt: a <strong>‘1’ bit</strong> is one half-cycle of 58 μs;
+      a <strong>‘0’ bit</strong> is at least 100 μs. The whole signalling vocabulary — speed, lights, sound, emergency
+      stop — is bit-banged on top of that. Click a bit type to see the waveform.
+    </p>
+
+    <div class="dcc-panel">
+      <div class="dcc-controls">
+        <button class="btn active" data-wave="speed">Speed packet · loco 03</button>
+        <button class="btn" data-wave="idle">IDLE packet</button>
+        <button class="btn" data-wave="estop">Emergency stop</button>
+        <button class="btn" data-wave="bits">Bit anatomy · 1 vs 0</button>
+      </div>
+      <div class="scope">
+        <svg viewBox="0 0 1100 220" id="scope-svg" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="height:220px;">
+          <!-- grid -->
+          <g stroke="#162644" stroke-width="0.5">
+            <line x1="0" y1="55" x2="1100" y2="55"/>
+            <line x1="0" y1="110" x2="1100" y2="110"/>
+            <line x1="0" y1="165" x2="1100" y2="165"/>
+          </g>
+          <path id="scope-trace" fill="none" stroke="#5bb6e8" stroke-width="2"/>
+          <g id="scope-anno"></g>
+        </svg>
+      </div>
+      <div class="pkt-anno">
+        <div><b>PREAMBLE</b>≥14 ones lets every decoder sync to the bitstream.</div>
+        <div><b>ADDR BYTE</b>Identifies which locomotive should obey.</div>
+        <div><b>INSTRUCTION</b>Speed, direction, function-group, or feature expansion.</div>
+        <div><b>ERROR BYTE</b>XOR of address ⊕ instruction. Decoder must verify.</div>
+        <div><b>END BIT</b>A single ‘1’ closes the packet. 5 ms idle until next.</div>
+      </div>
+      <p class="sect-sub" style="margin-top: 20px;">
+        Why an IDLE between every packet? The NMRA standard requires ≥5 ms between consecutive packets to the
+        same decoder. For three years that didn’t matter — until <strong>April 2018</strong>, when Hornby’s TTS sound decoder
+        refused to work without it. V2.2 of the Booster added the IDLE separator. The April-2018 entries also added
+        DCC functions F5–F20, then immediately fixed F13–F20 a few weeks later in V2.4.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SIGNALS ============ -->
+<section id="signals">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 04 · signalling logic</div>
+        <h2 class="sect-title">Aspects propagate <em>upstream</em>.</h2>
+      </div>
+    </div>
+    <p class="sect-sub">
+      The Mainboard recomputes signal aspects on every loop iteration. The trick is that each signal’s aspect depends
+      on the <strong>next</strong> signal downstream — a green only stays green if the next signal isn’t red. So the
+      code walks the layout backwards, calling <code>sigPrevAspect()</code> on every signal in reverse order. Eight
+      signal types are supported: 2/3/4-aspect colour-light, semaphore home/distant, and feathers (route indicators).
+      Toggle the inputs below — the signals update exactly as the firmware computes them.
+    </p>
+
+    <div class="sim-wrap">
+      <div class="sim-stage">
+        <svg id="sim-svg" viewBox="0 0 640 240" xmlns="http://www.w3.org/2000/svg">
+          <!-- track -->
+          <g stroke="#5b6987" stroke-width="2" fill="none">
+            <line x1="20" y1="170" x2="620" y2="170"/>
+            <line x1="20" y1="184" x2="620" y2="184"/>
+          </g>
+          <!-- sleepers -->
+          <g stroke="#2a3654" stroke-width="3">
+            <line x1="40" y1="160" x2="40" y2="194"/>
+            <line x1="100" y1="160" x2="100" y2="194"/>
+            <line x1="160" y1="160" x2="160" y2="194"/>
+            <line x1="220" y1="160" x2="220" y2="194"/>
+            <line x1="280" y1="160" x2="280" y2="194"/>
+            <line x1="340" y1="160" x2="340" y2="194"/>
+            <line x1="400" y1="160" x2="400" y2="194"/>
+            <line x1="460" y1="160" x2="460" y2="194"/>
+            <line x1="520" y1="160" x2="520" y2="194"/>
+            <line x1="580" y1="160" x2="580" y2="194"/>
+          </g>
+          <!-- track sections (TCs) -->
+          <g id="sim-tcs">
+            <rect class="tc" data-tc="A" x="30" y="160" width="190" height="34" fill="rgba(78,192,123,0.12)" stroke="#4ec07b" stroke-width="1.2" rx="2"/>
+            <text x="125" y="220" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="11">TC A — clear</text>
+
+            <rect class="tc" data-tc="B" x="230" y="160" width="190" height="34" fill="rgba(78,192,123,0.12)" stroke="#4ec07b" stroke-width="1.2" rx="2"/>
+            <text x="325" y="220" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="11">TC B — clear</text>
+
+            <rect class="tc" data-tc="C" x="430" y="160" width="190" height="34" fill="rgba(78,192,123,0.12)" stroke="#4ec07b" stroke-width="1.2" rx="2"/>
+            <text x="525" y="220" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="11">TC C — clear</text>
+          </g>
+          <!-- signals: 4-aspect heads (cantilevered on left of each tc) -->
+          <!-- signal at start of A -->
+          <g class="sig" id="sig1">
+            <line x1="45" y1="170" x2="45" y2="80" stroke="#5b6987" stroke-width="1.5"/>
+            <rect x="35" y="40" width="20" height="42" rx="3" fill="#0e1a2e" stroke="#5b6987" stroke-width="1"/>
+            <circle class="lamp y1" cx="45" cy="48"  r="4" fill="#2a3654"/>
+            <circle class="lamp g"  cx="45" cy="58"  r="4" fill="#2a3654"/>
+            <circle class="lamp y2" cx="45" cy="68"  r="4" fill="#2a3654"/>
+            <circle class="lamp r"  cx="45" cy="78"  r="4" fill="#2a3654"/>
+            <text x="45" y="100" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">S1</text>
+          </g>
+          <!-- signal at start of B -->
+          <g class="sig" id="sig2">
+            <line x1="245" y1="170" x2="245" y2="80" stroke="#5b6987" stroke-width="1.5"/>
+            <rect x="235" y="40" width="20" height="42" rx="3" fill="#0e1a2e" stroke="#5b6987" stroke-width="1"/>
+            <circle class="lamp y1" cx="245" cy="48"  r="4" fill="#2a3654"/>
+            <circle class="lamp g"  cx="245" cy="58"  r="4" fill="#2a3654"/>
+            <circle class="lamp y2" cx="245" cy="68"  r="4" fill="#2a3654"/>
+            <circle class="lamp r"  cx="245" cy="78"  r="4" fill="#2a3654"/>
+            <text x="245" y="100" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">S2</text>
+          </g>
+          <!-- signal at start of C -->
+          <g class="sig" id="sig3">
+            <line x1="445" y1="170" x2="445" y2="80" stroke="#5b6987" stroke-width="1.5"/>
+            <rect x="435" y="40" width="20" height="42" rx="3" fill="#0e1a2e" stroke="#5b6987" stroke-width="1"/>
+            <circle class="lamp y1" cx="445" cy="48"  r="4" fill="#2a3654"/>
+            <circle class="lamp g"  cx="445" cy="58"  r="4" fill="#2a3654"/>
+            <circle class="lamp y2" cx="445" cy="68"  r="4" fill="#2a3654"/>
+            <circle class="lamp r"  cx="445" cy="78"  r="4" fill="#2a3654"/>
+            <text x="445" y="100" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">S3</text>
+          </g>
+          <!-- end stop signal (always red at end) -->
+          <g class="sig" id="sigEnd">
+            <line x1="610" y1="170" x2="610" y2="80" stroke="#5b6987" stroke-width="1.5"/>
+            <rect x="600" y="40" width="20" height="42" rx="3" fill="#0e1a2e" stroke="#5b6987" stroke-width="1"/>
+            <circle class="lamp r"  cx="610" cy="78"  r="4" fill="#e5484d"/>
+            <text x="610" y="100" text-anchor="middle" fill="#7d8aac" font-family="JetBrains Mono" font-size="10">end</text>
+          </g>
+        </svg>
+        <p class="sect-sub" style="margin-top: 18px;">
+          Click any green section to mark it <strong>occupied</strong> (red), then watch the signals upstream cascade
+          through the colour-light vocabulary: <span style="color:#4ec07b">green</span> →
+          <span style="color:#f3a929">double-yellow</span> → <span style="color:#f3a929">yellow</span> →
+          <span style="color:#e5484d">red</span>. This is exactly how <code>sigPrevAspect()</code> works in
+          <code>Mainboard.ino</code>.
+        </p>
+      </div>
+      <div class="sim-side">
+        <h4>Live state</h4>
+        <div class="row"><span>tc.A</span><span class="val" id="state-tcA">CLEAR</span></div>
+        <div class="row"><span>tc.B</span><span class="val" id="state-tcB">CLEAR</span></div>
+        <div class="row"><span>tc.C</span><span class="val" id="state-tcC">CLEAR</span></div>
+        <div class="row"><span>sig.1.aspect</span><span class="val aspect-g" id="state-sig1">GREEN</span></div>
+        <div class="row"><span>sig.2.aspect</span><span class="val aspect-g" id="state-sig2">GREEN</span></div>
+        <div class="row"><span>sig.3.aspect</span><span class="val aspect-red" id="state-sig3">RED</span></div>
+        <div class="row"><span>cycle</span><span class="val" id="state-cycle">0 ms</span></div>
+        <div class="hint">
+          The real Mainboard recomputes the entire layout every loop, then pushes byte-packed aspect bytes over
+          I²C to the IOBoards. Press <kbd>R</kbd> to clear all sections.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EVOLUTION ============ -->
+<section id="evolution">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 05 · evolution</div>
+        <h2 class="sect-title">Six years of <em>“MD did this”</em>.</h2>
+      </div>
+    </div>
+    <p class="sect-sub">
+      Every source file opens with a dated changelog. Reconstructed below from those comments — every entry is signed
+      by the same developer initials, “MD”. The shape is unmistakable: explosive activity in 2015, consolidation
+      across 2016, a long quiet patch, then a single targeted return in spring 2018 to chase Hornby decoder bugs.
+    </p>
+
+    <div class="tl">
+      <div class="tl-item major">
+        <div class="tl-date">17 Feb 2013</div>
+        <h3 class="tl-title">Mainboard begins<span class="tl-tag">v0</span></h3>
+        <div class="tl-body">First commit anywhere in the tree. Just point-throwing logic and the I²C scaffolding for the trackside fabric. The earliest comment header in the codebase.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">14 Aug 2013</div>
+        <h3 class="tl-title">Keypad + display land</h3>
+        <div class="tl-body">A 4×4 keypad and 16×2 LCD added to the Mainboard so it can be used without a host PC.</div>
+      </div>
+      <div class="tl-item major">
+        <div class="tl-date">Jan – Feb 2015</div>
+        <h3 class="tl-title">The big split<span class="tl-tag">refactor</span></h3>
+        <div class="tl-body">Mainboard cleaved into <em>Mainboard</em> + <em>Keyboard</em>. IOBoard firmware (signal driver) lifted from the old 2003 PIC-based Strathmore railway and rewritten for Arduino.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Mar 2015</div>
+        <h3 class="tl-title">DCC Booster v0.1<span class="tl-tag">new module</span></h3>
+        <div class="tl-body">DCC bitstream generation begins. Initial version is wired, not wireless.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">May 2015</div>
+        <h3 class="tl-title">ControlPanel arrives</h3>
+        <div class="tl-body">Mimic-diagram panel with route-setting buttons replaces direct point control. <em>FORCE</em> mode added: throw every point in a route even if it’s already in the right position.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Jun – Aug 2015</div>
+        <h3 class="tl-title">DCC Handset v1.0<span class="tl-tag">v1.0</span></h3>
+        <div class="tl-body">Battery-powered wireless throttle. Screen dimming, battery monitor, OLED display. Power-saving down to a 1.8 V brown-out floor.</div>
+      </div>
+      <div class="tl-item major">
+        <div class="tl-date">Aug – Sep 2015</div>
+        <h3 class="tl-title">Move to NRF24L01<span class="tl-tag">v1.2</span></h3>
+        <div class="tl-body">Both Booster and Handset switch to the cheap NRF24L01 2.4 GHz radio. Channel 120; multi-loco packet format; channel-pipe addressing for up to 5 simultaneous handsets.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Oct – Nov 2015</div>
+        <h3 class="tl-title">Hardening<span class="tl-tag">v1.4 → v2.0</span></h3>
+        <div class="tl-body">Pkt-loss fix. Zero-stretching for DC loco on address 0. Overload trip delay (so down-stream auto-reversers can clear first). Emergency-stop works across all controllers. Default speed-0 on power-on.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Nov 2015</div>
+        <h3 class="tl-title">Level Crossing<span class="tl-tag">new module</span></h3>
+        <div class="tl-body">Standalone Arduino with the Mozzi synthesis library producing the UK yodalarm tones and alternating red flashes.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Jan 2016</div>
+        <h3 class="tl-title">Bus cleanup<span class="tl-tag">v2.x</span></h3>
+        <div class="tl-body">ControlPanel demoted from master to <em>slave-only</em> — two I²C masters were clashing. Watchdog timer added to IOBoard. New <code>MDWire</code> library throughout.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">Jun 2016</div>
+        <h3 class="tl-title">Repeater + TouchScreen<span class="tl-tag">new modules</span></h3>
+        <div class="tl-body">A bridge from the I²C layout to the NRF24 air. TouchScreen module begins on Arduino Due with a 7″ SainSmart TFT — billed as the foundation of fully-automatic control.</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-date">May 2017</div>
+        <h3 class="tl-title">G-Scale Motor</h3>
+        <div class="tl-body">A receiver that lives inside a large-scale locomotive: NRF24 in, L298N H-bridge out, with back-EMF feedback for smooth low-speed running.</div>
+      </div>
+      <div class="tl-item major">
+        <div class="tl-date">Apr – May 2018</div>
+        <h3 class="tl-title">The Hornby return<span class="tl-tag">v2.2 → v2.4</span></h3>
+        <div class="tl-body">After ~22 months of quiet, three Booster releases inside four weeks: make IDLE packets satisfy Hornby TTS sound decoders, add F5–F20 function support, fix F13–F20 a fortnight later. The most recent code in the tree.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ASSESSMENT ============ -->
+<section id="assessment">
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 06 · assessment</div>
+        <h2 class="sect-title">What it gets right — and where <em>it shows its age</em>.</h2>
+      </div>
+    </div>
+
+    <div class="pc-grid">
+      <div class="pc-col good">
+        <h3>Genuinely <em>good</em></h3>
+        <ul>
+          <li><span><b>Header documentation</b> is exceptional. Every file opens with architecture, build instructions, datasheet references, even the I²C-spec quote about reserved address ranges.</span></li>
+          <li><span><b>Hardware-aware design.</b> Throwing points uses a relay (for direction) plus FET (for current) with explicit settle and recharge delays so the supply capacitor doesn’t brown out.</span></li>
+          <li><span><b>Defensive embedded patterns:</b> watchdog timers, brown-out detection, <code>setMasterRC()</code> sticky-error semantics, I²C return-code mapping, sleep modes that respect handset state.</span></li>
+          <li><span><b>Memory-conscious.</b> Strings live in flash via <code>PROGMEM</code>; lookup tables are byte-packed (bus, unit-index, position folded into a single byte) to fit in 2 KB of SRAM.</span></li>
+          <li><span><b>Protocol design</b> is real engineering — Booster ↔ Handset packets are versioned (V1 ➜ V2), use NRF24 ack-payloads, retries, and pipe-per-handset addressing.</span></li>
+          <li><span><b>Single developer, one consistent voice.</b> The <code>ACL_</code>, <code>MD_</code>, <code>xi/xo</code> prefix conventions are followed across every firmware. It’s easy to read.</span></li>
+        </ul>
+      </div>
+      <div class="pc-col bad">
+        <h3>Could be <em>improved</em></h3>
+        <ul>
+          <li><span><b>The build system is a VBScript</b> that automates Arduino 1.0.6 via <code>SendKeys</code>. It opens the IDE, sends Ctrl-W, Ctrl-O, the path, Enter, Ctrl-R. Reproducible only on one specific Windows PC at <code>c:\apps\arduino-1.0.6</code>.</span></li>
+          <li><span><b>Code lives twice.</b> Each module ships a <code>tmp/&lt;Name&gt;.c</code> source and a copy at <code>&lt;Name&gt;.ino</code> — the build script copies one over the other every time. A symlink or build target would do the same job without divergence risk.</span></li>
+          <li><span><b><code>goto MD_EXIT_POINT</code> everywhere.</b> Used as a poor-man’s try/finally. Functional, but precludes RAII and makes refactoring tricky. C++ on AVR could replace it with scoped guards.</span></li>
+          <li><span><b>No version control history in-tree.</b> Changelogs live as comment blocks at the top of each file. Useful, but no diff, no branches, no blame.</span></li>
+          <li><span><b>Pinned to Arduino 1.0.6 and old library forks</b> (custom <code>MDWire</code>, <code>MDLiquidCrystal_I2C</code>). Updating the toolchain is a project unto itself; LevelCrossing specifically requires <em>Arduino 1.0.5</em> because of Mozzi.</span></li>
+          <li><span><b>No tests.</b> Reasonable for a one-person hobby project — but with eight firmwares talking over two networks, a packet-format unit test would have caught the V1/V2 LOCOINFO break-glass moment in advance.</span></li>
+          <li><span><b>Static layout maps.</b> Point/TC/signal tables are hand-edited C arrays compiled into each binary. Bringing up a new layout means recompiling Mainboard. EEPROM-resident or external-config storage would be a natural next step.</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- LOC chart -->
+    <div style="margin-top: 44px;">
+      <h3 style="font-family:'Instrument Serif',serif; font-weight:400; font-size:28px; margin: 0 0 18px;">By the line</h3>
+      <div class="loc-list" id="loc-list"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CURIOSITIES ============ -->
+<section>
+  <div class="wrap">
+    <div class="sect-head">
+      <div>
+        <div class="sect-kicker">§ 07 · curiosities</div>
+        <h2 class="sect-title">Things you only find <em>by reading</em>.</h2>
+      </div>
+    </div>
+
+    <div class="triv-grid">
+      <div class="triv">
+        <div class="num">01</div>
+        <h4>It starts up at 2 MHz, on purpose</h4>
+        <p>The Handset’s fuses set <code>CKDIV8</code>. The chip boots at 2 MHz (safe at the 1.8 V brown-out floor), and the very first thing <code>setup()</code> does is reset the clock prescaler to 1 — back to 16 MHz, now that the supply is stable. <em>Cold-boot timidity, deliberate.</em></p>
+      </div>
+      <div class="triv">
+        <div class="num">02</div>
+        <h4>The “FORCE” mode</h4>
+        <p>By default routes only move points that aren’t already correct. Press FORCE on the panel and the Mainboard will re-throw every single point in the route anyway — useful when you’re not sure a Conrad motor actually moved (because there’s no position feedback at all).</p>
+      </div>
+      <div class="triv">
+        <div class="num">03</div>
+        <h4>Two I²C masters do not get along</h4>
+        <p>For most of 2015 the ControlPanel was a master too — the comments call this “clashes on the bus”. Jan 2016 demoted it to slave and life got quieter. The header note still lectures future readers about this.</p>
+      </div>
+      <div class="triv">
+        <div class="num">04</div>
+        <h4>Hornby TTS broke things three years later</h4>
+        <p>For three years the Booster sent DCC packets back-to-back. Then in April 2018 someone tried a Hornby TTS sound decoder and discovered it strictly requires the NMRA-mandated 5 ms gap. An IDLE packet between every command fixed it. <em>Standards-compliance has a half-life.</em></p>
+      </div>
+      <div class="triv">
+        <div class="num">05</div>
+        <h4>The “A” chip trick</h4>
+        <p>The PCA9554 only has 3 address bits → 8 devices. The PCA9554<strong>A</strong> variant uses a different fixed prefix — same chip, different address range. The Mainboard uses both flavours back-to-back: 0x20–0x27 for points, 0x38–0x3F for track circuits. Sixteen expanders on one bus.</p>
+      </div>
+      <div class="triv">
+        <div class="num">06</div>
+        <h4>Yodalarm by Mozzi</h4>
+        <p>LevelCrossing uses the Mozzi audio-DSP library to synthesise the alternating 800 Hz / 660 Hz tones of a British level-crossing warning — at the cost of being pinned to Arduino IDE <strong>1.0.5</strong> specifically. Every other module is on 1.0.6.</p>
+      </div>
+      <div class="triv">
+        <div class="num">07</div>
+        <h4>BC1A: the elephant in the room</h4>
+        <p>The booster H-bridge isn’t Arduino at all — it’s the MERG BC1A, a classic enthusiast-club design (PCB schematics ship in <code>00-Info/Merg BC1A/</code>). The Arduino just drives its input pins. Re-use over re-invention.</p>
+      </div>
+      <div class="triv">
+        <div class="num">08</div>
+        <h4>The handset’s case has a part number</h4>
+        <p>Every detail has a home. The handset enclosure spec is committed to the repo as a single-line file: <code>Case.txt → Hammond 1553DYLBKBAT</code>. (The “BAT” suffix means it’s the version with the battery compartment.)</p>
+      </div>
+    </div>
+
+    <p class="sect-sub" style="margin-top: 40px;">
+      <strong>One more thing:</strong> the <code>ToDo.txt</code> describes a “fully autonomous control” system — Inputs:
+      track occupancy and signal aspects. Outputs: train control + route setting. A wireless interface from this Overall
+      Control System back to the Booster. <em>That’s</em> what the TouchScreen on the Arduino DUE was the front-end for.
+      The most recent code in the tree is the four-week April-2018 sprint fixing Hornby decoders, so the autonomous OCS
+      didn’t quite happen — but the wires are all in place for someone to pick it up.
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>~16,243 LOC of Arduino C · ~17,500 LOC including the <code>tmp/*.c</code> mirrors.</p>
+    <p>Languages: C (firmware), VBScript (build), C++ (Wire, RF24, UTFT, Mozzi libraries).</p>
+    <p>Compiled with avr-gcc via Arduino IDE 1.0.6 (and 1.0.5 for the Level Crossing). Targets: ATmega328P, ATmega32U4, SAM3X8E.</p>
+  </div>
+</footer>
+
+<script>
+/* ============================================================
+   Component cards
+   ============================================================ */
+const components = [
+  { name: "Mainboard",     role: "Trackside brain · I²C master",
+    pin: "Nano · 0x10",
+    loc: 4721,
+    blurb: "The central controller. Implements route handling, signalling logic, track-circuit debounce, point throwing, banner repeaters, and the keypad/LCD UI.",
+    bullets: [
+      "Recomputes every signal’s aspect every loop iteration via reverse-direction propagation",
+      "Throws route points sequentially to avoid overloading the 5 V supply",
+      "Owns the I²C bus as the sole master after Jan 2016",
+      "Watchdog reset on every loop iteration",
+      "Strings stored in PROGMEM (flash) — 30 status messages",
+    ],
+    libs: ["Wire.h", "MDLiquidCrystal_I2C", "avr/pgmspace", "avr/wdt"]
+  },
+  { name: "DCCBooster",    role: "DCC command station + booster",
+    pin: "Nano · NRF24 hub",
+    loc: 3447,
+    blurb: "Generates the DCC bitstream from a Timer2 ISR, drives an H-bridge into the rails, and listens to up to 5 wireless handsets on 5 NRF24 pipes.",
+    bullets: [
+      "Bit-banged DCC at 58 μs / >100 μs via TIMER2_COMPA_vect",
+      "Each loco gets speed + 4 function-group packets (~60 ms), then IDLE",
+      "Zero-stretching supports a single DC loco on address 0",
+      "30 ms grace before tripping overload — lets autoreversers clear first",
+      "F0–F20 plus emergency stop",
+    ],
+    libs: ["SPI.h", "RF24", "Wire.h", "avr/wdt"]
+  },
+  { name: "DCCHandset",    role: "Wireless throttle",
+    pin: "Pro Mini · NRF24 TX",
+    loc: 3258,
+    blurb: "Battery-powered handset with OLED, keypad and speed pot. Aggressively power-saving, with custom fuses to survive a 1.8 V brown-out floor.",
+    bullets: [
+      "Boots at 2 MHz (CKDIV8 fuse) then switches to 16 MHz once stable",
+      "Custom <code>boards.txt</code> entry to set the right fuse triplet",
+      "Sleeps after 5 min idle; display dims after 5 s of no input",
+      "18-byte (V1) / larger (V2) LOCOINFO packets, sent every 100 ms when active",
+      "Hammond 1553DYLBKBAT enclosure",
+    ],
+    libs: ["SPI.h", "RF24", "U8glib", "Keypad.h", "avr/sleep"]
+  },
+  { name: "ControlPanel",  role: "Mimic-diagram UI · I²C slave",
+    pin: "Nano · 0x11",
+    loc: 1049,
+    blurb: "The route-setting console. Was once an I²C master with the Mainboard as its slave — converted to slave-only in Jan 2016 to stop bus clashes.",
+    bullets: [
+      "4×4 keypad + LCD + piezo for ack/error beeps",
+      "Soft-button display for context-sensitive options",
+      "FORCE mode toggle for re-throwing already-set routes",
+      "Mainboard polls it for the next command string",
+    ],
+    libs: ["Wire.h", "LiquidCrystal.h", "Keypad.h", "avr/wdt"]
+  },
+  { name: "IOBoard",       role: "64-in / 64-out signal driver",
+    pin: "Nano · 0x0E / 0x0F",
+    loc: 562,
+    blurb: "Lifted from the 2003 PIC-based Strathmore railway — same PCB, but the PIC was swapped for an Arduino because Nanos cost £2.",
+    bullets: [
+      "Two instances on the bus: one near the spirals, one under the lower station",
+      "Three I²C commands: VERSION, READ, WRITE",
+      "Watchdog timer added Jan 2016",
+      "Drives every signal lamp and feather on the layout",
+    ],
+    libs: ["Wire.h", "avr/wdt"]
+  },
+  { name: "Repeater",      role: "I²C → NRF24 bridge",
+    pin: "Nano · 0x12",
+    loc: 543,
+    blurb: "Listens for broadcast state from the Mainboard over I²C and re-emits it as NRF24 packets so wireless devices know the layout’s state.",
+    bullets: [
+      "Added Jun 2016 — bridges the two networks",
+      "Mainboard pushes point / signal / TC state every loop",
+      "TouchScreen and future automation modules subscribe over the air",
+    ],
+    libs: ["SPI.h", "Wire.h", "RF24", "avr/wdt"]
+  },
+  { name: "LevelCrossing", role: "Standalone sound + lights",
+    pin: "Micro · standalone",
+    loc: 514,
+    blurb: "Simulates a UK level crossing: amber → flashing-red transition with the yodalarm tones synthesised by Mozzi. The only module needing Arduino 1.0.5.",
+    bullets: [
+      "4-state machine: IDLE → AMBER → TRANSITION → REDFLASH",
+      "Mozzi generates 800 Hz + 660 Hz alternating tones",
+      "Alternating-flash red LEDs with proper UK timing",
+      "No bus connection — runs entirely on its own clock",
+    ],
+    libs: ["MozziGuts", "Oscil", "sin2048_int8"]
+  },
+  { name: "GScaleMotor",   role: "In-loco G-scale receiver",
+    pin: "Nano · in-loco",
+    loc: 1201,
+    blurb: "A receiver that sits inside a G-scale (large) locomotive, taking NRF24 commands directly and driving an L298N H-bridge with BEMF feedback.",
+    bullets: [
+      "Same handset packet protocol as the DCC chain",
+      "L298N H-bridge with PWM speed control",
+      "Back-EMF measurement for smooth low-speed running",
+      "Drives headlight / rear headlight / number boards / cab light separately",
+      "EEPROM-persisted settings",
+    ],
+    libs: ["SPI.h", "RF24", "MDWire", "MDLiquidCrystal_I2C", "EEPROM"]
+  },
+  { name: "TouchScreen",   role: "Future autonomous controller",
+    pin: "Arduino Due",
+    loc: 948,
+    blurb: "An Arduino DUE with a 7″ SainSmart TFT + XPT2046 touch controller — intended as the front-end of fully-automatic control. The most experimental module.",
+    bullets: [
+      "Listens to repeater broadcast: sees points, signals, TCs in real time",
+      "UTFT + UTouch + UTFT_Buttons (Henning Karlsen libraries)",
+      "32-bit SAM3X8E — far more headroom than the AVR-based nodes",
+      "Calibration captured in <code>notes.txt</code>",
+    ],
+    libs: ["UTFT", "UTouch", "UTFT_Geometry", "SPI.h", "RF24"]
+  },
+];
+
+const grid = document.getElementById('comp-grid');
+components.forEach((c, idx) => {
+  const el = document.createElement('div');
+  el.className = 'comp-card';
+  el.innerHTML = `
+    <div class="pin">${c.pin}</div>
+    <h3>${c.name}</h3>
+    <div class="role">${c.role}</div>
+    <p>${c.blurb}</p>
+    <div class="meta"><span>${c.loc.toLocaleString()} LOC</span><span style="color:var(--cyan)">click to expand</span></div>
+    <div class="expand">
+      <ul>${c.bullets.map(b => '<li>' + b + '</li>').join('')}</ul>
+      <div class="libs">${c.libs.map(l => '<span>'+l+'</span>').join('')}</div>
+    </div>
+  `;
+  el.addEventListener('click', () => el.classList.toggle('open'));
+  grid.appendChild(el);
+});
+
+/* ============================================================
+   Architecture node hover
+   ============================================================ */
+const detail = document.getElementById('arch-detail');
+document.querySelectorAll('.arch-svg .node').forEach(n => {
+  n.addEventListener('mouseenter', () => {
+    detail.querySelector('h4').textContent = n.dataset.name;
+    detail.querySelector('.role').textContent = n.dataset.role;
+    detail.querySelector('p').textContent = n.dataset.text;
+  });
+});
+
+/* ============================================================
+   DCC waveform
+   ============================================================ */
+const traceEl = document.getElementById('scope-trace');
+const annoEl = document.getElementById('scope-anno');
+
+// Each bit is rendered as a square wave segment.
+// '1' = ~58μs per half cycle, '0' = ~116μs per half cycle
+function buildPath(bits, opts = {}) {
+  const W = 1100, H = 220, mid = 110;
+  const amp = 60;
+  // compute total time
+  let totalUs = 0;
+  for (const b of bits) totalUs += (b === '1' ? 116 : 232); // full cycle
+  const scale = (W - 40) / totalUs;
+  let x = 20;
+  let high = true;
+  let d = `M ${x} ${mid - amp}`;
+  const annotations = [];
+  for (let i = 0; i < bits.length; i++) {
+    const b = bits[i];
+    const halfUs = (b === '1' ? 58 : 116);
+    // first half
+    const dx1 = halfUs * scale;
+    x += dx1;
+    d += ` L ${x} ${high ? mid - amp : mid + amp}`;
+    high = !high;
+    d += ` L ${x} ${high ? mid - amp : mid + amp}`;
+    // second half
+    const dx2 = halfUs * scale;
+    x += dx2;
+    d += ` L ${x} ${high ? mid - amp : mid + amp}`;
+    high = !high;
+    d += ` L ${x} ${high ? mid - amp : mid + amp}`;
+  }
+  return { d, totalUs };
+}
+
+function annotateRegions(bits, regions) {
+  // regions: array of [startIdx, endIdx, label, color]
+  let totalUs = 0;
+  for (const b of bits) totalUs += (b === '1' ? 116 : 232);
+  const scale = (1100 - 40) / totalUs;
+  let cumUs = 0;
+  const positions = [20];
+  for (let i = 0; i < bits.length; i++) {
+    cumUs += (bits[i] === '1' ? 116 : 232);
+    positions.push(20 + cumUs * scale);
+  }
+  let html = '';
+  for (const [s, e, label, color] of regions) {
+    const x1 = positions[s], x2 = positions[e];
+    html += `
+      <rect x="${x1}" y="22" width="${x2-x1}" height="14" fill="${color}" opacity="0.18"/>
+      <text x="${(x1+x2)/2}" y="32" text-anchor="middle" fill="${color}" font-family="JetBrains Mono" font-size="10" letter-spacing="1">${label}</text>
+      <line x1="${x1}" y1="38" x2="${x1}" y2="200" stroke="${color}" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.4"/>
+      <line x1="${x2}" y1="38" x2="${x2}" y2="200" stroke="${color}" stroke-width="0.5" stroke-dasharray="2 3" opacity="0.4"/>
+    `;
+  }
+  annoEl.innerHTML = html;
+}
+
+const WAVES = {
+  // speed packet: preamble (12 ones) + start(0) + addr 0x03(00000011) + start(0) + spd inst(0x71)(01110001) + start(0) + xor(0x72)(01110010) + end(1)
+  speed: {
+    bits: '111111111111' + '0' + '00000011' + '0' + '01110001' + '0' + '01110010' + '1',
+    regions: [
+      [0,12,'PREAMBLE','#5bb6e8'],
+      [13,21,'ADDR 0x03','#f3a929'],
+      [22,30,'SPEED 0x71','#4ec07b'],
+      [31,39,'XOR 0x72','#d67c3b'],
+      [39,40,'END','#e5484d']
+    ]
+  },
+  idle: {
+    bits: '111111111111' + '0' + '11111111' + '0' + '00000000' + '0' + '11111111' + '1',
+    regions: [
+      [0,12,'PREAMBLE','#5bb6e8'],
+      [13,21,'ADDR 0xFF','#f3a929'],
+      [22,30,'INSTR 0x00','#4ec07b'],
+      [31,39,'XOR 0xFF','#d67c3b'],
+      [39,40,'END','#e5484d']
+    ]
+  },
+  estop: {
+    // broadcast emergency stop: preamble + 00000000 + 0 + 01000001 + 0 + 01000001 + 1
+    bits: '111111111111' + '0' + '00000000' + '0' + '01000001' + '0' + '01000001' + '1',
+    regions: [
+      [0,12,'PREAMBLE','#5bb6e8'],
+      [13,21,'BROADCAST','#f3a929'],
+      [22,30,'E-STOP','#e5484d'],
+      [31,39,'XOR','#d67c3b'],
+      [39,40,'END','#e5484d']
+    ]
+  },
+  bits: {
+    bits: '1111' + '0000' + '1010',
+    regions: [
+      [0,4,'four 1s (58μs)','#4ec07b'],
+      [4,8,'four 0s (≥100μs)','#f3a929'],
+      [8,12,'alternating','#5bb6e8']
+    ]
+  }
+};
+
+function drawWave(key) {
+  const w = WAVES[key];
+  const { d } = buildPath(w.bits);
+  traceEl.setAttribute('d', d);
+  annotateRegions(w.bits, w.regions);
+}
+drawWave('speed');
+
+document.querySelectorAll('[data-wave]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('[data-wave]').forEach(o => o.classList.remove('active'));
+    b.classList.add('active');
+    drawWave(b.dataset.wave);
+  });
+});
+
+/* ============================================================
+   Signal sim
+   ============================================================ */
+const tcState = { A: 0, B: 0, C: 0 }; // 0 = clear, 1 = occupied
+const ASPECTS = ['RED','YEL','DYEL','GRN'];
+let cycleMs = 0;
+
+function colorForAspect(a) {
+  return { RED:'#e5484d', YEL:'#f3a929', DYEL:'#f3a929', GRN:'#4ec07b' }[a];
+}
+function classForAspect(a) {
+  return { RED:'aspect-red', YEL:'aspect-y', DYEL:'aspect-dy', GRN:'aspect-g' }[a];
+}
+
+// sigPrevAspect-style: next signal's aspect → my aspect
+// red→yellow→double-yellow→green progression (4-aspect)
+function prevAspect(nextA, nextTcOccupied) {
+  if (nextTcOccupied) return 'RED';
+  // For a 4-aspect signal: idx(next) → idx(me) = idx(next)+1 clamped
+  const i = ASPECTS.indexOf(nextA);
+  return ASPECTS[Math.min(3, i + 1)];
+}
+
+function recompute() {
+  // Walk upstream: end is always RED (terminal). Then S3 sees TC.C occupancy and what's "downstream" (end RED).
+  // Conceptually S3 protects TC C (downstream), so if C is occupied → S3 RED; else S3 depends on "next signal" which is end → RED → so S3 yellow.
+  // To get full 4-aspect cascade we treat the end as a permanent RED next-signal.
+  const endA = 'RED';
+  // S3: protects entry to track beyond it; if C occupied → RED. Otherwise yellow (next is RED).
+  let s3 = tcState.C ? 'RED' : prevAspect(endA, false);
+  // S2: protects B; if B occupied → RED. Otherwise next is S3.
+  let s2 = tcState.B ? 'RED' : prevAspect(s3, false);
+  // S1: protects A; if A occupied → RED. Otherwise next is S2.
+  let s1 = tcState.A ? 'RED' : prevAspect(s2, false);
+
+  // update DOM
+  const update = (id, aspect) => {
+    const el = document.getElementById(id);
+    el.textContent = aspect === 'DYEL' ? 'DBL-YEL' : aspect;
+    el.className = 'val ' + classForAspect(aspect);
+  };
+  update('state-sig1', s1);
+  update('state-sig2', s2);
+  update('state-sig3', s3);
+
+  ['A','B','C'].forEach(k => {
+    const el = document.getElementById('state-tc' + k);
+    el.textContent = tcState[k] ? 'OCCUPIED' : 'CLEAR';
+    el.className = 'val ' + (tcState[k] ? 'aspect-red' : 'aspect-g');
+  });
+
+  // update lamps
+  const sigs = [['sig1', s1], ['sig2', s2], ['sig3', s3]];
+  sigs.forEach(([id, aspect]) => {
+    const g = document.getElementById(id);
+    const r = g.querySelector('.r'), y1 = g.querySelector('.y1'), gr = g.querySelector('.g'), y2 = g.querySelector('.y2');
+    [r,y1,gr,y2].forEach(el => el.setAttribute('fill', '#2a3654'));
+    if (aspect === 'RED') r.setAttribute('fill', '#e5484d');
+    if (aspect === 'YEL') y2.setAttribute('fill', '#f3a929');
+    if (aspect === 'GRN') gr.setAttribute('fill', '#4ec07b');
+    if (aspect === 'DYEL') { y1.setAttribute('fill', '#f3a929'); y2.setAttribute('fill', '#f3a929'); }
+  });
+
+  // tc rectangles
+  ['A','B','C'].forEach(k => {
+    const rect = document.querySelector('.tc[data-tc="' + k + '"]');
+    if (tcState[k]) {
+      rect.setAttribute('fill', 'rgba(229,72,77,0.18)');
+      rect.setAttribute('stroke', '#e5484d');
+    } else {
+      rect.setAttribute('fill', 'rgba(78,192,123,0.12)');
+      rect.setAttribute('stroke', '#4ec07b');
+    }
+  });
+}
+
+document.querySelectorAll('.tc').forEach(rect => {
+  rect.style.cursor = 'pointer';
+  rect.addEventListener('click', () => {
+    const k = rect.dataset.tc;
+    tcState[k] = 1 - tcState[k];
+    recompute();
+  });
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'r' || e.key === 'R') {
+    tcState.A = tcState.B = tcState.C = 0;
+    recompute();
+  }
+});
+
+// cycle timer
+setInterval(() => {
+  cycleMs += 10;
+  document.getElementById('state-cycle').textContent = cycleMs.toLocaleString() + ' ms';
+}, 10);
+
+recompute();
+
+/* ============================================================
+   Handset power: phase selector
+   ============================================================ */
+const PHASES = {
+  boot: {
+    title: 'Cold boot @ 2 MHz',
+    meta: ['fuse: <code>CKDIV8</code>', 'BOD: 1.8 V', 'F_CPU: 2 MHz'],
+    body: "Fuses are set so the handset starts at 2 MHz \u2014 the boost converter isn't on yet, so the chip is running directly off the raw battery (~2.6 V NiMH). That's below the safe operating area for any speed above ~4 MHz. The brown-out detector is armed at 1.8 V; if the cells are too flat the chip never makes it out of reset."
+  },
+  climb: {
+    title: 'Climb to 16 MHz',
+    meta: ['<code>CLKPR = 0x80;</code>', '<code>CLKPR = 0x00;</code>', 'V<sub>cc</sub> \u2192 3.3 V'],
+    body: "The boost converter is enabled by writing PORTC. Once the supply is stable at 3.3 V the very first line of setup() flips the clock prescaler back to /1, so the chip jumps to 16 MHz. There's a strict timed sequence: the prescaler-change-enable bit must be cleared within 4 clock cycles of being set, or the write is ignored."
+  },
+  active: {
+    title: 'Active TX',
+    meta: ['F_CPU: 16 MHz', 'RF: nRF24L01 on', 'OLED: full brightness'],
+    body: "The OLED is driven over SPI, the nRF24L01 fires up to 5 LOCOINFO packets per second to the booster (with ACK-payload responses coming back), and the ADC is sampled to read the speed potentiometer. Peak draw is dominated by the radio's TX bursts; the spikes in the trace are individual transmissions."
+  },
+  dim: {
+    title: '5 s after last keypress',
+    meta: ['OLED brightness \u2193', 'all else unchanged'],
+    body: "Five seconds of input idleness drops the OLED contrast to a low-power mode. The radio is still active because the loco is still moving; the screen dim is purely cosmetic-power. If the user touches anything, the screen pops back to full brightness immediately."
+  },
+  sleep: {
+    title: '5 min idle \u2192 SLEEP_MODE_PWR_DOWN',
+    meta: ['ADCSRA = 0', '<code>power_all_disable()</code>', 'BOD disabled in SW'],
+    body: "Five minutes of total idleness triggers full power-down. ADC off. All TWI/SPI/UART/Timer peripherals powered off via PRR. Boost converter switched off (PORTC = 0). Then \u2014 critically \u2014 brown-out detection is disabled in software with a 4-clock-cycle write sequence to MCUCR (BODS+BODSE, then BODS alone), and sleep_cpu() is executed within 3 clock cycles. The CPU clock stops entirely."
+  },
+  wake: {
+    title: 'Pin-change interrupt wakes the chip',
+    meta: ['PCINT16: e-stop', 'PCINT19\u201322: keypad rows'],
+    body: "The only thing that can wake the handset from this state is a pin-change interrupt on the emergency-stop button or any keypad row. PCINT2_vect fires, the chip re-enables BOD, the boost converter is turned back on, the clock is restored to 16 MHz, and the system returns to full Active TX in under a millisecond."
+  }
+};
+
+const phaseDetail = document.getElementById('phase-detail');
+function selectPhase(key) {
+  const p = PHASES[key];
+  if (!p) return;
+  document.querySelectorAll('[data-phase]').forEach(b => b.classList.toggle('active', b.dataset.phase === key));
+  document.querySelectorAll('.phase-rect').forEach(r => r.classList.toggle('active', r.dataset.p === key));
+  document.getElementById('phase-title').textContent = p.title;
+  document.querySelector('.phase-meta').innerHTML = p.meta.map(m => '<span>' + m + '</span>').join('');
+  document.getElementById('phase-body').innerHTML = p.body;
+}
+document.querySelectorAll('[data-phase]').forEach(b => b.addEventListener('click', () => selectPhase(b.dataset.phase)));
+document.querySelectorAll('.phase-rect').forEach(r => r.addEventListener('click', () => selectPhase(r.dataset.p)));
+selectPhase('boot');
+
+/* ============================================================
+   Safe operating area slider
+   ============================================================ */
+const vccSlider = document.getElementById('vcc-slider');
+const vccOut = document.getElementById('vcc-out');
+const fmaxOut = document.getElementById('fmax-out');
+const saoaVline = document.getElementById('saoa-vline');
+const saoaDot = document.getElementById('saoa-dot');
+// linear approx: 1.8V -> 4MHz, 4.5V -> 20MHz
+function maxFreq(v) {
+  // from comments: 4MHz @ 1.8, 8 @ 2.4, 12 @ 3.06, 16 @ 3.78, 20 @ 4.5 -> ~(v-1.8)/0.15 + 4 MHz, but cap 20
+  const f = ((v - 1.8) / (4.5 - 1.8)) * 16 + 4;
+  return Math.max(4, Math.min(20, f));
+}
+function xForVoltage(v) {
+  // svg x from 60 to 1060, mapping 1.8 -> 60, 4.5 -> 1060
+  return 60 + ((v - 1.8) / (4.5 - 1.8)) * 1000;
+}
+function yForFreq(f) {
+  // svg y from 30 (=20MHz) to 180 (=4MHz)
+  return 180 - ((f - 4) / (20 - 4)) * 150;
+}
+function updateSAOA() {
+  const v = vccSlider.value / 100;
+  const f = maxFreq(v);
+  vccOut.textContent = v.toFixed(2);
+  fmaxOut.textContent = '~' + f.toFixed(1);
+  const x = xForVoltage(v);
+  const y = yForFreq(f);
+  saoaVline.setAttribute('x1', x);
+  saoaVline.setAttribute('x2', x);
+  saoaDot.setAttribute('cx', x);
+  saoaDot.setAttribute('cy', y);
+  // color cue: red if v < 2.0
+  saoaDot.setAttribute('fill', v < 2.0 ? '#e5484d' : (v < 2.7 ? '#f3a929' : '#4ec07b'));
+}
+vccSlider.addEventListener('input', updateSAOA);
+updateSAOA();
+
+/* ============================================================
+   Level crossing sim
+   ============================================================ */
+const LC = {
+  state: 'IDLE',
+  t: 0,
+  started: 0,
+  muted: false,
+  raf: null,
+  freq: 800,
+  flipT: 0,
+};
+
+const lcAmberL = document.getElementById('lc-amber-L');
+const lcAmberR = document.getElementById('lc-amber-R');
+const lcR1L = document.getElementById('lc-r1-L');
+const lcR2L = document.getElementById('lc-r2-L');
+const lcR1R = document.getElementById('lc-r1-R');
+const lcR2R = document.getElementById('lc-r2-R');
+const lcLabel = document.getElementById('lc-statelabel');
+const lcTime = document.getElementById('lc-t');
+const lcMarker = document.getElementById('lc-marker');
+const lcWaves = document.getElementById('lc-waves');
+const lcFreq = document.getElementById('lc-freq');
+const lcScope = document.getElementById('lc-scope');
+
+function setLamp(el, on, color) {
+  el.setAttribute('fill', on ? color : '#2a3654');
+}
+
+function setLEDs(mode) {
+  // OFF / AMBER / R1 / R2 / RBOTH
+  setLamp(lcAmberL, false, '#f3a929');
+  setLamp(lcAmberR, false, '#f3a929');
+  setLamp(lcR1L, false, '#e5484d');
+  setLamp(lcR2L, false, '#e5484d');
+  setLamp(lcR1R, false, '#e5484d');
+  setLamp(lcR2R, false, '#e5484d');
+  if (mode === 'AMBER') {
+    setLamp(lcAmberL, true, '#f3a929');
+    setLamp(lcAmberR, true, '#f3a929');
+  } else if (mode === 'R1') {
+    setLamp(lcR1L, true, '#e5484d');
+    setLamp(lcR1R, true, '#e5484d');
+  } else if (mode === 'R2') {
+    setLamp(lcR2L, true, '#e5484d');
+    setLamp(lcR2R, true, '#e5484d');
+  } else if (mode === 'RBOTH') {
+    // both physically can't be on — alternate at high rate
+    const tick = Math.floor(performance.now() / 8) & 1;
+    if (tick) { setLamp(lcR1L, true, '#e5484d'); setLamp(lcR1R, true, '#e5484d'); }
+    else      { setLamp(lcR2L, true, '#e5484d'); setLamp(lcR2R, true, '#e5484d'); }
+  }
+}
+
+function setLCState(s) {
+  LC.state = s;
+  lcLabel.textContent = s;
+  document.querySelectorAll('.lc-phase').forEach(p => p.classList.toggle('active', p.dataset.lc === s));
+  if (s === 'IDLE') {
+    setLEDs('OFF');
+    lcWaves.classList.remove('on');
+  }
+}
+
+function drawScope() {
+  // draw current frequency as a sine over 320px
+  const w = 320, h = 80, mid = 40, amp = 28;
+  const cycles = LC.freq / 200; // visual scaling
+  let d = '';
+  for (let i = 0; i <= 80; i++) {
+    const x = (i / 80) * w;
+    const y = mid - Math.sin((i / 80) * cycles * 2 * Math.PI) * amp;
+    d += (i === 0 ? 'M' : 'L') + x + ' ' + y + ' ';
+  }
+  lcScope.setAttribute('d', d);
+  lcFreq.textContent = LC.freq;
+}
+
+function lcTick(now) {
+  if (!LC.started) {
+    LC.raf = requestAnimationFrame(lcTick);
+    return;
+  }
+  const elapsed = (now - LC.started) / 1000; // seconds
+  LC.t = elapsed;
+  lcTime.textContent = elapsed.toFixed(1);
+
+  // state machine: AMBER 0-2s, TRANSITION 2-3.5s, REDFLASH 3.5+
+  if (elapsed < 2.0) {
+    setLCState('AMBER');
+    setLEDs('AMBER');
+    lcWaves.classList.add('on');
+    // marker position: 0-2s on first slice (flex 2)
+    lcMarker.style.opacity = 1;
+    lcMarker.style.left = (elapsed / 2.0) * (2/7.5) * 100 + '%';
+  } else if (elapsed < 3.5) {
+    setLCState('TRANSITION');
+    // sub-phases each 250 ms within 1.5s window
+    const t = elapsed - 2.0;
+    if (t < 0.25) setLEDs('RBOTH');
+    else if (t < 0.5) setLEDs('OFF');
+    else if (t < 0.75) setLEDs('R2');
+    else if (t < 1.0) setLEDs('RBOTH');
+    else if (t < 1.25) setLEDs('R1');
+    else setLEDs('OFF');
+    lcMarker.style.left = ((2/7.5) + (t / 1.5) * (1.5/7.5)) * 100 + '%';
+  } else {
+    setLCState('REDFLASH');
+    const t = elapsed - 3.5;
+    // 500ms cadence flip R1 / R2
+    const flip = Math.floor(t / 0.5) & 1;
+    setLEDs(flip ? 'R1' : 'R2');
+    lcMarker.style.left = Math.min(100, ((3.5/7.5) + (t / 4) * (4/7.5)) * 100) + '%';
+    if (t > 4) {
+      // loop the demo — restart
+      LC.started = now;
+    }
+  }
+
+  // alternate freq every 250 ms while audible
+  if (LC.state !== 'IDLE' && !LC.muted) {
+    if (now - LC.flipT > 250) {
+      LC.freq = LC.freq === 800 ? 1000 : 800;
+      LC.flipT = now;
+      drawScope();
+    }
+  }
+  LC.raf = requestAnimationFrame(lcTick);
+}
+
+document.getElementById('lc-start').addEventListener('click', () => {
+  LC.started = performance.now();
+  LC.flipT = LC.started;
+  if (!LC.raf) lcTick(LC.started);
+});
+document.getElementById('lc-stop').addEventListener('click', () => {
+  LC.started = 0;
+  if (LC.raf) cancelAnimationFrame(LC.raf);
+  LC.raf = null;
+  setLCState('IDLE');
+  lcTime.textContent = '0.0';
+  lcMarker.style.opacity = 0;
+});
+document.getElementById('lc-mute').addEventListener('click', (e) => {
+  LC.muted = !LC.muted;
+  e.target.textContent = LC.muted ? '\ud83d\udd07 Muted' : '\ud83d\udd07 Mute';
+  lcWaves.style.opacity = LC.muted ? 0.1 : '';
+});
+document.querySelectorAll('.lc-phase').forEach(p => {
+  p.addEventListener('click', () => {
+    const tForState = { AMBER: 0, TRANSITION: 2.0, REDFLASH: 3.5 };
+    LC.started = performance.now() - tForState[p.dataset.lc] * 1000;
+    LC.flipT = performance.now();
+    if (!LC.raf) lcTick(performance.now());
+  });
+});
+drawScope();
+
+/* ============================================================
+   LOC chart
+   ============================================================ */
+const locData = [
+  { name: 'Mainboard',     loc: 4721 },
+  { name: 'DCCBooster',    loc: 3447 },
+  { name: 'DCCHandset',    loc: 3258 },
+  { name: 'GScaleMotor',   loc: 1201 },
+  { name: 'ControlPanel',  loc: 1049 },
+  { name: 'TouchScreen',   loc: 948  },
+  { name: 'IOBoard',       loc: 562  },
+  { name: 'Repeater',      loc: 543  },
+  { name: 'LevelCrossing', loc: 514  },
+];
+const maxLoc = Math.max(...locData.map(d => d.loc));
+const locList = document.getElementById('loc-list');
+locData.forEach((d, i) => {
+  const row = document.createElement('div');
+  row.className = 'loc-row';
+  row.innerHTML = `<div class="name">${d.name}</div><div class="bar"><i style="width:0"></i></div><div class="v">${d.loc.toLocaleString()}</div>`;
+  locList.appendChild(row);
+  setTimeout(() => {
+    row.querySelector('.bar i').style.width = ((d.loc / maxLoc) * 100) + '%';
+  }, 200 + i * 80);
+});
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Lighthouse — Codebase Deep Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0d12;
+    --bg-2: #11161e;
+    --bg-3: #161c26;
+    --panel: #131922;
+    --line: #232c3a;
+    --line-2: #2e3a4d;
+    --text: #e6ecf2;
+    --text-dim: #97a3b4;
+    --text-faint: #5a6678;
+    --phos: #7df9a8;      /* phosphor green */
+    --phos-dim: #4ab57a;
+    --amber: #ffc35c;     /* CGA amber */
+    --lapis: #73d0ff;     /* link blue */
+    --magenta: #d4a8ff;
+    --crimson: #ff7a82;
+    --vga-blue: #2a3aa8;
+    --vga-orange: #c97a3a;
+    --radius: 4px;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: 'Inter Tight', system-ui, -apple-system, sans-serif;
+    --serif: 'Newsreader', Georgia, serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { background: var(--bg); color: var(--text); font-family: var(--sans); margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(ellipse 90% 50% at 50% 0%, rgba(125, 249, 168, 0.04), transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 30%, rgba(115, 208, 255, 0.03), transparent 60%),
+      var(--bg);
+    line-height: 1.55;
+    font-size: 16px;
+    overflow-x: hidden;
+  }
+  /* Subtle CRT scanline overlay */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg, rgba(255,255,255,0.012) 0 1px, transparent 1px 3px
+    );
+    z-index: 999;
+    mix-blend-mode: overlay;
+  }
+  a { color: var(--lapis); text-decoration: none; border-bottom: 1px dotted rgba(115,208,255,0.4); }
+  a:hover { border-bottom-style: solid; }
+  code, .mono { font-family: var(--mono); font-variant-ligatures: none; }
+  code { color: var(--phos); background: rgba(125,249,168,0.06); padding: 1px 6px; border-radius: 3px; font-size: 0.86em; }
+  pre { font-family: var(--mono); background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px; overflow-x: auto; font-size: 13px; line-height: 1.6; color: #d6dbe2; }
+  pre .kw { color: var(--magenta); }
+  pre .op { color: var(--phos); }
+  pre .num { color: var(--amber); }
+  pre .com { color: var(--text-faint); font-style: italic; }
+  pre .str { color: #ffd591; }
+
+  /* Layout */
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 36px; }
+  .hero {
+    border-bottom: 1px solid var(--line);
+    padding: 80px 0 64px;
+    position: relative;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 56px;
+    align-items: end;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--phos);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 28px; height: 1px;
+    background: var(--phos);
+    display: inline-block;
+  }
+  h1 {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 64px;
+    line-height: 1.02;
+    letter-spacing: -0.025em;
+    margin: 22px 0 22px;
+  }
+  h1 .accent { color: var(--phos); font-style: italic; font-weight: 700; }
+  h1 small { display: block; font-size: 22px; font-weight: 500; color: var(--text-dim); margin-top: 14px; letter-spacing: -0.01em; }
+  .deck {
+    font-family: var(--serif);
+    font-size: 19px;
+    color: var(--text-dim);
+    max-width: 56ch;
+    line-height: 1.6;
+  }
+  .hero-shot {
+    border: 1px solid var(--line-2);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.04);
+    position: relative;
+  }
+  .hero-shot img { width: 100%; display: block; image-rendering: pixelated; }
+  .hero-shot::after {
+    content: "early game tick — workshop room, SCUMM verb bar";
+    display: block;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    padding: 10px 14px;
+    background: var(--bg-2);
+    border-top: 1px solid var(--line);
+  }
+
+  /* Top stats strip */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0;
+    margin-top: 56px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-2);
+    overflow: hidden;
+  }
+  .stat {
+    padding: 18px 18px;
+    border-right: 1px solid var(--line);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-n { font-family: var(--mono); font-size: 22px; font-weight: 600; color: var(--phos); letter-spacing: -0.01em; }
+  .stat-l { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+  /* Section header style */
+  section { padding: 96px 0; border-bottom: 1px solid var(--line); }
+  .sec-head { display: flex; align-items: baseline; gap: 16px; margin-bottom: 32px; }
+  .sec-num { font-family: var(--mono); color: var(--phos); font-size: 13px; letter-spacing: 0.1em; }
+  h2 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 38px;
+    letter-spacing: -0.022em;
+    margin: 0;
+    line-height: 1.1;
+  }
+  h3 {
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: -0.015em;
+    margin: 36px 0 14px;
+  }
+  h4 {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--phos);
+    margin: 24px 0 8px;
+  }
+  p { color: var(--text); }
+  p.lede { font-family: var(--serif); font-size: 21px; line-height: 1.55; color: var(--text); max-width: 70ch; }
+
+  .twocol {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-top: 24px;
+  }
+  .col p { max-width: 60ch; }
+
+  /* "Card" panels */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+  }
+  .panel + .panel { margin-top: 16px; }
+
+  /* ============== Pipeline widget ============== */
+  .pipeline {
+    margin-top: 32px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .pipeline-stages {
+    display: flex;
+    overflow-x: auto;
+    padding: 18px 18px 14px;
+    gap: 8px;
+    scrollbar-width: thin;
+  }
+  .stage {
+    flex: 0 0 auto;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--bg-3);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    transition: all 0.18s ease;
+    min-width: 132px;
+    position: relative;
+    text-align: left;
+  }
+  .stage .si {
+    font-size: 10px;
+    color: var(--text-faint);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .stage .sn { color: var(--text); font-weight: 600; }
+  .stage:hover, .stage.active {
+    border-color: var(--phos);
+    background: rgba(125,249,168,0.06);
+    color: var(--text);
+    transform: translateY(-1px);
+  }
+  .stage.active .sn { color: var(--phos); }
+  .stage::after {
+    content: "→";
+    position: absolute;
+    right: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--line-2);
+    z-index: 1;
+    background: var(--bg-2);
+    padding: 0 2px;
+  }
+  .stage:last-child::after { display: none; }
+  .pipeline-detail {
+    border-top: 1px solid var(--line);
+    padding: 22px 24px;
+    background: var(--bg-3);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+  .pipeline-detail h5 {
+    margin: 0 0 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--phos);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .pipeline-detail .file {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--amber);
+    margin-bottom: 12px;
+  }
+  .pipeline-detail p { font-size: 14px; color: var(--text-dim); margin: 0; line-height: 1.6; }
+
+  /* ============== Opcode grid + stepper ============== */
+  .vm-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+    margin-top: 28px;
+  }
+  .opc-cats {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .opc-cat {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 10px;
+    border: 1px solid var(--line-2);
+    color: var(--text-dim);
+    background: var(--bg-2);
+    cursor: pointer;
+    border-radius: 3px;
+    text-transform: lowercase;
+    letter-spacing: 0.04em;
+  }
+  .opc-cat.active, .opc-cat:hover {
+    border-color: var(--phos);
+    color: var(--phos);
+    background: rgba(125,249,168,0.05);
+  }
+  .opcodes {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 4px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    padding: 8px;
+    border-radius: var(--radius);
+    max-height: 540px;
+    overflow-y: auto;
+  }
+  .opc {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px 10px;
+    background: var(--bg-3);
+    border: 1px solid transparent;
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--text-dim);
+    transition: all 0.15s;
+    text-align: left;
+    position: relative;
+  }
+  .opc[data-has-operand="1"]::after {
+    content: "·";
+    color: var(--amber);
+    position: absolute;
+    top: 3px;
+    right: 6px;
+    font-size: 16px;
+  }
+  .opc:hover, .opc.active {
+    color: var(--phos);
+    border-color: var(--phos);
+    background: rgba(125,249,168,0.05);
+  }
+  .opc.dim { opacity: 0.18; }
+  .opc-info {
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    font-size: 13px;
+    min-height: 200px;
+  }
+  .opc-info h5 {
+    font-family: var(--mono);
+    color: var(--phos);
+    font-size: 13px;
+    margin: 0 0 6px;
+  }
+  .opc-info .opc-id {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    margin-bottom: 16px;
+  }
+  .opc-info p { color: var(--text-dim); font-size: 13px; line-height: 1.55; }
+  .opc-info .row { display: flex; gap: 8px; margin-top: 14px; font-family: var(--mono); font-size: 11px; }
+  .opc-info .tag {
+    padding: 3px 8px;
+    border: 1px solid var(--line-2);
+    color: var(--text-dim);
+    border-radius: 3px;
+  }
+  .opc-info .tag.amber { color: var(--amber); border-color: rgba(255,195,92,0.4); }
+
+  /* ============== VM Stepper ============== */
+  .stepper {
+    margin-top: 32px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .stepper-head {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .stepper-head .label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .demo-select {
+    background: var(--bg-3);
+    border: 1px solid var(--line-2);
+    color: var(--text);
+    padding: 6px 12px;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .btn {
+    background: var(--bg-3);
+    border: 1px solid var(--line-2);
+    color: var(--text);
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .btn:hover { border-color: var(--phos); color: var(--phos); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.primary { background: rgba(125,249,168,0.12); border-color: var(--phos); color: var(--phos); }
+  .stepper-body {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr 0.9fr;
+    min-height: 360px;
+  }
+  .stepper-col { border-right: 1px solid var(--line); padding: 16px 20px; }
+  .stepper-col:last-child { border-right: none; }
+  .stepper-col h6 {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-faint);
+    margin: 0 0 12px;
+  }
+  .bc-line {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 4px 10px;
+    color: var(--text-dim);
+    border-radius: 3px;
+    display: flex;
+    gap: 14px;
+  }
+  .bc-line.cur {
+    background: rgba(125,249,168,0.12);
+    color: var(--phos);
+    box-shadow: inset 2px 0 0 var(--phos);
+  }
+  .bc-line .addr { color: var(--text-faint); width: 38px; }
+  .bc-line .opn { color: var(--magenta); }
+  .bc-line.cur .opn { color: var(--phos); }
+  .bc-line .opv { color: var(--amber); }
+  .bc-line .cmt { color: var(--text-faint); font-style: italic; margin-left: auto; }
+  .stack-cell {
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 6px 12px;
+    border: 1px solid var(--line-2);
+    background: var(--bg-3);
+    margin-bottom: 4px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .stack-cell.top { border-color: var(--phos); color: var(--phos); }
+  .stack-cell .idx { color: var(--text-faint); }
+  .stack-empty { font-family: var(--mono); font-size: 11px; color: var(--text-faint); font-style: italic; }
+  .regs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 14px; font-family: var(--mono); font-size: 12px; }
+  .regs .k { color: var(--text-faint); }
+  .regs .v { color: var(--phos); text-align: right; }
+  .out {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+    margin-top: 14px;
+    padding: 8px 10px;
+    background: rgba(255,195,92,0.06);
+    border-left: 2px solid var(--amber);
+    border-radius: 0 3px 3px 0;
+    min-height: 28px;
+    line-height: 1.6;
+  }
+
+  /* ============== Subsystems map ============== */
+  .modgrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 8px;
+    margin-top: 24px;
+  }
+  .mod {
+    border: 1px solid var(--line);
+    background: var(--bg-2);
+    padding: 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .mod:hover { border-color: var(--phos); transform: translateY(-1px); }
+  .mod-name { font-family: var(--mono); font-size: 13px; color: var(--phos); font-weight: 600; }
+  .mod-role { font-size: 12px; color: var(--text-dim); margin-top: 6px; line-height: 1.45; }
+  .mod-bar {
+    margin-top: 12px;
+    height: 3px;
+    background: var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .mod-bar .fill { height: 100%; background: var(--phos); }
+  .mod-meta {
+    display: flex;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    margin-top: 8px;
+  }
+  .mod-meta .lbl { color: var(--text-faint); }
+  .mod-meta .val { color: var(--text-dim); }
+
+  /* ============== Coverage chart ============== */
+  .covchart { margin-top: 24px; }
+  .covrow { display: grid; grid-template-columns: 110px 1fr 70px 70px; align-items: center; gap: 16px; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.04); font-family: var(--mono); font-size: 12px; }
+  .covrow .nm { color: var(--text); }
+  .covrow .bar { height: 14px; background: var(--bg-3); border-radius: 2px; position: relative; overflow: hidden; }
+  .covrow .bar .fl { height: 100%; background: var(--phos); }
+  .covrow .bar .fl.warn { background: var(--amber); }
+  .covrow .bar .fl.bad { background: var(--crimson); }
+  .covrow .pct { text-align: right; color: var(--phos); }
+  .covrow .pct.warn { color: var(--amber); }
+  .covrow .pct.bad { color: var(--crimson); }
+  .covrow .lc { text-align: right; color: var(--text-faint); }
+
+  /* ============== Timeline ============== */
+  .timeline {
+    margin-top: 28px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 24px 28px;
+  }
+  .tl-track {
+    height: 6px;
+    background: var(--bg-3);
+    border-radius: 3px;
+    margin: 60px 0 24px;
+    position: relative;
+  }
+  .tl-fill {
+    position: absolute;
+    height: 100%;
+    background: linear-gradient(90deg, var(--phos), var(--amber));
+    border-radius: 3px;
+    left: 0;
+    width: 100%;
+  }
+  .tl-marker {
+    position: absolute;
+    top: -8px;
+    transform: translateX(-50%);
+    width: 2px;
+    height: 22px;
+    background: rgba(255,255,255,0.2);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .tl-marker:hover, .tl-marker.active {
+    background: var(--phos);
+    box-shadow: 0 0 12px rgba(125,249,168,0.5);
+  }
+  .tl-marker .dot {
+    position: absolute;
+    top: -6px;
+    left: -4px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--bg-2);
+    border: 2px solid currentColor;
+  }
+  .tl-marker.active .dot { background: var(--phos); border-color: var(--phos); }
+  .tl-marker .lbl {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+  .tl-marker.active .lbl { color: var(--phos); }
+  .tl-detail {
+    background: var(--bg-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-top: 14px;
+  }
+  .tl-detail h4 { margin-top: 0; }
+  .tl-detail .when { font-family: var(--mono); font-size: 11px; color: var(--amber); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .tl-detail .what { font-family: var(--sans); font-size: 17px; color: var(--text); font-weight: 600; margin-bottom: 10px; }
+  .tl-detail p { color: var(--text-dim); font-size: 14px; line-height: 1.6; margin: 0; }
+  .tl-detail .ev { font-family: var(--mono); font-size: 11px; color: var(--text-faint); margin-top: 12px; }
+
+  /* ============== Games tabs ============== */
+  .games {
+    margin-top: 28px;
+    background: var(--bg-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .games-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--line);
+  }
+  .games-tab {
+    flex: 1;
+    padding: 22px 28px;
+    cursor: pointer;
+    border-right: 1px solid var(--line);
+    background: var(--bg-2);
+    transition: all 0.15s;
+  }
+  .games-tab:last-child { border-right: none; }
+  .games-tab:hover { background: var(--bg-3); }
+  .games-tab.active {
+    background: var(--bg-3);
+    box-shadow: inset 0 -2px 0 var(--phos);
+  }
+  .games-tab .title { font-family: var(--sans); font-weight: 700; font-size: 17px; color: var(--text); }
+  .games-tab .tag { font-family: var(--mono); font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+  .games-tab.active .tag { color: var(--phos); }
+  .games-body { padding: 28px 32px; min-height: 320px; }
+  .games-body h4 { color: var(--amber); margin-top: 0; }
+  .games-body .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .meta-list { font-family: var(--mono); font-size: 12px; }
+  .meta-list .ml-row { display: grid; grid-template-columns: 110px 1fr; gap: 14px; padding: 5px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); }
+  .meta-list .k { color: var(--text-faint); }
+  .meta-list .v { color: var(--text); }
+
+  /* ============== Misc ============== */
+  .callout {
+    border-left: 2px solid var(--phos);
+    padding: 14px 20px;
+    background: rgba(125,249,168,0.04);
+    margin: 24px 0;
+    font-size: 15px;
+    color: var(--text-dim);
+    border-radius: 0 3px 3px 0;
+  }
+  .callout.amber { border-left-color: var(--amber); background: rgba(255,195,92,0.04); }
+  .callout.crim { border-left-color: var(--crimson); background: rgba(255,122,130,0.04); }
+  .callout strong { color: var(--text); }
+
+  ul.tidy { padding-left: 0; list-style: none; }
+  ul.tidy li { padding-left: 22px; position: relative; margin-bottom: 8px; }
+  ul.tidy li::before {
+    content: "▸";
+    position: absolute;
+    left: 0;
+    color: var(--phos);
+    font-size: 12px;
+    top: 2px;
+  }
+  ul.tidy.dim li::before { color: var(--amber); }
+  ul.tidy.crim li::before { color: var(--crimson); }
+
+  table.def { border-collapse: collapse; margin: 18px 0; font-size: 13px; width: 100%; }
+  table.def th, table.def td { text-align: left; padding: 9px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  table.def th { font-family: var(--mono); color: var(--phos); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; }
+  table.def td.mono { font-family: var(--mono); color: var(--amber); white-space: nowrap; }
+
+  /* Footnote ref */
+  .ref { font-family: var(--mono); font-size: 10px; color: var(--text-faint); vertical-align: super; }
+
+  /* Footer */
+  footer { padding: 60px 0 100px; color: var(--text-faint); font-size: 13px; }
+  footer .files { font-family: var(--mono); font-size: 11px; columns: 2; column-gap: 40px; margin-top: 18px; }
+  footer .files div { break-inside: avoid; padding: 2px 0; }
+
+  /* Responsive */
+  @media (max-width: 960px) {
+    .hero-grid, .twocol, .vm-grid, .games-body .grid2, .pipeline-detail { grid-template-columns: 1fr; }
+    .stepper-body { grid-template-columns: 1fr; }
+    .stepper-col { border-right: none; border-bottom: 1px solid var(--line); }
+    h1 { font-size: 44px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat { border-bottom: 1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========================== HERO ========================== -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">Codebase deep dive · mdlighthouse</div>
+        <h1>A SCUMM-style adventure engine,<br><span class="accent">built for DOS</span>, in 2026.<small>The Lighthouse engine — a 5,100-line C89 game engine, two original adventure games, and an obsessive testing &amp; tooling stack.</small></h1>
+        <p class="deck">Lighthouse is a from-scratch reimplementation of the LucasArts SCUMM idea — bytecode-driven adventure games on 386 + VGA + Sound Blaster hardware — written to <em>modern</em> standards: 98.94% test coverage, libFuzzer on the VM, deterministic E2E play tests, and a Rust-based asset pipeline. This page walks the architecture, the bytecode VM, the content pipeline, the two games it runs, and how an unusually disciplined repository of plans + journals + reviews evolved over seven weeks.</p>
+      </div>
+      <div class="hero-shot">
+        <img src="assets/lighthouse_demo.png" alt="Lighthouse engine demo showing SCUMM verb bar over a blue room with a brown floor and small character sprite" />
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="stat-n">~5,100</div><div class="stat-l">lines · core engine (C89)</div></div>
+      <div class="stat"><div class="stat-n">22</div><div class="stat-l">core .c modules</div></div>
+      <div class="stat"><div class="stat-n">60+</div><div class="stat-l">VM opcodes</div></div>
+      <div class="stat"><div class="stat-n">329</div><div class="stat-l">unit tests · 98.94% cov</div></div>
+      <div class="stat"><div class="stat-n">696K</div><div class="stat-l">fuzz iterations · 0 crashes</div></div>
+      <div class="stat"><div class="stat-n">~7 wks</div><div class="stat-l">2026-03-16 → 2026-05-06</div></div>
+    </div>
+  </div>
+</header>
+
+<!-- ========================== 30s pitch ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">01</div><h2>The thirty-second version</h2></div>
+
+    <p class="lede">A point-and-click adventure engine in the lineage of <em>Monkey Island</em> and <em>Day of the Tentacle</em>. Game code is not C — it&rsquo;s bytecode, compiled from a small scripting language, loaded out of a resource pack. The C engine is a portable interpreter plus a SCUMM-style verb UI, walk-box pathfinding, dialogue trees, MIDI sequencer, and save system. Hardware is reached only through a function-pointer struct (<code>platform_t</code>), so the same engine compiles for DOS, Windows, and a headless host that pretends to be hardware while unit tests run.</p>
+
+    <div class="twocol">
+      <div class="col">
+        <h4>What you actually get</h4>
+        <ul class="tidy">
+          <li>A 5,100-line C89 engine that builds on Open Watcom v2 + DOS/4GW for the original 386 target, and on Win32 + a host stub for development.</li>
+          <li>A stack-based bytecode VM with cooperative multitasking — up to 16 concurrent scripts that yield on <code>WAIT_FRAMES</code>, dialogue choices, walk completion, palette fades, and signals.</li>
+          <li>Three command-line tools — assembler (<code>lhasm</code>), compiler (<code>lhsc</code>), packer (<code>lhpack</code>) — plus a Rust asset builder (<code>lhbuild</code>) and a Rust E2E test runner (<code>lhscru</code>).</li>
+          <li>Two original games on top: <strong>Professor Splodgkins</strong> (an Egyptian-mecha-snake comedy prologue) and <strong>Ground Truth</strong> (a workplace comedy about three founders fixing AI-generated software disasters).</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h4>Why it&rsquo;s interesting</h4>
+        <ul class="tidy">
+          <li>It treats a retro target as an engineering discipline, not a vibe. The core is C89-clean — <code>/* */</code> comments only, declarations-at-top, no <code>&lt;stdint.h&gt;</code>, no <code>#ifdef</code> in the portable layer.</li>
+          <li>Game content is <em>data, not C</em>. Rooms, scripts, sprites, palettes, strings — everything lives in <code>game.pak</code>, parsed field-by-field (never struct-cast).</li>
+          <li>The tests are the safety net: round-trip oracles for save/load, pack/unpack, compile/execute; frame-hash assertions for E2E play tests; libFuzzer + ASAN on the VM.</li>
+          <li>The whole thing was built collaboratively by a human + AI agents using an explicit coordination protocol (see <a href="#evolution">§09 Evolution</a>) — and the paper trail is unusually rich.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Architecture / pipeline ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">02</div><h2>The game tick &amp; the core/platform split</h2></div>
+
+    <p>Every frame, <code>game_tick()</code> in <code>engine/src/core/engine.c</code> walks a fixed sequence of fourteen stages. Hover any stage:</p>
+
+    <div class="pipeline">
+      <div class="pipeline-stages" id="pipeline-stages"></div>
+      <div class="pipeline-detail" id="pipeline-detail"></div>
+    </div>
+
+    <div class="twocol" style="margin-top: 40px;">
+      <div class="col">
+        <h3>Core stays portable. Platform stays thin.</h3>
+        <p>The architectural spine of Lighthouse is a hard rule: <strong>nothing in <code>src/core/</code> includes an OS header or calls hardware directly.</strong> All hardware access goes through a struct of function pointers — <code>platform_t</code> — covering graphics, sound, music, input, timer, and file I/O.</p>
+        <p>Three implementations of that struct exist (or are stubbed in):</p>
+        <table class="def">
+          <thead><tr><th>Layer</th><th>Where</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">core/</td><td>22 .c files</td><td>VM, rooms, actors, verbs, dialogue, render, save — all portable.</td></tr>
+            <tr><td class="mono">host/</td><td>Win32 + stubs</td><td>Fake timer, framebuffer-as-buffer, file passthrough — for unit tests.</td></tr>
+            <tr><td class="mono">win32/</td><td>real Win32</td><td>Real window, real input — for dev playtesting.</td></tr>
+            <tr><td class="mono">dos/</td><td>VGA / mouse / timer wired; SB &amp; MPU-401 stubbed</td><td>The shipping target. Real Mode 13h, real hardware interrupts.</td></tr>
+          </tbody>
+        </table>
+        <p>This split is why the engine has 329 fast unit tests. The fake timer is deterministic; the framebuffer is just a <code>uint8</code> buffer that gets blit-recorded. Hardware never enters the test loop.</p>
+      </div>
+
+      <div class="col">
+        <h3>Dependency graph (top-down)</h3>
+<pre><span class="com">/* low-level — no game knowledge */</span>
+types.h          <span class="com">/* uint8, int16, uint32 */</span>
+  &darr;
+error · resource · strtable · platform
+
+<span class="com">/* the execution engine */</span>
+  &darr;
+<span class="kw">vm</span>              <span class="com">/* the script interpreter */</span>
+  &darr;
+
+<span class="com">/* the world the VM acts on */</span>
+room · actor · object · walkbox · camera
+
+<span class="com">/* player-facing systems */</span>
+verb · dialog · sound · music_seq
+cutscene · credits · palette · font
+render · scene · inv_icon · save_ui
+
+<span class="com">/* the glue */</span>
+  &darr;
+<span class="kw">engine</span>          <span class="com">/* game_tick + lifecycle */</span>
+  &darr;
+save            <span class="com">/* serialise everything above */</span>
+</pre>
+        <p style="font-size: 14px; color: var(--text-dim);">Every subsystem owns its data and exposes init / update / render entry points. <code>vm.h</code>&rsquo;s <code>vm_state</code> carries pointers to all the other subsystems&rsquo; state — that&rsquo;s how a script can move actors, play music, or trigger a fade.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== VM ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">03</div><h2>The bytecode VM</h2></div>
+    <p class="lede">The heart of the engine: a stack-based interpreter with sixty-plus opcodes, sixteen cooperatively-scheduled scripts, a thousand 16-bit globals, and a runaway detector that kills any script doing more than ten thousand ops per frame.</p>
+
+    <h3>Every opcode in the language</h3>
+    <p>Click one to inspect. The amber dot means &ldquo;takes a 2-byte inline operand after the opcode byte.&rdquo;</p>
+
+    <div class="opc-cats" id="opc-cats"></div>
+
+    <div class="vm-grid">
+      <div class="opcodes" id="opcodes"></div>
+      <div class="opc-info" id="opc-info"></div>
+    </div>
+
+    <h3>Step a real script</h3>
+    <p>Each demo is a real <code>uint8[]</code> bytecode array — exactly the shape the VM consumes. The runaway limit (10,000 ops) and stack overflow (64 slots) are real checks the same way <code>vm_exec_script()</code> does them.</p>
+
+    <div class="stepper">
+      <div class="stepper-head">
+        <span class="label">Program</span>
+        <select id="demo-select" class="demo-select"></select>
+        <span style="flex: 1;"></span>
+        <button class="btn" id="btn-reset">Reset</button>
+        <button class="btn" id="btn-step">Step</button>
+        <button class="btn primary" id="btn-run">Run</button>
+      </div>
+      <div class="stepper-body">
+        <div class="stepper-col">
+          <h6>Bytecode</h6>
+          <div id="bc-listing"></div>
+        </div>
+        <div class="stepper-col">
+          <h6>Stack (top first)</h6>
+          <div id="stack-view"></div>
+        </div>
+        <div class="stepper-col">
+          <h6>Registers / state</h6>
+          <div class="regs" id="regs-view"></div>
+          <h6 style="margin-top: 18px;">Output</h6>
+          <div class="out" id="out-view">&nbsp;</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>Cooperative multitasking</h3>
+    <p>The VM doesn&rsquo;t preempt; scripts yield. When a script hits <code>WAIT_FRAMES</code>, <code>WAIT_SIGNAL</code>, <code>DIALOG_WAIT</code>, <code>WAIT_WALK</code>, <code>WAIT_SPEECH</code>, <code>WAIT_FADE</code>, or <code>WAIT_CREDITS</code>, it parks itself in that wait state and <code>vm_run_frame</code> moves on. The engine&rsquo;s update passes (actor walk, palette fade, dialogue) flip the corresponding flag when their work is done, and the script wakes up.</p>
+    <p>This is the whole point: a puzzle script can read like a screenplay — &ldquo;walk to the drain; wait until you get there; play a sound; say a line; wait until you finish speaking; open the hatch&rdquo; — without ever blocking the render loop.</p>
+
+    <div class="callout">
+      <strong>Where the VM is uncomfortable:</strong> save files <em>do not</em> serialise in-flight scripts. Loading re-enters the current room with restored globals and re-runs the room enter script. This is documented in <code>backlog.md</code> as intentional v1 scope, not a bug; it does mean a save in the middle of a cutscene rewinds you to the cutscene start.
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Subsystems ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">04</div><h2>Subsystems &amp; how big they are</h2></div>
+    <p>Twenty-two source files in <code>engine/src/core/</code>. Click one — bar widths are a rough proxy for module weight from the coverage report.</p>
+
+    <div class="modgrid" id="modgrid"></div>
+  </div>
+</section>
+
+<!-- ========================== Content pipeline ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">05</div><h2>From a PNG to <code>game.pak</code></h2></div>
+
+    <p class="lede">There is no story in the C. Every room, sprite, costume, dialogue line, and puzzle script lives in <code>game.pak</code> — a typed resource bundle the engine opens at startup. The pipeline turns authored content into that bundle.</p>
+
+    <h3>The five-stop journey</h3>
+
+    <div class="pipeline">
+      <div class="pipeline-stages" id="pipeline2"></div>
+      <div class="pipeline-detail" id="pipeline2-detail"></div>
+    </div>
+
+    <div class="twocol" style="margin-top: 36px;">
+      <div class="col">
+        <h4>Resource types</h4>
+        <table class="def">
+          <thead><tr><th>Tag</th><th>What</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">ROOM</td><td>Walk-boxes, exits, objects, walk-behinds, palette ref.</td></tr>
+            <tr><td class="mono">BGND</td><td>Background image — 320&times;200 raw indexed pixels.</td></tr>
+            <tr><td class="mono">SPRT</td><td>Sprite — fixed-size frame, palette-0 transparent.</td></tr>
+            <tr><td class="mono">COST</td><td>Costume — named animations &amp; per-frame timing.</td></tr>
+            <tr><td class="mono">SCRP</td><td>Compiled bytecode for one script (entry, verb, dialogue).</td></tr>
+            <tr><td class="mono">STRT</td><td>String table — deduplicated, 16-bit IDs.</td></tr>
+            <tr><td class="mono">MUSC</td><td>MIDI event list with millisecond timestamps.</td></tr>
+            <tr><td class="mono">PCMA</td><td>Sound-effect PCM blob.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col">
+        <h4>Why field-by-field parsing?</h4>
+        <p>Every binary read in <code>loader.c</code> and <code>resource.c</code> goes through one-byte helpers — <code>read_u16(&amp;buf[off])</code>, never <code>*(uint16*)buf</code>. Two reasons:</p>
+        <ul class="tidy">
+          <li><strong>Struct padding differs by compiler.</strong> Open Watcom 386 packs differently from MSVC x64. Casting a buffer would silently corrupt fields on the host build.</li>
+          <li><strong>Endianness is explicit.</strong> All multi-byte values are little-endian on disk. The helper makes that part of the contract, not an accident.</li>
+        </ul>
+        <p>That discipline is also what made the round-trip oracle tests easy: a hundred random game states → save → reload → byte-for-byte equal.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== The games ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">06</div><h2>The games on top</h2></div>
+    <p>Lighthouse exists to ship games. Two are in this repository — one comic, one corporate.</p>
+
+    <div class="games">
+      <div class="games-tabs">
+        <div class="games-tab active" data-game="splodgkins">
+          <div class="title">Professor Splodgkins</div>
+          <div class="tag">Working title · ~6–10 hrs</div>
+        </div>
+        <div class="games-tab" data-game="ground-truth">
+          <div class="title">Ground Truth</div>
+          <div class="tag">In production · ~6–8 hrs</div>
+        </div>
+        <div class="games-tab" data-game="postcards">
+          <div class="title">Postcards From Nowhere</div>
+          <div class="tag">Experimental · prototype</div>
+        </div>
+      </div>
+      <div class="games-body" id="games-body"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Languages & tooling ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">07</div><h2>Languages &amp; tooling</h2></div>
+
+    <p class="lede">Lighthouse is a deliberately polyglot project — C89 for the parts that have to run on a 386, Rust for everything else, JavaScript for the design prototype, and a sprinkle of Lua used purely as data.</p>
+
+    <div class="modgrid">
+      <div class="mod"><div class="mod-name">C89</div><div class="mod-role">Engine core, three CLI tools (<code>lhasm</code>, <code>lhsc</code>, <code>lhpack</code>), and DOS/Win32 platform layers. Strict mode — no <code>//</code>, no <code>&lt;stdint.h&gt;</code>, no mixed decls.</div><div class="mod-bar"><div class="fill" style="width:100%"></div></div><div class="mod-meta"><span class="lbl">role</span><span class="val">engine + tools</span></div></div>
+      <div class="mod"><div class="mod-name">Rust (2021)</div><div class="mod-role"><code>lhbuild</code> asset pipeline, <code>lhscru</code> E2E runner, and <code>tests/full_test</code> — a six-lane quality orchestrator (build, lint, coverage, fuzz, play tests).</div><div class="mod-bar"><div class="fill" style="width:68%"></div></div><div class="mod-meta"><span class="lbl">role</span><span class="val">pipeline + ci</span></div></div>
+      <div class="mod"><div class="mod-name">JavaScript</div><div class="mod-role"><code>prototype/</code> — a complete HTML/canvas re-implementation of the SCUMM loop used as a design sketchpad before committing patterns to C.</div><div class="mod-bar"><div class="fill" style="width:38%"></div></div><div class="mod-meta"><span class="lbl">role</span><span class="val">design prototype</span></div></div>
+      <div class="mod"><div class="mod-name">Lua</div><div class="mod-role">Used purely as data — sprite sheets, cutscene frame timings, room metadata. Loaded by <code>lhbuild</code> at asset-build time; not embedded in the engine.</div><div class="mod-bar"><div class="fill" style="width:22%"></div></div><div class="mod-meta"><span class="lbl">role</span><span class="val">asset metadata</span></div></div>
+      <div class="mod"><div class="mod-name">Shell &amp; .cmd</div><div class="mod-role"><code>build.sh</code>, <code>build.cmd</code>, <code>test.cmd</code> — thin façades around Watcom <code>wmake</code> and Cargo. Same args either platform.</div><div class="mod-bar"><div class="fill" style="width:18%"></div></div><div class="mod-meta"><span class="lbl">role</span><span class="val">build entry</span></div></div>
+      <div class="mod"><div class="mod-name">libFuzzer + ASAN</div><div class="mod-role">VM bytecode fuzzer with a 300+ entry seed corpus. Currently 696K iterations, zero crashes. Runs in the full-test pipeline.</div><div class="mod-bar"><div class="fill" style="width:48%"></div></div><div class="mod-meta"><span class="lbl">role</span><span class="val">fuzz</span></div></div>
+    </div>
+
+    <h3>The three command-line tools</h3>
+    <div class="twocol">
+      <div class="col">
+        <table class="def">
+          <thead><tr><th>Tool</th><th>In</th><th>Out</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">lhasm</td><td>.asm (one opcode per line, labels)</td><td>raw bytecode .bin</td></tr>
+            <tr><td class="mono">lhsc</td><td>high-level script .lhs</td><td>bytecode + STRT</td></tr>
+            <tr><td class="mono">lhpack</td><td>manifest.txt + .bin files</td><td>game.pak</td></tr>
+            <tr><td class="mono">lhbuild</td><td>PNGs, .lua, .lhs sources</td><td>typed .bin files</td></tr>
+            <tr><td class="mono">lhscru</td><td>.emu play scripts</td><td>frame-hash pass/fail</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col">
+        <h4>The full-test orchestrator</h4>
+        <p>Six lanes, one Rust binary in <code>tests/full_test/</code>:</p>
+        <ul class="tidy">
+          <li><strong>Build</strong> — compile engine, tools, tests with Open Watcom.</li>
+          <li><strong>Unit</strong> — run 329 Unity-based tests.</li>
+          <li><strong>Lint</strong> — clang <code>-Wall -Wextra -Wpedantic</code> on the core.</li>
+          <li><strong>Coverage</strong> — clang <code>--coverage</code> + <code>llvm-cov</code> &rarr; HTML report.</li>
+          <li><strong>Fuzz</strong> — libFuzzer + ASAN on the VM, 30-second smoke test.</li>
+          <li><strong>Play</strong> — lhscru drives the engine through <code>.emu</code> scripts, checks frame hashes against goldens.</li>
+        </ul>
+        <p>Reports get written to <code>tests/results/&lt;date&gt; - full test report.html</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Testing & quality ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">08</div><h2>Testing &amp; quality</h2></div>
+
+    <div class="twocol">
+      <div class="col">
+        <p class="lede">Tests are written red-green TDD. They exercise real engine logic — no mocks of core subsystems. The primary verification pattern is the <em>round-trip oracle</em>: build state, serialise, deserialise, assert equivalence.</p>
+
+        <h4>Test taxonomy</h4>
+        <table class="def">
+          <thead><tr><th>Tier</th><th>Scope</th><th>Run</th></tr></thead>
+          <tbody>
+            <tr><td>Unit</td><td>329 functions, Unity framework</td><td>&lt;5 s</td></tr>
+            <tr><td>Integration</td><td>Full <code>game_tick</code> w/ scripted input</td><td>Seconds</td></tr>
+            <tr><td>Property</td><td>500 random walk-box configs, 100 random save states</td><td>Seconds</td></tr>
+            <tr><td>Fuzz</td><td>libFuzzer on the VM, 696K+ iters, ASAN</td><td>30 s / hours</td></tr>
+            <tr><td>E2E play</td><td>13 <code>.emu</code> scripts, 21 frame-hash assertions</td><td>Minutes</td></tr>
+            <tr><td>Static</td><td>clang strict warnings on core</td><td>Seconds</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col">
+        <h4>Per-file line coverage <span style="color: var(--text-faint); font-weight: 400; font-size: 12px;">(from coverage_summary.txt)</span></h4>
+        <div class="covchart" id="covchart"></div>
+      </div>
+    </div>
+
+    <div class="callout amber" style="margin-top: 40px;">
+      <strong>The honest gaps.</strong> <code>error.c</code> sits at 0% because <code>fatal()</code> calls <code>abort()</code> directly — unit-testable only with process isolation, which the project chose not to build. <code>vm.c</code> at 84.64% line coverage is dominated by defensive bounds checks on malformed bytecode that the fuzzer hits but the unit tests don&rsquo;t target line-by-line. There&rsquo;s no benchmarking infrastructure — &ldquo;measure on real 386 hardware if it gets slow&rdquo; is the stated approach.
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Evolution ========================== -->
+<section id="evolution">
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">09</div><h2>How the repository evolved</h2></div>
+    <p class="lede">From an empty directory on <strong>16 March 2026</strong> to a 5,100-line tested engine with two games and a Rust pipeline by <strong>6 May 2026</strong>. Drag the marker:</p>
+
+    <div class="timeline">
+      <div class="tl-track">
+        <div class="tl-fill"></div>
+        <div id="tl-markers"></div>
+      </div>
+      <div class="tl-detail" id="tl-detail"></div>
+    </div>
+
+    <h3>How the work was actually done</h3>
+    <p>This is the unusual bit. Lighthouse was built by a single human (committing as <code>0x4D44</code>) working with multiple AI coding agents in parallel — and the protocol for that collaboration is itself in the repository, in <code>AGENTS.md</code>, <code>CLAUDE.md</code>, and a coordination file with rules like &ldquo;file-level granularity; two agents must not edit the same file simultaneously&rdquo; and &ldquo;broken build, not your code? wait — don&rsquo;t fix it.&rdquo;</p>
+    <p>The paper trail this produced is striking:</p>
+    <ul class="tidy">
+      <li><strong>100+ HLD documents</strong> in <code>wrk_docs/</code> — high-level designs, plan reviews, devil&rsquo;s-advocate reviews, ranked concept docs, version-by-version refinements (some HLDs go to V4 or V6).</li>
+      <li><strong>95+ session journals</strong> in <code>wrk_journals/</code> — one per significant work session, often with the &ldquo;phase summary table&rdquo; pattern: phase, commit hash, tests added, key components.</li>
+      <li>An explicit <strong>Project Blueprint</strong> document (686 lines) covering philosophy, red lines, decision framework, quality philosophy, multi-agent rules, debugging protocol, and git workflow.</li>
+      <li>Game design documents go from a <em>Ground Truth</em> game concept doc to per-chapter GDDs, room implementation packets, dialogue production plans, and a critical-path walkthrough.</li>
+    </ul>
+    <div class="callout">
+      It&rsquo;s rare to see a codebase this small with documentation this dense. Most of the value isn&rsquo;t the engine — it&rsquo;s the <em>process artefacts</em>: an unusually clear record of decisions, alternatives considered, things tried and dropped.
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Strengths / weaknesses ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">10</div><h2>What&rsquo;s good, what could be better</h2></div>
+
+    <div class="twocol">
+      <div class="col">
+        <h3 style="color: var(--phos);">What&rsquo;s working</h3>
+        <ul class="tidy">
+          <li><strong>The portability discipline.</strong> Compiling the same C89 core for DOS-386 <em>and</em> a Win32 host pays off the moment you want to write tests — the host build runs in milliseconds, the DOS build runs the actual game.</li>
+          <li><strong>Round-trip oracles everywhere.</strong> Save/load, pack/unpack, and compile/run all use the same pattern: produce a thing, round-trip it, assert equality. This catches whole categories of bugs (alignment, endianness, padding) for free.</li>
+          <li><strong>VM fuzz harness with ASAN.</strong> 696K iterations, zero crashes — that&rsquo;s a hard claim, but the harness is in the repo and reproducible. The VM&rsquo;s explicit bounds-check before every read is the reason.</li>
+          <li><strong>Deterministic E2E play tests via frame hashes.</strong> The host platform uses a fake timer; given the same input script, every frame should be byte-identical. That&rsquo;s what <code>lhscru</code> asserts.</li>
+          <li><strong>Architecture documentation matches the code.</strong> <code>docs/architecture.md</code>&rsquo;s tick pipeline is a line-by-line description of what <code>game_tick()</code> actually does. Rare.</li>
+          <li><strong>&ldquo;Data not code&rdquo; is real.</strong> Adding a new room is editing a .lua + .lhs and rebuilding the pak, not touching the C. The discipline holds.</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3 style="color: var(--amber);">What could improve</h3>
+        <ul class="tidy dim">
+          <li><strong>Memory lifecycle on room transition.</strong> Currently leaks loaded resources — flagged in <code>backlog.md</code> as a shipping blocker. There&rsquo;s no room-scoped allocator yet; rooms <code>malloc()</code> and forget.</li>
+          <li><strong>VM state isn&rsquo;t serialised in saves.</strong> Loading rewinds to the room&rsquo;s entry script; in-flight scripts are dropped. Documented as intentional for v1, but a long cutscene plus a quick-save is a footgun.</li>
+          <li><strong>DOS audio drivers are stubs.</strong> Sound Blaster PCM and MPU-401 MIDI exist as platform entry points but no-op. The host build plays nothing; the DOS build is silent.</li>
+          <li><strong>No tool golden tests.</strong> <code>lhasm</code>, <code>lhsc</code>, <code>lhpack</code> are exercised via the engine&rsquo;s integration tests, but there are no &ldquo;assemble this input, compare bytes against a checked-in expected&rdquo; tests. A regression in the assembler could ship.</li>
+          <li><strong>Many planning docs, many versions.</strong> &ldquo;HLD - Gap Remediation Plan V1&hellip;V4&rdquo;, &ldquo;HLD - Ground Truth GDD Buildout - V1&hellip;V6&rdquo; — the document tree is itself getting hard to navigate. A pruning pass would help future readers.</li>
+          <li><strong>No automated benchmarks.</strong> Performance is &ldquo;measure on real hardware if it&rsquo;s slow.&rdquo; That&rsquo;s fine until it isn&rsquo;t — but adding frame-time tracking to the host build would be cheap insurance.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Misc / closing ========================== -->
+<section>
+  <div class="wrap">
+    <div class="sec-head"><div class="sec-num">11</div><h2>Things that surprised me</h2></div>
+
+    <div class="twocol">
+      <div class="col">
+        <h4>Two parallel pre-MVP rewrites of the same idea</h4>
+        <p>There are <em>four versions</em> of the High-Level Design for the engine itself — <code>HLD - Adventure Game Engine.md</code>, V1, V2, V3, V4. The repo keeps all of them. Reading them in order is a clean tour of how the architecture was reasoned about: V1 has scripts as C functions; V4 has the bytecode VM.</p>
+      </div>
+      <div class="col">
+        <h4>The JS prototype was the rehearsal</h4>
+        <p>Before committing the SCUMM loop to C89, the author built the whole thing in <code>prototype/</code> as plain HTML + canvas — <code>engine.js</code>, <code>renderer.js</code>, <code>actor.js</code>, <code>ui.js</code>, <code>audio.js</code>. It&rsquo;s a complete miniature point-and-click in 7 files. The integration patterns from the JS prototype show up almost line-for-line in the C engine.</p>
+      </div>
+      <div class="col">
+        <h4>The Spanish encyclopedia gag</h4>
+        <p>The Professor Splodgkins antagonist is a drain-inspection robot snake that absorbed a beta copy of Encarta — partly in Spanish. Its dialogue glitches mid-sentence into Spanish during villainous monologues. The codebase has no special infrastructure for this; it&rsquo;s just careful string-table authoring.</p>
+      </div>
+      <div class="col">
+        <h4>The verb bar in the screenshot is from a real binary</h4>
+        <p>The hero shot at the top of this page is from <code>2026-03-17</code> — one day after the engine was started. By then the host build was already running, rendering a room, scrolling the camera, and accepting verb clicks. The full SCUMM verb grid (Open, Close, Give, Pick up, Use, Look at, Talk to, Push, Pull) is wired through to the dispatch system.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== Footer / files ========================== -->
+<footer>
+  <div class="wrap">
+    <h4 style="color: var(--text-dim);">Files referenced</h4>
+    <div class="files">
+      <div>README.md</div>
+      <div>CLAUDE.md</div>
+      <div>AGENTS.md</div>
+      <div>backlog.md</div>
+      <div>requirements.md</div>
+      <div>tests.md</div>
+      <div>coverage_summary.txt</div>
+      <div>docs/architecture.md</div>
+      <div>docs/adding-opcodes.md</div>
+      <div>docs/build-guide.md</div>
+      <div>engine/src/core/vm.h, vm.c</div>
+      <div>engine/src/core/engine.c</div>
+      <div>engine/src/core/platform.h</div>
+      <div>engine/src/core/* (22 modules)</div>
+      <div>engine/tests/test_*.c (15 suites)</div>
+      <div>tools/lhasm.c, lhsc.c, lhpack.c</div>
+      <div>lhbuild/src/*.rs</div>
+      <div>prototype/index.html + 8 .js files</div>
+      <div>wrk_docs/* (100+ HLDs, GDDs, reviews)</div>
+      <div>wrk_journals/* (95+ session journals)</div>
+      <div>wrk_docs/2026.03.18 - Project Blueprint - mdlighthouse.md</div>
+      <div>games/professor-splodgkins/</div>
+      <div>games/ground-truth/</div>
+      <div>games/postcards-from-nowhere/</div>
+    </div>
+    <p style="margin-top: 32px;">Generated as a static, self-contained explainer · all interactive widgets run in vanilla JS · no network calls · CRT vibes deliberate.</p>
+  </div>
+</footer>
+
+<!-- ========================== INTERACTIVE WIDGETS JS ========================== -->
+<script>
+/* ============================================================
+   PIPELINE — game tick stages
+   ============================================================ */
+const PIPELINE_STAGES = [
+  { name: 'input_poll', file: 'platform.h → input_poll()', detail: 'Calls the platform input callback to get the latest mouse + keyboard state. On host this is fake/scripted; on DOS it talks to the BIOS/PS/2 mouse handler.', side: 'Reads keys + mouse coords into an input_state struct.' },
+  { name: 'dialog?', file: 'dialog.c', detail: 'If a dialogue is active (choice list visible), the click is routed to dialog_handle_input — the player picks a line, the VM resumes at its script address. Skips the rest of the verb pipeline for this frame.', side: 'Early-out for conversation trees.' },
+  { name: 'verb input', file: 'verb.c → verb_handle_input', detail: 'Builds the SCUMM-style sentence (verb + target + with-target) from mouse hovers and clicks over the verb grid, sentence line, and inventory strip.', side: 'Produces a pending_action struct.' },
+  { name: 'screen→room', file: 'camera.c → camera_screen_to_room_x', detail: 'Converts the screen-space mouse X to room-space, accounting for horizontal smooth scroll of rooms wider than 320 pixels.', side: 'So clicks map to walk-targets in room coords.' },
+  { name: 'ESC check', file: 'cutscene.c', detail: 'If a cutscene is playing, ESC requests a skip — the VM kills spawned scripts and jumps the calling script to the cutscene&rsquo;s registered override fixup. Otherwise ESC quits.', side: 'The classic SCUMM ESC-to-skip.' },
+  { name: 'vm_run_frame', file: 'vm.c', detail: 'The heartbeat. Executes every script that is RUNNING up to the runaway limit (10,000 ops). Scripts yield on WAIT_* opcodes; the rest of the frame happens around them.', side: 'Cooperative multitasking over 16 slots.' },
+  { name: 'room change?', file: 'engine.c', detail: 'OP_LOAD_ROOM sets vm.pending_room. After the VM finishes its frame the engine notices, runs vm_clear_room (resets room vars), and triggers the loader for the new room.', side: 'Deferred so the firing script doesn&rsquo;t mutate live state.' },
+  { name: 'music_seq_tick', file: 'music_seq.c', detail: 'Advances the MIDI sequencer by elapsed milliseconds. Events with timestamp ≤ now get dispatched through plat->mus_send_midi. Supports looping; granularity is per-frame (~67ms).', side: 'Good enough for adventure music; not rhythm-accurate.' },
+  { name: 'verb_dispatch', file: 'object.c', detail: 'Resolves the pending_action — looks up the (object_id, verb) pair in the room&rsquo;s verb-response table and starts the matching script. Falls back to a default response if there&rsquo;s none.', side: '"Open door" → start script #42.' },
+  { name: 'camera_update', file: 'camera.c', detail: 'Smooth-scrolls the camera toward its target X. Either ego-tracking (follow the player) or a manual target set by OP_SET_CAMERA.', side: 'Cuts the per-frame scroll into easings.' },
+  { name: 'actors_update', file: 'actor.c', detail: 'Walks every active actor along its A*-computed path of waypoints, advances animation frame counters, applies walk-box depth scaling. Signals the VM when walking completes.', side: 'Pathfinding through the walk-box graph.' },
+  { name: 'palette_update', file: 'palette.c', detail: 'Steps fade-to-black / fade-from-black if a fade is in progress. Also rotates palette indices for cycling effects (water, lava, lights).', side: 'When fade completes, wakes WAIT_FADE scripts.' },
+  { name: 'render', file: 'render.c + scene.c', detail: 'Clears the framebuffer, blits the background at camera offset, draws actors and inventory icons z-sorted, draws walk-behind regions, overlays the dialog or verb UI, draws speech text with outlining.', side: '320×200 uint8 indexed buffer.' },
+  { name: 'blit', file: 'platform.h → gfx_blit', detail: 'Hands the finished framebuffer + 256-entry palette to the platform. On DOS this pushes to VGA Mode 13h via the VBE/IO bus. On host it just records the call so tests can hash the frame.', side: 'The frame is now on screen.' },
+];
+const pipelineEl = document.getElementById('pipeline-stages');
+const pipelineDetailEl = document.getElementById('pipeline-detail');
+PIPELINE_STAGES.forEach((s, i) => {
+  const el = document.createElement('button');
+  el.className = 'stage' + (i === 0 ? ' active' : '');
+  el.dataset.idx = i;
+  el.innerHTML = '<span class="si">' + String(i+1).padStart(2,'0') + '</span><span class="sn">' + s.name + '</span>';
+  el.addEventListener('mouseenter', () => selectStage(i));
+  el.addEventListener('click', () => selectStage(i));
+  pipelineEl.appendChild(el);
+});
+function selectStage(i) {
+  pipelineEl.querySelectorAll('.stage').forEach(s => s.classList.toggle('active', +s.dataset.idx === i));
+  const s = PIPELINE_STAGES[i];
+  pipelineDetailEl.innerHTML =
+    '<div><h5>What happens</h5><div class="file">' + s.file + '</div><p>' + s.detail + '</p></div>' +
+    '<div><h5>Side effect</h5><p>' + s.side + '</p></div>';
+}
+selectStage(0);
+
+/* ============================================================
+   PIPELINE 2 — content pipeline
+   ============================================================ */
+const PIPELINE2_STAGES = [
+  { name: 'authored', file: '.png / .lua / .lhs', detail: 'Hand-authored assets in the games/.../assets/ tree. PNGs for backgrounds and sprites, Lua tables for animation metadata, .lhs script source files for room logic and dialogue.', side: 'Human-readable, version-controllable, diffable.' },
+  { name: 'lhbuild', file: 'lhbuild/src/*.rs (Rust)', detail: 'Quantises PNGs to the 256-colour VGA palette, slices sprite sheets into frames according to the Lua metadata, generates the typed .bin resource for each asset.', side: 'Per-asset .bin files in build_out/.' },
+  { name: 'lhsc', file: 'tools/lhsc.c', detail: 'Compiles high-level script source to bytecode. Extracts string literals to a separate STRT table, replaces them with 16-bit IDs in the bytecode, resolves labels and forward references.', side: 'One .bin per script + a shared STRT.' },
+  { name: 'manifest', file: 'manifest.txt', detail: 'Lists every resource: type tag (ROOM/BGND/SPRT/COST/SCRP/STRT/MUSC/PCMA), 16-bit ID, name, source filename. The single source of truth for what&rsquo;s in the game.', side: 'Editing this is how you add a resource.' },
+  { name: 'lhpack', file: 'tools/lhpack.c', detail: 'Walks the manifest, appends each .bin to game.pak with an index header. The engine&rsquo;s resource manager reads the index at startup and can then load any resource by ID in one seek + one read.', side: 'A single game.pak — ~196 resources in the prologue.' },
+];
+const p2El = document.getElementById('pipeline2');
+const p2DetailEl = document.getElementById('pipeline2-detail');
+PIPELINE2_STAGES.forEach((s, i) => {
+  const el = document.createElement('button');
+  el.className = 'stage' + (i === 0 ? ' active' : '');
+  el.dataset.idx = i;
+  el.innerHTML = '<span class="si">' + String(i+1).padStart(2,'0') + '</span><span class="sn">' + s.name + '</span>';
+  el.addEventListener('mouseenter', () => selectP2(i));
+  el.addEventListener('click', () => selectP2(i));
+  p2El.appendChild(el);
+});
+function selectP2(i) {
+  p2El.querySelectorAll('.stage').forEach(s => s.classList.toggle('active', +s.dataset.idx === i));
+  const s = PIPELINE2_STAGES[i];
+  p2DetailEl.innerHTML =
+    '<div><h5>What happens</h5><div class="file">' + s.file + '</div><p>' + s.detail + '</p></div>' +
+    '<div><h5>Output</h5><p>' + s.side + '</p></div>';
+}
+selectP2(0);
+
+/* ============================================================
+   OPCODES
+   ============================================================ */
+const OPCODES = [
+  // stack/arith
+  { name:'NOP', id:0, cat:'flow', op:0, d:'Do nothing. Useful as a jump landing pad and during fuzzing to verify the dispatcher copes with no-op bytes.' },
+  { name:'PUSH', id:1, cat:'stack', op:1, d:'Push a 2-byte inline operand onto the stack as int16.' },
+  { name:'POP', id:2, cat:'stack', op:0, d:'Pop and discard the top of stack.' },
+  { name:'ADD', id:3, cat:'arith', op:0, d:'Pop b, pop a, push a + b (int16, wraps).' },
+  { name:'SUB', id:4, cat:'arith', op:0, d:'Pop b, pop a, push a − b (int16, wraps).' },
+  { name:'MUL', id:5, cat:'arith', op:0, d:'Pop b, pop a, push a * b. Guarded by stack bounds, but overflow wraps.' },
+  { name:'DIV', id:6, cat:'arith', op:0, d:'Pop b, pop a, push a / b. Divide-by-zero terminates the script with an error.' },
+  { name:'MOD', id:7, cat:'arith', op:0, d:'Pop b, pop a, push a % b. Modulo-by-zero terminates the script.' },
+  { name:'AND', id:8, cat:'arith', op:0, d:'Bitwise AND of top two stack values.' },
+  { name:'OR', id:9, cat:'arith', op:0, d:'Bitwise OR of top two stack values.' },
+  { name:'NOT', id:10, cat:'arith', op:0, d:'Logical not: pop a, push 1 if a==0 else 0.' },
+  { name:'NEG', id:11, cat:'arith', op:0, d:'Numeric negation: pop a, push -a.' },
+  // compare
+  { name:'EQ', id:12, cat:'cmp', op:0, d:'Equal — push 1 or 0.' },
+  { name:'NE', id:13, cat:'cmp', op:0, d:'Not equal.' },
+  { name:'LT', id:14, cat:'cmp', op:0, d:'Less than.' },
+  { name:'GT', id:15, cat:'cmp', op:0, d:'Greater than.' },
+  { name:'LE', id:16, cat:'cmp', op:0, d:'Less than or equal.' },
+  { name:'GE', id:17, cat:'cmp', op:0, d:'Greater than or equal.' },
+  // flow
+  { name:'JUMP', id:18, cat:'flow', op:1, d:'Unconditional jump to a 2-byte absolute address operand.' },
+  { name:'JUMP_IF', id:19, cat:'flow', op:1, d:'Pop top of stack; if nonzero, jump to the operand address.' },
+  { name:'JUMP_UNLESS', id:20, cat:'flow', op:1, d:'Pop top of stack; if zero, jump to the operand address.' },
+  { name:'CALL', id:21, cat:'flow', op:1, d:'Push the next-instruction address as a return marker, then jump to operand.' },
+  { name:'RETURN', id:22, cat:'flow', op:0, d:'Pop a saved return address and jump there.' },
+  // vars
+  { name:'GET_GLOBAL', id:23, cat:'vars', op:1, d:'Push globals[operand]. There are 1000 globals; they survive room transitions and go into save files.' },
+  { name:'SET_GLOBAL', id:24, cat:'vars', op:1, d:'Pop value, store in globals[operand].' },
+  { name:'GET_LOCAL', id:25, cat:'vars', op:1, d:'Push this script&rsquo;s locals[operand]. 32 locals per script slot.' },
+  { name:'SET_LOCAL', id:26, cat:'vars', op:1, d:'Pop, store into locals[operand].' },
+  { name:'GET_ROOM_VAR', id:27, cat:'vars', op:1, d:'Read a room-scoped variable. Cleared on room transition.' },
+  { name:'SET_ROOM_VAR', id:28, cat:'vars', op:1, d:'Write a room-scoped variable.' },
+  // control / wait
+  { name:'WAIT_FRAMES', id:29, cat:'wait', op:0, d:'Pop N; yield until N frames have passed. Cooperative — the rest of the engine runs.' },
+  { name:'STOP_SCRIPT', id:30, cat:'wait', op:0, d:'Mark this script INACTIVE; its slot frees up.' },
+  { name:'START_SCRIPT', id:31, cat:'wait', op:0, d:'Pop script_id, launch that script in a free slot.' },
+  { name:'SIGNAL', id:32, cat:'wait', op:0, d:'Pop signal_id, set it. There are 16 signal flags; multiple scripts can wait on one.' },
+  { name:'WAIT_SIGNAL', id:33, cat:'wait', op:0, d:'Pop signal_id, yield until that signal is raised this frame.' },
+  { name:'HALT', id:34, cat:'wait', op:0, d:'Permanently halt this script — like STOP but explicit; used to signal &ldquo;done&rdquo;.' },
+  // actor / world
+  { name:'ACTOR_WALK_TO', id:35, cat:'actor', op:0, d:'Pop x, y, actor_id; walk that actor to (x,y) via A* over the walk-box graph.' },
+  { name:'ACTOR_FACE', id:36, cat:'actor', op:0, d:'Pop direction, actor_id; turn the actor to face that direction.' },
+  { name:'ACTOR_ANIMATE', id:37, cat:'actor', op:0, d:'Pop anim_id, actor_id; play a named animation from the costume.' },
+  { name:'ACTOR_SAY', id:38, cat:'actor', op:0, d:'Pop string_id, actor_id; show speech text in the actor&rsquo;s talk_color, set speech_timer.' },
+  { name:'ACTOR_COSTUME', id:39, cat:'actor', op:0, d:'Pop costume_id, actor_id; switch the actor&rsquo;s costume (e.g. costume change in cutscene).' },
+  { name:'ACTOR_POSITION', id:40, cat:'actor', op:0, d:'Pop x, y, actor_id; teleport an actor (no walk).' },
+  { name:'LOAD_ROOM', id:41, cat:'world', op:0, d:'Pop entry_point, room_id; sets vm.pending_room. The engine swaps rooms after vm_run_frame.' },
+  { name:'SET_CAMERA', id:42, cat:'world', op:0, d:'Pop x; smooth-scroll the camera to that room X.' },
+  { name:'OBJECT_STATE', id:43, cat:'world', op:0, d:'Pop state, object_id; set persistent state (door locked/open, item taken).' },
+  { name:'PICK_UP_OBJECT', id:44, cat:'world', op:0, d:'Pop object_id; ego picks it up — adds to inventory, marks the room object hidden.' },
+  { name:'ADD_INVENTORY', id:45, cat:'world', op:0, d:'Pop item_id, actor_id; force-add an item without animation.' },
+  { name:'REMOVE_INVENTORY', id:46, cat:'world', op:0, d:'Pop item_id, actor_id.' },
+  { name:'HAS_INVENTORY', id:47, cat:'world', op:0, d:'Pop item_id, actor_id; push 1 if held, 0 otherwise.' },
+  // sound/music
+  { name:'PLAY_SOUND', id:48, cat:'audio', op:0, d:'Pop sound_id; play a PCM effect through plat->snd_play_pcm.' },
+  { name:'STOP_SOUND', id:49, cat:'audio', op:0, d:'Stop the currently playing PCM sound.' },
+  { name:'PLAY_MUSIC', id:50, cat:'audio', op:0, d:'Pop music_id; load events into the sequencer and start ticking.' },
+  { name:'STOP_MUSIC', id:51, cat:'audio', op:0, d:'Stop the sequencer; sends MIDI all-notes-off.' },
+  // dialog
+  { name:'DIALOG_BEGIN', id:52, cat:'dialog', op:0, d:'Start collecting dialogue choices for display.' },
+  { name:'DIALOG_END', id:53, cat:'dialog', op:0, d:'Finalise the choice list and display it.' },
+  { name:'DIALOG_CHOICE', id:54, cat:'dialog', op:0, d:'Pop script_addr, string_id; add a choice. When picked, the VM jumps to script_addr.' },
+  { name:'DIALOG_CHOICE_IF', id:55, cat:'dialog', op:0, d:'Conditional choice: also pops cond_var and negate flag. Choice shows only when the condition is true.' },
+  { name:'DIALOG_RETURN', id:56, cat:'dialog', op:0, d:'Jump back to the choice list — re-evaluates conditions, useful for nested branches.' },
+  { name:'DIALOG_WAIT', id:57, cat:'dialog', op:0, d:'Yield until the player picks a choice.' },
+  // cutscene
+  { name:'BEGIN_CUTSCENE', id:58, cat:'cut', op:0, d:'Register the PC of the cutscene&rsquo;s override fixup block. If ESC is pressed during the cutscene the script jumps here.' },
+  { name:'END_CUTSCENE', id:59, cat:'cut', op:0, d:'Clear the override; ESC reverts to its normal &ldquo;quit&rdquo; behaviour.' },
+  { name:'QUIT', id:60, cat:'cut', op:0, d:'Request engine shutdown — sets the gs->quit flag.' },
+  // visibility & later additions
+  { name:'OBJECT_SHOW', id:61, cat:'world', op:0, d:'Pop object_id; mark visible=1.' },
+  { name:'OBJECT_HIDE', id:62, cat:'world', op:0, d:'Pop object_id; mark visible=0.' },
+  { name:'WAIT_SPEECH', id:63, cat:'wait', op:0, d:'Pop actor_id; yield until that actor&rsquo;s speech_timer reaches zero.' },
+  { name:'SHOW_IMAGE', id:64, cat:'world', op:0, d:'Pop resource_id; render a full-screen background image. Used for title cards and cutscene stills.' },
+  { name:'FADE_TO_BLACK', id:65, cat:'world', op:0, d:'Pop speed; start a palette fade to black. Yields until complete.' },
+  { name:'FADE_FROM_BLACK', id:66, cat:'world', op:0, d:'Pop speed; fade from black to the active palette. Yields.' },
+  { name:'SHOW_CREDITS', id:67, cat:'world', op:0, d:'Pop string_id; start the credits scroll subsystem. Yields until done.' },
+  { name:'SET_EGO', id:68, cat:'actor', op:0, d:'Pop actor_index; switch the player-controlled actor. Used in Act 3 of Splodgkins when the snake becomes playable.' },
+];
+const CATS = [
+  { id:'all', label:'all (60+)' },
+  { id:'stack', label:'stack' },
+  { id:'arith', label:'arithmetic' },
+  { id:'cmp', label:'compare' },
+  { id:'flow', label:'flow control' },
+  { id:'vars', label:'variables' },
+  { id:'wait', label:'wait / schedule' },
+  { id:'actor', label:'actor' },
+  { id:'world', label:'world' },
+  { id:'audio', label:'audio' },
+  { id:'dialog', label:'dialog' },
+  { id:'cut', label:'cutscene' },
+];
+const catsEl = document.getElementById('opc-cats');
+const opcEl = document.getElementById('opcodes');
+const opcInfoEl = document.getElementById('opc-info');
+let activeCat = 'all';
+let activeOpc = OPCODES[3]; // ADD
+
+CATS.forEach(c => {
+  const b = document.createElement('button');
+  b.className = 'opc-cat' + (c.id === activeCat ? ' active' : '');
+  b.textContent = c.label;
+  b.dataset.cat = c.id;
+  b.addEventListener('click', () => { activeCat = c.id; renderCats(); renderOpcs(); });
+  catsEl.appendChild(b);
+});
+function renderCats() {
+  catsEl.querySelectorAll('.opc-cat').forEach(b => b.classList.toggle('active', b.dataset.cat === activeCat));
+}
+function renderOpcs() {
+  opcEl.innerHTML = '';
+  OPCODES.forEach(o => {
+    const b = document.createElement('button');
+    const dim = (activeCat !== 'all' && o.cat !== activeCat);
+    b.className = 'opc' + (o.name === activeOpc.name ? ' active' : '') + (dim ? ' dim' : '');
+    b.dataset.hasOperand = o.op;
+    b.textContent = o.name;
+    b.addEventListener('click', () => { activeOpc = o; renderOpcs(); renderOpcInfo(); });
+    opcEl.appendChild(b);
+  });
+}
+function renderOpcInfo() {
+  const o = activeOpc;
+  opcInfoEl.innerHTML =
+    '<h5>OP_' + o.name + '</h5>' +
+    '<div class="opc-id">opcode 0x' + o.id.toString(16).padStart(2,'0') + ' · enum value ' + o.id + ' · category ' + o.cat + '</div>' +
+    '<p>' + o.d + '</p>' +
+    '<div class="row">' +
+      '<span class="tag' + (o.op ? ' amber' : '') + '">' + (o.op ? 'takes 2-byte operand' : 'no operand') + '</span>' +
+      '<span class="tag">defined in vm.h</span>' +
+    '</div>';
+}
+renderOpcs();
+renderOpcInfo();
+
+/* ============================================================
+   VM STEPPER — small tracing interpreter for demos
+   ============================================================
+   Implements a meaningful subset of the real VM: PUSH, POP, ADD,
+   SUB, MUL, DIV, NEG, EQ, NE, LT, GT, LE, GE, NOT,
+   GET_GLOBAL, SET_GLOBAL, JUMP, JUMP_IF, JUMP_UNLESS, NOP, HALT,
+   plus a fake ACTOR_SAY that prints to the output strip. */
+const OP = {
+  NOP:0, PUSH:1, POP:2, ADD:3, SUB:4, MUL:5, DIV:6,
+  EQ:12, NE:13, LT:14, GT:15, LE:16, GE:17, NOT:10, NEG:11,
+  JUMP:18, JUMP_IF:19, JUMP_UNLESS:20,
+  GET_GLOBAL:23, SET_GLOBAL:24,
+  WAIT_FRAMES:29, HALT:34, ACTOR_SAY:38,
+};
+const OP_NAMES = {};
+Object.entries(OP).forEach(([k,v]) => OP_NAMES[v]=k);
+const HAS_OP = { 1:1, 18:1, 19:1, 20:1, 23:1, 24:1 };
+
+const DEMOS = [
+  {
+    name: '01 — Hello: push 6, push 7, multiply',
+    src: [
+      [OP.PUSH, [6, 0]],
+      [OP.PUSH, [7, 0]],
+      [OP.MUL],
+      [OP.HALT],
+    ],
+    comments: ['push 6', 'push 7', 'pop b,a → push a*b', 'halt'],
+  },
+  {
+    name: '02 — Conditional: if global[0]==1 say A else say B',
+    src: [
+      [OP.GET_GLOBAL, [0, 0]],     // 0
+      [OP.PUSH, [1, 0]],            // 3
+      [OP.EQ],                      // 6
+      [OP.JUMP_UNLESS, [16, 0]],    // 7  → 16 if false
+      [OP.PUSH, [101, 0]],          // 10  string_id 101 = "Hello"
+      [OP.PUSH, [0, 0]],            // 13  actor 0
+      [OP.ACTOR_SAY],               // 16 → wait, this is wrong, jumping to 16 lands on ACTOR_SAY directly
+      [OP.JUMP, [22, 0]],           // 17
+      [OP.PUSH, [102, 0]],          // 20
+      [OP.PUSH, [0, 0]],            // 23
+      [OP.ACTOR_SAY],               // 26
+      [OP.HALT],                    // 27
+    ],
+    comments: ['get globals[0]','push 1','==','jump if 0 →L2','push "Hello"','push actor 0','say','jump end','L2: push "Goodbye"','push actor 0','say','halt'],
+    globals: { 0: 1 },
+  },
+  {
+    name: '03 — Loop: count down from 5, multiply each by 2',
+    src: [
+      [OP.PUSH, [5, 0]],            // push initial counter
+      [OP.SET_GLOBAL, [1, 0]],       // globals[1] = 5
+      // loop:
+      [OP.GET_GLOBAL, [1, 0]],       // counter
+      [OP.JUMP_UNLESS, [29, 0]],     // if 0 → end
+      [OP.GET_GLOBAL, [1, 0]],
+      [OP.PUSH, [2, 0]],
+      [OP.MUL],                       // counter * 2 (just for show)
+      [OP.POP],                       // discard
+      [OP.GET_GLOBAL, [1, 0]],
+      [OP.PUSH, [1, 0]],
+      [OP.SUB],
+      [OP.SET_GLOBAL, [1, 0]],
+      [OP.JUMP, [6, 0]],
+      [OP.HALT],                      // end
+    ],
+    comments: ['push 5','globals[1]=5','loop:','jump end if zero','...','×2','discard','dec','','','','','jump loop','halt'],
+    globals: {},
+  },
+  {
+    name: '04 — Stack overflow detection',
+    src: (() => {
+      const arr = [];
+      for (let i = 0; i < 80; i++) arr.push([OP.PUSH, [i, 0]]);
+      arr.push([OP.HALT]);
+      return arr;
+    })(),
+    comments: Array(80).fill('push').concat(['halt']),
+    globals: {},
+  },
+];
+// Recompute the conditional demo more carefully — labels are address-based.
+DEMOS[1] = (() => {
+  // Compile a simple two-branch if/else in linear bytes.
+  // pc by pc:
+  // 0:  GET_GLOBAL 0          (3 bytes)
+  // 3:  PUSH 1                 (3 bytes)
+  // 6:  EQ                     (1 byte)
+  // 7:  JUMP_UNLESS L_ELSE    (3 bytes) -> addr 20
+  // 10: PUSH 101                (3)
+  // 13: PUSH 0                  (3)
+  // 16: ACTOR_SAY               (1)
+  // 17: JUMP L_END              (3) -> 26
+  // 20: L_ELSE: PUSH 102        (3)
+  // 23: PUSH 0                  (3)
+  // 26: ACTOR_SAY               (1)
+  // 27: HALT
+  const src = [
+    [OP.GET_GLOBAL, [0,0]],      // 0
+    [OP.PUSH, [1,0]],            // 3
+    [OP.EQ],                      // 6
+    [OP.JUMP_UNLESS, [20,0]],     // 7
+    [OP.PUSH, [101,0]],           // 10
+    [OP.PUSH, [0,0]],             // 13
+    [OP.ACTOR_SAY],               // 16
+    [OP.JUMP, [27,0]],            // 17
+    [OP.PUSH, [102,0]],           // 20
+    [OP.PUSH, [0,0]],             // 23
+    [OP.ACTOR_SAY],               // 26
+    [OP.HALT],                    // 27
+  ];
+  return {
+    name: '02 — Branch: if globals[0]==1 say "Hello" else "Goodbye"',
+    src,
+    comments: ['get globals[0]','push 1','==','jump_unless 20 (→else)','push str 101','push actor 0','say','jump 27 (→end)','else: push str 102','push actor 0','say','halt'],
+    globals: {0: 1},
+  };
+})();
+
+function assemble(demo) {
+  const bytes = [];
+  const meta = []; // per-instruction: { pc, op, operand, comment }
+  let pc = 0;
+  demo.src.forEach((inst, idx) => {
+    const [op, operand] = inst;
+    meta.push({ pc, op, operand, comment: demo.comments[idx] || '' });
+    bytes.push(op);
+    pc++;
+    if (operand) {
+      bytes.push(operand[0]);
+      bytes.push(operand[1]);
+      pc += 2;
+    }
+  });
+  return { bytes, meta };
+}
+
+const STR_TABLE = { 101: '"Hello, world."', 102: '"Goodbye, cruel world."' };
+
+let demoIdx = 0;
+let vm;
+function resetVM() {
+  const demo = DEMOS[demoIdx];
+  const { bytes, meta } = assemble(demo);
+  vm = {
+    bytes, meta,
+    pc: 0,
+    stack: [],
+    globals: Object.assign({}, demo.globals || {}),
+    halted: false,
+    output: '',
+    ops: 0,
+    error: null,
+  };
+  renderVM();
+}
+function readU16At(pc) {
+  return vm.bytes[pc] | (vm.bytes[pc+1] << 8);
+}
+function vmStep() {
+  if (vm.halted || vm.error) return;
+  if (vm.pc >= vm.bytes.length) { vm.halted = true; renderVM(); return; }
+  if (vm.ops >= 10000) { vm.error = 'RUNAWAY'; renderVM(); return; }
+  const op = vm.bytes[vm.pc++];
+  vm.ops++;
+  const opPop = (n) => {
+    if (vm.stack.length < n) { vm.error = 'STACK UNDERFLOW'; return null; }
+    return vm.stack.splice(vm.stack.length - n, n);
+  };
+  const opPush = (v) => {
+    if (vm.stack.length >= 64) { vm.error = 'STACK OVERFLOW'; return false; }
+    vm.stack.push(v|0);
+    return true;
+  };
+  switch (op) {
+    case OP.NOP: break;
+    case OP.PUSH: opPush(readU16At(vm.pc)); vm.pc += 2; break;
+    case OP.POP: opPop(1); break;
+    case OP.ADD: { const [a,b] = opPop(2)||[0,0]; opPush(a+b); break; }
+    case OP.SUB: { const [a,b] = opPop(2)||[0,0]; opPush(a-b); break; }
+    case OP.MUL: { const [a,b] = opPop(2)||[0,0]; opPush(a*b); break; }
+    case OP.DIV: { const [a,b] = opPop(2)||[0,1]; if (b===0){vm.error='DIV BY ZERO';break;} opPush((a/b)|0); break; }
+    case OP.EQ: { const [a,b] = opPop(2)||[0,0]; opPush(a===b?1:0); break; }
+    case OP.NE: { const [a,b] = opPop(2)||[0,0]; opPush(a!==b?1:0); break; }
+    case OP.LT: { const [a,b] = opPop(2)||[0,0]; opPush(a<b?1:0); break; }
+    case OP.GT: { const [a,b] = opPop(2)||[0,0]; opPush(a>b?1:0); break; }
+    case OP.LE: { const [a,b] = opPop(2)||[0,0]; opPush(a<=b?1:0); break; }
+    case OP.GE: { const [a,b] = opPop(2)||[0,0]; opPush(a>=b?1:0); break; }
+    case OP.NOT: { const [a] = opPop(1)||[0]; opPush(a?0:1); break; }
+    case OP.NEG: { const [a] = opPop(1)||[0]; opPush(-a); break; }
+    case OP.JUMP: vm.pc = readU16At(vm.pc); break;
+    case OP.JUMP_IF: { const target = readU16At(vm.pc); vm.pc += 2; const [a] = opPop(1)||[0]; if (a) vm.pc = target; break; }
+    case OP.JUMP_UNLESS: { const target = readU16At(vm.pc); vm.pc += 2; const [a] = opPop(1)||[0]; if (!a) vm.pc = target; break; }
+    case OP.GET_GLOBAL: { const idx = readU16At(vm.pc); vm.pc += 2; opPush(vm.globals[idx]|0); break; }
+    case OP.SET_GLOBAL: { const idx = readU16At(vm.pc); vm.pc += 2; const [v] = opPop(1)||[0]; vm.globals[idx] = v; break; }
+    case OP.HALT: vm.halted = true; break;
+    case OP.ACTOR_SAY: { const [sid, aid] = opPop(2)||[0,0]; const s = STR_TABLE[sid] || ('str#'+sid); vm.output += '[actor ' + aid + '] ' + s + '\n'; break; }
+    default: vm.error = 'UNKNOWN OPCODE 0x' + op.toString(16); break;
+  }
+  renderVM();
+}
+
+function vmRun() {
+  let safety = 0;
+  while (!vm.halted && !vm.error && safety < 5000) {
+    vmStep();
+    safety++;
+  }
+}
+
+const bcEl = document.getElementById('bc-listing');
+const stackEl = document.getElementById('stack-view');
+const regsEl = document.getElementById('regs-view');
+const outEl = document.getElementById('out-view');
+const demoSelect = document.getElementById('demo-select');
+
+function renderVM() {
+  // Bytecode listing
+  bcEl.innerHTML = '';
+  vm.meta.forEach((m, i) => {
+    const cur = (vm.pc === m.pc) && !vm.halted;
+    const div = document.createElement('div');
+    div.className = 'bc-line' + (cur ? ' cur' : '');
+    let opStr = '<span class="opn">' + (OP_NAMES[m.op] || '?').padEnd(12) + '</span>';
+    let opvStr = '';
+    if (m.operand) opvStr = '<span class="opv">' + (m.operand[0] | (m.operand[1]<<8)) + '</span>';
+    div.innerHTML =
+      '<span class="addr">' + String(m.pc).padStart(3,'0') + '</span>' +
+      opStr + opvStr +
+      (m.comment ? '<span class="cmt">' + m.comment + '</span>' : '');
+    bcEl.appendChild(div);
+  });
+  // Stack
+  stackEl.innerHTML = '';
+  if (vm.stack.length === 0) {
+    const e = document.createElement('div');
+    e.className = 'stack-empty';
+    e.textContent = '(empty)';
+    stackEl.appendChild(e);
+  } else {
+    for (let i = vm.stack.length - 1; i >= 0; i--) {
+      const c = document.createElement('div');
+      c.className = 'stack-cell' + (i === vm.stack.length - 1 ? ' top' : '');
+      c.innerHTML = '<span class="idx">[' + i + ']</span><span>' + vm.stack[i] + '</span>';
+      stackEl.appendChild(c);
+    }
+  }
+  // Regs
+  regsEl.innerHTML =
+    '<span class="k">PC</span><span class="v">' + vm.pc + '</span>' +
+    '<span class="k">SP</span><span class="v">' + vm.stack.length + '</span>' +
+    '<span class="k">ops</span><span class="v">' + vm.ops + '</span>' +
+    '<span class="k">status</span><span class="v" style="color:' +
+      (vm.error ? 'var(--crimson)' : vm.halted ? 'var(--text-faint)' : 'var(--phos)') + '">' +
+      (vm.error ? vm.error : vm.halted ? 'halted' : 'running') + '</span>';
+  // Globals (show only set ones)
+  const gKeys = Object.keys(vm.globals);
+  if (gKeys.length) {
+    let g = '';
+    gKeys.forEach(k => {
+      g += '<span class="k">g[' + k + ']</span><span class="v">' + vm.globals[k] + '</span>';
+    });
+    regsEl.innerHTML += g;
+  }
+  // Output
+  outEl.textContent = vm.output || '\u00A0';
+  // Buttons
+  document.getElementById('btn-step').disabled = vm.halted || !!vm.error;
+  document.getElementById('btn-run').disabled = vm.halted || !!vm.error;
+}
+
+DEMOS.forEach((d, i) => {
+  const o = document.createElement('option');
+  o.value = i;
+  o.textContent = d.name;
+  demoSelect.appendChild(o);
+});
+demoSelect.addEventListener('change', e => { demoIdx = +e.target.value; resetVM(); });
+document.getElementById('btn-reset').addEventListener('click', resetVM);
+document.getElementById('btn-step').addEventListener('click', vmStep);
+document.getElementById('btn-run').addEventListener('click', vmRun);
+resetVM();
+
+/* ============================================================
+   SUBSYSTEMS GRID
+   ============================================================ */
+const MODS = [
+  // (data from coverage_summary.txt; widths normalized to vm.c=100%)
+  { name:'vm.c', role:'Stack-based bytecode interpreter. 60+ opcodes, 16 concurrent scripts, cooperative multitasking, runaway detection.', lines: 814, cov:'84.6%', tests: 56 },
+  { name:'verb.c', role:'SCUMM-style verb bar, sentence building, click resolution, inventory strip UI.', lines: 456, cov:'91.2%', tests: 34 },
+  { name:'loader.c', role:'ROOM binary parser — walk-boxes, exits, objects, walk-behinds, palette ref — all field-by-field.', lines: 507, cov:'96.8%', tests: 12 },
+  { name:'engine.c', role:'Game state, lifecycle, the game_tick pipeline itself.', lines: 259, cov:'86.5%', tests: 18 },
+  { name:'actor.c', role:'Up to 16 actors. A* pathfinding over walk-box graph, walking, facing, animation, scaling, inventory.', lines: 260, cov:'96.2%', tests: 27 },
+  { name:'save.c', role:'Binary state serialisation. 9 slots, round-trip oracle tested.', lines: 216, cov:'92.6%', tests: 20 },
+  { name:'room.c', role:'Room data — walk-boxes, adjacency, entry/exit points, walk-behinds, palette.', lines: 171, cov:'100%', tests: 17 },
+  { name:'dialog.c', role:'Conversation trees, conditional choices, 4-level nesting, dialog_return.', lines: 141, cov:'100%', tests: 19 },
+  { name:'walkbox.c', role:'Axis-aligned rectangles, point-in-box, nearest-point clamp, adjacency, depth-based scale.', lines: 168, cov:'95.8%', tests: 0 },
+  { name:'object.c', role:'Verb dispatch, persistent (room,object)→state registry, pick-up logic, default responses.', lines: 144, cov:'94.4%', tests: 17 },
+  { name:'scene.c', role:'Scene composition — background blit, z-sort, walk-behinds, sprites, speech, UI layers.', lines: 102, cov:'97.1%', tests: 0 },
+  { name:'font.c', role:'8×8 bitmap font, per-glyph width, outlined text, word-wrap.', lines: 120, cov:'100%', tests: 0 },
+  { name:'resource.c', role:'LHPK pack file loader — index of 256 typed resources, malloc&rsquo;d buffers.', lines: 103, cov:'100%', tests: 12 },
+  { name:'render.c', role:'Framebuffer primitives — clear, rect, sprite blit, scrolling background.', lines: 104, cov:'100%', tests: 0 },
+  { name:'palette.c', role:'256-colour VGA palette. Fade in/out, cycling for water/lights.', lines: 87, cov:'100%', tests: 0 },
+  { name:'credits.c', role:'End-credits scroll subsystem. New addition; OP_SHOW_CREDITS wakes it.', lines: 79, cov:'92.4%', tests: 0 },
+  { name:'cutscene.c', role:'ESC-to-skip mechanism with override fixup. Re-routes the calling script&rsquo;s PC.', lines: 77, cov:'92.2%', tests: 0 },
+  { name:'music_seq.c', role:'Time-based MIDI event sequencer. Up to 1024 events with ms timestamps.', lines: 62, cov:'100%', tests: 17 },
+  { name:'camera.c', role:'Horizontal smooth scroll. Screen↔room coord transforms, auto-track ego.', lines: 50, cov:'100%', tests: 0 },
+  { name:'inv_icon.c', role:'Inventory icon rendering. WU-19. Recent addition for the prologue UI polish.', lines: 49, cov:'100%', tests: 0 },
+  { name:'strtable.c', role:'Deduplicated string storage. 256 strings, 8KB pool, returns existing ID for dupes.', lines: 32, cov:'87.5%', tests: 0 },
+  { name:'sound.c', role:'PCM sound-effect interface. Tracks current playing ID for script queries.', lines: 24, cov:'100%', tests: 17 },
+  { name:'error.c', role:'fatal() — prints, calls abort(). Untestable without process isolation.', lines: 9, cov:'0%', tests: 0 },
+];
+const modGridEl = document.getElementById('modgrid');
+const maxLines = Math.max(...MODS.map(m => m.lines));
+MODS.forEach(m => {
+  const el = document.createElement('div');
+  el.className = 'mod';
+  el.innerHTML =
+    '<div class="mod-name">' + m.name + '</div>' +
+    '<div class="mod-role">' + m.role + '</div>' +
+    '<div class="mod-bar"><div class="fill" style="width:' + Math.max(8, Math.round(m.lines/maxLines*100)) + '%"></div></div>' +
+    '<div class="mod-meta"><span class="lbl">lines</span><span class="val">' + m.lines + '</span><span class="lbl">cov</span><span class="val">' + m.cov + '</span></div>';
+  modGridEl.appendChild(el);
+});
+
+/* ============================================================
+   COVERAGE CHART
+   ============================================================ */
+const COV = [
+  { f:'actor.c', pct:96.15, lines:260 },
+  { f:'camera.c', pct:100, lines:50 },
+  { f:'credits.c', pct:92.41, lines:79 },
+  { f:'cutscene.c', pct:92.21, lines:77 },
+  { f:'dialog.c', pct:100, lines:141 },
+  { f:'engine.c', pct:86.49, lines:259 },
+  { f:'error.c', pct:0, lines:9 },
+  { f:'font.c', pct:100, lines:120 },
+  { f:'inv_icon.c', pct:100, lines:49 },
+  { f:'loader.c', pct:96.84, lines:507 },
+  { f:'music_seq.c', pct:100, lines:62 },
+  { f:'object.c', pct:94.44, lines:144 },
+  { f:'palette.c', pct:100, lines:87 },
+  { f:'render.c', pct:100, lines:104 },
+  { f:'resource.c', pct:100, lines:103 },
+  { f:'room.c', pct:100, lines:171 },
+  { f:'save.c', pct:92.59, lines:216 },
+  { f:'scene.c', pct:97.06, lines:102 },
+  { f:'sound.c', pct:100, lines:24 },
+  { f:'strtable.c', pct:87.5, lines:32 },
+  { f:'verb.c', pct:90.35, lines:456 },
+  { f:'vm.c', pct:97.30, lines:814 },
+  { f:'walkbox.c', pct:95.83, lines:168 },
+];
+const covEl = document.getElementById('covchart');
+COV.sort((a,b) => b.lines - a.lines).forEach(c => {
+  const row = document.createElement('div');
+  row.className = 'covrow';
+  let cls = '';
+  if (c.pct < 50) cls = 'bad';
+  else if (c.pct < 90) cls = 'warn';
+  row.innerHTML =
+    '<span class="nm">' + c.f + '</span>' +
+    '<div class="bar"><div class="fl ' + cls + '" style="width:' + c.pct + '%"></div></div>' +
+    '<span class="pct ' + cls + '">' + c.pct.toFixed(1) + '%</span>' +
+    '<span class="lc">' + c.lines + ' L</span>';
+  covEl.appendChild(row);
+});
+
+/* ============================================================
+   GAMES TABS
+   ============================================================ */
+const GAMES = {
+  'splodgkins': {
+    title: 'The Incredible Temporal Catastrophe of Professor Splodgkins',
+    summary: 'A scatterbrained 1990s inventor must travel to Ancient Egypt to stop his rogue drain-inspection robot — a snake who absorbed a buggy Spanish-language beta Encarta CD-ROM and now believes itself destined to rule the world — before it rewrites all of human history.',
+    bullets: [
+      ['Tone', 'Warm British absurdism. Full Branestawm. Children&rsquo;s-book zaniness played completely straight.'],
+      ['Comparable to', '<em>Day of the Tentacle</em> meets Professor Branestawm meets Wallace &amp; Gromit.'],
+      ['Settings', '1990s English village, Ancient Egypt (~1250 BCE, reign of Ramesses II), and a slowly-Egyptianising present.'],
+      ['Playable cast', 'Professor Splodgkins in Acts 1–3; the snake itself (&ldquo;Pythonus Maximus&rdquo;) becomes playable in Act 3.'],
+    ],
+    detail: 'The repository contains a GCD, four versions of each chapter&rsquo;s GDD, ranked concept docs (this game beat out four other ideas), and a fully-built MVP — &ldquo;The Blocked Drain&rdquo; prologue with 3 rooms (Hallway, Kitchen, Workshop), the Splodgkins/Mrs Flittersnoop actor pair, and end-to-end puzzle solving wired through every engine subsystem. <code>build_out/</code> contains 177 compiled script files and the room/sprite/costume binaries.',
+    bin: '~177 SCRP, 3 rooms, 2 costumes, 196 resources in pak',
+  },
+  'ground-truth': {
+    title: 'Ground Truth',
+    summary: 'Three founders at a tiny startup travel from one malfunctioning client site to another, fixing AI-generated software disasters that have started behaving like physical farce. Smart buildings, kiosks, queue managers — all generated by something the world doesn&rsquo;t quite understand, all failing in stupid logical ways.',
+    bullets: [
+      ['Tone', 'British workplace absurdism — Sam &amp; Max meets The IT Crowd meets Day of the Tentacle.'],
+      ['Structure', 'Roadshow comedy. Office is home base; each chapter sends the trio into a new venue: co-working incubator, smart office tower, council offices, museum, tech expo.'],
+      ['Cast', 'Crispin, Nadia, Bea — three named founders. Plus a yellow office dog (Ed) and a black-and-white cat. Mrs Hadley is a recurring NPC.'],
+      ['State', 'In active production. 5 chapter GDDs + room implementation packets, a critical-path walkthrough, dialogue production plan, full VO design and recordings.'],
+    ],
+    detail: 'This is the most extensively planned thing in the repo. Look in <code>wrk_docs/</code>: GDDs at chapter and sub-chapter granularity, dialogue outline matrices, parallel build strategies, agent prompts for the five streams of parallel work, devil&rsquo;s-advocate reviews. <code>games/ground-truth/assets/</code> has hundreds of named &ldquo;look_*&rdquo; scripts (per-object look-at responses), 19 background images, 30+ sprites.',
+    bin: '~700+ look_* SCRP files, 19 backgrounds, 30+ sprites, full VO',
+  },
+  'postcards': {
+    title: 'Postcards From Nowhere',
+    summary: 'A third game directory exists at <code>games/postcards-from-nowhere/</code> — a smaller experimental project tracked in <code>wrk_journals/2026.05.06 - JRN - Postcards Implementation.md</code>. Less paper trail than the others, and clearly post-MVP exploration of what else the engine can do.',
+    bullets: [
+      ['Status', 'Implementation in progress; only one journal entry as of the latest commit.'],
+      ['Why it matters', 'It shows the engine is genuinely reusable — a third game built on it without changing the engine itself.'],
+      ['Lineage', 'Spawned out of <code>2026.05.05 - JRN - New Image Generated Game Brainstorm.md</code>.'],
+    ],
+    detail: 'Nothing more to say — the project is too young in the repo. But its existence proves the data-not-code promise: a new game is mostly a new asset directory.',
+    bin: '(early)',
+  },
+};
+const gbEl = document.getElementById('games-body');
+function renderGame(key) {
+  const g = GAMES[key];
+  gbEl.innerHTML =
+    '<h4>' + g.title + '</h4>' +
+    '<p class="lede" style="font-size: 18px; max-width: 76ch;">' + g.summary + '</p>' +
+    '<div class="grid2" style="margin-top: 28px;">' +
+      '<div><div class="meta-list">' +
+        g.bullets.map(b => '<div class="ml-row"><span class="k">' + b[0] + '</span><span class="v">' + b[1] + '</span></div>').join('') +
+      '</div></div>' +
+      '<div><p style="color: var(--text-dim); font-size: 14px;">' + g.detail + '</p>' +
+        '<div style="margin-top: 14px; font-family: var(--mono); font-size: 11px; color: var(--amber);">build_out/ ≈ ' + g.bin + '</div></div>' +
+    '</div>';
+}
+document.querySelectorAll('.games-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.games-tab').forEach(x => x.classList.toggle('active', x === t));
+    renderGame(t.dataset.game);
+  });
+});
+renderGame('splodgkins');
+
+/* ============================================================
+   TIMELINE
+   ============================================================ */
+const TIMELINE = [
+  { day: 'Mar 16', label: 'day 1', what: 'Project bootstrapped', d: 'Empty repo at start of day. By end of day: 207 unit tests passing, 13 engine phases complete — foundation, graphics, VM core, rooms, actors, verbs, objects, dialogue, sound, cutscenes, save, compiler, resources, integration. The Project Blueprint and GCD for Professor Splodgkins both drafted.', ev: '13 commits · 207 tests · the entire engine skeleton lives' },
+  { day: 'Mar 17', label: 'day 2', what: 'Build infra, lhscru, content pipeline, Win32 host', d: 'Rendering pipeline + test level. lhscru E2E runner spec&rsquo;d and implemented. Win32 host window. The hero screenshot at the top of this page is from this day.', ev: 'Demo running. Mouse input. Verb bar drawing.' },
+  { day: 'Mar 18', label: 'day 3', what: 'Repo reorg, blueprint, asset plan, prologue build', d: 'Repository reorganised into core/host/dos split. Project Blueprint formalised (686 lines). Asset completion plan. Prologue &ldquo;The Blocked Drain&rdquo; begins building.', ev: 'Repo structure stabilises. Asset planning kicks in.' },
+  { day: 'Mar 19–20', label: 'wk 1 end', what: 'Credits, inventory icons, DOS audio drivers, Ground Truth concept', d: 'OP_SHOW_CREDITS opcode added (with HLD review). Inventory icon rendering goes through three HLD revisions before landing. DOS audio drivers implemented (still partly stubs). Ground Truth game concept doc written: a new game using the same engine.', ev: 'First post-MVP engine features. A second game emerges.' },
+  { day: 'Mar 21–22', label: 'wk 2', what: 'Ground Truth: 5 chapter GDDs, room packets, parallel build strategy', d: 'Massive design burst for Ground Truth. Five chapter GDDs, room implementation packets, dialogue production plan, full-game critical-path walkthrough, parallel build strategy across five streams of agents. Production schedule and milestones drafted.', ev: 'The most planning-dense days in the repo.' },
+  { day: 'Mar 24–26', label: 'wk 2 end', what: 'MVP implementation, E2E test campaigns', d: 'Ground Truth MVP implementation status report. Full-game E2E test campaign run. Devil&rsquo;s-advocate review of Phase 2.', ev: 'Engine tested as a real game runs on it.' },
+  { day: 'Mar 31 – Apr 8', label: 'wk 3–4', what: 'Ground Truth fixture grind', d: 'Seven consecutive days of &ldquo;Ground Truth Fixture Continuation&rdquo; journal entries — the grinding part of game production. Office continuation, late save flow, midgame flow, character sprite pass, HQ room fit pass, launch room fit pass.', ev: 'The work that isn&rsquo;t the fun stuff.' },
+  { day: 'Apr 10–13', label: 'wk 5', what: 'Audio: MIDI assets, SFX, full voiceover', d: 'Audio planning, MIDI source assets, SFX source assets, protagonist implementation. Stage 1/2/3 audio workers. Stage 3 voice integration. Full VO design and implementation across multiple sessions.', ev: 'The game gets sound.' },
+  { day: 'Apr 16–26', label: 'wk 6', what: 'GDD buildouts V1→V6, selectable protagonist, Phase 4–5 handover', d: 'Six versions of the GDD buildout HLD. Selectable protagonist. Spike paper designs for each chapter. A long handover document for Phases 4–5 stage 5+.', ev: 'Late-stage polish &amp; structure work.' },
+  { day: 'May 5–6', label: 'wk 7', what: 'Postcards From Nowhere, repo cleanup', d: 'Brainstorm for a new image-generated game (Postcards From Nowhere) and its implementation begins. Repo structure clarification. Progress summary audit. Local Watcom install journal — the project pulls its toolchain inside.', ev: 'Engine proven reusable. Repo audited. End of paper trail.' },
+];
+const tlMarkers = document.getElementById('tl-markers');
+const tlDetail = document.getElementById('tl-detail');
+TIMELINE.forEach((t, i) => {
+  const m = document.createElement('div');
+  m.className = 'tl-marker' + (i === 0 ? ' active' : '');
+  m.style.left = (i / (TIMELINE.length - 1) * 100) + '%';
+  m.innerHTML = '<div class="dot"></div><div class="lbl">' + t.day + '</div>';
+  m.addEventListener('click', () => selectTL(i));
+  m.addEventListener('mouseenter', () => selectTL(i));
+  tlMarkers.appendChild(m);
+});
+function selectTL(i) {
+  tlMarkers.querySelectorAll('.tl-marker').forEach((m, idx) => m.classList.toggle('active', idx === i));
+  const t = TIMELINE[i];
+  tlDetail.innerHTML =
+    '<div class="when">' + t.day + ' · ' + t.label + '</div>' +
+    '<div class="what">' + t.what + '</div>' +
+    '<p>' + t.d + '</p>' +
+    '<div class="ev">↳ ' + t.ev + '</div>';
+}
+selectTL(0);
+
+</script>
+
+</body>
+</html>
