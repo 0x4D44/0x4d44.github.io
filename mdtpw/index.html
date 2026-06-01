@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>mdtpw — Architecture Deep-Dive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ===================== TOP BAR ===================== -->
+<header class="topbar">
+  <div class="mark"><span class="sq"></span> mdtpw</div>
+  <span class="ver">v0.14.1</span>
+  <div class="spacer"></div>
+  <nav class="tnav">
+    <a href="#pipeline">Pipeline</a>
+    <a href="#decisions">Decisions</a>
+    <a href="#ddvt">Dispatch</a>
+    <a href="#runtime">Runtime</a>
+    <a href="#status">Status</a>
+  </nav>
+</header>
+
+<div class="shell">
+
+  <!-- ===================== SIDE NAV ===================== -->
+  <aside class="sidenav">
+    <div class="navgroup">Orientation</div>
+    <a data-spy="overview" href="#overview"><span class="n">00</span>Overview</a>
+    <a data-spy="purpose" href="#purpose"><span class="n">01</span>What &amp; why</a>
+    <a data-spy="model" href="#model"><span class="n">02</span>Mental model</a>
+
+    <div class="navgroup">The compiler</div>
+    <a data-spy="pipeline" href="#pipeline"><span class="n">03</span>Compile pipeline</a>
+    <a data-spy="decisions" href="#decisions"><span class="n">04</span>Locked decisions</a>
+    <a data-spy="typemodel" href="#typemodel"><span class="n">05</span>Two-plane types</a>
+
+    <div class="navgroup">Runtime &amp; OWL</div>
+    <a data-spy="ddvt" href="#ddvt"><span class="n">06</span>Message dispatch</a>
+    <a data-spy="runtime" href="#runtime"><span class="n">07</span>Runtime split</a>
+    <a data-spy="backend" href="#backend"><span class="n">08</span>Self-standing backend</a>
+
+    <div class="navgroup">Policy &amp; proof</div>
+    <a data-spy="isms" href="#isms"><span class="n">09</span>16-bit-ism policy</a>
+    <a data-spy="modules" href="#modules"><span class="n">10</span>Module map</a>
+    <a data-spy="testing" href="#testing"><span class="n">11</span>Oracle ladder</a>
+    <a data-spy="status" href="#status"><span class="n">12</span>Status</a>
+  </aside>
+
+  <!-- ===================== MAIN ===================== -->
+  <main>
+
+    <!-- HERO -->
+    <section id="overview" class="hero">
+      <div class="inner">
+        <div class="eyebrow">Architecture deep-dive · clean-room compiler</div>
+        <h1>Recompiling <span class="accent">Turbo&nbsp;Pascal</span><br />for the modern era.</h1>
+        <p class="sub"><b>mdtpw</b> is a clean-room reimplementation of <b>Borland Turbo Pascal for Windows 1.5</b>. It takes legacy 16-bit Object Pascal source and compiles it to a native <b>PE32</b> or <b>PE32+</b> executable that runs on modern 64-bit Windows — no 16-bit emulation, no NE output, no DOS box.</p>
+
+        <div class="heromono">
+          <span class="chip">front-end: <b>Rust</b></span>
+          <span class="chip">backend: <b>LLVM 21.1.8</b></span>
+          <span class="chip">output: <b>PE32 / PE32+</b></span>
+          <span class="chip">libraries: <b>OWL 1.0 + BWCC</b></span>
+          <span class="chip">no host MSVC / SDK</span>
+        </div>
+
+        <div class="statrow reveal">
+          <div class="stat"><div class="num">~18<span class="u">k</span></div><div class="lbl">Rust front-end LOC</div></div>
+          <div class="stat"><div class="num">859<span class="u"> ✓</span></div><div class="lbl">passing oracles</div></div>
+          <div class="stat"><div class="num">20</div><div class="lbl">re-authored TPW units</div></div>
+          <div class="stat"><div class="num">M0–M7</div><div class="lbl">delivered milestones</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PURPOSE -->
+    <section id="purpose">
+      <div class="inner reveal">
+        <div class="eyebrow">01 · The problem</div>
+        <h2>A 30-year-old app, recompiled — and it just runs.</h2>
+        <p class="lede">The deliverable that matters: <em>"a representative TPW app, recompiled, runs correctly on modern Windows."</em> Bug-for-bug machine-code fidelity with Borland's compiler is explicitly <strong>not</strong> a goal. Behavioural fidelity of the <strong>language and its libraries</strong> is.</p>
+
+        <div class="grid3">
+          <div class="card">
+            <div class="ic">The input</div>
+            <h4>TP7-era Object Pascal</h4>
+            <p>The <code>object</code> model (not Delphi <code>class</code>), 16-bit <code>Integer</code>, length-prefixed strings, sets, variant records, units, typed constants, <code>absolute</code>, inline <code>asm</code> — and a faithful OWL 1.0 + BWCC GUI stack.</p>
+          </div>
+          <div class="card">
+            <div class="ic">The output</div>
+            <h4>A flat native PE image</h4>
+            <p>The produced binary is an ordinary 32- or 64-bit Windows executable. The modern loader treats it like any other EXE — no thunking, no DPMI, no compatibility shim, no virtual machine.</p>
+          </div>
+          <div class="card">
+            <div class="ic">The method</div>
+            <h4>Re-author, don't emulate</h4>
+            <p>No Borland binaries are consumed. The <code>.TPL</code> runtime and the whole OWL library are <strong>re-written from source in Pascal</strong> and compiled by mdtpw itself — the most faithful path and the best end-to-end test.</p>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="tag">Grounded in the original media</span>
+          The design was built on the authentic TPW 1.5 distribution, extracted to a 164-file source corpus, cross-checked line-by-line against Borland's own <code>SYSTEM.INT</code>, <code>WOBJECTS.INT</code>, <code>WINTYPES.PAS</code> and the <code>STEP01..STEP10</code> tutorial demos. The compiler's tests run that unmodified corpus.
+        </div>
+      </div>
+    </section>
+
+    <!-- MENTAL MODEL -->
+    <section id="model">
+      <div class="inner reveal">
+        <div class="eyebrow">02 · Mental model</div>
+        <h2>Three things, holdable in one head.</h2>
+        <p class="lede">The architecture is deliberately small. It is a conventional Pascal front-end that emits LLVM IR, a thin native runtime in Rust, and the TPW libraries re-authored in Pascal and compiled by mdtpw. Read top to bottom: each plane sits on the one below it.</p>
+
+        <div class="planes">
+          <div class="plane frontend">
+            <div class="phead"><span class="ttl">① Front-end &nbsp;·&nbsp; Rust</span><span class="meta">src/ — lexer → parser → sema → emit</span></div>
+            <p class="measure" style="font-size:14.5px;color:var(--ink-soft);margin:0 0 12px;">A by-the-book recursive-descent Pascal-7 compiler. The only genuinely novel work is the type/layout engine, the typed-constant evaluator, and DDVT dispatch.</p>
+            <div class="chips">
+              <span class="pchip"><b>lexer</b> · tokens</span>
+              <span class="pchip"><b>parser</b> · AST</span>
+              <span class="pchip"><b>sema</b> · types + layout</span>
+              <span class="pchip"><b>consteval</b></span>
+              <span class="pchip"><b>emit</b> · textual LLVM IR</span>
+            </div>
+          </div>
+
+          <div class="plane llvm">
+            <div class="phead"><span class="ttl">② LLVM backend &nbsp;·&nbsp; off-the-shelf</span><span class="meta">bundled clang + lld-link</span></div>
+            <p class="measure" style="font-size:14.5px;color:var(--ink-soft);margin:0 0 12px;">Textual <code>.ll</code> is fed to bundled LLVM tools — optimise, codegen to COFF, link to PE. Solved problems stay solved; mdtpw writes none of this.</p>
+            <div class="chips">
+              <span class="pchip"><b>clang</b> · opt + x86/x64</span>
+              <span class="pchip"><b>lld-link</b> · PE32/PE32+</span>
+              <span class="pchip"><b>llvm-rc</b> · resources</span>
+              <span class="pchip"><b>llvm-dlltool</b> · import libs</span>
+            </div>
+          </div>
+
+          <div class="plane floor">
+            <div class="phead"><span class="ttl">③ Native floor &nbsp;·&nbsp; Rust <code style="font-size:0.8em">#![no_std]</code></span><span class="meta">mdtpw_rt/ — i686 + x86_64 staticlibs</span></div>
+            <p class="measure" style="font-size:14.5px;color:var(--ink-soft);margin:0 0 12px;">The smallest possible native surface — only the symbols LLVM/clang cannot synthesise. Everything else lives one plane up, in Pascal.</p>
+            <div class="chips">
+              <span class="pchip"><b>__mdtpw_start</b> · PE entry</span>
+              <span class="pchip"><b>StdWndProc</b> trampoline</span>
+              <span class="pchip"><b>__tpw_*</b> helpers</span>
+              <span class="pchip"><b>__tpw_ddvt_lookup</b></span>
+            </div>
+          </div>
+
+          <div class="plane libs">
+            <div class="phead"><span class="ttl">④ TPW libraries &nbsp;·&nbsp; Pascal, compiled by mdtpw</span><span class="meta">runtime_pas/ — 20 re-authored units</span></div>
+            <p class="measure" style="font-size:14.5px;color:var(--ink-soft);margin:0 0 12px;">The bulk of the Windows surface <em>is</em> ordinary Pascal that mdtpw recompiles. The library being the object model is exactly why re-authoring is the best compiler test.</p>
+            <div class="chips">
+              <span class="pchip"><b>WObjects</b> · OWL 1.0</span>
+              <span class="pchip"><b>WinTypes / WinProcs</b></span>
+              <span class="pchip"><b>StdDlgs · StdWnds</b></span>
+              <span class="pchip"><b>BWCC</b></span>
+              <span class="pchip"><b>WinDos</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="note amber">
+          <span class="tag">The one-line model</span>
+          "Pascal-7 front-end → LLVM. Everything Windows-specific is <em>Pascal we recompile</em>, sitting on a <em>thin Rust floor</em>."
+        </div>
+      </div>
+    </section>
+
+    <!-- PIPELINE -->
+    <section id="pipeline">
+      <div class="inner reveal">
+        <div class="eyebrow">03 · The compile pipeline</div>
+        <h2>One source file, eight stages, a native EXE.</h2>
+        <p class="lede measure">Hover or tap any stage to inspect what it does, which module owns it, and the decisions baked into it. The driver resolves <strong>one immutable <code>Target</code> record</strong> up front and threads it through every stage — no environment variables, no feature flags, one behavioural code path.</p>
+
+        <div class="pipe">
+          <div class="pipe-track" id="pipeTrack"></div>
+          <div class="pipe-detail" id="pipeDetail"></div>
+        </div>
+
+        <div class="codecap">What the front-end hands to LLVM — emit.rs output</div>
+        <div class="code"><span class="c">; per DDVT-bearing object: a Dynamic Method Table keyed by Windows message id</span>
+<span class="k">@dmt.o42</span> = <span class="k">global</span> { <span class="k">ptr</span> <span class="hl">@dmt.o12</span>, <span class="k">i32</span> <span class="g">2</span>,
+  [<span class="g">2</span> x { <span class="k">i16</span>, <span class="k">ptr</span> }] [
+    { <span class="k">i16</span> <span class="g">5</span>,      <span class="k">ptr</span> <span class="hl">@TMyWin.WMSize</span> },   <span class="c">; wm_First + wm_Size</span>
+    { <span class="k">i16</span> <span class="d">-24575</span>, <span class="k">ptr</span> <span class="hl">@TMyWin.CMExit</span> } ] }  <span class="c">; cm_First + cm_Exit</span>
+
+<span class="c">; the object header stores both tables: { vmtptr@0, dmtptr@4 }</span>
+<span class="c">; the runtime walks @dmt via __tpw_ddvt_lookup(obj, msgid) -> ptr</span></div>
+      </div>
+    </section>
+
+    <!-- DECISIONS -->
+    <section id="decisions">
+      <div class="inner reveal">
+        <div class="eyebrow">04 · Locked decisions</div>
+        <h2>Nine choices that shaped everything.</h2>
+        <p class="lede measure">These are settled, not up for relitigation. Each trades scope for fidelity or simplicity. Expand any card for the rationale.</p>
+
+        <div class="decisions">
+          <details class="dcard" open>
+            <summary><span class="did">D1</span><span class="dttl">AST → LLVM IR directly — no custom middle IR</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p>The emitter lowers the typed AST straight to textual LLVM IR. There is no hand-rolled intermediate representation between them.</p>
+              <div class="why"><b>Why:</b> LLVM <em>is</em> the typed IR. A bespoke middle IR would duplicate it for zero optimizer payoff.</div>
+            </div>
+          </details>
+
+          <details class="dcard">
+            <summary><span class="did">D2</span><span class="dttl">Re-author OWL / Objects / StdDlgs / BWCC in Pascal</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p>The entire OWL library is re-written in TPW Pascal and compiled by mdtpw itself, rather than reimplemented natively or consumed as binary.</p>
+              <div class="why"><b>Why:</b> the library <em>is</em> the object model and the DDVT. Re-authoring is the most faithful path <em>and</em> the single best end-to-end compiler test. The native floor stays tiny.</div>
+            </div>
+          </details>
+
+          <details class="dcard">
+            <summary><span class="did">D4</span><span class="dttl">Two-plane type model — language widths frozen, API widths widened</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p>Pascal language types keep their TPW widths (<code>Integer</code> = 16-bit). Only <code>Pointer</code>/<code>PChar</code> widen to flat 32-bit. The re-declared API units re-type handles and messages at true Win32 width.</p>
+              <div class="why"><b>Why:</b> legacy code touches handles only <em>by name</em> through compiler-supplied units — so recompiling is both source-compatible and ABI-correct. This is the make-or-break decision (see §05).</div>
+            </div>
+          </details>
+
+          <details class="dcard">
+            <summary><span class="did">D5</span><span class="dttl">stdcall everywhere</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p>Every Pascal routine and every Win32 import uses <code>stdcall</code> (LLVM <code>x86_stdcallcc</code>).</p>
+              <div class="why"><b>Why:</b> Win16 Pascal/FAR is callee-cleans-stack; <code>stdcall</code> is the only Win32 convention that is callee-cleans <em>and</em> exactly what kernel32/user32/gdi32 export — so API calls and callbacks need no shim.</div>
+            </div>
+          </details>
+
+          <details class="dcard">
+            <summary><span class="did">D6</span><span class="dttl">Real → IEEE f64</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p>Borland's 6-byte software <code>Real</code> maps to IEEE <code>f64</code>; <code>Single</code>→f32, <code>Extended</code>→f64, <code>Comp</code>→i64. Serialized or <code>absolute</code> <code>Real</code> is rejected with a diagnostic (size 6→8).</p>
+              <div class="why"><b>Why:</b> <code>f64</code> strictly dominates the 48-bit real; the corpus uses bare <code>Real</code>, never <code>{$N+}</code>. A bit-faithful 48-bit real is a large runtime for <em>less</em> accuracy.</div>
+            </div>
+          </details>
+
+          <details class="dcard">
+            <summary><span class="did">D7</span><span class="dttl">Segment / port / interrupt / overlay / BASM → reject with a diagnostic</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p>16-bit-isms with no flat-32 meaning are a hard compile error carrying a precise, actionable message.</p>
+              <div class="why"><b>Why:</b> a survey of ~150 demos shows application code never uses them — only the RTL does, and the RTL is replaced. Rejecting is faithful and simplest (see §09).</div>
+            </div>
+          </details>
+
+          <details class="dcard">
+            <summary><span class="did">D8</span><span class="dttl">Reuse a modern resource compiler</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p><code>.RC</code> scripts compile through bundled <code>llvm-rc</code>; resources embed via the linker's <code>.rsrc</code>. mdtpw writes no RC compiler.</p>
+              <div class="why"><b>Why:</b> resource compilation is a solved problem; writing one is pure scope.</div>
+            </div>
+          </details>
+
+          <details class="dcard">
+            <summary><span class="did">D9</span><span class="dttl">No env vars, no feature flags</span><span class="dchev">›</span></summary>
+            <div class="dbody">
+              <p>The target is a single CLI argument resolved into one immutable <code>Target</code> record, threaded through codegen and ABI. There is exactly one behavioural code path.</p>
+              <div class="why"><b>Why:</b> reproducible, testable, holdable in the head. Win64 becomes a <em>data</em> change in that record — not scattered string switches.</div>
+            </div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- TYPE MODEL -->
+    <section id="typemodel">
+      <div class="inner reveal">
+        <div class="eyebrow">05 · The two-plane type model</div>
+        <h2>How 16-bit code stays correct on a 32/64-bit machine.</h2>
+        <p class="lede measure">This is the load-bearing idea (decision D4). There are two representation planes. The <strong>language plane</strong> freezes Pascal types at their original TPW widths for source fidelity. The <strong>API plane</strong> re-declares the handle and message types at their true modern Win32 widths — and legacy code only ever touches those by name.</p>
+
+        <div class="tablewrap">
+          <table class="tbl">
+            <thead><tr><th>Pascal type</th><th>Plane</th><th>Representation</th><th>LLVM</th><th>Note</th></tr></thead>
+            <tbody>
+              <tr><td><b>Integer</b></td><td><span class="pill frozen">language</span></td><td class="m">16-bit signed (wraps)</td><td class="m">i16</td><td>Stays 16-bit — fidelity</td></tr>
+              <tr><td><b>LongInt</b></td><td><span class="pill frozen">language</span></td><td class="m">32-bit</td><td class="m">i32</td><td></td></tr>
+              <tr><td><b>Real</b></td><td><span class="pill frozen">language</span></td><td class="m">→ IEEE double</td><td class="m">double</td><td>Decision D6</td></tr>
+              <tr><td><b>string[n]</b></td><td><span class="pill frozen">language</span></td><td class="m">length-prefixed, byte 0 = len</td><td class="m">[n+1 x i8]</td><td>ShortString</td></tr>
+              <tr><td><b>set of</b></td><td><span class="pill frozen">language</span></td><td class="m">bitset, ≤256 elems</td><td class="m">[N x i8]</td><td>byte-exact ops</td></tr>
+              <tr><td><b>record</b></td><td><span class="pill frozen">language</span></td><td class="m">byte-packed + variant overlay</td><td class="m">%struct</td><td>layout engine owns offsets</td></tr>
+              <tr><td><b>Pointer / PChar / ^T</b></td><td><span class="pill lower">widened</span></td><td class="m">flat 32-bit</td><td class="m">ptr</td><td>the only widened language type</td></tr>
+              <tr><td><b>THandle / HWnd / HDC</b></td><td><span class="pill lower">API</span></td><td class="m">32-bit opaque (orig. Word)</td><td class="m">i32 / i64</td><td>re-declared in WinTypes</td></tr>
+              <tr><td><b>TMessage.WParam</b></td><td><span class="pill lower">API</span></td><td class="m">32-bit (orig. Word)</td><td class="m">i32 / i64</td><td>repacked centrally — §06</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">
+          <span class="tag">Why it works</span>
+          A legacy program declares <code>var W: HWnd;</code> and passes it to <code>SendMessage</code>. It never writes the width down — it just uses the name. Because mdtpw <em>supplies</em> <code>HWnd</code> from its own re-declared <code>WinTypes</code>, recompiling silently upgrades every handle from 16 to 32/64 bits, ABI-correct, with zero source edits. The escape hatch — code that <code>absolute</code>-overlays or serializes a width-changed struct — is rejected rather than silently corrupted.
+        </div>
+      </div>
+    </section>
+
+    <!-- DDVT DISPATCH -->
+    <section id="ddvt">
+      <div class="inner reveal">
+        <div class="eyebrow">06 · Message dispatch — the heart of OWL</div>
+        <h2>DDVT: a second vtable, keyed by Windows message.</h2>
+        <p class="lede measure">OWL methods declared <code>virtual wm_First + wm_Size</code> don't go in the ordinary VMT. They go in a separate <strong>Dynamic Method Table (DMT)</strong>, keyed by the message id, with inheritance fallback. Every object type therefore carries <em>two</em> dispatch tables. Step through a live message arriving from Windows:</p>
+
+        <div class="ddvt">
+          <div class="ddvt-top">
+            <div class="ddvt-flow">
+              <div class="ddvt-step"><div class="sdot">1</div><div class="sbody"><div class="st">Windows posts a message</div><div class="sd"><code>WM_SIZE</code> arrives at the one exported <code>StdWndProc</code> trampoline (in the native floor).</div></div></div>
+              <div class="ddvt-step"><div class="sdot">2</div><div class="sbody"><div class="st">Recover the OWL object</div><div class="sd"><code>GetObjectPtr(HWND)</code> looks up the Pascal object for this window in a side table.</div></div></div>
+              <div class="ddvt-step"><div class="sdot">3</div><div class="sbody"><div class="st">Repack to a Win16 TMessage</div><div class="sd">The Win32 args are reshaped into the canonical Win16 <code>TMessage</code> layout user code expects.</div></div></div>
+              <div class="ddvt-step"><div class="sdot">4</div><div class="sbody"><div class="st">Lookup by message id</div><div class="sd"><code>__tpw_ddvt_lookup(obj, 5)</code> walks the DMT. <code>wm_Size</code> = index 5 → found in <code>TMyWin</code>.</div></div></div>
+              <div class="ddvt-step"><div class="sdot">5</div><div class="sbody"><div class="st">Dispatch the handler</div><div class="sd">User's <code>WMSize(var Msg)</code> runs verbatim — it reads <code>Msg.LParamLo/Hi</code> assuming Win16 shape.</div></div></div>
+              <div class="ddvt-step"><div class="sdot">6</div><div class="sbody"><div class="st">Unhandled? Fall through</div><div class="sd">A miss walks <code>DefWndProc → DefCommandProc / DefChildProc</code> → ultimately Win32 <code>DefWindowProc</code>.</div></div></div>
+            </div>
+            <div class="ddvt-side">
+              <div class="scap">DMT — @dmt.o42 (class TMyWin)</div>
+              <div class="ddvt-table">
+                <div class="ddvt-row"><span class="key">parent</span><span class="arrow">→</span><span class="val">@dmt.o12</span></div>
+                <div class="ddvt-row"><span class="key">i16 5</span><span class="arrow">→</span><span class="val">@TMyWin.WMSize</span></div>
+                <div class="ddvt-row"><span class="key">i16 -24575</span><span class="arrow">→</span><span class="val">@TMyWin.CMExit</span></div>
+                <div class="ddvt-row fall"><span class="key">‹miss›</span><span class="arrow">→</span><span class="val">DefWndProc chain</span></div>
+              </div>
+              <div style="margin-top:18px;font-family:var(--mono);font-size:11px;color:var(--code-dim);line-height:1.7;">
+                wm_First = $0000<br />
+                id_First = $8000<br />
+                cm_First = $A000<br />
+                <span style="color:var(--code-amber)">one</span> repack path lives only in the trampoline,<br />so user WMxxx overrides stay verbatim.
+              </div>
+            </div>
+          </div>
+          <div class="ddvt-ctrl">
+            <button id="ddvtNext">Next ›</button>
+            <button class="ghost" id="ddvtReset">Reset</button>
+            <span class="prog" id="ddvtProg">step 1 / 6</span>
+          </div>
+        </div>
+
+        <div class="note amber">
+          <span class="tag">The highest-risk contract</span>
+          The Win16⇄Win32 <code>WM_COMMAND</code> repack is where every menu and button silently lives or dies — Win16 puts the control id in <code>wParam</code>; Win32 splits id/notify into <code>wParam</code> and the hwnd into <code>lParam</code>. That reshape happens in <strong>exactly one place</strong>, the trampoline, so thousands of lines of user handlers never have to know.
+        </div>
+      </div>
+    </section>
+
+    <!-- RUNTIME SPLIT -->
+    <section id="runtime">
+      <div class="inner reveal">
+        <div class="eyebrow">07 · The runtime split</div>
+        <h2>Mostly Pascal, with a thin Rust floor.</h2>
+        <p class="lede measure">The runtime is split deliberately to keep native code minimal. Almost everything is Pascal that mdtpw recompiles; the Rust floor exists only for the handful of symbols that LLVM and the linker genuinely cannot synthesise.</p>
+
+        <div class="grid2">
+          <div class="card" style="background:var(--amber-soft);border-color:var(--amber);">
+            <div class="ic" style="color:oklch(0.5 0.12 64)">runtime_pas/ — re-authored Pascal</div>
+            <h4>20 TPW units, compiled by mdtpw</h4>
+            <p style="margin-bottom:12px;">The bulk of the OWL and Windows API surface. Each is ordinary TP-dialect Pascal that exercises the compiler end to end every time it's built.</p>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--ink-soft);line-height:1.95;">
+              WObjects · WinTypes · WinProcs · StdDlgs<br />
+              StdWnds · BWCC · WinDos · CommDlg · Ctl3d<br />
+              ShellAPI · Validate · WinApi · Win31 · Ole<br />
+              DDEML · MMSystem · PenWin · OPrinter · …
+            </div>
+          </div>
+          <div class="card" style="background:oklch(0.96 0.03 150);border-color:oklch(0.82 0.07 150);">
+            <div class="ic" style="color:var(--green)">mdtpw_rt/ — native floor · #![no_std]</div>
+            <h4>~3,300 LOC of Rust, two staticlibs</h4>
+            <p style="margin-bottom:12px;">i686 and x86_64 MSVC staticlibs. Only the irreducible native symbols — no MSVC CRT, no UCRT, no std.</p>
+            <div style="font-family:var(--mono);font-size:12px;color:var(--ink-soft);line-height:1.95;">
+              __mdtpw_start / DllMain · PE startup<br />
+              StdWndProc · HWND→object table · repack<br />
+              __tpw_* · write / string / set / file / heap<br />
+              __tpw_ddvt_lookup · the DMT walker<br />
+              BWCC link gate
+            </div>
+          </div>
+        </div>
+
+        <div class="note">
+          <span class="tag">One walker, no second copy</span>
+          The DDVT walk lives in <code>src/ddvt_walk.rs</code>. It is a module of the compiler crate — so <code>cargo test</code> runs its unit oracle — <em>and</em> it is <code>#[path]</code>-included into the runtime floor, where <code>__tpw_ddvt_lookup</code> forwards to the exact same code. There is no duplicate implementation to drift apart. The ABI it depends on — symbol name, <code>(ptr, i16) → ptr</code> signature, and the <code>{ parent, count, [count × {i16, ptr}] }</code> memory layout — is frozen.
+        </div>
+      </div>
+    </section>
+
+    <!-- BACKEND -->
+    <section id="backend">
+      <div class="inner reveal">
+        <div class="eyebrow">08 · Self-standing backend</div>
+        <h2>Ships as a single EXE. Needs nothing installed.</h2>
+        <p class="lede measure"><code>cargo build --release</code> produces one <code>mdtpw.exe</code> that embeds both the runtime assets and the entire LLVM backend. A fresh Windows host needs no LLVM, no MSVC, and no Windows SDK to compile a supported program.</p>
+
+        <div class="code"><span class="c">; the backend payload, embedded in mdtpw.exe, extracted on first use to:</span>
+<span class="d">%LOCALAPPDATA%\mdtpw\backend\</span><span class="hl">&lt;content-hash&gt;</span><span class="d">\</span>
+
+  <span class="k">clang.exe</span>          <span class="c">; .ll  → .obj   (LLVM 21.1.8, x86 + x64 backends)</span>
+  <span class="k">lld-link.exe</span>       <span class="c">; .obj → PE32 / PE32+</span>
+  <span class="k">llvm-rc.exe</span>        <span class="c">; .rc  → .res   (resources)</span>
+  <span class="k">llvm-dlltool.exe</span>   <span class="c">; generate Win32 import libs from actual imports</span>
+
+<span class="c">; the cache is content-addressed: a new build extracts a new &lt;hash&gt; dir,</span>
+<span class="c">; so versions never collide and re-extraction is a no-op once warm.</span></div>
+
+        <div class="grid3">
+          <div class="card"><div class="ic">Targets</div><h4>win32 &amp; win64</h4><p><code>--target win32</code> (default) emits i686 PE32 with stdcall. <code>--target win64</code> emits x86_64 PE32+ with the MS x64 ABI, native-width handles, and native callback boundaries — the same source, a data change in <code>Target</code>.</p></div>
+          <div class="card"><div class="ic">Build config</div><h4>mdtpw.toml</h4><p>Invoked with no <code>.pas</code>, mdtpw walks up for an <code>mdtpw.toml</code> (cargo-style). An explicit <code>.pas</code> bypasses it entirely — the backward-compatibility lock keeps every test invocation byte-identical.</p></div>
+          <div class="card"><div class="ic">Resources</div><h4>Win16 .RES → COFF</h4><p>A dedicated reconstructor (<code>res16</code>) rebuilds 16-bit <code>.RES</code> resources — bitmaps, icons, dialogs — into modern COFF resources the linker can bind, recovering assets the original binary tooling left behind.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 16-BIT-ISM POLICY -->
+    <section id="isms">
+      <div class="inner reveal">
+        <div class="eyebrow">09 · 16-bit-ism policy</div>
+        <h2>Lower it, emulate it, or reject it.</h2>
+        <p class="lede measure">Every 16-bit construct gets one of three verdicts. The policy is justifiable precisely because the corpus survey shows application code never touches the <span class="pill reject">reject</span> set — only the runtime library did, and the runtime library is replaced.</p>
+
+        <div class="tablewrap">
+          <table class="tbl">
+            <thead><tr><th>Construct</th><th>Verdict</th><th>Rationale</th></tr></thead>
+            <tbody>
+              <tr><td class="m">Pointer / PChar / ^T, @, Addr</td><td><span class="pill lower">lower</span></td><td>Flat 32 — the only sane representation</td></tr>
+              <tr><td class="m">MakeProcInstance / FreeProcInstance</td><td><span class="pill lower">lower</span></td><td>Identity / no-op — thunks meaningless when flat</td></tr>
+              <tr><td class="m">export, far / near procs, {$F}</td><td><span class="pill lower">lower</span></td><td>One convention: stdcall, flat (D5)</td></tr>
+              <tr><td class="m">ExitProc chain, unit init order</td><td><span class="pill emulate">emulate</span></td><td>Observable program behaviour — reproduce faithfully</td></tr>
+              <tr><td class="m">Real arithmetic</td><td><span class="pill emulate">emulate</span></td><td>As f64 (D6) — dominates 48-bit, simpler</td></tr>
+              <tr><td class="m">Seg / Ofs / Ptr, Mem, Port, PrefixSeg</td><td><span class="pill reject">reject</span></td><td>No flat-32 meaning; absent from app corpus</td></tr>
+              <tr><td class="m">inline asm … end, inline($..)</td><td><span class="pill reject">reject</span></td><td>16-bit machine code; only the (replaced) RTL used it</td></tr>
+              <tr><td class="m">interrupt, MsDos / Intr, overlays</td><td><span class="pill reject">reject</span></td><td>DOS / 16-bit only — not Windows practice</td></tr>
+              <tr><td class="m">Serialized / absolute width-changed structs</td><td><span class="pill reject">reject</span></td><td>SizeOf changed (6→8, 16→32) — silent corruption otherwise</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="measure" style="font-size:14.5px;color:var(--ink-faint);">Rejections aren't silent — each is a precise, actionable diagnostic naming the construct and why it has no flat-32 meaning. Out-of-scope units (OLE, DDE, MMSystem, PenWindows, Paradox) still <em>parse</em> as a front-end safety net but carry no behavioural gate.</p>
+      </div>
+    </section>
+
+    <!-- MODULE MAP -->
+    <section id="modules">
+      <div class="inner reveal">
+        <div class="eyebrow">10 · Module map</div>
+        <h2>Where the code lives, by weight.</h2>
+        <p class="lede measure">Bar length is source size. The emitter dominates — lowering every Pascal construct to IR is most of the work — followed by the layout-bearing analysis modules. The native floor is the second-largest single file, yet stays deliberately self-contained.</p>
+
+        <div class="modmap">
+          <div class="modrow fe"><div class="mname">emit.rs<span class="role">AST → textual LLVM IR</span></div><div class="mbar" style="width:100%"></div><div class="mloc">6,743</div></div>
+          <div class="modrow rt"><div class="mname">mdtpw_rt/lib.rs<span class="role">native floor · #![no_std]</span></div><div class="mbar" style="width:48%"></div><div class="mloc">3,269</div></div>
+          <div class="modrow fe"><div class="mname">sema.rs<span class="role">semantic analysis + TypeEnv</span></div><div class="mbar" style="width:42%"></div><div class="mloc">2,839</div></div>
+          <div class="modrow fe"><div class="mname">parser.rs<span class="role">recursive-descent → AST</span></div><div class="mbar" style="width:35%"></div><div class="mloc">2,359</div></div>
+          <div class="modrow fe"><div class="mname">link.rs<span class="role">clang + lld-link driver</span></div><div class="mbar" style="width:20%"></div><div class="mloc">1,366</div></div>
+          <div class="modrow fe"><div class="mname">types.rs<span class="role">type &amp; layout engine</span></div><div class="mbar" style="width:20%"></div><div class="mloc">1,325</div></div>
+          <div class="modrow fe"><div class="mname">lexer.rs<span class="role">tokens · includes · CP1252</span></div><div class="mbar" style="width:17%"></div><div class="mloc">1,139</div></div>
+          <div class="modrow fe"><div class="mname">main.rs<span class="role">CLI driver</span></div><div class="mbar" style="width:14%"></div><div class="mloc">937</div></div>
+          <div class="modrow fe"><div class="mname">lib.rs<span class="role">compile() · unit-loading DAG</span></div><div class="mbar" style="width:12%"></div><div class="mloc">791</div></div>
+          <div class="modrow fe"><div class="mname">consteval.rs<span class="role">typed-constant evaluator</span></div><div class="mbar" style="width:8%"></div><div class="mloc">509</div></div>
+          <div class="modrow fe"><div class="mname">resolve.rs<span class="role">name / scope resolution</span></div><div class="mbar" style="width:6%"></div><div class="mloc">348</div></div>
+          <div class="modrow fe"><div class="mname">target.rs<span class="role">the immutable Target record</span></div><div class="mbar" style="width:5%"></div><div class="mloc">326</div></div>
+          <div class="modrow fe"><div class="mname">ddvt_walk.rs<span class="role">DMT walker — shared w/ floor</span></div><div class="mbar" style="width:4%"></div><div class="mloc">238</div></div>
+        </div>
+        <div class="modlegend">
+          <span><span class="sw" style="background:var(--blue)"></span> Rust front-end (src/)</span>
+          <span><span class="sw" style="background:var(--amber)"></span> native floor (mdtpw_rt/)</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ORACLE LADDER -->
+    <section id="testing">
+      <div class="inner reveal">
+        <div class="eyebrow">11 · The oracle ladder</div>
+        <h2>The project lives or dies by its tests.</h2>
+        <p class="lede measure">Every capability gates on a tiered oracle, written <em>before</em> the implementation. The gates harden as you climb — golden stdout for console programs, then real linkage, then a real headless Win32 message pump for GUI apps. Goldens are derived from TP 1.5 <em>semantics</em>, never captured from current behaviour.</p>
+
+        <div class="ladder">
+          <div class="lrow head"><div>Tier</div><div>Capability</div><div>Oracle</div></div>
+          <div class="lrow"><div class="tier">T0</div><div class="cap"><b>WinCrt</b> stdout hello</div><div class="orc">golden stdout diff · headless</div></div>
+          <div class="lrow"><div class="tier">T1</div><div class="cap"><b>Language core</b> — objects, records, sets, strings, files</div><div class="orc">golden stdout + IR snapshot + x86/x64 self-diff</div></div>
+          <div class="lrow"><div class="tier">T2</div><div class="cap"><b>Objects</b> — streams &amp; collections</div><div class="orc">binary stream-artifact round-trip</div></div>
+          <div class="lrow"><div class="tier">T3</div><div class="cap"><b>Raw Win32</b> — WinMain / WndProc / imports / .RES</div><div class="orc">compile + link + launch/exit smoke</div></div>
+          <div class="lrow"><div class="tier">T4</div><div class="cap"><b>OWL minimal</b> — TApplication / TWindow / Paint</div><div class="orc">assert_owl_headless_exit · real pump</div></div>
+          <div class="lrow"><div class="tier">T5</div><div class="cap"><b>OWL controls</b> + resource menus</div><div class="orc">scripted-control dispatch on CALC</div></div>
+          <div class="lrow"><div class="tier">T6</div><div class="cap"><b>OWL dialogs</b> (+ RES persistence)</div><div class="orc">file-artifact diff · STEP08 / STEP09</div></div>
+          <div class="lrow"><div class="tier">T7–T9</div><div class="cap"><b>MDI · multi-unit · BWCC</b> — MDIAPP, PAINT, SWAT</div><div class="orc">smoke + perceptual diff</div></div>
+          <div class="lrow oos"><div class="tier">T10</div><div class="cap">OLE / DDE / MMSystem / Pen / Paradox</div><div class="orc">out of scope v1 — parse-only net</div></div>
+        </div>
+
+        <div class="note">
+          <span class="tag">What "headless GUI test" means</span>
+          <code>assert_owl_headless_exit</code> drives a <strong>real Win32 message pump</strong> with no display. The OWL program runs a deterministic self-script — <code>InvalidateRect</code> + <code>PostMessage</code> + a <code>wm_Close</code> terminator — so <code>WM_PAINT</code> and <code>WM_COMMAND</code> traverse the genuine pump, sentinel writes prove handler dispatch, and a clean exit code 0 proves the whole stack. M7 proved OWL dispatches end-to-end this way. There is no <code>#[ignore]</code> escape valve: an ignored test names a gap and the stage that owns it — ignored is never "closed".
+        </div>
+      </div>
+    </section>
+
+    <!-- STATUS -->
+    <section id="status">
+      <div class="inner reveal">
+        <div class="eyebrow">12 · Status &amp; corpus</div>
+        <h2>From "hello" to a working chess game.</h2>
+        <p class="lede measure">Milestones M0–M7 are delivered. The Borland corpus ladder climbs from a one-line WinCrt program to multi-unit OWL apps, all compiling to valid PE32 and running headless to a hand-derived golden.</p>
+
+        <div class="miles">
+          <div class="mile"><div class="dot"></div><div class="line"></div><div class="mk">M0</div><div class="ms">WinCrt slice — WELCOME prints, golden stdout</div></div>
+          <div class="mile"><div class="dot"></div><div class="line"></div><div class="mk">M1</div><div class="ms">Language core + object model + VMT</div></div>
+          <div class="mile"><div class="dot"></div><div class="line"></div><div class="mk">M2</div><div class="ms">DMT / DDVT dispatch + Objects streams</div></div>
+          <div class="mile"><div class="dot"></div><div class="line"></div><div class="mk">M3</div><div class="ms">WinTypes / WinProcs + raw Win32 path</div></div>
+          <div class="mile"><div class="dot"></div><div class="line"></div><div class="mk">M4</div><div class="ms">OWL P1 — TApplication / TWindow + trampoline</div></div>
+          <div class="mile"><div class="dot"></div><div class="line"></div><div class="mk">M5</div><div class="ms">Controls, dialogs, MDI</div></div>
+          <div class="mile"><div class="dot"></div><div class="line"></div><div class="mk">M6</div><div class="ms">Streams / collections + BWCC</div></div>
+          <div class="mile"><div class="dot"></div><div class="mk">M7</div><div class="ms">OWL dispatch end-to-end through a real pump</div></div>
+        </div>
+
+        <div class="grid3">
+          <div class="card"><div class="ic">Real apps, recompiled</div><h4>OWLCHESS &amp; Estwhi</h4><p>Beyond the SDK demos, full real-world TPW programs — a BWCC chess game and a Whist card game with an in-game AI — compile and play through the headless pump, exercising menus, dialogs, save/load, and owner-drawn painting.</p></div>
+          <div class="card"><div class="ic">The stop condition</div><h4>Every demo, run to golden</h4><p>The ratified target: every <code>.PAS</code> under <code>DOCDEMOS/</code> and <code>OWLDEMOS/</code> both compiles <em>and</em> runs to a hand-derived golden. No exceptions, no ignore valve.</p></div>
+          <div class="card"><div class="ic">Engineering discipline</div><h4>17 HLDs, 22 journals</h4><p>Every architecturally novel change starts as a dated HLD with source-line citations; every session closes with an honest journal — baseline, what changed, what went red, what remains.</p></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  <div class="ftitle">mdtpw — clean-room Turbo Pascal for Windows 1.5</div>
+  <div class="fmono">
+    <b>front-end</b> Rust (lexer · parser · sema · layout · emit) &nbsp;·&nbsp; <b>backend</b> bundled LLVM 21.1.8 (clang + lld-link)<br />
+    <b>output</b> native PE32 / PE32+ &nbsp;·&nbsp; <b>libraries</b> OWL 1.0 + BWCC, re-authored in Pascal &nbsp;·&nbsp; <b>floor</b> mdtpw_rt #![no_std]<br />
+    <b>locked</b> AST→LLVM IR · two-plane types · stdcall · Real→f64 · no env vars / feature flags &nbsp;·&nbsp; <b>proof</b> 859 headless oracles<br />
+    <br />
+    This deep-dive is generated documentation. Authoritative source: <b>wrk_docs/</b> HLDs and <b>CLAUDE.md</b> in the repository.
+  </div>
+</footer>
+
+<template id="__bundler_thumbnail">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <rect width="100" height="100" fill="#1a2a4a"/>
+    <rect x="30" y="30" width="40" height="40" rx="6" fill="#3a6fd8"/>
+    <rect x="38" y="38" width="24" height="24" rx="3" fill="#1a2a4a"/>
+    <text x="50" y="86" font-family="monospace" font-size="11" fill="#e8e4d8" text-anchor="middle">mdtpw</text>
+  </svg>
+</template>
+
+<script src="doc.js"></script>
+</body>
+</html>

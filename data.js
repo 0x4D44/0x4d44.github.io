@@ -440,6 +440,19 @@ window.ESSAYS = [
     tags: ["rail", "engineering"],
     real: true,
   },
+  {
+    slug: "mdtpw",
+    title: "mdtpw",
+    tagline: "A from-scratch Turbo Pascal compiler in Rust — legacy 16-bit Pascal in, native Windows .EXE out.",
+    url: "https://0x4d44.github.io/mdtpw/",
+    illustration: "ill-tpw",
+    date: "2026-06-01T10:00:00",
+    year: 2026,
+    readingMin: 19,
+    words: 3893,
+    tags: ["software", "engineering"],
+    real: true,
+  },
 ];
 
 // Tags shown in the filter row. "all" is always first.
