@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "claude-workflows",
+    title: "Dynamic Workflows in Claude Code",
+    tagline: "An interactive, cartoon deep-dive into Claude Code's parallel-subagent dynamic workflows — how they work, the patterns, the pitfalls, and a build-it-yourself playground.",
+    url: "https://0x4d44.github.io/claude-workflows/",
+    illustration: "ill-workflow",
+    date: "2026-06-05T19:20:00",
+    year: 2026,
+    readingMin: 16,
+    words: 3600,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "ecml",
     title: "The Long Run",
     tagline: "A timeline of the East Coast Main Line, 1862–2025.",
