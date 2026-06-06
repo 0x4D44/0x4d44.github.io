@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "mddosem-win16",
+    title: "Win16, Repaired",
+    tagline: "An interactive field report from the mddosem Windows 3.1 compatibility sweep — thirty fixes across the NE loader, KERNEL/USER/GDI, and the cooperative scheduler.",
+    url: "https://0x4d44.github.io/mddosem-win16/",
+    illustration: "ill-win16",
+    date: "2026-06-06T12:00:00",
+    year: 2026,
+    readingMin: 18,
+    words: 5200,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "claude-workflows",
     title: "Dynamic Workflows in Claude Code",
     tagline: "An interactive, cartoon deep-dive into Claude Code's parallel-subagent dynamic workflows — how they work, the patterns, the pitfalls, and a build-it-yourself playground.",
