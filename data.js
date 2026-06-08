@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "mdtoken",
+    title: "The Forge",
+    tagline: "Nine months, 260 billion tokens, three AI tools and seven machines — an interactive autopsy of my own AI-coding habit, mountain ranges and all.",
+    url: "https://0x4d44.github.io/mdtoken/",
+    illustration: "ill-ridgeline",
+    date: "2026-06-08T12:05:00",
+    year: 2026,
+    readingMin: 8,
+    words: 1500,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "rci-fleet",
     title: "Fleet Atlas",
     tagline: "Every Royal Caribbean cruise ship by tonnage, power, age and fate — and how the cruise ship grew from ocean liner to floating city.",
