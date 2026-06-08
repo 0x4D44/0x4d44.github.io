@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Routes & Islands — Fleet Atlas</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .head{padding:54px 0 18px;}
+  .head h1{font-size:clamp(36px,6vw,68px);}
+  .maplayout{display:grid;grid-template-columns:1fr 320px;gap:22px;align-items:start;margin-top:18px;}
+  @media(max-width:980px){.maplayout{grid-template-columns:1fr;}}
+
+  .chartbox{position:relative;border:1px solid var(--hair-strong);border-radius:16px;overflow:hidden;
+    background:radial-gradient(900px 500px at 30% 20%,rgba(17,110,160,0.18),transparent),linear-gradient(180deg,rgba(6,14,24,0.8),rgba(3,8,14,0.9));}
+  .chartbox svg{display:block;width:100%;height:auto;}
+  .regionchips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+
+  .land{fill:rgba(63,224,255,0.05);stroke:rgba(63,224,255,0.28);stroke-width:0.8;}
+  .grat{stroke:rgba(120,190,230,0.08);stroke-width:0.6;}
+  .route{fill:none;stroke:var(--cyan);stroke-width:1.4;opacity:0;stroke-dasharray:4 5;animation:flow 1.2s linear infinite;}
+  @keyframes flow{to{stroke-dashoffset:-18;}}
+  .route.show{opacity:.5;}
+  .port{cursor:pointer;}
+  .port .ring{fill:none;stroke-width:1.6;}
+  .port .core{}
+  .port.home .core{fill:#3fe0ff;}
+  .port.home .ring{stroke:#3fe0ff;}
+  .port.private .core{fill:#ffb454;}
+  .port.private .ring{stroke:#ffb454;}
+  .port.dim{opacity:.18;}
+  .port .pulse{transform-origin:center;animation:ping 2.6s ease-out infinite;}
+  @keyframes ping{0%{r:4;opacity:.7;}100%{r:16;opacity:0;}}
+  .plabel{font-family:var(--mono);font-size:8px;fill:var(--ink-2);letter-spacing:.04em;pointer-events:none;}
+
+  .info{border:1px solid var(--hair);border-radius:14px;background:linear-gradient(165deg,rgba(18,34,54,0.5),rgba(8,16,28,0.45));padding:22px;position:sticky;top:84px;min-height:300px;}
+  .info .tag{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;}
+  .info .nm{font-family:var(--display);font-size:24px;font-weight:600;margin:10px 0 0;line-height:1.1;}
+  .info .tx{font-size:13.5px;color:var(--ink-2);line-height:1.65;margin:14px 0 0;}
+  .info .coord{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:16px;padding-top:14px;border-top:1px solid var(--hair);letter-spacing:.06em;}
+  .info .ships{margin-top:14px;}
+  .info .ships .sh{font-family:var(--mono);font-size:11px;color:var(--cyan);padding:5px 0;}
+  .leg{display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;}
+  .leg div{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ink-2);}
+  .leg .d{width:10px;height:10px;border-radius:50%;}
+</style>
+</head>
+<body>
+<div class="bg-deep"></div>
+<div class="bg-grid"></div>
+
+<section class="head">
+  <div class="wrap">
+    <div class="eyebrow">Operations chart</div>
+    <h1>Where the fleet sails</h1>
+    <p class="muted" style="max-width:600px;margin-top:14px">Home ports, private islands and the regions Royal Caribbean works year-round. Filter by region, then tap any marker to read its file. Amber markers are the line’s own private destinations.</p>
+  </div>
+</section>
+
+<section class="section-sm" style="padding-top:10px">
+  <div class="wrap">
+    <div class="regionchips" id="regionChips"></div>
+    <div class="maplayout">
+      <div class="chartbox">
+        <svg id="chart" viewBox="0 0 1000 520" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <div class="info" id="info">
+        <div class="tag" style="color:var(--cyan)">Select a marker</div>
+        <div class="nm">The chart</div>
+        <div class="tx">Royal Caribbean operates from home ports on five continents, with two signature private destinations in the Caribbean basin and a third opening at Nassau. Tap a glowing marker to learn more.</div>
+        <div class="leg">
+          <div><span class="d" style="background:#3fe0ff"></span>Home port</div>
+          <div><span class="d" style="background:#ffb454"></span>Private destination</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+const P = FLEET.PORTS, S = FLEET.SHIPS;
+const W=1000,H=520;
+const proj=(lat,lon)=>[ (lon+180)/360*W, (90-lat)/180*(H) ];
+
+/* rough continent outlines in [lon,lat] for a stylised chart */
+const CONTS=[
+  [[-158,66],[-140,69],[-125,70],[-100,68],[-82,62],[-64,60],[-52,47],[-66,44],[-70,41],[-75,35],[-81,25],[-90,29],[-97,26],[-105,22],[-110,30],[-117,33],[-124,40],[-124,48],[-130,55],[-140,60],[-150,60]],
+  [[-80,8],[-70,11],[-60,5],[-50,0],[-44,-3],[-38,-12],[-48,-25],[-58,-35],[-66,-45],[-72,-52],[-75,-45],[-70,-30],[-72,-18],[-78,-5],[-81,0]],
+  [[-10,36],[-8,43],[-2,48],[2,51],[-4,58],[8,62],[18,65],[28,62],[30,55],[40,48],[28,40],[20,40],[15,44],[8,44],[3,43],[-5,36]],
+  [[-16,15],[-10,28],[10,34],[22,33],[33,31],[43,12],[51,12],[40,-3],[40,-15],[33,-26],[25,-34],[18,-35],[12,-18],[8,4],[-8,5],[-16,15]],
+  [[40,48],[60,66],[90,72],[120,73],[140,70],[160,68],[178,66],[170,58],[135,52],[140,45],[130,35],[122,30],[108,21],[98,10],[80,8],[72,20],[60,25],[50,33],[45,40]],
+  [[114,-22],[122,-18],[130,-12],[142,-11],[148,-20],[153,-28],[150,-37],[140,-38],[130,-32],[118,-35],[114,-30]],
+];
+
+function build(){
+  let svg='';
+  /* graticule */
+  for(let lon=-150;lon<=150;lon+=30){const[x]=proj(0,lon);svg+=`<line class="grat" x1="${x}" y1="0" x2="${x}" y2="${H}"/>`;}
+  for(let lat=-60;lat<=60;lat+=30){const[,y]=proj(lat,0);svg+=`<line class="grat" x1="0" y1="${y}" x2="${W}" y2="${y}"/>`;}
+  /* continents */
+  CONTS.forEach(c=>{
+    const d=c.map((p,i)=>(i?'L':'M')+proj(p[1],p[0]).map(n=>n.toFixed(1)).join(' ')).join(' ')+' Z';
+    svg+=`<path class="land" d="${d}"/>`;
+  });
+  /* signature routes: home ports -> private islands */
+  const coco=P.find(p=>p.name.includes('CocoCay')), lab=P.find(p=>p.name.includes('Labadee'));
+  const routeFrom=['PortMiami','Port Canaveral','Cape Liberty, Bayonne','Galveston'];
+  let routes='';
+  routeFrom.forEach(nm=>{const a=P.find(p=>p.name===nm); if(a&&coco){routes+=arc(a,coco);} });
+  if(coco&&lab) routes+=arc(coco,lab);
+  svg+=routes;
+  /* ports */
+  P.forEach((p,i)=>{
+    const[x,y]=proj(p.lat,p.lon);
+    const cls=p.type==='private'?'private':'home';
+    svg+=`<g class="port ${cls}" data-i="${i}" transform="translate(${x.toFixed(1)},${y.toFixed(1)})">
+      <circle class="pulse" r="4" fill="${p.type==='private'?'#ffb454':'#3fe0ff'}"/>
+      <circle class="ring" r="7"/>
+      <circle class="core" r="3.4"/>
+      <text class="plabel" x="10" y="3">${p.name.replace('Perfect Day at ','').replace(', Bayonne','').replace(', Paradise Island','')}</text>
+    </g>`;
+  });
+  document.getElementById('chart').innerHTML=svg;
+  bind();
+}
+function arc(a,b){
+  const[x1,y1]=proj(a.lat,a.lon),[x2,y2]=proj(b.lat,b.lon);
+  const mx=(x1+x2)/2, my=(y1+y2)/2-Math.abs(x2-x1)*0.18-10;
+  return `<path class="route" data-region="${b.region}" d="M${x1.toFixed(1)} ${y1.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}"/>`;
+}
+
+let region='';
+function regionShipsFor(rn){return S.filter(s=>s.regions.includes(rn)).map(s=>s.name);}
+function show(i){
+  const p=P[i]; const info=document.getElementById('info');
+  const ships = S.filter(s=>s.homeport && s.homeport.includes(p.name.split(',')[0].replace('PortMiami','Miami')));
+  const sList = ships.length?`<div class="ships"><div class="info .tag" style="font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3)">Ships based here</div>${ships.map(s=>`<div class="sh">▸ ${s.name}</div>`).join('')}</div>`:'';
+  info.innerHTML=`<div class="tag" style="color:${p.type==='private'?'#ffb454':'#3fe0ff'}">${p.type==='private'?'Private destination':'Home port'} · ${p.region}</div>
+    <div class="nm">${p.name}</div>
+    <div class="tx">${p.text}</div>
+    ${sList}
+    <div class="coord">◎ ${Math.abs(p.lat).toFixed(2)}°${p.lat>=0?'N':'S'} &nbsp; ${Math.abs(p.lon).toFixed(2)}°${p.lon>=0?'E':'W'}</div>`;
+}
+function bind(){
+  document.querySelectorAll('.port').forEach(g=>{
+    g.onclick=()=>{show(+g.dataset.i);
+      document.querySelectorAll('.port').forEach(x=>x.style.filter='');
+      g.style.filter='drop-shadow(0 0 8px currentColor)';};
+  });
+}
+function applyRegion(){
+  document.querySelectorAll('.port').forEach(g=>{
+    const p=P[+g.dataset.i];
+    g.classList.toggle('dim', region && p.region!==region);
+  });
+  document.querySelectorAll('.route').forEach(r=>{
+    r.classList.toggle('show', !region || r.dataset.region===region || region==='Bahamas'||region==='Caribbean');
+  });
+}
+
+/* region chips */
+const regions=['','Bahamas','Caribbean','Alaska','Europe','Asia-Pacific'];
+document.getElementById('regionChips').innerHTML=regions.map(r=>
+  `<button class="chip ${r===''?'active':''}" data-r="${r}">${r||'All regions'}</button>`).join('');
+document.getElementById('regionChips').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;
+  region=b.dataset.r;[...document.querySelectorAll('#regionChips .chip')].forEach(x=>x.classList.toggle('active',x.dataset.r===region));
+  applyRegion();};
+
+build();
+setTimeout(()=>document.querySelectorAll('.route').forEach(r=>r.classList.add('show')),400);
+__buildFooter();
+</script>
+</body>
+</html>

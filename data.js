@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "rci-fleet",
+    title: "Fleet Atlas",
+    tagline: "Every Royal Caribbean cruise ship by tonnage, power, age and fate — and how the cruise ship grew from ocean liner to floating city.",
+    url: "https://0x4d44.github.io/rci-fleet/",
+    illustration: "ill-ship",
+    date: "2026-06-08T12:00:00",
+    year: 2026,
+    readingMin: 13,
+    words: 3000,
+    tags: ["maritime", "history", "engineering"],
+    real: true,
+  },
+  {
     slug: "mddosem-win16",
     title: "Win16, Repaired",
     tagline: "An interactive field report from the mddosem Windows 3.1 compatibility sweep — thirty fixes across the NE loader, KERNEL/USER/GDI, and the cooperative scheduler.",
@@ -482,7 +495,7 @@ window.ESSAYS = [
 ];
 
 // Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "fiction", "software", "comic", "history", "math", "science", "engineering"];
+window.TAGS = ["all", "rail", "maritime", "fiction", "software", "comic", "history", "math", "science", "engineering"];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);

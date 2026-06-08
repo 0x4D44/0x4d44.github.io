@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evolution — Fleet Atlas</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .head{padding:54px 0 10px;}
+  .head h1{font-size:clamp(38px,6.5vw,82px);}
+
+  /* scrollytelling: sticky stage + scrolling captions */
+  .scrolly{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;}
+  @media(max-width:900px){.scrolly{grid-template-columns:1fr;}}
+  .stage{position:sticky;top:90px;height:min(70vh,560px);border-radius:18px;overflow:hidden;
+    border:1px solid var(--hair-strong);background:
+    radial-gradient(700px 400px at 50% 120%,rgba(63,224,255,0.10),transparent),
+    linear-gradient(180deg,rgba(10,20,34,0.6),rgba(4,9,16,0.7));display:flex;flex-direction:column;justify-content:flex-end;padding:34px;}
+  @media(max-width:900px){.stage{height:46vh;top:74px;}}
+  .stage .waterline{position:absolute;left:0;right:0;bottom:120px;height:1px;background:var(--hair-strong);}
+  .stage .wlbl{position:absolute;right:18px;bottom:124px;font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--ink-3);text-transform:uppercase;}
+  .stage-sil{position:absolute;left:0;right:0;bottom:120px;display:flex;justify-content:center;align-items:flex-end;transition:transform .7s cubic-bezier(.2,.7,.2,1),opacity .6s;padding:0 30px;}
+  .stage-meta{position:relative;z-index:3;}
+  .stage-era{font-family:var(--display);font-weight:700;font-size:clamp(40px,7vw,84px);line-height:.9;letter-spacing:-0.03em;transition:.5s;}
+  .stage-kind{font-family:var(--mono);font-size:12px;letter-spacing:.22em;text-transform:uppercase;margin-top:6px;transition:.4s;}
+  .stage-stats{display:flex;gap:26px;margin-top:18px;}
+  .stage-stats div b{font-family:var(--display);font-size:22px;font-weight:600;display:block;}
+  .stage-stats div span{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+
+  .captions{display:flex;flex-direction:column;}
+  .cap{min-height:58vh;display:flex;flex-direction:column;justify-content:center;padding:30px 0;border-bottom:1px solid rgba(120,190,230,0.06);opacity:.32;transition:opacity .4s;}
+  .cap.active{opacity:1;}
+  .cap .cera{font-family:var(--mono);font-size:13px;letter-spacing:.2em;color:var(--cc);text-transform:uppercase;}
+  .cap .cname{font-family:var(--display);font-size:clamp(24px,3vw,34px);font-weight:600;margin:10px 0 0;}
+  .cap .ctx{font-size:15.5px;color:var(--ink-2);line-height:1.7;margin:16px 0 0;max-width:440px;}
+  .cap .cbar{margin-top:20px;display:flex;align-items:center;gap:12px;}
+  .cap .cbar .track{flex:1;height:6px;border-radius:4px;background:rgba(120,190,230,0.1);overflow:hidden;}
+  .cap .cbar .fill{height:100%;background:var(--cc);box-shadow:0 0 10px var(--cc);}
+  .cap .cbar .cg{font-family:var(--mono);font-size:11px;color:var(--ink-2);white-space:nowrap;}
+
+  .closing{text-align:center;padding:60px 0 90px;}
+  .growth{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:14px;overflow:hidden;margin-top:30px;}
+  .growth>div{background:rgba(8,16,28,0.7);padding:22px 18px;}
+  .growth b{font-family:var(--display);font-size:clamp(22px,3vw,34px);font-weight:600;color:var(--cyan);}
+  .growth span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-top:8px;}
+  @media(max-width:780px){.growth{grid-template-columns:repeat(2,1fr);}}
+</style>
+</head>
+<body>
+<div class="bg-deep"></div>
+<div class="bg-grid"></div>
+
+<section class="head">
+  <div class="wrap">
+    <div class="eyebrow">The evolution of the cruise ship</div>
+    <h1>From crossing<br>to floating city</h1>
+    <p class="muted" style="max-width:620px;margin-top:16px">A century ago, a great ship existed to carry you across an ocean as fast and as grandly as possible. Today it exists to be the destination itself. Scroll to watch the ship grow — drawn to scale.</p>
+  </div>
+</section>
+
+<section class="section-sm">
+  <div class="wrap">
+    <div class="scrolly">
+      <!-- sticky stage -->
+      <div class="stage" id="stage">
+        <div class="waterline"></div><div class="wlbl">waterline</div>
+        <div class="stage-sil" id="stageSil"></div>
+        <div class="stage-meta">
+          <div class="stage-era" id="sEra">1912</div>
+          <div class="stage-kind" id="sKind">Ocean liner</div>
+          <div class="stage-stats" id="sStats"></div>
+        </div>
+      </div>
+      <!-- scrolling captions -->
+      <div class="captions" id="caps"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section closing">
+  <div class="wrap">
+    <div class="eyebrow" style="justify-content:center">112 years of growth</div>
+    <h2 style="margin-top:14px">Titanic would fit five times over</h2>
+    <p class="muted" style="max-width:560px;margin:14px auto 0">Between RMS Titanic and Icon of the Seas, the cruise ship grew more than five-fold in tonnage and tripled its passenger count — while trading coal smoke for liquefied natural gas.</p>
+    <div class="growth">
+      <div><b>5.4×</b><span>more gross tonnage</span></div>
+      <div><b>3.1×</b><span>more passengers</span></div>
+      <div><b>+316 ft</b><span>longer hull</span></div>
+      <div><b>Coal → LNG</b><span>cleaner fuel</span></div>
+    </div>
+    <div style="margin-top:34px;display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="fleet.html" class="btn btn-primary">▸ Explore today’s fleet</a>
+      <a href="history.html" class="btn btn-ghost">RCI’s own history</a>
+    </div>
+  </div>
+</section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+const E = FLEET.EVOLUTION;
+const maxLen = Math.max(...E.map(e=>e.lenFt));
+const maxGt = Math.max(...E.map(e=>e.gt));
+
+/* captions */
+document.getElementById('caps').innerHTML = E.map((e,i)=>`
+  <div class="cap" data-i="${i}" style="--cc:${e.color}">
+    <div class="cera">${e.era}</div>
+    <div class="cname">${e.name}</div>
+    <div class="ctx">${e.text}</div>
+    <div class="cbar">
+      <div class="track"><div class="fill" style="width:${(e.gt/maxGt*100).toFixed(1)}%"></div></div>
+      <div class="cg">${fmt(e.gt)} GT</div>
+    </div>
+  </div>`).join('');
+
+const stageSil=document.getElementById('stageSil');
+const sEra=document.getElementById('sEra'), sKind=document.getElementById('sKind'), sStats=document.getElementById('sStats');
+let cur=-1;
+function setStage(i){
+  if(i===cur)return; cur=i;
+  const e=E[i];
+  const w = 180 + (e.lenFt/maxLen)*460; // scale width by length
+  const era = i<=1?'liner':'modern';
+  const funnels = e.era==='1912'?4 : e.era==='1936'?3 : e.era==='1970'?1:1;
+  stageSil.style.opacity=1;
+  stageSil.style.transform='scale(.96)';
+  stageSil.innerHTML=shipSilhouette({lenFt:e.lenFt,decks:e.era==='2024'?20:e.era==='2009'?16:e.era==='1999'?15:e.era<='1936'?9:11,color:e.color,w:w,funnels:funnels,era:era});
+  requestAnimationFrame(()=>{stageSil.style.transform='none';});
+  sEra.textContent=e.era; sEra.style.color=e.color;
+  sKind.textContent=e.kind; sKind.style.color=e.color;
+  sStats.innerHTML=`
+    <div><b>${compactGt(e.gt)}</b><span>gross tons</span></div>
+    <div><b>${fmt(e.lenFt)}</b><span>feet long</span></div>
+    <div><b>${fmt(e.pax)}</b><span>passengers</span></div>`;
+  [...document.querySelectorAll('.cap')].forEach((c,j)=>c.classList.toggle('active',j===i));
+}
+setStage(0);
+
+const capObs=null;
+const capEls=[...document.querySelectorAll('.cap')];
+function pickActive(){
+  const mid=innerHeight*0.5;
+  let best=0,bestD=Infinity;
+  capEls.forEach((c,i)=>{const r=c.getBoundingClientRect();const cc=r.top+r.height/2;const d=Math.abs(cc-mid);if(d<bestD){bestD=d;best=i;}});
+  setStage(best);
+}
+addEventListener('scroll',pickActive,{passive:true});
+addEventListener('resize',pickActive);
+pickActive();
+
+__buildFooter();
+</script>
+</body>
+</html>

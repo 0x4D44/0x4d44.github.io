@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History — Fleet Atlas</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .head{padding:54px 0 20px;}
+  .head h1{font-size:clamp(38px,6.5vw,80px);}
+
+  /* ---- timeline ---- */
+  .tl{position:relative;margin:30px 0 20px;padding-left:0;}
+  .tl-line{position:absolute;left:120px;top:0;bottom:0;width:2px;background:linear-gradient(var(--hair),var(--hair-strong),var(--hair));}
+  .tl-line .progress{position:absolute;top:0;left:0;width:100%;height:0;background:linear-gradient(var(--cyan),var(--aqua));box-shadow:0 0 16px var(--cyan);}
+  @media(max-width:700px){.tl-line{left:64px;}}
+
+  .ev{position:relative;display:grid;grid-template-columns:120px 1fr;gap:40px;padding:22px 0;}
+  @media(max-width:700px){.ev{grid-template-columns:64px 1fr;gap:22px;}}
+  .ev .yr{font-family:var(--display);font-weight:700;font-size:clamp(22px,2.6vw,30px);text-align:right;color:var(--ink);line-height:1;padding-top:2px;}
+  .ev .node{position:absolute;left:120px;top:28px;transform:translateX(-50%);width:15px;height:15px;border-radius:50%;background:var(--abyss-0);border:2px solid var(--ink-3);transition:.4s;z-index:2;}
+  @media(max-width:700px){.ev .node{left:64px;}}
+  .ev.in .node{border-color:var(--cyan);box-shadow:0 0 0 5px rgba(63,224,255,0.12),0 0 16px var(--cyan);background:var(--cyan);}
+  .ev .card{background:linear-gradient(165deg,rgba(18,34,54,0.5),rgba(8,16,28,0.45));border:1px solid var(--hair);border-radius:13px;padding:22px 24px;transition:transform .5s cubic-bezier(.2,.7,.2,1);transform:translateX(16px);}
+  .ev.in .card{transform:none;border-color:var(--hair-strong);}
+  .ev .tag{font-family:var(--mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--cyan);}
+  .ev .ti{font-family:var(--display);font-size:21px;font-weight:600;margin:8px 0 0;}
+  .ev .tx{font-size:14px;color:var(--ink-2);margin:10px 0 0;line-height:1.6;}
+
+  /* ---- former ships ---- */
+  .formersec{background:linear-gradient(180deg,transparent,rgba(255,107,107,0.03),transparent);border-top:1px solid var(--hair);}
+  .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:16px;margin-top:30px;}
+  .fcard{border-radius:14px;padding:22px;border:1px solid var(--hair);background:rgba(10,18,30,0.5);position:relative;overflow:hidden;transition:.22s;}
+  .fcard:hover{transform:translateY(-3px);border-color:var(--fc);}
+  .fcard .ribbon{position:absolute;top:16px;right:-30px;transform:rotate(38deg);font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;padding:4px 36px;background:var(--fc);color:#04121a;font-weight:600;}
+  .fcard .fn{font-family:var(--display);font-size:20px;font-weight:600;padding-right:50px;}
+  .fcard .fmeta{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em;margin-top:6px;}
+  .fcard .fx{font-size:13.5px;color:var(--ink-2);line-height:1.6;margin:14px 0 0;}
+  .fcard .ffate{margin-top:14px;padding-top:13px;border-top:1px solid var(--hair);display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:12px;color:var(--fc);font-weight:500;letter-spacing:.04em;}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:18px;}
+  .legi{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.08em;}
+  .legi .sw{width:11px;height:11px;border-radius:3px;}
+
+  .future-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:24px;}
+  .fut{border:1px dashed var(--hair-strong);border-radius:12px;padding:18px;background:rgba(63,224,255,0.03);}
+  .fut .fy{font-family:var(--mono);font-size:11px;letter-spacing:.18em;color:var(--cyan);text-transform:uppercase;}
+  .fut .fnn{font-family:var(--display);font-size:17px;font-weight:600;margin-top:7px;}
+  .fut .fss{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:8px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="bg-deep"></div>
+<div class="bg-grid"></div>
+
+<section class="head">
+  <div class="wrap">
+    <div class="eyebrow">1968 → today</div>
+    <h1>Six decades<br>on the water</h1>
+    <p class="muted" style="max-width:600px;margin-top:16px">From three small Norwegian-owned ships built for Caribbean sunshine to the largest cruise vessels ever launched. The story of Royal Caribbean — and what became of every ship that sailed before.</p>
+  </div>
+</section>
+
+<section class="section-sm">
+  <div class="wrap">
+    <div class="eyebrow" style="margin-bottom:8px">The timeline</div>
+    <div class="tl">
+      <div class="tl-line"><div class="progress" id="prog"></div></div>
+      <div id="events"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section formersec">
+  <div class="wrap">
+    <div class="eyebrow">Where are they now</div>
+    <h2 style="margin-top:14px">The ships that came before</h2>
+    <p class="muted" style="max-width:620px;margin-top:14px">Eleven ships have left the fleet since 1970. Some were sold on for second and third careers under new flags; others met the breakers’ beach. Here is the fate of each.</p>
+    <div class="legend">
+      <div class="legi"><span class="sw" style="background:#ff6b6b"></span>Scrapped</div>
+      <div class="legi"><span class="sw" style="background:#ffb454"></span>Sold on</div>
+      <div class="legi"><span class="sw" style="background:#5eead4"></span>Still sailing elsewhere</div>
+    </div>
+    <div class="fgrid" id="former"></div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="eyebrow">On order</div>
+    <h2 style="margin-top:14px">Still to come</h2>
+    <p class="muted" style="max-width:620px;margin-top:14px">The orderbook through 2032 — more Icon-class giants and an all-new "Discovery" class.</p>
+    <div class="future-strip" id="future"></div>
+  </div>
+</section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+const H = FLEET.HISTORY;
+document.getElementById('events').innerHTML = H.map(e=>`
+  <div class="ev reveal-ev">
+    <div class="yr">${e.year}</div>
+    <div class="node"></div>
+    <div class="card"><div class="tag">${e.tag}</div><div class="ti">${e.title}</div><div class="tx">${e.text}</div></div>
+  </div>`).join('');
+
+/* timeline reveal + progress */
+const evs=[...document.querySelectorAll('.ev')];
+function revealInView(){
+  evs.forEach(e=>{const r=e.getBoundingClientRect();
+    if(r.top < innerHeight*0.9 && r.bottom>0) e.classList.add('in');});
+}
+if('IntersectionObserver' in window){
+  const io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting)x.target.classList.add('in');}),{threshold:0.18});
+  evs.forEach(e=>io.observe(e));
+}else{ evs.forEach(e=>e.classList.add('in')); }
+revealInView();
+addEventListener('scroll',revealInView,{passive:true});
+/* safety: never leave a card hidden */
+setTimeout(()=>{evs.forEach(e=>{const r=e.getBoundingClientRect();if(r.top<innerHeight)e.classList.add('in');});},1200);
+const prog=document.getElementById('prog');
+function updProg(){
+  const tl=document.querySelector('.tl').getBoundingClientRect();
+  const vh=innerHeight;
+  const start=tl.top, total=tl.height;
+  const seen=Math.min(Math.max(vh*0.5-start,0),total);
+  prog.style.height=(seen/total*100)+'%';
+}
+addEventListener('scroll',updProg,{passive:true});updProg();
+
+/* former ships */
+const fateColor={scrapped:'#ff6b6b',sold:'#ffb454',active:'#5eead4'};
+const fateIcon={scrapped:'⚓ Broken up',sold:'⇄ Sold on',active:'● Still sailing'};
+document.getElementById('former').innerHTML = FLEET.FORMER.map(f=>{
+  const c=fateColor[f.fateType];
+  return `<div class="fcard" style="--fc:${c}">
+    <div class="ribbon">${f.fateType==='scrapped'?'Scrapped':f.fateType==='sold'?'Sold':'Afloat'}</div>
+    <div class="fn">${f.name}</div>
+    <div class="fmeta">${f.cls} · in service ${f.served} · ${f.gt} GT</div>
+    <div class="fx">${f.blurb}</div>
+    <div class="ffate">${fateIcon[f.fateType]} — ${f.fate}</div>
+  </div>`;
+}).join('');
+
+/* future */
+document.getElementById('future').innerHTML = FLEET.FUTURE.map(f=>`
+  <div class="fut"><div class="fy">${f.year} · ${f.cls}</div>
+  <div class="fnn">${f.name}</div>
+  <div class="fss">${f.gt} GT · ${f.status}<br>${f.note}</div></div>`).join('');
+
+__buildFooter();
+</script>
+</body>
+</html>
