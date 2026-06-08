@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "ipo-history",
+    title: "Declared Effective",
+    tagline: "Four centuries of going public — the history, anatomy and high drama of the IPO prospectus, from the VOC's 1602 charter to the modern S-1, plus a build-your-own-IPO scoring engine.",
+    url: "https://0x4d44.github.io/ipo-history/",
+    illustration: "ill-prospectus",
+    date: "2026-06-08T18:30:00",
+    year: 1933,
+    readingMin: 18,
+    words: 4000,
+    tags: ["finance", "history"],
+    real: true,
+  },
+  {
     slug: "mdtoken",
     title: "The Forge",
     tagline: "Nine months, 260 billion tokens, three AI tools and seven machines — an interactive autopsy of my own AI-coding habit, mountain ranges and all.",
@@ -508,7 +521,7 @@ window.ESSAYS = [
 ];
 
 // Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "maritime", "fiction", "software", "comic", "history", "math", "science", "engineering"];
+window.TAGS = ["all", "rail", "maritime", "fiction", "software", "comic", "history", "math", "science", "finance", "engineering"];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);
