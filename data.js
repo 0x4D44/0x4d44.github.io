@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "perth",
+    title: "Perth on the Tay",
+    tagline: "Eight centuries of a Scottish town, traced on a map that grows before your eyes — the medieval burgh on the river, the great Victorian railway junction, the A9 bypass that remade its edges, and the Wm Low and Iceland years that rewrote its weekly shop.",
+    url: "https://0x4d44.github.io/perth/",
+    illustration: "ill-perth",
+    date: "2026-06-09T16:00:00",
+    year: 1124,
+    readingMin: 18,
+    words: 3500,
+    tags: ["history", "rail"],
+    real: true,
+  },
+  {
     slug: "class-47",
     title: "Class 47",
     tagline: "An interactive study of the Brush Type 4 — Britain's most useful diesel. The twin-bank Sulzer, the diesel-electric power chain, the great derating, the series-parallel wiring question, and a fleet of 512, across five driveable chapters.",
