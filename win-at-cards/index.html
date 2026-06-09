@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Gentleman's Compendium of Winning at Cards</title>
+<meta name="description" content="A practical manual of advantage play for the discerning bridge player. Privately printed." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --paper:#efe4c8;
+  --paper-edge:#e3d4ad;
+  --ink:#231a10;
+  --ink-soft:#5a4a32;
+  --ink-faint:#8a785a;
+  --oxblood:#7c2229;
+  --oxblood-soft:#a8505420;
+  --gold:#8a6d35;
+  --rule:#6c5a3c;
+  --baize:#2c4133;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:"EB Garamond",Georgia,serif;
+  color:var(--ink);
+  line-height:1.62;
+  font-size:20px;
+  /* the card table */
+  background:
+    radial-gradient(120% 90% at 50% -10%, #38513f 0%, #2c4133 45%, #1f2f25 100%);
+  background-attachment:fixed;
+  padding:clamp(16px,4vw,64px) clamp(10px,3vw,40px) 80px;
+  min-height:100vh;
+}
+::selection{background:var(--oxblood);color:var(--paper)}
+
+/* ---------------- the book page ---------------- */
+.book{
+  max-width:830px;
+  margin:0 auto;
+  background:var(--paper);
+  background-image:
+    radial-gradient(140% 120% at 18% 8%, #ffffff22 0%, #ffffff00 40%),
+    radial-gradient(60% 50% at 88% 16%, #b9a87a26 0%, #b9a87a00 60%),
+    radial-gradient(70% 60% at 12% 86%, #ad9c6e24 0%, #ad9c6e00 60%),
+    radial-gradient(40% 30% at 70% 60%, #7c52221a 0%, #7c52220 60%);
+  box-shadow:
+    0 1px 0 #ffffff70 inset,
+    0 0 0 1px #00000018,
+    0 2px 4px #00000040,
+    0 30px 60px -20px #00000088;
+  padding:clamp(34px,6vw,82px) clamp(26px,6.5vw,86px) clamp(40px,6vw,72px);
+  position:relative;
+  border-radius:2px;
+}
+/* foxing / age speckle */
+.book::before{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:2px;
+  background-image:
+    radial-gradient(circle at 24% 30%, #6c4a2010 0 2px, transparent 3px),
+    radial-gradient(circle at 67% 18%, #6c4a200d 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 80% 72%, #6c4a2010 0 2px, transparent 3px),
+    radial-gradient(circle at 38% 80%, #6c4a200c 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 12% 56%, #6c4a200d 0 1.5px, transparent 2.5px);
+  mix-blend-mode:multiply;opacity:.7;
+}
+
+/* ---------------- shared type ---------------- */
+.disp{font-family:"Libre Caslon Display",Georgia,serif;font-weight:400;line-height:1.04}
+.sc{font-variant:small-caps;letter-spacing:.14em}
+.center{text-align:center}
+.oxblood{color:var(--oxblood)}
+em{font-style:italic}
+.strike{text-decoration:line-through;text-decoration-thickness:.06em;color:var(--ink-faint);text-decoration-color:var(--oxblood)}
+
+/* rules & ornaments */
+.rule{border:0;height:0;border-top:1.5px solid var(--rule);margin:30px 0}
+.rule-d{border:0;height:5px;border-top:1.5px solid var(--rule);border-bottom:.75px solid var(--rule);margin:30px auto}
+.flourish{display:flex;align-items:center;justify-content:center;gap:16px;color:var(--oxblood);font-size:18px;margin:26px 0}
+.flourish::before,.flourish::after{content:"";height:1px;background:var(--rule);flex:1;max-width:160px}
+.fleur{font-size:22px;line-height:1}
+
+/* ---------------- title page ---------------- */
+.titlepage{text-align:center;padding:8px 0 2px}
+.kicker{font-variant:small-caps;letter-spacing:.32em;font-size:13px;color:var(--ink-soft);margin-bottom:26px}
+.maintitle{font-size:clamp(34px,7.2vw,62px);letter-spacing:.01em;margin:6px 0}
+.maintitle .small{display:block;font-size:.42em;letter-spacing:.34em;color:var(--ink-soft);margin:14px 0;font-variant:small-caps}
+.maintitle .verb{display:block}
+.subtitle{font-style:italic;font-size:clamp(18px,2.6vw,23px);color:var(--ink-soft);max-width:30ch;margin:20px auto 0;line-height:1.4}
+.byline{font-variant:small-caps;letter-spacing:.18em;font-size:15px;margin-top:30px}
+.byline .name{color:var(--oxblood)}
+.imprint{font-size:13px;color:var(--ink-faint);font-variant:small-caps;letter-spacing:.22em;margin-top:34px;line-height:1.9}
+.seal{
+  width:128px;height:128px;margin:26px auto 4px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  border:2px double var(--oxblood);color:var(--oxblood);position:relative;
+  transform:rotate(-7deg);
+}
+.seal svg{width:100%;height:100%}
+
+.dedication{font-style:italic;color:var(--ink-soft);text-align:center;max-width:34ch;margin:0 auto;font-size:18px;line-height:1.6}
+
+/* ---------------- contents ---------------- */
+.contents{max-width:560px;margin:0 auto}
+.contents h2{font-family:"Libre Caslon Display",serif;text-align:center;font-size:24px;font-variant:small-caps;letter-spacing:.2em;margin-bottom:22px;color:var(--ink)}
+.toc{list-style:none}
+.toc li{display:flex;align-items:baseline;gap:8px;margin:11px 0;font-size:18px}
+.toc .ch{font-variant:small-caps;letter-spacing:.08em;color:var(--oxblood);white-space:nowrap}
+.toc .nm a{color:var(--ink);text-decoration:none}
+.toc .nm a:hover{color:var(--oxblood);text-decoration:underline;text-underline-offset:3px}
+.toc .dots{flex:1;border-bottom:1.5px dotted var(--ink-faint);transform:translateY(-4px)}
+.toc .pg{color:var(--ink-soft);font-variant:small-caps}
+
+/* ---------------- chapters ---------------- */
+.chapter{margin-top:18px}
+.chapter-head{text-align:center;margin:40px 0 26px}
+.chapter-num{font-variant:small-caps;letter-spacing:.34em;font-size:14px;color:var(--oxblood)}
+.chapter-title{font-family:"Libre Caslon Display",serif;font-size:clamp(26px,4.4vw,38px);margin-top:10px;line-height:1.1}
+.chapter-sub{font-style:italic;color:var(--ink-soft);margin-top:10px;font-size:18px}
+
+.body p{margin:0 0 16px;text-wrap:pretty;hyphens:auto}
+.body p+p{text-indent:1.6em}
+.dropcap{display:flow-root}
+.dropcap::first-letter{
+  -webkit-initial-letter:3;
+  initial-letter:3;
+  font-family:"Libre Caslon Display",serif;
+  font-weight:400;
+  color:var(--oxblood);
+  margin-right:.09em;
+}
+@supports not (initial-letter:3){
+  .dropcap::first-letter{
+    float:left;font-size:3.4em;line-height:.66;
+    padding:.06em .09em 0 0;
+  }
+}
+.lead-sc::first-line{font-variant:small-caps;letter-spacing:.04em}
+
+h3.run{font-family:"Libre Caslon Display",serif;font-size:21px;margin:26px 0 8px;font-variant:small-caps;letter-spacing:.06em}
+.body ul,.body ol{margin:6px 0 18px;padding-left:1.4em}
+.body li{margin:8px 0;padding-left:.2em}
+.body li::marker{color:var(--oxblood)}
+
+/* marginalia / asides */
+.aside{
+  border-left:2px solid var(--oxblood);
+  background:#7c52220a;
+  padding:12px 18px;margin:22px 0;font-size:18px;font-style:italic;color:var(--ink-soft);
+}
+.aside .lbl{display:block;font-style:normal;font-variant:small-caps;letter-spacing:.16em;font-size:12px;color:var(--oxblood);margin-bottom:4px}
+
+/* footnotes */
+.fn{vertical-align:super;font-size:.66em;color:var(--oxblood);text-decoration:none;padding:0 1px}
+.footnotes{border-top:1px solid var(--rule);margin-top:30px;padding-top:14px;font-size:15.5px;color:var(--ink-soft)}
+.footnotes p{margin:6px 0;line-height:1.5}
+.footnotes .num{color:var(--oxblood);margin-right:6px}
+
+/* ---------------- figure plates ---------------- */
+.plate{
+  margin:26px auto;max-width:430px;text-align:center;
+  border:1px solid var(--rule);padding:20px 20px 14px;background:#ffffff22;
+}
+.plate svg{width:100%;height:auto;color:var(--ink);display:block}
+.plate .cap{font-variant:small-caps;letter-spacing:.1em;font-size:13.5px;color:var(--ink-soft);margin-top:12px}
+.plate .cap b{color:var(--oxblood);font-weight:600}
+.two-up{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.two-up .plate{margin:0;max-width:none}
+@media(max-width:560px){.two-up{grid-template-columns:1fr}}
+
+/* ---------------- interactive contraptions ---------------- */
+.contraption{
+  border:1.5px solid var(--rule);
+  background:
+    linear-gradient(#00000005,#00000005),
+    repeating-linear-gradient(0deg,#0000,#0000 27px,#7c52220c 27px,#7c52220c 28px);
+  padding:22px 24px 24px;margin:28px 0;border-radius:2px;
+}
+.contraption .ctitle{font-family:"Libre Caslon Display",serif;font-variant:small-caps;letter-spacing:.1em;font-size:20px;text-align:center;color:var(--oxblood)}
+.contraption .ctitle .pat{display:block;font-family:"EB Garamond",serif;font-variant:small-caps;letter-spacing:.24em;font-size:11px;color:var(--ink-faint);margin-top:4px}
+.contraption .crule{border:0;border-top:1px solid var(--rule);margin:14px 0 18px}
+.ctrl-label{font-variant:small-caps;letter-spacing:.12em;font-size:13px;color:var(--ink-soft);display:block;margin-bottom:6px;text-align:center}
+.garment-list{list-style:none;display:flex;flex-direction:column;gap:2px}
+.garment-list li{margin:0}
+.garment-list button{
+  width:100%;text-align:left;background:transparent;border:1px solid transparent;
+  font-family:"EB Garamond",serif;font-size:18px;color:var(--ink);
+  padding:7px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-radius:2px;
+  transition:background .12s,border-color .12s;
+}
+.garment-list button:hover{background:#7c52220e}
+.garment-list button[aria-pressed="true"]{background:#7c52221a;border-color:var(--oxblood)}
+.garment-list .g-cap{font-variant:small-caps;letter-spacing:.06em;font-size:13px;color:var(--ink-faint);white-space:nowrap}
+.garment-list button[aria-pressed="true"] .g-cap{color:var(--oxblood)}
+
+.readout{
+  margin-top:18px;border-top:1px dotted var(--ink-faint);padding-top:16px;text-align:center;
+}
+.readout .big{font-family:"Libre Caslon Display",serif;font-size:clamp(40px,9vw,58px);color:var(--oxblood);line-height:1}
+.readout .big small{font-size:.3em;font-variant:small-caps;letter-spacing:.1em;color:var(--ink-soft);display:block;margin-top:4px}
+.readout .verdict{font-style:italic;color:var(--ink-soft);max-width:42ch;margin:12px auto 0;min-height:2.6em}
+
+.btn{
+  font-family:"EB Garamond",serif;font-variant:small-caps;letter-spacing:.14em;font-size:16px;
+  background:var(--oxblood);color:var(--paper);border:none;padding:10px 26px;cursor:pointer;border-radius:2px;
+  box-shadow:0 1px 0 #00000040;transition:transform .08s,background .12s;
+}
+.btn:hover{background:#8e2a31}
+.btn:active{transform:translateY(1px)}
+.distraction-out{
+  margin-top:20px;border:1px solid var(--rule);background:#ffffff26;padding:18px 20px;text-align:center;min-height:96px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+}
+.distraction-out .num{font-variant:small-caps;letter-spacing:.2em;font-size:12px;color:var(--oxblood)}
+.distraction-out .line{font-family:"Libre Caslon Display",serif;font-size:clamp(19px,3.2vw,24px);color:var(--ink);line-height:1.25}
+.distraction-out .stage{font-style:italic;font-size:15px;color:var(--ink-soft)}
+
+/* deck dial */
+.dial-row{display:flex;align-items:center;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:6px}
+.dial-row input[type=range]{width:min(280px,70vw);accent-color:var(--oxblood)}
+.dial-readout{font-family:"Libre Caslon Display",serif;font-size:34px;color:var(--oxblood);min-width:2ch;text-align:center}
+
+/* ---------------- appendix ---------------- */
+.glossary dt{font-variant:small-caps;letter-spacing:.04em;color:var(--oxblood);margin-top:14px;font-size:19px}
+.glossary dd{margin:2px 0 0;color:var(--ink-soft);font-size:18px}
+
+.code-box{border:2px double var(--rule);padding:22px 26px;margin:24px 0;background:#ffffff22}
+.code-box h3{font-family:"Libre Caslon Display",serif;text-align:center;font-variant:small-caps;letter-spacing:.14em;margin-bottom:8px}
+.code-box ol{counter-reset:c;list-style:none;padding:0}
+.code-box li{counter-increment:c;padding:8px 0 8px 42px;position:relative;border-bottom:1px dotted #8a785a55}
+.code-box li:last-child{border-bottom:0}
+.code-box li::before{content:counter(c,upper-roman) ".";position:absolute;left:0;top:8px;color:var(--oxblood);font-variant:small-caps;width:34px}
+
+.colophon{text-align:center;color:var(--ink-faint);font-size:14px;font-variant:small-caps;letter-spacing:.16em;line-height:2;margin-top:10px}
+.backlink{text-align:center;margin-top:30px}
+.backlink a{color:var(--ink-soft);font-variant:small-caps;letter-spacing:.14em;font-size:14px;text-decoration:none;border-bottom:1px solid var(--ink-faint)}
+.backlink a:hover{color:var(--oxblood);border-color:var(--oxblood)}
+
+.section-gap{height:8px}
+.nb{font-variant:small-caps;letter-spacing:.14em;color:var(--oxblood);font-size:13px}
+</style>
+</head>
+<body>
+<main class="book">
+
+  <!-- ============ TITLE PAGE ============ -->
+  <section class="titlepage" data-screen-label="Title page">
+    <div class="kicker">Privately Printed · For the Family · Not for the Tournament Directors</div>
+
+    <h1 class="maintitle disp">
+      The Gentleman's Compendium
+      <span class="small">of the gentle art of</span>
+      <span class="verb"><span class="strike">Cheating</span> <span class="oxblood">Winning</span></span>
+      <span class="small">at cards</span>
+    </h1>
+
+    <p class="subtitle">Being a Practical Manual of Advantage Play for the Discerning Bridge Player &amp; the Honest Man Who Simply Prefers to Win.</p>
+
+    <div class="seal" aria-hidden="true">
+      <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="60" cy="60" r="54"/>
+        <circle cx="60" cy="60" r="46" stroke-width="0.8"/>
+        <!-- ace up the sleeve motif: a cuff with a peeping card -->
+        <path d="M40 78 L40 52 Q40 44 50 44 L70 44 Q80 44 80 52 L80 78"/>
+        <path d="M48 70 L48 40 L66 36 L66 66 Z"/>
+        <path d="M55 52 l3 4 l-3 4 l-3 -4 z" fill="currentColor" stroke="none"/>
+        <text x="60" y="100" text-anchor="middle" font-family="Libre Caslon Display, serif" font-size="9" fill="currentColor" stroke="none" letter-spacing="1">PER MANICAM AD ASTRA</text>
+      </svg>
+    </div>
+
+    <p class="byline sc">Compiled by <span class="name">A Devoted Family</span><br/>In Honour of Our Father &amp; Grandmaster</p>
+
+    <div class="flourish" aria-hidden="true"><span class="fleur">&#10086;</span></div>
+
+    <p class="dedication">Dedicated, with the deepest love and the gravest suspicion, to a man who has never once cheated at cards — and who will tell you so himself, at length, while you count the aces.</p>
+
+    <p class="imprint">The Sleeve &amp; Spectacle Press<br/>Established this Christmas · Edition the First</p>
+  </section>
+
+  <hr class="rule-d" style="max-width:180px" />
+
+  <!-- ============ PREFATORY NOTE ============ -->
+  <section class="body" style="max-width:600px;margin:0 auto">
+    <p class="nb center" style="margin-bottom:14px">A Note from the Publishers</p>
+    <p class="dropcap">This volume makes no apology. For too long the upright card-player has been told that the outcome of a game rests upon such vulgar accidents as the deal, the odds, or the cards themselves. We reject this counsel of despair. The truly accomplished player understands that a hand of cards is not a sentence to be endured but a <em>negotiation</em> to be won — quietly, gracefully, and from a position of overwhelming and entirely undisclosed advantage.</p>
+    <p>What follows is the accumulated wisdom of a lifetime spent at the green baize: a body of knowledge passed down not in writing (writing being <em>evidence</em>) but by example, across countless family Christmases, to children who learned to count to thirteen and to four-times-thirteen with unusual speed.</p>
+    <div class="aside">
+      <span class="lbl">Disclaimer, the Only One</span>
+      Nothing herein should be construed as an accusation. Our subject is, and has always been, a man of impeccable honour. We simply cannot account for the aces.
+    </div>
+  </section>
+
+  <div class="flourish" aria-hidden="true"><span class="fleur">&#10087;</span><span class="fleur">&#10086;</span><span class="fleur">&#10087;</span></div>
+
+  <!-- ============ CONTENTS ============ -->
+  <section class="contents" data-screen-label="Table of Contents">
+    <h2>Table of Contents</h2>
+    <ul class="toc">
+      <li><span class="ch">Chap. I</span><span class="nm"><a href="#ch1">On the Higher Ethics of Winning</a></span><span class="dots"></span><span class="pg">i</span></li>
+      <li><span class="ch">Chap. II</span><span class="nm"><a href="#ch2">Of Wardrobe &amp; Concealment</a></span><span class="dots"></span><span class="pg">v</span></li>
+      <li><span class="ch">Chap. III</span><span class="nm"><a href="#ch3">The Doctrine of the Multiple Deck</a></span><span class="dots"></span><span class="pg">xi</span></li>
+      <li><span class="ch">Chap. IV</span><span class="nm"><a href="#ch4">The Fine Art of the Distraction</a></span><span class="dots"></span><span class="pg">xvii</span></li>
+      <li><span class="ch">Chap. V</span><span class="nm"><a href="#ch5">Manoeuvres for the Bridge Table</a></span><span class="dots"></span><span class="pg">xxv</span></li>
+      <li><span class="ch">Chap. VI</span><span class="nm"><a href="#ch6">Plausible Deniability &amp; the Innocent Countenance</a></span><span class="dots"></span><span class="pg">xxxi</span></li>
+      <li><span class="ch">Appendix</span><span class="nm"><a href="#appendix">A Glossary &amp; The Code of Honour</a></span><span class="dots"></span><span class="pg">xl</span></li>
+    </ul>
+  </section>
+
+  <hr class="rule" />
+
+  <!-- ============ CHAPTER I ============ -->
+  <article class="chapter" id="ch1" data-screen-label="Ch. I — Ethics">
+    <header class="chapter-head">
+      <div class="chapter-num">Chapter the First</div>
+      <h2 class="chapter-title disp">On the Higher Ethics of Winning</h2>
+      <p class="chapter-sub">In which a delicate matter of vocabulary is settled, once and for all.</p>
+    </header>
+    <div class="body">
+      <p class="dropcap">Let us begin by dismissing an ugly little word. The reader will have noticed that, upon the title page, the word <span class="strike">cheating</span> has been struck through and replaced with <span class="oxblood">winning</span>. This is not an erratum. It is the single most important lesson in this book, and the rest is merely commentary.</p>
+      <p>To <em>cheat</em> is to break the rules. We do no such thing. We merely arrive at the table having prepared more thoroughly than our opponents — in matters of wardrobe, inventory, and conversation — and we decline to publish our preparations. There is no rule against being well dressed. There is no rule against owning several decks of cards. There is, regrettably, no rule against coughing.<a href="#f1" class="fn">1</a></p>
+      <p>The accomplished player therefore operates within a private moral universe, governed by three immovable principles:</p>
+      <h3 class="run">The Three Pillars</h3>
+      <ul>
+        <li><b>The Pillar of Foresight.</b> An ace produced from the sleeve was not <em>conjured</em>; it was merely <em>anticipated</em>, earlier and more completely than the deck anticipated it.</li>
+        <li><b>The Pillar of Generosity.</b> One must lose occasionally, and graciously, so that one's victories appear the gift of Providence rather than the fruit of labour.</li>
+        <li><b>The Pillar of Silence.</b> The method is never explained, never confessed, and — above all — never written down.<a href="#f2" class="fn">2</a></li>
+      </ul>
+      <div class="aside">
+        <span class="lbl">Maxim for the Beginner</span>
+        It is not cheating if you are family, and it is not cheating if nobody can prove it. On the rare occasion that both conditions fail, it is, at most, a Christmas tradition.
+      </div>
+      <div class="footnotes">
+        <p id="f1"><span class="num">1.</span> See Chapter IV, in which coughing is elevated from a mere bodily function to a fine art, and indeed to a second language.</p>
+        <p id="f2"><span class="num">2.</span> The present volume is, the publishers concede, in some tension with this Pillar. We have agreed never to speak of it.</p>
+      </div>
+    </div>
+  </article>
+
+  <hr class="rule" />
+
+  <!-- ============ CHAPTER II ============ -->
+  <article class="chapter" id="ch2" data-screen-label="Ch. II — Wardrobe">
+    <header class="chapter-head">
+      <div class="chapter-num">Chapter the Second</div>
+      <h2 class="chapter-title disp">Of Wardrobe &amp; Concealment</h2>
+      <p class="chapter-sub">Wherein the humble knitted garment is revealed as the player's truest friend.</p>
+    </header>
+    <div class="body">
+      <p class="dropcap">No subject is more shamefully neglected by the amateur than tailoring. He arrives at the card table dressed for the <em>occasion</em> rather than for the <em>opportunity</em>, and is duly punished for it. The seasoned player knows that a hand of cards is won not at the moment of play but weeks earlier, before the bedroom mirror, among the woollens.</p>
+      <p>The governing principle is that of <em>volume without suspicion</em>. One requires a garment loose enough to admit a quantity of cards yet respectable enough that no man would dream of asking you to remove it. The genius of the cardigan — and, in its highest form, the Aran sweater — is that it answers both demands at a single stroke. It is warm; it is grandfatherly; it is, structurally, a filing cabinet.</p>
+
+      <div class="two-up">
+        <div class="plate">
+          <svg aria-hidden="true" viewBox="0 0 200 150" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- aran sweater, front view -->
+            <path d="M58 38 L78 30 Q100 24 122 30 L142 38 L160 58 L146 72 L138 64 L138 124 Q100 132 62 124 L62 64 L54 72 L40 58 Z"/>
+            <path d="M78 30 Q100 46 122 30"/>
+            <!-- cable knit columns -->
+            <path d="M84 56 q6 6 0 12 q-6 6 0 12 q6 6 0 12 q-6 6 0 12" stroke-width="0.8"/>
+            <path d="M100 54 q6 6 0 12 q-6 6 0 12 q6 6 0 12 q-6 6 0 12 q6 6 0 12" stroke-width="0.8"/>
+            <path d="M116 56 q6 6 0 12 q-6 6 0 12 q6 6 0 12 q-6 6 0 12" stroke-width="0.8"/>
+            <!-- ribbed hem -->
+            <path d="M62 120 v8 M72 122 v8 M82 123 v8 M92 124 v8 M108 124 v8 M118 123 v8 M128 122 v8 M138 120 v8" stroke-width="0.7"/>
+            <!-- a card peeping from the hem -->
+            <rect x="120" y="108" width="18" height="26" rx="2" fill="var(--paper)"/>
+            <text x="124" y="120" font-family="Libre Caslon Display,serif" font-size="9" fill="currentColor" stroke="none">A</text>
+            <path d="M127 122 l2.5 3 l-2.5 3 l-2.5 -3 z" fill="currentColor" stroke="none"/>
+          </svg>
+          <div class="cap"><b>Fig. 1.</b> The Aran Cardigan, front. Note the third cable column, which is in fact a sleeve.</div>
+        </div>
+        <div class="plate">
+          <svg aria-hidden="true" viewBox="0 0 200 150" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+            <!-- sleeve in cross-section with cards -->
+            <path d="M40 44 Q44 38 56 38 L150 40 Q170 42 170 56 L170 96 Q170 110 150 112 L56 114 Q44 114 40 108 Z"/>
+            <path d="M40 76 Q100 70 170 76" stroke-width="0.7" stroke-dasharray="3 4"/>
+            <!-- stacked hidden cards -->
+            <g fill="var(--paper)">
+              <rect x="70" y="52" width="58" height="16" rx="2"/>
+              <rect x="64" y="64" width="64" height="16" rx="2"/>
+              <rect x="72" y="76" width="56" height="16" rx="2"/>
+              <rect x="66" y="88" width="62" height="16" rx="2"/>
+            </g>
+            <g stroke-width="0.8">
+              <rect x="70" y="52" width="58" height="16" rx="2"/>
+              <rect x="64" y="64" width="64" height="16" rx="2"/>
+              <rect x="72" y="76" width="56" height="16" rx="2"/>
+              <rect x="66" y="88" width="62" height="16" rx="2"/>
+            </g>
+            <text x="150" y="34" font-family="Libre Caslon Display,serif" font-size="10" fill="currentColor" stroke="none">cuff</text>
+          </svg>
+          <div class="cap"><b>Fig. 2.</b> The same sleeve, in section, charged to its rated capacity.</div>
+        </div>
+      </div>
+
+      <h3 class="run">A Word on Climate</h3>
+      <p>The reader will object that a heavy sweater is conspicuous in July. Just so. The committed player therefore ensures that the family always plays cards in <em>winter</em>, near a window, with the heating set unaccountably low and a draught helpfully identified. A man who insists on his cardigan in a cold room is not a suspect. He is a martyr.</p>
+
+      <!-- CONTRAPTION 1 -->
+      <div class="contraption" data-screen-label="Sleeve Capacity Calculator">
+        <div class="ctitle">The Sleeve Capacity Calculator<span class="pat">Patent Applied For · Do Not Show The Other Players</span></div>
+        <hr class="crule" />
+        <span class="ctrl-label">Select the garment to be worn</span>
+        <ul class="garment-list" id="garmentList"></ul>
+        <div class="readout">
+          <div class="big" id="capNum">—<small>cards held in reserve</small></div>
+          <p class="verdict" id="capVerdict">Choose a garment above to receive the Press's professional assessment.</p>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <hr class="rule" />
+
+  <!-- ============ CHAPTER III ============ -->
+  <article class="chapter" id="ch3" data-screen-label="Ch. III — Multiple Decks">
+    <header class="chapter-head">
+      <div class="chapter-num">Chapter the Third</div>
+      <h2 class="chapter-title disp">The Doctrine of the Multiple Deck</h2>
+      <p class="chapter-sub">On the prudence of never owning fewer than four of anything.</p>
+    </header>
+    <div class="body">
+      <p class="dropcap">Here we arrive at the cornerstone of household strategy, a principle so elegant that its discoverer wept. It is this: a single deck of cards contains but one Ace of Spades. A man who owns <em>four identical decks</em> is, by the plainest arithmetic, never more than an arm's length from <em>four</em> Aces of Spades — and may distribute the surplus as conscience and cardigan allow.</p>
+      <p>The method requires nothing more than patience at the point of purchase. One simply acquires the same brand, the same pattern, the same reassuringly ordinary blue-backed deck, year upon year, until the household holds a small but devoted standing army of cards, all indistinguishable, all loyal.</p>
+
+      <div class="plate" style="max-width:360px">
+        <svg aria-hidden="true" viewBox="0 0 240 130" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- four identical decks in a row -->
+          <g>
+            <rect x="20" y="42" width="38" height="56" rx="4"/>
+            <rect x="24" y="38" width="38" height="56" rx="4" fill="var(--paper)"/>
+            <path d="M30 50 h26 M30 58 h26 M30 66 h26 M30 74 h26 M30 82 h26" stroke-width="0.5" stroke-dasharray="2 3"/>
+          </g>
+          <g transform="translate(52 0)">
+            <rect x="20" y="42" width="38" height="56" rx="4"/>
+            <rect x="24" y="38" width="38" height="56" rx="4" fill="var(--paper)"/>
+            <path d="M30 50 h26 M30 58 h26 M30 66 h26 M30 74 h26 M30 82 h26" stroke-width="0.5" stroke-dasharray="2 3"/>
+          </g>
+          <g transform="translate(104 0)">
+            <rect x="20" y="42" width="38" height="56" rx="4"/>
+            <rect x="24" y="38" width="38" height="56" rx="4" fill="var(--paper)"/>
+            <path d="M30 50 h26 M30 58 h26 M30 66 h26 M30 74 h26 M30 82 h26" stroke-width="0.5" stroke-dasharray="2 3"/>
+          </g>
+          <g transform="translate(156 0)">
+            <rect x="20" y="42" width="38" height="56" rx="4"/>
+            <rect x="24" y="38" width="38" height="56" rx="4" fill="var(--paper)"/>
+            <text x="30" y="62" font-family="Libre Caslon Display,serif" font-size="14" fill="currentColor" stroke="none">A</text>
+            <path d="M36 68 l4 5 l-4 5 l-4 -5 z" fill="currentColor" stroke="none"/>
+          </g>
+          <path d="M20 112 h200" stroke-width="0.7"/>
+          <text x="120" y="124" text-anchor="middle" font-family="Libre Caslon Display,serif" font-size="7.2" fill="currentColor" stroke="none" letter-spacing="0.3">FOUR DECKS · FOUR SPADES · ONE QUIET SMILE</text>
+        </svg>
+        <div class="cap"><b>Fig. 3.</b> A household reserve, correctly maintained.</div>
+      </div>
+
+      <div class="aside">
+        <span class="lbl">A Caution on Wear</span>
+        Decks age. A pristine card dealt into a tired hand is as loud as a trumpet. The disciplined player therefore <em>seasons</em> his reserve, shuffling all decks together at intervals through the year so that every Ace acquires the same honest patina of thumb-grease and history.
+      </div>
+
+      <!-- CONTRAPTION 2 (dial) -->
+      <div class="contraption" data-screen-label="Reserve Ready-Reckoner">
+        <div class="ctitle">The Reserve Ready-Reckoner<span class="pat">For the Planning of Christmases Yet to Come</span></div>
+        <hr class="crule" />
+        <span class="ctrl-label">Identical decks held in the household</span>
+        <div class="dial-row">
+          <span class="dial-readout" id="deckCount">4</span>
+          <input type="range" id="deckDial" min="1" max="24" value="4" step="1" aria-label="Number of identical decks" />
+        </div>
+        <p class="verdict" id="deckVerdict" style="font-style:italic;color:var(--ink-soft);text-align:center;max-width:46ch;margin:14px auto 0;min-height:3em"></p>
+      </div>
+    </div>
+  </article>
+
+  <hr class="rule" />
+
+  <!-- ============ CHAPTER IV ============ -->
+  <article class="chapter" id="ch4" data-screen-label="Ch. IV — Distraction">
+    <header class="chapter-head">
+      <div class="chapter-num">Chapter the Fourth</div>
+      <h2 class="chapter-title disp">The Fine Art of the Distraction</h2>
+      <p class="chapter-sub">In which the player learns that the eye, once turned, sees nothing.</p>
+    </header>
+    <div class="body">
+      <p class="dropcap">All concealment is wasted if performed before a watchful audience. The advanced player therefore cultivates the art of redirection: the brief, well-timed event that draws every eye to the window, the door, or the dog — affording a window of perhaps two seconds in which the universe may be quietly rearranged.</p>
+      <p>The distraction must be <em>plausible</em>, <em>brief</em>, and above all <em>deniable</em>. Knocking over one's own drink is the classic of the genre — generous, self-deprecating, and instantly forgiven. The pointing of a finger at the garden, accompanied by the words <em>"Was that a heron?"</em>, is a perennial favourite, requiring no props and surviving repeated use within the same evening through the sheer force of the family's reluctance to discuss it.</p>
+
+      <h3 class="run">A Taxonomy of Diversions</h3>
+      <ul>
+        <li><b>The Meteorological.</b> "Is it snowing?" Best deployed in any season but snow.</li>
+        <li><b>The Domestic Crisis.</b> "I think something's burning." Reserved for high-stakes hands; clears the room entirely.</li>
+        <li><b>The Sympathetic Ailment.</b> A sudden, theatrical search for one's spectacles — which are, of course, upon one's head — buying time and goodwill in equal measure.</li>
+        <li><b>The Conversational Gambit.</b> A pointed question about a relative's love life, guaranteed to occupy the table for no less than four minutes.</li>
+      </ul>
+
+      <!-- CONTRAPTION 3 -->
+      <div class="contraption" data-screen-label="Distraction Generator">
+        <div class="ctitle">The Automatic Distraction Generator<span class="pat">A Fresh Diversion For Every Hand</span></div>
+        <hr class="crule" />
+        <div style="text-align:center">
+          <button class="btn" id="distractBtn" type="button">Generate a Diversion</button>
+        </div>
+        <div class="distraction-out" id="distractOut">
+          <div class="num">Diversion No. —</div>
+          <div class="line">Press the lever to receive your diversion.</div>
+          <div class="stage"></div>
+        </div>
+      </div>
+
+      <div class="aside">
+        <span class="lbl">On Restraint</span>
+        A distraction spent is a distraction spent. The master uses but one or two per evening, and never the heron twice before pudding.
+      </div>
+    </div>
+  </article>
+
+  <hr class="rule" />
+
+  <!-- ============ CHAPTER V ============ -->
+  <article class="chapter" id="ch5" data-screen-label="Ch. V — Bridge">
+    <header class="chapter-head">
+      <div class="chapter-num">Chapter the Fifth</div>
+      <h2 class="chapter-title disp">Manoeuvres for the Bridge Table</h2>
+      <p class="chapter-sub">Advanced technique for the four-handed game, where one's partner is an accomplice by law.</p>
+    </header>
+    <div class="body">
+      <p class="dropcap">Bridge is the connoisseur's arena, for it furnishes the player with that rarest of gifts: a <em>partner</em>, bound by the rules of the game itself to act in concert with him. Where the rules permit so much open collusion, the imaginative player finds the remaining latitude positively luxurious.</p>
+      <h3 class="run">The Meaningful Cough</h3>
+      <p>The laws of bridge sternly forbid signalling to one's partner by word, gesture, or expression. They are, however, silent on bronchitis. A robust system may be built entirely from the respiratory tract: one cough for hearts, two for spades, a thoughtful clearing of the throat for "I have absolutely nothing and intend to blame you." The beauty of the method is that any opponent who objects must first accuse a beloved elderly relative of faking a chest complaint at Christmas, a social impossibility.<a href="#f3" class="fn">3</a></p>
+      <h3 class="run">On the Dummy</h3>
+      <p>When one's partner is dummy and lays down his hand, a brief and apparently absent-minded <em>tidying</em> of his cards — straightening them, admiring them, gently reordering a suit "for clarity" — communicates a wealth of intelligence while presenting only the picture of a helpful, tidy-minded man.</p>
+      <h3 class="run">The Long Deal</h3>
+      <p>The player who deals slowly, with much licking of the thumb and many small apologies for his clumsiness, is afforded ample opportunity to acquaint himself with the lower regions of the pack. Clumsiness, cultivated over decades, is the perfect disguise: nobody suspects the man who cannot find his own glasses of having memorised the bottom eight cards.</p>
+      <div class="aside">
+        <span class="lbl">Partnership Note</span>
+        The ideal partner is a spouse of forty years' standing, who requires no signals at all, having long ago learned to read everything from the angle of an eyebrow — and who will, crucially, never testify.
+      </div>
+      <div class="footnotes">
+        <p id="f3"><span class="num">3.</span> Should the cough system fail, the player may fall back upon the venerable practice of <em>peering</em>, for which a reflective surface — a spectacle lens, a polished spoon, the bottom of a sherry glass — is invaluable. See also Fig. 2.</p>
+      </div>
+    </div>
+  </article>
+
+  <hr class="rule" />
+
+  <!-- ============ CHAPTER VI ============ -->
+  <article class="chapter" id="ch6" data-screen-label="Ch. VI — Deniability">
+    <header class="chapter-head">
+      <div class="chapter-num">Chapter the Sixth</div>
+      <h2 class="chapter-title disp">Plausible Deniability &amp; the Innocent Countenance</h2>
+      <p class="chapter-sub">The final and most important art: that of being, at all times, beyond reproach.</p>
+    </header>
+    <div class="body">
+      <p class="dropcap">Technique is nothing without temperament. A man may have an ace in each sleeve and a heron at the ready, yet undo himself entirely with a single guilty glance. The crowning discipline of the advantage player is therefore the cultivation of an <em>innocence so complete</em> that suspicion itself comes to seem the accuser's failing rather than his own.</p>
+      <p>This is achieved through a lifetime's rehearsal of three expressions: <em>mild surprise</em> at one's own good fortune; <em>gentle hurt</em> at any insinuation; and <em>warm, forgiving amusement</em> when — as occasionally happens — a grandchild flips back the cuff of a cardigan and discovers the better part of a second deck.</p>
+
+      <div class="plate" style="max-width:300px">
+        <svg aria-hidden="true" viewBox="0 0 200 150" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- the innocent face -->
+          <ellipse cx="100" cy="84" rx="46" ry="52"/>
+          <!-- spectacles -->
+          <circle cx="82" cy="78" r="13"/>
+          <circle cx="118" cy="78" r="13"/>
+          <path d="M95 78 h10"/>
+          <path d="M69 76 l-14 -4 M131 76 l14 -4"/>
+          <!-- raised, innocent eyebrows -->
+          <path d="M70 58 q12 -8 24 -2"/>
+          <path d="M106 56 q12 -6 24 2"/>
+          <!-- the faintest smile -->
+          <path d="M84 108 q16 8 32 0"/>
+          <!-- a single card-corner peeping from collar -->
+          <path d="M132 128 l16 -2 l2 16 l-16 2 z" fill="var(--paper)"/>
+          <text x="135" y="140" font-family="Libre Caslon Display,serif" font-size="9" fill="currentColor" stroke="none">A</text>
+        </svg>
+        <div class="cap"><b>Fig. 4.</b> The Countenance of Total Innocence (with corroborating evidence).</div>
+      </div>
+
+      <h3 class="run">The Standard Replies</h3>
+      <p>Every household champion maintains a repertoire of unanswerable responses, delivered with a faint air of wounded patience:</p>
+      <ul>
+        <li>"I've been dealt good cards all my life. It's called <em>positivity</em>."</li>
+        <li>"You'd never speak to your mother like this."</li>
+        <li>"Show me the rule. Go on. Fetch the box and show me the rule."</li>
+        <li>"That card was in my hand the <em>whole time</em>. You weren't watching."</li>
+        <li>"Why would I cheat to win <em>twenty pence</em>?" — a question whose unanswerability is its entire purpose.</li>
+      </ul>
+      <p>Master these, and the player attains the final state to which all of this tends: not merely to win, but to win while being comforted by his victims for the distress their suspicions have caused him.</p>
+    </div>
+  </article>
+
+  <div class="flourish" aria-hidden="true"><span class="fleur">&#10087;</span><span class="fleur">&#10086;</span><span class="fleur">&#10087;</span></div>
+
+  <!-- ============ APPENDIX ============ -->
+  <article class="chapter" id="appendix" data-screen-label="Appendix">
+    <header class="chapter-head">
+      <div class="chapter-num">Appendix</div>
+      <h2 class="chapter-title disp">A Glossary &amp; The Code of Honour</h2>
+    </header>
+    <div class="body">
+      <h3 class="run center" style="text-align:center">A Brief Glossary of Terms</h3>
+      <dl class="glossary">
+        <dt>Foresight</dt><dd>The act of knowing which card is coming, on account of having put it there.</dd>
+        <dt>The Reserve</dt><dd>A household's standing stock of identical decks; a pension, paid in aces.</dd>
+        <dt>The Heron</dt><dd>Any object in the garden, real or imagined, sufficient to turn four heads for two seconds.</dd>
+        <dt>Seasoning</dt><dd>The disciplined ageing of new cards until they may be introduced without scandal.</dd>
+        <dt>The Cough System</dt><dd>A complete language of the chest, fluent only between players married thirty years or more.</dd>
+        <dt>Twenty Pence</dt><dd>The traditional and entirely sufficient motive for a lifetime of meticulous deception.</dd>
+      </dl>
+
+      <div class="code-box">
+        <h3>The Player's Code of Honour</h3>
+        <ol>
+          <li>I shall never cheat — only prepare, anticipate, and decline to explain.</li>
+          <li>I shall lose with grace, that I may win without examination.</li>
+          <li>I shall never deploy the heron twice before pudding.</li>
+          <li>I shall season my decks, that no Ace betray me by its youth.</li>
+          <li>I shall keep my cardigan, my counsel, and my conscience all firmly buttoned.</li>
+          <li>I shall, if discovered, be hurt — deeply, visibly, and at considerable length.</li>
+          <li>Above all, I shall never, ever write any of this down.</li>
+        </ol>
+      </div>
+
+      <p class="center" style="font-style:italic;color:var(--ink-soft);max-width:40ch;margin:24px auto 0">And so the family hereby breaks the seventh rule, with love, in the hope that he will take it in the spirit intended — and deal us, just once, an honest hand.</p>
+    </div>
+  </article>
+
+  <hr class="rule-d" style="max-width:200px" />
+
+  <p class="colophon">
+    The Sleeve &amp; Spectacle Press<br/>
+    Set in Libre Caslon &amp; Garamond · Printed upon the kitchen table<br/>
+    No aces were harmed · Several were relocated<br/>
+    <span aria-hidden="true">&#10086;</span> Edition the First <span aria-hidden="true">&#10086;</span>
+  </p>
+
+  <div class="backlink"><a href="../index.html">&#8592; Return to the Documents</a></div>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Sleeve Capacity Calculator ---------- */
+  var garments = [
+    {name:"The Ordinary Shirt-Sleeve", tag:"amateur", cards:1,
+     verdict:"One card, and a guilty conscience. The garment of a man who has not read this book. We can do better."},
+    {name:"The Lambswool V-Neck", tag:"respectable", cards:3,
+     verdict:"Light, plausible, and good for a single decisive ace. The everyday workhorse of the discreet uncle."},
+    {name:"The Aran Cardigan", tag:"recommended", cards:7,
+     verdict:"The Press's house favourite. Warm, grandfatherly, and structurally a filing cabinet. Above suspicion by virtue of being so obviously cosy."},
+    {name:"The Norwegian Ski-Jumper (festive)", tag:"seasonal", cards:11,
+     verdict:"Loud of pattern, generous of weave. Best worn at Christmas, when no one may comment on a jumper without seeming unkind."},
+    {name:"The Tweed Shooting-Jacket, lined", tag:"advanced", cards:14,
+     verdict:"Now we are serious. Four interior pockets and a lining that forgives all sins. Suggests one has come straight from the moor, not the manual."},
+    {name:"The Full Academic Gown", tag:"do not attempt", cards:31,
+     verdict:"An entire spare suit of clubs, with room for sandwiches. Reserved for the player who no longer cares whether he is caught, only whether he wins."}
+  ];
+
+  var list = document.getElementById("garmentList");
+  var capNum = document.getElementById("capNum");
+  var capVerdict = document.getElementById("capVerdict");
+
+  garments.forEach(function(g, i){
+    var li = document.createElement("li");
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.setAttribute("aria-pressed","false");
+    btn.innerHTML = '<span>'+g.name+'</span><span class="g-cap">'+g.tag+'</span>';
+    btn.addEventListener("click", function(){
+      Array.prototype.forEach.call(list.querySelectorAll("button"), function(b){ b.setAttribute("aria-pressed","false"); });
+      btn.setAttribute("aria-pressed","true");
+      animateNumber(capNum, g.cards, "cards held in reserve");
+      capVerdict.textContent = g.verdict;
+    });
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+
+  function animateNumber(el, target, label){
+    var start = 0, dur = 420, t0 = performance.now();
+    function frame(now){
+      var p = Math.min(1, (now - t0)/dur);
+      var val = Math.round(start + (target - start) * (1 - Math.pow(1-p,3)));
+      el.innerHTML = val + '<small>'+label+'</small>';
+      if(p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- Reserve Ready-Reckoner ---------- */
+  var dial = document.getElementById("deckDial");
+  var deckCount = document.getElementById("deckCount");
+  var deckVerdict = document.getElementById("deckVerdict");
+  function reckon(){
+    var d = parseInt(dial.value, 10);
+    deckCount.textContent = d;
+    var aces = d * 4;
+    var msg;
+    if(d === 1){
+      msg = "A single deck. One Ace of Spades, and the constant terror of being asked to account for it. The Press cannot recommend a household so exposed.";
+    } else if(d <= 3){
+      msg = aces + " aces in the house — a respectable beginning, sufficient for ordinary family play and the occasional bold Tuesday.";
+    } else if(d <= 6){
+      msg = aces + " aces, four of them spades. A standing reserve worthy of the name. You may now lose a hand on purpose without the slightest anxiety.";
+    } else if(d <= 12){
+      msg = aces + " aces and " + d + " kings of every suit. This is no longer a card collection; it is a strategic deterrent. Opponents sense it and do not know why.";
+    } else {
+      msg = aces + " aces. " + d + " identical decks. You have transcended the game entirely and entered the realm of legend, suspicion, and a slightly alarmed family who have started counting the cupboards.";
+    }
+    deckVerdict.textContent = msg;
+  }
+  dial.addEventListener("input", reckon);
+  reckon();
+
+  /* ---------- Distraction Generator ---------- */
+  var distractions = [
+    {line:"\u201cWas that a heron?\u201d", stage:"(Point firmly at the garden. Hold for two full seconds.)"},
+    {line:"\u201cI think something\u2019s burning.\u201d", stage:"(Reserved for high stakes. Clears the entire room.)"},
+    {line:"\u201cWho left the immersion on?\u201d", stage:"(Universally alarming. Nobody is ever sure.)"},
+    {line:"\u201cIs that the phone?\u201d", stage:"(There is no phone. There has never been a phone.)"},
+    {line:"\u201cGood Lord \u2014 has the cat got something?\u201d", stage:"(Works equally well with no cat.)"},
+    {line:"\u201cWhere have my glasses got to?\u201d", stage:"(They are upon your head. Search for them anyway.)"},
+    {line:"\u201cDid you hear about your cousin?\u201d", stage:"(Occupies the table for no less than four minutes.)"},
+    {line:"\u201cI do feel a draught. Is that window shut?\u201d", stage:"(Justifies the cardigan and turns four heads at once.)"},
+    {line:"\u201cQuick \u2014 what\u2019s the capital of Paraguay?\u201d", stage:"(Nobody knows. It is Asunci\u00f3n. Use the silence.)"},
+    {line:"*knocks over own sherry*", stage:"(The classic. Generous, self-deprecating, instantly forgiven.)"},
+    {line:"\u201cIs it starting to snow, do you think?\u201d", stage:"(Deploy in any season but winter.)"},
+    {line:"\u201cListen \u2014 is that carol-singers?\u201d", stage:"(It is July. They will look anyway.)"}
+  ];
+  var dBtn = document.getElementById("distractBtn");
+  var dOut = document.getElementById("distractOut");
+  var lastIdx = -1, count = 0;
+  dBtn.addEventListener("click", function(){
+    var idx;
+    do { idx = Math.floor(Math.random()*distractions.length); } while(idx === lastIdx && distractions.length > 1);
+    lastIdx = idx; count++;
+    var d = distractions[idx];
+    dOut.style.opacity = 0;
+    setTimeout(function(){
+      dOut.innerHTML = '<div class="num">Diversion No. '+roman(count)+'</div>'+
+                       '<div class="line">'+d.line+'</div>'+
+                       '<div class="stage">'+d.stage+'</div>';
+      dOut.style.transition = "opacity .25s";
+      dOut.style.opacity = 1;
+    }, 120);
+  });
+  function roman(n){
+    var map=[[10,"X"],[9,"IX"],[5,"V"],[4,"IV"],[1,"I"]], out="";
+    while(n>0){ for(var i=0;i<map.length;i++){ while(n>=map[i][0]){ out+=map[i][1]; n-=map[i][0]; } } }
+    return out;
+  }
+})();
+</script>
+</body>
+</html>

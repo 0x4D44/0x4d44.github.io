@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "win-at-cards",
+    title: "The Gentleman's Compendium",
+    tagline: "A deadpan vintage manual of winning — never, ever cheating — at cards: wardrobe and concealment, the doctrine of the multiple deck, and the Meaningful Cough. Dedicated to a grandmaster who has never once cheated and will tell you so, at length — with a working Sleeve Capacity Calculator and an Automatic Distraction Generator.",
+    url: "https://0x4d44.github.io/win-at-cards/",
+    illustration: "ill-sleeve",
+    date: "2026-06-09T23:00:00",
+    year: 2026,
+    readingMin: 11,
+    words: 2230,
+    tag: "fiction",
+    real: true,
+  },
+  {
     slug: "lothian",
     title: "Lothian",
     tagline: "Edinburgh's buses, a deep dive — a century of madder-and-gold deckers, 110 million journeys a year, a flat-fare network and the road to a net-zero fleet.",
