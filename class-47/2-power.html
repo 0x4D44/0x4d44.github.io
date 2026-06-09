@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · The Power Chain — CLASS 47</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="02">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch2 hero">
+  <div class="kicker">Chapter 02</div>
+  <div class="num">02</div>
+  <h2 style="margin-top:18px;max-width:22ch">The power chain: diesel in, controllable pull out.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">There is no gearbox in a Class 47. A single twin-bank Sulzer turns a big DC generator; the generator feeds six traction motors. Electricity <em>is</em> the transmission — and it is an infinitely variable one.</p>
+  <div class="meta">
+    <div><div class="k">Prime mover</div><div class="v">Sulzer 12LDA28-C · twin-bank</div></div>
+    <div><div class="k">Transmission</div><div class="v">DC electric · 1 generator → 6 motors</div></div>
+    <div><div class="k">Output</div><div class="v">2,750 bhp (as built)</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#why">Why electric transmission</a>
+    <a href="#engine">The Sulzer twin-bank</a>
+    <a href="#flow">Live: drive the power chain</a>
+    <a href="#numbers">The numbers</a>
+  </nav>
+
+  <div>
+    <!-- WHY ELECTRIC -->
+    <section id="why" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">Why electric transmission</div>
+      <h3>The generator is a gearbox with no gears.</h3>
+      <p style="margin-top:18px">A 2,750&nbsp;bhp engine produces its power in a narrow band of speeds, but a train needs full pulling effort from a dead stand right up to 95&nbsp;mph. No mechanical gearbox of the 1960s could shift that much power across that range and survive. The elegant answer: let the engine spin a <strong>generator</strong>, and use the electricity to drive <strong>traction motors</strong> geared to the axles.</p>
+      <p>Now the engine never has to "match" the wheels. It runs at whatever speed the driver's power handle selects; the generator's <strong>excitation</strong> is varied to soak up exactly the power the engine is making, and the motors turn that into torque at any road speed. At a standstill the motors draw huge current at low voltage — maximum torque. At speed they spin fast, generate back-EMF, and draw less current. The transmission re-gears itself, continuously, with no moving ratio at all.</p>
+      <div class="note annot">
+        <span class="tag">The key idea</span>
+        <p>A diesel-electric isn't "a diesel that makes electricity." It is a <strong>constant-power machine</strong>: the engine works hardest at one steady output, and the electrical system trades volts for amps to deliver that same power as either lots of pull at low speed, or modest pull at high speed. Keep this in mind — it is the whole of Chapter 03.</p>
+      </div>
+    </section>
+
+    <!-- ENGINE CUTAWAY -->
+    <section id="engine" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 2.1</div>
+      <h3>The Sulzer 12LDA28 — two banks, two crankshafts.</h3>
+      <p style="margin-top:18px">Sulzer's <strong>twin-bank</strong> layout is the 47's signature oddity. Instead of a V, it stands two banks of six cylinders <em>side by side</em>, each bank on its <strong>own crankshaft</strong>; the two cranks are geared together and drive the generator from one end. It is compact, rigid, and — at 280&nbsp;mm bore — a true medium-speed marine-style diesel pressed into a railway frame. Toggle the systems to see how it works.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 2.1</span><span>12LDA28-C — TRANSVERSE SECTION (SCHEMATIC)</span><span class="dim" id="engHint" style="color:var(--cyan-soft)">2 banks · 12 cyl · turbocharged</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 760 380" style="width:100%;height:auto" id="engSvg"></svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line)">
+          <div class="ctrl-row">
+            <button class="btn on" data-sys="all">Whole engine</button>
+            <button class="btn" data-sys="cyl">Cylinders &amp; pistons</button>
+            <button class="btn" data-sys="crank">Twin crankshafts</button>
+            <button class="btn" data-sys="air">Turbo &amp; charge air</button>
+          </div>
+          <div id="engNote" class="readout" style="margin-top:16px;color:var(--paper-on-plate);min-height:3em"></div>
+          <div class="ctrl-row" style="margin-top:6px"><button class="btn" id="engRun">▶ Run cycle</button><span class="readout" style="color:var(--cyan-soft)" id="engRpm">— rpm</span></div>
+        </div>
+        <div class="figure-cap"><b>Medium-speed, twin-crank.</b> Bore 280&nbsp;mm, stroke 360&nbsp;mm, twelve cylinders, ~800&nbsp;rpm at full power. Two crankshafts geared at the free end share the drive — unusual, robust, and (Ch. 04) ultimately worked too hard at 2,750&nbsp;bhp.</div>
+      </figure>
+    </section>
+
+    <!-- POWER FLOW -->
+    <section id="flow" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 2.2 — flagship model</div>
+      <h3>Drive the whole transmission, end to end.</h3>
+      <p style="margin-top:18px">Open the power handle and watch energy move: the engine spins up, the generator excites, current floods down the bus to six motors, and the wheels turn. Then change <strong>road speed</strong> and watch the trade — the same power delivered as <span style="color:var(--signal)">amps</span> (pull) at low speed, or <span class="mono">volts</span> (revs) at high speed.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 2.2</span><span id="flowTitle">POWER FLOW · NOTCH 0 — IDLE</span><span class="dim" style="color:var(--cyan-soft)" id="flowState">engine idling</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 820 300" style="width:100%;height:auto" id="flowSvg"></svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+          <div><div class="tag" style="color:var(--cyan-soft)">Engine</div><div class="readout" style="font-size:1.25rem"><b id="rRpm" style="color:var(--cyan)">450</b><span style="font-size:.7rem"> rpm</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Gen. power</div><div class="readout" style="font-size:1.25rem"><b id="rkW" style="color:var(--cyan)">0</b><span style="font-size:.7rem"> kW</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Bus volts</div><div class="readout" style="font-size:1.25rem"><b id="rV" style="color:var(--paper-on-plate)">0</b><span style="font-size:.7rem"> V</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Motor amps</div><div class="readout" style="font-size:1.25rem"><b id="rA" style="color:var(--signal)">0</b><span style="font-size:.7rem"> A</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Tractive effort</div><div class="readout" style="font-size:1.25rem"><b id="rTE" style="color:var(--signal-2)">0</b><span style="font-size:.7rem"> klbf</span></div></div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:1fr 1fr;gap:28px">
+          <div><div class="readout" style="color:var(--cyan-soft);margin-bottom:6px">Power handle — <b id="notchLab" style="color:var(--signal)">Notch 0</b></div>
+            <input id="notch" type="range" min="0" max="8" value="0" step="1" style="width:100%">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.6rem;color:var(--cyan-soft);opacity:.7;margin-top:4px"><span>IDLE</span><span>4</span><span>FULL</span></div>
+          </div>
+          <div><div class="readout" style="color:var(--cyan-soft);margin-bottom:6px">Road speed — <b id="spdLab" style="color:var(--cyan)">0 mph</b></div>
+            <input id="spd" type="range" min="0" max="95" value="0" step="1" style="width:100%">
+            <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.6rem;color:var(--cyan-soft);opacity:.7;margin-top:4px"><span>0</span><span>base ~27</span><span>95</span></div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Watch the trade-off.</b> Push the handle to 8 and hold the speed at 0: huge <span style="color:var(--signal)">current</span>, almost no volts — maximum pull, the wheels straining. Now wind the speed up: volts climb, current falls, the tractive-effort number drops as the constant power spreads thinner. That hyperbola is the heart of Chapter 03.</div>
+      </figure>
+    </section>
+
+    <!-- NUMBERS -->
+    <section id="numbers" class="section">
+      <div class="kicker blue">The numbers</div>
+      <h3>Engine &amp; transmission data.</h3>
+      <div class="cols2">
+        <div>
+          <h4 style="margin-bottom:6px">Prime mover</h4>
+          <ul class="spec">
+            <li><span class="k">Type</span><span class="v">Sulzer 12LDA28-C, 4-stroke, twin-bank</span></li>
+            <li><span class="k">Cylinders</span><span class="v">12 — two banks of six, side by side</span></li>
+            <li><span class="k">Crankshafts</span><span class="v">Two, geared together at free end</span></li>
+            <li><span class="k">Bore × stroke</span><span class="v">280 mm × 360 mm</span></li>
+            <li><span class="k">Aspiration</span><span class="v">Turbocharged + charge-air cooled</span></li>
+            <li><span class="k">Full speed</span><span class="v">~800 rpm (reduced on derated units)</span></li>
+            <li><span class="k">Output</span><span class="v">2,750 bhp → 2,580 bhp (Ch. 04)</span></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="margin-bottom:6px">Electric transmission</h4>
+          <ul class="spec">
+            <li><span class="k">Main generator</span><span class="v">Brush DC, engine-driven</span></li>
+            <li><span class="k">Traction motors</span><span class="v">6 × Brush DC, axle-hung, nose-suspended</span></li>
+            <li><span class="k">Aux. generator</span><span class="v">Battery charging &amp; control supply</span></li>
+            <li><span class="k">Control</span><span class="v">Load regulator varies generator excitation</span></li>
+            <li><span class="k">Max tractive effort</span><span class="v">~60,000 lbf · 267 kN (starting)</span></li>
+            <li><span class="k">Continuous TE</span><span class="v">~30,000 lbf at ~26–27 mph</span></li>
+            <li><span class="k">Train heating</span><span class="v">Steam boiler (47/0) or ETH alternator (47/4)</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="note">
+        <span class="tag">Load regulator</span>
+        <p>The clever automatic at the centre of it all. As road conditions change, the <strong>load regulator</strong> continuously adjusts the generator's field so the engine is always loaded to exactly the power the driver selected — never lugged down, never over-fuelled. It is what lets one fixed engine speed serve every road speed, and it is doing its work every second you move the sliders above.</p>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>CLASS 47 · Ch.02 — The power chain</span>
+  <span>Schematic · not to scale · educational</span>
+</div></footer>
+
+<script>
+/* ============ FIG 2.1 — engine cutaway ============ */
+(function(){
+  const svg=document.getElementById('engSvg'); if(!svg) return;
+  let sys='all', running=false, raf=null, ang=0;
+  const NOTES={
+    all:`A complete transverse slice: two cylinder banks rise from two crankcases, each with its own crankshaft. Exhaust gas spins a <b style="color:var(--signal-2)">turbocharger</b> that rams cooled air back into the cylinders.`,
+    cyl:`Twelve cylinders in <b>two banks of six</b>. Each piston is driven down by combustion and connected to the crankshaft below it. Bore 280&nbsp;mm — these are big, slow, durable cylinders, not a high-revving car engine.`,
+    crank:`The signature feature: <b style="color:var(--cyan)">two separate crankshafts</b>, one per bank, <b>geared together</b> at the free end so they share the load and drive the generator as one. Few diesels are built this way.`,
+    air:`Exhaust energy spins the <b style="color:var(--signal-2)">turbocharger</b>; the compressed charge air is then <b>cooled</b> before entering the cylinders, packing in more oxygen so more fuel can be burned — the route to 2,750&nbsp;bhp from this size of engine.`,
+  };
+  function piston(x, baseY, topY, phase){
+    // returns y of piston crown given crank angle phase (0..2pi)
+    const throw_=26;
+    const cy = (baseY-60) - throw_*Math.cos(phase);
+    return cy;
+  }
+  function draw(){
+    const dim=(on)=> on? 1 : .16;
+    const cyl = sys==='all'||sys==='cyl';
+    const crank = sys==='all'||sys==='crank';
+    const air = sys==='all'||sys==='air';
+    const baseY=300;
+    let s='';
+    // crankcase / block outline
+    s+=`<path d="M120 ${baseY} L120 150 L160 110 L300 110 L340 150 L420 150 L460 110 L600 110 L640 150 L640 ${baseY} Z" fill="rgba(120,205,228,.05)" stroke="var(--cyan)" stroke-width="2" opacity="${dim(true)}"/>`;
+    // two banks: left bank cylinders centered ~230, right bank ~530
+    const banks=[230,530];
+    banks.forEach((bx,bi)=>{
+      // crank centre
+      const ccx=bx, ccy=baseY-60;
+      // cylinder bores (show 1 representative cylinder per bank in section)
+      const op=dim(cyl);
+      s+=`<g opacity="${op}">`;
+      s+=`<rect x="${bx-26}" y="130" width="52" height="120" fill="none" stroke="var(--cyan)" stroke-width="1.6"/>`;
+      // piston
+      const ph = ang + bi*Math.PI; // banks offset
+      const py = (baseY-150) - 24*Math.cos(ph);
+      s+=`<rect x="${bx-22}" y="${py}" width="44" height="26" fill="rgba(120,205,228,.18)" stroke="var(--cyan)" stroke-width="1.4"/>`;
+      // con rod
+      const crx=ccx+24*Math.sin(ph), cry=ccy-24*Math.cos(ph);
+      s+=`<line x1="${bx}" y1="${py+22}" x2="${crx}" y2="${cry}" stroke="var(--cyan-soft)" stroke-width="2"/>`;
+      // combustion spark at top
+      if(running && Math.cos(ph)>0.8) s+=`<circle cx="${bx}" cy="${py-2}" r="7" fill="var(--signal-2)" opacity=".8"/>`;
+      s+=`</g>`;
+      // crankshaft
+      const opc=dim(crank);
+      s+=`<g opacity="${opc}">`;
+      s+=`<circle cx="${ccx}" cy="${ccy}" r="30" fill="none" stroke="var(--signal)" stroke-width="2"/>`;
+      s+=`<circle cx="${ccx}" cy="${ccy}" r="5" fill="var(--signal)"/>`;
+      s+=`<circle cx="${crx}" cy="${cry}" r="5" fill="var(--signal)"/>`;
+      s+=`<line x1="${ccx}" y1="${ccy}" x2="${crx}" y2="${cry}" stroke="var(--signal)" stroke-width="2"/>`;
+      s+=`<text x="${bx}" y="${baseY-8}" text-anchor="middle" font-size="9" fill="var(--signal)">CRANK ${bi+1}</text>`;
+      s+=`</g>`;
+      s+=`<text x="${bx}" y="125" text-anchor="middle" font-size="9" fill="var(--cyan-soft)" opacity="${op}">BANK ${bi+1}</text>`;
+    });
+    // coupling gear between cranks
+    s+=`<g opacity="${dim(crank)}"><line x1="260" y1="${baseY-60}" x2="500" y2="${baseY-60}" stroke="var(--signal)" stroke-width="1.2" stroke-dasharray="4 4"/><circle cx="380" cy="${baseY-60}" r="14" fill="none" stroke="var(--signal)" stroke-width="1.6"/><text x="380" y="${baseY-34}" text-anchor="middle" font-size="8" fill="var(--signal)">GEAR TRAIN</text></g>`;
+    // turbocharger + charge air (right side)
+    const opa=dim(air);
+    s+=`<g opacity="${opa}">`;
+    s+=`<circle cx="700" cy="170" r="34" fill="none" stroke="var(--signal-2)" stroke-width="2"/>`;
+    s+=`<circle cx="700" cy="170" r="10" fill="none" stroke="var(--signal-2)" stroke-width="1.4"/>`;
+    // turbine blades
+    for(let k=0;k<8;k++){const a=k/8*2*Math.PI + (running?ang*1.6:0);s+=`<line x1="700" y1="170" x2="${700+28*Math.cos(a)}" y2="${170+28*Math.sin(a)}" stroke="var(--signal-2)" stroke-width="1.4"/>`;}
+    s+=`<text x="700" y="222" text-anchor="middle" font-size="9" fill="var(--signal-2)">TURBO</text>`;
+    // exhaust in, charge air out arrows
+    s+=`<path d="M640 150 Q680 150 680 150" />`;
+    s+=`<path d="M666 200 H700" stroke="var(--signal-2)" stroke-width="1.4" marker-end="url(#x)"/>`;
+    s+=`<text x="690" y="120" text-anchor="middle" font-size="8" fill="var(--signal-2)">exhaust ↑</text>`;
+    s+=`<text x="608" y="142" text-anchor="end" font-size="8" fill="var(--signal-2)">cooled charge air →</text>`;
+    s+=`</g>`;
+    // output to generator (left)
+    s+=`<line x1="120" y1="${baseY-60}" x2="70" y2="${baseY-60}" stroke="var(--cyan)" stroke-width="3"/><text x="64" y="${baseY-64}" text-anchor="end" font-size="9" fill="var(--cyan-soft)">→ generator</text>`;
+    svg.innerHTML=`<defs><marker id="x" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L5,3 L0,6" fill="none" stroke="var(--signal-2)" stroke-width="1"/></marker></defs>`+s;
+    document.getElementById('engNote').innerHTML=NOTES[sys];
+  }
+  function loop(){ ang+=0.12; if(ang>Math.PI*2) ang-=Math.PI*2; draw(); document.getElementById('engRpm').textContent='≈ 800 rpm'; raf=requestAnimationFrame(loop); }
+  document.querySelectorAll('[data-sys]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('[data-sys]').forEach(x=>x.classList.toggle('on',x===b));
+    sys=b.dataset.sys; draw();
+  }));
+  document.getElementById('engRun').addEventListener('click',function(){
+    running=!running; this.classList.toggle('on',running); this.textContent=running?'▮▮ Pause':'▶ Run cycle';
+    if(running) loop(); else { cancelAnimationFrame(raf); document.getElementById('engRpm').textContent='— rpm'; draw(); }
+  });
+  draw();
+})();
+
+/* ============ FIG 2.2 — power flow ============ */
+(function(){
+  const svg=document.getElementById('flowSvg'); if(!svg) return;
+  let notch=0, spd=0, raf=null, t=0;
+  const Pmax=1920; // kW at rail-ish (2580 bhp ~ 1920 kW)
+  const TEmax=60;  // klbf
+  const baseSpeed=27;
+  function calc(){
+    const frac = notch/8;
+    const P = frac*Pmax;                 // kW delivered
+    const v = Math.max(spd,0.5);
+    // tractive effort: capped below base speed, then constant-power hyperbola
+    let TE = Math.min(TEmax*frac, frac*Pmax*0.42/v);
+    if(spd<1) TE = TEmax*frac;
+    // motor armature current tracks torque (∝ TE); bus volts track back-EMF (∝ speed)
+    const A = notch===0 ? 0 : (TE/TEmax)*1050;
+    const V = notch===0 ? 0 : (60 + (spd/95)*780);
+    const rpm = 450 + frac*350;
+    return {frac,P,TE,V,A,rpm};
+  }
+  function draw(){
+    const d=calc();
+    // layout blocks
+    let s='';
+    const y=150;
+    // engine block
+    s+=block(40,90,120,120,'DIESEL','12LDA28');
+    // generator
+    s+=block(250,90,120,120,'GENERATOR','Brush DC');
+    // bus node
+    // motors stack
+    s+=block(560,40,160,220,'6 × MOTORS','axle-hung');
+    // wheels
+    // connections
+    // engine->gen shaft (spins)
+    s+=`<line x1="160" y1="${y}" x2="250" y2="${y}" stroke="var(--cyan)" stroke-width="3"/>`;
+    s+=`<text x="205" y="${y-10}" text-anchor="middle" font-size="9" fill="var(--cyan-soft)">shaft</text>`;
+    // crank spin indicator on engine
+    const ea=t*(d.rpm/120);
+    s+=`<g transform="translate(100 ${y}) rotate(${ea*40})"><circle r="22" fill="none" stroke="var(--cyan)" stroke-width="1.4"/><line x1="0" y1="0" x2="0" y2="-22" stroke="var(--cyan)" stroke-width="2"/></g>`;
+    // gen rotor spin
+    s+=`<g transform="translate(310 ${y}) rotate(${ea*40})"><circle r="22" fill="none" stroke="var(--cyan)" stroke-width="1.4"/><line x1="0" y1="0" x2="0" y2="-22" stroke="var(--signal)" stroke-width="2"/></g>`;
+    // bus from gen to motors with particles
+    const bx1=370,bx2=560;
+    s+=`<line x1="${bx1}" y1="${y}" x2="${bx2}" y2="${y}" stroke="var(--plate-line)" stroke-width="6"/>`;
+    s+=`<text x="465" y="${y-14}" text-anchor="middle" font-size="9" fill="var(--cyan-soft)">DC BUS</text>`;
+    // current particles: density/speed ~ amps
+    const amps=d.A;
+    if(amps>1){
+      const n=Math.min(14, 2+Math.round(amps/60));
+      for(let i=0;i<n;i++){
+        const fp=((t*(0.4+amps/500)+i/n)%1);
+        const px=bx1+(bx2-bx1)*fp;
+        s+=`<circle cx="${px}" cy="${y}" r="3.5" fill="var(--signal)"/>`;
+      }
+    }
+    // motors fan-out lines
+    const mys=[80,150,220];
+    mys.forEach(my=>{ s+=`<line x1="${bx2}" y1="${y}" x2="600" y2="${my}" stroke="var(--plate-line)" stroke-width="1.2"/>`; });
+    // wheels (3) at right spinning ~ speed
+    const wa=t*(spd/40);
+    [80,150,220].forEach(my=>{
+      s+=`<g transform="translate(750 ${my}) rotate(${wa*60})"><circle r="20" fill="none" stroke="var(--cyan)" stroke-width="2"/><line x1="0" y1="0" x2="0" y2="-20" stroke="var(--cyan-soft)" stroke-width="1.4"/><line x1="0" y1="0" x2="17" y2="10" stroke="var(--cyan-soft)" stroke-width="1.4"/><line x1="0" y1="0" x2="-17" y2="10" stroke="var(--cyan-soft)" stroke-width="1.4"/></g>`;
+    });
+    s+=`<text x="750" y="276" text-anchor="middle" font-size="9" fill="var(--cyan-soft)">WHEELS</text>`;
+    svg.innerHTML=s;
+    // readouts
+    document.getElementById('rRpm').textContent=Math.round(d.rpm);
+    document.getElementById('rkW').textContent=Math.round(d.P);
+    document.getElementById('rV').textContent=Math.round(d.V);
+    document.getElementById('rA').textContent=Math.round(d.A);
+    document.getElementById('rTE').textContent=d.TE.toFixed(1);
+    document.getElementById('flowTitle').textContent=`POWER FLOW · NOTCH ${notch}` + (notch===0?' — IDLE':'');
+    document.getElementById('flowState').textContent =
+      notch===0? 'engine idling' : spd<2? 'starting — max current' : spd>baseSpeed? 'constant-power region' : 'accelerating';
+    document.getElementById('notchLab').textContent='Notch '+notch;
+    document.getElementById('spdLab').textContent=spd+' mph';
+  }
+  function block(x,y,w,h,t1,t2){
+    return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="rgba(120,205,228,.05)" stroke="var(--cyan)" stroke-width="1.6"/>`+
+           `<text x="${x+w/2}" y="${y+h-26}" text-anchor="middle" font-size="11" fill="var(--paper-on-plate)">${t1}</text>`+
+           `<text x="${x+w/2}" y="${y+h-12}" text-anchor="middle" font-size="8" fill="var(--cyan-soft)">${t2}</text>`;
+  }
+  function loop(){ t+=0.03; draw(); raf=requestAnimationFrame(loop); }
+  document.getElementById('notch').addEventListener('input',e=>{ notch=+e.target.value; draw(); });
+  document.getElementById('spd').addEventListener('input',e=>{ spd=+e.target.value; draw(); });
+  loop();
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

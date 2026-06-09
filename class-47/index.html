@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLASS 47 — An Interactive Study of the Brush Type 4</title>
+<meta name="description" content="A deep, interactive technical study of British Rail's Class 47 / Brush Type 4 diesel-electric locomotive: design, the Sulzer engine, the power chain, faults and the great derating, sub-classes and a fleet of 512.">
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="00">
+<div id="topbar"></div>
+
+<!-- ===================== HERO ===================== -->
+<section class="wrap" style="padding:64px 32px 26px" data-screen-label="Hub hero">
+  <div class="kicker">An interactive study · 5 chapters · 512 locomotives</div>
+  <div style="display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:end" class="hero-grid">
+    <div>
+      <h1>The most useful<br>diesel Britain<br>ever built.</h1>
+      <p class="lead" style="margin-top:24px;max-width:36ch">The Brush Type 4 — <strong>Class 47</strong> — was the workhorse the 1955 Modernisation Plan was looking for. Take it apart: the twin-bank Sulzer, the electric transmission, the faults that forced a famous derating, and the 512-strong fleet that ran everything from the Royal Train to coal.</p>
+    </div>
+    <div>
+      <p class="dim mono" style="font-size:.82rem;line-height:1.7">Five hundred and twelve were built between 1962 and 1968 — more than any other mainline diesel class in British history. Sixty years on, examples are <em>still</em> earning revenue. This study explains why the design endured, and where it very nearly came undone.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HERO PLATE: side elevation ===================== -->
+<section class="wrap" style="padding:14px 32px 40px">
+  <figure class="figure plate">
+    <div class="figure-bar"><span class="fno">FIG. 00</span><span>BRUSH TYPE 4 · CLASS 47/0 — SIDE ELEVATION</span><span class="dim" style="color:var(--cyan-soft)">WHEEL ARR. Co-Co · N.T.S.</span></div>
+    <div class="figure-body" style="padding:8px 6px">
+      <svg viewBox="0 0 1180 360" style="width:100%;height:auto;display:block" id="locoSvg">
+        <defs>
+          <marker id="arH" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="var(--cyan)" stroke-width="1"/></marker>
+        </defs>
+
+        <!-- ground / rail with scrolling sleepers -->
+        <g>
+          <line x1="20" y1="300" x2="1160" y2="300" stroke="var(--cyan)" stroke-width="2"/>
+          <line x1="20" y1="306" x2="1160" y2="306" stroke="var(--plate-line)" stroke-width="1"/>
+          <g id="sleepers" stroke="var(--plate-line)" stroke-width="1"></g>
+        </g>
+
+        <!-- ============ BODY ============ -->
+        <g stroke="var(--cyan)" fill="none">
+          <!-- main bodyside: cab-nose at both ends, slightly raked -->
+          <path d="M70 250
+                   L70 150 L96 112 L150 96 L1030 96 L1084 112 L1110 150 L1110 250 Z"
+                stroke-width="2.5"/>
+          <!-- solebar / underframe band -->
+          <line x1="70" y1="226" x2="1110" y2="226" stroke="var(--plate-line)" stroke-width="1.2"/>
+          <line x1="70" y1="250" x2="1110" y2="250" stroke="var(--cyan)" stroke-width="2"/>
+          <!-- waistline -->
+          <line x1="100" y1="150" x2="1080" y2="150" stroke="var(--plate-line)" stroke-width="1"/>
+          <!-- roof line -->
+          <line x1="150" y1="96" x2="1030" y2="96" stroke="var(--plate-line)" stroke-width="1"/>
+        </g>
+
+        <!-- No.1 cab (left) -->
+        <g stroke="var(--cyan)" fill="none" stroke-width="1.6">
+          <!-- cab side window -->
+          <rect x="96" y="120" width="60" height="34" rx="3"/>
+          <!-- headcode box on nose -->
+          <rect x="70" y="120" width="22" height="22" rx="2" stroke="var(--signal-2)"/>
+          <text id="headcode" x="81" y="136" font-size="11" fill="var(--signal-2)" text-anchor="middle" stroke="none">1A47</text>
+          <!-- cab door -->
+          <line x1="166" y1="150" x2="166" y2="226" stroke="var(--plate-line)"/>
+        </g>
+
+        <!-- No.2 cab (right) -->
+        <g stroke="var(--cyan)" fill="none" stroke-width="1.6">
+          <rect x="1024" y="120" width="60" height="34" rx="3"/>
+          <rect x="1088" y="120" width="22" height="22" rx="2" stroke="var(--signal-2)"/>
+          <line x1="1014" y1="150" x2="1014" y2="226" stroke="var(--plate-line)"/>
+        </g>
+
+        <!-- engine-room bodyside windows + grilles -->
+        <g stroke="var(--plate-line)" fill="none" stroke-width="1.2">
+          <rect x="210" y="124" width="40" height="30" rx="2"/>
+          <rect x="262" y="124" width="40" height="30" rx="2"/>
+          <!-- boiler / water filler area -->
+          <rect x="330" y="118" width="120" height="92" rx="3" stroke-dasharray="3 4"/>
+          <g stroke-width="0.9">
+            <line x1="345" y1="124" x2="345" y2="204"/><line x1="360" y1="124" x2="360" y2="204"/>
+            <line x1="375" y1="124" x2="375" y2="204"/><line x1="390" y1="124" x2="390" y2="204"/>
+            <line x1="405" y1="124" x2="405" y2="204"/><line x1="420" y1="124" x2="420" y2="204"/>
+            <line x1="435" y1="124" x2="435" y2="204"/>
+          </g>
+          <!-- central engine-room windows -->
+          <rect x="500" y="124" width="36" height="28" rx="2"/>
+          <rect x="548" y="124" width="36" height="28" rx="2"/>
+          <rect x="640" y="124" width="36" height="28" rx="2"/>
+          <rect x="688" y="124" width="36" height="28" rx="2"/>
+          <!-- radiator grille (No.2 end) -->
+          <rect x="770" y="116" width="180" height="96" rx="3"/>
+          <g stroke-width="0.9">
+            <line x1="788" y1="116" x2="788" y2="212"/><line x1="806" y1="116" x2="806" y2="212"/>
+            <line x1="824" y1="116" x2="824" y2="212"/><line x1="842" y1="116" x2="842" y2="212"/>
+            <line x1="860" y1="116" x2="860" y2="212"/><line x1="878" y1="116" x2="878" y2="212"/>
+            <line x1="896" y1="116" x2="896" y2="212"/><line x1="914" y1="116" x2="914" y2="212"/>
+            <line x1="932" y1="116" x2="932" y2="212"/>
+          </g>
+        </g>
+
+        <!-- roof: radiator fan grille + exhaust -->
+        <g stroke="var(--plate-line)" fill="none" stroke-width="1.1">
+          <circle cx="860" cy="96" r="0"/>
+          <ellipse cx="858" cy="96" rx="48" ry="6"/>
+          <path d="M470 96 q6 -16 18 -16 q12 0 18 16" stroke="var(--signal-2)"/>
+          <path id="exhaust" d="M488 80 q-6 -14 2 -26" stroke="var(--signal-2)" stroke-dasharray="2 5" opacity="0.8"/>
+        </g>
+
+        <!-- ============ Co-Co BOGIES ============ -->
+        <!-- bogie 1 -->
+        <g>
+          <rect x="150" y="252" width="230" height="22" rx="4" fill="none" stroke="var(--plate-line)" stroke-width="1.2"/>
+          <g class="wheel" style="transform-origin:200px 282px">
+            <circle cx="200" cy="282" r="30" fill="none" stroke="var(--cyan)" stroke-width="2.2"/>
+            <circle cx="200" cy="282" r="6" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>
+            <line x1="200" y1="252" x2="200" y2="312" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="170" y1="282" x2="230" y2="282" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="179" y1="261" x2="221" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="221" y1="261" x2="179" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+          </g>
+          <g class="wheel" style="transform-origin:265px 282px">
+            <circle cx="265" cy="282" r="30" fill="none" stroke="var(--cyan)" stroke-width="2.2"/>
+            <circle cx="265" cy="282" r="6" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>
+            <line x1="265" y1="252" x2="265" y2="312" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="235" y1="282" x2="295" y2="282" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="244" y1="261" x2="286" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="286" y1="261" x2="244" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+          </g>
+          <g class="wheel" style="transform-origin:330px 282px">
+            <circle cx="330" cy="282" r="30" fill="none" stroke="var(--cyan)" stroke-width="2.2"/>
+            <circle cx="330" cy="282" r="6" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>
+            <line x1="330" y1="252" x2="330" y2="312" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="300" y1="282" x2="360" y2="282" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="309" y1="261" x2="351" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="351" y1="261" x2="309" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+          </g>
+        </g>
+        <!-- bogie 2 -->
+        <g>
+          <rect x="800" y="252" width="230" height="22" rx="4" fill="none" stroke="var(--plate-line)" stroke-width="1.2"/>
+          <g class="wheel" style="transform-origin:850px 282px">
+            <circle cx="850" cy="282" r="30" fill="none" stroke="var(--cyan)" stroke-width="2.2"/>
+            <circle cx="850" cy="282" r="6" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>
+            <line x1="850" y1="252" x2="850" y2="312" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="820" y1="282" x2="880" y2="282" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="829" y1="261" x2="871" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="871" y1="261" x2="829" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+          </g>
+          <g class="wheel" style="transform-origin:915px 282px">
+            <circle cx="915" cy="282" r="30" fill="none" stroke="var(--cyan)" stroke-width="2.2"/>
+            <circle cx="915" cy="282" r="6" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>
+            <line x1="915" y1="252" x2="915" y2="312" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="885" y1="282" x2="945" y2="282" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="894" y1="261" x2="936" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="936" y1="261" x2="894" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+          </g>
+          <g class="wheel" style="transform-origin:980px 282px">
+            <circle cx="980" cy="282" r="30" fill="none" stroke="var(--cyan)" stroke-width="2.2"/>
+            <circle cx="980" cy="282" r="6" fill="none" stroke="var(--cyan)" stroke-width="1.4"/>
+            <line x1="980" y1="252" x2="980" y2="312" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="950" y1="282" x2="1010" y2="282" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="959" y1="261" x2="1001" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+            <line x1="1001" y1="261" x2="959" y2="303" stroke="var(--plate-line)" stroke-width="1"/>
+          </g>
+        </g>
+
+        <!-- buffers -->
+        <g stroke="var(--cyan)" stroke-width="1.6" fill="none">
+          <line x1="70" y1="200" x2="52" y2="200"/><circle cx="50" cy="200" r="5"/>
+          <line x1="70" y1="232" x2="52" y2="232"/><circle cx="50" cy="232" r="5"/>
+          <line x1="1110" y1="200" x2="1128" y2="200"/><circle cx="1130" cy="200" r="5"/>
+          <line x1="1110" y1="232" x2="1128" y2="232"/><circle cx="1130" cy="232" r="5"/>
+        </g>
+
+        <!-- callouts -->
+        <g stroke="var(--cyan)" stroke-width="1" fill="none">
+          <path d="M390 118 V48 H300" marker-end="url(#arH)"/>
+          <path d="M860 116 V46 H950" marker-end="url(#arH)"/>
+          <path d="M126 120 V64 H210" marker-end="url(#arH)"/>
+          <path d="M265 312 V340 H160" marker-end="url(#arH)"/>
+        </g>
+        <g font-size="12" fill="var(--cyan-soft)" font-family="var(--font-mono)">
+          <text x="296" y="52" text-anchor="end">TRAIN-HEAT BOILER & WATER</text>
+          <text x="956" y="50">RADIATOR / FAN — No.2 END</text>
+          <text x="214" y="68">HEADCODE BOX (4-CHAR)</text>
+          <text x="156" y="344" text-anchor="end">CO-CO BOGIE — 3 POWERED AXLES</text>
+        </g>
+      </svg>
+    </div>
+    <div class="figure-cap"><b>Co-Co, all-welded, one big engine.</b> Two three-axle bogies, every axle driven by its own motor; a single Sulzer twin-bank diesel amidships turning a generator. The body is a stressed-skin integral structure — no separate chassis. We start here and work inward, ending at a circuit diagram and a fleet of 512.</div>
+  </figure>
+</section>
+
+<!-- ===================== ORIENTATION FACTS ===================== -->
+<section class="wrap" style="padding:18px 32px 10px">
+  <div class="facts">
+    <div><div class="big">512<span class="u">built</span></div><div class="lbl">1962–68 · most numerous UK mainline diesel</div></div>
+    <div><div class="big">2,750<span class="u">bhp</span></div><div class="lbl">As built — soon cut to 2,580 (Ch. 04)</div></div>
+    <div><div class="big">95<span class="u">mph</span></div><div class="lbl">Maximum speed · 153 km/h</div></div>
+    <div><div class="big">60k<span class="u">lbf</span></div><div class="lbl">Max tractive effort · ~267 kN</div></div>
+  </div>
+</section>
+
+<!-- ===================== READING / SYSTEM NOTE ===================== -->
+<section class="section wrap">
+  <div class="cols2">
+    <div>
+      <div class="kicker blue">How to read this study</div>
+      <h2>One locomotive, taken apart.</h2>
+    </div>
+    <div>
+      <p>The Class 47 is easy to love and easy to underrate. It looks ordinary — a box on two bogies — and it did ordinary work for sixty years. But underneath is a careful set of engineering compromises: <strong>a big medium-speed diesel, a DC electric transmission, and a body light enough to keep the axle-load legal.</strong></p>
+      <p>Each chapter circles one question: <em>how do you turn 2,750 horsepower of diesel into controllable pull at the rail, reliably, on a 19-tonne axle limit?</em> We answer it with the engine, the generator, the motors, the faults, and the fleet.</p>
+      <p class="dim mono" style="font-size:.82rem">Diagrams are interactive where you see the <span class="sig">orange</span> signal colour — drag, toggle, and drive the models. All figures are schematic and not to scale.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONTENTS ===================== -->
+<section class="section wrap" id="contents">
+  <div class="kicker">Contents</div>
+  <h2 style="margin-bottom:34px">Five chapters.</h2>
+  <div id="chapGrid" class="chapgrid"></div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>CLASS 47 — an interactive study of the Brush Type 4</span>
+  <span>Schematic diagrams · not to scale · educational</span>
+</div></footer>
+
+<style>
+.chapgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+@media(max-width:920px){ .chapgrid{ grid-template-columns:1fr 1fr; } }
+@media(max-width:600px){ .chapgrid{ grid-template-columns:1fr; } .hero-grid{ grid-template-columns:1fr !important; } }
+@media(max-width:760px){ .hero-grid{ grid-template-columns:1fr !important; gap:24px !important; } }
+.chapcard{ background:var(--paper-card); padding:24px 22px 26px; display:flex; flex-direction:column; gap:14px; min-height:240px; transition:.14s; position:relative; }
+.chapcard:hover{ background:var(--paper); text-decoration:none; }
+.chapcard:hover .chapcard-go{ color:var(--signal); }
+.chapcard .cn{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.14em; color:var(--signal); }
+.chapcard h3{ color:var(--ink); }
+.chapcard p{ font-size:.92rem; line-height:1.55; margin:0; color:var(--ink-soft); flex:1; }
+.chapcard-ico{ height:46px; }
+.chapcard-go{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.1em; color:var(--ink-faint); transition:.14s; }
+/* loco animation */
+@media (prefers-reduced-motion: no-preference){
+  .wheel{ animation: spin 2.6s linear infinite; }
+  #sleepers{ animation: slide 1.3s linear infinite; }
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+@keyframes slide{ from{ transform:translateX(0); } to{ transform:translateX(-44px); } }
+</style>
+
+<script>
+// scrolling sleepers under the rail
+(function(){
+  const g = document.getElementById('sleepers');
+  if(g){ let s=''; for(let x=10; x<1240; x+=44){ s+=`<line x1="${x}" y1="306" x2="${x-10}" y2="320"/>`; } g.innerHTML=s; }
+  // live headcode shuffle
+  const hc = document.getElementById('headcode');
+  const codes = ['1A47','1S76','0Z47','1V92','6M11','1E47','1Z47'];
+  let i=0; if(hc) setInterval(()=>{ i=(i+1)%codes.length; hc.textContent=codes[i]; }, 2600);
+})();
+
+const CHAPTERS = [
+  {n:"01", t:"Origins & design", href:"1-origins.html",
+   d:"The 1955 Modernisation Plan, the Type 4 power race, and the Brush–Sulzer answer. Lion vs Falcon vs the winner; the integral body, the Co-Co bogies, and the 19-tonne axle problem that shaped everything.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><path d="M5 30 L9 12 L37 12 L41 18 L41 30 Z"/><line x1="3" y1="30" x2="43" y2="30"/><rect x="14" y="16" width="6" height="5"/><rect x="23" y="16" width="6" height="5"/><circle cx="13" cy="34" r="3" stroke="var(--signal)"/><circle cx="20" cy="34" r="3" stroke="var(--signal)"/></g>`},
+  {n:"02", t:"The power chain", href:"2-power.html",
+   d:"Diesel in, torque out. The twin-bank Sulzer 12LDA28 cutaway, how a medium-speed engine makes 2,750 bhp, and the diesel-electric transmission: engine → main generator → six traction motors. A live, animated power-flow model.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><rect x="5" y="16" width="16" height="14" rx="2"/><circle cx="31" cy="23" r="9"/><circle cx="31" cy="23" r="3"/><path d="M21 23 h4" stroke="var(--signal)"/><path d="M40 23 h3" stroke="var(--signal)"/></g>`},
+  {n:"03", t:"Control & config", href:"3-control.html",
+   d:"How the driver turns a power handle into pull — and the genuine split in the fleet: series-parallel versus all-parallel traction-motor connection. Drive the tractive-effort curve and compare the two electrical schemes side by side.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><circle cx="12" cy="14" r="5"/><circle cx="12" cy="32" r="5"/><circle cx="34" cy="23" r="5"/><path d="M17 14 H40 M17 32 H40 M40 14 V32" stroke="var(--signal)"/></g>`},
+  {n:"04", t:"Faults & the fix", href:"4-faults.html",
+   d:"Cracked cylinder heads, engine-room fires, and the famous derating from 2,750 to 2,580 bhp. Plus the Class 48 experiment: five locos with a Sulzer V-engine that failed so badly they were rebuilt as 47s.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><path d="M23 8 L40 36 L6 36 Z"/><line x1="23" y1="18" x2="23" y2="28" stroke="var(--bad)"/><circle cx="23" cy="32" r="1.3" fill="var(--bad)" stroke="none"/></g>`},
+  {n:"05", t:"Fleet & service", href:"5-fleet.html",
+   d:"512 locomotives, eight sub-classes, sixty years. Explore 47/0 through 47/9, the push-pull 47/7s, the ten that went to Cuba, the cab and what it was like to drive — and the Class 57 rebuilds that gave the bodyshell a second life.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><rect x="5" y="10" width="36" height="9"/><rect x="5" y="22" width="36" height="9"/><rect x="5" y="34" width="22" height="6"/><line x1="33" y1="22" x2="33" y2="31" stroke="var(--signal)"/></g>`},
+];
+document.getElementById('chapGrid').innerHTML = CHAPTERS.map(c=>`
+  <a class="chapcard" href="${c.href}">
+    <svg class="chapcard-ico" viewBox="0 0 46 46">${c.ico}</svg>
+    <div class="cn">CH. ${c.n}</div>
+    <h3>${c.t}</h3>
+    <p>${c.d}</p>
+    <div class="chapcard-go">Read chapter →</div>
+  </a>`).join('');
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

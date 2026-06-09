@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "class-47",
+    title: "Class 47",
+    tagline: "An interactive study of the Brush Type 4 — Britain's most useful diesel. The twin-bank Sulzer, the diesel-electric power chain, the great derating, the series-parallel wiring question, and a fleet of 512, across five driveable chapters.",
+    url: "https://0x4d44.github.io/class-47/",
+    illustration: "ill-class47",
+    date: "2026-06-09T12:00:00",
+    year: 1962,
+    readingMin: 28,
+    words: 6200,
+    tags: ["rail", "engineering", "history"],
+    real: true,
+  },
+  {
     slug: "ai-history",
     title: "To Build a Mind",
     tagline: "An interactive history of artificial intelligence — the people, the ideas and the machines that built it — with a working model you can drive in every era, from Turing to today's frontier labs.",

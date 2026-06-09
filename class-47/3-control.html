@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Control &amp; Configuration — CLASS 47</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="03">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch3 hero">
+  <div class="kicker">Chapter 03</div>
+  <div class="num">03</div>
+  <h2 style="margin-top:18px;max-width:23ch">Control &amp; configuration: the power handle, the curve, and the great wiring question.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">The driver has one lever and almost nothing to think about — the load regulator does the rest. But behind the simplicity sits a genuine fork in the fleet: how do you wire six traction motors? <strong>All in parallel, or in series-parallel?</strong> The choice changes the locomotive's whole character.</p>
+  <div class="meta">
+    <div><div class="k">Driver's input</div><div class="v">Power handle · 8 notches</div></div>
+    <div><div class="k">The automatic</div><div class="v">Load regulator (CCBV)</div></div>
+    <div><div class="k">The fork</div><div class="v">Series-parallel vs all-parallel</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#handle">One lever to drive it</a>
+    <a href="#curve">Live: the tractive-effort curve</a>
+    <a href="#wiring">Live: how to wire six motors</a>
+    <a href="#slip">Live: weight transfer &amp; slip</a>
+    <a href="#adhesion">Adhesion &amp; wheelslip</a>
+  </nav>
+
+  <div>
+    <!-- POWER HANDLE -->
+    <section id="handle" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">One lever to drive it</div>
+      <h3>The driver selects power, not speed.</h3>
+      <p style="margin-top:18px">Unlike a steam locomotive — where the driver juggles regulator and reverser by feel — the Class 47 driver moves a single <strong>power handle</strong> through eight notches. Each notch commands an engine speed and a power level. From there the <strong>load regulator</strong> takes over, trimming the generator's excitation so the engine is always loaded to exactly that power, whatever the road throws at it.</p>
+      <p>This is why a 47 feels so unfussy to drive: you ask for power, and the electric transmission silently re-gears itself to deliver it as pull. The skill is no longer in matching engine to wheels — it is in <em>managing adhesion</em>, watching for wheelslip, and knowing the road. The machine handles the rest.</p>
+      <div class="note annot">
+        <span class="tag">From the cab</span>
+        <p>"You wind the power handle round and just <em>wait</em> for her to take hold — there's a moment where nothing happens, then the ammeter swings and she leans into the train. On a greasy rail you learn to ease it, or she'll spin a wheel and the lights flicker as the slip-relay knocks the power back."</p>
+        <p class="dim mono" style="font-size:.78rem;margin-top:8px">— composite driver recollection, illustrative</p>
+      </div>
+    </section>
+
+    <!-- TE CURVE -->
+    <section id="curve" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 3.1</div>
+      <h3>Tractive effort versus speed — the constant-power curve.</h3>
+      <p style="margin-top:18px">Drag the <strong>power handle</strong> and read the curve. At low speed effort is flat-topped — limited by adhesion and motor current, not by power. Past <strong>base speed</strong> the locomotive runs out of voltage and effort falls away as a hyperbola: constant power means effort × speed is fixed, so going faster <em>must</em> mean pulling less.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 3.1</span><span>TRACTIVE EFFORT / SPEED — CLASS 47</span><span class="dim" style="color:var(--cyan-soft)" id="teState">notch 8 · full power</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 760 360" style="width:100%;height:auto" id="teSvg"></svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div><div class="tag" style="color:var(--cyan-soft)">Power</div><div class="readout" style="font-size:1.25rem"><b id="tP" style="color:var(--cyan)">100</b><span style="font-size:.7rem"> %</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">At speed</div><div class="readout" style="font-size:1.25rem"><b id="tS" style="color:var(--paper-on-plate)">27</b><span style="font-size:.7rem"> mph</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Tractive effort</div><div class="readout" style="font-size:1.25rem"><b id="tTE" style="color:var(--signal-2)">30</b><span style="font-size:.7rem"> klbf</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Drawbar power</div><div class="readout" style="font-size:1.25rem"><b id="tDP" style="color:var(--signal)">—</b><span style="font-size:.7rem"> hp</span></div></div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:1fr 1fr;gap:28px">
+          <div><div class="readout" style="color:var(--cyan-soft);margin-bottom:6px">Power handle — <b id="teNotchLab" style="color:var(--signal)">Notch 8</b></div>
+            <input id="teNotch" type="range" min="1" max="8" value="8" step="1" style="width:100%"></div>
+          <div><div class="readout" style="color:var(--cyan-soft);margin-bottom:6px">Operating speed — <b id="teSpdLab" style="color:var(--cyan)">27 mph</b></div>
+            <input id="teSpd" type="range" min="3" max="95" value="27" step="1" style="width:100%"></div>
+        </div>
+        <div class="figure-cap"><b>Read the two regions.</b> The flat top is the <span style="color:var(--signal)">adhesion / current limit</span> — all the pull the wheels can grip. The falling curve is <span style="color:var(--signal-2)">constant power</span>. Where they meet is <b>base speed</b>, ~26–27 mph at full power: the 47's continuous rating point, ~30,000 lbf, the figure that decides what it can drag up a bank all day.</div>
+      </figure>
+    </section>
+
+    <!-- WIRING -->
+    <section id="wiring" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 3.2 — the configuration fork</div>
+      <h3>Six motors, and the wiring BR changed its mind about.</h3>
+      <p style="margin-top:18px">This is the detail enthusiasts argue about, and it is a genuine generational split in the fleet — not a marketing trim. The generator feeds six traction motors (Brush <span class="mono">TM64-68</span>, one per axle, from a <span class="mono">TG160-60</span> generator), and there were two rival ways to group them.</p>
+      <p>The <strong>earliest</strong> Brush Type 4s were built <strong>series-parallel (SP)</strong>: like a DC electric multiple unit, they stepped through three stages as they accelerated — <strong>Series → Transition → Parallel</strong> — regrouping the motors on the move to trade torque for speed. The <strong>bulk</strong> of the fleet was wired the simpler way: <strong>permanent all-parallel</strong>, six motors always across the line, no transition, with the load regulator and field-weakening doing all the work. Toggle between them below; the consequences for starting, slip and reliability are the rest of this chapter.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 3.2</span><span id="wTitle">ALL-PARALLEL — SIX ACROSS THE LINE</span><span class="dim" style="color:var(--cyan-soft)" id="wTag">favours speed</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 760 320" style="width:100%;height:auto" id="wSvg"></svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
+          <div><div class="tag" style="color:var(--cyan-soft)">Volts / motor</div><div class="readout" style="font-size:1.25rem"><b id="wVm" style="color:var(--cyan)">V</b></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Generator current</div><div class="readout" style="font-size:1.25rem"><b id="wIg" style="color:var(--signal)">6·I</b></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Starting effort</div><div class="readout" style="font-size:1.25rem"><b id="wTE" style="color:var(--signal-2)">—</b></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Balancing speed</div><div class="readout" style="font-size:1.25rem"><b id="wSp" style="color:var(--paper-on-plate)">—</b></div></div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line)">
+          <div class="ctrl-row" style="justify-content:space-between;align-items:center">
+            <div class="seg" id="wSeg">
+              <button data-w="par" class="on">All-parallel</button>
+              <button data-w="sp">Series-parallel</button>
+            </div>
+            <div class="readout" style="color:var(--cyan-soft)">Generator output <input id="wOut" type="range" min="10" max="100" value="70" step="1" style="width:140px;vertical-align:middle"></div>
+          </div>
+          <div id="wNote" class="readout" style="margin-top:16px;color:var(--paper-on-plate);min-height:3.4em"></div>
+        </div>
+        <div class="figure-cap"><b>The trade, in one diagram.</b> In <span style="color:var(--cyan)">all-parallel</span> every motor sees the full bus voltage — simple, and steplessly controlled by generator excitation alone. In <span style="color:var(--signal-2)">series-parallel</span> the motors start grouped in series strings at low voltage and high torque, then <em>transition</em> to parallel as speed builds — more low-speed pull, but at the cost of extra switchgear and a transition that has to be made on the move.</div>
+      </figure>
+
+      <div class="cols2" style="margin-top:28px">
+        <div>
+          <h4 style="margin-bottom:8px">All-parallel — the standard</h4>
+          <ul class="spec">
+            <li><span class="k">Grouping</span><span class="v">Six motors permanently across the line</span></li>
+            <li><span class="k">Speed control</span><span class="v">Generator excitation + field weakening — no transition</span></li>
+            <li><span class="k">Switchgear</span><span class="v">Minimal — fewer contactors to fail</span></li>
+            <li><span class="k">Slip</span><span class="v">Each motor independent — a slip stays local</span></li>
+            <li><span class="k">Verdict</span><span class="v">Became the BR standard; the bulk of the fleet</span></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="margin-bottom:8px">Series-parallel — the early scheme</h4>
+          <ul class="spec">
+            <li><span class="k">Grouping</span><span class="v">Series strings at start → parallel at speed</span></li>
+            <li><span class="k">Stages</span><span class="v">Series · Transition · Parallel</span></li>
+            <li><span class="k">Switchgear</span><span class="v">Transition contactors — more to maintain</span></li>
+            <li><span class="k">Slip</span><span class="v">Series-coupled motors drag each other down</span></li>
+            <li><span class="k">Verdict</span><span class="v">Non-standard; flagged for early withdrawal</span></li>
+          </ul>
+        </div>
+      </div>
+      <div class="note blue">
+        <span class="tag">Why the early scheme was dropped</span>
+        <p>The series-parallel locomotives worked — but they were the odd ones out. The transition stages needed extra contactors and relays that could (and did) give trouble, the changeover itself put a momentary interruption into the tractive effort, and — as Fig.&nbsp;3.3 shows — series-coupling behaves badly when one wheelset loses grip. With most of the fleet wired the simpler permanent-parallel way, the SP machines were a maintenance minority. When British Rail later drew up a list of locomotives for early withdrawal, <strong>the non-standard "series-parallel" locomotives were specifically targeted</strong>: the clever scheme became a liability simply by being different.</p>
+      </div>
+    </section>
+
+    <!-- WEIGHT TRANSFER & SLIP -->
+    <section id="slip" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 3.3 — why the grouping mattered</div>
+      <h3>The loco "sits back" — and the wiring decides who slips.</h3>
+      <p style="margin-top:18px">Here is the deep reason all-parallel won. The moment a locomotive pulls, weight shifts <strong>rearward</strong>: the drawbar drags at coupler height while the rail pushes back at rail level, so the whole body pitches back onto its rear axles. Each bogie does the same internally — its leading axle lightens, its trailing axle digs in. The <strong>front axle of the front bogie ends up lightest of all</strong>, and is first to slip.</p>
+      <p>Now recall the awkward geometry: <strong>three axles per bogie, but series pairs take two motors each</strong>. Three pairs cannot all sit inside one bogie — at least one pair must <strong>straddle the gap</strong>, putting a light front-bogie axle in series with a well-gripping rear-bogie axle. Series-connected motors are forced to share one current, so they must make the <em>same</em> torque. When the light axle slips, it drags its partner's torque down with it — wasting grip the rear axle still had. Apply power below and watch it happen.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 3.3</span><span id="slTitle">SERIES-PARALLEL · DRY RAIL</span><span class="dim" style="color:var(--cyan-soft)" id="slState">no power</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 760 300" style="width:100%;height:auto" id="slSvg"></svg>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div><div class="tag" style="color:var(--cyan-soft)">Axles slipping</div><div class="readout" style="font-size:1.3rem"><b id="slSlip" style="color:var(--bad)">0</b> <span style="font-size:.7rem">of 6</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Effort delivered</div><div class="readout" style="font-size:1.3rem"><b id="slTE" style="color:var(--signal-2)">0</b><span style="font-size:.7rem"> %</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Effort wasted to slip</div><div class="readout" style="font-size:1.3rem"><b id="slWaste" style="color:var(--bad)">0</b><span style="font-size:.7rem"> %</span></div></div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center">
+          <div><div class="readout" style="color:var(--cyan-soft);margin-bottom:6px">Power handle / demanded effort — <b id="slDemLab" style="color:var(--signal)">0 %</b></div>
+            <input id="slDem" type="range" min="0" max="100" value="0" step="1" style="width:100%"></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div class="seg" id="slMode">
+              <button data-m="sp" class="on">Series-parallel</button>
+              <button data-m="par">All-parallel</button>
+            </div>
+            <div class="seg" id="slRail">
+              <button data-r="dry" class="on">Dry</button>
+              <button data-r="wet">Wet</button>
+            </div>
+          </div>
+        </div>
+        <div id="slNote" class="figure-body readout" style="border-top:1px solid var(--plate-line);color:var(--paper-on-plate);min-height:2.6em"></div>
+        <div class="figure-cap"><b>Watch the cross-bogie pair.</b> The highlighted <span style="color:var(--signal-2)">series pair straddles the two bogies</span>. On wet rail, wind the handle up in <span style="color:var(--signal-2)">series-parallel</span>: the light front axle slips and its partner's effort collapses with it. Switch to <span style="color:var(--cyan)">all-parallel</span> and the slip stays local — the gripping axles keep pulling, and more total effort reaches the rail. That difference, repeated every greasy autumn morning, is why BR standardised on parallel.</div>
+      </figure>
+
+      <div class="note">
+        <span class="tag">The honest caveat</span>
+        <p>That the early 47s were series-parallel with a Series–Transition–Parallel sequence, and that BR later singled the SP machines out for early withdrawal, are both documented. The exact internal motor topology — whether the series stage paired motors two-by-two (forcing a cross-bogie pair, as drawn here) or ran each bogie's three motors as a string — is not something this study can state with certainty, so Fig.&nbsp;3.3 illustrates the <em>principle</em> of series-coupling under weight transfer rather than a verified wiring diagram. The physics it shows — that series-coupled motors share current and so propagate a slip, while parallel motors do not — is general to all DC traction.</p>
+      </div>
+    </section>
+
+    <!-- ADHESION -->
+    <section id="adhesion" class="section">
+      <div class="kicker">Adhesion &amp; wheelslip</div>
+      <h3>All that effort is useless if the wheels spin.</h3>
+      <p style="margin-top:18px">Tractive effort can only be applied as far as the steel-on-steel grip allows — typically a fraction of the weight on the driven wheels. Demand more and the wheels break away into a <strong>slip</strong>: motor current surges, the wheelset races, and pulling effort collapses. A 47 carries a <strong>wheelslip relay</strong> that senses the runaway and momentarily cuts power to let the wheel re-grip.</p>
+      <p>This is the practical limit behind the flat top of the curve in Fig.&nbsp;3.1. On a dry rail the 47 can lay down its full ~60,000&nbsp;lbf; on a wet, leaf-strewn autumn rail the usable figure can halve, and the driver's art is keeping the train moving without ever asking for grip that isn't there. Six powered axles help — more wheels sharing the load means more total grip than a machine with idle carrying axles.</p>
+      <div class="facts">
+        <div><div class="big">~60k<span class="u">lbf</span></div><div class="lbl">Max effort, dry rail</div></div>
+        <div><div class="big">6</div><div class="lbl">Powered axles all contributing grip</div></div>
+        <div><div class="big">~30k<span class="u">lbf</span></div><div class="lbl">Continuous rating at base speed</div></div>
+        <div><div class="big">≈ 0.2+</div><div class="lbl">Adhesion coefficient when conditions allow</div></div>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>CLASS 47 · Ch.03 — Control &amp; configuration</span>
+  <span>Schematic · not to scale · educational</span>
+</div></footer>
+
+<script>
+/* ===== FIG 3.1 — TE curve ===== */
+(function(){
+  const svg=document.getElementById('teSvg'); if(!svg) return;
+  let notch=8, spd=27;
+  const TEmax=60, Pfull=2580; // bhp
+  const X0=70, X1=720, Y0=40, Y1=300;
+  const sMax=95, teTop=64;
+  const px=v=>X0+(v/sMax)*(X1-X0);
+  const py=te=>Y1-(te/teTop)*(Y1-Y0);
+  // teCap = adhesion/current ceiling (the momentary ~60 klbf starting effort, scaled by notch);
+  // k = constant-power constant so that at full power the hyperbola passes through the
+  // continuous rating ~30 klbf at ~27 mph (k=810), and the 60 klbf cap meets it at ~13.5 mph.
+  function teAt(v,frac){
+    const teCap = TEmax*frac;
+    const k = 810*frac;
+    return Math.min(teCap, k/Math.max(v,1));
+  }
+  function draw(){
+    const frac=notch/8;
+    let s='';
+    // axes
+    s+=`<line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="var(--cyan)" stroke-width="1.4"/>`;
+    s+=`<line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="var(--cyan)" stroke-width="1.4"/>`;
+    s+=`<text x="${X0-8}" y="${Y0+4}" text-anchor="end" font-size="10" fill="var(--cyan-soft)">klbf</text>`;
+    s+=`<text x="${X1}" y="${Y1+20}" text-anchor="end" font-size="10" fill="var(--cyan-soft)">mph →</text>`;
+    // gridlines
+    for(let te=10;te<=60;te+=10){ s+=`<line x1="${X0}" y1="${py(te)}" x2="${X1}" y2="${py(te)}" stroke="var(--plate-grid)" stroke-width="1"/><text x="${X0-6}" y="${py(te)+3}" text-anchor="end" font-size="8" fill="var(--cyan-soft)" opacity=".7">${te}</text>`; }
+    for(let v=20;v<=90;v+=20){ s+=`<line x1="${px(v)}" y1="${Y0}" x2="${px(v)}" y2="${Y1}" stroke="var(--plate-grid)" stroke-width="1"/><text x="${px(v)}" y="${Y1+16}" text-anchor="middle" font-size="8" fill="var(--cyan-soft)" opacity=".7">${v}</text>`; }
+    // full-power reference curve (ghost)
+    let ref='';
+    for(let v=2;v<=sMax;v++){ const te=teAt(v,1); ref+=(v===2?'M':'L')+px(v)+' '+py(te)+' '; }
+    s+=`<path d="${ref}" fill="none" stroke="var(--plate-line)" stroke-width="1" stroke-dasharray="3 4"/>`;
+    // selected curve
+    let path='';
+    for(let v=2;v<=sMax;v++){ const te=teAt(v,frac); path+=(v===2?'M':'L')+px(v)+' '+py(te)+' '; }
+    s+=`<path d="${path}" fill="none" stroke="var(--signal-2)" stroke-width="2.5"/>`;
+    // shade regions: cap vs power — find base speed
+    const teCap=TEmax*frac;
+    // base speed where the cap meets the constant-power curve: k/v = teCap → v = k/teCap
+    const k=810*frac;
+    const vbase=teCap>0 ? k/teCap : 13.5;
+    s+=`<line x1="${px(vbase)}" y1="${Y0}" x2="${px(vbase)}" y2="${Y1}" stroke="var(--cyan)" stroke-width="1" stroke-dasharray="2 3"/>`;
+    s+=`<text x="${px(vbase)}" y="${Y0-6}" text-anchor="middle" font-size="9" fill="var(--cyan)">base ${vbase.toFixed(0)}mph</text>`;
+    // operating point
+    const te=teAt(spd,frac);
+    s+=`<circle cx="${px(spd)}" cy="${py(te)}" r="6" fill="var(--signal)"/>`;
+    s+=`<line x1="${px(spd)}" y1="${py(te)}" x2="${px(spd)}" y2="${Y1}" stroke="var(--signal)" stroke-width="1" stroke-dasharray="2 2"/>`;
+    // region labels
+    s+=`<text x="${X0+20}" y="${py(teCap)-8}" font-size="9" fill="var(--signal)">adhesion / current limit</text>`;
+    s+=`<text x="${px(Math.min(70,vbase+22))}" y="${py(teAt(Math.min(70,vbase+22),frac))-8}" font-size="9" fill="var(--signal-2)">constant power</text>`;
+    svg.innerHTML=s;
+    // readouts
+    document.getElementById('tP').textContent=Math.round(frac*100);
+    document.getElementById('tS').textContent=spd;
+    document.getElementById('tTE').textContent=te.toFixed(1);
+    const dp=Math.round(te*1000*spd*1.466/550); // lbf*ft/s /550 = hp
+    document.getElementById('tDP').textContent=dp.toLocaleString();
+    document.getElementById('teNotchLab').textContent='Notch '+notch;
+    document.getElementById('teSpdLab').textContent=spd+' mph';
+    document.getElementById('teState').textContent = spd<vbase? 'effort-limited (gripping)':'power-limited (constant power)';
+  }
+  document.getElementById('teNotch').addEventListener('input',e=>{ notch=+e.target.value; draw(); });
+  document.getElementById('teSpd').addEventListener('input',e=>{ spd=+e.target.value; draw(); });
+  draw();
+})();
+
+/* ===== FIG 3.2 — wiring ===== */
+(function(){
+  const svg=document.getElementById('wSvg'); if(!svg) return;
+  let mode='par', out=70, raf=null, t=0;
+  function draw(){
+    const frac=out/100;
+    let s='';
+    const topR=70, botR=250, gx=70;
+    // bus rails
+    s+=`<line x1="${gx}" y1="${topR}" x2="700" y2="${topR}" stroke="var(--cyan)" stroke-width="3"/>`;
+    s+=`<line x1="${gx}" y1="${botR}" x2="700" y2="${botR}" stroke="var(--cyan)" stroke-width="3"/>`;
+    s+=`<text x="705" y="${topR+4}" font-size="10" fill="var(--signal)">+</text>`;
+    s+=`<text x="705" y="${botR+4}" font-size="10" fill="var(--cyan-soft)">−</text>`;
+    // generator at left
+    s+=`<rect x="20" y="${topR}" width="48" height="${botR-topR}" fill="rgba(120,205,228,.06)" stroke="var(--cyan)" stroke-width="1.6"/>`;
+    s+=`<text x="44" y="${(topR+botR)/2-6}" text-anchor="middle" font-size="10" fill="var(--paper-on-plate)">GEN</text>`;
+    s+=`<text x="44" y="${(topR+botR)/2+10}" text-anchor="middle" font-size="8" fill="var(--cyan-soft)">DC</text>`;
+    // motors
+    function motor(cx,cy,label){
+      return `<circle cx="${cx}" cy="${cy}" r="22" fill="rgba(120,205,228,.05)" stroke="var(--cyan)" stroke-width="1.6"/><text x="${cx}" y="${cy+4}" text-anchor="middle" font-size="11" fill="var(--cyan-soft)">M</text>`+
+             (label?`<text x="${cx}" y="${cy+38}" text-anchor="middle" font-size="8" fill="var(--cyan-soft)">${label}</text>`:'');
+    }
+    const cols=[160,250,340,430,520,610];
+    if(mode==='par'){
+      // 6 motors each across rails
+      cols.forEach((cx,i)=>{
+        const cy=(topR+botR)/2;
+        s+=`<line x1="${cx}" y1="${topR}" x2="${cx}" y2="${cy-22}" stroke="var(--plate-line)" stroke-width="1.4"/>`;
+        s+=`<line x1="${cx}" y1="${cy+22}" x2="${cx}" y2="${botR}" stroke="var(--plate-line)" stroke-width="1.4"/>`;
+        s+=motor(cx,cy,'M'+(i+1));
+      });
+    } else {
+      // 3 pairs in series; pairs at cols 200,360,520 each two motors stacked
+      const pairX=[210,380,550];
+      pairX.forEach((cx,i)=>{
+        const m1y=topR+58, m2y=botR-58, midy=(m1y+m2y)/2;
+        s+=`<line x1="${cx}" y1="${topR}" x2="${cx}" y2="${m1y-22}" stroke="var(--plate-line)" stroke-width="1.4"/>`;
+        s+=motor(cx,m1y,'');
+        s+=`<line x1="${cx}" y1="${m1y+22}" x2="${cx}" y2="${m2y-22}" stroke="var(--signal-2)" stroke-width="1.4"/>`;
+        s+=motor(cx,m2y,'pair '+(i+1));
+        s+=`<line x1="${cx}" y1="${m2y+22}" x2="${cx}" y2="${botR}" stroke="var(--plate-line)" stroke-width="1.4"/>`;
+      });
+    }
+    // current particles along top rail (speed/density ~ generator current)
+    const Ig = mode==='par'? frac*6 : frac*3; // relative units
+    const n=Math.round(4+Ig*1.6);
+    for(let i=0;i<n;i++){
+      const fp=((t*(0.3+frac*0.5)+i/n)%1);
+      const x=gx+ (700-gx)*fp;
+      s+=`<circle cx="${x}" cy="${topR}" r="3" fill="var(--signal)"/>`;
+    }
+    svg.innerHTML=s;
+    // readouts
+    const Vm = mode==='par'? '1·V' : '½·V';
+    const Igr= mode==='par'? '6 · Iₘ' : '3 · Iₘ';
+    document.getElementById('wVm').textContent=Vm;
+    document.getElementById('wIg').textContent=Igr;
+    // relative TE & speed bars
+    document.getElementById('wTE').innerHTML = mode==='par'? '<span style="color:var(--signal-2)">●●●○○</span>' : '<span style="color:var(--signal-2)">●●●●●</span>';
+    document.getElementById('wSp').innerHTML = mode==='par'? '<span style="color:var(--cyan)">●●●●●</span>' : '<span style="color:var(--cyan)">●●●○○</span>';
+    document.getElementById('wTitle').textContent = mode==='par'? 'ALL-PARALLEL — SIX ACROSS THE LINE':'SERIES-PARALLEL — THREE PAIRS';
+    document.getElementById('wTag').textContent = mode==='par'? 'the standard fleet':'the early locos';
+    document.getElementById('wNote').innerHTML = mode==='par'
+      ? `All six motors see the <b style="color:var(--cyan)">full bus voltage</b>, so they spin fast — high balancing speed. The price: the generator must source <b style="color:var(--signal)">six motor-currents</b> in parallel, a punishing demand when starting a heavy train.`
+      : `Motors are paired in series, so each sees only <b style="color:var(--signal-2)">half the voltage</b> — lower top speed. But the generator now supplies just <b>three</b> motor-currents, so for a given machine you can push more current per motor: <b style="color:var(--signal-2)">more pull</b>, gentler on the generator.`;
+  }
+  function loop(){ t+=0.02; draw(); raf=requestAnimationFrame(loop); }
+  document.getElementById('wSeg').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b));
+    mode=b.dataset.w; draw();
+  });
+  document.getElementById('wOut').addEventListener('input',e=>{ out=+e.target.value; draw(); });
+  loop();
+})();
+
+/* ===== FIG 3.3 — weight transfer & slip ===== */
+(function(){
+  const svg=document.getElementById('slSvg'); if(!svg) return;
+  let dem=0, mode='sp', rail='dry', t=0, raf=null;
+  const W0=19.5, demandFull=3.6;
+  const AX=[150,215,280,480,545,610];
+  const railY=196;
+  function model(){
+    const d=dem/100;
+    const mu = rail==='dry'?0.34:0.18;
+    const w=AX.map((x,i)=>{
+      const bodyShift = 4.4*d*((i-2.5)/2.5);
+      const local=i%3;
+      const bogieShift = 2.0*d*(local-1);
+      return Math.max(8, W0+bodyShift+bogieShift);
+    });
+    const maxTE=w.map(wi=>mu*wi);
+    const cmd=d*demandFull;
+    const slip=new Array(6).fill(false), deliv=new Array(6).fill(0);
+    if(mode==='par'){
+      for(let i=0;i<6;i++){ if(cmd>maxTE[i]){ slip[i]=true; deliv[i]=0.45*maxTE[i]; } else deliv[i]=cmd; }
+    } else {
+      [[0,1],[2,3],[4,5]].forEach(p=>{
+        const lim=Math.min(maxTE[p[0]],maxTE[p[1]]);
+        if(cmd>lim){ p.forEach(i=>{slip[i]=true; deliv[i]=0.45*maxTE[i];}); }
+        else p.forEach(i=>{ deliv[i]=cmd; });
+      });
+    }
+    const totalDemand=6*cmd, delivered=deliv.reduce((a,b)=>a+b,0);
+    const pct= totalDemand>0? Math.min(100, delivered/totalDemand*100):0;
+    return {d,w,maxTE,cmd,slip,deliv,pct,nSlip:slip.filter(Boolean).length};
+  }
+  function draw(){
+    const m=model();
+    const pitch=m.d*1.3;
+    let s='';
+    // rail + direction
+    s+=`<line x1="40" y1="${railY}" x2="720" y2="${railY}" stroke="var(--cyan)" stroke-width="2"/>`;
+    s+=`<path d="M120 ${railY+12} H78" stroke="var(--cyan-soft)" stroke-width="1.3" marker-end="url(#slA)"/>`;
+    s+=`<text x="124" y="${railY+16}" font-size="9" fill="var(--cyan-soft)">travel</text>`;
+    s+=`<text x="706" y="${railY-44}" font-size="9" fill="var(--signal)" text-anchor="end">drawbar → train</text>`;
+    s+=`<line x1="690" y1="${railY-36}" x2="726" y2="${railY-36}" stroke="var(--signal)" stroke-width="2"/>`;
+    // body (pitches back)
+    s+=`<g transform="rotate(${pitch} 600 150)">`;
+    s+=`<path d="M110 156 L110 70 L150 44 L650 44 L690 70 L690 156 Z" fill="rgba(120,205,228,.06)" stroke="var(--cyan)" stroke-width="2"/>`;
+    s+=`<rect x="150" y="50" width="40" height="24" rx="2" fill="none" stroke="var(--plate-line)"/>`;
+    s+=`<rect x="610" y="50" width="40" height="24" rx="2" fill="none" stroke="var(--plate-line)"/>`;
+    s+=`<line x1="110" y1="120" x2="690" y2="120" stroke="var(--plate-line)" stroke-width="1"/>`;
+    s+=`</g>`;
+    // bogie frames
+    [[0,1,2],[3,4,5]].forEach(grp=>{ const x0=AX[grp[0]]-24,x1=AX[grp[2]]+24; s+=`<rect x="${x0}" y="160" width="${x1-x0}" height="18" rx="3" fill="none" stroke="var(--plate-line)" stroke-width="1.2"/>`; });
+    // wheels + weight bars
+    m.w.forEach((wi,i)=>{
+      const x=AX[i], slip=m.slip[i], col=slip?'var(--bad)':'var(--cyan)';
+      const spin = slip? t*9 : t*(m.d*2.2);
+      s+=`<g transform="translate(${x} 182) rotate(${spin*30})"><circle r="14" fill="none" stroke="${col}" stroke-width="2.2"/><line x1="0" y1="0" x2="0" y2="-14" stroke="${col}" stroke-width="1.3"/><line x1="0" y1="0" x2="12" y2="7" stroke="${col}" stroke-width="1.3"/></g>`;
+      if(slip) s+=`<text x="${x}" y="160" text-anchor="middle" font-size="8" fill="var(--bad)">SLIP</text>`;
+      s+=`<text x="${x}" y="${railY+24}" text-anchor="middle" font-size="8" fill="var(--cyan-soft)">A${i+1}</text>`;
+      const h=(wi-4)*1.45;
+      s+=`<rect x="${x-5}" y="${railY+30}" width="10" height="${h}" fill="${slip?'var(--bad)':'var(--signal)'}" opacity="${slip?'.5':'.7'}"/>`;
+    });
+    s+=`<text x="44" y="${railY+40}" font-size="8" fill="var(--cyan-soft)">load ↓</text>`;
+    // grouping markers
+    const gy=railY+72;
+    if(mode==='sp'){
+      [[0,1,'var(--cyan-soft)','pair'],[2,3,'var(--signal-2)','CROSS-BOGIE PAIR'],[4,5,'var(--cyan-soft)','pair']].forEach(p=>{
+        const xa=AX[p[0]],xb=AX[p[1]];
+        s+=`<path d="M${xa} ${gy} V${gy+9} H${xb} V${gy}" fill="none" stroke="${p[2]}" stroke-width="${p[1]===3?'1.8':'1.4'}"/>`;
+        s+=`<text x="${(xa+xb)/2}" y="${gy+20}" text-anchor="middle" font-size="8" fill="${p[2]}">${p[3]}</text>`;
+      });
+    } else {
+      m.w.forEach((wi,i)=>{ s+=`<text x="${AX[i]}" y="${gy+6}" text-anchor="middle" font-size="11" fill="var(--cyan)">∥</text>`; });
+      s+=`<text x="380" y="${gy+20}" text-anchor="middle" font-size="8" fill="var(--cyan-soft)">each motor independent across the line</text>`;
+    }
+    svg.innerHTML=`<defs><marker id="slA" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M5,0 L0,3 L5,6" fill="none" stroke="var(--cyan-soft)"/></marker></defs>`+s;
+    document.getElementById('slSlip').textContent=m.nSlip;
+    document.getElementById('slTE').textContent=Math.round(m.pct);
+    document.getElementById('slWaste').textContent=Math.round(100-m.pct);
+    document.getElementById('slDemLab').textContent=dem+' %';
+    document.getElementById('slTitle').textContent=(mode==='sp'?'SERIES-PARALLEL':'ALL-PARALLEL')+' · '+(rail==='dry'?'DRY RAIL':'WET RAIL');
+    document.getElementById('slState').textContent = dem===0?'no power': m.nSlip===0?'all gripping': m.nSlip+' axle'+(m.nSlip>1?'s':'')+' slipping';
+    const note=document.getElementById('slNote');
+    if(dem===0) note.innerHTML=`Power off — all six axles rest at their static <b>${W0.toFixed(1)} t</b>. Wind up the handle and watch the body pitch back.`;
+    else if(m.nSlip===0) note.innerHTML=`Gripping. Weight has shifted rearward — front axle down to <b style="color:var(--signal-2)">${m.w[0].toFixed(1)} t</b>, rear axle up to <b style="color:var(--cyan)">${m.w[5].toFixed(1)} t</b> — but every wheel still holds.`;
+    else if(mode==='sp') note.innerHTML=`<b style="color:var(--bad)">Slip propagating.</b> The light front axle broke away — and because it is <b>series-coupled</b>, its partner is dragged into slip with it. Only <b style="color:var(--signal-2)">${Math.round(m.pct)}%</b> of demanded effort reaches the rail.`;
+    else note.innerHTML=`<b style="color:var(--good)">Slip contained.</b> Only the wheels that actually lost grip spin; the rest keep pulling. <b style="color:var(--good)">${Math.round(m.pct)}%</b> of demand still reaches the rail — more than series-parallel manages here.`;
+  }
+  function loop(){ t+=0.03; draw(); raf=requestAnimationFrame(loop); }
+  document.getElementById('slDem').addEventListener('input',e=>{ dem=+e.target.value; draw(); });
+  document.getElementById('slMode').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); mode=b.dataset.m; draw();});
+  document.getElementById('slRail').addEventListener('click',e=>{const b=e.target.closest('button'); if(!b)return; [...e.currentTarget.children].forEach(x=>x.classList.toggle('on',x===b)); rail=b.dataset.r; draw();});
+  loop();
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

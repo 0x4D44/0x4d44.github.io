@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Faults &amp; the Fix — CLASS 47</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="04">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch4 hero">
+  <div class="kicker">Chapter 04</div>
+  <div class="num">04</div>
+  <h2 style="margin-top:18px;max-width:23ch">Faults &amp; the fix: cracked heads, fires, and the 170-horsepower retreat.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">The 47 was reliable <em>once</em> British Railways accepted an uncomfortable truth: 2,750&nbsp;bhp was more than the installation could take. The most important engineering decision of the class's life was to ask the engine for <strong>less</strong>.</p>
+  <div class="meta">
+    <div><div class="k">Symptom</div><div class="v">Cracked heads · high exhaust temps · fires</div></div>
+    <div><div class="k">The fix</div><div class="v">Derate 2,750 → 2,580 bhp</div></div>
+    <div><div class="k">Dead end</div><div class="v">Class 48 — the V-engine that failed</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#stress">An engine worked too hard</a>
+    <a href="#derate">Live: the derating decision</a>
+    <a href="#fire">Fires &amp; other troubles</a>
+    <a href="#class48">The Class 48 dead end</a>
+    <a href="#verdict">What it cost, what it bought</a>
+  </nav>
+
+  <div>
+    <!-- STRESS -->
+    <section id="stress" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">An engine worked too hard</div>
+      <h3>Light installation, big demand, hot cylinder heads.</h3>
+      <p style="margin-top:18px">Chapter 01 ended on a warning: the 47 sat right on its axle limit, so every component was built as light as it could be — including the engine installation. Then it was asked for the full <strong>2,750&nbsp;bhp</strong>. The Sulzer 12LDA28 could make that figure, but doing so day after day ran the cylinders hot. <strong>Cylinder heads cracked.</strong> Exhaust temperatures climbed. Components downstream of the combustion — heads, valves, turbocharger — wore and failed faster than the railway could tolerate.</p>
+      <p>Early-fleet availability suffered. A locomotive in the works with a cracked head earns nothing, and with hundreds entering traffic the problem multiplied across the network. The engineers faced a classic choice: chase the reliability with ever-heavier, costlier components — weight the 47 could not spare — or simply <strong>ask the engine for less power</strong> and let it live.</p>
+      <div class="note bad">
+        <span class="tag">The failure mode</span>
+        <p>At sustained full power the combustion side ran hotter than the structure liked. Thermal cycling — heat, cool, heat, cool — opened <strong>cracks in the cylinder heads</strong> and stressed the exhaust system. Each crack meant a failure, a removal, a works visit. Reliability, not raw output, became the number that mattered.</p>
+      </div>
+    </section>
+
+    <!-- DERATE INTERACTIVE -->
+    <section id="derate" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 4.1</div>
+      <h3>Why 170 horsepower bought a reliable locomotive.</h3>
+      <p style="margin-top:18px">Slide the demanded output and watch the two things that move in opposite directions: <span style="color:var(--signal)">performance</span> rises gently with power, while <span style="color:var(--bad)">thermal stress</span> on the cylinder heads climbs steeply — and reliability falls off a cliff above the safe line. The engineers found the knee of that curve at <strong>2,580&nbsp;bhp</strong>.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 4.1</span><span id="dTitle">DERATING — STRESS vs OUTPUT</span><span class="dim" style="color:var(--cyan-soft)" id="dVerdict">—</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1.1fr .9fr;gap:24px" class="dGrid">
+          <svg viewBox="0 0 420 300" style="width:100%;height:auto" id="dSvg"></svg>
+          <div>
+            <div class="tag" style="color:var(--cyan-soft)">Cylinder-head temperature</div>
+            <svg viewBox="0 0 320 150" style="width:100%;height:auto" id="headSvg"></svg>
+            <div class="readout" style="margin-top:10px;color:var(--paper-on-plate)" id="dNote"></div>
+          </div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line);display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+          <div><div class="tag" style="color:var(--cyan-soft)">Output</div><div class="readout" style="font-size:1.3rem"><b id="dP" style="color:var(--cyan)">2750</b><span style="font-size:.7rem"> bhp</span></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Thermal stress</div><div class="readout" style="font-size:1.3rem"><b id="dStress" style="color:var(--bad)">—</b></div></div>
+          <div><div class="tag" style="color:var(--cyan-soft)">Fleet availability</div><div class="readout" style="font-size:1.3rem"><b id="dAvail" style="color:var(--signal-2)">—</b><span style="font-size:.7rem"> %</span></div></div>
+        </div>
+        <div class="figure-body" style="border-top:1px solid var(--plate-line)">
+          <div class="readout" style="color:var(--cyan-soft);margin-bottom:6px">Demanded output — drag through the two known settings</div>
+          <input id="dRange" type="range" min="2400" max="2800" value="2750" step="10" style="width:100%">
+          <div style="display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:.62rem;color:var(--cyan-soft);opacity:.8;margin-top:6px"><span>2400</span><span style="color:var(--good)">◆ 2580 derated</span><span style="color:var(--bad)">2750 as-built ◆</span></div>
+        </div>
+        <div class="figure-cap"><b>The knee of the curve.</b> Below ~2,580&nbsp;bhp the engine runs cool and lives long; the lost performance is marginal — a few seconds on a journey. Above it, stress and failures rise far faster than the extra power is worth. Trading 170&nbsp;bhp for a fleet that <em>stayed in traffic</em> was the bargain of the class's career.</div>
+      </figure>
+    </section>
+
+    <!-- FIRES -->
+    <section id="fire" class="section">
+      <div class="kicker">Fires &amp; other troubles</div>
+      <h3>It wasn't only the heads.</h3>
+      <p style="margin-top:18px">A hard-worked diesel in a tight engine room is a fire risk: hot exhaust, fuel and lubricating oil under pressure, and electrical gear all share a confined space. The 47 saw its share of <strong>engine-room fires</strong> over a long career — a hazard the class was not unique in, but one that maintenance and later modifications worked steadily to reduce.</p>
+      <div class="cols2">
+        <div>
+          <h4 style="margin-bottom:8px">Recurring weak points</h4>
+          <ul class="spec">
+            <li><span class="k">Cylinder heads</span><span class="v">Thermal cracking at full output — the headline fault</span></li>
+            <li><span class="k">Train-heat boiler</span><span class="v">Steam boilers (47/0) were temperamental and disliked</span></li>
+            <li><span class="k">Engine-room fires</span><span class="v">Oil/fuel + heat in a confined bay</span></li>
+            <li><span class="k">Weight creep</span><span class="v">Equipment added over time ate into the axle-load margin</span></li>
+          </ul>
+        </div>
+        <div>
+          <h4 style="margin-bottom:8px">How they were managed</h4>
+          <ul class="spec">
+            <li><span class="k">Derating</span><span class="v">The single biggest reliability gain</span></li>
+            <li><span class="k">ETH conversion</span><span class="v">Electric train heating replaced troublesome boilers (Ch. 05)</span></li>
+            <li><span class="k">Refurbishment</span><span class="v">Rolling programmes through the 1970s–80s</span></li>
+            <li><span class="k">Re-engining</span><span class="v">Ultimately the Class 57 — a new heart entirely (Ch. 05)</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLASS 48 -->
+    <section id="class48" class="section">
+      <div class="kicker">The dead end</div>
+      <h3>Class 48: five locomotives with the wrong engine.</h3>
+      <p style="margin-top:18px">If the twin-bank Sulzer was being pushed too hard, why not try a different engine? In 1965 five locomotives — <strong>D1702–D1706</strong> — were completed not with the 12LDA28 twin-bank but with a Sulzer <strong>12LVA24 V-form engine</strong>, a more modern, more compact design. Classified separately as <strong>Class 48</strong>, they were the experiment that would test whether a V-engine was the 47's future.</p>
+      <div class="story">
+        <span class="tag">Case study · the 12LVA24</span>
+        <div class="q">The V-engine was lighter and newer — and it was a failure. Within a few years all five were stripped of their Sulzer V-units, fitted with the standard twin-bank 12LDA28, and quietly absorbed back into the Class 47 fleet.</div>
+        <div class="by">The locomotives lost their separate identity, absorbed into the 47 fleet. The same 12LVA24 V-engine had one other outlet, though — built at the very same time: ten near-identical "Clayton" locomotives for Cuba (Ch. 05). The twin-bank engine the engineers had been fighting turned out to be the better bet after all.</div>
+      </div>
+      <p>The lesson was pointed: the 47's problem was not fundamentally its <em>engine type</em> but how <em>hard it was driven</em>. Once the derating tamed the twin-bank, the case for a riskier, unproven V-engine evaporated. The Class 48 stands as the road not taken — proof that the conservative choice, run within its limits, beat the clever one run on the edge.</p>
+      <div class="facts">
+        <div><div class="big">5</div><div class="lbl">Locomotives built as Class 48</div></div>
+        <div><div class="big">12LVA24</div><div class="lbl">Sulzer V-engine — the experiment</div></div>
+        <div><div class="big">1971</div><div class="lbl">All rebuilt as Class 47s by</div></div>
+        <div><div class="big">CUBA</div><div class="lbl">Same V-engine ran in 10 export locos</div></div>
+      </div>
+    </section>
+
+    <!-- VERDICT -->
+    <section id="verdict" class="section">
+      <div class="kicker blue">What it cost, what it bought</div>
+      <h3>A reliable workhorse beats a brilliant invalid.</h3>
+      <p style="margin-top:18px">Derating cost the 47 nothing a passenger would notice and everything a fleet manager would celebrate. A locomotive that holds 2,580&nbsp;bhp and stays in traffic for weeks earns far more than one that makes 2,750&nbsp;bhp and spends a fortnight in the works with a cracked head. The number that mattered was never peak power — it was <strong>availability</strong>, and the 47 won it the hard way.</p>
+      <div class="note">
+        <span class="tag">The through-line</span>
+        <p>Every chapter has circled the same compromise — power against weight, volts against amps, performance against reliability. The 47's greatness is not that it resolved these tensions, but that British Railways found the <em>right point of balance</em> on each, and then built five hundred and twelve locomotives around it. Chapter 05 is what that fleet did for the next sixty years.</p>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>CLASS 47 · Ch.04 — Faults &amp; the fix</span>
+  <span>Schematic · not to scale · educational</span>
+</div></footer>
+
+<script>
+/* ===== FIG 4.1 — derating ===== */
+(function(){
+  const dSvg=document.getElementById('dSvg'), hSvg=document.getElementById('headSvg');
+  if(!dSvg) return;
+  let P=2750;
+  const Pmin=2400,Pmax=2800,SAFE=2580;
+  // normalized stress 0..1 climbing steeply past SAFE
+  function stressOf(p){ const x=(p-Pmin)/(Pmax-Pmin); return Math.min(1, 0.25+Math.pow(Math.max(0,(p-2480)/(Pmax-2480)),2.3)*0.9); }
+  function availOf(p){ const s=stressOf(p); return Math.round(98 - s*52); } // 98%..~46%
+  function perfOf(p){ return (p-Pmin)/(Pmax-Pmin); }
+  function draw(){
+    const X0=50,X1=400,Y0=20,Y1=250;
+    const px=p=>X0+((p-Pmin)/(Pmax-Pmin))*(X1-X0);
+    const py=f=>Y1-f*(Y1-Y0);
+    let s='';
+    s+=`<line x1="${X0}" y1="${Y0}" x2="${X0}" y2="${Y1}" stroke="var(--cyan)" stroke-width="1.2"/>`;
+    s+=`<line x1="${X0}" y1="${Y1}" x2="${X1}" y2="${Y1}" stroke="var(--cyan)" stroke-width="1.2"/>`;
+    s+=`<text x="${X1}" y="${Y1+18}" text-anchor="end" font-size="9" fill="var(--cyan-soft)">bhp →</text>`;
+    // safe line
+    s+=`<line x1="${px(SAFE)}" y1="${Y0}" x2="${px(SAFE)}" y2="${Y1}" stroke="var(--good)" stroke-width="1" stroke-dasharray="3 3"/>`;
+    s+=`<text x="${px(SAFE)}" y="${Y0-6}" text-anchor="middle" font-size="8" fill="var(--good)">safe</text>`;
+    // stress curve (red)
+    let st='';for(let p=Pmin;p<=Pmax;p+=10){ st+=(p===Pmin?'M':'L')+px(p)+' '+py(stressOf(p))+' '; }
+    s+=`<path d="${st}" fill="none" stroke="var(--bad)" stroke-width="2.4"/>`;
+    s+=`<text x="${X1-6}" y="${py(stressOf(Pmax))-6}" text-anchor="end" font-size="9" fill="var(--bad)">thermal stress</text>`;
+    // performance curve (orange, gentle)
+    let pf='';for(let p=Pmin;p<=Pmax;p+=10){ pf+=(p===Pmin?'M':'L')+px(p)+' '+py(0.2+perfOf(p)*0.5)+' '; }
+    s+=`<path d="${pf}" fill="none" stroke="var(--signal)" stroke-width="2.4"/>`;
+    s+=`<text x="${X0+10}" y="${py(0.2+perfOf(Pmin)*0.5)-8}" font-size="9" fill="var(--signal)">performance</text>`;
+    // operating point
+    s+=`<line x1="${px(P)}" y1="${Y0}" x2="${px(P)}" y2="${Y1}" stroke="var(--cyan)" stroke-width="1" stroke-dasharray="2 2"/>`;
+    s+=`<circle cx="${px(P)}" cy="${py(stressOf(P))}" r="5" fill="var(--bad)"/>`;
+    s+=`<circle cx="${px(P)}" cy="${py(0.2+perfOf(P)*0.5)}" r="5" fill="var(--signal)"/>`;
+    dSvg.innerHTML=s;
+    // cylinder head thermal
+    const stress=stressOf(P);
+    const hot = stress;
+    const col = hot<0.45? 'var(--cyan)' : hot<0.7? 'var(--signal-2)' : 'var(--bad)';
+    let h='';
+    h+=`<rect x="40" y="30" width="240" height="80" rx="6" fill="rgba(120,205,228,.05)" stroke="${col}" stroke-width="2"/>`;
+    // valves
+    h+=`<circle cx="100" cy="70" r="16" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+    h+=`<circle cx="160" cy="70" r="16" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+    h+=`<circle cx="220" cy="70" r="10" fill="none" stroke="${col}" stroke-width="1.6"/>`;
+    // heat glow fill proportional
+    h+=`<rect x="40" y="${110-80*hot}" width="240" height="${80*hot}" rx="0" fill="${col}" opacity="0.12"/>`;
+    // cracks appear above 0.7
+    if(hot>0.7){
+      h+=`<path d="M130 38 l8 14 l-5 10 l9 12" stroke="var(--bad)" stroke-width="1.6" fill="none"/>`;
+    }
+    if(hot>0.85){
+      h+=`<path d="M200 40 l-6 16 l7 9" stroke="var(--bad)" stroke-width="1.6" fill="none"/>`;
+      h+=`<path d="M70 44 l5 12 l-4 8" stroke="var(--bad)" stroke-width="1.4" fill="none"/>`;
+    }
+    h+=`<text x="160" y="132" text-anchor="middle" font-size="10" fill="${col}">${hot<0.45?'COOL · LONG LIFE':hot<0.7?'WARM':hot<0.85?'HOT — STRESSED':'CRACKING'}</text>`;
+    hSvg.innerHTML=h;
+    // readouts
+    document.getElementById('dP').textContent=P;
+    document.getElementById('dStress').textContent=Math.round(stress*100)+'%';
+    document.getElementById('dStress').style.color = stress<0.45?'var(--cyan)':stress<0.7?'var(--signal-2)':'var(--bad)';
+    document.getElementById('dAvail').textContent=availOf(P);
+    const v=document.getElementById('dVerdict');
+    if(P<=SAFE){ v.textContent='RELIABLE — within limits'; v.style.color='var(--good)'; }
+    else if(P<2700){ v.textContent='MARGINAL'; v.style.color='var(--signal-2)'; }
+    else { v.textContent='OVER-STRESSED — heads at risk'; v.style.color='var(--bad)'; }
+    const note=document.getElementById('dNote');
+    if(P<=SAFE) note.innerHTML=`At <b style="color:var(--good)">${P} bhp</b> the heads run cool and the fleet stays in traffic. This is where the 47 settled.`;
+    else if(P<2700) note.innerHTML=`<b style="color:var(--signal-2)">${P} bhp</b> — getting warm. Reliability is already slipping for a sliver of extra performance.`;
+    else note.innerHTML=`<b style="color:var(--bad)">${P} bhp.</b> Cylinder heads thermally cycling into cracks — exactly the as-built condition that forced the derating.`;
+  }
+  document.getElementById('dRange').addEventListener('input',e=>{ P=+e.target.value; draw(); });
+  draw();
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>
