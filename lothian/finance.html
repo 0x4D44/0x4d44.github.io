@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finance — Lothian, Edinburgh's Buses</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .fin2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media(max-width:840px){.fin2{grid-template-columns:1fr;}}
+  .chartcard{border:1px solid var(--hair);border-radius:16px;background:var(--card);padding:26px 26px 20px;}
+  .chartcard .ttl{font-family:var(--display);font-weight:800;font-size:18px;}
+  .chartcard .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);margin:3px 0 16px;}
+  .ownlayout{display:grid;grid-template-columns:300px 1fr;gap:36px;align-items:center;}
+  @media(max-width:760px){.ownlayout{grid-template-columns:1fr;}}
+  .ownrow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--hair);}
+  .ownrow:last-child{border:none;}
+  .ownrow .sw{width:16px;height:16px;border-radius:4px;flex:none;}
+  .ownrow .nm{flex:1;font-size:14px;}
+  .ownrow .pc{font-family:var(--display);font-weight:800;font-size:22px;}
+  .model{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px;}
+  @media(max-width:760px){.model{grid-template-columns:1fr;}}
+  .mc{border:1px solid var(--hair);border-radius:14px;background:var(--card);padding:22px;}
+  .mc h3{font-size:17px;}.mc p{font-size:13px;margin-top:9px;}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div><div class="bg-grid"></div>
+
+<section class="phero"><div class="wrap reveal">
+  <div class="kick">Chapter 05 · The money</div>
+  <h1>Profit that<br>pays the city</h1>
+  <p>Turnover topped <b>£176 million</b> in 2023. Uniquely among big UK operators, Lothian is owned by its councils — so its profits flow back as dividends and reinvestment, not to private shareholders.</p>
+</div></section>
+
+<section class="section-sm"><div class="wrap">
+  <div class="fin2 reveal">
+    <div class="chartcard"><div class="ttl">Turnover</div><div class="sub">£ millions per year · hover any bar</div><div id="revchart"></div></div>
+    <div class="chartcard"><div class="ttl">Dividend to councils</div><div class="sub">£ millions returned · suspended through COVID &amp; for electrification</div><div id="divchart"></div></div>
+  </div>
+</div></section>
+
+<section class="section" style="padding-top:18px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">Who owns Lothian</div><h2 style="margin-top:14px">A municipal company</h2>
+    <p>Four councils hold the shares; Edinburgh dominates with 91%. There are no private investors.</p></div></div>
+  <div class="chartcard reveal">
+    <div class="ownlayout">
+      <div id="donut"></div>
+      <div id="ownlist"></div>
+    </div>
+  </div>
+  <div class="model reveal">
+    <div class="mc"><h3>Arm’s length</h3><p>Run as an independent commercial company since 1986 deregulation — the councils set strategy but don’t run day-to-day operations.</p></div>
+    <div class="mc"><h3>Profit recycled</h3><p>Surpluses return to owners as dividends — £3.2m in 2024, the first since 2019 — or are reinvested in new, cleaner vehicles.</p></div>
+    <div class="mc"><h3>Electrification first</h3><p>The 2025 dividend was suspended so the company could pour money into electric buses and depot charging instead.</p></div>
+  </div>
+</div></section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('finance.html');
+barChartReveal($('#revchart'), LB.REVENUE, {w:520,h:300,color:'var(--madder)',unit:'m',label:'turnover',fmt:v=>'£'+v});
+barChartReveal($('#divchart'), LB.DIVIDEND, {w:520,h:300,color:'var(--gold-deep)',unit:'m',label:'dividend',fmt:v=>'£'+v});
+
+// donut
+const O=LB.OWNERS, R=110, r=66, cx=130, cy=130, C=2*Math.PI*((R+r)/2), sw=R-r;
+let acc=0; let segs='';
+O.forEach(o=>{
+  const frac=o.pct/100, dash=frac*C;
+  segs+=`<circle cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="${o.col}" stroke-width="${sw}"
+    stroke-dasharray="${dash} ${C-dash}" stroke-dashoffset="${-acc*C}" transform="rotate(-90 ${cx} ${cy})"
+    style="transition:stroke-dasharray 1s"></circle>`;
+  acc+=frac;
+});
+$('#donut').innerHTML=`<svg viewBox="0 0 260 260" width="260" style="max-width:100%">
+  ${segs}
+  <text x="${cx}" y="${cy-6}" text-anchor="middle" font-family="var(--display)" font-weight="800" font-size="40" fill="var(--madder)">91%</text>
+  <text x="${cx}" y="${cy+18}" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--ink-3)" letter-spacing="2">EDINBURGH</text>
+</svg>`;
+$('#ownlist').innerHTML=O.map(o=>`<div class="ownrow"><span class="sw" style="background:${o.col}"></span>
+  <span class="nm">${o.name}</span><span class="pc" style="color:${o.col}">${o.pct}%</span></div>`).join('');
+
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

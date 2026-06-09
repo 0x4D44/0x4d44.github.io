@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ridership — Lothian, Edinburgh's Buses</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .chartcard{border:1px solid var(--hair);border-radius:16px;background:var(--card);padding:28px 28px 22px;}
+  .chart-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;margin-bottom:18px;}
+  .chart-head .ttl{font-family:var(--display);font-weight:800;font-size:20px;}
+  .chart-head .sub{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.08em;}
+  .keymoments{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:30px;}
+  @media(max-width:760px){.keymoments{grid-template-columns:1fr;}}
+  .km{border:1px solid var(--hair);border-radius:14px;background:var(--card);padding:22px;border-top:4px solid var(--kc);}
+  .km .y{font-family:var(--mono);font-size:11px;letter-spacing:.16em;color:var(--ink-3);}
+  .km .big{font-family:var(--display);font-weight:800;font-size:38px;color:var(--kc);line-height:1;margin:6px 0 4px;}
+  .km .t{font-family:var(--display);font-weight:700;font-size:15px;margin-top:8px;}
+  .km .d{font-size:13px;color:var(--ink-2);margin-top:6px;line-height:1.5;}
+  .legendline{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;color:var(--ink-3);margin-top:6px;}
+  .legendline span{display:flex;align-items:center;gap:6px;}
+  .swatch{width:12px;height:12px;border-radius:3px;display:inline-block;}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div><div class="bg-grid"></div>
+
+<section class="phero"><div class="wrap reveal">
+  <div class="kick">Chapter 04 · The passengers</div>
+  <h1>110 million<br>journeys a year</h1>
+  <p>Lothian carries more passengers than almost any bus operator outside London — and bucked the national trend even before COVID. Here is the rise, the cliff, and the comeback.</p>
+</div></section>
+
+<section class="section-sm"><div class="wrap">
+  <div class="chartcard reveal">
+    <div class="chart-head">
+      <div><div class="ttl">Passenger journeys, 2015 — 2024</div><div class="sub">Millions of journeys per year · hover any bar</div></div>
+      <div class="legendline"><span><i class="swatch" style="background:var(--madder)"></i> actual</span><span><i class="swatch" style="background:var(--madder);opacity:.55"></i> estimate</span></div>
+    </div>
+    <div id="ridechart"></div>
+  </div>
+
+  <div class="keymoments reveal">
+    <div class="km" style="--kc:var(--gold-deep)"><div class="y">PEAK · 2018</div><div class="big">124m</div><div class="t">Before the storm</div><div class="d">Ridership climbed year on year while most UK operators shrank — a rare growth story for a bus network.</div></div>
+    <div class="km" style="--kc:#b3284a"><div class="y">CLIFF · 2020</div><div class="big">−61%</div><div class="t">The COVID collapse</div><div class="d">Lockdowns cut journeys to roughly 48 million overnight; timetables were slashed to a skeleton service.</div></div>
+    <div class="km" style="--kc:var(--green)"><div class="y">REBOUND · 2023</div><div class="big">+17%</div><div class="t">The comeback</div><div class="d">Journeys jumped from 94m to 110m in a single year — back to around 90% of pre-pandemic levels.</div></div>
+  </div>
+</div></section>
+
+<section class="section" style="padding-top:20px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">What drives the numbers</div><h2 style="margin-top:14px">Why Edinburgh keeps riding</h2></div></div>
+  <div class="reveal" style="display:grid;grid-template-columns:repeat(2,1fr);gap:18px">
+    <div class="panel" style="padding:24px"><h3>The flat fare</h3><p style="margin-top:10px">A single adult fare anywhere on the city network since 2006 makes the bus the simplest way to move — no zones, no calculating, just tap and go.</p></div>
+    <div class="panel" style="padding:24px"><h3>The Ridacard</h3><p style="margin-top:10px">A season ticket loaded onto a smartcard, plus contactless “Tap Tap Cap” that automatically caps daily and weekly spend, keeps regular riders loyal.</p></div>
+    <div class="panel" style="padding:24px"><h3>Frequency</h3><p style="margin-top:10px">Trunk corridors run every few minutes from early morning to late night, with a full Night Bus network after midnight.</p></div>
+    <div class="panel" style="padding:24px"><h3>A compact, dense city</h3><p style="margin-top:10px">Edinburgh’s geography — tight, hilly, parking-scarce — plays to the strengths of a frequent, blanket bus network.</p></div>
+  </div>
+</div></section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('ridership.html');
+barChartReveal($('#ridechart'), LB.RIDERSHIP, {w:760,h:320,color:'var(--madder)',unit:'m',label:'journeys',fmt:v=>v});
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

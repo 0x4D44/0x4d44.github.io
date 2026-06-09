@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Network — Lothian, Edinburgh's Buses</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .maplayout{display:block;}
+  .mapcard{border:1px solid var(--hair);border-radius:15px;background:var(--card);overflow:hidden;}
+  .mapcard svg{display:block;width:100%;height:auto;background:linear-gradient(180deg,#eaf1f4,#f3eee2 18%);}
+  .rline{fill:none;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s,stroke-width .25s;}
+  .node{fill:var(--card);stroke:var(--ink);stroke-width:2;}
+  .nlabel{font-family:var(--mono);font-size:11px;fill:var(--ink-2);}
+  .nhub{fill:var(--madder);stroke:#fff;stroke-width:2.5;}
+  .selbar{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--hair);flex-wrap:wrap;gap:10px;}
+  .selbar .now{font-family:var(--display);font-weight:700;font-size:16px;}
+  .selbar .via{font-family:var(--mono);font-size:11px;color:var(--ink-3);}
+  /* full-width route picker below the map */
+  .picker{margin-top:16px;border:1px solid var(--hair);border-radius:15px;background:var(--card);padding:18px 20px;}
+  .picker-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .picker-head .h{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:600;}
+  .picker-head .hint{font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);}
+  .pgroup{display:grid;grid-template-columns:104px 1fr;gap:14px;align-items:start;padding:11px 0;border-top:1px dashed var(--hair);}
+  .pgroup:first-of-type{border-top:none;}
+  .pgroup .glabel{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);padding-top:6px;line-height:1.4;}
+  .prow{display:flex;flex-wrap:wrap;gap:8px;}
+  .ppill{min-width:46px;height:38px;padding:0 12px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-weight:800;font-size:16px;color:#fff;background:var(--rc);cursor:pointer;
+    border:2.5px solid transparent;transition:transform .14s,box-shadow .14s,border-color .14s;box-shadow:0 2px 0 rgba(0,0,0,.16) inset;position:relative;}
+  .ppill:hover{transform:translateY(-2px);}
+  .ppill.on{border-color:var(--ink);box-shadow:0 0 0 3px var(--paper),0 0 0 5px var(--rc);}
+  .ppill .zap{position:absolute;top:-5px;right:-5px;font-size:11px;background:var(--paper);border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;}
+  @media(max-width:620px){.pgroup{grid-template-columns:1fr;gap:7px;}.pgroup .glabel{padding-top:0;}}
+  .netfacts{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:34px;}
+  @media(max-width:760px){.netfacts{grid-template-columns:repeat(2,1fr);}}
+  .nf{border:1px solid var(--hair);border-radius:14px;background:var(--card);padding:22px;}
+  .nf .v{font-family:var(--display);font-weight:800;font-size:32px;color:var(--madder);line-height:1;}
+  .nf .l{font-size:13px;color:var(--ink-2);margin-top:8px;line-height:1.45;}
+  /* roster */
+  .rgroup{margin-bottom:26px;}
+  .rgroup-h{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--hair-strong);}
+  .rgroup-h h3{font-size:18px;}
+  .rgroup-h .note{font-size:12.5px;color:var(--ink-3);flex:1;min-width:200px;}
+  .rgroup-h .ct{font-family:var(--mono);font-size:11px;color:var(--madder);}
+  .ritems{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;}
+  .ritem{display:flex;gap:11px;align-items:center;border:1px solid var(--hair);border-radius:10px;background:var(--card);padding:9px 11px;transition:.15s;}
+  .ritem:hover{border-color:var(--rc);transform:translateY(-1px);}
+  .ritem .rb{min-width:36px;height:27px;padding:0 7px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--display);font-weight:800;font-size:13px;color:#fff;background:var(--rc);flex:none;box-shadow:0 2px 0 rgba(0,0,0,.16) inset;}
+  .ritem .rname{font-size:12.5px;line-height:1.3;color:var(--ink);}
+  .ritem .zap{color:var(--green);font-size:11px;}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div><div class="bg-grid"></div>
+
+<section class="phero"><div class="wrap reveal">
+  <div class="kick">Chapter 03 · The network</div>
+  <h1>One city, one<br>flat fare</h1>
+  <p>Around <b>70</b> routes radiate from Princes Street across Edinburgh and out to the Lothians. Pick a service to trace it across this schematic map — and watch a bus run the line.</p>
+</div></section>
+
+<section class="section-sm"><div class="wrap">
+  <div class="maplayout reveal">
+    <div class="mapcard">
+      <div class="selbar"><div><div class="now" id="selNow">Whole network</div><div class="via" id="selVia">Pick a route below to trace it</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold" id="runbtn" style="padding:8px 14px">▸ Run all buses</button><button class="btn" id="allbtn" style="padding:8px 14px">Show all</button></div></div>
+      <svg id="map" viewBox="0 0 1000 600" aria-label="Schematic map of the Lothian Buses network"></svg>
+    </div>
+    <div class="picker">
+      <div class="picker-head"><span class="h">Select a route to trace</span><span class="hint">Hover for the destination · click to follow it on the map</span></div>
+      <div id="picker"></div>
+    </div>
+  </div>
+  <p class="mono reveal" style="font-size:11px;color:var(--ink-faint);margin-top:14px;text-align:center">Schematic map — geography simplified, in the spirit of a transit diagram. It shows 27 traceable services; the full network is listed below. <span style="color:var(--madder)">Colinton</span> (highlighted) is served by the 10, 16, 27, 35, 44 and 45.</p>
+</div></section>
+
+<section class="section" style="padding-top:10px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">The complete index</div><h2 style="margin-top:14px">Every route, listed</h2>
+    <p>The map traces a selection — but the network is far bigger. This is the whole roster from Lothian’s official network map: around 40 numbered city services plus the Airlink, Lothian Country, East Coast Buses, night and sightseeing networks.</p></div></div>
+  <div id="roster" class="reveal"></div>
+  <p class="mono reveal" style="font-size:10.5px;color:var(--ink-faint);margin-top:18px">Route numbers and termini per Lothian’s official Network Map (Feb 2026). Services and routings change periodically — check lothianbuses.com for live detail.</p>
+</div></section>
+
+<section class="section" style="padding-top:10px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">By the numbers</div><h2 style="margin-top:14px">The network at scale</h2></div></div>
+  <div class="netfacts reveal">
+    <div class="nf"><div class="v">~70</div><div class="l">day routes across the city and Lothians</div></div>
+    <div class="nf"><div class="v">2006</div><div class="l">the year the single flat fare arrived — no zones, no distance</div></div>
+    <div class="nf"><div class="v">24 h</div><div class="l">Night Bus network keeps the city moving after midnight</div></div>
+    <div class="nf"><div class="v">Tap</div><div class="l">contactless “Tap Tap Cap” auto-caps daily &amp; weekly spend</div></div>
+  </div>
+</div></section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('routes.html');
+
+const N={
+  // west
+  airport:[55,300,'Airport'], gyle:[140,315,'Gyle'], edinburghPark:[165,360,'Edinburgh Park'],
+  heriotwatt:[110,442,'Heriot-Watt'], clermiston:[230,248,'Clermiston'], corstorphine:[288,300,'Corstorphine'],
+  murrayfield:[382,298,'Murrayfield'],
+  // centre
+  haymarket:[452,300,'Haymarket'], princes:[512,284,'Princes St'], waverley:[562,294,'Waverley'],
+  tollcross:[482,340,'Tollcross'], grassmarket:[522,318,'Grassmarket'], royalMile:[560,312,'Royal Mile'],
+  // north / Forth
+  silverknowes:[380,120,'Silverknowes'], muirhouse:[440,140,'Muirhouse'], granton:[482,108,'Granton'],
+  westernHarbour:[560,92,'W. Harbour'], newhaven:[592,108,'Newhaven'], oceanTerminal:[628,102,'Ocean Term.'],
+  goldenacre:[497,205,'Goldenacre'], creweToll:[447,196,'Crewe Toll'], leith:[652,160,'Leith'], leithWalk:[600,232,'Leith Walk'],
+  // east
+  restalrig:[686,210,'Restalrig'], seafield:[698,236,'Seafield'], portobello:[762,286,'Portobello'],
+  kingsRoad:[778,262,"King's Rd"], qmu:[902,352,'QM Uni'], musselburgh:[876,300,'Musselburgh'],
+  tranent:[886,356,'Tranent'], haddington:[922,276,'Haddington'], northberwick:[965,250,'N. Berwick'],
+  // south
+  newington:[560,360,'Newington'], cameronToll:[616,400,'Cameron Toll'], royalInfirmary:[666,440,'Royal Inf.'],
+  kingsBuildings:[590,430,"King's Bldgs"], morningside:[476,400,'Morningside'], comiston:[492,446,'Comiston'],
+  slateford:[400,360,'Slateford'], westerHailes:[250,400,'W. Hailes'], clovenstone:[245,440,'Clovenstone'],
+  juniperGreen:[228,456,'Juniper Grn'], torphin:[300,470,'Torphin'], colinton:[360,445,'Colinton'],
+  bonaly:[345,492,'Bonaly'], oxgangs:[440,466,'Oxgangs'], hunterTryst:[412,486,"Hunter's Tryst"],
+  gracemount:[560,478,'Gracemount'], hyvotsBank:[596,496,'Hyvots Bank'], livingston:[40,432,'Livingston'],
+  // added for the fuller route set
+  gorgie:[418,332,'Gorgie'], sighthill:[225,372,'Sighthill'], eastCraigs:[198,286,'East Craigs'],
+  mayfield:[762,520,'Mayfield'], thejewel:[818,318,'The Jewel'], greendykes:[822,372,'Greendykes'],
+  bonnyrigg:[716,516,'Bonnyrigg'], balerno:[118,476,'Balerno'], wallyford:[916,332,'Wallyford'],
+  cramond:[330,92,'Cramond'], craigleith:[440,250,'Craigleith'],
+  // added for the corrected route corridors
+  currie:[172,470,'Currie'], craiglockhart:[402,406,'Craiglockhart']
+};
+const PATHS={
+  '1':['clermiston','corstorphine','murrayfield','haymarket','princes','leithWalk','seafield'],
+  '3':['clovenstone','westerHailes','sighthill','gorgie','haymarket','princes','newington','cameronToll','mayfield'],
+  '5':['hunterTryst','oxgangs','comiston','morningside','newington','royalMile','restalrig','portobello','thejewel'],
+  '7':['newhaven','goldenacre','princes','newington','cameronToll','royalInfirmary'],
+  '8':['muirhouse','goldenacre','leithWalk','royalMile','newington','royalInfirmary'],
+  '9':['muirhouse','goldenacre','princes','newington','kingsBuildings'],
+  '10':['oceanTerminal','leith','leithWalk','princes','tollcross','craiglockhart','colinton','bonaly'],
+  '11':['westernHarbour','newhaven','leithWalk','princes','tollcross','morningside','comiston','gracemount','hyvotsBank'],
+  '12':['gyle','edinburghPark','sighthill','corstorphine','murrayfield','haymarket','tollcross','newington','kingsBuildings','cameronToll','portobello','kingsRoad'],
+  '14':['muirhouse','granton','goldenacre','leith','leithWalk','royalMile','newington','royalInfirmary','greendykes'],
+  '16':['silverknowes','creweToll','princes','tollcross','morningside','comiston','oxgangs','colinton','torphin'],
+  '22':['granton','creweToll','craigleith','princes','gorgie','slateford','edinburghPark','gyle'],
+  '25':['heriotwatt','sighthill','gorgie','haymarket','princes','leithWalk','leith','restalrig'],
+  '26':['clermiston','eastCraigs','corstorphine','murrayfield','haymarket','princes','portobello','kingsRoad','musselburgh','tranent'],
+  '27':['silverknowes','muirhouse','creweToll','goldenacre','princes','tollcross','craiglockhart','colinton','oxgangs','hunterTryst'],
+  '30':['clovenstone','westerHailes','slateford','gorgie','princes','newington','cameronToll','thejewel','qmu'],
+  '31':['eastCraigs','corstorphine','murrayfield','haymarket','princes','newington','cameronToll','gracemount','bonnyrigg'],
+  '32':['cramond','eastCraigs','gyle','sighthill','westerHailes','juniperGreen','currie','balerno'],
+  '34':['heriotwatt','westerHailes','sighthill','slateford','gorgie','princes','leithWalk','restalrig','leith','oceanTerminal'],
+  '35':['heriotwatt','juniperGreen','colinton','slateford','gorgie','tollcross','royalMile','leith','oceanTerminal'],
+  '45':['heriotwatt','currie','juniperGreen','colinton','craiglockhart','tollcross','royalMile','restalrig','seafield','kingsRoad'],
+  '44':['balerno','currie','juniperGreen','colinton','slateford','gorgie','haymarket','princes','thejewel','musselburgh','wallyford'],
+  '100':['airport','gyle','haymarket','princes','waverley'],
+  'ECB':['waverley','portobello','musselburgh','haddington','northberwick'],
+  'LC':['princes','haymarket','gyle','edinburghPark','livingston'],
+  'N':['oceanTerminal','leith','leithWalk','princes','tollcross','morningside','colinton','bonaly'],
+  'T':['waverley','princes','grassmarket','royalMile','waverley']
+};
+const hubs=['princes','waverley','haymarket','leith','oceanTerminal','airport','gyle'];
+
+const map=$('#map'); const NS='http://www.w3.org/2000/svg';
+function el(tag,at){const e=document.createElementNS(NS,tag);for(const k in at)e.setAttribute(k,at[k]);return e;}
+function pts(n){return PATHS[n].map(k=>N[k]);}
+function pathD(n){const p=pts(n);return 'M'+p.map(c=>c[0]+' '+c[1]).join(' L ');}
+
+// Forth water
+map.appendChild(el('rect',{x:0,y:0,width:1000,height:70,fill:'#cfe0e6'}));
+const wave=el('text',{x:30,y:42,'font-family':'var(--mono)','font-size':'13',fill:'#7fa6b0','letter-spacing':'4'});wave.textContent='F I R T H   O F   F O R T H';map.appendChild(wave);
+
+// route lines
+const lineEls={};
+LB.ROUTES.forEach(r=>{
+  const p=el('path',{class:'rline',d:pathD(r.n),stroke:r.col,'stroke-width':4,opacity:0.5});
+  p.dataset.n=r.n; map.appendChild(p); lineEls[r.n]=p;
+});
+// nodes
+Object.entries(N).forEach(([k,[x,y,lbl]])=>{
+  const isHub=hubs.includes(k);
+  const isColinton=k==='colinton';
+  map.appendChild(el('circle',{cx:x,cy:y,r:isHub?7:(isColinton?6:4.5),
+    class:isHub?'nhub':'node', ...(isColinton?{fill:'var(--gold)',stroke:'var(--madder)','stroke-width':2.5}:{})}));
+  const t=el('text',{x:x+9,y:y+4,class:'nlabel','font-weight':(isHub||isColinton)?'700':'400'});
+  t.textContent=lbl;
+  if(isColinton)t.setAttribute('fill','var(--madder)');
+  if(x>648){t.setAttribute('text-anchor','end');t.setAttribute('x',x-9);}
+  map.appendChild(t);
+});
+// moving bus marker
+const marker=el('g',{opacity:0});
+marker.appendChild(el('circle',{r:9,fill:'#fff',stroke:'var(--madder)','stroke-width':2.5}));
+const mt=el('text',{'text-anchor':'middle',y:4,'font-family':'var(--display)','font-weight':'800','font-size':'10',fill:'var(--madder)'});
+marker.appendChild(mt);map.appendChild(marker);
+
+// route picker — compact grouped roundels below the map
+const PGROUPS=[
+  ['city','City & electric'],['airlink','Airport'],['country','Lothian Country'],
+  ['eastcoast','East Coast'],['night','Night'],['tour','Tour'],
+];
+const kindLabel={electric:'city'}; // electric routes sit in the city group
+$('#picker').innerHTML=PGROUPS.map(([kind,label])=>{
+  const rs=LB.ROUTES.filter(r=>(kindLabel[r.kind]||r.kind)===kind)
+    .sort((a,b)=>(parseInt(a.n,10)||999)-(parseInt(b.n,10)||999) || a.n.localeCompare(b.n));
+  if(!rs.length) return '';
+  const pills=rs.map(r=>`<button class="ppill" data-n="${r.n}" style="--rc:${r.col}" aria-label="${r.name}">${r.n}${r.kind==='electric'?'<span class="zap" title="electric">⚡</span>':''}</button>`).join('');
+  return `<div class="pgroup"><div class="glabel">${label}</div><div class="prow">${pills}</div></div>`;
+}).join('');
+// hover tooltips on pills
+$$('.ppill').forEach(p=>{
+  const r=LB.ROUTES.find(x=>x.n===p.dataset.n);
+  p.addEventListener('mousemove',e=>tipShow(`<b>${r.n}</b> · ${r.name}<br>via ${r.via}`,e.clientX,e.clientY));
+  p.addEventListener('mouseleave',tipHide);
+});
+
+let anim=null, sel=null;
+function selectRoute(n){
+  sel=n; const r=LB.ROUTES.find(x=>x.n===n);
+  LB.ROUTES.forEach(x=>{lineEls[x.n].setAttribute('opacity',x.n===n?1:0.08);lineEls[x.n].setAttribute('stroke-width',x.n===n?6:3);});
+  $$('.ppill').forEach(l=>l.classList.toggle('on',l.dataset.n===n));
+  $('#selNow').innerHTML=`<span class="roundel" style="background:${r.col};vertical-align:middle">${n}</span> &nbsp;${r.name}`;
+  $('#selVia').textContent='via '+r.via;
+  mt.textContent=n.length>2?'':n; marker.setAttribute('opacity',1);
+  marker.querySelector('circle').setAttribute('stroke',r.col);
+  mt.setAttribute('fill',r.col);
+  runAnim(lineEls[n]);
+}
+function showAll(){
+  sel=null; if(anim)cancelAnimationFrame(anim);
+  LB.ROUTES.forEach(x=>{lineEls[x.n].setAttribute('opacity',0.5);lineEls[x.n].setAttribute('stroke-width',4);});
+  $$('.ppill').forEach(l=>l.classList.remove('on'));
+  marker.setAttribute('opacity',0);
+  $('#selNow').textContent='Whole network'; $('#selVia').textContent='Pick a route below to trace it';
+}
+function runAnim(pathEl){
+  if(anim)cancelAnimationFrame(anim);
+  const len=pathEl.getTotalLength(); let d=0;
+  function step(){
+    d=(d+1.6)%len; const pt=pathEl.getPointAtLength(d);
+    marker.setAttribute('transform',`translate(${pt.x} ${pt.y})`);
+    anim=requestAnimationFrame(step);
+  }
+  step();
+}
+$$('.ppill').forEach(l=>l.addEventListener('click',()=>selectRoute(l.dataset.n)));
+$$('.rline').forEach(p=>p.addEventListener('click',()=>selectRoute(p.dataset.n)));
+$('#allbtn').addEventListener('click',()=>{ if(runAll) stopAll(); showAll(); });
+selectRoute('35'); // open on the 35 the user spotted
+
+/* ============================================================
+   "RUN ALL BUSES" — Transport-Tycoon mode
+   a bus launches from every route at once; ding-ding when two
+   pass close, with the occasional fireball (and a respawn).
+   ============================================================ */
+let runAll=false, runRAF=null, buses=[], pairCD=new Map(), lastDing=0, lastBoom=0, simStart=0;
+
+// --- synthesized audio (no files) ---
+let actx;
+function ac(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+function bell(freq,t0,dur,vol){
+  const a=ac(), o=a.createOscillator(), o2=a.createOscillator(), g=a.createGain(), g2=a.createGain();
+  o.type='sine'; o2.type='sine'; o.frequency.value=freq; o2.frequency.value=freq*2.76;
+  g2.gain.value=0.35; o2.connect(g2).connect(g); o.connect(g); g.connect(a.destination);
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.004);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.start(t0);o2.start(t0);o.stop(t0+dur);o2.stop(t0+dur);
+}
+function ding(){ const t=ac().currentTime; bell(1180,t,0.16,0.16); bell(1180,t+0.135,0.20,0.15); }
+function boom(){
+  const a=ac(), t=a.currentTime, n=a.sampleRate*0.5, buf=a.createBuffer(1,n,a.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/n,2);
+  const src=a.createBufferSource(); src.buffer=buf;
+  const lp=a.createBiquadFilter(); lp.type='lowpass'; lp.frequency.setValueAtTime(1600,t); lp.frequency.exponentialRampToValueAtTime(120,t+0.45);
+  const g=a.createGain(); g.gain.setValueAtTime(0.42,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+  src.connect(lp).connect(g).connect(a.destination); src.start(t); src.stop(t+0.5);
+}
+
+// --- a fireball at (x,y) in viewBox units ---
+function fireball(x,y){
+  const grp=el('g',{}); map.appendChild(grp);
+  const core=el('circle',{cx:x,cy:y,r:2,fill:'#fff7e0'}); grp.appendChild(core);
+  const ring=el('circle',{cx:x,cy:y,r:3,fill:'#ff8c1a'}); grp.insertBefore(ring,core);
+  const smoke=el('circle',{cx:x,cy:y,r:5,fill:'rgba(60,40,30,0.5)'}); grp.insertBefore(smoke,ring);
+  core.animate([{r:'2px',opacity:1},{r:'15px',opacity:0}],{duration:380,easing:'ease-out',fill:'forwards'});
+  ring.animate([{r:'3px',opacity:0.95},{r:'34px',opacity:0}],{duration:620,easing:'ease-out',fill:'forwards'});
+  smoke.animate([{r:'5px',opacity:0},{r:'9px',opacity:0.5,offset:0.3},{r:'24px',opacity:0}],{duration:700,easing:'ease-out',fill:'forwards'});
+  const cols=['#ffe066','#ffa94d','#ff6b3d','#ffd43b'];
+  for(let i=0;i<9;i++){
+    const ang=(i/9)*Math.PI*2 + Math.random()*0.5, dist=20+Math.random()*16;
+    const sp=el('circle',{cx:x,cy:y,r:1.6+Math.random()*1.6,fill:cols[i%cols.length]}); grp.appendChild(sp);
+    sp.animate([{cx:x+'px',cy:y+'px',opacity:1},{cx:(x+Math.cos(ang)*dist)+'px',cy:(y+Math.sin(ang)*dist)+'px',opacity:0}],
+      {duration:520+Math.random()*220,easing:'cubic-bezier(.2,.7,.3,1)',fill:'forwards'});
+  }
+  setTimeout(()=>grp.remove(),760);
+}
+
+// --- build a bus token for a route ---
+function makeBus(r){
+  const len=lineEls[r.n].getTotalLength();
+  const g=el('g',{});
+  g.appendChild(el('circle',{r:7.5,fill:r.col,stroke:'#fff','stroke-width':2}));
+  const t=el('text',{'text-anchor':'middle',y:3.2,'font-family':'var(--display)','font-weight':'800',
+    'font-size':r.n.length>2?6:8,fill:'#fff'}); t.textContent=r.n; g.appendChild(t);
+  map.appendChild(g);
+  return { n:r.n, path:lineEls[r.n], len, g, d:0, dir:1,
+    speed:1.15*(0.72+Math.random()*0.7), x:0, y:0, alive:true };
+}
+function placeBus(b){
+  const dd=Math.max(0,Math.min(b.len,b.d));
+  const p=b.path.getPointAtLength(dd); b.x=p.x; b.y=p.y;
+  b.g.setAttribute('transform',`translate(${p.x.toFixed(1)} ${p.y.toFixed(1)})`);
+}
+
+function startAll(){
+  runAll=true; if(anim)cancelAnimationFrame(anim); marker.setAttribute('opacity',0);
+  $$('.ppill').forEach(l=>l.classList.remove('on'));
+  LB.ROUTES.forEach(x=>{lineEls[x.n].setAttribute('opacity',0.42);lineEls[x.n].setAttribute('stroke-width',3.5);});
+  $('#selNow').innerHTML='🚌 All buses running'; $('#selVia').textContent='watch the junctions — ding-ding when they meet';
+  $('#runbtn').textContent='❚❚ Stop the buses'; $('#runbtn').classList.remove('btn-gold'); $('#runbtn').classList.add('btn-primary');
+  try{ ac().resume(); }catch(e){}
+  buses=LB.ROUTES.map(makeBus); buses.forEach(b=>{ b.d=0; placeBus(b); });
+  pairCD.clear(); simStart=performance.now();
+  loopAll();
+}
+function stopAll(){
+  runAll=false; if(runRAF)cancelAnimationFrame(runRAF); runRAF=null;
+  buses.forEach(b=>b.g.remove()); buses=[];
+  $('#runbtn').textContent='▸ Run all buses'; $('#runbtn').classList.add('btn-gold'); $('#runbtn').classList.remove('btn-primary');
+}
+function loopAll(){
+  const now=performance.now(), armed=now-simStart>500;
+  for(const b of buses){
+    if(!b.alive) continue;
+    b.d+=b.speed*b.dir;
+    if(b.d>=b.len){ b.d=b.len; b.dir=-1; }       // bounce back along the route
+    else if(b.d<=0){ b.d=0; b.dir=1; }
+    placeBus(b);
+  }
+  if(armed){
+    for(let i=0;i<buses.length;i++){
+      const a=buses[i]; if(!a.alive) continue;
+      for(let j=i+1;j<buses.length;j++){
+        const c=buses[j]; if(!c.alive) continue;
+        const dx=a.x-c.x, dy=a.y-c.y, d2=dx*dx+dy*dy;
+        if(d2<210){                                // ~14.5 units apart
+          const key=a.n+'|'+c.n, last=pairCD.get(key)||0;
+          if(now-last>1700){
+            pairCD.set(key,now);
+            if(now-lastDing>130){ ding(); lastDing=now; }
+            if(Math.random()<0.16 && now-lastBoom>1100){
+              lastBoom=now; const mx=(a.x+c.x)/2, my=(a.y+c.y)/2;
+              fireball(mx,my); boom(); crash(a); crash(c);
+            }
+          }
+        }
+      }
+    }
+  }
+  runRAF=requestAnimationFrame(loopAll);
+}
+function crash(b){
+  b.alive=false; b.g.setAttribute('opacity','0');
+  setTimeout(()=>{ if(!runAll) return; b.d=2; b.dir=1; b.alive=true; placeBus(b); b.g.setAttribute('opacity','1'); }, 1500);
+}
+$('#runbtn').addEventListener('click',()=>{ runAll? (stopAll(), showAll()) : startAll(); });
+
+// keep single-route selection sane: leaving run-all when a pill is clicked
+const _origSelect=selectRoute;
+selectRoute=function(n){ if(runAll) stopAll(); _origSelect(n); };
+
+
+// full roster
+const groupCol={'City day services':'var(--madder)','Airlink & airport':'#1864ab',
+  'Lothian Country':'#2f9e44','East Coast Buses':'#1f6f9e','Night Network':'#3b3054','Edinburgh Bus Tours':'var(--gold-deep)'};
+$('#roster').innerHTML=LB.ROSTER.map(g=>{
+  const rc=groupCol[g.group]||'var(--madder)';
+  const items=g.items.map(([n,name,elec])=>{
+    const col=elec?'var(--green)':rc;
+    return `<div class="ritem" style="--rc:${col}"><span class="rb" style="background:${col}">${n}</span>
+      <span class="rname">${name}${elec?' <span class="zap" title="electric">⚡</span>':''}</span></div>`;
+  }).join('');
+  return `<div class="rgroup"><div class="rgroup-h"><h3>${g.group}</h3><span class="ct">${g.items.length} listed</span><span class="note">${g.note}</span></div>
+    <div class="ritems">${items}</div></div>`;
+}).join('');
+
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lothian — Edinburgh's Buses, a deep dive</title>
+<meta name="description" content="A deep dive into Lothian Buses: the history, fleet, network, ridership, finances and electric future of the UK's largest municipal bus company.">
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .hero{position:relative;padding:64px 0 40px;}
+  .hero-grid{display:grid;grid-template-columns:1.05fr 0.95fr;gap:48px;align-items:center;}
+  @media(max-width:920px){.hero-grid{grid-template-columns:1fr;gap:32px;}}
+  .hero h1{font-size:clamp(56px,12vw,150px);line-height:0.86;letter-spacing:-0.04em;}
+  .hero h1 .o{color:var(--gold-deep);}
+  .hero .sub{font-family:var(--mono);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--madder);margin-bottom:18px;}
+  .hero .lede{max-width:520px;font-size:clamp(16px,1.8vw,20px);margin:24px 0 0;color:var(--ink-2);}
+  .hero-cta{display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;}
+  .hero-side{display:flex;flex-direction:column;gap:18px;}
+  .blindcard{position:relative;}
+  .blindcard .tagrow{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:9px;}
+  .minifacts{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:14px;overflow:hidden;}
+  .minifacts > div{background:var(--card);padding:16px 18px;}
+  .minifacts .v{font-family:var(--display);font-weight:800;font-size:26px;color:var(--madder);line-height:1;}
+  .minifacts .l{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);margin-top:7px;}
+
+  .brandgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:900px){.brandgrid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){.brandgrid{grid-template-columns:1fr;}}
+  .bcard{padding:24px;border-radius:16px;border:1px solid var(--hair);background:var(--card);position:relative;overflow:hidden;transition:.22s;}
+  .bcard:hover{transform:translateY(-3px);box-shadow:0 18px 40px -24px rgba(60,20,10,0.5);border-color:var(--bc);}
+  .bcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--bc);}
+  .bcard .bn{font-family:var(--display);font-weight:800;font-size:20px;margin-top:4px;}
+  .bcard .by{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--bc);}
+  .bcard .bnote{font-size:13.5px;color:var(--ink-2);margin:12px 0 16px;line-height:1.55;}
+  .bcard .bstat{display:flex;align-items:baseline;gap:8px;border-top:1px solid var(--hair);padding-top:13px;}
+  .bcard .bstat b{font-family:var(--display);font-size:22px;color:var(--bc);}
+  .bcard .bstat span{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);}
+
+  .livery{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  @media(max-width:860px){.livery{grid-template-columns:repeat(2,1fr);}}
+  .lv{padding:20px;border-radius:14px;border:1px solid var(--hair);background:var(--card);}
+  .lv .era{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);}
+  .lv .nm{font-family:var(--display);font-weight:700;font-size:16px;margin:3px 0 14px;}
+  .lv p{font-size:12.5px;margin:14px 0 0;color:var(--ink-2);line-height:1.5;}
+
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  @media(max-width:900px){.tiles{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:520px){.tiles{grid-template-columns:1fr;}}
+  .tile{padding:24px;border-radius:14px;border:1px solid var(--hair);background:var(--card);transition:.2s;display:block;}
+  .tile:hover{border-color:var(--madder);transform:translateY(-3px);}
+  .tile .ti{font-family:var(--mono);font-size:11px;color:var(--gold-deep);letter-spacing:.2em;}
+  .tile .tn{font-family:var(--display);font-size:19px;font-weight:700;margin-top:12px;}
+  .tile .td{font-size:13px;color:var(--ink-2);margin-top:7px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div>
+<div class="bg-grid"></div>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="sub reveal">Edinburgh · Est. 1919 · UK’s largest municipal bus company</div>
+        <h1 class="reveal">L<span class="o">O</span>THIAN</h1>
+        <p class="lede reveal">The deep dive into Edinburgh’s buses — a century of madder-and-gold double-deckers, a flat-fare network carrying <b>110 million</b> journeys a year, and the road to a net-zero fleet.</p>
+        <div class="hero-cta reveal">
+          <a href="history.html" class="btn btn-primary">▸ Start in 1919</a>
+          <a href="fleet.html" class="btn">Explore the fleet</a>
+        </div>
+      </div>
+      <div class="hero-side">
+        <div class="blindcard reveal">
+          <div class="tagrow"><span>● Destination blind</span><span>Annandale St depot</span></div>
+          <div class="blind"><canvas id="blind"></canvas></div>
+        </div>
+        <div class="minifacts reveal" id="minifacts"></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ============ AT A GLANCE ============ -->
+<section class="section-sm">
+  <div class="wrap">
+    <div class="sectop reveal">
+      <div><div class="eyebrow">The company today</div><h2 style="margin-top:14px">At a glance</h2></div>
+      <p class="muted">Owned by four councils, run at arm’s length, and bucking the national trend of bus decline — Lothian is a rare municipal success story.</p>
+    </div>
+    <div class="strip reveal" id="strip"></div>
+  </div>
+</section>
+
+<!-- ============ SUB-BRANDS ============ -->
+<section class="section">
+  <div class="wrap">
+    <div class="sectop reveal">
+      <div><div class="eyebrow">One operator, many liveries</div><h2 style="margin-top:14px">The Lothian family</h2>
+      <p>From the red city deckers to airport expresses, coastal routes and open-top tours — six identities under one roof.</p></div>
+    </div>
+    <div class="brandgrid reveal" id="brandgrid"></div>
+  </div>
+</section>
+
+<!-- ============ LIVERY EVOLUTION ============ -->
+<section class="section" style="padding-top:10px">
+  <div class="wrap">
+    <div class="sectop reveal">
+      <div><div class="eyebrow">A century of paint</div><h2 style="margin-top:14px">How the bus changed</h2>
+      <p>The same madder thread runs from the 1960s Atlantean to the 2024 electric decker — but the shape, the band and the badge tell the decades apart.</p></div>
+    </div>
+    <div class="livery reveal" id="livery"></div>
+  </div>
+</section>
+
+<!-- ============ EXPLORE ============ -->
+<section class="section" style="padding-top:10px">
+  <div class="wrap">
+    <div class="sectop reveal"><div><div class="eyebrow">Chart a route</div><h2 style="margin-top:14px">Explore the deep dive</h2></div></div>
+    <div class="tiles reveal" id="tiles"></div>
+  </div>
+</section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('index.html');
+
+/* ---- destination blind ---- */
+ledBlind(document.getElementById('blind'), [
+  'LOTHIAN  BUSES','EDINBURGH  SINCE  1919','110 MILLION JOURNEYS A YEAR',
+  '8  ROYAL INFIRMARY  ·  NOW ELECTRIC','100  AIRLINK  ·  EDINBURGH AIRPORT',
+  'NET ZERO BY 2035','PLEASE HAVE YOUR RIDACARD READY'
+], {rows:13, dot:4, gap:1, speed:0.5});
+
+/* ---- mini facts ---- */
+document.getElementById('minifacts').innerHTML=[
+  [LB.STATS.fleet,'buses & coaches'],['~'+LB.STATS.routes,'routes'],
+  [LB.STATS.staff.toLocaleString('en-GB')+'+','staff'],['£'+LB.STATS.revenue2023+'m','turnover · 2023'],
+].map(([v,l])=>`<div><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+
+/* ---- glance strip ---- */
+const S=LB.STATS;
+const strip=[
+  [S.fleet,'vehicles in the fleet'],
+  [S.passengers2023+'<span class="stat-unit">m</span>','journeys · 2023'],
+  ['£'+S.revenue2023+'<span class="stat-unit">m</span>','turnover · 2023'],
+  [S.cityShare+'<span class="stat-unit">%</span>','owned by Edinburgh'],
+  ['2035','net-zero target'],
+];
+document.getElementById('strip').innerHTML=strip.map(([v,l])=>`<div><div class="stat-val">${v}</div><div class="stat-lab">${l}</div></div>`).join('');
+
+/* ---- sub-brand cards ---- */
+document.getElementById('brandgrid').innerHTML=LB.BRANDS.map(b=>`
+  <a class="bcard" style="--bc:${b.accent}" href="${b.key==='trams'?'routes.html':b.key==='tours'?'fleet.html':'routes.html'}">
+    <div class="by">${b.years}</div>
+    <div class="bn">${b.name}</div>
+    <div class="bnote">${b.note}</div>
+    <div class="bstat"><b>${b.stat[0]}</b><span>${b.stat[1]}</span></div>
+  </a>`).join('');
+
+/* ---- livery evolution ---- */
+const lvData=[
+  {era:'1965 · Heritage',nm:'Madder & white',sil:{type:'dd',fuel:'diesel',color:'#7a1228',band:'#efe7d2'},p:'The classic crimson with cream upper panels — open-platform crews giving way to the rear-engined Atlantean.'},
+  {era:'2009 · Transitional',nm:'Harlequin',sil:{type:'dd',fuel:'diesel',color:'#8c1d35',band:'var(--gold)'},p:'A bold patterned wrap bridged the old livery and the new — and arrived with the smart Ridacard.'},
+  {era:'2016 · Fleet of the future',nm:'Angular madder',sil:{type:'dd',fuel:'hybrid',color:'var(--madder)',band:'var(--gold)'},p:'A sharper, more confident madder-and-gold scheme debuting alongside East Coast Buses.'},
+  {era:'2024 · Electric',nm:'Zero-emission',sil:{type:'dd',fuel:'electric',color:'var(--madder)',band:'var(--gold-soft)'},p:'Same signature colours, now wrapped on a silent Volvo BZL Electric double-decker.'},
+];
+document.getElementById('livery').innerHTML=lvData.map(d=>`
+  <div class="lv"><div class="era">${d.era}</div><div class="nm">${d.nm}</div>
+    ${busSil(Object.assign({w:220},d.sil))}<p>${d.p}</p></div>`).join('');
+
+/* ---- explore tiles ---- */
+const tiles=[
+  ['history.html','01','History','From 1871 horse trams to the electric era — a scrubbable century.'],
+  ['fleet.html','02','Fleet','Every class explored, filtered and sorted — and the silhouettes by decade.'],
+  ['routes.html','03','Network','An interactive map of Edinburgh’s colour-coded route web.'],
+  ['ridership.html','04','Ridership','110 million journeys — the rise, the COVID cliff and the rebound.'],
+  ['finance.html','05','Finance','£176m turnover, council ownership and the dividend story.'],
+  ['electric.html','06','Electric','The diesel-to-electric transition and the net-zero countdown.'],
+  ['incidents.html','07','Resilience','Snowstorms, a pandemic and the safety record behind the wheel.'],
+  ['fleet.html','08','Liveries','A century of madder and gold, decade by decade.'],
+];
+document.getElementById('tiles').innerHTML=tiles.map(([h,i,n,d])=>`
+  <a class="tile" href="${h}"><div class="ti">${i}</div><div class="tn">${n}</div><div class="td">${d}</div></a>`).join('');
+
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

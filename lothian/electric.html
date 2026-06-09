@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Electric — Lothian, Edinburgh's Buses</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .track{border:1px solid var(--hair);border-radius:18px;background:var(--card);padding:30px;}
+  .track-top{display:grid;grid-template-columns:1fr 280px;gap:30px;align-items:center;}
+  @media(max-width:780px){.track-top{grid-template-columns:1fr;}}
+  .bigpct{font-family:var(--display);font-weight:900;font-size:clamp(60px,11vw,120px);line-height:0.85;color:var(--green);letter-spacing:-0.04em;}
+  .bigpct small{font-size:.3em;color:var(--ink-3);font-family:var(--mono);letter-spacing:.1em;display:block;margin-top:8px;}
+  .yearlbl{font-family:var(--display);font-weight:800;font-size:30px;}
+  .stack{height:46px;border-radius:10px;overflow:hidden;display:flex;margin:18px 0 6px;border:1px solid var(--hair);}
+  .stack > div{transition:width .5s cubic-bezier(.2,.7,.2,1);display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--mono);font-size:11px;font-weight:600;}
+  .s-diesel{background:#7a6253;}.s-hybrid{background:var(--gold-deep);}.s-electric{background:var(--green);}
+  .stack-leg{display:flex;gap:16px;font-family:var(--mono);font-size:11px;color:var(--ink-3);}
+  .stack-leg span{display:flex;align-items:center;gap:6px;}.stack-leg i{width:11px;height:11px;border-radius:3px;}
+  .yslider{width:100%;margin-top:22px;accent-color:var(--green);height:6px;}
+  .yticks{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--ink-faint);margin-top:6px;}
+  .bzl{display:grid;grid-template-columns:1.1fr 0.9fr;gap:34px;align-items:center;margin-top:8px;}
+  @media(max-width:840px){.bzl{grid-template-columns:1fr;}}
+  .bzlspec{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--hair);border:1px solid var(--hair);border-radius:14px;overflow:hidden;}
+  .bzlspec > div{background:var(--card);padding:18px 20px;}
+  .bzlspec .v{font-family:var(--display);font-weight:800;font-size:26px;color:var(--madder);}
+  .bzlspec .l{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);margin-top:6px;}
+  .road{position:relative;margin-top:14px;padding-left:8px;}
+  .rstep{display:grid;grid-template-columns:90px 1fr;gap:18px;padding:16px 0;border-bottom:1px dashed var(--hair);}
+  .rstep .ry{font-family:var(--display);font-weight:800;font-size:22px;color:var(--gold-deep);}
+  .rstep .rt{font-family:var(--display);font-weight:700;font-size:16px;}
+  .rstep .rd{font-size:13.5px;color:var(--ink-2);margin-top:4px;line-height:1.5;}
+  .rstep.done .ry{color:var(--green);}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div><div class="bg-grid"></div>
+
+<section class="phero"><div class="wrap reveal">
+  <div class="kick">Chapter 06 · The transition</div>
+  <h1>Going quietly<br>electric</h1>
+  <p>From the first 15 hybrids in 2011 to 50 pure-electric double-deckers in 2024, Lothian is steering toward a <b>net-zero fleet by 2035</b>. Scrub the years to watch the diesel give way.</p>
+</div></section>
+
+<section class="section-sm"><div class="wrap">
+  <div class="track reveal">
+    <div class="track-top">
+      <div>
+        <div class="yearlbl" id="tYear">2024</div>
+        <div class="stack" id="tStack"></div>
+        <div class="stack-leg">
+          <span><i class="s-diesel" style="background:#7a6253"></i> Diesel</span>
+          <span><i class="s-hybrid" style="background:var(--gold-deep)"></i> Hybrid</span>
+          <span><i class="s-electric" style="background:var(--green)"></i> Electric</span>
+        </div>
+        <input type="range" class="yslider" id="ySlider" min="0" max="0" value="0" step="1">
+        <div class="yticks" id="yTicks"></div>
+      </div>
+      <div style="text-align:center">
+        <div class="bigpct"><span id="tPct">8</span>%<small id="tEst">share electric</small></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="section" style="padding-top:18px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">The flagship</div><h2 style="margin-top:14px">Volvo BZL Electric</h2>
+    <p>Fifty zero-tailpipe double-deckers — a £24m order bodied by MCV, now running routes 8 and 9.</p></div></div>
+  <div class="bzl reveal">
+    <div>
+      <div class="bzlspec" id="bzlspec"></div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+      <div id="bzlsil"></div>
+      <p class="mono" style="font-size:11px;color:var(--ink-3);text-align:center">Charged overnight at Annandale Street — 3–4 hours for a full day’s range.</p>
+    </div>
+  </div>
+</div></section>
+
+<section class="section" style="padding-top:0"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">The countdown</div><h2 style="margin-top:14px">Road to net zero</h2></div></div>
+  <div class="road reveal" id="road"></div>
+</div></section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('electric.html');
+const M=LB.FUELMIX, sl=$('#ySlider'); sl.max=M.length-1;
+$('#yTicks').innerHTML=M.map(m=>`<span>${m.y}</span>`).join('');
+function renderMix(i){
+  const m=M[i];
+  $('#tYear').textContent=m.y+(m.est?'  · projected':'');
+  $('#tStack').innerHTML=`
+    <div class="s-diesel" style="width:${m.diesel}%">${m.diesel>8?m.diesel+'%':''}</div>
+    <div class="s-hybrid" style="width:${m.hybrid}%">${m.hybrid>8?m.hybrid+'%':''}</div>
+    <div class="s-electric" style="width:${m.electric}%">${m.electric>8?m.electric+'%':''}</div>`;
+  animateNum($('#tPct'),m.electric);
+  $('#tEst').textContent=m.est?'projected electric share':'share electric';
+  sl.value=i;
+}
+sl.addEventListener('input',()=>renderMix(+sl.value));
+renderMix(4); // 2024
+
+// BZL spec
+const B=LB.BZL;
+$('#bzlspec').innerHTML=[
+  [B.fleet,'buses ordered'],['£'+B.invest+'m','investment'],
+  [B.energy+' kWh','battery storage'],[B.motor+' kW','electric motor'],
+  ['~'+B.range+' km','range per charge'],[B.routes,'launch routes'],
+].map(([v,l])=>`<div><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+$('#bzlsil').innerHTML=busSil({type:'dd',fuel:'electric',color:'var(--madder)',band:'var(--gold-soft)',w:330});
+
+// roadmap
+const road=[
+  [2011,'First hybrids','Fifteen ADL Enviro400H hybrids enter service on route 10.',true],
+  [2017,'First electrics','Six Wright StreetAir battery-electric single-deckers run route 1.',true],
+  [2020,'Euro6 fleet','Every bus reaches the clean Euro6 emissions standard.',true],
+  [2023,'The big order','50 Volvo BZL electric deckers ordered; “Driving towards Net Zero” strategy published.',true],
+  [2024,'Electrics arrive','First BZL deckers on routes 8 & 9; charging built at Annandale Street.',true],
+  [2030,'Tipping point','Around half the fleet projected to be zero-tailpipe as depots electrify.',false],
+  [2035,'Net zero','Target: a fully zero-tailpipe-emission fleet across the network.',false],
+];
+$('#road').innerHTML=road.map(([y,t,d,done])=>`
+  <div class="rstep ${done?'done':''}"><div class="ry">${y}</div>
+    <div><div class="rt">${t} ${done?'✓':''}</div><div class="rd">${d}</div></div></div>`).join('');
+
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

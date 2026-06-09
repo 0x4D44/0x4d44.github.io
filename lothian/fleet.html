@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fleet — Lothian, Edinburgh's Buses</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .evo{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  @media(max-width:880px){.evo{grid-template-columns:repeat(2,1fr);}}
+  .evocard{border:1px solid var(--hair);border-radius:14px;background:var(--card);padding:20px;}
+  .evocard .e{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-deep);}
+  .evocard .span{font-family:var(--display);font-weight:800;font-size:18px;margin:3px 0 14px;}
+  .evocard p{font-size:12.5px;margin:14px 0 0;color:var(--ink-2);line-height:1.5;}
+
+  .controls{display:flex;flex-direction:column;gap:14px;margin-bottom:26px;}
+  .ctlrow{display:flex;gap:18px;flex-wrap:wrap;align-items:center;}
+  .ctlrow .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-right:2px;}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;}
+
+  .fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px;}
+  .fcard{border:1px solid var(--hair);border-radius:15px;background:var(--card);padding:20px;transition:.2s;cursor:pointer;position:relative;overflow:hidden;}
+  .fcard:hover{transform:translateY(-3px);box-shadow:0 18px 40px -26px rgba(60,20,10,0.5);border-color:var(--madder);}
+  .fcard .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .fcard .yr{font-family:var(--mono);font-size:11px;color:var(--gold-deep);letter-spacing:.1em;}
+  .fcard .badge{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:999px;font-weight:600;}
+  .b-diesel{background:rgba(60,30,18,0.1);color:var(--ink-2);}
+  .b-hybrid{background:rgba(46,129,88,0.16);color:var(--green);}
+  .b-electric{background:var(--green);color:#fff;}
+  .fcard .nm{font-family:var(--display);font-weight:800;font-size:18px;margin:8px 0 2px;line-height:1.1;}
+  .fcard .mk{font-size:12px;color:var(--ink-3);}
+  .fcard .sil{margin:14px 0 12px;display:flex;align-items:center;justify-content:center;min-height:70px;}
+  .fcard .spx{display:flex;gap:14px;border-top:1px solid var(--hair);padding-top:12px;font-family:var(--mono);font-size:11px;color:var(--ink-2);}
+  .fcard .spx b{color:var(--ink);}
+  .fcard .note{font-size:12.5px;color:var(--ink-2);line-height:1.5;margin-top:11px;
+    max-height:0;overflow:hidden;opacity:0;transition:max-height .3s,opacity .3s,margin .3s;}
+  .fcard.open .note{max-height:120px;opacity:1;margin-top:11px;}
+  .fcard .stat-tag{position:absolute;top:0;right:0;font-family:var(--mono);font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+    padding:4px 9px;border-bottom-left-radius:9px;}
+  .st-active{background:var(--madder);color:#fff;}.st-retired{background:#b3a290;color:#fff;}.st-preserved{background:var(--gold);color:var(--madder-ink);}
+  .empty{padding:40px;text-align:center;color:var(--ink-3);font-family:var(--mono);}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div><div class="bg-grid"></div>
+
+<section class="phero"><div class="wrap reveal">
+  <div class="kick">Chapter 02 · The vehicles</div>
+  <h1>The fleet, class<br>by class</h1>
+  <p>Around <b>730</b> buses and coaches — overwhelmingly Volvo chassis under Wright and Alexander Dennis bodies. Filter and sort the classes that have defined six decades of Edinburgh transport.</p>
+</div></section>
+
+<section class="section-sm"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">Evolution</div><h2 style="margin-top:14px">Four eras of the Edinburgh bus</h2></div></div>
+  <div class="evo reveal" id="evo"></div>
+</div></section>
+
+<section class="section" style="padding-top:20px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">Fleet explorer</div><h2 style="margin-top:14px">Browse the classes</h2>
+    <p>Tap a card to read its story. <span id="fcount" class="mono"></span></p></div></div>
+  <div class="controls reveal">
+    <div class="ctlrow"><span class="lbl">Type</span><div class="chips" id="f-type"></div></div>
+    <div class="ctlrow"><span class="lbl">Fuel</span><div class="chips" id="f-fuel"></div></div>
+    <div class="ctlrow"><span class="lbl">Era</span><div class="chips" id="f-era"></div>
+      <span class="lbl" style="margin-left:auto">Sort</span><div class="chips" id="f-sort"></div></div>
+  </div>
+  <div class="fgrid" id="fgrid"></div>
+</div></section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('fleet.html');
+const F=LB.FLEET;
+
+// evolution
+const eras=[
+  ['Heritage','1965 — 1999','Rear-engined deckers in madder & cream, from the Atlantean to the Olympian.',{type:'dd',fuel:'diesel',color:'#7a1228',band:'#efe7d2'}],
+  ['Low-floor','1999 — 2008','Step-free Tridents and the first Volvo/Wright Geminis transform accessibility.',{type:'dd',fuel:'diesel',color:'#8c1d35',band:'var(--gold)'}],
+  ['Modern','2008 — 2023','Hundreds of B9TL/B5TL deckers, hybrids and the extra-long XLB.',{type:'dd',fuel:'hybrid',color:'var(--madder)',band:'var(--gold)'}],
+  ['Electric','2024 —','The Volvo BZL Electric: silent, zero-tailpipe, same madder and gold.',{type:'dd',fuel:'electric',color:'var(--madder)',band:'var(--gold-soft)'}],
+];
+$('#evo').innerHTML=eras.map(([e,s,p,sil])=>`
+  <div class="evocard"><div class="e">${e}</div><div class="span">${s}</div>${busSil(Object.assign({w:230},sil))}<p>${p}</p></div>`).join('');
+
+// filters
+let state={type:'all',fuel:'all',era:'all',sort:'yr'};
+const typeOpts=[['all','All'],['dd','Double-deck'],['sd','Single-deck'],['ot','Open-top']];
+const fuelOpts=[['all','All'],['diesel','Diesel'],['hybrid','Hybrid'],['electric','Electric']];
+const eraOpts=[['all','All'],['Heritage','Heritage'],['Low-floor','Low-floor'],['Modern','Modern'],['Electric','Electric']];
+const sortOpts=[['yr','Newest'],['yrold','Oldest'],['cap','Capacity'],['name','Name']];
+function chips(host,opts,key){
+  $(host).innerHTML=opts.map(([v,l])=>`<button class="chip ${state[key]===v?'active':''}" data-v="${v}">${l}</button>`).join('');
+  $$(host+' .chip').forEach(c=>c.addEventListener('click',()=>{state[key]=c.dataset.v;chips(host,opts,key);draw();}));
+}
+function colorFor(f){return f==='electric'?'var(--madder)':f==='hybrid'?'var(--madder)':'#8c1d35';}
+function bandFor(f){return f==='electric'?'var(--gold-soft)':'var(--gold)';}
+function draw(){
+  let list=F.filter(v=>(state.type==='all'||v.type===state.type)&&(state.fuel==='all'||v.fuel===state.fuel)&&(state.era==='all'||v.era===state.era));
+  list.sort((a,b)=> state.sort==='yr'?b.yr-a.yr : state.sort==='yrold'?a.yr-b.yr : state.sort==='cap'?b.cap-a.cap : a.name.localeCompare(b.name));
+  $('#fcount').textContent='— '+list.length+' of '+F.length+' classes';
+  $('#fgrid').innerHTML = list.length? list.map(v=>`
+    <div class="fcard" data-id="${v.id}">
+      <div class="stat-tag st-${v.status}">${v.status}</div>
+      <div class="top"><span class="yr">${v.yr}</span><span class="badge b-${v.fuel}">${v.fuel}</span></div>
+      <div class="nm">${v.name}</div><div class="mk">${v.maker} · ${v.body}</div>
+      <div class="sil">${busSil({type:v.type,fuel:v.fuel,color:colorFor(v.fuel),band:bandFor(v.fuel),w:240})}</div>
+      <div class="spx"><span><b>${v.cap}</b> seats</span><span><b>${v.len}</b> m</span><span><b>${v.era}</b></span></div>
+      <div class="note">${v.note}</div>
+    </div>`).join('') : '<div class="empty">No classes match these filters.</div>';
+  $$('.fcard').forEach(c=>c.addEventListener('click',()=>c.classList.toggle('open')));
+}
+chips('#f-type',typeOpts,'type');chips('#f-fuel',fuelOpts,'fuel');chips('#f-era',eraOpts,'era');chips('#f-sort',sortOpts,'sort');
+draw();
+
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

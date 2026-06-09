@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>History — Lothian, Edinburgh's Buses</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  /* scrubber */
+  .scrub{position:relative;}
+  .scrub-stage{display:grid;grid-template-columns:1.1fr 0.9fr;gap:36px;align-items:center;
+    border:1px solid var(--hair);border-radius:18px;background:var(--card);padding:36px;min-height:300px;}
+  @media(max-width:840px){.scrub-stage{grid-template-columns:1fr;gap:24px;}}
+  .scrub-year{font-family:var(--display);font-weight:900;font-size:clamp(64px,11vw,128px);line-height:0.85;color:var(--madder);letter-spacing:-0.04em;}
+  .scrub-tag{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-deep);}
+  .scrub-title{font-family:var(--display);font-weight:800;font-size:clamp(22px,3vw,32px);margin:6px 0 14px;}
+  .scrub-desc{font-size:15.5px;line-height:1.62;color:var(--ink-2);max-width:460px;}
+  .scrub-vis{display:flex;align-items:center;justify-content:center;background:var(--card-2);border-radius:14px;border:1px solid var(--hair);padding:28px;}
+
+  .track-wrap{margin-top:26px;}
+  .ticks{position:relative;height:54px;margin:0 6px;}
+  .tickline{position:absolute;left:0;right:0;top:26px;height:3px;background:linear-gradient(90deg,var(--gold),var(--madder));border-radius:2px;opacity:.5;}
+  .tick{position:absolute;top:16px;width:13px;height:13px;border-radius:50%;background:var(--card);border:2.5px solid var(--madder);transform:translateX(-50%);cursor:pointer;transition:.18s;}
+  .tick:hover{transform:translateX(-50%) scale(1.3);}
+  .tick.on{background:var(--gold);border-color:var(--gold-deep);transform:translateX(-50%) scale(1.45);box-shadow:0 0 0 5px rgba(217,154,43,0.22);}
+  .tick .yr{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:9px;color:var(--ink-3);white-space:nowrap;}
+  input[type=range].slider{width:100%;margin-top:8px;accent-color:var(--madder);height:6px;cursor:pointer;}
+  .scrub-ctl{display:flex;gap:10px;align-items:center;margin-top:18px;flex-wrap:wrap;}
+
+  .tl{position:relative;margin-top:14px;}
+  .tl::before{content:"";position:absolute;left:18px;top:0;bottom:0;width:2px;background:var(--hair-strong);}
+  @media(min-width:760px){.tl::before{left:50%;}}
+  .tlrow{position:relative;padding:14px 0 14px 50px;}
+  @media(min-width:760px){
+    .tlrow{width:50%;padding:18px 40px;}
+    .tlrow:nth-child(even){margin-left:50%;}
+  }
+  .tldot{position:absolute;left:12px;top:24px;width:14px;height:14px;border-radius:50%;background:var(--madder);border:3px solid var(--paper);}
+  @media(min-width:760px){
+    .tlrow:nth-child(odd) .tldot{left:auto;right:-7px;}
+    .tlrow:nth-child(even) .tldot{left:-7px;}
+  }
+  .tlcard{border:1px solid var(--hair);border-radius:13px;background:var(--card);padding:18px 20px;transition:.2s;}
+  .tlcard:hover{border-color:var(--madder);transform:translateY(-2px);}
+  .tlcard .y{font-family:var(--display);font-weight:800;color:var(--gold-deep);font-size:20px;}
+  .tlcard .t{font-family:var(--display);font-weight:700;font-size:16.5px;margin:2px 0 7px;}
+  .tlcard .d{font-size:13.5px;color:var(--ink-2);line-height:1.55;}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div><div class="bg-grid"></div>
+
+<section class="phero"><div class="wrap reveal">
+  <div class="kick">Chapter 01 · The story</div>
+  <h1>A century on<br>Edinburgh's streets</h1>
+  <p>From horse-drawn rails in 1871 to silent electric deckers in 2024 — drag the scrubber through the decades that built Britain's largest municipal bus company.</p>
+</div></section>
+
+<section class="section-sm"><div class="wrap">
+  <div class="scrub reveal">
+    <div class="scrub-stage">
+      <div>
+        <div class="scrub-tag" id="sTag"></div>
+        <div class="scrub-year" id="sYear"></div>
+        <div class="scrub-title" id="sTitle"></div>
+        <div class="scrub-desc" id="sDesc"></div>
+      </div>
+      <div class="scrub-vis" id="sVis"></div>
+    </div>
+    <div class="track-wrap">
+      <div class="ticks" id="ticks"><div class="tickline"></div></div>
+      <input type="range" class="slider" id="slider" min="0" max="0" value="0" step="1">
+      <div class="scrub-ctl">
+        <button class="btn btn-primary" id="play">▸ Play through the decades</button>
+        <span class="mono" style="font-size:11px;color:var(--ink-3)" id="counter"></span>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<section class="section" style="padding-top:24px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">Every milestone</div><h2 style="margin-top:14px">The full timeline</h2></div></div>
+  <div class="tl reveal" id="tl"></div>
+</div></section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('history.html');
+const T=LB.TIMELINE;
+const slider=$('#slider'); slider.max=T.length-1;
+
+// era → silhouette
+function eraSil(y){
+  if(y<=1956) return busSil({type:'dd',fuel:'diesel',color:'#7a1228',band:'#efe7d2',w:300});
+  if(y<=1975) return busSil({type:'dd',fuel:'diesel',color:'#7a1228',band:'#efe7d2',w:300});
+  if(y<=2009) return busSil({type:'dd',fuel:'diesel',color:'#8c1d35',band:'var(--gold)',w:300});
+  if(y<=2015) return busSil({type:'dd',fuel:'hybrid',color:'#8c1d35',band:'var(--gold)',w:300});
+  if(y<=2023) return busSil({type:'dd',fuel:'hybrid',color:'var(--madder)',band:'var(--gold)',w:300});
+  return busSil({type:'dd',fuel:'electric',color:'var(--madder)',band:'var(--gold-soft)',w:300});
+}
+
+// ticks
+const minY=T[0].y, maxY=T[T.length-1].y, span=maxY-minY;
+$('#ticks').innerHTML='<div class="tickline"></div>'+T.map((m,i)=>{
+  const p=((m.y-minY)/span)*100;
+  return `<div class="tick" data-i="${i}" style="left:${p}%"><span class="yr">${m.y}</span></div>`;
+}).join('');
+const ticks=$$('.tick');
+
+function render(i){
+  const m=T[i];
+  $('#sTag').textContent='Milestone '+(i+1)+' of '+T.length;
+  $('#sYear').textContent=m.y;
+  $('#sTitle').textContent=m.t;
+  $('#sDesc').textContent=m.d;
+  $('#sVis').innerHTML=eraSil(m.y);
+  $('#counter').textContent=m.y+(m.y===2035?'  · target':'');
+  ticks.forEach((t,j)=>t.classList.toggle('on',j===i));
+  slider.value=i;
+}
+slider.addEventListener('input',()=>render(+slider.value));
+ticks.forEach(t=>t.addEventListener('click',()=>{stop();render(+t.dataset.i);}));
+
+// autoplay
+let timer=null;
+function stop(){if(timer){clearInterval(timer);timer=null;$('#play').textContent='▸ Play through the decades';}}
+$('#play').addEventListener('click',()=>{
+  if(timer){stop();return;}
+  $('#play').textContent='❚❚ Pause';
+  timer=setInterval(()=>{
+    let v=(+slider.value+1);
+    if(v>=T.length){v=0;}
+    render(v);
+    if(v===T.length-1){/* keep on last then loop */}
+  },1700);
+});
+
+render(1); // start at 1919
+
+// full timeline
+$('#tl').innerHTML=T.map(m=>`
+  <div class="tlrow"><div class="tldot"></div>
+    <div class="tlcard"><div class="y">${m.y}</div><div class="t">${m.t}</div><div class="d">${m.d}</div></div>
+  </div>`).join('');
+
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

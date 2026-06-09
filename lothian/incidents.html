@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resilience — Lothian, Edinburgh's Buses</title>
+<link rel="stylesheet" href="assets/theme.css">
+<style>
+  .safegrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  @media(max-width:760px){.safegrid{grid-template-columns:repeat(2,1fr);}}
+  .sf{border:1px solid var(--hair);border-radius:14px;background:var(--card);padding:22px;text-align:center;}
+  .sf .v{font-family:var(--display);font-weight:800;font-size:34px;color:var(--madder);line-height:1;}
+  .sf .l{font-size:12.5px;color:var(--ink-2);margin-top:9px;line-height:1.45;}
+  .ev{display:grid;grid-template-columns:120px 1fr;gap:22px;border:1px solid var(--hair);border-radius:14px;background:var(--card);padding:22px 24px;margin-bottom:14px;transition:.2s;}
+  .ev:hover{border-color:var(--madder);transform:translateX(3px);}
+  @media(max-width:620px){.ev{grid-template-columns:1fr;gap:8px;}}
+  .ev .yc{display:flex;flex-direction:column;gap:6px;}
+  .ev .y{font-family:var(--display);font-weight:800;font-size:30px;color:var(--gold-deep);line-height:1;}
+  .ev .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#fff;background:var(--madder);padding:3px 8px;border-radius:999px;width:fit-content;}
+  .ev .t{font-family:var(--display);font-weight:700;font-size:18px;}
+  .ev .d{font-size:14px;color:var(--ink-2);margin-top:6px;line-height:1.6;}
+  .acc{display:grid;grid-template-columns:repeat(2,1fr);gap:18px;margin-top:8px;}
+  @media(max-width:680px){.acc{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="bg-paper"></div><div class="bg-grid"></div>
+
+<section class="phero"><div class="wrap reveal">
+  <div class="kick">Chapter 07 · Keeping going</div>
+  <h1>Resilience &amp;<br>the safety record</h1>
+  <p>A blanket network is only as good as its worst day. Snowstorms, a pandemic and a driver shortage have all tested Lothian — and shaped a fleet built around safety and access for everyone.</p>
+</div></section>
+
+<section class="section-sm"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">Safety &amp; access</div><h2 style="margin-top:14px">Built for everyone</h2></div></div>
+  <div class="safegrid reveal" id="safe"></div>
+</div></section>
+
+<section class="section" style="padding-top:20px"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">Stress tests</div><h2 style="margin-top:14px">Notable operational events</h2>
+    <p>The moments that disrupted the network — and how the company responded.</p></div></div>
+  <div class="reveal" id="events"></div>
+</div></section>
+
+<section class="section" style="padding-top:0"><div class="wrap">
+  <div class="sectop reveal"><div><div class="eyebrow">Accessibility</div><h2 style="margin-top:14px">A bus anyone can board</h2></div></div>
+  <div class="acc reveal">
+    <div class="panel" style="padding:24px"><h3>Step-free, low-floor</h3><p style="margin-top:10px">The entire fleet is low-floor with a kneeling suspension and a ramp, so wheelchair users, buggies and the less mobile can board at street level. New double-deckers carry two wheelchair spaces.</p></div>
+    <div class="panel" style="padding:24px"><h3>Audio-visual announcements</h3><p style="margin-top:10px">“Next stop” is announced aloud and shown on screen across the fleet — vital for blind and partially-sighted passengers and anyone new to the city.</p></div>
+    <div class="panel" style="padding:24px"><h3>Quieter, clearer cabs</h3><p style="margin-top:10px">Electric and hybrid deckers cut noise and vibration, while camera-based mirror systems give drivers a wider, clearer field of view in poor weather.</p></div>
+    <div class="panel" style="padding:24px"><h3>Cleaner air</h3><p style="margin-top:10px">A 100% Euro6-or-better fleet since 2020 — and a growing electric core — directly improves air quality on Edinburgh’s busiest streets.</p></div>
+  </div>
+</div></section>
+
+<script src="assets/data.js"></script>
+<script src="assets/common.js"></script>
+<script>
+buildNav('incidents.html');
+$('#safe').innerHTML=LB.SAFETY.map(([v,l])=>`<div class="sf"><div class="v">${v}</div><div class="l">${l}</div></div>`).join('');
+$('#events').innerHTML=LB.EVENTS.map(e=>`
+  <div class="ev"><div class="yc"><div class="y">${e.y}</div><span class="tag">${e.tag}</span></div>
+    <div><div class="t">${e.t}</div><div class="d">${e.d}</div></div></div>`).join('');
+buildFooter();
+initReveal();
+</script>
+</body>
+</html>

@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "lothian",
+    title: "Lothian",
+    tagline: "Edinburgh's buses, a deep dive — a century of madder-and-gold deckers, 110 million journeys a year, a flat-fare network and the road to a net-zero fleet.",
+    url: "https://0x4d44.github.io/lothian/",
+    illustration: "ill-bus",
+    date: "2026-06-09T22:00:00",
+    year: 2025,
+    readingMin: 14,
+    words: 3200,
+    tags: ["transport", "history", "engineering"],
+    real: true,
+  },
+  {
     slug: "perth",
     title: "Perth on the Tay",
     tagline: "Eight centuries of a Scottish town, traced on a map that grows before your eyes — the medieval burgh on the river, the great Victorian railway junction, the A9 bypass that remade its edges, and the Wm Low and Iceland years that rewrote its weekly shop.",
@@ -560,7 +573,7 @@ window.ESSAYS = [
 ];
 
 // Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "maritime", "fiction", "software", "comic", "history", "math", "science", "finance", "engineering"];
+window.TAGS = ["all", "rail", "maritime", "transport", "fiction", "software", "comic", "history", "math", "science", "finance", "engineering"];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);
