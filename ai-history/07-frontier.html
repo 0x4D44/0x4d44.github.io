@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>07 · The Modern Frontier (2023–now) — AI Almanac</title>
+<meta name="description" content="The frontier labs and their flagship models, what AI can do today — text, code, image, video, music, voice, agents, science — plus reasoning, agents and the safety question." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="almanac.css" />
+<style>
+  .lab-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 14px; margin-top: 20px; }
+  .lab-card { border: 1px solid var(--rule); background: var(--bg-2); padding: 16px; position: relative; }
+  .lab-card::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--lc); box-shadow:0 0 10px var(--lc); }
+  .lab-card .lc-nm { font-size: 18px; color: var(--fg-bright); font-weight: 700; }
+  .lab-card .lc-meta { font-size: 10.5px; letter-spacing: 1px; text-transform: uppercase; color: var(--lc); margin: 4px 0 10px; }
+  .lab-card p { font-size: 13px; color: var(--fg); margin: 0 0 8px; }
+  .lab-card .lc-flag { font-size: 11px; color: var(--dim); border-top: 1px dashed var(--rule); padding-top: 8px; }
+  .lab-card .lc-flag b { color: var(--green); }
+
+  /* timeline */
+  .lb-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+  .lb-chip { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--rule); background: var(--bg-2); color: var(--dim); padding: 5px 10px; font-size: 11px; font-family: var(--mono); cursor: pointer; }
+  .lb-chip .sw { width: 9px; height: 9px; background: var(--lc); opacity: 0.3; }
+  .lb-chip.on { color: var(--fg); border-color: var(--lc); } .lb-chip.on .sw { opacity: 1; box-shadow: 0 0 6px var(--lc); }
+  .lb-scroller { overflow-x: auto; border: 1px solid var(--panel-edge); background: repeating-linear-gradient(0deg, rgba(20,22,13,0.5) 0 2px, rgba(12,14,7,0.5) 2px 3px); }
+  .lb-scroller::-webkit-scrollbar { height: 10px; } .lb-scroller::-webkit-scrollbar-track { background: var(--bg-2); }
+  .lb-scroller::-webkit-scrollbar-thumb { background: var(--dimmer); }
+  .lb-rail { position: relative; min-height: 200px; }
+  .lb-tick { position: absolute; top: 0; border-left: 1px dashed var(--rule-soft); }
+  .lb-tick span { position: absolute; top: -2px; left: 4px; font-size: 10px; color: var(--dim); }
+  .lb-row-lab { position: absolute; left: 8px; font-size: 11px; color: var(--lc); font-weight: 700; letter-spacing: 0.5px; width: 130px; }
+  .lb-row-line { position: absolute; height: 1px; background: var(--rule-soft); }
+  .lb-dot { position: absolute; background: none; border: none; cursor: pointer; padding: 0; transform: translate(-5px,-5px); }
+  .lb-dot .d { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--bg); border: 2px solid var(--lc); box-shadow: 0 0 6px var(--lc); }
+  .lb-dot .nm { position: absolute; left: 12px; top: -3px; font-size: 9.5px; color: var(--dim); white-space: nowrap; }
+  .lb-dot:hover .d, .lb-dot.sel .d { background: var(--lc); transform: scale(1.3); }
+  .lb-dot.sel .nm { color: var(--lc); }
+  .lb-detail { margin-top: 14px; }
+  .lb-d-empty { border: 1px dashed var(--rule); padding: 14px; color: var(--dim); font-size: 13px; text-align: center; }
+  .lb-d-card { border: 1px solid var(--rule); border-left: 4px solid var(--lc); background: rgba(16,18,9,0.6); padding: 14px 16px; }
+  .lb-d-head { display: flex; justify-content: space-between; font-size: 10.5px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .lb-d-head .lab { color: var(--lc); } .lb-d-head .when { color: var(--dim); }
+  .lb-d-title { font-size: 18px; color: var(--fg-bright); font-weight: 700; margin: 4px 0 4px; }
+  .lb-d-card p { font-size: 13px; color: var(--fg); margin: 0; }
+
+  /* showcase */
+  .show-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap: 14px; margin-top: 20px; }
+  .show { border: 1px solid var(--rule); background: var(--bg-2); padding: 16px; }
+  .show .sf { width: 34px; height: 34px; color: var(--amber); }
+  .show .sf svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+  .show h4 { font-size: 15px; color: var(--fg-bright); margin: 8px 0 6px; text-transform: none; letter-spacing: 0; }
+  .show p { font-size: 12.5px; color: var(--fg); margin: 0 0 8px; }
+  .show .ex { font-size: 11px; color: var(--dim); border-top: 1px dashed var(--rule); padding-top: 7px; }
+  .show .ex b { color: var(--green); }
+  .show.live { border-color: var(--green-lo); }
+  .show .livetag { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--green); border: 1px solid var(--green-lo); padding: 1px 6px; float: right; }
+  .show a { color: var(--amber); border-bottom: 1px dotted currentColor; }
+
+  /* music */
+  .mu-wrap { display: flex; flex-direction: column; }
+  .mu-scales { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+</style>
+</head>
+<body>
+
+<div class="field glow-bg" aria-hidden="true"></div>
+<div class="field scan" aria-hidden="true"></div>
+<div class="field grain" aria-hidden="true"></div>
+<div class="field vignette" aria-hidden="true"></div>
+<div class="field flicker" aria-hidden="true"></div>
+
+<!-- showcase icon sprite -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="s-text" viewBox="0 0 40 40"><rect x="8" y="8" width="24" height="24" rx="2"/><line x1="13" y1="15" x2="27" y2="15"/><line x1="13" y1="20" x2="27" y2="20"/><line x1="13" y1="25" x2="22" y2="25"/></symbol>
+  <symbol id="s-code" viewBox="0 0 40 40"><path d="M16 13 L9 20 L16 27"/><path d="M24 13 L31 20 L24 27"/><line x1="21" y1="11" x2="19" y2="29"/></symbol>
+  <symbol id="s-image" viewBox="0 0 40 40"><rect x="8" y="10" width="24" height="20" rx="2"/><circle cx="15" cy="17" r="2.5"/><path d="M8 27 L17 19 L23 24 L28 20 L32 24"/></symbol>
+  <symbol id="s-video" viewBox="0 0 40 40"><rect x="8" y="11" width="18" height="18" rx="2"/><path d="M26 17 L32 13 L32 27 L26 23 Z"/><path d="M14 16 L20 20 L14 24 Z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="s-music" viewBox="0 0 40 40"><path d="M16 26 V12 L28 9 V23"/><circle cx="13" cy="27" r="3"/><circle cx="25" cy="24" r="3"/></symbol>
+  <symbol id="s-voice" viewBox="0 0 40 40"><rect x="16" y="8" width="8" height="16" rx="4"/><path d="M12 20 a8 8 0 0 0 16 0"/><line x1="20" y1="28" x2="20" y2="33"/><line x1="15" y1="33" x2="25" y2="33"/></symbol>
+  <symbol id="s-agent" viewBox="0 0 40 40"><rect x="13" y="14" width="14" height="12" rx="2"/><circle cx="17" cy="20" r="1.6" fill="currentColor" stroke="none"/><circle cx="23" cy="20" r="1.6" fill="currentColor" stroke="none"/><line x1="20" y1="9" x2="20" y2="14"/><circle cx="20" cy="8" r="1.6"/><path d="M13 22 L8 22 M27 22 L32 22"/></symbol>
+  <symbol id="s-science" viewBox="0 0 40 40"><path d="M17 9 L17 18 L11 29 a2 2 0 0 0 2 3 L27 32 a2 2 0 0 0 2 -3 L23 18 L23 9"/><line x1="15" y1="9" x2="25" y2="9"/><line x1="14.5" y1="24" x2="25.5" y2="24"/></symbol>
+</defs></svg>
+
+<div class="topbar">
+  <div class="crumbs"><a href="index.html">almanac</a><span class="sep">/</span>07 · the modern frontier</div>
+  <a class="btn-link" href="index.html">◂ all eras</a>
+</div>
+
+<main class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">─── CHAPTER 07 ─── 2023 — NOW ─── <span class="blip">●</span> the gold rush</div>
+    <h1 class="title"><span class="prompt">#</span> The Modern Frontier</h1>
+    <p class="lede">
+      After ChatGPT, AI became an industry, a geopolitical contest, and a daily tool for hundreds of
+      millions. This final chapter maps the players, shows what the technology can actually do right now —
+      with live demos — and sits, honestly, with the questions we don't yet have answers to.
+    </p>
+  </header>
+
+  <div class="statusbar">
+    <span>7 labs · 1 model · live demos</span>
+    <span>the race · capabilities · agents · safety</span>
+    <span class="online">live</span>
+  </div>
+
+  <!-- ===== THE LABS ===== -->
+  <section class="section reveal">
+    <span class="eyebrow">who is building it</span>
+    <h2 class="h2"><span class="n">¶</span> The frontier labs</h2>
+    <div class="prose">
+      <p>A handful of organisations train the largest models. They differ less in architecture — almost all
+      are scaled Transformers — than in <em>philosophy</em>: how open to be, how fast to move, how much to
+      weigh capability against safety.</p>
+    </div>
+
+    <div class="lab-cards">
+      <div class="lab-card" style="--lc:#7ad96a">
+        <div class="lc-nm">OpenAI</div><div class="lc-meta">2015 · San Francisco</div>
+        <p>Founded as a non-profit to ensure AI "benefits all of humanity," now capped-profit. Bet earliest
+        and hardest on scale; built GPT and ChatGPT. Tightly partnered with Microsoft.</p>
+        <div class="lc-flag">flagship · <b>GPT-5, o-series reasoning</b></div>
+      </div>
+      <div class="lab-card" style="--lc:#5fc6d4">
+        <div class="lc-nm">Google DeepMind</div><div class="lc-meta">2010 / merged 2023 · London</div>
+        <p>The RL pioneers behind AlphaGo and AlphaFold, merged with Google Brain. Deep research bench;
+        strengths in science and multimodality.</p>
+        <div class="lc-flag">flagship · <b>Gemini family</b></div>
+      </div>
+      <div class="lab-card" style="--lc:#e2a64a">
+        <div class="lc-nm">Anthropic</div><div class="lc-meta">2021 · San Francisco</div>
+        <p>Founded by ex-OpenAI researchers focused on AI safety. Pioneered Constitutional AI and
+        interpretability research. Builds the Claude models.</p>
+        <div class="lc-flag">flagship · <b>Claude family</b></div>
+      </div>
+      <div class="lab-card" style="--lc:#a98fe0">
+        <div class="lc-nm">Meta AI (FAIR)</div><div class="lc-meta">2013 · Menlo Park</div>
+        <p>Champion of <em>open-weight</em> models. The Llama series put capable models in everyone's hands
+        and seeded a vast open ecosystem.</p>
+        <div class="lc-flag">flagship · <b>Llama (open weights)</b></div>
+      </div>
+      <div class="lab-card" style="--lc:#e2614a">
+        <div class="lc-nm">Mistral AI</div><div class="lc-meta">2023 · Paris</div>
+        <p>Europe's frontier contender. Famous for small, efficient, openly-licensed models that punch far
+        above their size.</p>
+        <div class="lc-flag">flagship · <b>Mistral / Mixtral</b></div>
+      </div>
+      <div class="lab-card" style="--lc:#cdd3bb">
+        <div class="lc-nm">xAI</div><div class="lc-meta">2023 · Bay Area</div>
+        <p>Elon Musk's lab, integrated with X. Scaled to a very large GPU cluster unusually fast; builds the
+        Grok models.</p>
+        <div class="lc-flag">flagship · <b>Grok</b></div>
+      </div>
+      <div class="lab-card" style="--lc:#f6c573">
+        <div class="lc-nm">DeepSeek</div><div class="lc-meta">2023 · Hangzhou</div>
+        <p>Chinese lab that stunned the field with efficient open reasoning models trained at a fraction of
+        expected cost — proof the frontier is not a Western monopoly.</p>
+        <div class="lc-flag">flagship · <b>DeepSeek-R1 (open)</b></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== FLAGSHIP TIMELINE ===== -->
+  <section class="section reveal" id="labs">
+    <span class="eyebrow">interactive</span>
+    <h2 class="h2"><span class="n">▸</span> Flagship release timeline</h2>
+    <div class="prose">
+      <p>The pace since 2022 is the real story. Toggle labs on and off, scroll through time, and click any
+      release for a one-line summary. Notice how releases cluster — the competitive ratchet in action.</p>
+    </div>
+    <div class="lab">
+      <div class="lab-head"><span class="lt">labs.v1 — flagship models 2018–2026</span><span class="meta">click a dot</span></div>
+      <div class="lab-body"><div id="labs-app"></div></div>
+    </div>
+  </section>
+
+  <!-- ===== TODAY SHOWCASE ===== -->
+  <section class="section reveal">
+    <span class="eyebrow">what it can do today</span>
+    <h2 class="h2"><span class="n">¶</span> The capability surface</h2>
+    <div class="prose">
+      <p>Each of these was, until recently, science fiction. Two of the cards below are <span class="green">live</span> —
+      you've already driven a text generator (Chapter 05) and an image denoiser (Chapter 06); the
+      music card runs a real generator right here.</p>
+    </div>
+
+    <div class="show-grid">
+      <div class="show live"><span class="livetag">live</span><div class="sf"><svg><use href="#s-text"/></svg></div>
+        <h4>Text &amp; chat</h4><p>Draft, summarise, translate, reason and converse across hundreds of languages.</p>
+        <div class="ex">try the live <a href="05-transformers.html#lab2">token sampler →</a></div></div>
+
+      <div class="show"><div class="sf"><svg><use href="#s-code"/></svg></div>
+        <h4>Code</h4><p>Write, explain, refactor and debug software; whole apps from a description. Agentic coding tools now edit repositories directly.</p>
+        <div class="ex"><b>e.g.</b> "add tests and fix the failing build"</div></div>
+
+      <div class="show live"><span class="livetag">live</span><div class="sf"><svg><use href="#s-image"/></svg></div>
+        <h4>Images</h4><p>Photorealistic or stylised pictures from a prompt; editing, inpainting and upscaling — via diffusion.</p>
+        <div class="ex">run the live <a href="06-generative.html#lab">diffusion denoiser →</a></div></div>
+
+      <div class="show"><div class="sf"><svg><use href="#s-video"/></svg></div>
+        <h4>Video</h4><p>Minute-long, coherent clips from text (Sora-class models). The hardest modality — physics and consistency are still imperfect.</p>
+        <div class="ex"><b>e.g.</b> "a paper boat sailing down a rain gutter"</div></div>
+
+      <div class="show live" id="music-card"><span class="livetag">live</span><div class="sf"><svg><use href="#s-music"/></svg></div>
+        <h4>Music</h4><p>Full songs with vocals from a prompt. The toy below composes a melody live in your browser.</p>
+        <div class="ex">scroll down for the <b>live melody generator ↓</b></div></div>
+
+      <div class="show"><div class="sf"><svg><use href="#s-voice"/></svg></div>
+        <h4>Voice &amp; audio</h4><p>Natural speech, real-time translation, voice cloning, and conversational assistants you can interrupt.</p>
+        <div class="ex"><b>e.g.</b> live spoken dialogue with sub-second latency</div></div>
+
+      <div class="show"><div class="sf"><svg><use href="#s-agent"/></svg></div>
+        <h4>Agents</h4><p>Models that use tools, browse, run code and take multi-step actions toward a goal — not just answer, but <em>do</em>.</p>
+        <div class="ex"><b>e.g.</b> "book the cheapest flight under 6 hours"</div></div>
+
+      <div class="show"><div class="sf"><svg><use href="#s-science"/></svg></div>
+        <h4>Science</h4><p>Protein folding (AlphaFold), weather, materials, maths proofs. AI as an instrument of discovery, not just a chatbot.</p>
+        <div class="ex"><b>e.g.</b> predicting 200M+ protein structures</div></div>
+    </div>
+  </section>
+
+  <!-- ===== LIVE MUSIC ===== -->
+  <section class="section reveal" id="lab">
+    <span class="eyebrow">interactive · live audio</span>
+    <h2 class="h2"><span class="n">▸</span> Generate music, live</h2>
+    <div class="prose">
+      <p>Real music models are huge, but the <em>principle</em> — sampling a sequence under learned
+      constraints — is the same one you met with text. This generator does a constrained random walk over a
+      musical scale and plays it with the Web Audio API. Change the scale, tempo and "drift," and hit play.</p>
+    </div>
+    <div class="lab">
+      <div class="lab-head"><span class="lt">music.v1 — live melodic walk</span><span class="meta">Web Audio · turn your sound on</span></div>
+      <div class="lab-body"><div id="music"></div></div>
+      <div class="lab-note"><b>Connection:</b> low <b>drift</b> gives safe, stepwise tunes (like low temperature in the text sampler); high drift leaps around and gets adventurous. Same trade-off, different medium.</div>
+    </div>
+  </section>
+
+  <!-- ===== AGENTS & REASONING ===== -->
+  <section class="section reveal">
+    <span class="eyebrow">2024–now · the next turn</span>
+    <h2 class="h2"><span class="n">¶</span> Reasoning &amp; agents</h2>
+    <div class="prose">
+      <p>Two shifts define the current frontier. First, <strong>reasoning models</strong> (OpenAI's o-series,
+      DeepSeek-R1, and others) are trained — using reinforcement learning, echoing Chapter 04 — to produce a
+      long internal "chain of thought" before answering. Spending more compute at <em>inference</em> time, not
+      just training time, sharply improves maths, code and logic.</p>
+      <p>Second, <strong>agents</strong>: models wrapped in loops that let them use tools, call other
+      software, browse, write and run code, and pursue multi-step goals with minimal supervision. The bet is
+      that the next leap comes not from a bigger brain alone, but from giving the brain <em>hands</em>.</p>
+    </div>
+  </section>
+
+  <!-- ===== SAFETY ===== -->
+  <section class="section reveal">
+    <span class="eyebrow">the open questions</span>
+    <h2 class="h2"><span class="n">¶</span> What we still don't know</h2>
+    <div class="prose">
+      <p>Capability has outrun understanding. Honest open problems, held without panic or hype:</p>
+      <ul>
+        <li><strong>Alignment.</strong> We train models to satisfy a reward proxy, not to share our values.
+        Ensuring powerful systems reliably do what we <em>mean</em> is unsolved.</li>
+        <li><strong>Interpretability.</strong> These are billion-parameter black boxes. We are only beginning
+        to read what happens inside them.</li>
+        <li><strong>Truth &amp; hallucination.</strong> A next-token predictor optimises for plausibility, not
+        accuracy, and will state falsehoods fluently.</li>
+        <li><strong>Impact.</strong> Jobs, education, misinformation, concentration of power, energy use, and
+        the data labour and consent behind training sets.</li>
+      </ul>
+      <div class="callout warn">
+        <span class="tag">the honest summary</span>
+        <p>We have built systems that are astonishingly capable and that we do not fully understand. The
+        history in this almanac is, ultimately, a story of <em>scale</em> producing surprises. The defining
+        question of the next chapter — the one not yet written — is whether we can make those surprises
+        ones we're glad to have.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== END ===== -->
+  <section class="section reveal">
+    <div class="callout key">
+      <span class="tag">the throughline</span>
+      <p>From Turing's tape to a trillion-parameter agent, one idea recurs: <em>don't hand-craft
+      intelligence — build a system that learns, then feed it data and compute.</em> Every winter came from
+      forgetting it; every spring from rediscovering it at a larger scale. You've now seen the whole arc —
+      and driven the machinery behind each turn.</p>
+    </div>
+    <div style="text-align:center; margin-top:30px;">
+      <a class="btn-link" href="quiz.html" style="padding:12px 22px; font-size:13px;">▸ Test yourself — take the quiz</a>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a class="prev" href="06-generative.html"><span class="dir">◂ previous</span><span class="nm">06 · Generative AI &amp; Diffusion</span></a>
+    <a class="next" href="index.html"><span class="dir">return to ▸</span><span class="nm">The Almanac</span></a>
+  </nav>
+
+  <footer class="page-footer">
+    <span>$ end-of-chapter — 07 · end-of-almanac</span>
+    <span>the modern frontier · 2023–now</span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<script src="chrome.js"></script>
+<script src="labs.js"></script>
+<script src="music.js"></script>
+</body>
+</html>

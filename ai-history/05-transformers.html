@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>05 · The Transformer Era (2017–2020) — AI Almanac</title>
+<meta name="description" content="Attention Is All You Need, BERT, the GPT line and the scaling laws. With an attention visualizer and a next-token sampler you can drive." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="almanac.css" />
+<style>
+  /* attention */
+  .at-wrap { display: flex; flex-direction: column; gap: 12px; }
+  .at-inputrow { display: flex; gap: 8px; }
+  .at-input { flex: 1; }
+  .at-presets, .at-heads { display: flex; flex-wrap: wrap; gap: 7px; }
+  /* sampler */
+  .sm-wrap { display: grid; grid-template-columns: 1fr 320px; gap: 22px; }
+  @media (max-width: 880px) { .sm-wrap { grid-template-columns: 1fr; } }
+  .sm-left, .sm-right { min-width: 0; }
+  .sm-out { border: 1px solid var(--rule); background: var(--bg); padding: 16px; min-height: 120px; font-size: 15px; line-height: 1.9; }
+  .sm-out .tk { color: var(--fg); }
+  .sm-out .tk-new { color: var(--bg); background: var(--green); padding: 1px 4px; }
+  .sm-dist { border: 1px solid var(--rule); background: var(--bg); padding: 12px; }
+  .sm-h { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+  .sm-row { display: grid; grid-template-columns: 78px 1fr 44px; gap: 8px; align-items: center; font-size: 12px; color: var(--fg); padding: 2px 0; }
+  .sm-row.cut { opacity: 0.4; }
+  .sm-w { color: var(--amber); }
+  .sm-row.cut .sm-w { color: var(--dim); text-decoration: line-through; }
+  .sm-bar { height: 9px; background: var(--bg-2); border: 1px solid var(--rule); position: relative; }
+  .sm-bar span { position: absolute; inset: 0 auto 0 0; background: var(--amber); opacity: 0.75; }
+  .sm-row.cut .sm-bar span { background: var(--dim); }
+  .sm-p { text-align: right; color: var(--green); }
+  .sm-row.cut .sm-p { color: var(--dim); }
+  .mc-toggle { flex-direction: row !important; align-items: center; gap: 6px; text-transform: none !important; letter-spacing: 0 !important; color: var(--dim); }
+  .gpt-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 10px; margin-top: 16px; }
+  .gpt-cell { border: 1px solid var(--rule); background: var(--bg-2); padding: 12px; }
+  .gpt-cell .v { font-size: 13px; color: var(--amber); font-weight: 700; } .gpt-cell .v b { color: var(--green); }
+  .gpt-cell .n { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="field glow-bg" aria-hidden="true"></div>
+<div class="field scan" aria-hidden="true"></div>
+<div class="field grain" aria-hidden="true"></div>
+<div class="field vignette" aria-hidden="true"></div>
+<div class="field flicker" aria-hidden="true"></div>
+
+<div class="topbar">
+  <div class="crumbs"><a href="index.html">almanac</a><span class="sep">/</span>05 · the transformer era</div>
+  <a class="btn-link" href="index.html">◂ all eras</a>
+</div>
+
+<main class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">─── CHAPTER 05 ─── 2017 — 2020 ─── <span class="blip">●</span> the architecture of now</div>
+    <h1 class="title"><span class="prompt">#</span> The Transformer Era</h1>
+    <p class="lede">
+      One 2017 paper reorganised the entire field around a single mechanism — <em>attention</em> — and the
+      discovery that you could make models smarter, almost without limit, simply by making them
+      <span class="green">bigger</span>. Everything you call "AI" in 2026 is a descendant of this chapter.
+    </p>
+  </header>
+
+  <div class="statusbar">
+    <span>4 milestones · 2 models</span>
+    <span>attention · BERT · GPT-1/2/3 · scaling laws</span>
+    <span class="online">live</span>
+  </div>
+
+  <section class="section reveal">
+    <span class="eyebrow">the problem with sequences</span>
+    <h2 class="h2"><span class="n">¶</span> Why recurrence had to go</h2>
+    <div class="prose">
+      <p><span class="lead-cap">U</span>ntil 2017, language models read text the way you read a sentence: one
+      word at a time, left to right, carrying a memory forward (the LSTMs of Chapter 03). This had two fatal
+      flaws at scale. It was <strong>sequential</strong> — you couldn't process word 50 until you'd done
+      word 49 — so it didn't exploit parallel GPUs. And it <strong>forgot</strong>: information from far back
+      degraded with every step.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">2017 · the paper</span>
+    <h2 class="h2"><span class="n">¶</span> Attention Is All You Need</h2>
+    <div class="prose">
+      <p>Vaswani and colleagues at Google proposed the <strong>Transformer</strong>, which threw out
+      recurrence entirely. Its core operation, <strong>self-attention</strong>, lets every token look at
+      every other token <em>at once</em> and decide which are relevant. For each token the model forms a
+      <em>query</em>, and every token offers a <em>key</em> and a <em>value</em>; the query is matched
+      against all keys, and the token pulls in a weighted blend of the values:</p>
+      <blockquote style="font-family:var(--mono);font-size:15px;color:var(--amber-hi)">
+        Attention(Q, K, V) = softmax( Q·Kᵀ / √d ) · V
+      </blockquote>
+      <p>Because it's just big matrix multiplications, it parallelises beautifully on GPUs, and because every
+      token can reach every other directly, distance no longer causes forgetting. Stack many such layers,
+      each with multiple attention <strong>"heads"</strong> that specialise in different relationships, and
+      you have the Transformer. The model below lets you see those heads at work.</p>
+    </div>
+  </section>
+
+  <!-- ===== INTERACTIVE 1: attention ===== -->
+  <section class="section reveal" id="lab">
+    <span class="eyebrow">Interactive model · 1 of 2</span>
+    <h2 class="h2"><span class="n">▸</span> Watch tokens attend</h2>
+    <div class="prose">
+      <p>Type a sentence and click any token to make it the <em>query</em>. The arcs and highlights show
+      which other tokens it attends to. Switch heads to see different patterns: a "previous-token" head that
+      just looks backward, a "coreference" head where pronouns find their noun, a "syntax" head linking
+      determiners and prepositions to their phrase, and a "content" head matching related words.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-head">
+        <span class="lt">attention.v1 — self-attention heads</span>
+        <span class="meta">Vaswani et al. 2017</span>
+      </div>
+      <div class="lab-body"><div id="attention"></div></div>
+      <div class="lab-note">
+        <b>Try this:</b> load <i>"the trophy did not fit in the suitcase because it was too big"</i>, pick the
+        <b>coreference</b> head, and click <b>it</b>. A real model has to decide whether "it" means the
+        trophy or the suitcase — the famous Winograd ambiguity. These heads are <i>illustrative</i>, but real
+        trained heads really do specialise like this.
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">2018–2019 · two branches</span>
+    <h2 class="h2"><span class="n">¶</span> BERT and GPT</h2>
+    <div class="prose">
+      <p>The Transformer split into two families. <strong>BERT</strong> (Google, 2018) read text in both
+      directions to build rich representations for understanding tasks — it quietly went into Google Search.
+      <strong>GPT</strong> (OpenAI, 2018) took the <em>decoder</em> half and did one thing: predict the next
+      token, left to right. Both followed the same recipe — <strong>pre-train</strong> on a vast pile of
+      unlabelled text, then <strong>fine-tune</strong> — and it generalised astonishingly well.</p>
+      <p><strong>GPT-2</strong> (2019, 1.5B parameters) wrote paragraphs coherent enough that OpenAI
+      initially withheld the full model as "too dangerous." It also revealed something uncanny: a model
+      trained only to predict the next word had implicitly learned to translate, summarise and answer
+      questions, just by being asked.</p>
+    </div>
+  </section>
+
+  <!-- ===== INTERACTIVE 2: sampler ===== -->
+  <section class="section reveal" id="lab2">
+    <span class="eyebrow">Interactive model · 2 of 2</span>
+    <h2 class="h2"><span class="n">▸</span> Sample the next token</h2>
+    <div class="prose">
+      <p>A language model doesn't "write" — it repeatedly predicts a <em>probability distribution</em> over
+      the next token, picks one, appends it, and predicts again. Below is a tiny model trained on a few
+      sentences. Each step shows its predicted distribution. Two knobs shape the output:</p>
+      <ul>
+        <li><strong>Temperature</strong> flattens or sharpens the distribution. Low = safe and repetitive;
+        high = surprising and eventually incoherent.</li>
+        <li><strong>Top-k</strong> only samples from the k most likely tokens, clipping the long tail of
+        nonsense.</li>
+      </ul>
+    </div>
+
+    <div class="lab">
+      <div class="lab-head">
+        <span class="lt">sampler.v1 — trigram language model</span>
+        <span class="meta">next-token prediction · temperature · top-k</span>
+      </div>
+      <div class="lab-body"><div id="sampler"></div></div>
+      <div class="lab-note">
+        <b>What to notice:</b> tick <b>greedy</b> (or set temperature near 0) and the model loops on its
+        single most-likely path. Crank temperature past ~1.4 and it spirals into word-salad. Real
+        deployments live in the sweet spot between — that "right" amount of randomness is a product decision.
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">2020 · the law</span>
+    <h2 class="h2"><span class="n">¶</span> Scaling laws &amp; GPT-3</h2>
+    <div class="prose">
+      <p>In 2020 OpenAI published <strong>scaling laws</strong>: model performance improves
+      <em>predictably</em> — as a smooth power law — as you increase parameters, data and compute together.
+      This turned research into something closer to engineering. You could forecast how good a model would be
+      <em>before training it</em>, and the chart said: keep going.</p>
+      <p>So they did. <strong>GPT-3</strong> (2020) had <strong>175 billion parameters</strong>, ~100× GPT-2.
+      It introduced <strong>in-context learning</strong>: show it a few examples in the prompt and it adapts
+      on the fly, no retraining. Capabilities nobody explicitly built — arithmetic, code, translation —
+      <em>emerged</em> from sheer scale. The "bitter lesson" from the hub, vindicated.</p>
+
+      <div class="gpt-grid">
+        <div class="gpt-cell"><div class="v">0.12<b>B</b></div><div class="n">GPT-1 · 2018</div></div>
+        <div class="gpt-cell"><div class="v">1.5<b>B</b></div><div class="n">GPT-2 · 2019</div></div>
+        <div class="gpt-cell"><div class="v">175<b>B</b></div><div class="n">GPT-3 · 2020</div></div>
+        <div class="gpt-cell"><div class="v">~100<b>×</b></div><div class="n">jump per gen</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="callout key">
+      <span class="tag">Carry-forward</span>
+      <p>The Transformer + scaling is the master key. The same architecture, made larger and pointed at
+      different data, becomes a chatbot, an image generator, a coding assistant, or a protein predictor. The
+      next two chapters are this key turning in different locks.</p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a class="prev" href="04-alphago.html"><span class="dir">◂ previous</span><span class="nm">04 · Games &amp; AlphaGo</span></a>
+    <a class="next" href="06-generative.html"><span class="dir">next chapter ▸</span><span class="nm">06 · Generative AI &amp; Diffusion</span></a>
+  </nav>
+
+  <footer class="page-footer">
+    <span>$ end-of-chapter — 05</span>
+    <span>the transformer era · 2017–2020</span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<script src="chrome.js"></script>
+<script src="attention.js"></script>
+<script src="sampler.js"></script>
+</body>
+</html>

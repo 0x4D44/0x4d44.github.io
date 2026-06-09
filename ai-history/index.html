@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>A History of Artificial Intelligence — Interactive Almanac</title>
+<meta name="description" content="An interactive, deeply detailed history of AI: the people, the ideas, and the machines — with working models that show how the technology actually works." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="almanac.css" />
+<link rel="stylesheet" href="timeline.css" />
+<style>
+  /* ---- hub-only styles ---- */
+  .icn { width: 100%; height: 100%; stroke: currentColor; fill: none;
+         stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+
+  .eras { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; margin-top: 22px; }
+  .era-card {
+    border: 1px solid var(--rule); background: var(--bg-2);
+    padding: 18px; display: flex; flex-direction: column;
+    transition: border-color .14s, background .14s, transform .14s;
+    position: relative; overflow: hidden;
+  }
+  .era-card::before {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+    background: var(--ac); box-shadow: 0 0 12px var(--ac); opacity: .85;
+  }
+  .era-card:hover { border-color: var(--ac); background: var(--bg-3); transform: translateY(-3px); }
+  .era-card .ec-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .era-card .ec-fig { width: 54px; height: 54px; color: var(--ac); flex: none; }
+  .era-card .ec-no { font-size: 11px; letter-spacing: 2px; color: var(--dim); }
+  .era-card .ec-yr { font-size: 11px; letter-spacing: 1px; color: var(--ac); margin-top: 12px; }
+  .era-card h3 { font-size: 21px; color: var(--fg-bright); margin: 3px 0 8px; line-height: 1.05; letter-spacing: -0.4px; }
+  .era-card p { font-size: 13px; color: var(--fg); margin: 0 0 12px; flex: 1; }
+  .era-card .ec-lab {
+    font-size: 10.5px; letter-spacing: 1px; color: var(--green);
+    border-top: 1px dashed var(--rule); padding-top: 9px; display: flex; align-items: center; gap: 7px;
+  }
+  .era-card .ec-lab::before { content: "▸"; color: var(--green); }
+  .era-card .ec-go { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ac); margin-top: 10px; }
+
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 20px; }
+  @media (max-width: 760px) { .pillars { grid-template-columns: 1fr; } }
+  .pillar { border: 1px solid var(--rule); background: var(--bg-2); padding: 16px; }
+  .pillar .pf { width: 36px; height: 36px; color: var(--cyan); }
+  .pillar h4 { font-size: 15px; color: var(--fg-bright); margin: 8px 0 6px; letter-spacing: 0; text-transform: none; }
+  .pillar p { font-size: 12.5px; color: var(--fg); margin: 0; }
+
+  #compute-chart { margin-top: 8px; }
+  .cc-info {
+    margin-top: 10px; font-size: 12.5px; color: var(--dim);
+    border-top: 1px dashed var(--rule); padding-top: 10px;
+  }
+  .cc-info b { color: var(--amber); }
+
+  .toys { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 18px; }
+  .toy { border: 1px solid var(--rule); background: var(--bg-2); padding: 13px 15px; transition: border-color .14s, background .14s; }
+  .toy:hover { border-color: var(--green); background: var(--bg-3); }
+  .toy .tn { font-size: 14px; color: var(--green); font-weight: 700; }
+  .toy .td { font-size: 12px; color: var(--fg); margin-top: 4px; }
+  .toy .tp { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-top: 8px; }
+
+  .quizcta {
+    margin-top: 28px; border: 1px solid var(--panel-edge); background: rgba(226,166,74,0.05);
+    padding: 22px; display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap;
+  }
+  .quizcta h3 { margin: 0 0 4px; font-size: 22px; color: var(--fg-bright); }
+  .quizcta p { margin: 0; font-size: 13px; color: var(--dim); }
+</style>
+</head>
+<body>
+
+<div class="field glow-bg" aria-hidden="true"></div>
+<div class="field scan" aria-hidden="true"></div>
+<div class="field grain" aria-hidden="true"></div>
+<div class="field vignette" aria-hidden="true"></div>
+<div class="field flicker" aria-hidden="true"></div>
+
+<!-- ============ SVG ICON SPRITE ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-origins" viewBox="0 0 100 100">
+    <rect x="12" y="44" width="76" height="16"/>
+    <line x1="26" y1="44" x2="26" y2="60"/><line x1="40" y1="44" x2="40" y2="60"/>
+    <line x1="54" y1="44" x2="54" y2="60"/><line x1="68" y1="44" x2="68" y2="60"/>
+    <path d="M47 30 L47 40 L53 40 L53 30 Z"/><line x1="50" y1="22" x2="50" y2="30"/>
+    <circle cx="50" cy="20" r="3"/>
+    <text x="32" y="56" font-size="9" fill="currentColor" stroke="none" font-family="JetBrains Mono">1</text>
+    <text x="60" y="56" font-size="9" fill="currentColor" stroke="none" font-family="JetBrains Mono">0</text>
+  </symbol>
+  <symbol id="i-symbolic" viewBox="0 0 100 100">
+    <circle cx="50" cy="22" r="7"/>
+    <circle cx="28" cy="54" r="7"/><circle cx="72" cy="54" r="7"/>
+    <circle cx="18" cy="82" r="6"/><circle cx="40" cy="82" r="6"/><circle cx="82" cy="82" r="6"/>
+    <line x1="45" y1="28" x2="32" y2="48"/><line x1="55" y1="28" x2="68" y2="48"/>
+    <line x1="24" y1="60" x2="20" y2="76"/><line x1="32" y1="60" x2="38" y2="76"/>
+    <line x1="74" y1="61" x2="81" y2="76"/>
+  </symbol>
+  <symbol id="i-connectionism" viewBox="0 0 100 100">
+    <g><circle cx="20" cy="30" r="5"/><circle cx="20" cy="50" r="5"/><circle cx="20" cy="70" r="5"/></g>
+    <g><circle cx="50" cy="24" r="5"/><circle cx="50" cy="44" r="5"/><circle cx="50" cy="64" r="5"/><circle cx="50" cy="84" r="5"/></g>
+    <g><circle cx="80" cy="40" r="5"/><circle cx="80" cy="60" r="5"/></g>
+    <g stroke-width="0.7" opacity="0.8">
+      <line x1="25" y1="30" x2="45" y2="24"/><line x1="25" y1="30" x2="45" y2="44"/><line x1="25" y1="30" x2="45" y2="64"/>
+      <line x1="25" y1="50" x2="45" y2="24"/><line x1="25" y1="50" x2="45" y2="44"/><line x1="25" y1="50" x2="45" y2="84"/>
+      <line x1="25" y1="70" x2="45" y2="44"/><line x1="25" y1="70" x2="45" y2="64"/><line x1="25" y1="70" x2="45" y2="84"/>
+      <line x1="55" y1="24" x2="75" y2="40"/><line x1="55" y1="44" x2="75" y2="40"/><line x1="55" y1="44" x2="75" y2="60"/>
+      <line x1="55" y1="64" x2="75" y2="60"/><line x1="55" y1="84" x2="75" y2="60"/>
+    </g>
+  </symbol>
+  <symbol id="i-games" viewBox="0 0 100 100">
+    <g stroke-width="0.8">
+      <line x1="22" y1="22" x2="22" y2="64"/><line x1="42" y1="22" x2="42" y2="64"/>
+      <line x1="62" y1="22" x2="62" y2="64"/>
+      <line x1="22" y1="22" x2="62" y2="22"/><line x1="22" y1="43" x2="62" y2="43"/><line x1="22" y1="64" x2="62" y2="64"/>
+    </g>
+    <circle cx="42" cy="43" r="7" fill="currentColor" stroke="none"/>
+    <circle cx="22" cy="22" r="5"/>
+    <line x1="62" y1="64" x2="74" y2="78"/>
+    <circle cx="78" cy="82" r="5"/><circle cx="66" cy="82" r="4"/>
+    <line x1="74" y1="78" x2="66" y2="80"/>
+  </symbol>
+  <symbol id="i-transformers" viewBox="0 0 100 100">
+    <g><rect x="14" y="20" width="14" height="12"/><rect x="34" y="20" width="14" height="12"/>
+       <rect x="54" y="20" width="14" height="12"/><rect x="74" y="20" width="12" height="12"/></g>
+    <g><rect x="14" y="68" width="14" height="12"/><rect x="34" y="68" width="14" height="12"/>
+       <rect x="54" y="68" width="14" height="12"/><rect x="74" y="68" width="12" height="12"/></g>
+    <g stroke-width="0.7" opacity="0.85">
+      <line x1="21" y1="32" x2="21" y2="68"/><line x1="21" y1="32" x2="41" y2="68"/><line x1="21" y1="32" x2="61" y2="68"/>
+      <line x1="41" y1="32" x2="21" y2="68"/><line x1="41" y1="32" x2="61" y2="68"/><line x1="41" y1="32" x2="80" y2="68"/>
+      <line x1="61" y1="32" x2="41" y2="68"/><line x1="61" y1="32" x2="80" y2="68"/>
+      <line x1="80" y1="32" x2="21" y2="68"/><line x1="80" y1="32" x2="61" y2="68"/>
+    </g>
+  </symbol>
+  <symbol id="i-generative" viewBox="0 0 100 100">
+    <rect x="16" y="22" width="30" height="56"/>
+    <g stroke="none" fill="currentColor" opacity="0.5">
+      <rect x="19" y="25" width="6" height="6"/><rect x="31" y="31" width="6" height="6"/><rect x="22" y="44" width="6" height="6"/>
+      <rect x="35" y="50" width="6" height="6"/><rect x="19" y="60" width="6" height="6"/><rect x="33" y="66" width="6" height="6"/>
+      <rect x="25" y="36" width="6" height="6"/><rect x="38" y="40" width="6" height="6"/>
+    </g>
+    <path d="M50 50 L62 50 M56 44 L64 50 L56 56"/>
+    <rect x="68" y="30" width="20" height="40"/>
+    <circle cx="74" cy="40" r="3" fill="currentColor" stroke="none"/>
+    <path d="M68 62 L76 52 L82 58 L88 50 L88 70 L68 70 Z" fill="currentColor" stroke="none" opacity="0.5"/>
+  </symbol>
+  <symbol id="i-frontier" viewBox="0 0 100 100">
+    <circle cx="50" cy="50" r="6"/>
+    <circle cx="22" cy="26" r="4"/><circle cx="78" cy="24" r="4"/><circle cx="84" cy="62" r="4"/>
+    <circle cx="58" cy="84" r="4"/><circle cx="20" cy="68" r="4"/><circle cx="44" cy="18" r="4"/>
+    <g stroke-width="0.7" opacity="0.8">
+      <line x1="45" y1="47" x2="25" y2="29"/><line x1="55" y1="47" x2="75" y2="27"/>
+      <line x1="56" y1="52" x2="80" y2="60"/><line x1="53" y1="56" x2="57" y2="80"/>
+      <line x1="45" y1="53" x2="23" y2="65"/><line x1="48" y1="45" x2="44" y2="22"/>
+    </g>
+  </symbol>
+  <symbol id="i-compute" viewBox="0 0 100 100">
+    <rect x="30" y="30" width="40" height="40" rx="2"/><rect x="42" y="42" width="16" height="16"/>
+    <g><line x1="38" y1="30" x2="38" y2="20"/><line x1="50" y1="30" x2="50" y2="20"/><line x1="62" y1="30" x2="62" y2="20"/>
+       <line x1="38" y1="70" x2="38" y2="80"/><line x1="50" y1="70" x2="50" y2="80"/><line x1="62" y1="70" x2="62" y2="80"/>
+       <line x1="30" y1="38" x2="20" y2="38"/><line x1="30" y1="50" x2="20" y2="50"/><line x1="30" y1="62" x2="20" y2="62"/>
+       <line x1="70" y1="38" x2="80" y2="38"/><line x1="70" y1="50" x2="80" y2="50"/><line x1="70" y1="62" x2="80" y2="62"/></g>
+  </symbol>
+  <symbol id="i-data" viewBox="0 0 100 100">
+    <ellipse cx="50" cy="28" rx="26" ry="9"/>
+    <path d="M24 28 V72 a26 9 0 0 0 52 0 V28"/>
+    <path d="M24 44 a26 9 0 0 0 52 0"/><path d="M24 58 a26 9 0 0 0 52 0"/>
+  </symbol>
+  <symbol id="i-algo" viewBox="0 0 100 100">
+    <path d="M18 26 L18 78 L82 78"/>
+    <path d="M22 40 C40 40 44 70 56 70 C70 70 70 34 82 30"/>
+    <circle cx="56" cy="70" r="4" fill="currentColor" stroke="none"/>
+    <line x1="56" y1="70" x2="50" y2="62" stroke-dasharray="2 2"/>
+    <line x1="56" y1="70" x2="64" y2="64" stroke-dasharray="2 2"/>
+  </symbol>
+</defs></svg>
+
+<main class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">─── AI ALMANAC ─── EDITION <span data-build>2026</span> ─── <span class="blip">●</span> a field assembled by hand, indexed by machine</div>
+    <h1 class="title"><span class="prompt">$</span> history --of ai<span class="cursor">_</span></h1>
+    <p class="lede">
+      Eighty years of trying to build a mind. This is the long version — the people who
+      imagined it, the ideas that made it possible, and the machines that finally worked.
+      Every era comes with a <span class="green">working model</span> you can poke at, because
+      the only way to really understand a perceptron, an attention head, or a diffusion
+      sampler is to <em>turn the knobs yourself</em>.
+    </p>
+  </header>
+
+  <div class="statusbar">
+    <span><span class="amber">7</span> eras · <span class="amber">7</span> interactive models · 30 milestones</span>
+    <span>Turing 1936 → frontier 2026</span>
+    <span class="online">live</span>
+  </div>
+
+  <!-- ============ MASTER TIMELINE ============ -->
+  <section class="section reveal">
+    <span class="eyebrow">The whole arc</span>
+    <h2 class="h2">Master timeline</h2>
+    <p class="prose">Scroll the rail. Each dot is a milestone; click one for the story and a way into the era it belongs to.</p>
+    <div id="timeline"></div>
+    <p class="tl-hint">drag or scroll the rail sideways to travel through time</p>
+  </section>
+
+  <!-- ============ ERAS ============ -->
+  <section class="section reveal">
+    <span class="eyebrow">Seven chapters</span>
+    <h2 class="h2">The eras</h2>
+    <p class="prose">Read them in order for the full narrative, or dive into whichever rabbit hole calls. Each chapter ends with an interactive model.</p>
+
+    <div class="eras">
+      <a class="era-card" href="01-origins.html" style="--ac: var(--cyan)">
+        <div class="ec-top"><div><div class="ec-no">01</div></div><div class="ec-fig"><svg class="icn"><use href="#i-origins"/></svg></div></div>
+        <div class="ec-yr">1936 — 1956</div>
+        <h3>Origins</h3>
+        <p>Turing's universal machine, the McCulloch–Pitts neuron, cybernetics, and the 1956 workshop that named the field.</p>
+        <div class="ec-lab">Build a perceptron and watch it learn a boundary</div>
+        <div class="ec-go">Enter chapter →</div>
+      </a>
+
+      <a class="era-card" href="02-symbolic.html" style="--ac: var(--red)">
+        <div class="ec-top"><div><div class="ec-no">02</div></div><div class="ec-fig"><svg class="icn"><use href="#i-symbolic"/></svg></div></div>
+        <div class="ec-yr">1956 — 1986</div>
+        <h3>Symbolic AI &amp; the Winters</h3>
+        <p>Logic machines, ELIZA, expert systems, the XOR problem that broke the perceptron, and two long funding freezes.</p>
+        <div class="ec-lab">Roll a ball down a loss surface with gradient descent</div>
+        <div class="ec-go">Enter chapter →</div>
+      </a>
+
+      <a class="era-card" href="03-connectionism.html" style="--ac: var(--violet)">
+        <div class="ec-top"><div><div class="ec-no">03</div></div><div class="ec-fig"><svg class="icn"><use href="#i-connectionism"/></svg></div></div>
+        <div class="ec-yr">1986 — 2012</div>
+        <h3>Connectionism &amp; Deep Learning</h3>
+        <p>Backpropagation revives neural nets; CNNs, LSTMs, ImageNet and finally AlexNet light the fuse.</p>
+        <div class="ec-lab">Explore word embeddings — king − man + woman</div>
+        <div class="ec-go">Enter chapter →</div>
+      </a>
+
+      <a class="era-card" href="04-alphago.html" style="--ac: var(--green)">
+        <div class="ec-top"><div><div class="ec-no">04</div></div><div class="ec-fig"><svg class="icn"><use href="#i-games"/></svg></div></div>
+        <div class="ec-yr">2012 — 2017</div>
+        <h3>Games &amp; AlphaGo</h3>
+        <p>Reinforcement learning from Atari pixels to the summit of Go — Move 37, AlphaZero, and learning by self-play.</p>
+        <div class="ec-lab">Run Monte-Carlo tree search on a small board</div>
+        <div class="ec-go">Enter chapter →</div>
+      </a>
+
+      <a class="era-card" href="05-transformers.html" style="--ac: var(--amber)">
+        <div class="ec-top"><div><div class="ec-no">05</div></div><div class="ec-fig"><svg class="icn"><use href="#i-transformers"/></svg></div></div>
+        <div class="ec-yr">2017 — 2020</div>
+        <h3>The Transformer Era</h3>
+        <p>"Attention Is All You Need" rewrites everything. BERT, the GPT line, and the scaling laws that predicted the future.</p>
+        <div class="ec-lab">Visualise attention + sample the next token</div>
+        <div class="ec-go">Enter chapter →</div>
+      </a>
+
+      <a class="era-card" href="06-generative.html" style="--ac: var(--amber-hi)">
+        <div class="ec-top"><div><div class="ec-no">06</div></div><div class="ec-fig"><svg class="icn"><use href="#i-generative"/></svg></div></div>
+        <div class="ec-yr">2020 — 2023</div>
+        <h3>Generative AI &amp; Diffusion</h3>
+        <p>CLIP, DALL·E and diffusion turn text into pictures; RLHF turns a language model into ChatGPT.</p>
+        <div class="ec-lab">Denoise an image one diffusion step at a time</div>
+        <div class="ec-go">Enter chapter →</div>
+      </a>
+
+      <a class="era-card" href="07-frontier.html" style="--ac: var(--green)">
+        <div class="ec-top"><div><div class="ec-no">07</div></div><div class="ec-fig"><svg class="icn"><use href="#i-frontier"/></svg></div></div>
+        <div class="ec-yr">2023 — now</div>
+        <h3>The Modern Frontier</h3>
+        <p>The labs, their flagship models, what AI can do today — music, video, code, voice, agents — and the safety question.</p>
+        <div class="ec-lab">Compare the labs + a flagship-release timeline</div>
+        <div class="ec-go">Enter chapter →</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ ENABLING TECH ============ -->
+  <section class="section reveal">
+    <span class="eyebrow">Why now, and not in 1970</span>
+    <h2 class="h2">The enabling technology</h2>
+    <p class="prose">
+      Most of the core ideas are surprisingly old. What changed wasn't cleverness but
+      <em>scale</em> — three curves bending upward at once. The single most important chart in
+      modern AI is the amount of computation poured into training a model. It has grown by
+      roughly a <span class="amber">hundred-billion-fold</span> since the perceptron.
+    </p>
+
+    <div class="frame cyan-edge">
+      <div class="frame-title">fig.0 — training compute over time</div>
+      <div id="compute-chart"></div>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pf"><svg class="icn"><use href="#i-compute"/></svg></div>
+        <h4>Compute</h4>
+        <p>Moore's law, then GPUs repurposed from gaming, then custom TPUs and AI accelerators. Parallel matrix multiply is the whole game.</p>
+      </div>
+      <div class="pillar">
+        <div class="pf"><svg class="icn"><use href="#i-data"/></svg></div>
+        <h4>Data</h4>
+        <p>The internet became a training set. ImageNet, Common Crawl, code, audio and video gave models trillions of examples to imitate.</p>
+      </div>
+      <div class="pillar">
+        <div class="pf"><svg class="icn"><use href="#i-algo"/></svg></div>
+        <h4>Algorithms</h4>
+        <p>Backprop, ReLU, attention, normalisation, Adam, and RLHF — small tricks that, stacked, let very deep networks actually train.</p>
+      </div>
+    </div>
+
+    <div class="callout key">
+      <span class="tag">The bitter lesson</span>
+      <p>In 2019 Rich Sutton argued that the methods which win, in the long run, are the ones that simply
+      <em>scale with compute</em> — general search and learning — not the ones where we hand-craft human knowledge.
+      The history below is, in large part, that lesson being learned the hard way, twice.</p>
+    </div>
+  </section>
+
+  <!-- ============ THE MODELS ============ -->
+  <section class="section reveal">
+    <span class="eyebrow">Learn by doing</span>
+    <h2 class="h2">The interactive models</h2>
+    <p class="prose">Seven working toys, one per era. No videos, no hand-waving — the real mechanism, simplified until you can see it move.</p>
+    <div class="toys">
+      <a class="toy" href="01-origins.html#lab"><div class="tn">Perceptron trainer</div><div class="td">Set weights, pick an activation, watch a line separate two classes.</div><div class="tp">Origins</div></a>
+      <a class="toy" href="02-symbolic.html#lab"><div class="tn">Gradient descent</div><div class="td">A ball rolling downhill on a loss surface — the heart of all learning.</div><div class="tp">Symbolic</div></a>
+      <a class="toy" href="03-connectionism.html#lab"><div class="tn">Word embeddings</div><div class="td">Meaning as geometry. Do arithmetic on words in 2-D space.</div><div class="tp">Connectionism</div></a>
+      <a class="toy" href="04-alphago.html#lab"><div class="tn">Tree search (MCTS)</div><div class="td">Watch a search tree grow as the machine reads ahead.</div><div class="tp">Games</div></a>
+      <a class="toy" href="05-transformers.html#lab"><div class="tn">Attention + sampling</div><div class="td">See tokens attend to each other; sample with temperature.</div><div class="tp">Transformers</div></a>
+      <a class="toy" href="06-generative.html#lab"><div class="tn">Diffusion denoiser</div><div class="td">Turn static into a picture, one reverse step at a time.</div><div class="tp">Generative</div></a>
+      <a class="toy" href="07-frontier.html#labs"><div class="tn">Lab comparator</div><div class="td">The frontier labs and their flagship model timeline, side by side.</div><div class="tp">Frontier</div></a>
+    </div>
+  </section>
+
+  <!-- ============ QUIZ CTA ============ -->
+  <section class="reveal">
+    <div class="quizcta">
+      <div>
+        <h3>Think you've got it?</h3>
+        <p>Twelve questions across the whole history. No peeking.</p>
+      </div>
+      <a class="btn-link" href="quiz.html" style="padding:12px 20px; font-size:13px;">Take the quiz →</a>
+    </div>
+  </section>
+
+  <footer class="page-footer">
+    <span>$ end-of-index</span>
+    <span>built as an interactive almanac · <span data-build>2026</span></span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<script src="chrome.js"></script>
+<script src="timeline.js"></script>
+<script src="compute-chart.js"></script>
+</body>
+</html>

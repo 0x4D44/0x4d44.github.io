@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>01 · Origins (1936–1956) — AI Almanac</title>
+<meta name="description" content="Turing's universal machine, the McCulloch–Pitts neuron, cybernetics, and the 1956 Dartmouth workshop that named the field. With a perceptron you can train." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="almanac.css" />
+<style>
+  /* perceptron widget */
+  .pc-wrap { display: grid; grid-template-columns: 480px 1fr; gap: 22px; }
+  @media (max-width: 880px) { .pc-wrap { grid-template-columns: 1fr; } }
+  .pc-readout {
+    display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim);
+  }
+  .pc-readout b { color: var(--amber); }
+  .pc-readout b.good { color: var(--green); }
+  .pc-side { min-width: 0; }
+  .pc-neuron { border: 1px solid var(--rule); background: var(--bg); padding: 10px; }
+  .pc-svg { width: 100%; height: auto; }
+  .pc-svg text.t { fill: var(--cyan); font: 13px JetBrains Mono, monospace; }
+  .pc-svg text.w { fill: var(--amber); font: 11px JetBrains Mono, monospace; }
+  .pc-svg text.s { fill: var(--fg-bright); font: 15px JetBrains Mono, monospace; }
+  .pc-svg line, .pc-svg circle, .pc-svg rect { stroke: var(--rule); fill: none; stroke-width: 1.2; }
+  .pc-svg circle { stroke: var(--amber); }
+  .pc-svg path.act { stroke: var(--green); fill: none; stroke-width: 1.5; }
+  .pc-hint { font-size: 12.5px; color: var(--dim); margin-top: 14px; max-width: 46ch; }
+  .pc-hint { line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="field glow-bg" aria-hidden="true"></div>
+<div class="field scan" aria-hidden="true"></div>
+<div class="field grain" aria-hidden="true"></div>
+<div class="field vignette" aria-hidden="true"></div>
+<div class="field flicker" aria-hidden="true"></div>
+
+<div class="topbar">
+  <div class="crumbs"><a href="index.html">almanac</a><span class="sep">/</span>01 · origins</div>
+  <a class="btn-link" href="index.html">◂ all eras</a>
+</div>
+
+<main class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">─── CHAPTER 01 ─── 1936 — 1956 ─── <span class="blip">●</span> the idea before the hardware</div>
+    <h1 class="title"><span class="prompt">#</span> Origins</h1>
+    <p class="lede">
+      Before a single neural network ran, the entire enterprise had to be imagined: a machine
+      that could compute <em>anything</em>, a mathematics of thought, a model of the neuron, and
+      finally a name. The founding decade of AI was almost pure theory — and almost all of it
+      still holds.
+    </p>
+  </header>
+
+  <div class="statusbar">
+    <span>5 milestones · 1 model</span>
+    <span>Turing · McCulloch–Pitts · Wiener · Shannon · McCarthy · Rosenblatt</span>
+    <span class="online">live</span>
+  </div>
+
+  <!-- ===== narrative ===== -->
+  <section class="section reveal">
+    <span class="eyebrow">The dream</span>
+    <h2 class="h2"><span class="n">¶</span> A calculus of thought</h2>
+    <div class="prose">
+      <p><span class="lead-cap">T</span>he ambition is old. In the 17th century Leibniz dreamed of a
+      <em>characteristica universalis</em> — a symbolic language so precise that disputes could be
+      settled by saying "let us calculate." In 1854 George Boole turned logic into algebra. But these
+      were notations for human reasoning. The leap that begins our story is the idea that reasoning
+      itself could be <strong>mechanised</strong> — carried out by a machine following fixed rules, with
+      no understanding required.</p>
+
+      <p>That leap was made, almost as a side effect, by a 24-year-old trying to settle a question in
+      the foundations of mathematics.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1936</span>
+    <h2 class="h2"><span class="n">¶</span> Turing's universal machine</h2>
+    <div class="prose">
+      <p>In <strong>On Computable Numbers</strong> (1936), <strong>Alan Turing</strong> imagined an
+      absurdly simple device: a tape of cells, a head that reads and writes one symbol at a time, and a
+      table of rules. He proved two staggering things. First, that some problems are
+      <em>undecidable</em> — no procedure can solve them. Second, and more important for us, that a
+      single <strong>universal machine</strong> could simulate <em>any</em> other machine, given a
+      description of it on its tape.</p>
+
+      <p>This is the seed of everything. A computer is not a calculator for one task; it is a
+      shape-shifter that becomes whatever program you feed it. Every model in this almanac — every
+      perceptron, transformer and diffusion sampler — is ultimately a program running on a descendant of
+      Turing's universal machine.</p>
+
+      <div class="callout">
+        <span class="tag">read the head</span>
+        <p>The Turing machine is deliberately the dumbest possible computer: read a symbol, write a
+        symbol, move left or right, change state. Its power comes entirely from <em>composition</em> —
+        and from the tape being long enough. "Intelligence" might be the same trick at a vastly larger scale.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1943</span>
+    <h2 class="h2"><span class="n">¶</span> The neuron as a logic gate</h2>
+    <div class="prose">
+      <p>Where Turing abstracted computation, <strong>Warren McCulloch</strong> (a neurophysiologist) and
+      <strong>Walter Pitts</strong> (a self-taught logician, still a teenager) abstracted the brain. Their
+      1943 paper, <em>A Logical Calculus of the Ideas Immanent in Nervous Activity</em>, modelled a neuron
+      as a binary threshold unit: it sums weighted inputs, and fires if the sum crosses a threshold.</p>
+
+      <p>With these units you can build AND, OR and NOT gates — and therefore, in principle, any logical
+      function. For the first time, "thinking" and "computing" were the same kind of thing. The
+      McCulloch–Pitts neuron is the direct ancestor of every artificial neuron you will train below.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1948</span>
+    <h2 class="h2"><span class="n">¶</span> Feedback &amp; information</h2>
+    <div class="prose">
+      <p>Two 1948 works supplied the missing vocabulary. <strong>Norbert Wiener's</strong>
+      <em>Cybernetics</em> studied <strong>feedback</strong> — systems that sense their own output and
+      correct course, from thermostats to gun-laying radar to, perhaps, goal-seeking minds. The same year,
+      <strong>Claude Shannon's</strong> <em>A Mathematical Theory of Communication</em> defined the
+      <strong>bit</strong> and showed how to measure information precisely, independent of meaning.</p>
+
+      <p>Feedback gives a machine the notion of an <em>error to reduce</em>; information theory gives it a
+      currency to optimise. Learning, as we will see, is just feedback on an error signal — a thread that
+      runs straight through to backpropagation and RLHF.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1950</span>
+    <h2 class="h2"><span class="n">¶</span> Can machines think?</h2>
+    <div class="prose">
+      <p>Turing returned in 1950 with <em>Computing Machinery and Intelligence</em>. Rather than define
+      "think," he proposed a test: the <strong>Imitation Game</strong>. If a human interrogator, exchanging
+      typed messages, cannot reliably tell a machine from a person, then quibbling about whether it "really"
+      thinks is, he argued, beside the point. He also answered, in advance, nine objections — including the
+      one we still argue about, that a machine only does "what we tell it to."</p>
+
+      <blockquote>
+        We can only see a short distance ahead, but we can see plenty there that needs to be done.
+        <cite>— A. M. Turing, 1950</cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1956</span>
+    <h2 class="h2"><span class="n">¶</span> The field gets a name</h2>
+    <div class="prose">
+      <p>In the summer of 1956, <strong>John McCarthy</strong> convened a workshop at
+      <strong>Dartmouth College</strong> with <strong>Marvin Minsky</strong>, <strong>Nathaniel
+      Rochester</strong> and <strong>Claude Shannon</strong>. The proposal contained the field's founding
+      sentence — and its founding overconfidence:</p>
+
+      <blockquote>
+        Every aspect of learning or any other feature of intelligence can in principle be so precisely
+        described that a machine can be made to simulate it.
+        <cite>— Dartmouth proposal, 1955</cite>
+      </blockquote>
+
+      <p>They expected significant progress in a single summer with ten people. That estimate was off by
+      roughly seventy years. But the term <strong>"Artificial Intelligence"</strong> stuck, the founders
+      shaped the field for decades, and the agenda — learning, language, abstraction, self-improvement — is
+      still the agenda.</p>
+    </div>
+  </section>
+
+  <!-- ===== personae ===== -->
+  <section class="section reveal">
+    <span class="eyebrow">Dramatis personae</span>
+    <h2 class="h2"><span class="n">¶</span> Who was in the room</h2>
+    <div class="cardgrid">
+      <div class="person"><div class="nm">Alan Turing</div><div class="yr">1912–1954</div><div class="role">Foundations</div><p>Universal computation, the Imitation Game, and early thinking on machine learning.</p></div>
+      <div class="person"><div class="nm">McCulloch &amp; Pitts</div><div class="yr">1943</div><div class="role">The artificial neuron</div><p>Modelled the neuron as a threshold logic unit — the seed of neural networks.</p></div>
+      <div class="person"><div class="nm">Norbert Wiener</div><div class="yr">1894–1964</div><div class="role">Cybernetics</div><p>Feedback and control as the basis of purposeful, self-correcting machines.</p></div>
+      <div class="person"><div class="nm">Claude Shannon</div><div class="yr">1916–2001</div><div class="role">Information theory</div><p>The bit, channel capacity, and a way to measure information itself.</p></div>
+      <div class="person"><div class="nm">John McCarthy</div><div class="yr">1927–2011</div><div class="role">Named the field</div><p>Coined "Artificial Intelligence", convened Dartmouth, later invented Lisp.</p></div>
+      <div class="person"><div class="nm">Frank Rosenblatt</div><div class="yr">1928–1971</div><div class="role">The perceptron</div><p>Built a learning machine in hardware and proved when it must converge.</p></div>
+    </div>
+  </section>
+
+  <!-- ===== INTERACTIVE ===== -->
+  <section class="section reveal" id="lab">
+    <span class="eyebrow">Interactive model</span>
+    <h2 class="h2"><span class="n">▸</span> Train a perceptron</h2>
+    <div class="prose">
+      <p>In 1957 <strong>Frank Rosenblatt</strong> turned the McCulloch–Pitts neuron into something that
+      <em>learns</em>. The <strong>perceptron</strong> takes inputs, multiplies them by adjustable
+      <em>weights</em>, sums, and fires through an activation function. Crucially, when it gets an example
+      wrong, it nudges its weights toward the right answer. Do that enough times and the weights define a
+      line that separates the two classes.</p>
+      <p>Below is exactly that machine, with two inputs. Step through training, or let it run, and watch the
+      amber boundary swing into place. The neuron diagram on the right is what's being adjusted.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-head">
+        <span class="lt">perceptron.v1 — single neuron, 2 inputs</span>
+        <span class="meta">Rosenblatt 1957 · learning rule</span>
+      </div>
+      <div class="lab-body">
+        <div id="perceptron"></div>
+      </div>
+      <div class="lab-note">
+        <b>What to notice:</b> with clean data the line always settles — that's the Perceptron Convergence
+        Theorem. Turn up <b>data noise</b> so the classes overlap and the boundary will jitter forever,
+        never satisfying every point. That single weakness is where Chapter 02 begins.
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="callout key">
+      <span class="tag">Carry-forward</span>
+      <p>Three ideas leave this chapter and never go away: <em>universal computation</em> (a machine can
+      become any program), <em>the artificial neuron</em> (intelligence as weighted sums and thresholds),
+      and <em>learning as error-correction</em> (feedback toward a goal). Hold onto them — every later
+      chapter is a remix.</p>
+    </div>
+  </section>
+
+  <!-- ===== pager ===== -->
+  <nav class="pager">
+    <a class="prev" href="index.html"><span class="dir">◂ back to</span><span class="nm">The Almanac</span></a>
+    <a class="next" href="02-symbolic.html"><span class="dir">next chapter ▸</span><span class="nm">02 · Symbolic AI &amp; the Winters</span></a>
+  </nav>
+
+  <footer class="page-footer">
+    <span>$ end-of-chapter — 01</span>
+    <span>origins · 1936–1956</span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<script src="chrome.js"></script>
+<script src="perceptron.js"></script>
+</body>
+</html>

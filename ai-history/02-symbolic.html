@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>02 · Symbolic AI &amp; the Winters (1956–1986) — AI Almanac</title>
+<meta name="description" content="Logic machines, ELIZA, expert systems, the XOR problem that broke the perceptron, the AI winters, and the rediscovery of backpropagation. With a gradient-descent playground." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="almanac.css" />
+<style>
+  .gd-wrap { display: grid; grid-template-columns: 460px 1fr; gap: 22px; }
+  @media (max-width: 880px) { .gd-wrap { grid-template-columns: 1fr; } }
+  .gd-side { min-width: 0; }
+  .gd-readout { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); }
+  .gd-readout b { color: var(--amber); }
+  .gd-surf { display: flex; flex-wrap: wrap; gap: 7px; }
+  .gd-surf .btn { font-size: 11px; padding: 6px 10px; }
+  .gd-note { font-size: 12.5px; color: var(--fg); margin-top: 14px; max-width: 46ch; line-height: 1.6; }
+  .gd-note.dim { color: var(--dim); }
+  .xor-table { border-collapse: collapse; margin: 10px 0; font-size: 13px; }
+  .xor-table th, .xor-table td { border: 1px solid var(--rule); padding: 5px 14px; text-align: center; }
+  .xor-table th { color: var(--green); font-weight: 700; }
+  .xor-table td.one { color: var(--cyan); } .xor-table td.zero { color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="field glow-bg" aria-hidden="true"></div>
+<div class="field scan" aria-hidden="true"></div>
+<div class="field grain" aria-hidden="true"></div>
+<div class="field vignette" aria-hidden="true"></div>
+<div class="field flicker" aria-hidden="true"></div>
+
+<div class="topbar">
+  <div class="crumbs"><a href="index.html">almanac</a><span class="sep">/</span>02 · symbolic ai &amp; the winters</div>
+  <a class="btn-link" href="index.html">◂ all eras</a>
+</div>
+
+<main class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">─── CHAPTER 02 ─── 1956 — 1986 ─── <span class="blip">●</span> logic, hubris, and two long freezes</div>
+    <h1 class="title"><span class="prompt">#</span> Symbolic AI<br>&amp; the Winters</h1>
+    <p class="lede">
+      For thirty years the dominant bet was that intelligence is <em>symbol manipulation</em> — that if you
+      could write enough rules and facts, reasoning would follow. It produced real triumphs and a famous
+      chatbot, then collided with problems it couldn't scale past, and funding froze. Twice. Out of the
+      wreckage came the algorithm that powers everything today: <span class="green">backpropagation</span>.
+    </p>
+  </header>
+
+  <div class="statusbar">
+    <span>6 milestones · 1 model</span>
+    <span>Logic Theorist · ELIZA · XOR · winters · expert systems · backprop</span>
+    <span class="online">live</span>
+  </div>
+
+  <section class="section reveal">
+    <span class="eyebrow">1956–1969 · the golden years</span>
+    <h2 class="h2"><span class="n">¶</span> Good Old-Fashioned AI</h2>
+    <div class="prose">
+      <p><span class="lead-cap">T</span>he first paradigm had a name in hindsight: <strong>GOFAI</strong>,
+      Good Old-Fashioned AI. Its creed, later stated sharply by Allen Newell and Herbert Simon, was the
+      <strong>physical symbol system hypothesis</strong>: a system that manipulates symbols has the
+      necessary and sufficient means for general intelligent action. Thought is computation over symbols;
+      build the right rules and you build a mind.</p>
+
+      <p>The early results were genuinely dazzling. Newell &amp; Simon's <strong>Logic Theorist</strong>
+      (1956) proved theorems from <em>Principia Mathematica</em> — one proof more elegant than the
+      original. Their <strong>General Problem Solver</strong> chased goals by reducing differences between
+      a current and desired state. Programs played checkers, solved algebra word problems, and stacked
+      blocks in toy "micro-worlds." McCarthy invented <strong>Lisp</strong> (1958), the language of AI for
+      decades. Optimism ran hot: Simon predicted in 1965 that machines would, within twenty years, do any
+      work a person could.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1966</span>
+    <h2 class="h2"><span class="n">¶</span> ELIZA and the illusion of understanding</h2>
+    <div class="prose">
+      <p>Joseph Weizenbaum's <strong>ELIZA</strong> (1966) parodied a psychotherapist by reflecting your
+      words back as questions — pure pattern-matching, no comprehension whatsoever. To Weizenbaum's alarm,
+      people poured their hearts out to it and insisted it understood them. The <strong>ELIZA
+      effect</strong> — our eagerness to read a mind into a machine that merely echoes us — is worth
+      remembering every time a modern chatbot sounds profound.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1969 · the first crack</span>
+    <h2 class="h2"><span class="n">¶</span> The XOR problem</h2>
+    <div class="prose">
+      <p>Meanwhile the rival, connectionist camp had Rosenblatt's perceptron (Chapter 01). In 1969
+      <strong>Marvin Minsky</strong> and <strong>Seymour Papert</strong> published <em>Perceptrons</em>, a
+      precise mathematical demolition. A single-layer perceptron can only draw a <em>straight line</em>
+      between classes. Some patterns have no such line — most famously <strong>exclusive-or (XOR)</strong>:</p>
+
+      <table class="xor-table">
+        <tr><th>x₁</th><th>x₂</th><th>XOR</th></tr>
+        <tr><td>0</td><td>0</td><td class="zero">0</td></tr>
+        <tr><td>0</td><td>1</td><td class="one">1</td></tr>
+        <tr><td>1</td><td>0</td><td class="one">1</td></tr>
+        <tr><td>1</td><td>1</td><td class="zero">0</td></tr>
+      </table>
+
+      <p>Plot those four points and try to separate the 1s from the 0s with one line. You can't — the
+      classes are diagonally opposite. The fix was known in principle: <em>stack</em> layers of neurons so
+      they can carve curved regions. But nobody had a reliable way to <strong>train</strong> a multi-layer
+      network. The book's pessimism, fairly or not, helped drain neural-network funding for over a decade.</p>
+
+      <div class="callout warn">
+        <span class="tag">a useful failure</span>
+        <p>Go back to the <a href="01-origins.html#lab">perceptron in Chapter 01</a> and try to place four
+        points in the XOR arrangement. No setting of the weights will ever classify all four — the single
+        neuron is fundamentally too simple. That wall is the whole reason deep networks exist.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1974 &amp; 1987 · the winters</span>
+    <h2 class="h2"><span class="n">¶</span> When the funding froze</h2>
+    <div class="prose">
+      <p>AI's promises had outrun its results. In 1973 the UK's <strong>Lighthill Report</strong> judged the
+      field a disappointment and gutted British funding; US agencies pulled back too. This
+      <strong>first AI winter</strong> (~1974–1980) was about <em>combinatorial explosion</em> — toy
+      methods that worked on micro-worlds drowned in the complexity of the real one.</p>
+
+      <p>A thaw came with <strong>expert systems</strong> in the early 1980s. These encoded a specialist's
+      rules — <em>if</em> these symptoms <em>then</em> that diagnosis. <strong>MYCIN</strong> advised on
+      infections; Digital Equipment's <strong>XCON</strong> configured computer orders and reportedly saved
+      tens of millions a year. An industry bloomed around Lisp machines and knowledge engineering.</p>
+
+      <p>Then the <strong>second winter</strong> (~1987–1993). Expert systems were brittle: expensive to
+      build, impossible to scale, and helpless outside their narrow rules. They had no common sense and
+      couldn't learn. The specialised Lisp-machine market collapsed almost overnight when cheap general
+      workstations caught up. "AI" became a word you avoided in grant applications.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1986 · the quiet revolution</span>
+    <h2 class="h2"><span class="n">¶</span> Backpropagation</h2>
+    <div class="prose">
+      <p>Even as the symbolic industry cooled, the answer to Minsky &amp; Papert's challenge arrived. In
+      1986 <strong>David Rumelhart, Geoffrey Hinton and Ronald Williams</strong> popularised
+      <strong>backpropagation</strong> — a way to train multi-layer networks. (The core idea had been
+      derived earlier, notably by Paul Werbos in 1974, and is, at heart, the chain rule of calculus.)</p>
+
+      <p>The trick: make every neuron's activation <em>smooth</em> rather than a hard threshold, so the
+      whole network is a differentiable function. Define a <strong>loss</strong> measuring how wrong the
+      output is. Then compute how the loss changes with respect to <em>every</em> weight — propagating the
+      error backward through the layers — and nudge each weight a little downhill. Repeat millions of times.</p>
+
+      <p>That "nudge each weight downhill" is <strong>gradient descent</strong>, and it is the single most
+      important procedure in modern AI. A trillion-parameter language model is trained by exactly this loop,
+      just enormously scaled. The model below lets you watch it happen on a landscape you can actually see.</p>
+    </div>
+  </section>
+
+  <!-- ===== INTERACTIVE ===== -->
+  <section class="section reveal" id="lab">
+    <span class="eyebrow">Interactive model</span>
+    <h2 class="h2"><span class="n">▸</span> Roll downhill — gradient descent</h2>
+    <div class="prose">
+      <p>Imagine the network's error as a <em>landscape</em>: every possible setting of the weights is a
+      point on the ground, and the height is the loss. Training means finding the lowest valley. Gradient
+      descent does it the way water does — always step in the steepest downhill direction.</p>
+      <p>Here the landscape is 2-D so you can see it (a real model's is billion-dimensional). Pick a
+      surface, drop the ball, and tune the <em>learning rate</em> — the step size. Too small and it crawls;
+      too large and it overshoots and diverges. Add <em>momentum</em> to power through the ravine.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-head">
+        <span class="lt">descent.v1 — loss surface explorer</span>
+        <span class="meta">Rumelhart–Hinton–Williams 1986 · the chain rule</span>
+      </div>
+      <div class="lab-body"><div id="gradient"></div></div>
+      <div class="lab-note">
+        <b>What to notice:</b> on <b>Twin valleys</b>, where you start decides which minimum you fall into —
+        that's a <b>local minimum</b>, and it haunted neural nets for years. On the <b>Ravine</b>, crank the
+        learning rate and watch it bounce off the walls and diverge; then add <b>momentum</b> and it sails
+        through. These are the exact knobs practitioners still tune today.
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="callout key">
+      <span class="tag">Carry-forward</span>
+      <p>The symbolic era's lesson is double-edged: hand-written rules don't scale to the messiness of the
+      real world, but its replacement — <em>differentiable networks trained by gradient descent</em> — was
+      sitting ready by 1986. All that was missing was enough data and enough compute. Both were coming.</p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a class="prev" href="01-origins.html"><span class="dir">◂ previous</span><span class="nm">01 · Origins</span></a>
+    <a class="next" href="03-connectionism.html"><span class="dir">next chapter ▸</span><span class="nm">03 · Connectionism &amp; Deep Learning</span></a>
+  </nav>
+
+  <footer class="page-footer">
+    <span>$ end-of-chapter — 02</span>
+    <span>symbolic ai &amp; the winters · 1956–1986</span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<script src="chrome.js"></script>
+<script src="gradient.js"></script>
+</body>
+</html>

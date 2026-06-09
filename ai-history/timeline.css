@@ -1,0 +1,122 @@
+/* Master timeline styles (hub only) */
+#timeline { margin-top: 22px; }
+
+.tl-legend {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 16px;
+}
+.tl-leg {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--rule); background: var(--bg-2);
+  padding: 5px 10px; font-size: 11px; color: var(--fg);
+  transition: border-color .14s, background .14s;
+}
+.tl-leg:hover { border-color: var(--amber); background: var(--bg-3); color: var(--amber-hi); }
+.tl-leg .sw { width: 10px; height: 10px; display: inline-block; box-shadow: 0 0 6px currentColor; }
+.tl-leg .lb { letter-spacing: 0.5px; }
+.tl-leg .rg { color: var(--dim); font-size: 10px; letter-spacing: 1px; }
+
+.tl-scroller {
+  overflow-x: auto; overflow-y: hidden;
+  border: 1px solid var(--panel-edge);
+  background:
+    repeating-linear-gradient(0deg, rgba(20,22,13,0.5) 0 2px, rgba(12,14,7,0.5) 2px 3px);
+  padding: 0;
+  scrollbar-color: var(--amber) var(--bg-2);
+}
+.tl-scroller::-webkit-scrollbar { height: 10px; }
+.tl-scroller::-webkit-scrollbar-track { background: var(--bg-2); }
+.tl-scroller::-webkit-scrollbar-thumb { background: var(--dimmer); }
+.tl-scroller::-webkit-scrollbar-thumb:hover { background: var(--amber); }
+
+.tl-rail {
+  position: relative;
+  height: 230px;
+}
+
+/* center axis */
+.tl-rail::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 115px; height: 2px;
+  background: var(--rule);
+}
+
+.tl-band {
+  position: absolute;
+  top: 104px; height: 24px;
+  background: color-mix(in srgb, var(--bc) 16%, transparent);
+  border-left: 2px solid var(--bc);
+  border-right: 1px solid var(--rule-soft);
+  display: flex; align-items: center;
+  overflow: hidden;
+  transition: background .14s;
+}
+.tl-band:hover { background: color-mix(in srgb, var(--bc) 30%, transparent); }
+.tl-band .bl {
+  font-size: 9.5px; letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--bc); padding: 0 8px; white-space: nowrap;
+  text-shadow: 0 0 6px currentColor;
+}
+
+.tl-tick {
+  position: absolute; top: 132px; height: 18px;
+  border-left: 1px dashed var(--rule);
+}
+.tl-tick span {
+  position: absolute; top: 18px; left: -16px; width: 34px; text-align: center;
+  font-size: 10px; color: var(--dim); letter-spacing: 1px;
+}
+
+.tl-ev {
+  position: absolute;
+  background: none; border: none; cursor: pointer; padding: 0;
+  width: 0;
+}
+.tl-ev .d {
+  position: absolute; left: -6px; top: 109px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--bg); border: 2px solid var(--ec);
+  box-shadow: 0 0 8px var(--ec);
+  transition: transform .12s;
+}
+.tl-ev .yl {
+  position: absolute; left: -18px; width: 36px; text-align: center;
+  font-size: 9.5px; color: var(--dim); letter-spacing: 0.5px;
+}
+.tl-ev.up .yl { top: 86px; }
+.tl-ev.down .yl { top: 124px; }
+.tl-ev.up .d::after, .tl-ev.down .d::after {
+  content: ""; position: absolute; left: 4px; width: 1px; background: var(--ec); opacity: .5;
+}
+.tl-ev.up .d::after { bottom: 12px; height: 14px; }
+.tl-ev.down .d::after { top: 12px; height: 14px; }
+.tl-ev:hover .d { transform: scale(1.5); }
+.tl-ev.sel .d { transform: scale(1.6); background: var(--ec); }
+.tl-ev.sel .yl { color: var(--ec); }
+
+.tl-detail { margin-top: 16px; }
+.tl-d-empty {
+  border: 1px dashed var(--rule); padding: 18px;
+  color: var(--dim); font-size: 13px; text-align: center;
+}
+.tl-d-card {
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--dc);
+  background: rgba(16,18,9,0.6);
+  padding: 16px 18px;
+  animation: tl-fade .25s ease;
+}
+@keyframes tl-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.tl-d-head { display: flex; align-items: baseline; gap: 12px; }
+.tl-d-head .yy { font-size: 22px; font-weight: 700; color: var(--dc); }
+.tl-d-head .ee { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); }
+.tl-d-title { font-size: 18px; color: var(--fg-bright); font-weight: 700; margin-top: 4px; }
+.tl-d-blurb { font-size: 13.5px; color: var(--fg); margin: 8px 0 12px; max-width: 70ch; }
+.tl-d-link { font-size: 12px; letter-spacing: 1px; color: var(--dc); border-bottom: 1px dotted currentColor; }
+.tl-d-link:hover { color: var(--green); }
+
+.tl-hint {
+  font-size: 11px; color: var(--dim); margin-top: 10px; letter-spacing: 0.5px;
+}
+.tl-hint::before { content: "◂▸ "; color: var(--amber); }

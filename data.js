@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "ai-history",
+    title: "To Build a Mind",
+    tagline: "An interactive history of artificial intelligence — the people, the ideas and the machines that built it — with a working model you can drive in every era, from Turing to today's frontier labs.",
+    url: "https://0x4d44.github.io/ai-history/",
+    illustration: "ill-ai",
+    date: "2026-06-08T20:30:00",
+    year: 1956,
+    readingMin: 38,
+    words: 8000,
+    tags: ["software", "history"],
+    real: true,
+  },
+  {
     slug: "ipo-history",
     title: "Declared Effective",
     tagline: "Four centuries of going public — the history, anatomy and high drama of the IPO prospectus, from the VOC's 1602 charter to the modern S-1, plus a build-your-own-IPO scoring engine.",

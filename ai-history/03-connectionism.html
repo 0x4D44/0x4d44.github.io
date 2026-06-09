@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>03 · Connectionism &amp; Deep Learning (1986–2012) — AI Almanac</title>
+<meta name="description" content="Backpropagation revives neural nets; CNNs read digits, LSTMs remember, ImageNet sets the stage, and AlexNet ignites the deep-learning era. With an interactive word-embedding space." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="almanac.css" />
+<style>
+  .emb-wrap { display: grid; grid-template-columns: 480px 1fr; gap: 22px; }
+  @media (max-width: 880px) { .emb-wrap { grid-template-columns: 1fr; } }
+  .emb-side { min-width: 0; }
+  .emb-eq { margin-top: 12px; font-size: 18px; letter-spacing: 0.5px; color: var(--dim); }
+  .emb-eq b { font-weight: 700; }
+  .emb-eq b.a { color: var(--cyan); } .emb-eq b.b { color: var(--red); }
+  .emb-eq b.c { color: var(--amber); } .emb-eq b.r { color: var(--green); }
+  .emb-read { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--dim); margin-top: 6px; }
+  .emb-read b { color: var(--amber); } .emb-read .exact { color: var(--green); }
+  .emb-h { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--green); margin-bottom: 8px; }
+  .emb-selrow { display: flex; gap: 8px; flex-wrap: wrap; }
+  .emb-sel { display: flex; align-items: center; gap: 6px; }
+  .emb-sel .sl { width: 20px; height: 20px; display: grid; place-items: center; font-weight: 700; font-size: 12px; border: 1px solid var(--rule); }
+  .emb-sel .sl.a { color: var(--cyan); } .emb-sel .sl.b { color: var(--red); } .emb-sel .sl.c { color: var(--amber); }
+  .emb-sel select { min-width: 96px; }
+  .emb-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .emb-note { font-size: 12.5px; color: var(--fg); margin-top: 16px; max-width: 46ch; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<div class="field glow-bg" aria-hidden="true"></div>
+<div class="field scan" aria-hidden="true"></div>
+<div class="field grain" aria-hidden="true"></div>
+<div class="field vignette" aria-hidden="true"></div>
+<div class="field flicker" aria-hidden="true"></div>
+
+<div class="topbar">
+  <div class="crumbs"><a href="index.html">almanac</a><span class="sep">/</span>03 · connectionism &amp; deep learning</div>
+  <a class="btn-link" href="index.html">◂ all eras</a>
+</div>
+
+<main class="wrap">
+
+  <header class="masthead">
+    <div class="kicker">─── CHAPTER 03 ─── 1986 — 2012 ─── <span class="blip">●</span> the long climb out of winter</div>
+    <h1 class="title"><span class="prompt">#</span> Connectionism<br>&amp; Deep Learning</h1>
+    <p class="lede">
+      With backpropagation in hand, a stubborn minority kept building neural networks while the rest of AI
+      looked away. Their nets learned to read cheques, to remember sequences, and — once a giant dataset and
+      gaming GPUs arrived — to <em>see</em>. In 2012 it all detonated.
+    </p>
+  </header>
+
+  <div class="statusbar">
+    <span>5 milestones · 1 model</span>
+    <span>LeNet · LSTM · Deep Blue · ImageNet · word2vec · AlexNet</span>
+    <span class="online">live</span>
+  </div>
+
+  <section class="section reveal">
+    <span class="eyebrow">1989 · seeing</span>
+    <h2 class="h2"><span class="n">¶</span> Convolutional networks</h2>
+    <div class="prose">
+      <p><span class="lead-cap">A</span>t Bell Labs, <strong>Yann LeCun</strong> built <strong>LeNet</strong>,
+      a <strong>convolutional neural network (CNN)</strong> that read handwritten digits. Its key idea,
+      inspired by the visual cortex: instead of connecting every pixel to every neuron, slide small
+      <em>filters</em> across the image that detect local patterns — edges, then corners, then strokes —
+      and stack them so later layers see larger, more abstract shapes. The same filter is reused everywhere,
+      so the network learns far fewer weights and generalises across position.</p>
+      <p>By the late 1990s LeNet was reading a meaningful fraction of the cheques in the United States. Deep
+      learning's first real-world product was quietly already in your bank.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">1997 · two landmarks</span>
+    <h2 class="h2"><span class="n">¶</span> Memory, and a defeated champion</h2>
+    <div class="prose">
+      <p>Plain neural nets forget: feed them a sequence and early items vanish as the signal fades — the
+      <strong>vanishing gradient</strong> problem. In 1997 <strong>Sepp Hochreiter</strong> and
+      <strong>Jürgen Schmidhuber</strong> introduced the <strong>LSTM</strong> (Long Short-Term Memory), a
+      recurrent cell with gates that decide what to keep, forget and output. LSTMs would go on to power a
+      decade of speech recognition and machine translation.</p>
+      <p>The same year, in the symbolic tradition's last great spectacle, IBM's <strong>Deep Blue</strong>
+      beat world chess champion <strong>Garry Kasparov</strong>. But Deep Blue didn't <em>learn</em> — it
+      searched 200 million positions a second with hand-tuned evaluation. It was a monument to brute force,
+      and a hint that games would be AI's proving ground (see Chapter 04).</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">2009 · the fuel</span>
+    <h2 class="h2"><span class="n">¶</span> ImageNet</h2>
+    <div class="prose">
+      <p>Algorithms were ready; what they lacked was <em>scale of data</em>. <strong>Fei-Fei Li</strong>
+      and collaborators built <strong>ImageNet</strong>: 14 million hand-labelled images across 20,000
+      categories, annotated via crowdsourcing. The annual <strong>ImageNet Challenge</strong> became the
+      field's benchmark. For a few years, error rates crept down slowly with clever hand-engineered features.
+      Then the floor dropped out.</p>
+      <div class="callout">
+        <span class="tag">enabling tech · data</span>
+        <p>ImageNet embodies the second great curve: the internet as a training set. None of what follows —
+        not AlexNet, not GPT — happens without someone first assembling data at a scale earlier researchers
+        could only dream of.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">2012 · the big bang</span>
+    <h2 class="h2"><span class="n">¶</span> AlexNet</h2>
+    <div class="prose">
+      <p>In 2012 <strong>Alex Krizhevsky</strong>, <strong>Ilya Sutskever</strong> and <strong>Geoffrey
+      Hinton</strong> entered a deep CNN — <strong>AlexNet</strong> — in the ImageNet Challenge. It cut the
+      error rate from ~26% to ~15%, an enormous margin. Three things made it work, and all three define the
+      modern recipe:</p>
+      <ul>
+        <li><strong>Depth</strong> — eight learned layers, far deeper than was thought trainable.</li>
+        <li><strong>GPUs</strong> — trained on two consumer gaming cards. The matrix multiplies that bored
+        gamers were exactly what neural nets needed. This is the <em>compute</em> curve arriving.</li>
+        <li><strong>Tricks that scale</strong> — the <code>ReLU</code> activation (fast, no vanishing
+        gradient), <code>dropout</code> for regularisation, and data augmentation.</li>
+      </ul>
+      <p>The result was a thunderclap. Within a year, computer vision abandoned hand-crafted features almost
+      entirely. Within three, the entire field had pivoted to deep learning. The winter was over — and the
+      people who'd kept the faith (Hinton, LeCun, and Yoshua Bengio) would share the 2018 Turing Award.</p>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <span class="eyebrow">2013 · meaning</span>
+    <h2 class="h2"><span class="n">¶</span> Words become vectors</h2>
+    <div class="prose">
+      <p>The same year, Tomáš Mikolov's team at Google released <strong>word2vec</strong>. The idea, rooted
+      in the linguist J. R. Firth's maxim — <em>"you shall know a word by the company it keeps"</em> — was
+      to train a network to predict a word from its neighbours. As a side effect, each word ends up as a
+      point in a high-dimensional space (say 300 dimensions) where <strong>distance means similarity and
+      direction means relationship</strong>.</p>
+      <p>The famous demonstration: take the vector for <em>king</em>, subtract <em>man</em>, add
+      <em>woman</em>, and the nearest word is <em>queen</em>. Meaning had become arithmetic. This idea —
+      representing things as vectors in a learned space — is the connective tissue of everything that
+      follows, from translation to the embeddings inside every transformer. The model below lets you do that
+      arithmetic yourself.</p>
+    </div>
+  </section>
+
+  <!-- ===== INTERACTIVE ===== -->
+  <section class="section reveal" id="lab">
+    <span class="eyebrow">Interactive model</span>
+    <h2 class="h2"><span class="n">▸</span> Do arithmetic on meaning</h2>
+    <div class="prose">
+      <p>Real embeddings live in hundreds of dimensions; here is a hand-built 2-D version so you can see the
+      geometry. Words sit in <em>families</em>, and within a family the relationship between two words is a
+      consistent <em>direction</em> — the "gender" arrow, the "capital-of" arrow, the "past-tense" arrow.</p>
+      <p>Pick three words (or a preset). The space computes <strong>A − B + C</strong> and finds the nearest
+      word. Watch the two green arrows: they're parallel, which is exactly why the analogy lands.</p>
+    </div>
+
+    <div class="lab">
+      <div class="lab-head">
+        <span class="lt">embeddings.v1 — vector space of words</span>
+        <span class="meta">Mikolov et al. 2013 · word2vec</span>
+      </div>
+      <div class="lab-body"><div id="embeddings"></div></div>
+      <div class="lab-note">
+        <b>What to notice:</b> the analogy works because <code>king − man</code> and <code>queen − woman</code>
+        are the <b>same vector</b>. Real models discover thousands of such directions on their own, purely
+        from reading text — no one tells them what "gender" or "capital city" is.
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal">
+    <div class="callout key">
+      <span class="tag">Carry-forward</span>
+      <p>Two ideas dominate from here on: <em>deep networks of simple, reused units learn their own
+      features</em> (no more hand-engineering), and <em>everything becomes a vector</em> in a learned space.
+      The remaining question was sequences and language — and a 2017 paper was about to answer it.</p>
+    </div>
+  </section>
+
+  <nav class="pager">
+    <a class="prev" href="02-symbolic.html"><span class="dir">◂ previous</span><span class="nm">02 · Symbolic AI &amp; the Winters</span></a>
+    <a class="next" href="04-alphago.html"><span class="dir">next chapter ▸</span><span class="nm">04 · Games &amp; AlphaGo</span></a>
+  </nav>
+
+  <footer class="page-footer">
+    <span>$ end-of-chapter — 03</span>
+    <span>connectionism &amp; deep learning · 1986–2012</span>
+    <span class="cursor">_</span>
+  </footer>
+
+</main>
+
+<script src="chrome.js"></script>
+<script src="embeddings.js"></script>
+</body>
+</html>
