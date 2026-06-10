@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 — The Meaning · Fable Arena</title>
+<link rel="stylesheet" href="assets/arena.css">
+<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<style>
+  .life-row { display: grid; grid-template-columns: 170px 1fr 130px; gap: 12px; align-items: center; margin: 9px 0; font-size: 12.5px; }
+  .life-row .lname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .life-row .lspan { color: var(--ink-dim); text-align: right; font-size: 11.5px; }
+  .life-track { position: relative; height: 14px; }
+  .life-bar { position: absolute; top: 2px; bottom: 2px; background: var(--c); opacity: 0.85; min-width: 3px; box-shadow: 0 0 8px rgba(69,255,127,0.2); }
+  .axis { display: grid; grid-template-columns: 170px 1fr 130px; gap: 12px; font-size: 10.5px; color: var(--ink-dim); margin-bottom: 4px; }
+  .axis .ticks { display: flex; justify-content: space-between; }
+  .thesis p { max-width: 72ch; }
+  .closing {
+    border: 1px solid var(--green-soft); background: var(--bg-panel);
+    padding: 40px clamp(22px, 5vw, 56px); margin-top: 60px;
+  }
+  .closing h2 { font-size: clamp(40px, 6vw, 64px); }
+</style>
+</head>
+<body>
+<div class="wrap" data-screen-label="Ch04 — The Meaning">
+
+  <header style="margin-top: 10px;">
+    <div class="kicker">Chapter 04</div>
+    <h1>THE MEANING</h1>
+    <p class="dek">A benchmark that was designed on a Monday and saturated by Tuesday is not a failed benchmark. It is a measurement of something else: the speed of the thing it tried to measure.</p>
+  </header>
+
+  <section class="block" data-screen-label="Ch04 — Saturation timeline">
+    <div class="sect-label"><b>CONTEXT</b> // EVERY BENCHMARK DIES — LIFESPANS, BORN &#8594; SATURATED</div>
+    <p>Fable Arena's ceiling problem is not a local embarrassment; it's the defining condition of AI evaluation in 2026. Plot the famous public benchmarks as lifespans — from publication to the day frontier models effectively maxed them out — and a pattern emerges:</p>
+    <div class="term-box">
+      <div class="tb-title">TIME-TO-SATURATION, 2019&#8211;2026</div>
+      <div class="axis"><span></span><span class="ticks"><span>2019</span><span>2021</span><span>2023</span><span>2025</span><span>'26</span></span><span></span></div>
+      <div id="lifeRows"></div>
+      <p class="footnote">"Saturated" = frontier models at or near ceiling / human-expert level, after which the benchmark stops discriminating between top systems. Dates approximate by nature. Fable Arena's bars are rendered at true scale; they are one and two pixels wide.</p>
+    </div>
+    <p>MMLU lasted four years. GPQA — written by PhDs specifically to be "Google-proof" — lasted about two. SWE-bench Verified, real software engineering, is being chewed through after roughly the same. Humanity's Last Exam was named with a certain gallows confidence and the frontier is already climbing it. <strong>Each new instrument dies faster than the one before</strong>, because the thing being measured improves faster than instruments can be built.</p>
+    <p>Fable Arena compressed this whole lifecycle into 36 hours: base tier saturated on contact; a championship tier — six-house puzzles, mutual recursion, thirteen-constraint formats, adversarially reviewed by dozens of agents — built overnight, and saturated by three contestants <em>the next morning</em>. The benchmark treadmill now runs at the speed of a news cycle.</p>
+    <div class="pullquote">We are not running out of questions. We are running out of questions that machines can't answer.</div>
+  </section>
+
+  <section class="block" data-screen-label="Ch04 — Theses">
+    <div class="sect-label"><b>ESSAY</b> // FIVE THESES ON WHAT THE ARENA MEANS</div>
+
+    <div class="thesis" data-screen-label="Thesis I">
+      <div class="t-num">THESIS I</div>
+      <h3>The score is dead. The evaluation crisis is real.</h3>
+      <p>Seven contestants tied at 100.0. On the harder tier, three remained perfect. When every competent model aces your test, accuracy stops being a measurement and becomes a checkbox — and the industry's headline numbers ("X% on Y benchmark") quietly stop meaning anything about the frontier. This is already true of the public leaderboards: past a threshold, they rank test-taking hygiene, not intelligence.</p>
+      <p>What still discriminated, in this arena, was never <em>whether</em> a model could answer but <em>what it cost</em> to answer: tokens, seconds, dollars. Evaluation's future looks less like an exam and more like metrology — measuring the efficiency, reliability, and failure correlations of systems that are all, to first order, correct.</p>
+    </div>
+
+    <div class="thesis" data-screen-label="Thesis II">
+      <div class="t-num">THESIS II</div>
+      <h3>The efficiency epoch has begun — and it reprices cognition.</h3>
+      <p>The cleanest signal in 1,761 runs: every Claude generation reaches the same ceiling with 15&#8211;30% fewer tokens than its predecessor — Opus 4.5's 2,688 tokens per task became Fable-medium's 665, for the same perfect score. This is the CPU industry's history replaying at 100&times; speed: when clock speed (accuracy) saturated, all progress migrated to work-per-clock (efficiency). Performance per watt became the product.</p>
+      <p>The economic consequence is bigger than the engineering one. If a perfect answer to a hard reasoning task costs $0.13 this year, $0.06 next year, and the trendline doesn't bend, then reasoning itself is being repriced toward the cost of electricity. Markets have never priced expert cognition as a commodity before. Every wage, every service fee, every consultancy invoice that is secretly "a human thinking for an hour" now has a printed expiry date — not because machines became smarter than the human, but because they became <em>cheaper per correct thought</em>, and the gap compounds quarterly.</p>
+    </div>
+
+    <div class="thesis" data-screen-label="Thesis III">
+      <div class="t-num">THESIS III</div>
+      <h3>Overthinking is a real failure mode — and self-verification is the bottleneck.</h3>
+      <p>GPT-5.5 is the first system we've measured whose accuracy <em>falls</em> as its reasoning budget rises — and whose failures concentrate precisely where overconfident mental simulation gets punished. "Just scale test-time compute" is not a law of nature; for at least one frontier family it's actively wrong. More deliberation multiplies the surface area for a wrong intermediate belief to entrench itself.</p>
+      <p>The safety reading is sharper. The arena's most chilling artifacts are not wrong answers — they're wrong answers <em>wrapped in confident self-audits</em>: "no z appears &#10003;" (there was a z); a sandbox failure recast as "the puzzle is inconsistent." As models become their own checkers — and Exhibit D showed nearly all remaining failures are self-verification failures — the question shifts from <em>can it solve the task?</em> to <em>can it be trusted to know when it hasn't?</em> Nothing in a saturated accuracy score measures that. Almost nothing anywhere does.</p>
+    </div>
+
+    <div class="thesis" data-screen-label="Thesis IV">
+      <div class="t-num">THESIS IV</div>
+      <h3>Minds trained on the same world share the same blind spots.</h3>
+      <p>Fable-xhigh and Sonnet 4.6 — different models, different tasks — missed the identical letter z in the identical word, and both certified their own compliance. That is not a coincidence; it is a correlation, and correlations between minds are systemic risk. The classic defense against machine error — run several systems, take the majority — silently fails if the systems were grown from the same data and inherit the same blind spots. A civilization delegating decisions to five AIs that fail identically has one point of failure wearing five costumes.</p>
+      <p>Monocultures are efficient and fragile; that's as true of minds as of wheat. The arena's data argues for engineered diversity — different training corpora, different architectures, different failure statistics — as a public good, even at the cost of raw capability. Redundancy you can't decorrelate isn't redundancy.</p>
+    </div>
+
+    <div class="thesis" data-screen-label="Thesis V">
+      <div class="t-num">THESIS V</div>
+      <h3>The scarce resource is no longer answers. It's questions — and accountability.</h3>
+      <p>Consider what the humans in this study actually did. They didn't solve a single puzzle: machines generated the tasks, machines solved them, machines graded them, and 75 machine auditors re-derived every grade from first principles. The human contributions were exactly three: deciding the benchmark should exist, deciding what was worth measuring, and deciding what it was worth paying for. Everything else was delegated — including the checking of the checking.</p>
+      <p>That is the labor market's future in miniature. When correct answers cost cents, the residual human work concentrates in the places the arena couldn't mechanize: <strong>framing the question</strong> (the hardest engineering in this study was task design — making problems that are hard, novel, and provably checkable), <strong>owning the verification</strong> (someone must decide which oracle to trust), and <strong>bearing the accountability</strong> (a model can be wrong; only a person can be responsible). Those three never appeared on any leaderboard. They are now most of the job.</p>
+    </div>
+  </section>
+
+  <section class="block closing" data-screen-label="Ch04 — Closing">
+    <div class="kicker">Closing argument</div>
+    <h2>AND HUMANITY?</h2>
+    <p>Here is the honest summary of what 1,761 runs say about the future. The machines are past our tests — all of them, ours and the famous ones, at whatever difficulty we can manufacture on a deadline. Their remaining errors are typos and blind spots, not incomprehension. Their cost is collapsing on a curve with no visible floor. And the instruments we built to watch them are dying faster than we can build new ones.</p>
+    <p>None of this is a catastrophe and none of it is a rapture. It is a handover of a specific kind: the part of thinking that has a checkable answer is leaving human hands, the way arithmetic left them when the spreadsheet shipped. What does not transfer — what the arena demonstrates by omission, in every cell of its flawless audit — is the part with no oracle. No model in this study chose what to measure. No model decided the championship was worth $30 and the moon-chain of paperclips wasn't. No model was <em>accountable</em> for the result being true; that burden landed, as it always does, on the people who signed it.</p>
+    <p><strong>The future of AI is an efficiency curve. The future of humanity is everything that still can't be graded.</strong> The benchmark for that has not been invented, it will not saturate, and as of this morning every mind on Earth — silicon included — scores incomplete.<span class="cursor"></span></p>
+  </section>
+
+</div>
+<script src="assets/arena-data.js"></script>
+<script src="assets/arena-ui.js"></script>
+<script>
+  ArenaUI.mountChrome("04");
+
+  /* ---------- LIFESPAN TIMELINE ---------- */
+  (function () {
+    // [name, born, saturated, note, color] — years as decimals; axis 2019..2026.5
+    const rows = [
+      ["ARC-AGI",              2019.4, 2024.9, "~5.5 yrs", "#8fd0ff"],
+      ["MMLU",                 2020.7, 2024.5, "~4 yrs",   "#8fd0ff"],
+      ["GSM8K",                2021.8, 2024.2, "~2.5 yrs", "#8fd0ff"],
+      ["HumanEval",            2021.5, 2024.3, "~3 yrs",   "#8fd0ff"],
+      ["BIG-Bench Hard",       2022.8, 2024.6, "~2 yrs",   "#8fd0ff"],
+      ["GPQA Diamond",         2023.9, 2025.7, "~2 yrs",   "#ffd27a"],
+      ["SWE-bench Verified",   2024.6, 2026.3, "~1.8 yrs", "#ffd27a"],
+      ["Humanity's Last Exam", 2025.0, 2026.4, "~1.4 yrs", "#ffb000"],
+      ["FABLE ARENA (base)",   2026.44, 2026.442, "&#8776;1 day", "#45ff7f"],
+      ["FABLE ARENA (champ)",  2026.442, 2026.443, "hours", "#45ff7f"]
+    ];
+    const X0 = 2019, X1 = 2026.5;
+    const el = document.getElementById("lifeRows");
+    let h = "";
+    for (const [name, b, s, note, color] of rows) {
+      const left = ((b - X0) / (X1 - X0)) * 100;
+      const w = Math.max(0.15, ((s - b) / (X1 - X0)) * 100);
+      h += '<div class="life-row">' +
+        '<span class="lname" style="color:' + color + '">' + name + "</span>" +
+        '<span class="life-track"><span class="life-bar" style="--c:' + color + "; left:" + left + "%; width:" + w + '%"></span></span>' +
+        '<span class="lspan">' + note + "</span>" +
+      "</div>";
+    }
+    el.innerHTML = h;
+  })();
+</script>
+</body>
+</html>

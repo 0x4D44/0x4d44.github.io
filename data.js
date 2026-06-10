@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "benchmarks",
+    title: "Fable Arena",
+    tagline: "Fourteen frontier models, five disciplines, 1,761 mechanically-graded runs — and a finish line so crowded the score stopped meaning anything. A CRT benchmark-zine where the real leaderboard is written in tokens: robot armies, paperclips toward the moon, 252 years of 486 time, and five theses on what a benchmark that saturates in a day means for the future of AI — and of us.",
+    url: "https://0x4d44.github.io/benchmarks/",
+    illustration: "ill-arena",
+    date: "2026-06-10T11:02:00",
+    year: 2026,
+    readingMin: 20,
+    words: 4200,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
     slug: "win-at-cards",
     title: "The Gentleman's Compendium",
     tagline: "A deadpan vintage manual of winning — never, ever cheating — at cards: wardrobe and concealment, the doctrine of the multiple deck, and the Meaningful Cough. Dedicated to a grandmaster who has never once cheated and will tell you so, at length — with a working Sleeve Capacity Calculator and an Automatic Distraction Generator.",

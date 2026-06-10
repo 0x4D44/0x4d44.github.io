@@ -1,0 +1,347 @@
+/* ============================================================
+   FABLE ARENA — CRT benchmark-zine theme
+   Phosphor green on near-black. VT323 display, IBM Plex Mono body.
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap');
+
+:root {
+  --bg: #060907;
+  --bg-panel: rgba(8, 28, 14, 0.42);
+  --ink: #b9e8c4;
+  --ink-bright: #e4ffe9;
+  --ink-dim: #6f9a7a;
+  --green: #45ff7f;
+  --green-soft: rgba(69, 255, 127, 0.35);
+  --green-faint: rgba(69, 255, 127, 0.12);
+  --amber: #ffb000;
+  --cyan: #59f2ff;
+  --red: #ff5566;
+  --display: 'VT323', monospace;
+  --mono: 'IBM Plex Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--bg); }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(40, 90, 55, 0.18), transparent 60%),
+    var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: var(--green); color: #04140a; }
+
+/* ---- CRT overlays ---- */
+.scanlines {
+  position: fixed; inset: 0; z-index: 60; pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.16) 3px,
+    rgba(0, 0, 0, 0) 4px
+  );
+}
+.vignette {
+  position: fixed; inset: 0; z-index: 61; pointer-events: none;
+  background: radial-gradient(115% 100% at 50% 45%, transparent 62%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* ---- layout ---- */
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 28px 90px 28px; }
+
+/* ---- top nav ---- */
+.arena-nav {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 18px;
+  padding: 16px 0 12px 0;
+  border-bottom: 1px dashed var(--green-soft);
+  margin-bottom: 36px;
+  font-size: 13px; letter-spacing: 0.06em;
+}
+.arena-nav .brand {
+  font-family: var(--display); font-size: 22px; color: var(--green);
+  text-decoration: none; text-shadow: 0 0 10px var(--green-soft);
+  margin-right: 8px;
+}
+.arena-nav a.chap {
+  color: var(--ink-dim); text-decoration: none; padding: 1px 6px;
+}
+.arena-nav a.chap:hover { color: var(--bg); background: var(--green); }
+.arena-nav a.chap.current { color: var(--green); border: 1px solid var(--green-soft); }
+
+/* ---- footer prev/next ---- */
+.footer-nav {
+  margin-top: 70px; padding-top: 22px;
+  border-top: 1px dashed var(--green-soft);
+  display: flex; justify-content: space-between; gap: 20px;
+  font-size: 14px;
+}
+.footer-nav a { color: var(--green); text-decoration: none; }
+.footer-nav a:hover { background: var(--green); color: #04140a; }
+.footer-nav .colophon { color: var(--ink-dim); font-size: 12px; text-align: center; flex: 1; }
+
+/* ---- type ---- */
+h1, h2, h3 { font-family: var(--display); font-weight: 400; line-height: 1.05; }
+h1 {
+  font-size: clamp(58px, 9vw, 104px); margin: 10px 0 8px 0;
+  color: var(--ink-bright); text-shadow: 0 0 18px var(--green-soft), 0 0 3px var(--green);
+  letter-spacing: 0.01em;
+}
+h2 {
+  font-size: clamp(34px, 5vw, 48px); margin: 0 0 14px 0; color: var(--green);
+  text-shadow: 0 0 12px var(--green-faint);
+}
+h3 { font-size: 26px; margin: 0 0 10px 0; color: var(--ink-bright); }
+p { margin: 0 0 16px 0; text-wrap: pretty; max-width: 76ch; }
+a { color: var(--green); }
+strong { color: var(--ink-bright); }
+em { color: var(--ink-bright); }
+
+.kicker {
+  font-size: 12px; letter-spacing: 0.32em; color: var(--amber);
+  text-transform: uppercase; margin-bottom: 6px;
+}
+.dek { font-size: 18px; color: var(--ink); max-width: 64ch; }
+.dim { color: var(--ink-dim); }
+.amber { color: var(--amber); }
+.cyan { color: var(--cyan); }
+.red { color: var(--red); }
+.grn { color: var(--green); }
+.small { font-size: 13px; }
+
+.cursor::after {
+  content: "█"; margin-left: 2px; color: var(--green);
+  animation: blink 1.05s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* ---- section spacing ---- */
+section.block { margin: 72px 0; }
+.sect-label {
+  font-size: 12px; letter-spacing: 0.28em; color: var(--ink-dim);
+  border-bottom: 1px solid var(--green-faint); padding-bottom: 6px; margin-bottom: 22px;
+}
+.sect-label b { color: var(--green); font-weight: 400; }
+
+/* ---- terminal box ---- */
+.term-box {
+  position: relative;
+  border: 1px solid var(--green-soft);
+  background: var(--bg-panel);
+  box-shadow: inset 0 0 32px rgba(69, 255, 127, 0.05);
+  padding: 24px;
+  margin: 26px 0;
+}
+.term-box .tb-title {
+  position: absolute; top: -10px; left: 14px;
+  background: var(--bg); padding: 0 8px;
+  font-size: 12px; letter-spacing: 0.22em; color: var(--green);
+}
+.term-box.amber-box { border-color: rgba(255, 176, 0, 0.4); }
+.term-box.amber-box .tb-title { color: var(--amber); }
+
+/* ---- tables ---- */
+table.tt { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+table.tt th {
+  text-align: left; color: var(--ink-dim); font-weight: 500;
+  border-bottom: 1px solid var(--green-soft); padding: 6px 10px;
+  letter-spacing: 0.08em; font-size: 11.5px; text-transform: uppercase;
+}
+table.tt td { padding: 6px 10px; border-bottom: 1px dotted rgba(69, 255, 127, 0.16); }
+table.tt td.num, table.tt th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.tt tr.hero td { background: var(--green-faint); color: var(--ink-bright); }
+
+/* ---- stat tickers ---- */
+.stat-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 14px; margin: 30px 0;
+}
+.stat {
+  border: 1px solid var(--green-faint); padding: 14px 16px 12px 16px;
+  background: var(--bg-panel);
+}
+.stat .v {
+  font-family: var(--display); font-size: 44px; color: var(--ink-bright);
+  text-shadow: 0 0 12px var(--green-faint); line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.stat .k { font-size: 11.5px; letter-spacing: 0.14em; color: var(--ink-dim); text-transform: uppercase; margin-top: 6px; }
+
+/* ---- buttons + controls ---- */
+.tbtn {
+  font-family: var(--mono); font-size: 13px; letter-spacing: 0.08em;
+  background: transparent; color: var(--green);
+  border: 1px solid var(--green-soft); padding: 7px 16px; cursor: pointer;
+}
+.tbtn:hover { background: var(--green); color: #04140a; }
+.tbtn.active { background: var(--green); color: #04140a; }
+.tbtn:disabled { opacity: 0.4; cursor: default; }
+.btn-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* ---- bars ---- */
+.bar-track {
+  position: relative; height: 16px; background: rgba(69, 255, 127, 0.07);
+  border: 1px solid var(--green-faint); overflow: hidden;
+}
+.bar-fill {
+  position: absolute; inset: 0 auto 0 0; width: 0%;
+  background: linear-gradient(90deg, rgba(69, 255, 127, 0.25), var(--c, var(--green)));
+  box-shadow: 0 0 10px var(--green-faint);
+}
+
+/* ---- chapter cards (hub) ---- */
+.chapter-list { display: grid; gap: 16px; margin-top: 28px; }
+a.chapter-card {
+  display: grid; grid-template-columns: 86px 1fr auto; gap: 20px; align-items: center;
+  border: 1px solid var(--green-soft); background: var(--bg-panel);
+  padding: 20px 24px; text-decoration: none; color: var(--ink);
+}
+a.chapter-card:hover { background: rgba(69, 255, 127, 0.09); }
+a.chapter-card .ch-num {
+  font-family: var(--display); font-size: 58px; color: var(--green);
+  text-shadow: 0 0 14px var(--green-soft); line-height: 1;
+}
+a.chapter-card .ch-title { font-family: var(--display); font-size: 30px; color: var(--ink-bright); line-height: 1.1; }
+a.chapter-card .ch-tease { font-size: 13.5px; color: var(--ink-dim); margin-top: 4px; }
+a.chapter-card .ch-go { font-size: 22px; color: var(--green); }
+
+/* ---- pixel robot sprite ---- */
+.bot {
+  display: inline-block; width: 13px; height: 11px; margin: 2px;
+  background: currentColor; border-radius: 2px; position: relative;
+  vertical-align: middle;
+}
+.bot::before {
+  content: ""; position: absolute; top: -4px; left: 5px;
+  width: 2px; height: 4px; background: currentColor;
+}
+.bot::after {
+  content: ""; position: absolute; top: 3px; left: 2px;
+  width: 3px; height: 3px; background: #04140a;
+  box-shadow: 6px 0 0 #04140a;
+}
+
+/* ---- exhibits / museum ---- */
+.exhibit {
+  border: 1px solid var(--green-soft); background: var(--bg-panel);
+  padding: 22px 24px; margin: 22px 0;
+}
+.exhibit .ex-tag {
+  display: inline-block; font-size: 11px; letter-spacing: 0.26em;
+  color: var(--bg); background: var(--amber); padding: 2px 10px; margin-bottom: 12px;
+}
+.exhibit pre {
+  background: rgba(0, 0, 0, 0.45); border: 1px solid var(--green-faint);
+  padding: 14px 16px; overflow-x: auto; font-size: 13px; line-height: 1.55;
+  color: var(--ink); margin: 12px 0;
+}
+
+/* ---- pull quotes / theses ---- */
+.pullquote {
+  font-family: var(--display); font-size: clamp(28px, 4vw, 40px);
+  color: var(--ink-bright); line-height: 1.18;
+  border-left: 3px solid var(--amber); padding: 6px 0 6px 24px;
+  margin: 40px 0; text-shadow: 0 0 14px var(--green-faint); max-width: 30ch;
+}
+.thesis { margin: 54px 0; }
+.thesis .t-num {
+  font-family: var(--display); font-size: 20px; color: var(--amber);
+  letter-spacing: 0.2em; margin-bottom: 4px;
+}
+
+/* ---- range slider ---- */
+input[type="range"].tslider {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 26px;
+  background: transparent; cursor: pointer;
+}
+input[type="range"].tslider::-webkit-slider-runnable-track {
+  height: 4px; background: var(--green-soft);
+}
+input[type="range"].tslider::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 22px; margin-top: -9px;
+  background: var(--green); border: 2px solid #04140a; box-shadow: 0 0 10px var(--green-soft);
+}
+input[type="range"].tslider::-moz-range-track { height: 4px; background: var(--green-soft); }
+input[type="range"].tslider::-moz-range-thumb {
+  width: 16px; height: 20px; background: var(--green); border: 2px solid #04140a; border-radius: 0;
+}
+
+/* ---- misc ---- */
+.rule { border: none; border-top: 1px dashed var(--green-soft); margin: 48px 0; }
+.tag {
+  display: inline-block; font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  border: 1px solid var(--green-soft); color: var(--green); padding: 2px 9px; margin: 0 6px 6px 0;
+}
+.footnote { font-size: 12.5px; color: var(--ink-dim); border-top: 1px dotted var(--green-faint); padding-top: 10px; margin-top: 26px; max-width: 80ch; }
+
+@media (max-width: 720px) {
+  a.chapter-card { grid-template-columns: 56px 1fr; }
+  a.chapter-card .ch-go { display: none; }
+  a.chapter-card .ch-num { font-size: 40px; }
+  .wrap { padding: 0 16px 70px 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor::after { animation: none; }
+}
+
+/* ============================================================
+   AMBER PHOSPHOR THEME  (toggle via nav button; persisted)
+   Recolours the CRT "chrome" only — the data-viz palettes
+   (race lanes, heatmap, chart lines) keep their own literal
+   colours so the charts read identically in either phosphor.
+   ============================================================ */
+:root[data-theme="amber"] {
+  --bg: #0b0700;
+  --bg-panel: rgba(40, 26, 4, 0.40);
+  --ink: #f0c074;
+  --ink-bright: #ffe9c2;
+  --ink-dim: #a87a3c;
+  --green: #ffb000;                         /* primary phosphor → amber */
+  --green-soft: rgba(255, 176, 0, 0.34);
+  --green-faint: rgba(255, 176, 0, 0.12);
+  --amber: #ff7e3e;                         /* contrast highlight → warm orange */
+}
+:root[data-theme="amber"] body {
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(120, 80, 18, 0.20), transparent 60%),
+    var(--bg);
+}
+:root[data-theme="amber"] ::selection { background: var(--green); color: #1a0f00; }
+/* recolour the few chrome accents that bake in a literal green rgba()
+   (CSS var overrides can't reach already-written literals) */
+:root[data-theme="amber"] .term-box { box-shadow: inset 0 0 32px rgba(255, 176, 0, 0.05); }
+:root[data-theme="amber"] table.tt td { border-bottom-color: rgba(255, 176, 0, 0.16); }
+:root[data-theme="amber"] .bar-track { background: rgba(255, 176, 0, 0.07); }
+:root[data-theme="amber"] .bar-fill { background: linear-gradient(90deg, rgba(255, 176, 0, 0.25), var(--c, var(--green))); }
+:root[data-theme="amber"] a.chapter-card:hover { background: rgba(255, 176, 0, 0.09); }
+
+/* ---- phosphor toggle in the nav ---- */
+.arena-nav .theme-toggle {
+  margin-left: auto;
+  align-self: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  background: transparent;
+  color: var(--ink-dim);
+  border: 1px solid var(--green-faint);
+  padding: 3px 10px;
+  cursor: pointer;
+}
+.arena-nav .theme-toggle:hover {
+  color: #04140a;
+  background: var(--green);
+  border-color: var(--green);
+}
+@media (max-width: 720px) {
+  .arena-nav .theme-toggle { margin-left: 0; }
+}

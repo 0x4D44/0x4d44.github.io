@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FABLE ARENA — Index</title>
+<link rel="stylesheet" href="assets/arena.css">
+<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+</head>
+<body>
+<div class="wrap" data-screen-label="Hub — Index">
+
+  <header style="margin-top: 26px;">
+    <pre id="boot" class="small" style="color: var(--ink-dim); min-height: 132px; margin: 0 0 30px 0; line-height: 1.7;"></pre>
+    <div class="kicker">An internal benchmark study &middot; vol. 1 &middot; June 2026</div>
+    <h1>FABLE ARENA</h1>
+    <p class="dek">Fourteen frontier minds. Five disciplines. <strong>1,761 graded runs</strong>, zero errors, zero integrity flags — and a finish line so crowded that the score itself stopped meaning anything. <span class="cursor"></span></p>
+  </header>
+
+  <div class="stat-grid" id="stats">
+    <div class="stat"><div class="v" data-n="1761">0</div><div class="k">graded runs</div></div>
+    <div class="stat"><div class="v" data-n="14">0</div><div class="k">contestants</div></div>
+    <div class="stat"><div class="v" data-n="7">0</div><div class="k">tied at 100.0</div></div>
+    <div class="stat"><div class="v" data-n="75">0</div><div class="k">audit agents</div></div>
+    <div class="stat"><div class="v" data-n="0">0</div><div class="k">grader artifacts</div></div>
+  </div>
+
+  <section class="block" data-screen-label="Hub — The setup">
+    <div class="sect-label"><b>BRIEFING</b> // WHAT HAPPENED HERE</div>
+    <p>In June 2026 we locked fourteen model configurations in an arena: Claude <strong>Fable 5</strong> at four reasoning-effort settings, the full <strong>Opus 4.5&#8211;4.8</strong> lineage, <strong>Sonnet 4.6</strong>, <strong>Haiku 4.5</strong>, and <strong>GPT-5.5</strong> at four effort settings. Every task was machine-generated from a seed, every answer verified by a constructive oracle — a brute-force solver, a hidden test suite, or the program's actual stdout. No human judgment anywhere in the grading loop, and an adversarial audit corps of 75 agents checking the graders' homework.</p>
+    <p>The headline result is not who won. It's that <em>winning became impossible to measure with accuracy alone</em> — and the moment that happened, an entirely different ranking emerged from underneath, written not in points but in <strong>tokens</strong>.</p>
+    <div class="term-box">
+      <div class="tb-title">THE ARENA, ONE SCREEN</div>
+      <div style="display: flex; flex-wrap: wrap; gap: 4px 0;">
+        <span class="tag">logic — 6-house zebra puzzles</span>
+        <span class="tag">math — multi-step word problems</span>
+        <span class="tag">code — hidden unit tests</span>
+        <span class="tag">output — predict a program's stdout</span>
+        <span class="tag">format — compound writing constraints</span>
+        <span class="tag">2 tracks: pure reasoning / tools allowed</span>
+        <span class="tag">2 tiers: base / championship</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" data-screen-label="Hub — Chapters">
+    <div class="sect-label"><b>CONTENTS</b> // FOUR CHAPTERS</div>
+    <div class="chapter-list">
+      <a class="chapter-card" href="01 The Photo Finish.html">
+        <span class="ch-num">01</span>
+        <span>
+          <span class="ch-title">THE PHOTO FINISH</span>
+          <span class="ch-tease" style="display:block;">Watch fourteen minds race to a 7-way tie at 100.0 — then watch a harder arena crack the tie from the bottom.</span>
+        </span>
+        <span class="ch-go">&#9654;</span>
+      </a>
+      <a class="chapter-card" href="02 The Token Economy.html">
+        <span class="ch-num">02</span>
+        <span>
+          <span class="ch-title">THE TOKEN ECONOMY</span>
+          <span class="ch-tease" style="display:block;">The real leaderboard: robot armies of tokens, paperclips toward the moon, floppy disks, and 252 years of 486 time.</span>
+        </span>
+        <span class="ch-go">&#9654;</span>
+      </a>
+      <a class="chapter-card" href="03 The Rollercoaster.html">
+        <span class="ch-num">03</span>
+        <span>
+          <span class="ch-title">THE ROLLERCOASTER</span>
+          <span class="ch-tease" style="display:block;">The model that gets worse the harder it thinks, the tools that hurt, and a museum of the last six mistakes.</span>
+        </span>
+        <span class="ch-go">&#9654;</span>
+      </a>
+      <a class="chapter-card" href="04 The Meaning.html">
+        <span class="ch-num">04</span>
+        <span>
+          <span class="ch-title">THE MEANING</span>
+          <span class="ch-tease" style="display:block;">Benchmarks are dying everywhere — MMLU, GPQA, now this one in a single day. Five theses on what comes after the score.</span>
+        </span>
+        <span class="ch-go">&#9654;</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="block" data-screen-label="Hub — Verdict teaser">
+    <div class="sect-label"><b>SPOILER</b> // THE ONE-LINE VERDICT</div>
+    <div class="pullquote">Across 1,761 runs, no model ever beat Fable 5 at medium effort — and nothing matched its efficiency.</div>
+    <p class="dim small">Seven contestants tied at a perfect 100.0 on the base tier. The championship tier broke the tie — not at the top, but from the bottom, as the oldest model in the field finally ran out of headroom. The survivors are separated only by how <em>cheaply</em> they think. That story starts in <a href="01 The Photo Finish.html">Chapter 01</a>.</p>
+  </section>
+
+</div>
+<script src="assets/arena-data.js"></script>
+<script src="assets/arena-ui.js"></script>
+<script>
+  ArenaUI.mountChrome("00");
+
+  ArenaUI.typeLines(document.getElementById("boot"), [
+    "FABLE ARENA BIOS v5.0 — 2026-06-10T11:02Z",
+    "DETECTING CONTESTANTS .......... 14 FOUND (10 CLAUDE / 4 GPT)",
+    "LOADING ORACLES ................ 90 TASKS, ALL CONSTRUCTIVELY VERIFIED",
+    "GRADING ........................ 1,761 RUNS / 0 TIMEOUTS / 0 ERRORS / 0 FLAGS",
+    "ADVERSARIAL AUDIT .............. 75 AGENTS / 0 GRADER ARTIFACTS",
+    "STARTING ARENA_OS .............. OK"
+  ], { charDelay: 5, lineDelay: 90 });
+
+  // count-up stats
+  const stats = document.querySelectorAll("#stats .v");
+  ArenaUI.onVisible(document.getElementById("stats"), () => {
+    stats.forEach((el) => ArenaUI.countUp(el, parseInt(el.dataset.n, 10), { dur: 1600 }));
+  });
+</script>
+</body>
+</html>

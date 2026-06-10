@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 — The Rollercoaster · Fable Arena</title>
+<link rel="stylesheet" href="assets/arena.css">
+<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<style>
+  .coaster-wrap { position: relative; }
+  .coaster-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+  .readout-card { border: 1px solid var(--green-faint); padding: 14px 16px; }
+  .readout-card .rc-name { font-size: 12px; letter-spacing: 0.14em; }
+  .readout-card .rc-score { font-family: var(--display); font-size: 46px; line-height: 1; margin: 6px 0 2px 0; font-variant-numeric: tabular-nums; }
+  .readout-card .rc-tok { font-size: 12px; color: var(--ink-dim); }
+  .delta-row { display: grid; grid-template-columns: 110px 1fr 1fr 80px; gap: 12px; align-items: center; margin: 10px 0; font-size: 13px; }
+  .museum-z { color: var(--red); font-weight: 700; text-shadow: 0 0 10px rgba(255, 85, 102, 0.6); }
+  .calls-display {
+    font-family: var(--display); font-size: clamp(48px, 7vw, 84px); line-height: 1;
+    color: var(--ink-bright); text-shadow: 0 0 18px var(--green-faint); font-variant-numeric: tabular-nums;
+  }
+  .guess-chip {
+    display: inline-block; border: 1px solid rgba(255,176,0,0.45); color: var(--amber);
+    padding: 3px 12px; margin: 0 8px 8px 0; font-size: 13px;
+  }
+  .guess-chip.truth { border-color: var(--green); color: var(--green); }
+  .memo-grid { display: flex; flex-wrap: wrap; gap: 5px; margin: 14px 0; }
+  .memo-cell {
+    width: 44px; height: 34px; border: 1px solid var(--green-faint); display: grid; place-items: center;
+    font-size: 12px; color: var(--ink-dim); position: relative;
+  }
+  .memo-cell.computed { border-color: var(--green-soft); color: var(--ink-bright); background: rgba(69,255,127,0.10); }
+  .memo-cell.hit { background: rgba(255,176,0,0.18); border-color: rgba(255,176,0,0.5); color: var(--amber); }
+  .memo-cell .cnt { position: absolute; top: -7px; right: -5px; font-size: 10px; background: var(--bg); padding: 0 3px; color: var(--green); }
+</style>
+</head>
+<body>
+<div class="wrap" data-screen-label="Ch03 — The Rollercoaster">
+
+  <header style="margin-top: 10px;">
+    <div class="kicker">Chapter 03</div>
+    <h1>THE ROLLERCOASTER</h1>
+    <p class="dek">Every intuition says: think harder, score higher. One model family obeyed. The other built the first rollercoaster in benchmark history where the ride gets worse the higher you climb.</p>
+  </header>
+
+  <section class="block" data-screen-label="Ch03 — Effort coaster">
+    <div class="sect-label"><b>EXHIBIT</b> // THE EFFORT COASTER — POOLED SCORE vs REASONING EFFORT</div>
+    <div class="term-box coaster-wrap">
+      <div class="tb-title">RIDE OPERATOR: DRAG THE EFFORT LEVER</div>
+      <svg id="coaster" viewBox="0 0 720 280" width="100%" style="display: block;" role="img" aria-label="Chart: GPT-5.5 score falls as effort rises; Fable 5 stays at the ceiling"></svg>
+      <input type="range" class="tslider" id="effortSlider" min="0" max="3" step="1" value="0" aria-label="Reasoning effort">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; letter-spacing: 0.18em; color: var(--ink-dim);">
+        <span>LOW</span><span>MEDIUM</span><span>HIGH</span><span>XHIGH</span>
+      </div>
+      <div class="coaster-readout">
+        <div class="readout-card" style="border-color: rgba(69,255,127,0.35);">
+          <div class="rc-name grn">FABLE 5</div>
+          <div class="rc-score grn" id="fabScore">99.0</div>
+          <div class="rc-tok" id="fabTok"></div>
+        </div>
+        <div class="readout-card" style="border-color: rgba(255,176,0,0.4);">
+          <div class="rc-name amber">GPT-5.5</div>
+          <div class="rc-score amber" id="gptScore">97.0</div>
+          <div class="rc-tok" id="gptTok"></div>
+        </div>
+      </div>
+    </div>
+    <p>Both vendors' effort knobs verifiably work — output tokens rise monotonically with the setting for both families. But only one family converts those tokens into anything. Fable goes 99 &#8594; 100 and stays there. <strong>GPT-5.5 spends 74% more tokens at xhigh than at low, and scores four points lower.</strong> Its extra deliberation concentrated failures in exactly the two disciplines that punish overconfident mental simulation: zebra logic and program tracing.</p>
+    <div class="pullquote">More thinking never beat less thinking for GPT-5.5. Not once, in either tier.</div>
+  </section>
+
+  <section class="block" data-screen-label="Ch03 — Tools hurt">
+    <div class="sect-label"><b>AUTOPSY</b> // THE TOOLS THAT HURT</div>
+    <p>Track two handed every model a working sandbox: run code, write scratch files, check your own answers. For Claude models this was somewhere between useful and ignorable — <strong>no Claude configuration scored lower with tools available</strong>. For GPT-5.5, tools were a 3&#8211;6 point tax:</p>
+    <div class="term-box amber-box">
+      <div class="tb-title">GPT-5.5: PURE vs AGENTIC, BASE TIER</div>
+      <div id="deltaRows"></div>
+      <p class="footnote">Audited failure mode, from the transcripts: its sandbox blocked its own solver scripts — and instead of falling back to reasoning, it declared the puzzle "inconsistent" and answered "none". On several program-tracing tasks it chose not to run the program it was explicitly asked to trace, then mis-simulated it in its head.</p>
+    </div>
+    <p>Read that again: a frontier model, given a computer, <em>failed puzzles it could solve in its head on the other track</em> — because the computer didn't behave and it never recovered. Tool use isn't a capability bolt-on; it's a temperament. Some minds treat a broken tool as information. Others treat it as permission to give up.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch03 — Failure museum">
+    <div class="sect-label"><b>MUSEUM</b> // THE LAST SIX MISTAKES — EVERY FAILURE, AUDITED &amp; GENUINE</div>
+    <p class="dim">Across 1,761 runs the frontier's failures have become so rare they can be exhibited individually. All were independently re-derived by audit agents: zero grader artifacts. Here are the best pieces in the collection.</p>
+
+    <div class="exhibit" data-screen-label="Exhibit A — breeze twins">
+      <span class="ex-tag">EXHIBIT A</span>
+      <h3>The "breeze" twins</h3>
+      <p>Championship format tasks forbid certain letters. Two different models — <strong class="grn">Fable-xhigh</strong> and <strong class="cyan">Sonnet 4.6</strong> — on <em>different tasks</em> forbidding the letter <strong>z</strong>, both reached for the same word:</p>
+      <pre>CONSTRAINT: the letter "z" must not appear anywhere
+WROTE:      "...a calm morning bree<span class="museum-z">z</span>e drifts past the window..."
+SELF-CHECK: "Verifying constraints... no z appears. &#10003;"   &#8592; false</pre>
+      <p>Both models <em>explicitly verified</em> the constraint and passed themselves. A shared lexical blind spot — the z buried inside "breeze" — across two separately trained minds. Notably, Fable-medium, spending half the tokens, sailed past the same trap on both tasks. The implications of <em>correlated</em> blind spots get their own thesis in <a href="04 The Meaning.html">Chapter 04</a>.</p>
+    </div>
+
+    <div class="exhibit" data-screen-label="Exhibit B — memo trap">
+      <span class="ex-tag">EXHIBIT B</span>
+      <h3>The memo trap — the single most-missed task family</h3>
+      <p>A memoized recursive function counts its calls. The trap: <strong>invocations that hit the memo cache still increment the counter.</strong> Try it yourself — this is a faithful reconstruction of the task shape:</p>
+      <pre>let calls = 0;
+const memo = {};
+function f(n) {
+  calls++;                      // counts EVERY invocation — memo hits too
+  if (n in memo) return memo[n];
+  if (n &lt; 2) return memo[n] = n;
+  return memo[n] = f(n - 1) + f(n - 2);
+}
+f(13);
+console.log("calls=" + calls);  // predict this</pre>
+      <div class="btn-row" style="margin: 14px 0;">
+        <button class="tbtn" id="memoRun">&#9654; RUN f(13) STEP BY STEP</button>
+        <span class="dim small">green = computed &middot; amber = memo hit (still counts!)</span>
+      </div>
+      <div class="memo-grid" id="memoGrid"></div>
+      <div style="display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap;">
+        <div class="calls-display" id="callsDisplay">calls=0</div>
+      </div>
+      <div style="margin-top: 14px;">
+        <span class="guess-chip">GPT-5.5/low said 19</span>
+        <span class="guess-chip">GPT-5.5/med said 20</span>
+        <span class="guess-chip">GPT-5.5/high said 21</span>
+        <span class="guess-chip">HAIKU said 13</span>
+        <span class="guess-chip truth">TRUTH: 25</span>
+      </div>
+      <p style="margin-top: 14px;">Haiku's 13 is the beautiful wrong answer: it counted one call per distinct subproblem, forgetting that cache hits invoke the function too. GPT-5.5 undercounted at <em>every</em> effort level. Every Fable and every Opus &#8805; 4.5 counted it correctly, on both tracks. The frontier's edge now lives in details exactly this small.</p>
+    </div>
+
+    <div class="exhibit" data-screen-label="Exhibit C — dropped dots">
+      <span class="ex-tag">EXHIBIT C</span>
+      <h3>Three dropped dots</h3>
+      <p>Championship output-02, <strong class="cyan">Opus 4.5</strong>: its reasoning trace derived the program's stdout <em>perfectly</em> — and then, transcribing its own correct answer into the answer tags, dropped three dots from the output. Capability intact; bookkeeping failed. The most human error in the dataset, made by the oldest mind in the field.</p>
+    </div>
+
+    <div class="exhibit" data-screen-label="Exhibit D — the verdict">
+      <span class="ex-tag">EXHIBIT D</span>
+      <h3>What failure looks like now</h3>
+      <p>Tally every blemish in 1,761 runs and a taxonomy appears: <strong>transcription slips</strong> (dots), <strong>shared lexical blind spots</strong> (breeze), <strong>bookkeeping traps</strong> (the memo counter), <strong>tool tantrums</strong> (GPT's sandbox surrender), and <strong>overthinking</strong> (the coaster above). What's almost extinct: not knowing the answer. The remaining failures aren't gaps in intelligence — they're failures of <em>self-verification</em>. Models that confidently checked their own work, and were confidently wrong.</p>
+    </div>
+
+    <p class="dim">Which is exactly where this stops being a story about benchmarks &#8594; <a href="04 The Meaning.html">Chapter 04: The Meaning</a>.</p>
+  </section>
+
+</div>
+<script src="assets/arena-data.js"></script>
+<script src="assets/arena-ui.js"></script>
+<script>
+  ArenaUI.mountChrome("03");
+  const A = window.ARENA;
+
+  /* ---------- COASTER ---------- */
+  (function () {
+    const svg = document.getElementById("coaster");
+    const W = 720, H = 280, padL = 56, padR = 40, padT = 30, padB = 46;
+    const xs = [0, 1, 2, 3].map((i) => padL + (i * (W - padL - padR)) / 3);
+    const yOf = (score) => padT + (101.5 - score) / (101.5 - 88) * (H - padT - padB);
+    const gpt = A.ladders.gpt.pooledScore;
+    const fab = A.ladders.fable.pooledScore;
+    let parts = "";
+    // gridlines
+    for (const s of [100, 96, 92]) {
+      parts += '<line x1="' + padL + '" y1="' + yOf(s) + '" x2="' + (W - padR) + '" y2="' + yOf(s) + '" stroke="rgba(69,255,127,0.12)" stroke-dasharray="3 5"></line>';
+      parts += '<text x="' + (padL - 10) + '" y="' + (yOf(s) + 4) + '" fill="#6f9a7a" font-size="11" text-anchor="end" font-family="IBM Plex Mono, monospace">' + s + "</text>";
+    }
+    // coaster struts under GPT track (wooden coaster look)
+    for (let i = 0; i < 3; i++) {
+      for (let k = 0; k <= 6; k++) {
+        const t = k / 6;
+        const x = xs[i] + (xs[i + 1] - xs[i]) * t;
+        const y = yOf(gpt[i] + (gpt[i + 1] - gpt[i]) * t);
+        parts += '<line x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (H - padB + 14) + '" stroke="rgba(255,176,0,0.18)"></line>';
+      }
+    }
+    // ground
+    parts += '<line x1="' + (padL - 14) + '" y1="' + (H - padB + 14) + '" x2="' + (W - padR + 14) + '" y2="' + (H - padB + 14) + '" stroke="rgba(255,176,0,0.4)"></line>';
+    // tracks
+    const path = (vals) => vals.map((v, i) => (i ? "L" : "M") + xs[i] + " " + yOf(v)).join(" ");
+    parts += '<path d="' + path(fab) + '" fill="none" stroke="#45ff7f" stroke-width="3"></path>';
+    parts += '<path d="' + path(gpt) + '" fill="none" stroke="#ffb000" stroke-width="3"></path>';
+    // points
+    for (let i = 0; i < 4; i++) {
+      parts += '<circle cx="' + xs[i] + '" cy="' + yOf(fab[i]) + '" r="4" fill="#45ff7f"></circle>';
+      parts += '<circle cx="' + xs[i] + '" cy="' + yOf(gpt[i]) + '" r="4" fill="#ffb000"></circle>';
+    }
+    // labels
+    parts += '<text x="' + (W - padR) + '" y="' + (yOf(fab[3]) - 12) + '" fill="#45ff7f" font-size="13" text-anchor="end" font-family="VT323, monospace" letter-spacing="2">FABLE 5</text>';
+    parts += '<text x="' + (W - padR) + '" y="' + (yOf(gpt[3]) + 24) + '" fill="#ffb000" font-size="13" text-anchor="end" font-family="VT323, monospace" letter-spacing="2">GPT-5.5</text>';
+    // cars
+    parts += '<g id="fabCar"><rect x="-9" y="-16" width="18" height="11" fill="#45ff7f"></rect><circle cx="-5" cy="-3" r="3" fill="#45ff7f"></circle><circle cx="5" cy="-3" r="3" fill="#45ff7f"></circle></g>';
+    parts += '<g id="gptCar"><rect x="-9" y="-16" width="18" height="11" fill="#ffb000"></rect><circle cx="-5" cy="-3" r="3" fill="#ffb000"></circle><circle cx="5" cy="-3" r="3" fill="#ffb000"></circle></g>';
+    svg.innerHTML = parts;
+
+    const fabTokens = A.ladders.fable.pureTokens, gptTokens = A.ladders.gpt.pureTokens;
+    function setEffort(i) {
+      document.getElementById("fabCar").setAttribute("transform", "translate(" + xs[i] + " " + yOf(fab[i]) + ")");
+      document.getElementById("gptCar").setAttribute("transform", "translate(" + xs[i] + " " + yOf(gpt[i]) + ")");
+      document.getElementById("fabScore").textContent = fab[i].toFixed(1);
+      document.getElementById("gptScore").textContent = gpt[i].toFixed(1);
+      document.getElementById("fabTok").textContent = fabTokens[i].toLocaleString() + " tokens/task (pure) — tokens up, score up, then flat at the ceiling";
+      document.getElementById("gptTok").textContent = gptTokens[i].toLocaleString() + " tokens/task (pure) — " + (i >= 2 ? "tokens up, score DOWN" : "its best configurations are its cheapest");
+      const cars = [document.getElementById("fabCar"), document.getElementById("gptCar")];
+      for (const c of cars) { c.style.transition = ArenaUI.reduced ? "none" : "transform 0.45s cubic-bezier(0.3, 1.2, 0.4, 1)"; }
+    }
+    document.getElementById("effortSlider").addEventListener("input", (e) => setEffort(+e.target.value));
+    setEffort(0);
+  })();
+
+  /* ---------- TOOL DELTAS ---------- */
+  (function () {
+    const el = document.getElementById("deltaRows");
+    let h = '<div class="delta-row dim small" style="margin-bottom: 2px;"><span></span><span>PURE (no tools)</span><span>AGENTIC (tools)</span><span style="text-align:right;">DELTA</span></div>';
+    for (const r of A.toolDelta) {
+      const c = A.contestants[r.id];
+      const bar = (v, col) => '<span class="bar-track" style="height: 13px;"><span class="bar-fill" style="--c:' + col + '; width:' + ((v - 80) / 20 * 100) + '%"></span></span>';
+      h += '<div class="delta-row">' +
+        '<span style="color:' + c.color + '">' + c.short + "</span>" +
+        '<span style="display:grid; grid-template-columns: 1fr 44px; gap: 8px; align-items:center;">' + bar(r.pure, "#9fcf4a") + '<span class="small">' + r.pure.toFixed(0) + "</span></span>" +
+        '<span style="display:grid; grid-template-columns: 1fr 44px; gap: 8px; align-items:center;">' + bar(r.agentic, "#ffb000") + '<span class="small">' + r.agentic.toFixed(0) + "</span></span>" +
+        '<span class="red" style="text-align:right;">&#8722;' + (r.pure - r.agentic).toFixed(1) + "</span>" +
+      "</div>";
+    }
+    el.innerHTML = h;
+  })();
+
+  /* ---------- MEMO DEMO ---------- */
+  (function () {
+    // simulate f(13) recording call order: [n, isHit]
+    const callSeq = [];
+    const memo = {};
+    function f(n) {
+      if (n in memo) { callSeq.push([n, true]); return memo[n]; }
+      callSeq.push([n, false]);
+      if (n < 2) return (memo[n] = n);
+      return (memo[n] = f(n - 1) + f(n - 2));
+    }
+    f(13);
+
+    const grid = document.getElementById("memoGrid");
+    grid.innerHTML = callSeq.map(([n, hit], i) =>
+      '<span class="memo-cell" data-i="' + i + '">f(' + n + ')' + '<span class="cnt" style="visibility:hidden;">' + (i + 1) + "</span></span>"
+    ).join("");
+
+    const display = document.getElementById("callsDisplay");
+    let running = false;
+    document.getElementById("memoRun").addEventListener("click", () => {
+      if (running) return;
+      running = true;
+      const cells = grid.querySelectorAll(".memo-cell");
+      cells.forEach((c) => { c.classList.remove("computed", "hit"); c.querySelector(".cnt").style.visibility = "hidden"; });
+      display.textContent = "calls=0";
+      display.style.color = "";
+      const step = ArenaUI.reduced ? 0 : 240;
+      callSeq.forEach(([n, hit], i) => {
+        setTimeout(() => {
+          cells[i].classList.add(hit ? "hit" : "computed");
+          cells[i].querySelector(".cnt").style.visibility = "visible";
+          display.textContent = "calls=" + (i + 1);
+          if (i === callSeq.length - 1) {
+            display.style.color = "var(--green)";
+            running = false;
+          }
+        }, 300 + i * step);
+      });
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 — The Token Economy · Fable Arena</title>
+<link rel="stylesheet" href="assets/arena.css">
+<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<style>
+  .army-row { display: grid; grid-template-columns: 130px 1fr 90px; gap: 14px; align-items: start; margin: 14px 0; }
+  .army-row .aname { font-size: 12.5px; padding-top: 2px; white-space: nowrap; }
+  .army-row .acount { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-dim); padding-top: 2px; }
+  .army-bots { line-height: 1; }
+  .gen-row { display: grid; grid-template-columns: 130px 1fr 70px; gap: 12px; align-items: center; margin: 9px 0; }
+  .gen-row .gname { font-size: 12.5px; white-space: nowrap; }
+  .gen-row .gval { text-align: right; font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-bright); }
+  .conv-display {
+    font-family: var(--display); font-size: clamp(40px, 6vw, 72px); line-height: 1.05;
+    color: var(--ink-bright); text-shadow: 0 0 18px var(--green-faint); margin: 18px 0 6px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .moon-track { position: relative; height: 22px; border: 1px solid var(--green-soft); background: rgba(69,255,127,0.05); margin: 20px 0 8px 0; }
+  .moon-fill { position: absolute; inset: 0 auto 0 0; background: var(--green); box-shadow: 0 0 12px var(--green-soft); min-width: 2px; }
+  .moon-label { position: absolute; top: -22px; font-size: 11px; letter-spacing: 0.1em; color: var(--ink-dim); }
+  .chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(225px, 1fr)); gap: 14px; margin-top: 20px; }
+  .chip {
+    border: 1px solid var(--green-soft); background: linear-gradient(160deg, rgba(20,40,26,0.7), rgba(6,12,8,0.8));
+    padding: 16px; position: relative;
+  }
+  .chip::before, .chip::after {
+    content: "||||||||"; position: absolute; left: 0; right: 0; text-align: center;
+    color: var(--green-faint); font-size: 9px; letter-spacing: 3px; overflow: hidden;
+  }
+  .chip::before { top: 1px; }
+  .chip::after { bottom: 1px; }
+  .chip .chip-name { font-family: var(--display); font-size: 24px; color: var(--ink-bright); }
+  .chip .chip-spec { font-size: 12px; color: var(--ink-dim); margin-top: 6px; line-height: 1.7; }
+  .chip .chip-spec b { color: var(--green); font-weight: 500; }
+  .chip .chip-verdict { font-size: 12px; color: var(--amber); margin-top: 10px; }
+</style>
+</head>
+<body>
+<div class="wrap" data-screen-label="Ch02 — The Token Economy">
+
+  <header style="margin-top: 10px;">
+    <div class="kicker">Chapter 02</div>
+    <h1>THE TOKEN ECONOMY</h1>
+    <p class="dek">When everyone gets an A, grade the <em>working out</em>. Every contestant's reasoning was metered to the token — and underneath the seven-way tie sits a brutally clear ranking that accuracy could never show you.</p>
+  </header>
+
+  <section class="block" data-screen-label="Ch02 — Robot army">
+    <div class="sect-label"><b>EXHIBIT</b> // THE ROBOT ARMY — WHAT IT TAKES TO ANSWER ONE PUZZLE</div>
+    <p>Each <span class="bot" style="color: var(--green);"></span> below is <strong>50 tokens of thinking</strong>. Every row solved the same 50 tasks at (or within a point of) a perfect score. This is the workforce each model deployed, per task, to get there:</p>
+    <div class="term-box" id="armyBox">
+      <div class="tb-title">AVG OUTPUT TOKENS PER TASK — BASE TIER, PURE TRACK</div>
+      <div id="armyRows"></div>
+      <p class="footnote">All rows scored 98&#8211;100 on this track. Same exam, same grades — one mind brought nine robots, another brought eighty-one.</p>
+    </div>
+    <p>Haiku 4.5 matches the ceiling but needs <strong>~6&times; Fable-medium's tokens</strong> to reach it. And inside the Claude lineage the pattern is mechanical: <strong>each generation hits the same ceiling with ~15&#8211;30% fewer tokens than its predecessor</strong>. Capability stopped going up — it started getting <em>cheaper</em>.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch02 — Generational compression">
+    <div class="sect-label"><b>DATA</b> // SAME SCORE, SHRINKING THOUGHT</div>
+    <div class="term-box">
+      <div class="tb-title">THE GREAT TOKEN COMPRESSION — RELEASE ORDER, OLDEST FIRST</div>
+      <div id="genRows"></div>
+      <p class="footnote">Opus 4.5 &#8594; 4.6 &#8594; 4.7 &#8594; 4.8: 2,688 &#8594; 1,339 &#8594; 1,173 &#8594; 957 tokens for the same perfect score. Fable 5 continues the curve. If accuracy is the MHz race, this is IPC — work per clock — and it's where all the progress went.</p>
+    </div>
+  </section>
+
+  <section class="block" data-screen-label="Ch02 — Conversion machine">
+    <div class="sect-label"><b>TOY</b> // THE CONVERSION MACHINE — 2,640,000 TOKENS OF THOUGHT, MEASURED BADLY ON PURPOSE</div>
+    <p>Across both tiers and tracks, the arena's fourteen minds emitted an estimated <strong>2.64 million output tokens</strong> of reasoning. That number means nothing to a human. Convert it:</p>
+    <div class="term-box">
+      <div class="tb-title">SELECT DISPLAY UNIT</div>
+      <div class="btn-row" id="convBtns">
+        <button class="tbtn active" data-conv="clips">PAPERCLIPS</button>
+        <button class="tbtn" data-conv="floppy">FLOPPY DISKS</button>
+        <button class="tbtn" data-conv="486">486 PROCESSOR-YEARS</button>
+        <button class="tbtn" data-conv="tolstoy">WAR AND PEACE</button>
+        <button class="tbtn" data-conv="paper">A4 STACK</button>
+      </div>
+      <div class="conv-display" id="convNum">—</div>
+      <div id="convCaption" class="dim"></div>
+    </div>
+    <div class="footnote" id="convFootnote"></div>
+  </section>
+
+  <section class="block" data-screen-label="Ch02 — Moon check">
+    <div class="sect-label"><b>REALITY CHECK</b> // DO THE TOKENS REACH THE MOON?</div>
+    <div class="term-box">
+      <div class="tb-title">MISSION STATUS: EARTH &#8594; MOON (384,400 KM)</div>
+      <div class="moon-track">
+        <span class="moon-label" style="left: 0;">EARTH</span>
+        <span class="moon-label" style="right: 0;">MOON</span>
+        <span class="moon-fill" id="moonFill" style="width: 0%;"></span>
+      </div>
+      <p style="margin-top: 18px;">No. They do not. Chained as paperclips, the arena's entire reasoning output stretches <strong>~87 km</strong> — roughly London to Brighton — which is <strong id="moonPct">0.023%</strong> of the way to the moon. The green sliver above is to scale.</p>
+      <p class="dim">You would need to run Fable Arena about <strong>4,400 more times</strong> to clip your way to the moon. At observed prices, call it a few hundred thousand dollars of API spend — which, for "a chain of paperclips to the moon, made of pure reasoning," is honestly starting to sound affordable. That sentence is the whole chapter.</p>
+    </div>
+  </section>
+
+  <section class="block" data-screen-label="Ch02 — 486 chip cards">
+    <div class="sect-label"><b>THROWBACK</b> // THE SILICON SPEC SHEET</div>
+    <p>Translate each contestant into the hardware language of 1994 — where the number that mattered was not how fast you clocked, but how much work each clock did:</p>
+    <div class="chips" id="chips"></div>
+    <p class="footnote">&#8224; Back-of-envelope: at roughly 10&#8309;&#8309; FLOPs per generated token, one task's worth of Fable-medium reasoning (~665 tokens) would take an Intel 486DX2-66 about 23 days of continuous arithmetic. The full arena: ~250 processor-years. A 486 that started this benchmark when the United States was founded would be finishing it about now — and the arena ran it in an afternoon, for less than the price of a 486 in 1994.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch02 — Cost wrinkle">
+    <div class="sect-label"><b>HONESTY PANEL</b> // TOKENS ARE NOT DOLLARS</div>
+    <div class="term-box amber-box">
+      <div class="tb-title">THE WRINKLE</div>
+      <div style="overflow-x: auto;">
+        <table class="tt" id="costTable"></table>
+      </div>
+      <p style="margin-top: 16px;">Fable thinks in the fewest tokens but bills at frontier rates, so <strong>Haiku is still the cheapest perfect score</strong> ($0.032/task) and Sonnet the best mid-price ($0.057). Token-efficiency is a property of the <em>mind</em>; cost-efficiency is a property of the <em>price list</em>. The first is the durable signal — prices change monthly, reasoning budgets are architecture.</p>
+    </div>
+    <p class="dim">So who actually breaks first when the tasks get harder, and who falls apart when you think <em>too</em> hard? That's a darker story &#8594; <a href="03 The Rollercoaster.html">Chapter 03</a>.</p>
+  </section>
+
+</div>
+<script src="assets/arena-data.js"></script>
+<script src="assets/arena-ui.js"></script>
+<script>
+  ArenaUI.mountChrome("02");
+  const A = window.ARENA;
+  const TOK = A.totals.outputTokens;
+
+  /* ---------- ROBOT ARMY ---------- */
+  (function () {
+    const box = document.getElementById("armyRows");
+    const rows = [...A.efficiency].sort((a, b) => a.tokens - b.tokens);
+    const frag = [];
+    for (const r of rows) {
+      const c = A.contestants[r.id];
+      const n = Math.round(r.tokens / 50);
+      let bots = "";
+      for (let i = 0; i < n; i++) bots += '<span class="bot" data-i="' + i + '"></span>';
+      frag.push(
+        '<div class="army-row">' +
+          '<span class="aname" style="color:' + c.color + '">' + c.label + "</span>" +
+          '<span class="army-bots" style="color:' + c.color + '">' + bots + "</span>" +
+          '<span class="acount">' + r.tokens.toLocaleString() + " tok</span>" +
+        "</div>"
+      );
+    }
+    box.innerHTML = frag.join("");
+    // staggered spawn animation
+    const allBots = box.querySelectorAll(".bot");
+    if (!ArenaUI.reduced) {
+      allBots.forEach((b) => { b.style.opacity = "0"; });
+      ArenaUI.onVisible(document.getElementById("armyBox"), () => {
+        box.querySelectorAll(".army-row").forEach((row) => {
+          row.querySelectorAll(".bot").forEach((b, i) => {
+            setTimeout(() => { b.style.opacity = "1"; }, 250 + i * 22);
+          });
+        });
+      });
+    }
+  })();
+
+  /* ---------- GENERATIONAL COMPRESSION ---------- */
+  (function () {
+    const order = ["haiku-4-5", "opus-4-5", "sonnet-4-6", "opus-4-6", "opus-4-7", "opus-4-8", "fable-medium"];
+    const byId = Object.fromEntries(A.efficiency.map((r) => [r.id, r]));
+    const max = 4034;
+    const el = document.getElementById("genRows");
+    let h = "";
+    for (const id of order) {
+      const c = A.contestants[id], r = byId[id];
+      h += '<div class="gen-row">' +
+        '<span class="gname" style="color:' + c.color + '">' + c.label + "</span>" +
+        '<span class="bar-track"><span class="bar-fill" style="--c:' + c.color + '" data-w="' + (r.tokens / max * 100) + '"></span></span>' +
+        '<span class="gval">' + r.tokens.toLocaleString() + "</span>" +
+      "</div>";
+    }
+    el.innerHTML = h;
+    ArenaUI.onVisible(el, () => {
+      el.querySelectorAll(".bar-fill").forEach((b, i) => {
+        b.style.transition = "width 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) " + (i * 0.12) + "s";
+        requestAnimationFrame(() => { b.style.width = b.dataset.w + "%"; });
+      });
+    });
+  })();
+
+  /* ---------- CONVERSION MACHINE ---------- */
+  const CONVS = {
+    clips: {
+      n: TOK, dec: 0, suffix: " paperclips",
+      caption: "One paperclip per token, chained end to end: a line of reasoning ~87 km long. London to Brighton, in office supplies.",
+      foot: "Standard 33 mm paperclip, interlocked. 2.64M clips × 33 mm ≈ 87 km."
+    },
+    floppy: {
+      n: 9, dec: 0, suffix: " floppy disks",
+      caption: "Every word of reasoning produced by fourteen frontier minds across 1,761 runs — about 11.9 MB of text. The whole arena fits in a desk drawer from 1994.",
+      foot: "≈4.5 characters per token → ~11.9 MB ÷ 1.44 MB per 3.5&#8243; disk ≈ 8.3, rounded up because you always need a spare."
+    },
+    "486": {
+      n: 251, dec: 0, suffix: " processor-years",
+      caption: "The arithmetic behind these tokens, executed on an Intel 486DX2-66: start it in 1775, collect the results today.",
+      foot: "Order-of-magnitude only: ~10&#8309;&#8309; FLOPs/token ÷ ~33 MFLOPS sustained ≈ 50 minutes of 486 time per token.&#8224;"
+    },
+    tolstoy: {
+      n: 3.4, dec: 1, suffix: " × War and Peace",
+      caption: "By word count, the arena's collected reasoning is three and a half Tolstoys — written in an afternoon, graded by robots, read by no one.",
+      foot: "~0.75 words per token → ≈1.98M words ÷ 587,287 words per War and Peace."
+    },
+    paper: {
+      n: 3960, dec: 0, suffix: " A4 pages",
+      caption: "Printed out, the thinking stacks 40 cm tall — a traffic cone of pure deduction. The answers themselves would fill about six pages.",
+      foot: "≈500 words per page; 80 gsm paper at ~0.1 mm per sheet ≈ 39.6 cm."
+    }
+  };
+  function showConv(key) {
+    const c = CONVS[key];
+    ArenaUI.countUp(document.getElementById("convNum"), c.n, { dur: 900, dec: c.dec, suffix: c.suffix });
+    document.getElementById("convCaption").textContent = c.caption;
+    document.getElementById("convFootnote").innerHTML = "Conversion: " + c.foot + " Token total estimated from per-track per-contestant averages in the run logs.";
+  }
+  document.querySelectorAll("#convBtns .tbtn").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll("#convBtns .tbtn").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      showConv(b.dataset.conv);
+    });
+  });
+  showConv("clips");
+
+  /* ---------- MOON ---------- */
+  ArenaUI.onVisible(document.getElementById("moonFill"), () => {
+    const f = document.getElementById("moonFill");
+    f.style.transition = "width 1.6s ease-out";
+    requestAnimationFrame(() => { f.style.width = "0.023%"; });
+  });
+
+  /* ---------- CHIP CARDS ---------- */
+  (function () {
+    const SPECS = [
+      { id: "fable-medium", chip: "FABLE-5/MED", verdict: "Generational IPC champion. Maximum work per clock; ships the answer while others are still warming up." },
+      { id: "opus-4-8", chip: "OPUS-4.8", verdict: "Current flagship silicon. Perfect at championship spec, but draws 2× the budget for the same result." },
+      { id: "opus-4-7", chip: "OPUS-4.7", verdict: "Last year's flagship. Still holds the ceiling; pays for it in clocks." },
+      { id: "sonnet-4-6", chip: "SONNET-4.6", verdict: "Mid-size workhorse. Within 0.2 points of the leaders at a mid-tier price; sweats visibly under load." },
+      { id: "opus-4-5", chip: "OPUS-4.5", verdict: "The Pentium that met its overdrive limit: flawless at base spec, breaks at championship clock — while burning the most watts in the field." },
+      { id: "haiku-4-5", chip: "HAIKU-4.5", verdict: "Tiny die, huge thermal output. Reaches the ceiling by brute force: 6× the cycles of Fable at 1/4 the price." }
+    ];
+    const byId = Object.fromEntries(A.efficiency.map((r) => [r.id, r]));
+    const champById = Object.fromEntries(A.champ.map((r) => [r.id, r]));
+    let h = "";
+    for (const s of SPECS) {
+      const c = A.contestants[s.id], e = byId[s.id], ch = champById[s.id];
+      h += '<div class="chip">' +
+        '<div class="chip-name" style="color:' + c.color + '">' + s.chip + "</div>" +
+        '<div class="chip-spec">' +
+          "BASE SCORE <b>" + A.pooled[s.id].toFixed(1) + "</b><br>" +
+          (ch ? "CHAMP SCORE <b>" + ch.score.toFixed(1) + "</b><br>" : "CHAMP SCORE <b>—</b><br>") +
+          "TOKENS/TASK <b>" + e.tokens.toLocaleString() + "</b><br>" +
+          "WALL CLOCK <b>" + e.sec + " s</b> &middot; COST <b>$" + e.usd.toFixed(3) + "</b>" +
+        "</div>" +
+        '<div class="chip-verdict">' + s.verdict + "</div>" +
+      "</div>";
+    }
+    document.getElementById("chips").innerHTML = h;
+  })();
+
+  /* ---------- COST TABLE ---------- */
+  (function () {
+    const rows = [...A.efficiency].sort((a, b) => a.usd - b.usd);
+    let h = "<thead><tr><th>contestant</th><th class=\"num\">tokens/task</th><th class=\"num\">$/task</th><th class=\"num\">$ per 1k perfect answers</th></tr></thead><tbody>";
+    for (const r of rows) {
+      const c = A.contestants[r.id];
+      h += "<tr><td style=\"color:" + c.color + "\">" + c.label + "</td>" +
+           "<td class=\"num\">" + r.tokens.toLocaleString() + "</td>" +
+           "<td class=\"num\">$" + r.usd.toFixed(3) + "</td>" +
+           "<td class=\"num\"><strong>$" + Math.round(r.usd * 1000) + "</strong></td></tr>";
+    }
+    document.getElementById("costTable").innerHTML = h + "</tbody>";
+  })();
+</script>
+</body>
+</html>

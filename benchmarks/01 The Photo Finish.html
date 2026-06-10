@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 — The Photo Finish · Fable Arena</title>
+<link rel="stylesheet" href="assets/arena.css">
+<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<style>
+  /* race */
+  .race-row { display: grid; grid-template-columns: 130px 1fr 64px; gap: 12px; align-items: center; margin: 7px 0; }
+  .race-row .rname { font-size: 12.5px; letter-spacing: 0.04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .race-row .rscore { font-variant-numeric: tabular-nums; font-size: 13px; text-align: right; color: var(--ink-dim); }
+  .race-track { position: relative; height: 15px; background: rgba(69,255,127,0.06); border: 1px solid var(--green-faint); }
+  .race-fill { position: absolute; inset: 0 auto 0 0; width: 0%; background: var(--c); opacity: 0.85; }
+  .race-runner { position: absolute; top: -3px; left: 0; width: 7px; height: 19px; background: var(--c); box-shadow: 0 0 9px var(--c); }
+  .finish-line { position: absolute; top: 0; bottom: 0; right: 0; width: 3px; background: repeating-linear-gradient(to bottom, #fff 0 3px, #000 3px 6px); opacity: 0.6; }
+  .tie-banner {
+    display: none; margin-top: 22px; padding: 16px 20px; text-align: center;
+    border: 1px solid var(--amber); color: var(--amber);
+    font-family: var(--display); font-size: clamp(26px, 4vw, 40px); letter-spacing: 0.04em;
+    text-shadow: 0 0 16px rgba(255,176,0,0.4);
+  }
+  .flash { animation: photoflash 0.55s ease-out 1; }
+  @keyframes photoflash {
+    0% { background: rgba(255,255,255,0.9); }
+    100% { background: transparent; }
+  }
+  /* heatmap */
+  .heat { display: grid; grid-template-columns: 130px repeat(5, 1fr); gap: 4px; font-size: 12px; }
+  .heat .hh { color: var(--ink-dim); text-transform: uppercase; letter-spacing: 0.1em; font-size: 10.5px; align-self: end; padding-bottom: 3px; }
+  .heat .hname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; align-self: center; font-size: 12px; }
+  .heat .cell {
+    text-align: center; padding: 5px 2px; font-variant-numeric: tabular-nums;
+    color: #04140a; font-weight: 600;
+  }
+  /* glitch title — RGB split + sync-roll, fired intermittently from JS */
+  h1.glitch { position: relative; }
+  h1.glitch.glitching { animation: glitchSkew 0.42s steps(3, end) 1; }
+  h1.glitch.glitching::before,
+  h1.glitch.glitching::after {
+    content: attr(data-text);
+    position: absolute; left: 0; top: 0; width: 100%;
+    pointer-events: none; user-select: none; text-shadow: none;
+  }
+  h1.glitch.glitching::before {
+    color: var(--cyan); opacity: 0.85;
+    clip-path: inset(0 0 62% 0);
+    animation: glitchTop 0.42s steps(2, end) 1;
+  }
+  h1.glitch.glitching::after {
+    color: var(--red); opacity: 0.85;
+    clip-path: inset(58% 0 0 0);
+    animation: glitchBot 0.42s steps(2, end) 1;
+  }
+  @keyframes glitchSkew {
+    0%, 100% { transform: none; }
+    20% { transform: translate(-3px, 1px) skewX(-4deg); }
+    45% { transform: translate(3px, -2px) skewX(3deg); }
+    70% { transform: translate(-2px, 1px) skewX(2deg); }
+    88% { transform: translate(2px, 0) skewX(-2deg); }
+  }
+  @keyframes glitchTop {
+    0%   { transform: translateX(0);    clip-path: inset(0 0 66% 0); }
+    50%  { transform: translateX(6px);  clip-path: inset(18% 0 44% 0); }
+    100% { transform: translateX(-4px); clip-path: inset(40% 0 22% 0); }
+  }
+  @keyframes glitchBot {
+    0%   { transform: translateX(0);    clip-path: inset(62% 0 0 0); }
+    50%  { transform: translateX(-6px); clip-path: inset(46% 0 14% 0); }
+    100% { transform: translateX(4px);  clip-path: inset(72% 0 0 0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    h1.glitch.glitching { animation: none; }
+    h1.glitch.glitching::before, h1.glitch.glitching::after { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap" data-screen-label="Ch01 — The Photo Finish">
+
+  <header style="margin-top: 10px;">
+    <div class="kicker">Chapter 01</div>
+    <h1 class="glitch" data-text="THE PHOTO FINISH">THE PHOTO FINISH</h1>
+    <p class="dek">Fifty machine-generated tasks. Five disciplines. Every answer checked by an oracle that cannot be argued with. Here is the entire base-tier competition, replayed in eight seconds.</p>
+  </header>
+
+  <section class="block" data-screen-label="Ch01 — The race">
+    <div class="sect-label"><b>EXHIBIT</b> // THE RACE TO THE CEILING — POOLED SCORE, BOTH TRACKS</div>
+    <div class="term-box" id="raceBox">
+      <div class="tb-title">ARENA FLOOR — 14 LANES</div>
+      <div class="btn-row" style="margin-bottom: 18px;">
+        <button class="tbtn" id="raceBtn">&#9654; RUN RACE</button>
+        <span class="dim small">lane speed &#8733; each model's real wall-clock; finish position = pooled score</span>
+      </div>
+      <div id="raceLanes"></div>
+      <div class="tie-banner" id="tieBanner">&#9733; 7-WAY PHOTO FINISH — TIED AT 100.0 &#9733;</div>
+    </div>
+    <p>Seven contestants — every Fable 5 setting above low, three generations of Opus, and Sonnet 4.6 — hit a <strong>perfect 100.0 across both tracks</strong>. Haiku 4.5 and Fable-low missed a single task each. Even GPT-5.5's best configurations landed at 97. The arena was built to be hard: zebra puzzles with provably unique solutions, programs you must trace by hand, constraint bundles with up to eight simultaneous rules. It did not matter. <em>The frontier ate it.</em></p>
+    <p class="dim">When the top half of the field is indistinguishable from perfect, your scoreboard is no longer measuring intelligence. It's measuring the test.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch01 — Leaderboard">
+    <div class="sect-label"><b>DATA</b> // FULL LEADERBOARD</div>
+    <div class="btn-row" style="margin-bottom: 14px;">
+      <button class="tbtn active" data-track="pooled">POOLED</button>
+      <button class="tbtn" data-track="pure">PURE (no tools)</button>
+      <button class="tbtn" data-track="agentic">AGENTIC (tools)</button>
+    </div>
+    <div class="term-box" style="margin-top: 0;">
+      <div class="tb-title" id="lbTitle">BASE TIER — POOLED, 100 CELLS PER CONTESTANT</div>
+      <div style="overflow-x: auto;">
+        <table class="tt" id="lbTable"></table>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" data-screen-label="Ch01 — Category heatmap">
+    <div class="sect-label"><b>DATA</b> // WHERE THE POINTS WERE LOST — CATEGORY HEATMAP</div>
+    <div class="btn-row" style="margin-bottom: 14px;">
+      <button class="tbtn active" data-heat="pure">PURE</button>
+      <button class="tbtn" data-heat="agentic">AGENTIC</button>
+    </div>
+    <div class="term-box" style="margin-top: 0;">
+      <div class="tb-title">SCORE BY CATEGORY (GREEN = 100, AMBER = DROPPED POINTS)</div>
+      <div class="heat" id="heatGrid"></div>
+    </div>
+    <p style="margin-top: 18px;">Notice the shape of the damage: on the pure track almost nothing; on the agentic track GPT-5.5's <strong>logic</strong> column collapses (as low as 60) and <strong>output tracing</strong> bleeds. Claude models lost essentially nothing when handed tools. That asymmetry is its own story — it gets a full autopsy in <a href="03 The Rollercoaster.html">Chapter 03</a>.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch01 — Championship">
+    <div class="sect-label"><b>ACT II</b> // THE CHAMPIONSHIP — BREAKING THE TIE</div>
+    <p>A benchmark that everyone aces is a broken instrument. So the arena was rebuilt overnight, knobs turned to championship spec: <strong>six-house</strong> puzzles with a fifth attribute category, programs with mutual recursion and aliasing traps, ~13 simultaneous format constraints, math chains of twenty operations. Same machinery, new seeds, adversarially reviewed by 34 fresh agents before any model saw a task.</p>
+    <div class="term-box">
+      <div class="tb-title">CHAMPIONSHIP TIER — PURE TRACK, 40 TASKS, OFFICIAL FIELD OF 8</div>
+      <div style="overflow-x: auto;">
+        <table class="tt" id="champTable"></table>
+      </div>
+      <p class="footnote">* codex output-token counts exclude some reasoning tokens; cross-vendor token comparisons are indicative only. Single-run cells: differences under ~2 points are noise.</p>
+    </div>
+    <p>The tie cracked — <strong>from the bottom</strong>. Opus 4.5, flawless at base tier, dropped two program-tracing tasks while burning 3.8&times; Fable-medium's tokens trying. Sonnet 4.6 held 99.8 but needed 3&times; the wall-clock. And the three contestants still standing at 100.0 are now separated by exactly one thing: <strong>fable-medium delivers the same perfect score at half the reasoning budget of Opus 4.7 and 4.8</strong>.</p>
+    <div class="pullquote">Difficulty scaled the spend, not the ranking. Every model paid 2&#8211;4&times; more tokens; the order never moved.</div>
+    <p class="dim">Which means the real scoreboard was never the score. Follow the tokens &#8594; <a href="02 The Token Economy.html">Chapter 02</a>.</p>
+  </section>
+
+</div>
+<script src="assets/arena-data.js"></script>
+<script src="assets/arena-ui.js"></script>
+<script>
+  ArenaUI.mountChrome("01");
+  const A = window.ARENA;
+
+  /* ---------- GLITCH TITLE (loses sync from time to time) ---------- */
+  (function () {
+    if (ArenaUI.reduced) return;
+    const h = document.querySelector("h1.glitch");
+    if (!h) return;
+    function burst() {
+      h.classList.add("glitching");
+      // remove exactly when the 0.42s animations finish — no static residue
+      setTimeout(() => h.classList.remove("glitching"), 420);
+      setTimeout(burst, 2600 + Math.random() * 5200);
+    }
+    setTimeout(burst, 1400);
+  })();
+
+  /* ---------- RACE ---------- */
+  const lanesEl = document.getElementById("raceLanes");
+  const raceRows = A.rosterOrder.map((id) => {
+    const c = A.contestants[id];
+    const pooledSec = (A.basePure[id][6] + A.baseAgentic[id][6]) / 2;
+    return { id, c, score: A.pooled[id], sec: pooledSec };
+  });
+  for (const r of raceRows) {
+    const row = document.createElement("div");
+    row.className = "race-row";
+    row.innerHTML =
+      '<span class="rname" style="color:' + r.c.color + '">' + r.c.label + "</span>" +
+      '<span class="race-track" style="--c:' + r.c.color + '">' +
+        '<span class="race-fill"></span><span class="race-runner" style="display:none;"></span>' +
+        '<span class="finish-line"></span>' +
+      "</span>" +
+      '<span class="rscore">&nbsp;</span>';
+    lanesEl.appendChild(row);
+    r.fill = row.querySelector(".race-fill");
+    r.runner = row.querySelector(".race-runner");
+    r.scoreEl = row.querySelector(".rscore");
+  }
+
+  let racing = false;
+  function runRace() {
+    if (racing) return;
+    racing = true;
+    document.getElementById("tieBanner").style.display = "none";
+    const btn = document.getElementById("raceBtn");
+    btn.disabled = true;
+    const minSec = Math.min(...raceRows.map((r) => r.sec));
+    const maxSec = Math.max(...raceRows.map((r) => r.sec));
+    // map real avg seconds (11.5..35.5) to animation duration 2.8s..7.5s
+    const dur = (s) => 2800 + ((s - minSec) / (maxSec - minSec)) * 4700;
+    const t0 = performance.now();
+    let finished = 0;
+    raceRows.forEach((r) => { r.done = false; r.scoreEl.textContent = "\u00a0"; });
+
+    function frame(t) {
+      const el = t - t0;
+      for (const r of raceRows) {
+        const k = Math.min(1, el / dur(r.sec));
+        const pct = k * r.score;
+        r.fill.style.width = pct + "%";
+        r.runner.style.display = "block";
+        r.runner.style.left = "calc(" + pct + "% - 4px)";
+        if (k >= 1 && !r.done) {
+          r.done = true;
+          finished++;
+          r.scoreEl.textContent = r.score.toFixed(1);
+          r.scoreEl.style.color = r.score >= 100 ? "var(--green)" : "var(--ink-dim)";
+          if (r.score >= 100) {
+            document.getElementById("raceBox").classList.remove("flash");
+            void document.getElementById("raceBox").offsetWidth;
+            document.getElementById("raceBox").classList.add("flash");
+          }
+        }
+      }
+      if (finished < raceRows.length) { requestAnimationFrame(frame); }
+      else {
+        document.getElementById("tieBanner").style.display = "block";
+        btn.disabled = false;
+        btn.innerHTML = "&#8635; REPLAY";
+        racing = false;
+      }
+    }
+    if (ArenaUI.reduced) {
+      for (const r of raceRows) {
+        r.fill.style.width = r.score + "%";
+        r.scoreEl.textContent = r.score.toFixed(1);
+      }
+      document.getElementById("tieBanner").style.display = "block";
+      btn.disabled = false;
+      racing = false;
+      return;
+    }
+    requestAnimationFrame(frame);
+  }
+  document.getElementById("raceBtn").addEventListener("click", runRace);
+  ArenaUI.onVisible(document.getElementById("raceBox"), () => setTimeout(runRace, 500));
+
+  /* ---------- LEADERBOARD ---------- */
+  const CATS = ["LOGIC", "MATH", "CODE", "OUTPUT", "FORMAT"];
+  function renderLb(track) {
+    const tbl = document.getElementById("lbTable");
+    const title = document.getElementById("lbTitle");
+    let rows;
+    if (track === "pooled") {
+      title.textContent = "BASE TIER — POOLED, 100 CELLS PER CONTESTANT";
+      rows = A.rosterOrder.map((id) => ({ id, mean: A.pooled[id], note: A.blemishes[id] || "none" }))
+        .sort((a, b) => b.mean - a.mean);
+      let h = "<thead><tr><th>#</th><th>contestant</th><th class=\"num\">pooled mean</th><th>blemishes</th></tr></thead><tbody>";
+      let rank = 0, prev = null, shown = 0;
+      for (const r of rows) {
+        shown++;
+        if (r.mean !== prev) { rank = shown; prev = r.mean; }
+        const c = A.contestants[r.id];
+        const hero = r.id === "fable-medium" ? " class=\"hero\"" : "";
+        h += "<tr" + hero + "><td>" + rank + (rows.filter(x => x.mean === r.mean).length > 1 ? "=" : "") + "</td>" +
+             "<td style=\"color:" + c.color + "\">" + c.label + "</td>" +
+             "<td class=\"num\"><strong>" + r.mean.toFixed(1) + "</strong></td>" +
+             "<td class=\"dim small\">" + r.note + "</td></tr>";
+      }
+      tbl.innerHTML = h + "</tbody>";
+    } else {
+      const src = track === "pure" ? A.basePure : A.baseAgentic;
+      title.textContent = "BASE TIER — " + track.toUpperCase() + " TRACK, 50 TASKS";
+      rows = A.rosterOrder.map((id) => ({ id, d: src[id] })).sort((a, b) => b.d[0] - a.d[0]);
+      let h = "<thead><tr><th>contestant</th><th class=\"num\">mean</th>";
+      for (const cat of CATS) h += "<th class=\"num\">" + cat.toLowerCase() + "</th>";
+      h += "<th class=\"num\">avg s</th></tr></thead><tbody>";
+      for (const r of rows) {
+        const c = A.contestants[r.id];
+        const hero = r.id === "fable-medium" ? " class=\"hero\"" : "";
+        h += "<tr" + hero + "><td style=\"color:" + c.color + "\">" + c.label + "</td>" +
+             "<td class=\"num\"><strong>" + r.d[0].toFixed(1) + "</strong></td>";
+        for (let i = 1; i <= 5; i++) {
+          const v = r.d[i];
+          h += "<td class=\"num\"" + (v < 100 ? " style=\"color: var(--amber)\"" : "") + ">" + v.toFixed(1) + "</td>";
+        }
+        h += "<td class=\"num dim\">" + r.d[6] + "</td></tr>";
+      }
+      tbl.innerHTML = h + "</tbody>";
+    }
+  }
+  document.querySelectorAll("[data-track]").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll("[data-track]").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      renderLb(b.dataset.track);
+    });
+  });
+  renderLb("pooled");
+
+  /* ---------- HEATMAP ---------- */
+  function heatColor(v) {
+    if (v >= 100) return "#2fae5e";
+    if (v >= 95) return "#9fcf4a";
+    if (v >= 85) return "#ffb000";
+    if (v >= 70) return "#f08c00";
+    return "#ff5566";
+  }
+  function renderHeat(track) {
+    const src = track === "pure" ? A.basePure : A.baseAgentic;
+    const grid = document.getElementById("heatGrid");
+    let h = "<span></span>";
+    for (const cat of CATS) h += '<span class="hh">' + cat + "</span>";
+    for (const id of A.rosterOrder) {
+      const c = A.contestants[id];
+      h += '<span class="hname" style="color:' + c.color + '">' + c.short + "</span>";
+      for (let i = 1; i <= 5; i++) {
+        const v = src[id][i];
+        h += '<span class="cell" style="background:' + heatColor(v) + '">' + (v % 1 ? v.toFixed(1) : v) + "</span>";
+      }
+    }
+    grid.innerHTML = h;
+  }
+  document.querySelectorAll("[data-heat]").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll("[data-heat]").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      renderHeat(b.dataset.heat);
+    });
+  });
+  renderHeat("pure");
+
+  /* ---------- CHAMPIONSHIP TABLE ---------- */
+  (function () {
+    const tbl = document.getElementById("champTable");
+    let h = "<thead><tr><th>contestant</th><th class=\"num\">champ score</th><th class=\"num\">avg out-tokens</th><th class=\"num\">avg s</th><th class=\"num\">base score</th></tr></thead><tbody>";
+    for (const r of A.champ) {
+      const c = A.contestants[r.id];
+      const hero = r.id === "fable-medium" ? " class=\"hero\"" : "";
+      h += "<tr" + hero + "><td style=\"color:" + c.color + "\">" + c.label + "</td>" +
+           "<td class=\"num\"><strong>" + r.score.toFixed(1) + "</strong></td>" +
+           "<td class=\"num\">" + r.tokens.toLocaleString() + (r.tokNote ? "*" : "") + "</td>" +
+           "<td class=\"num\">" + r.sec + "</td>" +
+           "<td class=\"num dim\">" + r.base.toFixed(1) + "</td></tr>";
+    }
+    tbl.innerHTML = h + "</tbody>";
+  })();
+</script>
+</body>
+</html>
