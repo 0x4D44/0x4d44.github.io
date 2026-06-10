@@ -12,6 +12,19 @@
 
 window.ESSAYS = [
   {
+    slug: "godel",
+    title: "The Snake That Ate Its Own Tail",
+    tagline: "An interactive essay on Gödel's incompleteness theorems for a young naturalist — self-reference told through snakes, self-copying microbes, a little honest calculus, and four plushie guides (Kurt the snake, Esther the bacterium, and the planets Cassini and Jove). Eight chapters and six working interactives: a Liar machine that overheats, a real prime-power Gödel-number encoder, a playable ouroboros snake game, a self-printing quine, a live logistic-growth grapher, and a step-by-step build of the sentence that ended Hilbert's dream — formal logic and calculus rendered throughout.",
+    url: "https://0x4d44.github.io/godel/",
+    illustration: "ill-ouroboros",
+    date: "2026-06-10T14:00:00",
+    year: 1931,
+    readingMin: 30,
+    words: 3200,
+    tags: ["math", "science"],
+    real: true,
+  },
+  {
     slug: "benchmarks",
     title: "Fable Arena",
     tagline: "Fourteen frontier models, five disciplines, 1,761 mechanically-graded runs — and a finish line so crowded the score stopped meaning anything. A six-chapter CRT benchmark-zine where the real leaderboard is written in tokens: robot armies, paperclips toward the moon, 252 years of 486 time, a real per-task token beeswarm, the actual exam with its constructive oracles, verbatim head-to-head transcripts, and five theses on what a benchmark that saturates in a day means for the future of AI — and of us.",
