@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>COMBUSTION — An Interactive Study of the Internal Combustion Engine</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="00">
+<div id="topbar"></div>
+
+<!-- ===================== HERO ===================== -->
+<section class="wrap" style="padding:70px 32px 30px" data-screen-label="Contents hero">
+  <div class="kicker">An interactive study · 8 chapters</div>
+  <div style="display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:end">
+    <div>
+      <h1>A controlled<br>explosion, four<br>times a second.</h1>
+      <p class="lead" style="margin-top:24px;max-width:36ch">How the internal combustion engine turns a measured fire into smooth rotating power — the cycle, the thermodynamics, the forces, and a century of engineering them better.</p>
+    </div>
+    <div>
+      <p class="dim" style="font-family:var(--font-mono);font-size:.82rem;line-height:1.7">An engine must take a fuel that burns in milliseconds and deliver torque so steady you can sip coffee while it does. Between those two facts lies everything: the flywheel, the firing order, the balance shaft, the turbo. This study takes the machine apart, thermodynamically and mechanically — and lets you drive a working model of it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HERO — LIVE 3D ENGINE ===================== -->
+<section class="wrap" style="padding:18px 32px 40px">
+  <figure class="figure plate" style="margin:0">
+    <div class="figure-bar"><span class="fno">FIG. 00</span><span>LIVE 3-D ENGINE — DRAG TO ROTATE · SCROLL TO ZOOM</span><span class="dim" id="cfgTag" style="color:var(--signal-2)">INLINE-4 · 4-STROKE</span></div>
+    <div class="stage3d" id="stage" style="aspect-ratio:16/9">
+      <div class="hud tl" id="hudL">building…</div>
+      <div class="hud tr" id="hudR"></div>
+      <div class="hud bl">drag · scroll · the orange crankshaft is the driven part</div>
+      <div class="hud redline">⚠ REDLINE — SHE'S GONNA BLOW</div>
+      <div class="boom">
+        <div class="big">💥 ENGINE GRENADED</div>
+        <div class="sub">You sat on the rev limiter. A connecting rod just left the building through the side of the block — a textbook "leg out of bed" (Ch. 07).</div>
+        <button class="buy" id="buyBtn">🔧 Buy a new engine →</button>
+        <div class="price">invoice: one (1) short block · labour not included</div>
+      </div>
+    </div>
+    <!-- ANALOG INSTRUMENT CLUSTER -->
+    <div id="gauges"></div>
+    <!-- COMPACT CONTROL DECK -->
+    <div class="deck">
+      <div class="deck-row">
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Cylinders</span></div>
+          <div class="chips" id="nChips">
+            <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button>
+            <button data-n="4" class="on">4</button><button data-n="5">5</button><button data-n="6">6</button><button data-n="8">8</button>
+          </div></div>
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Layout</span></div>
+          <div class="chips" id="layChips">
+            <button data-l="inline" class="on">INLINE</button><button data-l="vee">V</button><button data-l="flat">FLAT</button>
+          </div></div>
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Cycle</span></div>
+          <div class="chips" id="strokeChips">
+            <button data-s="4" class="on">4-STROKE</button><button data-s="2">2-STROKE</button>
+          </div></div>
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Fuel</span></div>
+          <div class="chips" id="fuelChips">
+            <button data-f="petrol" class="on">PETROL</button><button data-f="diesel">DIESEL</button>
+          </div></div>
+      </div>
+      <div class="deck-row">
+        <button class="btn on" id="runBtn">❚❚ Running</button>
+        <div class="field" style="max-width:360px"><div class="flab"><span>Engine speed</span><b id="rpmLab">900 rpm</b></div>
+          <input id="rpm" type="range" min="120" max="6000" step="60" value="900"></div>
+        <button class="btn" id="ghostBtn">Ghost block: ON</button>
+        <button class="btn" id="resetBtn">Reset view</button>
+        <a class="btn" href="3-model-lab.html" style="text-decoration:none">Open full lab →</a>
+      </div>
+    </div>
+    <div class="figure-cap"><b>The whole study, in one machine.</b> A real, rotatable engine driven by genuine slider-crank kinematics — change the cylinder count, the layout, the cycle and the fuel and everything reacts: pistons follow their throws, rods swing, valves lift on cam timing, and the spark (or diesel injector) flashes just before TDC. Drag to orbit, scroll to zoom. The dedicated <a href="3-model-lab.html">model lab</a> adds valve and ghost-block toggles and a guided tour.</div>
+  </figure>
+</section>
+
+<!-- ===================== ORIENTATION FACTS ===================== -->
+<section class="wrap" style="padding:20px 32px 10px">
+  <div class="facts">
+    <div><div class="big">η<span class="u">= 1 − r<sup>1−γ</sup></span></div><div class="lbl">Otto efficiency rises with compression ratio</div></div>
+    <div><div class="big">720<span class="u">°</span></div><div class="lbl">Two full turns per power stroke — four-stroke</div></div>
+    <div><div class="big">~35<span class="u">%</span></div><div class="lbl">Best brake thermal efficiency, modern engines</div></div>
+    <div><div class="big">2<span class="u">bar→200</span></div><div class="lbl">Cylinder pressure swing within a single stroke</div></div>
+  </div>
+</section>
+
+<!-- ===================== READING NOTE ===================== -->
+<section class="section wrap">
+  <div class="cols2">
+    <div>
+      <div class="kicker">How to read this study</div>
+      <h2>One question, asked eight ways.</h2>
+    </div>
+    <div>
+      <p>Every chapter circles the same engineering problem: <strong>how do you turn the violent, intermittent release of chemical energy into smooth, controllable, durable rotating power?</strong></p>
+      <p>The cycle answers it in principle; thermodynamics sets the ceiling; the forces of reciprocating mass fight you the whole way; configuration, balance and the flywheel tame them; forced induction pushes past the limits; and a hundred years of wear, failure and refinement decide what actually survives in service.</p>
+      <p class="dim mono" style="font-size:.82rem">Diagrams are interactive where you see the <span class="sig">orange</span> signal colour — drag, toggle, and drive the models. <strong>Chapter 03</strong> is a fully rotatable 3D engine you can run. All figures are schematic.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONTENTS ===================== -->
+<section class="section wrap" id="contents">
+  <div class="kicker">Contents</div>
+  <h2 style="margin-bottom:34px">Eight chapters.</h2>
+  <div id="chapGrid" class="chapgrid"></div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION — an interactive study of the internal combustion engine</span>
+  <span>Schematic diagrams · not to scale · educational</span>
+</div></footer>
+
+<style>
+.chapgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+@media(max-width:920px){ .chapgrid{ grid-template-columns:1fr 1fr; } }
+@media(max-width:600px){ .chapgrid{ grid-template-columns:1fr; } }
+.chapcard{ background:var(--paper-card); padding:24px 22px 26px; display:flex; flex-direction:column; gap:14px; min-height:230px; transition:.14s; position:relative; }
+.chapcard:hover{ background:var(--paper); text-decoration:none; }
+.chapcard:hover .chapcard-go{ color:var(--signal); }
+.chapcard .cn{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.14em; color:var(--signal); }
+.chapcard h3{ color:var(--ink); }
+.chapcard p{ font-size:.92rem; line-height:1.55; margin:0; color:var(--ink-soft); flex:1; }
+.chapcard-ico{ height:46px; }
+.chapcard-go{ font-family:var(--font-mono); font-size:.72rem; letter-spacing:.1em; color:var(--ink-faint); transition:.14s; }
+</style>
+
+<script>
+const CHAPTERS = [
+  {n:"01", t:"The cycle", href:"1-the-cycle.html",
+   d:"Intake, compression, power, exhaust — the four-stroke cycle stroke by stroke, against its leaner, fiercer two-stroke cousin. A live animated cutaway you can slow to a crawl.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><rect x="14" y="6" width="18" height="22"/><rect x="17" y="14" width="12" height="8" fill="var(--signal)" stroke="none"/><path d="M23 28v8"/><circle cx="23" cy="40" r="4"/></g>`},
+  {n:"02", t:"Petrol & Diesel", href:"2-petrol-diesel.html",
+   d:"Spark vs compression ignition. The Otto and Diesel ideal cycles on live P–V and T–s diagrams, knock and cetane, the glow plug, and why diesels are thermally superior.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><path d="M6 38 V10 h12 q14 0 14 14 t-14 14z" stroke="var(--signal)"/><path d="M6 38 H40"/></g>`},
+  {n:"03", t:"The model lab", href:"3-model-lab.html",
+   d:"The centrepiece: a rotatable 3D engine you build and run. Choose cylinders, V or inline, 2- or 4-stroke, petrol or diesel; watch the valves, sparks and crank in real time.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><path d="M23 6 L38 15 V31 L23 40 L8 31 V15 Z" stroke="var(--signal)"/><path d="M23 6 V23 L8 15M23 23 L38 15"/></g>`},
+  {n:"04", t:"Forces & balance", href:"4-forces-balance.html",
+   d:"Reciprocating mass fights you. Primary and secondary shaking forces, why an inline-four buzzes and a straight-six purrs, the flywheel, balance shafts — with live force and torque graphs.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><path d="M5 32 q6-20 11 0t11 0 11 0" stroke="var(--signal)"/><path d="M5 38h36"/></g>`},
+  {n:"05", t:"Configurations", href:"5-configurations.html",
+   d:"Single bank, V, flat, the opposed-piston Napier Deltic triangle, the radial, and the rotary Wankel. What each layout buys and what it costs.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><circle cx="23" cy="13" r="6"/><circle cx="13" cy="32" r="6"/><circle cx="33" cy="32" r="6"/><path d="M23 13 L13 32M23 13L33 32M13 32H33" stroke="var(--signal)"/></g>`},
+  {n:"06", t:"Forced induction", href:"6-forced-induction.html",
+   d:"Turbochargers single and sequential, the wastegate and VGT, intercooling, and the physics of turbo lag — why boost arrives late, and the tricks that hurry it.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><circle cx="23" cy="23" r="9"/><path d="M23 23 L23 12M23 23 L33 28M23 23 L13 28" stroke="var(--signal)"/><circle cx="23" cy="23" r="2.4" fill="var(--ink)" stroke="none"/></g>`},
+  {n:"07", t:"Wear & upkeep", href:"7-wear-upkeep.html",
+   d:"How an engine ages: bore wear, bearing failure, what \u201Cputting a leg out of bed\u201D means, why oil must warm before you load it, and reading an engine's blood through oil analysis.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><circle cx="23" cy="20" r="11"/><path d="M23 31v9M14 40h18"/><path d="M16 16l4 2M30 16l-4 2M23 13v4" stroke="var(--signal)"/></g>`},
+  {n:"08", t:"History", href:"8-history.html",
+   d:"Otto to Diesel to the modern hybrid. Significant engines pulled apart: the Sulzer 12LDA28C of the Class 47, the Napier Deltic, and the screaming 3-litre F1 V10.",
+   ico:`<g fill="none" stroke="var(--ink)" stroke-width="1.4"><rect x="5" y="8" width="32" height="30"/><path d="M5 16h32M11 23h12M11 29h18"/><path d="M28 8v30" stroke="var(--signal)"/></g>`},
+];
+document.getElementById('chapGrid').innerHTML = CHAPTERS.map(c=>`
+  <a class="chapcard" href="${c.href}">
+    <svg class="chapcard-ico" viewBox="0 0 46 46">${c.ico}</svg>
+    <div class="cn">CH. ${c.n}</div>
+    <h3>${c.t}</h3>
+    <p>${c.d}</p>
+    <div class="chapcard-go">Read chapter →</div>
+  </a>`).join('');
+</script>
+
+<!-- 3D engine hero -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/engine-kin.js"></script>
+<script src="assets/engine3d.js"></script>
+<script src="assets/gauges.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  if(typeof THREE==='undefined'){ $('hudL').textContent='WebGL/Three.js failed to load (offline?)'; return; }
+  const eng=Engine3D({
+    mount:$('stage'),
+    onbuild:info=>{
+      $('hudL').innerHTML = `${info.layout}${info.N>1?'-'+info.N:''} · ${info.stroke}<br>${info.fuel}`;
+      $('hudR').innerHTML = `${info.rpm} rpm<br>${info.firing}`;
+      $('cfgTag').textContent = `${info.layout.toUpperCase()}${info.N>1?'-'+info.N:''} · ${info.stroke.toUpperCase()}`;
+    },
+    onheat:(h,over)=>{ $('stage').classList.toggle('warn', over && h>0.02 && !eng.exploded);
+      $('rpmLab').style.color = over ? '#EE5A2B' : ''; },
+    onexplode:()=>{ $('stage').classList.remove('warn'); $('stage').classList.add('blown');
+      $('runBtn').classList.remove('on'); $('runBtn').textContent='▶ Paused'; $('cfgTag').textContent='💥 GRENADED'; },
+    onrevive:()=>{ $('stage').classList.remove('blown'); $('runBtn').classList.add('on'); $('runBtn').textContent='❚❚ Running'; $('rpmLab').style.color=''; }
+  });
+  window.__eng=eng;
+  if(window.EngineGauges) EngineGauges({mount:document.getElementById('gauges'), engine:eng});
+  $('buyBtn').addEventListener('click',()=>eng.revive());
+  function chips(el, fn){ $(el).addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on'); fn(b); }); }
+  chips('nChips', b=>eng.set({N:+b.dataset.n}));
+  chips('layChips', b=>{ const l=b.dataset.l; eng.set({layout:l});
+    if((l==='vee'||l==='flat') && eng.cfg.N%2){ const nn=Math.max(2,eng.cfg.N-1); eng.set({N:nn});
+      [...$('nChips').children].forEach(x=>x.classList.toggle('on', +x.dataset.n===nn)); }
+  });
+  chips('strokeChips', b=>eng.set({stroke4:b.dataset.s==='4'}));
+  chips('fuelChips', b=>eng.set({diesel:b.dataset.f==='diesel'}));
+  $('rpm').addEventListener('input',e=>{ eng.set({rpm:+e.target.value}); $('rpmLab').textContent=e.target.value+' rpm'; });
+  $('runBtn').addEventListener('click',e=>{ const r=!eng.cfg.run; eng.set({run:r}); e.target.classList.toggle('on',r); e.target.textContent=r?'❚❚ Running':'▶ Paused'; });
+  $('ghostBtn').addEventListener('click',e=>{ const g=!eng.cfg.ghost; eng.set({ghost:g}); e.target.textContent='Ghost block: '+(g?'ON':'OFF'); e.target.classList.toggle('on',g); });
+  $('resetBtn').addEventListener('click',()=>{ eng.resize(); });
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>01 — The Photo Finish · Fable Arena</title>
 <link rel="stylesheet" href="assets/arena.css">
-<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<script>try{var p=localStorage.getItem('arena-phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p);}catch(e){}</script>
 <style>
   /* race */
   .race-row { display: grid; grid-template-columns: 130px 1fr 64px; gap: 12px; align-items: center; margin: 7px 0; }
@@ -34,46 +34,6 @@
     text-align: center; padding: 5px 2px; font-variant-numeric: tabular-nums;
     color: #04140a; font-weight: 600;
   }
-  /* glitch title — RGB split + sync-roll, fired intermittently from JS */
-  h1.glitch { position: relative; }
-  h1.glitch.glitching { animation: glitchSkew 0.42s steps(3, end) 1; }
-  h1.glitch.glitching::before,
-  h1.glitch.glitching::after {
-    content: attr(data-text);
-    position: absolute; left: 0; top: 0; width: 100%;
-    pointer-events: none; user-select: none; text-shadow: none;
-  }
-  h1.glitch.glitching::before {
-    color: var(--cyan); opacity: 0.85;
-    clip-path: inset(0 0 62% 0);
-    animation: glitchTop 0.42s steps(2, end) 1;
-  }
-  h1.glitch.glitching::after {
-    color: var(--red); opacity: 0.85;
-    clip-path: inset(58% 0 0 0);
-    animation: glitchBot 0.42s steps(2, end) 1;
-  }
-  @keyframes glitchSkew {
-    0%, 100% { transform: none; }
-    20% { transform: translate(-3px, 1px) skewX(-4deg); }
-    45% { transform: translate(3px, -2px) skewX(3deg); }
-    70% { transform: translate(-2px, 1px) skewX(2deg); }
-    88% { transform: translate(2px, 0) skewX(-2deg); }
-  }
-  @keyframes glitchTop {
-    0%   { transform: translateX(0);    clip-path: inset(0 0 66% 0); }
-    50%  { transform: translateX(6px);  clip-path: inset(18% 0 44% 0); }
-    100% { transform: translateX(-4px); clip-path: inset(40% 0 22% 0); }
-  }
-  @keyframes glitchBot {
-    0%   { transform: translateX(0);    clip-path: inset(62% 0 0 0); }
-    50%  { transform: translateX(-6px); clip-path: inset(46% 0 14% 0); }
-    100% { transform: translateX(4px);  clip-path: inset(72% 0 0 0); }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    h1.glitch.glitching { animation: none; }
-    h1.glitch.glitching::before, h1.glitch.glitching::after { display: none; }
-  }
 </style>
 </head>
 <body>
@@ -81,7 +41,7 @@
 
   <header style="margin-top: 10px;">
     <div class="kicker">Chapter 01</div>
-    <h1 class="glitch" data-text="THE PHOTO FINISH">THE PHOTO FINISH</h1>
+    <h1>THE PHOTO FINISH</h1>
     <p class="dek">Fifty machine-generated tasks. Five disciplines. Every answer checked by an oracle that cannot be argued with. Here is the entire base-tier competition, replayed in eight seconds.</p>
   </header>
 
@@ -149,20 +109,7 @@
 <script>
   ArenaUI.mountChrome("01");
   const A = window.ARENA;
-
-  /* ---------- GLITCH TITLE (loses sync from time to time) ---------- */
-  (function () {
-    if (ArenaUI.reduced) return;
-    const h = document.querySelector("h1.glitch");
-    if (!h) return;
-    function burst() {
-      h.classList.add("glitching");
-      // remove exactly when the 0.42s animations finish — no static residue
-      setTimeout(() => h.classList.remove("glitching"), 420);
-      setTimeout(burst, 2600 + Math.random() * 5200);
-    }
-    setTimeout(burst, 1400);
-  })();
+  ArenaUI.glitchTitle(document.querySelector("header h1"), { min: 3000, spread: 4500 });
 
   /* ---------- RACE ---------- */
   const lanesEl = document.getElementById("raceLanes");

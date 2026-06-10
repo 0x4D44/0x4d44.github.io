@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 — The Tasks · Fable Arena</title>
+<link rel="stylesheet" href="assets/arena.css">
+<script>try{var p=localStorage.getItem('arena-phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p);}catch(e){}</script>
+<style>
+  .task-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 22px; }
+  .task-pill {
+    font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em;
+    background: transparent; color: var(--ink-dim); border: 1px solid var(--green-faint);
+    padding: 8px 14px; cursor: pointer; text-align: left; line-height: 1.3;
+  }
+  .task-pill:hover { color: var(--ink-bright); border-color: var(--green-soft); }
+  .task-pill.active { background: var(--green); color: var(--bg); border-color: var(--green); }
+  .task-pill .tp-cat { display: block; font-size: 10px; letter-spacing: 0.2em; opacity: 0.8; }
+  .prompt-pre {
+    background: rgba(0,0,0,0.5); border: 1px solid var(--green-faint);
+    padding: 18px 20px; font-size: 13px; line-height: 1.6; white-space: pre-wrap;
+    color: var(--ink); overflow-x: auto; margin: 0;
+  }
+  .oracle-box { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin: 18px 0; }
+  .oracle-box .ob-ans {
+    font-family: var(--display); font-size: 38px; color: var(--green);
+    text-shadow: 0 0 12px var(--green-faint); white-space: pre; line-height: 1.05;
+  }
+  .resp-card { border: 1px solid var(--green-faint); padding: 16px 18px; margin: 12px 0; }
+  .resp-card.bad { border-color: rgba(255,85,102,0.45); }
+  .resp-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .resp-head .rh-name { font-size: 13px; letter-spacing: 0.06em; }
+  .resp-head .rh-tok { font-size: 11.5px; color: var(--ink-dim); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .resp-head .verdict { font-size: 11px; letter-spacing: 0.14em; padding: 1px 8px; }
+  .verdict.ok { color: var(--bg); background: var(--green); }
+  .verdict.no { color: #fff; background: var(--red); }
+  .resp-reason { font-size: 12.5px; color: var(--ink); line-height: 1.6; }
+  .resp-reason.dim2 { color: var(--ink-dim); font-style: italic; }
+  .resp-code { background: rgba(0,0,0,0.5); border: 1px solid var(--green-faint); padding: 12px 14px; font-size: 12.5px; white-space: pre; overflow-x: auto; color: var(--ink); margin: 8px 0 0 0; }
+  .resp-note { font-size: 12px; color: var(--amber); margin-top: 8px; border-top: 1px dotted rgba(255,176,0,0.3); padding-top: 8px; }
+  .gridsol { display: grid; grid-template-columns: repeat(5, auto); gap: 2px 14px; font-size: 12px; margin-top: 8px; width: fit-content; }
+  .gridsol .gc { padding: 3px 8px; background: rgba(69,255,127,0.06); border: 1px solid var(--green-faint); color: var(--ink); }
+  .gridsol .gh { color: var(--ink-dim); border: none; background: none; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="wrap" data-screen-label="Ch05 — The Tasks">
+
+  <header style="margin-top: 10px;">
+    <div class="kicker">Chapter 05 · Appendix</div>
+    <h1>THE TASKS</h1>
+    <p class="dek">No multiple choice. No human graders. Every task is machine-generated from a seed, and every answer is checked by a <em>constructive oracle</em> — a brute-force solver, a hidden test suite, or the program's own stdout. Pick a task and see exactly what these minds were up against.</p>
+  </header>
+
+  <section class="block" data-screen-label="Ch05 — How grading works">
+    <div class="sect-label"><b>METHOD</b> // HOW A MACHINE GRADES A MACHINE</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="v">90</div><div class="k">unique tasks (base+champ)</div></div>
+      <div class="stat"><div class="v">5</div><div class="k">disciplines</div></div>
+      <div class="stat"><div class="v">100%</div><div class="k">mechanical grading</div></div>
+      <div class="stat"><div class="v">0</div><div class="k">answers in any prompt</div></div>
+    </div>
+    <p>Each discipline has its own oracle. <strong>Logic:</strong> a backtracking solver proves the puzzle has exactly one solution, and clues are greedily minimized so nothing is redundant. <strong>Math:</strong> the answer is computed by construction as the problem is generated. <strong>Code:</strong> submissions run against hidden unit tests in a sandboxed Node subprocess. <strong>Output:</strong> the oracle is the program's actual stdout. <strong>Format:</strong> the generator first builds a witness proving the constraints are satisfiable, then a checker verifies each one programmatically. The answer is never present in any prompt, and the orchestrator never grades its own family.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch05 — Task explorer">
+    <div class="sect-label"><b>EXPLORE</b> // FIVE REAL TASKS, ONE PER DISCIPLINE</div>
+    <div class="task-picker" id="taskPicker"></div>
+
+    <div class="term-box" style="margin-top: 0;">
+      <div class="tb-title" id="taskTitle">TASK</div>
+      <div class="dim small" id="taskMeta" style="margin-bottom: 12px;"></div>
+      <pre class="prompt-pre" id="taskPrompt"></pre>
+
+      <div class="oracle-box">
+        <span class="tag" style="border-color: var(--green); color: var(--green);">ORACLE ANSWER</span>
+        <span class="ob-ans" id="taskOracle"></span>
+      </div>
+      <div id="taskGrid"></div>
+      <div id="taskWalk" class="small dim" style="margin: 8px 0 4px 0;"></div>
+    </div>
+
+    <h3 style="margin-top: 30px;">How the field answered</h3>
+    <div id="taskResponses"></div>
+  </section>
+
+  <section class="block" data-screen-label="Ch05 — Closing">
+    <div class="sect-label"><b>NEXT</b></div>
+    <p>These are the questions. To watch four different minds attack the <em>same</em> question — and see the rare moments one of them slips — go to <a href="06 The Transcripts.html">Chapter 06: The Transcripts</a>.</p>
+  </section>
+
+</div>
+<script src="assets/arena-data.js"></script>
+<script src="assets/arena-tokens.js"></script>
+<script src="assets/arena-tasks.js"></script>
+<script src="assets/arena-ui.js"></script>
+<script>
+  ArenaUI.mountChrome("05");
+  const A = window.ARENA, TASKS = window.ARENA_TASKS, ORDER = window.ARENA_TASK_ORDER;
+  const TOK = window.ARENA_TOKENS;
+
+  function tokFor(id, taskId) {
+    if (!TOK || !TOK[id]) return null;
+    const rec = TOK[id].find((r) => r.id === taskId);
+    return rec ? rec.tok : null;
+  }
+
+  // build picker
+  const picker = document.getElementById("taskPicker");
+  ORDER.forEach((tid, i) => {
+    const t = TASKS[tid];
+    const b = document.createElement("button");
+    b.className = "task-pill" + (i === 0 ? " active" : "");
+    b.dataset.tid = tid;
+    b.innerHTML = '<span class="tp-cat">' + t.cat.toUpperCase() + "</span>" + tid;
+    b.addEventListener("click", () => { render(tid); document.querySelectorAll(".task-pill").forEach((x) => x.classList.toggle("active", x === b)); });
+    picker.appendChild(b);
+  });
+
+  function render(tid) {
+    const t = TASKS[tid];
+    document.getElementById("taskTitle").textContent = tid.toUpperCase() + " — " + t.title;
+    document.getElementById("taskMeta").innerHTML = "Discipline: <b style=\"color:var(--ink-bright)\">" + t.cat + "</b> &middot; Oracle: " + t.oracleKind;
+    document.getElementById("taskPrompt").textContent = t.prompt;
+    document.getElementById("taskOracle").textContent = t.oracle;
+
+    // grid (logic solution)
+    const gd = document.getElementById("taskGrid");
+    if (t.grid) {
+      let h = '<div class="dim small" style="margin:8px 0 4px;">The unique solution:</div><div class="gridsol">';
+      const heads = ["#", "NAME", "COLOR", "DRINK", "PET"];
+      heads.forEach((hh) => h += '<span class="gc gh">' + hh + "</span>");
+      for (const row of t.grid) row.forEach((cell) => h += '<span class="gc">' + cell + "</span>");
+      gd.innerHTML = h + "</div>";
+    } else gd.innerHTML = "";
+
+    document.getElementById("taskWalk").innerHTML = t.walk ? ("&#9656; " + t.walk) : "";
+
+    // responses
+    const rc = document.getElementById("taskResponses");
+    rc.innerHTML = t.responses.map((r) => {
+      const c = A.contestants[r.id] || { label: r.id, color: "#9affc0" };
+      const tk = r.tok != null ? r.tok : tokFor(r.id, tid);
+      const tokStr = tk != null ? tk.toLocaleString() + " output tok" + (r.reasonTok ? " (" + r.reasonTok.toLocaleString() + " hidden reasoning)" : "") : (r.ms ? "" : "");
+      let body = "";
+      if (r.reasoning) body += '<div class="resp-reason' + (r.id === "gpt-5.5-medium" && /no visible/.test(r.reasoning) ? " dim2" : "") + '">' + r.reasoning + "</div>";
+      if (r.code) body += '<pre class="resp-code">' + r.code.replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</pre>";
+      if (r.note) body += '<div class="resp-note">&#9888; ' + r.note + "</div>";
+      return '<div class="resp-card' + (r.correct ? "" : " bad") + '">' +
+        '<div class="resp-head">' +
+          '<span class="rh-name" style="color:' + c.color + '">' + c.label + "</span>" +
+          '<span class="verdict ' + (r.correct ? "ok" : "no") + '">' + (r.correct ? "CORRECT" : "WRONG &middot; \"" + r.answer + "\"") + "</span>" +
+          (tokStr ? '<span class="rh-tok">' + tokStr + "</span>" : "") +
+        "</div>" + body +
+      "</div>";
+    }).join("");
+  }
+  render(ORDER[0]);
+</script>
+</body>
+</html>

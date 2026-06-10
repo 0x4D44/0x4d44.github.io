@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>06 — The Transcripts · Fable Arena</title>
+<link rel="stylesheet" href="assets/arena.css">
+<script>try{var p=localStorage.getItem('arena-phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p);}catch(e){}</script>
+<style>
+  .spend-row { display: grid; grid-template-columns: 150px 1fr 96px; gap: 12px; align-items: center; margin: 8px 0; }
+  .spend-row .sname { font-size: 12.5px; white-space: nowrap; }
+  .spend-row .sval { text-align: right; font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--ink-bright); }
+  .tr-card { border: 1px solid var(--green-faint); padding: 16px 18px; margin: 12px 0; }
+  .tr-card.bad { border-color: rgba(255,85,102,0.45); }
+  .tr-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  .tr-head .name { font-size: 14px; letter-spacing: 0.05em; }
+  .tr-head .meta { font-size: 11.5px; color: var(--ink-dim); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .tr-head .v { font-size: 11px; letter-spacing: 0.14em; padding: 1px 8px; }
+  .v.ok { color: var(--bg); background: var(--green); }
+  .v.no { color: #fff; background: var(--red); }
+  .tr-reason { font-size: 12.5px; line-height: 1.62; color: var(--ink); }
+  .tr-reason.empty { color: var(--ink-dim); font-style: italic; }
+  .answer-out { font-family: var(--mono); background: rgba(0,0,0,0.5); border: 1px solid var(--green-faint); padding: 10px 14px; white-space: pre; font-size: 13px; color: var(--ink); margin-top: 8px; }
+  .answer-out .hl { color: var(--green); }
+  .answer-out .hlbad { color: var(--red); font-weight: 600; }
+  .tr-note { font-size: 12px; color: var(--amber); margin-top: 10px; border-top: 1px dotted rgba(255,176,0,0.3); padding-top: 8px; }
+  .vs { font-family: var(--display); font-size: 22px; color: var(--ink-dim); text-align: center; margin: 4px 0; }
+</style>
+</head>
+<body>
+<div class="wrap" data-screen-label="Ch06 — The Transcripts">
+
+  <header style="margin-top: 10px;">
+    <div class="kicker">Chapter 06 · Appendix</div>
+    <h1>THE TRANSCRIPTS</h1>
+    <p class="dek">Same question. Four minds. These are the actual responses, pulled verbatim from the logs — and the cleanest way to <em>feel</em> what "token efficiency" means: identical answers, wildly different amounts of thinking to get there.</p>
+  </header>
+
+  <section class="block" data-screen-label="Ch06 — logic-01 head to head">
+    <div class="sect-label"><b>HEAT 1</b> // LOGIC-01 — FOUR CORRECT ANSWERS, FOUR DIFFERENT PRICES</div>
+    <p>Every model below got the same right answer: <strong class="grn">milk</strong>. Watch how much reasoning each spent to arrive there.</p>
+    <div class="term-box">
+      <div class="tb-title">OUTPUT TOKENS SPENT ON ONE ZEBRA PUZZLE</div>
+      <div id="spend"></div>
+      <p class="footnote">Same puzzle, same correct answer. Fable-medium reasons in 2,381 tokens; Haiku needs 7,893 to reach the identical conclusion. GPT-5.5 reports 1,507 — but 1,493 of those were burned in a hidden reasoning channel; what reached the page was four characters.</p>
+    </div>
+    <div id="logicCards"></div>
+  </section>
+
+  <section class="block" data-screen-label="Ch06 — math-01 the slip">
+    <div class="sect-label"><b>HEAT 2</b> // MATH-01 — THE EFFORT SLIP</div>
+    <p>The same model family, one notch of reasoning effort apart, on the same 11-step warehouse problem. One carries the right intermediate through the final swap. One doesn't.</p>
+    <div id="mathCards"></div>
+    <div class="pullquote">Both did the hard arithmetic correctly. The cheaper run grabbed the wrong number at the last step — a slip a few hundred extra tokens of checking erased.</div>
+  </section>
+
+  <section class="block" data-screen-label="Ch06 — output-04 the trap">
+    <div class="sect-label"><b>HEAT 3</b> // OUTPUT-04 — THE MEMO TRAP, CAUGHT IN THE ACT</div>
+    <p>The most-missed task family in the whole arena. Both models below computed every printed value correctly. They disagree on one number: how many times the function was <em>called</em>.</p>
+    <div id="outCards"></div>
+    <p>The function increments its counter on <em>every</em> invocation — including the ones that hit the memo cache and return immediately. Count those and you get 25. GPT-5.5 counted only the calls that did fresh work and reported 22. It made this exact undercount at every effort level; see the live step-through in <a href="03 The Rollercoaster.html">Chapter 03</a>.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch06 — takeaway">
+    <div class="sect-label"><b>TAKEAWAY</b></div>
+    <p>Three heats, three lessons. Heat 1: when the answer is free, the price is the thinking — and it varies <strong>3–5&times;</strong> between minds that score identically. Heat 2: the cheapest correct run and the cheapest <em>wrong</em> run are separated by a single careless step, which is why self-verification is the real frontier. Heat 3: the surviving errors are tiny, specific, and shared across families. That's the whole thesis of <a href="04 The Meaning.html">Chapter 04</a>, written in transcripts instead of charts.</p>
+  </section>
+
+</div>
+<script src="assets/arena-data.js"></script>
+<script src="assets/arena-tokens.js"></script>
+<script src="assets/arena-tasks.js"></script>
+<script src="assets/arena-ui.js"></script>
+<script>
+  ArenaUI.mountChrome("06");
+  const A = window.ARENA, TASKS = window.ARENA_TASKS;
+
+  function card(r, taskId) {
+    const c = A.contestants[r.id] || { label: r.id, color: "#9affc0" };
+    const tk = r.tok != null ? (r.tok.toLocaleString() + " out tok" + (r.reasonTok ? " &middot; " + r.reasonTok.toLocaleString() + " hidden" : "")) : "";
+    let body = "";
+    if (r.reasoning) {
+      const empty = /no visible/.test(r.reasoning);
+      body += '<div class="tr-reason' + (empty ? " empty" : "") + '">' + r.reasoning + "</div>";
+    }
+    if (r.answerBlock) body += '<div class="answer-out">' + r.answerBlock + "</div>";
+    if (r.note) body += '<div class="tr-note">&#9888; ' + r.note + "</div>";
+    return '<div class="tr-card' + (r.correct ? "" : " bad") + '">' +
+      '<div class="tr-head"><span class="name" style="color:' + c.color + '">' + c.label + "</span>" +
+        '<span class="v ' + (r.correct ? "ok" : "no") + '">' + (r.correct ? "CORRECT" : "WRONG") + "</span>" +
+        (tk ? '<span class="meta">' + tk + "</span>" : "") +
+      "</div>" + body + "</div>";
+  }
+
+  /* HEAT 1 — logic-01 */
+  (function () {
+    const t = TASKS["logic-01"];
+    const max = Math.max(...t.responses.map((r) => r.tok || 0));
+    const spend = document.getElementById("spend");
+    spend.innerHTML = t.responses.map((r) => {
+      const c = A.contestants[r.id];
+      const w = (r.tok / max) * 100;
+      const hidden = r.reasonTok ? (r.reasonTok / max) * 100 : 0;
+      return '<div class="spend-row">' +
+        '<span class="sname" style="color:' + c.color + '">' + c.label + "</span>" +
+        '<span class="bar-track" style="height:15px;">' +
+          (r.reasonTok ? '<span class="bar-fill" style="--c:' + c.color + '; width:' + hidden + '%; opacity:0.35; background:' + c.color + '"></span>' : "") +
+          '<span class="bar-fill" data-w="' + w + '" style="--c:' + c.color + '; width:0%"></span>' +
+        "</span>" +
+        '<span class="sval">' + r.tok.toLocaleString() + "</span>" +
+      "</div>";
+    }).join("");
+    ArenaUI.onVisible(spend, () => {
+      spend.querySelectorAll(".bar-fill[data-w]").forEach((b, i) => {
+        b.style.transition = "width 1s cubic-bezier(0.2,0.8,0.2,1) " + (i * 0.12) + "s";
+        requestAnimationFrame(() => { b.style.width = b.dataset.w + "%"; });
+      });
+    });
+    document.getElementById("logicCards").innerHTML = t.responses.map((r) => card(r, "logic-01")).join("");
+  })();
+
+  /* HEAT 2 — math-01 */
+  (function () {
+    const t = TASKS["math-01"];
+    const rs = t.responses.map((r) => Object.assign({}, r, {
+      answerBlock: '&lt;answer&gt; <span class="' + (r.correct ? "hl" : "hlbad") + '">' + r.answer + "</span> &lt;/answer&gt;" + (r.correct ? "   &#10003; oracle = 221" : "   &#10007; oracle = 221")
+    }));
+    // order: medium (correct) then low (wrong) for narrative
+    const ordered = [rs.find((r) => r.id === "fable-medium"), rs.find((r) => r.id === "fable-low")];
+    document.getElementById("mathCards").innerHTML =
+      card(ordered[0], "math-01") + '<div class="vs">VS</div>' + card(ordered[1], "math-01");
+  })();
+
+  /* HEAT 3 — output-04 */
+  (function () {
+    const t = TASKS["output-04"];
+    const fmt = (ans, ok) => ans.split("\n").map((ln) => {
+      if (/^calls=/.test(ln)) return '<span class="' + (ok ? "hl" : "hlbad") + '">' + ln + "</span>";
+      return ln;
+    }).join("\n");
+    const rs = t.responses.map((r) => Object.assign({}, r, { answerBlock: fmt(r.answer, r.correct) }));
+    document.getElementById("outCards").innerHTML =
+      card(rs[0], "output-04") + '<div class="vs">VS</div>' + card(rs[1], "output-04");
+  })();
+</script>
+</body>
+</html>

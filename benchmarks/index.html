@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FABLE ARENA — Index</title>
 <link rel="stylesheet" href="assets/arena.css">
-<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<script>try{var p=localStorage.getItem('arena-phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p);}catch(e){}</script>
 </head>
 <body>
 <div class="wrap" data-screen-label="Hub — Index">
@@ -44,7 +44,7 @@
   </section>
 
   <section class="block" data-screen-label="Hub — Chapters">
-    <div class="sect-label"><b>CONTENTS</b> // FOUR CHAPTERS</div>
+    <div class="sect-label"><b>CONTENTS</b> // SIX CHAPTERS</div>
     <div class="chapter-list">
       <a class="chapter-card" href="01 The Photo Finish.html">
         <span class="ch-num">01</span>
@@ -78,6 +78,22 @@
         </span>
         <span class="ch-go">&#9654;</span>
       </a>
+      <a class="chapter-card" href="05 The Tasks.html">
+        <span class="ch-num">05</span>
+        <span>
+          <span class="ch-title">THE TASKS</span>
+          <span class="ch-tease" style="display:block;">The actual exam. Five real machine-generated tasks, the constructive oracles that grade them, and how the field answered.</span>
+        </span>
+        <span class="ch-go">&#9654;</span>
+      </a>
+      <a class="chapter-card" href="06 The Transcripts.html">
+        <span class="ch-num">06</span>
+        <span>
+          <span class="ch-title">THE TRANSCRIPTS</span>
+          <span class="ch-tease" style="display:block;">Same question, four minds, verbatim. Watch identical answers cost 3–5× different amounts of thinking — and catch a slip in the act.</span>
+        </span>
+        <span class="ch-go">&#9654;</span>
+      </a>
     </div>
   </section>
 
@@ -92,6 +108,8 @@
 <script src="assets/arena-ui.js"></script>
 <script>
   ArenaUI.mountChrome("00");
+
+  ArenaUI.glitchTitle(document.querySelector("header h1"), { min: 4200, spread: 5200 });
 
   ArenaUI.typeLines(document.getElementById("boot"), [
     "FABLE ARENA BIOS v5.0 — 2026-06-10T11:02Z",

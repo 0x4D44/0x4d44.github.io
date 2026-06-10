@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Petrol & Diesel — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="02">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch2 hero">
+  <div class="kicker">Chapter 02</div>
+  <div class="num">02</div>
+  <h2 style="margin-top:18px;max-width:20ch">Petrol &amp; Diesel: spark versus squeeze.</h2>
+  <p class="lead" style="max-width:54ch;margin-top:22px">Two ways to light the fire. One brings the spark to a ready mixture; the other compresses air so hard that fuel ignites the moment it arrives. That single choice ripples through efficiency, fuelling, cold starting and the very shape of the cycle.</p>
+  <div class="meta">
+    <div><div class="k">Petrol (Otto)</div><div class="v">Spark ignition · premixed</div></div>
+    <div><div class="k">Diesel</div><div class="v">Compression ignition · injected</div></div>
+    <div><div class="k">Heat addition</div><div class="v">Const-volume vs const-pressure</div></div>
+    <div><div class="k">Governing</div><div class="v">Throttle vs fuel quantity</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#two-fires">Two ways to light it</a>
+    <a href="#cycles">Live: Otto &amp; Diesel cycles</a>
+    <a href="#efficiency">Why diesel wins on efficiency</a>
+    <a href="#knock">Knock, octane &amp; cetane</a>
+    <a href="#cold">Cold starting &amp; glow plugs</a>
+    <a href="#ignition">Modern ignition strategies</a>
+  </nav>
+
+  <div>
+    <section id="two-fires" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The fork in the road</div>
+      <h3>Premix then ignite, or compress then inject.</h3>
+      <div class="cards c2" style="margin-top:24px">
+        <div>
+          <div class="tag tag-annot">Spark ignition</div>
+          <h4>The petrol (Otto) engine</h4>
+          <p>Air and fuel are mixed <em>before</em> they reach the cylinder (or during early intake, in direct injection) to a near-stoichiometric ratio. The charge is compressed modestly — typically <strong>9:1 to 13:1</strong>, limited by knock — then a <strong>spark</strong> lights it at a precisely chosen instant. Combustion is fast and roughly <strong>constant-volume</strong>, near TDC.</p>
+        </div>
+        <div>
+          <div class="tag tag-sig">Compression ignition</div>
+          <h4>The diesel engine</h4>
+          <p>Only <strong>air</strong> is drawn in and compressed hard — <strong>14:1 to 24:1</strong> — until it reaches 700–900&nbsp;°C. Fuel is then sprayed in at high pressure; it ignites on contact and burns as it injects, giving a more drawn-out, roughly <strong>constant-pressure</strong> combustion. There is no throttle: power is set purely by <em>how much fuel</em> you inject.</p>
+        </div>
+      </div>
+      <p>That last point matters more than it looks. A petrol engine controls power by <strong>throttling the air</strong>, which costs pumping work at part load. A diesel always breathes freely and simply meters fuel — one reason it sips at light load, and idles so frugally.</p>
+    </section>
+
+    <!-- INTERACTIVE CYCLES -->
+    <section id="cycles" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 2.1</div>
+      <h3>The ideal cycles, drawn live.</h3>
+      <p style="margin-top:18px">The <strong>p–V indicator diagram</strong> is the engine's signature: area enclosed = net work per cycle. Switch fuels, raise the compression ratio, change how much heat you add, and watch the loop — and the thermal efficiency — respond.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 2.1</span><span id="cyTitle">OTTO CYCLE — IDEAL AIR-STANDARD</span><span class="dim" id="cyEta" style="color:var(--signal-2)">η = —</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1.3fr .9fr;gap:24px;align-items:center">
+          <svg viewBox="0 0 600 340" style="width:100%;height:auto" id="pv">
+            <line x1="60" y1="20" x2="60" y2="300" stroke="var(--plate-line)" stroke-width="1.2"/>
+            <line x1="60" y1="300" x2="572" y2="300" stroke="var(--plate-line)" stroke-width="1.2"/>
+            <text x="52" y="22" text-anchor="end" font-size="11" fill="var(--cyan-soft)">p</text>
+            <text x="568" y="320" text-anchor="end" font-size="11" fill="var(--cyan-soft)">Volume V →</text>
+            <g id="pvGrid"></g>
+            <polygon id="pvFill" fill="var(--signal)" opacity="0.10"/>
+            <polyline id="pvCurve" fill="none" stroke="var(--signal)" stroke-width="2.2"/>
+            <g id="pvStates"></g>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div class="readout"><b id="rTdc">—</b> compression ratio</div>
+            <div class="readout">Air-standard efficiency <span class="sig" id="rEff">—</span></div>
+            <div class="readout">Peak pressure ratio <b id="rPeak">—</b></div>
+            <div class="readout" id="rExtra" style="color:var(--cyan-soft)">—</div>
+            <hr style="border:0;border-top:1px solid var(--plate-line);width:100%;margin:8px 0">
+            <div class="readout" style="font-size:.74rem;line-height:1.5;color:var(--cyan-soft)">
+              <b style="color:#fff">1→2</b> isentropic compression ·
+              <b style="color:#fff">2→3</b> heat in ·
+              <b style="color:#fff">3→4</b> isentropic expansion ·
+              <b style="color:#fff">4→1</b> heat rejected
+            </div>
+          </div>
+        </div>
+        <div class="deck">
+          <div class="deck-row">
+            <div class="chips" id="cyChips">
+              <button data-t="otto" class="on">OTTO · PETROL</button>
+              <button data-t="diesel">DIESEL</button>
+            </div>
+            <div class="field"><div class="flab"><span>Compression ratio</span><b id="crLab">10.0 : 1</b></div>
+              <input id="cr" type="range" min="6" max="24" step="0.5" value="10"></div>
+            <div class="field" id="heatField"><div class="flab"><span id="heatName">Heat added (β)</span><b id="heatLab">2.2</b></div>
+              <input id="heat" type="range" min="1.4" max="3.4" step="0.05" value="2.2"></div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Read the loop.</b> Diesel's heat is added at the flat top (constant pressure) as the piston already moves away from TDC; Otto's is a vertical spike at minimum volume. The narrower, taller Otto loop is why, <em>at equal compression ratio</em>, Otto is the more efficient — but the diesel can run a far higher ratio without knocking, and wins overall.</div>
+      </figure>
+    </section>
+
+    <!-- EFFICIENCY -->
+    <section id="efficiency" class="section">
+      <div class="kicker">The thermodynamics</div>
+      <h3>Why the diesel is the more efficient engine.</h3>
+      <p style="margin-top:18px">Air-standard efficiency depends almost entirely on how much you compress the charge:</p>
+      <div class="eq">
+        <span class="lbl">Otto (constant-volume heat addition)</span>
+        η<sub>Otto</sub> = 1 − 1 / r<sup>(γ−1)</sup>
+      </div>
+      <div class="eq">
+        <span class="lbl">Diesel (constant-pressure heat addition, cutoff ratio r<sub>c</sub>)</span>
+        η<sub>Diesel</sub> = 1 − (1 / r<sup>γ−1</sup>) · [ (r<sub>c</sub><sup>γ</sup> − 1) / ( γ (r<sub>c</sub> − 1) ) ]
+      </div>
+      <p>The bracketed term in the diesel expression is always <strong>greater than one</strong>, so <strong>at the same compression ratio Otto is more efficient</strong>. The diesel's advantage is that it has <em>no knock limit</em> — it compresses pure air, so it can run ratios of 18–24:1 where a petrol engine would detonate. The much higher <em>r</em> more than overcomes the cutoff penalty. The result, in real engines: ~25–35% brake thermal efficiency for petrol, <strong>up to ~45% for road diesels</strong> and <strong>50%+ for large marine two-strokes</strong>.</p>
+      <div class="note">
+        <span class="tag">The other half of the story — part load</span>
+        <p>Petrol engines throttle the intake to reduce power, creating a partial vacuum the pistons must pump against — <strong>pumping loss</strong>. Diesels never throttle; they just inject less fuel. In stop-start, light-load driving this gap widens dramatically, which is why diesels dominate trucks, ships and (historically) economy cars.</p>
+      </div>
+    </section>
+
+    <!-- KNOCK -->
+    <section id="knock" class="section">
+      <div class="kicker">The limits of the fuel</div>
+      <h3>Knock and octane; ignition delay and cetane.</h3>
+      <div class="cards c2" style="margin-top:24px">
+        <div>
+          <div class="tag tag-annot">Petrol problem</div>
+          <h4>Knock (detonation)</h4>
+          <p>In a spark engine the flame should travel smoothly across the chamber. If the unburnt <strong>end-gas</strong> ahead of the flame gets hot enough to <em>auto-ignite</em>, it explodes all at once — a sharp pressure spike heard as a metallic "pinking". Sustained knock hammers bearings and can hole a piston. <strong>Octane number</strong> rates a fuel's resistance to it; higher octane lets you run more compression or advance.</p>
+        </div>
+        <div>
+          <div class="tag tag-sig">Diesel problem</div>
+          <h4>Ignition delay &amp; cetane</h4>
+          <p>A diesel <em>wants</em> the fuel to auto-ignite — but not too slowly. The gap between injection and ignition is the <strong>ignition delay</strong>; if it is long, too much fuel piles up and burns at once, giving the diesel "knock"/clatter and high NOₓ. <strong>Cetane number</strong> rates how readily a fuel ignites — high cetane = short delay = smoother, quieter combustion.</p>
+        </div>
+      </div>
+      <p>Octane and cetane pull in opposite directions: a fuel that resists auto-ignition (good petrol) is a poor diesel, and vice versa. They are, in effect, mirror-image quality scales for the two combustion philosophies.</p>
+    </section>
+
+    <!-- COLD START / GLOW PLUGS -->
+    <section id="cold" class="section">
+      <div class="kicker">Starting cold</div>
+      <h3>Glow plugs: helping a diesel light when the air is cold.</h3>
+      <p style="margin-top:18px">A diesel relies on the <strong>heat of compression</strong> to ignite its fuel. On a cold morning, the cylinder walls and the incoming air are cold enough to drain that heat away before ignition can occur — the compressed air simply doesn't get hot enough. The fix is a <strong>glow plug</strong>: an electrically heated element projecting into each cylinder (or the pre-chamber) that glows red-hot for a few seconds before and during cranking, providing a local hot-spot to start combustion.</p>
+      <div class="cards c3">
+        <div><h4>Pre-glow</h4><p>You wait for the dashboard coil lamp. The plugs heat to ~1000&nbsp;°C in 2–5&nbsp;s on modern ceramic units, far faster than the old metal-sheath type.</p></div>
+        <div><h4>Crank &amp; start</h4><p>The hot element ignites the first injections reliably even with cold, heat-sapping cylinder walls.</p></div>
+        <div><h4>After-glow</h4><p>Plugs stay on for up to a minute after starting to smooth running and cut white smoke and noise while the engine warms.</p></div>
+      </div>
+      <p>Petrol engines need no such help to ignite — the spark does that regardless of temperature — but they do run a richer mixture and higher idle when cold, and rely on the same warm-up discipline for <em>lubrication</em>, which we take up in Ch. 07.</p>
+    </section>
+
+    <!-- MODERN IGNITION -->
+    <section id="ignition" class="section">
+      <div class="kicker">Beyond the distributor</div>
+      <h3>Modern ignition &amp; injection strategy.</h3>
+      <p style="margin-top:18px">Early engines fired a single spark at a fixed-ish advance set by a mechanical distributor and centrifugal weights. A modern engine's ECU instead computes the <strong>optimum spark and injection timing tens of thousands of times a minute</strong>, from a live picture of load, speed, temperature and even individual-cylinder behaviour.</p>
+      <table class="dt">
+        <thead><tr><th>Strategy</th><th>What it does</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td><b>Mapped spark advance</b></td><td>3-D table of advance vs rpm &amp; load, interpolated live</td><td>Maximum-brake-torque timing at every operating point</td></tr>
+          <tr><td><b>Knock-sensor feedback</b></td><td>Listens for detonation; retards timing per cylinder until it stops</td><td>Lets the engine run on the ragged edge safely, adapt to fuel grade</td></tr>
+          <tr><td><b>Coil-on-plug</b></td><td>One coil per cylinder, no distributor</td><td>Higher energy, precise per-cylinder timing, multi-spark possible</td></tr>
+          <tr><td><b>Diesel common rail</b></td><td>Fuel held at 1,500–2,500&nbsp;bar, injected by solenoid/piezo</td><td>Decouples injection pressure from speed; enables split shots</td></tr>
+          <tr><td><b>Pilot + main + post injection</b></td><td>A tiny pilot shot softens combustion; a post shot aids the DPF</td><td>Cuts diesel clatter and NOₓ; manages after-treatment</td></tr>
+          <tr><td><b>Stratified / GDI</b></td><td>Direct injection builds a rich kernel at the plug in lean overall charge</td><td>Lean-burn economy without misfire; charge cooling raises knock limit</td></tr>
+        </tbody>
+      </table>
+      <div class="note annot">
+        <span class="tag">The trend</span>
+        <p>The line between the two engines is blurring. Petrol engines now use diesel-style high-pressure direct injection; experimental <strong>HCCI</strong> engines deliberately auto-ignite a premixed charge like a diesel, chasing diesel efficiency with petrol-clean combustion. Ignition is no longer a spark — it is a control problem.</p>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 02 — Petrol &amp; Diesel</span>
+  <span>Fig. 2.1 · ideal air-standard cycles</span>
+</div></footer>
+
+<script src="assets/engine-kin.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  let type='otto', cr=10, heat=2.2;
+  const PX0=60,PX1=572,PY0=20,PY1=300;
+
+  function render(){
+    const opt = type==='otto' ? {cr, beta:heat} : {cr, rc:heat};
+    const c = EK.idealCycle(type, opt);
+    const pv=c.pv;
+    const pmax=Math.max(...pv.map(p=>p[1]))*1.05;
+    const sx=V=>PX0+V*(PX1-PX0);
+    const sy=p=>PY1-(p/pmax)*(PY1-PY0);
+    $('pvCurve').setAttribute('points', pv.map(p=>`${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' '));
+    $('pvFill').setAttribute('points', pv.map(p=>`${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' '));
+    // grid
+    let g='';
+    for(let i=1;i<=4;i++){ const y=PY0+(PY1-PY0)*i/5; g+=`<line x1="60" y1="${y}" x2="572" y2="${y}" stroke="var(--plate-grid)"/>`; }
+    $('pvGrid').innerHTML=g;
+    // states
+    const Vc=1/cr;
+    const states = type==='otto'
+      ? [['1',1,1],['2',Vc,Math.pow(cr,1.4)],['3',Vc,Math.pow(cr,1.4)*heat],['4',1,Math.pow(cr,1.4)*heat*Math.pow(Vc,1.4)]]
+      : (()=>{ const p2=Math.pow(cr,1.4),V3=Vc*heat; return [['1',1,1],['2',Vc,p2],['3',V3,p2],['4',1,p2*Math.pow(V3,1.4)]]; })();
+    $('pvStates').innerHTML = states.map(s=>{
+      const x=sx(s[1]),y=sy(s[2]);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="var(--cyan)"/>
+              <text x="${(x+8).toFixed(1)}" y="${(y-6).toFixed(1)}" font-size="12" fill="#fff" font-family="var(--font-mono)">${s[0]}</text>`;
+    }).join('');
+    // readouts
+    $('rEff').textContent=(c.eff*100).toFixed(1)+'%';
+    $('cyEta').textContent='η = '+(c.eff*100).toFixed(1)+'%';
+    $('rTdc').textContent=cr.toFixed(1)+':1';
+    $('rPeak').textContent=(states[2][2]).toFixed(1)+' ×';
+    $('cyTitle').textContent=(type==='otto'?'OTTO CYCLE':'DIESEL CYCLE')+' — IDEAL AIR-STANDARD';
+    $('rExtra').textContent = type==='diesel' ? ('cutoff ratio r_c = '+heat.toFixed(2)) : ('combustion pressure ratio β = '+heat.toFixed(2));
+  }
+
+  $('cyChips').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    type=b.dataset.t;
+    if(type==='diesel'){ cr=18; $('cr').value=18; $('crLab').textContent='18.0 : 1'; heat=2.0; $('heat').value=2.0; $('heatName').textContent='Cutoff ratio (r_c)'; $('heatLab').textContent='2.00'; $('heat').min=1.4; $('heat').max=3.0; }
+    else { cr=10; $('cr').value=10; $('crLab').textContent='10.0 : 1'; heat=2.2; $('heat').value=2.2; $('heatName').textContent='Heat added (β)'; $('heatLab').textContent='2.2'; }
+    render();
+  });
+  $('cr').addEventListener('input',e=>{ cr=+e.target.value; $('crLab').textContent=cr.toFixed(1)+' : 1'; render(); });
+  $('heat').addEventListener('input',e=>{ heat=+e.target.value; $('heatLab').textContent=heat.toFixed(2); render(); });
+  render();
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

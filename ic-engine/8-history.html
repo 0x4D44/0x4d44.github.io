@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · History — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="08">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch8 hero">
+  <div class="kicker">Chapter 08</div>
+  <div class="num">08</div>
+  <h2 style="margin-top:18px;max-width:22ch">History: a century and a half of refining fire.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">The internal combustion engine was not invented once. It was argued into existence over decades — Otto's four-stroke, Diesel's compression ignition, the turbo, electronic injection — each step trading a problem solved for a new one created. Here is the line of descent, and three engines worth taking apart.</p>
+  <div class="meta">
+    <div><div class="k">1860s</div><div class="v">Lenoir, Otto — the first runners</div></div>
+    <div><div class="k">1876 / 1892</div><div class="v">Otto four-stroke · Diesel's patent</div></div>
+    <div><div class="k">20th c.</div><div class="v">Turbo, injection, electronics</div></div>
+    <div><div class="k">Featured</div><div class="v">Sulzer · Deltic · F1 V10</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#timeline">The line of descent</a>
+    <a href="#ignition">Modern ignition strategy</a>
+    <a href="#torque">Torque, power &amp; the curve</a>
+    <a href="#sulzer">Featured: Sulzer 12LDA28C</a>
+    <a href="#deltic">Featured: Napier Deltic</a>
+    <a href="#v10">Featured: the F1 V10</a>
+    <a href="#future">Where it goes next</a>
+  </nav>
+
+  <div>
+    <!-- TIMELINE -->
+    <section id="timeline" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker tag-sig">Interactive · Fig. 8.1</div>
+      <h3>The line of descent.</h3>
+      <p style="margin-top:18px">Click a milestone to expand it. Each one solved a real limitation of the engines before it — and most created the problem the next one had to solve.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 8.1</span><span>ENGINE DEVELOPMENT — 1860 TO NOW</span><span class="dim" style="color:var(--signal-2)">SELECT A MILESTONE</span></div>
+        <div class="figure-body">
+          <div id="timeAxis" style="position:relative;padding:30px 10px 12px">
+            <div style="position:absolute;left:10px;right:10px;top:46px;height:2px;background:var(--plate-line)"></div>
+            <div id="timeDots" style="position:relative;display:flex;justify-content:space-between"></div>
+          </div>
+          <div id="timeDetail" style="border-top:1px solid var(--plate-line);padding:22px 24px;min-height:120px"></div>
+        </div>
+        <div class="figure-cap"><b>Not a straight line of "better".</b> Each milestone is a different answer to the same pressures — efficiency, power density, emissions, cost. The diesel is more efficient but heavier and dirtier in soot; the turbo recovers waste energy but adds lag; electronics tamed emissions but added complexity. Engineering is the management of these trades, not their abolition.</div>
+      </figure>
+    </section>
+
+    <!-- IGNITION -->
+    <section id="ignition" class="section">
+      <div class="kicker">The brain catches up to the machine</div>
+      <h3>Modern ignition &amp; injection strategy.</h3>
+      <p style="margin-top:18px">For most of its life the engine was controlled by mechanical guesswork — a distributor's centrifugal weights guessing ignition advance, a carburettor's venturi guessing fuelling. The microprocessor replaced guessing with measurement. A modern <strong>engine control unit (ECU)</strong> decides, for <em>every single firing</em>, exactly when to inject, how much, and when to light it — reading a dozen sensors hundreds of times a second.</p>
+      <div class="cards c3">
+        <div><h4>Mapped &amp; knock-corrected spark</h4><p>Ignition timing is looked up from a 3-D map (load × rpm) and then trimmed in real time: a <strong>knock sensor</strong> listens for detonation and retards the spark a degree at a time until it stops, letting the engine run as close to the efficiency edge as conditions allow.</p></div>
+        <div><h4>Direct injection &amp; multiple events</h4><p>High-pressure <strong>direct injection</strong> sprays fuel straight into the cylinder, and can split one charge into several injections per cycle — a small pilot to soften diesel combustion noise, a main event, and a late post-injection to heat the catalyst or burn off soot.</p></div>
+        <div><h4>Closed-loop everything</h4><p>An <strong>oxygen (lambda) sensor</strong> in the exhaust lets the ECU hold the mixture exactly at stoichiometric for the catalytic converter; variable valve timing, boost, and EGR are all servo-controlled the same way — measure, correct, repeat.</p></div>
+      </div>
+      <div class="note annot">
+        <span class="tag">Why this matters</span>
+        <p>Everything earlier in this study — compression ratio limits, knock, balance, breathing, boost, even oil temperature — is now actively <em>managed</em> by software many times per second. The modern engine makes more power, burns less fuel and emits a tiny fraction of the pollution of its 1970s ancestor from the <em>same</em> thermodynamic cycle, almost entirely because of control.</p>
+      </div>
+    </section>
+
+    <!-- TORQUE -->
+    <section id="torque" class="section">
+      <div class="kicker">A definition people get wrong</div>
+      <h3>Torque, power, and why they're not the same thing.</h3>
+      <p style="margin-top:18px"><strong>Torque</strong> is the twisting effort at the crankshaft — force times the radius it acts at. <strong>Power</strong> is the <em>rate</em> of doing work: torque times rotational speed. An engine can make big torque slowly (a ship's diesel) or modest torque very fast (an F1 V10) and arrive at similar power. The relationship is exact and worth carrying for life:</p>
+      <div class="eq">
+        <span class="lbl">The only engine equation you must memorise</span>
+        Power = Torque × angular speed &nbsp;&nbsp;→&nbsp;&nbsp; P (kW) = T (N·m) × rpm ÷ 9549
+      </div>
+
+      <figure class="figure plate" style="margin-top:8px">
+        <div class="figure-bar"><span class="fno">FIG. 8.2</span><span>TORQUE &amp; POWER vs RPM</span><span class="dim" id="tpTag" style="color:var(--signal-2)">—</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 260px;gap:26px;align-items:center">
+          <svg viewBox="0 0 560 300" style="width:100%;height:auto" id="tpSvg">
+            <line x1="52" y1="16" x2="52" y2="250" stroke="var(--plate-line)"/>
+            <line x1="52" y1="250" x2="544" y2="250" stroke="var(--plate-line)"/>
+            <text x="46" y="22" text-anchor="end" font-size="10" fill="var(--cyan-soft)">↑</text>
+            <text x="540" y="270" text-anchor="end" font-size="10" fill="var(--cyan-soft)">rpm →</text>
+            <polyline id="tqLine" fill="none" stroke="var(--signal)" stroke-width="2.4"/>
+            <polyline id="pwLine" fill="none" stroke="var(--intake)" stroke-width="2.4"/>
+            <line id="tpCursor" x1="52" y1="16" x2="52" y2="250" stroke="var(--cyan)" stroke-width="1" stroke-dasharray="3 3"/>
+            <circle id="tqDot" r="4" fill="var(--signal)"/>
+            <circle id="pwDot" r="4" fill="var(--intake)"/>
+          </svg>
+          <div>
+            <div class="legend" style="flex-direction:column;gap:8px;margin-bottom:14px">
+              <span><i style="background:var(--signal)"></i>torque (twisting effort)</span>
+              <span><i style="background:var(--intake)"></i>power (work rate)</span>
+            </div>
+            <div class="field"><div class="flab"><span>Engine character</span></div>
+              <div class="chips" id="tpChips" style="flex-direction:column">
+                <button data-t="diesel" class="on" style="border-right:0;border-bottom:1px solid var(--plate-line)">TRUCK DIESEL</button>
+                <button data-t="petrol" style="border-right:0;border-bottom:1px solid var(--plate-line)">ROAD PETROL</button>
+                <button data-t="race" style="border-right:0">F1 V10</button>
+              </div></div>
+            <div class="readout" style="margin-top:12px">Peak torque <b id="tqPeak">—</b><br>Peak power <b class="sig" id="pwPeak">—</b></div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>The shape is the character.</b> A truck diesel makes a huge, flat torque plateau down low and never revs — all pulling, no singing. A road petrol engine spreads its torque and revs to ~6,500. The F1 V10 makes comparatively little torque but at such colossal rpm that power is enormous: power is the area under the torque-times-speed product, which is why the screaming engine wins despite the modest twist. Note where peak torque and peak power fall — never at the same rpm.</div>
+      </figure>
+    </section>
+
+    <!-- SULZER -->
+    <section id="sulzer" class="section">
+      <div class="kicker tag-sig">Featured engine · I</div>
+      <h3>Sulzer 12LDA28C — the heart of the Class 47.</h3>
+      <p style="margin-top:18px">If one engine represents the workhorse era of British diesel traction, it is this one. The <strong>Sulzer 12LDA28C</strong> powered the <strong>BR Class 47</strong> — at 512 built, the most numerous mainline diesel locomotive in British history, and a class still earning its keep some sixty years on. It is a wonderful example of the <strong>twin-bank</strong> layout (Ch. 05): essentially <em>two straight-sixes sharing one crankcase</em>, with two parallel crankshafts geared together to a single output.</p>
+
+      <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:start;margin:26px 0">
+        <table class="dt" style="margin:0">
+          <tbody>
+            <tr><td>Configuration</td><td class="mono"><b>Twin-bank, 12-cyl (2 × inline-6)</b></td></tr>
+            <tr><td>Cycle</td><td class="mono">Four-stroke diesel, turbocharged + intercooled</td></tr>
+            <tr><td>Bore × stroke</td><td class="mono">280 mm × 360 mm</td></tr>
+            <tr><td>Swept volume</td><td class="mono">~22 L/cyl → ~264 L total</td></tr>
+            <tr><td>Output</td><td class="mono">2,750 bhp @ 800 rpm</td></tr>
+            <tr><td>Derated to</td><td class="mono"><b>2,580 bhp</b> (from mid-1960s)</td></tr>
+            <tr><td>Lineage</td><td class="mono">12LDA28A (2,300) → B (2,500) → C</td></tr>
+            <tr><td>Built under licence</td><td class="mono">Vickers, Barrow-in-Furness</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <svg viewBox="0 0 280 220" style="width:100%;height:auto;background:var(--plate);border:1px solid var(--plate-line)">
+            <text x="140" y="22" text-anchor="middle" font-size="10" fill="var(--cyan-soft)" font-family="var(--font-mono)">TWIN-BANK — END VIEW</text>
+            <!-- two parallel banks of 6, two cranks geared to one output -->
+            <g stroke="var(--cyan)" stroke-width="1.6" fill="none">
+              <rect x="40" y="60" width="60" height="90"/>
+              <rect x="180" y="60" width="60" height="90"/>
+            </g>
+            <g fill="var(--intake)" opacity="0.5">
+              <rect x="52" y="70" width="36" height="20"/><rect x="192" y="70" width="36" height="20"/>
+            </g>
+            <circle cx="70" cy="170" r="14" fill="none" stroke="var(--signal)" stroke-width="2"/>
+            <circle cx="210" cy="170" r="14" fill="none" stroke="var(--signal)" stroke-width="2"/>
+            <circle cx="140" cy="190" r="16" fill="none" stroke="var(--cyan)" stroke-width="2"/>
+            <line x1="84" y1="170" x2="126" y2="188" stroke="var(--plate-line)"/>
+            <line x1="196" y1="170" x2="154" y2="188" stroke="var(--plate-line)"/>
+            <text x="70" y="205" text-anchor="middle" font-size="8" fill="var(--cyan-soft)">crank A</text>
+            <text x="210" y="205" text-anchor="middle" font-size="8" fill="var(--cyan-soft)">crank B</text>
+            <text x="140" y="215" text-anchor="middle" font-size="8" fill="var(--signal-2)">output</text>
+          </svg>
+        </div>
+      </div>
+      <p>The "C" was wrung from the earlier "B" by fitting <strong>strengthened connecting rods and pistons, larger intercoolers, and raising engine speed from 750 to 800 rpm</strong>. That last 10% is also where the trouble lay: at the highest rating the cyclic, shock-laden life of rail service (very different from the steady marine duty the engine descended from) <strong>cracked crankcases</strong> on around a hundred locomotives. BR's fix was the most instructive decision in the whole class's history — they <strong>derated</strong> it to 2,580 bhp. Reducing the stress bought reliability with almost no loss of useful performance, and turned a troubled engine into a sixty-year success. It is Ch. 04's lesson about stress and Ch. 07's about fatigue, written in locomotives.</p>
+    </section>
+
+    <!-- DELTIC -->
+    <section id="deltic" class="section">
+      <div class="kicker tag-sig">Featured engine · II</div>
+      <h3>Napier Deltic — the triangle that howled.</h3>
+      <p style="margin-top:18px">We met the <strong>Napier Deltic</strong>'s extraordinary geometry in Ch. 05; here is the engine in service. Conceived for fast naval craft — where its <strong>power-to-weight</strong> and the ability to be lifted out and replaced as a unit mattered more than fuel economy — it found lasting fame in the <strong>BR Class 55 "Deltic"</strong>, which used <em>two</em> of these 18-cylinder opposed-piston two-stroke diesels to produce <strong>3,300 bhp</strong> and haul the East Coast Main Line expresses for two decades.</p>
+      <div style="display:grid;grid-template-columns:.9fr 1.1fr;gap:30px;align-items:start;margin:26px 0">
+        <table class="dt" style="margin:0">
+          <tbody>
+            <tr><td>Type (D18-25)</td><td class="mono"><b>18-cyl opposed-piston 2-stroke diesel</b></td></tr>
+            <tr><td>Layout</td><td class="mono">Triangular — 3 banks, 3 crankshafts</td></tr>
+            <tr><td>Pistons</td><td class="mono">36 (two per cylinder, no head)</td></tr>
+            <tr><td>Output (per engine)</td><td class="mono">~1,650 bhp @ 1,500 rpm</td></tr>
+            <tr><td>Class 55 loco</td><td class="mono"><b>2 engines → 3,300 bhp</b></td></tr>
+            <tr><td>Also</td><td class="mono">Navy MTBs, minesweepers; "Baby Deltic" T9-29</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p style="margin-top:0">Why two smaller screaming engines instead of one big slow one? <strong>Power density and serviceability.</strong> A Deltic could be unbolted and swapped in hours, keeping the locomotive in traffic while the engine went to the works — a maintenance philosophy from its naval roots. The price was a thirsty, complex, highly-stressed engine with a fearsome appetite for skilled attention, and an unforgettable hard, whistling exhaust note from firing 18 cylinders every revolution. Only 22 Class 55s were ever built, yet they are among the most beloved locomotives in British history — the clearest case in this study of a layout chosen for power-to-weight over all else.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- V10 -->
+    <section id="v10" class="section">
+      <div class="kicker tag-sig">Featured engine · III</div>
+      <h3>The Formula 1 V10 — the cycle taken to its limit.</h3>
+      <p style="margin-top:18px">At the opposite extreme from a locomotive diesel sits the engine many consider the most extreme expression of the reciprocating IC engine ever raced: the <strong>3.0-litre Formula 1 V10</strong> of roughly 1995–2005. Where the Sulzer makes its power from sheer size at 800 rpm, the V10 makes comparable <em>power</em> from almost nothing — three litres — by doing the cycle <strong>astonishingly fast</strong>.</p>
+      <div style="display:grid;grid-template-columns:1.1fr .9fr;gap:30px;align-items:start;margin:26px 0">
+        <table class="dt" style="margin:0">
+          <tbody>
+            <tr><td>Configuration</td><td class="mono"><b>90° V10, naturally aspirated</b></td></tr>
+            <tr><td>Displacement</td><td class="mono">3.0 L (~300 cc/cyl)</td></tr>
+            <tr><td>Peak speed</td><td class="mono"><b>~18,000–19,000 rpm</b></td></tr>
+            <tr><td>Power</td><td class="mono">~900+ bhp (~300 bhp/litre)</td></tr>
+            <tr><td>Mass</td><td class="mono">~95 kg</td></tr>
+            <tr><td>Piston accel.</td><td class="mono">~10,000 g at the crown</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <p style="margin-top:0">Every theme of this study is at its breaking point here. The <strong>reciprocating forces</strong> of Ch. 04 reach ~10,000 g, demanding exotic pneumatic valve springs because steel ones cannot follow the cam. <strong>Breathing</strong> (Ch. 01) is everything, so the engine lives at wide-open valve overlap and screams. <strong>Balance</strong>: ten cylinders give an inherently good primary balance and a sound no other count makes. The V10 was the perfect compromise of the era between the smoothness and power of a V12 and the lighter weight and lower friction of a V8 — which is exactly why the rules eventually <em>mandated</em> it, then replaced it with a 2.4 V8, then a turbo-hybrid V6, each time trading spectacle for efficiency. The V10's wail is the sound of the Otto cycle at its absolute limit.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FUTURE -->
+    <section id="future" class="section">
+      <div class="kicker">The long view</div>
+      <h3>Where it goes next.</h3>
+      <p style="margin-top:18px">After 150 years the IC engine is no longer the obvious future of personal transport — the electric motor of its sibling study is quieter, simpler and cleaner at the point of use. But the engine is far from finished. It is being pushed to extraordinary efficiencies as a <strong>hybrid range-extender</strong> running at one optimal point; it is learning to burn <strong>hydrogen</strong> and carbon-neutral <strong>synthetic and bio-fuels</strong>; and in the places where energy density is everything — ships, heavy haulage, aviation, standby power, and the locomotives this study keeps returning to — it will be turning cranks for a long time yet.</p>
+      <div class="note">
+        <span class="tag">The thread through all eight chapters</span>
+        <p>From the single cylinder of the contents page to the F1 V10, every engine in this study is the same idea under different pressures: <strong>catch a controlled explosion, harvest it through a piston and crank, and smooth it into useful rotating power</strong> — while fighting the forces, the heat and the wear that the explosion itself creates. Everything else is engineering judgement about which compromise to accept.</p>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 08 — History &amp; significant engines</span>
+  <span>Figs. 8.1–8.2 · facts cross-checked</span>
+</div></footer>
+
+<script src="assets/engine-kin.js"></script>
+<script>
+/* ===== FIG 8.1 timeline ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const M=[
+    {y:'1860',t:'Lenoir gas engine',d:'Étienne Lenoir builds the first commercially successful internal combustion engine — a double-acting, spark-ignited engine burning coal gas with no compression. Hopelessly inefficient (~4%), but it ran, and it proved the principle.'},
+    {y:'1876',t:'Otto four-stroke',d:'Nikolaus Otto builds the first practical four-stroke engine, compressing the charge before ignition. The "Otto cycle" multiplies efficiency several-fold and becomes the basis of nearly every petrol engine since. The intake–compression–power–exhaust sequence of Ch. 01 is his.'},
+    {y:'1886',t:'The motor car',d:'Karl Benz patents the Motorwagen; Daimler & Maybach build a high-speed petrol engine light enough for a vehicle. The engine leaves the factory floor and takes to the road.'},
+    {y:'1892',t:'Diesel\u2019s patent',d:'Rudolf Diesel patents compression ignition: compress air alone until it is hot enough to ignite injected fuel, with no spark. Higher compression means higher efficiency (Ch. 02) — the diesel becomes the engine of heavy work.'},
+    {y:'1905',t:'The turbocharger',d:'Alfred Büchi patents exhaust-gas turbocharging — recovering waste exhaust energy to compress the intake charge (Ch. 06). It transforms aircraft, then diesels, then eventually almost everything.'},
+    {y:'1920s',t:'Leaded fuel & octane',d:'Tetraethyl lead and the octane rating let engines run higher compression without knock (Ch. 02), unlocking more power and efficiency — a gain later undone by the toxicity of lead and reclaimed by electronics.'},
+    {y:'1950s',t:'Gas turbine & diesel traction',d:'Diesel-electric and diesel-hydraulic locomotives — the Sulzer and Deltic of this chapter — sweep away steam. High-speed diesels reach extraordinary power densities for ships, rail and trucks.'},
+    {y:'1967',t:'Electronic fuel injection',d:'Bosch D-Jetronic brings electronic injection to production cars, beginning the handover from mechanical guesswork to measured, mapped control (Ch. 08 ignition).'},
+    {y:'1970s',t:'Emissions era',d:'The catalytic converter, the lambda sensor and tightening law force the engine to run precisely stoichiometric and clean — driving the closed-loop electronic control that defines the modern engine.'},
+    {y:'1990s',t:'Common-rail & DI',d:'High-pressure common-rail direct injection with multiple injection events makes the diesel quiet, clean and efficient, and brings stratified direct injection to petrol. Software now meters every firing.'},
+    {y:'2010s',t:'Downsize, boost, hybridise',d:'Small turbocharged engines and electric hybridisation chase efficiency; the engine begins to share its job with the electric motor, sometimes running only at its single best operating point.'},
+  ];
+  const dots=$('timeDots');
+  dots.innerHTML=M.map((m,i)=>`<button class="tdot" data-i="${i}" style="background:none;border:0;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;flex:1">
+      <span style="font-family:var(--font-mono);font-size:.66rem;color:var(--cyan-soft)">${m.y}</span>
+      <span class="tknob" style="width:13px;height:13px;border-radius:50%;background:var(--plate-2);border:2px solid var(--cyan)"></span>
+    </button>`).join('');
+  function show(i){
+    const m=M[i];
+    $('timeDetail').innerHTML=`<div style="font-family:var(--font-mono);font-size:.72rem;letter-spacing:.1em;color:var(--signal)">${m.y}</div>
+      <div style="font-family:var(--font-display);font-size:1.3rem;color:#fff;margin:6px 0 8px">${m.t}</div>
+      <p style="color:var(--cyan-soft);font-size:.95rem;margin:0;max-width:74ch">${m.d}</p>`;
+    dots.querySelectorAll('.tdot').forEach((b,j)=>{ b.querySelector('.tknob').style.background=(j==i)?'var(--signal)':'var(--plate-2)'; b.querySelector('.tknob').style.borderColor=(j==i)?'var(--signal)':'var(--cyan)'; });
+  }
+  dots.addEventListener('click',e=>{ const b=e.target.closest('.tdot'); if(b)show(+b.dataset.i); });
+  show(1);
+})();
+
+/* ===== FIG 8.2 torque/power ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const X0=52,X1=544,YT=16,YB=250;
+  const TYPES={
+    diesel:{rpm:[600,2600], tq:r=>{const x=(r-600)/2000; return 1.0-0.5*Math.pow(Math.max(0,x-0.25),2)*3 - 0.2*x;}, label:'Truck diesel', tpeak:'~2,500 N·m @ 1,200', ppeak:'~370 kW @ 2,000'},
+    petrol:{rpm:[800,7000], tq:r=>{const x=(r-800)/6200; return 0.55+0.5*Math.sin(Math.min(Math.PI,x*Math.PI*1.05))-0.15*x;}, label:'Road petrol', tpeak:'~400 N·m @ 4,200', ppeak:'~230 kW @ 6,500'},
+    race:{rpm:[6000,19000], tq:r=>{const x=(r-6000)/13000; return 0.5+0.45*Math.sin(Math.min(Math.PI,x*Math.PI*1.1));}, label:'F1 V10', tpeak:'~380 N·m @ 15,000', ppeak:'~680 kW @ 18,500'}
+  };
+  let cur='diesel';
+  function render(){
+    const T=TYPES[cur];
+    const r0=T.rpm[0],r1=T.rpm[1];
+    const N=80; const tq=[],pw=[];
+    let tqMax=0,pwMax=0;
+    for(let i=0;i<=N;i++){ const r=r0+(r1-r0)*i/N; const t=Math.max(0.05,T.tq(r)); const p=t*r; tq.push([r,t]); pw.push([r,p]); tqMax=Math.max(tqMax,t); pwMax=Math.max(pwMax,p); }
+    const sx=r=>X0+((r-r0)/(r1-r0))*(X1-X0);
+    const syT=t=>YB-(t/tqMax)*(YB-YT)*0.92;
+    const syP=p=>YB-(p/pwMax)*(YB-YT)*0.92;
+    $('tqLine').setAttribute('points',tq.map(d=>`${sx(d[0]).toFixed(1)},${syT(d[1]).toFixed(1)}`).join(' '));
+    $('pwLine').setAttribute('points',pw.map(d=>`${sx(d[0]).toFixed(1)},${syP(d[1]).toFixed(1)}`).join(' '));
+    $('tqPeak').textContent=T.tpeak; $('pwPeak').textContent=T.ppeak;
+    $('tpTag').textContent=T.label.toUpperCase();
+    // cursor dot animation
+    window.__tp={sx,syT,syP,tq,pw,r0,r1};
+  }
+  render();
+  let phase=0;
+  function anim(){ phase=(phase+0.004)%1; const d=window.__tp; if(d){ const i=Math.floor(phase*(d.tq.length-1)); const r=d.tq[i][0];
+    $('tpCursor').setAttribute('x1',d.sx(r)); $('tpCursor').setAttribute('x2',d.sx(r));
+    $('tqDot').setAttribute('cx',d.sx(r)); $('tqDot').setAttribute('cy',d.syT(d.tq[i][1]));
+    $('pwDot').setAttribute('cx',d.sx(r)); $('pwDot').setAttribute('cy',d.syP(d.pw[i][1])); }
+    requestAnimationFrame(anim); }
+  anim();
+  $('tpChips').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on'); cur=b.dataset.t; render(); });
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

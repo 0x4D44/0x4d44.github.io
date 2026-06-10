@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Wear & Upkeep — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="07">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch7 hero">
+  <div class="kicker">Chapter 07</div>
+  <div class="num">07</div>
+  <h2 style="margin-top:18px;max-width:22ch">Wear &amp; upkeep: how an engine ages, and how to read it.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">An engine is thousands of hard parts sliding against each other, hundreds of times a second, in a bath of hot acid and grit, for years. That it lasts at all is a triumph of lubrication. This chapter is about how that truce breaks down — slowly as wear, suddenly as failure — and how engineers diagnose an engine without taking it apart.</p>
+  <div class="meta">
+    <div><div class="k">The enemy</div><div class="v">Friction, heat, acid, debris</div></div>
+    <div><div class="k">The defence</div><div class="v">A film of oil microns thick</div></div>
+    <div><div class="k">Slow failure</div><div class="v">Wear — bore, bearings, rings</div></div>
+    <div><div class="k">Fast failure</div><div class="v">"A leg out of bed"</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#film">The oil film</a>
+    <a href="#warm">Why oil must warm up</a>
+    <a href="#wear">How engines wear</a>
+    <a href="#leg">"A leg out of bed"</a>
+    <a href="#oil">Oil analysis</a>
+    <a href="#glow">Glow plugs &amp; cold starting</a>
+    <a href="#care">Caring for an engine</a>
+  </nav>
+
+  <div>
+    <!-- FILM -->
+    <section id="film" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The whole game</div>
+      <h3>Everything rides on a film microns thick.</h3>
+      <p style="margin-top:18px">A crankshaft does not actually touch its bearings. At speed it floats on a wedge of pressurised oil a few <strong>micrometres</strong> thick — thinner than a human hair — dragged in by the journal's own rotation. This is <strong>hydrodynamic lubrication</strong>, and while the film holds, wear is almost zero: the metal surfaces never meet. The art of engine longevity is keeping that film intact through every condition the engine sees.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 7.1</span><span>STRIBECK CURVE — THE LUBRICATION REGIMES</span><span class="dim" id="strTag" style="color:var(--signal-2)">—</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 280px;gap:28px;align-items:center">
+          <svg viewBox="0 0 560 300" style="width:100%;height:auto" id="stribeck">
+            <line x1="56" y1="20" x2="56" y2="250" stroke="var(--plate-line)"/>
+            <line x1="56" y1="250" x2="540" y2="250" stroke="var(--plate-line)"/>
+            <text x="50" y="26" text-anchor="end" font-size="10" fill="var(--cyan-soft)">friction</text>
+            <text x="536" y="270" text-anchor="end" font-size="10" fill="var(--cyan-soft)">speed × viscosity / load →</text>
+            <!-- regime bands -->
+            <rect x="56" y="20" width="120" height="230" fill="var(--bad,#c0392b)" opacity="0.07"/>
+            <rect x="176" y="20" width="120" height="230" fill="var(--comp)" opacity="0.07"/>
+            <rect x="296" y="20" width="244" height="230" fill="var(--intake)" opacity="0.07"/>
+            <text x="116" y="40" text-anchor="middle" font-size="9" fill="var(--bad,#c0392b)">BOUNDARY</text>
+            <text x="236" y="40" text-anchor="middle" font-size="9" fill="var(--comp)">MIXED</text>
+            <text x="418" y="40" text-anchor="middle" font-size="9" fill="var(--intake)">HYDRODYNAMIC</text>
+            <path id="strCurve" fill="none" stroke="var(--signal)" stroke-width="2.4"/>
+            <circle id="strDot" r="6" fill="var(--signal)"/>
+          </svg>
+          <div>
+            <p style="color:var(--cyan-soft);font-size:.9rem;margin:0 0 12px">Drag the operating point. To the <b>left</b> — low speed, cold thick oil, or high load — the film thins until asperities touch: <b>boundary</b> friction, where wear happens. To the <b>right</b>, a full film floats the parts apart. Startup and idle live dangerously near the left; cruising lives safely on the right.</p>
+            <div class="field"><div class="flab"><span>Operating point</span><b id="opLab">cruise</b></div>
+              <input id="opPt" type="range" min="2" max="98" value="70"></div>
+            <div class="readout" style="margin-top:10px">Regime <b class="sig" id="opReg">—</b> · wear rate <b id="opWear">—</b></div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Most wear happens at startup.</b> The famous figure that "90% of engine wear occurs at cold start" comes straight from this curve: before oil pressure builds and before the oil thins enough to flow, the engine runs briefly in the boundary regime on the far left, metal grazing metal. Every later section in this chapter is a consequence of where on this curve the engine is forced to operate.</div>
+      </figure>
+    </section>
+
+    <!-- WARM -->
+    <section id="warm" class="section">
+      <div class="kicker">Patience</div>
+      <h3>Why you let the oil come to temperature before loading it.</h3>
+      <p style="margin-top:18px">Cold oil is <strong>thick</strong>. That sounds protective, but it is the opposite of what you want at the bearings: thick oil is slow to be pumped to the far corners of the engine, slow to form its hydrodynamic wedge, and it shears and pumps badly. Worse, the engine's parts are at uneven temperatures — the piston heats and expands far faster than the cold cylinder around it, so clearances are wrong. Loading an engine hard before the <strong>oil</strong> (not just the coolant) is warm forces the bearings to carry full firing loads while the protective film is still marginal.</p>
+      <div class="cards c2">
+        <div>
+          <h4>Coolant warm ≠ oil warm</h4>
+          <p>The temperature gauge on the dash usually reads <em>coolant</em>, which warms in a few minutes. The <strong>oil</strong> takes far longer — often two to three times as long — to reach full temperature and shed condensed water and fuel. A racing or hard-driven engine is best kept gentle until oil temperature, not coolant, is up.</p>
+        </div>
+        <div>
+          <h4>The cold-start ritual</h4>
+          <p>Start, let oil pressure establish, drive gently. This is why diesel and aero engines specify a warm-up, and why turbocharged engines also benefit from a brief cool-down: the turbo's bearing is oil-fed and red-hot, and shutting down instantly can <strong>coke</strong> the oil in it.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- WEAR -->
+    <section id="wear" class="section">
+      <div class="kicker">Slow death</div>
+      <h3>How an engine wears.</h3>
+      <p style="margin-top:18px">Even perfectly maintained, an engine wears. The classic pattern follows the "bathtub": rapid <strong>run-in</strong> wear when new as surfaces bed together, a long flat plateau of slow steady wear, then an accelerating climb as clearances open, oil control fails, and damage feeds on itself.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 7.2</span><span>WEAR OVER A SERVICE LIFE — THE BATHTUB</span><span class="dim" style="color:var(--signal-2)">RUN-IN · PLATEAU · WEAR-OUT</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 900 260" style="width:100%;height:auto" id="bathtub">
+            <line x1="56" y1="16" x2="56" y2="210" stroke="var(--plate-line)"/>
+            <line x1="56" y1="210" x2="876" y2="210" stroke="var(--plate-line)"/>
+            <text x="50" y="22" text-anchor="end" font-size="10" fill="var(--cyan-soft)">wear rate</text>
+            <text x="872" y="230" text-anchor="end" font-size="10" fill="var(--cyan-soft)">service hours / miles →</text>
+            <path d="M56 70 Q120 200 300 200 L640 198 Q820 196 860 60" fill="none" stroke="var(--signal)" stroke-width="2.4"/>
+            <text x="150" y="120" font-size="11" fill="var(--cyan-soft)" font-family="var(--font-mono)">run-in</text>
+            <text x="430" y="190" font-size="11" fill="var(--cyan-soft)" font-family="var(--font-mono)">useful life — slow steady wear</text>
+            <text x="770" y="120" font-size="11" fill="var(--cyan-soft)" font-family="var(--font-mono)">wear-out</text>
+          </svg>
+        </div>
+        <div class="figure-cap">The major wear interfaces, roughly in order of consequence:</div>
+      </figure>
+      <div class="cards c3">
+        <div><h4>Cylinder bore &amp; rings</h4><p>The ring sliding on the bore is the hardest-worked seal in the engine. As it wears, the bore goes oval and tapers, compression leaks past, oil is burned, and "blow-by" of combustion gas into the crankcase rises. A ridge at the top of the bore is the classic tell.</p></div>
+        <div><h4>Main &amp; big-end bearings</h4><p>The plain bearings on the crank wear if the oil film fails — from dirty oil, low pressure, or sustained overload. Wear opens the clearance, the oil pressure drops further, and a knock develops. Left unchecked, this is the road to catastrophic failure.</p></div>
+        <div><h4>Valve train</h4><p>Cam lobes, followers, valve guides and seats wear and recede; clearances drift, sealing degrades, and the engine loses breathing and compression. Hydraulic lifters hide it for a while; eventually it shows as lost power and hard starting.</p></div>
+      </div>
+    </section>
+
+    <!-- LEG OUT OF BED -->
+    <section id="leg" class="section">
+      <div class="kicker tag-sig">The dramatic failure</div>
+      <h3>"Putting a leg out of bed."</h3>
+      <p style="margin-top:18px">It is one of the great pieces of engineman's slang — vivid, grim, and instantly clear once you've seen the aftermath. To <strong>"put a leg out of bed"</strong> (or "throw a rod") is the catastrophic failure in which a <strong>connecting rod breaks free and punches through the side of the crankcase</strong>. The "bed" is the crankcase — the housing the rods live in; the "leg" is a connecting rod. When one comes out of its bed, it comes out through the block.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 7.3</span><span>"A LEG OUT OF BED" — THE FAILURE SEQUENCE</span><span class="dim" id="legTag" style="color:var(--signal-2)">STEP 1 / 4</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:center">
+          <svg viewBox="0 0 360 320" style="width:100%;height:auto" id="legSvg">
+            <!-- crankcase -->
+            <rect x="60" y="40" width="240" height="240" rx="6" fill="var(--plate-2)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="180" y="30" text-anchor="middle" font-size="10" fill="var(--cyan-soft)" font-family="var(--font-mono)">CRANKCASE ("the bed")</text>
+            <!-- crank circle -->
+            <circle cx="180" cy="180" r="70" fill="none" stroke="var(--plate-line)" stroke-width="1.5"/>
+            <circle cx="180" cy="180" r="8" fill="var(--cyan)"/>
+            <!-- the rod (animated group) -->
+            <g id="legRod">
+              <line id="rodShaft" x1="180" y1="110" x2="180" y2="180" stroke="var(--signal)" stroke-width="9" stroke-linecap="round"/>
+              <circle id="rodBigEnd" cx="180" cy="180" r="14" fill="none" stroke="var(--signal)" stroke-width="6"/>
+              <rect id="rodPiston" x="160" y="84" width="40" height="30" rx="3" fill="#9fb4bd" stroke="var(--cyan)"/>
+            </g>
+            <!-- breach hole (hidden until step 4) -->
+            <path id="breach" d="M300 150 l40 -20 l-6 36 l34 14 l-40 18 l4 30 l-30 -24" fill="var(--bad,#c0392b)" opacity="0"/>
+          </svg>
+          <div>
+            <ol id="legSteps" style="margin:0;padding-left:18px;color:var(--cyan-soft);font-size:.92rem;line-height:1.6">
+              <li data-s="0"><b style="color:#fff">Oil film fails.</b> A bearing is starved or overloaded; the big-end runs dry and overheats.</li>
+              <li data-s="1"><b style="color:#fff">The bearing seizes or hammers.</b> Clearance opens, a knock begins, the rod batters its journal.</li>
+              <li data-s="2"><b style="color:#fff">The rod or bolts let go.</b> Fatigue or a seizure snaps the rod or its cap bolts at full firing load.</li>
+              <li data-s="3"><b style="color:#fff">The leg comes out of bed.</b> The freed rod, still driven by the crank, flails and punches clean through the crankcase wall. The engine is destroyed.</li>
+            </ol>
+            <button class="btn on" id="legPlay" style="margin-top:14px">▶ Replay the sequence</button>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Almost always lubrication, in the end.</b> A thrown rod is usually the final act of a story that began with oil — a missed oil change, a starved bearing, over-revving past the rods' fatigue limit, or hydraulic lock from ingested liquid. It is exactly the failure that oil analysis (below) exists to catch <em>before</em> it happens.</div>
+      </figure>
+    </section>
+
+    <!-- OIL ANALYSIS -->
+    <section id="oil" class="section">
+      <div class="kicker">Reading the engine's blood</div>
+      <h3>Oil analysis: a diagnosis without a teardown.</h3>
+      <p style="margin-top:18px">Engine oil is a continuously circulating sample of the engine's internal health. Send a small bottle to a lab — <strong>spectrometric oil analysis</strong> — and the trace metals dissolved and suspended in it reveal <em>which parts are wearing and how fast</em>, long before anything is audible. Fleet operators, railways, ships and aircraft live by it: it turns maintenance from "fix it when it breaks" into "replace it just before it would have." Each wear metal points to a specific component.</p>
+      <table class="dt">
+        <thead><tr><th>Element found in oil</th><th>Points to</th><th>What rising levels mean</th></tr></thead>
+        <tbody>
+          <tr><td class="mono"><b>Iron (Fe)</b></td><td>Cylinder bores, crankshaft, cam, gears</td><td>General wear; a sharp rise suggests bore/liner or valvetrain trouble</td></tr>
+          <tr><td class="mono"><b>Copper (Cu) / Lead (Pb) / Tin (Sn)</b></td><td>Bearing shells &amp; bushes</td><td>Bearing wear — the early warning of a future thrown rod</td></tr>
+          <tr><td class="mono"><b>Aluminium (Al)</b></td><td>Pistons, some bearings</td><td>Piston/skirt wear or scuffing</td></tr>
+          <tr><td class="mono"><b>Chromium (Cr)</b></td><td>Piston rings, some liners</td><td>Ring wear; rising blow-by</td></tr>
+          <tr><td class="mono"><b>Silicon (Si)</b></td><td>Dirt / airborne grit (and sealant)</td><td>A failing air filter — abrasive ingestion, the cause of much else</td></tr>
+          <tr><td class="mono"><b>Sodium (Na) / Glycol</b></td><td>Coolant</td><td>A head-gasket or core leak — coolant in the oil</td></tr>
+          <tr><td class="mono"><b>Fuel dilution / soot</b></td><td>Combustion sealing, injection</td><td>Worn rings, over-fuelling, or injector faults</td></tr>
+        </tbody>
+      </table>
+      <div class="note annot">
+        <span class="tag">Trends matter more than numbers</span>
+        <p>A single reading means little; the power is in the <strong>trend</strong>. A steady iron level is healthy wear; an iron level that doubles between samples is an engine telling you something is starting to fail. This is condition-based maintenance — and it is why the same Sulzer and Deltic locomotive engines of Ch. 08 were sampled at every depot visit.</p>
+      </div>
+    </section>
+
+    <!-- GLOW PLUGS -->
+    <section id="glow" class="section">
+      <div class="kicker">Cold starting</div>
+      <h3>Glow plugs: helping a cold diesel catch.</h3>
+      <p style="margin-top:18px">A diesel has no spark — it relies on the heat of compression to ignite its fuel (Ch. 02). But a <em>cold</em> engine steals that heat into its cold metal walls before the charge gets hot enough to fire, so a cold diesel may not start at all. The <strong>glow plug</strong> is a small electric heating element screwed into each cylinder; switched on for a few seconds before cranking, it warms the combustion chamber (or the pre-chamber) enough to guarantee ignition on the first compression strokes. The dashboard "wait-to-start" coil light is the glow plugs doing their job.</p>
+      <div class="cards c2">
+        <div>
+          <h4>Glow plug (diesel)</h4>
+          <p>Heats the chamber so compression ignition will catch when cold. Modern ceramic plugs heat in under two seconds and may stay on after starting (post-glow) to smooth warm-up and cut white smoke. Indirect-injection diesels lean on them heavily; large direct-injection engines may use intake <strong>grid heaters</strong> instead.</p>
+        </div>
+        <div>
+          <h4>Not to be confused with…</h4>
+          <p>A <strong>spark plug</strong> (petrol) fires every cycle to ignite the mixture; a <strong>glow plug</strong> (diesel) only assists <em>starting</em> and then is no longer needed. Model aircraft "glow engines" use a third, different thing — a catalytic glow filament — to keep a methanol engine firing. Same word, three jobs.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CARE -->
+    <section id="care" class="section">
+      <div class="kicker">In practice</div>
+      <h3>What actually keeps an engine alive.</h3>
+      <div class="cards c3" style="margin-top:24px">
+        <div><h4>Clean oil, changed in time</h4><p>Oil wears out — additives deplete, acids and soot accumulate, the film weakens. Regular changes with the right grade are, by an enormous margin, the single biggest factor in engine life.</p></div>
+        <div><h4>Clean air</h4><p>The silicon line in the oil report is a reminder: a tired air filter feeds the engine grit, and grit is sandpaper on the bores. The cheapest part in the engine protects the most expensive ones.</p></div>
+        <div><h4>Gentle warm-up, honest cool-down</h4><p>Let the oil reach temperature before loading; let a hot turbo idle a moment before shutdown. Both keep the film where the Stribeck curve wants it — on the right-hand, safe side.</p></div>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 07 — Wear &amp; upkeep</span>
+  <span>Figs. 7.1–7.3 · schematic</span>
+</div></footer>
+
+<script src="assets/engine-kin.js"></script>
+<script>
+/* ===== FIG 7.1 Stribeck ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  // curve: high at left (boundary), dips to minimum (mixed→hydrodynamic), rises gently right
+  function fric(x){ // x in 0..1 across axis
+    const boundary=0.9*Math.exp(-x*9);
+    const hydro=0.12+0.55*x;       // gentle rise with speed*visc
+    const mixedDip=0.18;
+    return Math.min(boundary+0.05, Math.max(mixedDip, Math.min(boundary, hydro)) + 0.4*Math.exp(-Math.pow((x-0.32)/0.16,2))*0 );
+  }
+  // build a smooth Stribeck explicitly
+  function stri(x){
+    const b=0.95*Math.exp(-x*11);          // boundary fall
+    const h=0.10+0.6*x;                     // hydrodynamic rise
+    return Math.max(0.13, Math.min(0.95, b + h*0.0)) ;
+  }
+  function curveY(x){
+    // classic shape: F = a/x_norm + b*x  with min in middle
+    const X=0.08+x*0.92;
+    return 0.018/X + 0.42*X;
+  }
+  const X0=56,X1=540,YT=20,YB=250;
+  let pts=[];
+  let ymin=9,ymax=-9;
+  for(let i=0;i<=100;i++){ const x=i/100; const y=curveY(x); pts.push([x,y]); ymin=Math.min(ymin,y); ymax=Math.max(ymax,y); }
+  const sx=x=>X0+x*(X1-X0);
+  const sy=y=>YB-((y-ymin)/(ymax-ymin))*(YB-YT);
+  $('strCurve').setAttribute('d','M'+pts.map(p=>`${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' L'));
+  function setOp(v){ // v 2..98
+    const x=v/100; const y=curveY(x);
+    $('strDot').setAttribute('cx',sx(x)); $('strDot').setAttribute('cy',sy(y));
+    let reg,wear,lab;
+    if(x<0.22){ reg='BOUNDARY'; wear='HIGH'; lab='cold start / lugging'; }
+    else if(x<0.42){ reg='MIXED'; wear='moderate'; lab='idle / low speed'; }
+    else { reg='HYDRODYNAMIC'; wear='~zero'; lab='cruise'; }
+    $('opReg').textContent=reg; $('opWear').textContent=wear; $('opLab').textContent=lab;
+    $('strTag').textContent=reg+' · WEAR '+wear.toUpperCase();
+  }
+  setOp(70);
+  $('opPt').addEventListener('input',e=>setOp(+e.target.value));
+})();
+
+/* ===== FIG 7.3 leg out of bed ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  let step=0, t=0, playing=true, knock=0;
+  const labels=['OIL FILM FAILS','BEARING HAMMERS','ROD LETS GO','LEG OUT OF BED'];
+  function frame(){
+    t+=0.04;
+    const ang=t*2.2;
+    const cx=180,cy=180,r=70;
+    if(step<3){
+      // normal-ish rotation, knock grows with step
+      knock = step*2.2*Math.sin(t*18);
+      const px=cx+r*Math.sin(ang)+ (step>=1?knock:0);
+      const py=cy-r*Math.cos(ang);
+      const topY=py-70;
+      $('rodBigEnd').setAttribute('cx',px); $('rodBigEnd').setAttribute('cy',py);
+      $('rodShaft').setAttribute('x1',px); $('rodShaft').setAttribute('y1',py);
+      $('rodShaft').setAttribute('x2',cx+(px-cx)*0.2); $('rodShaft').setAttribute('y2',topY);
+      $('rodPiston').setAttribute('x',cx+(px-cx)*0.2-20); $('rodPiston').setAttribute('y',topY-30);
+      $('breach').setAttribute('opacity',0);
+      $('legRod').setAttribute('opacity',1);
+    } else {
+      // failure: rod flails out to the right and breaches
+      const ej=Math.min(1,(t%4)/1.2);
+      const px=cx+ r*Math.sin(ang) + ej*150;
+      const py=cy - r*Math.cos(ang) - ej*40;
+      const rot=ej*120;
+      $('legRod').setAttribute('transform',`rotate(${rot} ${px} ${py})`);
+      $('rodBigEnd').setAttribute('cx',px); $('rodBigEnd').setAttribute('cy',py);
+      $('rodShaft').setAttribute('x1',px); $('rodShaft').setAttribute('y1',py);
+      $('rodShaft').setAttribute('x2',px); $('rodShaft').setAttribute('y2',py-70);
+      $('rodPiston').setAttribute('x',px-20); $('rodPiston').setAttribute('y',py-100);
+      $('breach').setAttribute('opacity',Math.min(0.85,ej));
+    }
+    // advance steps on a timer
+    if(playing && t> (step+1)*2.2 && step<3){ step++; $('legTag').textContent='STEP '+(step+1)+' / 4'; highlight(); }
+    requestAnimationFrame(frame);
+  }
+  function highlight(){
+    document.querySelectorAll('#legSteps li').forEach((li,i)=>{ li.style.opacity = i<=step?1:0.4; });
+  }
+  function reset(){ step=0;t=0; $('legRod').removeAttribute('transform'); $('legTag').textContent='STEP 1 / 4'; highlight(); }
+  highlight();
+  frame();
+  $('legPlay').addEventListener('click',reset);
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

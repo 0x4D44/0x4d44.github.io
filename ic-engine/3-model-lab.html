@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · The Model Lab — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="03">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch3 hero">
+  <div class="kicker">Chapter 03</div>
+  <div class="num">03</div>
+  <h2 style="margin-top:18px;max-width:20ch">The model lab: build one and run it.</h2>
+  <p class="lead" style="max-width:54ch;margin-top:22px">Everything from the first two chapters, assembled into a working three-dimensional engine you can rotate, zoom and drive. Change the cylinder count, the layout, the cycle and the fuel, and watch the crankshaft, rods, pistons, valves and sparks move exactly as the kinematics dictate.</p>
+</section>
+
+<!-- THE LAB -->
+<section class="wrap" style="padding:8px 32px 20px">
+  <figure class="figure plate" style="margin:0">
+    <div class="figure-bar"><span class="fno">FIG. 3.1</span><span>LIVE 3-D ENGINE — DRAG TO ROTATE · SCROLL TO ZOOM</span><span class="dim" id="cfgTag" style="color:var(--signal-2)">INLINE-4 · 4-STROKE</span></div>
+    <div class="stage3d" id="stage" style="aspect-ratio:16/9">
+      <div class="hud tl" id="hudL">building…</div>
+      <div class="hud tr" id="hudR"></div>
+      <div class="hud bl">drag · scroll · the orange crankshaft is the driven part</div>
+      <div class="hud redline">⚠ REDLINE — SHE'S GONNA BLOW</div>
+      <div class="boom">
+        <div class="big">💥 ENGINE GRENADED</div>
+        <div class="sub">You sat on the rev limiter. A connecting rod just left the building through the side of the block — a textbook "leg out of bed" (Ch. 07).</div>
+        <button class="buy" id="buyBtn">🔧 Buy a new engine →</button>
+        <div class="price">invoice: one (1) short block · labour not included</div>
+      </div>
+    </div>
+    <!-- ANALOG INSTRUMENT CLUSTER -->
+    <div id="gauges"></div>
+    <!-- CONTROL DECK -->
+    <div class="deck">
+      <div class="deck-row">
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Cylinders</span></div>
+          <div class="chips" id="nChips">
+            <button data-n="1">1</button><button data-n="2">2</button><button data-n="3">3</button>
+            <button data-n="4" class="on">4</button><button data-n="5">5</button><button data-n="6">6</button><button data-n="8">8</button>
+          </div></div>
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Layout</span></div>
+          <div class="chips" id="layChips">
+            <button data-l="inline" class="on">INLINE</button><button data-l="vee">V</button><button data-l="flat">FLAT</button>
+          </div></div>
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Cycle</span></div>
+          <div class="chips" id="strokeChips">
+            <button data-s="4" class="on">4-STROKE</button><button data-s="2">2-STROKE</button>
+          </div></div>
+        <div class="field" style="flex:0 0 auto"><div class="flab"><span>Fuel</span></div>
+          <div class="chips" id="fuelChips">
+            <button data-f="petrol" class="on">PETROL</button><button data-f="diesel">DIESEL</button>
+          </div></div>
+      </div>
+      <div class="deck-row">
+        <button class="btn on" id="runBtn">❚❚ Running</button>
+        <div class="field" style="max-width:340px"><div class="flab"><span>Engine speed</span><b id="rpmLab">900 rpm</b></div>
+          <input id="rpm" type="range" min="120" max="6000" step="60" value="900"></div>
+        <button class="btn" id="ghostBtn">Ghost block: ON</button>
+        <button class="btn" id="valveBtn">Valves: ON</button>
+        <button class="btn" id="resetBtn">Reset view</button>
+      </div>
+    </div>
+    <div class="figure-cap"><b>What you are looking at.</b> The <span style="color:var(--signal)">orange</span> crankshaft is the output; each piston follows the exact slider-crank solution for its throw; rods swing to suit; intake (blue) and exhaust (purple) valves lift on the cam timing of Ch. 01; the spark plug — or, in diesel mode, the injector — sits in the head and flashes just before TDC on the firing stroke. In two-stroke mode the valves switch to a uniflow timing, working near BDC to scavenge the cylinder. V and flat layouts share crank pins between opposing cylinders. <b>Mind the redline</b> — hold it near 6,000 rpm and find out what happens.</div>
+  </figure>
+</section>
+
+<section class="wrap cols-rail" style="padding-top:30px">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#read">How to read the model</a>
+    <a href="#try">Things to try</a>
+    <a href="#parts">The parts, named</a>
+  </nav>
+  <div>
+    <section id="read" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">Orientation</div>
+      <h3>One crank angle, the whole machine.</h3>
+      <p style="margin-top:18px">The model is driven by a single rotating value: crankshaft angle. From it, every other motion is <em>derived</em>, not animated by hand. Each cylinder is assigned a crank throw and a firing phase exactly as a real engine's firing order demands; the piston position is the closed-form slider-crank solution you met in Ch. 01; the connecting rod simply spans from the wandering crank pin up to the piston pin, swinging as it must.</p>
+      <p>Because the geometry is real, the model shows you things diagrams hide: how the rods of a V-engine crowd onto shared crank pins, how a flat-six's pistons box outward in perfect opposition, and why a long crankshaft with many throws is a torsional spring waiting to resonate (Ch. 04).</p>
+    </section>
+
+    <section id="try" class="section">
+      <div class="kicker tag-sig">Experiments</div>
+      <h3>Things worth trying.</h3>
+      <ul class="spec">
+        <li><strong>Drop to a single cylinder, 120 rpm.</strong> Watch how long the crank coasts between power strokes — the job the flywheel does (Ch. 04).</li>
+        <li><strong>Inline-4 vs flat-4.</strong> Same count, very different motion. The boxer's opposed pistons cancel primary shaking forces the inline-four cannot.</li>
+        <li><strong>V configuration, 6 and 8 cylinders.</strong> See opposing rods share a crank pin, and how the bank angle sets the rhythm of firing.</li>
+        <li><strong>Switch to two-stroke.</strong> The valves shift to a uniflow timing near BDC, and every revolution now fires. Note how much "busier" the engine looks at the same rpm.</li>
+        <li><strong>Petrol → Diesel.</strong> The plug in the head changes to an injector, and the flash colour and timing shift from a sharp yellow spark to the orange of compression ignition.</li>
+        <li><strong>Wind the speed to 6,000 rpm.</strong> The reciprocating parts blur, the engine glows red-hot — and then it grenades. The inertia loads (∝ rpm²) of Ch. 04 are what ultimately limit engine speed; here you get to find the limit the fun way.</li>
+      </ul>
+    </section>
+
+    <section id="parts" class="section">
+      <div class="kicker">Glossary in motion</div>
+      <h3>The parts, named.</h3>
+      <div class="cards c2">
+        <div><h4>Crankshaft &amp; throws</h4><p>The output shaft. Each <em>throw</em> (offset pin + webs + counterweight) converts a rod's push into torque. Counterweights balance the rotating mass of the throw and big-end.</p></div>
+        <div><h4>Connecting rod</h4><p>Joins piston (small end) to crank pin (big end). It both pushes and swings, so it carries bending as well as compression — and its mass is split into "reciprocating" and "rotating" shares in Ch. 04.</p></div>
+        <div><h4>Piston &amp; bore</h4><p>The sliding seal that catches the gas pressure. The translucent ghost cylinder is the bore; toggle it off to see the internals clearly.</p></div>
+        <div><h4>Valves &amp; head</h4><p>In four-stroke mode, intake (blue) and exhaust (purple) poppet valves open and close on cam timing. The head carries them and the spark/injector.</p></div>
+        <div><h4>Flywheel</h4><p>The heavy disc on the end of the crank. It stores the energy of each power stroke and releases it through the idle strokes — the smoothing element of Ch. 04.</p></div>
+        <div><h4>Spark / injector</h4><p>The yellow flash (petrol) or orange flash (diesel) marks ignition, fired just before TDC on the power stroke of each cylinder in turn.</p></div>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 03 — The model lab</span>
+  <span>Fig. 3.1 · live WebGL · schematic proportions</span>
+</div></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="assets/engine-kin.js"></script>
+<script src="assets/engine3d.js"></script>
+<script src="assets/gauges.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  if(typeof THREE==='undefined'){ $('hudL').textContent='WebGL/Three.js failed to load (offline?)'; return; }
+  const eng=Engine3D({
+    mount:$('stage'),
+    onbuild:info=>{
+      $('hudL').innerHTML = `${info.layout}${info.N>1?'-'+info.N:''} · ${info.stroke}<br>${info.fuel}`;
+      $('hudR').innerHTML = `${info.rpm} rpm<br>${info.firing}`;
+      $('cfgTag').textContent = `${info.layout.toUpperCase()}${info.N>1?'-'+info.N:''} · ${info.stroke.toUpperCase()}`;
+    },
+    onheat:(h,over)=>{ $('stage').classList.toggle('warn', over && h>0.02 && !eng.exploded);
+      $('rpmLab').style.color = over ? '#EE5A2B' : ''; },
+    onexplode:()=>{ $('stage').classList.remove('warn'); $('stage').classList.add('blown');
+      $('runBtn').classList.remove('on'); $('runBtn').textContent='▶ Paused'; $('cfgTag').textContent='💥 GRENADED'; },
+    onrevive:()=>{ $('stage').classList.remove('blown'); $('runBtn').classList.add('on'); $('runBtn').textContent='❚❚ Running'; $('rpmLab').style.color=''; }
+  });
+  window.__eng=eng;
+  if(window.EngineGauges) EngineGauges({mount:document.getElementById('gauges'), engine:eng});
+  $('buyBtn').addEventListener('click',()=>eng.revive());
+  function chips(el, fn){ $(el).addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on'); fn(b); }); }
+  chips('nChips', b=>eng.set({N:+b.dataset.n}));
+  chips('layChips', b=>{ const l=b.dataset.l; eng.set({layout:l});
+    // V/flat need even counts; reflect in N chips
+    if((l==='vee'||l==='flat') && eng.cfg.N%2){ const nn=Math.max(2,eng.cfg.N-1); eng.set({N:nn});
+      [...$('nChips').children].forEach(x=>x.classList.toggle('on', +x.dataset.n===nn)); }
+  });
+  chips('strokeChips', b=>eng.set({stroke4:b.dataset.s==='4'}));
+  chips('fuelChips', b=>eng.set({diesel:b.dataset.f==='diesel'}));
+  $('rpm').addEventListener('input',e=>{ eng.set({rpm:+e.target.value}); $('rpmLab').textContent=e.target.value+' rpm'; });
+  $('runBtn').addEventListener('click',e=>{ const r=!eng.cfg.run; eng.set({run:r}); e.target.classList.toggle('on',r); e.target.textContent=r?'❚❚ Running':'▶ Paused'; });
+  $('ghostBtn').addEventListener('click',e=>{ const g=!eng.cfg.ghost; eng.set({ghost:g}); e.target.textContent='Ghost block: '+(g?'ON':'OFF'); e.target.classList.toggle('on',g); });
+  $('valveBtn').addEventListener('click',e=>{ const v=!eng.cfg.valves; eng.set({valves:v}); e.target.textContent='Valves: '+(v?'ON':'OFF'); e.target.classList.toggle('on',v); });
+  $('resetBtn').addEventListener('click',()=>{ eng.resize(); location.hash=''; });
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

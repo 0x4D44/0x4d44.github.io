@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · The Cycle — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="01">
+<div id="topbar"></div>
+
+<!-- HERO -->
+<section class="wrap chero" data-screen-label="Ch1 hero">
+  <div class="kicker">Chapter 01</div>
+  <div class="num">01</div>
+  <h2 style="margin-top:18px;max-width:20ch">The cycle: four events, in one bore.</h2>
+  <p class="lead" style="max-width:54ch;margin-top:22px">Every piston engine is a loop. Draw in a charge, squeeze it, burn it, throw it out — and the only stroke that pays is the third. Everything clever in engine design is about getting that one stroke to feed the other three smoothly.</p>
+  <div class="meta">
+    <div><div class="k">Principle</div><div class="v">Constant-mass cyclic heat engine</div></div>
+    <div><div class="k">Four-stroke</div><div class="v">720° crank · 1 power stroke</div></div>
+    <div><div class="k">Two-stroke</div><div class="v">360° crank · 1 power stroke</div></div>
+    <div><div class="k">Inventors</div><div class="v">Otto 1876 · Clerk/Day 1880s</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#why">Why a cycle at all</a>
+    <a href="#lab">Live: the four strokes</a>
+    <a href="#four">The four strokes in detail</a>
+    <a href="#valves">Valve timing & overlap</a>
+    <a href="#two">The two-stroke bargain</a>
+    <a href="#compare">Two vs four</a>
+  </nav>
+
+  <div>
+    <!-- WHY -->
+    <section id="why" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The problem</div>
+      <h3>Fire is fast and violent. A wheel wants steady and slow.</h3>
+      <p style="margin-top:18px">Burning a petrol–air mixture releases its energy in a few <strong>milliseconds</strong>, as a sharp rise in pressure. A road wheel or a propeller, by contrast, wants a smooth, continuous torque. The engine's job is to act as a <strong>buffer and a converter</strong> between these two worlds: to catch each violent expansion, harvest it through a piston and crank, and store enough of it to carry the mechanism through to the next one.</p>
+      <p>It does this by running the same trapped mass of gas around a repeating <strong>thermodynamic cycle</strong>. In the four-stroke (Otto/Diesel) cycle, the crank turns <strong>twice</strong> for each firing; in the two-stroke (Clerk) cycle, once. The price of admission for every cycle is the same: you must first get fresh charge in, and last get burnt gas out — the "breathing" that limits every engine ever built.</p>
+      <div class="note">
+        <span class="tag">A definition worth fixing</span>
+        <p>A <strong>stroke</strong> is one full travel of the piston, top to bottom or bottom to top — exactly <strong>180°</strong> of crank rotation. <strong>TDC</strong> (top dead centre) and <strong>BDC</strong> (bottom dead centre) are the turning points where the piston momentarily stops. The whole study comes back to what is happening at, and between, these two points.</p>
+      </div>
+    </section>
+
+    <!-- LAB -->
+    <section id="lab" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 1.1</div>
+      <h3>Drive the cycle as slow as you like.</h3>
+      <p style="margin-top:18px">Run it, slow it to a crawl, or switch between the four-stroke and two-stroke principle. Watch the valves (or ports), the spark, the gas colour and the pressure trace move together — all driven by one crank angle.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 1.1</span><span id="figTitle">SINGLE CYLINDER — FOUR-STROKE</span><span class="dim" id="figStroke" style="color:var(--signal-2)">INTAKE</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:stretch">
+          <!-- cutaway svg -->
+          <svg viewBox="0 0 320 540" style="width:100%;height:auto" id="cut">
+            <!-- head dome -->
+            <path d="M150 96 Q230 56 310 96 L310 110 L150 110 Z" fill="var(--plate-2)" stroke="var(--cyan)" stroke-width="2"/>
+            <!-- block walls -->
+            <rect x="150" y="108" width="160" height="206" fill="none" stroke="var(--cyan)" stroke-width="2.5"/>
+            <!-- chamber gas (between crown and head) -->
+            <rect id="gas" x="153" y="110" width="154" height="60" fill="var(--intake)" opacity="0.3"/>
+            <!-- intake port + valve (left) -->
+            <g id="intakeGrp">
+              <path d="M150 120 L110 104 L110 90 L150 104 Z" fill="var(--plate-2)" stroke="var(--plate-line)"/>
+              <g id="intakeValve">
+                <line x1="178" y1="70" x2="178" y2="112" stroke="var(--intake)" stroke-width="4"/>
+                <path d="M168 112 L188 112 L184 120 L172 120 Z" fill="var(--intake)"/>
+              </g>
+              <text x="120" y="86" font-size="10" fill="var(--intake)" text-anchor="middle">IN</text>
+            </g>
+            <!-- exhaust port + valve (right) -->
+            <g id="exhaustGrp">
+              <path d="M310 120 L350 104 L350 90 L310 104 Z" fill="var(--plate-2)" stroke="var(--plate-line)"/>
+              <g id="exhaustValve">
+                <line x1="282" y1="70" x2="282" y2="112" stroke="var(--exhaust)" stroke-width="4"/>
+                <path d="M272 112 L292 112 L288 120 L276 120 Z" fill="var(--exhaust)"/>
+              </g>
+              <text x="340" y="86" font-size="10" fill="var(--exhaust)" text-anchor="middle">EX</text>
+            </g>
+            <!-- 2-stroke ports (hidden by default) -->
+            <g id="portsGrp" style="display:none">
+              <rect id="exPort" x="304" y="236" width="12" height="34" fill="var(--exhaust)" opacity="0.5"/>
+              <rect id="trPort" x="144" y="250" width="12" height="30" fill="var(--intake)" opacity="0.5"/>
+              <text x="324" y="252" font-size="9" fill="var(--exhaust)">EXH</text>
+              <text x="118" y="266" font-size="9" fill="var(--intake)">TR</text>
+            </g>
+            <!-- spark / injector -->
+            <g id="spark">
+              <line x1="230" y1="58" x2="230" y2="92" stroke="var(--spark)" stroke-width="3"/>
+              <g id="sparkFlash" opacity="0">
+                <path d="M230 92 l-6 12 l8 0 l-6 14" fill="none" stroke="var(--spark)" stroke-width="2"/>
+                <circle cx="230" cy="98" r="10" fill="var(--spark)" opacity="0.5"/>
+              </g>
+            </g>
+            <!-- piston -->
+            <g id="piston">
+              <rect x="153" y="110" width="154" height="50" rx="2" fill="var(--plate)" stroke="var(--cyan)" stroke-width="2"/>
+              <line x1="153" y1="122" x2="307" y2="122" stroke="var(--plate-line)"/>
+              <line x1="153" y1="129" x2="307" y2="129" stroke="var(--plate-line)"/>
+              <line x1="153" y1="136" x2="307" y2="136" stroke="var(--plate-line)"/>
+              <circle cx="230" cy="140" r="7" fill="var(--plate-2)" stroke="var(--cyan)" stroke-width="2"/>
+            </g>
+            <!-- rod -->
+            <line id="rod" x1="230" y1="140" x2="230" y2="410" stroke="var(--cyan)" stroke-width="6" stroke-linecap="round"/>
+            <!-- crankcase -->
+            <circle cx="230" cy="410" r="96" fill="none" stroke="var(--cyan)" stroke-width="2.5"/>
+            <circle cx="230" cy="410" r="96" fill="var(--plate-2)" opacity="0.25"/>
+            <!-- crank -->
+            <g id="crank">
+              <line x1="230" y1="410" x2="230" y2="335" stroke="var(--signal)" stroke-width="6"/>
+              <circle id="crankpin" cx="230" cy="335" r="9" fill="var(--signal)"/>
+            </g>
+            <circle cx="230" cy="410" r="9" fill="var(--cyan)"/>
+            <!-- crank angle dial -->
+            <g transform="translate(58,452)">
+              <circle r="34" fill="none" stroke="var(--plate-line)"/>
+              <line id="dial" x1="0" y1="0" x2="0" y2="-34" stroke="var(--signal)" stroke-width="2"/>
+              <text x="0" y="52" font-size="9" fill="var(--cyan-soft)" text-anchor="middle">CRANK θ</text>
+            </g>
+          </svg>
+
+          <!-- right column: pressure trace + readouts -->
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <svg viewBox="0 0 460 230" style="width:100%;height:auto;flex:none" id="ptrace">
+              <line x1="44" y1="14" x2="44" y2="196" stroke="var(--plate-line)" stroke-width="1.2"/>
+              <line x1="44" y1="196" x2="452" y2="196" stroke="var(--plate-line)" stroke-width="1.2"/>
+              <text x="38" y="20" text-anchor="end" font-size="10" fill="var(--cyan-soft)">P</text>
+              <text x="448" y="214" text-anchor="end" font-size="10" fill="var(--cyan-soft)">crank angle →</text>
+              <g id="strokeBands"></g>
+              <polyline id="pcurve" fill="none" stroke="var(--signal)" stroke-width="2"/>
+              <line id="pcursor" x1="44" y1="14" x2="44" y2="196" stroke="var(--cyan)" stroke-width="1.4" stroke-dasharray="3 3"/>
+              <circle id="pdot" r="4" fill="var(--signal)"/>
+            </svg>
+            <div class="readout" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 18px">
+              <div>Stroke <b id="rStroke" class="sig">—</b></div>
+              <div>Crank angle <b id="rAng">—</b></div>
+              <div>Piston <b id="rPist">—</b></div>
+              <div>Cyl. pressure <b id="rP">—</b></div>
+              <div>Intake valve <b id="rIn">—</b></div>
+              <div>Exhaust valve <b id="rEx">—</b></div>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:var(--intake)"></i>fresh charge</span>
+              <span><i class="dot" style="background:var(--comp)"></i>compressed</span>
+              <span><i class="dot" style="background:var(--fire)"></i>combustion</span>
+              <span><i class="dot" style="background:var(--exhaust)"></i>spent gas</span>
+            </div>
+          </div>
+        </div>
+        <!-- control deck -->
+        <div class="deck">
+          <div class="deck-row">
+            <div class="chips" id="modeChips">
+              <button data-m="4" class="on">FOUR-STROKE</button>
+              <button data-m="2">TWO-STROKE</button>
+            </div>
+            <button class="btn on" id="playBtn">❚❚ Running</button>
+            <div class="field" style="max-width:280px">
+              <div class="flab"><span>Speed</span><b id="spdLab">320 rpm-eq</b></div>
+              <input id="spd" type="range" min="2" max="100" value="34">
+            </div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>One crank angle drives everything.</b> The piston position is the exact slider-crank solution; valve lift, gas colour and the pressure trace are all read off the same angle. Slow it right down and step through TDC to watch the spark fire just before the piston reaches the top — the <b>ignition advance</b> we return to in Ch. 02.</div>
+      </figure>
+    </section>
+
+    <!-- FOUR STROKES -->
+    <section id="four" class="section">
+      <div class="kicker">The four-stroke cycle</div>
+      <h3>Two turns of the crank, one payday.</h3>
+      <div class="cards c2" style="margin-top:24px">
+        <div>
+          <div class="tag tag-annot">0° → 180°</div>
+          <h4>1 · Intake (induction)</h4>
+          <p>Piston descends from TDC; the inlet valve is open. The growing volume drops cylinder pressure below atmospheric and fresh charge — air, or air plus fuel — is pushed in by the outside air. Breathing here sets the engine's <strong>volumetric efficiency</strong>, and is exactly what a turbocharger later attacks.</p>
+        </div>
+        <div>
+          <div class="tag tag-annot">180° → 360°</div>
+          <h4>2 · Compression</h4>
+          <p>Both valves shut; the rising piston squeezes the charge into the clearance volume. Temperature and pressure climb steeply (T ∝ V<sup>1−γ</sup>). The <strong>compression ratio</strong> set here fixes the cycle's thermal efficiency — and, in a petrol engine, how close you dare run to <strong>knock</strong>.</p>
+        </div>
+        <div>
+          <div class="tag tag-sig">360° → 540°</div>
+          <h4>3 · Power (expansion)</h4>
+          <p>Just before TDC the charge is ignited — by spark, or by the heat of compression in a diesel. Peak pressure (80–200&nbsp;bar) drives the piston down: <strong>this is the only stroke that does net work</strong>. The expanding gas cools as it gives up its energy to the crank.</p>
+        </div>
+        <div>
+          <div class="tag" style="color:var(--exhaust)">540° → 720°</div>
+          <h4>4 · Exhaust</h4>
+          <p>The exhaust valve opens; the rising piston sweeps the spent gas out. A well-designed engine times the valves so that the outgoing exhaust helps drag in the next intake charge — the <strong>overlap</strong> around TDC.</p>
+        </div>
+      </div>
+      <div class="eq">
+        <span class="lbl">Net cycle work — the indicator loop</span>
+        W<sub>net</sub> = ∮ p dV  =  (work of power + intake strokes) − (work of compression + exhaust strokes)
+      </div>
+      <p>The three non-firing strokes are paid for out of the energy banked from the last firing — temporarily, by the <strong>flywheel</strong> (Ch. 04). A single-cylinder engine therefore delivers torque in violent gulps; adding cylinders, phased around the cycle, is how you fill in the gaps.</p>
+    </section>
+
+    <!-- VALVES -->
+    <section id="valves" class="section">
+      <div class="kicker">Breathing</div>
+      <h3>Valve timing: the cycle doesn't start and stop on the dot.</h3>
+      <p style="margin-top:18px">Gas has inertia. By the time the piston reaches BDC the incoming charge is still moving, so the inlet valve is held open well <em>after</em> BDC to keep packing it in (ram effect). Likewise the exhaust valve opens <em>before</em> BDC, while there is still pressure to help blow the cylinder clear. Around TDC between exhaust and intake, both valves are briefly open together — the <strong>valve overlap</strong> — letting the departing exhaust scavenge the chamber and pull in fresh charge.</p>
+      <div class="note annot">
+        <span class="tag">Why variable valve timing exists</span>
+        <p>Fixed valve timing is always a compromise: lots of overlap helps top-end power but spoils a smooth idle and low-speed torque. <strong>Variable valve timing</strong> (and lift) lets a modern engine have a clean, narrow-overlap idle and a wide-open, free-breathing top end from the same hardware — a recurring theme in Ch. 02's ignition and Ch. 06's boosting.</p>
+      </div>
+    </section>
+
+    <!-- TWO-STROKE -->
+    <section id="two" class="section">
+      <div class="kicker">The two-stroke cycle</div>
+      <h3>One power stroke every revolution — at a price.</h3>
+      <p style="margin-top:18px">The two-stroke folds intake and exhaust into the ends of the power and compression strokes, doing away with separate breathing strokes — and often with the valve gear entirely. As the piston nears BDC it uncovers an <strong>exhaust port</strong> and a <strong>transfer port</strong> in the cylinder wall; fresh charge, pre-pressurised in the crankcase below the piston, rushes up through the transfer port and <strong>scavenges</strong> the burnt gas out. The piston rises, covers the ports, compresses, and fires again. <strong>Toggle the model above to two-stroke</strong> to watch the ports do the work the valves used to.</p>
+      <div class="cards c2">
+        <div>
+          <h4>What you gain</h4>
+          <p>Twice the firing frequency for a given speed → high power-to-weight; mechanical simplicity (no valve train in the classic crankcase-scavenged design); and it works in any orientation — hence chainsaws and outboards. Large <strong>uniflow</strong> two-stroke diesels are the most thermally efficient engines ever built.</p>
+        </div>
+        <div>
+          <h4>What you pay</h4>
+          <p>Scavenging is imperfect: fresh charge and exhaust briefly share the cylinder, so in a carburetted petrol two-stroke some unburnt fuel escapes — poor economy and dirty emissions. Crankcase scavenging means oil is mixed with the fuel. The cylinder also runs hotter, with less time to cool.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMPARE -->
+    <section id="compare" class="section">
+      <div class="kicker">Side by side</div>
+      <h3>Two-stroke versus four-stroke.</h3>
+      <table class="dt">
+        <thead><tr><th>Property</th><th>Four-stroke</th><th>Two-stroke</th></tr></thead>
+        <tbody>
+          <tr><td>Crank rotation per power stroke</td><td class="mono">720° (2 rev)</td><td class="mono">360° (1 rev)</td></tr>
+          <tr><td>Power strokes per minute @ N rpm</td><td class="mono">N / 2</td><td class="mono">N</td></tr>
+          <tr><td>Breathing</td><td>Poppet valves, cam-timed</td><td>Ports + scavenge pump</td></tr>
+          <tr><td>Power-to-weight</td><td>Moderate</td><td><b>High</b></td></tr>
+          <tr><td>Fuel economy & emissions</td><td><b>Good</b>, easy to clean up</td><td>Poor (crankcase-scavenged)</td></tr>
+          <tr><td>Lubrication</td><td>Pressurised sump, oil stays put</td><td>Oil burned with fuel (classic)</td></tr>
+          <tr><td>Best-in-class example</td><td>Modern car & truck engines</td><td>Marine uniflow diesel (50%+ η)</td></tr>
+        </tbody>
+      </table>
+      <p>The two-stroke is not a crude version of the four-stroke — it is a different bargain. At one extreme it powers a disposable strimmer; at the other, the 14-cylinder Wärtsilä-Sulzer marine engines that move container ships are uniflow two-stroke diesels, and among the most efficient heat engines on Earth. We meet both ends of that range in Ch. 05 and Ch. 08.</p>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 01 — The cycle</span>
+  <span>Fig. 1.1 · schematic</span>
+</div></footer>
+
+<script src="assets/engine-kin.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const D2R=Math.PI/180;
+  const lam=0.30, r_px=75, crownTDC=110;
+  let mode4=true, running=true, thetaDeg=540, speed=34;
+
+  // ---- build pressure curve for current mode ----
+  const pcurve=$('pcurve'), bands=$('strokeBands');
+  const PX0=44,PX1=452,PY0=14,PY1=196;
+  function buildTrace(){
+    const cyc=mode4?720:360;
+    const pts=[];
+    for(let a=0;a<=cyc;a+=4){
+      const p=mode4?EK.gasP4(a,{}):EK.gasP2(a,{});
+      pts.push([a,p]);
+    }
+    const pmax=Math.max(...pts.map(p=>p[1])), pmin=Math.min(...pts.map(p=>p[1]),-0.1);
+    const sx=a=>PX0+(a/cyc)*(PX1-PX0);
+    const sy=p=>PY1-((p-pmin)/(pmax-pmin))*(PY1-PY0);
+    pcurve.setAttribute('points', pts.map(p=>`${sx(p[0]).toFixed(1)},${sy(p[1]).toFixed(1)}`).join(' '));
+    // bands
+    const labs = mode4
+      ? [['Intake',0,180,'var(--intake)'],['Compress',180,360,'var(--comp)'],['Power',360,540,'var(--fire)'],['Exhaust',540,720,'var(--exhaust)']]
+      : [['Power / scavenge',0,180,'var(--fire)'],['Compression',180,360,'var(--comp)']];
+    bands.innerHTML = labs.map(L=>{
+      const x=sx(L[1]), w=sx(L[2])-sx(L[1]);
+      return `<rect x="${x}" y="${PY0}" width="${w}" height="${PY1-PY0}" fill="${L[3]}" opacity="0.08"/>
+              <text x="${x+w/2}" y="${PY1+15}" font-size="9" fill="var(--cyan-soft)" text-anchor="middle">${L[0]}</text>`;
+    }).join('');
+    return {cyc,sx,sy,pmin,pmax};
+  }
+  let TR=buildTrace();
+
+  // ---- gas colour by phase ----
+  function gasStyle(phi){
+    if(mode4){
+      if(phi<180) return ['var(--intake)',0.30];
+      if(phi<360){ const t=(phi-180)/180; return ['var(--comp)',0.25+0.25*t]; }
+      if(phi<540){ const t=(phi-360)/180; return ['var(--fire)', 0.75*Math.exp(-t*2.4)+0.18]; }
+      return ['var(--exhaust)',0.40];
+    } else {
+      if(phi<60){ const t=phi/60; return ['var(--fire)',0.7*Math.exp(-t*2)+0.2]; }
+      if(phi<180) return ['var(--exhaust)',0.4];
+      return ['var(--comp)',0.3];
+    }
+  }
+
+  function draw(){
+    const cyc=mode4?720:360;
+    const phi=((thetaDeg%cyc)+cyc)%cyc;
+    const th=thetaDeg*D2R;
+    const disp=EK.pistonPos(th,lam)*r_px;   // 0..150 px
+    $('piston').setAttribute('transform','translate(0,'+disp.toFixed(2)+')');
+    // gas rect grows with piston
+    const gtop=110+disp, gh=Math.max(2,170+0-gtop+ (170-110)); // chamber from head(110) to crown
+    $('gas').setAttribute('y',110); $('gas').setAttribute('height',(disp+60).toFixed(1));
+    const gs=gasStyle(phi); $('gas').setAttribute('fill',gs[0]); $('gas').setAttribute('opacity',gs[1].toFixed(2));
+    // rod + crank
+    const cx=230,cy=410;
+    const pinx=cx+r_px*Math.sin(th), piny=cy-r_px*Math.cos(th);
+    $('crank').setAttribute('transform','rotate('+(thetaDeg)+' 230 410)');
+    const rod=$('rod'); rod.setAttribute('x1',230); rod.setAttribute('y1',(140+disp).toFixed(1));
+    rod.setAttribute('x2',pinx.toFixed(1)); rod.setAttribute('y2',piny.toFixed(1));
+    $('dial').setAttribute('transform','rotate('+(thetaDeg)+')');
+
+    // valves vs ports
+    if(mode4){
+      const il=EK.intakeLift(phi), el=EK.exhaustLift(phi);
+      $('intakeValve').setAttribute('transform','translate(0,'+(il*16).toFixed(1)+')');
+      $('exhaustValve').setAttribute('transform','translate(0,'+(el*16).toFixed(1)+')');
+      $('rIn').textContent=il>0.02?('OPEN '+Math.round(il*100)+'%'):'shut';
+      $('rEx').textContent=el>0.02?('OPEN '+Math.round(el*100)+'%'):'shut';
+      // spark just before TDC end of compression (~700-720) for petrol
+      const adv = (phi>704 || phi<6)?1:0;
+      $('sparkFlash').setAttribute('opacity', adv? (0.5+0.5*Math.random()):0);
+    } else {
+      // ports uncovered as piston nears BDC (disp large)
+      const open = disp>105;
+      $('exPort').setAttribute('opacity', open?0.85:0.25);
+      $('trPort').setAttribute('opacity', open?0.85:0.25);
+      $('rIn').textContent= open?'TR open':'closed';
+      $('rEx').textContent= open?'EX open':'closed';
+      const adv=(phi>352||phi<6)?1:0;
+      $('sparkFlash').setAttribute('opacity', adv?(0.5+0.5*Math.random()):0);
+    }
+
+    // pressure cursor
+    const p = mode4?EK.gasP4(phi,{}):EK.gasP2(phi,{});
+    const px=TR.sx(phi), py=TR.sy(p);
+    $('pcursor').setAttribute('x1',px); $('pcursor').setAttribute('x2',px);
+    $('pdot').setAttribute('cx',px); $('pdot').setAttribute('cy',py);
+
+    // readouts
+    const stroke = mode4?EK.strokeOf4(phi):(phi<180?'Power/Exhaust':'Compression');
+    $('rStroke').textContent=stroke; $('figStroke').textContent=stroke.toUpperCase();
+    $('rAng').textContent=Math.round(phi)+'° '+(mode4?'/720':'/360');
+    $('rPist').textContent=(disp<3?'at TDC':disp>147?'at BDC':(disp/150*100).toFixed(0)+'% down');
+    $('rP').textContent=(p*200).toFixed(0)+' rel';
+  }
+  function loop(){ if(running) thetaDeg += speed*0.06; draw(); requestAnimationFrame(loop); }
+  draw();
+  requestAnimationFrame(loop);
+
+  // controls
+  $('modeChips').addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    mode4 = b.dataset.m==='4';
+    $('figTitle').textContent='SINGLE CYLINDER — '+(mode4?'FOUR-STROKE':'TWO-STROKE');
+    $('intakeGrp').style.display=mode4?'':'none';
+    $('exhaustGrp').style.display=mode4?'':'none';
+    $('portsGrp').style.display=mode4?'none':'';
+    TR=buildTrace();
+  });
+  $('playBtn').addEventListener('click',e=>{
+    running=!running; e.target.classList.toggle('on',running);
+    e.target.textContent=running?'❚❚ Running':'▶ Paused';
+  });
+  $('spd').addEventListener('input',e=>{ speed=+e.target.value; $('spdLab').textContent=Math.round(speed*9.4)+' rpm-eq'; });
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

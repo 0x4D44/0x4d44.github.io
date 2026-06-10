@@ -5,7 +5,9 @@ window.ArenaUI = (() => {
     { file: "01 The Photo Finish.html", num: "01", title: "THE PHOTO FINISH" },
     { file: "02 The Token Economy.html", num: "02", title: "THE TOKEN ECONOMY" },
     { file: "03 The Rollercoaster.html", num: "03", title: "THE ROLLERCOASTER" },
-    { file: "04 The Meaning.html",      num: "04", title: "THE MEANING" }
+    { file: "04 The Meaning.html",      num: "04", title: "THE MEANING" },
+    { file: "05 The Tasks.html",        num: "05", title: "THE TASKS" },
+    { file: "06 The Transcripts.html", num: "06", title: "THE TRANSCRIPTS" }
   ];
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -25,28 +27,10 @@ window.ArenaUI = (() => {
       html += '<a class="chap' + cur + '" href="' + p.file + '">' + p.num + " " + p.title + "</a>";
     }
     nav.innerHTML = html;
-
-    // phosphor toggle (green <-> amber), persisted in localStorage
-    const themeBtn = document.createElement("button");
-    themeBtn.type = "button";
-    themeBtn.className = "theme-toggle";
-    const curTheme = () => (document.documentElement.dataset.theme === "amber" ? "amber" : "green");
-    function paintThemeBtn() {
-      themeBtn.textContent = "PHOSPHOR: " + curTheme().toUpperCase();
-      themeBtn.setAttribute("aria-label", "Toggle phosphor colour (currently " + curTheme() + ")");
-    }
-    themeBtn.addEventListener("click", () => {
-      const next = curTheme() === "amber" ? "green" : "amber";
-      if (next === "amber") document.documentElement.dataset.theme = "amber";
-      else delete document.documentElement.dataset.theme;
-      try { localStorage.setItem("arena.theme", next); } catch (e) { /* ignore */ }
-      paintThemeBtn();
-    });
-    paintThemeBtn();
-    nav.appendChild(themeBtn);
-
     const wrap = document.querySelector(".wrap");
     wrap.insertBefore(nav, wrap.firstChild);
+
+    mountPhosphor(nav);
 
     // footer
     const idx = PAGES.findIndex((p) => p.num === currentNum);
@@ -119,5 +103,49 @@ window.ArenaUI = (() => {
     io.observe(el);
   }
 
-  return { mountChrome, typeLines, countUp, onVisible, reduced, PAGES };
+  // Persistent phosphor (green/amber) theme switch, shared across pages
+  function applyPhosphor(mode) {
+    document.documentElement.setAttribute("data-phosphor", mode);
+    try { localStorage.setItem("arena-phosphor", mode); } catch (e) {}
+  }
+  function mountPhosphor(nav) {
+    let mode = "green";
+    try { mode = localStorage.getItem("arena-phosphor") || "green"; } catch (e) {}
+    document.documentElement.setAttribute("data-phosphor", mode);
+    const wrap = document.createElement("span");
+    wrap.className = "phosphor-switch";
+    wrap.innerHTML = 'PHOSPHOR <span class="ps-btns">' +
+      '<button data-m="green">GRN</button><button data-m="amber">AMB</button></span>';
+    nav.appendChild(wrap);
+    const btns = wrap.querySelectorAll("button");
+    function sync() { btns.forEach((b) => b.classList.toggle("on", b.dataset.m === document.documentElement.getAttribute("data-phosphor"))); }
+    btns.forEach((b) => b.addEventListener("click", () => { applyPhosphor(b.dataset.m); sync(); }));
+    sync();
+  }
+
+  // Glitch / vertical-hold-loss on a title element. Returns a stop() fn.
+  function glitchTitle(el, opts) {
+    opts = opts || {};
+    if (reduced || !el) return function () {};
+    el.classList.add("glitch");
+    if (!el.hasAttribute("data-text")) el.setAttribute("data-text", el.textContent.trim());
+    let timer = null, stopped = false;
+    function burst() {
+      if (stopped) return;
+      const desync = Math.random() < 0.22;
+      el.classList.add("glitching");
+      if (desync) el.classList.add("desync");
+      setTimeout(() => { el.classList.remove("glitching"); el.classList.remove("desync"); }, desync ? 700 : 400);
+      // sometimes a quick double-tick
+      if (!desync && Math.random() < 0.4) {
+        setTimeout(() => { if (!stopped) { el.classList.add("glitching"); setTimeout(() => el.classList.remove("glitching"), 220); } }, 520);
+      }
+      const gap = (opts.min || 3200) + Math.random() * (opts.spread || 4500);
+      timer = setTimeout(burst, gap);
+    }
+    timer = setTimeout(burst, 1400 + Math.random() * 1200);
+    return function () { stopped = true; if (timer) clearTimeout(timer); el.classList.remove("glitching", "desync"); };
+  }
+
+  return { mountChrome, typeLines, countUp, onVisible, reduced, PAGES, glitchTitle, applyPhosphor };
 })();

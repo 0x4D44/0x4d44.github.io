@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>04 — The Meaning · Fable Arena</title>
 <link rel="stylesheet" href="assets/arena.css">
-<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<script>try{var p=localStorage.getItem('arena-phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p);}catch(e){}</script>
 <style>
   .life-row { display: grid; grid-template-columns: 170px 1fr 130px; gap: 12px; align-items: center; margin: 9px 0; font-size: 12.5px; }
   .life-row .lname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

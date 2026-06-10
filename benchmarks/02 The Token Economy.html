@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>02 — The Token Economy · Fable Arena</title>
 <link rel="stylesheet" href="assets/arena.css">
-<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<script>try{var p=localStorage.getItem('arena-phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p);}catch(e){}</script>
 <style>
   .army-row { display: grid; grid-template-columns: 130px 1fr 90px; gap: 14px; align-items: start; margin: 14px 0; }
   .army-row .aname { font-size: 12.5px; padding-top: 2px; white-space: nowrap; }
@@ -57,6 +57,18 @@
       <p class="footnote">All rows scored 98&#8211;100 on this track. Same exam, same grades — one mind brought nine robots, another brought eighty-one.</p>
     </div>
     <p>Haiku 4.5 matches the ceiling but needs <strong>~6&times; Fable-medium's tokens</strong> to reach it. And inside the Claude lineage the pattern is mechanical: <strong>each generation hits the same ceiling with ~15&#8211;30% fewer tokens than its predecessor</strong>. Capability stopped going up — it started getting <em>cheaper</em>.</p>
+  </section>
+
+  <section class="block" data-screen-label="Ch02 — The real spread">
+    <div class="sect-label"><b>EXHIBIT</b> // THE REAL SPREAD — EVERY TASK, EVERY TOKEN (50 TASKS × 4 MINDS)</div>
+    <p>Averages lie by smoothing. Here is the <strong>raw per-task token count</strong> for all 50 pure-track tasks, pulled straight from the run logs — one dot per task, colored by discipline, on a log scale. Hover any dot.</p>
+    <div class="term-box" id="swarmBox">
+      <div class="tb-title">OUTPUT TOKENS PER TASK · LOG SCALE · ┃ = MEDIAN</div>
+      <div id="swarmLegend" style="display:flex; flex-wrap:wrap; gap:4px 16px; font-size:11.5px; margin-bottom:14px;"></div>
+      <svg id="swarm" viewBox="0 0 720 340" width="100%" style="display:block;" role="img" aria-label="Beeswarm of per-task output tokens for four Claude models"></svg>
+      <div id="swarmTip" style="min-height:20px; font-size:12.5px; color:var(--ink-dim); margin-top:6px;">&nbsp;</div>
+      <p class="footnote">Real data, pure track. The generational order is unmistakable even task-by-task: fable-medium's whole cloud sits left of opus-4-5's median. Haiku reaches the same ceiling but its cloud sprawls past 20,000 tokens on the hardest traces. GPT-5.5 is omitted here — its codex logs exclude most reasoning tokens, so its dots aren't comparable; see <a href="06 The Transcripts.html">Chapter 06</a> for the head-to-head.</p>
+    </div>
   </section>
 
   <section class="block" data-screen-label="Ch02 — Generational compression">
@@ -121,6 +133,7 @@
 
 </div>
 <script src="assets/arena-data.js"></script>
+<script src="assets/arena-tokens.js"></script>
 <script src="assets/arena-ui.js"></script>
 <script>
   ArenaUI.mountChrome("02");
@@ -158,6 +171,65 @@
         });
       });
     }
+  })();
+
+  /* ---------- REAL PER-TASK BEESWARM ---------- */
+  (function () {
+    const T = window.ARENA_TOKENS;
+    if (!T) return;
+    const rows = ["fable-medium", "opus-4-8", "opus-4-5", "haiku-4-5"].filter((id) => T[id]);
+    const CATCOL = { logic: "#45ff7f", math: "#59f2ff", code: "#ffb000", output: "#ff7ad0", format: "#c9a3ff" };
+    const CATLAB = { logic: "LOGIC", math: "MATH", code: "CODE", output: "OUTPUT", format: "FORMAT" };
+    // legend
+    document.getElementById("swarmLegend").innerHTML =
+      Object.keys(CATCOL).map((k) => '<span style="color:' + CATCOL[k] + '">&#9679; ' + CATLAB[k] + "</span>").join("") +
+      '<span style="color:var(--ink-dim)">&#9711; failed task</span>';
+
+    const W = 720, H = 340, padL = 120, padR = 24, padT = 16, padB = 40;
+    const rowH = (H - padT - padB) / rows.length;
+    const LMIN = Math.log10(70), LMAX = Math.log10(24000);
+    const xOf = (tok) => padL + (Math.log10(tok) - LMIN) / (LMAX - LMIN) * (W - padL - padR);
+    let parts = "";
+    // x gridlines
+    for (const t of [100, 300, 1000, 3000, 10000]) {
+      const x = xOf(t);
+      parts += '<line x1="' + x + '" y1="' + padT + '" x2="' + x + '" y2="' + (H - padB) + '" stroke="rgba(125,160,135,0.13)"></line>';
+      parts += '<text x="' + x + '" y="' + (H - padB + 16) + '" fill="#6f9a7a" font-size="10.5" text-anchor="middle" font-family="IBM Plex Mono, monospace">' + t.toLocaleString() + "</text>";
+    }
+    parts += '<text x="' + (W - padR) + '" y="' + (H - padB + 16) + '" fill="#6f9a7a" font-size="10.5" text-anchor="end" font-family="IBM Plex Mono, monospace">tokens &#8594;</text>';
+
+    rows.forEach((id, ri) => {
+      const cy0 = padT + ri * rowH + rowH / 2;
+      const c = window.ARENA.contestants[id];
+      const data = T[id];
+      // row separator + label
+      if (ri > 0) parts += '<line x1="' + padL + '" y1="' + (padT + ri * rowH) + '" x2="' + (W - padR) + '" y2="' + (padT + ri * rowH) + '" stroke="rgba(125,160,135,0.08)"></line>';
+      parts += '<text x="' + (padL - 12) + '" y="' + (cy0 - 4) + '" fill="' + c.color + '" font-size="11" text-anchor="end" font-family="VT323, monospace" letter-spacing="0.5">' + c.label + "</text>";
+      const toks = data.map((d) => d.tok).filter((x) => x != null).sort((a, b) => a - b);
+      const med = toks[Math.floor(toks.length / 2)];
+      parts += '<text x="' + (padL - 12) + '" y="' + (cy0 + 12) + '" fill="#6f9a7a" font-size="10" text-anchor="end" font-family="IBM Plex Mono, monospace">med ' + med.toLocaleString() + "</text>";
+      // median tick
+      parts += '<line x1="' + xOf(med) + '" y1="' + (cy0 - rowH * 0.36) + '" x2="' + xOf(med) + '" y2="' + (cy0 + rowH * 0.36) + '" stroke="' + c.color + '" stroke-width="2" opacity="0.7"></line>';
+      // deterministic jitter
+      let seed = ri * 99 + 7;
+      const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return (seed / 0x7fffffff) - 0.5; };
+      for (const d of data) {
+        if (d.tok == null) continue;
+        const cx = xOf(d.tok);
+        const cy = cy0 + rnd() * rowH * 0.62;
+        const col = CATCOL[d.cat] || "#9affc0";
+        if (d.fail) {
+          parts += '<circle class="swdot" data-info="' + id + " &middot; " + d.id + " &middot; " + d.tok.toLocaleString() + ' tok &middot; FAILED" cx="' + cx + '" cy="' + cy + '" r="5" fill="none" stroke="' + col + '" stroke-width="1.5"></circle>';
+        } else {
+          parts += '<circle class="swdot" data-info="' + id + " &middot; " + d.id + " &middot; " + d.tok.toLocaleString() + ' tok" cx="' + cx + '" cy="' + cy + '" r="3.1" fill="' + col + '" opacity="0.82"></circle>';
+        }
+      }
+    });
+    const svg = document.getElementById("swarm");
+    svg.innerHTML = parts;
+    const tip = document.getElementById("swarmTip");
+    svg.addEventListener("mouseover", (e) => { if (e.target.classList.contains("swdot")) { tip.innerHTML = "&#9656; " + e.target.dataset.info; } });
+    svg.addEventListener("mouseout", () => { tip.innerHTML = "&nbsp;"; });
   })();
 
   /* ---------- GENERATIONAL COMPRESSION ---------- */

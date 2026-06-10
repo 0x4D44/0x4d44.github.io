@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Configurations — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="05">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch5 hero">
+  <div class="kicker">Chapter 05</div>
+  <div class="num">05</div>
+  <h2 style="margin-top:18px;max-width:22ch">Configurations: how you arrange the cylinders is the engine.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">Take the same cylinder and the same cycle and lay the cylinders out differently, and you get a delivery van, a supercar, a fighter, or a locomotive. Layout decides balance, length, height, centre of gravity, cost and sound — often more than any other single choice.</p>
+  <div class="meta">
+    <div><div class="k">The axes of choice</div><div class="v">Banks · angle · count · stroke</div></div>
+    <div><div class="k">Single bank</div><div class="v">Inline — simple, tall, long</div></div>
+    <div><div class="k">Multi bank</div><div class="v">V · flat · W · radial · Deltic</div></div>
+    <div><div class="k">No pistons at all</div><div class="v">The Wankel rotary</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#picker">Compare the layouts</a>
+    <a href="#single">Single bank — inline</a>
+    <a href="#vee">The V engine</a>
+    <a href="#flat">Flat &amp; boxer</a>
+    <a href="#radial">The radial</a>
+    <a href="#deltic">The Napier Deltic</a>
+    <a href="#wankel">The Wankel rotary</a>
+    <a href="#choose">Choosing a layout</a>
+  </nav>
+
+  <div>
+    <!-- PICKER -->
+    <section id="picker" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker tag-sig">Interactive · Fig. 5.1</div>
+      <h3>The same cylinders, arranged seven ways.</h3>
+      <p style="margin-top:18px">Click a layout to see the end-on cylinder arrangement and its trade-offs. These are the cross-sections you'd see looking down the crankshaft.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 5.1</span><span id="layTitle">INLINE-4</span><span class="dim" id="layBal" style="color:var(--signal-2)">—</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:center">
+          <svg viewBox="0 0 280 280" style="width:100%;height:auto" id="layView">
+            <circle cx="140" cy="170" r="9" fill="var(--signal)"/>
+          </svg>
+          <div>
+            <div class="readout" style="margin-bottom:10px;font-size:1.05rem;color:#fff" id="layName">Inline-4</div>
+            <p id="layDesc" style="color:var(--cyan-soft);font-size:.94rem;margin:0 0 14px"></p>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-family:var(--font-mono);font-size:.8rem;color:var(--cyan-soft)">
+              <span style="color:var(--ink-faint)">Balance</span><b id="dBal" style="color:#fff"></b>
+              <span style="color:var(--ink-faint)">Packaging</span><b id="dPkg" style="color:#fff"></b>
+              <span style="color:var(--ink-faint)">Centre of gravity</span><b id="dCog" style="color:#fff"></b>
+              <span style="color:var(--ink-faint)">Typical use</span><b id="dUse" style="color:#fff"></b>
+            </div>
+          </div>
+        </div>
+        <div class="deck">
+          <div class="chips" id="layPick" style="flex-wrap:wrap">
+            <button data-l="i4" class="on">INLINE-4</button>
+            <button data-l="i6">INLINE-6</button>
+            <button data-l="v6">V6</button>
+            <button data-l="v8">V8</button>
+            <button data-l="v12">V12</button>
+            <button data-l="f4">FLAT-4</button>
+            <button data-l="f6">FLAT-6</button>
+            <button data-l="r9">RADIAL-9</button>
+            <button data-l="w12">W-12</button>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Reading the rosette.</b> Each blue bore is drawn at its real bank angle about the orange crank centre. Notice how a V "folds" a long inline engine into a short, tall block; how the flat layout drops the whole centre of gravity to the floor; and how the radial wraps its cylinders into a single short disc, ideal for an aircraft nose.</div>
+      </figure>
+    </section>
+
+    <!-- SINGLE BANK -->
+    <section id="single" class="section">
+      <div class="kicker">Single bank</div>
+      <h3>The inline (straight) engine.</h3>
+      <p style="margin-top:18px">All cylinders in one row, sharing one crankshaft and one cylinder head — the simplest possible multi-cylinder engine. Cheap to make, easy to maintain, and in <strong>six-cylinder</strong> form (Ch. 04) inherently balanced. Its weakness is geometry: a straight-six is <em>long</em>, which makes it awkward across a small car's engine bay and gives a tall four a high centre of gravity. The inline-four is the default engine of the world for one reason — it is the cheapest adequate answer — and lives with its 2nd-order buzz, sometimes tamed by balance shafts.</p>
+      <div class="cards c2">
+        <div><h4>Why builders love it</h4><p>One head, one cam bank, one exhaust manifold, a stiff simple crankcase. Half the part count of a V of the same cylinder count.</p></div>
+        <div><h4>Where it runs out</h4><p>Beyond six cylinders an inline becomes too long and its crankshaft too whippy (torsional vibration). That is the door through which the V walks.</p></div>
+      </div>
+    </section>
+
+    <!-- VEE -->
+    <section id="vee" class="section">
+      <div class="kicker">Two banks, shared crank</div>
+      <h3>The V engine: folding the engine in half.</h3>
+      <p style="margin-top:18px">Split the cylinders into two banks on a common crankshaft, set at an included angle, and a long engine becomes short and stiff. A <strong>V8</strong> is no longer than an inline-four but has twice the cylinders; a <strong>V12</strong> is effectively two straight-sixes sharing a crank — and inherits the straight-six's perfect balance, which is why it has always been the connoisseur's engine.</p>
+      <p>The <strong>bank angle</strong> is chosen for balance and packaging: 60° suits a V6 or V12, 90° suits a V8 (and lets the inlet "vee" sit neatly between the banks), 72° appears in some V10s. Get the angle wrong and you reintroduce the very shaking forces the layout was meant to avoid; that is why a 90° V6 (made by lopping two cylinders off a V8 tooling) needs a <strong>split crankpin</strong> or a balance shaft to fire evenly.</p>
+      <div class="note annot">
+        <span class="tag">Cross-plane vs flat-plane V8</span>
+        <p>A <strong>cross-plane</strong> V8 crank (throws at 90°) gives the smooth, off-beat burble of an American V8 and a muscle-car idle, but needs heavy counterweights. A <strong>flat-plane</strong> crank (throws at 180°, like two inline-fours) is lighter and revs harder with a flat, hard wail — the choice of Ferrari and most F1 V8s — at the price of more vibration. Same layout, two completely different characters.</p>
+      </div>
+    </section>
+
+    <!-- FLAT -->
+    <section id="flat" class="section">
+      <div class="kicker">Banks at 180°</div>
+      <h3>Flat &amp; boxer engines.</h3>
+      <p style="margin-top:18px">Open the V right out to 180° and the banks lie flat. Two distinct things share this description. A true <strong>boxer</strong> gives each piston its own crankpin directly opposite its partner, so the two pistons "box" in and out together — primary forces cancel beautifully and the engine is very smooth and very low. A <strong>180° V</strong> (flat but sharing crankpins, like some Ferrari "flat-12s") behaves differently and isn't truly boxer-balanced.</p>
+      <div class="cards c2">
+        <div><h4>What the flat buys</h4><p>The lowest possible centre of gravity — the engine sits below the axle line. Superb for a sports car's handling (Porsche 911, Subaru) and for a low cabin floor. Inherently good balance in 4- and 6-cylinder boxer form.</p></div>
+        <div><h4>What it costs</h4><p>Width. A flat engine is broad, crowding the front wheels and steering. Two cylinder heads, two exhaust banks, and awkward access make it more expensive than an inline of the same count.</p></div>
+      </div>
+    </section>
+
+    <!-- RADIAL -->
+    <section id="radial" class="section">
+      <div class="kicker">Cylinders in a circle</div>
+      <h3>The radial: the shape of early flight.</h3>
+      <p style="margin-top:18px">Arrange an odd number of cylinders like spokes around a single crank throw, all their rods ganged onto one <strong>master rod</strong>, and you get the radial — short, light, and beautifully air-cooled because every cylinder sits in the slipstream. It dominated aviation from the 1920s to the 1950s. The odd cylinder count (5, 7, 9…) is essential: it lets every <em>other</em> cylinder fire in turn for even firing in a four-stroke.</p>
+      <div class="cards c3">
+        <div><h4>Strengths</h4><p>Excellent power-to-weight, superb cooling, short and robust, tolerant of battle damage — a radial could lose a cylinder and fly home.</p></div>
+        <div><h4>Quirks</h4><p>Large frontal area (drag), and oil pools in the lower cylinders when stopped — they must be turned by hand before starting to avoid <strong>hydraulic lock</strong>.</p></div>
+        <div><h4>Scaling up</h4><p>Need more power? Stack two rows (twin-row radial) — the Pratt &amp; Whitney R-2800 packed 18 cylinders into two rows of nine.</p></div>
+      </div>
+    </section>
+
+    <!-- DELTIC -->
+    <section id="deltic" class="section">
+      <div class="kicker tag-sig">A featured engine</div>
+      <h3>The Napier Deltic: three crankshafts in a triangle.</h3>
+      <p style="margin-top:18px">The most extraordinary layout in this study. The <strong>Napier Deltic</strong> is an <strong>opposed-piston two-stroke diesel</strong> arranged as an equilateral <strong>triangle</strong>: three cylinder banks form the sides, with a crankshaft at each of the three corners. Each cylinder holds <em>two</em> pistons that rush toward each other and back — there is <strong>no cylinder head at all</strong>; the combustion space is the gap between the two piston crowns mid-cylinder.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 5.2</span><span>NAPIER DELTIC — OPPOSED-PISTON TRIANGLE</span><span class="dim" id="delTag" style="color:var(--signal-2)">3 CRANKS · 18 CYL · 36 PISTONS</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:center">
+          <svg viewBox="0 0 360 340" style="width:100%;height:auto" id="delSvg">
+            <g id="delBanks" stroke="var(--cyan)" stroke-width="2" fill="none"></g>
+            <g id="delPistons"></g>
+            <g id="delCranks"></g>
+            <text x="180" y="326" text-anchor="middle" font-size="10" fill="var(--cyan-soft)">opposed pistons meet at mid-bank — combustion, no head</text>
+          </svg>
+          <div>
+            <p style="color:var(--cyan-soft);font-size:.92rem;margin:0 0 14px">Each side of the triangle is a cylinder bank; pistons race toward each other to compress the charge between them, then are flung apart by combustion, driving all three crankshafts. The crankshafts are geared together, one running in the opposite sense to phase the porting.</p>
+            <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-family:var(--font-mono);font-size:.78rem;color:var(--cyan-soft)">
+              <span style="color:var(--ink-faint)">Type</span><b style="color:#fff">Opposed-piston 2-stroke diesel</b>
+              <span style="color:var(--ink-faint)">Banks</span><b style="color:#fff">3 (triangle), 6 cyl each → 18</b>
+              <span style="color:var(--ink-faint)">Pistons</span><b style="color:#fff">36 (two per cylinder)</b>
+              <span style="color:var(--ink-faint)">Cranks</span><b style="color:#fff">3, phased &amp; geared</b>
+              <span style="color:var(--ink-faint)">Heyday</span><b style="color:#fff">BR Class 55 "Deltic" loco; MTBs</b>
+            </div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Why bother?</b> Opposed pistons give two power strokes' worth of work per cylinder volume with no heat lost to a cylinder head, and the two-stroke cycle fires every revolution — so the Deltic produced enormous power for its size and weight: ~1,650&nbsp;bhp from a package small enough to put two in a locomotive. The cost was complexity, thirst, and a fearsome maintenance reputation. It earns its full case study in Ch. 08.</div>
+      </figure>
+    </section>
+
+    <!-- WANKEL -->
+    <section id="wankel" class="section">
+      <div class="kicker tag-sig">No pistons at all</div>
+      <h3>The Wankel rotary: the cycle without a reciprocating part.</h3>
+      <p style="margin-top:18px">Felix Wankel's engine dispenses with pistons entirely. A triangular <strong>rotor</strong> orbits inside a figure-eight (epitrochoid) housing; the three chambers between rotor and housing each expand and contract as the rotor turns, performing intake, compression, power and exhaust in <em>different places</em> around the housing at once. There are no valves — ports do the breathing — and almost nothing reciprocates, so it is extraordinarily smooth and revs freely.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 5.3</span><span>WANKEL ROTARY — ONE ROTOR</span><span class="dim" id="wkPhase" style="color:var(--signal-2)">—</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:center">
+          <svg viewBox="0 0 340 320" style="width:100%;height:auto" id="wkSvg">
+            <path id="wkHousing" fill="none" stroke="var(--cyan)" stroke-width="2.5"/>
+            <g id="wkChambers"></g>
+            <polygon id="wkRotor" fill="var(--plate-2)" stroke="var(--signal)" stroke-width="2"/>
+            <circle id="wkEcc" r="5" fill="var(--signal)"/>
+            <circle id="wkPlug" r="6" fill="none" stroke="var(--spark)" stroke-width="2"/>
+            <text x="170" y="312" text-anchor="middle" font-size="10" fill="var(--cyan-soft)">one rotor face followed through intake → compression → power → exhaust</text>
+          </svg>
+          <div>
+            <div class="legend" style="flex-direction:column;gap:8px;margin-bottom:14px">
+              <span><i class="dot" style="background:var(--intake)"></i>intake — drawing charge</span>
+              <span><i class="dot" style="background:var(--comp)"></i>compression</span>
+              <span><i class="dot" style="background:var(--fire)"></i>power — firing</span>
+              <span><i class="dot" style="background:var(--exhaust)"></i>exhaust</span>
+            </div>
+            <p style="color:var(--cyan-soft);font-size:.9rem;margin:0">The rotor turns at one-third of the output shaft speed; each of its three faces completes one full four-stroke cycle per rotor revolution, so the engine fires three times per rotor turn — once per output-shaft turn, like a two-stroke, but with four-stroke breathing.</p>
+          </div>
+        </div>
+        <div class="figure-cap"><b>The bargain.</b> Few parts, no reciprocating mass, tiny and smooth, with a high power-to-weight — Mazda raced it to victory at Le Mans. But the long, thin combustion chamber burns poorly, the apex seals at the rotor tips are hard to seal and wear, and economy and emissions suffer. A brilliant idea perpetually fighting its own geometry.</div>
+      </figure>
+    </section>
+
+    <!-- CHOOSE -->
+    <section id="choose" class="section">
+      <div class="kicker">The decision</div>
+      <h3>Choosing a layout is choosing your compromises.</h3>
+      <table class="dt">
+        <thead><tr><th>Layout</th><th>Wins</th><th>Loses</th><th>Lives in</th></tr></thead>
+        <tbody>
+          <tr><td><b>Inline-4</b></td><td>Cheap, compact, simple</td><td>2nd-order buzz</td><td>Most cars on Earth</td></tr>
+          <tr><td><b>Inline-6</b></td><td>Perfect balance, smooth</td><td>Long; tall bay</td><td>BMW, trucks, classic Jaguar</td></tr>
+          <tr><td><b>V6 / V8</b></td><td>Short, stiff, powerful</td><td>Complex, two of everything</td><td>Saloons, trucks, muscle</td></tr>
+          <tr><td><b>V12</b></td><td>Sublime smoothness</td><td>Cost, length</td><td>Ferrari, Rolls-Royce, aero</td></tr>
+          <tr><td><b>Flat-4 / 6</b></td><td>Low CoG, smooth</td><td>Wide; costly</td><td>Porsche, Subaru</td></tr>
+          <tr><td><b>Radial</b></td><td>Light, air-cooled</td><td>Frontal drag</td><td>Piston-era aircraft</td></tr>
+          <tr><td><b>Deltic</b></td><td>Huge power density</td><td>Complex, thirsty</td><td>Locomotives, fast boats</td></tr>
+          <tr><td><b>Wankel</b></td><td>Tiny, smooth, revvy</td><td>Seals, economy, emissions</td><td>Mazda RX series</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 05 — Configurations</span>
+  <span>Figs. 5.1–5.3 · schematic</span>
+</div></footer>
+
+<script src="assets/engine-kin.js"></script>
+<script>
+/* ===== FIG 5.1 layout rosette ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const DATA={
+    i4:{name:'Inline-4',bores:[0,0,0,0],desc:'Four cylinders upright in a row on one crank. The world\u2019s default engine.',bal:'Primary balanced; 2nd-order shake',pkg:'Compact, but tall',cog:'High',use:'Most passenger cars'},
+    i6:{name:'Inline-6',bores:[0,0,0,0,0,0],desc:'Six upright cylinders — two inline-threes mirrored. Inherently, perfectly balanced.',bal:'Fully balanced',pkg:'Long',cog:'High',use:'BMW, trucks, classic Jaguar'},
+    v6:{name:'V6 (60\u00B0)',bores:[-30,-30,-30,30,30,30],desc:'Two banks of three at 60\u00B0 on a shared crank. Short and stiff.',bal:'Good with split pins',pkg:'Short, compact',cog:'Medium',use:'Saloons, SUVs'},
+    v8:{name:'V8 (90\u00B0)',bores:[-45,-45,-45,-45,45,45,45,45],desc:'Two banks of four at 90\u00B0. The classic high-output layout.',bal:'Good (cross-plane crank)',pkg:'Short for the power',cog:'Medium',use:'Muscle cars, trucks, GTs'},
+    v12:{name:'V12 (60\u00B0)',bores:[-30,-30,-30,-30,-30,-30,30,30,30,30,30,30],desc:'Two straight-sixes sharing a crank — inherits perfect balance.',bal:'Fully balanced',pkg:'Long but low',cog:'Medium',use:'Ferrari, Rolls-Royce, aero'},
+    f4:{name:'Flat-4 boxer',bores:[-90,-90,90,90],desc:'Two opposed pairs; pistons box in and out. Very low and smooth.',bal:'Primary balanced',pkg:'Wide, very low',cog:'Very low',use:'Subaru, VW Beetle'},
+    f6:{name:'Flat-6 boxer',bores:[-90,-90,-90,90,90,90],desc:'Three opposed pairs — smooth, flat and low. The 911 engine.',bal:'Excellent',pkg:'Wide, low',cog:'Very low',use:'Porsche 911'},
+    r9:{name:'Radial-9',bores:[-160,-120,-80,-40,0,40,80,120,160],desc:'Nine cylinders around one crank throw, on a master rod. Air-cooled.',bal:'Good (single row)',pkg:'Short, large frontal area',cog:'On axis',use:'Piston-era aircraft'},
+    w12:{name:'W-12',bores:[-50,-30,-50,-30,-50,-30,30,50,30,50,30,50],desc:'Two narrow-angle VR banks joined into a W — very compact for 12 cylinders.',bal:'Good',pkg:'Remarkably short',cog:'Medium',use:'Bentley, Audi'}
+  };
+  function render(key){
+    const d=DATA[key]; const angs=d.bores;
+    const cx=140,cy=170,R=9,len=82,bw=20;
+    let svg=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--signal)"/>`;
+    const counts={};
+    angs.forEach((a)=>{ const ux=Math.sin(a*Math.PI/180), uy=-Math.cos(a*Math.PI/180);
+      const nSame=angs.filter(x=>x===a).length; const idx=(counts[a]=(counts[a]||0)+1)-1;
+      // perpendicular stagger for stacked cylinders sharing a bank angle (inline rows / V banks)
+      const px=Math.cos(a*Math.PI/180), py=Math.sin(a*Math.PI/180);
+      const spread=(key==='r9')?0:18;
+      const sOff=(idx-(nSame-1)/2)*spread;
+      const baseX=cx+ux*22+px*sOff, baseY=cy+uy*22+py*sOff;
+      const x2=baseX+ux*len, y2=baseY+uy*len;
+      svg+=`<g>
+        <line x1="${baseX.toFixed(1)}" y1="${baseY.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--intake)" stroke-width="${bw}" stroke-linecap="round" stroke-opacity="0.16"/>
+        <line x1="${baseX.toFixed(1)}" y1="${baseY.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="var(--cyan)" stroke-width="1.4"/>
+        <circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="3" fill="var(--cyan)"/>
+      </g>`;
+    });
+    $('layView').innerHTML=svg;
+    $('layTitle').textContent=d.name.toUpperCase();
+    $('layName').textContent=d.name;
+    $('layDesc').textContent=d.desc;
+    $('dBal').textContent=d.bal; $('dPkg').textContent=d.pkg; $('dCog').textContent=d.cog; $('dUse').textContent=d.use;
+    $('layBal').textContent=d.bal.toUpperCase();
+  }
+  render('i4');
+  $('layPick').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on'); render(b.dataset.l); });
+})();
+
+/* ===== FIG 5.2 Deltic ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const cx=180,cy=150,Rt=110;
+  const corners=[0,1,2].map(i=>{ const a=(-90+i*120)*Math.PI/180; return {x:cx+Rt*Math.cos(a),y:cy+Rt*Math.sin(a)}; });
+  const banks=$('delBanks'), pistG=$('delPistons'), crankG=$('delCranks');
+  const bankDefs=[];
+  for(let i=0;i<3;i++){ const A=corners[i],B=corners[(i+1)%3];
+    banks.innerHTML+=`<line x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke-width="22" stroke="var(--cyan)" stroke-opacity="0.16" stroke-linecap="round"/>
+      <line x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}"/>`;
+    bankDefs.push({A,B});
+  }
+  corners.forEach(c=>{ crankG.innerHTML+=`<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="11" fill="var(--signal)"/><circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="4" fill="var(--plate)"/>`; });
+  let t=0;
+  function frame(){
+    t+=0.05; const ph=(Math.sin(t)+1)/2;
+    let html='';
+    bankDefs.forEach((bk)=>{
+      const A=bk.A,B=bk.B; const mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+      const dx=(B.x-A.x),dy=(B.y-A.y); const L=Math.hypot(dx,dy); const ux=dx/L,uy=dy/L;
+      const gap=8+ph*26;
+      const p1x=mx-ux*gap,p1y=my-uy*gap, p2x=mx+ux*gap,p2y=my+uy*gap;
+      const rotd=Math.atan2(uy,ux)*180/Math.PI;
+      html+=`<rect x="${(p1x-7).toFixed(1)}" y="${(p1y-7).toFixed(1)}" width="14" height="14" rx="2" transform="rotate(${rotd.toFixed(1)} ${p1x.toFixed(1)} ${p1y.toFixed(1)})" fill="#9fb4bd" stroke="var(--cyan)"/>
+        <rect x="${(p2x-7).toFixed(1)}" y="${(p2y-7).toFixed(1)}" width="14" height="14" rx="2" transform="rotate(${rotd.toFixed(1)} ${p2x.toFixed(1)} ${p2y.toFixed(1)})" fill="#9fb4bd" stroke="var(--cyan)"/>`;
+      if(ph>0.65){ html+=`<circle cx="${mx.toFixed(1)}" cy="${my.toFixed(1)}" r="${(10*(ph-0.6)).toFixed(1)}" fill="var(--fire)" opacity="0.5"/>`; }
+    });
+    pistG.innerHTML=html;
+    $('delTag').textContent = ph>0.6?'POWER — PISTONS FLUNG APART':ph<0.4?'COMPRESSION — PISTONS CLOSING':'3 CRANKS · 18 CYL · 36 PISTONS';
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ===== FIG 5.3 Wankel ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const cx=170,cy=150, e=18, Rr=78;
+  function housing(){
+    let pts=[];
+    for(let a=0;a<=360;a+=4){ const t=a*Math.PI/180;
+      const x=cx+ e*Math.cos(3*t) + Rr*Math.cos(t);
+      const y=cy+ e*Math.sin(3*t) + Rr*Math.sin(t);
+      pts.push(`${x.toFixed(1)},${y.toFixed(1)}`);
+    }
+    return 'M'+pts.join(' L')+'Z';
+  }
+  $('wkHousing').setAttribute('d',housing());
+  $('wkPlug').setAttribute('cx',cx+Rr+e-6); $('wkPlug').setAttribute('cy',cy);
+  let theta=0;
+  function frame(){
+    theta+=0.03;
+    const ox=cx+e*Math.cos(theta), oy=cy+e*Math.sin(theta);
+    const rot=theta/3;
+    const verts=[];
+    for(let k=0;k<3;k++){ const a=rot+k*2*Math.PI/3; verts.push([ox+ Rr*0.86*Math.cos(a), oy+Rr*0.86*Math.sin(a)]); }
+    $('wkRotor').setAttribute('points',verts.map(v=>`${v[0].toFixed(1)},${v[1].toFixed(1)}`).join(' '));
+    $('wkEcc').setAttribute('cx',ox); $('wkEcc').setAttribute('cy',oy);
+    let ch='';
+    for(let k=0;k<3;k++){
+      const a1=rot+k*2*Math.PI/3, a2=rot+(k+1)*2*Math.PI/3;
+      const v1=[ox+Rr*0.86*Math.cos(a1),oy+Rr*0.86*Math.sin(a1)];
+      const v2=[ox+Rr*0.86*Math.cos(a2),oy+Rr*0.86*Math.sin(a2)];
+      const mx=(v1[0]+v2[0])/2, my=(v1[1]+v2[1])/2;
+      const ang=Math.atan2(my-cy,mx-cx); let deg=(ang*180/Math.PI+360)%360;
+      let col;
+      if(deg<60||deg>300) col='var(--fire)';
+      else if(deg<180) col='var(--intake)';
+      else col='var(--comp)';
+      ch+=`<path d="M${v1[0].toFixed(1)},${v1[1].toFixed(1)} Q${mx.toFixed(1)},${my.toFixed(1)} ${v2[0].toFixed(1)},${v2[1].toFixed(1)}" fill="${col}" opacity="0.16"/>`;
+    }
+    $('wkChambers').innerHTML=ch;
+    const ph=(theta*180/Math.PI/3)%360;
+    $('wkPhase').textContent='ROTOR '+ph.toFixed(0)+'\u00B0 · 3 FACES, 3 CYCLES';
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

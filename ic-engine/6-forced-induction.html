@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · Forced Induction — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="06">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch6 hero">
+  <div class="kicker">Chapter 06</div>
+  <div class="num">06</div>
+  <h2 style="margin-top:18px;max-width:22ch">Forced induction: stuffing more air in than the engine can breathe.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">An engine's power is limited by how much air it can swallow — burn more fuel and you need more oxygen to burn it with. Forced induction cheats the limit: it <em>pumps</em> dense air into the cylinders, so a small engine breathes like a big one. The turbocharger does it almost for free, by stealing energy from the exhaust — but nothing is truly free, and the bill is paid in lag.</p>
+  <div class="meta">
+    <div><div class="k">The lever</div><div class="v">Power ∝ air mass per cycle</div></div>
+    <div><div class="k">Turbo</div><div class="v">Exhaust-driven, near-free energy</div></div>
+    <div><div class="k">Supercharger</div><div class="v">Crank-driven, instant but costly</div></div>
+    <div><div class="k">The catch</div><div class="v">Turbo lag &amp; heat</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#why">Why force air in</a>
+    <a href="#turbo">The turbocharger</a>
+    <a href="#lag">Live: turbo lag</a>
+    <a href="#control">Wastegate, VGT &amp; blow-off</a>
+    <a href="#multi">Sequential &amp; twin-scroll</a>
+    <a href="#intercool">Intercooling</a>
+    <a href="#super">Superchargers &amp; compounding</a>
+  </nav>
+
+  <div>
+    <!-- WHY -->
+    <section id="why" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The air limit</div>
+      <h3>An engine is an air pump that happens to make power.</h3>
+      <p style="margin-top:18px">Every power stroke burns the fuel that the trapped air can oxidise — no more. The chemically correct (<strong>stoichiometric</strong>) ratio for petrol is about <strong>14.7 kg of air to 1 kg of fuel</strong>. So the real limit on power is the <em>mass</em> of air you can pack into the cylinder each cycle. A naturally aspirated engine is capped by atmospheric pressure and its own breathing. There are only two ways past: make the engine bigger, or make the air denser.</p>
+      <div class="eq">
+        <span class="lbl">Brake power, in terms of air</span>
+        P ≈ ( ṁ<sub>air</sub> / AFR ) · Q<sub>fuel</sub> · η<sub>brake</sub>  &nbsp;&nbsp;→&nbsp;&nbsp; double the air density, you can roughly double the fuel — and the power
+      </div>
+      <p>Forced induction raises <strong>ρ<sub>air</sub></strong>, the intake charge density. A 2-litre engine at 1&nbsp;bar of boost ingests roughly the air of a 4-litre engine — "downsizing" with a turbo is exactly this trade: a small, light, low-friction engine that breathes like a large one when you ask it to.</p>
+    </section>
+
+    <!-- TURBO -->
+    <section id="turbo" class="section">
+      <div class="kicker">The free lunch (almost)</div>
+      <h3>The turbocharger: two wheels on one shaft.</h3>
+      <p style="margin-top:18px">A turbocharger is two impellers on a common shaft. Hot, fast exhaust gas — normally thrown away — spins the <strong>turbine</strong> wheel on its way out; the shaft drives the <strong>compressor</strong> wheel on the intake side, which crams dense air into the engine. It recovers energy that would otherwise be wasted as noise and heat, so it costs the crankshaft almost nothing. The catch is that it only works once there's enough exhaust flow to spin it — and that takes a moment.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 6.1</span><span>TURBOCHARGER — GAS PATH</span><span class="dim" id="tbState" style="color:var(--signal-2)">SPOOLING</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 900 360" style="width:100%;height:auto" id="turboSvg">
+            <!-- engine block -->
+            <rect x="360" y="150" width="180" height="120" fill="var(--plate-2)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="450" y="215" text-anchor="middle" font-size="13" fill="var(--cyan-soft)" font-family="var(--font-mono)">ENGINE</text>
+            <!-- intake path (cool, blue) from compressor to engine -->
+            <path d="M250 120 H300 V160 H360" fill="none" stroke="var(--intake)" stroke-width="10" opacity="0.5"/>
+            <!-- exhaust path (hot, orange) from engine to turbine -->
+            <path d="M540 250 H600 V300 H660" fill="none" stroke="var(--fire)" stroke-width="10" opacity="0.55"/>
+            <!-- compressor housing (left) -->
+            <g id="compG">
+              <circle cx="200" cy="120" r="58" fill="var(--plate)" stroke="var(--intake)" stroke-width="2.5"/>
+              <g id="compWheel" style="transform-origin:200px 120px">
+                <g stroke="var(--intake)" stroke-width="3" fill="none">
+                  <path d="M200 120 L200 70"/><path d="M200 120 L243 95"/><path d="M200 120 L243 145"/>
+                  <path d="M200 120 L200 170"/><path d="M200 120 L157 145"/><path d="M200 120 L157 95"/>
+                </g>
+              </g>
+              <text x="200" y="200" text-anchor="middle" font-size="11" fill="var(--intake)" font-family="var(--font-mono)">COMPRESSOR</text>
+            </g>
+            <!-- turbine housing (right) -->
+            <g id="turbG">
+              <circle cx="710" cy="300" r="50" fill="var(--plate)" stroke="var(--fire)" stroke-width="2.5"/>
+              <g id="turbWheel" style="transform-origin:710px 300px">
+                <g stroke="var(--fire)" stroke-width="3" fill="none">
+                  <path d="M710 300 L710 258"/><path d="M710 300 L746 280"/><path d="M710 300 L746 320"/>
+                  <path d="M710 300 L710 342"/><path d="M710 300 L674 320"/><path d="M710 300 L674 280"/>
+                </g>
+              </g>
+              <text x="710" y="368" text-anchor="middle" font-size="11" fill="var(--fire)" font-family="var(--font-mono)">TURBINE</text>
+            </g>
+            <!-- common shaft -->
+            <line x1="258" y1="120" x2="660" y2="300" stroke="var(--cyan)" stroke-width="3" stroke-dasharray="6 5"/>
+            <text x="455" y="120" text-anchor="middle" font-size="10" fill="var(--cyan-soft)" font-family="var(--font-mono)">COMMON SHAFT — up to 200,000 rpm</text>
+            <!-- air in / gas out -->
+            <text x="150" y="60" font-size="11" fill="var(--intake)" font-family="var(--font-mono)">↓ cool air in</text>
+            <text x="760" y="300" font-size="11" fill="var(--fire)" font-family="var(--font-mono)">hot gas out →</text>
+            <!-- boost gauge -->
+            <g transform="translate(450,300)">
+              <text x="0" y="-2" text-anchor="middle" font-size="10" fill="var(--cyan-soft)" font-family="var(--font-mono)">BOOST</text>
+              <rect x="-70" y="6" width="140" height="12" fill="var(--plate-2)" stroke="var(--plate-line)"/>
+              <rect id="boostBar" x="-70" y="6" width="0" height="12" fill="var(--signal)"/>
+            </g>
+          </svg>
+        </div>
+        <div class="figure-cap"><b>Energy recovery, not energy creation.</b> The blue (cool, pressurised intake) and orange (hot exhaust) paths never mix — they only share a shaft. The turbine extracts work from gas that a naturally aspirated engine would simply dump. The figure spins both wheels together because they are one shaft: that single fact is also the root of turbo lag.</div>
+      </figure>
+    </section>
+
+    <!-- LAG -->
+    <section id="lag" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 6.2</div>
+      <h3>Turbo lag: the boost arrives late.</h3>
+      <p style="margin-top:18px">Stab the throttle and the turbo doesn't respond instantly. The turbine has to <strong>accelerate its own rotating inertia</strong> up to speed before it makes meaningful boost, and the only thing accelerating it is exhaust flow — which is itself weak until the engine is already making more power. It is a chicken-and-egg delay: <strong>turbo lag</strong>. Press <em>throttle</em> and watch boost chase demand; shrink the turbo or add a supercharger to close the gap.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 6.2</span><span>THROTTLE STEP → BOOST RESPONSE</span><span class="dim" id="lagTag" style="color:var(--signal-2)">—</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 900 300" style="width:100%;height:auto" id="lagSvg">
+            <line x1="54" y1="16" x2="54" y2="250" stroke="var(--plate-line)"/>
+            <line x1="54" y1="250" x2="876" y2="250" stroke="var(--plate-line)"/>
+            <text x="48" y="22" text-anchor="end" font-size="10" fill="var(--cyan-soft)">%</text>
+            <text x="872" y="270" text-anchor="end" font-size="10" fill="var(--cyan-soft)">time →</text>
+            <polyline id="demandLine" fill="none" stroke="var(--cyan)" stroke-width="1.6" stroke-dasharray="5 4"/>
+            <polyline id="boostLine" fill="none" stroke="var(--signal)" stroke-width="2.4"/>
+            <polyline id="rpmLine" fill="none" stroke="var(--comp)" stroke-width="1.6"/>
+          </svg>
+        </div>
+        <div class="deck">
+          <div class="deck-row">
+            <button class="btn on" id="throttleBtn" style="min-width:200px">⟱ HOLD to floor it</button>
+            <div class="field"><div class="flab"><span>Turbo size / inertia</span><b id="szLab">medium</b></div>
+              <input id="turboSz" type="range" min="1" max="40" step="1" value="18"></div>
+            <label class="readout" style="display:flex;align-items:center;gap:8px;cursor:pointer">
+              <input type="checkbox" id="eboost"> electric pre-spool (e-turbo)</label>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--cyan)"></i>throttle demand</span>
+            <span><i style="background:var(--signal)"></i>boost delivered</span>
+            <span><i style="background:var(--comp)"></i>turbo shaft rpm</span>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Lag is rotating inertia in disguise.</b> A big turbo makes big top-end boost but spins up slowly — laggy. A small turbo spools fast but runs out of breath up high. Watch the orange boost line lag behind the dashed demand: a smaller turbo (left slider) or an electric pre-spool closes the gap, which is exactly why modern engines use small twin turbos, twin-scroll housings, or e-turbos.</div>
+      </figure>
+    </section>
+
+    <!-- CONTROL -->
+    <section id="control" class="section">
+      <div class="kicker">Taming boost</div>
+      <h3>Wastegate, variable geometry &amp; blow-off.</h3>
+      <div class="cards c3" style="margin-top:24px">
+        <div>
+          <h4>Wastegate</h4>
+          <p>Left alone, a turbine spins faster the harder you drive until boost destroys the engine. The <strong>wastegate</strong> is a valve that bleeds exhaust <em>around</em> the turbine once target boost is reached, capping shaft speed. It is the throttle on the turbine side.</p>
+        </div>
+        <div>
+          <h4>Variable geometry (VGT)</h4>
+          <p>Moving vanes in the turbine housing change the gas angle and effective area: closed-down at low speed to spool fast, opened-up at high speed to flow freely. A <strong>VGT</strong> gives one turbo the manners of a small one <em>and</em> a big one — common on diesels, where exhaust is cooler.</p>
+        </div>
+        <div>
+          <h4>Blow-off / recirc valve</h4>
+          <p>Lift off the throttle and the compressor suddenly pushes against a closed butterfly — the flow stalls and reverses, hammering the wheel (<strong>surge</strong>). A <strong>blow-off valve</strong> vents that pressure spike (the classic "psssh"), protecting the turbo and keeping it spinning for the next squeeze.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MULTI -->
+    <section id="multi" class="section">
+      <div class="kicker">More than one</div>
+      <h3>Sequential, parallel &amp; twin-scroll.</h3>
+      <p style="margin-top:18px">If one turbo can't be both fast-spooling and high-flowing, use more than one — or feed one more cleverly.</p>
+      <table class="dt">
+        <thead><tr><th>Arrangement</th><th>How it works</th><th>Buys you</th></tr></thead>
+        <tbody>
+          <tr><td><b>Parallel twin</b></td><td>Two equal smaller turbos, one per cylinder bank (natural on a V engine)</td><td>Half the inertia each → faster spool, neat packaging</td></tr>
+          <tr><td><b>Sequential twin</b></td><td>A small turbo for low rpm; a big one cuts in up high; sometimes both together</td><td>Fast response <em>and</em> big top-end — at the cost of complex plumbing</td></tr>
+          <tr><td><b>Twin-scroll (single)</b></td><td>Two exhaust passages keep cylinders' pulses from interfering, feeding the turbine in clean bursts</td><td>Sharper spool from one turbo, less reversion</td></tr>
+          <tr><td><b>Compound</b></td><td>A big low-pressure turbo feeds a small high-pressure one in series</td><td>Very high boost — heavy trucks, marine, aero</td></tr>
+          <tr><td><b>Electric (e-turbo)</b></td><td>A motor-generator on the shaft spins the compressor before exhaust can</td><td>Near-zero lag; can harvest energy too (F1 MGU-H)</td></tr>
+        </tbody>
+      </table>
+      <div class="note annot">
+        <span class="tag">The modern answer to lag</span>
+        <p>The trend is <strong>small twin turbos</strong> with twin-scroll housings and, increasingly, an <strong>electric pre-spool</strong>. Each attacks the inertia problem from a different side — less mass to accelerate, cleaner pulses to accelerate it with, or an electric motor that doesn't wait for exhaust at all. Toggle the e-turbo in Fig. 6.2 to feel the difference.</p>
+      </div>
+    </section>
+
+    <!-- INTERCOOL -->
+    <section id="intercool" class="section">
+      <div class="kicker">Cooling the charge</div>
+      <h3>Why boost needs an intercooler.</h3>
+      <p style="margin-top:18px">Compressing air heats it (the same adiabatic law that heats the diesel's charge in Ch. 02). Hot air is <em>less dense</em>, which fights the very thing the turbo is for — and hotter intake charge brings a petrol engine closer to <strong>knock</strong>. An <strong>intercooler</strong> (charge-air cooler) sits between compressor and engine and sheds that heat, recovering density and detonation margin. On a hard-working engine it can be worth a significant slice of the boost's benefit.</p>
+      <div class="eq">
+        <span class="lbl">Density gained by intercooling</span>
+        ρ = p / (R · T)  →  drop charge temperature from 120 °C to 50 °C at the same pressure and you regain ≈ 18% density (and the fuel to match)
+      </div>
+    </section>
+
+    <!-- SUPER -->
+    <section id="super" class="section">
+      <div class="kicker">The other pump</div>
+      <h3>Superchargers &amp; turbo-compounding.</h3>
+      <div class="cards c2" style="margin-top:24px">
+        <div>
+          <h4>Supercharger — driven by the crank</h4>
+          <p>A supercharger is a compressor driven mechanically off the crankshaft (belt or gear), so it makes boost <strong>instantly</strong> and in exact proportion to engine speed — no lag at all. The price is that it consumes crankshaft power to run, so it is less efficient than a turbo. Roots and twin-screw blowers are the classic drag-strip and muscle-car choice; centrifugal types resemble a belt-driven turbo compressor.</p>
+        </div>
+        <div>
+          <h4>Turbo-compounding — give the exhaust back</h4>
+          <p>A <strong>power turbine</strong> downstream of the main turbo geared back to the crankshaft recovers still more exhaust energy as shaft work, rather than boost. The Wright R-3350 Turbo-Compound and modern heavy-truck and marine diesels use it to claw back a few percent of efficiency — the same idea as F1's MGU-H, which turns that recovered energy into electricity.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 06 — Forced induction</span>
+  <span>Figs. 6.1–6.2 · schematic</span>
+</div></footer>
+
+<script src="assets/engine-kin.js"></script>
+<script>
+/* ===== FIG 6.1 turbo spin (driven by a slow idle/boost demo loop) ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  let ca=0,ta=0, boost=0.15, t=0;
+  function frame(){
+    t+=0.016;
+    // gentle demo: boost oscillates as if engine loaded/unloaded
+    const target=0.5+0.45*Math.sin(t*0.6);
+    boost += (target-boost)*0.02;
+    const spd=2+boost*22;
+    ca=(ca+spd)%360; ta=(ta+spd)%360;
+    $('compWheel').setAttribute('transform','rotate('+ca+' 200 120)');
+    $('turbWheel').setAttribute('transform','rotate('+ta+' 710 300)');
+    $('boostBar').setAttribute('width',(boost*140).toFixed(1));
+    $('tbState').textContent= boost<0.3?'OFF BOOST':boost<0.7?'SPOOLING':'ON BOOST · '+(boost*1.4).toFixed(1)+' bar';
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* ===== FIG 6.2 turbo lag sim ===== */
+(function(){
+  const $=id=>document.getElementById(id);
+  const X0=54,X1=876,YT=16,YB=250;
+  const N=260;
+  let demand=new Array(N).fill(8), boost=new Array(N).fill(8), rpm=new Array(N).fill(15);
+  let flooring=false, inertia=18, eboost=false;
+  let shaft=15, bst=8, eng=18;
+  function step(){
+    // throttle demand
+    const d = flooring?100:8;
+    // engine rpm responds to actual boost (torque)
+    eng += ((30+bst*0.7) - eng)*0.05;
+    // exhaust energy ∝ engine load & rpm; spins shaft against its inertia
+    const exhaust = (d/100)*(0.4+eng/120);
+    const eAssist = eboost? (flooring?2.2:0):0;
+    const drag = shaft*0.04;
+    shaft += ((exhaust*60 + eAssist*60) - drag - shaft*0.0) / (inertia*1.4) - shaft*0.02;
+    shaft = Math.max(8, Math.min(100, shaft));
+    // boost follows shaft^2 (compressor map), but capped by wastegate at demand
+    let rawBoost = Math.min(100, (shaft*shaft)/100*1.6);
+    rawBoost = Math.min(rawBoost, d); // can't exceed demand here (simplified)
+    bst += (rawBoost - bst)*0.25;
+    demand.push(d); demand.shift();
+    boost.push(bst); boost.shift();
+    rpm.push(shaft); rpm.shift();
+    draw();
+  }
+  function draw(){
+    const sx=i=>X0+(i/(N-1))*(X1-X0);
+    const sy=v=>YB-(v/100)*(YB-YT);
+    $('demandLine').setAttribute('points',demand.map((v,i)=>`${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' '));
+    $('boostLine').setAttribute('points',boost.map((v,i)=>`${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' '));
+    $('rpmLine').setAttribute('points',rpm.map((v,i)=>`${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' '));
+    const lag=Math.max(0,(demand[N-1]-boost[N-1]));
+    $('lagTag').textContent = flooring? ('LAG '+lag.toFixed(0)+'% — boost chasing') : 'OFF THROTTLE';
+  }
+  let _acc=0,_last=performance.now();
+  function tick(now){
+    _acc += now-_last; _last=now;
+    while(_acc>=30){ step(); _acc-=30; }   // fixed 30ms sim steps, driven by rAF
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+  const btn=$('throttleBtn');
+  const press=()=>{flooring=true;btn.classList.add('on');btn.textContent='⟱ FLOORED';};
+  const release=()=>{flooring=false;btn.textContent='⟱ HOLD to floor it';};
+  btn.addEventListener('mousedown',press); btn.addEventListener('touchstart',e=>{e.preventDefault();press();});
+  window.addEventListener('mouseup',release); btn.addEventListener('touchend',release);
+  $('turboSz').addEventListener('input',e=>{ inertia=+e.target.value; $('szLab').textContent=inertia<12?'small (fast)':inertia<26?'medium':'large (laggy)'; });
+  $('eboost').addEventListener('change',e=>{ eboost=e.target.checked; });
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>03 — The Rollercoaster · Fable Arena</title>
 <link rel="stylesheet" href="assets/arena.css">
-<script>try{if(localStorage.getItem('arena.theme')==='amber')document.documentElement.dataset.theme='amber';}catch(e){}</script>
+<script>try{var p=localStorage.getItem('arena-phosphor');if(p)document.documentElement.setAttribute('data-phosphor',p);}catch(e){}</script>
 <style>
   .coaster-wrap { position: relative; }
   .coaster-readout { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }

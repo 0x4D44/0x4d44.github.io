@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Forces & Balance — COMBUSTION</title>
+<link rel="stylesheet" href="assets/site.css">
+</head>
+<body data-chapter="04">
+<div id="topbar"></div>
+
+<section class="wrap chero" data-screen-label="Ch4 hero">
+  <div class="kicker">Chapter 04</div>
+  <div class="num">04</div>
+  <h2 style="margin-top:18px;max-width:22ch">Forces &amp; balance: the war against your own moving parts.</h2>
+  <p class="lead" style="max-width:56ch;margin-top:22px">Every piston is a hammer thrown up and down hundreds of times a second. The gas does useful work — but the dead weight of the reciprocating parts shakes the engine, and the firing pulses arrive in lumps. This chapter is about turning a bag of hammer-blows into smooth, quiet torque.</p>
+  <div class="meta">
+    <div><div class="k">Primary force</div><div class="v">∝ cos θ — once per rev</div></div>
+    <div><div class="k">Secondary force</div><div class="v">∝ λ cos 2θ — twice per rev</div></div>
+    <div><div class="k">Smoothing</div><div class="v">Flywheel + cylinder count</div></div>
+    <div><div class="k">The classic win</div><div class="v">The inherently balanced straight-six</div></div>
+  </div>
+</section>
+
+<section class="wrap cols-rail">
+  <nav class="rail">
+    <div class="rt">On this page</div>
+    <a href="#recip">The reciprocating problem</a>
+    <a href="#orders">Primary &amp; secondary</a>
+    <a href="#lab">Live: shaking force by layout</a>
+    <a href="#power">Live: lumpy power</a>
+    <a href="#why6">Why a six is so smooth</a>
+    <a href="#flywheel">The flywheel</a>
+    <a href="#balance">Balance shafts &amp; counterweights</a>
+  </nav>
+
+  <div>
+    <!-- RECIP -->
+    <section id="recip" class="section" style="padding-top:0;border-top:0">
+      <div class="kicker">The root of all vibration</div>
+      <h3>Gas does the work. Inertia sends the bill.</h3>
+      <p style="margin-top:18px">Two quite different forces act through the crank. The first is the <strong>gas force</strong> — useful, the thing you bought the engine for. The second is the <strong>inertia force</strong> of accelerating the piston and rod up and down: every stroke they are flung from rest at a dead-centre to full speed and back to rest again, and that acceleration needs force — force the engine structure has to react against.</p>
+      <p>The piston's acceleration isn't a clean sine wave, because the connecting rod is finite in length. The exact result, with crank radius <em>r</em>, rod length <em>L</em>, and ratio λ = r/L, is:</p>
+      <div class="eq">
+        <span class="lbl">Piston acceleration (≈ to 2nd order)</span>
+        a ≈ r ω² ( cos θ + λ cos 2θ )
+      </div>
+      <p>That tidy expression hides the whole story of engine balance. The <strong>cos θ</strong> term repeats <strong>once per revolution</strong> — the <strong>primary</strong>. The <strong>λ cos 2θ</strong> term repeats <strong>twice per revolution</strong> — the <strong>secondary</strong>. The reciprocating inertia force is just mass × this acceleration, and it is the enemy we must arrange to cancel.</p>
+    </section>
+
+    <!-- ORDERS -->
+    <section id="orders" class="section">
+      <div class="kicker">Two harmonics</div>
+      <h3>Primary and secondary forces.</h3>
+      <div class="cards c2" style="margin-top:24px">
+        <div>
+          <div class="tag tag-annot">1st order</div>
+          <h4>Primary force — once per revolution</h4>
+          <p>F<sub>1</sub> = m·r·ω²·cos θ. Large, and at engine frequency. In multi-cylinder engines it can often be cancelled by arranging the cranks symmetrically, or absorbed by <strong>counterweights</strong> on the crankshaft. A single cylinder cannot escape it.</p>
+        </div>
+        <div>
+          <div class="tag tag-sig">2nd order</div>
+          <h4>Secondary force — twice per revolution</h4>
+          <p>F<sub>2</sub> = m·r·ω²·λ·cos 2θ. Smaller (λ ≈ 0.25–0.35) but at <strong>twice</strong> the frequency, so it is harder to cancel with crank arrangement alone. It is the famous buzz of the inline-four, and the reason that engine often needs a pair of <strong>balance shafts</strong> spinning at 2× crank speed.</p>
+        </div>
+      </div>
+      <p>An engine layout is "balanced" to a given order if the vector sum of all cylinders' forces (and their moments along the crank) cancels at that order. The art of configuration — Ch. 05 — is largely the art of making these sums vanish.</p>
+    </section>
+
+    <!-- LAB: SHAKING FORCE -->
+    <section id="lab" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 4.1</div>
+      <h3>The shaking force, layout by layout.</h3>
+      <p style="margin-top:18px">Choose a configuration and watch the net <strong>unbalanced inertia force</strong> trace out over two revolutions, resolved into the vertical and horizontal directions. The polar blob is the tip of the force vector through the cycle — a point means perfectly balanced; a big loop means a shaker. Counts and layouts that cancel cleanly collapse toward the centre.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 4.1</span><span id="f1Title">INLINE-4 · SHAKING FORCE</span><span class="dim" id="f1Verdict" style="color:var(--signal-2)">—</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:1fr 300px;gap:24px;align-items:center">
+          <svg viewBox="0 0 540 300" style="width:100%;height:auto" id="forceTrace">
+            <line x1="46" y1="20" x2="46" y2="262" stroke="var(--plate-line)"/>
+            <line x1="46" y1="141" x2="528" y2="141" stroke="var(--plate-line)"/>
+            <text x="40" y="26" text-anchor="end" font-size="10" fill="var(--cyan-soft)">F</text>
+            <text x="524" y="158" text-anchor="end" font-size="10" fill="var(--cyan-soft)">crank angle (2 rev) →</text>
+            <polyline id="fY" fill="none" stroke="var(--signal)" stroke-width="2"/>
+            <polyline id="fX" fill="none" stroke="var(--intake)" stroke-width="1.6" stroke-dasharray="4 3"/>
+            <line id="fCursor" x1="46" y1="20" x2="46" y2="262" stroke="var(--cyan)" stroke-width="1" stroke-dasharray="2 3"/>
+          </svg>
+          <!-- polar -->
+          <svg viewBox="0 0 240 240" style="width:100%;height:auto" id="polar">
+            <circle cx="120" cy="120" r="100" fill="none" stroke="var(--plate-line)"/>
+            <circle cx="120" cy="120" r="50" fill="none" stroke="var(--plate-grid)"/>
+            <line x1="20" y1="120" x2="220" y2="120" stroke="var(--plate-grid)"/>
+            <line x1="120" y1="20" x2="120" y2="220" stroke="var(--plate-grid)"/>
+            <polygon id="polarBlob" fill="var(--signal)" opacity="0.14" stroke="var(--signal)" stroke-width="1.4"/>
+            <circle id="polarDot" r="5" fill="var(--signal)"/>
+            <text x="120" y="236" text-anchor="middle" font-size="9" fill="var(--cyan-soft)">force vector locus (engine-fixed)</text>
+          </svg>
+        </div>
+        <div class="deck">
+          <div class="deck-row">
+            <div class="field" style="flex:0 0 auto"><div class="flab"><span>Configuration</span></div>
+              <div class="chips" id="cfgChips">
+                <button data-c="single|1" class="on">SINGLE</button>
+                <button data-c="inline|2">INLINE-2</button>
+                <button data-c="inline|3">INLINE-3</button>
+                <button data-c="inline|4">INLINE-4</button>
+                <button data-c="inline|6">INLINE-6</button>
+                <button data-c="flat|4">FLAT-4</button>
+                <button data-c="vee|6">V6</button>
+                <button data-c="vee|8">V8</button>
+              </div></div>
+          </div>
+          <div class="deck-row">
+            <button class="btn on" id="f1Run">❚❚ Running</button>
+            <div class="legend">
+              <span><i style="background:var(--signal)"></i>vertical shake F<sub>y</sub></span>
+              <span><i style="background:var(--intake)"></i>horizontal shake F<sub>x</sub></span>
+            </div>
+            <div class="readout">Peak shake <b id="f1Peak">—</b> · 2nd-order content <b id="f1Sec">—</b></div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>What "balanced" means.</b> The traces are the net reciprocating inertia <em>force</em> of <em>all</em> cylinders, in units of one piston's m·r·ω². The single cylinder swings the full amount; the inline-four cancels its primary but leaves a strong vertical secondary at twice crank speed; the inline-six collapses to a dot. <b>But forces aren't the whole story:</b> the inline-three and V6 show zero net force here yet still buzz, because their cylinders sit at different points along the crank and leave an unbalanced <em>rocking couple</em> — which the verdict above the figure now calls out. A layout is only truly smooth when both its forces <em>and</em> its couples cancel, which is why the inline-six and V12 are the benchmarks.</div>
+      </figure>
+    </section>
+
+    <!-- LAB: LUMPY POWER -->
+    <section id="power" class="section">
+      <div class="kicker tag-sig">Interactive · Fig. 4.2</div>
+      <h3>Lumpy power: why one cylinder shudders and twelve hum.</h3>
+      <p style="margin-top:18px">Torque at the crank is not steady — it surges with each power stroke and goes <em>negative</em> during compression. Here is the instantaneous gas torque over two revolutions for different cylinder counts, with the firing pulses phased by an even firing order. Watch the <strong>ripple</strong> shrink as cylinders are added and their power strokes overlap to fill the troughs.</p>
+
+      <figure class="figure plate" style="margin-top:24px">
+        <div class="figure-bar"><span class="fno">FIG. 4.2</span><span>INSTANTANEOUS CRANK TORQUE</span><span class="dim" id="f2Tag" style="color:var(--signal-2)">RIPPLE —</span></div>
+        <div class="figure-body">
+          <svg viewBox="0 0 900 320" style="width:100%;height:auto" id="torqueTrace">
+            <line x1="54" y1="16" x2="54" y2="270" stroke="var(--plate-line)"/>
+            <line x1="54" y1="200" x2="876" y2="200" stroke="var(--plate-line)"/>
+            <text x="48" y="22" text-anchor="end" font-size="10" fill="var(--cyan-soft)">torque</text>
+            <text x="60" y="214" font-size="9" fill="var(--cyan-soft)">0</text>
+            <text x="872" y="290" text-anchor="end" font-size="10" fill="var(--cyan-soft)">crank angle — two revolutions (720°) →</text>
+            <g id="torqueLayers"></g>
+            <g id="torqueMeans"></g>
+            <text x="270" y="292" font-size="9" fill="var(--cyan-soft)">↑ each shaded hump is one cylinder's power stroke</text>
+          </svg>
+        </div>
+        <div class="deck">
+          <div class="deck-row">
+            <div class="field"><div class="flab"><span>Cylinders (even-firing inline)</span><b id="ncLab">4</b></div>
+              <input id="nc" type="range" min="1" max="12" step="1" value="4"></div>
+            <button class="btn" id="overlayBtn">Show contributions: ON</button>
+            <div class="readout">Mean torque <b id="f2Mean">—</b> · Torque ripple <b class="sig" id="f2Ripple">—</b></div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>Ripple is the lumpiness you feel.</b> Torque ripple = (peak − trough) ÷ mean. A single cylinder swings wildly negative between firings — it relies entirely on the flywheel to keep turning. By six cylinders the power strokes overlap (each lasts ~180° of a 120°-spaced firing), so torque never falls to zero; by twelve it is nearly a straight line. This is the real reason luxury and aero engines carried so many cylinders.</div>
+      </figure>
+    </section>
+
+    <!-- WHY SIX -->
+    <section id="why6" class="section">
+      <div class="kicker">The famous case</div>
+      <h3>Why the straight-six is "inherently balanced".</h3>
+      <p style="margin-top:18px">The inline-six is the engine enthusiasts call <em>perfectly</em> balanced, and the figures above show why. Its six throws are arranged at 0–120–240–240–120–0°, which makes it behave like <strong>two inline-threes back to back, mirror-imaged</strong>. Every primary and secondary force has an equal and opposite partner along the crank, and so do their <strong>moments</strong> (the rocking couples that an inline-three and inline-four can't escape). The result: primary forces, secondary forces, primary couples and secondary couples all cancel — a rare clean sweep.</p>
+      <table class="dt">
+        <thead><tr><th>Layout</th><th>Primary force</th><th>Secondary force</th><th>Couples</th><th>Feel</th></tr></thead>
+        <tbody>
+          <tr><td>Single</td><td class="mono">unbalanced</td><td class="mono">unbalanced</td><td class="mono">—</td><td>Thumper</td></tr>
+          <tr><td>Inline-3</td><td class="mono">balanced</td><td class="mono">balanced</td><td class="mono"><b>rocking couple</b></td><td>Buzzy, needs balance shaft</td></tr>
+          <tr><td>Inline-4</td><td class="mono">balanced</td><td class="mono"><b>unbalanced (2×)</b></td><td class="mono">balanced</td><td>Characteristic 4-pot buzz</td></tr>
+          <tr><td>Flat-4 (boxer)</td><td class="mono">balanced</td><td class="mono">balanced</td><td class="mono">small couple</td><td>Smooth, wide &amp; low</td></tr>
+          <tr><td>Inline-6</td><td class="mono"><b>balanced</b></td><td class="mono"><b>balanced</b></td><td class="mono"><b>balanced</b></td><td>Silky — the benchmark</td></tr>
+          <tr><td>V8 cross-plane</td><td class="mono">balanced*</td><td class="mono">balanced</td><td class="mono">needs counterweights</td><td>Smooth, burbling order</td></tr>
+          <tr><td>V12</td><td class="mono"><b>balanced</b></td><td class="mono"><b>balanced</b></td><td class="mono"><b>balanced</b></td><td>Two straight-sixes — sublime</td></tr>
+        </tbody>
+      </table>
+      <p class="dim mono" style="font-size:.8rem">*cross-plane V8 needs heavy counterweights to balance a rotating couple; the flat-plane V8 (most F1, some Ferraris) is lighter and revs harder but shakes more — the trade we revisit in Ch. 08.</p>
+    </section>
+
+    <!-- FLYWHEEL -->
+    <section id="flywheel" class="section">
+      <div class="kicker">The smoothing element</div>
+      <h3>The flywheel: a bank account for torque.</h3>
+      <p style="margin-top:18px">No matter how many cylinders, torque still rises and falls through the cycle. The <strong>flywheel</strong> — a heavy disc on the crankshaft — bridges the gaps. During a power stroke, surplus torque <em>speeds it up slightly</em> and energy is stored as rotational kinetic energy; during the idle strokes it <em>gives that energy back</em>, keeping the crank turning smoothly through to the next firing.</p>
+      <div class="eq">
+        <span class="lbl">Energy stored in the flywheel</span>
+        E = ½ I ω²  &nbsp;&nbsp;→&nbsp;&nbsp; fluctuation handled: ΔE = I ω² C<sub>s</sub>  &nbsp;(C<sub>s</sub> = coefficient of speed fluctuation)
+      </div>
+
+      <figure class="figure plate" style="margin-top:8px">
+        <div class="figure-bar"><span class="fno">FIG. 4.3</span><span>FLYWHEEL SMOOTHING — SPEED RIPPLE</span><span class="dim" id="fwTag" style="color:var(--signal-2)">—</span></div>
+        <div class="figure-body" style="display:grid;grid-template-columns:230px 1fr;gap:24px;align-items:center">
+          <svg viewBox="0 0 220 220" style="width:100%;height:auto">
+            <circle cx="110" cy="110" r="88" fill="none" stroke="var(--cyan)" stroke-width="2.5"/>
+            <circle cx="110" cy="110" r="70" fill="var(--plate-2)" stroke="var(--plate-line)" stroke-width="10"/>
+            <g id="fwSpin" style="transform-origin:110px 110px">
+              <line x1="110" y1="110" x2="110" y2="28" stroke="var(--signal)" stroke-width="3"/>
+              <circle cx="110" cy="40" r="6" fill="var(--signal)"/>
+            </g>
+            <circle cx="110" cy="110" r="12" fill="var(--cyan)"/>
+            <text x="110" y="210" text-anchor="middle" font-size="9" fill="var(--cyan-soft)">heavier = steadier, but slower to respond</text>
+          </svg>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <svg viewBox="0 0 480 180" style="width:100%;height:auto" id="speedTrace">
+              <line x1="44" y1="14" x2="44" y2="150" stroke="var(--plate-line)"/>
+              <line x1="44" y1="82" x2="470" y2="82" stroke="var(--plate-line)"/>
+              <text x="38" y="20" text-anchor="end" font-size="10" fill="var(--cyan-soft)">ω</text>
+              <text x="466" y="168" text-anchor="end" font-size="10" fill="var(--cyan-soft)">crank angle →</text>
+              <polyline id="torqLine" fill="none" stroke="var(--plate-line)" stroke-width="1.4" stroke-dasharray="3 3"/>
+              <polyline id="omegaLine" fill="none" stroke="var(--signal)" stroke-width="2.2"/>
+            </svg>
+            <div class="field"><div class="flab"><span>Flywheel inertia</span><b id="fwLab">medium</b></div>
+              <input id="fwI" type="range" min="1" max="60" step="1" value="20"></div>
+            <div class="readout">Speed fluctuation C<sub>s</sub> = <b class="sig" id="fwCs">—</b></div>
+          </div>
+        </div>
+        <div class="figure-cap"><b>The trade-off.</b> A bigger flywheel (right slider) flattens the speed ripple — wonderful for a generator or a ship's engine that wants constant speed. But that same inertia makes the engine slow to rev up and down, which is why a sports engine uses the <em>lightest</em> flywheel that will still idle smoothly, and a single-cylinder stationary engine uses a huge one.</p></div>
+      </figure>
+      <p>The flywheel also does double duty: it carries the <strong>starter ring gear</strong>, presents the friction face for the <strong>clutch</strong>, and on many engines its rim is where the crank-position sensor reads. A <strong>dual-mass flywheel</strong> splits it into two spring-coupled halves to isolate the gearbox from torsional pulses — the same lumpiness of Fig. 4.2, attacked downstream.</p>
+    </section>
+
+    <!-- BALANCE SHAFTS -->
+    <section id="balance" class="section">
+      <div class="kicker">Cancelling what's left</div>
+      <h3>Counterweights and balance shafts.</h3>
+      <div class="cards c2" style="margin-top:24px">
+        <div>
+          <h4>Crankshaft counterweights</h4>
+          <p>Lobes cast opposite each throw cancel the <strong>rotating</strong> mass of the crank pin and the big-end, and a chosen fraction of the reciprocating primary. They also reduce the bending and the main-bearing loads — but add rotating inertia, blunting throttle response.</p>
+        </div>
+        <div>
+          <h4>Balance shafts</h4>
+          <p>For the secondary force an inline-four can't cancel, <strong>Lanchester balance shafts</strong> — a pair counter-rotating at <em>twice</em> crank speed — generate an equal, opposite 2nd-order force. They smooth the engine at the cost of friction and complexity, which is why small, cheap fours often go without and simply buzz.</p>
+        </div>
+      </div>
+      <div class="note annot">
+        <span class="tag">The whole chapter in one sentence</span>
+        <p>Balance is about cancelling <em>forces</em> and <em>couples</em> at the 1st and 2nd order; smoothness of <em>delivery</em> is about overlapping power strokes and storing the surplus in a flywheel. Configuration (Ch. 05) is how engineers buy both at once.</p>
+      </div>
+    </section>
+
+    <div class="pager" data-pager></div>
+  </div>
+</section>
+
+<footer class="foot"><div class="wrap">
+  <span>COMBUSTION · Ch. 04 — Forces &amp; balance</span>
+  <span>Figs. 4.1–4.3 · reciprocating dynamics</span>
+</div></footer>
+
+<script src="assets/engine-kin.js"></script>
+<script>
+/* ============ FIG 4.1 — shaking force ============ */
+(function(){
+  const $=id=>document.getElementById(id);
+  let kind='single', N=1, run=true, t=0;
+  let A=null;
+  function rebuild(){
+    A=EK.analyse(kind,N,0.30,{samples:360});
+    // build traces
+    const maxF=Math.max(0.001, Math.max(...A.Fy.map(Math.abs), ...A.Fx.map(Math.abs)));
+    const sx=i=>46+(i/(A.ang.length-1))*(528-46);
+    const sy=v=>141-(v/maxF)*110;
+    $('fY').setAttribute('points', A.Fy.map((v,i)=>`${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' '));
+    $('fX').setAttribute('points', A.Fx.map((v,i)=>`${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' '));
+    // 2nd order content: correlate Fy with cos(2θ)
+    let s2=0,s1=0;
+    A.ang.forEach((a,i)=>{ s2+=A.Fy[i]*Math.cos(2*a*Math.PI/180); s1+=A.Fy[i]*Math.cos(a*Math.PI/180); });
+    const peak=maxF;
+    const imb=EK.imbalance(kind,N,0.30);
+    const couple=imb.peakCouple;
+    $('f1Peak').textContent=peak.toFixed(2)+' mrω²';
+    $('f1Sec').textContent=(Math.abs(s2)>Math.abs(s1)?'dominant':'present');
+    // verdict accounts for free forces (primary vs secondary) AND rocking couples
+    let bal; const secDom=Math.abs(s2)>Math.abs(s1);
+    if(peak<0.05 && couple<0.08)      bal='FULLY BALANCED';
+    else if(peak<0.05)                bal='FORCES BALANCED · ROCKING COUPLE';
+    else if(secDom)                   bal=(peak>1.0?'STRONG SECONDARY SHAKE':'SECONDARY SHAKE')+(couple>0.6?' + COUPLE':'');
+    else                              bal=(peak>0.9?'STRONG SHAKER · PRIMARY':'PARTIAL · PRIMARY')+(couple>0.6?' + COUPLE':'');
+    $('f1Verdict').textContent=bal;
+    $('f1Title').textContent=({single:'SINGLE',inline:'INLINE',flat:'FLAT',vee:'V'}[kind])+(N>1?'-'+N:'')+' · SHAKING FORCE';
+    // polar locus
+    const pts=A.ang.map((a,i)=>`${(120+A.Fx[i]/maxF*100).toFixed(1)},${(120-A.Fy[i]/maxF*100).toFixed(1)}`);
+    $('polarBlob').setAttribute('points',pts.join(' '));
+    return {sx,sy,maxF};
+  }
+  let G=rebuild();
+  function loop(){
+    if(run) t=(t+1.6)%360;
+    const i=Math.round(t/360*(A.ang.length-1));
+    const x=46+(t/360)*(528-46);
+    $('fCursor').setAttribute('x1',x); $('fCursor').setAttribute('x2',x);
+    $('polarDot').setAttribute('cx',120+A.Fx[i]/G.maxF*100);
+    $('polarDot').setAttribute('cy',120-A.Fy[i]/G.maxF*100);
+    requestAnimationFrame(loop);
+  }
+  loop();
+  $('cfgChips').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+    [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
+    const [k,n]=b.dataset.c.split('|'); kind=k; N=+n; G=rebuild();
+  });
+  $('f1Run').addEventListener('click',e=>{ run=!run; e.target.classList.toggle('on',run); e.target.textContent=run?'❚❚ Running':'▶ Paused'; });
+})();
+
+/* ============ FIG 4.2 — lumpy torque ============ */
+(function(){
+  const $=id=>document.getElementById(id);
+  let N=4, overlay=true;
+  const X0=54,X1=876,Y0=16,YZ=200,Ymin=270;
+  function singleTorque(phi){ // one cylinder gas torque over 720
+    const p=EK.gasP4(((phi%720)+720)%720,{});
+    const th=phi*Math.PI/180;
+    return p*EK.torqueArm(th,0.30);
+  }
+  function render(){
+    const layers=$('torqueLayers'); layers.innerHTML='';
+    const means=$('torqueMeans'); means.innerHTML='';
+    const S=360, sum=new Array(S+1).fill(0);
+    const per=[];
+    for(let c=0;c<N;c++){
+      const off=c*720/N;
+      const arr=[];
+      for(let i=0;i<=S;i++){ const phi=i/S*720; const v=singleTorque(phi+off); arr.push(v); sum[i]+=v; }
+      per.push(arr);
+    }
+    const allMax=Math.max(...sum, ...per.flat(), 0.1);
+    const allMin=Math.min(...sum, 0);
+    const sx=i=>X0+(i/S)*(X1-X0);
+    const sy=v=>YZ-(v/allMax)*(YZ-Y0);
+    // per-cylinder shaded humps
+    if(overlay){
+      per.forEach((arr,c)=>{
+        const pts=['54,200'].concat(arr.map((v,i)=>`${sx(i).toFixed(1)},${sy(Math.max(0,v)).toFixed(1)}`)).concat(['876,200']);
+        const hue=200+c*14;
+        layers.innerHTML+=`<polygon points="${pts.join(' ')}" fill="hsl(${hue} 45% 55% / .16)" stroke="hsl(${hue} 45% 60% / .5)" stroke-width="1"/>`;
+      });
+    }
+    // resultant
+    const rpts=sum.map((v,i)=>`${sx(i).toFixed(1)},${sy(v).toFixed(1)}`).join(' ');
+    layers.innerHTML+=`<polyline points="${rpts}" fill="none" stroke="var(--signal)" stroke-width="2.4"/>`;
+    // mean line
+    const mean=sum.reduce((a,b)=>a+b,0)/sum.length;
+    const my=sy(mean);
+    means.innerHTML=`<line x1="54" y1="${my.toFixed(1)}" x2="876" y2="${my.toFixed(1)}" stroke="var(--cyan)" stroke-dasharray="6 4" stroke-width="1.2"/>
+      <text x="864" y="${(my-6).toFixed(1)}" text-anchor="end" font-size="10" fill="var(--cyan)">mean</text>`;
+    const ripple=(Math.max(...sum)-Math.min(...sum))/Math.max(mean,0.001);
+    $('f2Mean').textContent=mean.toFixed(3);
+    $('f2Ripple').textContent=ripple.toFixed(2)+' : 1';
+    $('f2Tag').textContent='RIPPLE '+ripple.toFixed(1)+':1';
+    $('ncLab').textContent=N;
+  }
+  render();
+  $('nc').addEventListener('input',e=>{ N=+e.target.value; render(); });
+  $('overlayBtn').addEventListener('click',e=>{ overlay=!overlay; e.target.textContent='Show contributions: '+(overlay?'ON':'OFF'); render(); });
+})();
+
+/* ============ FIG 4.3 — flywheel ============ */
+(function(){
+  const $=id=>document.getElementById(id);
+  let I=20, ang=0;
+  // torque pulse: single-ish lumpy source (use 2-cyl gas torque for visible ripple)
+  function srcTorque(phi){ let T=0; for(let c=0;c<2;c++){ const p=EK.gasP4(((phi+c*360)%720+720)%720,{}); T+=p*EK.torqueArm(phi*Math.PI/180,0.30);} return T; }
+  function render(){
+    const S=240, X0=44,X1=470,YZ=82;
+    const tq=[],om=[]; let w=1.0;
+    // integrate omega given torque/I over a couple of cycles to get steady ripple
+    for(let pass=0;pass<3;pass++){ w=1.0; for(let i=0;i<=S;i++){ const phi=i/S*720; const T=srcTorque(phi); w+=(T-0.0)/(I*4); } }
+    // now record
+    w=1.0; const meanT=(()=>{let s=0;for(let i=0;i<=S;i++)s+=srcTorque(i/S*720);return s/(S+1);})();
+    for(let i=0;i<=S;i++){ const phi=i/S*720; const T=srcTorque(phi); tq.push(T); w+=(T-meanT)/(I*3); om.push(w); }
+    const omMax=Math.max(...om),omMin=Math.min(...om), tMax=Math.max(...tq.map(Math.abs),0.1);
+    const sx=i=>X0+(i/S)*(X1-X0);
+    const syO=v=>YZ-(v-1)/Math.max(0.001,(omMax-omMin))*60;
+    const syT=v=>YZ-(v/tMax)*54;
+    $('omegaLine').setAttribute('points', om.map((v,i)=>`${sx(i).toFixed(1)},${syO(v).toFixed(1)}`).join(' '));
+    $('torqLine').setAttribute('points', tq.map((v,i)=>`${sx(i).toFixed(1)},${syT(v).toFixed(1)}`).join(' '));
+    const Cs=(omMax-omMin)/1.0;
+    $('fwCs').textContent=Cs.toFixed(4);
+    $('fwLab').textContent= I<12?'light':I<35?'medium':'heavy';
+    $('fwTag').textContent='C_s = '+Cs.toFixed(3);
+    return Cs;
+  }
+  let Cs=render();
+  $('fwI').addEventListener('input',e=>{ I=+e.target.value; Cs=render(); });
+  // spin animation, speed wobbles inversely with I
+  function spin(){ ang=(ang+ (2.4*(1+ (60-I)/120)))%360; $('fwSpin').setAttribute('transform','rotate('+ang+' 110 110)'); requestAnimationFrame(spin); }
+  spin();
+})();
+</script>
+<script src="assets/site.js"></script>
+</body>
+</html>
