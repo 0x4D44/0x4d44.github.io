@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>An Isochronic Passage Chart</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap"
+    rel="stylesheet"
+  />
+  <script type="module" crossorigin src="./assets/index-BYztE7rM.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-CBDu3TxR.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="map"></canvas>
+    <div class="texture" aria-hidden="true"></div>
+
+    <aside class="cartouche">
+      <div class="cartouche-inner">
+        <h1>An Isochronic<br />Passage Chart</h1>
+        <p class="subtitle">
+          shewing the time required to travel from
+          <em id="origin-name">London</em> to all parts of the world
+        </p>
+        <p class="byline">
+          by aeroplane, railway, road &amp; sea<br />
+          compiled from the schedules of MMXXVI<br />
+          <span class="after">after Francis Galton's chart of 1881</span>
+        </p>
+        <nav class="plates" id="plates"></nav>
+        <nav class="views">
+          <button data-view="world" class="active">The World</button>
+          <span class="sep">·</span>
+          <button data-view="region">The Region</button>
+        </nav>
+        <p class="hint">scroll to magnify · drag to pan · double-click to reset</p>
+      </div>
+    </aside>
+
+    <aside class="moon" id="moon">
+      <div class="moon-disc" aria-hidden="true"></div>
+      <div class="moon-caption">The Moon<br /><span>3 d 4 h</span></div>
+    </aside>
+
+    <footer class="legend-wrap">
+      <div class="legend" id="legend"></div>
+      <p class="assumptions" id="assumptions"></p>
+    </footer>
+
+    <div class="tooltip" id="tooltip" hidden>
+      <div class="tooltip-time" id="tooltip-time"></div>
+      <div class="tooltip-place" id="tooltip-place" hidden></div>
+      <div class="tooltip-route" id="tooltip-route"></div>
+    </div>
+  </div>
+</body>
+</html>

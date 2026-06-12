@@ -12,6 +12,17 @@
 
 window.ESSAYS = [
   {
+    slug: "mdisochrone",
+    title: "An Isochronic Passage Chart",
+    tagline: "How long does it really take to get anywhere from Colinton? An interactive homage to Francis Galton's 1881 isochronic chart: pick one of seven origin cities and watch real door-to-door travel-time contours wash across an aged-paper world — walking, driving, railways, and some 700 researched flight routes including airport access, check-in, and onward connections. Zoom into the Pentlands or out to Easter Island; snap to any city for its exact route; the Moon waits in the corner (no scheduled service in 2026).",
+    url: "https://0x4d44.github.io/mdisochrone/",
+    illustration: "ill-isochrone",
+    date: "2026-06-12T23:10:00",
+    year: 2026,
+    tags: ["transport", "software"],
+    real: true,
+  },
+  {
     slug: "godel",
     title: "The Snake That Ate Its Own Tail",
     tagline: "An interactive essay on Gödel's incompleteness theorems for a young naturalist — self-reference told through snakes, self-copying microbes, a little honest calculus, and four plushie guides (Kurt the snake, Esther the bacterium, and the planets Cassini and Jove). Eight chapters and six working interactives: a Liar machine that overheats, a real prime-power Gödel-number encoder, a playable ouroboros snake game, a self-printing quine, a live logistic-growth grapher, and a step-by-step build of the sentence that ended Hilbert's dream — formal logic and calculus rendered throughout.",

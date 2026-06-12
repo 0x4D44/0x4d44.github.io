@@ -862,6 +862,24 @@
       <!-- eye -->
       <circle cx="108" cy="24" r="1.6" fill="currentColor" stroke="none"/>
     </symbol>
+    <!-- isochrone: travel-time rings around an origin star, a flight arc to a distant bullseye (mdisochrone) -->
+    <symbol id="ill-isochrone" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- origin: compass star -->
+      <path d="M62 60 l3.5 -10 3.5 10 10 3.5 -10 3.5 -3.5 10 -3.5 -10 -10 -3.5 z" stroke-width="1.3"/>
+      <!-- concentric isochrone bands, slightly irregular -->
+      <path d="M65.5 44 Q80 40 88 50 Q95 60 88 72 Q78 84 64 80 Q50 76 47 64 Q46 52 65.5 44 z"/>
+      <path d="M65.5 33 Q88 28 99 45 Q108 62 97 80 Q84 96 62 92 Q40 87 36 65 Q34 44 65.5 33 z" opacity="0.75"/>
+      <path d="M65.5 22 Q96 16 110 40 Q122 64 106 88 Q88 110 58 103 Q28 95 25 64 Q24 32 65.5 22 z" opacity="0.5"/>
+      <!-- flight arc to a far city -->
+      <path d="M78 50 Q120 18 160 48" stroke-dasharray="3 4" opacity="0.9"/>
+      <!-- aeroplane on the arc -->
+      <path d="M119 28 l10 2 M124 24 l-1 10 M121 33 l5 -1" stroke-width="1.3"/>
+      <!-- destination bullseye -->
+      <circle cx="160" cy="55" r="4"/>
+      <circle cx="160" cy="55" r="10" opacity="0.7"/>
+      <circle cx="160" cy="55" r="16" opacity="0.45"/>
+      <circle cx="160" cy="55" r="1.4" fill="currentColor" stroke="none"/>
+    </symbol>
   </defs>
 </svg>
 
