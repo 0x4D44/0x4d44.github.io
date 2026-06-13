@@ -16,34 +16,34 @@
   "cellKmY": 0,
   "modes": {
     "walk": {
-      "reached": 583367,
-      "maxMin": 1440,
-      "bytes": 448977
+      "reached": 582948,
+      "maxMin": 1445,
+      "bytes": 450966
     },
     "car": {
-      "reached": 583362,
-      "maxMin": 355,
-      "bytes": 305835
+      "reached": 582890,
+      "maxMin": 377,
+      "bytes": 350372
     },
     "taxi": {
-      "reached": 583370,
-      "maxMin": 358,
-      "bytes": 305846
+      "reached": 582897,
+      "maxMin": 378,
+      "bytes": 350424
     },
     "train": {
-      "reached": 583367,
-      "maxMin": 937,
-      "bytes": 417311
+      "reached": 582948,
+      "maxMin": 935,
+      "bytes": 414311
     },
     "bus": {
-      "reached": 583371,
-      "maxMin": 684,
-      "bytes": 393621
+      "reached": 582951,
+      "maxMin": 681,
+      "bytes": 395424
     },
     "tram": {
-      "reached": 583367,
-      "maxMin": 1440,
-      "bytes": 449158
+      "reached": 582948,
+      "maxMin": 1422,
+      "bytes": 451334
     }
   },
   "date": "20260616",
