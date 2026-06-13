@@ -14,7 +14,7 @@ window.ESSAYS = [
   {
     slug: "mdisochrone",
     title: "An Isochronic Passage Chart",
-    tagline: "How long does it really take to get anywhere from Colinton? An interactive homage to Francis Galton's 1881 isochronic chart: pick one of thirteen origin cities — from Edinburgh to Honolulu, Auckland and Santiago — and watch real door-to-door travel-time contours wash across an aged-paper world — walking, driving, railways, and over a thousand researched flight routes including airport access, check-in, and onward connections. Zoom into the Pentlands or out to Easter Island; snap to any city for its exact route; the Moon waits in the corner (no scheduled service in 2026).",
+    tagline: "How long does it really take to get anywhere from Colinton? An interactive homage to Francis Galton's 1881 isochronic chart: pick one of thirteen origin cities — from Edinburgh to Honolulu, Auckland and Santiago — and watch real door-to-door travel-time contours wash across an aged-paper world — walking, driving, railways, and over a thousand researched flight routes including airport access, check-in, and onward connections. Then travel back through time: a year-scale steps from today to the year 1000, the world slowing from the jet age through the steamship and the mail-coach to medieval sail, the legend rescaling from hours to months. Zoom into the Pentlands or out to Easter Island; snap to any city for its exact route; the Moon waits in the corner (no scheduled service in 2026).",
     url: "https://0x4d44.github.io/mdisochrone/",
     illustration: "ill-isochrone",
     date: "2026-06-12T23:10:00",

@@ -10,13 +10,16 @@
     href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&display=swap"
     rel="stylesheet"
   />
-  <script type="module" crossorigin src="./assets/index-IDU2dC22.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CBDu3TxR.css">
+  <script type="module" crossorigin src="./assets/index-Ds_b3526.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DO3YHcta.css">
 </head>
 <body>
   <div id="app">
     <canvas id="map"></canvas>
     <div class="texture" aria-hidden="true"></div>
+
+    <nav class="eras" id="eras" aria-label="travel-time era"></nav>
+    <div class="eras-caption" aria-hidden="true">the years &mdash; choose an age of travel</div>
 
     <aside class="cartouche">
       <div class="cartouche-inner">
@@ -26,8 +29,8 @@
           <em id="origin-name">London</em> to all parts of the world
         </p>
         <p class="byline">
-          by aeroplane, railway, road &amp; sea<br />
-          compiled from the schedules of MMXXVI<br />
+          <span id="byline-modes">by aeroplane, railway, road &amp; sea</span><br />
+          the world as it could be crossed in <span id="byline-year">2026</span><br />
           <span class="after">after Francis Galton's chart of 1881</span>
         </p>
         <nav class="plates" id="plates"></nav>
