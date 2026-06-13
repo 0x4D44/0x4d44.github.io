@@ -12,6 +12,17 @@
 
 window.ESSAYS = [
   {
+    slug: "edinburgh-isochrone",
+    title: "Time-Contours of Edinburgh",
+    tagline: "How far can you really get from Colinton — on foot, by bus, tram, train, car or taxi? A layer-tinted travel-time map of the Lothians, Fife and the Borders, built from the real road, rail and path network (OpenStreetMap) and real bus timetables (the Bus Open Data Service), routed offline with a grid-Dijkstra flood and a Connection-Scan transit engine. The Firth of Forth is a true barrier: cars take the Queensferry Crossing, taxis and buses the Forth Road Bridge, walkers its cycleway — each chosen from the map's own access rules. Pick a mode and the isochrones redraw in the green-to-buff-to-brown layer tints of the great Edinburgh map-house John Bartholomew & Son; hover anywhere for the door-to-door time and the nearest place. A regional companion to the world-scale Isochronic Passage Chart.",
+    url: "https://0x4d44.github.io/edinburgh-isochrone/",
+    illustration: "ill-edinburgh-iso",
+    date: "2026-06-13T19:00:00",
+    year: 2026,
+    tags: ["transport", "software"],
+    real: true,
+  },
+  {
     slug: "mdisochrone",
     title: "An Isochronic Passage Chart",
     tagline: "How long does it really take to get anywhere from Colinton? An interactive homage to Francis Galton's 1881 isochronic chart: pick one of thirteen origin cities — from Edinburgh to Honolulu, Auckland and Santiago — and watch real door-to-door travel-time contours wash across an aged-paper world — walking, driving, railways, and over a thousand researched flight routes including airport access, check-in, and onward connections. Then travel back through time: a year-scale steps from today to the year 1000, the world slowing from the jet age through the steamship and the mail-coach to medieval sail, the legend rescaling from hours to months. Zoom into the Pentlands or out to Easter Island; snap to any city for its exact route; the Moon waits in the corner (no scheduled service in 2026).",

@@ -1,0 +1,60 @@
+{
+  "W": 915,
+  "H": 774,
+  "BOX": {
+    "minLat": 55.4,
+    "maxLat": 56.45,
+    "minLon": -4.3,
+    "maxLon": -2.1
+  },
+  "origin": {
+    "lat": 55.9072949,
+    "lon": -3.2575535,
+    "name": "Colinton"
+  },
+  "cellKmX": 0,
+  "cellKmY": 0,
+  "modes": {
+    "walk": {
+      "reached": 583367,
+      "maxMin": 1440,
+      "bytes": 448977
+    },
+    "car": {
+      "reached": 583362,
+      "maxMin": 355,
+      "bytes": 305835
+    },
+    "taxi": {
+      "reached": 583370,
+      "maxMin": 358,
+      "bytes": 305846
+    },
+    "train": {
+      "reached": 583367,
+      "maxMin": 937,
+      "bytes": 417311
+    },
+    "bus": {
+      "reached": 583371,
+      "maxMin": 684,
+      "bytes": 393621
+    },
+    "tram": {
+      "reached": 583367,
+      "maxMin": 1440,
+      "bytes": 449158
+    }
+  },
+  "date": "20260616",
+  "thresholds": [
+    10,
+    20,
+    30,
+    45,
+    60,
+    90,
+    120,
+    180
+  ]
+}

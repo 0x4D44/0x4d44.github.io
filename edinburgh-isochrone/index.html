@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Time-Contours of Edinburgh — an isochrone map from Colinton</title>
+    <meta name="description" content="A layer-tinted isochrone map of the Lothians, Fife and the Borders — real multimodal travel times from Colinton, in the spirit of John Bartholomew & Son." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+    <script type="module" crossorigin src="./assets/index-CRruRXCd.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-HhFKOKJu.css">
+  </head>
+  <body>
+    <main id="app">
+      <canvas id="map"></canvas>
+
+      <header id="cartouche">
+        <div class="rule"></div>
+        <h1>Time-Contours of Edinburgh</h1>
+        <p class="sub">Travel-time from <strong>Colinton</strong> &middot; the Lothians, Fife &amp; the Borders</p>
+        <div class="rule"></div>
+      </header>
+
+      <section id="modes" aria-label="Mode of travel">
+        <button data-mode="walk"><span class="g">🚶</span>Walk</button>
+        <button data-mode="bus"><span class="g">🚌</span>Bus</button>
+        <button data-mode="tram"><span class="g">🚊</span>Tram</button>
+        <button data-mode="train"><span class="g">🚆</span>Train</button>
+        <button data-mode="car" class="on"><span class="g">🚗</span>Car</button>
+        <button data-mode="taxi"><span class="g">🚕</span>Taxi</button>
+        <button data-mode="combined"><span class="g">✦</span>Fastest</button>
+      </section>
+
+      <aside id="legend" aria-label="Legend"></aside>
+
+      <div id="tooltip" hidden></div>
+
+      <footer id="colophon">
+        <span id="assume"></span>
+        <span class="src">Roads &amp; rail geometry: © OpenStreetMap contributors (ODbL). Bus times: Bus Open Data Service (OGL). Rail &amp; tram: published ScotRail / Edinburgh Trams timetables. Layer-tints after John Bartholomew &amp; Son, Edinburgh.</span>
+      </footer>
+
+      <div id="loading">Engraving the plate…</div>
+    </main>
+  </body>
+</html>
