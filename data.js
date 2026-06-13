@@ -12,6 +12,17 @@
 
 window.ESSAYS = [
   {
+    slug: "uk-isochrone",
+    title: "An Isochronic Map of Britain",
+    tagline: "How long does it take to reach anywhere in Britain from Colinton — and to stand on top of every mountain? A national layer-tint isochrone map: door-to-door travel-time contours by road, rail and air (with the fastest mode chosen for you), plus a Munros layer giving the door-to-summit time for all 282 Munros and 222 Corbetts — the drive to the trailhead plus the Naismith walk-up, with real ascent from the SRTM elevation model. Pan and zoom from the Cairngorms to Cornwall; ferries carry you across to Belfast and Dublin; London is ~3.7 h by air, Ben Nevis 6.3 h to the summit cairn. A national companion to the Time-Contours of Edinburgh.",
+    url: "https://0x4d44.github.io/uk-isochrone/",
+    illustration: "ill-uk-iso",
+    date: "2026-06-14T12:00:00",
+    year: 2026,
+    tags: ["transport", "software"],
+    real: true,
+  },
+  {
     slug: "edinburgh-isochrone",
     title: "Time-Contours of Edinburgh",
     tagline: "How far can you really get from Colinton — on foot, by bus, tram, train, car or taxi? A layer-tinted travel-time map of the Lothians, Fife and the Borders, built from the real road, rail and path network (OpenStreetMap) and real bus timetables (the Bus Open Data Service), routed offline with a grid-Dijkstra flood and a Connection-Scan transit engine. The Firth of Forth is a true barrier: cars take the Queensferry Crossing, taxis and buses the Forth Road Bridge, walkers its cycleway — each chosen from the map's own access rules. Pick a mode and the isochrones redraw in the green-to-buff-to-brown layer tints of the great Edinburgh map-house John Bartholomew & Son; hover anywhere for the door-to-door time and the nearest place. A regional companion to the world-scale Isochronic Passage Chart.",

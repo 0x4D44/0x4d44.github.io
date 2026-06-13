@@ -1,0 +1,47 @@
+{
+  "W": 611,
+  "H": 973,
+  "BOX": {
+    "minLat": 49.9,
+    "maxLat": 58.7,
+    "minLon": -7.5,
+    "maxLon": 1.9
+  },
+  "origin": {
+    "lat": 55.9072949,
+    "lon": -3.2575535,
+    "name": "Colinton"
+  },
+  "modes": {
+    "car": {
+      "reached": 250828,
+      "maxMin": 617,
+      "bytes": 197812
+    },
+    "rail": {
+      "reached": 250829,
+      "maxMin": 660,
+      "bytes": 195832
+    },
+    "air": {
+      "reached": 250828,
+      "maxMin": 457,
+      "bytes": 192088
+    },
+    "combined": {
+      "reached": 250829,
+      "maxMin": 457,
+      "bytes": 192090
+    }
+  },
+  "thresholds": [
+    30,
+    60,
+    120,
+    180,
+    240,
+    300,
+    420,
+    600
+  ]
+}
