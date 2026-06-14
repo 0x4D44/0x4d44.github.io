@@ -94,6 +94,49 @@
     #graph { height: 112px; }
     .graph-head .cap { display: none; }
   }
+  #region {
+    font-family: inherit; font-size: 0.82rem; color: var(--ink);
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line);
+    border-radius: 8px; padding: 3px 8px; cursor: pointer; outline: none;
+  }
+  #region option { background: #0d1428; color: var(--ink); }
+
+  /* ---- hover tooltip ---- */
+  .tip {
+    position: fixed; z-index: 9; pointer-events: none; max-width: 17rem;
+    background: rgba(10, 16, 32, 0.94); border: 1px solid var(--line);
+    border-radius: 9px; padding: 7px 11px; font-size: 0.82rem; line-height: 1.3;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.6); transform: translate(-50%, calc(-100% - 12px));
+  }
+  .tip b { display: block; font-weight: 600; font-size: 0.92rem; }
+  .tip span { color: var(--dim); }
+  .tip .kind { font-style: italic; }
+
+  /* ---- about panel ---- */
+  .about {
+    position: fixed; inset: 0; z-index: 10; display: grid; place-items: center;
+    background: rgba(4, 7, 14, 0.62); backdrop-filter: blur(3px);
+  }
+  .about[hidden] { display: none; }
+  .about-card {
+    position: relative; width: min(560px, calc(100% - 40px)); max-height: 82vh; overflow: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 26px 30px; box-shadow: 0 20px 70px rgba(0,0,0,0.7);
+  }
+  .about-card h2 { font-weight: 600; font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .about-card h3 { font-weight: 600; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 1.1rem 0 0.4rem; }
+  .about-card p { color: #d2d8e8; font-size: 0.95rem; line-height: 1.5; margin-bottom: 0.4rem; }
+  .about-card ul { list-style: none; }
+  .about-card li { color: #d2d8e8; font-size: 0.92rem; line-height: 1.5; padding-left: 1rem; position: relative; }
+  .about-card li::before { content: "·"; position: absolute; left: 0.2rem; color: var(--accent); }
+  .about-card b { color: var(--ink); font-weight: 600; }
+  .about-close {
+    position: absolute; top: 12px; right: 14px; width: 30px; height: 30px;
+    font-size: 1.3rem; line-height: 1; color: var(--dim); background: transparent;
+    border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+  }
+  .about-close:hover { color: var(--ink); border-color: var(--accent); }
+
   .loading { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dim); font-style: italic; z-index: 8; }
 </style>
 </head>
@@ -114,7 +157,22 @@
 
   <div class="controls">
     <div class="graph-head">
-      <span class="cap">world population through time</span>
+      <span class="k"><label for="region" class="cap" style="margin:0">show</label>
+        <select id="region">
+          <option value="World">World total</option>
+          <option value="East Asia">East Asia</option>
+          <option value="South Asia">South Asia</option>
+          <option value="Southeast Asia">Southeast Asia</option>
+          <option value="Central Asia">Central Asia</option>
+          <option value="Middle East & North Africa">Middle East &amp; N. Africa</option>
+          <option value="Sub-Saharan Africa">Sub-Saharan Africa</option>
+          <option value="Europe">Europe</option>
+          <option value="Russia & North Asia">Russia &amp; North Asia</option>
+          <option value="North America">North America</option>
+          <option value="Latin America">Latin America</option>
+          <option value="Oceania">Oceania</option>
+        </select>
+      </span>
       <span class="keys">
         <span class="k"><span class="dot" style="color:#b07cff"></span>disease</span>
         <span class="k"><span class="dot" style="color:#ff6a5a"></span>war</span>
@@ -134,8 +192,43 @@
         <button data-s="2">×2</button>
         <button data-s="4">×4</button>
       </span>
-      <span class="spacer"></span>
       <span class="hint" id="hint">post-2100 figures are projections; post-2200 is speculative</span>
+      <span class="spacer"></span>
+      <button class="btn" id="about">ⓘ&nbsp;About the data</button>
+    </div>
+  </div>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <div class="about" id="aboutPanel" hidden>
+    <div class="about-card">
+      <button class="about-close" id="aboutClose" aria-label="close">×</button>
+      <h2>About this map</h2>
+      <p><em>The Peopling of the Earth</em> is a model, not a dataset. Global
+      population totals and the share of each macro-region are anchored to
+      published estimates; those aggregates are then spread across fixed
+      geographic settlement nodes and overlaid with the rise and fall of
+      history's great cities, so the heat-map shows roughly <em>where</em>
+      people lived, not just how many.</p>
+      <h3>Sources</h3>
+      <ul>
+        <li><b>Deep history</b> — McEvedy &amp; Jones, <em>Atlas of World
+          Population History</em>; the HYDE 3.2/3.3 database.</li>
+        <li><b>Regional shares</b> — Maddison Project; Our World in Data.</li>
+        <li><b>Great cities</b> — Chandler, <em>Four Thousand Years of Urban
+          Growth</em>, with Modelski/Morris.</li>
+        <li><b>Modern era &amp; projections</b> — UN <em>World Population
+          Prospects 2024</em> (medium variant), peaking near 10.3&nbsp;billion
+          around 2084.</li>
+      </ul>
+      <h3>Caveats</h3>
+      <p>Figures before 1&nbsp;CE carry wide uncertainty (often ±30%). Numbers
+      after 2100 are a single stabilise-then-decline scenario; after 2200 they
+      are openly speculative, not a forecast. Most mortality events were modest
+      checks on the <em>global</em> total — pick an affected region (e.g.
+      Europe for the Black Death, Latin America for the post-Columbian
+      collapse) to see them as real dips. Event markers are sized by estimated
+      death toll; hover one for detail.</p>
     </div>
   </div>
 
@@ -259,6 +352,11 @@
       if (m < 1000) return Math.round(m).toLocaleString() + " million";
       return (m / 1000).toFixed(2) + " billion";
     }
+    function fmtPopShort(m) { // compact axis label
+      if (m < 1) return (m * 1000).toFixed(0) + " k";
+      if (m < 1000) return (m % 1 ? m.toFixed(1) : m) + " M";
+      return (m / 1000 % 1 ? (m / 1000).toFixed(1) : m / 1000) + " bn";
+    }
     function largestCity(year) {
       let best = null, bestPop = 0;
       for (const c of POP.activeCities(year)) {
@@ -318,14 +416,17 @@
     let gW = 0, gH = 0;                  // CSS px
     const G_PADT = 46, G_PADB = 18;      // top label band / bottom tick band
     const KIND_COLOR = { disease: "#b07cff", war: "#ff6a5a", famine: "#ffc24d", mixed: "#ff8fb0" };
-    const Y_LOG_MIN = Math.log10(3), Y_LOG_MAX = Math.log10(11000); // millions
+    let yLogMin = Math.log10(3), yLogMax = Math.log10(11000); // millions; fitted per series
+    let series = POP.worldTotalAt;       // current series: world or a region
+    let eventHits = [];                  // {x, y, r, ev} for hover hit-testing
 
     function gx(t01) { return t01 * gW; }
     function gyPop(m) {
-      const u = (Math.log10(Math.max(1, m)) - Y_LOG_MIN) / (Y_LOG_MAX - Y_LOG_MIN);
+      const u = (Math.log10(Math.max(0.05, m)) - yLogMin) / (yLogMax - yLogMin);
       return G_PADT + (1 - Math.max(0, Math.min(1, u))) * (gH - G_PADT - G_PADB);
     }
-    function gyYear(year) { return gyPop(POP.worldTotalAt(year)); }
+    function gyYear(year) { return gyPop(series(year)); }
+    function dotR(deaths) { return Math.max(3, Math.min(9, 2.4 + Math.sqrt(deaths || 1) * 0.72)); }
 
     function buildGraph() {
       const rect = graph.getBoundingClientRect();
@@ -336,50 +437,59 @@
       const c = gbctx;
       c.setTransform(dpr, 0, 0, dpr, 0, 0);
       c.clearRect(0, 0, gW, gH);
-      // log gridlines
+      // fit the log y-range to the current series
+      const N = 480, sample = [];
+      let mn = Infinity, mx = 0;
+      for (let i = 0; i <= N; i++) {
+        const v = series(POP.yearFromT(i / N));
+        sample.push(v); if (v < mn) mn = v; if (v > mx) mx = v;
+      }
+      yLogMin = Math.log10(Math.max(0.05, mn * 0.78));
+      yLogMax = Math.log10(mx * 1.3);
+      // gridlines at the powers of ten inside the range
       c.textBaseline = "middle"; c.font = '10px "Spectral", Georgia, serif';
-      for (const [m, lab] of [[10, "10 M"], [100, "100 M"], [1000, "1 bn"], [10000, "10 bn"]]) {
+      for (let e = -1; e <= 5; e++) {
+        const m = Math.pow(10, e); if (m < mn * 0.6 || m > mx * 1.4) continue;
         const y = gyPop(m);
         c.strokeStyle = "rgba(150,170,220,0.10)"; c.lineWidth = 1;
         c.beginPath(); c.moveTo(0, y); c.lineTo(gW, y); c.stroke();
         c.fillStyle = "rgba(150,170,220,0.5)"; c.textAlign = "right";
-        c.fillText(lab, gW - 3, y - 6);
+        c.fillText(fmtPopShort(m), gW - 3, y - 6);
       }
-      // sample the curve along the (non-linear) timeline axis
-      const N = 480, pts = [];
-      for (let i = 0; i <= N; i++) { const t01 = i / N; pts.push([gx(t01), gyYear(POP.yearFromT(t01))]); }
-      // area fill
+      // area + curve
+      const pts = sample.map((v, i) => [gx(i / N), gyPop(v)]);
       const grad = c.createLinearGradient(0, G_PADT, 0, gH - G_PADB);
       grad.addColorStop(0, "rgba(255,170,90,0.32)"); grad.addColorStop(1, "rgba(120,40,110,0.04)");
       c.beginPath(); c.moveTo(pts[0][0], gH - G_PADB);
       for (const p of pts) c.lineTo(p[0], p[1]);
       c.lineTo(pts[pts.length - 1][0], gH - G_PADB); c.closePath();
       c.fillStyle = grad; c.fill();
-      // curve
       c.beginPath(); c.moveTo(pts[0][0], pts[0][1]);
       for (const p of pts) c.lineTo(p[0], p[1]);
       c.strokeStyle = "rgba(255,226,176,0.95)"; c.lineWidth = 2; c.stroke();
-      // events, greedy label tiers to limit overlap
+      // events: dot sized by death toll, greedy label tiers
+      eventHits = [];
       const tiers = [12, 25, 38], lastRight = [-1e9, -1e9, -1e9];
       c.textBaseline = "alphabetic";
-      for (const [year, label, kind] of POP.EVENTS) {
-        const x = gx(POP.tFromYear(year)), yC = gyYear(year);
-        const col = KIND_COLOR[kind] || "#fff";
+      for (const ev of POP.EVENTS) {
+        const x = gx(POP.tFromYear(ev.year)), yC = gyYear(ev.year), r = dotR(ev.deaths);
+        const col = KIND_COLOR[ev.kind] || "#fff";
         c.font = '10px "Spectral", Georgia, serif';
-        const tw = c.measureText(label).width;
+        const tw = c.measureText(ev.label).width;
         let tier = tiers.length - 1;
         for (let k = 0; k < tiers.length; k++) { if (lastRight[k] < x - 6) { tier = k; break; } }
         const ly = tiers[tier]; lastRight[tier] = x + tw + 10;
-        // connector down to the curve
         c.strokeStyle = col; c.globalAlpha = 0.5; c.lineWidth = 1; c.setLineDash([2, 3]);
-        c.beginPath(); c.moveTo(x, ly + 3); c.lineTo(x, yC); c.stroke();
+        c.beginPath(); c.moveTo(x, ly + 3); c.lineTo(x, yC - r); c.stroke();
         c.setLineDash([]); c.globalAlpha = 1;
-        // dot on the curve
-        c.fillStyle = col; c.beginPath(); c.arc(x, yC, 3, 0, Math.PI * 2); c.fill();
-        // label, flipped left near the right edge
-        let lx = x + 4, align = "left";
-        if (lx + tw > gW - 2) { lx = x - 4; align = "right"; }
-        c.textAlign = align; c.fillStyle = col; c.fillText(label, lx, ly);
+        // hollow ring sized by deaths, filled core
+        c.globalAlpha = 0.85; c.fillStyle = col;
+        c.beginPath(); c.arc(x, yC, r, 0, Math.PI * 2); c.fill(); c.globalAlpha = 1;
+        c.fillStyle = "#0c1222"; c.beginPath(); c.arc(x, yC, Math.max(1.2, r - 2.4), 0, Math.PI * 2); c.fill();
+        let lx = x + 5, align = "left";
+        if (lx + tw > gW - 2) { lx = x - 5; align = "right"; }
+        c.textAlign = align; c.fillStyle = col; c.fillText(ev.label, lx, ly);
+        eventHits.push({ x, y: yC, r, ev, col });
       }
     }
 
@@ -413,6 +523,7 @@
       updateHUD(year);
       drawCityMarker(currentCity);
       drawGraphOverlay();
+      if (mapHover) refreshMapTip();
     }
 
     let holdTimer = null; // pause-at-end before looping
@@ -471,10 +582,81 @@
     graph.addEventListener("pointerup", () => { dragging = false; });
     graph.addEventListener("pointercancel", () => { dragging = false; });
     window.addEventListener("keydown", (e) => {
-      if (e.code === "Space") { e.preventDefault(); setPlaying(!playing); }
+      if (e.code === "Escape") { setAbout(false); hideTip(); }
+      else if (e.target && e.target.tagName === "SELECT") return;
+      else if (e.code === "Space") { e.preventDefault(); setPlaying(!playing); }
       else if (e.code === "ArrowRight") { setPlaying(false); t = Math.min(1, t + 0.01); draw(); }
       else if (e.code === "ArrowLeft") { setPlaying(false); t = Math.max(0, t - 0.01); draw(); }
     });
+
+    // ---- shared hover tooltip ----
+    const tipEl = document.getElementById("tip");
+    function showTip(html, cx, cy) {
+      tipEl.innerHTML = html;
+      tipEl.style.left = cx + "px"; tipEl.style.top = cy + "px"; tipEl.hidden = false;
+    }
+    function hideTip() { tipEl.hidden = true; }
+
+    // ---- region selector: switch the graphed series ----
+    document.getElementById("region").addEventListener("change", (e) => {
+      const r = e.target.value;
+      series = r === "World" ? POP.worldTotalAt : (year) => POP.regionPopAt(r, year);
+      buildGraph(); draw();
+    });
+
+    // ---- graph: hover an event marker for its toll ----
+    function graphEventAt(lx, ly) {
+      for (const h of eventHits) {
+        const dx = lx - h.x, dy = ly - h.y;
+        if (dx * dx + dy * dy <= (h.r + 5) * (h.r + 5)) return h;
+      }
+      return null;
+    }
+    graph.addEventListener("pointermove", (e) => {
+      if (dragging) { hideTip(); return; }
+      const rect = graph.getBoundingClientRect();
+      const h = graphEventAt(e.clientX - rect.left, e.clientY - rect.top);
+      if (h) {
+        graph.style.cursor = "help";
+        showTip(`<b>${h.ev.label}</b><span class="kind">${h.ev.kind} · ${h.ev.year} CE</span><span>${h.ev.toll}</span>`,
+          rect.left + h.x, rect.top + h.y - h.r);
+      } else { graph.style.cursor = "ew-resize"; hideTip(); }
+    });
+    graph.addEventListener("pointerleave", hideTip);
+
+    // ---- map: hover to name the place under the cursor ----
+    let mapHover = null;
+    canvas.addEventListener("pointermove", (e) => { mapHover = { cx: e.clientX, cy: e.clientY }; refreshMapTip(); });
+    canvas.addEventListener("pointerleave", () => { mapHover = null; hideTip(); });
+    function refreshMapTip() {
+      const info = mapHover && mapTipContent(mapHover.cx, mapHover.cy);
+      if (info) showTip(info, mapHover.cx, mapHover.cy); else hideTip();
+    }
+    function mapTipContent(cx, cy) {
+      if (cx < mapX || cx > mapX + mapW || cy < mapY || cy > mapY + mapH) return null;
+      const lon = (cx - mapX) / mapW * 360 - 180, lat = 90 - (cy - mapY) / mapH * 180;
+      const year = POP.yearFromT(t), coslat = Math.max(0.25, Math.cos(lat * Math.PI / 180));
+      let best = null, bestD = Infinity;
+      for (const c of POP.activeCities(year)) {
+        const dlon = (c.lon - lon) * coslat, dlat = c.lat - lat;
+        const d = Math.sqrt(dlon * dlon + dlat * dlat) / 2.4; // cities easier to hit
+        if (d < bestD) { bestD = d; best = { name: c.name, pop: c.pop, sub: "great city" }; }
+      }
+      for (const n of POP.activeNodes(year)) {
+        const dlon = (n.lon - lon) * coslat, dlat = n.lat - lat;
+        const d = Math.sqrt(dlon * dlon + dlat * dlat);
+        if (d < bestD) { bestD = d; best = { name: n.name, pop: n.pop, sub: n.region }; }
+      }
+      if (!best || bestD > 15) return null;
+      return `<b>${best.name.replace(/ \(.*\)$/, "")}</b><span>${fmtPop(best.pop)} &middot; ${best.sub}</span>`;
+    }
+
+    // ---- about panel ----
+    const aboutPanel = document.getElementById("aboutPanel");
+    function setAbout(open) { aboutPanel.hidden = !open; if (open) setPlaying(false); }
+    document.getElementById("about").addEventListener("click", () => setAbout(true));
+    document.getElementById("aboutClose").addEventListener("click", () => setAbout(false));
+    aboutPanel.addEventListener("click", (e) => { if (e.target === aboutPanel) setAbout(false); });
 
     // legend bar fill from ramp
     (function () {
@@ -502,20 +684,33 @@
     })();
 
     // ---- bootstrap ----
-    // Optional deep-link: #year=1500 or #t=0.8 sets the opening playhead.
+    // Optional deep-link: #year=1500 / #t=0.8 set the playhead; #region=Europe
+    // selects a series; #about opens the data panel.
     let autoplay = true;
     (function () {
-      const m = /(?:^|[#&])(year|t)=(-?\d+(?:\.\d+)?)/.exec(location.hash);
-      if (!m) return;
-      autoplay = false;
-      if (m[1] === "t") t = Math.max(0, Math.min(1, parseFloat(m[2])));
-      else t = POP.tFromYear(parseFloat(m[2]));
+      const hash = location.hash;
+      const m = /(?:^|[#&])(year|t)=(-?\d+(?:\.\d+)?)/.exec(hash);
+      if (m) {
+        autoplay = false;
+        if (m[1] === "t") t = Math.max(0, Math.min(1, parseFloat(m[2])));
+        else t = POP.tFromYear(parseFloat(m[2]));
+      }
+      const rm = /(?:^|[#&])region=([^&]+)/.exec(hash);
+      if (rm) {
+        const r = decodeURIComponent(rm[1]);
+        const sel = document.getElementById("region");
+        if ([...sel.options].some((o) => o.value === r)) {
+          sel.value = r;
+          series = r === "World" ? POP.worldTotalAt : (year) => POP.regionPopAt(r, year);
+        }
+      }
     })();
     window.addEventListener("resize", () => { layout(); draw(); });
     layout();
     updateHUD(POP.yearFromT(t));
     draw();
     requestAnimationFrame(loop);
+    if (/(?:^|[#&])about(?:&|$)/.test(location.hash)) { setAbout(true); autoplay = false; }
 
     // load coastlines (non-blocking; the map works without them)
     const loadEl = document.getElementById("loading");

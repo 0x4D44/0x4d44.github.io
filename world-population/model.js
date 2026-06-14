@@ -199,18 +199,18 @@
   ];
 
   // ---- Mortality events: the great checks on population -------------------
-  // [year, label, kind]; kind in disease | war | famine | mixed. These are the
-  // moments that flattened or reversed the curve (globally or regionally).
+  // {year, label, kind, deaths (millions, central estimate, for marker size),
+  //  toll (human-readable), region}. kind in disease | war | famine | mixed.
   const EVENTS = [
-    [165, "Antonine Plague", "disease"],
-    [541, "Plague of Justinian", "disease"],
-    [755, "An Lushan Rebellion", "war"],
-    [1347, "The Black Death", "disease"],
-    [1520, "American depopulation", "disease"],
-    [1618, "Thirty Years' War", "war"],
-    [1918, "WWI & the 1918 flu", "mixed"],
-    [1939, "World War II", "war"],
-    [1959, "Great Chinese Famine", "famine"],
+    { year: 165, label: "Antonine Plague", kind: "disease", deaths: 8, toll: "~5–10 million dead", region: "Europe" },
+    { year: 541, label: "Plague of Justinian", kind: "disease", deaths: 25, toll: "~15–50 million dead", region: "Middle East & North Africa" },
+    { year: 755, label: "An Lushan Rebellion", kind: "war", deaths: 13, toll: "tens of millions; the census fell by ~36 million", region: "East Asia" },
+    { year: 1347, label: "The Black Death", kind: "disease", deaths: 50, toll: "~50 million dead — up to a third of Europe", region: "Europe" },
+    { year: 1520, label: "American depopulation", kind: "disease", deaths: 55, toll: "50–90% of the Americas lost over a century", region: "Latin America" },
+    { year: 1618, label: "Thirty Years' War", kind: "war", deaths: 7, toll: "~4–8 million dead", region: "Europe" },
+    { year: 1918, label: "WWI & the 1918 flu", kind: "mixed", deaths: 45, toll: "~17M in the war + 25–50M from the flu", region: "Europe" },
+    { year: 1939, label: "World War II", kind: "war", deaths: 75, toll: "~70–85 million dead", region: "Europe" },
+    { year: 1959, label: "Great Chinese Famine", kind: "famine", deaths: 30, toll: "~15–45 million dead", region: "East Asia" },
   ];
 
   // ---- Timeline: normalised playhead t (0..1) -> year ---------------------
@@ -267,6 +267,11 @@
     const idx = REGIONS.indexOf(region);
     const pairs = SHARE_YEARS.map((y) => [y, SHARES[String(y)][idx]]);
     return interpPairs(pairs, year, false);
+  }
+
+  // Population (millions) of a macro-region in a given year.
+  function regionPopAt(region, year) {
+    return worldTotalAt(year) * regionShareAt(region, year) / 100;
   }
 
   function eraLabel(year) {
@@ -389,7 +394,7 @@
   return {
     REGIONS, NODES, CITIES, ERAS, EVENTS, TIMELINE, WORLD_TOTALS, PROJECTIONS, PEAK,
     SHARE_YEARS, SHARES,
-    worldTotalAt, yearFromT, tFromYear, regionShareAt, eraLabel,
+    worldTotalAt, yearFromT, tFromYear, regionShareAt, regionPopAt, eraLabel,
     activeNodes, activeCities, computeDensity,
     buildRamp, fieldToColorIndex,
     REGION_SIGMA_DEG, CITY_SIGMA_DEG, DREF,
