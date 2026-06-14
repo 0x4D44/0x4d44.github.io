@@ -33,7 +33,7 @@
     "train": {
       "reached": 582948,
       "maxMin": 935,
-      "bytes": 414311
+      "bytes": 414810
     },
     "bus": {
       "reached": 582951,
@@ -42,8 +42,8 @@
     },
     "tram": {
       "reached": 582948,
-      "maxMin": 1422,
-      "bytes": 451334
+      "maxMin": 1465,
+      "bytes": 449148
     }
   },
   "date": "20260616",
