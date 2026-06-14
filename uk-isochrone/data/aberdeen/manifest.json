@@ -20,10 +20,12 @@
   ],
   "fields": [
     "car",
-    "walk"
+    "walk",
+    "bus"
   ],
   "modes": [
     "combined",
+    "bus",
     "walk"
   ],
   "defaultMode": "combined",
