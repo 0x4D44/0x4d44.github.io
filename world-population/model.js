@@ -198,6 +198,21 @@
     [2300, "The far future (speculative)"],
   ];
 
+  // ---- Mortality events: the great checks on population -------------------
+  // [year, label, kind]; kind in disease | war | famine | mixed. These are the
+  // moments that flattened or reversed the curve (globally or regionally).
+  const EVENTS = [
+    [165, "Antonine Plague", "disease"],
+    [541, "Plague of Justinian", "disease"],
+    [755, "An Lushan Rebellion", "war"],
+    [1347, "The Black Death", "disease"],
+    [1520, "American depopulation", "disease"],
+    [1618, "Thirty Years' War", "war"],
+    [1918, "WWI & the 1918 flu", "mixed"],
+    [1939, "World War II", "war"],
+    [1959, "Great Chinese Famine", "famine"],
+  ];
+
   // ---- Timeline: normalised playhead t (0..1) -> year ---------------------
   // Non-linear so eventful recent eras get screen time and the deep past and
   // far future are compressed.
@@ -372,7 +387,7 @@
   }
 
   return {
-    REGIONS, NODES, CITIES, ERAS, TIMELINE, WORLD_TOTALS, PROJECTIONS, PEAK,
+    REGIONS, NODES, CITIES, ERAS, EVENTS, TIMELINE, WORLD_TOTALS, PROJECTIONS, PEAK,
     SHARE_YEARS, SHARES,
     worldTotalAt, yearFromT, tFromYear, regionShareAt, eraLabel,
     activeNodes, activeCities, computeDensity,

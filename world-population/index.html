@@ -49,39 +49,24 @@
   .readout .pop b { font-weight: 600; }
   .readout .city { font-size: 0.86rem; color: var(--dim); margin-top: 0.2rem; min-height: 1.1em; }
 
-  /* ---- legend ---- */
-  .legend { position: fixed; left: 26px; bottom: 110px; z-index: 5; pointer-events: none; }
-  .legend .bar { width: 200px; height: 9px; border-radius: 5px; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); }
-  .legend .labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--dim); margin-top: 4px; letter-spacing: 0.03em; }
-  .legend .cap { font-size: 0.72rem; color: var(--dim); margin-bottom: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
-
   /* ---- control bar ---- */
   .controls {
-    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
-    width: min(900px, calc(100% - 40px)); z-index: 6;
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    width: min(1100px, calc(100% - 32px)); z-index: 6;
     background: var(--panel); backdrop-filter: blur(8px);
     border: 1px solid var(--line); border-radius: 14px;
-    padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 10px;
+    padding: 10px 16px 12px; display: flex; flex-direction: column; gap: 7px;
     box-shadow: 0 10px 40px rgba(0,0,0,0.5);
   }
-  .scrub-wrap { position: relative; }
-  input[type=range].scrub {
-    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
-    background: linear-gradient(90deg, #3a2a6a, #7a2f6a, #c8503c, #f5b942);
-    border-radius: 6px; outline: none; cursor: pointer;
-  }
-  input[type=range].scrub::-webkit-slider-thumb {
-    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
-    background: #fff; box-shadow: 0 0 0 3px rgba(255,214,106,0.55), 0 2px 6px rgba(0,0,0,0.6); cursor: grab;
-  }
-  input[type=range].scrub::-moz-range-thumb {
-    width: 16px; height: 16px; border: none; border-radius: 50%;
-    background: #fff; box-shadow: 0 0 0 3px rgba(255,214,106,0.55); cursor: grab;
-  }
-  .ticks { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.66rem; color: var(--dim); }
-  .ticks span { transform: translateX(-50%); white-space: nowrap; }
-  .ticks span:first-child { transform: none; }
-  .ticks span:last-child { transform: translateX(-100%); }
+  .graph-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .graph-head .cap { font-size: 0.72rem; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase; }
+  .keys { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 0.72rem; color: var(--dim); }
+  .keys .k { display: inline-flex; align-items: center; gap: 5px; }
+  .keys .dot { width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 6px currentColor; }
+  .keys .densbar { width: 84px; height: 8px; border-radius: 5px; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); }
+  #graph { width: 100%; height: 150px; display: block; cursor: ew-resize; touch-action: none; }
+  .ticks { position: relative; height: 1em; font-size: 0.66rem; color: var(--dim); margin-top: 1px; }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
   .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
   .btn {
     font-family: inherit; font-size: 0.9rem; color: var(--ink);
@@ -104,9 +89,10 @@
   @media (max-width: 640px) {
     .title { top: 14px; left: 16px; }
     .readout { top: 14px; right: 16px; }
-    .legend { display: none; }
-    .controls { bottom: 12px; padding: 10px 12px; }
+    .controls { bottom: 10px; padding: 9px 11px; }
     .row { gap: 8px; }
+    #graph { height: 112px; }
+    .graph-head .cap { display: none; }
   }
   .loading { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dim); font-style: italic; z-index: 8; }
 </style>
@@ -126,17 +112,18 @@
     <div class="city" id="city">&nbsp;</div>
   </div>
 
-  <div class="legend">
-    <div class="cap">population density</div>
-    <div class="bar" id="legendBar"></div>
-    <div class="labels"><span>sparse</span><span>dense</span><span>megacity</span></div>
-  </div>
-
   <div class="controls">
-    <div class="scrub-wrap">
-      <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0" />
-      <div class="ticks" id="ticks"></div>
+    <div class="graph-head">
+      <span class="cap">world population through time</span>
+      <span class="keys">
+        <span class="k"><span class="dot" style="color:#b07cff"></span>disease</span>
+        <span class="k"><span class="dot" style="color:#ff6a5a"></span>war</span>
+        <span class="k"><span class="dot" style="color:#ffc24d"></span>famine</span>
+        <span class="k" style="margin-left:6px"><span class="densbar" id="legendBar"></span>map density</span>
+      </span>
     </div>
+    <canvas id="graph"></canvas>
+    <div class="ticks" id="ticks"></div>
     <div class="row">
       <button class="btn play" id="play">▶ Play</button>
       <button class="btn" id="reset">⟲ Reset</button>
@@ -202,6 +189,7 @@
       if (mapH > h) { mapH = h; mapW = h * 2; }
       mapX = (w - mapW) / 2; mapY = (h - mapH) / 2;
       drawBase();
+      buildGraph();
     }
 
     function drawBase() {
@@ -282,7 +270,6 @@
     const elEra = document.getElementById("era");
     const elPop = document.getElementById("pop");
     const elCity = document.getElementById("city");
-    const scrub = document.getElementById("scrub");
     let currentCity = null; // largest city this frame, marked on the map
 
     function updateHUD(year) {
@@ -323,6 +310,93 @@
       ctx.restore();
     }
 
+    // ---- population graph (bottom panel) ----
+    const graph = document.getElementById("graph");
+    const gctx = graph.getContext("2d");
+    const gbase = document.createElement("canvas");
+    const gbctx = gbase.getContext("2d");
+    let gW = 0, gH = 0;                  // CSS px
+    const G_PADT = 46, G_PADB = 18;      // top label band / bottom tick band
+    const KIND_COLOR = { disease: "#b07cff", war: "#ff6a5a", famine: "#ffc24d", mixed: "#ff8fb0" };
+    const Y_LOG_MIN = Math.log10(3), Y_LOG_MAX = Math.log10(11000); // millions
+
+    function gx(t01) { return t01 * gW; }
+    function gyPop(m) {
+      const u = (Math.log10(Math.max(1, m)) - Y_LOG_MIN) / (Y_LOG_MAX - Y_LOG_MIN);
+      return G_PADT + (1 - Math.max(0, Math.min(1, u))) * (gH - G_PADT - G_PADB);
+    }
+    function gyYear(year) { return gyPop(POP.worldTotalAt(year)); }
+
+    function buildGraph() {
+      const rect = graph.getBoundingClientRect();
+      gW = rect.width; gH = rect.height;
+      if (gW < 2) return;
+      graph.width = Math.round(gW * dpr); graph.height = Math.round(gH * dpr);
+      gbase.width = graph.width; gbase.height = graph.height;
+      const c = gbctx;
+      c.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.clearRect(0, 0, gW, gH);
+      // log gridlines
+      c.textBaseline = "middle"; c.font = '10px "Spectral", Georgia, serif';
+      for (const [m, lab] of [[10, "10 M"], [100, "100 M"], [1000, "1 bn"], [10000, "10 bn"]]) {
+        const y = gyPop(m);
+        c.strokeStyle = "rgba(150,170,220,0.10)"; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(0, y); c.lineTo(gW, y); c.stroke();
+        c.fillStyle = "rgba(150,170,220,0.5)"; c.textAlign = "right";
+        c.fillText(lab, gW - 3, y - 6);
+      }
+      // sample the curve along the (non-linear) timeline axis
+      const N = 480, pts = [];
+      for (let i = 0; i <= N; i++) { const t01 = i / N; pts.push([gx(t01), gyYear(POP.yearFromT(t01))]); }
+      // area fill
+      const grad = c.createLinearGradient(0, G_PADT, 0, gH - G_PADB);
+      grad.addColorStop(0, "rgba(255,170,90,0.32)"); grad.addColorStop(1, "rgba(120,40,110,0.04)");
+      c.beginPath(); c.moveTo(pts[0][0], gH - G_PADB);
+      for (const p of pts) c.lineTo(p[0], p[1]);
+      c.lineTo(pts[pts.length - 1][0], gH - G_PADB); c.closePath();
+      c.fillStyle = grad; c.fill();
+      // curve
+      c.beginPath(); c.moveTo(pts[0][0], pts[0][1]);
+      for (const p of pts) c.lineTo(p[0], p[1]);
+      c.strokeStyle = "rgba(255,226,176,0.95)"; c.lineWidth = 2; c.stroke();
+      // events, greedy label tiers to limit overlap
+      const tiers = [12, 25, 38], lastRight = [-1e9, -1e9, -1e9];
+      c.textBaseline = "alphabetic";
+      for (const [year, label, kind] of POP.EVENTS) {
+        const x = gx(POP.tFromYear(year)), yC = gyYear(year);
+        const col = KIND_COLOR[kind] || "#fff";
+        c.font = '10px "Spectral", Georgia, serif';
+        const tw = c.measureText(label).width;
+        let tier = tiers.length - 1;
+        for (let k = 0; k < tiers.length; k++) { if (lastRight[k] < x - 6) { tier = k; break; } }
+        const ly = tiers[tier]; lastRight[tier] = x + tw + 10;
+        // connector down to the curve
+        c.strokeStyle = col; c.globalAlpha = 0.5; c.lineWidth = 1; c.setLineDash([2, 3]);
+        c.beginPath(); c.moveTo(x, ly + 3); c.lineTo(x, yC); c.stroke();
+        c.setLineDash([]); c.globalAlpha = 1;
+        // dot on the curve
+        c.fillStyle = col; c.beginPath(); c.arc(x, yC, 3, 0, Math.PI * 2); c.fill();
+        // label, flipped left near the right edge
+        let lx = x + 4, align = "left";
+        if (lx + tw > gW - 2) { lx = x - 4; align = "right"; }
+        c.textAlign = align; c.fillStyle = col; c.fillText(label, lx, ly);
+      }
+    }
+
+    function drawGraphOverlay() {
+      if (gW < 2) return;
+      gctx.setTransform(1, 0, 0, 1, 0, 0);
+      gctx.clearRect(0, 0, graph.width, graph.height);
+      gctx.drawImage(gbase, 0, 0);
+      gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const x = gx(t), yC = gyYear(POP.yearFromT(t));
+      gctx.strokeStyle = "rgba(255,255,255,0.8)"; gctx.lineWidth = 1.4;
+      gctx.beginPath(); gctx.moveTo(x, G_PADT - 8); gctx.lineTo(x, gH - G_PADB); gctx.stroke();
+      gctx.fillStyle = "#fff"; gctx.beginPath(); gctx.arc(x, yC, 4, 0, Math.PI * 2); gctx.fill();
+      gctx.strokeStyle = "rgba(255,214,106,0.95)"; gctx.lineWidth = 2;
+      gctx.beginPath(); gctx.arc(x, yC, 4, 0, Math.PI * 2); gctx.stroke();
+    }
+
     // ---- main frame ----
     function draw() {
       const year = POP.yearFromT(t);
@@ -338,7 +412,7 @@
       ctx.globalCompositeOperation = "source-over";
       updateHUD(year);
       drawCityMarker(currentCity);
-      scrub.value = Math.round(t * 1000);
+      drawGraphOverlay();
     }
 
     let holdTimer = null; // pause-at-end before looping
@@ -380,13 +454,26 @@
       speed = parseFloat(b.dataset.s);
       for (const el of e.currentTarget.children) el.classList.toggle("active", el === b);
     });
-    scrub.addEventListener("input", () => {
-      t = scrub.value / 1000; draw();
+    // graph doubles as the scrubber: click/drag to seek
+    function seekFromClientX(clientX) {
+      const rect = graph.getBoundingClientRect();
+      t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      draw();
       if (t >= 1) playBtn.innerHTML = "↻ Replay"; else if (!playing) playBtn.innerHTML = "▶ Play";
+    }
+    let dragging = false;
+    graph.addEventListener("pointerdown", (e) => {
+      dragging = true; graph.setPointerCapture(e.pointerId);
+      setPlaying(false); seekFromClientX(e.clientX);
     });
-    scrub.addEventListener("pointerdown", () => setPlaying(false));
+    graph.addEventListener("pointermove", (e) => { if (dragging) seekFromClientX(e.clientX); });
+    graph.addEventListener("pointerup", () => { dragging = false; });
+    graph.addEventListener("pointercancel", () => { dragging = false; });
     window.addEventListener("keydown", (e) => {
       if (e.code === "Space") { e.preventDefault(); setPlaying(!playing); }
+      else if (e.code === "ArrowRight") { setPlaying(false); t = Math.min(1, t + 0.01); draw(); }
+      else if (e.code === "ArrowLeft") { setPlaying(false); t = Math.max(0, t - 0.01); draw(); }
     });
 
     // legend bar fill from ramp
@@ -405,11 +492,13 @@
       const marks = [[-10000, "10000 BCE"], [1, "1 CE"], [1500, "1500"], [1900, "1900"], [2025, "today"], [3025, "3025"]];
       for (const [y, lab] of marks) {
         const s = document.createElement("span");
-        s.textContent = lab; s.style.position = "absolute";
-        s.style.left = (POP.tFromYear(y) * 100).toFixed(1) + "%";
+        s.textContent = lab;
+        const pct = POP.tFromYear(y) * 100;
+        s.style.left = pct.toFixed(1) + "%";
+        if (pct < 4) s.style.transform = "translateX(0)";
+        else if (pct > 96) s.style.transform = "translateX(-100%)";
         wrap.appendChild(s);
       }
-      wrap.style.position = "relative"; wrap.style.height = "1em";
     })();
 
     // ---- bootstrap ----
