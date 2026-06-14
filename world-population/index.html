@@ -276,21 +276,51 @@
       for (const c of POP.activeCities(year)) {
         if (c.pop > bestPop) { bestPop = c.pop; best = c; }
       }
-      return best ? { name: best.name, pop: bestPop } : null;
+      return best ? { name: best.name.replace(/ \(.*\)$/, ""), pop: bestPop, lat: best.lat, lon: best.lon } : null;
     }
     const elYear = document.getElementById("year");
     const elEra = document.getElementById("era");
     const elPop = document.getElementById("pop");
     const elCity = document.getElementById("city");
     const scrub = document.getElementById("scrub");
+    let currentCity = null; // largest city this frame, marked on the map
 
     function updateHUD(year) {
       elYear.innerHTML = fmtYear(year);
       elEra.textContent = POP.eraLabel(year);
       elPop.textContent = fmtPop(POP.worldTotalAt(year));
-      const lc = largestCity(year);
-      const name = lc ? lc.name.replace(/ \(.*\)$/, "") : null;
-      elCity.textContent = lc ? `largest city: ${name} (~${fmtPop(lc.pop)})` : "";
+      currentCity = largestCity(year);
+      elCity.textContent = currentCity ? `largest city: ${currentCity.name} (~${fmtPop(currentCity.pop)})` : "";
+    }
+
+    // Mark the world's largest city of the moment, with a label.
+    function drawCityMarker(lc) {
+      if (!lc) return;
+      const [x, y] = project(lc.lon, lc.lat);
+      ctx.save();
+      // white ring + dot
+      ctx.strokeStyle = "rgba(255,255,255,0.92)"; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(x, y, 7, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath(); ctx.arc(x, y, 2.3, 0, Math.PI * 2); ctx.fill();
+      // amber crosshair ticks
+      ctx.strokeStyle = "rgba(255,214,106,0.95)"; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(x - 13, y); ctx.lineTo(x - 8, y);
+      ctx.moveTo(x + 8, y); ctx.lineTo(x + 13, y);
+      ctx.moveTo(x, y - 13); ctx.lineTo(x, y - 8);
+      ctx.moveTo(x, y + 8); ctx.lineTo(x, y + 13);
+      ctx.stroke();
+      // label, flipped to the left near the right edge
+      ctx.font = '600 14px "Spectral", Georgia, serif';
+      const tw = ctx.measureText(lc.name).width;
+      let lx = x + 13, align = "left";
+      if (lx + tw > Math.min(mapX + mapW, window.innerWidth) - 8) { lx = x - 13; align = "right"; }
+      ctx.textAlign = align; ctx.textBaseline = "middle";
+      ctx.shadowColor = "rgba(0,0,0,0.95)"; ctx.shadowBlur = 7;
+      ctx.fillStyle = "#ffe9a8";
+      ctx.fillText(lc.name, lx, y);
+      ctx.restore();
     }
 
     // ---- main frame ----
@@ -307,16 +337,26 @@
       ctx.drawImage(heatCanvas, mapX, mapY, mapW, mapH);
       ctx.globalCompositeOperation = "source-over";
       updateHUD(year);
+      drawCityMarker(currentCity);
       scrub.value = Math.round(t * 1000);
     }
 
+    let holdTimer = null; // pause-at-end before looping
+    function scheduleLoopRestart() {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        // only auto-restart if still parked at the end and not already playing
+        if (!playing && t >= 1) setPlaying(true); // setPlaying rewinds t to 0
+      }, 2000);
+    }
     function loop(ts) {
       if (!lastTs) lastTs = ts;
       const dt = Math.min(0.1, (ts - lastTs) / 1000);
       lastTs = ts;
       if (playing) {
         t += (dt * speed) / DURATION;
-        if (t >= 1) { t = 1; setPlaying(false); }
+        if (t >= 1) { t = 1; setPlaying(false); scheduleLoopRestart(); }
         draw();
       }
       requestAnimationFrame(loop);
@@ -332,6 +372,7 @@
     }
     playBtn.addEventListener("click", () => setPlaying(!playing));
     document.getElementById("reset").addEventListener("click", () => {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
       t = 0; setPlaying(false); draw();
     });
     document.getElementById("speed").addEventListener("click", (e) => {
