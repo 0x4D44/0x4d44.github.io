@@ -1,0 +1,33 @@
+{
+  "name": "Dundee",
+  "W": 113,
+  "H": 92,
+  "BOX": {
+    "minLat": 56.41,
+    "maxLat": 56.51,
+    "minLon": -3.07,
+    "maxLon": -2.85
+  },
+  "thresholds": [
+    65,
+    70,
+    75,
+    80,
+    90,
+    105,
+    120,
+    150
+  ],
+  "fields": [
+    "car",
+    "walk",
+    "bus"
+  ],
+  "modes": [
+    "combined",
+    "bus",
+    "walk"
+  ],
+  "defaultMode": "combined",
+  "note": "Local detail around Dundee (≈1¼ h from Colinton): the Firth of Tay to the south; walk, local bus or road."
+}

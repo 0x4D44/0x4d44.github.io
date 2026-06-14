@@ -1,0 +1,33 @@
+{
+  "name": "Perth",
+  "W": 82,
+  "H": 97,
+  "BOX": {
+    "minLat": 56.345,
+    "maxLat": 56.45,
+    "minLon": -3.52,
+    "maxLon": -3.36
+  },
+  "thresholds": [
+    45,
+    50,
+    55,
+    60,
+    70,
+    85,
+    100,
+    130
+  ],
+  "fields": [
+    "car",
+    "walk",
+    "bus"
+  ],
+  "modes": [
+    "combined",
+    "bus",
+    "walk"
+  ],
+  "defaultMode": "combined",
+  "note": "Local detail around Perth (≈1¼ h from Colinton): the Tay splits the town; walk, local bus or road."
+}

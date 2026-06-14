@@ -1,0 +1,33 @@
+{
+  "name": "Oxford",
+  "W": 121,
+  "H": 111,
+  "BOX": {
+    "minLat": 51.69,
+    "maxLat": 51.81,
+    "minLon": -1.36,
+    "maxLon": -1.15
+  },
+  "thresholds": [
+    245,
+    250,
+    255,
+    260,
+    270,
+    285,
+    300,
+    330
+  ],
+  "fields": [
+    "car",
+    "walk",
+    "bus"
+  ],
+  "modes": [
+    "combined",
+    "bus",
+    "walk"
+  ],
+  "defaultMode": "combined",
+  "note": "Local detail: arrive at Oxford by rail (≈5½ h), then walk, bus or the ring-road network — the Thames & Cherwell are real barriers."
+}

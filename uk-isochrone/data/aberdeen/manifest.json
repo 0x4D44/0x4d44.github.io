@@ -1,0 +1,31 @@
+{
+  "name": "Aberdeen",
+  "W": 101,
+  "H": 111,
+  "BOX": {
+    "minLat": 57.09,
+    "maxLat": 57.21,
+    "minLon": -2.22,
+    "maxLon": -2.02
+  },
+  "thresholds": [
+    145,
+    150,
+    155,
+    160,
+    170,
+    185,
+    200,
+    230
+  ],
+  "fields": [
+    "car",
+    "walk"
+  ],
+  "modes": [
+    "combined",
+    "walk"
+  ],
+  "defaultMode": "combined",
+  "note": "Local detail around Aberdeen (≈2½ h from Colinton): the North Sea to the east, the Dee & Don rivers; walk, First Aberdeen bus or road."
+}
