@@ -2359,11 +2359,12 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.m
     const tex=new THREE.CanvasTexture(c); return new THREE.Mesh(new THREE.PlaneGeometry(w,w*0.5), new THREE.MeshBasicMaterial({map:tex, transparent:true})); }
 
   // ---------- State / Audio ----------
-  const state={ s:stations[0].stopS, speed:0, throttle:0, brake:0, eBrake:false,
+  const state={ s:stations[0].stopS, speed:0, throttle:0, brake:1.0, eBrake:false,
     simTime:timetableBase, score:0, derailed:false, spad:false, doorsOpen:true, dwellUntil:null,
     awsState:'CLEAR', awsDeadline:0, finished:false, bufferImpact:false, direction:1 };
   const frontOffset=2.0, frontS=()=>state.s+frontOffset;
   let prevBrake=state.brake;
+  const heldKeys=new Set();   // movement keys currently held, for auto-repeat in the sim loop
 
   const audioCtx=new (window.AudioContext||window.webkitAudioContext)(); let audioReady=false,
     gMaster,
@@ -2496,6 +2497,14 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.m
   function triggerAWSWarning(){ state.awsState='WARNING'; state.awsDeadline=state.simTime+3; cab._awsLamp.material.color.setHex(0xffd247); beep(1000,0.15,'square',0.08); beep(1100,0.15,'square',0.08); }
   function awsClear(){ state.awsState='CLEAR'; cab._awsLamp.material.color.setHex(0x111111); beep(880,0.08,'sine',0.06); }
   function awsBrakeDemand(){ state.awsState='BRAKE'; state.eBrake=true; state.brake=1.0; state.throttle=0; cab._awsLamp.material.color.setHex(0xff4040); for(let i=0;i<3;i++) setTimeout(()=>beep(300,0.12,'sawtooth',0.08),i*120); }
+  // Driver acknowledges AWS (Q, or by starting to release the brake). In BRAKE
+  // this also releases the AWS emergency-brake latch so the brake lever responds again.
+  function acknowledgeAWS(){
+    if(state.awsState==='CLEAR') return;
+    if(state.awsState==='BRAKE') state.eBrake=false;
+    state.awsState='CLEAR'; state.awsDeadline=0;
+    cab._awsLamp.material.color.setHex(0x111111); beep(880,0.08,'sine',0.06);
+  }
 
   // ---------- Input (mouse yaw fixed: left = left) ----------
   let yaw=0, pitch=0; function recenter(){ yaw=0; pitch=0; }
@@ -2530,11 +2539,11 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.m
       return;
     }
     ensureAudio();
-    if(e.code==='KeyW') state.throttle=clamp(state.throttle+0.1,0,1);
-    if(e.code==='KeyS') state.throttle=clamp(state.throttle-0.1,0,1);
-    if(e.code==='KeyA') state.brake=clamp(state.brake-0.1,0,1);
-    if(e.code==='KeyD') state.brake=clamp(state.brake+0.1,0,1);
-    if(e.code==='KeyQ' && state.awsState==='WARNING') awsClear();
+    if(e.code==='KeyW'){ heldKeys.add('KeyW'); state.throttle=clamp(state.throttle+0.1,0,1); }
+    if(e.code==='KeyS'){ heldKeys.add('KeyS'); state.throttle=clamp(state.throttle-0.1,0,1); }
+    if(e.code==='KeyA'){ heldKeys.add('KeyA'); if(state.awsState==='BRAKE') acknowledgeAWS(); state.brake=clamp(state.brake-0.1,0,1); }
+    if(e.code==='KeyD'){ heldKeys.add('KeyD'); state.brake=clamp(state.brake+0.1,0,1); }
+    if(e.code==='KeyQ' && (state.awsState==='WARNING'||state.awsState==='BRAKE')) acknowledgeAWS();
     if(e.code==='Space'){
       if(isWithinPlatform(nextStationIndex) && Math.abs(state.speed)<0.2){
         toggleDoors();
@@ -2563,6 +2572,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.m
     }
     if(e.code==='Escape') recenter();
   });
+  window.addEventListener('keyup', e=>{ heldKeys.delete(e.code); });
+  window.addEventListener('blur', ()=>{ heldKeys.clear(); });   // avoid stuck keys on focus loss
 
   function toggleDoors(){
     if(!state.doorsOpen){
@@ -2666,6 +2677,15 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.m
     const now=performance.now(); let dt=(now-last)/1000; last=now; dt=Math.min(dt,0.05);
     state.simTime+=dt;
 
+    // Held W/S/A/D auto-repeat: ramp throttle/brake continuously while a key is down.
+    if(!jumpMenuOpen){
+      const adj=0.6*dt;
+      if(heldKeys.has('KeyW')) state.throttle=clamp(state.throttle+adj,0,1);
+      if(heldKeys.has('KeyS')) state.throttle=clamp(state.throttle-adj,0,1);
+      if(heldKeys.has('KeyA')){ if(state.awsState==='BRAKE') acknowledgeAWS(); state.brake=clamp(state.brake-adj,0,1); }
+      if(heldKeys.has('KeyD')) state.brake=clamp(state.brake+adj,0,1);
+    }
+
     if(state.awsState==='WARNING' && state.simTime>state.awsDeadline) awsBrakeDemand();
 
     if(prevBrake>0.15 && state.brake<0.05 && !state.doorsOpen){ playBrakeRelease(); }
@@ -2689,15 +2709,15 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.m
       const drag=(0.06 + 0.0007*absV*absV);
       let a=maxA*effThrottle - maxB*state.brake - drag*dragDir;
       if(state.eBrake && state.speed!==0) a -= 2.0*Math.sign(state.speed);
-      const holdSign=Math.sign(state.speed||effThrottle||state.direction||1);
       const wantsHold=Math.abs(state.speed)<0.05 && Math.abs(effThrottle)<0.05 && state.brake>0.05;
       if(wantsHold){
         a=0;
         state.speed=0;
       }
       if(state.doorsOpen){
-        if(holdSign>=0) a = Math.min(a, -1.5);
-        else a = Math.max(a, 1.5);
+        // Doors open ⇒ train is held at a standstill (no creep in either direction).
+        if(Math.abs(state.speed)<0.6){ a=0; state.speed=0; }
+        else a = -Math.sign(state.speed)*1.5;
       }
       state.speed+=a*dt;
       if(Math.abs(state.speed)<0.01 && Math.abs(effThrottle)<0.05) state.speed=0;
