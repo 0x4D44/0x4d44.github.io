@@ -12,6 +12,28 @@
 
 window.ESSAYS = [
   {
+    slug: "worldviewer",
+    title: "Worldviewer",
+    tagline: "A browser-based Earth twin that travels from orbit to city streets. Spin a MapLibre globe, switch on terrain relief, Sentinel-2 satellite imagery and extruded 3D buildings, search for any place on Earth, then fly cinematically down to street scale — with live aircraft drawn overhead straight from the OpenSky network, and open data all the way down (OpenFreeMap, EOX, AWS Terrain Tiles, Nominatim). Built in TypeScript on MapLibre GL JS.",
+    url: "https://0x4d44.github.io/worldviewer/",
+    illustration: "ill-globe",
+    date: "2026-06-14T15:30:00",
+    year: 2026,
+    tags: ["software", "transport"],
+    real: true,
+  },
+  {
+    slug: "emu-cab",
+    title: "The Cab",
+    tagline: "Take the controls of a British electric multiple unit inside a fully 3D WebGL cab. Notch up the traction, work the service brake, cancel the AWS before it dumps the air, and run the working timetable from Westford to Eastbank via Riverside, City Centre and Victoria Street — stopping on the board to within two metres, minding the dwell, and keeping your score up while dodging the SPAD and the high-speed derailment. Pointer-lock cab, ambient railway soundscape, Three.js — all in a single page.",
+    url: "https://0x4d44.github.io/emu-cab/",
+    illustration: "ill-emu",
+    date: "2026-06-14T15:00:00",
+    year: 2026,
+    tags: ["rail", "software"],
+    real: true,
+  },
+  {
     slug: "uk-isochrone",
     title: "An Isochronic Map of Britain",
     tagline: "How long does it take to reach anywhere in Britain from Colinton — and to stand on top of every mountain? A national layer-tint isochrone map: door-to-door travel-time contours by road, rail and air (with the fastest mode chosen for you), plus a Munros layer giving the door-to-summit time for all 282 Munros and 222 Corbetts — the drive to the trailhead plus the Naismith walk-up, with real ascent from the SRTM elevation model. It is multi-scale: zoom into Edinburgh for the real Lothian buses, ScotRail and trams, into London for the actual Underground / DLR / Overground network, or into Oxford, Perth, Dundee and Aberdeen for their streets, rivers, estuaries and local buses — with the modes switching to local ones as you go. Pan and zoom from the Cairngorms to Cornwall; ferries carry you across to Belfast and Dublin; London is ~3.7 h by air, Ben Nevis 6.3 h to the summit cairn. A national companion to the Time-Contours of Edinburgh.",
