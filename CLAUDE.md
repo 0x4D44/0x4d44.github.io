@@ -42,6 +42,29 @@ served verbatim (`.nojekyll` disables Jekyll processing).
 Many document directories also contain a `*.zip` source archive and sometimes a
 print `*.pdf`. These are downloadable artifacts; the site does not reference them.
 
+**Pre-built Vite bundles** — some documents are committed here as *built output*
+only (hashed `assets/index-*.js` + `.css`, no readable source). To change them,
+edit the source project, rebuild, and copy the `dist/` output back in. Known
+source locations (outside this repo):
+- `uk-isochrone/` ← `C:\language\mdisochrone\UK` (TypeScript: `src/main.ts`,
+  `src/render.ts`)
+- `edinburgh-isochrone/` ← `C:\language\mdisochrone\Edinburgh`
+- `mdisochrone/` ← `C:\language\mdisochrone` (the root project)
+Build with `npm run build` in the source dir, then copy its `dist/*` over the
+matching `<slug>/` directory here. Do **not** hand-edit the minified bundles.
+
+**Imported from standalone repos** — a few `<slug>/` directories are copies of a
+document's own GitHub project. There is no automatic sync: if you fix one here,
+mirror the change back upstream (and vice versa) so a future re-import doesn't
+undo it.
+- `emu-cab/` ← `github.com/0x4D44/mdtrain` (branch `master`) — "UK EMU Cab
+  Simulator", a single self-contained `index.html` (Three.js loaded from a CDN
+  importmap; no build step). Edit `index.html` directly.
+- `worldviewer/` ← `github.com/0x4D44/mdgpt54`, `worldviewer/` subdir — MapLibre
+  GL "Earth twin", Vite + TypeScript. A pre-built bundle (see above): clone,
+  `npm run build`, copy `dist/*` here. The live-ships relay is server-side, so
+  that toggle stays inert on Pages; live aircraft and everything else work.
+
 ## Adding a document (the common task)
 
 1. Create `<slug>/` containing a self-contained `index.html` (plus any assets).
