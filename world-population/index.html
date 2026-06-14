@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Peopling of the Earth</title>
+<meta name="description" content="An animated heat-map of human population density across all of recorded history and a thousand years into the future." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ocean: #090e1c;
+    --ink: #e8ecf6;
+    --dim: #8a93ad;
+    --panel: rgba(12, 18, 34, 0.72);
+    --line: rgba(150, 170, 220, 0.22);
+    --accent: #ffd66a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--ocean);
+    color: var(--ink);
+    font-family: "Spectral", Georgia, serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  #map { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  /* ---- title cartouche ---- */
+  .title {
+    position: fixed; top: 22px; left: 26px; max-width: 30rem;
+    pointer-events: none; z-index: 5;
+    text-shadow: 0 2px 14px rgba(0,0,0,0.8);
+  }
+  .title h1 { font-size: clamp(1.5rem, 3vw, 2.4rem); font-weight: 600; letter-spacing: 0.01em; line-height: 1.05; }
+  .title p { font-size: 0.92rem; color: var(--dim); font-style: italic; margin-top: 0.35rem; line-height: 1.35; }
+
+  /* ---- era + counter (top-right) ---- */
+  .readout {
+    position: fixed; top: 22px; right: 26px; text-align: right; z-index: 5;
+    pointer-events: none; text-shadow: 0 2px 14px rgba(0,0,0,0.85);
+  }
+  .readout .year { font-size: clamp(2.4rem, 6vw, 4.2rem); font-weight: 600; line-height: 0.95; font-variant-numeric: tabular-nums; }
+  .readout .year .bce { font-size: 0.42em; color: var(--dim); margin-left: 0.25em; vertical-align: 0.5em; }
+  .readout .era { font-size: 1rem; font-style: italic; color: var(--accent); margin-top: 0.2rem; }
+  .readout .pop { font-size: 1.05rem; color: var(--ink); margin-top: 0.45rem; font-variant-numeric: tabular-nums; }
+  .readout .pop b { font-weight: 600; }
+  .readout .city { font-size: 0.86rem; color: var(--dim); margin-top: 0.2rem; min-height: 1.1em; }
+
+  /* ---- legend ---- */
+  .legend { position: fixed; left: 26px; bottom: 110px; z-index: 5; pointer-events: none; }
+  .legend .bar { width: 200px; height: 9px; border-radius: 5px; box-shadow: 0 0 0 1px rgba(255,255,255,0.08); }
+  .legend .labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--dim); margin-top: 4px; letter-spacing: 0.03em; }
+  .legend .cap { font-size: 0.72rem; color: var(--dim); margin-bottom: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
+
+  /* ---- control bar ---- */
+  .controls {
+    position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%);
+    width: min(900px, calc(100% - 40px)); z-index: 6;
+    background: var(--panel); backdrop-filter: blur(8px);
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 18px 14px; display: flex; flex-direction: column; gap: 10px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  }
+  .scrub-wrap { position: relative; }
+  input[type=range].scrub {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 6px;
+    background: linear-gradient(90deg, #3a2a6a, #7a2f6a, #c8503c, #f5b942);
+    border-radius: 6px; outline: none; cursor: pointer;
+  }
+  input[type=range].scrub::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 0 3px rgba(255,214,106,0.55), 0 2px 6px rgba(0,0,0,0.6); cursor: grab;
+  }
+  input[type=range].scrub::-moz-range-thumb {
+    width: 16px; height: 16px; border: none; border-radius: 50%;
+    background: #fff; box-shadow: 0 0 0 3px rgba(255,214,106,0.55); cursor: grab;
+  }
+  .ticks { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.66rem; color: var(--dim); }
+  .ticks span { transform: translateX(-50%); white-space: nowrap; }
+  .ticks span:first-child { transform: none; }
+  .ticks span:last-child { transform: translateX(-100%); }
+  .row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .btn {
+    font-family: inherit; font-size: 0.9rem; color: var(--ink);
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line);
+    border-radius: 9px; padding: 7px 14px; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,214,106,0.5); }
+  .btn.play { min-width: 96px; justify-content: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button {
+    font-family: inherit; font-size: 0.82rem; color: var(--dim); background: transparent;
+    border: none; padding: 7px 11px; cursor: pointer; transition: color 0.15s, background 0.15s;
+  }
+  .seg button.active { color: #1a1206; background: var(--accent); font-weight: 600; }
+  .label { font-size: 0.78rem; color: var(--dim); letter-spacing: 0.04em; }
+  .spacer { flex: 1; }
+  .hint { font-size: 0.74rem; color: var(--dim); font-style: italic; }
+
+  @media (max-width: 640px) {
+    .title { top: 14px; left: 16px; }
+    .readout { top: 14px; right: 16px; }
+    .legend { display: none; }
+    .controls { bottom: 12px; padding: 10px 12px; }
+    .row { gap: 8px; }
+  }
+  .loading { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dim); font-style: italic; z-index: 8; }
+</style>
+</head>
+<body>
+  <canvas id="map"></canvas>
+
+  <div class="title">
+    <h1>The Peopling of the Earth</h1>
+    <p>A heat-map of human population, from the first farmers to a thousand years hence. Watch the lights of humanity kindle, spread, and shift across the face of the world.</p>
+  </div>
+
+  <div class="readout">
+    <div class="year" id="year">—</div>
+    <div class="era" id="era">&nbsp;</div>
+    <div class="pop">world population <b id="pop">—</b></div>
+    <div class="city" id="city">&nbsp;</div>
+  </div>
+
+  <div class="legend">
+    <div class="cap">population density</div>
+    <div class="bar" id="legendBar"></div>
+    <div class="labels"><span>sparse</span><span>dense</span><span>megacity</span></div>
+  </div>
+
+  <div class="controls">
+    <div class="scrub-wrap">
+      <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0" />
+      <div class="ticks" id="ticks"></div>
+    </div>
+    <div class="row">
+      <button class="btn play" id="play">▶ Play</button>
+      <button class="btn" id="reset">⟲ Reset</button>
+      <span class="label">Speed</span>
+      <span class="seg" id="speed">
+        <button data-s="0.5">×0.5</button>
+        <button data-s="1" class="active">×1</button>
+        <button data-s="2">×2</button>
+        <button data-s="4">×4</button>
+      </span>
+      <span class="spacer"></span>
+      <span class="hint" id="hint">post-2100 figures are projections; post-2200 is speculative</span>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">drawing the coastlines…</div>
+
+  <script src="./model.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const POP = window.POP;
+    const canvas = document.getElementById("map");
+    const ctx = canvas.getContext("2d");
+
+    // ---- state ----
+    const DURATION = 95;       // seconds for a full sweep at x1
+    let t = 0;                 // normalised playhead 0..1
+    let playing = false;
+    let speed = 1;
+    let lastTs = 0;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // map rect (CSS px) within the canvas
+    let mapX = 0, mapY = 0, mapW = 0, mapH = 0;
+
+    // ---- heat grid ----
+    const GW = 480, GH = 240;
+    const field = new Float32Array(GW * GH);
+    const ramp = POP.buildRamp(256);
+    const heatCanvas = document.createElement("canvas");
+    heatCanvas.width = GW; heatCanvas.height = GH;
+    const heatCtx = heatCanvas.getContext("2d");
+    const heatImg = heatCtx.createImageData(GW, GH);
+
+    // ---- base map (land), rendered once per resize to an offscreen canvas ----
+    const base = document.createElement("canvas");
+    const baseCtx = base.getContext("2d");
+    let land = null; // GeoJSON features
+
+    function project(lon, lat) {
+      return [mapX + ((lon + 180) / 360) * mapW, mapY + ((90 - lat) / 180) * mapH];
+    }
+
+    function layout() {
+      const w = window.innerWidth, h = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // 2:1 map, contained and centred
+      mapW = w; mapH = w / 2;
+      if (mapH > h) { mapH = h; mapW = h * 2; }
+      mapX = (w - mapW) / 2; mapY = (h - mapH) / 2;
+      drawBase();
+    }
+
+    function drawBase() {
+      const w = window.innerWidth, h = window.innerHeight;
+      base.width = Math.round(w * dpr); base.height = Math.round(h * dpr);
+      baseCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // ocean: subtle vertical gradient
+      const g = baseCtx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, "#0a1124"); g.addColorStop(0.5, "#070c1a"); g.addColorStop(1, "#05080f");
+      baseCtx.fillStyle = g; baseCtx.fillRect(0, 0, w, h);
+      // graticule
+      baseCtx.strokeStyle = "rgba(120,140,190,0.10)"; baseCtx.lineWidth = 1;
+      baseCtx.beginPath();
+      for (let lat = -60; lat <= 60; lat += 30) { const [, y] = project(0, lat); baseCtx.moveTo(mapX, y); baseCtx.lineTo(mapX + mapW, y); }
+      for (let lon = -150; lon <= 150; lon += 30) { const [x] = project(lon, 0); baseCtx.moveTo(x, mapY); baseCtx.lineTo(x, mapY + mapH); }
+      baseCtx.stroke();
+      // map frame
+      baseCtx.strokeStyle = "rgba(150,170,220,0.18)"; baseCtx.strokeRect(mapX, mapY, mapW, mapH);
+      // land
+      if (land) {
+        baseCtx.fillStyle = "#141d33";
+        baseCtx.strokeStyle = "rgba(120,150,210,0.30)"; baseCtx.lineWidth = 0.6;
+        for (const feat of land) drawGeom(baseCtx, feat.geometry);
+      }
+    }
+
+    function drawGeom(c, geom) {
+      const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+      for (const poly of polys) {
+        c.beginPath();
+        for (const ring of poly) {
+          let prevLon = null, started = false;
+          for (const [lon, lat] of ring) {
+            // break the path across the antimeridian to avoid smears
+            if (prevLon !== null && Math.abs(lon - prevLon) > 180) started = false;
+            const [x, y] = project(lon, lat);
+            if (!started) { c.moveTo(x, y); started = true; } else c.lineTo(x, y);
+            prevLon = lon;
+          }
+          c.closePath();
+        }
+        c.fill(); c.stroke();
+      }
+    }
+
+    // ---- heat compositing ----
+    function renderHeat(year) {
+      POP.computeDensity(year, GW, GH, field);
+      const data = heatImg.data;
+      for (let i = 0; i < GW * GH; i++) {
+        const idx = POP.fieldToColorIndex(field[i], 256) * 4;
+        data[i * 4] = ramp[idx];
+        data[i * 4 + 1] = ramp[idx + 1];
+        data[i * 4 + 2] = ramp[idx + 2];
+        data[i * 4 + 3] = ramp[idx + 3];
+      }
+      heatCtx.putImageData(heatImg, 0, 0);
+    }
+
+    // ---- HUD ----
+    function fmtYear(y) {
+      if (y < 0) return `${Math.abs(y).toLocaleString()}<span class="bce">BCE</span>`;
+      return `${y.toLocaleString()}<span class="bce">CE</span>`;
+    }
+    function fmtPop(m) { // m in millions
+      if (m < 1) return (m * 1000).toFixed(0) + " thousand";
+      if (m < 1000) return Math.round(m).toLocaleString() + " million";
+      return (m / 1000).toFixed(2) + " billion";
+    }
+    function largestCity(year) {
+      let best = null, bestPop = 0;
+      for (const c of POP.activeCities(year)) {
+        if (c.pop > bestPop) { bestPop = c.pop; best = c; }
+      }
+      return best ? { name: best.name, pop: bestPop } : null;
+    }
+    const elYear = document.getElementById("year");
+    const elEra = document.getElementById("era");
+    const elPop = document.getElementById("pop");
+    const elCity = document.getElementById("city");
+    const scrub = document.getElementById("scrub");
+
+    function updateHUD(year) {
+      elYear.innerHTML = fmtYear(year);
+      elEra.textContent = POP.eraLabel(year);
+      elPop.textContent = fmtPop(POP.worldTotalAt(year));
+      const lc = largestCity(year);
+      const name = lc ? lc.name.replace(/ \(.*\)$/, "") : null;
+      elCity.textContent = lc ? `largest city: ${name} (~${fmtPop(lc.pop)})` : "";
+    }
+
+    // ---- main frame ----
+    function draw() {
+      const year = POP.yearFromT(t);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(base, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      // heat glow over the map
+      renderHeat(year);
+      ctx.globalCompositeOperation = "lighter";
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(heatCanvas, mapX, mapY, mapW, mapH);
+      ctx.globalCompositeOperation = "source-over";
+      updateHUD(year);
+      scrub.value = Math.round(t * 1000);
+    }
+
+    function loop(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(0.1, (ts - lastTs) / 1000);
+      lastTs = ts;
+      if (playing) {
+        t += (dt * speed) / DURATION;
+        if (t >= 1) { t = 1; setPlaying(false); }
+        draw();
+      }
+      requestAnimationFrame(loop);
+    }
+
+    // ---- controls ----
+    const playBtn = document.getElementById("play");
+    function setPlaying(p) {
+      playing = p;
+      playBtn.innerHTML = p ? "❚❚ Pause" : (t >= 1 ? "↻ Replay" : "▶ Play");
+      if (p && t >= 1) t = 0;
+      lastTs = 0;
+    }
+    playBtn.addEventListener("click", () => setPlaying(!playing));
+    document.getElementById("reset").addEventListener("click", () => {
+      t = 0; setPlaying(false); draw();
+    });
+    document.getElementById("speed").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-s]"); if (!b) return;
+      speed = parseFloat(b.dataset.s);
+      for (const el of e.currentTarget.children) el.classList.toggle("active", el === b);
+    });
+    scrub.addEventListener("input", () => {
+      t = scrub.value / 1000; draw();
+      if (t >= 1) playBtn.innerHTML = "↻ Replay"; else if (!playing) playBtn.innerHTML = "▶ Play";
+    });
+    scrub.addEventListener("pointerdown", () => setPlaying(false));
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Space") { e.preventDefault(); setPlaying(!playing); }
+    });
+
+    // legend bar fill from ramp
+    (function () {
+      const stops = [];
+      for (let i = 0; i <= 10; i++) {
+        const idx = Math.round(i / 10 * 255) * 4;
+        stops.push(`rgb(${ramp[idx]},${ramp[idx + 1]},${ramp[idx + 2]}) ${i * 10}%`);
+      }
+      document.getElementById("legendBar").style.background = `linear-gradient(90deg, ${stops.join(",")})`;
+    })();
+
+    // build era ticks under the scrubber
+    (function () {
+      const wrap = document.getElementById("ticks");
+      const marks = [[-10000, "10000 BCE"], [1, "1 CE"], [1500, "1500"], [1900, "1900"], [2025, "today"], [3025, "3025"]];
+      for (const [y, lab] of marks) {
+        const s = document.createElement("span");
+        s.textContent = lab; s.style.position = "absolute";
+        s.style.left = (POP.tFromYear(y) * 100).toFixed(1) + "%";
+        wrap.appendChild(s);
+      }
+      wrap.style.position = "relative"; wrap.style.height = "1em";
+    })();
+
+    // ---- bootstrap ----
+    // Optional deep-link: #year=1500 or #t=0.8 sets the opening playhead.
+    let autoplay = true;
+    (function () {
+      const m = /(?:^|[#&])(year|t)=(-?\d+(?:\.\d+)?)/.exec(location.hash);
+      if (!m) return;
+      autoplay = false;
+      if (m[1] === "t") t = Math.max(0, Math.min(1, parseFloat(m[2])));
+      else t = POP.tFromYear(parseFloat(m[2]));
+    })();
+    window.addEventListener("resize", () => { layout(); draw(); });
+    layout();
+    updateHUD(POP.yearFromT(t));
+    draw();
+    requestAnimationFrame(loop);
+
+    // load coastlines (non-blocking; the map works without them)
+    const loadEl = document.getElementById("loading");
+    function loadScript(src) {
+      return new Promise((res, rej) => {
+        const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej;
+        document.head.appendChild(s);
+      });
+    }
+    (async function () {
+      try {
+        await loadScript("https://unpkg.com/topojson-client@3/dist/topojson-client.min.js");
+        const r = await fetch("https://unpkg.com/world-atlas@2/land-110m.json");
+        const topo = await r.json();
+        const fc = window.topojson.feature(topo, topo.objects.land);
+        land = fc.features || [fc];
+        drawBase(); draw();
+      } catch (err) {
+        console.warn("coastlines unavailable, showing heat-map only", err);
+      } finally {
+        loadEl.style.display = "none";
+      }
+    })();
+
+    // auto-start after a beat so the opening frame registers
+    if (autoplay) setTimeout(() => setPlaying(true), 900);
+    else playBtn.innerHTML = t >= 1 ? "↻ Replay" : "▶ Play";
+  })();
+  </script>
+</body>
+</html>

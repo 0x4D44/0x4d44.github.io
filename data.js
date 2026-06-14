@@ -12,6 +12,17 @@
 
 window.ESSAYS = [
   {
+    slug: "world-population",
+    title: "The Peopling of the Earth",
+    tagline: "Twelve thousand years of humanity, lit on a dark globe. An animated heat-map of population density that runs from the first Neolithic farmers, through the rise and fall of Rome, Baghdad and Edo, to the megacities of today — then a thousand years on, past the projected peak of ten billion to a speculative far future. Watch the centre of human gravity swing from China and India to a blazing Africa. Play, pause, scrub and change speed; world totals after McEvedy & Jones, HYDE and the UN's 2024 projections. Vanilla JS on a canvas, with the world's coastlines from MapLibre's atlas.",
+    url: "https://0x4d44.github.io/world-population/",
+    illustration: "ill-population",
+    date: "2026-06-14T16:30:00",
+    year: 2026,
+    tags: ["science", "history", "software"],
+    real: true,
+  },
+  {
     slug: "worldviewer",
     title: "Worldviewer",
     tagline: "A browser-based Earth twin that flies from orbit to street level. Spin a MapLibre globe with terrain relief, Sentinel-2 imagery and extruded 3D buildings, search any place on Earth, then drop to street scale with live aircraft overhead from the OpenSky network. TypeScript on MapLibre GL JS.",
