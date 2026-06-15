@@ -25,7 +25,7 @@ window.ESSAYS = [
   {
     slug: "night-cab",
     title: "The Night Cab",
-    tagline: "The Cab, rebuilt from the rails up — and a measure of how far AI coding has come in a few months. A wet-night, first-person drive of a GTO-inverter EMU down the Westford–Eastbank line: notch up through the rising inverter whine, work the brake, answer the AWS and hold at the red starters, with rain on the windscreen and the wipers beating. Where the original was a sketch, this one rides on an engineered, test-driven core — longitudinal physics, multi-aspect signalling, AWS/TPWS and a vigilance device behind a pure simulation kernel — and drives by keyboard, gamepad or on-screen touch. TypeScript + Three.js.",
+    tagline: "The Cab, rebuilt from the rails up — and a measure of how far AI coding has come in a few months. A rainy, first-person drive of a GTO-inverter EMU down the Westford–Eastbank line: notch up through the rising inverter whine, work the brake, answer the AWS and hold at the red starters, with rain on the windscreen and the wipers beating — and cycle the weather from an overcast day through sunset to a moody wet-night. Where the original was a sketch, this one rides on an engineered, test-driven core — longitudinal physics, multi-aspect signalling, AWS/TPWS and a vigilance device behind a pure simulation kernel — and drives by keyboard, gamepad or on-screen touch. TypeScript + Three.js.",
     url: "https://0x4d44.github.io/night-cab/",
     illustration: "ill-emu",
     date: "2026-06-15T10:00:00",
