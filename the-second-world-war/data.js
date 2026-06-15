@@ -3633,109 +3633,109 @@ window.WW2_DATA = {
     "note": "Instrument of Surrender signed aboard USS Missouri; Allied occupation begins, ending WW2."
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Russia",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Ukraine",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Belarus",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
-    "country": "Estonia",
-    "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
-   },
-   {
-    "date": "1938-01-01",
-    "country": "Latvia",
-    "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
-   },
-   {
-    "date": "1938-01-01",
-    "country": "Lithuania",
-    "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
-   },
-   {
-    "date": "1938-01-01",
-    "country": "Moldova",
-    "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
-   },
-   {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Georgia",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Armenia",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Azerbaijan",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Kazakhstan",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Uzbekistan",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Turkmenistan",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Tajikistan",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
    },
    {
-    "date": "1938-01-01",
+    "date": "1939-09-17",
     "country": "Kyrgyzstan",
     "control": "Soviet",
-    "event": "Soviet Union",
-    "note": "Part of the USSR"
+    "event": "enters the war",
+    "note": "The USSR invades eastern Poland under the Nazi–Soviet Pact"
+   },
+   {
+    "date": "1940-08-06",
+    "country": "Estonia",
+    "control": "Soviet",
+    "event": "annexed",
+    "note": "Forcibly annexed by the USSR"
+   },
+   {
+    "date": "1940-08-06",
+    "country": "Latvia",
+    "control": "Soviet",
+    "event": "annexed",
+    "note": "Forcibly annexed by the USSR"
+   },
+   {
+    "date": "1940-08-06",
+    "country": "Lithuania",
+    "control": "Soviet",
+    "event": "annexed",
+    "note": "Forcibly annexed by the USSR"
+   },
+   {
+    "date": "1940-06-28",
+    "country": "Moldova",
+    "control": "Soviet",
+    "event": "annexed",
+    "note": "Bessarabia annexed by the USSR from Romania"
    },
    {
     "date": "1941-06-25",
