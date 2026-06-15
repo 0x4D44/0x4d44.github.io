@@ -512,6 +512,72 @@ window.WW2_DATA = {
     "magnitude": 5,
     "victor": "Soviet",
     "blurb": "The Soviet assault on the German capital ended with Hitler's suicide and the city's surrender, effectively finishing the war in Europe."
+   },
+   {
+    "date": "1939-12-13",
+    "name": "Battle of the River Plate",
+    "lon": -56.5,
+    "lat": -35.3,
+    "kind": "sea",
+    "theatre": "Atlantic",
+    "magnitude": 3,
+    "victor": "Allied",
+    "blurb": "Royal Navy cruisers cornered the pocket battleship Graf Spee, which scuttled off Montevideo."
+   },
+   {
+    "date": "1940-11-11",
+    "name": "Battle of Taranto",
+    "lon": 17.23,
+    "lat": 40.47,
+    "kind": "sea",
+    "theatre": "Mediterranean",
+    "magnitude": 3,
+    "victor": "Allied",
+    "blurb": "Fairey Swordfish crippled the Italian battle fleet at anchor — the first all-aircraft naval strike, and a model for Pearl Harbor."
+   },
+   {
+    "date": "1941-03-28",
+    "name": "Battle of Cape Matapan",
+    "lon": 21,
+    "lat": 36.4,
+    "kind": "sea",
+    "theatre": "Mediterranean",
+    "magnitude": 3,
+    "victor": "Allied",
+    "blurb": "The Royal Navy sank three Italian cruisers off Greece, securing the eastern Mediterranean."
+   },
+   {
+    "date": "1941-05-27",
+    "name": "Sinking of the Bismarck",
+    "lon": -16,
+    "lat": 48.2,
+    "kind": "sea",
+    "theatre": "Atlantic",
+    "magnitude": 4,
+    "victor": "Allied",
+    "blurb": "After it sank HMS Hood, Germany's mightiest battleship was hunted down and destroyed in the North Atlantic."
+   },
+   {
+    "date": "1942-08-11",
+    "name": "Malta Convoy (Operation Pedestal)",
+    "lon": 11.5,
+    "lat": 37,
+    "kind": "sea",
+    "theatre": "Mediterranean",
+    "magnitude": 3,
+    "victor": "Allied",
+    "blurb": "A battered convoy fought through air and U-boat attack to keep besieged Malta in the war."
+   },
+   {
+    "date": "1943-12-26",
+    "name": "Battle of the North Cape",
+    "lon": 24,
+    "lat": 72.5,
+    "kind": "sea",
+    "theatre": "Atlantic",
+    "magnitude": 3,
+    "victor": "Allied",
+    "blurb": "The Royal Navy sank the battleship Scharnhorst in the Arctic dark, guarding the Murmansk convoys."
    }
   ]
  },
@@ -2992,6 +3058,190 @@ window.WW2_DATA = {
      ]
     ],
     "note": "From the Solomons up through the Gilberts, Marianas, Iwo Jima and Okinawa toward Japan."
+   },
+   {
+    "label": "Battle of Britain: the Luftwaffe over England",
+    "faction": "Axis",
+    "kind": "air",
+    "startDate": "1940-07-10",
+    "endDate": "1940-10-31",
+    "path": [
+     [
+      2.3,
+      49
+     ],
+     [
+      0.5,
+      50.3
+     ],
+     [
+      -0.13,
+      51.5
+     ]
+    ],
+    "note": "The Luftwaffe's daylight assault on RAF Fighter Command"
+   },
+   {
+    "label": "Kido Butai sails for Pearl Harbor",
+    "faction": "Axis",
+    "kind": "naval",
+    "startDate": "1941-11-26",
+    "endDate": "1941-12-07",
+    "path": [
+     [
+      147.5,
+      45
+     ],
+     [
+      175,
+      43
+     ],
+     [
+      -178,
+      40
+     ],
+     [
+      -168,
+      32
+     ],
+     [
+      -158,
+      21.4
+     ]
+    ],
+    "note": "Japan's six-carrier strike force crosses the North Pacific in radio silence"
+   },
+   {
+    "label": "RAF thousand-bomber raids on the Ruhr",
+    "faction": "Allied",
+    "kind": "air",
+    "startDate": "1942-05-30",
+    "endDate": "1942-06-30",
+    "path": [
+     [
+      0,
+      52.6
+     ],
+     [
+      3.5,
+      51.8
+     ],
+     [
+      6.96,
+      50.94
+     ]
+    ],
+    "note": "Bomber Command opens the area-bombing campaign on Cologne"
+   },
+   {
+    "label": "Hamburg firestorm (Operation Gomorrah)",
+    "faction": "Allied",
+    "kind": "air",
+    "startDate": "1943-07-24",
+    "endDate": "1943-08-03",
+    "path": [
+     [
+      0.5,
+      52.8
+     ],
+     [
+      5,
+      53.4
+     ],
+     [
+      9.99,
+      53.55
+     ]
+    ],
+    "note": "RAF and USAAF raids raise a firestorm that kills some 37,000"
+   },
+   {
+    "label": "USAAF daylight raids (Schweinfurt)",
+    "faction": "Allied",
+    "kind": "air",
+    "startDate": "1943-08-17",
+    "endDate": "1943-10-14",
+    "path": [
+     [
+      0.5,
+      52.3
+     ],
+     [
+      5,
+      51
+     ],
+     [
+      10.23,
+      50.05
+     ]
+    ],
+    "note": "Unescorted deep raids suffer crippling losses over Germany"
+   },
+   {
+    "label": "Big Week & the Combined Bomber Offensive",
+    "faction": "Allied",
+    "kind": "air",
+    "startDate": "1944-02-20",
+    "endDate": "1944-02-25",
+    "path": [
+     [
+      0.5,
+      52.3
+     ],
+     [
+      6,
+      51.5
+     ],
+     [
+      11,
+      50.5
+     ]
+    ],
+    "note": "With long-range escorts, the Allies break the Luftwaffe over the Reich"
+   },
+   {
+    "label": "Bombing of Dresden",
+    "faction": "Allied",
+    "kind": "air",
+    "startDate": "1945-02-13",
+    "endDate": "1945-02-16",
+    "path": [
+     [
+      2,
+      52
+     ],
+     [
+      8,
+      51.5
+     ],
+     [
+      13.74,
+      51.05
+     ]
+    ],
+    "note": "Firebombing kills around 25,000 in the crowded city"
+   },
+   {
+    "label": "B-29 firebombing of Japan",
+    "faction": "Allied",
+    "kind": "air",
+    "startDate": "1944-11-24",
+    "endDate": "1945-08-14",
+    "path": [
+     [
+      145.7,
+      15.2
+     ],
+     [
+      142,
+      25
+     ],
+     [
+      139.7,
+      35.7
+     ]
+    ],
+    "note": "From the Marianas, B-29s burn the cities of Japan"
    }
   ]
  },
@@ -3922,5 +4172,67 @@ window.WW2_DATA = {
     "note": "Korea freed; partitioned at the 38th parallel"
    }
   ]
- }
+ },
+ "casualties": [
+  {
+   "date": "1939-09-01",
+   "dead": 0
+  },
+  {
+   "date": "1939-12-31",
+   "dead": 0.6
+  },
+  {
+   "date": "1940-06-30",
+   "dead": 1.5
+  },
+  {
+   "date": "1940-12-31",
+   "dead": 2.2
+  },
+  {
+   "date": "1941-06-22",
+   "dead": 3.5
+  },
+  {
+   "date": "1941-12-31",
+   "dead": 8
+  },
+  {
+   "date": "1942-06-30",
+   "dead": 14
+  },
+  {
+   "date": "1942-12-31",
+   "dead": 22
+  },
+  {
+   "date": "1943-06-30",
+   "dead": 31
+  },
+  {
+   "date": "1943-12-31",
+   "dead": 40
+  },
+  {
+   "date": "1944-06-30",
+   "dead": 50
+  },
+  {
+   "date": "1944-12-31",
+   "dead": 60
+  },
+  {
+   "date": "1945-05-08",
+   "dead": 70
+  },
+  {
+   "date": "1945-09-02",
+   "dead": 77
+  },
+  {
+   "date": "1946-01-01",
+   "dead": 78
+  }
+ ]
 };

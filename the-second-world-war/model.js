@@ -201,7 +201,7 @@
       if (end == null || end <= start) end = start + 30 * DAY;
       const side = a.faction === "Soviet" ? "soviet" : a.faction === "Axis" ? "axis" : "allies";
       const path = (a.path || []).filter((p) => Array.isArray(p) && p.length >= 2);
-      return { label: a.label, faction: a.faction, side, start, end, path, note: a.note || "" };
+      return { label: a.label, faction: a.faction, side, kind: a.kind || "ground", start, end, path, note: a.note || "" };
     }).filter((a) => a.start != null && a.path.length >= 2);
   })();
   // Arrow draw/fade envelope: grows over its window, holds, then fades out.
@@ -297,6 +297,24 @@
     return { tonnage: ton, norm: ton / ATL_MAX };
   }
 
+  // === Running death toll ===================================================
+  // Cumulative dead (millions, military + civilian), interpolated between
+  // anchors. A sombre counter, not a precise figure.
+  const DEATHS = ((DATA.casualties) || [])
+    .map((p) => ({ ms: parseDate(p.date), dead: +p.dead || 0 }))
+    .filter((p) => p.ms != null)
+    .sort((a, b) => a.ms - b.ms);
+  function deathsAt(ms) {
+    if (!DEATHS.length) return 0;
+    if (ms <= DEATHS[0].ms) return DEATHS[0].dead;
+    const last = DEATHS[DEATHS.length - 1];
+    if (ms >= last.ms) return last.dead;
+    let i = 1; while (i < DEATHS.length && DEATHS[i].ms < ms) i++;
+    const a = DEATHS[i - 1], b = DEATHS[i];
+    const u = (ms - a.ms) / ((b.ms - a.ms) || 1);
+    return a.dead + (b.dead - a.dead) * u;
+  }
+
   // === Timeline scrubber ticks ==============================================
   // The big, signpost events shown on the time ribbon. Picked from BATTLES by
   // magnitude so the ribbon doesn't clutter.
@@ -315,6 +333,7 @@
     ARROWS, ARROW_COLOR, arrowEnvelope,
     BATTLES, battleActivity,
     ATL_LANES, ATL_SERIES, ATL_MAX, atlanticAt,
+    DEATHS, deathsAt,
     timelineTicks,
   };
 });

@@ -45,7 +45,8 @@
   .readout .date { font-size: clamp(1.7rem, 4vw, 2.9rem); font-weight: 600; line-height: 0.98; font-variant-numeric: tabular-nums; }
   .readout .phase { font-size: 1.02rem; font-style: italic; color: var(--accent); margin-top: 0.25rem; }
   .readout .sub { font-size: 0.82rem; color: var(--dim); margin-top: 0.1rem; }
-  .readout .now { font-size: 0.86rem; color: var(--ink); margin-top: 0.5rem; max-width: 22rem; min-height: 1.2em; opacity: 0.92; }
+  .readout .toll { font-size: 0.96rem; color: #ff9a8c; margin-top: 0.5rem; font-variant-numeric: tabular-nums; letter-spacing: 0.01em; min-height: 1.2em; }
+  .readout .now { font-size: 0.86rem; color: var(--ink); margin-top: 0.2rem; max-width: 22rem; min-height: 1.2em; opacity: 0.92; }
 
   .controls {
     position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
@@ -60,8 +61,9 @@
   .keys .k { display: inline-flex; align-items: center; gap: 5px; }
   .keys .sw { width: 13px; height: 10px; border-radius: 2px; display: inline-block; }
   .keys .ln { width: 18px; height: 0; border-top-width: 2px; border-top-style: solid; display: inline-block; }
+  .keys .dotr { width: 7px; height: 7px; border-radius: 50%; background: #ff5a4a; display: inline-block; box-shadow: 0 0 5px #ff5a4a; }
   .cap { font-size: 0.7rem; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase; }
-  #graph { width: 100%; height: 104px; display: block; cursor: ew-resize; touch-action: none; }
+  #graph { width: 100%; height: 122px; display: block; cursor: ew-resize; touch-action: none; }
   .ticks { position: relative; height: 1em; font-size: 0.66rem; color: var(--dim); margin-top: 1px; }
   .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
   .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -89,7 +91,7 @@
     .readout .now { display: none; }
     .controls { bottom: 8px; padding: 8px 10px; }
     .row { gap: 7px; }
-    #graph { height: 78px; }
+    #graph { height: 96px; }
     .keys { display: none; }
   }
 
@@ -142,6 +144,7 @@
     <div class="date" id="date">—</div>
     <div class="phase" id="phase">&nbsp;</div>
     <div class="sub" id="sub">&nbsp;</div>
+    <div class="toll" id="toll">&nbsp;</div>
     <div class="now" id="now">&nbsp;</div>
   </div>
 
@@ -153,9 +156,11 @@
         <span class="k"><span class="sw" style="background:#a3271f"></span>USSR</span>
         <span class="k"><span class="sw" style="background:#2f5b8c"></span>Allies</span>
         <span class="k"><span class="sw" style="background:#2c7270"></span>liberated</span>
-        <span class="k"><span class="sw" style="background:#222838"></span>neutral</span>
+        <span class="k"><span class="sw" style="background:#2a3346"></span>neutral</span>
         <span class="k"><span class="ln" style="border-color:#ffcf5a"></span>front</span>
         <span class="k"><span class="ln" style="border-color:#ff5a4a"></span>offensive</span>
+        <span class="k"><span class="ln" style="border-color:#ff8ec6;border-top-style:dashed"></span>air raid</span>
+        <span class="k"><span class="dotr"></span>U-boat attack</span>
       </span>
     </div>
     <canvas id="graph"></canvas>
@@ -190,15 +195,23 @@
       <p><em>The Second World War</em> animates the war month by month from the
       annexations of 1938 to the surrender of Japan in 1945. Countries are tinted
       by who controlled them; bold lines trace the <b>front</b> where armies met;
-      arrows mark the great <b>offensives</b>; markers flare at each <b>battle</b>;
-      and the curve below charts the <b>Battle of the Atlantic</b> — the merchant
-      tonnage sent to the bottom by the U-boats, month by month.</p>
+      solid arrows mark the great <b>offensives</b>, dashed tracks the <b>air
+      raids</b> and the carrier run to Pearl Harbor; markers flare at each
+      <b>battle</b> on land, at sea and in the air; and the curve below charts the
+      <b>Battle of the Atlantic</b> — the merchant tonnage sent to the bottom by
+      the U-boats, with red flashes for the ships going down. A running
+      <b>death toll</b> climbs in the corner.</p>
       <h3>How to read it</h3>
       <ul>
         <li>Press <b>play</b>, or drag the time ribbon to scrub through the war.</li>
         <li>Switch <b>view</b> between the European/Atlantic and Pacific theatres.</li>
         <li>Hover a battle marker, a country or a ribbon tick for detail.</li>
+        <li>Colours: Axis ochre, the <b>Soviet Union red</b> (its own front and
+          nearly half the war's dead), the Western Allies blue, liberated teal.</li>
       </ul>
+      <p>The war at sea ran far beyond the Atlantic — the carrier battles of the
+      Pacific (Coral Sea, Midway, Leyte Gulf) and the duels of the Mediterranean
+      (Taranto, Matapan) appear as sea markers in their theatres.</p>
       <h3>Sources &amp; method</h3>
       <p>Dates, places and outcomes were assembled from standard references
       (Wikipedia, Britannica, official campaign histories) and put through a
@@ -306,23 +319,37 @@
       baseCtx.stroke();
     }
 
+    // Unwrap a ring to a continuous longitude run (no 360° jumps inside it), so
+    // a polygon that straddles the antimeridian fills as one piece instead of
+    // smearing a chord across the map.
+    function unwrapRing(ring) {
+      let prevW = null; const uw = [];
+      for (const p of ring) {
+        let w = wrapLon(p[0]);
+        if (prevW !== null) { while (w - prevW > 180) w -= 360; while (w - prevW < -180) w += 360; }
+        uw.push([w, p[1]]); prevW = w;
+      }
+      return uw;
+    }
+    function addRing(c, uw, off) {
+      for (let i = 0; i < uw.length; i++) {
+        const x = mapX + (uw[i][0] + off + view.halfWidth) * midLatCos * scale;
+        const y = mapY + (view.lat1 - uw[i][1]) * scale;
+        if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+      }
+      c.closePath();
+    }
+    // Draw at -360/0/+360 wrapped offsets; the viewport clip (set in buildGeo)
+    // discards the off-screen copies, so a country at the seam shows on both edges.
     function drawGeom(c, geom, fill, stroke) {
       const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
       for (const poly of polys) {
         c.beginPath();
         for (const ring of poly) {
-          let prevW = null, started = false;
-          for (const [lon, lat] of ring) {
-            const wx = wrapLon(lon);
-            // break the subpath where the ring crosses the seam (big wrapped jump)
-            if (prevW !== null && Math.abs(wx - prevW) > 180) started = false;
-            const [x, y] = project(lon, lat);
-            if (!started) { c.moveTo(x, y); started = true; } else c.lineTo(x, y);
-            prevW = wx;
-          }
-          c.closePath();
+          const uw = unwrapRing(ring);
+          addRing(c, uw, -360); addRing(c, uw, 0); addRing(c, uw, 360);
         }
-        if (fill) { c.fillStyle = fill; c.fill(); }
+        if (fill) { c.fillStyle = fill; c.fill("nonzero"); }
         if (stroke) { c.strokeStyle = stroke; c.stroke(); }
       }
     }
@@ -334,6 +361,8 @@
       geoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       geoCtx.clearRect(0, 0, w, h);
       if (!countries) return;
+      geoCtx.save();
+      geoCtx.beginPath(); geoCtx.rect(mapX, mapY, mapW, mapH); geoCtx.clip();
       geoCtx.lineWidth = 0.5; geoCtx.lineJoin = "round";
       for (const feat of countries) {
         const name = feat.properties && feat.properties.name;
@@ -342,6 +371,7 @@
         const fill = fac ? fac.fill : LAND_NEUTRAL;
         drawGeom(geoCtx, feat.geometry, fill, "rgba(150,170,220,0.22)");
       }
+      geoCtx.restore();
     }
 
     // ---- front lines ----
@@ -375,7 +405,8 @@
       ctx.stroke();
     }
 
-    // ---- offensive arrows ----
+    // ---- offensive arrows (ground), air raids and naval approaches ----
+    const AIR_COLOR = "#ff8ec6", NAVAL_COLOR = "#7fc6ff";
     function drawArrows(ms) {
       for (const a of W.ARROWS) {
         const env = W.arrowEnvelope(a, ms);
@@ -383,16 +414,24 @@
         const full = a.path.map((p) => project(p[0], p[1]));
         const pts = partialPath(full, env.draw);
         if (pts.length < 2) continue;
-        const col = W.ARROW_COLOR[a.side] || "#ff5a4a";
+        const air = a.kind === "air", naval = a.kind === "naval";
+        const col = air ? AIR_COLOR : naval ? NAVAL_COLOR : (W.ARROW_COLOR[a.side] || "#ff5a4a");
         ctx.save();
-        ctx.globalAlpha = env.alpha * 0.9; ctx.lineCap = "round"; ctx.lineJoin = "round";
-        ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6; ctx.lineWidth = 3.2;
-        strokePath(pts);
+        ctx.globalAlpha = env.alpha * (air || naval ? 0.95 : 0.9); ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.strokeStyle = col; ctx.shadowColor = col;
+        if (air || naval) {
+          // dashed, flowing toward the target — a stream of bombers / a ship's track
+          ctx.shadowBlur = 5; ctx.lineWidth = air ? 2.2 : 2.4;
+          ctx.setLineDash(air ? [3, 5] : [8, 6]); ctx.lineDashOffset = dashPhase;
+          strokePath(pts); ctx.setLineDash([]);
+        } else {
+          ctx.shadowBlur = 6; ctx.lineWidth = 3.2; strokePath(pts);
+        }
         // arrowhead at the drawn tip
         const n = pts.length;
         const tip = pts[n - 1], prev = pts[Math.max(0, n - 2)];
         const ang = Math.atan2(tip[1] - prev[1], tip[0] - prev[0]);
-        const hl = 11, hw = 0.42;
+        const hl = air ? 9 : 11, hw = 0.42;
         ctx.shadowBlur = 0; ctx.fillStyle = col; ctx.beginPath();
         ctx.moveTo(tip[0], tip[1]);
         ctx.lineTo(tip[0] - hl * Math.cos(ang - hw), tip[1] - hl * Math.sin(ang - hw));
@@ -421,13 +460,12 @@
     }
 
     // ---- Battle of the Atlantic ----
-    let dashPhase = 0;
+    let dashPhase = 0, animClock = 0;
     function drawAtlantic(ms, dt) {
       const inWar = ms >= W.parseDate("1939-09-01") && ms <= W.parseDate("1945-05-31");
       if (!inWar) return;
       const a = W.atlanticAt(ms);
       const intensity = a.norm;
-      dashPhase -= dt * 26;
       ctx.save();
       ctx.lineCap = "round";
       for (const lane of W.ATL_LANES) {
@@ -439,22 +477,28 @@
         strokePath(pts);
       }
       ctx.setLineDash([]);
-      // U-boat menace: flickering pips in the mid-Atlantic, scaled by intensity
-      const packs = Math.round(intensity * 22);
-      ctx.fillStyle = "#ff5a4a";
-      for (let i = 0; i < packs; i++) {
-        const ph = (i * 12.9898 + Math.floor(ms / DAY3) * 78.233);
+      // U-boat attacks: short-lived red flashes where ships are going down, their
+      // number scaled by the tonnage being lost that month. Concentrated in the
+      // mid-ocean "air gap" and along the convoy lanes.
+      const sinkings = Math.round(intensity * 26);
+      for (let i = 0; i < sinkings; i++) {
+        const ph = (i * 12.9898 + Math.floor(ms / DAY2) * 78.233);
         const r1 = frac(Math.sin(ph) * 43758.5453);
         const r2 = frac(Math.sin(ph + 1.7) * 43758.5453);
-        const lon = -42 + r1 * 26, lat = 44 + r2 * 16;
+        const lon = -48 + r1 * 34, lat = 40 + r2 * 20;
         const [x, y] = project(lon, lat);
         if (x < mapX || x > mapX + mapW || y < mapY || y > mapY + mapH) continue;
-        ctx.globalAlpha = 0.35 + 0.5 * frac(Math.sin(ph + ms / 9e6) * 1000);
-        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2); ctx.fill();
+        const life = frac(ph * 0.31 + ms / (DAY2 * 6)); // 0..1 flash cycle
+        const fade = Math.sin(Math.min(1, life) * Math.PI);
+        if (fade <= 0.02) continue;
+        ctx.globalAlpha = fade * 0.85; ctx.strokeStyle = "#ff5a4a"; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.arc(x, y, 1.4 + fade * 3.4, 0, Math.PI * 2); ctx.stroke();
+        ctx.globalAlpha = fade; ctx.fillStyle = "#ff7a5a";
+        ctx.beginPath(); ctx.arc(x, y, 1.5, 0, Math.PI * 2); ctx.fill();
       }
       ctx.restore();
     }
-    const DAY3 = 86400000 * 3;
+    const DAY2 = 86400000 * 2;
     function frac(x) { return x - Math.floor(x); }
 
     // ---- battle markers ----
@@ -465,13 +509,13 @@
     let markerHits = [];
     function drawBattles(ms) {
       markerHits = [];
-      // draw faded (memory) first, active on top
-      const order = [];
+      const order = [], labels = [];
       for (const b of W.BATTLES) {
         const act = W.battleActivity(b, ms);
         if (!act || act.alpha <= 0.02) continue;
         order.push({ b, act });
       }
+      // draw faded (memory) first, active on top
       order.sort((p, q) => (p.act.active === q.act.active) ? 0 : p.act.active ? 1 : -1);
       for (const { b, act } of order) {
         const [x, y] = project(b.lon, b.lat);
@@ -479,28 +523,76 @@
         const col = KIND_FILL[b.kind] || "#ffd66a";
         const baseR = 2 + b.magnitude * 0.7;
         ctx.save();
-        // pulse ring
+        // pulse rings — air raids, bombing and the atomic bombs throw expanding shock waves
         if (act.pulse > 0.02) {
-          const pr = baseR + act.pulse * (6 + b.magnitude * 3.5);
-          ctx.globalAlpha = act.pulse * 0.55; ctx.strokeStyle = col; ctx.lineWidth = 1.6;
-          ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI * 2); ctx.stroke();
+          const shock = (b.kind === "bombing" || b.kind === "air" || b.kind === "nuclear");
+          const rings = shock ? 3 : 1;
+          for (let k = 0; k < rings; k++) {
+            const ph = (animClock * 0.6 + k / rings) % 1;
+            const pr = baseR + ph * (8 + b.magnitude * (shock ? 5 : 3.5));
+            ctx.globalAlpha = (1 - ph) * act.pulse * (shock ? 0.55 : 0.5);
+            ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+            ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI * 2); ctx.stroke();
+          }
         }
         // core marker
         ctx.globalAlpha = act.alpha; ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = act.active ? 8 : 0;
         drawMarker(b.kind, x, y, baseR);
-        // label for active, significant battles
-        if (act.active && b.magnitude >= 3) {
-          ctx.shadowColor = "rgba(0,0,0,0.95)"; ctx.shadowBlur = 6;
-          ctx.font = (b.magnitude >= 4 ? "600 13px" : "12px") + ' "Spectral", Georgia, serif';
-          ctx.fillStyle = "#fff"; ctx.textBaseline = "middle";
-          const tw = ctx.measureText(b.name).width;
-          let lx = x + baseR + 6, align = "left";
-          if (lx + tw > mapX + mapW - 4) { lx = x - baseR - 6; align = "right"; }
-          ctx.textAlign = align; ctx.globalAlpha = Math.min(1, act.alpha) * (0.6 + 0.4 * act.pulse);
-          ctx.fillText(b.name, lx, y);
-        }
         ctx.restore();
         markerHits.push({ x, y, r: baseR + 6, b });
+        if (act.active && b.magnitude >= 3) labels.push({ b, act, x, y, r: baseR, col });
+      }
+      placeLabels(labels);
+    }
+
+    // Place battle labels with collision avoidance: high-priority (big, peaking)
+    // battles claim space first; others take a free side or are dropped this frame.
+    function rectsOverlap(a, b) { return !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1); }
+    // Fixed corner zones the HUD occupies — kept clear of battle labels. Cheap
+    // (no per-frame layout reads) and generous enough for the changing readout.
+    function reservedRects() {
+      const w = window.innerWidth, h = window.innerHeight;
+      return [
+        { x0: 0, y0: 0, x1: 430, y1: 132 },        // title (top-left)
+        { x0: w - 390, y0: 0, x1: w, y1: 240 },     // date / phase / toll (top-right)
+        { x0: 0, y0: h - 176, x1: w, y1: h },        // control bar (bottom)
+      ];
+    }
+    function placeLabels(labels) {
+      labels.sort((a, b) => (b.b.magnitude + b.act.pulse) - (a.b.magnitude + a.act.pulse));
+      const placed = reservedRects();
+      ctx.textBaseline = "middle";
+      for (const L of labels) {
+        ctx.font = (L.b.magnitude >= 4 ? "600 13px" : "12px") + ' "Spectral", Georgia, serif';
+        const tw = ctx.measureText(L.b.name).width, th = 15;
+        const cands = [
+          { ax: L.x + L.r + 6, align: "left", dy: 0 },
+          { ax: L.x - L.r - 6, align: "right", dy: 0 },
+          { ax: L.x + L.r + 6, align: "left", dy: -th },
+          { ax: L.x - L.r - 6, align: "right", dy: -th },
+          { ax: L.x + L.r + 6, align: "left", dy: th },
+          { ax: L.x - L.r - 6, align: "right", dy: th },
+        ];
+        let chosen = null;
+        for (const c of cands) {
+          const ay = L.y + c.dy;
+          const x0 = c.align === "left" ? c.ax : c.ax - tw;
+          const rect = { x0: x0 - 2, y0: ay - th / 2, x1: x0 + tw + 2, y1: ay + th / 2 };
+          if (rect.x0 < mapX + 2 || rect.x1 > mapX + mapW - 2 || rect.y0 < mapY + 2 || rect.y1 > mapY + mapH - 2) continue;
+          if (placed.some((p) => rectsOverlap(p, rect))) continue;
+          chosen = { ax: c.ax, ay, align: c.align, rect }; break;
+        }
+        if (!chosen) continue;
+        placed.push(chosen.rect);
+        // a faint leader if the label was nudged off the marker's own line
+        if (Math.abs(chosen.ay - L.y) > 2) {
+          ctx.globalAlpha = Math.min(1, L.act.alpha) * 0.35; ctx.strokeStyle = L.col; ctx.lineWidth = 0.8;
+          ctx.beginPath(); ctx.moveTo(L.x, L.y); ctx.lineTo(chosen.align === "left" ? chosen.ax - 3 : chosen.ax + 3, chosen.ay); ctx.stroke();
+        }
+        ctx.globalAlpha = Math.min(1, L.act.alpha) * (0.65 + 0.35 * L.act.pulse);
+        ctx.fillStyle = "#fff"; ctx.shadowColor = "rgba(0,0,0,0.95)"; ctx.shadowBlur = 6; ctx.textAlign = chosen.align;
+        ctx.fillText(L.b.name, chosen.ax, chosen.ay);
+        ctx.shadowBlur = 0;
       }
     }
     function drawMarker(kind, x, y, r) {
@@ -525,10 +617,14 @@
     const elPhase = document.getElementById("phase");
     const elSub = document.getElementById("sub");
     const elNow = document.getElementById("now");
+    const elToll = document.getElementById("toll");
     function updateHUD(ms) {
       elDate.textContent = W.fmtMs(ms);
       const ph = W.phaseAt(ms);
       elPhase.textContent = ph.label; elSub.textContent = ph.sub;
+      // running death toll (military + civilian)
+      const dead = W.deathsAt(ms);
+      elToll.textContent = dead < 0.05 ? "" : "≈ " + fmtMillions(dead) + " dead";
       // headline: the most significant battle within ~10 days
       let best = null, bestScore = -1;
       for (const b of W.BATTLES) {
@@ -539,6 +635,10 @@
       }
       elNow.textContent = best ? best.name : "";
     }
+    function fmtMillions(m) {
+      if (m >= 1) return m.toFixed(1).replace(/\.0$/, "") + " million";
+      return Math.round(m * 1000) + " thousand";
+    }
 
     // ---- time ribbon (scrubber) ----
     const graph = document.getElementById("graph");
@@ -546,7 +646,7 @@
     const gbase = document.createElement("canvas");
     const gbctx = gbase.getContext("2d");
     let gW = 0, gH = 0;
-    const G_PADT = 30, G_PADB = 14;
+    const G_PADT = 44, G_PADB = 14;
     let tickHits = [];
 
     function buildGraph() {
@@ -579,26 +679,31 @@
         c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts) c.lineTo(p[0], p[1]);
         c.strokeStyle = "rgba(255,140,120,0.9)"; c.lineWidth = 1.6; c.stroke();
       }
-      // event ticks (signpost battles), greedy 2-tier label packing
+      // event ticks (signpost battles) with greedy multi-tier label packing:
+      // a label takes the first tier where it doesn't collide; if none is free,
+      // the tick still shows but its label is dropped (hover the tick for it).
       tickHits = [];
       const ticks = W.timelineTicks();
-      const tiers = [10, 21], lastRight = [-1e9, -1e9];
-      c.textBaseline = "alphabetic";
+      const tiers = [11, 22, 33], lastRight = [-1e9, -1e9, -1e9];
+      c.textBaseline = "alphabetic"; c.font = '9px "Spectral", Georgia, serif';
       for (const tk of ticks) {
         const x = x0 + tk.t * (x1 - x0);
         const col = KIND_FILL[tk.kind] || "#ffd66a";
-        c.strokeStyle = "rgba(255,255,255,0.25)"; c.lineWidth = 1;
-        c.beginPath(); c.moveTo(x, G_PADT - 4); c.lineTo(x, y1); c.stroke();
-        c.fillStyle = col; c.beginPath(); c.arc(x, G_PADT - 4, 3, 0, Math.PI * 2); c.fill();
-        c.font = '9px "Spectral", Georgia, serif';
-        const short = tk.label.length > 18 ? tk.label.slice(0, 17) + "…" : tk.label;
+        c.strokeStyle = "rgba(255,255,255,0.16)"; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(x, G_PADT - 3); c.lineTo(x, y1); c.stroke();
+        c.fillStyle = col; c.beginPath(); c.arc(x, G_PADT - 3, 2.6, 0, Math.PI * 2); c.fill();
+        tickHits.push({ x, y: G_PADT - 3, label: tk.label, ms: tk.ms });
+        const short = tk.label.length > 20 ? tk.label.slice(0, 19) + "…" : tk.label;
         const tw = c.measureText(short).width;
-        let tier = 0; for (let k = 0; k < tiers.length; k++) { if (lastRight[k] < x - 4) { tier = k; break; } tier = k; }
-        lastRight[tier] = x + tw + 8;
-        let lx = x + 4, align = "left"; if (lx + tw > gW - 2) { lx = x - 4; align = "right"; }
-        c.textAlign = align; c.fillStyle = "rgba(220,228,245,0.9)";
+        let align = "left", lx = x + 4;
+        if (lx + tw > gW - 2) { align = "right"; lx = x - 4; }
+        const spanL = align === "left" ? lx : lx - tw, spanR = align === "left" ? lx + tw : lx;
+        let tier = -1;
+        for (let k = 0; k < tiers.length; k++) { if (lastRight[k] < spanL - 6) { tier = k; break; } }
+        if (tier < 0) continue;            // no room on any tier this frame
+        lastRight[tier] = spanR + 6;
+        c.textAlign = align; c.fillStyle = "rgba(222,230,245,0.92)";
         c.fillText(short, lx, tiers[tier]);
-        tickHits.push({ x, y: G_PADT - 4, label: tk.label, ms: tk.ms });
       }
     }
     function drawGraphOverlay() {
@@ -635,6 +740,8 @@
     // ---- main frame ----
     function draw(dt) {
       const ms = W.msFromT(t);
+      dashPhase -= (dt || 0.016) * 26;   // flow for convoy lanes & air/naval tracks
+      animClock += (dt || 0.016);        // steady real-time clock for shock rings
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(base, 0, 0);
