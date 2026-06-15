@@ -12,6 +12,17 @@
 
 window.ESSAYS = [
   {
+    slug: "the-second-world-war",
+    title: "The Second World War",
+    tagline: "An animated atlas of the deadliest conflict in history, 1938–1945. Watch the map of the world change month by month: countries fall and are freed in shifting colour, the front lines bulge east to the Volga and roll back to Berlin, the great offensives sweep the continent as arrows, and battle markers flare from Dunkirk to Stalingrad to Okinawa — while the curve below charts the Battle of the Atlantic, the merchant tonnage sent to the bottom by the U-boats month by month, rising to a peak and breaking in the spring of 1943. Play, pause, scrub and change speed; switch between the European and Pacific theatres. Vanilla JS on a canvas, borders from MapLibre's atlas, the data assembled by web research and an adversarial fact-check pass.",
+    url: "https://0x4d44.github.io/the-second-world-war/",
+    illustration: "ill-ww2",
+    date: "2026-06-15T18:00:00",
+    year: 1939,
+    tags: ["history", "software"],
+    real: true,
+  },
+  {
     slug: "night-cab",
     title: "The Night Cab",
     tagline: "The Cab, rebuilt from the rails up — and a measure of how far AI coding has come in a few months. A wet-night, first-person drive of a GTO-inverter EMU down the Westford–Eastbank line: notch up through the rising inverter whine, work the brake, answer the AWS and hold at the red starters, with rain on the windscreen and the wipers beating. Where the original was a sketch, this one rides on an engineered, test-driven core — longitudinal physics, multi-aspect signalling, AWS/TPWS and a vigilance device behind a pure simulation kernel — and drives by keyboard, gamepad or on-screen touch. TypeScript + Three.js.",

@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Second World War — an animated atlas</title>
+<meta name="description" content="An animated map of the Second World War, 1938–1945: the front lines, the great battles, the Battle of the Atlantic and the changing map of a world at war." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --ocean: #070b14;
+    --ink: #eef1f8;
+    --dim: #93a0bd;
+    --panel: rgba(10, 15, 28, 0.74);
+    --line: rgba(150, 170, 220, 0.22);
+    --accent: #ffd66a;
+    --axis: #d4544a;
+    --allied: #5b9bd6;
+    --soviet: #e0564a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--ocean);
+    color: var(--ink);
+    font-family: "Spectral", Georgia, serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  #map { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .title {
+    position: fixed; top: 20px; left: 24px; max-width: 27rem;
+    pointer-events: none; z-index: 5; text-shadow: 0 2px 16px rgba(0,0,0,0.9);
+  }
+  .title h1 { font-size: clamp(1.4rem, 2.8vw, 2.2rem); font-weight: 600; letter-spacing: 0.01em; line-height: 1.05; }
+  .title p { font-size: 0.9rem; color: var(--dim); font-style: italic; margin-top: 0.3rem; line-height: 1.35; }
+
+  .readout {
+    position: fixed; top: 20px; right: 24px; text-align: right; z-index: 5;
+    pointer-events: none; text-shadow: 0 2px 16px rgba(0,0,0,0.9);
+  }
+  .readout .date { font-size: clamp(1.7rem, 4vw, 2.9rem); font-weight: 600; line-height: 0.98; font-variant-numeric: tabular-nums; }
+  .readout .phase { font-size: 1.02rem; font-style: italic; color: var(--accent); margin-top: 0.25rem; }
+  .readout .sub { font-size: 0.82rem; color: var(--dim); margin-top: 0.1rem; }
+  .readout .now { font-size: 0.86rem; color: var(--ink); margin-top: 0.5rem; max-width: 22rem; min-height: 1.2em; opacity: 0.92; }
+
+  .controls {
+    position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%);
+    width: min(1180px, calc(100% - 28px)); z-index: 6;
+    background: var(--panel); backdrop-filter: blur(8px);
+    border: 1px solid var(--line); border-radius: 14px;
+    padding: 9px 15px 11px; display: flex; flex-direction: column; gap: 6px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.55);
+  }
+  .graph-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .keys { display: flex; gap: 11px; align-items: center; flex-wrap: wrap; font-size: 0.72rem; color: var(--dim); }
+  .keys .k { display: inline-flex; align-items: center; gap: 5px; }
+  .keys .sw { width: 13px; height: 10px; border-radius: 2px; display: inline-block; }
+  .keys .ln { width: 18px; height: 0; border-top-width: 2px; border-top-style: solid; display: inline-block; }
+  .cap { font-size: 0.7rem; color: var(--dim); letter-spacing: 0.06em; text-transform: uppercase; }
+  #graph { width: 100%; height: 104px; display: block; cursor: ew-resize; touch-action: none; }
+  .ticks { position: relative; height: 1em; font-size: 0.66rem; color: var(--dim); margin-top: 1px; }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    font-family: inherit; font-size: 0.9rem; color: var(--ink);
+    background: rgba(255,255,255,0.06); border: 1px solid var(--line);
+    border-radius: 9px; padding: 6px 13px; cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    display: inline-flex; align-items: center; gap: 7px;
+  }
+  .btn:hover { background: rgba(255,255,255,0.13); border-color: rgba(255,214,106,0.5); }
+  .btn.play { min-width: 92px; justify-content: center; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button {
+    font-family: inherit; font-size: 0.82rem; color: var(--dim); background: transparent;
+    border: none; padding: 6px 10px; cursor: pointer; transition: color 0.15s, background 0.15s;
+  }
+  .seg button.active { color: #1a1206; background: var(--accent); font-weight: 600; }
+  .seg.view button.active { color: #07101c; background: var(--allied); }
+  .label { font-size: 0.78rem; color: var(--dim); letter-spacing: 0.04em; }
+  .spacer { flex: 1; }
+
+  @media (max-width: 680px) {
+    .title { top: 12px; left: 14px; max-width: 16rem; }
+    .readout { top: 12px; right: 14px; }
+    .readout .now { display: none; }
+    .controls { bottom: 8px; padding: 8px 10px; }
+    .row { gap: 7px; }
+    #graph { height: 78px; }
+    .keys { display: none; }
+  }
+
+  .tip {
+    position: fixed; z-index: 9; pointer-events: none; max-width: 19rem;
+    background: rgba(8, 13, 26, 0.95); border: 1px solid var(--line);
+    border-radius: 9px; padding: 7px 11px; font-size: 0.82rem; line-height: 1.32;
+    box-shadow: 0 8px 26px rgba(0,0,0,0.65); transform: translate(-50%, calc(-100% - 12px));
+  }
+  .tip b { display: block; font-weight: 600; font-size: 0.92rem; }
+  .tip .meta { color: var(--dim); font-style: italic; font-size: 0.76rem; }
+  .tip .blurb { margin-top: 2px; }
+
+  .about {
+    position: fixed; inset: 0; z-index: 10; display: grid; place-items: center;
+    background: rgba(3, 6, 12, 0.66); backdrop-filter: blur(3px);
+  }
+  .about[hidden] { display: none; }
+  .about-card {
+    position: relative; width: min(580px, calc(100% - 40px)); max-height: 84vh; overflow: auto;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 26px 30px; box-shadow: 0 20px 70px rgba(0,0,0,0.7);
+  }
+  .about-card h2 { font-weight: 600; font-size: 1.5rem; margin-bottom: 0.5rem; }
+  .about-card h3 { font-weight: 600; font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); margin: 1.1rem 0 0.4rem; }
+  .about-card p { color: #d2d8e8; font-size: 0.94rem; line-height: 1.5; margin-bottom: 0.4rem; }
+  .about-card ul { list-style: none; }
+  .about-card li { color: #d2d8e8; font-size: 0.9rem; line-height: 1.5; padding-left: 1rem; position: relative; }
+  .about-card li::before { content: "·"; position: absolute; left: 0.2rem; color: var(--accent); }
+  .about-card b { color: var(--ink); font-weight: 600; }
+  .about-close {
+    position: absolute; top: 12px; right: 14px; width: 30px; height: 30px;
+    font-size: 1.3rem; line-height: 1; color: var(--dim); background: transparent;
+    border: 1px solid var(--line); border-radius: 8px; cursor: pointer;
+  }
+  .about-close:hover { color: var(--ink); border-color: var(--accent); }
+
+  .loading { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dim); font-style: italic; z-index: 8; }
+</style>
+</head>
+<body>
+  <canvas id="map"></canvas>
+
+  <div class="title">
+    <h1>The Second World War</h1>
+    <p>An animated atlas of the deadliest conflict in history — the front lines, the great battles and the long war at sea, 1938 to 1945.</p>
+  </div>
+
+  <div class="readout">
+    <div class="date" id="date">—</div>
+    <div class="phase" id="phase">&nbsp;</div>
+    <div class="sub" id="sub">&nbsp;</div>
+    <div class="now" id="now">&nbsp;</div>
+  </div>
+
+  <div class="controls">
+    <div class="graph-head">
+      <span class="cap">the war at sea — Allied tonnage lost to U-boats · key events on the ribbon</span>
+      <span class="keys" id="legend">
+        <span class="k"><span class="sw" style="background:#9a7236"></span>Axis</span>
+        <span class="k"><span class="sw" style="background:#a3271f"></span>USSR</span>
+        <span class="k"><span class="sw" style="background:#2f5b8c"></span>Allies</span>
+        <span class="k"><span class="sw" style="background:#2c7270"></span>liberated</span>
+        <span class="k"><span class="sw" style="background:#222838"></span>neutral</span>
+        <span class="k"><span class="ln" style="border-color:#ffcf5a"></span>front</span>
+        <span class="k"><span class="ln" style="border-color:#ff5a4a"></span>offensive</span>
+      </span>
+    </div>
+    <canvas id="graph"></canvas>
+    <div class="ticks" id="ticks"></div>
+    <div class="row">
+      <button class="btn play" id="play">▶ Play</button>
+      <button class="btn" id="reset">⟲ Reset</button>
+      <span class="label">Speed</span>
+      <span class="seg" id="speed">
+        <button data-s="0.5">×0.5</button>
+        <button data-s="1" class="active">×1</button>
+        <button data-s="2">×2</button>
+        <button data-s="4">×4</button>
+      </span>
+      <span class="label">View</span>
+      <span class="seg view" id="view">
+        <button data-v="europe" class="active">Europe</button>
+        <button data-v="pacific">Pacific</button>
+        <button data-v="world">World</button>
+      </span>
+      <span class="spacer"></span>
+      <button class="btn" id="about">ⓘ&nbsp;About</button>
+    </div>
+  </div>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <div class="about" id="aboutPanel" hidden>
+    <div class="about-card">
+      <button class="about-close" id="aboutClose" aria-label="close">×</button>
+      <h2>About this atlas</h2>
+      <p><em>The Second World War</em> animates the war month by month from the
+      annexations of 1938 to the surrender of Japan in 1945. Countries are tinted
+      by who controlled them; bold lines trace the <b>front</b> where armies met;
+      arrows mark the great <b>offensives</b>; markers flare at each <b>battle</b>;
+      and the curve below charts the <b>Battle of the Atlantic</b> — the merchant
+      tonnage sent to the bottom by the U-boats, month by month.</p>
+      <h3>How to read it</h3>
+      <ul>
+        <li>Press <b>play</b>, or drag the time ribbon to scrub through the war.</li>
+        <li>Switch <b>view</b> between the European/Atlantic and Pacific theatres.</li>
+        <li>Hover a battle marker, a country or a ribbon tick for detail.</li>
+      </ul>
+      <h3>Sources &amp; method</h3>
+      <p>Dates, places and outcomes were assembled from standard references
+      (Wikipedia, Britannica, official campaign histories) and put through a
+      fact-checking pass. Front-line positions are interpolated between dated
+      keyframes and are necessarily schematic.</p>
+      <h3>Caveats</h3>
+      <p>Country fills use <em>modern</em> borders — the only world atlas a static
+      page can load — so the Soviet Union shows as its successor states, and the
+      front-line overlay (not the fills) carries the true line of contact through
+      the USSR. This is an illustration, not a substitute for a historical GIS.</p>
+    </div>
+  </div>
+
+  <div class="loading" id="loading">drawing the map of the world…</div>
+
+  <script src="./data.js"></script>
+  <script src="./model.js"></script>
+  <script>
+  (function () {
+    "use strict";
+    const W = window.WW2;
+    const canvas = document.getElementById("map");
+    const ctx = canvas.getContext("2d");
+
+    // ---- state ----
+    const DURATION = 110;      // seconds for the whole war at x1
+    let t = 0, playing = false, speed = 1, lastTs = 0;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    // ---- map viewport (animated, seam-centred) ----
+    // Each view is a centre longitude + half-width (degrees) + a latitude band.
+    // Longitudes are wrapped relative to centreLon so the antimeridian seam sits
+    // on the *far* side of the view, off-screen, and never bisects the theatre.
+    const VIEWS = {
+      europe:  { centerLon: -6,  halfWidth: 62,  lat0: 18,  lat1: 72 },
+      pacific: { centerLon: 150, halfWidth: 66,  lat0: -16, lat1: 52 },
+      world:   { centerLon: 10,  halfWidth: 172, lat0: -56, lat1: 80 },
+    };
+    let viewName = "europe";
+    let view = Object.assign({}, VIEWS.europe);     // current (animated)
+    let viewTarget = Object.assign({}, VIEWS.europe);
+    // on-screen map rect (CSS px) + scale
+    let mapX = 0, mapY = 0, mapW = 0, mapH = 0, scale = 1, midLatCos = 1;
+
+    // longitude wrapped to (-180,180] relative to the current view centre
+    function wrapLon(lon) { return ((lon - view.centerLon + 540) % 360) - 180; }
+    function computeRect() {
+      const w = window.innerWidth, h = window.innerHeight;
+      const midLat = (view.lat0 + view.lat1) / 2;
+      midLatCos = Math.max(0.18, Math.cos(midLat * Math.PI / 180));
+      const Wg = (2 * view.halfWidth) * midLatCos;
+      const Hg = (view.lat1 - view.lat0);
+      const s = Math.min(w / Wg, h / Hg) * 0.98;
+      scale = s; mapW = Wg * s; mapH = Hg * s;
+      mapX = (w - mapW) / 2; mapY = (h - mapH) / 2;
+    }
+    function project(lon, lat) {
+      const x = mapX + (wrapLon(lon) + view.halfWidth) * midLatCos * scale;
+      const y = mapY + (view.lat1 - lat) * scale;
+      return [x, y];
+    }
+    function unproject(px, py) {
+      const lat = view.lat1 - (py - mapY) / scale;
+      let lon = view.centerLon + (px - mapX) / (midLatCos * scale) - view.halfWidth;
+      lon = ((lon + 540) % 360) - 180;
+      return [lon, lat];
+    }
+
+    // ---- offscreen layers ----
+    const base = document.createElement("canvas");   // ocean + graticule
+    const baseCtx = base.getContext("2d");
+    const geo = document.createElement("canvas");     // land + country fills + borders
+    const geoCtx = geo.getContext("2d");
+    let countries = null;                             // GeoJSON features
+    let lastGeoKey = "";
+
+    function viewKey() {
+      return [view.centerLon, view.halfWidth, view.lat0, view.lat1, mapW, mapH].map((v) => Math.round(v)).join(",");
+    }
+
+    function layout() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = window.innerWidth, h = window.innerHeight;
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      canvas.style.width = w + "px"; canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      computeRect();
+      drawBase();
+      lastGeoKey = "";   // force geo rebuild
+      buildGraph();
+    }
+
+    function drawBase() {
+      const w = window.innerWidth, h = window.innerHeight;
+      base.width = Math.round(w * dpr); base.height = Math.round(h * dpr);
+      baseCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const g = baseCtx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, "#0a1020"); g.addColorStop(0.55, "#070b16"); g.addColorStop(1, "#04060d");
+      baseCtx.fillStyle = g; baseCtx.fillRect(0, 0, w, h);
+      // graticule
+      baseCtx.strokeStyle = "rgba(120,140,190,0.08)"; baseCtx.lineWidth = 1;
+      baseCtx.beginPath();
+      for (let lat = -80; lat <= 80; lat += 10) { const [, y] = project(0, lat); if (y > mapY - 1 && y < mapY + mapH + 1) { baseCtx.moveTo(mapX, y); baseCtx.lineTo(mapX + mapW, y); } }
+      for (let lon = -180; lon < 180; lon += 10) { const [x] = project(lon, 0); if (x > mapX + 1 && x < mapX + mapW - 1) { baseCtx.moveTo(x, mapY); baseCtx.lineTo(x, mapY + mapH); } }
+      baseCtx.stroke();
+    }
+
+    function drawGeom(c, geom, fill, stroke) {
+      const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+      for (const poly of polys) {
+        c.beginPath();
+        for (const ring of poly) {
+          let prevW = null, started = false;
+          for (const [lon, lat] of ring) {
+            const wx = wrapLon(lon);
+            // break the subpath where the ring crosses the seam (big wrapped jump)
+            if (prevW !== null && Math.abs(wx - prevW) > 180) started = false;
+            const [x, y] = project(lon, lat);
+            if (!started) { c.moveTo(x, y); started = true; } else c.lineTo(x, y);
+            prevW = wx;
+          }
+          c.closePath();
+        }
+        if (fill) { c.fillStyle = fill; c.fill(); }
+        if (stroke) { c.strokeStyle = stroke; c.stroke(); }
+      }
+    }
+
+    const LAND_NEUTRAL = "#161d2e";
+    function buildGeo(ms) {
+      const w = window.innerWidth, h = window.innerHeight;
+      geo.width = Math.round(w * dpr); geo.height = Math.round(h * dpr);
+      geoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      geoCtx.clearRect(0, 0, w, h);
+      if (!countries) return;
+      geoCtx.lineWidth = 0.5; geoCtx.lineJoin = "round";
+      for (const feat of countries) {
+        const name = feat.properties && feat.properties.name;
+        const ctrl = name ? W.controlAt(name, ms) : null;
+        const fac = ctrl && W.FACTIONS[ctrl];
+        const fill = fac ? fac.fill : LAND_NEUTRAL;
+        drawGeom(geoCtx, feat.geometry, fill, "rgba(150,170,220,0.22)");
+      }
+    }
+
+    // ---- front lines ----
+    function drawFronts(ms) {
+      for (const front of W.FRONTS) {
+        const grace = front.name === "North Africa" ? 25 : 70;
+        const f = W.frontAt(front, ms, grace);
+        if (!f) continue;
+        const pts = f.pts.map((p) => project(p[0], p[1]));
+        ctx.save();
+        ctx.globalAlpha = f.fade;
+        // soft underglow
+        ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.strokeStyle = front.color; ctx.globalAlpha = f.fade * 0.18; ctx.lineWidth = 9;
+        strokePath(pts);
+        // crisp line
+        ctx.globalAlpha = f.fade * 0.95; ctx.lineWidth = 2.4;
+        ctx.strokeStyle = front.color; strokePath(pts);
+        // little tick marks toward the enemy side give it the cartographic feel
+        ctx.restore();
+      }
+    }
+    function strokePath(pts) {
+      if (pts.length < 2) return;
+      ctx.beginPath(); ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length; i++) {
+        const mx = (pts[i - 1][0] + pts[i][0]) / 2, my = (pts[i - 1][1] + pts[i][1]) / 2;
+        ctx.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my);
+      }
+      ctx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+      ctx.stroke();
+    }
+
+    // ---- offensive arrows ----
+    function drawArrows(ms) {
+      for (const a of W.ARROWS) {
+        const env = W.arrowEnvelope(a, ms);
+        if (!env) continue;
+        const full = a.path.map((p) => project(p[0], p[1]));
+        const pts = partialPath(full, env.draw);
+        if (pts.length < 2) continue;
+        const col = W.ARROW_COLOR[a.side] || "#ff5a4a";
+        ctx.save();
+        ctx.globalAlpha = env.alpha * 0.9; ctx.lineCap = "round"; ctx.lineJoin = "round";
+        ctx.strokeStyle = col; ctx.shadowColor = col; ctx.shadowBlur = 6; ctx.lineWidth = 3.2;
+        strokePath(pts);
+        // arrowhead at the drawn tip
+        const n = pts.length;
+        const tip = pts[n - 1], prev = pts[Math.max(0, n - 2)];
+        const ang = Math.atan2(tip[1] - prev[1], tip[0] - prev[0]);
+        const hl = 11, hw = 0.42;
+        ctx.shadowBlur = 0; ctx.fillStyle = col; ctx.beginPath();
+        ctx.moveTo(tip[0], tip[1]);
+        ctx.lineTo(tip[0] - hl * Math.cos(ang - hw), tip[1] - hl * Math.sin(ang - hw));
+        ctx.lineTo(tip[0] - hl * 0.6 * Math.cos(ang), tip[1] - hl * 0.6 * Math.sin(ang));
+        ctx.lineTo(tip[0] - hl * Math.cos(ang + hw), tip[1] - hl * Math.sin(ang + hw));
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+      }
+    }
+    // first `frac` of a polyline by arc length
+    function partialPath(pts, frac) {
+      if (frac >= 1 || pts.length < 2) return pts;
+      const seg = [0];
+      for (let i = 1; i < pts.length; i++) seg.push(seg[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      const total = seg[seg.length - 1], target = total * Math.max(0.001, frac);
+      const out = [pts[0]];
+      for (let i = 1; i < pts.length; i++) {
+        if (seg[i] <= target) { out.push(pts[i]); }
+        else {
+          const u = (target - seg[i - 1]) / ((seg[i] - seg[i - 1]) || 1);
+          out.push([pts[i - 1][0] + (pts[i][0] - pts[i - 1][0]) * u, pts[i - 1][1] + (pts[i][1] - pts[i - 1][1]) * u]);
+          break;
+        }
+      }
+      return out;
+    }
+
+    // ---- Battle of the Atlantic ----
+    let dashPhase = 0;
+    function drawAtlantic(ms, dt) {
+      const inWar = ms >= W.parseDate("1939-09-01") && ms <= W.parseDate("1945-05-31");
+      if (!inWar) return;
+      const a = W.atlanticAt(ms);
+      const intensity = a.norm;
+      dashPhase -= dt * 26;
+      ctx.save();
+      ctx.lineCap = "round";
+      for (const lane of W.ATL_LANES) {
+        const pts = (lane.path || []).map((p) => project(p[0], p[1]));
+        if (pts.length < 2) continue;
+        ctx.globalAlpha = 0.22 + intensity * 0.4;
+        ctx.strokeStyle = "#7fb4e8"; ctx.lineWidth = 1.6;
+        ctx.setLineDash([2, 9]); ctx.lineDashOffset = dashPhase;
+        strokePath(pts);
+      }
+      ctx.setLineDash([]);
+      // U-boat menace: flickering pips in the mid-Atlantic, scaled by intensity
+      const packs = Math.round(intensity * 22);
+      ctx.fillStyle = "#ff5a4a";
+      for (let i = 0; i < packs; i++) {
+        const ph = (i * 12.9898 + Math.floor(ms / DAY3) * 78.233);
+        const r1 = frac(Math.sin(ph) * 43758.5453);
+        const r2 = frac(Math.sin(ph + 1.7) * 43758.5453);
+        const lon = -42 + r1 * 26, lat = 44 + r2 * 16;
+        const [x, y] = project(lon, lat);
+        if (x < mapX || x > mapX + mapW || y < mapY || y > mapY + mapH) continue;
+        ctx.globalAlpha = 0.35 + 0.5 * frac(Math.sin(ph + ms / 9e6) * 1000);
+        ctx.beginPath(); ctx.arc(x, y, 1.7, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+    const DAY3 = 86400000 * 3;
+    function frac(x) { return x - Math.floor(x); }
+
+    // ---- battle markers ----
+    const KIND_FILL = {
+      land: "#ffd66a", sea: "#5fd0ff", air: "#c9a0ff", amphibious: "#7fffd0",
+      siege: "#ff9a5a", bombing: "#ff7a9c", political: "#cfd6e6", nuclear: "#ffffff",
+    };
+    let markerHits = [];
+    function drawBattles(ms) {
+      markerHits = [];
+      // draw faded (memory) first, active on top
+      const order = [];
+      for (const b of W.BATTLES) {
+        const act = W.battleActivity(b, ms);
+        if (!act || act.alpha <= 0.02) continue;
+        order.push({ b, act });
+      }
+      order.sort((p, q) => (p.act.active === q.act.active) ? 0 : p.act.active ? 1 : -1);
+      for (const { b, act } of order) {
+        const [x, y] = project(b.lon, b.lat);
+        if (x < mapX - 20 || x > mapX + mapW + 20 || y < mapY - 20 || y > mapY + mapH + 20) continue;
+        const col = KIND_FILL[b.kind] || "#ffd66a";
+        const baseR = 2 + b.magnitude * 0.7;
+        ctx.save();
+        // pulse ring
+        if (act.pulse > 0.02) {
+          const pr = baseR + act.pulse * (6 + b.magnitude * 3.5);
+          ctx.globalAlpha = act.pulse * 0.55; ctx.strokeStyle = col; ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI * 2); ctx.stroke();
+        }
+        // core marker
+        ctx.globalAlpha = act.alpha; ctx.fillStyle = col; ctx.shadowColor = col; ctx.shadowBlur = act.active ? 8 : 0;
+        drawMarker(b.kind, x, y, baseR);
+        // label for active, significant battles
+        if (act.active && b.magnitude >= 3) {
+          ctx.shadowColor = "rgba(0,0,0,0.95)"; ctx.shadowBlur = 6;
+          ctx.font = (b.magnitude >= 4 ? "600 13px" : "12px") + ' "Spectral", Georgia, serif';
+          ctx.fillStyle = "#fff"; ctx.textBaseline = "middle";
+          const tw = ctx.measureText(b.name).width;
+          let lx = x + baseR + 6, align = "left";
+          if (lx + tw > mapX + mapW - 4) { lx = x - baseR - 6; align = "right"; }
+          ctx.textAlign = align; ctx.globalAlpha = Math.min(1, act.alpha) * (0.6 + 0.4 * act.pulse);
+          ctx.fillText(b.name, lx, y);
+        }
+        ctx.restore();
+        markerHits.push({ x, y, r: baseR + 6, b });
+      }
+    }
+    function drawMarker(kind, x, y, r) {
+      ctx.beginPath();
+      if (kind === "sea") { // diamond
+        ctx.moveTo(x, y - r); ctx.lineTo(x + r, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r, y); ctx.closePath();
+      } else if (kind === "air" || kind === "bombing") { // triangle
+        ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.92, y + r * 0.7); ctx.lineTo(x - r * 0.92, y + r * 0.7); ctx.closePath();
+      } else if (kind === "political") { // square
+        ctx.rect(x - r * 0.8, y - r * 0.8, r * 1.6, r * 1.6);
+      } else if (kind === "nuclear") { // burst
+        for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, rr = i % 2 ? r : r * 1.9; ctx.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+        ctx.closePath();
+      } else { // land / amphibious / siege → circle
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+      }
+      ctx.fill();
+    }
+
+    // ---- HUD ----
+    const elDate = document.getElementById("date");
+    const elPhase = document.getElementById("phase");
+    const elSub = document.getElementById("sub");
+    const elNow = document.getElementById("now");
+    function updateHUD(ms) {
+      elDate.textContent = W.fmtMs(ms);
+      const ph = W.phaseAt(ms);
+      elPhase.textContent = ph.label; elSub.textContent = ph.sub;
+      // headline: the most significant battle within ~10 days
+      let best = null, bestScore = -1;
+      for (const b of W.BATTLES) {
+        const d = Math.abs(b.ms - ms) / W.DAY;
+        if (d > 12) continue;
+        const score = b.magnitude - d * 0.15;
+        if (score > bestScore) { bestScore = score; best = b; }
+      }
+      elNow.textContent = best ? best.name : "";
+    }
+
+    // ---- time ribbon (scrubber) ----
+    const graph = document.getElementById("graph");
+    const gctx = graph.getContext("2d");
+    const gbase = document.createElement("canvas");
+    const gbctx = gbase.getContext("2d");
+    let gW = 0, gH = 0;
+    const G_PADT = 30, G_PADB = 14;
+    let tickHits = [];
+
+    function buildGraph() {
+      const rect = graph.getBoundingClientRect();
+      gW = rect.width; gH = rect.height;
+      if (gW < 2) return;
+      graph.width = Math.round(gW * dpr); graph.height = Math.round(gH * dpr);
+      gbase.width = graph.width; gbase.height = graph.height;
+      const c = gbctx; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, gW, gH);
+      const x0 = 0, x1 = gW, y1 = gH - G_PADB;
+      // year gridlines
+      c.font = '10px "Spectral", Georgia, serif'; c.textBaseline = "alphabetic";
+      for (let yr = 1938; yr <= 1946; yr++) {
+        const tt = W.tFromMs(Date.UTC(yr, 0, 1)); const x = x0 + tt * (x1 - x0);
+        c.strokeStyle = "rgba(150,170,220,0.12)"; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(x, G_PADT - 6); c.lineTo(x, y1); c.stroke();
+        c.fillStyle = "rgba(150,170,220,0.55)"; c.textAlign = "left";
+        if (yr <= 1945) c.fillText(yr, x + 3, y1 + 11);
+      }
+      // Atlantic tonnage area
+      const S = W.ATL_SERIES;
+      if (S.length) {
+        const gy = (ton) => y1 - (ton / W.ATL_MAX) * (y1 - G_PADT);
+        const pts = S.map((p) => [x0 + W.tFromMs(p.ms) * (x1 - x0), gy(p.tonnage)]);
+        const grad = c.createLinearGradient(0, G_PADT, 0, y1);
+        grad.addColorStop(0, "rgba(255,90,74,0.42)"); grad.addColorStop(1, "rgba(255,90,74,0.03)");
+        c.beginPath(); c.moveTo(pts[0][0], y1);
+        for (const p of pts) c.lineTo(p[0], p[1]);
+        c.lineTo(pts[pts.length - 1][0], y1); c.closePath(); c.fillStyle = grad; c.fill();
+        c.beginPath(); c.moveTo(pts[0][0], pts[0][1]); for (const p of pts) c.lineTo(p[0], p[1]);
+        c.strokeStyle = "rgba(255,140,120,0.9)"; c.lineWidth = 1.6; c.stroke();
+      }
+      // event ticks (signpost battles), greedy 2-tier label packing
+      tickHits = [];
+      const ticks = W.timelineTicks();
+      const tiers = [10, 21], lastRight = [-1e9, -1e9];
+      c.textBaseline = "alphabetic";
+      for (const tk of ticks) {
+        const x = x0 + tk.t * (x1 - x0);
+        const col = KIND_FILL[tk.kind] || "#ffd66a";
+        c.strokeStyle = "rgba(255,255,255,0.25)"; c.lineWidth = 1;
+        c.beginPath(); c.moveTo(x, G_PADT - 4); c.lineTo(x, y1); c.stroke();
+        c.fillStyle = col; c.beginPath(); c.arc(x, G_PADT - 4, 3, 0, Math.PI * 2); c.fill();
+        c.font = '9px "Spectral", Georgia, serif';
+        const short = tk.label.length > 18 ? tk.label.slice(0, 17) + "…" : tk.label;
+        const tw = c.measureText(short).width;
+        let tier = 0; for (let k = 0; k < tiers.length; k++) { if (lastRight[k] < x - 4) { tier = k; break; } tier = k; }
+        lastRight[tier] = x + tw + 8;
+        let lx = x + 4, align = "left"; if (lx + tw > gW - 2) { lx = x - 4; align = "right"; }
+        c.textAlign = align; c.fillStyle = "rgba(220,228,245,0.9)";
+        c.fillText(short, lx, tiers[tier]);
+        tickHits.push({ x, y: G_PADT - 4, label: tk.label, ms: tk.ms });
+      }
+    }
+    function drawGraphOverlay() {
+      if (gW < 2) return;
+      gctx.setTransform(1, 0, 0, 1, 0, 0); gctx.clearRect(0, 0, graph.width, graph.height);
+      gctx.drawImage(gbase, 0, 0); gctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const x = t * gW;
+      gctx.strokeStyle = "rgba(255,255,255,0.85)"; gctx.lineWidth = 1.4;
+      gctx.beginPath(); gctx.moveTo(x, G_PADT - 8); gctx.lineTo(x, gH - G_PADB); gctx.stroke();
+      gctx.fillStyle = "#fff"; gctx.beginPath(); gctx.arc(x, G_PADT - 8, 3.5, 0, Math.PI * 2); gctx.fill();
+    }
+
+    // ---- view transitions ----
+    let viewAnim = 0; // 0..1 remaining
+    function setView(name) {
+      if (!VIEWS[name]) return;
+      viewName = name; viewTarget = VIEWS[name]; viewAnim = 1;
+      for (const el of document.getElementById("view").children) el.classList.toggle("active", el.dataset.v === name);
+    }
+    function stepView(dt) {
+      if (viewAnim <= 0) return false;
+      const k = Math.min(1, dt * 3.2);
+      let moved = false;
+      for (const key of ["centerLon", "halfWidth", "lat0", "lat1"]) {
+        const d = viewTarget[key] - view[key];
+        if (Math.abs(d) > 0.01) { view[key] += d * k; moved = true; }
+        else view[key] = viewTarget[key];
+      }
+      computeRect(); drawBase();
+      if (!moved) viewAnim = 0;
+      return true;
+    }
+
+    // ---- main frame ----
+    function draw(dt) {
+      const ms = W.msFromT(t);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(base, 0, 0);
+      // rebuild geo (fills) only when view or political state changes
+      const key = viewKey() + "@" + W.controlSignature(ms);
+      if (key !== lastGeoKey) { buildGeo(ms); lastGeoKey = key; }
+      ctx.drawImage(geo, 0, 0);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      drawAtlantic(ms, dt || 0.016);
+      drawFronts(ms);
+      drawArrows(ms);
+      drawBattles(ms);
+      updateHUD(ms);
+      drawGraphOverlay();
+      if (mapHover) refreshMapTip();
+    }
+
+    let holdTimer = null;
+    function scheduleLoopRestart() {
+      if (holdTimer) clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => { holdTimer = null; if (!playing && t >= 1) setPlaying(true); }, 2200);
+    }
+    function loop(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(0.1, (ts - lastTs) / 1000); lastTs = ts;
+      const moving = stepView(dt);
+      if (playing) {
+        t += (dt * speed) / DURATION;
+        if (t >= 1) { t = 1; setPlaying(false); scheduleLoopRestart(); }
+        draw(dt);
+      } else if (moving) {
+        draw(dt);
+      }
+      requestAnimationFrame(loop);
+    }
+
+    // ---- controls ----
+    const playBtn = document.getElementById("play");
+    function setPlaying(p) {
+      playing = p;
+      playBtn.innerHTML = p ? "❚❚ Pause" : (t >= 1 ? "↻ Replay" : "▶ Play");
+      if (p && t >= 1) t = 0;
+      lastTs = 0;
+    }
+    playBtn.addEventListener("click", () => setPlaying(!playing));
+    document.getElementById("reset").addEventListener("click", () => {
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      t = 0; setPlaying(false); draw(0.016);
+    });
+    document.getElementById("speed").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-s]"); if (!b) return;
+      speed = parseFloat(b.dataset.s);
+      for (const el of e.currentTarget.children) el.classList.toggle("active", el === b);
+    });
+    document.getElementById("view").addEventListener("click", (e) => {
+      const b = e.target.closest("button[data-v]"); if (!b) return; setView(b.dataset.v);
+    });
+
+    // scrubber seek
+    function seekFromClientX(clientX) {
+      const rect = graph.getBoundingClientRect();
+      t = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      if (holdTimer) { clearTimeout(holdTimer); holdTimer = null; }
+      draw(0.016);
+      playBtn.innerHTML = t >= 1 ? "↻ Replay" : (playing ? "❚❚ Pause" : "▶ Play");
+    }
+    let dragging = false;
+    graph.addEventListener("pointerdown", (e) => { dragging = true; graph.setPointerCapture(e.pointerId); setPlaying(false); seekFromClientX(e.clientX); });
+    graph.addEventListener("pointermove", (e) => {
+      if (dragging) { hideTip(); return seekFromClientX(e.clientX); }
+      const rect = graph.getBoundingClientRect();
+      const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+      let hit = null; for (const h of tickHits) { if (Math.abs(mx - h.x) < 5 && my < G_PADT + 4) { hit = h; break; } }
+      if (hit) { graph.style.cursor = "help"; showTip(`<b>${hit.label}</b><span class="meta">${W.fmtMs(hit.ms)}</span>`, rect.left + hit.x, rect.top + hit.y); }
+      else { graph.style.cursor = "ew-resize"; hideTip(); }
+    });
+    graph.addEventListener("pointerup", () => { dragging = false; });
+    graph.addEventListener("pointercancel", () => { dragging = false; });
+    graph.addEventListener("pointerleave", () => { if (!dragging) hideTip(); });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.code === "Escape") { setAbout(false); hideTip(); }
+      else if (e.code === "Space") { e.preventDefault(); setPlaying(!playing); }
+      else if (e.code === "ArrowRight") { setPlaying(false); t = Math.min(1, t + 0.004); draw(0.016); }
+      else if (e.code === "ArrowLeft") { setPlaying(false); t = Math.max(0, t - 0.004); draw(0.016); }
+    });
+
+    // ---- tooltip ----
+    const tipEl = document.getElementById("tip");
+    function showTip(html, cx, cy) { tipEl.innerHTML = html; tipEl.style.left = cx + "px"; tipEl.style.top = cy + "px"; tipEl.hidden = false; }
+    function hideTip() { tipEl.hidden = true; }
+
+    // ---- map hover ----
+    let mapHover = null;
+    canvas.addEventListener("pointermove", (e) => { mapHover = { cx: e.clientX, cy: e.clientY }; refreshMapTip(); });
+    canvas.addEventListener("pointerleave", () => { mapHover = null; hideTip(); });
+    function refreshMapTip() {
+      if (!mapHover) return;
+      const { cx, cy } = mapHover;
+      // battle markers first
+      let best = null, bestD = Infinity;
+      for (const h of markerHits) { const d = Math.hypot(cx - h.x, cy - h.y); if (d < h.r && d < bestD) { bestD = d; best = h; } }
+      if (best) {
+        const b = best.b;
+        const vic = b.victor && b.victor !== "none" ? ` · ${b.victor} victory` : "";
+        showTip(`<b>${b.name}</b><span class="meta">${W.fmtMs(b.ms)}${vic}</span><div class="blurb">${b.blurb || ""}</div>`, cx, cy);
+        return;
+      }
+      // else: name the country + who held it
+      if (cx < mapX || cx > mapX + mapW || cy < mapY || cy > mapY + mapH) { hideTip(); return; }
+      const info = countryAt(cx, cy);
+      if (info) showTip(info, cx, cy); else hideTip();
+    }
+    function countryAt(cx, cy) {
+      if (!countries) return null;
+      const [lon, lat] = unproject(cx, cy);
+      for (const feat of countries) {
+        if (pointInGeom(lon, lat, feat.geometry)) {
+          const name = feat.properties && feat.properties.name;
+          const ms = W.msFromT(t);
+          const lc = name && W.lastChange(name, ms);
+          const fac = lc && W.FACTIONS[lc.control];
+          const who = fac ? fac.label : "neutral / uninvolved";
+          const note = lc && lc.note ? `<div class="blurb">${lc.note}</div>` : "";
+          return `<b>${name}</b><span class="meta">${who}</span>${note}`;
+        }
+      }
+      return null;
+    }
+    function pointInGeom(lon, lat, geom) {
+      const polys = geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
+      for (const poly of polys) if (pointInPoly(lon, lat, poly)) return true;
+      return false;
+    }
+    function pointInPoly(lon, lat, rings) {
+      // outer ring inside, holes outside
+      if (!ringContains(rings[0], lon, lat)) return false;
+      for (let i = 1; i < rings.length; i++) if (ringContains(rings[i], lon, lat)) return false;
+      return true;
+    }
+    function ringContains(ring, x, y) {
+      let inside = false;
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+        if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / ((yj - yi) || 1e-9) + xi)) inside = !inside;
+      }
+      return inside;
+    }
+
+    // ---- about ----
+    const aboutPanel = document.getElementById("aboutPanel");
+    function setAbout(open) { aboutPanel.hidden = !open; if (open) setPlaying(false); }
+    document.getElementById("about").addEventListener("click", () => setAbout(true));
+    document.getElementById("aboutClose").addEventListener("click", () => setAbout(false));
+    aboutPanel.addEventListener("click", (e) => { if (e.target === aboutPanel) setAbout(false); });
+
+    // ---- ribbon era ticks under the scrubber ----
+    (function () {
+      const wrap = document.getElementById("ticks");
+      for (const ph of W.PHASES) {
+        const s = document.createElement("span"); s.textContent = ph.label;
+        const pct = W.tFromMs(ph.ms) * 100; s.style.left = pct.toFixed(1) + "%";
+        if (pct < 5) s.style.transform = "translateX(0)"; else if (pct > 95) s.style.transform = "translateX(-100%)";
+        wrap.appendChild(s);
+      }
+    })();
+
+    // ---- bootstrap ----
+    let autoplay = true;
+    (function () {
+      const m = /(?:^|[#&])t=(-?\d+(?:\.\d+)?)/.exec(location.hash);
+      if (m) { autoplay = false; t = Math.max(0, Math.min(1, parseFloat(m[1]))); }
+      const vm = /(?:^|[#&])view=(\w+)/.exec(location.hash);
+      if (vm && VIEWS[vm[1]]) { viewName = vm[1]; view = Object.assign({}, VIEWS[vm[1]]); viewTarget = view; for (const el of document.getElementById("view").children) el.classList.toggle("active", el.dataset.v === vm[1]); }
+    })();
+    window.addEventListener("resize", () => { layout(); draw(0.016); });
+    layout();
+    draw(0.016);
+    requestAnimationFrame(loop);
+    if (/(?:^|[#&])about(?:&|$)/.test(location.hash)) { setAbout(true); autoplay = false; }
+
+    // load borders (the map works without them — just the heat of battle on the sea)
+    const loadEl = document.getElementById("loading");
+    function loadScript(src) {
+      return new Promise((res, rej) => { const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
+    }
+    (async function () {
+      try {
+        await loadScript("https://unpkg.com/topojson-client@3/dist/topojson-client.min.js");
+        const r = await fetch("https://unpkg.com/world-atlas@2/countries-110m.json");
+        const topo = await r.json();
+        const fc = window.topojson.feature(topo, topo.objects.countries);
+        countries = fc.features || [fc];
+        lastGeoKey = ""; draw(0.016);
+      } catch (err) {
+        console.warn("country borders unavailable", err);
+      } finally { loadEl.style.display = "none"; }
+    })();
+
+    if (autoplay) setTimeout(() => setPlaying(true), 1000);
+    else playBtn.innerHTML = t >= 1 ? "↻ Replay" : "▶ Play";
+  })();
+  </script>
+</body>
+</html>
