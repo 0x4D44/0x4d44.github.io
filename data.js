@@ -12,6 +12,17 @@
 
 window.ESSAYS = [
   {
+    slug: "night-cab",
+    title: "The Night Cab",
+    tagline: "The Cab, rebuilt from the rails up — and a measure of how far AI coding has come in a few months. A wet-night, first-person drive of a GTO-inverter EMU down the Westford–Eastbank line: notch up through the rising inverter whine, work the brake, answer the AWS and hold at the red starters, with rain on the windscreen and the wipers beating. Where the original was a sketch, this one rides on an engineered, test-driven core — longitudinal physics, multi-aspect signalling, AWS/TPWS and a vigilance device behind a pure simulation kernel — and drives by keyboard, gamepad or on-screen touch. TypeScript + Three.js.",
+    url: "https://0x4d44.github.io/night-cab/",
+    illustration: "ill-emu",
+    date: "2026-06-15T10:00:00",
+    year: 2026,
+    tags: ["rail", "software"],
+    real: true,
+  },
+  {
     slug: "world-population",
     title: "The Peopling of the Earth",
     tagline: "Twelve thousand years of humanity, lit on a dark globe. An animated heat-map of population density that runs from the first Neolithic farmers, through the rise and fall of Rome, Baghdad and Edo, to the megacities of today — then a thousand years on, past the projected peak of ten billion to a speculative far future. Watch the centre of human gravity swing from China and India to a blazing Africa. Play, pause, scrub and change speed; world totals after McEvedy & Jones, HYDE and the UN's 2024 projections. Vanilla JS on a canvas, with the world's coastlines from MapLibre's atlas.",

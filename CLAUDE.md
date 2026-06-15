@@ -50,6 +50,10 @@ source locations (outside this repo):
   `src/render.ts`)
 - `edinburgh-isochrone/` ← `C:\language\mdisochrone\Edinburgh`
 - `mdisochrone/` ← `C:\language\mdisochrone` (the root project)
+- `night-cab/` ← `C:\language\mdtrain2` (also `github.com/0x4D44/mdtrain2`) —
+  "The Night Cab", the wet-night GTO successor to `emu-cab`. Vite + TypeScript +
+  Three.js on a tested sim core; `vite.config.ts` already sets `base: "./"` so the
+  bundle works under the subpath. `npm run build`, copy `dist/*` here.
 Build with `npm run build` in the source dir, then copy its `dist/*` over the
 matching `<slug>/` directory here. Do **not** hand-edit the minified bundles.
 
