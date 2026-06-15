@@ -129,6 +129,27 @@
   }
   .about-close:hover { color: var(--ink); border-color: var(--accent); }
 
+  /* ---- period photograph (lower-left), crossfading as events occur ---- */
+  .photo {
+    position: fixed; left: 18px; bottom: 220px; width: 240px; z-index: 4;
+    opacity: 0; transition: opacity 0.8s ease; pointer-events: none;
+  }
+  .photo.show { opacity: 1; }
+  .photo .frame {
+    position: relative; display: block; width: 100%; height: 160px; background: #05070d;
+    border: 1px solid rgba(150,170,220,0.4); border-radius: 3px; overflow: hidden;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.66);
+  }
+  .photo img {
+    position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+    opacity: 0; transition: opacity 0.9s ease; filter: contrast(1.04) saturate(0.92);
+  }
+  .photo img.on { opacity: 1; }
+  .photo figcaption { margin-top: 5px; font-size: 0.72rem; line-height: 1.28; color: var(--dim); text-shadow: 0 1px 8px rgba(0,0,0,0.9); }
+  .photo figcaption b { display: block; color: var(--ink); font-size: 0.8rem; font-weight: 600; }
+  .photo figcaption .cr { font-size: 0.64rem; opacity: 0.72; font-style: italic; }
+  @media (max-width: 820px), (max-height: 640px) { .photo { display: none; } }
+
   .loading { position: fixed; inset: 0; display: grid; place-items: center; color: var(--dim); font-style: italic; z-index: 8; }
 </style>
 </head>
@@ -186,6 +207,11 @@
     </div>
   </div>
 
+  <figure class="photo" id="photo" aria-hidden="true">
+    <span class="frame"><img id="photoA" alt="" /><img id="photoB" alt="" /></span>
+    <figcaption id="photoCap"></figcaption>
+  </figure>
+
   <div class="tip" id="tip" hidden></div>
 
   <div class="about" id="aboutPanel" hidden>
@@ -228,6 +254,7 @@
   <div class="loading" id="loading">drawing the map of the world…</div>
 
   <script src="./data.js"></script>
+  <script src="./photos.js"></script>
   <script src="./model.js"></script>
   <script>
   (function () {
@@ -552,11 +579,13 @@
     // (no per-frame layout reads) and generous enough for the changing readout.
     function reservedRects() {
       const w = window.innerWidth, h = window.innerHeight;
-      return [
+      const out = [
         { x0: 0, y0: 0, x1: 430, y1: 132 },        // title (top-left)
         { x0: w - 390, y0: 0, x1: w, y1: 240 },     // date / phase / toll (top-right)
         { x0: 0, y0: h - 176, x1: w, y1: h },        // control bar (bottom)
       ];
+      if (photoShown && w > 820 && h > 640) out.push({ x0: 8, y0: h - 426, x1: 266, y1: h - 212 }); // photo (lower-left)
+      return out;
     }
     function placeLabels(labels) {
       labels.sort((a, b) => (b.b.magnitude + b.act.pulse) - (a.b.magnitude + a.act.pulse));
@@ -638,6 +667,41 @@
     function fmtMillions(m) {
       if (m >= 1) return m.toFixed(1).replace(/\.0$/, "") + " million";
       return Math.round(m * 1000) + " thousand";
+    }
+
+    // ---- period photograph (crossfades as events flare) ----
+    const photoEl = document.getElementById("photo"), capEl = document.getElementById("photoCap");
+    let frontImg = document.getElementById("photoA"), backImg = document.getElementById("photoB");
+    let shownEvent = null, photoShown = false;
+    const photoEntries = [];
+    for (const ph of (window.WW2_PHOTOS || [])) {
+      const b = W.BATTLES.find((x) => x.name === ph.event);
+      if (b) photoEntries.push({ photo: ph, battle: b });
+    }
+    function pickPhoto(ms) {
+      let best = null, score = -1;
+      for (const pe of photoEntries) {
+        const a = W.battleActivity(pe.battle, ms);
+        if (!a || !a.active) continue;
+        const s = pe.battle.magnitude + a.pulse;
+        if (s > score) { score = s; best = pe; }
+      }
+      return best;
+    }
+    function updatePhoto(ms) {
+      const pe = pickPhoto(ms);
+      const ev = pe ? pe.photo.event : null;
+      if (ev === shownEvent) return;       // no change — let the current one ride
+      shownEvent = ev;
+      if (!pe) { photoEl.classList.remove("show"); photoShown = false; return; }
+      const ph = pe.photo;
+      const reveal = () => { backImg.classList.add("on"); frontImg.classList.remove("on"); const t = frontImg; frontImg = backImg; backImg = t; };
+      backImg.classList.remove("on");
+      backImg.onload = reveal;
+      backImg.src = "./img/" + ph.file;
+      if (backImg.complete && backImg.naturalWidth) reveal();
+      capEl.innerHTML = '<b>' + ph.event + '</b><span class="cr">' + ph.credit + ' · ' + ph.license + '</span>';
+      photoEl.classList.add("show"); photoShown = true;
     }
 
     // ---- time ribbon (scrubber) ----
@@ -755,6 +819,7 @@
       drawArrows(ms);
       drawBattles(ms);
       updateHUD(ms);
+      updatePhoto(ms);
       drawGraphOverlay();
       if (mapHover) refreshMapTip();
     }
