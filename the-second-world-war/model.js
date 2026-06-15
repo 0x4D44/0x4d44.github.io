@@ -19,12 +19,17 @@
   "use strict";
 
   // === DATA (injected from the research workflow) ============================
-  const DATA = window.WW2_DATA || (typeof WW2_DATA !== "undefined" ? WW2_DATA : {});
+  // Resolve from whichever global the host provides (browser window, or a
+  // globalThis/WW2_DATA assigned by a headless Node test before require).
+  const DATA = (typeof window !== "undefined" && window.WW2_DATA) ||
+    (typeof globalThis !== "undefined" && globalThis.WW2_DATA) ||
+    (typeof WW2_DATA !== "undefined" ? WW2_DATA : {});
 
   // === Time axis =============================================================
   // The playhead t (0..1) is linear over [START, END]; every day gets equal
-  // screen time, because in this war a fortnight could turn the world.
-  const START = Date.UTC(1938, 0, 1);
+  // screen time, because in this war a fortnight could turn the world. The span
+  // opens with the war in Asia (the Marco Polo Bridge incident, July 1937).
+  const START = Date.UTC(1937, 6, 7);
   const END = Date.UTC(1946, 0, 1);
   const SPAN = END - START;
   const DAY = 86400000;
@@ -50,7 +55,8 @@
 
   // === Phases (the changing caption) ========================================
   const PHASES = [
-    ["1938-01-01", "The Gathering Storm", "Appeasement and annexation"],
+    ["1937-07-07", "The War in Asia", "Japan invades China"],
+    ["1938-03-12", "The Gathering Storm", "Appeasement and annexation"],
     ["1939-09-01", "Blitzkrieg", "The Axis unleashed"],
     ["1940-06-01", "Britain Alone", "The fall of the West"],
     ["1941-06-22", "The War Becomes Global", "Barbarossa and Pearl Harbor"],
@@ -73,7 +79,7 @@
     "Axis": { fill: "#9a7236", edge: "#caa052", label: "Axis" },
     "occupied-by-axis": { fill: "#75561f", edge: "#b08a3e", label: "Axis-occupied" },
     "co-belligerent-axis": { fill: "#8a6730", edge: "#bd954c", label: "Axis co-belligerent" },
-    "Soviet": { fill: "#a3271f", edge: "#e0564a", label: "Soviet Union" },
+    "Soviet": { fill: "#7e2a26", edge: "#d65249", label: "Soviet Union" },
     "Allied": { fill: "#356ba1", edge: "#69a8e0", label: "Allied" },
     "occupied-by-allies": { fill: "#2e7e79", edge: "#5cc0ba", label: "Allied-liberated" },
     "co-belligerent-allied": { fill: "#3a7593", edge: "#63aecb", label: "Allied co-belligerent" },
@@ -153,7 +159,7 @@
   }
 
   const FRONT_COLOR = {
-    "Eastern Front": "#ffcf5a",
+    "Eastern Front": "#ffe1a0",
     "Western Front": "#5fd0ff",
     "Italian Front": "#86e0a0",
     "North Africa": "#ffa24d",

@@ -146,7 +146,7 @@ window.WW2_DATA = {
     "kind": "land",
     "theatre": "Eastern Front",
     "magnitude": 5,
-    "victor": "indecisive",
+    "victor": "Soviet",
     "blurb": "Germany's massive invasion of the USSR opened the largest land war in history but stalled short of Moscow by winter."
    },
    {
@@ -529,7 +529,7 @@ window.WW2_DATA = {
     "name": "Battle of Taranto",
     "lon": 17.23,
     "lat": 40.47,
-    "kind": "sea",
+    "kind": "air",
     "theatre": "Mediterranean",
     "magnitude": 3,
     "victor": "Allied",
@@ -539,12 +539,12 @@ window.WW2_DATA = {
     "date": "1941-03-28",
     "name": "Battle of Cape Matapan",
     "lon": 21,
-    "lat": 36.4,
+    "lat": 35.4,
     "kind": "sea",
     "theatre": "Mediterranean",
     "magnitude": 3,
     "victor": "Allied",
-    "blurb": "The Royal Navy sank three Italian cruisers off Greece, securing the eastern Mediterranean."
+    "blurb": "The Royal Navy sank three Italian cruisers in a night gun action south-west of Crete, securing the eastern Mediterranean."
    },
    {
     "date": "1941-05-27",
@@ -571,13 +571,49 @@ window.WW2_DATA = {
    {
     "date": "1943-12-26",
     "name": "Battle of the North Cape",
-    "lon": 24,
+    "lon": 28.2,
     "lat": 72.5,
     "kind": "sea",
     "theatre": "Atlantic",
     "magnitude": 3,
     "victor": "Allied",
     "blurb": "The Royal Navy sank the battleship Scharnhorst in the Arctic dark, guarding the Murmansk convoys."
+   },
+   {
+    "date": "1941-07-10",
+    "endDate": "1941-09-10",
+    "name": "Battle of Smolensk",
+    "lon": 32.05,
+    "lat": 54.78,
+    "kind": "land",
+    "theatre": "Eastern Front",
+    "magnitude": 3,
+    "victor": "indecisive",
+    "blurb": "Fierce resistance on the road to Moscow holds up Army Group Centre for two costly months."
+   },
+   {
+    "date": "1944-06-09",
+    "endDate": "1944-08-05",
+    "name": "Vyborg–Petrozavodsk Offensive",
+    "lon": 28.73,
+    "lat": 60.71,
+    "kind": "land",
+    "theatre": "Eastern Front",
+    "magnitude": 3,
+    "victor": "Soviet",
+    "blurb": "The Red Army drives Finland out of the Continuation War, forcing the September armistice."
+   },
+   {
+    "date": "1944-12-29",
+    "endDate": "1945-02-13",
+    "name": "Siege of Budapest",
+    "lon": 19.04,
+    "lat": 47.5,
+    "kind": "siege",
+    "theatre": "Eastern Front",
+    "magnitude": 3,
+    "victor": "Soviet",
+    "blurb": "A brutal 50-day siege ends with the Red Army's capture of the Hungarian capital."
    }
   ]
  },
@@ -920,6 +956,42 @@ window.WW2_DATA = {
     "magnitude": 5,
     "victor": "Allied",
     "blurb": "The second atomic bomb devastated Nagasaki, and within days Japan announced its surrender, ending World War II."
+   },
+   {
+    "date": "1942-07-21",
+    "endDate": "1943-01-22",
+    "name": "Kokoda Track Campaign",
+    "lon": 147.73,
+    "lat": -8.88,
+    "kind": "land",
+    "theatre": "Pacific",
+    "magnitude": 4,
+    "victor": "Allied",
+    "blurb": "Australians halt and reverse Japan's overland drive on Port Moresby across the Owen Stanley Range."
+   },
+   {
+    "date": "1942-11-12",
+    "endDate": "1942-11-15",
+    "name": "Naval Battle of Guadalcanal",
+    "lon": 159.9,
+    "lat": -9.27,
+    "kind": "sea",
+    "theatre": "Pacific",
+    "magnitude": 4,
+    "victor": "Allied",
+    "blurb": "Climactic night surface battles in Ironbottom Sound break Japan's bid to retake Henderson Field."
+   },
+   {
+    "date": "1944-04-17",
+    "endDate": "1944-12-31",
+    "name": "Operation Ichi-Go",
+    "lon": 113,
+    "lat": 28.2,
+    "kind": "land",
+    "theatre": "CBI",
+    "magnitude": 4,
+    "victor": "Axis",
+    "blurb": "Japan's largest land offensive overruns central and southern China, seizing US airfields."
    }
   ]
  },
@@ -972,7 +1044,7 @@ window.WW2_DATA = {
     "kind": "bombing",
     "theatre": "Western Europe",
     "magnitude": 3,
-    "victor": "Axis",
+    "victor": "indecisive",
     "blurb": "An 11-hour Luftwaffe raid gutted Coventry's centre and its medieval cathedral, killing about 568 and giving German the verb 'coventrieren'."
    },
    {
@@ -1006,10 +1078,10 @@ window.WW2_DATA = {
     "place": "Berlin (Wannsee), Germany",
     "lon": 13.164,
     "lat": 52.4327,
-    "kind": "political",
-    "theatre": "Home Front",
+    "kind": "atrocity",
+    "theatre": "Western Europe",
     "magnitude": 5,
-    "victor": "Axis",
+    "victor": "none",
     "blurb": "Senior Nazi officials coordinated the 'Final Solution', the industrial-scale genocide of Europe's Jews."
    },
    {
@@ -1237,6 +1309,105 @@ window.WW2_DATA = {
     "magnitude": 5,
     "victor": "Allied",
     "blurb": "Japan signed the instrument of surrender aboard USS Missouri, formally ending the Second World War."
+   },
+   {
+    "date": "1940-04-03",
+    "name": "Katyn Massacre",
+    "lon": 31.79,
+    "lat": 54.77,
+    "kind": "atrocity",
+    "theatre": "Eastern Front",
+    "magnitude": 4,
+    "victor": "none",
+    "blurb": "The Soviet NKVD shoots some 22,000 captured Polish officers and intellectuals in the Katyn forest and elsewhere."
+   },
+   {
+    "date": "1941-09-29",
+    "name": "Babi Yar Massacre",
+    "lon": 30.45,
+    "lat": 50.46,
+    "kind": "atrocity",
+    "theatre": "Eastern Front",
+    "magnitude": 4,
+    "victor": "none",
+    "blurb": "Einsatzgruppe C shoots 33,771 Jews of Kyiv in two days — one of the worst single massacres of the Holocaust."
+   },
+   {
+    "date": "1942-07-23",
+    "name": "Operation Reinhard",
+    "lon": 22.05,
+    "lat": 52.63,
+    "kind": "atrocity",
+    "theatre": "Eastern Front",
+    "magnitude": 5,
+    "victor": "none",
+    "blurb": "The death camps Treblinka, Belzec and Sobibor begin the systematic murder of some 1.7 million Jews."
+   },
+   {
+    "date": "1943-04-19",
+    "name": "Warsaw Ghetto Uprising",
+    "lon": 20.99,
+    "lat": 52.25,
+    "kind": "atrocity",
+    "theatre": "Eastern Front",
+    "magnitude": 4,
+    "victor": "none",
+    "blurb": "The largest Jewish revolt of the war holds out for a month before the ghetto is razed."
+   },
+   {
+    "date": "1943-06-01",
+    "name": "Bengal Famine",
+    "lon": 88.36,
+    "lat": 22.57,
+    "kind": "atrocity",
+    "theatre": "CBI",
+    "magnitude": 4,
+    "victor": "none",
+    "blurb": "Wartime policy, hoarding and the loss of Burmese rice kill some 2–3 million in British-ruled Bengal."
+   },
+   {
+    "date": "1945-01-27",
+    "name": "Liberation of Auschwitz-Birkenau",
+    "lon": 19.2,
+    "lat": 50.03,
+    "kind": "atrocity",
+    "theatre": "Eastern Front",
+    "magnitude": 5,
+    "victor": "none",
+    "blurb": "The Red Army frees the largest Nazi death camp, where some 1.1 million — overwhelmingly Jews — were murdered."
+   },
+   {
+    "date": "1944-06-13",
+    "name": "First V-1 Flying Bombs hit London",
+    "lon": 0,
+    "lat": 51.4,
+    "kind": "bombing",
+    "theatre": "Western Europe",
+    "magnitude": 3,
+    "victor": "Axis",
+    "blurb": "Hitler's first 'vengeance weapon', the pulse-jet V-1, opens a cruise-missile bombardment of London."
+   },
+   {
+    "date": "1944-09-08",
+    "name": "First V-2 Rocket Strikes London",
+    "lon": -0.27,
+    "lat": 51.46,
+    "kind": "bombing",
+    "theatre": "Western Europe",
+    "magnitude": 3,
+    "victor": "Axis",
+    "blurb": "The supersonic V-2 — the world's first ballistic missile — strikes without warning from the edge of space."
+   },
+   {
+    "date": "1945-07-16",
+    "name": "Trinity Nuclear Test",
+    "lon": -106.48,
+    "lat": 33.68,
+    "kind": "nuclear",
+    "theatre": "Home Front",
+    "magnitude": 5,
+    "victor": "none",
+    "blurb": "The Manhattan Project detonates the first atomic device in the New Mexico desert — the dawn of the nuclear age."
    }
   ]
  },
@@ -3031,7 +3202,7 @@ window.WW2_DATA = {
     "note": "Strikes from the Home Islands taking the Philippines, Malaya, Singapore and the Indies."
    },
    {
-    "label": "US island-hopping counter-offensive",
+    "label": "US Pacific counter-offensive (Solomons to the Marianas)",
     "faction": "Allied",
     "startDate": "1943-06-30",
     "endDate": "1945-06-22",
@@ -4175,64 +4346,68 @@ window.WW2_DATA = {
  },
  "casualties": [
   {
-   "date": "1939-09-01",
+   "date": "1937-07-07",
    "dead": 0
   },
   {
-   "date": "1939-12-31",
-   "dead": 0.6
+   "date": "1938-01-01",
+   "dead": 0.4
+  },
+  {
+   "date": "1939-01-01",
+   "dead": 1.2
+  },
+  {
+   "date": "1939-09-01",
+   "dead": 2.5
   },
   {
    "date": "1940-06-30",
-   "dead": 1.5
-  },
-  {
-   "date": "1940-12-31",
-   "dead": 2.2
+   "dead": 4
   },
   {
    "date": "1941-06-22",
-   "dead": 3.5
+   "dead": 7
   },
   {
    "date": "1941-12-31",
-   "dead": 8
+   "dead": 12
   },
   {
    "date": "1942-06-30",
-   "dead": 14
+   "dead": 18
   },
   {
    "date": "1942-12-31",
-   "dead": 22
+   "dead": 27
   },
   {
    "date": "1943-06-30",
-   "dead": 31
+   "dead": 36
   },
   {
    "date": "1943-12-31",
-   "dead": 40
+   "dead": 45
   },
   {
    "date": "1944-06-30",
-   "dead": 50
+   "dead": 55
   },
   {
    "date": "1944-12-31",
-   "dead": 60
+   "dead": 64
   },
   {
    "date": "1945-05-08",
-   "dead": 70
+   "dead": 72
   },
   {
    "date": "1945-09-02",
-   "dead": 77
+   "dead": 78
   },
   {
    "date": "1946-01-01",
-   "dead": 78
+   "dead": 79
   }
  ]
 };
