@@ -1,0 +1,6 @@
+# Scratch / implementation working directory — document generator scripts,
+# screenshots, contact sheets, and data dumps used while building documents
+# (e.g. the-second-world-war). Not part of the published site; served by Pages
+# only if committed, so keep it out of the repo.
+.impl-work/
+.impl-work$1.png
