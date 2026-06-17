@@ -42,6 +42,11 @@ served verbatim (`.nojekyll` disables Jekyll processing).
 Many document directories also contain a `*.zip` source archive and sometimes a
 print `*.pdf`. These are downloadable artifacts; the site does not reference them.
 
+Not every top-level directory is a catalog entry: `wrk_journals/` (and any
+`wrk_docs/`, plus `scratchpad.md` / `lessons_learnt.md` at the root) are
+repo-meta from the working conventions, not documents. They are still served by
+Pages but have no `window.ESSAYS` entry and should not get one.
+
 **Pre-built Vite bundles** — some documents are committed here as *built output*
 only (hashed `assets/index-*.js` + `.css`, no readable source). To change them,
 edit the source project, rebuild, and copy the `dist/` output back in. Known
@@ -78,6 +83,10 @@ undo it.
 3. If it needs a new icon, add a `<symbol id="ill-…">` to the SVG sprite in
    `index.html` and set the entry's `illustration` to that id.
 4. If it introduces a new category, add the tag to `window.TAGS` in `data.js`.
+   The current vocabulary (after `"all"`) is: `rail`, `maritime`, `transport`,
+   `fiction`, `software`, `comic`, `history`, `math`, `science`, `finance`,
+   `engineering`. Reuse one of these where it fits; only extend `window.TAGS`
+   for a genuinely new category (a `tag` not listed there gets no filter chip).
 
 ## Do not publish
 
