@@ -4,6 +4,10 @@
 // tagline, url, date, year (subject year), and a tag.
 // Use `tag: "x"` for one subject, or `tags: ["x", "y"]` for several
 // (the page then appears under each of those filters).
+// Keep `tagline` short — aim for one to three sentences and ~55 words
+// max (roughly two lines in the listing). Lead with what the thing IS,
+// add at most one sentence of flavour, then close with the tech stack.
+// Resist itemising every feature: the tagline is a hook, not a spec.
 // `date` is ISO 8601 and is the sort key. Use a full timestamp
 // (e.g. "2026-05-28T18:54:00") so multiple entries published on the
 // same day sort in the right order; a bare "YYYY-MM-DD" also works.
@@ -14,7 +18,7 @@ window.ESSAYS = [
   {
     slug: "the-second-world-war",
     title: "The Second World War",
-    tagline: "An animated atlas of the deadliest conflict in history, from the war in Asia in 1937 to the surrender of Japan in 1945. Watch the map of the world change month by month: countries fall and are freed in shifting colour, the front lines bulge east to the Volga and roll back to Berlin, the great offensives sweep the continent as arrows, battle markers flare from Dunkirk to Stalingrad to Okinawa, and sombre markers mark the Holocaust — while the curve below charts the Battle of the Atlantic and a running death toll climbs past seventy million. Play, pause, scrub and change speed; switch between the European, Pacific and world theatres. Vanilla JS on a canvas, borders from MapLibre's atlas, the data assembled and fact-checked by a multi-agent research pass.",
+    tagline: "An animated atlas of the deadliest conflict in history, 1937–1945. Watch the world change month by month as front lines bulge and roll back, the great offensives sweep the continent, and a running death toll climbs past seventy million. Play, pause, scrub and switch between the European, Pacific and world theatres. Vanilla JS on a canvas, fact-checked by a multi-agent research pass.",
     url: "https://0x4d44.github.io/the-second-world-war/",
     illustration: "ill-ww2",
     date: "2026-06-15T18:00:00",
@@ -25,7 +29,7 @@ window.ESSAYS = [
   {
     slug: "night-cab",
     title: "The Night Cab",
-    tagline: "The Cab, rebuilt from the rails up — and a measure of how far AI coding has come in a few months. A first-person drive of a GTO-inverter EMU, now down a fourteen-kilometre grand route from the city terminus at Kingsgate to the sea at Seahaven — through cuttings and embankments, across a viaduct carried high over a river valley, and into a tunnel bored through a headland, under ACES-graded light with a real sky overhead. Notch up through the rising inverter whine, work the brake, answer the AWS and hold at the red starters; rain beats on the windscreen and the wipers sweep, and you can cycle the weather from an overcast day through sunset to a moody wet-night, or look around the cab with the mouse from the driver's seat on the left. Where the original was a sketch, this rides on an engineered, test-driven core — longitudinal physics, multi-aspect signalling, AWS/TPWS and a vigilance device, and now a pure, oracle-tested geometry that places every metre of track and terrain — and drives by keyboard, gamepad or on-screen touch. TypeScript + Three.js.",
+    tagline: "The Cab, rebuilt from the rails up — a first-person drive of a GTO-inverter EMU down a fourteen-kilometre route from city terminus to the sea, through cuttings, a viaduct and a tunnel under a real sky. Notch up the inverter whine, work the brake and answer the AWS, with rain on the windscreen and weather you can cycle from overcast to wet-night. Rides on an engineered, test-driven sim core. TypeScript + Three.js.",
     url: "https://0x4d44.github.io/night-cab/",
     illustration: "ill-emu",
     date: "2026-06-15T10:00:00",
@@ -36,7 +40,7 @@ window.ESSAYS = [
   {
     slug: "world-population",
     title: "The Peopling of the Earth",
-    tagline: "Twelve thousand years of humanity, lit on a dark globe. An animated heat-map of population density that runs from the first Neolithic farmers, through the rise and fall of Rome, Baghdad and Edo, to the megacities of today — then a thousand years on, past the projected peak of ten billion to a speculative far future. Watch the centre of human gravity swing from China and India to a blazing Africa. Play, pause, scrub and change speed; world totals after McEvedy & Jones, HYDE and the UN's 2024 projections. Vanilla JS on a canvas, with the world's coastlines from MapLibre's atlas.",
+    tagline: "Twelve thousand years of humanity, lit on a dark globe — an animated heat-map of population density from the first Neolithic farmers to the megacities of today, and on past a projected peak of ten billion. Watch the centre of human gravity swing from China and India to a blazing Africa. Play, pause, scrub and change speed. Vanilla JS on a canvas.",
     url: "https://0x4d44.github.io/world-population/",
     illustration: "ill-population",
     date: "2026-06-14T16:30:00",

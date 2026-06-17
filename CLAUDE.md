@@ -72,7 +72,9 @@ undo it.
 ## Adding a document (the common task)
 
 1. Create `<slug>/` containing a self-contained `index.html` (plus any assets).
-2. Add an entry to the `window.ESSAYS` array in `data.js`.
+2. Add an entry to the `window.ESSAYS` array in `data.js`. Keep `tagline`
+   short — one to three sentences, ~55 words max: lead with what it is, one
+   line of flavour, then the tech. It's a hook, not a feature list.
 3. If it needs a new icon, add a `<symbol id="ill-…">` to the SVG sprite in
    `index.html` and set the entry's `illustration` to that id.
 4. If it introduces a new category, add the tag to `window.TAGS` in `data.js`.
