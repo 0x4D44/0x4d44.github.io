@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#1a0f08" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#ecdfc2" media="(prefers-color-scheme: light)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Quarto" />
+  <meta name="description" content="Quarto — the strategy game where every piece you play is chosen by your opponent." />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+  <link rel="apple-touch-icon" href="icon-512.png" />
+
+  <title>Quarto</title>
+
+  <!-- 30% inset thumbnail SVG used by the bundler as a splash/no-JS fallback. -->
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#232a3b"/>
+          <stop offset="100%" stop-color="#0a0d15"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#bg)"/>
+      <g transform="translate(50 56)">
+        <!-- iso piece silhouette -->
+        <ellipse cx="0" cy="14" rx="18" ry="6" fill="#000" opacity="0.5"/>
+        <path d="M -14 -16 L -14 12 A 14 5 0 0 0 14 12 L 14 -16 A 14 5 0 0 1 -14 -16 Z"
+              fill="#c89a4b"/>
+        <ellipse cx="0" cy="-16" rx="14" ry="5" fill="#e6c082" stroke="#3a230f" stroke-width="0.5"/>
+        <ellipse cx="0" cy="-16" rx="7" ry="2.5" fill="#3a230f"/>
+      </g>
+      <text x="50" y="86" text-anchor="middle"
+            font-family="Georgia, serif" font-style="italic"
+            font-size="11" fill="#c89a4b" letter-spacing="2">QUARTO</text>
+    </svg>
+  </template>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+
+  <style>
+    html, body {
+      margin: 0; padding: 0; height: 100%;
+      background: #0a0d15;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+    body {
+      font-family: 'Inter', -apple-system, system-ui, sans-serif;
+      color: #fff;
+      overflow: hidden;
+    }
+    #root {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+    }
+    .play-stage {
+      width: 100%;
+      max-width: 460px;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      /* keep design content out from under iOS / Android system bars */
+      padding-top: env(safe-area-inset-top, 0px);
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      box-sizing: border-box;
+    }
+
+    @keyframes qFadeIn   { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes qSlideUp  { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: none } }
+    @keyframes qWinHop   {
+      0%   { transform: translateY(8px); opacity: 0; }
+      60%  { transform: translateY(-3px); opacity: 1; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes qHintPulse {
+      0%,100% { opacity: 0.4; transform: scale(1); }
+      50%     { opacity: 1;   transform: scale(1.03); }
+    }
+
+    /* The splash that shows while React boots. */
+    #boot-splash {
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(120% 80% at 50% -10%, #232a3b 0%, #131826 55%, #0a0d15 100%);
+      color: #c89a4b;
+      font-family: 'Fraunces', Georgia, serif;
+      font-style: italic; font-size: 24px;
+      letter-spacing: 0.04em;
+      transition: opacity .4s;
+    }
+    #boot-splash.hidden { opacity: 0; pointer-events: none; }
+  </style>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+  <div id="boot-splash">Quarto.</div>
+  <div id="root"></div>
+
+  <script type="text/babel" src="quarto-themes.jsx"></script>
+  <script type="text/babel" src="quarto-engine.jsx"></script>
+  <script type="text/babel" src="quarto-iso.jsx"></script>
+  <script type="text/babel" src="quarto-piece.jsx"></script>
+  <script type="text/babel" src="quarto-board.jsx"></script>
+  <script type="text/babel" src="quarto-screens.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+    const T   = window.QUARTO_THEMES;
+    const QE  = window.QuartoEngine;
+    const QS  = window.QuartoScreens;
+    const QB  = window.QuartoBoardKit;
+
+    // ─────────────────────────────────────────────────────────────
+    // Persistence
+    // ─────────────────────────────────────────────────────────────
+    const STORE = {
+      settings: 'quarto.settings.v1',
+      game:     'quarto.game.v1',
+      history:  'quarto.history.v1',
+      seen:     'quarto.seen.v1',
+    };
+    const loadJSON = (key, fallback) => {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch { return fallback; }
+    };
+    const saveJSON = (key, value) => {
+      try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
+    };
+
+    const DEFAULT_SETTINGS = {
+      theme:      'salon',
+      pieceStyle: 'iso',
+      difficulty: 'medium',
+      animSpeed:  1,
+      assists:    true,
+      haptics:    true,
+    };
+
+    // ─────────────────────────────────────────────────────────────
+    // The play-time orchestrator. Owns the entire production state
+    // machine (settings, current game, screen routing, history).
+    // ─────────────────────────────────────────────────────────────
+    function PlayApp() {
+      // ── Persisted state ──
+      const [settings, setSettings] = useState(() => ({
+        ...DEFAULT_SETTINGS,
+        ...loadJSON(STORE.settings, {}),
+      }));
+      const [history, setHistory] = useState(() => loadJSON(STORE.history, []));
+      const [game, setGame] = useState(() => loadJSON(STORE.game, null));
+      const [seen, setSeen] = useState(() => !!localStorage.getItem(STORE.seen));
+
+      // ── Screen routing ──
+      const [screen, setScreen] = useState(() => {
+        if (!seen) return 'onboarding';
+        if (game && game.phase !== 'ended') return 'game';
+        return 'home';
+      });
+      const [onboardingStep, setOnboardingStep] = useState(1);
+      const [hintCell, setHintCell] = useState(null);
+      const [hintPiece, setHintPiece] = useState(null);
+
+      // ── Persist on change ──
+      useEffect(() => { saveJSON(STORE.settings, settings); }, [settings]);
+      useEffect(() => { saveJSON(STORE.history, history); }, [history]);
+      useEffect(() => {
+        if (game) saveJSON(STORE.game, game);
+        else localStorage.removeItem(STORE.game);
+      }, [game]);
+
+      // ── Hide boot splash once we render ──
+      useEffect(() => {
+        const s = document.getElementById('boot-splash');
+        if (s) {
+          s.classList.add('hidden');
+          setTimeout(() => s.remove(), 500);
+        }
+      }, []);
+
+      // ── Resolved theme ──
+      const theme = T[settings.theme] || T.salon;
+
+      // ── AI loop ──
+      const [aiThinking, setAiThinking] = useState(false);
+      useEffect(() => {
+        if (!game || game.phase === 'ended' || game.current !== 'ai') return;
+        setAiThinking(true);
+        const delay = 900 / Math.max(0.3, settings.animSpeed);
+        const t = setTimeout(() => {
+          setGame(g => {
+            if (!g || g.phase === 'ended' || g.current !== 'ai') return g;
+            if (g.phase === 'place') {
+              const cell = QE.aiChoosePlacement(g, g.difficulty);
+              return QE.applyPlace(g, cell);
+            } else {
+              const piece = QE.aiChooseGift(g, g.difficulty);
+              return QE.applySelect(g, piece);
+            }
+          });
+          setAiThinking(false);
+        }, delay);
+        return () => { clearTimeout(t); setAiThinking(false); };
+      }, [game, settings.animSpeed]);
+
+      // ── Record completed match exactly once ──
+      const lastRecordedRef = useRef(null);
+      useEffect(() => {
+        if (!game || game.phase !== 'ended') return;
+        if (lastRecordedRef.current === game) return;
+        lastRecordedRef.current = game;
+        setHistory(h => [{
+          opp:        'Pavlov',
+          result:     game.winner === 'you' ? 'won' : game.winner === 'ai' ? 'lost' : 'draw',
+          moves:      game.moveCount,
+          when:       Date.now(),
+          difficulty: game.difficulty,
+          attr:       winLineAttr(game),
+        }, ...h].slice(0, 100));
+      }, [game]);
+
+      // ── Setting updates (with magic keys for actions) ──
+      const updateSetting = useCallback((key, value) => {
+        if (key === '__reset') {
+          setSettings(DEFAULT_SETTINGS);
+          return;
+        }
+        if (key === '__clearHistory') {
+          setHistory([]);
+          lastRecordedRef.current = null;
+          return;
+        }
+        setSettings(s => ({ ...s, [key]: value }));
+      }, []);
+
+      // ── Game actions ──
+      const startNewGame = useCallback(() => {
+        const next = QE.createInitialState({ difficulty: settings.difficulty });
+        lastRecordedRef.current = null;
+        setGame(next);
+        setHintCell(null); setHintPiece(null);
+        setScreen('game');
+      }, [settings.difficulty]);
+
+      const resumeGame = useCallback(() => { setScreen('game'); }, []);
+
+      const handleCellClick = useCallback((i) => {
+        setGame(g => g ? QE.applyPlace(g, i) : g);
+        setHintCell(null); setHintPiece(null);
+        if (settings.haptics && navigator.vibrate) navigator.vibrate(8);
+      }, [settings.haptics]);
+
+      const handleSelectGift = useCallback((p) => {
+        setGame(g => g ? QE.applySelect(g, p) : g);
+        setHintCell(null); setHintPiece(null);
+        if (settings.haptics && navigator.vibrate) navigator.vibrate(8);
+      }, [settings.haptics]);
+
+      const handleUndo = useCallback(() => {
+        setGame(g => g ? QE.undoPlayerTurn(g) : g);
+        setHintCell(null); setHintPiece(null);
+      }, []);
+
+      const handleHint = useCallback(() => {
+        if (!game) return;
+        if (game.phase === 'place' && game.current === 'you' && game.held != null) {
+          setHintCell(QE.aiChoosePlacement(game, 'hard'));
+          setHintPiece(null);
+        } else if (game.phase === 'select' && game.current === 'you') {
+          setHintPiece(QE.aiChooseGift(game, 'hard'));
+          setHintCell(null);
+        }
+      }, [game]);
+
+      const handleConcede = useCallback(() => {
+        setGame(g => g ? { ...g, phase: 'ended', winner: 'ai' } : g);
+      }, []);
+
+      const goHome = useCallback(() => setScreen('home'), []);
+      const toggleAssists = useCallback(() => updateSetting('assists', !settings.assists), [settings.assists, updateSetting]);
+
+      // ── Stats for the home screen ──
+      const stats = useMemo(() => {
+        const won  = history.filter(h => h.result === 'won').length;
+        const lost = history.filter(h => h.result === 'lost').length;
+        // current streak (counts from most recent win, broken by lost/draw)
+        let streak = 0;
+        for (const m of history) {
+          if (m.result === 'won') streak++;
+          else break;
+        }
+        return [
+          { k: 'Played', v: String(history.length) },
+          { k: 'Won',    v: String(won) },
+          { k: 'Streak', v: String(streak) },
+        ];
+      }, [history]);
+
+      // ── Render ──
+      const resumable = !!game && game.phase !== 'ended';
+
+      let body = null;
+      if (screen === 'onboarding') {
+        body = (
+          <QS.OnboardingScreen
+            theme={theme} pieceStyle={settings.pieceStyle} step={onboardingStep}
+            onNext={() => {
+              if (onboardingStep < 3) setOnboardingStep(s => s + 1);
+              else {
+                localStorage.setItem(STORE.seen, '1');
+                setSeen(true);
+                setScreen('home');
+              }
+            }}
+            onSkip={() => {
+              localStorage.setItem(STORE.seen, '1');
+              setSeen(true);
+              setScreen('home');
+            }}
+          />
+        );
+      } else if (screen === 'settings') {
+        body = (
+          <QS.SettingsScreen
+            theme={theme}
+            settings={settings}
+            onChange={updateSetting}
+            onBack={goHome}
+          />
+        );
+      } else if (screen === 'history') {
+        body = (
+          <QS.HistoryScreen
+            theme={theme}
+            pieceStyle={settings.pieceStyle}
+            history={history}
+            onBack={goHome}
+          />
+        );
+      } else if (screen === 'game') {
+        body = (
+          <GamePlay
+            theme={theme}
+            state={game}
+            aiThinking={aiThinking}
+            pieceStyle={settings.pieceStyle}
+            assists={settings.assists}
+            hintCell={hintCell}
+            hintPiece={hintPiece}
+            onCellClick={handleCellClick}
+            onSelect={handleSelectGift}
+            onHint={handleHint}
+            onUndo={handleUndo}
+            onConcede={handleConcede}
+            onMenu={goHome}
+            onToggleAssists={toggleAssists}
+            onRestart={startNewGame}
+          />
+        );
+      } else {
+        body = (
+          <QS.HomeScreen
+            theme={theme}
+            pieceStyle={settings.pieceStyle}
+            stats={stats}
+            resumable={resumable}
+            onResume={resumeGame}
+            onPlay={startNewGame}
+            onSettings={() => setScreen('settings')}
+            onHistory={() => setScreen('history')}
+            onLearn={() => { setOnboardingStep(1); setScreen('onboarding'); }}
+          />
+        );
+      }
+
+      return (
+        <div className="play-stage" style={{
+          background: theme.bg,
+          color: theme.text,
+          fontFamily: theme.fontUI,
+        }}>
+          {/* paper / felt grain */}
+          <PlayGrain opacity={theme.grain} />
+          <div key={screen} style={{
+            position: 'absolute', inset: 0,
+            paddingTop: 'env(safe-area-inset-top, 0px)',
+            paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+            boxSizing: 'border-box',
+            animation: 'qFadeIn .25s ease',
+          }}>
+            {body}
+          </div>
+        </div>
+      );
+    }
+
+    // What attribute won the line? Used for history copy.
+    function winLineAttr(g) {
+      if (!g || !g.winLine) return null;
+      const pieces = g.winLine.map(i => g.board[i]).filter(p => p != null);
+      if (pieces.length !== 4) return null;
+      let and = 0xF, or = 0;
+      for (const p of pieces) { and &= p; or |= p; }
+      const liveOnes = and, liveZeros = (~or) & 0xF;
+      const labels = [
+        [0, ['all short', 'all tall']],
+        [1, ['all light', 'all dark']],
+        [2, ['all square', 'all round']],
+        [3, ['all solid', 'all hollow']],
+      ];
+      for (const [bit, [zeroLabel, oneLabel]] of labels) {
+        if (liveOnes & (1 << bit)) return oneLabel;
+        if (liveZeros & (1 << bit)) return zeroLabel;
+      }
+      return null;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // GamePlay — gameplay screen layout. Fills available height and
+    // centers the board so we look right at any phone aspect ratio.
+    // ─────────────────────────────────────────────────────────────
+    function GamePlay({
+      theme, state, aiThinking, pieceStyle, assists,
+      hintCell, hintPiece,
+      onCellClick, onSelect, onHint, onUndo, onConcede,
+      onMenu, onToggleAssists, onRestart,
+    }) {
+      if (!state) {
+        // shouldn't happen, but defensive
+        return (
+          <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: theme.textDim }}>
+            <button onClick={onMenu} style={{ background: 'none', border: `1px solid ${theme.panelBorder}`, color: theme.text, padding: '12px 18px', borderRadius: 12, cursor: 'pointer' }}>Back to menu</button>
+          </div>
+        );
+      }
+      return (
+        <div style={{
+          height: '100%', display: 'flex', flexDirection: 'column',
+          position: 'relative', zIndex: 2,
+        }}>
+          <QB.GameHeader state={state} theme={theme} aiThinking={aiThinking} onMenu={onMenu} />
+          <QB.HeldBar state={state} theme={theme} pieceStyle={pieceStyle} />
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+            <QB.Board
+              state={state} theme={theme}
+              onCellClick={onCellClick}
+              pieceStyle={pieceStyle}
+              assists={{ threats: assists, liveAttrs: assists }}
+              hintCell={hintCell}
+            />
+          </div>
+          <QB.Pool
+            state={state} theme={theme}
+            onSelect={onSelect}
+            pieceStyle={pieceStyle}
+            suggestedPiece={hintPiece}
+          />
+          <QB.ActionBar
+            theme={theme}
+            onHint={onHint}
+            onUndo={onUndo}
+            onConcede={onConcede}
+            hintActive={hintCell != null || hintPiece != null}
+            canUndo={state.history.filter(h => h.kind === 'place' && h.by === 'you').length > 0}
+            assists={assists}
+            onToggleAssists={onToggleAssists}
+          />
+          <QS.ResultModal
+            state={state} theme={theme} pieceStyle={pieceStyle}
+            onAgain={onRestart} onMenu={onMenu}
+          />
+        </div>
+      );
+    }
+
+    // A subtle paper-grain overlay (SVG fractal noise) — same trick as the canvas demo.
+    function PlayGrain({ opacity = 0.06 }) {
+      return (
+        <svg style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          pointerEvents: 'none', zIndex: 1, opacity, mixBlendMode: 'overlay',
+        }}>
+          <filter id="play-grain">
+            <feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" stitchTiles="stitch" />
+            <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0" />
+          </filter>
+          <rect width="100%" height="100%" filter="url(#play-grain)" />
+        </svg>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<PlayApp />);
+
+    // Service worker — only registers when served over http(s) so file://
+    // sideloading still works (browsers refuse SW from file://).
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>

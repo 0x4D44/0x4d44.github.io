@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "quarto",
+    title: "Quarto",
+    tagline: "The elegant abstract with a cruel twist: you never choose your own piece — your opponent hands you each one. Line up four that share any trait — tall, dark, round or hollow — and you win. A phone-first match against an AI in three hand-built themes. React, transpiled in the browser; installable offline.",
+    url: "https://0x4d44.github.io/quarto/",
+    illustration: "ill-quarto",
+    date: "2026-06-20T19:30:00",
+    year: 1991,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "the-second-world-war",
     title: "The Second World War",
     tagline: "An animated atlas of the deadliest conflict in history, 1937–1945. Watch the world change month by month as front lines bulge and roll back, the great offensives sweep the continent, and a running death toll climbs past seventy million. Play, pause, scrub and switch between the European, Pacific and world theatres. Vanilla JS on a canvas, fact-checked by a multi-agent research pass.",
