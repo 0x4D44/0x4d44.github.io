@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "coil",
+    title: "Coil",
+    tagline: "A snake that solves puzzles with its own body. Strike across a void, grow to bridge a gap, anchor to climb a wall, hold a plate down while you reach the next exit — a curriculum of snake abilities taught one room at a time, across eight worlds. Discrete, deterministic, undo-friendly. TypeScript + Three.js on a tested sim core.",
+    url: "https://0x4d44.github.io/coil/",
+    illustration: "ill-coil",
+    date: "2026-06-20T20:00:00",
+    year: 2026,
+    tags: ["software"],
+    real: false,
+  },
+  {
     slug: "quarto",
     title: "Quarto",
     tagline: "The elegant abstract with a cruel twist: you never choose your own piece — your opponent hands you each one. Line up four that share any trait — tall, dark, round or hollow — and you win. A phone-first match against an AI in three hand-built themes. React, transpiled in the browser; installable offline.",

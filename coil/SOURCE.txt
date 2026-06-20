@@ -1,0 +1,5 @@
+Coil — built output. DO NOT EDIT here.
+Source repo: github.com/0x4D44/mdsnake  (local: C:\language\mdsnake)
+Source commit: dccdae3b0e833fdb684d871fa5b646bae69d0ae0
+Built: 2026-06-20
+To change: edit source, `npm run build`, copy dist/* back here (mirror-both-ways).

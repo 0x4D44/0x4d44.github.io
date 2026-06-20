@@ -51,6 +51,11 @@ Pages but have no `window.ESSAYS` entry and should not get one.
 only (hashed `assets/index-*.js` + `.css`, no readable source). To change them,
 edit the source project, rebuild, and copy the `dist/` output back in. Known
 source locations (outside this repo):
+- `coil/` ← `C:\language\mdsnake` (also `github.com/0x4D44/mdsnake`) — "Coil", a
+  discrete 2.5D snake puzzle (Vite + TypeScript + Three.js on a tested sim core;
+  `vite.config.ts` sets `base: "./"`). **Build output only — never hand-edit `coil/`
+  here;** `coil/SOURCE.txt` records the source commit. Mirror-both-ways: fix in
+  `mdsnake`, `npm run build`, copy `dist/*` here.
 - `uk-isochrone/` ← `C:\language\mdisochrone\UK` (TypeScript: `src/main.ts`,
   `src/render.ts`)
 - `edinburgh-isochrone/` ← `C:\language\mdisochrone\Edinburgh`
