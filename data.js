@@ -51,10 +51,10 @@ window.ESSAYS = [
   {
     slug: "night-cab",
     title: "The Night Cab",
-    tagline: "The Cab, rebuilt from the rails up — a first-person drive of a GTO-inverter EMU down a fourteen-kilometre route from city terminus to the sea, through cuttings, a viaduct and a tunnel under a real sky. Notch up the inverter whine, work the brake and answer the AWS, with rain on the windscreen and weather you can cycle from overcast to wet-night. Rides on an engineered, test-driven sim core. TypeScript + Three.js.",
+    tagline: "A first-person drive of a GTO-inverter EMU down a fourteen-kilometre route from city terminus to the sea — through cuttings, over a viaduct and through a tunnel under a real, rain-streaked sky. Now you share the line: overtake an AI service held in a passing loop and watch another diverge onto a branch. Notch up the whine, work the brake, answer the AWS. Test-driven sim core; TypeScript + Three.js.",
     url: "https://0x4d44.github.io/night-cab/",
     illustration: "ill-emu",
-    date: "2026-06-15T10:00:00",
+    date: "2026-06-20T22:30:00",
     year: 2026,
     tags: ["rail", "software"],
     real: true,
