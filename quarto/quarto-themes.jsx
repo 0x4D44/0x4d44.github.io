@@ -29,7 +29,7 @@ const QUARTO_THEMES = {
     boardHole: 'radial-gradient(closest-side, #0c0805 0%, #1a0f08 70%)',
     // pieces
     pieceLight: { top: '#e6c082', topHi: '#fae7c0', sideTop: '#c69558', sideBot: '#7e5128', edge: '#3a230f', sheen: 'rgba(255,240,210,0.55)' },
-    pieceDark:  { top: '#3a2820', topHi: '#5a3e2e', sideTop: '#2b1d16', sideBot: '#120a06', edge: '#000', sheen: 'rgba(200,160,110,0.25)' },
+    pieceDark:  { top: '#6f4d37', topHi: '#946a4b', sideTop: '#523623', sideBot: '#2e1c10', edge: '#170c04', sheen: 'rgba(235,195,145,0.42)' },
     // typography
     fontDisplay: '"Fraunces", "Cormorant Garamond", Georgia, serif',
     fontUI: '"Inter", -apple-system, system-ui, sans-serif',
@@ -59,7 +59,7 @@ const QUARTO_THEMES = {
     boardCellHover: 'rgba(142,58,42,0.16)',
     boardHole: 'radial-gradient(closest-side, #6a4a22 0%, #b6925a 70%)',
     pieceLight: { top: '#f3e5c0', topHi: '#fff6dc', sideTop: '#d8bf85', sideBot: '#a4854d', edge: '#5a4220', sheen: 'rgba(255,250,230,0.6)' },
-    pieceDark:  { top: '#4a2d16', topHi: '#6a4523', sideTop: '#3a200d', sideBot: '#1a0c04', edge: '#080300', sheen: 'rgba(220,170,110,0.35)' },
+    pieceDark:  { top: '#5c3a1f', topHi: '#82582f', sideTop: '#43280f', sideBot: '#26160a', edge: '#120800', sheen: 'rgba(235,185,130,0.4)' },
     fontDisplay: '"Fraunces", "Cormorant Garamond", Georgia, serif',
     fontUI: '"Inter Tight", "Inter", -apple-system, system-ui, sans-serif',
     fontMono: '"JetBrains Mono", ui-monospace, monospace',
@@ -88,7 +88,7 @@ const QUARTO_THEMES = {
     boardCellHover: 'rgba(212,175,55,0.14)',
     boardHole: 'radial-gradient(closest-side, #0c0805 0%, #2a1608 70%)',
     pieceLight: { top: '#efe2bf', topHi: '#fff5d6', sideTop: '#cdb887', sideBot: '#8a7544', edge: '#3a2e15', sheen: 'rgba(255,248,220,0.65)' },
-    pieceDark:  { top: '#262018', topHi: '#3a3225', sideTop: '#1a140e', sideBot: '#080604', edge: '#000', sheen: 'rgba(200,170,110,0.3)' },
+    pieceDark:  { top: '#574635', topHi: '#79634a', sideTop: '#3e3122', sideBot: '#241a11', edge: '#100b06', sheen: 'rgba(225,190,140,0.42)' },
     fontDisplay: '"Fraunces", Georgia, serif',
     fontUI: '"Manrope", -apple-system, system-ui, sans-serif',
     fontMono: '"JetBrains Mono", ui-monospace, monospace',
