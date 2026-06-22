@@ -45,7 +45,7 @@ const ISO = {
 // Used for the tray (small) AND inside the board (large).
 // ─────────────────────────────────────────────────────────────
 
-function IsoPiece({ p, theme, size = 60, glow = false, selected = false, dim = false, lifted = false, style = {} }) {
+function IsoPiece({ p, theme, size = 60, glow = false, selected = false, dim = false, lifted = false, grey = false, style = {} }) {
   const tall   = (p & 1) !== 0;
   const dark   = (p & 2) !== 0;
   const round  = (p & 4) !== 0;
@@ -79,9 +79,10 @@ function IsoPiece({ p, theme, size = 60, glow = false, selected = false, dim = f
       style={{
         display: 'block',
         overflow: 'visible',
-        opacity: dim ? 0.4 : 1,
+        opacity: dim ? (grey ? 0.3 : 0.4) : 1,
         transform: lifted ? 'translateY(-3px)' : 'none',
-        filter: glow ? `drop-shadow(0 0 8px ${theme.accentGlow})` : 'none',
+        filter: glow ? `drop-shadow(0 0 8px ${theme.accentGlow})`
+              : (grey ? 'grayscale(0.85) brightness(0.85)' : 'none'),
         transition: 'transform .25s cubic-bezier(.3,.7,.2,1), opacity .25s, filter .25s',
         ...style,
       }}

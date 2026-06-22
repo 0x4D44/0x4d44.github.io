@@ -483,26 +483,31 @@ function Pool({ state, theme, onSelect, pieceStyle, suggestedPiece }) {
               style={{
                 aspectRatio: '1 / 1',
                 padding: 0, border: 'none',
-                background: tappable && !used
-                  ? `${theme.boardCell}`
-                  : 'transparent',
+                background: used
+                  ? 'rgba(0,0,0,0.28)'
+                  : (tappable ? `${theme.boardCell}` : 'transparent'),
                 borderRadius: 6,
                 cursor: tappable ? 'pointer' : 'default',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 position: 'relative',
                 transition: 'background .15s, transform .1s',
                 outline: suggestedPiece === p ? `2px dashed ${theme.accent}` : 'none',
+                boxShadow: used ? 'inset 0 1px 4px rgba(0,0,0,0.5)' : 'none',
               }}
               onMouseOver={e => { if (tappable) e.currentTarget.style.background = theme.boardCellHover; }}
               onMouseOut={e => { if (tappable) e.currentTarget.style.background = theme.boardCell; }}
             >
               <Piece p={p} theme={theme} size={26} flatStyle={pieceStyle}
-                dim={used || inHand} />
-              {used && <div style={{
-                position: 'absolute', inset: 2,
-                background: 'repeating-linear-gradient(135deg, transparent 0 4px, rgba(0,0,0,0.12) 4px 5px)',
-                borderRadius: 4, pointerEvents: 'none',
-              }} />}
+                dim={used || inHand} grey={used} />
+              {used && (
+                <svg viewBox="0 0 24 24" style={{
+                  position: 'absolute', inset: 0, width: '100%', height: '100%',
+                  pointerEvents: 'none',
+                }}>
+                  <line x1="6" y1="6" x2="18" y2="18" stroke={theme.danger} strokeOpacity="0.7" strokeWidth="1.6" strokeLinecap="round" />
+                  <line x1="18" y1="6" x2="6" y2="18" stroke={theme.danger} strokeOpacity="0.7" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              )}
               {inHand && (
                 <div style={{
                   position: 'absolute', top: 2, right: 2,

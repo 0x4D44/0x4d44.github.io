@@ -17,13 +17,14 @@ function QuartoPiece({
   selected = false,       // bold accent ring (used while picking a piece for opponent)
   dim = false,            // fade out (used pieces in tray, AI-thinking blur)
   lifted = false,         // a tiny vertical hop, used when the piece is the held one
+  grey = false,           // desaturate (played pieces in the pool)
   flatStyle = 'iso',      // 'iso' | 'three-quarter' | 'topdown' | 'sticker'
   style = {},
 }) {
   // Delegate to the dedicated iso renderer when requested.
   if (flatStyle === 'iso' && window.IsoPiece) {
     const Iso = window.IsoPiece;
-    return <Iso p={p} theme={theme} size={size} glow={glow} selected={selected} dim={dim} lifted={lifted} style={style} />;
+    return <Iso p={p} theme={theme} size={size} glow={glow} selected={selected} dim={dim} lifted={lifted} grey={grey} style={style} />;
   }
   const tall    = (p & 1) !== 0;
   const dark    = (p & 2) !== 0;
@@ -57,7 +58,7 @@ function QuartoPiece({
   // Hover/affordance glow filter
   const glowFilter = `${uid}-glow`;
 
-  const opacity = dim ? 0.35 : 1;
+  const opacity = dim ? (grey ? 0.3 : 0.35) : 1;
   const transform = lifted ? 'translateY(-2px)' : 'none';
 
   // ─── TOPDOWN (alternative piece style) ─────────────────────────────────
@@ -116,7 +117,8 @@ function QuartoPiece({
       opacity,
       transform,
       transition: 'transform .25s cubic-bezier(.3,.7,.2,1), opacity .25s, filter .25s',
-      filter: glow ? `drop-shadow(0 0 6px ${theme.accentGlow})` : 'none',
+      filter: glow ? `drop-shadow(0 0 6px ${theme.accentGlow})`
+            : (grey ? 'grayscale(0.85) brightness(0.85)' : 'none'),
       ...style,
     }}>
       <defs>
