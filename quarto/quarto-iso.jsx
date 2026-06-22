@@ -412,10 +412,16 @@ function IsoBoard({ state, theme, onCellClick, assists, hintCell }) {
             const a = winLine[0], b = winLine[3];
             const pa = tilePos(Math.floor(a / 4), a % 4);
             const pb = tilePos(Math.floor(b / 4), b % 4);
+            const lostLine = state.winner === 'ai';
+            const lineColor = lostLine ? theme.danger : theme.accent;
+            const lineGlow = lostLine ? `${theme.danger}` : theme.accentGlow;
             return (
               <line x1={pa.cx} y1={pa.cy} x2={pb.cx} y2={pb.cy}
-                stroke={theme.accent} strokeWidth="3" strokeLinecap="round"
-                style={{ filter: `drop-shadow(0 0 6px ${theme.accentGlow})` }}
+                stroke={lineColor} strokeWidth="3" strokeLinecap="round"
+                style={{
+                  filter: `drop-shadow(0 0 6px ${lineGlow})`,
+                  animation: 'qLinePulse 1.3s ease-in-out infinite',
+                }}
               />
             );
           })()}

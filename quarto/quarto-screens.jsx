@@ -152,6 +152,58 @@ function ResultModal({ state, theme, pieceStyle, onAgain, onMenu }) {
   const lost = state.winner === 'ai';
   const winPieces = state.winLine ? state.winLine.map(i => state.board[i]) : [];
 
+  // ── LOSS: keep the board (and its red pulsing line) fully visible. ──
+  // Instead of a blocking modal we anchor a slim action strip to the bottom,
+  // veiling only the now-defunct pool / action bar — never the board.
+  if (lost) {
+    return (
+      <div style={{
+        position: 'absolute', left: 0, right: 0, bottom: 0,
+        zIndex: 100,
+        paddingTop: 60,
+        background: `linear-gradient(180deg, transparent 0%, ${theme.chrome}d9 42%, ${theme.chrome} 100%)`,
+        display: 'flex', flexDirection: 'column', alignItems: 'stretch',
+        gap: 12, padding: '60px 18px 18px',
+        animation: 'qFadeIn .3s ease',
+        pointerEvents: 'none',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          pointerEvents: 'auto',
+        }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: theme.danger,
+            boxShadow: `0 0 10px ${theme.danger}`,
+            animation: 'qLinePulse 1.3s ease-in-out infinite',
+            flexShrink: 0,
+          }} />
+          <div style={{
+            fontFamily: theme.fontUI, fontSize: 11, letterSpacing: '0.04em',
+            color: theme.textDim,
+          }}>
+            Pavlov closed the line in {state.moveCount} moves. Study it above.
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, pointerEvents: 'auto' }}>
+          <button onClick={onMenu} style={{
+            flex: 1, height: 48, borderRadius: 12,
+            background: 'transparent', border: `1px solid ${theme.panelBorder}`,
+            color: theme.text, fontFamily: theme.fontUI, fontSize: 12,
+            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+          }}>Menu</button>
+          <button onClick={onAgain} style={{
+            flex: 2, height: 48, borderRadius: 12,
+            background: theme.accent, border: 'none',
+            color: theme.chrome, fontFamily: theme.fontUI, fontSize: 12, fontWeight: 600,
+            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+            boxShadow: `0 0 18px ${theme.accentGlow}`,
+          }}>Rematch</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{
       position: 'absolute', inset: 0, zIndex: 100,

@@ -121,40 +121,67 @@ function HeldBar({ state, theme, pieceStyle }) {
   const aiPlace = phase === 'place' && current === 'ai';
   const ended = phase === 'ended';
 
-  let title, sub, accent;
-  if (youPlace)       { title = 'Place this piece'; sub = 'Tap any open square'; accent = true; }
-  else if (youSelect) { title = 'Hand a piece to opponent'; sub = 'Choose from the pool below'; accent = true; }
-  else if (aiPlace)   { title = 'They have this piece'; sub = 'Pavlov is choosing a square'; accent = false; }
-  else if (ended)     { title = state.winner === 'you' ? 'Quarto.' : (state.winner === 'ai' ? 'They got four.' : 'No moves left.'); sub = state.winner === 'you' ? 'You won the line.' : (state.winner === 'ai' ? 'Pavlov won the line.' : 'Drawn game.'); accent = false; }
-  else                { title = 'Their selection'; sub = 'You\'ll place this next'; accent = false; }
+  const lost = ended && state.winner === 'ai';
+  const wonGame = ended && state.winner === 'you';
+  const drawn = ended && state.winner === 'draw';
+
+  // tone: 'accent' (your move) | 'danger' (you lost) | 'win' (you won) | 'neutral'
+  let title, sub, tone;
+  if (youPlace)       { title = 'Place this piece'; sub = 'Tap any open square'; tone = 'accent'; }
+  else if (youSelect) { title = 'Hand a piece to opponent'; sub = 'Choose from the pool below'; tone = 'accent'; }
+  else if (aiPlace)   { title = 'They have this piece'; sub = 'Pavlov is choosing a square'; tone = 'neutral'; }
+  else if (lost)      { title = 'You\u2019ve lost'; sub = 'Pavlov completed the highlighted line below'; tone = 'danger'; }
+  else if (wonGame)   { title = 'Quarto \u2014 you won'; sub = 'You closed the line in ' + state.moveCount + ' moves'; tone = 'win'; }
+  else if (drawn)     { title = 'Drawn game'; sub = 'No line could be completed'; tone = 'neutral'; }
+  else                { title = 'Their selection'; sub = 'You\'ll place this next'; tone = 'neutral'; }
+
+  const accent = tone === 'accent';
+  const toneColor = tone === 'danger' ? theme.danger
+                  : tone === 'win'    ? theme.accent
+                  : theme.accent;
+  const toneGlow  = tone === 'danger' ? `${theme.danger}66` : theme.accentGlow;
+
+  // End-of-game marker glyph shown in the held slot.
+  const endMarker = lost ? '\u2715' : wonGame ? '\u2726' : '\u2013';
 
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '10px 16px',
-      background: accent
-        ? `linear-gradient(90deg, ${theme.accentGlow}33, transparent 70%)`
-        : theme.panel,
-      borderTop: `1px solid ${theme.panelBorder}`,
-      borderBottom: `1px solid ${theme.panelBorder}`,
+      background: tone === 'danger'
+          ? `linear-gradient(90deg, ${theme.danger}30, transparent 78%)`
+        : tone === 'win'
+          ? `linear-gradient(90deg, ${theme.accentGlow}40, transparent 75%)`
+        : accent
+          ? `linear-gradient(90deg, ${theme.accentGlow}33, transparent 70%)`
+          : theme.panel,
+      borderTop: `1px solid ${tone === 'danger' ? theme.danger + '55' : theme.panelBorder}`,
+      borderBottom: `1px solid ${tone === 'danger' ? theme.danger + '55' : theme.panelBorder}`,
       position: 'relative',
     }}>
       {/* the held piece slot */}
       <div style={{
         width: 54, height: 64,
-        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        display: 'flex', alignItems: ended ? 'center' : 'flex-end', justifyContent: 'center',
         background: 'rgba(0,0,0,0.18)',
         borderRadius: 10,
-        border: `1px dashed ${held != null ? 'transparent' : theme.panelBorder}`,
+        border: `1px ${ended ? 'solid' : 'dashed'} ${held != null ? 'transparent' : (lost ? theme.danger + '66' : theme.panelBorder)}`,
         boxShadow: held != null
           ? `inset 0 0 0 1px ${theme.panelBorder}, 0 6px 14px ${youPlace ? theme.accentGlow : 'rgba(0,0,0,0.25)'}`
-          : 'none',
+          : (lost ? `inset 0 0 12px ${theme.danger}22` : 'none'),
         flexShrink: 0,
       }}>
         {held != null && (
           <Piece p={held} theme={theme} size={42} flatStyle={pieceStyle} lifted={youPlace} glow={youPlace} />
         )}
-        {held == null && (
+        {held == null && ended && (
+          <div style={{
+            fontSize: 24, lineHeight: 1, fontWeight: 700,
+            color: lost ? theme.danger : wonGame ? theme.accent : theme.textDim,
+            textShadow: `0 0 12px ${toneGlow}`,
+          }}>{endMarker}</div>
+        )}
+        {held == null && !ended && (
           <div style={{
             color: theme.textFaint, fontSize: 9, fontFamily: theme.fontUI,
             letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -164,13 +191,13 @@ function HeldBar({ state, theme, pieceStyle }) {
       </div>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{
-          fontFamily: theme.fontDisplay, fontSize: 17,
-          color: accent ? theme.text : theme.textDim,
+          fontFamily: theme.fontDisplay, fontSize: lost || wonGame ? 19 : 17,
+          color: lost ? theme.danger : (accent || wonGame ? theme.text : theme.textDim),
           lineHeight: 1.15,
         }}>{title}</div>
         <div style={{
           fontFamily: theme.fontUI, fontSize: 11,
-          color: theme.textFaint, marginTop: 2,
+          color: lost ? `${theme.danger}cc` : theme.textFaint, marginTop: 2,
           letterSpacing: '0.02em',
         }}>{sub}</div>
       </div>
@@ -182,7 +209,7 @@ function HeldBar({ state, theme, pieceStyle }) {
           fontFamily: theme.fontUI, fontWeight: 700, fontSize: 14,
           boxShadow: `0 0 12px ${theme.accentGlow}`,
           flexShrink: 0,
-        }}>→</div>
+        }}>{'\u2192'}</div>
       )}
     </div>
   );
@@ -271,11 +298,16 @@ function Board({ state, theme, onCellClick, pieceStyle, assists, hintCell, anima
                 const a = winLine[0], b = winLine[3];
                 const ax = (a % 4) + 0.5, ay = Math.floor(a / 4) + 0.5;
                 const bx = (b % 4) + 0.5, by = Math.floor(b / 4) + 0.5;
+                const lostLine = state.winner === 'ai';
+                const lineColor = lostLine ? theme.danger : theme.accent;
                 return (
                   <line x1={ax} y1={ay} x2={bx} y2={by}
-                    stroke={theme.accent} strokeWidth="0.06"
+                    stroke={lineColor} strokeWidth="0.06"
                     strokeLinecap="round"
-                    style={{ filter: `drop-shadow(0 0 0.05px ${theme.accent})` }}
+                    style={{
+                      filter: `drop-shadow(0 0 0.05px ${lineColor})`,
+                      animation: 'qLinePulse 1.3s ease-in-out infinite',
+                    }}
                   />
                 );
               })()}
