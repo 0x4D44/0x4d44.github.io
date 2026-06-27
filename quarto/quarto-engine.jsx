@@ -76,49 +76,144 @@ function emptyCells(board) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// AI
+// AI — one bounded minimax over the place→select turn structure.
 // ─────────────────────────────────────────────────────────────
-// All AI is intentionally lightweight — fast enough that we can give the
-// player an "AI thinking…" beat without it actually being CPU-bound.
+// Difficulty sets search depth (easy is random). The search is pure and
+// deterministic; only `easy` (and game setup) draw randomness, via `randomFn`
+// so tests can pin it. Two unconditional floors keep play never weaker than a
+// 1-ply guard: always take a win; never hand / walk into an avoidable 1-turn loss.
 
-const rnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
+let randomFn = Math.random;                          // swappable for deterministic tests
+const rnd = (arr) => arr[Math.floor(randomFn() * arr.length)];
+const opponent = (who) => (who === 'you' ? 'ai' : 'you');
+
+// A safety backstop only — adaptive depth (searchDepth) is what keeps moves
+// snappy; the budget caps pathological positions, degrading to the leaf score.
+const NODE_BUDGET = 2000000;
+let searchNodes = 0;
+
+// Remaining pieces that are "safe to hand over": placing them on any empty cell
+// never completes a line. `held` (the piece in hand) is excluded.
+function safeGiftCount(board, held) {
+  const cells = emptyCells(board);
+  let n = 0;
+  for (const p of remainingPieces(board, held)) {
+    if (cells.every(c => !placementWins(board, c, p))) n++;
+  }
+  return n;
+}
+
+// Static leaf score from the ROOT player's perspective, bounded in (−1, 1) so it
+// can never outrank a real ±1 terminal. `mover` is the side to move at the leaf;
+// `held != null` ⇒ a place node (with a one-ply-win quiescence check).
+function leafScore(board, held, mover, root) {
+  if (held != null) {
+    for (const c of emptyCells(board)) {
+      if (placementWins(board, c, held)) return mover === root ? 1 : -1;
+    }
+  }
+  // Prefer keeping safe outs for the side that gifts next (the mover).
+  const s = safeGiftCount(board, held) / 32;         // in [0, 0.5)
+  return mover === root ? s : -s;
+}
+
+// Minimax with alpha-beta, keyed on `current` (the place→select edge does NOT
+// flip the mover — only a gift does). Value is from `root`'s perspective.
+// Operates with make/unmake on a mutable board — never the O(n) state transitions.
+function minimax(board, held, mover, root, depth, alpha, beta) {
+  if (depth <= 0 || ++searchNodes > NODE_BUDGET) return leafScore(board, held, mover, root);
+  const maxing = mover === root;
+  let best = maxing ? -2 : 2;
+  if (held != null) {
+    const cells = emptyCells(board);                 // place node
+    for (const c of cells) {
+      board[c] = held;
+      let v;
+      if (findWin(board)) v = maxing ? 1 : -1;
+      else if (cells.length === 1) v = 0;            // placed the last cell ⇒ draw
+      else v = minimax(board, null, mover, root, depth - 1, alpha, beta);
+      board[c] = null;
+      if (maxing) { if (v > best) best = v; if (best > alpha) alpha = best; }
+      else        { if (v < best) best = v; if (best < beta)  beta  = best; }
+      if (alpha >= beta) break;
+    }
+  } else {
+    const rem = remainingPieces(board, null);        // select node
+    if (rem.length === 0) return 0;
+    for (const p of rem) {
+      const v = minimax(board, p, opponent(mover), root, depth - 1, alpha, beta);
+      if (maxing) { if (v > best) best = v; if (best > alpha) alpha = best; }
+      else        { if (v < best) best = v; if (best < beta)  beta  = best; }
+      if (alpha >= beta) break;
+    }
+  }
+  return best;
+}
+
+// Search depth in plies (a place or a select = 1). Fixed per move. The opening
+// holds no forced results and huge branching, so both levels stay shallow there;
+// strength comes from deepening as the board fills. Hard solves the endgame
+// exactly (where Quarto is decided, and the tree is small — see the perf notes).
+function searchDepth(difficulty, board) {
+  const e = emptyCells(board).length;
+  if (difficulty === 'medium') return e > 7 ? 2 : 4;
+  if (e > 9) return 2;                               // hard: shallow opening
+  if (e > 6) return 4;                               // mid: bounded lookahead
+  return 32;                                         // ≤6 empties ⇒ solved to terminal
+}
 
 function aiChoosePlacement(state, difficulty) {
-  const { board, held } = state;
+  const { board, held, current } = state;
   const cells = emptyCells(board);
   if (held == null) return cells[0];
-
-  // 1) Take an immediate win if available.
-  for (const c of cells) if (placementWins(board, c, held)) return c;
-
+  for (const c of cells) if (placementWins(board, c, held)) return c;   // floor: take a win
   if (difficulty === 'easy') return rnd(cells);
 
-  // 2) Avoid placements that let opponent force a win with ANY remaining piece.
-  const remaining = remainingPieces(board, held);
-  const safe = cells.filter(c => {
-    const b = board.slice(); b[c] = held;
-    // For each piece we could hand opponent next, opponent's best move:
-    return remaining.every(p =>
-      emptyCells(b).every(c2 => !placementWins(b, c2, p))
-    );
+  const b = board.slice();
+  // Floor: drop placements that leave us with no safe gift (a forced 1-turn loss),
+  // unless every placement does. Never excludes a genuinely better move.
+  const candidates = cells.filter(c => {
+    b[c] = held;
+    const ok = safeGiftCount(b, held) > 0 || remainingPieces(b, held).length === 0;
+    b[c] = null;
+    return ok;
   });
-  if (safe.length) return rnd(safe);
-  return rnd(cells);
+  const pool = candidates.length ? candidates : cells;
+
+  const depth = searchDepth(difficulty, board);
+  searchNodes = 0;
+  let bestC = pool[0], bestV = -2;
+  for (const c of pool) {
+    b[c] = held;
+    const v = cells.length === 1
+      ? 0
+      : minimax(b, null, current, current, depth - 1, -2, 2);
+    b[c] = null;
+    if (v > bestV) { bestV = v; bestC = c; }          // strict > ⇒ lowest-index tie-break
+  }
+  return bestC;
 }
 
 function aiChooseGift(state, difficulty) {
-  const { board } = state;
+  const { board, current } = state;
   const remaining = remainingPieces(board, null);
   if (!remaining.length) return null;
-
   if (difficulty === 'easy') return rnd(remaining);
 
-  // Prefer pieces opponent CANNOT win with on any empty cell.
-  const safe = remaining.filter(p =>
-    emptyCells(board).every(c => !placementWins(board, c, p))
-  );
-  if (safe.length) return rnd(safe);
-  return rnd(remaining);
+  // Floor: never hand a piece the opponent can win with immediately, if avoidable.
+  const cells = emptyCells(board);
+  const safe = remaining.filter(p => cells.every(c => !placementWins(board, c, p)));
+  const pool = safe.length ? safe : remaining;
+
+  const depth = searchDepth(difficulty, board);
+  const b = board.slice();
+  searchNodes = 0;
+  let bestP = pool[0], bestV = -2;
+  for (const p of pool) {
+    const v = minimax(b, p, opponent(current), current, depth - 1, -2, 2);
+    if (v > bestV) { bestV = v; bestP = p; }          // strict > ⇒ lowest-id tie-break
+  }
+  return bestP;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -126,8 +221,7 @@ function aiChooseGift(state, difficulty) {
 // ─────────────────────────────────────────────────────────────
 function createInitialState({ difficulty = 'medium', whoStarts = 'you', firstPiece } = {}) {
   // The OPPONENT of whoever-starts hands them the first piece.
-  const opponent = whoStarts === 'you' ? 'ai' : 'you';
-  const piece = firstPiece != null ? firstPiece : Math.floor(Math.random() * 16);
+  const piece = firstPiece != null ? firstPiece : Math.floor(randomFn() * 16);
   return {
     board: Array(16).fill(null),
     held: piece,
@@ -136,7 +230,7 @@ function createInitialState({ difficulty = 'medium', whoStarts = 'you', firstPie
     winner: null,
     winLine: null,
     difficulty,
-    history: [{ kind: 'gift', by: opponent, to: whoStarts, piece }],
+    history: [{ kind: 'gift', by: opponent(whoStarts), to: whoStarts, piece }],
     moveCount: 0,
   };
 }
@@ -166,7 +260,7 @@ function applyPlace(state, cell) {
 function applySelect(state, piece) {
   if (state.phase !== 'select') return state;
   if (state.board.includes(piece)) return state;
-  const other = state.current === 'you' ? 'ai' : 'you';
+  const other = opponent(state.current);
   return {
     ...state,
     held: piece,
@@ -216,4 +310,5 @@ window.QuartoEngine = {
   ALL_PIECES, LINES, findWin, analyzeLines, placementWins, remainingPieces, emptyCells,
   aiChoosePlacement, aiChooseGift,
   createInitialState, applyPlace, applySelect, undoPlayerTurn, replayHistory,
+  _setRandom: (fn) => { randomFn = fn; },            // test hook for deterministic RNG
 };

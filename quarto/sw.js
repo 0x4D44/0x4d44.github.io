@@ -4,7 +4,7 @@
 // catch updates fast, cache-first for everything else so the game runs
 // even without a connection.
 
-const VERSION = 'quarto-v5';
+const VERSION = 'quarto-v6';
 const SHELL = [
   './',
   './index.html',

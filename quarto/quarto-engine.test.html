@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quarto engine tests</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, Menlo, monospace; background:#0e1320; color:#e8e2d0; padding:20px; }
+  h1 { font-size:18px; }
+  .pass { color:#7fd18b; } .fail { color:#ff6b6b; font-weight:700; }
+  #summary { font-size:16px; margin:12px 0; }
+  pre { white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Quarto engine tests</h1>
+<div id="summary">running…</div>
+<pre id="log"></pre>
+<script>
+// Unregister any active service worker for this scope, then load the engine fresh
+// (the SW caches scripts cache-first; a stale engine would invalidate the run).
+(async () => {
+  try {
+    const regs = await (navigator.serviceWorker?.getRegistrations?.() || []);
+    await Promise.all(regs.map(r => r.unregister()));
+  } catch (e) {}
+  const s = document.createElement('script');
+  s.src = 'quarto-engine.jsx?cachebust=' + Date.now();
+  s.onload = run;
+  s.onerror = () => { document.getElementById('summary').innerHTML =
+    '<span class="fail">FAILED to load quarto-engine.jsx</span>'; };
+  document.body.appendChild(s);
+})();
+
+function run() {
+  const QE = window.QuartoEngine;
+  const { emptyCells, remainingPieces, findWin, placementWins } = QE;
+  const opp = w => (w === 'you' ? 'ai' : 'you');
+  const results = { pass: 0, fail: 0, failures: [] };
+  const logEl = document.getElementById('log');
+  function check(name, cond, detail) {
+    if (cond) { results.pass++; logEl.innerHTML += `<span class="pass">PASS</span> ${name}\n`; }
+    else { results.fail++; results.failures.push(name + (detail ? ' — ' + detail : ''));
+      logEl.innerHTML += `<span class="fail">FAIL</span> ${name}${detail ? ' — ' + detail : ''}\n`; }
+  }
+  const E = (board, extra) => Object.assign(
+    { board, held: null, current: 'ai', phase: 'place', winner: null, winLine: null,
+      difficulty: 'hard', history: [], moveCount: 0 }, extra);
+  const blank = () => Array(16).fill(null);
+
+  // Independent exhaustive ground-truth solver — value for `current` ∈ {−1,0,1}.
+  // Uses only public primitives; no heuristic, no depth limit (endgame only).
+  function solve(board, held, current) {
+    if (held != null) {                       // place: current to move, no perspective flip
+      let best = -2;
+      for (const c of emptyCells(board)) {
+        const b = board.slice(); b[c] = held;
+        let v;
+        if (findWin(b)) v = 1;
+        else if (emptyCells(b).length === 0) v = 0;
+        else v = solve(b, null, current);
+        if (v > best) best = v;
+        if (best === 1) break;
+      }
+      return best;
+    }
+    const rem = remainingPieces(board, null);  // select: hand to opponent → flip
+    if (!rem.length) return 0;
+    let best = -2;
+    for (const p of rem) {
+      const v = -solve(board, p, opp(current));
+      if (v > best) best = v;
+      if (best === 1) break;
+    }
+    return best;
+  }
+
+  // Deterministic PRNG (mulberry32) for reproducible random positions.
+  function mulberry32(a) {
+    return function () { a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+
+  // ── A1: medium & hard take an available immediate winning placement ──
+  // Row 0 cells [0,1,2] = {2,3,6} (all dark); held 7 (dark) completes at cell 3.
+  {
+    for (const diff of ['medium', 'hard']) {
+      const board = blank(); board[0] = 2; board[1] = 3; board[2] = 6;
+      const m = QE.aiChoosePlacement(E(board, { held: 7, current: 'ai' }), diff);
+      check(`A1 ${diff} takes immediate win (cell 3)`, m === 3, `got cell ${m}`);
+    }
+  }
+
+  // ── A2: medium & hard never feed an immediate winner when a safe piece exists ──
+  // Same threat: row 0 = {2,3,6} dark, cell 3 open. A dark gift wins at 3; a light gift is safe.
+  {
+    for (const diff of ['medium', 'hard']) {
+      const board = blank(); board[0] = 2; board[1] = 3; board[2] = 6;
+      const p = QE.aiChooseGift(E(board, { held: null, current: 'ai', phase: 'select' }), diff);
+      const unsafe = emptyCells(board).some(c => placementWins(board, c, p));
+      check(`A2 ${diff} hands a safe piece (not an immediate winner)`, !unsafe, `handed piece ${p}`);
+    }
+  }
+
+  // ── A4 oracle (+ A3): in the endgame, hard matches the exhaustive solver, and
+  //    never loses from a non-losing position. Over deterministic random positions. ──
+  {
+    const rand = mulberry32(0xC0FFEE);
+    const pick = arr => arr[Math.floor(rand() * arr.length)];
+    let placeTests = 0, giftTests = 0, placeOpt = 0, giftOpt = 0, neverWorse = 0, neverWorseTot = 0;
+    let games = 0;
+    while ((placeTests < 25 || giftTests < 25) && games < 4000) {
+      games++;
+      // random legal self-play until an endgame (≤6 empties) position appears
+      let board = blank();
+      let held = Math.floor(rand() * 16);
+      let current = rand() < 0.5 ? 'you' : 'ai';
+      let phase = 'place', ended = false;
+      while (!ended) {
+        const e = emptyCells(board).length;
+        if (phase === 'place') {
+          if (e <= 6 && placeTests < 25 && held != null) {
+            const O = solve(board, held, current);
+            const m = QE.aiChoosePlacement(E(board, { held, current, phase: 'place' }), 'hard');
+            const b = board.slice(); b[m] = held;
+            let got;
+            if (findWin(b)) got = 1; else if (emptyCells(b).length === 0) got = 0;
+            else got = solve(b, null, current);
+            placeTests++; if (got === O) placeOpt++;
+            else results.failures.push(`A4 place: solver ${O} but hard achieved ${got}`);
+            if (O >= 0) { neverWorseTot++; if (got >= 0) neverWorse++; }
+          }
+          // apply a random legal placement to advance
+          const c = pick(emptyCells(board)); board[c] = held; held = null;
+          if (findWin(board)) { ended = true; break; }
+          if (emptyCells(board).length === 0) { ended = true; break; }
+          phase = 'select';
+        } else { // select
+          if (e <= 6 && giftTests < 25) {
+            const O = solve(board, null, current);
+            const p = QE.aiChooseGift(E(board, { held: null, current, phase: 'select' }), 'hard');
+            const got = -solve(board, p, opp(current));
+            giftTests++; if (got === O) giftOpt++;
+            else results.failures.push(`A4 gift: solver ${O} but hard achieved ${got}`);
+            if (O >= 0) { neverWorseTot++; if (got >= 0) neverWorse++; }
+          }
+          const rem = remainingPieces(board, null);
+          if (!rem.length) { ended = true; break; }
+          held = pick(rem); current = opp(current); phase = 'place';
+        }
+      }
+    }
+    check(`A4 hard plays endgame placements optimally (${placeOpt}/${placeTests})`, placeOpt === placeTests);
+    check(`A4 hard plays endgame gifts optimally (${giftOpt}/${giftTests})`, giftOpt === giftTests);
+    check(`A3 hard never loses from a non-losing position (${neverWorse}/${neverWorseTot})`, neverWorse === neverWorseTot);
+    check(`A4 sufficient coverage (place≥25 gift≥25)`, placeTests >= 25 && giftTests >= 25, `place ${placeTests} gift ${giftTests}`);
+  }
+
+  // ── A5: API / purity / determinism ──
+  {
+    check('A5 aiChoosePlacement arity 2', QE.aiChoosePlacement.length === 2);
+    check('A5 aiChooseGift arity 2', QE.aiChooseGift.length === 2);
+    check('A5 _setRandom exposed', typeof QE._setRandom === 'function');
+    // determinism: same state ⇒ same move (search is deterministic)
+    const board = blank(); board[0] = 2; board[1] = 3; board[5] = 6;
+    const st = E(board, { held: 9, current: 'ai', phase: 'place' });
+    const m1 = QE.aiChoosePlacement(st, 'hard');
+    const m2 = QE.aiChoosePlacement(st, 'hard');
+    check('A5 placement deterministic', m1 === m2, `${m1} vs ${m2}`);
+    // purity: aiChoose* must not mutate the input board
+    const snapshot = JSON.stringify(board);
+    QE.aiChoosePlacement(st, 'hard');
+    QE.aiChooseGift(E(board, { held: null, current: 'ai', phase: 'select' }), 'hard');
+    check('A5 no board mutation', JSON.stringify(board) === snapshot);
+    // easy honours the injected RNG (empty board ⇒ no immediate-win floor; rnd→cells[0])
+    QE._setRandom(() => 0);
+    const em = QE.aiChoosePlacement(E(blank(), { held: 5, current: 'ai' }), 'easy');
+    check('A5 easy uses injected RNG (first empty)', em === 0, `got ${em}`);
+    QE._setRandom(Math.random);
+  }
+
+  const ok = results.fail === 0;
+  document.getElementById('summary').innerHTML =
+    `<span class="${ok ? 'pass' : 'fail'}">${ok ? 'ALL PASS' : 'FAILURES'}</span> — ` +
+    `${results.pass} passed, ${results.fail} failed`;
+  window.__testResults = results;
+}
+</script>
+</body>
+</html>
