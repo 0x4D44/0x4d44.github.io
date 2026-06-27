@@ -310,25 +310,29 @@ function IsoBoard({ state, theme, onCellClick, assists, hintCell }) {
         <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
           <defs>
             {/* Plinth top wood grain. */}
+            {(() => { const bd = theme.board || { top: theme.pieceDark.sideTop, side: theme.pieceDark.sideBot, edge: theme.pieceDark.edge }; return (
+            <>
             <linearGradient id="iso-plinth-top" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%"   stopColor={theme.pieceDark.sideTop} stopOpacity="0.95" />
-              <stop offset="100%" stopColor={theme.pieceDark.sideBot} />
+              <stop offset="0%"   stopColor={bd.top} stopOpacity="0.98" />
+              <stop offset="100%" stopColor={bd.side} />
             </linearGradient>
             <linearGradient id="iso-plinth-left" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor={theme.pieceDark.sideTop} />
-              <stop offset="100%" stopColor={theme.pieceDark.edge} />
+              <stop offset="0%"   stopColor={bd.side} />
+              <stop offset="100%" stopColor={bd.edge} />
             </linearGradient>
             <linearGradient id="iso-plinth-right" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stopColor={theme.pieceDark.sideBot} />
-              <stop offset="100%" stopColor="#000" />
+              <stop offset="0%"   stopColor={bd.edge} />
+              <stop offset="100%" stopColor={bd.edge} />
             </linearGradient>
+            </>
+            ); })()}
             <radialGradient id="iso-plinth-vignette" cx="50%" cy="50%" r="55%">
               <stop offset="60%" stopColor="black" stopOpacity="0" />
               <stop offset="100%" stopColor="black" stopOpacity="0.35" />
             </radialGradient>
             <pattern id="iso-grain" patternUnits="userSpaceOnUse" width="6" height="3" patternTransform="rotate(0)">
               <rect width="6" height="3" fill="transparent" />
-              <line x1="0" y1="1.5" x2="6" y2="1.5" stroke={theme.pieceDark.edge} strokeOpacity="0.18" strokeWidth="0.4" />
+              <line x1="0" y1="1.5" x2="6" y2="1.5" stroke={(theme.board || theme.pieceDark).edge} strokeOpacity="0.16" strokeWidth="0.4" />
             </pattern>
           </defs>
 
@@ -359,11 +363,13 @@ function IsoBoard({ state, theme, onCellClick, assists, hintCell }) {
             const inset = 2; // gap between tile and grid line
             const w = tileW - inset * 2;
             const h = tileH - inset * 2;
+            const occupied = piece != null;
 
             let fill = theme.boardCell;
             if (isHover) fill = theme.boardCellHover;
             else if (isHot) fill = `${theme.accent}22`;
-            else fill = 'rgba(0,0,0,0.18)';
+            else if (occupied) fill = theme.tileSeat || theme.boardCell;
+            else fill = theme.boardCell;
 
             return (
               <g key={i}>
@@ -407,22 +413,47 @@ function IsoBoard({ state, theme, onCellClick, assists, hintCell }) {
             );
           })}
 
-          {/* WIN LINE — drawn over tiles, under pieces */}
+          {/* WIN LINE — glowing tiles + layered beam, drawn over tiles, under pieces */}
           {winLine && (() => {
             const a = winLine[0], b = winLine[3];
             const pa = tilePos(Math.floor(a / 4), a % 4);
             const pb = tilePos(Math.floor(b / 4), b % 4);
             const lostLine = state.winner === 'ai';
-            const lineColor = lostLine ? theme.danger : theme.accent;
-            const lineGlow = lostLine ? `${theme.danger}` : theme.accentGlow;
+            const core = lostLine ? theme.danger : theme.accent;
+            const glow = lostLine ? theme.danger : theme.accent;
             return (
-              <line x1={pa.cx} y1={pa.cy} x2={pb.cx} y2={pb.cy}
-                stroke={lineColor} strokeWidth="3" strokeLinecap="round"
-                style={{
-                  filter: `drop-shadow(0 0 6px ${lineGlow})`,
-                  animation: 'qLinePulse 1.3s ease-in-out infinite',
-                }}
-              />
+              <g style={{ animation: 'qLinePulse 1.2s ease-in-out infinite' }}>
+                {/* glowing diamond on each of the 4 winning tiles */}
+                {winLine.map(ci => {
+                  const { cx, cy } = tilePos(Math.floor(ci / 4), ci % 4);
+                  return (
+                    <g key={ci}>
+                      <polygon
+                        points={diamond(cx, cy, tileW - 2, tileH - 2)}
+                        fill={core} fillOpacity="0.18"
+                      />
+                      <polygon
+                        points={diamond(cx, cy, tileW - 3, tileH - 3)}
+                        fill="none" stroke={core} strokeWidth="2.2"
+                        style={{ filter: `drop-shadow(0 0 5px ${glow})` }}
+                      />
+                    </g>
+                  );
+                })}
+                {/* wide soft beam */}
+                <line x1={pa.cx} y1={pa.cy} x2={pb.cx} y2={pb.cy}
+                  stroke={core} strokeWidth="9" strokeLinecap="round" opacity="0.28"
+                  style={{ filter: `drop-shadow(0 0 8px ${glow})` }}
+                />
+                {/* bright core */}
+                <line x1={pa.cx} y1={pa.cy} x2={pb.cx} y2={pb.cy}
+                  stroke="#fff" strokeWidth="2.4" strokeLinecap="round" opacity="0.9"
+                />
+                <line x1={pa.cx} y1={pa.cy} x2={pb.cx} y2={pb.cy}
+                  stroke={core} strokeWidth="4" strokeLinecap="round" opacity="0.85"
+                  style={{ filter: `drop-shadow(0 0 4px ${glow})` }}
+                />
+              </g>
             );
           })()}
 
@@ -441,13 +472,16 @@ function IsoBoard({ state, theme, onCellClick, assists, hintCell }) {
           const pieceSize = 60;
           const left = cx - pieceSize / 2;
           const top  = cy - 78;
+          const isWinPiece = winLine && winLine.includes(i);
+          const winColor = state.winner === 'ai' ? theme.danger : theme.accent;
           return (
             <div key={i} style={{
               position: 'absolute',
               left, top,
-              zIndex: 10 + depth * 4 + c,
+              zIndex: 10 + depth * 4 + c + (isWinPiece ? 200 : 0),
               pointerEvents: 'none',
-              animation: depth === 0 ? undefined : undefined,
+              filter: isWinPiece ? `drop-shadow(0 0 7px ${winColor}) drop-shadow(0 0 14px ${winColor})` : 'none',
+              animation: isWinPiece ? 'qWinBob 1.2s ease-in-out infinite' : undefined,
             }}>
               <IsoPiece p={piece} theme={theme} size={pieceSize} />
             </div>

@@ -94,6 +94,10 @@
       0%,100% { opacity: 0.5; }
       50%     { opacity: 1; }
     }
+    @keyframes qWinBob {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-4px); }
+    }
 
     /* The splash that shows while React boots. */
     #boot-splash {
@@ -151,7 +155,7 @@
     };
 
     const DEFAULT_SETTINGS = {
-      theme:      'salon',
+      theme:      'atelier',
       pieceStyle: 'iso',
       difficulty: 'medium',
       animSpeed:  1,
@@ -391,6 +395,10 @@
             onSettings={() => setScreen('settings')}
             onHistory={() => setScreen('history')}
             onLearn={() => { setOnboardingStep(1); setScreen('onboarding'); }}
+            isLight={settings.theme === 'atelier'}
+            onToggleLight={() => setSettings(s => s.theme === 'atelier'
+              ? { ...s, theme: s.lastDark || 'salon' }
+              : { ...s, theme: 'atelier', lastDark: s.theme })}
           />
         );
       }

@@ -10,7 +10,7 @@ const QPiece = window.QuartoPiece;
 // ─────────────────────────────────────────────────────────────
 // HOME SCREEN
 // ─────────────────────────────────────────────────────────────
-function HomeScreen({ theme, onPlay, pieceStyle, onSettings, onHistory, onLearn, resumable = false, onResume, stats }) {
+function HomeScreen({ theme, onPlay, pieceStyle, onSettings, onHistory, onLearn, resumable = false, onResume, stats, isLight, onToggleLight }) {
   const liveStats = stats || [
     { k: 'Rank', v: '—' },
     { k: 'Won', v: '0' },
@@ -35,11 +35,28 @@ function HomeScreen({ theme, onPlay, pieceStyle, onSettings, onHistory, onLearn,
         <QPiece p={0b1110} theme={theme} size={48} flatStyle={pieceStyle} />
       </div>
 
-      {/* Eyebrow */}
-      <div style={{
-        fontFamily: theme.fontUI, fontSize: 11, letterSpacing: '0.32em',
-        color: theme.accent, textTransform: 'uppercase',
-      }}>Quarto · est. 1991</div>
+      {/* Eyebrow + light/dark toggle */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 2 }}>
+        <div style={{
+          fontFamily: theme.fontUI, fontSize: 11, letterSpacing: '0.32em',
+          color: theme.accent, textTransform: 'uppercase',
+        }}>Quarto · est. 1991</div>
+        {onToggleLight && (
+          <button onClick={onToggleLight} aria-label={isLight ? 'Switch to dark mode' : 'Switch to light mode'} style={{
+            display: 'flex', alignItems: 'center', gap: 7,
+            height: 34, padding: '0 12px 0 10px',
+            borderRadius: 99,
+            background: theme.panel,
+            border: `1px solid ${theme.panelBorder}`,
+            color: theme.text, cursor: 'pointer',
+            fontFamily: theme.fontUI, fontSize: 11, letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+          }}>
+            <span style={{ fontSize: 15, lineHeight: 1, color: theme.accent }}>{isLight ? '☀' : '☾'}</span>
+            <span>{isLight ? 'Light' : 'Dark'}</span>
+          </button>
+        )}
+      </div>
 
       {/* Title */}
       <div style={{ marginTop: 'auto' }}>
