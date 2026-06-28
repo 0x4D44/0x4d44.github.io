@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "pylos",
+    title: "Pylos",
+    tagline: "The rising-pyramid strategy game: place spheres on a 4×4 base and build upward — whoever crowns the single apex wins. The twist: neither side has enough spheres to fill it alone, so you win them back by completing squares and raising your own. A phone-first match against an AI, built in React and installable offline.",
+    url: "https://0x4d44.github.io/pylos/",
+    illustration: "ill-pylos",
+    date: "2026-06-28T12:00:00",
+    year: 1994,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "coil",
     title: "Coil",
     tagline: "A snake that solves puzzles with its own body. Strike across a void, grow to bridge a gap, anchor to climb a wall, hold a plate down while you reach the next exit — a curriculum of snake abilities taught one room at a time, across eight worlds. Discrete, deterministic, undo-friendly. TypeScript + Three.js on a tested sim core.",
