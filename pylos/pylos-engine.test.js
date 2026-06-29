@@ -147,6 +147,33 @@
   ok('depth-3 search from opening returns a move', !!E.bestMove(E.create(), 3, mulberry32(1)));
   ok('weakMove returns a legal move', !!E.weakMove(E.create(), mulberry32(3)));
 
+  // ------------------------------------------------- Unit 3: difficulty ladder
+  grp('difficulty ladder (Unit 3)');
+  ['novice', 'club', 'strong', 'expert'].forEach(function (lv) {
+    ok('chooseMove(' + lv + ') returns a move', !!E.chooseMove(E.create(), lv, mulberry32(5)));
+  });
+  ['club', 'strong', 'expert'].forEach(function (lv) {
+    var a = E.chooseMove(positions[0], lv, mulberry32(11)), b = E.chooseMove(positions[0], lv, mulberry32(11));
+    ok('chooseMove(' + lv + ') deterministic under fixed seed', JSON.stringify(a) === JSON.stringify(b));
+  });
+  // endgame gating: aw has 29 spheres placed (only the apex empty) -> expert deep-searches & wins
+  ok('endgame gate active near the top (emptySeats <= 8)', E.emptySeats(aw) <= 8, 'emptySeats ' + E.emptySeats(aw));
+  ok('expert takes the apex win in the endgame', E.applyMove(aw, E.chooseMove(aw, 'expert', mulberry32(1))).winner === 'p1');
+
+  // ladder is REAL: Strong (depth 3) out-scores Club (depth 2) over seeded games
+  function playGame(p1lv, p2lv, seed) {
+    var rnd = mulberry32(seed), s = E.create('p1'), steps = 0;
+    while (!s.winner && steps < 200) { var lv = s.turn === 'p1' ? p1lv : p2lv; s = E.applyMove(s, E.chooseMove(s, lv, rnd)); steps++; }
+    return s.winner;
+  }
+  var N = 8, strongWins = 0, clubWins = 0;
+  for (var gi = 0; gi < N; gi++) {
+    var w1 = playGame('strong', 'club', 0x1000 + gi); if (w1 === 'p1') strongWins++; else if (w1 === 'p2') clubWins++;
+    var w2 = playGame('club', 'strong', 0x2000 + gi); if (w2 === 'p2') strongWins++; else if (w2 === 'p1') clubWins++;
+  }
+  emit('   ladder record: Strong ' + strongWins + ' - ' + clubWins + ' Club (of ' + (2 * N) + ')');
+  ok('Strong out-scores (>=) Club across the ladder', strongWins >= clubWins, 'Strong ' + strongWins + ' Club ' + clubWins);
+
   var summary = (fail === 0 ? 'ALL PASS' : 'FAILURES') + ' -- ' + pass + ' passed, ' + fail + ' failed';
   emit(''); emit(summary);
   G.__PYLOS_TEST__ = { pass: pass, fail: fail, lines: lines, summary: summary };

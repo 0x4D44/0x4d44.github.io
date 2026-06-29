@@ -239,12 +239,16 @@
   }
 
   // negamax with alpha-beta; score is from the side-to-move's perspective.
-  function negamax(s, depth, alpha, beta) {
+  // ctx = {nodes, budget}: a node budget keeps search time bounded (Pylos recycles
+  // spheres, so the tree doesn't shrink monotonically) and the in-game AI snappy;
+  // on budget exhaustion a node falls back to the static eval (graceful, not a hang).
+  function negamax(s, depth, alpha, beta, ctx) {
+    ctx.nodes++;
     if (s.winner) return s.winner === s.turn ? WIN : -WIN;   // (produced states: winner !== turn -> -WIN)
-    if (depth <= 0) return evalState(s, s.turn);
+    if (depth <= 0 || ctx.nodes > ctx.budget) return evalState(s, s.turn);
     var moves = legalMoves(s), best = -Infinity;
     for (var i = 0; i < moves.length; i++) {
-      var v = -negamax(applyMove(s, moves[i]), depth - 1, -beta, -alpha);
+      var v = -negamax(applyMove(s, moves[i]), depth - 1, -beta, -alpha, ctx);
       if (v > best) best = v;
       if (best > alpha) alpha = best;
       if (alpha >= beta) break;
@@ -253,15 +257,17 @@
   }
 
   /* Best move at a given search depth. Deterministic search; randomFn breaks ties
-   * among equal-best moves ONLY (so a seeded randomFn => reproducible choice). */
-  function bestMove(state, depth, randomFn) {
+   * among equal-best moves ONLY (so a seeded randomFn => reproducible choice).
+   * Optional `budget` caps total nodes searched. */
+  function bestMove(state, depth, randomFn, budget) {
     if (state.winner) return null;
     var moves = legalMoves(state);
     if (!moves.length) return null;
     if (!(depth > 0)) depth = 1;
+    var ctx = { nodes: 0, budget: budget > 0 ? budget : Infinity };
     var alpha = -Infinity, bestVal = -Infinity, ties = [];
     for (var i = 0; i < moves.length; i++) {
-      var v = -negamax(applyMove(state, moves[i]), depth - 1, -Infinity, -alpha);
+      var v = -negamax(applyMove(state, moves[i]), depth - 1, -Infinity, -alpha, ctx);
       if (v > bestVal) { bestVal = v; ties = [moves[i]]; if (v > alpha) alpha = v; }
       else if (v === bestVal) { ties.push(moves[i]); }
     }
@@ -282,6 +288,34 @@
     return pool[Math.floor(rf() * pool.length)];
   }
 
+  // ---- difficulty ladder = search depth ------------------------------------
+  function emptySeats(state) { return 30 - onBoard(state.levels, 'p1') - onBoard(state.levels, 'p2'); }
+
+  // Difficulty IS search depth (the dishonest 1-ply "EXPERT" is gone). Expert
+  // searches deeper once few seats remain — the late game, where reading to the
+  // crown matters most and the tree is cheapest. Node budgets keep every tier
+  // responsive on a phone.
+  var LEVELS = {
+    novice: { weak: true },
+    club:   { depth: 2, budget: 30000 },
+    strong: { depth: 3, budget: 60000 },
+    expert: { depth: 4, budget: 90000, endgameAt: 8, endgameDepth: 6, endgameBudget: 200000 },
+  };
+
+  function levelDepth(state, level) {
+    var cfg = LEVELS[level] || LEVELS.strong;
+    if (cfg.weak) return { weak: true };
+    if (cfg.endgameAt != null && emptySeats(state) <= cfg.endgameAt) return { depth: cfg.endgameDepth, budget: cfg.endgameBudget };
+    return { depth: cfg.depth, budget: cfg.budget };
+  }
+
+  // The one entry point the game uses to pick an AI move at a difficulty level.
+  function chooseMove(state, level, randomFn) {
+    var d = levelDepth(state, level);
+    if (d.weak) return weakMove(state, randomFn);
+    return bestMove(state, d.depth, randomFn, d.budget);
+  }
+
   root.PylosEngine = {
     PLAYERS: PLAYERS, other: other,
     create: create, cloneState: cloneState, cloneLevels: cloneLevels, emptyGrid: emptyGrid,
@@ -294,5 +328,6 @@
     onBoard: onBoard,
     WIN: WIN, threatSquares: threatSquares, heightScore: heightScore, evalState: evalState,
     negamax: negamax, bestMove: bestMove, weakMove: weakMove,
+    emptySeats: emptySeats, LEVELS: LEVELS, levelDepth: levelDepth, chooseMove: chooseMove,
   };
 })(typeof window !== 'undefined' ? window : this);
