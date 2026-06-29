@@ -1,0 +1,97 @@
+/* ============================================================================
+ * pylos-engine.test.js — ONE test source, runnable two ways:
+ *   - in the browser via pylos-engine.test.html (renders a pass/fail report);
+ *   - headless via JXA:  cat pylos-engine.js pylos-engine.test.js > /tmp/r.js
+ *                        && osascript -l JavaScript /tmp/r.js
+ *     (the engine attaches to `this` when `window` is absent, so PylosEngine is
+ *      a global in JXA too). console.log lines go to stderr there.
+ *
+ * Results are also exposed as globalThis.__PYLOS_TEST__ = {pass, fail, lines}
+ * so the gate command can print a one-line verdict as its final expression.
+ * ========================================================================== */
+(function (G) {
+  'use strict';
+  var E = G.PylosEngine;
+  var pass = 0, fail = 0, lines = [];
+  function emit(line) { lines.push(line); if (typeof console !== 'undefined' && console.log) console.log(line); }
+  function ok(name, cond, detail) { if (cond) { pass++; emit('PASS  ' + name); } else { fail++; emit('FAIL  ' + name + '  -- ' + (detail || 'assertion failed')); } }
+  function eq(name, a, b) { ok(name, a === b, 'got ' + JSON.stringify(a) + ' expected ' + JSON.stringify(b)); }
+  function grp(name) { emit(''); emit('# ' + name); }
+
+  function mulberry32(seed) { return function () { seed |= 0; seed = (seed + 0x6D2B79F5) | 0; var t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+  function total(s, p) { return E.onBoard(s.levels, p) + s.reserves[p]; }
+  function noFloating(L) { for (var l = 1; l < 4; l++) { var n = 4 - l; for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (L[l][r][c] != null && !E.isSupported(L, l, r, c)) return false; } return true; }
+
+  grp('create / initial state');
+  var s0 = E.create();
+  eq('turn p1', s0.turn, 'p1'); eq('p1 reserve 15', s0.reserves.p1, 15); eq('p2 reserve 15', s0.reserves.p2, 15);
+  eq('winner null', s0.winner, null); eq('base 4x4', s0.levels[0].length, 4); eq('apex 1x1', s0.levels[3].length, 1);
+
+  grp('geometry / predicates');
+  ok('base all supported', (function () { for (var r = 0; r < 4; r++) for (var c = 0; c < 4; c++) if (!E.isSupported(s0.levels, 0, r, c)) return false; return true; })());
+  ok('apex unsupported on empty', !E.isSupported(s0.levels, 3, 0, 0));
+  eq('supporters(1,0,0) = 4', E.supporters(1, 0, 0).length, 4);
+  eq('coversOf(0,0,0) = 1', E.coversOf(0, 0, 0).length, 1);
+  eq('coversOf(0,1,1) = 4', E.coversOf(0, 1, 1).length, 4);
+
+  grp('base move generation');
+  var m0 = E.baseMoves(s0.levels, 'p1', 15);
+  eq('16 base placements', m0.filter(function (m) { return m.kind === 'place'; }).length, 16);
+  eq('0 raises on empty', m0.filter(function (m) { return m.kind === 'raise'; }).length, 0);
+  eq('legalMoves empty = 16', E.legalMoves(s0).length, 16);
+
+  grp('applyMove — place / no-mutation / conservation');
+  var s1 = E.applyMove(s0, { kind: 'place', dst: { l: 0, r: 0, c: 0 }, take: [] });
+  eq('place sets cell', s1.levels[0][0][0], 'p1'); eq('place decrements reserve', s1.reserves.p1, 14); eq('turn flips', s1.turn, 'p2');
+  eq('input cell not mutated', s0.levels[0][0][0], null); eq('input reserve not mutated', s0.reserves.p1, 15);
+  eq('conservation p1', total(s1, 'p1'), 15);
+
+  grp('square reclaim');
+  var sq = E.create(); sq.levels[0][0][0] = 'p1'; sq.levels[0][0][1] = 'p1'; sq.levels[0][1][0] = 'p1'; sq.reserves.p1 = 12; sq.turn = 'p1';
+  var sqMoves = E.legalMoves(sq).filter(function (m) { return m.kind === 'place' && m.dst.l === 0 && m.dst.r === 1 && m.dst.c === 1; });
+  ok('square move offers reclaim variants', sqMoves.length >= 2, 'got ' + sqMoves.length);
+  ok('a variant takes 0', sqMoves.some(function (m) { return m.take.length === 0; }));
+  ok('a variant takes 2', sqMoves.some(function (m) { return m.take.length === 2; }));
+  var take2 = sqMoves.find(function (m) { return m.take.length === 2; });
+  var sqAfter = E.applyMove(sq, take2);
+  eq('reclaim returns 2 to reserve', sqAfter.reserves.p1, 12 - 1 + 2);
+  ok('conservation after reclaim', total(sqAfter, 'p1') === 15);
+  var exFull = E.legalMoves(sq, { exhaustive: true }).filter(function (m) { return m.dst.l === 0 && m.dst.r === 1 && m.dst.c === 1; });
+  ok('exhaustive >= bounded reclaim variants', exFull.length >= sqMoves.length, 'ex ' + exFull.length + ' bounded ' + sqMoves.length);
+
+  grp('apex win');
+  var aw = E.create();
+  for (var Lv = 0; Lv < 3; Lv++) { var n = 4 - Lv; for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) aw.levels[Lv][r][c] = ((r + c) % 2 === 0) ? 'p1' : 'p2'; }
+  aw.turn = 'p1'; aw.reserves.p1 = 5;
+  ok('apex seat placeable', E.canPlaceAt(aw.levels, 3, 0, 0));
+  var awAfter = E.applyMove(aw, { kind: 'place', dst: { l: 3, r: 0, c: 0 }, take: [] });
+  eq('crowning the apex wins', awAfter.winner, 'p1');
+
+  grp('property — seeded random self-play (200 games)');
+  var games = 200, vio = { floating: 0, cons: 0, illegal: 0, nomove: 0, draw: 0 }, fin = 0, maxLen = 0;
+  for (var g = 0; g < games; g++) {
+    var rnd = mulberry32(0x51A0 + g * 2654435761);
+    var s = E.create(g % 2 === 0 ? 'p1' : 'p2'); var steps = 0;
+    while (!s.winner && steps < 400) {
+      var mv = E.legalMoves(s); if (!mv.length) { vio.nomove++; break; }
+      var pick = mv[Math.floor(rnd() * mv.length)]; var snap = JSON.stringify(s);
+      var ns = E.applyMove(s, pick); if (JSON.stringify(s) !== snap) vio.illegal++;
+      s = ns; steps++;
+      if (!noFloating(s.levels)) vio.floating++;
+      if (total(s, 'p1') !== 15 || total(s, 'p2') !== 15) vio.cons++;
+    }
+    if (s.winner) fin++; else if (steps >= 400) vio.draw++;
+    maxLen = Math.max(maxLen, steps);
+  }
+  eq('all games terminate with a winner', fin, games);
+  eq('no floating-sphere states', vio.floating, 0);
+  eq('no conservation violations', vio.cons, 0);
+  eq('no applyMove input mutation', vio.illegal, 0);
+  eq('no "no move before winner"', vio.nomove, 0);
+  eq('no draws / infinite games', vio.draw, 0);
+  ok('longest game <= 60 plies', maxLen <= 60, 'maxLen ' + maxLen);
+
+  var summary = (fail === 0 ? 'ALL PASS' : 'FAILURES') + ' -- ' + pass + ' passed, ' + fail + ' failed';
+  emit(''); emit(summary);
+  G.__PYLOS_TEST__ = { pass: pass, fail: fail, lines: lines, summary: summary };
+})(typeof window !== 'undefined' ? window : this);

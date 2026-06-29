@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pylos engine tests</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, Menlo, Consolas, monospace; background: #0a0d15; color: #d7e0ea; margin: 0; padding: 20px; }
+  h1 { font-size: 18px; }
+  #summary { font-size: 20px; font-weight: 700; padding: 10px 14px; border-radius: 8px; margin: 12px 0; }
+  .ok { background: #14361f; color: #9ee0a6; }
+  .bad { background: #3a1416; color: #ff9a8f; }
+  pre { white-space: pre-wrap; }
+  .pass { color: #6fcf7f; } .fail { color: #ff7a6b; } .grp { color: #8fa0b4; margin-top: 10px; }
+</style>
+</head>
+<body>
+<h1>Pylos engine — test harness</h1>
+<div id="summary">running…</div>
+<pre id="log"></pre>
+<script src="pylos-engine.js"></script>
+<script src="pylos-engine.test.js"></script>
+<script>
+(function () {
+  var res = window.__PYLOS_TEST__ || { pass: 0, fail: 1, lines: ['test module did not run'], summary: 'FAILURES' };
+  var log = document.getElementById('log');
+  res.lines.forEach(function (ln) {
+    var span = document.createElement('span');
+    span.className = ln.indexOf('FAIL') === 0 ? 'fail' : (ln.indexOf('PASS') === 0 ? 'pass' : 'grp');
+    span.textContent = ln + '\n';
+    log.appendChild(span);
+  });
+  var sum = document.getElementById('summary');
+  sum.className = res.fail === 0 ? 'ok' : 'bad';
+  sum.textContent = res.summary;
+})();
+</script>
+</body>
+</html>
