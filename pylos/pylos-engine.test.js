@@ -174,6 +174,65 @@
   emit('   ladder record: Strong ' + strongWins + ' - ' + clubWins + ' Club (of ' + (2 * N) + ')');
   ok('Strong out-scores (>=) Club across the ladder', strongWins >= clubWins, 'Strong ' + strongWins + ' Club ' + clubWins);
 
+  // ------------------------------------------------- Unit 4: differential oracle
+  grp('differential oracle (Unit 4)');
+  // INDEPENDENT exhaustive solver: can the side to move FORCE a win? (perfect play,
+  // exhaustive reclaim subsets, path-cycle => not a forced win, hard ply cap for safety)
+  function keyOf(s) { return JSON.stringify([s.levels, s.turn, s.reserves]); }
+  function oracleWins(s, path, ply) {
+    if (ply > 18) return false;
+    var key = keyOf(s);
+    if (path.has(key)) return false;
+    path.add(key);
+    var res = false, moves = E.legalMoves(s, { exhaustive: true });
+    for (var i = 0; i < moves.length; i++) {
+      var ns = E.applyMove(s, moves[i]);
+      if (ns.winner === s.turn) { res = true; break; }          // immediate win
+      if (!ns.winner && !oracleWins(ns, path, ply + 1)) { res = true; break; } // opponent can't force a win
+    }
+    path.delete(key);
+    return res;
+  }
+  // collect small, non-terminal endgame positions (apex not yet reachable)
+  function collectEndgames(n, seed) {
+    var rnd = mulberry32(seed), out = [], guard = 0;
+    while (out.length < n && guard < 30000) {
+      guard++;
+      var s = E.create(guard % 2 ? 'p1' : 'p2'), steps = 0;
+      while (!s.winner && steps < 200) {
+        if (E.emptySeats(s) <= 3 && E.legalMoves(s).length >= 1) { out.push(s); break; }
+        var mv = E.legalMoves(s); s = E.applyMove(s, mv[Math.floor(rnd() * mv.length)]); steps++;
+      }
+    }
+    return out;
+  }
+  var endgames = collectEndgames(40, 0xDEED);
+  ok('collected small endgame positions', endgames.length >= 15, 'got ' + endgames.length);
+
+  var mism = 0, wonCount = 0, notWon = 0;
+  endgames.forEach(function (s) {
+    var ow = oracleWins(s, new Set(), 0);
+    var engineWin = E.searchRoot(s, 10, 800000).value >= E.WIN - 1;
+    if (engineWin !== ow) mism++;
+    if (ow) wonCount++; else notWon++;
+  });
+  eq('engine deep value agrees with the exhaustive oracle', mism, 0);
+  ok('oracle sample is non-vacuous (both win & not-win seen)', wonCount > 0 && notWon > 0, 'won ' + wonCount + ' notWon ' + notWon);
+
+  // conversion: from an oracle-WON position, expert beats a random opponent (never loses a won game)
+  var convFail = 0, convTested = 0;
+  endgames.forEach(function (s) {
+    if (convTested >= 8 || !oracleWins(s, new Set(), 0)) return;
+    convTested++;
+    var st = s, rnd = mulberry32(123), steps = 0;
+    while (!st.winner && steps < 80) {
+      var mv = (st.turn === s.turn) ? E.chooseMove(st, 'expert', rnd) : (function () { var L = E.legalMoves(st); return L[Math.floor(rnd() * L.length)]; })();
+      st = E.applyMove(st, mv); steps++;
+    }
+    if (st.winner !== s.turn) convFail++;
+  });
+  ok('expert converts oracle-won endgames vs random play', convFail === 0 && convTested > 0, 'fail ' + convFail + ' tested ' + convTested);
+
   var summary = (fail === 0 ? 'ALL PASS' : 'FAILURES') + ' -- ' + pass + ' passed, ' + fail + ' failed';
   emit(''); emit(summary);
   G.__PYLOS_TEST__ = { pass: pass, fail: fail, lines: lines, summary: summary };

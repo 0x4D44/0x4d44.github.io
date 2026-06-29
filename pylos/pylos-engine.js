@@ -256,13 +256,12 @@
     return best;
   }
 
-  /* Best move at a given search depth. Deterministic search; randomFn breaks ties
-   * among equal-best moves ONLY (so a seeded randomFn => reproducible choice).
-   * Optional `budget` caps total nodes searched. */
-  function bestMove(state, depth, randomFn, budget) {
-    if (state.winner) return null;
+  /* Root search: returns {value, ties} where value is the negamax value from the
+   * side-to-move's perspective and ties are the equal-best moves. Deterministic. */
+  function searchRoot(state, depth, budget) {
+    if (state.winner) return { value: -WIN, ties: [] };
     var moves = legalMoves(state);
-    if (!moves.length) return null;
+    if (!moves.length) return { value: -WIN, ties: [] };
     if (!(depth > 0)) depth = 1;
     var ctx = { nodes: 0, budget: budget > 0 ? budget : Infinity };
     var alpha = -Infinity, bestVal = -Infinity, ties = [];
@@ -271,8 +270,16 @@
       if (v > bestVal) { bestVal = v; ties = [moves[i]]; if (v > alpha) alpha = v; }
       else if (v === bestVal) { ties.push(moves[i]); }
     }
+    return { value: bestVal, ties: ties };
+  }
+
+  /* Best move at a given search depth. randomFn breaks ties among equal-best moves
+   * ONLY (so a seeded randomFn => reproducible choice). Optional `budget` caps nodes. */
+  function bestMove(state, depth, randomFn, budget) {
+    var r = searchRoot(state, depth, budget);
+    if (!r.ties.length) return null;
     var rf = randomFn || Math.random;
-    return ties[Math.floor(rf() * ties.length)];
+    return r.ties[Math.floor(rf() * r.ties.length)];
   }
 
   /* Deliberately weak move (Novice tier): take an immediate win, otherwise mostly
@@ -327,7 +334,7 @@
     legalMoves: legalMoves, applyMove: applyMove, winner: winner, isTerminal: isTerminal,
     onBoard: onBoard,
     WIN: WIN, threatSquares: threatSquares, heightScore: heightScore, evalState: evalState,
-    negamax: negamax, bestMove: bestMove, weakMove: weakMove,
+    negamax: negamax, searchRoot: searchRoot, bestMove: bestMove, weakMove: weakMove,
     emptySeats: emptySeats, LEVELS: LEVELS, levelDepth: levelDepth, chooseMove: chooseMove,
   };
 })(typeof window !== 'undefined' ? window : this);
