@@ -1,9 +1,10 @@
 // Pylos — offline service worker. Cache-first for the app shell so the
 // game launches with no network once installed.
-const CACHE = 'pylos-v3';
+const CACHE = 'pylos-v4';
 const ASSETS = [
   './',
   'index.html',
+  'pylos-engine.js',
   'support.js',
   'manifest.json',
   'icon-192.png',

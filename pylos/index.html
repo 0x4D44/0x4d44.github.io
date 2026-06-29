@@ -19,6 +19,7 @@
     window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
   }
 </script>
+<script src="./pylos-engine.js"></script>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -279,7 +280,7 @@ class Component extends DCLogic {
       reserves: { p1: 15, p2: 15 },
       turn: 'p1', phase: 'play', removeCount: 0, selected: null,
       mode: mode, aiSide: 'p2', theme: theme || this.state?.theme || 'salon',
-      level: level || 'normal', coachOn: true,
+      level: level || 'club', coachOn: true,
       hints: true, showRules: false, winner: null, thinking: false,
       log: [], history: [],
     };
@@ -314,7 +315,7 @@ class Component extends DCLogic {
   anyRaise(L, p){ for(let l=0;l<4;l++){ const n=4-l;
     for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(L[l][r][c]===p && this.isFree(L,l,r,c) && this.hasRaiseDest(L,l,r,c)) return true; } return false; }
 
-  nm(p){ if(p === 'p1') return 'Light'; if(this.state.mode !== 'ai') return 'Dark'; return this.state.level === 'beginner' ? 'Novice' : 'Pavlov'; }
+  nm(p){ if(p === 'p1') return 'Light'; if(this.state.mode !== 'ai') return 'Dark'; return ({novice:'Novice',club:'Club',strong:'Strong',expert:'Expert'})[this.state.level] || 'AI'; }
   moveLabel(x){ return (x.l === 0 ? 'Base' : 'L' + x.l) + ' ' + String.fromCharCode(65 + x.c) + (x.r + 1); }
   other(p){ return p === 'p1' ? 'p2' : 'p1'; }
   coord(l, r, c){ return 'L' + l + ' ' + String.fromCharCode(65 + c) + (r + 1); }
@@ -387,10 +388,17 @@ class Component extends DCLogic {
 
   newGame(mode, level){ this.setState(this.freshState(mode || this.state.mode, this.state.theme, level || this.state.level), () => this.afterCommit()); }
   cycleOpponent(){
+    // honest ladder = search depth: Novice / Club / Strong / Expert, then 2-Player
+    const cyc = [
+      { mode: 'ai', level: 'novice' }, { mode: 'ai', level: 'club' },
+      { mode: 'ai', level: 'strong' }, { mode: 'ai', level: 'expert' },
+      { mode: '2p', level: 'club' },
+    ];
     const s = this.state;
-    if(s.mode === 'ai' && s.level === 'normal') this.newGame('ai', 'beginner');
-    else if(s.mode === 'ai') this.newGame('2p', 'normal');
-    else this.newGame('ai', 'normal');
+    let i = cyc.findIndex(x => x.mode === s.mode && (s.mode === '2p' || x.level === s.level));
+    if(i < 0) i = 1;
+    const nx = cyc[(i + 1) % cyc.length];
+    this.newGame(nx.mode, nx.level);
   }
   toggleCoach(){ this.setState({ coachOn: !this.state.coachOn }); }
   toggleHints(){ this.setState({ hints: !this.state.hints }); }
@@ -403,108 +411,29 @@ class Component extends DCLogic {
       history: hist, phase: 'play', removeCount: 0, selected: null, winner: null, thinking: false });
   }
 
-  /* ---------- AI (medium) ---------- */
+  /* ---------- AI (PylosEngine: deterministic alpha-beta, difficulty = depth) ---------- */
+  // build the engine's plain state from the live UI state (engine never mutates it)
+  engState(){ const s = this.state; return { levels: s.levels, reserves: { ...s.reserves }, turn: s.turn, winner: null }; }
   aiPlay(){
     const s = this.state;
     if(s.winner || s.mode !== 'ai' || s.turn !== s.aiSide){ this.setState({ thinking: false }); return; }
-    const p = s.aiSide, opp = this.other(p), L = s.levels;
-    const moves = this.genMoves(L, p, s.reserves[p]);
-    if(!moves.length){ const ns = this.clone(); ns.thinking = false; this.finishTurn(ns); return; }
-    let best;
-    if(s.level === 'beginner'){
-      best = this.weakPick(L, p, moves);
-    } else {
-      best = null; let bestScore = -Infinity;
-      for(const m of moves){ const sim = this.simMove(L, p, m); const sc = this.evalAfter(sim.levels, p, opp, m, sim);
-        if(sc > bestScore){ bestScore = sc; best = m; } }
-    }
+    const p = s.aiSide;
+    const move = PylosEngine.chooseMove(this.engState(), s.level, Math.random);
+    if(!move){ const ns = this.clone(); ns.thinking = false; this.finishTurn(ns); return; }
     const ns = this.clone(); ns.thinking = false; ns.history = ns.history.concat([this.snapStr()]);
-    if(best.kind === 'place'){ ns.reserves[p]--; ns.levels[best.dst.l][best.dst.r][best.dst.c] = p;
-      ns.log = ns.log.concat([this.nm(p)+' place '+this.coord(best.dst.l,best.dst.r,best.dst.c)]);
-    } else { ns.levels[best.src.l][best.src.r][best.src.c] = null; ns.levels[best.dst.l][best.dst.r][best.dst.c] = p;
-      ns.log = ns.log.concat([this.nm(p)+' raise '+this.coord(best.src.l,best.src.r,best.src.c)+'\u2192'+this.coord(best.dst.l,best.dst.r,best.dst.c)]); }
-    const d = best.dst;
-    if(d.l === 3){ ns.winner = p; ns.phase = 'done'; ns.log = ns.log.concat(['apex placed']); this.commit(ns); return; }
-    if(this.squaresAt(ns.levels, d.l, d.r, d.c, p) && this.hasFreeOwn(ns.levels, p)){
-      const takes = this.aiPickTakes(ns.levels, p, 2);
-      for(const tk of takes){ ns.levels[tk.l][tk.r][tk.c] = null; ns.reserves[p]++; ns.log = ns.log.concat([this.nm(p)+' take '+this.coord(tk.l,tk.r,tk.c)]); }
+    if(move.kind === 'place'){ ns.reserves[p]--; ns.levels[move.dst.l][move.dst.r][move.dst.c] = p;
+      ns.log = ns.log.concat([this.nm(p)+' place '+this.coord(move.dst.l,move.dst.r,move.dst.c)]);
+    } else { ns.levels[move.src.l][move.src.r][move.src.c] = null; ns.levels[move.dst.l][move.dst.r][move.dst.c] = p;
+      ns.log = ns.log.concat([this.nm(p)+' raise '+this.coord(move.src.l,move.src.r,move.src.c)+'\u2192'+this.coord(move.dst.l,move.dst.r,move.dst.c)]); }
+    if(move.dst.l === 3){ ns.winner = p; ns.phase = 'done'; ns.log = ns.log.concat(['apex placed']); this.commit(ns); return; }
+    // the engine SEARCHES the reclaim (0-2 free own spheres) as part of the move
+    if(move.take && move.take.length){
+      for(const tk of move.take){ ns.levels[tk.l][tk.r][tk.c] = null; ns.reserves[p]++; ns.log = ns.log.concat([this.nm(p)+' take '+this.coord(tk.l,tk.r,tk.c)]); }
     }
     this.finishTurn(ns);
   }
-  genMoves(L, p, reserve){ const moves = [];
-    if(reserve > 0){ for(let l=0;l<4;l++){ const n=4-l;
-      for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(this.canPlaceAt(L,l,r,c)) moves.push({kind:'place',dst:{l,r,c}}); } }
-    for(let l=0;l<3;l++){ const n=4-l;
-      for(let r=0;r<n;r++) for(let c=0;c<n;c++){ if(L[l][r][c]!==p || !this.isFree(L,l,r,c)) continue;
-        for(let l2=l+1;l2<=3;l2++){ const n2=4-l2;
-          for(let r2=0;r2<n2;r2++) for(let c2=0;c2<n2;c2++)
-            if(this.canPlaceAt(L,l2,r2,c2) && !this.isSupporterOf(l2,r2,c2,{l,r,c})) moves.push({kind:'raise',src:{l,r,c},dst:{l:l2,r:r2,c:c2}}); } } }
-    return moves;
-  }
-  simMove(L, p, m){ const nl = L.map(g => g.map(row => row.slice()));
-    if(m.kind === 'place') nl[m.dst.l][m.dst.r][m.dst.c] = p;
-    else { nl[m.src.l][m.src.r][m.src.c] = null; nl[m.dst.l][m.dst.r][m.dst.c] = p; }
-    let regained = 0;
-    if(m.dst.l !== 3 && this.squaresAt(nl, m.dst.l, m.dst.r, m.dst.c, p) && this.hasFreeOwn(nl, p)){
-      const takes = this.aiPickTakes(nl, p, 2); for(const tk of takes){ nl[tk.l][tk.r][tk.c] = null; regained++; } }
-    return { levels: nl, regained };
-  }
-  aiPickTakes(L, p, max){ const free = [];
-    for(let l=0;l<4;l++){ const n=4-l; for(let r=0;r<n;r++) for(let c=0;c<n;c++) if(L[l][r][c]===p && this.isFree(L,l,r,c)) free.push({l,r,c}); }
-    free.sort((a,b) => b.l - a.l); return free.slice(0, max);
-  }
-  apexAvailable(L){ return this.canPlaceAt(L, 3, 0, 0); }
-  threatSquares(L, q){ let t = 0;
-    for(let l=0;l<3;l++){ const n=4-l;
-      for(let br=0;br<=n-2;br++) for(let bc=0;bc<=n-2;bc++){
-        const cs = [[br,bc],[br,bc+1],[br+1,bc],[br+1,bc+1]]; let own=0, empt=null;
-        for(const [R,C] of cs){ const v = L[l][R][C]; if(v===q) own++; else if(v==null) empt=[l,R,C]; }
-        if(own===3 && empt && this.canPlaceAt(L, empt[0], empt[1], empt[2])) t++; } }
-    return t;
-  }
-  evalAfter(nl, p, opp, m, sim){
-    if(m.dst.l === 3) return 1e9; let sc = 0;
-    sc += sim.regained * 14; sc += m.kind === 'raise' ? 9 : 0; sc += m.dst.l * 2;
-    if(this.apexAvailable(nl)) sc -= 100000;
-    sc -= this.threatSquares(nl, opp) * 16; sc += this.threatSquares(nl, p) * 5;
-    sc += Math.random() * 1.5; return sc;
-  }
-
-  /* ---------- weak AI + expert coach ---------- */
-  // A move hands the opponent the crown if it leaves the apex seat open & supported.
-  givesApex(levels){ return this.canPlaceAt(levels, 3, 0, 0); }
-
-  weakPick(L, p, moves){
-    // Novice: take an obvious win, otherwise play almost at random — only
-    // sometimes bothering to avoid gifting the apex. Strategically clueless.
-    const win = moves.find(m => m.dst.l === 3);
-    if(win) return win;
-    const safe = moves.filter(m => !this.givesApex(this.simMove(L, p, m).levels));
-    const pool = (Math.random() < 0.6 && safe.length) ? safe : moves;
-    return pool[Math.floor(Math.random() * pool.length)];
-  }
-
-  // Expert recommendation for player p — deterministic, strong heuristics.
-  coachBestMove(L, p, reserve){
-    const opp = this.other(p);
-    const moves = this.genMoves(L, p, reserve);
-    if(!moves.length) return null;
-    const win = moves.find(m => m.dst.l === 3);
-    if(win) return win;
-    let best = null, bestScore = -Infinity;
-    for(const m of moves){
-      const sim = this.simMove(L, p, m);
-      let sc = 0;
-      if(this.givesApex(sim.levels)) sc -= 1e6;          // never hand over the crown
-      sc += sim.regained * 22;                            // reclaimed spheres win games
-      sc += m.kind === 'raise' ? 13 : 0;                  // raising saves reserve
-      sc += m.dst.l * 4;                                  // build upward
-      sc += this.threatSquares(sim.levels, p) * 7;        // set up your own squares
-      sc -= this.threatSquares(sim.levels, opp) * 19;     // deny theirs
-      if(sc > bestScore){ bestScore = sc; best = m; }
-    }
-    return best;
-  }
+  // (Component AI heuristics removed — the AI move and the coach hint now both
+  //  come from window.PylosEngine: one deterministic alpha-beta search, one eval.)
 
   /* ---------- iso board ---------- */
   renderBoard(){
@@ -674,9 +603,9 @@ class Component extends DCLogic {
     // expert coach (beginner mode only)
     this._coachMove = null;
     let coachLine = 'Coach is off';
-    const coachActive = s.mode === 'ai' && s.level === 'beginner' && !s.winner && !s.thinking && s.phase === 'play' && isHuman;
+    const coachActive = s.mode === 'ai' && s.level === 'novice' && !s.winner && !s.thinking && s.phase === 'play' && isHuman;
     if(coachActive && s.coachOn){
-      const cm = this.coachBestMove(s.levels, cur, s.reserves[cur]);
+      const cm = PylosEngine.chooseMove({ levels: s.levels, reserves: s.reserves, turn: cur, winner: null }, 'expert', () => 0);
       if(cm){
         this._coachMove = cm;
         if(cm.dst.l === 3) coachLine = '★ Winning move — crown the apex!';
@@ -717,11 +646,11 @@ class Component extends DCLogic {
       resvSlashStyle: `font-size:11px;font-weight:400;color:${t.textDim};`,
       barTrackStyle: `height:5px;border-radius:4px;background:${t.textFaint};margin-top:5px;overflow:hidden;`,
       p1BarStyle: bar(s.reserves.p1), p2BarStyle: bar(s.reserves.p2),
-      p1Name: 'Light', p2Name: s.mode === 'ai' ? (s.level === 'beginner' ? 'Novice' : 'Pavlov') : 'Dark',
+      p1Name: 'Light', p2Name: s.mode === 'ai' ? (({novice:'Novice',club:'Club',strong:'Strong',expert:'Expert'})[s.level] || 'AI') : 'Dark',
       p1Count: s.reserves.p1, p2Count: s.reserves.p2,
       btnStyle: btn,
       undoBtnStyle: btn + `opacity:${s.history.length ? '1' : '.4'};`,
-      hintsLabel: s.hints ? 'HINTS ON' : 'HINTS OFF', modeBtnLabel: s.mode === '2p' ? '2-PLAYER' : (s.level === 'beginner' ? 'BEGINNER' : 'EXPERT'),
+      hintsLabel: s.hints ? 'HINTS ON' : 'HINTS OFF', modeBtnLabel: s.mode === '2p' ? '2-PLAYER' : (({novice:'NOVICE',club:'CLUB',strong:'STRONG',expert:'EXPERT'})[s.level] || 'AI'),
       viewHint: this.viewDirty() ? 'Right-drag rotate · Shift+drag or middle-drag pan · wheel zoom · ⟲ reset' : 'Right-drag to rotate · two-finger drag to pan & zoom',
       viewHintStyle: `margin-top:6px;font-size:10px;letter-spacing:.4px;color:${t.textDim};text-align:center;`,
       showCoach: coachActive, coachLine,
