@@ -177,13 +177,15 @@
     var p = state.turn, ns = cloneState(state);
     if (move.kind === 'place') { ns.reserves[p] -= 1; ns.levels[move.dst.l][move.dst.r][move.dst.c] = p; }
     else { ns.levels[move.src.l][move.src.r][move.src.c] = null; ns.levels[move.dst.l][move.dst.r][move.dst.c] = p; }
-    if (move.dst.l === 3) { ns.winner = p; return ns; }            // crowned the apex
-    if (move.take && move.take.length) {
+    var apexWin = move.dst.l === 3;
+    if (!apexWin && move.take && move.take.length) {
       move.take.forEach(function (t) { ns.levels[t.l][t.r][t.c] = null; ns.reserves[p] += 1; });
     }
-    var next = other(p);
-    ns.turn = next;
-    if (!hasAnyMove(ns.levels, next, ns.reserves[next])) ns.winner = p;  // opponent stuck -> mover wins
+    // The turn ALWAYS flips (even on a winning move) so negamax negation stays
+    // consistent: after any move, ns.turn = the non-mover and ns.winner = the mover.
+    ns.turn = other(p);
+    if (apexWin) ns.winner = p;                                                  // crowned the apex
+    else if (!hasAnyMove(ns.levels, ns.turn, ns.reserves[ns.turn])) ns.winner = p; // opponent stuck
     return ns;
   }
 
@@ -198,6 +200,88 @@
     return n2;
   }
 
+  // ---- AI: evaluation + alpha-beta negamax ---------------------------------
+  var WIN = 1e6;
+
+  // number of p's 2x2 squares that are one placeable seat away from completing
+  function threatSquares(L, p) {
+    var t = 0;
+    for (var l = 0; l < 3; l++) { var n = 4 - l;
+      for (var br = 0; br <= n - 2; br++) for (var bc = 0; bc <= n - 2; bc++) {
+        var own = 0, empt = null, cells = [[br, bc], [br, bc + 1], [br + 1, bc], [br + 1, bc + 1]];
+        for (var k = 0; k < 4; k++) { var v = L[l][cells[k][0]][cells[k][1]]; if (v === p) own++; else if (v == null) empt = [l, cells[k][0], cells[k][1]]; }
+        if (own === 3 && empt && canPlaceAt(L, empt[0], empt[1], empt[2])) t++;
+      } }
+    return t;
+  }
+  // total "build height" of p's spheres (higher = more progress toward the apex)
+  function heightScore(L, p) {
+    var s = 0;
+    for (var l = 0; l < 4; l++) { var n = 4 - l;
+      for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (L[l][r][c] === p) s += l; }
+    return s;
+  }
+
+  /* Leaf evaluation from `me`'s perspective. Pylos is a tempo/parity battle:
+   * reserves ARE the resource (out of reserve + no raise = loss), so the reserve
+   * differential rewards reserve-preserving raises/reclaims over raw placement.
+   * The apex term makes even a depth-1 search take a win and refuse to gift one. */
+  function evalState(s, me) {
+    var opp = other(me);
+    if (s.winner) return s.winner === me ? WIN : -WIN;
+    if (canPlaceAt(s.levels, 3, 0, 0)) return s.turn === me ? (WIN - 1) : -(WIN - 1); // side to move can crown next
+    var sc = 0;
+    sc += (s.reserves[me] - s.reserves[opp]) * 6;            // tempo / material
+    sc += threatSquares(s.levels, me) * 7;                   // set up own reclaims
+    sc -= threatSquares(s.levels, opp) * 9;                  // deny theirs (worth more)
+    sc += (heightScore(s.levels, me) - heightScore(s.levels, opp)); // mild build shaping
+    return sc;
+  }
+
+  // negamax with alpha-beta; score is from the side-to-move's perspective.
+  function negamax(s, depth, alpha, beta) {
+    if (s.winner) return s.winner === s.turn ? WIN : -WIN;   // (produced states: winner !== turn -> -WIN)
+    if (depth <= 0) return evalState(s, s.turn);
+    var moves = legalMoves(s), best = -Infinity;
+    for (var i = 0; i < moves.length; i++) {
+      var v = -negamax(applyMove(s, moves[i]), depth - 1, -beta, -alpha);
+      if (v > best) best = v;
+      if (best > alpha) alpha = best;
+      if (alpha >= beta) break;
+    }
+    return best;
+  }
+
+  /* Best move at a given search depth. Deterministic search; randomFn breaks ties
+   * among equal-best moves ONLY (so a seeded randomFn => reproducible choice). */
+  function bestMove(state, depth, randomFn) {
+    if (state.winner) return null;
+    var moves = legalMoves(state);
+    if (!moves.length) return null;
+    if (!(depth > 0)) depth = 1;
+    var alpha = -Infinity, bestVal = -Infinity, ties = [];
+    for (var i = 0; i < moves.length; i++) {
+      var v = -negamax(applyMove(state, moves[i]), depth - 1, -Infinity, -alpha);
+      if (v > bestVal) { bestVal = v; ties = [moves[i]]; if (v > alpha) alpha = v; }
+      else if (v === bestVal) { ties.push(moves[i]); }
+    }
+    var rf = randomFn || Math.random;
+    return ties[Math.floor(rf() * ties.length)];
+  }
+
+  /* Deliberately weak move (Novice tier): take an immediate win, otherwise mostly
+   * avoid gifting the apex, otherwise play at random. randomFn for reproducibility. */
+  function weakMove(state, randomFn) {
+    var rf = randomFn || Math.random;
+    var moves = legalMoves(state);
+    if (!moves.length) return null;
+    var win = moves.find(function (m) { return m.dst.l === 3; });
+    if (win) return win;
+    var safe = moves.filter(function (m) { return !canPlaceAt(applyMove(state, m).levels, 3, 0, 0); });
+    var pool = (rf() < 0.6 && safe.length) ? safe : moves;
+    return pool[Math.floor(rf() * pool.length)];
+  }
+
   root.PylosEngine = {
     PLAYERS: PLAYERS, other: other,
     create: create, cloneState: cloneState, cloneLevels: cloneLevels, emptyGrid: emptyGrid,
@@ -208,5 +292,7 @@
     baseMoves: baseMoves, applyBase: applyBase, reclaimSets: reclaimSets,
     legalMoves: legalMoves, applyMove: applyMove, winner: winner, isTerminal: isTerminal,
     onBoard: onBoard,
+    WIN: WIN, threatSquares: threatSquares, heightScore: heightScore, evalState: evalState,
+    negamax: negamax, bestMove: bestMove, weakMove: weakMove,
   };
 })(typeof window !== 'undefined' ? window : this);

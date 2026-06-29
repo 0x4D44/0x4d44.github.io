@@ -91,6 +91,62 @@
   eq('no draws / infinite games', vio.draw, 0);
   ok('longest game <= 60 plies', maxLen <= 60, 'maxLen ' + maxLen);
 
+  // ------------------------------------------------- Unit 2: eval + search
+  grp('eval + alpha-beta search (Unit 2)');
+  function hasWinningMove(s) { return E.legalMoves(s).some(function (m) { return E.applyMove(s, m).winner === s.turn; }); }
+
+  // terminal eval sign (awAfter from the apex-win group: p1 just crowned)
+  ok('eval: +ve for the winner', E.evalState(awAfter, 'p1') > 0, 'got ' + E.evalState(awAfter, 'p1'));
+  ok('eval: -ve for the loser', E.evalState(awAfter, 'p2') < 0, 'got ' + E.evalState(awAfter, 'p2'));
+  // eval directionality: a reserve advantage should score higher for me
+  (function () { var a = E.create(), b = E.create(); b.reserves.p1 = 9; ok('eval rewards a reserve advantage', E.evalState(a, 'p1') > E.evalState(b, 'p1')); })();
+  // concrete: a position with an immediate apex win must be taken
+  var apexPick = E.bestMove(aw, 3, mulberry32(1));
+  ok('bestMove takes the immediate apex win', !!apexPick && E.applyMove(aw, apexPick).winner === 'p1');
+
+  // collect NEAR-TERMINAL positions that actually have a winning move (apex/stuck).
+  function collectWinnable(n, seed) {
+    var rnd = mulberry32(seed), out = [], guard = 0;
+    while (out.length < n && guard < 6000) {
+      guard++;
+      var s = E.create(guard % 2 ? 'p1' : 'p2'), steps = 0;
+      while (!s.winner && steps < 200) {
+        if (hasWinningMove(s)) { out.push(s); if (out.length >= n) break; }
+        var mv = E.legalMoves(s); s = E.applyMove(s, mv[Math.floor(rnd() * mv.length)]); steps++;
+      }
+    }
+    return out;
+  }
+  var winnable = collectWinnable(80, 0xABCD);
+  ok('exercised real winnable positions', winnable.length >= 20, 'got ' + winnable.length);
+  var winMiss = 0;
+  winnable.forEach(function (s) { var pick = E.bestMove(s, 2, mulberry32(9)); if (E.applyMove(s, pick).winner !== s.turn) winMiss++; });
+  eq('always takes an immediate winning move', winMiss, 0);
+
+  // collect general mid-game positions for determinism + sanity
+  function collectPositions(n, seed) {
+    var rnd = mulberry32(seed), out = [], guard = 0;
+    while (out.length < n && guard < n * 40) {
+      guard++;
+      var s = E.create(guard % 2 ? 'p1' : 'p2'), steps = 0, stopAt = 4 + Math.floor(rnd() * 22);
+      while (!s.winner && steps < stopAt) { var mv = E.legalMoves(s); s = E.applyMove(s, mv[Math.floor(rnd() * mv.length)]); steps++; }
+      if (!s.winner && E.legalMoves(s).length >= 2) out.push(s);
+    }
+    return out;
+  }
+  var positions = collectPositions(60, 0xC0FFEE);
+  ok('collected mid-game positions', positions.length >= 30, 'got ' + positions.length);
+  var nondet = 0;
+  positions.slice(0, 40).forEach(function (s) {
+    var a = E.bestMove(s, 3, mulberry32(42)), b = E.bestMove(s, 3, mulberry32(42));
+    if (JSON.stringify(a) !== JSON.stringify(b)) nondet++;
+  });
+  eq('bestMove is deterministic under a fixed seed', nondet, 0);
+
+  // sanity: depth-3 search from the opening returns a legal move; weakMove works
+  ok('depth-3 search from opening returns a move', !!E.bestMove(E.create(), 3, mulberry32(1)));
+  ok('weakMove returns a legal move', !!E.weakMove(E.create(), mulberry32(3)));
+
   var summary = (fail === 0 ? 'ALL PASS' : 'FAILURES') + ' -- ' + pass + ' passed, ' + fail + ' failed';
   emit(''); emit(summary);
   G.__PYLOS_TEST__ = { pass: pass, fail: fail, lines: lines, summary: summary };
