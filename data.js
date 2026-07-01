@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "salient",
+    title: "Salient",
+    tagline: "A parlour reimagining of the classic territory-and-dice war game: reinforce your armies, roll to attack across the sea-lanes, and conquer a five-continent world. Two to four players, any mix of humans and AI on Easy or Hard, with a coach that suggests moves for newcomers. A hex-mapped game, installable offline.",
+    url: "https://0x4d44.github.io/salient/",
+    illustration: "ill-salient",
+    date: "2026-07-01T13:00:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "focus",
     title: "Focus",
     tagline: "Sid Sackson's 1963 Spiel-des-Jahres classic (a.k.a. Domination): a stack moves as many squares as it is tall, and you control any pile your colour caps. Overflow past five spills off the bottom — your own return as reserves, the rest are captured. Two- or four-player, an AI ladder or pass-and-play, three hand-built themes. Installable offline.",

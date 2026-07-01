@@ -1054,6 +1054,30 @@
       <ellipse cx="150" cy="60" rx="26" ry="9" fill="currentColor" stroke="none"/>
       <ellipse cx="150" cy="60" rx="26" ry="9"/>
     </symbol>
+    <!-- Salient: island-continents linked by sea-lanes + a compass -->
+    <symbol id="ill-salient" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- sea-lanes (dashed) -->
+      <g stroke-width="0.8" stroke-dasharray="2 4" opacity="0.9">
+        <line x1="52" y1="44" x2="90" y2="58"/>
+        <line x1="148" y1="44" x2="110" y2="58"/>
+        <line x1="93" y1="72" x2="66" y2="84"/>
+        <line x1="107" y1="72" x2="134" y2="84"/>
+        <line x1="53" y1="36" x2="147" y2="36"/>
+      </g>
+      <!-- five island-continents (flat-top hexes) -->
+      <polygon points="53,40 46.5,51.3 33.5,51.3 27,40 33.5,28.7 46.5,28.7"/>
+      <polygon points="173,40 166.5,51.3 153.5,51.3 147,40 153.5,28.7 166.5,28.7"/>
+      <polygon points="113,62 106.5,73.3 93.5,73.3 87,62 93.5,50.7 106.5,50.7"/>
+      <polygon points="71,92 64.5,103.3 51.5,103.3 45,92 51.5,80.7 64.5,80.7"/>
+      <polygon points="155,92 148.5,103.3 135.5,103.3 129,92 135.5,80.7 148.5,80.7"/>
+      <!-- compass rose -->
+      <g transform="translate(176 100)">
+        <circle r="9"/>
+        <path d="M0 -9 L2 0 L0 9 L-2 0 Z" fill="currentColor" stroke="none"/>
+        <path d="M-9 0 L0 -2 L9 0 L0 2 Z"/>
+        <text y="-11" font-size="6" text-anchor="middle" fill="currentColor" stroke="none" font-family="JetBrains Mono, monospace">N</text>
+      </g>
+    </symbol>
   </defs>
 </svg>
 

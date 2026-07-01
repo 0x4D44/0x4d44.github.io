@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Salient</title>
+<meta name="description" content="Salient — a parlour game of territory and dice. Reinforce, attack, and conquer a stylised world.">
+<meta name="theme-color" content="#0a0d15">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Salient">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<script>
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="salient-engine.js"></script>
+<style>
+  html,body{margin:0;padding:0;background:#0a0d15;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  @keyframes qFadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes qHintPulse{0%,100%{opacity:.45}50%{opacity:1}}
+  @keyframes qWinHop{0%{transform:translateY(10px);opacity:0}60%{transform:translateY(-3px);opacity:1}100%{transform:translateY(0);opacity:1}}
+  @keyframes diceShake{0%{transform:rotate(-7deg) scale(.9)}30%{transform:rotate(6deg) scale(1.05)}55%{transform:rotate(-4deg)}80%{transform:rotate(3deg)}100%{transform:rotate(0) scale(1)}}
+  @keyframes marchDots{0%,20%{opacity:.2}50%{opacity:1}100%{opacity:.2}}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</helmet>
+<div style="{{ rootStyle }}">
+  <div style="{{ stageStyle }}">
+
+    <!-- header -->
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px;">
+      <div>
+        <div style="{{ kickerStyle }}">PARLOUR GAMES</div>
+        <h1 style="{{ titleStyle }}">Salient</h1>
+      </div>
+      <button onClick="{{ onTheme }}" style="{{ pillStyle }}">{{ themeName }}</button>
+    </div>
+
+    <!-- players -->
+    {{ legend }}
+
+    <!-- status -->
+    <div role="status" aria-live="polite" style="{{ statusStyle }}">{{ status }}</div>
+
+    <!-- coach -->
+    <sc-if value="{{ showCoach }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ coachBannerStyle }}">
+        <span style="{{ coachDotStyle }}"></span>
+        <span style="flex:1;min-width:0;">{{ coachLine }}</span>
+        <button onClick="{{ onCoachToggle }}" style="{{ coachToggleStyle }}">{{ coachToggleLabel }}</button>
+      </div>
+    </sc-if>
+
+    <!-- board -->
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0;padding:6px 0;gap:8px;">
+      {{ board }}
+      {{ contLegend }}
+    </div>
+
+    <!-- phase / deploy bar -->
+    {{ phaseBar }}
+
+    <!-- actions -->
+    <div style="display:flex;gap:7px;margin-top:10px;">
+      <button onClick="{{ onNew }}" style="{{ btnStyle }}">NEW</button>
+      <button onClick="{{ onHints }}" style="{{ btnStyle }}">{{ hintsLabel }}</button>
+      <button onClick="{{ onMode }}" style="{{ btnStyle }}">{{ modeLabel }}</button>
+      <button onClick="{{ onLevel }}" style="{{ btnStyle }}">{{ levelLabel }}</button>
+      <button onClick="{{ onRules }}" style="{{ btnStyle }}">RULES</button>
+    </div>
+
+  </div>
+
+  <!-- rules sheet -->
+  <sc-if value="{{ showRules }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ sheetScrimStyle }}" onClick="{{ onRules }}"></div>
+    <div style="{{ sheetStyle }}">
+      <div style="{{ sheetTitleStyle }}">How to play</div>
+      <div style="{{ sheetBodyStyle }}">
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Goal.</b> Conquer the map. Eliminate every rival power by overrunning their last territory.</p>
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Reinforce.</b> Start each turn with fresh armies — one per three lands you hold (minimum three), plus a bonus for every continent you hold in full. Tap your lands to deploy.</p>
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Attack.</b> Tap one of your lands (two or more armies), then a bordering enemy. Dice decide it: you roll up to three, the defender up to two, highest dice paired off — ties go to the defender. Take a land and choose how many armies advance into it.</p>
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Fortify.</b> Move armies between neighbouring lands as often as you like, then press End turn.</p>
+        <p style="margin:0 0 16px;"><b style="{{ ruleHeadStyle }}">Continents.</b> Hold every land of a continent for its bonus each turn — Mirra, the centre, is worth most.</p>
+        <button onClick="{{ onRules }}" style="{{ doneBtnStyle }}">GOT IT</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- win modal -->
+  <sc-if value="{{ winner }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ winScrimStyle }}"></div>
+    <div style="{{ winCardStyle }}">
+      <div style="{{ winKickerStyle }}">CAMPAIGN OVER</div>
+      <div style="{{ winTitleStyle }}">{{ winnerText }}</div>
+      <div style="{{ winReasonStyle }}">{{ winnerReason }}</div>
+      <button onClick="{{ onNew }}" style="{{ doneBtnStyle }}">PLAY AGAIN</button>
+    </div>
+  </sc-if>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <linearGradient id="slt-bg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#232a3b"/><stop offset="100%" stop-color="#0a0d15"/>
+        </linearGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#slt-bg)"/>
+      <g transform="translate(50 48)" stroke="#0a0d15" stroke-width="1">
+        <polygon points="-18,-10 -9,-15 0,-10 0,0 -9,5 -18,0" fill="#c89a4b"/>
+        <polygon points="0,-10 9,-15 18,-10 18,0 9,5 0,0" fill="#5aa6a0"/>
+        <polygon points="-9,5 0,0 9,5 9,15 0,20 -9,15" fill="#cf7a6e"/>
+      </g>
+      <rect x="38" y="60" width="11" height="11" rx="2" fill="#f1e6cf" transform="rotate(-6 43 65)"/>
+      <circle cx="43" cy="65" r="1.6" fill="#2a1c0c"/>
+      <text x="50" y="90" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="13" fill="#c89a4b" letter-spacing="1">Salient</text>
+    </svg>
+  </template>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:440,&quot;height&quot;:880},&quot;opponents&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;You + 2 AI&quot;,&quot;You + 3 AI&quot;,&quot;2P + 2 AI&quot;,&quot;3 Players&quot;,&quot;4 Players&quot;],&quot;default&quot;:&quot;You + 2 AI&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Play&quot;},&quot;aiLevel&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;easy&quot;,&quot;hard&quot;],&quot;default&quot;:&quot;hard&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Play&quot;},&quot;coach&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Play&quot;},&quot;animationSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1,&quot;min&quot;:0.5,&quot;max&quot;:2,&quot;step&quot;:0.1,&quot;unit&quot;:&quot;x&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Play&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.THEMES = {
+      salon: {
+        name: 'Salon',
+        bg: 'radial-gradient(120% 80% at 50% -10%, #232a3b 0%, #131826 55%, #0a0d15 100%)',
+        panel: 'linear-gradient(180deg, rgba(255,245,220,0.05), rgba(0,0,0,0.18))',
+        panelBorder: 'rgba(200,154,75,0.20)',
+        chrome: '#0e121b', text: '#f1e6cf', textDim: 'rgba(241,230,207,0.62)', textFaint: 'rgba(241,230,207,0.30)',
+        accent: '#c89a4b', accentGlow: 'rgba(217,170,90,0.45)', danger: '#d96a4a', success: '#9ec07a',
+        edge: '#0a0d15', sea: 'rgba(120,150,180,0.05)',
+        players: ['#c89a4b', '#5aa6a0', '#cf7a6e', '#9a86d6'],
+        fontDisplay: '"Fraunces", Georgia, serif', fontUI: '"Inter", system-ui, sans-serif',
+      },
+      atelier: {
+        name: 'Atelier',
+        bg: 'radial-gradient(120% 80% at 50% 0%, #f6ecd6 0%, #ecdfc2 60%, #d9c8a3 100%)',
+        panel: 'linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.18))',
+        panelBorder: 'rgba(60,40,20,0.18)',
+        chrome: '#efe5cd', text: '#2b1d10', textDim: 'rgba(43,29,16,0.64)', textFaint: 'rgba(43,29,16,0.30)',
+        accent: '#8e3a2a', accentGlow: 'rgba(142,58,42,0.35)', danger: '#a93f23', success: '#5a7a3a',
+        edge: '#efe5cd', sea: 'rgba(60,40,20,0.05)',
+        players: ['#8e3a2a', '#3f857e', '#b5544a', '#6f5fae'],
+        fontDisplay: '"Fraunces", Georgia, serif', fontUI: '"Inter", system-ui, sans-serif',
+      },
+      modern: {
+        name: 'Tabletop',
+        bg: 'radial-gradient(120% 80% at 50% 0%, #2a553f 0%, #163826 60%, #0c2418 100%)',
+        panel: 'linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.55))',
+        panelBorder: 'rgba(212,175,55,0.24)',
+        chrome: '#0c2418', text: '#f1e8d2', textDim: 'rgba(241,232,210,0.64)', textFaint: 'rgba(241,232,210,0.30)',
+        accent: '#d4af37', accentGlow: 'rgba(212,175,55,0.40)', danger: '#d97a4a', success: '#a4c878',
+        edge: '#0c2418', sea: 'rgba(255,255,255,0.04)',
+        players: ['#d4af37', '#56b0a6', '#d77f6b', '#a48fd6'],
+        fontDisplay: '"Fraunces", Georgia, serif', fontUI: '"Inter", system-ui, sans-serif',
+      },
+    };
+    this.CONT_HUE = { auster: '#caa45f', korda: '#6fa39b', mirra: '#c08a84', sable: '#8b86bf', vell: '#9aad72' };
+    this.PRESETS = [
+      { humans: 1, ai: 2, short: 'YOU+2AI' },
+      { humans: 1, ai: 3, short: 'YOU+3AI' },
+      { humans: 2, ai: 2, short: '2P+2AI' },
+      { humans: 3, ai: 0, short: '3 PLAYERS' },
+      { humans: 4, ai: 0, short: '4 PLAYERS' },
+    ];
+    this.AI_NAMES = ['Otho', 'Sabine', 'Castell', 'Voss'];
+    this.STORE = { game: 'salient.game.v1', settings: 'salient.settings.v1' };
+    this.state = {
+      game: null, theme: 'salon', level: this.optLevel(), preset: this.optPreset(),
+      hints: true, coachOn: this.props.coach !== false, brush: 1,
+      sel: null, fx: null, transfer: null, panX: 0, panY: 0, zoom: 1,
+    };
+    this._aiBusy = false; this._fxLock = false; this._ptrs = new Map(); this._mdrag = null;
+  }
+  optLevel(){ return this.props.aiLevel === 'easy' ? 'easy' : 'hard'; }
+  optPreset(){ var labels = ['You + 2 AI','You + 3 AI','2P + 2 AI','3 Players','4 Players']; var i = labels.indexOf(this.props.opponents); return i < 0 ? 0 : i; }
+
+  /* ---------- lifecycle ---------- */
+  componentDidMount(){ this.boot(); }
+  boot(){
+    if(!window.SalientEngine){ setTimeout(() => this.boot(), 40); return; }
+    var saved = this.loadJSON(this.STORE.settings, null);
+    var patch = {};
+    if(saved){ ['theme','level','preset','hints','coachOn','brush'].forEach(k => { if(saved[k] !== undefined) patch[k] = saved[k]; }); }
+    var g = this.loadJSON(this.STORE.game, null);
+    if(g && g.terr){ patch.game = g; this.setState(patch, () => this.maybeAI()); }
+    else { this.setState(patch, () => this.newGame(patch.preset != null ? patch.preset : this.state.preset, patch.level || this.state.level)); }
+  }
+  componentDidUpdate(prevProps){
+    if(prevProps.opponents !== this.props.opponents || prevProps.aiLevel !== this.props.aiLevel){
+      var p = this.optPreset(), l = this.optLevel();
+      this.setState({ preset: p, level: l }, () => this.newGame(p, l));
+      return;
+    }
+    this.maybeAI();
+  }
+  loadJSON(key, fb){ try { var r = localStorage.getItem(key); return r ? JSON.parse(r) : fb; } catch(e){ return fb; } }
+  saveJSON(key, v){ try { localStorage.setItem(key, JSON.stringify(v)); } catch(e){} }
+  persist(){ this.saveJSON(this.STORE.settings, { theme: this.state.theme, level: this.state.level, preset: this.state.preset, hints: this.state.hints, coachOn: this.state.coachOn, brush: this.state.brush }); }
+
+  /* ---------- game setup ---------- */
+  theme(){ return this.THEMES[this.state.theme] || this.THEMES.salon; }
+  speed(){ var s = Number(this.props.animationSpeed); return s > 0 ? Math.max(0.4, Math.min(2.5, s)) : 1; }
+  buildPlayers(presetIdx, level){
+    var pr = this.PRESETS[presetIdx], N = pr.humans + pr.ai, names = this.AI_NAMES.slice(), out = [];
+    for(var i = 0; i < N; i++){
+      var human = i < pr.humans;
+      out.push({
+        id: 'p' + (i + 1), ci: i, kind: human ? 'human' : 'ai',
+        name: human ? (pr.humans === 1 ? 'You' : 'Player ' + (i + 1)) : names.shift(),
+        level: human ? null : level,
+      });
+    }
+    return out;
+  }
+  newGame(presetIdx, level){
+    if(!window.SalientEngine) return;
+    var g = window.SalientEngine.create(this.buildPlayers(presetIdx, level));
+    this._aiBusy = false; this._fxLock = false;
+    this.setState({ game: g, sel: null, fx: null, transfer: null, panX: 0, panY: 0, zoom: 1 }, () => { this.saveJSON(this.STORE.game, g); this.maybeAI(); });
+  }
+  setG(g, extra){ var st = Object.assign({ game: g }, extra || {}); this.setState(st, () => this.saveJSON(this.STORE.game, g)); }
+
+  pidColor(g, pid){ var t = this.theme(); var p = g.players.find(x => x.id === pid); return p ? t.players[p.ci % 4] : t.textFaint; }
+  curPlayer(){ var g = this.state.game; return g ? g.players.find(p => p.id === g.turn) : null; }
+  isHumanTurn(){ var p = this.curPlayer(); return !!(p && p.kind === 'human' && !this._aiBusy && this.state.game && !this.state.game.winner); }
+
+  /* ---------- human interaction ---------- */
+  onCell(id){
+    var g = this.state.game;
+    if(!g || g.winner || this._aiBusy || this._fxLock || this.state.transfer) return;
+    if(!this.isHumanTurn()) return;
+    var SE = window.SalientEngine, sel = this.state.sel, owner = g.terr[id].owner, mine = owner === g.turn;
+    if(g.phase === 'reinforce'){
+      if(mine && g.toPlace > 0){
+        var amt = this.state.brush === 'all' ? g.toPlace : Math.min(this.state.brush, g.toPlace);
+        var ng = SE.placeArmy(g, id, amt);
+        if(ng.toPlace === 0) ng = SE.toAttack(ng);
+        this.setG(ng);
+      }
+      return;
+    }
+    if(g.phase === 'attack'){
+      if(sel == null){ if(mine && g.terr[id].armies >= 2 && SE.enemyNeighbours(g, id).length) this.setState({ sel: id }); return; }
+      if(id === sel){ this.setState({ sel: null }); return; }
+      if(mine){ if(g.terr[id].armies >= 2 && SE.enemyNeighbours(g, id).length) this.setState({ sel: id }); return; }
+      if(SE.canAttack(g, sel, id)) this.humanAttack(sel, id);
+      return;
+    }
+    if(g.phase === 'fortify'){
+      if(sel == null){ if(mine && g.terr[id].armies >= 2 && SE.friendlyNeighbours(g, id).length) this.setState({ sel: id }); return; }
+      if(id === sel){ this.setState({ sel: null }); return; }
+      if(mine && SE.adjacent(sel, id)){ var fg = SE.fortify(g, sel, id); this.setG(fg, { sel: null, transfer: { from: sel, to: id, mode: 'fortify' } }); return; }
+      if(mine && g.terr[id].armies >= 2 && SE.friendlyNeighbours(g, id).length){ this.setState({ sel: id }); return; }
+      return;
+    }
+  }
+  humanAttack(from, to){
+    var SE = window.SalientEngine, g = this.state.game;
+    var defColor = this.pidColor(g, g.terr[to].owner);
+    var res = SE.resolve(g, from, to);
+    if(!res) return;
+    var ng = res.state;
+    var keepSel = !res.conquered && ng.terr[from].armies >= 2 ? from : (res.conquered && ng.terr[from].armies >= 2 ? from : null);
+    this._fxLock = true;
+    var fx = { from: from, to: to, roll: res.roll, losses: res.losses, conquered: res.conquered, defColor: defColor };
+    this.setState(Object.assign({ game: ng, fx: fx, sel: res.conquered ? null : keepSel }, res.conquered ? { transfer: { from: from, to: to, mode: 'advance' } } : {}), () => this.saveJSON(this.STORE.game, ng));
+    var self = this;
+    setTimeout(function(){ self._fxLock = false; self.setState({ fx: null }); }, 880 / this.speed());
+  }
+  shiftTransfer(n){ var tr = this.state.transfer; if(!tr) return; this.setG(window.SalientEngine.shiftArmies(this.state.game, tr.from, tr.to, n)); }
+  transferAll(){ var tr = this.state.transfer; if(!tr) return; var g = this.state.game, n = g.terr[tr.from].armies - 1; if(n > 0) this.setG(window.SalientEngine.shiftArmies(g, tr.from, tr.to, n)); }
+  doneTransfer(){ this.setState({ transfer: null }); }
+  endPhase(){
+    var SE = window.SalientEngine, g = this.state.game; if(!g || !this.isHumanTurn()) return;
+    if(g.phase === 'attack') this.setG(SE.toFortify(g), { sel: null });
+    else if(g.phase === 'fortify') this.setG(SE.endTurn(g), { sel: null });
+  }
+
+  /* ---------- AI ---------- */
+  maybeAI(){
+    var g = this.state.game; if(!g || g.winner || this._aiBusy || this.state.fx) return;
+    var p = g.players.find(x => x.id === g.turn);
+    if(p && p.kind === 'ai') this.aiRun();
+  }
+  sleep(ms){ var sp = this.speed(); return new Promise(r => setTimeout(r, ms / sp)); }
+  setGP(g){ return new Promise(res => this.setState({ game: g }, () => { this.saveJSON(this.STORE.game, g); res(); })); }
+  async aiRun(){
+    if(this._aiBusy) return; this._aiBusy = true;
+    var SE = window.SalientEngine;
+    try {
+      var g = this.state.game;
+      await this.sleep(480);
+      // reinforce
+      SE.aiReinforcePlan(g).forEach(p => { g = SE.placeArmy(g, p.id, p.count); });
+      await this.setGP(g); await this.sleep(420);
+      g = SE.toAttack(g); await this.setGP(g); await this.sleep(280);
+      // attacks
+      var guard = 0;
+      while(!g.winner && guard++ < 40){
+        var atk = SE.aiNextAttack(g); if(!atk) break;
+        var defColor = this.pidColor(g, g.terr[atk.to].owner);
+        var res = SE.resolve(g, atk.from, atk.to); if(!res) break;
+        g = res.state;
+        await new Promise(r => this.setState({ game: g, fx: { from: atk.from, to: atk.to, roll: res.roll, losses: res.losses, conquered: res.conquered, defColor: defColor } }, () => { this.saveJSON(this.STORE.game, g); r(); }));
+        await this.sleep(820);
+        await new Promise(r => this.setState({ fx: null }, r));
+        if(g.winner) break;
+      }
+      if(!g.winner){
+        g = SE.toFortify(g); await this.setGP(g); await this.sleep(320);
+        var f = SE.aiFortifyPlan(g);
+        if(f) g = SE.fortify(g, f.from, f.to, f.count);
+        g = SE.endTurn(g);
+        await this.setGP(g);
+      }
+    } catch(e){ /* swallow */ }
+    this._aiBusy = false;
+    this.forceUpdate();
+  }
+
+  /* ---------- controls ---------- */
+  cycleTheme(){ var k = Object.keys(this.THEMES); var i = k.indexOf(this.state.theme); this.setState({ theme: k[(i + 1) % k.length] }, () => this.persist()); }
+  toggleHints(){ this.setState({ hints: !this.state.hints }, () => this.persist()); }
+  toggleCoach(){ this.setState({ coachOn: !this.state.coachOn }, () => this.persist()); }
+  cycleMode(){ var p = (this.state.preset + 1) % this.PRESETS.length; this.setState({ preset: p }, () => { this.persist(); this.newGame(p, this.state.level); }); }
+  cycleLevel(){ var l = this.state.level === 'hard' ? 'easy' : 'hard'; this.setState({ level: l }, () => { this.persist(); this.newGame(this.state.preset, l); }); }
+  toggleRules(){ this.setState({ showRules: !this.state.showRules }); }
+  setBrush(b){ this.setState({ brush: b }, () => this.persist()); }
+  resetView(){ this.setState({ panX: 0, panY: 0, zoom: 1 }); }
+  viewDirty(){ var s = this.state; return s.panX !== 0 || s.panY !== 0 || s.zoom !== 1; }
+  clampZoom(z){ return Math.max(0.6, Math.min(2.8, z)); }
+
+  /* ---------- view gestures (wheel + two-finger / right-drag) ---------- */
+  onWheel(e){ e.preventDefault(); this.setState({ zoom: this.clampZoom(this.state.zoom * Math.exp(-e.deltaY * 0.0012)) }); }
+  onPDown(e){
+    if(e.pointerType === 'mouse'){ if(e.button === 2 || e.button === 1){ e.preventDefault(); try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){ } this._mdrag = { x: e.clientX, y: e.clientY }; } return; }
+    this._ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if(this._ptrs.size === 2){ try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){ } var v = [...this._ptrs.values()]; this._g = { panX: this.state.panX, panY: this.state.panY, zoom: this.state.zoom, cx: (v[0].x + v[1].x) / 2, cy: (v[0].y + v[1].y) / 2, dist: Math.hypot(v[1].x - v[0].x, v[1].y - v[0].y) || 1 }; }
+  }
+  onPMove(e){
+    if(e.pointerType === 'mouse'){ if(!this._mdrag) return; e.preventDefault(); var dx = e.clientX - this._mdrag.x, dy = e.clientY - this._mdrag.y; this._mdrag.x = e.clientX; this._mdrag.y = e.clientY; this.setState({ panX: this.state.panX + dx, panY: this.state.panY + dy }); return; }
+    if(!this._ptrs.has(e.pointerId)) return;
+    this._ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if(this._ptrs.size >= 2 && this._g){ e.preventDefault(); var v = [...this._ptrs.values()]; var cx = (v[0].x + v[1].x) / 2, cy = (v[0].y + v[1].y) / 2, dist = Math.hypot(v[1].x - v[0].x, v[1].y - v[0].y) || 1, gg = this._g; this.setState({ panX: gg.panX + (cx - gg.cx), panY: gg.panY + (cy - gg.cy), zoom: this.clampZoom(gg.zoom * (dist / gg.dist)) }); }
+  }
+  onPUp(e){ if(e.pointerType === 'mouse'){ this._mdrag = null; return; } this._ptrs.delete(e.pointerId); if(this._ptrs.size < 2) this._g = null; }
+
+  /* ---------- board geometry ---------- */
+  diePips(v){
+    var a = -0.26, b = 0, c = 0.26;
+    var M = { 1: [[b,b]], 2: [[a,a],[c,c]], 3: [[a,a],[b,b],[c,c]], 4: [[a,a],[a,c],[c,a],[c,c]], 5: [[a,a],[a,c],[b,b],[c,a],[c,c]], 6: [[a,a],[a,b],[a,c],[c,a],[c,b],[c,c]] };
+    return M[v] || [];
+  }
+  die(h, cx, cy, val, fill, pip, key){
+    var D = 16, kids = [ h('rect', { key: 'r', x: cx - D / 2, y: cy - D / 2, width: D, height: D, rx: 3.5, fill: fill, stroke: 'rgba(0,0,0,0.35)', strokeWidth: 0.8 }) ];
+    this.diePips(val).forEach((p, i) => kids.push(h('circle', { key: 'p' + i, cx: cx + p[0] * D, cy: cy + p[1] * D, r: D * 0.1, fill: pip })));
+    return h('g', { key: key, style: { animation: 'diceShake .42s ease' } }, kids);
+  }
+  renderBoard(){
+    var h = React.createElement, t = this.theme(), s = this.state, g = s.game, SE = window.SalientEngine;
+    if(!g || !SE) return h('div', { style: { minHeight: '300px' } });
+    var size = 30, SQ3 = Math.sqrt(3), OX = size + 12, OY = size + 12;
+    var ctr = T => ({ x: OX + size * 1.5 * T.col, y: OY + size * SQ3 * (T.row + ((T.col & 1) ? 0.5 : 0)) });
+    var poly = (cx, cy, r) => { var p = []; for(var i = 0; i < 6; i++){ var a = Math.PI / 180 * (60 * i); p.push((cx + r * Math.cos(a)).toFixed(1) + ',' + (cy + r * Math.sin(a)).toFixed(1)); } return p.join(' '); };
+    var centers = {}; SE.TERR.forEach(T => centers[T.id] = ctr(T));
+    var minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+    SE.TERR.forEach(T => { var c = centers[T.id]; minX = Math.min(minX, c.x - size); maxX = Math.max(maxX, c.x + size); minY = Math.min(minY, c.y - size); maxY = Math.max(maxY, c.y + size); });
+
+    var human = this.isHumanTurn(), sel = s.sel, cur = g.turn;
+    // legal sets for the human
+    var targets = {}, dests = {}, sources = {};
+    if(human && !s.fx && !s.transfer){
+      if(g.phase === 'attack'){
+        if(sel != null){ SE.enemyNeighbours(g, sel).forEach(n => { if(SE.canAttack(g, sel, n)) targets[n] = 1; }); }
+        SE.TERR.forEach(T => { if(g.terr[T.id].owner === cur && g.terr[T.id].armies >= 2 && SE.enemyNeighbours(g, T.id).length) sources[T.id] = 1; });
+      } else if(g.phase === 'fortify'){
+        if(sel != null){ SE.friendlyNeighbours(g, sel).forEach(n => dests[n] = 1); }
+        SE.TERR.forEach(T => { if(g.terr[T.id].owner === cur && g.terr[T.id].armies >= 2 && SE.friendlyNeighbours(g, T.id).length) sources[T.id] = 1; });
+      } else if(g.phase === 'reinforce'){
+        SE.TERR.forEach(T => { if(g.terr[T.id].owner === cur) sources[T.id] = 1; });
+      }
+    }
+    // coach highlight
+    var coach = (s.hints && s.coachOn && human && !s.fx && !s.transfer) ? SE.coachSuggestion(g) : null;
+
+    var layers = [];
+    var GP = 8;
+    // faint chart graticule behind the ocean
+    for(var gi = 1; gi <= 4; gi++){
+      var gfx = (minX - GP) + (maxX - minX + 2 * GP) * gi / 5, gfy = (minY - GP) + (maxY - minY + 2 * GP) * gi / 5;
+      layers.push(h('line', { key: 'gx' + gi, x1: gfx, y1: minY - GP, x2: gfx, y2: maxY + GP, stroke: t.textFaint, strokeWidth: 0.8, strokeDasharray: '1 9', opacity: 0.55, style: { pointerEvents: 'none' } }));
+      layers.push(h('line', { key: 'gy' + gi, x1: minX - GP, y1: gfy, x2: maxX + GP, y2: gfy, stroke: t.textFaint, strokeWidth: 0.8, strokeDasharray: '1 9', opacity: 0.55, style: { pointerEvents: 'none' } }));
+    }
+    // sea-lanes between continents (peek out from under the coasts)
+    SE.BRIDGES.forEach((b, bi) => { var a = centers[b[0]], d = centers[b[1]];
+      layers.push(h('line', { key: 'br' + bi, x1: a.x, y1: a.y, x2: d.x, y2: d.y, stroke: t.textDim, strokeWidth: 1.6, strokeDasharray: '2 5', opacity: 0.5, style: { pointerEvents: 'none' } }));
+    });
+    // shallow-water haloes — merge into a soft glow around each landmass
+    SE.TERR.forEach(T => { var c = centers[T.id]; layers.push(h('polygon', { key: 'sw' + T.id, points: poly(c.x, c.y, size + 9), fill: this.CONT_HUE[T.cont], opacity: 0.08, style: { pointerEvents: 'none' } })); });
+    // coastline — a merged solid cont-colour landmass
+    SE.TERR.forEach(T => { var c = centers[T.id]; layers.push(h('polygon', { key: 'cst' + T.id, points: poly(c.x, c.y, size + 2.5), fill: this.CONT_HUE[T.cont], style: { pointerEvents: 'none' } })); });
+    // ownership fill (near full-cell; the coloured coast shows only at the outer shore)
+    SE.TERR.forEach(T => {
+      var c = centers[T.id], cell = g.terr[T.id], col = this.pidColor(g, cell.owner);
+      var isSel = sel === T.id;
+      var clickable = human && (sources[T.id] || targets[T.id] || dests[T.id] || isSel || (g.phase === 'reinforce' && cell.owner === cur));
+      layers.push(h('polygon', {
+        key: 'hx' + T.id, points: poly(c.x, c.y, size - 0.5), fill: col,
+        stroke: isSel ? t.text : t.edge, strokeWidth: isSel ? 2.6 : 1.1,
+        onClick: () => this.onCell(T.id),
+        style: { cursor: clickable ? 'pointer' : 'default', transition: 'fill .25s' },
+      }));
+      layers.push(h('polygon', { key: 'sh' + T.id, points: poly(c.x, c.y - 1.5, size - 5), fill: 'rgba(255,255,255,0.10)', style: { pointerEvents: 'none' } }));
+    });
+    // compass rose, set in open water
+    var ccx = OX + size * 1.5 * 5.3, ccy = OY + size * SQ3 * 3.1, CR = 14, cr2 = CR * 0.2;
+    layers.push(h('circle', { key: 'cmp0', cx: ccx, cy: ccy, r: CR, fill: 'none', stroke: t.textDim, strokeWidth: 0.8, opacity: 0.5, style: { pointerEvents: 'none' } }));
+    layers.push(h('circle', { key: 'cmp1', cx: ccx, cy: ccy, r: CR * 0.6, fill: 'none', stroke: t.textFaint, strokeWidth: 0.6, opacity: 0.55, style: { pointerEvents: 'none' } }));
+    layers.push(h('path', { key: 'cmpv', d: 'M ' + ccx + ' ' + (ccy - CR) + ' L ' + (ccx + cr2) + ' ' + ccy + ' L ' + ccx + ' ' + (ccy + CR) + ' L ' + (ccx - cr2) + ' ' + ccy + ' Z', fill: t.accent, opacity: 0.6, style: { pointerEvents: 'none' } }));
+    layers.push(h('path', { key: 'cmph', d: 'M ' + (ccx - CR) + ' ' + ccy + ' L ' + ccx + ' ' + (ccy - cr2) + ' L ' + (ccx + CR) + ' ' + ccy + ' L ' + ccx + ' ' + (ccy + cr2) + ' Z', fill: t.textDim, opacity: 0.5, style: { pointerEvents: 'none' } }));
+    layers.push(h('text', { key: 'cmpn', x: ccx, y: ccy - CR - 3.5, textAnchor: 'middle', fontFamily: t.fontUI, fontSize: 8, fontWeight: 700, fill: t.textDim, opacity: 0.85, style: { pointerEvents: 'none' } }, 'N'));
+    // highlight rings: sources(faint when hints), targets/dests(pulse), coach(green)
+    if(human){
+      if(s.hints && g.phase === 'reinforce') Object.keys(sources).forEach(id => { var c = centers[id]; layers.push(h('polygon', { key: 'rs' + id, points: poly(c.x, c.y, size - 6), fill: 'none', stroke: t.accent, strokeWidth: 1.2, strokeDasharray: '2 4', opacity: 0.5, pointerEvents: 'none' })); });
+      Object.keys(targets).forEach(id => { var c = centers[id]; layers.push(h('polygon', { key: 'tg' + id, points: poly(c.x, c.y, size + 1), fill: 'none', stroke: t.accent, strokeWidth: 2.4, strokeDasharray: '4 3', style: { animation: 'qHintPulse 1.3s ease-in-out infinite' }, pointerEvents: 'none' })); });
+      Object.keys(dests).forEach(id => { var c = centers[id]; layers.push(h('polygon', { key: 'ds' + id, points: poly(c.x, c.y, size + 1), fill: 'none', stroke: t.accent, strokeWidth: 2.4, strokeDasharray: '4 3', style: { animation: 'qHintPulse 1.3s ease-in-out infinite' }, pointerEvents: 'none' })); });
+    }
+    if(coach){
+      var mark = id => { var c = centers[id]; layers.push(h('polygon', { key: 'co' + id, points: poly(c.x, c.y, size + 3), fill: 'none', stroke: t.success, strokeWidth: 2.4, opacity: 0.9, style: { animation: 'qHintPulse 1.1s ease-in-out infinite' }, pointerEvents: 'none' })); };
+      if(coach.terr) mark(coach.terr);
+      if(coach.from) mark(coach.from); if(coach.to) mark(coach.to);
+    }
+    if(s.transfer){
+      var tcf = centers[s.transfer.from], tct = centers[s.transfer.to];
+      [tcf, tct].forEach((c, i) => layers.push(h('polygon', { key: 'trh' + i, points: poly(c.x, c.y, size + 3), fill: 'none', stroke: t.accent, strokeWidth: 2.6, opacity: 0.95, style: { animation: 'qHintPulse 1.1s ease-in-out infinite' }, pointerEvents: 'none' })));
+      var tang = Math.atan2(tct.y - tcf.y, tct.x - tcf.x), tax = tct.x - Math.cos(tang) * (size - 2), tay = tct.y - Math.sin(tang) * (size - 2);
+      layers.push(h('line', { key: 'tra', x1: tcf.x, y1: tcf.y, x2: tax, y2: tay, stroke: t.accent, strokeWidth: 2.4, opacity: 0.9, style: { pointerEvents: 'none' } }));
+      layers.push(h('path', { key: 'trah', d: 'M ' + tax + ' ' + tay + ' L ' + (tax - Math.cos(tang - 0.5) * 9) + ' ' + (tay - Math.sin(tang - 0.5) * 9) + ' L ' + (tax - Math.cos(tang + 0.5) * 9) + ' ' + (tay - Math.sin(tang + 0.5) * 9) + ' Z', fill: t.accent, opacity: 0.9, style: { pointerEvents: 'none' } }));
+    }
+    // army numerals
+    SE.TERR.forEach(T => {
+      var c = centers[T.id], n = g.terr[T.id].armies;
+      layers.push(h('text', { key: 'n' + T.id, x: c.x, y: c.y + 0.5, textAnchor: 'middle', dominantBaseline: 'central', fontFamily: t.fontUI, fontSize: 16, fontWeight: 700, fill: '#fff', stroke: 'rgba(0,0,0,0.55)', strokeWidth: 0.7, paintOrder: 'stroke', pointerEvents: 'none' }, String(n)));
+    });
+    // continent name labels, set just beyond each coast in clear water
+    SE.CONT.forEach(c => {
+      var mem = SE.contMembers(c.id).map(id => centers[id]);
+      var cx2 = mem.reduce((a, p) => a + p.x, 0) / mem.length;
+      var cMinY = Math.min.apply(null, mem.map(p => p.y)), cMaxY = Math.max.apply(null, mem.map(p => p.y));
+      var bottom = (c.id === 'korda' || c.id === 'vell');
+      var lx = cx2, ly = bottom ? cMaxY + size * 1.5 : cMinY - size * 1.5;
+      minX = Math.min(minX, lx - 30); maxX = Math.max(maxX, lx + 30);
+      minY = Math.min(minY, ly - 11); maxY = Math.max(maxY, ly + 11);
+      layers.push(h('text', { key: 'lbl' + c.id, x: lx, y: ly, textAnchor: 'middle', dominantBaseline: 'central', fontFamily: t.fontDisplay, fontStyle: 'italic', fontSize: 13, fontWeight: 600, fill: this.CONT_HUE[c.id], opacity: 0.95, stroke: t.chrome, strokeWidth: 2.6, paintOrder: 'stroke', style: { pointerEvents: 'none' } }, c.name));
+    });
+    // dice fx
+    if(s.fx){
+      var ff = s.fx, cf = centers[ff.from], ct = centers[ff.to];
+      var mx = (cf.x + ct.x) / 2, my = (cf.y + ct.y) / 2;
+      var ad = ff.roll.atk, dd = ff.roll.def;
+      var aw = ad.length * 19, dw = dd.length * 19;
+      var grp = [];
+      ad.forEach((v, i) => grp.push(this.die(h, mx - aw / 2 + 9.5 + i * 19, my - 12, v, t.accent, 'rgba(20,12,4,0.9)', 'a' + i)));
+      dd.forEach((v, i) => grp.push(this.die(h, mx - dw / 2 + 9.5 + i * 19, my + 12, v, ff.defColor, '#fff', 'd' + i)));
+      // loss labels
+      if(ff.losses.atk) grp.push(h('text', { key: 'la', x: mx - aw / 2 - 6, y: my - 12, textAnchor: 'end', dominantBaseline: 'central', fontFamily: t.fontUI, fontSize: 11, fontWeight: 700, fill: t.danger }, '\u2212' + ff.losses.atk));
+      if(ff.losses.def) grp.push(h('text', { key: 'ld', x: mx + dw / 2 + 6, y: my + 12, textAnchor: 'start', dominantBaseline: 'central', fontFamily: t.fontUI, fontSize: 11, fontWeight: 700, fill: t.danger }, '\u2212' + ff.losses.def));
+      grp.push(h('rect', { key: 'bk', x: mx - Math.max(aw, dw) / 2 - 14, y: my - 26, width: Math.max(aw, dw) + 28, height: 52, rx: 8, fill: 'rgba(0,0,0,0.30)', pointerEvents: 'none' }));
+      layers.push(h('g', { key: 'fx', pointerEvents: 'none' }, [grp[grp.length - 1]].concat(grp.slice(0, grp.length - 1))));
+    }
+
+    var pad = 8, vbW = (maxX - minX) + pad * 2, vbH = (maxY - minY) + pad * 2;
+    var svg = h('svg', {
+      viewBox: (minX - pad) + ' ' + (minY - pad) + ' ' + vbW + ' ' + vbH, width: '100%',
+      style: { width: '100%', height: 'auto', maxWidth: '440px', display: 'block', overflow: 'visible', transform: 'translate(' + s.panX + 'px,' + s.panY + 'px) scale(' + s.zoom + ')', transformOrigin: 'center center', transition: (this._mdrag || this._g) ? 'none' : 'transform .12s ease', filter: 'drop-shadow(0 16px 26px rgba(0,0,0,0.32))' },
+    }, layers);
+    var reset = this.viewDirty() ? h('button', { key: 'rv', onClick: () => this.resetView(), title: 'Reset view', style: { position: 'absolute', top: '4px', right: '4px', zIndex: 5, width: '32px', height: '32px', borderRadius: '9px', border: '1px solid ' + t.panelBorder, background: t.panel, color: t.text, font: 'inherit', fontSize: '15px', cursor: 'pointer', lineHeight: '1', backdropFilter: 'blur(4px)' } }, '\u27f2') : null;
+    return h('div', {
+      onPointerDown: e => this.onPDown(e), onPointerMove: e => this.onPMove(e), onPointerUp: e => this.onPUp(e), onPointerCancel: e => this.onPUp(e),
+      onContextMenu: e => e.preventDefault(), onWheel: e => this.onWheel(e), onDoubleClick: () => this.resetView(),
+      style: { position: 'relative', width: '100%', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', touchAction: 'none' },
+    }, [reset, svg]);
+  }
+
+  /* ---------- legend / continents / phase bar ---------- */
+  renderLegend(){
+    var h = React.createElement, t = this.theme(), g = this.state.game, SE = window.SalientEngine;
+    if(!g || !SE) return h('div');
+    var chips = g.players.map(p => {
+      var dead = !SE.alive(g, p.id), active = g.turn === p.id && !g.winner;
+      var col = t.players[p.ci % 4], terr = SE.ownedBy(g, p.id).length, army = SE.armiesOf(g, p.id);
+      var badge = active && g.phase === 'reinforce' ? ('+' + g.toPlace) : (active ? '\u25b6' : '');
+      return h('div', { key: p.id, style: { flex: '1 1 0', minWidth: 0, display: 'flex', alignItems: 'center', gap: '7px', padding: '7px 9px', borderRadius: '11px', border: '1px solid ' + (active ? col : t.panelBorder), background: t.panel, boxShadow: active ? ('0 0 0 1px ' + col + ', 0 6px 16px -8px ' + t.accentGlow) : 'none', opacity: dead ? 0.4 : 1, transition: 'all .2s' } }, [
+        h('span', { key: 's', style: { width: '14px', height: '14px', borderRadius: '50%', flex: 'none', background: col, boxShadow: 'inset 0 -1px 2px rgba(0,0,0,0.4)' } }),
+        h('div', { key: 'd', style: { flex: 1, minWidth: 0 } }, [
+          h('div', { key: 'n', style: { fontSize: '12px', fontWeight: 700, color: t.text, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: dead ? 'line-through' : 'none' } }, p.name),
+          h('div', { key: 'm', style: { fontSize: '10px', color: t.textDim, fontVariantNumeric: 'tabular-nums' } }, dead ? 'out' : (terr + ' lands \u00b7 ' + army + ' armies')),
+        ]),
+        badge ? h('span', { key: 'b', style: { flex: 'none', fontSize: '12px', fontWeight: 700, color: col } }, badge) : null,
+      ]);
+    });
+    return h('div', { style: { display: 'flex', gap: '7px', marginTop: '12px', flexWrap: g.players.length > 3 ? 'wrap' : 'nowrap' } }, chips);
+  }
+  renderContLegend(){
+    var h = React.createElement, t = this.theme(), SE = window.SalientEngine; if(!SE) return h('div');
+    var items = SE.CONT.map(c => h('div', { key: c.id, style: { display: 'flex', alignItems: 'center', gap: '4px' } }, [
+      h('span', { key: 'd', style: { width: '8px', height: '8px', borderRadius: '2px', background: this.CONT_HUE[c.id] } }),
+      h('span', { key: 'n', style: { fontSize: '10px', color: t.textDim, letterSpacing: '.3px' } }, c.name + ' +' + c.bonus),
+    ]));
+    return h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px 12px', justifyContent: 'center', maxWidth: '440px' } }, items);
+  }
+  renderTransferBar(){
+    var h = React.createElement, t = this.theme(), g = this.state.game, SE = window.SalientEngine, tr = this.state.transfer;
+    var dn = SE.BY_ID[tr.to].name, dc = g.terr[tr.to].armies, sc = g.terr[tr.from].armies;
+    var sb = (label, fn, disabled, primary) => h('button', { key: label, onClick: disabled ? undefined : fn, style: { padding: '8px 11px', borderRadius: '9px', background: primary ? t.accent : t.panel, color: primary ? t.chrome : (disabled ? t.textFaint : t.text), border: '1px solid ' + (primary ? t.accent : t.panelBorder), font: 'inherit', fontSize: '12px', fontWeight: 700, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.5 : 1 } }, label);
+    return h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', padding: '8px 10px', borderRadius: '13px', border: '1px solid ' + t.accent, background: 'linear-gradient(180deg, ' + t.accent + '1f, ' + t.accent + '0a)' } }, [
+      h('span', { key: 'l', style: { flex: 1, minWidth: 0, fontSize: '12px', fontWeight: 600, color: t.text } }, (tr.mode === 'advance' ? 'Advance into ' : 'Move into ') + dn),
+      sb('\u2212', () => this.shiftTransfer(-1), dc <= 1),
+      h('span', { key: 'c', style: { fontSize: '16px', fontWeight: 700, color: t.text, minWidth: '20px', textAlign: 'center' } }, String(dc)),
+      sb('+', () => this.shiftTransfer(1), sc <= 1),
+      sb('ALL', () => this.transferAll(), sc <= 1),
+      sb('DONE', () => this.doneTransfer(), false, true),
+    ]);
+  }
+  renderPhaseBar(){
+    var h = React.createElement, t = this.theme(), s = this.state, g = s.game, SE = window.SalientEngine;
+    if(!g || !SE) return h('div');
+    if(s.transfer && this.isHumanTurn()) return this.renderTransferBar();
+    var phases = [['reinforce', 'REINFORCE'], ['attack', 'ATTACK'], ['fortify', 'FORTIFY']];
+    var steps = h('div', { key: 'st', style: { display: 'flex', gap: '5px', flex: 1 } }, phases.map(p => {
+      var on = g.phase === p[0] && !g.winner;
+      return h('div', { key: p[0], style: { flex: 1, textAlign: 'center', padding: '6px 2px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, letterSpacing: '.5px', color: on ? t.chrome : t.textDim, background: on ? t.accent : 'transparent', border: '1px solid ' + (on ? t.accent : t.panelBorder), transition: 'all .2s' } }, p[1]);
+    }));
+    var ctrl = null, human = this.isHumanTurn();
+    if(g.winner){ ctrl = null; }
+    else if(!human){
+      ctrl = h('div', { key: 'ai', style: { display: 'flex', alignItems: 'center', gap: '3px', flex: 'none', color: t.textDim, fontSize: '11px', fontWeight: 600 } }, ['marching', h('span', { key: 'd1', style: { animation: 'marchDots 1.1s infinite' } }, '\u00b7'), h('span', { key: 'd2', style: { animation: 'marchDots 1.1s infinite .2s' } }, '\u00b7'), h('span', { key: 'd3', style: { animation: 'marchDots 1.1s infinite .4s' } }, '\u00b7')]);
+    } else if(g.phase === 'reinforce'){
+      var seg = [1, 5, 'all'].map(b => h('button', { key: b, onClick: () => this.setBrush(b), style: { padding: '6px 9px', borderRadius: '8px', border: '1px solid ' + (s.brush === b ? t.accent : t.panelBorder), background: s.brush === b ? t.accent : 'transparent', color: s.brush === b ? t.chrome : t.text, font: 'inherit', fontSize: '11px', fontWeight: 700, cursor: 'pointer' } }, b === 'all' ? 'ALL' : ('+' + b)));
+      ctrl = h('div', { key: 'rf', style: { display: 'flex', gap: '5px', flex: 'none' } }, seg);
+    } else {
+      var label = g.phase === 'attack' ? 'END ASSAULT \u2192' : 'END TURN \u2192';
+      ctrl = h('button', { key: 'ep', onClick: () => this.endPhase(), style: { flex: 'none', padding: '9px 15px', borderRadius: '10px', border: 'none', background: t.accent, color: t.chrome, font: 'inherit', fontSize: '12px', fontWeight: 700, letterSpacing: '.5px', cursor: 'pointer' } }, label);
+    }
+    return h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginTop: '10px', padding: '8px', borderRadius: '13px', border: '1px solid ' + t.panelBorder, background: t.panel } }, [steps, ctrl]);
+  }
+
+  /* ---------- render ---------- */
+  renderVals(){
+    var t = this.theme(), s = this.state, g = s.game, SE = window.SalientEngine;
+    var human = this.isHumanTurn();
+    var cur = g ? g.players.find(p => p.id === g.turn) : null;
+    var status = 'Loading\u2026';
+    if(g && SE){
+      if(s.transfer && human){ status = s.transfer.mode === 'advance' ? ('Captured ' + SE.BY_ID[s.transfer.to].name + ' — choose how many advance') : ('Moving armies into ' + SE.BY_ID[s.transfer.to].name); }
+      else if(g.winner){ var wn = SE.nameOf(g, g.winner); status = (wn === 'You' ? 'You conquer the map' : wn + ' conquers the map'); }
+      else if(!human){ status = (cur ? cur.name : 'AI') + ' is marching\u2026'; }
+      else if(g.phase === 'reinforce'){ status = cur.name + ': deploy ' + g.toPlace + ' \u2014 tap your lands'; }
+      else if(g.phase === 'attack'){ status = s.sel ? ('Striking from ' + SE.BY_ID[s.sel].name + ' \u2014 tap an enemy border') : (cur.name + ': tap a land to attack from, or end your assault'); }
+      else if(g.phase === 'fortify'){ status = s.sel ? ('Move from ' + SE.BY_ID[s.sel].name + ' \u2014 tap a neighbouring land') : (cur.name + ': fortify a neighbour, or end your turn'); }
+    }
+    var coach = (g && SE && s.coachOn && human && !g.winner && !s.transfer) ? SE.coachSuggestion(g) : null;
+    var lost = g && g.winner && cur && false;
+    var youWon = g && g.winner === 'p1' && g.players[0] && g.players[0].kind === 'human';
+    var winCol = g && g.winner ? this.pidColor(g, g.winner) : t.accent;
+    var btn = 'flex:1;min-width:0;padding:9px 3px;border-radius:11px;border:1px solid ' + t.panelBorder + ';background:' + t.panel + ';color:' + t.text + ';font:inherit;font-size:10.5px;font-weight:600;letter-spacing:.3px;cursor:pointer;transition:all .15s;';
+    var doneBtn = 'width:100%;margin-top:6px;padding:12px;border-radius:12px;border:none;background:' + t.accent + ';color:' + t.chrome + ';font:inherit;font-size:12px;font-weight:700;letter-spacing:.6px;cursor:pointer;';
+
+    return {
+      board: this.renderBoard(),
+      legend: this.renderLegend(),
+      contLegend: this.renderContLegend(),
+      phaseBar: this.renderPhaseBar(),
+      status: status,
+      rootStyle: 'position:relative;min-height:100vh;overflow-x:hidden;font-family:' + t.fontUI + ';color:' + t.text + ';background:' + t.bg + ';',
+      stageStyle: 'position:relative;z-index:1;width:100%;max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;box-sizing:border-box;padding:18px 16px 22px;',
+      kickerStyle: 'font-size:10px;letter-spacing:3px;color:' + t.textDim + ';text-transform:uppercase;',
+      titleStyle: 'margin:2px 0 0;font-family:' + t.fontDisplay + ';font-style:italic;font-weight:600;font-size:34px;line-height:1;color:' + t.text + ';',
+      pillStyle: 'padding:7px 13px;border-radius:999px;border:1px solid ' + t.accent + ';background:transparent;color:' + t.accent + ';font:inherit;font-size:11px;font-weight:600;letter-spacing:.5px;cursor:pointer;white-space:nowrap;',
+      themeName: t.name,
+      statusStyle: 'margin-top:12px;padding:9px 14px;border-radius:11px;border:1px solid ' + t.panelBorder + ';background:' + t.panel + ';color:' + t.textDim + ';font-size:12px;font-weight:500;text-align:center;',
+      showCoach: !!coach, coachLine: coach ? coach.text : '',
+      coachToggleLabel: s.coachOn ? 'HIDE' : 'SHOW', coachOn: s.coachOn,
+      coachBannerStyle: 'margin-top:8px;display:flex;align-items:center;gap:10px;padding:9px 10px 9px 13px;border-radius:11px;border:1px solid ' + t.success + ';background:linear-gradient(180deg, ' + t.success + '22, ' + t.success + '0d);color:' + t.text + ';font-size:12px;font-weight:600;',
+      coachDotStyle: 'width:9px;height:9px;border-radius:50%;flex:none;background:' + t.success + ';box-shadow:0 0 0 3px ' + t.success + '33;',
+      coachToggleStyle: 'flex:none;padding:5px 11px;border-radius:8px;border:1px solid ' + t.success + ';background:transparent;color:' + t.success + ';font:inherit;font-size:10px;font-weight:700;letter-spacing:.6px;cursor:pointer;',
+      btnStyle: btn, doneBtnStyle: doneBtn,
+      hintsLabel: s.hints ? 'HINTS ON' : 'HINTS OFF',
+      modeLabel: this.PRESETS[s.preset].short,
+      levelLabel: s.level === 'hard' ? 'HARD' : 'EASY',
+      showRules: !!s.showRules,
+      sheetScrimStyle: 'position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.5);animation:qFadeIn .2s ease;',
+      sheetStyle: 'position:fixed;left:50%;bottom:0;z-index:31;transform:translateX(-50%);width:100%;max-width:480px;background:' + t.chrome + ';border-top:1px solid ' + t.panelBorder + ';border-radius:20px 20px 0 0;padding:22px 20px calc(22px + env(safe-area-inset-bottom,0px));box-shadow:0 -20px 50px rgba(0,0,0,.5);animation:qWinHop .3s ease both;max-height:80vh;overflow:auto;',
+      sheetTitleStyle: 'font-family:' + t.fontDisplay + ';font-style:italic;font-size:24px;font-weight:600;color:' + t.text + ';margin-bottom:14px;',
+      sheetBodyStyle: 'font-size:13px;line-height:1.6;color:' + t.textDim + ';',
+      ruleHeadStyle: 'color:' + t.accent + ';',
+      winner: !!(g && g.winner),
+      winScrimStyle: 'position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);animation:qFadeIn .25s ease;',
+      winCardStyle: 'position:fixed;left:50%;top:50%;z-index:41;transform:translate(-50%,-50%);width:calc(100% - 48px);max-width:340px;background:' + t.chrome + ';border:1px solid ' + t.panelBorder + ';border-radius:20px;padding:28px 26px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.55), 0 0 0 1px ' + winCol + ', 0 0 48px -10px ' + winCol + ';animation:qWinHop .3s ease both;',
+      winKickerStyle: 'font-size:10px;letter-spacing:3px;color:' + t.textDim + ';text-transform:uppercase;',
+      winTitleStyle: 'font-family:' + t.fontDisplay + ';font-style:italic;font-size:34px;font-weight:600;color:' + winCol + ';margin:6px 0 6px;',
+      winReasonStyle: 'font-size:13px;color:' + t.textDim + ';margin-bottom:18px;',
+      winnerText: g && g.winner ? (youWon ? 'You win' : SE.nameOf(g, g.winner) + ' wins') : '',
+      winnerReason: g && g.winner ? (youWon ? 'The map is yours, commander.' : 'Your campaign ends here.') : '',
+      onTheme: () => this.cycleTheme(), onNew: () => this.newGame(this.state.preset, this.state.level),
+      onHints: () => this.toggleHints(), onMode: () => this.cycleMode(), onLevel: () => this.cycleLevel(),
+      onRules: () => this.toggleRules(), onCoachToggle: () => this.toggleCoach(),
+    };
+  }
+}
+</script>
+</body>
+</html>
