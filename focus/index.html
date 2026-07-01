@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Focus</title>
+<meta name="description" content="Focus (Domination) — Sid Sackson's stacking strategy classic. Move stacks, capture, and dominate the board. Two- or four-player, vs AI or pass-and-play.">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#15100b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Focus">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-512.png">
+<style>
+  html,body{margin:0;padding:0;background:#15100b;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  @keyframes fFade{from{opacity:0}to{opacity:1}}
+  @keyframes fUp{0%{opacity:0;transform:translateY(14px)}100%{opacity:1;transform:none}}
+  @keyframes fHop{0%{opacity:0;transform:translateY(10px)}60%{opacity:1;transform:translateY(-3px)}100%{transform:translateY(0)}}
+  @keyframes fPulse{0%,100%{opacity:.4}50%{opacity:1}}
+  @keyframes fSpin{to{transform:rotate(360deg)}}
+  @keyframes fRing{0%{opacity:.85;transform:scale(.82)}70%{opacity:0;transform:scale(1.32)}100%{opacity:0;transform:scale(1.32)}}
+  @keyframes fSlide{from{transform:translate(var(--fx),var(--fy))}to{transform:translate(0,0)}}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+<script src="./focus-engine.js"></script>
+<script>
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
+</script>
+</helmet>
+<div style="{{ rootStyle }}">
+  <div style="{{ stageStyle }}">
+
+    <!-- ============ ONBOARDING ============ -->
+    <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ colFill }}">
+        <div style="{{ kickerStyle }}">PARLOUR GAMES · NO. III</div>
+        <h1 style="{{ wordmarkStyle }}">Focus</h1>
+        <div style="{{ onbCardStyle }}">
+          <div style="{{ onbArtWrap }}">{{ onbArt }}</div>
+          <div style="{{ onbTitleStyle }}">{{ onbTitle }}</div>
+          <div style="{{ onbBodyStyle }}">{{ onbBody }}</div>
+          <div style="{{ onbDotsStyle }}">{{ onbDots }}</div>
+        </div>
+        <div style="display:flex;gap:10px;width:100%;">
+          <button onClick="{{ onSkip }}" style="{{ ghostBtnStyle }}">SKIP</button>
+          <button onClick="{{ onNext }}" style="{{ primaryBtnStyle }}">{{ onbNextLabel }}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ HOME ============ -->
+    <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ colFill }}">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;">
+          <div>
+            <div style="{{ kickerStyle }}">PARLOUR GAMES · NO. III</div>
+            <h1 style="{{ wordmarkStyle }}">Focus</h1>
+            <div style="{{ taglineStyle }}">Stack, attack, dominate the board.</div>
+          </div>
+          <button onClick="{{ onTheme }}" style="{{ themeChipStyle }}">{{ themeName }}</button>
+        </div>
+
+        <div style="{{ heroCardStyle }}">{{ heroBoard }}</div>
+
+        <div style="{{ segLabelStyle }}">PLAYERS</div>
+        <div style="{{ segRowStyle }}">
+          <sc-for list="{{ playerOpts }}" as="opt" hint-placeholder-count="2">
+            <button onClick="{{ opt.on }}" style="{{ opt.style }}">{{ opt.label }}</button>
+          </sc-for>
+        </div>
+        <div style="{{ segLabelStyle }}">OPPONENT</div>
+        <div style="{{ segRowStyle }}">
+          <sc-for list="{{ levelOpts }}" as="opt" hint-placeholder-count="5">
+            <button onClick="{{ opt.on }}" style="{{ opt.style }}">{{ opt.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;gap:10px;width:100%;margin-top:4px;">
+          <sc-if value="{{ resumable }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ onResume }}" style="{{ resumeBtnStyle }}">RESUME GAME</button>
+          </sc-if>
+          <button onClick="{{ onPlay }}" style="{{ primaryBtnStyle }}">{{ playLabel }}</button>
+        </div>
+
+        <div style="{{ statRowStyle }}">
+          <sc-for list="{{ stats }}" as="st" hint-placeholder-count="3">
+            <div style="{{ statCellStyle }}">
+              <div style="{{ statValStyle }}">{{ st.v }}</div>
+              <div style="{{ statKeyStyle }}">{{ st.k }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;gap:10px;width:100%;">
+          <button onClick="{{ onLearn }}" style="{{ ghostBtnStyle }}">HOW TO PLAY</button>
+          <button onClick="{{ onHistory }}" style="{{ ghostBtnStyle }}">HISTORY</button>
+          <button onClick="{{ onSettings }}" style="{{ ghostBtnStyle }}">SETTINGS</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PLAY ============ -->
+    <sc-if value="{{ isPlay }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ playColStyle }}">
+        <div style="display:flex;align-items:center;gap:10px;width:100%;">
+          <button onClick="{{ onMenu }}" style="{{ iconBtnStyle }}">‹</button>
+          <div style="flex:1;min-width:0;">
+            <div style="{{ playKickerStyle }}">{{ matchLabel }}</div>
+            <div style="{{ playTitleStyle }}">Focus</div>
+          </div>
+          <div style="{{ turnPillStyle }}"><span style="{{ turnDotStyle }}"></span>{{ turnText }}</div>
+        </div>
+
+        <div role="status" style="{{ statusStyle }}">{{ status }}</div>
+
+        <sc-if value="{{ coachSlot }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ coachSlotStyle }}">
+            <sc-if value="{{ showCoach }}" hint-placeholder-val="{{ false }}">
+              <div style="{{ coachStyle }}">
+                <span style="{{ coachDotStyle }}"></span>
+                <span style="flex:1;min-width:0;">{{ coachLine }}</span>
+                <button onClick="{{ onCoachToggle }}" style="{{ coachBtnStyle }}">{{ coachBtnLabel }}</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <div style="{{ boardWrapStyle }}">{{ board }}</div>
+        <div style="flex:1;min-height:6px;"></div>
+
+        <div style="{{ panelsWrapStyle }}">
+          <sc-for list="{{ playerPanels }}" as="pp" hint-placeholder-count="2">
+            <div style="{{ pp.style }}">
+              <span style="{{ pp.swatchStyle }}"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="{{ pp.nameStyle }}">{{ pp.name }}</div>
+                <div style="{{ panelStatStyle }}">{{ pp.reserve }}<span style="{{ panelSubStyle }}"> res</span> · {{ pp.lost }}<span style="{{ panelSubStyle }}"> lost</span></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ canReserve }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onReserveMode }}" style="{{ reserveBtnStyle }}">{{ reserveBtnLabel }}</button>
+        </sc-if>
+
+        <div style="{{ actionRowStyle }}">
+          <button onClick="{{ onNew }}" style="{{ actBtnStyle }}">NEW</button>
+          <button onClick="{{ onUndo }}" style="{{ undoBtnStyle }}">UNDO</button>
+          <button onClick="{{ onHints }}" style="{{ actBtnStyle }}">{{ coachToggleLabel }}</button>
+          <button onClick="{{ onRules }}" style="{{ actBtnStyle }}">RULES</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ HISTORY ============ -->
+    <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ colFill }}">
+        <div style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:4px;">
+          <button onClick="{{ onMenu }}" style="{{ iconBtnStyle }}">‹</button>
+          <h2 style="{{ screenTitleStyle }}">Match history</h2>
+        </div>
+        <sc-if value="{{ hasHistory }}" hint-placeholder-val="{{ true }}">
+          <div style="{{ histListStyle }}">
+            <sc-for list="{{ historyItems }}" as="m" hint-placeholder-count="4">
+              <div style="{{ m.rowStyle }}">
+                <span style="{{ m.badgeStyle }}">{{ m.badge }}</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="{{ histResultStyle }}">{{ m.title }}</div>
+                  <div style="{{ histMetaStyle }}">{{ m.meta }}</div>
+                </div>
+                <div style="{{ histWhenStyle }}">{{ m.when }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noHistory }}" hint-placeholder-val="{{ false }}">
+          <div style="{{ emptyStyle }}">No games yet. Your finished matches will appear here.</div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ============ SETTINGS ============ -->
+    <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
+      <div style="{{ colFill }}">
+        <div style="display:flex;align-items:center;gap:10px;width:100%;margin-bottom:2px;">
+          <button onClick="{{ onMenu }}" style="{{ iconBtnStyle }}">‹</button>
+          <h2 style="{{ screenTitleStyle }}">Settings</h2>
+        </div>
+
+        <div style="{{ segLabelStyle }}">LOOK &amp; FEEL</div>
+        <div style="{{ optColStyle }}">
+          <sc-for list="{{ themeOpts }}" as="opt" hint-placeholder-count="3">
+            <button onClick="{{ opt.on }}" style="{{ opt.style }}">
+              <span style="{{ opt.swatchStyle }}"></span>
+              <div style="flex:1;min-width:0;text-align:left;">
+                <div style="{{ optTitleStyle }}">{{ opt.label }}</div>
+                <div style="{{ optDescStyle }}">{{ opt.desc }}</div>
+              </div>
+              <span style="{{ opt.checkStyle }}">{{ opt.check }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="{{ segLabelStyle }}">PLAYERS</div>
+        <div style="{{ segRowStyle }}">
+          <sc-for list="{{ playerOpts2 }}" as="opt" hint-placeholder-count="2">
+            <button onClick="{{ opt.on }}" style="{{ opt.style }}">{{ opt.label }}</button>
+          </sc-for>
+        </div>
+        <div style="{{ segLabelStyle }}">OPPONENT</div>
+        <div style="{{ segRowStyle }}">
+          <sc-for list="{{ levelOpts2 }}" as="opt" hint-placeholder-count="5">
+            <button onClick="{{ opt.on }}" style="{{ opt.style }}">{{ opt.label }}</button>
+          </sc-for>
+        </div>
+
+        <div style="{{ segLabelStyle }}">OPENING SETUP</div>
+        <div style="{{ optColStyle }}">
+          <sc-for list="{{ setupOpts }}" as="opt" hint-placeholder-count="3">
+            <button onClick="{{ opt.on }}" style="{{ opt.style }}">
+              <div style="flex:1;min-width:0;text-align:left;">
+                <div style="{{ optTitleStyle }}">{{ opt.label }}</div>
+                <div style="{{ optDescStyle }}">{{ opt.desc }}</div>
+              </div>
+              <span style="{{ opt.checkStyle }}">{{ opt.check }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="{{ segLabelStyle }}">ASSISTS</div>
+        <button onClick="{{ onToggleAssist }}" style="{{ toggleRowStyle }}">
+          <div style="flex:1;min-width:0;text-align:left;">
+            <div style="{{ optTitleStyle }}">Legal-move highlights</div>
+            <div style="{{ optDescStyle }}">Glow the squares a lifted stack can reach.</div>
+          </div>
+          <span style="{{ assistKnobStyle }}"><span style="{{ assistDotStyle }}"></span></span>
+        </button>
+        <button onClick="{{ onToggleCoach }}" style="{{ toggleRowStyle }}">
+          <div style="flex:1;min-width:0;text-align:left;">
+            <div style="{{ optTitleStyle }}">Coach hints</div>
+            <div style="{{ optDescStyle }}">Suggest a strong move on your turn.</div>
+          </div>
+          <span style="{{ coachKnobStyle }}"><span style="{{ coachDot2Style }}"></span></span>
+        </button>
+
+        <div style="display:flex;gap:10px;width:100%;margin-top:8px;">
+          <button onClick="{{ onClearHistory }}" style="{{ ghostBtnStyle }}">CLEAR HISTORY</button>
+          <button onClick="{{ onResetAll }}" style="{{ dangerBtnStyle }}">RESET ALL</button>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+
+  <!-- ============ RULES SHEET ============ -->
+  <sc-if value="{{ showRules }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ scrimStyle }}" onClick="{{ onRules }}"></div>
+    <div style="{{ sheetStyle }}">
+      <div style="{{ sheetTitleStyle }}">How to play</div>
+      <div style="{{ sheetBodyStyle }}">
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Goal.</b> Be the last player able to move. You win when your opponent can neither move a stack nor place a reserve.</p>
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Control.</b> You may move any stack whose top piece is your colour — even if your piece sits atop the opponent's.</p>
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Move.</b> Lift the top 1–5 pieces of a stack and slide them in a straight line — across or up/down, never diagonally — exactly as many squares as pieces you lifted. Jump freely over anything between.</p>
+        <p style="margin:0 0 13px;"><b style="{{ ruleHeadStyle }}">Stack.</b> Landing merges piles. No stack may stand taller than five: extra pieces spill off the bottom. Your own spilled pieces become <b style="{{ ruleHeadStyle }}">reserves</b>; the opponent's are <b style="{{ ruleHeadStyle }}">captured</b> for good.</p>
+        <p style="margin:0 0 16px;"><b style="{{ ruleHeadStyle }}">Reserves.</b> Instead of moving, drop one reserve onto any square — empty or not. They are powerful; spend them well.</p>
+        <button onClick="{{ onRules }}" style="{{ primaryBtnStyle }}">GOT IT</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ WIN MODAL ============ -->
+  <sc-if value="{{ gameOver }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ winScrimStyle }}"></div>
+    <div style="{{ winCardStyle }}">
+      <div style="{{ winKickerStyle }}">GAME OVER</div>
+      <div style="{{ winTitleStyle }}">{{ winnerText }}</div>
+      <div style="{{ winReasonStyle }}">{{ winnerReason }}</div>
+      <div style="display:flex;gap:10px;width:100%;">
+        <button onClick="{{ onMenu }}" style="{{ ghostBtnStyle }}">MENU</button>
+        <button onClick="{{ onNew }}" style="{{ primaryBtnStyle }}">PLAY AGAIN</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="ftg" cx="0.5" cy="0.4" r="0.8">
+          <stop offset="0%" stop-color="#2c2218"/><stop offset="100%" stop-color="#120d08"/>
+        </radialGradient>
+        <radialGradient id="fgr" cx="0.36" cy="0.32" r="0.9">
+          <stop offset="0%" stop-color="#8ee9a6"/><stop offset="45%" stop-color="#2fb457"/><stop offset="100%" stop-color="#0a3a1a"/>
+        </radialGradient>
+        <radialGradient id="frd" cx="0.36" cy="0.32" r="0.9">
+          <stop offset="0%" stop-color="#ff9c8b"/><stop offset="45%" stop-color="#e23a2d"/><stop offset="100%" stop-color="#460c08"/>
+        </radialGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#ftg)"/>
+      <g transform="translate(50 52)">
+        <ellipse cx="0" cy="20" rx="22" ry="7" fill="#000" opacity="0.4"/>
+        <g>
+          <ellipse cx="0" cy="14" rx="20" ry="9" fill="#1c8a40"/>
+          <ellipse cx="0" cy="6"  rx="20" ry="9" fill="#bd2a20"/>
+          <ellipse cx="0" cy="-2" rx="20" ry="9" fill="#1c8a40"/>
+          <ellipse cx="0" cy="-12" rx="20" ry="9.5" fill="url(#frd)" stroke="#460c08" stroke-width="0.6"/>
+        </g>
+      </g>
+      <text x="50" y="92" text-anchor="middle" font-family="'Space Grotesk',sans-serif" font-weight="700" font-size="13" fill="#cf9b46" letter-spacing="1">FOCUS</text>
+    </svg>
+  </template>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:460,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.GREEN = { topHi:'#8ee9a6', top:'#2fb457', side:'#1c8a40', sideDark:'#106b2e', rim:'#0a3a1a' };
+    this.RED   = { topHi:'#ff9c8b', top:'#e23a2d', side:'#bd2a20', sideDark:'#8c1a14', rim:'#460c08' };
+    this.BLUE  = { topHi:'#9cc4ff', top:'#2f6fe0', side:'#1f55b8', sideDark:'#143f8c', rim:'#0a2452' };
+    this.YELLOW= { topHi:'#ffe48a', top:'#efbe2c', side:'#cf9d14', sideDark:'#a87a0c', rim:'#5a3f04' };
+    this.PALS  = { p1:this.GREEN, p2:this.RED, p3:this.BLUE, p4:this.YELLOW };
+    this.GID   = { p1:'g', p2:'r', p3:'b', p4:'y' };
+    this.THEMES = {
+      studio: {
+        name:'Studio', kind:'light',
+        bg:'radial-gradient(125% 90% at 50% -8%, #f8f2e6 0%, #efe6d4 55%, #e3d8c0 100%)',
+        panel:'rgba(255,255,255,0.55)', panelBorder:'rgba(40,32,18,0.16)', chrome:'#efe6d4',
+        text:'#211c12', textDim:'rgba(33,28,18,0.60)', textFaint:'rgba(33,28,18,0.34)',
+        accent:'#1f6f5c', accentGlow:'rgba(31,111,92,0.34)', danger:'#b3402e', success:'#1f7a44',
+        tileA:'#efe7d4', tileB:'#ddd0b4', boardBg:'#cdbf9d', boardEdge:'#b6a684',
+      },
+      walnut: {
+        name:'Walnut', kind:'dark',
+        bg:'radial-gradient(125% 90% at 50% -5%, #322619 0%, #221910 55%, #120d07 100%)',
+        panel:'linear-gradient(180deg, rgba(255,240,210,0.06), rgba(0,0,0,0.20))', panelBorder:'rgba(201,138,60,0.26)', chrome:'#15100b',
+        text:'#f2e6cf', textDim:'rgba(242,230,207,0.62)', textFaint:'rgba(242,230,207,0.32)',
+        accent:'#cf9b46', accentGlow:'rgba(207,155,70,0.40)', danger:'#d9663f', success:'#9ec07a',
+        tileA:'#e7d4ab', tileB:'#cdb585', boardBg:'#4a3420', boardEdge:'#67492c',
+      },
+      midnight: {
+        name:'Midnight', kind:'dark',
+        bg:'radial-gradient(125% 90% at 50% -5%, #1d2433 0%, #121826 55%, #0a0d14 100%)',
+        panel:'rgba(255,255,255,0.05)', panelBorder:'rgba(120,150,190,0.22)', chrome:'#0a0d14',
+        text:'#eef3fa', textDim:'rgba(238,243,250,0.60)', textFaint:'rgba(238,243,250,0.30)',
+        accent:'#46b8c8', accentGlow:'rgba(70,184,200,0.40)', danger:'#e0654f', success:'#5ec98b',
+        tileA:'#2a3344', tileB:'#1f2734', boardBg:'#161c28', boardEdge:'#2c374a',
+      },
+    };
+    const set = this.load('focus.settings.v1', {});
+    this.state = {
+      screen: this.load('focus.seen.v1', false) ? 'home' : 'onboarding',
+      theme: set.theme || 'walnut',
+      level: (set.level === '2p' ? 'hotseat' : set.level) || 'club',
+      players: set.players === 4 ? 4 : 2,
+      setup: set.setup || 'checker',
+      assists: set.assists !== false,
+      coachOn: !!set.coachOn,
+      onbStep: 1,
+      game: null, moves: 0, hist: [], sel: null, reserveMode: false, lastMove: null, thinking: false, aiAnim: null,
+      history: this.load('focus.history.v1', []),
+      showRules: false,
+    };
+    this.HUMAN = 'p1'; this.AI = 'p2';
+    this._recordKey = null;
+  }
+
+  /* ---------- persistence ---------- */
+  load(k, fb){ try { const v = localStorage.getItem(k); return v == null ? fb : JSON.parse(v); } catch(e){ return fb; } }
+  save(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} }
+  saveSettings(){ this.save('focus.settings.v1', { theme:this.state.theme, level:this.state.level, players:this.state.players, setup:this.state.setup, assists:this.state.assists, coachOn:this.state.coachOn }); }
+
+  componentDidMount(){
+    const g = this.load('focus.game.v1', null);
+    if (g && g.game && g.game.board) this.setState({ game: g.game, moves: g.moves || 0, hist: [], lastMove: null });
+  }
+
+  /* ---------- helpers ---------- */
+  E(){ return window.FocusEngine; }
+  theme(){ return this.THEMES[this.state.theme] || this.THEMES.walnut; }
+  pal(o){ return this.PALS[o] || this.GREEN; }
+  gid(o){ return this.GID[o] || 'g'; }
+  numPlayers(){ return this.state.players === 4 ? 4 : 2; }
+  isAI(){ return this.state.level !== 'hotseat'; }
+  isAISeat(p){ return this.isAI() && p !== 'p1'; }
+  levelLabel(l){ return ({novice:'Novice',club:'Club',strong:'Strong',expert:'Expert',hotseat:'Hotseat'})[l] || 'Club'; }
+  nm(p){ return ({p1:'Green',p2:'Red',p3:'Blue',p4:'Yellow'})[p] || p; }
+  isHumanTurn(){ const g = this.state.game; return g && !g.winner && !this.isAISeat(g.turn); }
+
+  /* ---------- game flow ---------- */
+  newGame(){
+    const E = this.E(); if (!E) return;
+    const g = E.newGame(this.state.setup, this.numPlayers());
+    this._recordKey = null;
+    this.setState({ game: g, moves: 0, hist: [], sel: null, reserveMode: false, lastMove: null, thinking: false, aiAnim: null, screen: 'play', showRules: false },
+      () => { this.persistGame(); this.afterMove(); });
+  }
+  persistGame(){ if (this.state.game) this.save('focus.game.v1', { game: this.state.game, moves: this.state.moves }); }
+
+  afterMove(){
+    const g = this.state.game; if (!g) return;
+    if (g.winner){ this.recordResult(); return; }
+    if (this.isAISeat(g.turn) && !this.state.thinking){
+      const delay = ({novice:650,club:820,strong:1000,expert:1180})[this.state.level] || 820;
+      this.setState({ thinking: true }, () => setTimeout(() => this.aiPlay(), delay));
+    }
+  }
+  aiPlay(){
+    const E = this.E(), g = this.state.game;
+    if (!E || !g || g.winner || !this.isAISeat(g.turn)){ this.setState({ thinking: false }); return; }
+    const seat = g.turn;
+    const mv = E.chooseMove(g, this.state.level, Math.random);
+    if (!mv){ this.setState({ thinking: false }); return; }
+    const snap = { game: E.cloneState(g), moves: this.state.moves };
+    const res = E.applyMove(g, mv);
+    const t0 = Date.now();
+    const anim = { from: mv.from || mv.to, to: mv.to, owner: seat, count: mv.count || 1, t0, dur: 1150, pre: snap.game };
+    this.setState({
+      game: res.state, moves: this.state.moves + 1, thinking: false,
+      hist: this.state.hist.concat([snap]).slice(-80),
+      lastMove: { from: mv.from || mv.to, to: mv.to }, aiAnim: anim,
+    }, () => { this.persistGame(); this.afterMove(); });
+    setTimeout(() => { if (this.state.aiAnim && this.state.aiAnim.t0 === t0) this.setState({ aiAnim: null }); }, (anim.dur || 500) + 260);
+  }
+  doMove(mv){
+    const E = this.E(), g = this.state.game; if (!E || !g) return;
+    const mover = g.turn;
+    const snap = { game: E.cloneState(g), moves: this.state.moves };
+    const res = E.applyMove(g, mv);
+    const t0 = Date.now();
+    const anim = { from: mv.from || mv.to, to: mv.to, owner: mover, count: mv.count || 1, t0, dur: 480, pre: snap.game };
+    this.setState({
+      game: res.state, moves: this.state.moves + 1,
+      hist: this.state.hist.concat([snap]).slice(-80),
+      sel: null, reserveMode: false, aiAnim: anim, lastMove: { from: mv.from || mv.to, to: mv.to },
+    }, () => { this.persistGame(); this.afterMove(); });
+    setTimeout(() => { if (this.state.aiAnim && this.state.aiAnim.t0 === t0) this.setState({ aiAnim: null }); }, (anim.dur || 500) + 260);
+  }
+  undo(){
+    const s = this.state; if (!s.hist.length || s.thinking) return;
+    let hist = s.hist.slice(), snap = hist.pop();
+    if (this.isAI() && snap.game.turn === this.AI && hist.length) snap = hist.pop();
+    this._recordKey = null;
+    this.setState({ game: snap.game, moves: snap.moves, hist, sel: null, reserveMode: false, thinking: false, lastMove: null, aiAnim: null },
+      () => this.persistGame());
+  }
+  recordResult(){
+    const g = this.state.game; if (!g || !g.winner) return;
+    const key = this.state.moves + ':' + g.winner;
+    if (this._recordKey === key) return;
+    this._recordKey = key;
+    const rec = { winner: g.winner, you: g.winner === 'p1', ai: this.isAI(), level: this.state.level, players: this.numPlayers(), moves: this.state.moves, when: Date.now() };
+    const history = [rec].concat(this.state.history).slice(0, 100);
+    this.setState({ history }); this.save('focus.history.v1', history);
+    this.save('focus.game.v1', null);
+  }
+
+  /* ---------- interaction ---------- */
+  selectableFrom(){
+    const E = this.E(), g = this.state.game, set = new Set();
+    if (!E || !g) return set;
+    const me = g.turn;
+    E.legalMoves(g, me).forEach(m => { if (m.kind === 'move') set.add(m.from[0] + ',' + m.from[1]); });
+    return set;
+  }
+  targetMap(){
+    const E = this.E(), g = this.state.game, s = this.state, map = {};
+    if (!E || !g) return map;
+    if (s.reserveMode && g.reserves[g.turn] > 0){
+      E.CELLS.forEach(([r,c]) => { map[r+','+c] = { kind:'reserve', to:[r,c] }; });
+      return map;
+    }
+    if (s.sel){
+      E.legalMoves(g, g.turn).forEach(m => {
+        if (m.kind === 'move' && m.from[0] === s.sel.r && m.from[1] === s.sel.c) map[m.to[0]+','+m.to[1]] = m;
+      });
+    }
+    return map;
+  }
+  handleCell(r, c){
+    const g = this.state.game, s = this.state; if (!g || g.winner) return;
+    if (this.isAISeat(g.turn)) return;
+    const key = r + ',' + c, tmap = this.targetMap();
+    if (s.reserveMode){ if (tmap[key]) this.doMove(tmap[key]); return; }
+    if (s.sel){
+      if (s.sel.r === r && s.sel.c === c){ this.setState({ sel: null }); return; }
+      if (tmap[key]){ this.doMove(tmap[key]); return; }
+      if (this.E().topOwner(g.board[r][c]) === g.turn && this.selectableFrom().has(key)){ this.setState({ sel: { r, c }, aiAnim: null }); return; }
+      this.setState({ sel: null, aiAnim: null }); return;
+    }
+    if (this.E().topOwner(g.board[r][c]) === g.turn && this.selectableFrom().has(key)) this.setState({ sel: { r, c }, aiAnim: null });
+  }
+  toggleReserveMode(){ this.setState({ reserveMode: !this.state.reserveMode, sel: null, aiAnim: null }); }
+
+  /* ---------- nav / settings ---------- */
+  go(screen){ this.setState({ screen, sel: null, reserveMode: false }); }
+  cycleTheme(){ const k = Object.keys(this.THEMES), i = k.indexOf(this.state.theme); this.setState({ theme: k[(i+1)%k.length] }, () => this.saveSettings()); }
+  setTheme(t){ this.setState({ theme: t }, () => this.saveSettings()); }
+  setLevel(l){ this.setState({ level: l }, () => this.saveSettings()); }
+  setSetup(s){ this.setState({ setup: s }, () => this.saveSettings()); }
+  setPlayers(n){ this.setState({ players: n }, () => this.saveSettings()); }
+  toggleAssist(){ this.setState({ assists: !this.state.assists }, () => this.saveSettings()); }
+  toggleCoach(){ this.setState({ coachOn: !this.state.coachOn }, () => this.saveSettings()); }
+  toggleRules(){ this.setState({ showRules: !this.state.showRules }); }
+  clearHistory(){ this.setState({ history: [] }); this.save('focus.history.v1', []); }
+  resetAll(){
+    try { ['focus.settings.v1','focus.game.v1','focus.history.v1','focus.seen.v1'].forEach(k => localStorage.removeItem(k)); } catch(e){}
+    this.setState({ theme:'walnut', level:'club', setup:'checker', assists:true, coachOn:false, history:[], game:null, screen:'home' });
+  }
+  nextOnb(){
+    if (this.state.onbStep < 3) this.setState({ onbStep: this.state.onbStep + 1 });
+    else { this.save('focus.seen.v1', true); this.setState({ screen: 'home' }); }
+  }
+  skipOnb(){ this.save('focus.seen.v1', true); this.setState({ screen: 'home' }); }
+
+  /* ---------- board rendering ---------- */
+  miniBoard(){
+    // small decorative board for the home hero — a snapshot mid-game
+    const E = this.E(); if (!E) return null;
+    const g = this.state.game || E.newGame(this.state.setup);
+    return this.drawBoard(g, { mini: true });
+  }
+  renderBoard(){
+    const E = this.E(), g = this.state.game; if (!E || !g) return null;
+    return this.drawBoard(g, { mini: false });
+  }
+  drawBoard(g, opt){
+    const h = React.createElement, E = this.E(), t = this.theme(), s = this.state;
+    const mini = opt.mini;
+    const CS = 50, R = 18, RY = R * 0.42, SIDE = 7, OFF = 7, INSET = 2.5;
+    const interactive = !mini && this.isHumanTurn();
+    const tmap = mini ? {} : this.targetMap();
+    const selset = (interactive && !s.reserveMode) ? this.selectableFrom() : new Set();
+    const sel = s.sel;
+    const coach = (!mini && s.coachOn && interactive && !s.reserveMode) ? this._coachMove : null;
+    const last = mini ? null : s.lastMove;
+
+    const px = (c) => c * CS, py = (r) => r * CS;
+    const stop = (o, col, k) => h('stop', { key: k, offset: o, stopColor: col });
+    const defs = h('defs', { key: 'd' }, [
+      h('radialGradient', { key:'gg', id:'fb-g', cx:'0.36', cy:'0.30', r:'0.95' },
+        [stop('0%', this.GREEN.topHi, 0), stop('40%', this.GREEN.top, 1), stop('100%', this.GREEN.side, 2)]),
+      h('radialGradient', { key:'gr', id:'fb-r', cx:'0.36', cy:'0.30', r:'0.95' },
+        [stop('0%', this.RED.topHi, 0), stop('40%', this.RED.top, 1), stop('100%', this.RED.side, 2)]),
+      h('radialGradient', { key:'gb', id:'fb-b', cx:'0.36', cy:'0.30', r:'0.95' },
+        [stop('0%', this.BLUE.topHi, 0), stop('40%', this.BLUE.top, 1), stop('100%', this.BLUE.side, 2)]),
+      h('radialGradient', { key:'gy', id:'fb-y', cx:'0.36', cy:'0.30', r:'0.95' },
+        [stop('0%', this.YELLOW.topHi, 0), stop('40%', this.YELLOW.top, 1), stop('100%', this.YELLOW.side, 2)]),
+    ]);
+
+    const tiles = [], stacks = [], overlays = [], hits = [];
+    // board backing plate
+    let minC = 8, maxC = -1, minR = 8, maxR = -1;
+    E.CELLS.forEach(([r,c]) => { minC=Math.min(minC,c); maxC=Math.max(maxC,c); minR=Math.min(minR,r); maxR=Math.max(maxR,r); });
+
+    E.CELLS.forEach(([r,c]) => {
+      const x = px(c), y = py(r), key = r+','+c;
+      const tileFill = ((r + c) % 2 === 0) ? t.tileA : t.tileB;
+      tiles.push(h('rect', { key:'t'+key, x:x+INSET, y:y+INSET, width:CS-2*INSET, height:CS-2*INSET, rx:7,
+        fill: tileFill, stroke: t.boardEdge, strokeOpacity:0.35, strokeWidth:0.75 }));
+
+      const isTarget = !!tmap[key];
+      if (isTarget){
+        overlays.push(h('rect', { key:'tg'+key, x:x+INSET, y:y+INSET, width:CS-2*INSET, height:CS-2*INSET, rx:7,
+          fill: t.accent, fillOpacity:0.16, stroke:t.accent, strokeWidth:2, strokeDasharray:'4 3',
+          style:{ animation:'fPulse 1.4s ease-in-out infinite' } }));
+      }
+      if (sel && sel.r===r && sel.c===c){
+        overlays.push(h('rect', { key:'sl'+key, x:x+INSET-1, y:y+INSET-1, width:CS-2*INSET+2, height:CS-2*INSET+2, rx:8,
+          fill:'none', stroke:t.accent, strokeWidth:2.5 }));
+      }
+      if (last && ((last.from && last.from[0]===r && last.from[1]===c) || (last.to && last.to[0]===r && last.to[1]===c))){
+        overlays.push(h('rect', { key:'lm'+key, x:x+INSET, y:y+INSET, width:CS-2*INSET, height:CS-2*INSET, rx:7,
+          fill:'none', stroke:t.accent, strokeOpacity:0.5, strokeWidth:1.5 }));
+      }
+    });
+
+    // during a move animation, paint from the PRE-move position and carry the moved coins
+    let displayBoard = g.board, _mover = null;
+    if (!mini && s.aiAnim && s.aiAnim.pre && (Date.now() - s.aiAnim.t0) < ((s.aiAnim.dur || 500) + 160)){
+      const a = s.aiAnim, reserve = (a.from[0] === a.to[0] && a.from[1] === a.to[1]);
+      displayBoard = a.pre.board.map(row => row.map(cell => cell ? cell.slice() : cell));
+      let movedPieces;
+      if (reserve){ movedPieces = [a.owner]; }
+      else { const src = displayBoard[a.from[0]][a.from[1]] || []; movedPieces = src.slice(src.length - a.count); displayBoard[a.from[0]][a.from[1]] = src.slice(0, src.length - a.count); }
+      _mover = { pieces: movedPieces, reserve };
+    }
+    // coach highlight — steady pulsing outline + expanding radar ring
+    if (coach){
+      const ck = (rc, id) => { const x=px(rc[1]), y=py(rc[0]);
+        overlays.push(h('rect', { key:'cc'+id, x:x+INSET, y:y+INSET, width:CS-2*INSET, height:CS-2*INSET, rx:7,
+          fill:'none', stroke:t.success, strokeWidth:2.6, style:{ animation:'fPulse 1.15s ease-in-out infinite' } }));
+        overlays.push(h('rect', { key:'ccr'+id, x:x+INSET, y:y+INSET, width:CS-2*INSET, height:CS-2*INSET, rx:9,
+          fill:'none', stroke:t.success, strokeWidth:2,
+          style:{ transformBox:'fill-box', transformOrigin:'center', animation:'fRing 1.5s ease-out infinite' } }));
+      };
+      if (coach.kind === 'move'){ ck(coach.from, 'f'); ck(coach.to, 't'); } else ck(coach.to, 't');
+    }
+    // computer-move animation — a marker slides source→dest, then the cell rings
+    // computer/move animation — source pulse, landing ring, and the carried coins sliding across
+    if (_mover){
+      const a = s.aiAnim, ap = this.pal(a.owner), dur = (a.dur || 500) / 1000, ringDelay = (dur * 0.78).toFixed(2);
+      const destStack = displayBoard[a.to[0]][a.to[1]] || [];
+      const destCx = px(a.to[1]) + CS/2, destBaseY = py(a.to[0]) + CS/2 + 7;
+      const bottomCy = destBaseY - destStack.length * OFF;
+      let dx = 0, dy = -38;
+      if (!_mover.reserve){
+        const srcRemain = displayBoard[a.from[0]][a.from[1]] || [];
+        const srcCx = px(a.from[1]) + CS/2, srcBaseY = py(a.from[0]) + CS/2 + 7;
+        dx = srcCx - destCx; dy = (srcBaseY - srcRemain.length * OFF) - bottomCy;
+        overlays.push(h('rect', { key:'aifrom', x:px(a.from[1])+INSET, y:py(a.from[0])+INSET, width:CS-2*INSET, height:CS-2*INSET, rx:7,
+          fill:'none', stroke:ap.top, strokeWidth:2.4, strokeOpacity:0.85, style:{ animation:'fPulse '+(dur*0.5).toFixed(2)+'s ease-in-out 2' } }));
+      }
+      overlays.push(h('rect', { key:'airing', x:px(a.to[1])+INSET, y:py(a.to[0])+INSET, width:CS-2*INSET, height:CS-2*INSET, rx:9,
+        fill:'none', stroke:ap.top, strokeWidth:3, opacity:0,
+        style:{ transformBox:'fill-box', transformOrigin:'center', animation:'fRing .5s ease-out '+ringDelay+'s forwards' } }));
+      const mg = [];
+      mg.push(h('ellipse', { key:'msh', cx:destCx, cy:bottomCy + SIDE + 3, rx:R*0.96, ry:RY*0.9, fill:'#000', opacity:0.28 }));
+      for (let i = 0; i < _mover.pieces.length; i++){
+        const owner = _mover.pieces[i], p = this.pal(owner), top = (i === _mover.pieces.length - 1), cy = bottomCy - i*OFF;
+        mg.push(h('rect', { key:'mr'+i, x:destCx-R, y:cy, width:2*R, height:SIDE+1, fill:p.side }));
+        mg.push(h('ellipse', { key:'mb'+i, cx:destCx, cy:cy+SIDE, rx:R, ry:RY, fill:p.sideDark }));
+        mg.push(h('ellipse', { key:'mt'+i, cx:destCx, cy:cy, rx:R, ry:RY, fill: top ? ('url(#fb-'+this.gid(owner)+')') : p.top, stroke:p.rim, strokeOpacity:0.55, strokeWidth:0.8 }));
+        if (top) mg.push(h('ellipse', { key:'mgl'+i, cx:destCx-R*0.3, cy:cy-RY*0.32, rx:R*0.3, ry:RY*0.34, fill:p.topHi, opacity:0.6 }));
+      }
+      const topCy = bottomCy - (_mover.pieces.length - 1) * OFF;
+      mg.push(h('ellipse', { key:'mring', cx:destCx, cy:topCy, rx:R+4.5, ry:RY+4.5, fill:'none', stroke:ap.top, strokeWidth:2.5, opacity:0.92 }));
+      overlays.push(h('g', { key:'movegrp', style:{ '--fx':dx+'px', '--fy':dy+'px', animation:'fSlide '+dur+'s cubic-bezier(.34,.08,.16,1) both' } }, mg));
+    }
+
+    // stacks (draw upper rows first so towers from lower rows overlap correctly)
+    const ordered = E.CELLS.slice().sort((a,b) => a[0]-b[0]);
+    ordered.forEach(([r,c]) => {
+      const st = displayBoard[r][c]; if (!st || !st.length) return;
+      const key = r+','+c, cx = px(c) + CS/2, baseY = py(r) + CS/2 + 7;
+      const h0 = st.length;
+      // shadow
+      stacks.push(h('ellipse', { key:'sh'+key, cx, cy: baseY + 4, rx: R*0.96, ry: RY*0.92, fill:'#000', opacity:0.28 }));
+      for (let i = 0; i < h0; i++){
+        const cy = baseY - i*OFF, owner = st[i], p = this.pal(owner), top = (i === h0-1);
+        stacks.push(h('rect', { key:'cs'+key+i, x:cx-R, y:cy, width:2*R, height:SIDE+1, fill:p.side }));
+        stacks.push(h('ellipse', { key:'cb'+key+i, cx, cy:cy+SIDE, rx:R, ry:RY, fill:p.sideDark }));
+        stacks.push(h('ellipse', { key:'ct'+key+i, cx, cy, rx:R, ry:RY, fill: top ? ('url(#fb-'+this.gid(owner)+')') : p.top,
+          stroke:p.rim, strokeOpacity:0.55, strokeWidth:0.8 }));
+        if (top){
+          stacks.push(h('ellipse', { key:'cg'+key, cx:cx-R*0.3, cy:cy-RY*0.32, rx:R*0.3, ry:RY*0.34, fill:p.topHi, opacity:0.6 }));
+        }
+      }
+      // height badge for stacks >= 2
+      if (h0 >= 2){
+        const by = baseY - (h0-1)*OFF - RY - 5, bx = cx + R - 3;
+        stacks.push(h('circle', { key:'bd'+key, cx:bx, cy:by, r:8, fill:t.chrome, stroke:t.accent, strokeWidth:1 }));
+        stacks.push(h('text', { key:'bt'+key, x:bx, y:by+3.5, textAnchor:'middle', fontSize:10.5, fontWeight:700,
+          fill:t.text, fontFamily:'Space Grotesk, sans-serif' }, String(h0)));
+      }
+      // selectable cue
+      if (selset.has(key) && !(sel && sel.r===r && sel.c===c)){
+        stacks.push(h('ellipse', { key:'cue'+key, cx, cy: baseY + SIDE + 2, rx:R*0.5, ry:2.4, fill:t.accent, opacity:0.7 }));
+      }
+      // carry-count badge on target cells (over the stack)
+      if (tmap[key] && tmap[key].kind === 'move'){
+        const cnt = tmap[key].count;
+        overlays.push(h('circle', { key:'cy'+key, cx, cy: py(r)+CS/2, r:11, fill:t.accent, opacity:0.95 }));
+        overlays.push(h('text', { key:'cyt'+key, x:cx, y:py(r)+CS/2+4, textAnchor:'middle', fontSize:12, fontWeight:700,
+          fill:'#fff', fontFamily:'Space Grotesk, sans-serif' }, String(cnt)));
+      }
+    });
+    // carry badge on EMPTY target cells
+    if (!mini) E.CELLS.forEach(([r,c]) => {
+      const key = r+','+c, m = tmap[key];
+      if (m && m.kind === 'move' && (!g.board[r][c] || !g.board[r][c].length)){
+        const cx = px(c)+CS/2, cy = py(r)+CS/2;
+        overlays.push(h('text', { key:'ecy'+key, x:cx, y:cy+5, textAnchor:'middle', fontSize:15, fontWeight:700,
+          fill:t.accent, fontFamily:'Space Grotesk, sans-serif' }, String(m.count)));
+      }
+    });
+
+    // hit layer
+    if (!mini) E.CELLS.forEach(([r,c]) => {
+      const x = px(c), y = py(r), key = r+','+c;
+      const actionable = interactive && (tmap[key] || (selset.has(key)) || (sel && sel.r===r && sel.c===c));
+      hits.push(h('rect', { key:'hit'+key, x, y, width:CS, height:CS, fill:'transparent',
+        onClick: () => this.handleCell(r,c), style:{ cursor: actionable ? 'pointer' : 'default' } }));
+    });
+
+    const pad = 8, vbX = px(minC) - pad, vbY = py(minR) - 34, vbW = (maxC-minC+1)*CS + pad*2, vbH = (maxR-minR+1)*CS + 34 + pad;
+    // board backing
+    const plate = h('rect', { key:'plate', x:vbX+3, y:py(minR)-6, width:vbW-6, height:(maxR-minR+1)*CS+12, rx:14,
+      fill:t.boardBg, stroke:t.boardEdge, strokeWidth:1.5, opacity: mini?0.9:1 });
+
+    return h('svg', {
+      viewBox: vbX+' '+vbY+' '+vbW+' '+vbH, width:'100%',
+      style:{ width:'100%', height:'auto', maxWidth: mini ? '300px' : '430px', display:'block', overflow:'visible',
+        filter: t.kind==='light' ? 'drop-shadow(0 14px 26px rgba(60,45,20,0.22))' : 'drop-shadow(0 16px 30px rgba(0,0,0,0.45))' },
+    }, [defs, plate, ...tiles, ...stacks, ...overlays, ...hits]);
+  }
+
+  /* ---------- onboarding art ---------- */
+  onbArtFor(step){
+    const h = React.createElement, t = this.theme();
+    const coin = (cx, cy, owner, top) => { const p = this.pal(owner); return [
+      h('rect', { key:'r'+cx+cy+owner, x:cx-16, y:cy, width:32, height:7, fill:p.side }),
+      h('ellipse', { key:'b'+cx+cy+owner, cx, cy:cy+7, rx:16, ry:7, fill:p.sideDark }),
+      h('ellipse', { key:'tp'+cx+cy+owner, cx, cy, rx:16, ry:7, fill: top?p.top:p.top, stroke:p.rim, strokeOpacity:0.5, strokeWidth:0.8 }),
+    ]; };
+    const svg = (kids) => h('svg', { viewBox:'0 0 220 120', width:'100%', style:{ width:'100%', maxWidth:'240px', height:'auto' } }, kids);
+    if (step === 1){
+      // a 3-stack sliding 3 spaces
+      const k = [];
+      [[40, 'p2', false],[40,'p1',false]].forEach(()=>{});
+      // stack of 3 on left
+      [['p2',false],['p1',false],['p1',true]].forEach((o,i)=> coin(46, 86-i*7, o[0], o[1]).forEach(e=>k.push(e)));
+      // arrow
+      k.push(h('path', { key:'arr', d:'M70 70 L150 70', stroke:t.accent, strokeWidth:2.5, fill:'none', markerEnd:'' }));
+      k.push(h('path', { key:'arrh', d:'M150 64 L162 70 L150 76 Z', fill:t.accent }));
+      k.push(h('text', { key:'lbl', x:110, y:58, textAnchor:'middle', fontSize:13, fontWeight:700, fill:t.text, fontFamily:'Space Grotesk' }, '3 pieces → 3 squares'));
+      // dest
+      [['p1',true]].forEach((o)=> coin(178, 86, o[0], o[1]).forEach(e=>k.push(e)));
+      return svg(k);
+    }
+    if (step === 2){
+      const k = [];
+      // tall stack of 5 + overflow spilling
+      [['p2',false],['p2',false],['p1',false],['p1',false],['p1',true]].forEach((o,i)=> coin(80, 92-i*7, o[0], o[1]).forEach(e=>k.push(e)));
+      k.push(h('text', { key:'cap', x:80, y:30, textAnchor:'middle', fontSize:12, fontWeight:700, fill:t.text, fontFamily:'Space Grotesk' }, 'max 5'));
+      // spilled green -> reserve (right), red -> captured
+      coin(150, 64, 'p1', true).forEach(e=>k.push(e));
+      k.push(h('text', { key:'res', x:150, y:90, textAnchor:'middle', fontSize:10.5, fontWeight:600, fill:t.success, fontFamily:'Hanken Grotesk' }, 'reserve'));
+      coin(196, 64, 'p2', true).forEach(e=>k.push(e));
+      k.push(h('text', { key:'cp', x:196, y:90, textAnchor:'middle', fontSize:10.5, fontWeight:600, fill:t.danger, fontFamily:'Hanken Grotesk' }, 'captured'));
+      return svg(k);
+    }
+    // step 3 — control & win
+    const k = [];
+    [['p2',false],['p2',false],['p1',true]].forEach((o,i)=> coin(70, 86-i*7, o[0], o[1]).forEach(e=>k.push(e)));
+    k.push(h('text', { key:'c', x:70, y:34, textAnchor:'middle', fontSize:11, fontWeight:700, fill:t.text, fontFamily:'Space Grotesk' }, 'your top = your stack'));
+    k.push(h('text', { key:'w', x:160, y:62, textAnchor:'middle', fontSize:12.5, fontWeight:700, fill:t.accent, fontFamily:'Space Grotesk' }, 'Strand your'));
+    k.push(h('text', { key:'w2', x:160, y:80, textAnchor:'middle', fontSize:12.5, fontWeight:700, fill:t.accent, fontFamily:'Space Grotesk' }, 'rival to win'));
+    return svg(k);
+  }
+
+  /* ---------- render ---------- */
+  renderVals(){
+    const t = this.theme(), s = this.state, E = this.E(), g = s.game;
+    const ui = "'Hanken Grotesk', system-ui, sans-serif", disp = "'Space Grotesk', sans-serif";
+    const ink = t.text, dim = t.textDim, faint = t.textFaint;
+
+    // shared button styles
+    const primaryBtn = `flex:1;padding:14px 16px;border-radius:13px;border:none;background:${t.accent};color:${t.kind==='light'?'#fff':t.chrome};font-family:${ui};font-size:13px;font-weight:800;letter-spacing:.6px;cursor:pointer;box-shadow:0 8px 22px -10px ${t.accentGlow};`;
+    const ghostBtn = `flex:1;padding:12px 12px;border-radius:12px;border:1px solid ${t.panelBorder};background:${t.panel};color:${ink};font-family:${ui};font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;backdrop-filter:blur(6px);`;
+    const dangerBtn = `flex:1;padding:12px 12px;border-radius:12px;border:1px solid ${t.danger};background:transparent;color:${t.danger};font-family:${ui};font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;`;
+    const iconBtn = `width:38px;height:38px;flex:none;border-radius:11px;border:1px solid ${t.panelBorder};background:${t.panel};color:${ink};font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;`;
+    const seg = (active) => `flex:1;padding:9px 4px;border-radius:10px;border:1px solid ${active?t.accent:t.panelBorder};background:${active?t.accent:t.panel};color:${active?(t.kind==='light'?'#fff':t.chrome):dim};font-family:${ui};font-size:11px;font-weight:700;letter-spacing:.3px;cursor:pointer;transition:all .15s;`;
+
+    const out = {
+      rootStyle: `position:relative;min-height:100vh;width:100%;font-family:${ui};color:${ink};background:${t.bg};`,
+      stageStyle: `position:relative;z-index:1;width:100%;max-width:460px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:20px 16px calc(22px + env(safe-area-inset-bottom,0px));`,
+      colFill: `display:flex;flex-direction:column;gap:14px;flex:1;animation:fFade .25s ease;`,
+      kickerStyle: `font-family:${ui};font-size:10px;letter-spacing:3px;color:${dim};text-transform:uppercase;font-weight:700;`,
+      wordmarkStyle: `margin:3px 0 0;font-family:${disp};font-weight:700;font-size:46px;line-height:.9;letter-spacing:-1.5px;color:${ink};`,
+      taglineStyle: `margin-top:8px;font-size:13.5px;color:${dim};font-weight:500;`,
+      primaryBtnStyle: primaryBtn, ghostBtnStyle: ghostBtn, dangerBtnStyle: dangerBtn, iconBtnStyle: iconBtn,
+      screenTitleStyle: `margin:0;font-family:${disp};font-weight:700;font-size:24px;letter-spacing:-.5px;color:${ink};`,
+      segLabelStyle: `font-size:10px;letter-spacing:2px;color:${faint};text-transform:uppercase;font-weight:700;margin-top:6px;`,
+      segRowStyle: `display:flex;gap:6px;width:100%;`,
+      optColStyle: `display:flex;flex-direction:column;gap:8px;width:100%;`,
+      optTitleStyle: `font-size:13.5px;font-weight:700;color:${ink};`,
+      optDescStyle: `font-size:11.5px;color:${dim};margin-top:2px;line-height:1.35;`,
+
+      // screen flags
+      isOnboarding: s.screen === 'onboarding',
+      isHome: s.screen === 'home',
+      isPlay: s.screen === 'play',
+      isHistory: s.screen === 'history',
+      isSettings: s.screen === 'settings',
+      showRules: s.showRules,
+      gameOver: s.screen === 'play' && !!(g && g.winner),
+
+      // nav handlers
+      onMenu: () => this.go('home'),
+      onPlay: () => this.newGame(),
+      onResume: () => this.go('play'),
+      onSettings: () => this.go('settings'),
+      onHistory: () => this.go('history'),
+      onLearn: () => { this.setState({ onbStep: 1, screen: 'onboarding' }); },
+      onTheme: () => this.cycleTheme(),
+      onNew: () => this.newGame(),
+      onUndo: () => this.undo(),
+      onHints: () => this.toggleCoach(),
+      onRules: () => this.toggleRules(),
+      onCoachToggle: () => this.toggleCoach(),
+      onReserveMode: () => this.toggleReserveMode(),
+      onNext: () => this.nextOnb(),
+      onSkip: () => this.skipOnb(),
+      onToggleAssist: () => this.toggleAssist(),
+      onToggleCoach: () => this.toggleCoach(),
+      onClearHistory: () => this.clearHistory(),
+      onResetAll: () => this.resetAll(),
+
+      themeName: t.name,
+      themeChipStyle: `padding:9px 14px;border-radius:999px;border:1px solid ${t.accent};background:transparent;color:${t.accent};font-family:${ui};font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;white-space:nowrap;flex:none;`,
+      playLabel: 'NEW GAME',
+      resumable: !!g && !g.winner,
+      resumeBtnStyle: ghostBtn + `flex:1;`,
+    };
+
+    // ----- onboarding -----
+    if (s.screen === 'onboarding'){
+      const steps = [
+        { title:'Move by stacking', body:'Lift the top pieces of a stack and slide them in a straight line — as many squares as pieces you lift. Single pieces move one square; a stack of three can travel three.' },
+        { title:'Five is the ceiling', body:'When piles merge, no stack may stand taller than five. Pieces spill off the bottom: your own become reusable reserves, your rival’s are captured for good.' },
+        { title:'Control & conquer', body:'You command any stack your colour caps — even atop the enemy. Box your opponent in until they cannot move, and the board is yours.' },
+      ];
+      const st = steps[s.onbStep - 1];
+      out.onbArtWrap = `display:flex;align-items:center;justify-content:center;height:140px;margin-bottom:6px;`;
+      out.onbArt = this.onbArtFor(s.onbStep);
+      out.onbTitle = st.title; out.onbBody = st.body;
+      out.onbTitleStyle = `font-family:${disp};font-weight:700;font-size:23px;letter-spacing:-.5px;color:${ink};margin-bottom:8px;text-align:center;`;
+      out.onbBodyStyle = `font-size:14px;line-height:1.55;color:${dim};text-align:center;`;
+      out.onbCardStyle = `flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 22px;border-radius:20px;border:1px solid ${t.panelBorder};background:${t.panel};backdrop-filter:blur(8px);`;
+      out.onbDotsStyle = `display:flex;gap:7px;justify-content:center;margin-top:20px;`;
+      out.onbDots = [1,2,3].map(i => React.createElement('span', { key:i, style:{ width: i===s.onbStep?'22px':'7px', height:'7px', borderRadius:'4px', background: i===s.onbStep?t.accent:t.panelBorder, transition:'all .2s' } }));
+      out.onbNextLabel = s.onbStep < 3 ? 'NEXT' : 'START PLAYING';
+    }
+
+    // ----- home -----
+    if (s.screen === 'home'){
+      out.heroCardStyle = `display:flex;align-items:center;justify-content:center;padding:18px;border-radius:20px;border:1px solid ${t.panelBorder};background:${t.panel};backdrop-filter:blur(8px);`;
+      out.heroBoard = this.miniBoard();
+      const wins = s.history.filter(x => (x.you !== undefined ? x.you : x.result === 'won')).length;
+      let streak = 0; for (const m of s.history){ if (m.you !== undefined ? m.you : m.result === 'won') streak++; else break; }
+      out.stats = [ { k:'PLAYED', v:String(s.history.length) }, { k:'WON', v:String(wins) }, { k:'STREAK', v:String(streak) } ];
+      out.statRowStyle = `display:flex;gap:10px;width:100%;`;
+      out.statCellStyle = `flex:1;padding:12px 8px;border-radius:13px;border:1px solid ${t.panelBorder};background:${t.panel};text-align:center;`;
+      out.statValStyle = `font-family:${disp};font-weight:700;font-size:24px;color:${ink};line-height:1;`;
+      out.statKeyStyle = `font-size:9.5px;letter-spacing:1.5px;color:${dim};text-transform:uppercase;margin-top:5px;font-weight:700;`;
+    }
+    // level options (home + settings)
+    const levels = [['novice','Novice'],['club','Club'],['strong','Strong'],['expert','Expert'],['hotseat','Hotseat']];
+    out.levelOpts = levels.map(([k,l]) => ({ label:l, on:() => this.setLevel(k), style: seg(s.level === k) }));
+    out.levelOpts2 = out.levelOpts;
+    const pls = [[2,'2 Players'],[4,'4 Players']];
+    out.playerOpts = pls.map(([n,l]) => ({ label:l, on:() => this.setPlayers(n), style: seg(s.players === n) }));
+    out.playerOpts2 = out.playerOpts;
+
+    // ----- play -----
+    if (s.screen === 'play' && g){
+      out.playColStyle = `display:flex;flex-direction:column;gap:12px;flex:1;animation:fFade .25s ease;`;
+      out.matchLabel = (this.numPlayers() === 4 ? '4 PLAYERS' : '2 PLAYERS') + ' · ' + (this.isAI() ? ('VS ' + this.levelLabel(s.level).toUpperCase()) : 'HOTSEAT');
+      out.playKickerStyle = `font-size:10px;letter-spacing:2px;color:${dim};font-weight:700;`;
+      out.playTitleStyle = `font-family:${disp};font-weight:700;font-size:20px;letter-spacing:-.5px;color:${ink};line-height:1;`;
+      const turnCol = this.pal(g.turn).top;
+      out.turnPillStyle = `display:flex;align-items:center;gap:7px;padding:7px 13px;border-radius:999px;border:1px solid ${t.panelBorder};background:${t.panel};font-size:11.5px;font-weight:700;color:${ink};flex:none;`;
+      out.turnDotStyle = `width:10px;height:10px;border-radius:50%;background:${turnCol};box-shadow:0 0 0 3px ${turnCol}33;`;
+      out.turnText = g.winner ? 'Finished' : (s.thinking ? 'Thinking…' : this.nm(g.turn));
+
+      // status
+      let status;
+      if (g.winner) status = this.nm(g.winner) + ' wins';
+      else if (s.thinking) status = this.nm(g.turn) + ' is thinking…';
+      else if (s.reserveMode) status = 'Reserve: tap any square to drop a piece — or tap RESERVE again to cancel';
+      else if (s.sel) status = 'Tap a glowing square to move (the number = pieces carried), or tap the stack to cancel';
+      else status = this.nm(g.turn) + ' to move — tap one of your stacks to lift it';
+      out.status = status;
+      out.statusStyle = `min-height:50px;display:flex;align-items:center;justify-content:center;padding:8px 14px;border-radius:12px;border:1px solid ${t.panelBorder};background:${t.panel};color:${dim};font-size:12.5px;font-weight:600;text-align:center;`;
+
+      out.boardWrapStyle = `display:flex;align-items:center;justify-content:center;padding:2px 0;`;
+
+      // coach — compute BEFORE drawing the board so its outline renders this same pass
+      this._coachMove = null;
+      let coachLine = '';
+      const coachActive = s.coachOn && this.isHumanTurn() && !s.thinking && !s.reserveMode;
+      if (coachActive){
+        const cm = E.chooseMove(g, 'expert', () => 0.5);
+        if (cm){
+          this._coachMove = cm;
+          if (cm.kind === 'reserve') coachLine = 'Coach: drop a reserve on ' + this.cellName(cm.to);
+          else coachLine = 'Coach: carry ' + cm.count + ' from ' + this.cellName(cm.from) + ' → ' + this.cellName(cm.to);
+        }
+      }
+      out.board = this.renderBoard();
+      out.showCoach = coachActive && !!coachLine;
+      out.coachSlot = s.coachOn;
+      out.coachSlotStyle = `min-height:44px;display:flex;align-items:stretch;`;
+      out.coachLine = coachLine;
+      out.coachBtnLabel = 'HIDE';
+      out.coachStyle = `display:flex;align-items:center;gap:10px;padding:9px 11px 9px 13px;border-radius:12px;border:1px solid ${t.success};background:linear-gradient(180deg, ${t.success}22, ${t.success}0d);color:${ink};font-size:12px;font-weight:600;`;
+      out.coachDotStyle = `width:9px;height:9px;border-radius:50%;flex:none;background:${t.success};box-shadow:0 0 0 3px ${t.success}33;`;
+      out.coachBtnStyle = `flex:none;padding:5px 11px;border-radius:8px;border:1px solid ${t.success};background:transparent;color:${t.success};font-family:${ui};font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;`;
+
+      // panels (one per active player)
+      const players = g.players || ['p1','p2'];
+      out.panelsWrapStyle = `display:flex;flex-wrap:wrap;gap:8px;width:100%;`;
+      out.panelStatStyle = `font-size:12px;font-weight:700;color:${ink};margin-top:2px;`;
+      out.panelSubStyle = `font-size:10.5px;font-weight:500;color:${dim};`;
+      out.playerPanels = players.map((p) => {
+        const pc = this.pal(p), active = !g.winner && g.turn === p;
+        const aliveP = E.controlled(g, p) > 0 || g.reserves[p] > 0;
+        const basis = players.length > 2 ? 'flex:1 1 calc(50% - 4px);' : 'flex:1;';
+        let nm = this.nm(p);
+        if (this.isAISeat(p)) nm += ' · AI'; else if (p === 'p1' && this.isAI()) nm += ' · you';
+        return {
+          name: nm, reserve: g.reserves[p], lost: g.captured[p],
+          swatchStyle: `width:24px;height:24px;border-radius:50%;flex:none;background:radial-gradient(circle at 36% 30%, ${pc.topHi}, ${pc.top} 42%, ${pc.side} 100%);box-shadow:inset 0 -2px 3px ${pc.rim};border:1px solid ${pc.rim};opacity:${aliveP?1:0.4};`,
+          nameStyle: `font-size:12px;font-weight:700;color:${aliveP?ink:dim};`,
+          style: `${basis}position:relative;display:flex;gap:10px;align-items:center;padding:10px 12px;border-radius:13px;border:1px solid ${active?t.accent:t.panelBorder};background:${t.panel};box-shadow:${active?`0 0 0 1px ${t.accent}`:'none'};opacity:${aliveP?1:0.6};transition:all .2s;`,
+        };
+      });
+
+      // reserve button
+      out.canReserve = this.isHumanTurn() && g.reserves[g.turn] > 0;
+      out.reserveBtnLabel = s.reserveMode ? 'CANCEL RESERVE' : ('PLACE A RESERVE · ' + g.reserves[g.turn] + ' held');
+      out.reserveBtnStyle = `width:100%;padding:11px;border-radius:12px;border:1px solid ${s.reserveMode?t.accent:t.success};background:${s.reserveMode?t.accent:'transparent'};color:${s.reserveMode?(t.kind==='light'?'#fff':t.chrome):t.success};font-family:${ui};font-size:11.5px;font-weight:700;letter-spacing:.5px;cursor:pointer;`;
+
+      out.actionRowStyle = `display:flex;gap:7px;width:100%;`;
+      out.actBtnStyle = `flex:1;padding:11px 4px;border-radius:11px;border:1px solid ${t.panelBorder};background:${t.panel};color:${ink};font-family:${ui};font-size:10.5px;font-weight:700;letter-spacing:.4px;cursor:pointer;`;
+      out.undoBtnStyle = out.actBtnStyle + `opacity:${s.hist.length && !s.thinking ? '1':'.4'};`;
+      out.coachToggleLabel = s.coachOn ? 'COACH ON' : 'COACH';
+
+      // win modal
+      const lost = this.isAI() && g.winner !== 'p1';
+      const winCol = lost ? t.danger : t.accent;
+      out.winScrimStyle = `position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.55);animation:fFade .25s ease;`;
+      out.winCardStyle = `position:fixed;left:50%;top:50%;z-index:41;transform:translate(-50%,-50%);width:calc(100% - 48px);max-width:340px;background:${t.chrome};border:1px solid ${t.panelBorder};border-radius:20px;padding:28px 26px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.55), 0 0 0 1px ${winCol};animation:fHop .3s ease both;`;
+      out.winKickerStyle = `font-size:10px;letter-spacing:3px;color:${dim};text-transform:uppercase;font-weight:700;`;
+      out.winTitleStyle = `font-family:${disp};font-weight:700;font-size:34px;color:${winCol};margin:8px 0 6px;letter-spacing:-.5px;`;
+      out.winReasonStyle = `font-size:13px;color:${dim};margin-bottom:20px;`;
+      out.winnerText = g.winner ? (this.isAI() ? (lost ? 'You lost' : 'You win') : this.nm(g.winner) + ' wins') : '';
+      out.winnerReason = g.winner ? ((this.numPlayers() === 4 ? 'Last colour standing' : 'Opponent stranded') + ' after ' + s.moves + ' moves.') : '';
+    } else {
+      out.gameOver = false;
+    }
+
+    // ----- history -----
+    if (s.screen === 'history'){
+      out.hasHistory = s.history.length > 0;
+      out.noHistory = s.history.length === 0;
+      out.histListStyle = `display:flex;flex-direction:column;gap:8px;width:100%;`;
+      out.emptyStyle = `flex:1;display:flex;align-items:center;justify-content:center;text-align:center;color:${dim};font-size:13.5px;padding:40px 20px;`;
+      out.histResultStyle = `font-size:13.5px;font-weight:700;color:${ink};`;
+      out.histMetaStyle = `font-size:11.5px;color:${dim};margin-top:2px;`;
+      out.histWhenStyle = `font-size:11px;color:${faint};font-weight:600;flex:none;`;
+      out.historyItems = s.history.map((m) => {
+        const winner = m.winner || (m.result === 'green' ? 'p1' : m.result === 'red' ? 'p2' : null);
+        const isAi = m.ai !== undefined ? m.ai : (m.mode === 'ai');
+        const youWon = m.you !== undefined ? m.you : (m.result === 'won' || m.result === 'green');
+        const np = m.players || 2;
+        const colName = this.nm(winner);
+        let title, badge, badgeBg;
+        if (isAi){ title = youWon ? 'Victory' : 'Defeat'; badge = youWon ? 'W' : 'L'; badgeBg = youWon ? t.success : t.danger; }
+        else { title = colName + ' won'; badge = (colName || '?').charAt(0); badgeBg = (this.pal(winner) || this.GREEN).top; }
+        const meta = (np === 4 ? '4P' : '2P') + ' · ' + (isAi ? ('vs ' + this.levelLabel(m.level)) : 'Hotseat') + ' · ' + m.moves + ' moves';
+        return {
+          title, badge, meta, when: this.timeAgo(m.when),
+          rowStyle: `display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:13px;border:1px solid ${t.panelBorder};background:${t.panel};`,
+          badgeStyle: `width:30px;height:30px;flex:none;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:${disp};font-weight:700;font-size:14px;color:#fff;background:${badgeBg};`,
+        };
+      });
+    }
+
+    // ----- settings -----
+    if (s.screen === 'settings'){
+      out.themeOpts = Object.keys(this.THEMES).map(k => {
+        const th = this.THEMES[k], active = s.theme === k;
+        return {
+          label: th.name, desc: ({studio:'Bright modernist gallery',walnut:'Warm classic tabletop',midnight:'Cool dark slate'})[k],
+          on: () => this.setTheme(k),
+          swatchStyle: `width:30px;height:30px;flex:none;border-radius:9px;background:${th.bg};border:1px solid ${th.panelBorder};box-shadow:inset 0 0 0 2px ${th.accent}55;`,
+          checkStyle: `font-size:16px;color:${t.accent};flex:none;width:20px;text-align:center;`,
+          check: active ? '✓' : '',
+          style: `display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;border-radius:13px;border:1px solid ${active?t.accent:t.panelBorder};background:${t.panel};cursor:pointer;text-align:left;`,
+        };
+      });
+      out.setupOpts = Object.keys(E ? E.SETUPS : {checker:1,stripes:1,pinwheel:1}).map(k => {
+        const su = E ? E.SETUPS[k] : { name:k, blurb:'' }, active = s.setup === k;
+        return {
+          label: su.name, desc: su.blurb,
+          on: () => this.setSetup(k),
+          checkStyle: `font-size:16px;color:${t.accent};flex:none;width:20px;text-align:center;`,
+          check: active ? '✓' : '',
+          style: `display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;border-radius:13px;border:1px solid ${active?t.accent:t.panelBorder};background:${t.panel};cursor:pointer;`,
+        };
+      });
+      const knob = (on) => `width:46px;height:27px;flex:none;border-radius:999px;background:${on?t.accent:t.panelBorder};position:relative;transition:background .2s;`;
+      const dot = (on) => `position:absolute;top:3px;left:${on?'22px':'3px'};width:21px;height:21px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3);`;
+      out.toggleRowStyle = `display:flex;align-items:center;gap:12px;width:100%;padding:11px 13px;border-radius:13px;border:1px solid ${t.panelBorder};background:${t.panel};cursor:pointer;`;
+      out.assistKnobStyle = knob(s.assists); out.assistDotStyle = dot(s.assists);
+      out.coachKnobStyle = knob(s.coachOn); out.coachDot2Style = dot(s.coachOn);
+    }
+
+    // ----- rules sheet -----
+    out.scrimStyle = `position:fixed;inset:0;z-index:30;background:rgba(0,0,0,.5);animation:fFade .2s ease;`;
+    out.sheetStyle = `position:fixed;left:50%;bottom:0;z-index:31;transform:translateX(-50%);width:100%;max-width:460px;background:${t.chrome};border-top:1px solid ${t.panelBorder};border-radius:22px 22px 0 0;padding:24px 22px calc(24px + env(safe-area-inset-bottom,0px));box-shadow:0 -20px 50px rgba(0,0,0,.5);animation:fHop .3s ease both;max-height:88vh;overflow:auto;`;
+    out.sheetTitleStyle = `font-family:${disp};font-weight:700;font-size:24px;letter-spacing:-.5px;color:${ink};margin-bottom:14px;`;
+    out.sheetBodyStyle = `font-size:13.5px;line-height:1.55;color:${dim};`;
+    out.ruleHeadStyle = `color:${t.accent};font-weight:700;`;
+
+    return out;
+  }
+
+  cellName(rc){ return String.fromCharCode(65 + rc[1]) + (8 - rc[0]); }
+  timeAgo(ts){
+    const d = Date.now() - ts, m = Math.floor(d/60000), hr = Math.floor(d/3600000), dy = Math.floor(d/86400000);
+    if (m < 1) return 'now'; if (m < 60) return m + 'm'; if (hr < 24) return hr + 'h'; if (dy < 7) return dy + 'd';
+    return new Date(ts).toLocaleDateString(undefined, { month:'short', day:'numeric' });
+  }
+}
+</script>
+</body>
+</html>

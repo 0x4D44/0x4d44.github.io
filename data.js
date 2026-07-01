@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "focus",
+    title: "Focus",
+    tagline: "Sid Sackson's 1963 Spiel-des-Jahres classic (a.k.a. Domination): a stack moves as many squares as it is tall, and you control any pile your colour caps. Overflow past five spills off the bottom — your own return as reserves, the rest are captured. Two- or four-player, an AI ladder or pass-and-play, three hand-built themes. Installable offline.",
+    url: "https://0x4d44.github.io/focus/",
+    illustration: "ill-focus",
+    date: "2026-07-01T12:00:00",
+    year: 1963,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "pylos",
     title: "Pylos",
     tagline: "The rising-pyramid strategy game: place spheres on a 4×4 base and build upward — whoever crowns the single apex wins. The twist: neither side has enough spheres to fill it alone, so you win them back by completing squares and raising your own. A phone-first match against an AI, built in React and installable offline.",
