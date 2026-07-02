@@ -1,0 +1,15 @@
+{
+  "name": "Nihon Quest — Japanese Travel RPG",
+  "short_name": "Nihon Quest",
+  "description": "A calm retro Japanese travel RPG for practical UK-to-Japan travel language learning.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#1a2430",
+  "theme_color": "#1a2430",
+  "categories": ["education", "travel", "language"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
