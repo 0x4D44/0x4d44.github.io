@@ -691,6 +691,17 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "estimation-whist-game",
+    title: "Estimation Whist",
+    tagline: "A playable rebuild of the 1994 Pascal card game: bid against three AI opponents across a full 25-round match, with a coach, house rules and three table themes. Built on a tiny HTML-template runtime that renders React in the browser — no build step.",
+    url: "https://0x4d44.github.io/estimation-whist-game/",
+    illustration: "ill-cards",
+    date: "2026-07-02T23:00:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "nonogram",
     title: "NONOGRAM.EXE",
     tagline: "A codebase walkthrough of a nonogram (picross) puzzle solver.",
