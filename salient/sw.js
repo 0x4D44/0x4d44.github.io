@@ -1,6 +1,6 @@
 // Salient — offline service worker. Cache-first for the app shell so the
 // game launches with no network once installed.
-const CACHE = 'salient-v1';
+const CACHE = 'salient-v2';
 const ASSETS = [
   './',
   'index.html',

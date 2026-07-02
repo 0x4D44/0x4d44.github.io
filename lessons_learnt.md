@@ -3,6 +3,14 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-02 — A CSS `@keyframes` that animates `transform` fully **replaces**
+  an element's base `transform`, including the centring offset. A modal centred
+  with `transform:translate(-50%,-50%)` + `animation` whose keyframes only set
+  `translateY(…)` ends up anchored by its top-left corner at the viewport centre
+  and gets chopped on narrow/mobile screens (with `fill:both` it stays wrong
+  after the anim). Fix: bake the centring offset into every keyframe
+  (`transform:translate(-50%,-50%) translateY(…)`), or centre via fl/positioning
+  instead of transform. Hit both dialogs in `salient/` (win card + rules sheet).
 - 2026-06-22 — The Quarto export emits some glyphs as `\uXXXX` in JSX **text**
   position (e.g. `<div>→</div>`), which React renders as the literal string
   `→`, not the arrow. On every re-import, grep each changed `.jsx` for an
