@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Nihon Quest icon">
+  <rect width="512" height="512" fill="#1a2430"/>
+  <path d="M56 384h400v48H56z" fill="#ebc56f"/>
+  <path d="M88 352h336v32H88z" fill="#2f4656"/>
+  <path d="M122 306h268l-54 46H176z" fill="#85c6ff"/>
+  <path d="M256 64l144 242H112z" fill="#f8f0d8"/>
+  <path d="M256 64l64 242H112z" fill="#5f7b6b"/>
+  <rect x="202" y="282" width="108" height="102" fill="#c04747" stroke="#101820" stroke-width="12"/>
+  <rect x="226" y="226" width="60" height="56" fill="#dba77e" stroke="#101820" stroke-width="10"/>
+  <path d="M220 224h72v28h-72z" fill="#2b1e24"/>
+  <path d="M174 398h164" stroke="#101820" stroke-width="18" stroke-linecap="square"/>
+  <text x="256" y="178" text-anchor="middle" font-size="96" font-family="monospace" font-weight="900" fill="#c04747">日</text>
+</svg>
