@@ -38,6 +38,17 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "humanity-retention",
+    title: "Humanity Retention Programme",
+    tagline: "A satirical mobile-first strategy game about keeping civilisation intact through fictional crises: manage regions, research, public trust, economy, misinformation and a suspicious administrative AI. Installable offline PWA with campaign and quick-play modes, local saves, procedural audio and deterministic vanilla JS simulation.",
+    url: "https://0x4d44.github.io/humanity-retention/",
+    illustration: "ill-population",
+    date: "2026-07-02T19:10:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "japanese-travel-rpg",
     title: "Nihon Quest",
     tagline: "A mobile-first Japanese travel RPG for getting around Japan: follow a UK-to-Japan route through airports, stations, konbini, temples and side trips, learning practical phrases, signs and etiquette as you go. Offline PWA with SRS review, searchable phrasebook, speech buttons, scripted roleplay and optional BYO-key AI practice.",
