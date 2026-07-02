@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "midi-observatory",
+    title: "Asterion MIDI Observatory",
+    tagline: "A browser MIDI listening room: play generated demo constellations or upload .mid files, then drive a Web Audio synth with presets, per-channel controls, an animated sky visualizer and WAV export. Self-contained static app with a manifest and service worker — no runtime network calls.",
+    url: "https://0x4d44.github.io/midi-observatory/",
+    illustration: "ill-wave",
+    date: "2026-07-02T20:22:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "vamos-spanish",
     title: "¡Vamos!: Spanish Learning App",
     tagline: "A Duolingo-style Spanish course in an iOS device frame: 26 units across six Spanish-speaking cities, each with vocabulary, sentences, grammar drills and listening exercises, plus streaks, XP, combos and badges. Text-to-speech reads every phrase aloud. Built on a tiny HTML-template runtime that renders React in the browser — no build step.",

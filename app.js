@@ -23,6 +23,11 @@
   const essays = window.ESSAYS || [];
   // A page may carry one `tag` (string) or several via `tags` (array).
   const tagsOf = (e) => e.tags || (e.tag ? [e.tag] : []);
+  const hasNumber = (v) => Number.isFinite(v);
+  const readingText = (e) => hasNumber(e.readingMin) ? `${e.readingMin}m` : "";
+  const wordsText = (e, suffix) => hasNumber(e.words) ? `${(e.words / 1000).toFixed(1)}k${suffix}` : "";
+  const sizeMobileParts = (e) => [readingText(e), wordsText(e, " w")].filter(Boolean);
+  const sizeText = (e) => [readingText(e), wordsText(e, "")].filter(Boolean).join(" · ");
 
   function el(tag, attrs, children) {
     const e = document.createElement(tag);
@@ -132,8 +137,7 @@
       el("div", { class: "row-title" }, essay.title),
       el("div", { class: "row-tagline" }, essay.tagline),
       el("div", { class: "row-meta-mobile" }, [
-        el("span", null, `${essay.readingMin}m`),
-        el("span", null, `${(essay.words/1000).toFixed(1)}k w`),
+        ...sizeMobileParts(essay).map(text => el("span", null, text)),
         el("span", null, tagsOf(essay).join(" · ")),
         el("span", null, String(essay.year)),
         el("span", { class: essay.real ? "pub" : "drf" }, essay.real ? "[PUB]" : "[DRAFT]"),
@@ -143,7 +147,7 @@
     wrapper.appendChild(fig);
     wrapper.appendChild(titleBlock);
     wrapper.appendChild(el("span", { class: "row-tag" }, tagsOf(essay).join(" · ")));
-    wrapper.appendChild(el("span", { class: "row-size" }, `${essay.readingMin}m · ${(essay.words/1000).toFixed(1)}k`));
+    wrapper.appendChild(el("span", { class: "row-size" }, sizeText(essay)));
     wrapper.appendChild(el("span", { class: "row-year" }, String(essay.year)));
     wrapper.appendChild(el("span", {
       class: "row-state " + (essay.real ? "published" : "draft")
@@ -166,7 +170,7 @@
     wrapper.appendChild(el("div", { class: "card-title" }, essay.title));
     wrapper.appendChild(el("div", { class: "card-tagline" }, essay.tagline));
     wrapper.appendChild(el("div", { class: "card-foot" }, [
-      el("span", null, `${essay.readingMin}m · ${(essay.words/1000).toFixed(1)}k`),
+      el("span", null, sizeText(essay)),
       el("span", { class: essay.real ? "published" : "draft" }, essay.real ? "[PUB]" : "[DRAFT]"),
     ]));
     return wrapper;
