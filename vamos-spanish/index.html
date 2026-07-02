@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#c75b39">
+<title>¡Vamos! — Spanish Learning App</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#efe6d4;min-height:100vh;display:grid;place-items:center;padding:20px;box-sizing:border-box;font-family:'Nunito',sans-serif}
+@keyframes vpulse{0%,100%{box-shadow:0 6px 0 #9c3f26,0 0 0 8px #f0d9c7}50%{box-shadow:0 6px 0 #9c3f26,0 0 0 14px #f0d9c7}}
+@keyframes vstar{0%{transform:scale(.2) rotate(-30deg)}70%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes vup{from{opacity:0;transform:translateY(14px)}}
+input::placeholder{color:#b9a888}
+</style>
+</helmet>
+
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#faf3e7;font-family:'Nunito',sans-serif;box-sizing:border-box;padding-top:62px;overflow:hidden">
+
+<!-- ═══════════════════════════ HOME ═══════════════════════════ -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div data-screen-label="Home" style="display:flex;flex-direction:column;height:100%;min-height:0">
+
+  <!-- stats header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px 10px;flex:none">
+    <div style="display:flex;align-items:center;gap:8px"><div style="width:28px;height:28px;border-radius:50%;background:#c75b39;display:grid;place-items:center"><div style="width:13px;height:13px;background:#f2b134;border-radius:50% 50% 50% 0;transform:rotate(-45deg)"></div></div><span style="font:800 17px 'Baloo 2',sans-serif;color:#3d2c22">¡Vamos!</span></div>
+    <div style="display:flex;gap:8px">
+      <div title="Day streak" style="display:flex;align-items:center;gap:6px;background:#f6e3c5;border-radius:999px;padding:5px 12px"><div style="width:11px;height:11px;background:#c75b39;border-radius:50% 50% 50% 0;transform:rotate(-45deg)"></div><span style="font:900 14px 'Nunito',sans-serif;color:#a4442a">{{ streak }}</span></div>
+      <div title="Total XP" style="display:flex;align-items:center;gap:6px;background:#dcebe4;border-radius:999px;padding:5px 12px"><div style="width:10px;height:10px;background:#20635b;border-radius:3px;transform:rotate(45deg)"></div><span style="font:900 14px 'Nunito',sans-serif;color:#20635b">{{ xp }} XP</span></div>
+    </div>
+  </div>
+
+  <!-- scrollable tab content -->
+  <div style="flex:1;overflow-y:auto;min-height:0;padding-bottom:12px">
+
+    <!-- ── LEARN TAB ── -->
+    <sc-if value="{{ tabLearn }}" hint-placeholder-val="{{ true }}">
+      <!-- daily goal -->
+      <div style="margin:2px 18px 0;display:flex;align-items:center;gap:14px;background:#f3e7cf;border-radius:18px;padding:12px 16px">
+        <div style="width:46px;height:46px;border-radius:50%;background:conic-gradient(#c75b39 0 {{ dailyPctCss }},#e4d2b2 {{ dailyPctCss }} 100%);display:grid;place-items:center;flex:none"><div style="width:34px;height:34px;border-radius:50%;background:#f3e7cf;display:grid;place-items:center;font:900 11px 'Nunito',sans-serif;color:#a4442a">{{ dailyPct }}%</div></div>
+        <div><div style="font:800 14px 'Nunito',sans-serif;color:#3d2c22">Meta diaria</div><div style="font:700 12px 'Nunito',sans-serif;color:#8a7057">{{ dailyLine }}</div></div>
+      </div>
+
+      <!-- character greeting -->
+      <div style="display:flex;gap:12px;align-items:flex-end;padding:16px 18px 4px">
+        <div style="width:60px;height:60px;border-radius:50%;background:{{ greet.skin }};flex:none;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:{{ greet.hairH }}px;background:{{ greet.hair }};border-radius:0 0 42% 42%"></div>
+          <div style="position:absolute;top:25px;left:15px;width:7px;height:7px;border-radius:50%;background:#2b1c12"></div>
+          <div style="position:absolute;top:25px;right:15px;width:7px;height:7px;border-radius:50%;background:#2b1c12"></div>
+          <div style="position:absolute;top:38px;left:50%;transform:translateX(-50%);width:20px;height:10px;border-radius:0 0 20px 20px;background:{{ greet.lip }}"></div>
+        </div>
+        <div style="background:#fffdf8;border:2px solid #e8d9bd;border-radius:18px 18px 18px 4px;padding:10px 14px;box-shadow:0 2px 0 #e8d9bd"><div style="font:800 12.5px 'Nunito',sans-serif;color:{{ greet.chip }};margin-bottom:1px">{{ greet.name }} · {{ greet.city }}</div><div style="font:700 13.5px/1.35 'Nunito',sans-serif;color:#3d2c22">{{ greet.line }}</div></div>
+      </div>
+
+      <!-- units + winding path -->
+      <sc-for list="{{ units }}" as="u" hint-placeholder-count="2">
+        <div style="padding:0 0 6px">
+          <div style="margin:14px 18px 6px;background:{{ u.color }};border-radius:20px;padding:14px 18px;box-shadow:0 4px 0 {{ u.shadow }}"><div style="font:800 10.5px 'Nunito',sans-serif;color:rgba(255,251,240,.75);letter-spacing:1.5px">{{ u.kicker }}</div><div style="font:800 19px 'Baloo 2',sans-serif;color:#fdf6e9">{{ u.title }}</div><div style="font:700 12px 'Nunito',sans-serif;color:rgba(255,251,240,.85);margin-top:1px">{{ u.progressTxt }}</div></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:16px 0 8px">
+            <sc-for list="{{ u.nodes }}" as="n" hint-placeholder-count="5">
+              <div style="display:flex;flex-direction:column;align-items:center;transform:translateX({{ n.dx }}px);position:relative;width:120px">
+                <sc-if value="{{ n.cur }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#c75b39;color:#fdf6e9;font:900 9.5px 'Nunito',sans-serif;padding:3px 9px;border-radius:999px;letter-spacing:1px;z-index:2;white-space:nowrap">EMPEZAR</div></sc-if>
+                <div onClick="{{ n.onTap }}" style="width:{{ n.size }}px;height:{{ n.size }}px;border-radius:50%;background:{{ n.bg }};box-shadow:{{ n.shadow }};display:grid;place-items:center;cursor:{{ n.cursor }};animation:{{ n.anim }}">
+                  <sc-if value="{{ n.done }}" hint-placeholder-val="{{ false }}"><span style="font:900 22px 'Nunito',sans-serif;color:#8a6205">★</span></sc-if>
+                  <sc-if value="{{ n.cur }}" hint-placeholder-val="{{ false }}"><div style="width:0;height:0;border-left:18px solid #fdf6e9;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:4px"></div></sc-if>
+                  <sc-if value="{{ n.lock }}" hint-placeholder-val="{{ true }}"><div style="width:15px;height:11px;border-radius:3px;background:#b3a184;position:relative"><div style="position:absolute;top:-7px;left:2.5px;width:10px;height:8px;border:2.5px solid #b3a184;border-bottom:none;border-radius:6px 6px 0 0;box-sizing:border-box"></div></div></sc-if>
+                </div>
+                <div style="font:800 11px 'Nunito',sans-serif;color:{{ n.labelFg }};margin-top:5px;text-align:center;max-width:110px">{{ n.title }}</div>
+                <sc-if value="{{ n.done }}" hint-placeholder-val="{{ false }}"><div style="font:900 11px 'Nunito',sans-serif;color:#cf922a;letter-spacing:2px;margin-top:1px">{{ n.starsTxt }}</div></sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </sc-if>
+
+    <!-- ── PRACTICE TAB ── -->
+    <sc-if value="{{ tabPractice }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Practice" style="padding:8px 18px;display:flex;flex-direction:column;gap:14px">
+        <div style="font:800 24px 'Baloo 2',sans-serif;color:#3d2c22">Práctica</div>
+        <div style="background:#fffdf8;border:2px solid #e8d9bd;border-radius:18px;padding:16px">
+          <div style="font:800 15px 'Nunito',sans-serif;color:#3d2c22;margin-bottom:4px">{{ practiceTitle }}</div>
+          <div style="font:700 13px/1.45 'Nunito',sans-serif;color:#8a7057">{{ practiceDesc }}</div>
+          <sc-if value="{{ hasWeak }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+              <sc-for list="{{ weakChips }}" as="w" hint-placeholder-count="3">
+                <div style="background:#f6e3c5;border-radius:999px;padding:5px 12px;font:800 13px 'Nunito',sans-serif;color:#a4442a">{{ w.t }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+        <div onClick="{{ onStartPractice }}" style="background:#20635b;border-radius:18px;padding:16px;text-align:center;font:800 17px 'Baloo 2',sans-serif;color:#fdf6e9;box-shadow:0 4px 0 #164740;cursor:pointer">Empezar práctica</div>
+      </div>
+    </sc-if>
+
+    <!-- ── AWARDS TAB ── -->
+    <sc-if value="{{ tabAwards }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Achievements" style="padding:8px 18px">
+        <div style="font:800 24px 'Baloo 2',sans-serif;color:#3d2c22;margin-bottom:4px">Logros</div>
+        <div style="font:700 13px 'Nunito',sans-serif;color:#8a7057;margin-bottom:14px">{{ badgeCountTxt }}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <sc-for list="{{ badgeCards }}" as="b" hint-placeholder-count="6">
+            <div style="background:{{ b.bg }};border:2px solid {{ b.bd }};border-radius:16px;padding:12px;opacity:{{ b.op }}">
+              <div style="width:34px;height:34px;border-radius:50%;background:{{ b.icBg }};display:grid;place-items:center;font:900 17px 'Nunito',sans-serif;color:{{ b.icFg }};margin-bottom:8px">★</div>
+              <div style="font:800 13.5px 'Nunito',sans-serif;color:#3d2c22">{{ b.name }}</div>
+              <div style="font:700 11.5px/1.35 'Nunito',sans-serif;color:#8a7057;margin-top:2px">{{ b.desc }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ── PROFILE TAB ── -->
+    <sc-if value="{{ tabProfile }}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Profile" style="padding:8px 18px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:64px;height:64px;border-radius:50%;background:#f2b134;position:relative;overflow:hidden;flex:none">
+            <div style="position:absolute;top:26px;left:16px;width:8px;height:8px;border-radius:50%;background:#2b1c12"></div>
+            <div style="position:absolute;top:26px;right:16px;width:8px;height:8px;border-radius:50%;background:#2b1c12"></div>
+            <div style="position:absolute;top:40px;left:50%;transform:translateX(-50%);width:22px;height:11px;border-radius:0 0 22px 22px;background:#a4442a"></div>
+          </div>
+          <div><div style="font:800 22px 'Baloo 2',sans-serif;color:#3d2c22">Estudiante</div><div style="font:800 13px 'Nunito',sans-serif;color:#c75b39">Nivel {{ level }}</div></div>
+        </div>
+        <div style="background:#fffdf8;border:2px solid #e8d9bd;border-radius:18px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;font:800 12.5px 'Nunito',sans-serif;color:#8a7057;margin-bottom:6px"><span>Nivel {{ level }}</span><span>{{ levelLine }}</span></div>
+          <div style="height:12px;border-radius:999px;background:#e9dcc3;overflow:hidden"><div style="height:100%;width:{{ levelPct }}%;background:#c75b39;border-radius:999px"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:#f6e3c5;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Baloo 2',sans-serif;color:#a4442a">{{ streak }}</div><div style="font:800 12px 'Nunito',sans-serif;color:#8a7057">días de racha</div></div>
+          <div style="background:#dcebe4;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Baloo 2',sans-serif;color:#20635b">{{ xp }}</div><div style="font:800 12px 'Nunito',sans-serif;color:#8a7057">XP total</div></div>
+          <div style="background:#f0d9c7;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Baloo 2',sans-serif;color:#c75b39">{{ doneCount }}/{{ totalLessons }}</div><div style="font:800 12px 'Nunito',sans-serif;color:#8a7057">lecciones</div></div>
+          <div style="background:#e9e0cd;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Baloo 2',sans-serif;color:#7d5296">{{ wordCount }}</div><div style="font:800 12px 'Nunito',sans-serif;color:#8a7057">palabras vistas</div></div>
+        </div>
+        <div style="background:#fffdf8;border:2px solid #e8d9bd;border-radius:18px;overflow:hidden">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:2px solid #f1e7d2">
+            <div><div style="font:800 14px 'Nunito',sans-serif;color:#3d2c22">Voz en español</div><div style="font:700 11.5px 'Nunito',sans-serif;color:#8a7057">Text-to-speech on tap</div></div>
+            <div onClick="{{ onToggleTts }}" style="width:50px;height:28px;border-radius:999px;background:{{ ttsBg }};display:flex;align-items:center;justify-content:{{ ttsJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fffdf8"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
+            <div><div style="font:800 14px 'Nunito',sans-serif;color:#3d2c22">Leer automáticamente</div><div style="font:700 11.5px 'Nunito',sans-serif;color:#8a7057">Speak each phrase as it appears</div></div>
+            <div onClick="{{ onToggleAuto }}" style="width:50px;height:28px;border-radius:999px;background:{{ autoBg }};display:flex;align-items:center;justify-content:{{ autoJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fffdf8"></div></div>
+          </div>
+        </div>
+        <div onClick="{{ onReset }}" style="text-align:center;font:800 13px 'Nunito',sans-serif;color:{{ resetFg }};padding:10px;cursor:pointer;border:2px dashed #e0cfae;border-radius:14px">{{ resetTxt }}</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- bottom nav -->
+  <div style="flex:none;display:flex;justify-content:space-around;align-items:center;border-top:2px solid #ecdfc6;padding:10px 8px 26px;background:#fffdf8">
+    <div onClick="{{ onTabLearn }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:70px"><div style="width:24px;height:24px;border-radius:8px;background:{{ navLearnBg }}"></div><span style="font:800 10px 'Nunito',sans-serif;color:{{ navLearnFg }}">Aprender</span></div>
+    <div onClick="{{ onTabPractice }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:70px"><div style="width:24px;height:24px;border-radius:50%;background:{{ navPracticeBg }}"></div><span style="font:800 10px 'Nunito',sans-serif;color:{{ navPracticeFg }}">Práctica</span></div>
+    <div onClick="{{ onTabAwards }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:70px"><div style="width:24px;height:24px;background:{{ navAwardsBg }};clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)"></div><span style="font:800 10px 'Nunito',sans-serif;color:{{ navAwardsFg }}">Logros</span></div>
+    <div onClick="{{ onTabProfile }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:70px"><div style="width:24px;height:24px;border-radius:50%;background:{{ navProfileBg }}"></div><span style="font:800 10px 'Nunito',sans-serif;color:{{ navProfileFg }}">Perfil</span></div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══════════════════════════ LESSON ═══════════════════════════ -->
+<sc-if value="{{ isLesson }}" hint-placeholder-val="{{ false }}">
+<div data-screen-label="Lesson" style="display:flex;flex-direction:column;height:100%;min-height:0">
+
+  <!-- lesson header -->
+  <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 18px 10px">
+    <div onClick="{{ onQuit }}" style="width:34px;height:34px;border-radius:50%;background:#e9dcc3;display:grid;place-items:center;cursor:pointer;font:900 15px 'Nunito',sans-serif;color:#8a7057;flex:none">✕</div>
+    <div style="flex:1;height:14px;border-radius:999px;background:#e9dcc3;overflow:hidden"><div style="height:100%;width:{{ lsPct }}%;background:#f2b134;border-radius:999px;transition:width .3s ease"></div></div>
+    <sc-if value="{{ comboShow }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:5px;background:#f6e3c5;border-radius:999px;padding:4px 10px;flex:none"><div style="width:9px;height:9px;background:#cf922a;transform:rotate(45deg)"></div><span style="font:900 13px 'Nunito',sans-serif;color:#a4442a">{{ comboTxt }}</span></div></sc-if>
+  </div>
+
+  <!-- ── intro phase ── -->
+  <sc-if value="{{ lsIntro }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Lesson intro" style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;padding:18px 22px;gap:16px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:14px;animation:vup .4s ease">
+        <div style="width:104px;height:104px;border-radius:50%;background:{{ lchar.skin }};position:relative;overflow:hidden;box-shadow:0 5px 0 #e0cfae">
+          <div style="position:absolute;top:0;left:0;right:0;height:{{ lchar.bigHairH }}px;background:{{ lchar.hair }};border-radius:0 0 42% 42%"></div>
+          <div style="position:absolute;top:44px;left:26px;width:11px;height:11px;border-radius:50%;background:#2b1c12"></div>
+          <div style="position:absolute;top:44px;right:26px;width:11px;height:11px;border-radius:50%;background:#2b1c12"></div>
+          <div style="position:absolute;top:66px;left:50%;transform:translateX(-50%);width:34px;height:16px;border-radius:0 0 34px 34px;background:{{ lchar.lip }}"></div>
+        </div>
+        <div style="background:{{ lchar.chip }};color:#fdf6e9;font:800 12.5px 'Nunito',sans-serif;padding:4px 14px;border-radius:999px">{{ lchar.name }} · {{ lchar.city }}, {{ lchar.country }}</div>
+      </div>
+      <div style="background:#fffdf8;border:2px solid #e8d9bd;border-radius:20px;padding:16px 18px;box-shadow:0 3px 0 #e8d9bd;animation:vup .4s .08s ease">
+        <div style="font:800 11px 'Nunito',sans-serif;color:#8a7057;letter-spacing:1.5px;margin-bottom:4px">{{ lsKicker }}</div>
+        <div style="font:800 21px 'Baloo 2',sans-serif;color:#3d2c22;margin-bottom:6px">{{ lsTitle }}</div>
+        <div style="font:700 14.5px/1.5 'Nunito',sans-serif;color:#3d2c22">{{ lsIntroTxt }}</div>
+      </div>
+      <div style="background:#f3e7cf;border-radius:20px;padding:14px 18px;animation:vup .4s .16s ease">
+        <div style="font:800 11px 'Nunito',sans-serif;color:#a4442a;letter-spacing:1.5px;margin-bottom:4px">CONSEJO · {{ tipTitle }}</div>
+        <div style="font:700 13.5px/1.5 'Nunito',sans-serif;color:#5d4632">{{ tipBody }}</div>
+      </div>
+      <div style="flex:1"></div>
+      <div onClick="{{ onStartEx }}" style="background:#c75b39;border-radius:18px;padding:16px;text-align:center;font:800 18px 'Baloo 2',sans-serif;color:#fdf6e9;box-shadow:0 4px 0 #9c3f26;cursor:pointer;margin-bottom:24px">¡Empezar!</div>
+    </div>
+  </sc-if>
+
+  <!-- ── exercise phase ── -->
+  <sc-if value="{{ lsEx }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;padding:10px 22px 0;gap:14px">
+      <div style="font:800 19px 'Baloo 2',sans-serif;color:#3d2c22">{{ exTitle }}</div>
+
+      <!-- prompt row (choice / choiceRev / fill / type) -->
+      <sc-if value="{{ exShowPrompt }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;background:#fffdf8;border:2px solid #e8d9bd;border-radius:16px;padding:14px 16px">
+          <sc-if value="{{ exCanSpeak }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ onSpeakEx }}" style="width:38px;height:38px;border-radius:12px;background:#c75b39;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;box-shadow:0 3px 0 #9c3f26">
+              <div style="width:6px;height:10px;background:#fdf6e9;border-radius:1.5px"></div><div style="width:0;height:0;border-right:11px solid #fdf6e9;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:-3px"></div><div style="width:5px;height:13px;border:2.5px solid #fdf6e9;border-left:none;border-radius:0 13px 13px 0;margin-left:3px"></div>
+            </div>
+          </sc-if>
+          <div style="font:800 19px/1.35 'Nunito',sans-serif;color:#3d2c22">{{ exPrompt }}</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ exHintShow }}" hint-placeholder-val="{{ false }}"><div style="font:700 13px 'Nunito',sans-serif;color:#8a7057;margin-top:-6px">{{ exHint }}</div></sc-if>
+
+      <!-- big listen button -->
+      <sc-if value="{{ exIsListen }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:center;padding:10px 0">
+          <div onClick="{{ onSpeakEx }}" style="width:92px;height:92px;border-radius:28px;background:#c75b39;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 0 #9c3f26">
+            <div style="width:11px;height:18px;background:#fdf6e9;border-radius:2px"></div><div style="width:0;height:0;border-right:20px solid #fdf6e9;border-top:14px solid transparent;border-bottom:14px solid transparent;margin-left:-5px"></div><div style="width:8px;height:24px;border:4px solid #fdf6e9;border-left:none;border-radius:0 24px 24px 0;margin-left:5px"></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- choices -->
+      <sc-if value="{{ exHasChoices }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ choices }}" as="c" hint-placeholder-count="4">
+            <div onClick="{{ c.onPick }}" style="background:{{ c.bg }};border:2px solid {{ c.bd }};border-radius:16px;padding:13px 16px;font:800 16px 'Nunito',sans-serif;color:{{ c.fg }};cursor:pointer;box-shadow:0 3px 0 {{ c.bd }}">{{ c.t }}</div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- tiles: answer row + bank -->
+      <sc-if value="{{ exIsTiles }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:56px;border-bottom:2px dashed #d8c8a6;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;padding:4px 0 10px">
+          <sc-for list="{{ pickedTiles }}" as="p" hint-placeholder-count="0">
+            <div onClick="{{ p.onRemove }}" style="background:#c75b39;border-radius:12px;padding:9px 13px;font:800 15px 'Nunito',sans-serif;color:#fdf6e9;cursor:pointer;box-shadow:0 3px 0 #9c3f26">{{ p.t }}</div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ bankTiles }}" as="b" hint-placeholder-count="6">
+            <div onClick="{{ b.onPick }}" style="background:{{ b.bg }};border-radius:12px;padding:9px 13px;font:800 15px 'Nunito',sans-serif;color:{{ b.fg }};cursor:pointer;box-shadow:0 3px 0 {{ b.sh }};opacity:{{ b.op }}">{{ b.t }}</div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- type input -->
+      <sc-if value="{{ exIsType }}" hint-placeholder-val="{{ false }}">
+        <input value="{{ typed }}" onChange="{{ onTyped }}" onKeyDown="{{ onTypedKey }}" placeholder="Type the English meaning…" style="width:100%;box-sizing:border-box;font:800 17px 'Nunito',sans-serif;color:#3d2c22;background:#fffdf8;border:2px solid #e8d9bd;border-radius:16px;padding:15px 16px;outline:none">
+      </sc-if>
+
+      <!-- match columns -->
+      <sc-if value="{{ exIsMatch }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ matchL }}" as="m" hint-placeholder-count="4">
+              <div onClick="{{ m.onPick }}" style="background:{{ m.bg }};border:2px solid {{ m.bd }};border-radius:14px;padding:12px 10px;font:800 14px 'Nunito',sans-serif;color:{{ m.fg }};cursor:pointer;text-align:center;opacity:{{ m.op }};box-shadow:0 3px 0 {{ m.bd }}">{{ m.t }}</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ matchR }}" as="m" hint-placeholder-count="4">
+              <div onClick="{{ m.onPick }}" style="background:{{ m.bg }};border:2px solid {{ m.bd }};border-radius:14px;padding:12px 10px;font:800 14px 'Nunito',sans-serif;color:{{ m.fg }};cursor:pointer;text-align:center;opacity:{{ m.op }};box-shadow:0 3px 0 {{ m.bd }}">{{ m.t }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="flex:1"></div>
+
+      <!-- check button (tiles / type, before feedback) -->
+      <sc-if value="{{ showCheck }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ onCheck }}" style="background:{{ checkBg }};border-radius:18px;padding:15px;text-align:center;font:800 17px 'Baloo 2',sans-serif;color:{{ checkFg }};box-shadow:0 4px 0 {{ checkSh }};cursor:pointer;margin-bottom:24px">Comprobar</div>
+      </sc-if>
+
+      <!-- feedback panel -->
+      <sc-if value="{{ fbShow }}" hint-placeholder-val="{{ false }}">
+        <div style="background:{{ fbBg }};border-radius:20px 20px 0 0;padding:16px 18px 30px;margin:0 -22px;animation:vup .25s ease">
+          <div style="font:800 17px 'Baloo 2',sans-serif;color:{{ fbFg }}">{{ fbTitle }}</div>
+          <sc-if value="{{ fbHasDetail }}" hint-placeholder-val="{{ false }}"><div style="font:800 14.5px 'Nunito',sans-serif;color:{{ fbFg }};margin-top:2px">{{ fbDetail }}</div></sc-if>
+          <div onClick="{{ onContinue }}" style="margin-top:12px;background:{{ fbBtnBg }};border-radius:16px;padding:13px;text-align:center;font:800 16px 'Baloo 2',sans-serif;color:#fdf6e9;box-shadow:0 4px 0 {{ fbBtnSh }};cursor:pointer">Continuar</div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ── results phase ── -->
+  <sc-if value="{{ lsDone }}" hint-placeholder-val="{{ false }}">
+    <div data-screen-label="Lesson results" style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;align-items:center;padding:26px 22px;gap:14px">
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <sc-for list="{{ resStars }}" as="s" hint-placeholder-count="3">
+          <div style="font:900 44px 'Nunito',sans-serif;color:{{ s.c }};animation:vstar .5s {{ s.delay }} ease">★</div>
+        </sc-for>
+      </div>
+      <div style="font:800 26px 'Baloo 2',sans-serif;color:#3d2c22">{{ resTitle }}</div>
+      <div style="font:700 14px 'Nunito',sans-serif;color:#8a7057;text-align:center">{{ resSub }}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:6px">
+        <div style="background:#dcebe4;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Baloo 2',sans-serif;color:#20635b">+{{ resXp }}</div><div style="font:800 11.5px 'Nunito',sans-serif;color:#8a7057">XP ganados</div></div>
+        <div style="background:#f6e3c5;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Baloo 2',sans-serif;color:#a4442a">{{ resAcc }}%</div><div style="font:800 11.5px 'Nunito',sans-serif;color:#8a7057">aciertos</div></div>
+        <div style="background:#f0d9c7;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Baloo 2',sans-serif;color:#c75b39">x{{ resCombo }}</div><div style="font:800 11.5px 'Nunito',sans-serif;color:#8a7057">mejor combo</div></div>
+        <div style="background:#e9e0cd;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Baloo 2',sans-serif;color:#7d5296">{{ resStreak }}</div><div style="font:800 11.5px 'Nunito',sans-serif;color:#8a7057">racha de días</div></div>
+      </div>
+      <sc-if value="{{ resHasBadges }}" hint-placeholder-val="{{ false }}">
+        <div style="width:100%;background:#fffdf8;border:2px solid #f2b134;border-radius:16px;padding:12px 16px">
+          <div style="font:800 11px 'Nunito',sans-serif;color:#cf922a;letter-spacing:1.5px;margin-bottom:6px">¡NUEVO LOGRO!</div>
+          <sc-for list="{{ resBadges }}" as="rb" hint-placeholder-count="1">
+            <div style="display:flex;align-items:center;gap:10px;padding:3px 0"><div style="width:28px;height:28px;border-radius:50%;background:#f2b134;display:grid;place-items:center;font:900 14px 'Nunito',sans-serif;color:#8a6205">★</div><div style="font:800 14px 'Nunito',sans-serif;color:#3d2c22">{{ rb.name }}</div></div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <div style="flex:1"></div>
+      <div onClick="{{ onQuit }}" style="width:100%;box-sizing:border-box;background:#c75b39;border-radius:18px;padding:16px;text-align:center;font:800 18px 'Baloo 2',sans-serif;color:#fdf6e9;box-shadow:0 4px 0 #9c3f26;cursor:pointer;margin-bottom:24px">Continuar</div>
+    </div>
+  </sc-if>
+
+</div>
+</sc-if>
+
+</div>
+</x-import>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dailyGoal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;min&quot;:10,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;showCombo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;speechRate&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.95,&quot;min&quot;:0.6,&quot;max&quot;:1.3,&quot;step&quot;:0.05,&quot;unit&quot;:&quot;x&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Voice&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const def = { xp: 0, streak: 0, lastDay: '', dailyXp: 0, dailyDay: '', stars: {}, done: [], weak: [], badges: [], ttsOn: true, autoSpeak: true };
+    let d = def;
+    try { d = { ...def, ...(JSON.parse(localStorage.getItem('vamos.v1') || 'null') || {}) }; } catch (e) {}
+    const today = this.dayKey(0);
+    if (d.dailyDay !== today) { d.dailyXp = 0; d.dailyDay = today; }
+    if (d.lastDay && d.lastDay !== today && d.lastDay !== this.dayKey(-1)) d.streak = 0;
+    this.state = {
+      data: d, ready: false, screen: 'home', tab: 'learn',
+      ls: null, // {isPractice, unit, lesson, exercises, i, phase, right, wrong, comboMax, gained, hadMatchError, applied, newBadges}
+      combo: 0, typed: '', picked: [], sel: null,
+      mSelL: null, mSelR: null, mDone: [], mFlash: null, mErr: false,
+      fb: null, confirmReset: false,
+    };
+  }
+
+  dayKey(off) { const dt = new Date(); dt.setDate(dt.getDate() + off); return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0'); }
+
+  componentDidMount() {
+    import('./lessons.js').then((m) => { this.L = m; this.setState({ ready: true }); });
+    if (window.speechSynthesis) { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; }
+  }
+
+  setData(patch) { const d = { ...this.state.data, ...patch }; try { localStorage.setItem('vamos.v1', JSON.stringify(d)); } catch (e) {} this.setState({ data: d }); }
+
+  speak(text, lang, force) {
+    if (!window.speechSynthesis) return;
+    if (!this.state.data.ttsOn && !force) return;
+    const u = new SpeechSynthesisUtterance(text);
+    const lg = lang || 'es-ES';
+    u.lang = lg; u.rate = this.props.speechRate ?? 0.95;
+    const vs = speechSynthesis.getVoices().filter((v) => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith('es'));
+    const low = lg.toLowerCase();
+    u.voice = vs.find((v) => v.lang.toLowerCase().replace('_', '-') === low) || vs.find((v) => !v.lang.toLowerCase().includes('es-es') === !low.includes('es-es')) || vs[0] || null;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }
+
+  // ---------------- lesson lifecycle ----------------
+  startLesson(lessonId) {
+    if (!this.L) return;
+    const { unit, lesson } = this.L.getLesson(lessonId);
+    const exercises = this.L.buildExercises(lessonId);
+    this.setState({ screen: 'lesson', ls: { isPractice: false, unit, lesson, exercises, i: 0, phase: 'intro', right: 0, wrong: 0, comboMax: 0, gained: 0, applied: false, newBadges: [] }, combo: 0, fb: null, typed: '', picked: [], mSelL: null, mSelR: null, mDone: [], mErr: false });
+  }
+
+  startPractice() {
+    if (!this.L) return;
+    const d = this.state.data;
+    const exercises = this.L.buildPractice(d.weak, d.done);
+    const unit = this.L.UNITS[0];
+    this.setState({ screen: 'lesson', ls: { isPractice: true, unit: null, lesson: null, exercises, i: 0, phase: 'ex', right: 0, wrong: 0, comboMax: 0, gained: 0, applied: false, newBadges: [] }, combo: 0, fb: null, typed: '', picked: [], mSelL: null, mSelR: null, mDone: [], mErr: false });
+    setTimeout(() => this.maybeAutoSpeak(), 250);
+  }
+
+  curEx() { const ls = this.state.ls; return ls && ls.phase === 'ex' ? ls.exercises[ls.i] : null; }
+  exLang() { const ls = this.state.ls; return ls && ls.unit ? this.L.CHARACTERS[ls.unit.char].lang : 'es-ES'; }
+
+  maybeAutoSpeak() {
+    const ex = this.curEx(); if (!ex) return;
+    if (ex.type === 'listen') this.speak(ex.speak, this.exLang(), true);
+    else if (this.state.data.autoSpeak && ex.speak) this.speak(ex.speak, this.exLang());
+  }
+
+  answer(ok, correctShown) {
+    const ls = this.state.ls; const ex = this.curEx(); if (!ex || this.state.fb) return;
+    const combo = ok ? this.state.combo + 1 : 0;
+    const base = ls.isPractice ? 5 : 10;
+    const bonus = ok ? Math.min(Math.max(combo - 1, 0), 5) * 2 : 0;
+    const gain = ok ? base + bonus : 0;
+    const nls = { ...ls, right: ls.right + (ok ? 1 : 0), wrong: ls.wrong + (ok ? 0 : 1), comboMax: Math.max(ls.comboMax, combo), gained: ls.gained + gain };
+    let weak = this.state.data.weak;
+    if (!ok && ex.key && !ex.key.startsWith('match:')) weak = [...new Set([...weak, ex.key])].slice(-40);
+    else if (ok && ex.key) weak = weak.filter((w) => w !== ex.key);
+    if (weak !== this.state.data.weak) this.setData({ weak });
+    const fb = ok
+      ? { ok: true, title: combo >= 3 ? '¡Muy bien! Combo x' + combo : '¡Muy bien!', detail: '+' + gain + ' XP' + (bonus ? ' (bonus de combo +' + bonus + ')' : ''), bg: '#ddeee6', fg: '#20635b', btn: '#20635b', btnSh: '#164740' }
+      : { ok: false, title: 'Respuesta correcta:', detail: correctShown, bg: '#f7ded9', fg: '#a03225', btn: '#c75b39', btnSh: '#9c3f26' };
+    this.setState({ ls: nls, combo, fb });
+    if (ok && ex.speak) this.speak(ex.speak, this.exLang());
+  }
+
+  continueNext() {
+    const ls = this.state.ls; if (!ls) return;
+    if (ls.i + 1 >= ls.exercises.length) { this.finishLesson(); return; }
+    this.setState({ ls: { ...ls, i: ls.i + 1 }, fb: null, typed: '', picked: [], mSelL: null, mSelR: null, mDone: [], mErr: false });
+    setTimeout(() => this.maybeAutoSpeak(), 250);
+  }
+
+  finishLesson() {
+    const ls = this.state.ls; if (!ls || ls.applied) return;
+    const d = this.state.data;
+    const total = ls.right + ls.wrong;
+    const acc = total ? ls.right / total : 0;
+    const stars = ls.isPractice ? 0 : acc >= 0.9 ? 3 : acc >= 0.7 ? 2 : 1;
+    const today = this.dayKey(0);
+    let streak = d.streak;
+    if (d.lastDay !== today) streak = d.lastDay === this.dayKey(-1) ? d.streak + 1 : 1;
+    const done = ls.isPractice ? d.done : [...new Set([...d.done, ls.lesson.id])];
+    const starMap = ls.isPractice ? d.stars : { ...d.stars, [ls.lesson.id]: Math.max(d.stars[ls.lesson.id] || 0, stars) };
+    const xp = d.xp + ls.gained;
+    const dailyXp = d.dailyXp + ls.gained;
+    // badges
+    const have = new Set(d.badges);
+    const won = [];
+    const award = (id) => { if (!have.has(id)) { have.add(id); won.push(id); } };
+    if (done.length >= 1) award('first');
+    if (!ls.isPractice && ls.wrong === 0) award('perfect');
+    if (ls.comboMax >= 5) award('combo5');
+    if (xp >= 100) award('xp100'); if (xp >= 500) award('xp500'); if (xp >= 1500) award('xp1500'); if (xp >= 5000) award('xp5000');
+    if (streak >= 3) award('streak3'); if (streak >= 7) award('streak7');
+    const unitsDone = this.L.UNITS.filter((u) => u.lessons.every((l) => done.includes(l.id))).length;
+    if (this.L.UNITS[0].lessons.every((l) => done.includes(l.id))) award('unit1');
+    if (unitsDone >= 3) award('unit3');
+    if (unitsDone >= 10) award('unit10');
+    if (unitsDone >= this.L.UNITS.length) award('units all');
+    if (ls.isPractice) award('practice');
+    this.setData({ xp, dailyXp, dailyDay: today, streak, lastDay: today, done, stars: starMap, badges: [...have] });
+    this.setState({ ls: { ...ls, phase: 'done', applied: true, stars, acc, newBadges: won }, fb: null });
+  }
+
+  quit() { if (window.speechSynthesis) speechSynthesis.cancel(); this.setState({ screen: 'home', ls: null, fb: null, combo: 0 }); }
+
+  // ---------------- renderVals ----------------
+  renderVals() {
+    const S = this.state, d = S.data, L = this.L;
+    const showComboProp = this.props.showCombo ?? true;
+    const goal = this.props.dailyGoal ?? 20;
+    const isLesson = S.screen === 'lesson' && !!S.ls;
+    const isHome = !isLesson;
+    const level = Math.floor(d.xp / 200) + 1;
+    const levelPct = Math.round(((d.xp % 200) / 200) * 100);
+    const dailyPct = Math.min(100, Math.round((d.dailyXp / goal) * 100));
+
+    const vals = {
+      isHome, isLesson,
+      tabLearn: S.tab === 'learn', tabPractice: S.tab === 'practice', tabAwards: S.tab === 'awards', tabProfile: S.tab === 'profile',
+      streak: d.streak, xp: d.xp, level, levelPct,
+      levelLine: (d.xp % 200) + ' / 200 XP',
+      dailyPct, dailyPctCss: dailyPct + '%',
+      dailyLine: d.dailyXp >= goal ? '¡Meta cumplida! ' + d.dailyXp + ' XP hoy' : d.dailyXp + ' / ' + goal + ' XP hoy',
+      doneCount: d.done.length, wordCount: d.done.length * 6,
+      totalLessons: L ? L.UNITS.reduce((n, u) => n + u.lessons.length, 0) : 130,
+      onTabLearn: () => this.setState({ tab: 'learn' }),
+      onTabPractice: () => this.setState({ tab: 'practice' }),
+      onTabAwards: () => this.setState({ tab: 'awards' }),
+      onTabProfile: () => this.setState({ tab: 'profile' }),
+      onQuit: () => this.quit(),
+      onStartPractice: () => this.startPractice(),
+      onToggleTts: () => this.setData({ ttsOn: !d.ttsOn }),
+      onToggleAuto: () => this.setData({ autoSpeak: !d.autoSpeak }),
+      ttsBg: d.ttsOn ? '#20635b' : '#d8c8a6', ttsJus: d.ttsOn ? 'flex-end' : 'flex-start',
+      autoBg: d.autoSpeak ? '#20635b' : '#d8c8a6', autoJus: d.autoSpeak ? 'flex-end' : 'flex-start',
+      resetTxt: S.confirmReset ? '¿Seguro? Toca otra vez para borrar todo' : 'Reiniciar progreso',
+      resetFg: S.confirmReset ? '#a03225' : '#8a7057',
+      onReset: () => {
+        if (!S.confirmReset) { this.setState({ confirmReset: true }); setTimeout(() => this.setState({ confirmReset: false }), 2500); return; }
+        try { localStorage.removeItem('vamos.v1'); } catch (e) {}
+        this.setData({ xp: 0, streak: 0, lastDay: '', dailyXp: 0, stars: {}, done: [], weak: [], badges: [] });
+        this.setState({ confirmReset: false });
+      },
+    };
+
+    // nav colors
+    const on = '#c75b39', off = '#ddd0b6', onFg = '#c75b39', offFg = '#9c8a6d';
+    vals.navLearnBg = S.tab === 'learn' ? on : off; vals.navLearnFg = S.tab === 'learn' ? onFg : offFg;
+    vals.navPracticeBg = S.tab === 'practice' ? on : off; vals.navPracticeFg = S.tab === 'practice' ? onFg : offFg;
+    vals.navAwardsBg = S.tab === 'awards' ? on : off; vals.navAwardsFg = S.tab === 'awards' ? onFg : offFg;
+    vals.navProfileBg = S.tab === 'profile' ? on : off; vals.navProfileFg = S.tab === 'profile' ? onFg : offFg;
+
+    // ------- home: units, path, greeting -------
+    const flat = L ? L.UNITS.flatMap((u) => u.lessons) : [];
+    const curIdx = flat.findIndex((l) => !d.done.includes(l.id));
+    const curLesson = curIdx === -1 ? null : flat[curIdx];
+    const dxArr = [-64, 0, 64, 0, -64];
+    vals.units = L ? L.UNITS.map((u) => {
+      const doneN = u.lessons.filter((l) => d.done.includes(l.id)).length;
+      const shadow = 'rgba(0,0,0,0.28)';
+      return {
+        color: u.color, shadow: this.darken(u.color),
+        kicker: u.id.toUpperCase().replace('U', 'UNIDAD ') + ' · ' + u.city.toUpperCase() + ', ' + u.country.toUpperCase(),
+        title: u.title, progressTxt: doneN + ' / 5 lecciones',
+        nodes: u.lessons.map((l, i) => {
+          const isDone = d.done.includes(l.id);
+          const gi = flat.findIndex((x) => x.id === l.id);
+          const isCur = gi === curIdx;
+          const lock = !isDone && !isCur;
+          const stars = d.stars[l.id] || 0;
+          return {
+            dx: dxArr[i % 5], title: l.t, done: isDone, cur: isCur, lock,
+            size: isCur ? 72 : 60,
+            bg: isDone ? '#f2b134' : isCur ? '#c75b39' : '#e9dcc3',
+            shadow: isDone ? '0 5px 0 #cf922a' : isCur ? '0 6px 0 #9c3f26,0 0 0 8px #f0d9c7' : '0 5px 0 #d3c3a4',
+            anim: isCur ? 'vpulse 2s ease-in-out infinite' : 'none',
+            cursor: lock ? 'default' : 'pointer',
+            labelFg: lock ? '#b3a184' : '#5d4632',
+            starsTxt: '★★★'.slice(0, stars) || '★',
+            onTap: lock ? () => {} : () => this.startLesson(l.id),
+          };
+        }),
+      };
+    }) : [];
+
+    const gUnit = L && curLesson ? L.UNITS.find((u) => u.lessons.some((l) => l.id === curLesson.id)) : null;
+    const gChar = L ? L.CHARACTERS[(gUnit || (L ? L.UNITS[L.UNITS.length - 1] : null) || {}).char] || L.CHARACTERS.lucia : null;
+    vals.greet = gChar ? {
+      skin: gChar.skin, hair: gChar.hair, hairH: gChar.hairH, lip: gChar.lip, chip: gChar.chip,
+      name: gChar.name, city: gChar.city,
+      line: curLesson ? 'Sigue con «' + curLesson.t + '». ¡Tú puedes!' : '¡Completaste todo el curso! ¡Felicidades!',
+    } : { skin: '#e8a87c', hair: '#2b1c12', hairH: 20, lip: '#a4442a', chip: '#c75b39', name: '…', city: '…', line: 'Cargando…' };
+
+    // practice tab
+    const weak = d.weak;
+    vals.hasWeak = weak.length > 0;
+    vals.weakChips = weak.slice(0, 12).map((w) => ({ t: w }));
+    vals.practiceTitle = weak.length ? 'Palabras difíciles (' + weak.length + ')' : 'Repaso general';
+    vals.practiceDesc = weak.length
+      ? 'These are the words you missed recently. A quick session will lock them in — 5 XP per correct answer.'
+      : 'No weak words right now. Start a mixed review of everything you have learned so far.';
+
+    // awards tab
+    const haveB = new Set(d.badges);
+    vals.badgeCards = L ? L.BADGES.map((b) => {
+      const got = haveB.has(b.id);
+      return { name: b.name, desc: b.desc, bg: got ? '#fffdf8' : '#f3ecdc', bd: got ? '#f2b134' : '#e4d7ba', op: got ? 1 : 0.65, icBg: got ? '#f2b134' : '#ddd0b6', icFg: got ? '#8a6205' : '#a99a7c' };
+    }) : [];
+    vals.badgeCountTxt = (L ? d.badges.filter((id) => L.BADGES.some((b) => b.id === id)).length : 0) + ' de ' + (L ? L.BADGES.length : 12) + ' conseguidos';
+
+    // ------- lesson -------
+    const ls = S.ls;
+    vals.lsIntro = isLesson && ls.phase === 'intro';
+    vals.lsEx = isLesson && ls.phase === 'ex';
+    vals.lsDone = isLesson && ls.phase === 'done';
+    vals.lsPct = isLesson ? (ls.phase === 'done' ? 100 : Math.round((ls.i / ls.exercises.length) * 100)) : 0;
+    vals.comboShow = showComboProp && isLesson && S.combo >= 2;
+    vals.comboTxt = 'x' + S.combo;
+
+    if (isLesson && !ls.isPractice && ls.unit) {
+      const ch = L.CHARACTERS[ls.unit.char];
+      vals.lchar = { skin: ch.skin, hair: ch.hair, bigHairH: Math.round(ch.hairH * 1.7), lip: ch.lip, chip: ch.chip, name: ch.name, city: ch.city, country: ch.country };
+      vals.lsKicker = ls.unit.city.toUpperCase() + ' · ' + ls.unit.title.toUpperCase();
+      vals.lsTitle = ls.lesson.t;
+      vals.lsIntroTxt = ls.lesson.intro;
+      vals.tipTitle = ls.lesson.tip[0];
+      vals.tipBody = ls.lesson.tip[1];
+    } else {
+      vals.lchar = { skin: '#e8a87c', hair: '#2b1c12', bigHairH: 34, lip: '#a4442a', chip: '#20635b', name: '', city: '', country: '' };
+      vals.lsKicker = ''; vals.lsTitle = ''; vals.lsIntroTxt = ''; vals.tipTitle = ''; vals.tipBody = '';
+    }
+    vals.onStartEx = () => { this.setState({ ls: { ...S.ls, phase: 'ex' } }); setTimeout(() => this.maybeAutoSpeak(), 250); };
+
+    // exercise view
+    const ex = this.curEx();
+    const titles = { choice: 'What does this mean?', choiceRev: 'How do you say it in Spanish?', listen: 'Listen and choose', fill: 'Complete the sentence', tiles: 'Build the sentence in Spanish', type: 'Type the English meaning', match: 'Match the pairs' };
+    vals.exTitle = ex ? titles[ex.type] : '';
+    vals.exShowPrompt = !!ex && (ex.type === 'choice' || ex.type === 'choiceRev' || ex.type === 'fill' || ex.type === 'type' || ex.type === 'tiles');
+    vals.exPrompt = ex ? (ex.prompt || '') : '';
+    vals.exCanSpeak = !!ex && !!ex.speak && ex.type !== 'listen' && d.ttsOn;
+    vals.exHintShow = !!ex && ex.type === 'fill' && !!ex.hint;
+    vals.exHint = ex && ex.hint ? '“' + ex.hint + '”' : '';
+    vals.exIsListen = !!ex && ex.type === 'listen';
+    vals.exIsTiles = !!ex && ex.type === 'tiles';
+    vals.exIsType = !!ex && ex.type === 'type';
+    vals.exIsMatch = !!ex && ex.type === 'match';
+    vals.exHasChoices = !!ex && (ex.type === 'choice' || ex.type === 'choiceRev' || ex.type === 'listen' || ex.type === 'fill');
+    vals.onSpeakEx = () => { const e2 = this.curEx(); if (e2 && e2.speak) this.speak(e2.speak, this.exLang(), e2.type === 'listen'); };
+
+    // choices
+    const fb = S.fb;
+    vals.choices = ex && vals.exHasChoices ? ex.choices.map((c) => {
+      let bg = '#fffdf8', bd = '#e8d9bd', fg = '#3d2c22';
+      if (fb) {
+        if (c === ex.answer) { bg = '#ddeee6'; bd = '#20635b'; fg = '#20635b'; }
+        else if (c === S.sel && !fb.ok) { bg = '#f7ded9'; bd = '#c75b39'; fg = '#a03225'; }
+        else { fg = '#b3a184'; }
+      } else if (c === S.sel) { bg = '#f6e3c5'; bd = '#f2b134'; }
+      return { t: c, bg, bd, fg, onPick: () => { if (this.state.fb) return; this.setState({ sel: c }); this.answer(c === ex.answer, ex.answer + (ex.meaning ? ' — ' + ex.meaning : '')); } };
+    }) : [];
+
+    // tiles
+    vals.pickedTiles = ex && ex.type === 'tiles' ? S.picked.map((t, i) => ({ t, onRemove: () => { if (this.state.fb) return; const p = this.state.picked.slice(); p.splice(i, 1); this.setState({ picked: p }); } })) : [];
+    const usedCount = {};
+    S.picked.forEach((t) => { usedCount[t] = (usedCount[t] || 0) + 1; });
+    const seen = {};
+    vals.bankTiles = ex && ex.type === 'tiles' ? ex.tiles.map((t) => {
+      seen[t] = (seen[t] || 0) + 1;
+      const used = (usedCount[t] || 0) >= seen[t];
+      return { t, op: used ? 0.35 : 1, bg: used ? '#e9dcc3' : '#fffdf8', fg: used ? '#b3a184' : '#3d2c22', sh: used ? '#d3c3a4' : '#e8d9bd', onPick: () => { if (this.state.fb || used) return; this.setState({ picked: [...this.state.picked, t] }); } };
+    }) : [];
+
+    // type input
+    vals.typed = S.typed;
+    vals.onTyped = (e) => this.setState({ typed: e.target.value });
+    vals.onTypedKey = (e) => { if (e.key === 'Enter') this.doCheck(); };
+
+    // match
+    const mkMatch = (arr, side) => arr.map((t) => {
+      const doneM = S.mDone.includes(t);
+      const sel = (side === 'l' ? S.mSelL : S.mSelR) === t;
+      const flash = S.mFlash === t;
+      let bg = '#fffdf8', bd = '#e8d9bd', fg = '#3d2c22';
+      if (doneM) { bg = '#ddeee6'; bd = '#bcd8cd'; fg = '#7fa89b'; }
+      else if (flash) { bg = '#f7ded9'; bd = '#c75b39'; fg = '#a03225'; }
+      else if (sel) { bg = '#f6e3c5'; bd = '#f2b134'; }
+      return { t, bg, bd, fg, op: doneM ? 0.6 : 1, onPick: () => this.pickMatch(side, t) };
+    });
+    vals.matchL = ex && ex.type === 'match' ? mkMatch(ex.left, 'l') : [];
+    vals.matchR = ex && ex.type === 'match' ? mkMatch(ex.right, 'r') : [];
+
+    // check button
+    const needsCheck = ex && (ex.type === 'tiles' || ex.type === 'type');
+    vals.showCheck = !!needsCheck && !fb;
+    const canCheck = ex && (ex.type === 'tiles' ? S.picked.length > 0 : S.typed.trim().length > 0);
+    vals.checkBg = canCheck ? '#c75b39' : '#e9dcc3';
+    vals.checkSh = canCheck ? '#9c3f26' : '#d3c3a4';
+    vals.checkFg = canCheck ? '#fdf6e9' : '#b3a184';
+    vals.onCheck = () => this.doCheck();
+
+    // feedback
+    vals.fbShow = !!fb;
+    vals.fbTitle = fb ? fb.title : '';
+    vals.fbDetail = fb ? fb.detail : '';
+    vals.fbHasDetail = !!fb && !!fb.detail;
+    vals.fbBg = fb ? fb.bg : '#ddeee6'; vals.fbFg = fb ? fb.fg : '#20635b';
+    vals.fbBtnBg = fb ? fb.btn : '#20635b'; vals.fbBtnSh = fb ? fb.btnSh : '#164740';
+    vals.onContinue = () => this.continueNext();
+
+    // results
+    const stars = isLesson ? (ls.stars || 0) : 0;
+    vals.resStars = [0, 1, 2].map((i) => ({ c: ls && ls.isPractice ? '#20635b' : i < stars ? '#f2b134' : '#e0d3b4', delay: (i * 0.15) + 's' }));
+    vals.resTitle = ls && ls.isPractice ? '¡Práctica completa!' : stars === 3 ? '¡Perfecto!' : stars === 2 ? '¡Muy bien!' : '¡Lección completa!';
+    vals.resSub = isLesson && ls.phase === 'done'
+      ? (ls.isPractice ? 'Repasaste ' + ls.exercises.length + ' ejercicios.' : (L && ls.unit ? L.CHARACTERS[ls.unit.char].name + ' está orgullosa de ti. ¡Hasta la próxima lección!' : ''))
+      : '';
+    vals.resXp = isLesson ? ls.gained : 0;
+    vals.resAcc = isLesson && (ls.right + ls.wrong) ? Math.round((ls.right / (ls.right + ls.wrong)) * 100) : 0;
+    vals.resCombo = isLesson ? ls.comboMax : 0;
+    vals.resStreak = d.streak;
+    vals.resHasBadges = isLesson && ls.newBadges && ls.newBadges.length > 0;
+    vals.resBadges = isLesson && L ? (ls.newBadges || []).map((id) => { const b = L.BADGES.find((x) => x.id === id); return { name: b ? b.name + ' — ' + b.desc : id }; }) : [];
+
+    return vals;
+  }
+
+  doCheck() {
+    const ex = this.curEx(); if (!ex || this.state.fb) return;
+    if (ex.type === 'tiles') {
+      const guess = this.state.picked.join(' ');
+      const ok = this.L.normalize(guess) === this.L.normalize(ex.answer);
+      this.answer(ok, ex.answer);
+    } else if (ex.type === 'type') {
+      const ok = this.L.checkTyped(this.state.typed, ex.answer);
+      this.answer(ok, ex.answer);
+    }
+  }
+
+  pickMatch(side, t) {
+    const ex = this.curEx(); if (!ex || ex.type !== 'match' || this.state.fb) return;
+    if (this.state.mDone.includes(t)) return;
+    const sel = { mSelL: this.state.mSelL, mSelR: this.state.mSelR };
+    sel[side === 'l' ? 'mSelL' : 'mSelR'] = t;
+    if (sel.mSelL && sel.mSelR) {
+      const hit = ex.pairs.some((p) => p[0] === sel.mSelL && p[1] === sel.mSelR);
+      if (hit) {
+        const mDone = [...this.state.mDone, sel.mSelL, sel.mSelR];
+        this.speak(sel.mSelL, this.exLang());
+        if (mDone.length >= ex.pairs.length * 2) {
+          this.setState({ mDone, mSelL: null, mSelR: null });
+          this.answer(!this.state.mErr, 'las parejas correctas');
+        } else this.setState({ mDone, mSelL: null, mSelR: null });
+      } else {
+        this.setState({ mErr: true, mFlash: sel.mSelR, mSelL: null, mSelR: null });
+        setTimeout(() => this.setState({ mFlash: null }), 600);
+      }
+    } else this.setState(sel);
+  }
+
+  darken(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const f = (v) => Math.max(0, Math.round(v * 0.68));
+    return 'rgb(' + f(n >> 16) + ',' + f((n >> 8) & 255) + ',' + f(n & 255) + ')';
+  }
+}
+
+</script>
+</body>
+</html>

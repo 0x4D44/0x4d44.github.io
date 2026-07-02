@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "vamos-spanish",
+    title: "¡Vamos!: Spanish Learning App",
+    tagline: "A Duolingo-style Spanish course in an iOS device frame: 26 units across six Spanish-speaking cities, each with vocabulary, sentences, grammar drills and listening exercises, plus streaks, XP, combos and badges. Text-to-speech reads every phrase aloud. Built on a tiny HTML-template runtime that renders React in the browser — no build step.",
+    url: "https://0x4d44.github.io/vamos-spanish/",
+    illustration: "ill-vamos",
+    date: "2026-07-02T20:00:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "japanese-travel-rpg",
     title: "Nihon Quest",
     tagline: "A mobile-first Japanese travel RPG for getting around Japan: follow a UK-to-Japan route through airports, stations, konbini, temples and side trips, learning practical phrases, signs and etiquette as you go. Offline PWA with SRS review, searchable phrasebook, speech buttons, scripted roleplay and optional BYO-key AI practice.",
