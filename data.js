@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "japanese-travel-rpg",
+    title: "Nihon Quest",
+    tagline: "A mobile-first Japanese travel RPG for getting around Japan: follow a UK-to-Japan route through airports, stations, konbini, temples and side trips, learning practical phrases, signs and etiquette as you go. Offline PWA with SRS review, searchable phrasebook, speech buttons, scripted roleplay and optional BYO-key AI practice.",
+    url: "https://0x4d44.github.io/japanese-travel-rpg/",
+    illustration: "ill-nihon-quest",
+    date: "2026-07-02T18:35:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "harbour-hustle-cruise-cup",
     title: "Harbour Hustle: Cruise Cup",
     tagline: "A cartoon cruise-boat racing arcade: kit out a bonkers boat from hulls, engines, decks and gadgets, then weave through buoys across six harbour races to bank coins, cups and oddball new parts. Keeps a browser-local high-score board and import/export save codes. Vanilla JS on a canvas — no dependencies, no build step.",
