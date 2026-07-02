@@ -49,9 +49,9 @@
   <sc-if value="{{ inHub }}" hint-placeholder-val="{{ true }}">
     <div>
       <h1 style="font-family:Fredoka;font-weight:700;font-size:34px;margin:6px 2px 2px">Deck Games 🎮</h1>
-      <p style="margin:0 2px 18px;color:#a9c6da;font-weight:600;font-size:14px">Four ways to kill a sea day. Tap a game to play — scores save on this device.</p>
+      <p style="margin:0 2px 18px;color:#a9c6da;font-weight:600;font-size:14px">Eight ways to kill a sea day. Tap a game to play — scores save on this device.</p>
       <div style="display:flex;flex-direction:column;gap:14px">
-        <sc-for list="{{ games }}" as="g" hint-placeholder-count="4">
+        <sc-for list="{{ games }}" as="g" hint-placeholder-count="8">
           <button onClick="{{ g.open }}" style="text-align:left;cursor:pointer;border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:18px;background:{{ g.bg }};color:#04263c;display:flex;align-items:center;gap:16px;box-shadow:0 14px 30px -18px rgba(0,0,0,.7)">
             <div style="font-size:44px;animation:gbob 3s ease-in-out infinite;animation-delay:{{ g.delay }}">{{ g.emoji }}</div>
             <div style="flex:1;min-width:0">
@@ -114,9 +114,13 @@ class Component extends DCLogic {
       shuffle:{title:"Shuffleboard", hint:"Drag back from your teal disc and release to slide. Knock the First Mate's discs out of the high zones!"},
       golf:{title:"Mini-Golf", hint:"Drag from the ball to aim and set power — longer drag = harder putt. Keep out of the pools."},
       race:{title:"Harmony Racer", hint:"Hold ◀ / ▶ (or press either side of the sea) to steer. Grab coins, dodge rocks & bergs."},
-      builder:{title:"Shipwright", hint:"The carrier swings wide of the ship — release over open water and the deck goes overboard (–$8M)! Build high & level; lopsided ships capsize."}
+      builder:{title:"Shipwright", hint:"The carrier swings wide of the ship — release over open water and the deck goes overboard (–$8M)! Build high & level; lopsided ships capsize."},
+      pisa:{title:"Leaning Tower", hint:"A floor slides side to side — tap to drop it. The overhang is sliced off, so stack straight! A dead-centre drop is a perfect. Miss the tower and it topples."},
+      colosseum:{title:"Colosseum Escape", hint:"Drag to run toward the EXIT gate at the top — dodge the lions! Reach the gate to clear the round; each round adds another lion."},
+      mosaic:{title:"Barcelona Mosaic", hint:"Tap a tile to cycle its colour and match the little target pattern. Complete as many mosaics as you can before the timer runs out."},
+      quiz:{title:"Ports Quiz", hint:"Tap the right answer about our ports of call. Every correct answer extends your streak — one wrong answer ends the run."}
     };
-    this.CLASSES = {shuffle:"Shuffle",golf:"Golf",race:"Racer",builder:"Builder"};
+    this.CLASSES = {shuffle:"Shuffle",golf:"Golf",race:"Racer",builder:"Builder",pisa:"Pisa",colosseum:"Colosseum",mosaic:"Mosaic",quiz:"Quiz"};
   }
 
   componentWillUnmount(){ if(this.engine){ this.engine.destroy(); this.engine=null; } }
@@ -149,6 +153,10 @@ class Component extends DCLogic {
     else if(sc==="golf"){ const v=o.total; if(v!=null && (b.golf==null||v<b.golf)) b.golf=v; }
     else if(sc==="race"){ const v=o.dist||0; if(v>(b.race||0)) b.race=v; }
     else if(sc==="builder"){ const v=o.value||0; if(v>(b.builder||0)) b.builder=v; }
+    else if(sc==="pisa"){ const v=o.tiers||0; if(v>(b.pisa||0)) b.pisa=v; }
+    else if(sc==="colosseum"){ const v=o.escapes||0; if(v>(b.colosseum||0)) b.colosseum=v; }
+    else if(sc==="mosaic"){ const v=o.solves||0; if(v>(b.mosaic||0)) b.mosaic=v; }
+    else if(sc==="quiz"){ const v=o.streak||0; if(v>(b.quiz||0)) b.quiz=v; }
     this.setState({best:b});
     try{ localStorage.setItem("cg_best", JSON.stringify(b)); }catch(e){}
   }
@@ -217,13 +225,21 @@ class Component extends DCLogic {
       shuffle: b.shuffle!=null ? "Best score "+b.shuffle : "Not played yet",
       golf: b.golf!=null ? "Best round "+b.golf+" strokes" : "Not played yet",
       race: b.race!=null ? "Best "+b.race+" nm" : "Not played yet",
-      builder: b.builder!=null ? "Best $"+b.builder+"M" : "Not played yet"
+      builder: b.builder!=null ? "Best $"+b.builder+"M" : "Not played yet",
+      pisa: b.pisa!=null ? "Best "+b.pisa+" floors" : "Not played yet",
+      colosseum: b.colosseum!=null ? "Best "+b.colosseum+" escapes" : "Not played yet",
+      mosaic: b.mosaic!=null ? "Best "+b.mosaic+" mosaics" : "Not played yet",
+      quiz: b.quiz!=null ? "Best streak "+b.quiz : "Not played yet"
     };
     const games = [
       {key:"shuffle",emoji:"🥌",name:"Deck Shuffleboard",blurb:"Slide discs into the scoring zones & out-play the First Mate.",bg:"linear-gradient(160deg,#7defd8,#2dd4bf)",delay:"0s",best:bestStr.shuffle,open:()=>this.openGame("shuffle")},
       {key:"golf",emoji:"⛳",name:"Mini-Golf",blurb:"Three nautical holes. Mind the pools!",bg:"linear-gradient(160deg,#ffd97a,#fbbf24)",delay:".3s",best:bestStr.golf,open:()=>this.openGame("golf")},
       {key:"race",emoji:"🚤",name:"Harmony Racer",blurb:"Steer through the swell, dodge bergs, grab coins.",bg:"linear-gradient(160deg,#ffb0be,#fb7185)",delay:".6s",best:bestStr.race,open:()=>this.openGame("race")},
-      {key:"builder",emoji:"🏗️",name:"Shipwright",blurb:"Stack decks on a floating hull without capsizing.",bg:"linear-gradient(160deg,#bfe0ff,#7dd3fc)",delay:".9s",best:bestStr.builder,open:()=>this.openGame("builder")}
+      {key:"builder",emoji:"🏗️",name:"Shipwright",blurb:"Stack decks on a floating hull without capsizing.",bg:"linear-gradient(160deg,#bfe0ff,#7dd3fc)",delay:".9s",best:bestStr.builder,open:()=>this.openGame("builder")},
+      {key:"pisa",emoji:"🗼",name:"Leaning Tower",blurb:"Slice-stack the tower of Pisa as high as you dare.",bg:"linear-gradient(160deg,#f3e6c4,#e0c98a)",delay:"1.2s",best:bestStr.pisa,open:()=>this.openGame("pisa")},
+      {key:"colosseum",emoji:"🦁",name:"Colosseum Escape",blurb:"Outrun the lions and dash for the gate in Rome.",bg:"linear-gradient(160deg,#f6c177,#e8974e)",delay:"1.5s",best:bestStr.colosseum,open:()=>this.openGame("colosseum")},
+      {key:"mosaic",emoji:"🎨",name:"Barcelona Mosaic",blurb:"Recreate Gaudí-style tile patterns against the clock.",bg:"linear-gradient(160deg,#a7f3d0,#67e8c3)",delay:"1.8s",best:bestStr.mosaic,open:()=>this.openGame("mosaic")},
+      {key:"quiz",emoji:"🧠",name:"Ports Quiz",blurb:"Test your crew on the ports, food & sights of the voyage.",bg:"linear-gradient(160deg,#c4b5fd,#a78bfa)",delay:"2.1s",best:bestStr.quiz,open:()=>this.openGame("quiz")}
     ];
     return {
       stars: this.stars,

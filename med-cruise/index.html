@@ -297,7 +297,24 @@
       <section>
         <h1 style="font-family:Fredoka;font-weight:700;font-size:30px;margin:18px 4px 4px">Extras 🎒</h1>
 
-        <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 4px 8px">
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:16px;margin:20px 4px 4px">🛟 Muster station card</h2>
+        <p style="margin:0 4px 12px;color:#a9c6da;font-weight:600;font-size:13px">Your assembly point if there's ever an emergency. Copy it from your SeaPass card so it's here even with no signal.</p>
+        <div style="display:flex;gap:8px">
+          <label style="flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:#8fb7d1;letter-spacing:.5px">STATION
+            <input defaultValue="{{ muster.station }}" onInput="{{ muster.setStation }}" placeholder="e.g. A4" style="width:100%;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.22);color:#eaf4fb;font-family:Fredoka;font-weight:600;font-size:18px;padding:10px 12px"></label>
+          <label style="flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:#8fb7d1;letter-spacing:.5px">DECK
+            <input defaultValue="{{ muster.deck }}" onInput="{{ muster.setDeck }}" placeholder="e.g. 4" style="width:100%;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.22);color:#eaf4fb;font-family:Fredoka;font-weight:600;font-size:18px;padding:10px 12px"></label>
+          <label style="flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:800;color:#8fb7d1;letter-spacing:.5px">CABIN
+            <input defaultValue="{{ muster.cabin }}" onInput="{{ muster.setCabin }}" placeholder="e.g. 8536" style="width:100%;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(0,0,0,.22);color:#eaf4fb;font-family:Fredoka;font-weight:600;font-size:18px;padding:10px 12px"></label>
+        </div>
+        <div style="margin-top:12px;padding:14px;border-radius:18px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.24);font-size:13px;font-weight:600;line-height:1.5;color:#dceefb">
+          <div style="margin-bottom:6px">🕑 The muster drill happens on embarkation day, <b>before the ship sails</b> — the whole family should go.</div>
+          <div style="margin-bottom:6px">📣 The general emergency signal is <b>seven or more short blasts, then one long</b> — stop and listen for the crew's announcements.</div>
+          <div style="margin-bottom:6px">🦺 Life jackets are usually in your cabin wardrobe; bring them to muster only if the crew asks.</div>
+          <div style="margin-bottom:2px">🧭 Lost? Ask <b>any crew member</b> — helping you find your station is their job. Always follow their instructions over this card.</div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:26px 4px 8px">
           <h2 style="font-family:Fredoka;font-weight:600;font-size:16px;margin:0">🎒 Packing list</h2>
           <button onClick="{{ resetChecks }}" style="border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#9fc0d6;font-weight:800;font-size:11px;padding:6px 12px;border-radius:999px;cursor:pointer">RESET</button>
         </div>
@@ -362,7 +379,7 @@
     <sc-if value="{{ showGames }}" hint-placeholder-val="{{ false }}">
       <section>
         <h1 style="font-family:Fredoka;font-weight:700;font-size:30px;margin:18px 4px 4px">Deck Games 🎮</h1>
-        <p style="margin:0 4px 16px;color:#a9c6da;font-weight:600;font-size:14px">Four mini-games to pass a sea day — with sound, scores &amp; a mute button.</p>
+        <p style="margin:0 4px 16px;color:#a9c6da;font-weight:600;font-size:14px">Eight mini-games to pass a sea day — with sound, scores &amp; a mute button.</p>
         <a href="games.dc.html" style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;padding:18px;border-radius:20px;background:linear-gradient(160deg,#7defd8,#2dd4bf);color:#04263c;font-family:Fredoka;font-weight:700;font-size:20px;box-shadow:0 14px 30px -16px rgba(0,0,0,.7)">🎮 Open the arcade →</a>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
           <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
@@ -376,6 +393,18 @@
           </a>
           <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
             <div style="font-size:34px">🏗️</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Shipwright</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Build without capsizing</div></div>
+          </a>
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">🗼</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Leaning Tower</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Slice-stack it high</div></div>
+          </a>
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">🦁</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Colosseum Escape</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Outrun the lions</div></div>
+          </a>
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">🎨</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Barcelona Mosaic</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Match the tiles</div></div>
+          </a>
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">🧠</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Ports Quiz</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Test the crew</div></div>
           </a>
         </div>
       </section>
@@ -419,6 +448,7 @@ class Component extends DCLogic {
       journalTick: 0
     };
     this.notes = load("hm_notes", {});
+    this.muster = load("hm_muster", {});
 
     // ---- itinerary waypoints (viewBox coords + pct overlay + UTC times) ----
     const U = (d,h,m)=>Date.UTC(2026,6,d,h,m); // July = month 6
@@ -622,6 +652,7 @@ class Component extends DCLogic {
     this.setState(s=>{ const m={...s.moods}; m[day]=emoji; try{localStorage.setItem("hm_moods",JSON.stringify(m));}catch(e){} return {moods:m}; });
   }
   saveNote(day,val){ this.notes[day]=val; try{localStorage.setItem("hm_notes",JSON.stringify(this.notes));}catch(e){} }
+  saveMuster(field,val){ this.muster[field]=val; try{localStorage.setItem("hm_muster",JSON.stringify(this.muster));}catch(e){} }
 
   // ---------- LIVE POSITION ----------
   liveState(){
@@ -690,6 +721,8 @@ class Component extends DCLogic {
     return {
       soundIcon: this.state.muted ? "🔇" : "🔊",
       days, checklist, journalDays,
+      muster: { station:this.muster.station||"", deck:this.muster.deck||"", cabin:this.muster.cabin||"",
+        setStation:(e)=>this.saveMuster("station",e.target.value), setDeck:(e)=>this.saveMuster("deck",e.target.value), setCabin:(e)=>this.saveMuster("cabin",e.target.value) },
       stats:this.STATS, funFacts:this.FUNFACTS, dining:this.DINING, activities:this.ACTIVITIES, rhythm:this.RHYTHM, shows:this.SHOWS,
       phrases:this.PHRASES, currency:this.CURRENCY,
       packPct: (tot?done/tot*100:0).toFixed(0)+"%", packLabel: done+" / "+tot+" packed",
