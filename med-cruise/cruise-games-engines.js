@@ -816,5 +816,357 @@
     this.hudText("VALUE  $" + this.value + "M", "Decks: " + this.count);
   };
 
-  window.CruiseGames = { Shuffle: Shuffle, Golf: Golf, Racer: Racer, Builder: Builder };
+  /* shared: greedy canvas word-wrap → array of lines that fit maxW */
+  function wrapLines(ctx, text, maxW) {
+    var words = String(text).split(" "), lines = [], line = "";
+    for (var i = 0; i < words.length; i++) {
+      var test = line ? line + " " + words[i] : words[i];
+      if (line && ctx.measureText(test).width > maxW) { lines.push(line); line = words[i]; }
+      else line = test;
+    }
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  /* =================================================================
+     5) LEANING TOWER OF PISA — overhang-slice stacker (Tower-Bloxx style).
+        A tier slides side to side; tap to drop. The overhang is trimmed so
+        the tower narrows; a dead-centre drop is a "perfect". Miss the stack
+        entirely = over. The lean/sway is COSMETIC — it never ends the game.
+  ================================================================= */
+  function Pisa(canvas, opts) { Base.call(this, canvas, opts); this.reset(); }
+  inherit(Pisa);
+  Pisa.prototype.reset = function () {
+    this.topY = 372;                       // fixed screen-y of the current top tier
+    this.tierH = 44; this.baseW = 320;
+    this.marginL = 46; this.marginR = this.W - 46;
+    this.blocks = [{ cx: this.W / 2, w: this.baseW }];
+    this.slider = { cx: this.marginL + this.baseW / 2, w: this.baseW, dir: 1 };
+    this.speed = 250; this.tiers = 0; this.sway = 0; this.flash = 0;
+    this.state = "play";
+    this.emit({ tiers: 0, over: false, msg: "Tap to drop each floor — keep it stacked!" });
+  };
+  Pisa.prototype._top = function () { return this.blocks[this.blocks.length - 1]; };
+  Pisa.prototype.pointer = function (p, phase) {
+    if (phase !== "down") return;
+    if (this.state === "over") { this.reset(); return; }
+    this._drop();
+  };
+  Pisa.prototype._drop = function () {
+    var top = this._top(), s = this.slider;
+    var oL = Math.max(s.cx - s.w / 2, top.cx - top.w / 2);
+    var oR = Math.min(s.cx + s.w / 2, top.cx + top.w / 2);
+    if (oR - oL <= 0) {                    // missed the tower below → topple
+      this.state = "over"; this.flash = 0.5;
+      this.emit({ over: true, tiers: this.tiers, msg: "Toppled at " + this.tiers + " floors! 🗼" });
+      this.sfx("lose"); return;
+    }
+    var newW, newCx;
+    if (Math.abs(s.cx - top.cx) < 7) {     // perfect: keep (slightly regrow) & centre
+      newW = Math.min(this.baseW, top.w + 6); newCx = top.cx; this.sfx("coin");
+    } else { newW = oR - oL; newCx = (oL + oR) / 2; this.sfx("place"); }
+    this.blocks.push({ cx: newCx, w: newW });
+    this.tiers++;
+    this.speed = Math.min(650, this.speed + 12);
+    var fromLeft = this.tiers % 2 === 0;
+    this.slider = { cx: fromLeft ? this.marginL + newW / 2 : this.marginR - newW / 2, w: newW, dir: fromLeft ? 1 : -1 };
+    this.emit({ tiers: this.tiers });
+  };
+  Pisa.prototype.update = function (dt) {
+    if (this.flash > 0) this.flash -= dt;
+    this.sway += dt;
+    if (this.state !== "play") return;
+    var s = this.slider;
+    s.cx += s.dir * this.speed * dt;
+    if (s.cx - s.w / 2 < this.marginL) { s.cx = this.marginL + s.w / 2; s.dir = 1; }
+    if (s.cx + s.w / 2 > this.marginR) { s.cx = this.marginR - s.w / 2; s.dir = -1; }
+  };
+  Pisa.prototype._tier = function (cx, w, sy) {
+    var c = this.ctx;
+    c.fillStyle = "#e9dfc7"; this.rr(cx - w / 2, sy - this.tierH / 2, w, this.tierH - 4, 7); c.fill();
+    c.strokeStyle = "rgba(120,96,60,.45)"; c.lineWidth = 2; c.stroke();
+    c.fillStyle = "rgba(120,96,60,.3)";
+    var n = Math.max(2, Math.floor(w / 34)), gap = w / n;
+    for (var i = 0; i < n; i++) { c.beginPath(); c.arc(cx - w / 2 + gap * (i + 0.5), sy + 2, 4.5, Math.PI, 0); c.fill(); }
+  };
+  Pisa.prototype.draw = function () {
+    var c = this.ctx, W = this.W, H = this.H;
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0a3a5c"); g.addColorStop(1, "#062038");
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#fde68a"; c.beginPath(); c.arc(W - 76, 96, 34, 0, TAU); c.fill();
+    c.fillStyle = "#2f6b3f"; c.fillRect(0, H - 66, W, 66);
+    c.fillStyle = "rgba(255,255,255,.08)"; c.fillRect(0, H - 66, W, 5);
+    var lean = Math.min(0.05, this.tiers * 0.0016) * Math.sin(this.sway * 0.8);
+    var topN = this.blocks.length - 1;
+    c.save();
+    c.translate(W / 2, this.topY); c.rotate(lean); c.translate(-W / 2, -this.topY);
+    for (var i = topN; i >= 0; i--) {
+      var sy = this.topY + (topN - i) * this.tierH;
+      if (sy - this.tierH > H) break;
+      this._tier(this.blocks[i].cx, this.blocks[i].w, sy);
+    }
+    c.restore();
+    if (this.state === "play") {
+      var s = this.slider, sy2 = this.topY - this.tierH;
+      this._tier(s.cx, s.w, sy2);
+      c.strokeStyle = "rgba(255,255,255,.3)"; c.lineWidth = 2; c.setLineDash([5, 8]);
+      c.beginPath(); c.moveTo(s.cx, sy2 + this.tierH / 2); c.lineTo(s.cx, this.topY - this.tierH / 2); c.stroke(); c.setLineDash([]);
+    }
+    if (this.flash > 0) { c.fillStyle = "rgba(251,113,133," + (this.flash * 0.5) + ")"; c.fillRect(0, 0, W, H); }
+    this.hudText("LEANING TOWER", "Floors: " + this.tiers);
+  };
+
+  /* =================================================================
+     6) COLOSSEUM ESCAPE — reach the exit gate, dodge the lions.
+        Bloodless & cartoon. Reach gate = win (round++, more lions);
+        caught = over. Best = rounds escaped.
+  ================================================================= */
+  function Colosseum(canvas, opts) { Base.call(this, canvas, opts); this.reset(); }
+  inherit(Colosseum);
+  Colosseum.prototype.reset = function () {
+    this.cxA = this.W / 2; this.cyA = this.H / 2 + 20;
+    this.rx = this.W / 2 - 40; this.ry = this.H / 2 - 90;
+    this.gate = { x: this.W / 2, w: 150, y: this.cyA - this.ry - 6 };
+    this.player = { x: this.W / 2, y: this.cyA + this.ry - 60, r: 22, sp: 300 };
+    this.target = { x: this.player.x, y: this.player.y };
+    this.round = 1; this.escapes = 0; this.flash = 0; this.win = 0;
+    this._spawnLions();
+    this.state = "run";
+    this.emit({ round: 1, escapes: 0, over: false, msg: "" });
+  };
+  Colosseum.prototype._spawnLions = function () {
+    var n = 1 + this.round;                // round 1 → 2 lions
+    this.lions = [];
+    for (var i = 0; i < n; i++) {
+      var a = (i / n) * TAU;
+      this.lions.push({ x: this.cxA + Math.cos(a) * this.rx * 0.5, y: this.cyA + Math.sin(a) * this.ry * 0.5, r: 20, sp: 130 + this.round * 12 });
+    }
+  };
+  Colosseum.prototype._clamp = function (o) {
+    var dx = (o.x - this.cxA) / this.rx, dy = (o.y - this.cyA) / this.ry, d = Math.sqrt(dx * dx + dy * dy);
+    if (d > 1) { o.x = this.cxA + dx / d * this.rx; o.y = this.cyA + dy / d * this.ry; }
+  };
+  Colosseum.prototype.pointer = function (p, phase) {
+    if (this.state === "over") { if (phase === "down") this.reset(); return; }
+    if (this.state !== "run") return;
+    if (phase === "down" || phase === "move") { this.target.x = p.x; this.target.y = p.y; }
+  };
+  Colosseum.prototype.update = function (dt) {
+    if (this.flash > 0) this.flash -= dt;
+    if (this.state === "won") { this.win -= dt; if (this.win <= 0) { this._spawnLions(); this.state = "run"; } return; }
+    if (this.state !== "run") return;
+    var pl = this.player, dx = this.target.x - pl.x, dy = this.target.y - pl.y, d = Math.sqrt(dx * dx + dy * dy);
+    if (d > 2) { var st = Math.min(d, pl.sp * dt); pl.x += dx / d * st; pl.y += dy / d * st; }
+    var inGateCol = Math.abs(pl.x - this.gate.x) < this.gate.w / 2 && pl.y < this.cyA;
+    if (!inGateCol) this._clamp(pl);
+    if (Math.abs(pl.x - this.gate.x) < this.gate.w / 2 && pl.y <= this.gate.y + 8) {
+      this.escapes++; this.round++; this.state = "won"; this.win = 0.9; this.sfx("win");
+      this.emit({ escapes: this.escapes, round: this.round, msg: "" });
+      pl.x = this.W / 2; pl.y = this.cyA + this.ry - 60; this.target.x = pl.x; this.target.y = pl.y;
+      return;
+    }
+    for (var i = 0; i < this.lions.length; i++) {
+      var L = this.lions[i], lx = pl.x - L.x, ly = pl.y - L.y, ld = Math.sqrt(lx * lx + ly * ly) || 1;
+      L.x += lx / ld * L.sp * dt; L.y += ly / ld * L.sp * dt; this._clamp(L);
+      if (ld < pl.r + L.r) {
+        this.state = "over"; this.flash = 0.6;
+        this.emit({ over: true, escapes: this.escapes, msg: "The lions cornered you! 🦁" });
+        this.sfx("lose"); return;
+      }
+    }
+  };
+  Colosseum.prototype.draw = function () {
+    var c = this.ctx, W = this.W, H = this.H;
+    c.fillStyle = "#0a3050"; c.fillRect(0, 0, W, H);
+    c.beginPath(); c.ellipse(this.cxA, this.cyA, this.rx + 26, this.ry + 26, 0, 0, TAU); c.fillStyle = "#8a7a5c"; c.fill();
+    c.strokeStyle = "rgba(60,48,30,.5)"; c.lineWidth = 4;
+    for (var a = 0; a < TAU; a += TAU / 26) {
+      c.beginPath();
+      c.moveTo(this.cxA + Math.cos(a) * (this.rx + 8), this.cyA + Math.sin(a) * (this.ry + 8));
+      c.lineTo(this.cxA + Math.cos(a) * (this.rx + 24), this.cyA + Math.sin(a) * (this.ry + 24)); c.stroke();
+    }
+    c.beginPath(); c.ellipse(this.cxA, this.cyA, this.rx, this.ry, 0, 0, TAU); c.fillStyle = "#d9c08a"; c.fill();
+    c.fillStyle = "#1f9e5a"; c.fillRect(this.gate.x - this.gate.w / 2, this.gate.y - 18, this.gate.w, 40);
+    c.fillStyle = "#eaffef"; c.font = "700 22px Fredoka, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+    c.fillText("EXIT ▲", this.gate.x, this.gate.y + 2);
+    for (var i = 0; i < this.lions.length; i++) {
+      var L = this.lions[i];
+      c.fillStyle = "#b45309"; c.beginPath(); c.arc(L.x, L.y, L.r + 6, 0, TAU); c.fill();
+      c.fillStyle = "#f59e0b"; c.beginPath(); c.arc(L.x, L.y, L.r, 0, TAU); c.fill();
+      c.fillStyle = "#3b2410";
+      c.beginPath(); c.arc(L.x - 6, L.y - 4, 3, 0, TAU); c.fill();
+      c.beginPath(); c.arc(L.x + 6, L.y - 4, 3, 0, TAU); c.fill();
+      c.beginPath(); c.arc(L.x, L.y + 5, 3.5, 0, TAU); c.fill();
+    }
+    var pl = this.player;
+    c.fillStyle = "rgba(0,0,0,.2)"; c.beginPath(); c.ellipse(pl.x, pl.y + pl.r, pl.r * 0.8, 6, 0, 0, TAU); c.fill();
+    c.fillStyle = "#2dd4bf"; c.beginPath(); c.arc(pl.x, pl.y, pl.r, 0, TAU); c.fill();
+    c.strokeStyle = "#eaf4fb"; c.lineWidth = 3; c.stroke();
+    c.fillStyle = "#04263c"; this.rr(pl.x - 9, pl.y - 5, 18, 10, 3); c.fill();
+    if (this.state === "won") { c.fillStyle = "#7defd8"; c.font = "700 40px Fredoka, sans-serif"; c.textAlign = "center"; c.fillText("ESCAPED!", W / 2, H / 2); }
+    if (this.flash > 0) { c.fillStyle = "rgba(251,113,133," + (this.flash * 0.5) + ")"; c.fillRect(0, 0, W, H); }
+    this.hudText("COLOSSEUM · Round " + this.round, "Escapes: " + this.escapes);
+  };
+
+  /* =================================================================
+     7) BARCELONA MOSAIC — recreate the trencadís pattern before time's up.
+        Tap a tile to cycle its colour to match the target. Solve as many as
+        you can in 60s. Best = mosaics completed (higher-is-better).
+  ================================================================= */
+  function Mosaic(canvas, opts) { Base.call(this, canvas, opts); this.reset(); }
+  inherit(Mosaic);
+  Mosaic.prototype.PAL = ["#2dd4bf", "#fbbf24", "#fb7185", "#7dd3fc"];
+  Mosaic.prototype.reset = function () {
+    this.N = 4; this.colors = 4; this.cell = 118; this.gap = 10;
+    this.gridW = this.N * this.cell + (this.N - 1) * this.gap;
+    this.ox = (this.W - this.gridW) / 2; this.oy = 274;
+    this.solves = 0; this.time = 60; this.state = "play";
+    this._newTarget();
+    this.emit({ solves: 0, over: false, msg: "Tap tiles to match the mosaic!" });
+  };
+  Mosaic.prototype._newTarget = function () {
+    var n = this.N * this.N; this.target = []; this.grid = [];
+    for (var i = 0; i < n; i++) { this.target.push((Math.random() * this.colors) | 0); this.grid.push(0); }
+    if (this._solved()) this.grid[0] = (this.grid[0] + 1) % this.colors;   // never start solved
+  };
+  Mosaic.prototype._solved = function () {
+    for (var i = 0; i < this.grid.length; i++) if (this.grid[i] !== this.target[i]) return false;
+    return true;
+  };
+  Mosaic.prototype.pointer = function (p, phase) {
+    if (phase !== "down") return;
+    if (this.state === "over") { this.reset(); return; }
+    if (this.state !== "play") return;
+    var step = this.cell + this.gap;
+    var col = Math.floor((p.x - this.ox) / step), row = Math.floor((p.y - this.oy) / step);
+    if (col < 0 || col >= this.N || row < 0 || row >= this.N) return;
+    if (p.x > this.ox + col * step + this.cell || p.y > this.oy + row * step + this.cell) return;  // in gap
+    var idx = row * this.N + col;
+    this.grid[idx] = (this.grid[idx] + 1) % this.colors; this.sfx("clack");
+    if (this._solved()) {
+      this.solves++; this.time = Math.min(75, this.time + 6); this.sfx("win");
+      this._newTarget(); this.emit({ solves: this.solves, msg: "Mosaic complete! ✨" });
+    }
+  };
+  Mosaic.prototype.update = function (dt) {
+    if (this.state !== "play") return;
+    this.time -= dt;
+    if (this.time <= 0) {
+      this.time = 0; this.state = "over";
+      this.emit({ over: true, solves: this.solves, msg: "Time! " + this.solves + " mosaics made 🎨" });
+      this.sfx(this.solves > 0 ? "win" : "lose");
+    }
+  };
+  Mosaic.prototype.draw = function () {
+    var c = this.ctx, W = this.W, H = this.H;
+    c.fillStyle = "#0a3450"; c.fillRect(0, 0, W, H);
+    c.fillStyle = "#a9c6da"; c.font = "700 16px Nunito, sans-serif"; c.textAlign = "left"; c.textBaseline = "middle";
+    c.fillText("Match this:", 46, 138);
+    var pv = 22, pg = 4, px = 46, py = 154;
+    for (var r = 0; r < this.N; r++) for (var col = 0; col < this.N; col++) {
+      c.fillStyle = this.PAL[this.target[r * this.N + col]];
+      this.rr(px + col * (pv + pg), py + r * (pv + pg), pv, pv, 5); c.fill();
+    }
+    c.textAlign = "right"; c.fillStyle = "#ffd97a"; c.font = "700 26px Fredoka, sans-serif";
+    c.fillText("⏱ " + Math.ceil(this.time) + "s", W - 46, 150);
+    c.fillStyle = "#7defd8"; c.fillText("✨ " + this.solves, W - 46, 186);
+    var step = this.cell + this.gap;
+    for (var rr2 = 0; rr2 < this.N; rr2++) for (var cc = 0; cc < this.N; cc++) {
+      var idx = rr2 * this.N + cc, x = this.ox + cc * step, y = this.oy + rr2 * step, match = this.grid[idx] === this.target[idx];
+      c.fillStyle = this.PAL[this.grid[idx]]; this.rr(x, y, this.cell, this.cell, 12); c.fill();
+      c.strokeStyle = match ? "rgba(255,255,255,.9)" : "rgba(0,0,0,.28)"; c.lineWidth = match ? 4 : 2;
+      this.rr(x, y, this.cell, this.cell, 12); c.stroke();
+    }
+    c.textAlign = "center"; c.fillStyle = "#8fb7d1"; c.font = "600 14px Nunito, sans-serif";
+    c.fillText("Tap a tile to change its colour", W / 2, this.oy + this.N * step + 8);
+  };
+
+  /* =================================================================
+     8) PORTS QUIZ — canvas-rendered trivia from the real itinerary.
+        Tap an answer. Correct → streak++, next question. Wrong → over.
+        Best = longest streak.
+  ================================================================= */
+  var QUIZ = [
+    { q: "Which city does the cruise sail round-trip from?", o: ["Barcelona", "Rome", "Naples", "Venice"], a: 0 },
+    { q: "La Spezia is the gateway to which famous five villages?", o: ["Cinque Terre", "Amalfi Coast", "Costa Brava", "Portofino"], a: 0 },
+    { q: "Civitavecchia is the cruise port for which capital?", o: ["Rome", "Florence", "Milan", "Turin"], a: 0 },
+    { q: "Which classic dish was born in Naples?", o: ["Pizza", "Paella", "Risotto", "Gelato"], a: 0 },
+    { q: "Palma de Mallorca is capital of which island group?", o: ["The Balearics", "The Canaries", "Sardinia", "Sicily"], a: 0 },
+    { q: "Barcelona's unfinished Gaudí basilica is the…?", o: ["Sagrada Família", "Duomo", "Pantheon", "La Scala"], a: 0 },
+    { q: "Which volcano looms over the Bay of Naples?", o: ["Vesuvius", "Etna", "Stromboli", "Krakatoa"], a: 0 },
+    { q: "What currency do you use in Spain and Italy?", o: ["The Euro", "The Peseta", "The Lira", "The Dollar"], a: 0 },
+    { q: "In which sea is this whole cruise sailing?", o: ["Mediterranean", "Atlantic", "Caribbean", "Baltic"], a: 0 },
+    { q: "What do you traditionally toss into Rome's Trevi Fountain?", o: ["A coin", "A flower", "A ring", "Bread"], a: 0 },
+    { q: "Which cruise line operates Harmony of the Seas?", o: ["Royal Caribbean", "Cunard", "P&O", "Disney"], a: 0 },
+    { q: "Cinque Terre's terraced hillsides famously grow…?", o: ["Grapevines", "Tulips", "Rice", "Tea"], a: 0 }
+  ];
+
+  function Quiz(canvas, opts) { Base.call(this, canvas, opts); this.reset(); }
+  inherit(Quiz);
+  Quiz.prototype.reset = function () {
+    this.order = []; for (var i = 0; i < QUIZ.length; i++) this.order.push(i);
+    for (var j = this.order.length - 1; j > 0; j--) { var k = (Math.random() * (j + 1)) | 0, t = this.order[j]; this.order[j] = this.order[k]; this.order[k] = t; }
+    this.qi = 0; this.streak = 0; this.state = "ask"; this.fb = 0; this.picked = -1;
+    this._layout();
+    this.emit({ streak: 0, over: false, msg: "" });
+  };
+  Quiz.prototype._cur = function () { return QUIZ[this.order[this.qi % this.order.length]]; };
+  Quiz.prototype._layout = function () {
+    var c = this.ctx, W = this.W, q = this._cur();
+    c.font = "600 26px Nunito, sans-serif";
+    this.qLines = wrapLines(c, q.q, W - 96);
+    this.qTop = 84; this.qPanelH = 26 + this.qLines.length * 38;
+    var y = this.qTop + this.qPanelH + 26;
+    this.rects = [];
+    c.font = "700 24px Nunito, sans-serif";
+    for (var i = 0; i < q.o.length; i++) {
+      var lines = wrapLines(c, q.o[i], W - 140), h = Math.max(70, 26 + lines.length * 30);
+      this.rects.push({ x: 46, y: y, w: W - 92, h: h, lines: lines }); y += h + 14;
+    }
+  };
+  Quiz.prototype.pointer = function (p, phase) {
+    if (phase !== "down") return;
+    if (this.state === "over") { this.reset(); return; }
+    if (this.state !== "ask") return;
+    for (var i = 0; i < this.rects.length; i++) {
+      var r = this.rects[i];
+      if (p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h) { this._answer(i); return; }
+    }
+  };
+  Quiz.prototype._answer = function (i) {
+    this.picked = i; var q = this._cur();
+    if (i === q.a) { this.streak++; this.sfx("coin"); this.state = "feedback"; this.fb = 0.7; this.emit({ streak: this.streak }); }
+    else { this.sfx("lose"); this.state = "over"; this.emit({ over: true, streak: this.streak, msg: "Not quite! Best streak: " + this.streak }); }
+  };
+  Quiz.prototype.update = function (dt) {
+    if (this.state !== "feedback") return;
+    this.fb -= dt;
+    if (this.fb <= 0) { this.qi++; this.picked = -1; this.state = "ask"; this._layout(); }
+  };
+  Quiz.prototype.draw = function () {
+    var c = this.ctx, W = this.W, H = this.H, q = this._cur();
+    var g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0c3a5a"); g.addColorStop(1, "#061f36");
+    c.fillStyle = g; c.fillRect(0, 0, W, H);
+    c.fillStyle = "rgba(255,255,255,.06)"; this.rr(30, this.qTop, W - 60, this.qPanelH, 18); c.fill();
+    c.fillStyle = "#eaf4fb"; c.font = "600 26px Nunito, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+    for (var i = 0; i < this.qLines.length; i++) c.fillText(this.qLines[i], W / 2, this.qTop + 30 + i * 38);
+    for (var j = 0; j < this.rects.length; j++) {
+      var r = this.rects[j], bg = "rgba(255,255,255,.08)", bd = "rgba(255,255,255,.18)";
+      if (this.state === "feedback") {
+        if (j === q.a) { bg = "rgba(45,212,191,.32)"; bd = "#2dd4bf"; }
+        else if (j === this.picked) { bg = "rgba(251,113,133,.3)"; bd = "#fb7185"; }
+      }
+      c.fillStyle = bg; this.rr(r.x, r.y, r.w, r.h, 16); c.fill();
+      c.strokeStyle = bd; c.lineWidth = 2; this.rr(r.x, r.y, r.w, r.h, 16); c.stroke();
+      c.fillStyle = "#eaf4fb"; c.font = "700 24px Nunito, sans-serif"; c.textAlign = "center"; c.textBaseline = "middle";
+      var cy = r.y + r.h / 2 - (r.lines.length - 1) * 15;
+      for (var k = 0; k < r.lines.length; k++) c.fillText(r.lines[k], W / 2, cy + k * 30);
+    }
+    this.hudText("PORTS QUIZ", "Streak: " + this.streak);
+  };
+
+  window.CruiseGames = {
+    Shuffle: Shuffle, Golf: Golf, Racer: Racer, Builder: Builder,
+    Pisa: Pisa, Colosseum: Colosseum, Mosaic: Mosaic, Quiz: Quiz
+  };
 })();

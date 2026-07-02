@@ -2,7 +2,6 @@
 // 0x4D44 — interactive listing
 // Vanilla JS. No framework. Handles filter/sort/layout state and
 // renders the listing into #listing. State persists to localStorage.
-// Includes standalone almanac app entries that live outside data.js.
 // ============================================================
 
 (function () {
@@ -10,19 +9,6 @@
 
   const STATE_KEY = "0x4d44.listing.v1";
   const defaults = { filter: "all", sort: "recent", layout: "table" };
-  const injected = [
-    {
-      slug: "humanity-retention",
-      title: "Humanity Retention Programme",
-      tagline: "A satirical, mobile-first outbreak containment strategy game: retain humanity through fictional crises, crisis cards, regional traits, research, trust, economy, misinformation and suspicious AI Administrative Control. Installable offline PWA with local saves, campaign, quick play, codex, achievements, procedural audio and tests. Vanilla JS modules — no build step.",
-      url: "https://0x4d44.github.io/humanity-retention/",
-      illustration: "ill-population",
-      date: "2026-07-02T19:10:00",
-      year: 2026,
-      tag: "software",
-      real: true,
-    }
-  ];
 
   function loadState() {
     try {
@@ -34,22 +20,22 @@
   }
 
   const state = loadState();
-  const essays = (window.ESSAYS || []).slice();
-  injected.forEach(entry => {
-    if (!essays.some(e => e.slug === entry.slug)) essays.unshift(entry);
-  });
+  const essays = window.ESSAYS || [];
+  // A page may carry one `tag` (string) or several via `tags` (array).
   const tagsOf = (e) => e.tags || (e.tag ? [e.tag] : []);
-  const sizeOf = e => e.readingMin && e.words ? `${e.readingMin}m · ${(e.words / 1000).toFixed(1)}k` : e.readingMin ? `${e.readingMin}m` : e.words ? `${(e.words / 1000).toFixed(1)}k w` : "app";
+  const hasNumber = (v) => Number.isFinite(v);
+  const readingText = (e) => hasNumber(e.readingMin) ? `${e.readingMin}m` : "";
+  const wordsText = (e, suffix) => hasNumber(e.words) ? `${(e.words / 1000).toFixed(1)}k${suffix}` : "";
+  const sizeMobileParts = (e) => [readingText(e), wordsText(e, " w")].filter(Boolean);
+  const sizeText = (e) => [readingText(e), wordsText(e, "")].filter(Boolean).join(" · ");
 
   function el(tag, attrs, children) {
     const e = document.createElement(tag);
     if (attrs) for (const k in attrs) {
-      const value = attrs[k];
-      if (value == null || value === false) continue;
-      if (k === "class") e.className = value;
-      else if (k === "html") e.innerHTML = value;
-      else if (k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(), value);
-      else e.setAttribute(k, value === true ? "" : String(value));
+      if (k === "class") e.className = attrs[k];
+      else if (k === "html") e.innerHTML = attrs[k];
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+      else e.setAttribute(k, attrs[k]);
     }
     if (children) for (const c of [].concat(children)) {
       if (c == null) continue;
@@ -70,6 +56,7 @@
     return svg;
   }
 
+  // ---------- status bar ----------
   function buildStatusbar() {
     const tot = essays.length;
     const words = essays.reduce((s, e) => s + (e.words || 0), 0);
@@ -82,6 +69,7 @@
     document.getElementById("build-date").textContent = window.fmtDate(new Date().toISOString().slice(0,10));
   }
 
+  // ---------- controls ----------
   function buildControlRow(rowId, options, key) {
     const row = document.getElementById(rowId);
     row.innerHTML = "";
@@ -94,84 +82,157 @@
           saveState(state);
           render();
         },
-      }, label);
+      });
+      b.textContent = label;
       row.appendChild(b);
     });
   }
 
   function buildControls() {
-    buildControlRow("filter-row", (window.TAGS || ["all"]).map(t => [t, "--" + t]), "filter");
-    buildControlRow("sort-row", [["recent", "date↓"], ["oldest", "date↑"], ["length", "len↓"], ["year", "yr↑"]], "sort");
-    buildControlRow("layout-row", [["table", "--table"], ["grid", "--grid"]], "layout");
+    buildControlRow(
+      "filter-row",
+      (window.TAGS || ["all"]).map(t => [t, "--" + t]),
+      "filter"
+    );
+    buildControlRow(
+      "sort-row",
+      [
+        ["recent", "date↓"],
+        ["oldest", "date↑"],
+        ["length", "len↓"],
+        ["year", "yr↑"],
+      ],
+      "sort"
+    );
+    buildControlRow(
+      "layout-row",
+      [
+        ["table", "--table"],
+        ["grid",  "--grid"],
+      ],
+      "layout"
+    );
   }
 
+  // ---------- listing ----------
   function sortedFiltered() {
     let list = essays.slice();
     if (state.filter !== "all") list = list.filter(e => tagsOf(e).includes(state.filter));
     if (state.sort === "recent") list.sort((a, b) => b.date.localeCompare(a.date));
     if (state.sort === "oldest") list.sort((a, b) => a.date.localeCompare(b.date));
     if (state.sort === "length") list.sort((a, b) => (b.words || 0) - (a.words || 0));
-    if (state.sort === "year") list.sort((a, b) => a.year - b.year);
+    if (state.sort === "year")   list.sort((a, b) => a.year - b.year);
     return list;
   }
 
   function rowEl(essay, idx) {
-    const wrapper = el("a", { class: "row", href: essay.url || "#", target: essay.url ? "_blank" : null, rel: essay.url ? "noopener" : null });
+    const wrapper = el("a", {
+      class: "row",
+      href: essay.url || "#",
+      target: essay.url ? "_blank" : null,
+      rel: essay.url ? "noopener" : null,
+    });
+    const fig = el("div", { class: "row-fig" }, [svgUse(essay.illustration || "ill-diesel")]);
     const titleBlock = el("div", { class: "row-title-block" }, [
       el("div", { class: "row-title" }, essay.title),
       el("div", { class: "row-tagline" }, essay.tagline),
       el("div", { class: "row-meta-mobile" }, [
-        el("span", null, sizeOf(essay)),
+        ...sizeMobileParts(essay).map(text => el("span", null, text)),
         el("span", null, tagsOf(essay).join(" · ")),
         el("span", null, String(essay.year)),
         el("span", { class: essay.real ? "pub" : "drf" }, essay.real ? "[PUB]" : "[DRAFT]"),
       ]),
     ]);
     wrapper.appendChild(el("span", { class: "row-num" }, String(idx + 1).padStart(3, "0")));
-    wrapper.appendChild(el("div", { class: "row-fig" }, [svgUse(essay.illustration || "ill-diesel")]));
+    wrapper.appendChild(fig);
     wrapper.appendChild(titleBlock);
     wrapper.appendChild(el("span", { class: "row-tag" }, tagsOf(essay).join(" · ")));
-    wrapper.appendChild(el("span", { class: "row-size" }, sizeOf(essay)));
+    wrapper.appendChild(el("span", { class: "row-size" }, sizeText(essay)));
     wrapper.appendChild(el("span", { class: "row-year" }, String(essay.year)));
-    wrapper.appendChild(el("span", { class: "row-state " + (essay.real ? "published" : "draft") }, essay.real ? "[PUB]" : "[DRAFT]"));
+    wrapper.appendChild(el("span", {
+      class: "row-state " + (essay.real ? "published" : "draft")
+    }, essay.real ? "[PUB]" : "[DRAFT]"));
     return wrapper;
   }
 
   function cardEl(essay, idx) {
-    const wrapper = el("a", { class: "card", href: essay.url || "#", target: essay.url ? "_blank" : null, rel: essay.url ? "noopener" : null });
-    wrapper.appendChild(el("div", { class: "card-head" }, [el("span", null, String(idx + 1).padStart(3, "0")), el("span", null, tagsOf(essay).map(t => t.toUpperCase()).join(" · "))]));
+    const wrapper = el("a", {
+      class: "card",
+      href: essay.url || "#",
+      target: essay.url ? "_blank" : null,
+      rel: essay.url ? "noopener" : null,
+    });
+    wrapper.appendChild(el("div", { class: "card-head" }, [
+      el("span", null, String(idx + 1).padStart(3, "0")),
+      el("span", null, tagsOf(essay).map(t => t.toUpperCase()).join(" · ")),
+    ]));
     wrapper.appendChild(el("div", { class: "card-fig" }, [svgUse(essay.illustration || "ill-diesel")]));
     wrapper.appendChild(el("div", { class: "card-title" }, essay.title));
     wrapper.appendChild(el("div", { class: "card-tagline" }, essay.tagline));
-    wrapper.appendChild(el("div", { class: "card-foot" }, [el("span", null, sizeOf(essay)), el("span", { class: essay.real ? "published" : "draft" }, essay.real ? "[PUB]" : "[DRAFT]")]));
+    wrapper.appendChild(el("div", { class: "card-foot" }, [
+      el("span", null, sizeText(essay)),
+      el("span", { class: essay.real ? "published" : "draft" }, essay.real ? "[PUB]" : "[DRAFT]"),
+    ]));
     return wrapper;
   }
 
-  function syncControls() {
-    const maps = { "filter-row": (window.TAGS || ["all"]), "sort-row": ["recent", "oldest", "length", "year"], "layout-row": ["table", "grid"] };
-    const keys = { "filter-row": "filter", "sort-row": "sort", "layout-row": "layout" };
-    Object.keys(maps).forEach(rowId => {
-      document.querySelectorAll(`#${rowId} button`).forEach((b, i) => b.setAttribute("aria-pressed", maps[rowId][i] === state[keys[rowId]] ? "true" : "false"));
-    });
-  }
-
   function render() {
-    syncControls();
+    // refresh pressed states
+    document.querySelectorAll("#filter-row button, #sort-row button, #layout-row button")
+      .forEach(b => b.setAttribute("aria-pressed", "false"));
+    function setPressed(rowId, value) {
+      document.querySelectorAll(`#${rowId} button`).forEach((b, i, all) => {
+        // value-to-label mapping: we stored by index, so cross-check textContent prefix
+      });
+    }
+    // simpler: re-stamp pressed by checking against current state via attribute on button
+    [
+      ["filter-row", state.filter, (window.TAGS||["all"]).map(t=>"--"+t)],
+      ["sort-row", state.sort, ["date↓","date↑","len↓","yr↑"]],
+      ["layout-row", state.layout, ["--table","--grid"]],
+    ].forEach(([rowId, val, labels]) => {
+      const map = {
+        "filter-row": (window.TAGS||["all"]),
+        "sort-row":   ["recent","oldest","length","year"],
+        "layout-row": ["table","grid"],
+      }[rowId];
+      document.querySelectorAll(`#${rowId} button`).forEach((b, i) => {
+        b.setAttribute("aria-pressed", map[i] === val ? "true" : "false");
+      });
+    });
+
     const listing = document.getElementById("listing");
     listing.innerHTML = "";
     const list = sortedFiltered();
+
     if (list.length === 0) {
-      listing.appendChild(el("div", { class: "empty", style: "padding:40px 6px;color:var(--dim);font-size:12px;letter-spacing:1.5px;" }, `// no documents match --${state.filter}`));
+      listing.appendChild(el("div", {
+        class: "empty",
+        style: "padding:40px 6px;color:var(--dim);font-size:12px;letter-spacing:1.5px;",
+      }, `// no documents match --${state.filter}`));
       return;
     }
+
     if (state.layout === "table") {
-      listing.appendChild(el("div", { class: "table-head" }, ["№", "FIG", "TITLE", "SUBJECT", "SIZE", "YEAR", "STATE"].map(x => el("span", null, x))));
+      const head = el("div", { class: "table-head" }, [
+        el("span", null, "№"),
+        el("span", null, "FIG"),
+        el("span", null, "TITLE"),
+        el("span", null, "SUBJECT"),
+        el("span", null, "SIZE"),
+        el("span", null, "YEAR"),
+        el("span", null, "STATE"),
+      ]);
+      listing.appendChild(head);
       list.forEach((e, i) => listing.appendChild(rowEl(e, i)));
     } else {
-      listing.appendChild(el("div", { class: "grid" }, list.map((e, i) => cardEl(e, i))));
+      const grid = el("div", { class: "grid" });
+      list.forEach((e, i) => grid.appendChild(cardEl(e, i)));
+      listing.appendChild(grid);
     }
   }
 
+  // ---------- init ----------
   document.addEventListener("DOMContentLoaded", function () {
     buildStatusbar();
     buildControls();
