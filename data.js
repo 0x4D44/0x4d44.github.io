@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "driftfield",
+    title: "Driftfield",
+    tagline: "A Perlin-noise flow-field toy: steer thousands of particles through live vector currents, then tune scale, speed, trails, palettes and cursor forces. React via the design-runtime export, painting directly to canvas - no build step.",
+    url: "https://0x4d44.github.io/driftfield/",
+    illustration: "ill-attractor",
+    date: "2026-07-03T00:46:00",
+    year: 2026,
+    tags: ["simulation", "math"],
+    real: true,
+  },
+  {
     slug: "hyperbolic",
     title: "Hyperbolic",
     tagline: "An orbital-mechanics toy: fling interstellar visitors through the solar system on one-pass hyperbolic orbits — ʻOumuamua, Borisov and 3I/ATLAS as presets, or dial in your own approach. Real vis-viva + velocity-Verlet physics, to scale out to Saturn. Vanilla JS on a canvas — no dependencies, no build step.",
