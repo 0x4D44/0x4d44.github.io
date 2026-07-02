@@ -698,7 +698,7 @@ window.ESSAYS = [
     illustration: "ill-cards",
     date: "2026-07-02T23:00:00",
     year: 2026,
-    tag: "software",
+    tag: "games",
     real: true,
   },
   {
