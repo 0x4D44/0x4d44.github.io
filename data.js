@@ -27,6 +27,17 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "strange-attractors",
+    title: "Strange Attractors",
+    tagline: "Seven strange attractors, drawn live in phase space — Lorenz, Rössler, Aizawa and more, each a handful of deterministic rules that never repeat and never escape. Spin them, then watch the butterfly effect happen: two near-identical worlds diverge on a log plot. Fourth-order Runge–Kutta in vanilla JS on a canvas — nothing pre-rendered.",
+    url: "https://0x4d44.github.io/strange-attractors/",
+    illustration: "ill-attractor",
+    date: "2026-07-02T21:30:00",
+    year: 1963,
+    tags: ["simulation", "science", "math"],
+    real: true,
+  },
+  {
     slug: "midi-observatory",
     title: "Asterion MIDI Observatory",
     tagline: "A browser MIDI listening room: play generated demo constellations or upload .mid files, then drive a Web Audio synth with presets, per-channel controls, an animated sky visualizer and WAV export. Self-contained static app with a manifest and service worker — no runtime network calls.",
