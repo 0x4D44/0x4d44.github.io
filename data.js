@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "harbour-hustle-cruise-cup",
+    title: "Harbour Hustle: Cruise Cup",
+    tagline: "A cartoon cruise-boat racing arcade: kit out a bonkers boat from hulls, engines, decks and gadgets, then weave through buoys across six harbour races to bank coins, cups and oddball new parts. Keeps a browser-local high-score board and import/export save codes. Vanilla JS on a canvas — no dependencies, no build step.",
+    url: "https://0x4d44.github.io/harbour-hustle-cruise-cup/",
+    illustration: "ill-harbour-hustle",
+    date: "2026-07-02T18:00:00",
+    year: 2026,
+    tags: ["software", "maritime"],
+    real: true,
+  },
+  {
     slug: "med-cruise",
     title: "Mediterranean Cruise Planner",
     tagline: "A phone-first companion for a family's 7-night Western Mediterranean sailing on Harmony of the Seas: a departure countdown, port-by-port itinerary, a day planner, a ship guide, and a four-game deck arcade for the sea days. Built on a tiny HTML-template runtime that renders React in the browser — no build step.",

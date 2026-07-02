@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1fb6ff">
+  <title>Harbour Hustle: Cruise Cup</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="sea-backdrop" aria-hidden="true">
+    <span class="bubble b1"></span>
+    <span class="bubble b2"></span>
+    <span class="bubble b3"></span>
+    <span class="bubble b4"></span>
+    <span class="cloud c1"></span>
+    <span class="cloud c2"></span>
+  </div>
+
+  <div id="app" class="app-shell">
+    <header class="hero cardish">
+      <div>
+        <p class="eyebrow">0x4d44 Almanac Arcade</p>
+        <h1>🚢 Harbour Hustle: Cruise Cup</h1>
+        <p class="tagline">Build a bonkers cruise boat, dodge buoys, win races, unlock oddball parts, and climb the dockside high-score board.</p>
+      </div>
+      <div class="hero-cta">
+        <button id="startQuickRace" class="primary-button big">Race the Tide!</button>
+        <button id="exportSave" class="ghost-button">Export save</button>
+      </div>
+    </header>
+
+    <section class="save-strip cardish" aria-label="Captain save controls">
+      <label class="captain-field">
+        <span>Captain</span>
+        <input id="captainName" maxlength="18" autocomplete="nickname" spellcheck="false" aria-label="Captain name">
+      </label>
+      <div class="pill-stat"><span>🪙 Coins</span><strong id="coinsCount">0</strong></div>
+      <div class="pill-stat"><span>🏆 Cups</span><strong id="trophyCount">0</strong></div>
+      <div class="pill-stat"><span>⭐ Rep</span><strong id="repCount">0</strong></div>
+      <div class="strip-actions">
+        <button id="importSave" class="ghost-button small">Import</button>
+        <button id="resetSave" class="danger-button small">Reset</button>
+      </div>
+    </section>
+
+    <main class="dashboard">
+      <section class="panel ship-panel cardish">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Dockyard</p>
+            <h2>Your Boat</h2>
+          </div>
+          <button id="paintButton" class="ghost-button small">🎨 Paint splash</button>
+        </div>
+        <canvas id="previewCanvas" width="720" height="360" aria-label="Boat preview"></canvas>
+        <div id="shipStats" class="stat-grid" aria-live="polite"></div>
+        <p id="buildTip" class="tip-box">Tip: Handling helps you weave through hazards. Stability makes crashes less painful.</p>
+      </section>
+
+      <section class="panel build-panel cardish">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Shipwright</p>
+            <h2>Build & Equip</h2>
+          </div>
+          <span id="unlockCount" class="badge">0 parts</span>
+        </div>
+        <div id="partTabs" class="tab-row" role="tablist" aria-label="Part categories"></div>
+        <div id="partsList" class="parts-list" aria-live="polite"></div>
+      </section>
+
+      <section class="panel race-panel cardish">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Harbour Board</p>
+            <h2>Choose a Race</h2>
+          </div>
+          <span class="badge">Win = new parts</span>
+        </div>
+        <div id="raceCards" class="race-grid"></div>
+      </section>
+
+      <section class="panel scores-panel cardish">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Bragging Rights</p>
+            <h2>High Scores</h2>
+          </div>
+          <button id="clearScores" class="ghost-button small">Clear scores</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>Race</th><th>Captain</th><th>Place</th><th>Time</th><th>Score</th></tr>
+            </thead>
+            <tbody id="scoreTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer-note">Keyboard: ↑/↓ or W/S steer, Space boosts. Touch controls appear during races. Save data stays in this browser.</footer>
+  </div>
+
+  <dialog id="raceDialog" class="race-dialog">
+    <div class="race-shell">
+      <div class="race-topbar">
+        <div>
+          <p class="eyebrow">Now racing</p>
+          <h2 id="raceTitle">Race</h2>
+        </div>
+        <div id="raceHud" class="race-hud" aria-live="polite"></div>
+        <button id="quitRace" class="danger-button small">Quit</button>
+      </div>
+      <canvas id="gameCanvas" width="1100" height="620" aria-label="Cruise boat racing game canvas"></canvas>
+      <div class="mobile-controls" aria-label="Touch racing controls">
+        <button data-control="up" aria-label="Steer up">▲</button>
+        <button data-control="down" aria-label="Steer down">▼</button>
+        <button data-control="boost" class="boost-touch" aria-label="Boost">BOOST</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="resultDialog" class="result-dialog">
+    <div id="resultCard" class="result-card"></div>
+  </dialog>
+
+  <template id="emptyScoreTemplate">
+    <tr><td colspan="6" class="empty-cell">No scores yet. Become the terror of the marina.</td></tr>
+  </template>
+
+  <script defer src="game.js"></script>
+</body>
+</html>
