@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="cruise-games-engines.js"></script>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{background:#02182b}
+  @keyframes gbob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+  @keyframes gpop{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
+  @keyframes gtwinkle{0%,100%{opacity:.25}50%{opacity:1}}
+  ::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+<div style="position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#041f38 0%,#073152 42%,#0d4a6b 78%,#12658c 100%)">
+  <sc-for list="{{ stars }}" as="s" hint-placeholder-count="0">
+    <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;top:{{ s.top }};left:{{ s.left }};animation:gtwinkle {{ s.dur }} ease-in-out infinite;animation-delay:{{ s.delay }}"></div>
+  </sc-for>
+</div>
+
+<div style="position:relative;z-index:1;max-width:520px;margin:0 auto;min-height:100vh;padding:0 16px 40px;font-family:Nunito,system-ui,sans-serif;color:#eaf4fb">
+
+  <header style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 2px 12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <sc-if value="{{ inGame }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ goHub }}" style="width:40px;height:40px;border-radius:13px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#eaf4fb;font-size:20px;cursor:pointer">‹</button>
+      </sc-if>
+      <div>
+        <div style="font-family:Fredoka;font-weight:600;font-size:20px;line-height:1">{{ title }}</div>
+        <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7fa8c4">HARMONY · DECK GAMES</div>
+      </div>
+    </div>
+    <button onClick="{{ toggleMute }}" style="flex:none;width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#eaf4fb;font-size:18px;cursor:pointer">{{ soundIcon }}</button>
+  </header>
+
+  <sc-if value="{{ inHub }}" hint-placeholder-val="{{ true }}">
+    <div>
+      <h1 style="font-family:Fredoka;font-weight:700;font-size:34px;margin:6px 2px 2px">Deck Games 🎮</h1>
+      <p style="margin:0 2px 18px;color:#a9c6da;font-weight:600;font-size:14px">Four ways to kill a sea day. Tap a game to play — scores save on this device.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <sc-for list="{{ games }}" as="g" hint-placeholder-count="4">
+          <button onClick="{{ g.open }}" style="text-align:left;cursor:pointer;border:1px solid rgba(255,255,255,.12);border-radius:22px;padding:18px;background:{{ g.bg }};color:#04263c;display:flex;align-items:center;gap:16px;box-shadow:0 14px 30px -18px rgba(0,0,0,.7)">
+            <div style="font-size:44px;animation:gbob 3s ease-in-out infinite;animation-delay:{{ g.delay }}">{{ g.emoji }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-family:Fredoka;font-weight:700;font-size:21px;line-height:1.05">{{ g.name }}</div>
+              <div style="font-size:13px;font-weight:700;opacity:.72;margin:2px 0 6px">{{ g.blurb }}</div>
+              <div style="display:inline-block;font-size:11px;font-weight:800;background:rgba(4,38,60,.16);padding:3px 10px;border-radius:999px">🏅 {{ g.best }}</div>
+            </div>
+            <div style="font-size:26px;opacity:.5">›</div>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ inGame }}" hint-placeholder-val="{{ false }}">
+    <div>
+      <div style="position:relative">
+        <canvas ref="{{ canvasRef }}" width="640" height="920" style="display:block;width:100%;height:auto;border-radius:22px;border:1px solid rgba(255,255,255,.14);box-shadow:0 16px 34px -18px rgba(0,0,0,.7);background:#0a3a5c"></canvas>
+        <sc-if value="{{ hud.over }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:rgba(4,20,36,.68);backdrop-filter:blur(3px);border-radius:22px;animation:gpop .25s ease">
+            <div style="font-family:Fredoka;font-weight:700;font-size:30px;text-align:center;padding:0 20px">{{ hud.msg }}</div>
+            <button onClick="{{ resetGame }}" style="padding:14px 30px;border-radius:16px;border:0;cursor:pointer;background:linear-gradient(160deg,#7defd8,#2dd4bf);color:#04263c;font-family:Fredoka;font-weight:600;font-size:18px">Play again ↻</button>
+            <button onClick="{{ goHub }}" style="padding:10px 22px;border-radius:14px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#cfe4f2;font-weight:800;font-size:13px;cursor:pointer">Back to games</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ showRaceControls }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:12px;margin-top:12px">
+          <button onPointerDown="{{ raceLeftDown }}" onPointerUp="{{ raceLeftUp }}" onPointerLeave="{{ raceLeftUp }}" style="flex:1;padding:20px;border-radius:18px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#eaf4fb;font-size:28px;cursor:pointer;touch-action:none;user-select:none">◀</button>
+          <button onPointerDown="{{ raceRightDown }}" onPointerUp="{{ raceRightUp }}" onPointerLeave="{{ raceRightUp }}" style="flex:1;padding:20px;border-radius:18px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#eaf4fb;font-size:28px;cursor:pointer;touch-action:none;user-select:none">▶</button>
+        </div>
+      </sc-if>
+
+      <div style="display:flex;align-items:center;gap:12px;margin-top:12px">
+        <div style="flex:1;font-size:12.5px;font-weight:600;color:#a9c6da;line-height:1.4">{{ controlHint }}</div>
+        <button onClick="{{ resetGame }}" style="flex:none;padding:10px 18px;border-radius:14px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.07);color:#cfe4f2;font-weight:800;font-size:12px;cursor:pointer">RESTART</button>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:880}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    let best = {};
+    try{ best = JSON.parse(localStorage.getItem("cg_best")||"{}"); }catch(e){ best = {}; }
+    this.state = { screen:"hub", muted:false, hud:{over:false}, best };
+    this._node = null;
+    this.setCanvas = (node)=>{
+      this._node = node;
+      if(node){ this.mountEngine(); }
+      else if(this.engine){ this.engine.destroy(); this.engine = null; }
+    };
+    this.stars = [];
+    const sr=(a,b)=>a+Math.random()*(b-a);
+    for(let i=0;i<22;i++) this.stars.push({top:sr(2,55).toFixed(1)+"%",left:sr(2,96).toFixed(1)+"%",dur:sr(2.5,6).toFixed(1)+"s",delay:(-sr(0,5)).toFixed(1)+"s"});
+    this.META = {
+      shuffle:{title:"Shuffleboard", hint:"Drag back from your teal disc and release to slide. Knock the First Mate's discs out of the high zones!"},
+      golf:{title:"Mini-Golf", hint:"Drag from the ball to aim and set power — longer drag = harder putt. Keep out of the pools."},
+      race:{title:"Harmony Racer", hint:"Hold ◀ / ▶ (or press either side of the sea) to steer. Grab coins, dodge rocks & bergs."},
+      builder:{title:"Shipwright", hint:"The carrier swings wide of the ship — release over open water and the deck goes overboard (–$8M)! Build high & level; lopsided ships capsize."}
+    };
+    this.CLASSES = {shuffle:"Shuffle",golf:"Golf",race:"Racer",builder:"Builder"};
+  }
+
+  componentWillUnmount(){ if(this.engine){ this.engine.destroy(); this.engine=null; } }
+
+  mountEngine(){
+    if(this.engine){ this.engine.destroy(); this.engine=null; }
+    const sc = this.state.screen;
+    if(sc === "hub" || !this._node) return;
+    const K = window.CruiseGames;
+    const cv = this._node;
+    if(!K){ setTimeout(()=>{ if(this._node && this.state.screen===sc) this.mountEngine(); }, 60); return; }
+    const Cls = K[this.CLASSES[sc]];
+    if(!Cls) return;
+    const self = this;
+    this.engine = new Cls(cv, {
+      sfx: (n)=>self.play(n),
+      onState: (o)=>self.onEngineState(o)
+    });
+    this.engine.start();
+  }
+
+  onEngineState(o){
+    this.setState(s=>({ hud: {...s.hud, ...o} }));
+    if(o.over) this.recordBest(o);
+  }
+  recordBest(o){
+    const sc = this.state.screen;
+    const b = {...this.state.best};
+    if(sc==="shuffle"){ const v=o.you||0; if(v>(b.shuffle||0)) b.shuffle=v; }
+    else if(sc==="golf"){ const v=o.total; if(v!=null && (b.golf==null||v<b.golf)) b.golf=v; }
+    else if(sc==="race"){ const v=o.dist||0; if(v>(b.race||0)) b.race=v; }
+    else if(sc==="builder"){ const v=o.value||0; if(v>(b.builder||0)) b.builder=v; }
+    this.setState({best:b});
+    try{ localStorage.setItem("cg_best", JSON.stringify(b)); }catch(e){}
+  }
+
+  // ---- audio ----
+  ensureAudio(){
+    if(this.actx) return;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.actx = new AC();
+      this.master = this.actx.createGain();
+      this.master.gain.value = this.state.muted ? 0 : 0.5;
+      this.master.connect(this.actx.destination);
+    }catch(e){}
+  }
+  tone(freq,dur,type,vol,slideTo,delay){
+    if(!this.actx || this.state.muted) return;
+    const t=this.actx.currentTime+(delay||0), o=this.actx.createOscillator(), g=this.actx.createGain();
+    o.type=type||"sine"; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol||0.18,t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.02);
+  }
+  noise(dur,vol,cut){
+    if(!this.actx || this.state.muted) return;
+    const t=this.actx.currentTime, len=Math.floor(this.actx.sampleRate*dur), buf=this.actx.createBuffer(1,len,this.actx.sampleRate), d=buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*(1-i/len);
+    const src=this.actx.createBufferSource(); src.buffer=buf;
+    const f=this.actx.createBiquadFilter(); f.type="lowpass"; f.frequency.value=cut||1200;
+    const g=this.actx.createGain(); g.gain.value=vol||0.25;
+    src.connect(f); f.connect(g); g.connect(this.master); src.start(t);
+  }
+  play(name){
+    if(!this.actx) this.ensureAudio();
+    if(!this.actx || this.state.muted) return;
+    switch(name){
+      case "putt": this.tone(320,0.12,"triangle",0.2,170); break;
+      case "wall": this.tone(180,0.06,"square",0.12,120); break;
+      case "clack": this.tone(760,0.05,"square",0.14); this.tone(1040,0.05,"square",0.1,null,0.03); break;
+      case "splash": this.noise(0.4,0.22,700); break;
+      case "sink": this.tone(660,0.1,"sine",0.18); this.tone(990,0.16,"sine",0.16,null,0.08); break;
+      case "coin": this.tone(940,0.07,"square",0.16,1400); break;
+      case "crash": this.noise(0.3,0.3,500); this.tone(120,0.25,"sawtooth",0.2,60); break;
+      case "drop": this.tone(420,0.12,"triangle",0.16,220); break;
+      case "place": this.tone(300,0.05,"square",0.14); this.tone(600,0.09,"sine",0.12,null,0.03); break;
+      case "win": [523,659,784,1047].forEach((f,i)=>this.tone(f,0.16,"triangle",0.18,null,i*0.09)); break;
+      case "lose": [440,330,247].forEach((f,i)=>this.tone(f,0.22,"sawtooth",0.16,null,i*0.11)); break;
+      default: this.tone(440,0.08,"sine",0.12);
+    }
+  }
+  toggleMute(){
+    const m=!this.state.muted; this.setState({muted:m});
+    if(!m){ this.ensureAudio(); if(this.master) this.master.gain.value=0.5; this.play("coin"); }
+    else if(this.master){ this.master.gain.value=0; }
+  }
+
+  openGame(k){ this.ensureAudio(); this.play("putt"); this.setState({screen:k, hud:{over:false}}); }
+  goHub(){ this.play("wall"); this.setState({screen:"hub", hud:{over:false}}); }
+  resetGame(){ this.ensureAudio(); if(this.engine) this.engine.reset(); this.setState(s=>({hud:{...s.hud, over:false}})); }
+
+  renderVals(){
+    const sc=this.state.screen, inHub=sc==="hub", b=this.state.best;
+    const bestStr = {
+      shuffle: b.shuffle!=null ? "Best score "+b.shuffle : "Not played yet",
+      golf: b.golf!=null ? "Best round "+b.golf+" strokes" : "Not played yet",
+      race: b.race!=null ? "Best "+b.race+" nm" : "Not played yet",
+      builder: b.builder!=null ? "Best $"+b.builder+"M" : "Not played yet"
+    };
+    const games = [
+      {key:"shuffle",emoji:"🥌",name:"Deck Shuffleboard",blurb:"Slide discs into the scoring zones & out-play the First Mate.",bg:"linear-gradient(160deg,#7defd8,#2dd4bf)",delay:"0s",best:bestStr.shuffle,open:()=>this.openGame("shuffle")},
+      {key:"golf",emoji:"⛳",name:"Mini-Golf",blurb:"Three nautical holes. Mind the pools!",bg:"linear-gradient(160deg,#ffd97a,#fbbf24)",delay:".3s",best:bestStr.golf,open:()=>this.openGame("golf")},
+      {key:"race",emoji:"🚤",name:"Harmony Racer",blurb:"Steer through the swell, dodge bergs, grab coins.",bg:"linear-gradient(160deg,#ffb0be,#fb7185)",delay:".6s",best:bestStr.race,open:()=>this.openGame("race")},
+      {key:"builder",emoji:"🏗️",name:"Shipwright",blurb:"Stack decks on a floating hull without capsizing.",bg:"linear-gradient(160deg,#bfe0ff,#7dd3fc)",delay:".9s",best:bestStr.builder,open:()=>this.openGame("builder")}
+    ];
+    return {
+      stars: this.stars,
+      inHub, inGame: !inHub,
+      title: inHub ? "Games" : (this.META[sc] ? this.META[sc].title : "Game"),
+      soundIcon: this.state.muted ? "🔇" : "🔊",
+      toggleMute: ()=>this.toggleMute(),
+      goHub: ()=>this.goHub(),
+      resetGame: ()=>this.resetGame(),
+      games,
+      canvasRef: this.setCanvas,
+      hud: this.state.hud,
+      controlHint: this.META[sc] ? this.META[sc].hint : "",
+      showRaceControls: sc==="race",
+      raceLeftDown: ()=>{ this.ensureAudio(); if(this.engine&&this.engine.setBtn) this.engine.setBtn("left",true); },
+      raceLeftUp: ()=>{ if(this.engine&&this.engine.setBtn) this.engine.setBtn("left",false); },
+      raceRightDown: ()=>{ this.ensureAudio(); if(this.engine&&this.engine.setBtn) this.engine.setBtn("right",true); },
+      raceRightUp: ()=>{ if(this.engine&&this.engine.setBtn) this.engine.setBtn("right",false); }
+    };
+  }
+}
+</script>
+</body>
+</html>

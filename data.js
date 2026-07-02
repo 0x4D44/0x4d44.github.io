@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "med-cruise",
+    title: "Mediterranean Cruise Planner",
+    tagline: "A phone-first companion for a family's 7-night Western Mediterranean sailing on Harmony of the Seas: a departure countdown, port-by-port itinerary, a day planner, a ship guide, and a four-game deck arcade for the sea days. Built on a tiny HTML-template runtime that renders React in the browser — no build step.",
+    url: "https://0x4d44.github.io/med-cruise/",
+    illustration: "ill-ship",
+    date: "2026-07-02T12:00:00",
+    year: 2026,
+    tags: ["maritime", "software"],
+    real: true,
+  },
+  {
     slug: "salient",
     title: "Salient",
     tagline: "A parlour reimagining of the classic territory-and-dice war game: reinforce your armies, roll to attack across the sea-lanes, and conquer a five-continent world. Two to four players, any mix of humans and AI on Easy or Hard, with a coach that suggests moves for newcomers. A hex-mapped game, installable offline.",

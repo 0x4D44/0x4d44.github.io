@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{background:#02182b}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(-1.2deg)}50%{transform:translateY(-9px) rotate(1.2deg)}}
+  @keyframes bobFast{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+  @keyframes sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+  @keyframes drift{from{transform:translateX(-30vw)}to{transform:translateX(130vw)}}
+  @keyframes twinkle{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.15)}}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes popIn{0%{opacity:0;transform:scale(.9)}60%{transform:scale(1.03)}100%{opacity:1;transform:scale(1)}}
+  @keyframes pulseGlow{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.12);opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes waveScroll{from{background-position-x:0}to{background-position-x:-84px}}
+  @keyframes floatUp{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  ::-webkit-scrollbar{width:0;height:0}
+</style>
+</helmet>
+<div style="position:fixed;inset:0;z-index:0;overflow:hidden;background:linear-gradient(180deg,#041f38 0%,#073152 34%,#0d4a6b 62%,#f6a94b 100%)">
+  <div style="position:absolute;top:6%;right:12%;width:96px;height:96px;border-radius:50%;background:radial-gradient(circle at 40% 40%,#fff3c2,#fbbf24 60%,#f59e0b);box-shadow:0 0 60px 18px rgba(251,191,36,.45);animation:floatUp 7s ease-in-out infinite"></div>
+  <div style="position:absolute;top:6%;right:12%;width:96px;height:96px;border-radius:50%;box-shadow:0 0 0 14px rgba(251,191,36,.12),0 0 0 30px rgba(251,191,36,.06);animation:pulseGlow 5s ease-in-out infinite"></div>
+  <sc-for list="{{ stars }}" as="s" hint-placeholder-count="0">
+    <div style="position:absolute;width:4px;height:4px;border-radius:50%;background:#fff;top:{{ s.top }};left:{{ s.left }};animation:twinkle {{ s.dur }} ease-in-out infinite;animation-delay:{{ s.delay }}"></div>
+  </sc-for>
+  <div style="position:absolute;top:16%;left:0;width:140px;height:44px;background:rgba(255,255,255,.85);border-radius:40px;filter:blur(1px);animation:drift 46s linear infinite;box-shadow:34px -14px 0 -6px rgba(255,255,255,.8),-30px 6px 0 -8px rgba(255,255,255,.7)"></div>
+  <div style="position:absolute;top:30%;left:0;width:100px;height:34px;background:rgba(255,255,255,.7);border-radius:40px;filter:blur(1px);animation:drift 64s linear infinite;animation-delay:-20s;box-shadow:26px -10px 0 -6px rgba(255,255,255,.65)"></div>
+  <div style="position:absolute;bottom:0;left:0;right:0;height:120px;background:repeating-linear-gradient(90deg,transparent 0,transparent 22px,rgba(255,255,255,.16) 22px,rgba(255,255,255,.16) 42px);-webkit-mask:radial-gradient(circle at 21px -8px,#000 12px,transparent 13px) repeat-x;mask:radial-gradient(circle at 21px -8px,#000 12px,transparent 13px) repeat-x;-webkit-mask-size:42px 40px;mask-size:42px 40px;background-color:rgba(13,74,107,.5);animation:waveScroll 6s linear infinite;opacity:.5"></div>
+</div>
+
+<div style="position:relative;z-index:1;max-width:560px;margin:0 auto;min-height:100vh;padding:0 0 108px;font-family:Nunito,system-ui,sans-serif;color:#eaf4fb">
+
+  <header style="position:sticky;top:0;z-index:30;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 18px;backdrop-filter:blur(10px);background:linear-gradient(180deg,rgba(4,31,56,.86),rgba(4,31,56,.35));border-bottom:1px solid rgba(255,255,255,.08)">
+    <div style="display:flex;align-items:center;gap:10px;min-width:0">
+      <div style="font-size:26px;animation:sway 4s ease-in-out infinite;transform-origin:50% 80%">⚓</div>
+      <div style="min-width:0">
+        <div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Harmony of the Seas</div>
+        <div style="font-size:11px;color:#8fb7d1;font-weight:700;letter-spacing:1px">BARCELONA · MED · '26</div>
+      </div>
+    </div>
+    <button onClick="{{ toggleMute }}" style="flex:none;width:42px;height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.08);color:#eaf4fb;font-size:18px;cursor:pointer">{{ soundIcon }}</button>
+  </header>
+
+  <main style="padding:0 16px">
+
+    <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
+      <section>
+        <div style="position:relative;margin-top:16px;padding:26px 22px 24px;border-radius:26px;background:linear-gradient(160deg,rgba(255,255,255,.14),rgba(255,255,255,.04));border:1px solid rgba(255,255,255,.16);box-shadow:0 20px 40px -18px rgba(0,0,0,.6);overflow:hidden">
+          <div style="position:absolute;top:-30px;right:-20px;font-size:120px;opacity:.16;transform:rotate(-8deg)">🚢</div>
+          <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#fbbf24">7-NIGHT WESTERN MEDITERRANEAN</div>
+          <h1 style="font-family:Fredoka;font-weight:700;font-size:38px;line-height:1.02;margin:8px 0 6px">Set sail,<br>crew of four! 🌊</h1>
+          <p style="margin:0;color:#cfe4f2;font-weight:600;font-size:15px">Barcelona → Palma → La Spezia → Rome → Naples → Barcelona</p>
+          <div style="display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:7px 14px;border-radius:999px;background:rgba(45,212,191,.16);border:1px solid rgba(45,212,191,.4);font-weight:800;font-size:13px;color:#7defd8">📅 Sun Jul 5 – Sun Jul 12, 2026</div>
+        </div>
+
+        <div style="margin-top:14px;padding:20px;border-radius:24px;background:linear-gradient(160deg,rgba(251,113,133,.18),rgba(251,146,60,.1));border:1px solid rgba(251,146,60,.3)">
+          <sc-if value="{{ countdown.launched }}" hint-placeholder-val="{{ false }}">
+            <div style="text-align:center">
+              <div style="font-size:12px;font-weight:800;letter-spacing:2px;color:#ffd7a1">YOU'RE ABOARD! 🎉</div>
+              <div style="font-family:Fredoka;font-weight:700;font-size:34px;margin-top:4px">{{ countdown.dayLabel }}</div>
+              <div style="color:#ffd7c2;font-weight:700;font-size:14px">{{ live.sub }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ countdown.counting }}" hint-placeholder-val="{{ true }}">
+            <div>
+              <div style="text-align:center;font-size:12px;font-weight:800;letter-spacing:2px;color:#ffd7a1;margin-bottom:12px">⏳ COUNTDOWN TO DEPARTURE</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+                <div style="text-align:center;padding:12px 4px;border-radius:16px;background:rgba(0,0,0,.24)"><div style="font-family:Fredoka;font-weight:700;font-size:30px;color:#fff">{{ countdown.days }}</div><div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#ffcf9c">DAYS</div></div>
+                <div style="text-align:center;padding:12px 4px;border-radius:16px;background:rgba(0,0,0,.24)"><div style="font-family:Fredoka;font-weight:700;font-size:30px;color:#fff">{{ countdown.hours }}</div><div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#ffcf9c">HRS</div></div>
+                <div style="text-align:center;padding:12px 4px;border-radius:16px;background:rgba(0,0,0,.24)"><div style="font-family:Fredoka;font-weight:700;font-size:30px;color:#fff">{{ countdown.mins }}</div><div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#ffcf9c">MIN</div></div>
+                <div style="text-align:center;padding:12px 4px;border-radius:16px;background:rgba(0,0,0,.24)"><div style="font-family:Fredoka;font-weight:700;font-size:30px;color:#fff">{{ countdown.secs }}</div><div style="font-size:10px;font-weight:800;letter-spacing:1px;color:#ffcf9c">SEC</div></div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+
+        <button onClick="{{ goTracker }}" style="width:100%;margin-top:14px;text-align:left;padding:16px 18px;border-radius:20px;cursor:pointer;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);color:#eaf4fb;display:flex;align-items:center;gap:14px">
+          <div style="font-size:30px;animation:bob 3.4s ease-in-out infinite">🚢</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:11px;font-weight:800;letter-spacing:1.5px;color:#7defd8">LIVE SHIP STATUS</div>
+            <div style="font-family:Fredoka;font-weight:600;font-size:19px;line-height:1.1">{{ live.label }}</div>
+            <div style="font-size:13px;color:#a9c6da;font-weight:600">{{ live.sub }}</div>
+          </div>
+          <div style="font-size:20px;color:#7defd8">›</div>
+        </button>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:15px;letter-spacing:.5px;color:#9fc0d6;margin:22px 4px 10px">MEET THE CREW</h2>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+          <sc-for list="{{ crew }}" as="c" hint-placeholder-count="4">
+            <div style="text-align:center;padding:12px 4px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:30px;animation:bobFast 3s ease-in-out infinite;animation-delay:{{ c.delay }}">{{ c.emoji }}</div>
+              <div style="font-family:Fredoka;font-weight:600;font-size:13px;margin-top:4px">{{ c.role }}</div>
+              <div style="font-size:10px;color:#89acc4;font-weight:700">{{ c.tag }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:15px;letter-spacing:.5px;color:#9fc0d6;margin:22px 4px 10px">JUMP IN</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="4">
+            <button onClick="{{ t.go }}" style="text-align:left;padding:16px;border-radius:20px;cursor:pointer;border:1px solid rgba(255,255,255,.12);background:{{ t.bg }};color:#04263c;min-height:104px;display:flex;flex-direction:column;justify-content:space-between">
+              <div style="font-size:30px">{{ t.emoji }}</div>
+              <div><div style="font-family:Fredoka;font-weight:600;font-size:17px;line-height:1">{{ t.title }}</div><div style="font-size:12px;font-weight:700;opacity:.7">{{ t.sub }}</div></div>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showVoyage }}" hint-placeholder-val="{{ false }}">
+      <section>
+        <h1 style="font-family:Fredoka;font-weight:700;font-size:30px;margin:18px 4px 4px">The Voyage 🗺️</h1>
+        <p style="margin:0 4px 14px;color:#a9c6da;font-weight:600;font-size:14px">Follow Harmony's loop around the Western Med — the marker moves with the real clock.</p>
+
+        <div style="position:relative;border-radius:24px;overflow:hidden;border:1px solid rgba(255,255,255,.14);box-shadow:0 16px 34px -18px rgba(0,0,0,.6)">
+          <svg viewBox="0 0 1000 700" style="display:block;width:100%;height:auto;background:radial-gradient(120% 90% at 50% 20%,#0a3f63,#041d33)">
+            <path d="M-60 200 C 30 180, 120 240, 130 340 C 135 380, 150 410, 120 440 C 90 500, 130 600, 80 700 L -80 700 Z" fill="#e0be82" stroke="#c8a45f" stroke-width="4"></path>
+            <path d="M150 545 C 180 535, 236 545, 240 570 C 245 596, 205 612, 170 601 C 138 591, 128 558, 150 545 Z" fill="#e0be82" stroke="#c8a45f" stroke-width="4"></path>
+            <path d="M430 208 C 462 203, 482 236, 470 302 C 465 342, 434 346, 424 300 C 417 258, 408 218, 430 208 Z" fill="#e0be82" stroke="#c8a45f" stroke-width="4"></path>
+            <path d="M418 372 C 456 360, 482 402, 470 472 C 462 522, 424 526, 414 470 C 407 420, 398 384, 418 372 Z" fill="#e0be82" stroke="#c8a45f" stroke-width="4"></path>
+            <path d="M1040 80 L 1040 720 L 900 720 C 895 640, 906 540, 896 452 C 889 402, 770 382, 748 342 C 730 300, 656 250, 640 200 C 632 172, 626 150, 620 132 C 700 96, 900 92, 1040 80 Z" fill="#e0be82" stroke="#c8a45f" stroke-width="4"></path>
+            <text x="60" y="360" fill="#9c7c40" font-family="Fredoka" font-weight="600" font-size="26" opacity=".8">SPAIN</text>
+            <text x="150" y="640" fill="#9c7c40" font-family="Fredoka" font-weight="600" font-size="17" opacity=".8">MALLORCA</text>
+            <text x="900" y="360" fill="#9c7c40" font-family="Fredoka" font-weight="600" font-size="26" opacity=".8">ITALY</text>
+            <path d="{{ routeD }}" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="5" stroke-linecap="round" stroke-dasharray="3 16"></path>
+            <sc-for list="{{ ports }}" as="p" hint-placeholder-count="5">
+              <circle cx="{{ p.cx }}" cy="{{ p.cy }}" r="11" fill="#fb7185" stroke="#fff" stroke-width="4"></circle>
+              <text x="{{ p.lx }}" y="{{ p.ly }}" fill="#eaf4fb" font-family="Fredoka" font-weight="600" font-size="21" text-anchor="{{ p.anchor }}">{{ p.name }}</text>
+            </sc-for>
+            <g transform="translate({{ ship.cx }},{{ ship.cy }})" style="transition:transform 1s linear">
+              <circle r="26" fill="rgba(45,212,191,.28)"></circle>
+              <circle r="16" fill="#2dd4bf" stroke="#fff" stroke-width="4"></circle>
+              <text x="0" y="9" text-anchor="middle" font-size="24">🚢</text>
+            </g>
+          </svg>
+          <div style="position:absolute;left:12px;bottom:12px;padding:8px 12px;border-radius:14px;background:rgba(4,24,43,.8);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.16)">
+            <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#7defd8">{{ live.label }}</div>
+            <div style="font-size:12px;color:#cfe4f2;font-weight:700">{{ live.sub }}</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;height:12px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;border:1px solid rgba(255,255,255,.12)">
+          <div style="height:100%;width:{{ live.pct }};background:linear-gradient(90deg,#2dd4bf,#fbbf24);border-radius:999px;transition:width 1s linear"></div>
+        </div>
+        <div style="text-align:center;font-size:12px;font-weight:800;color:#8fb7d1;margin-top:6px">{{ live.pctLabel }} of the voyage</div>
+
+        <div style="margin-top:18px;display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ legs }}" as="l" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)">
+              <div style="font-size:22px">{{ l.icon }}</div>
+              <div style="flex:1;min-width:0"><div style="font-family:Fredoka;font-weight:600;font-size:16px">{{ l.name }}</div><div style="font-size:12px;color:#9fc0d6;font-weight:700">{{ l.when }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="margin-top:16px;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)">
+          <div style="font-family:Fredoka;font-weight:600;font-size:15px;margin-bottom:4px">📡 Want the real satellite feed?</div>
+          <p style="margin:0 0 12px;font-size:13px;color:#a9c6da;font-weight:600">The map above simulates position from the schedule. For the true AIS position while you're connected:</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <a href="https://www.cruisemapper.com/ships/Harmony-Of-The-Seas-1067" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:12px;border-radius:14px;background:#2dd4bf;color:#04263c;font-weight:800;font-size:13px;text-decoration:none">CruiseMapper ↗</a>
+            <a href="https://www.marinetraffic.com/en/ais/details/ships/imo:9682875" target="_blank" rel="noopener" style="flex:1;text-align:center;padding:12px;border-radius:14px;background:#fbbf24;color:#3a2a00;font-weight:800;font-size:13px;text-decoration:none">MarineTraffic ↗</a>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showDays }}" hint-placeholder-val="{{ false }}">
+      <section>
+        <h1 style="font-family:Fredoka;font-weight:700;font-size:30px;margin:18px 4px 4px">Day by Day 📅</h1>
+        <p style="margin:0 4px 14px;color:#a9c6da;font-weight:600;font-size:14px">Tap any day for ideas, weather &amp; where to eat.</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ days }}" as="d" hint-placeholder-count="8">
+            <div style="border-radius:22px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);overflow:hidden">
+              <button onClick="{{ d.toggle }}" style="width:100%;border:0;background:none;color:#eaf4fb;cursor:pointer;text-align:left;display:flex;align-items:center;gap:13px;padding:14px">
+                <div style="flex:none;width:58px;text-align:center;padding:8px 4px;border-radius:14px;background:rgba(0,0,0,.24);border-left:4px solid {{ d.accent }}">
+                  <div style="font-family:Fredoka;font-weight:700;font-size:13px;color:{{ d.accent }}">{{ d.day }}</div>
+                  <div style="font-size:10px;font-weight:800;color:#9fc0d6">{{ d.dateShort }}</div>
+                </div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-family:Fredoka;font-weight:600;font-size:17px;line-height:1.05">{{ d.flag }} {{ d.port }}</div>
+                  <div style="font-size:10.5px;font-weight:800;color:#8fb7d1;letter-spacing:.4px;margin:1px 0 2px">{{ d.times }}</div>
+                  <div style="font-size:12.5px;color:#cbe1f0;font-weight:600">{{ d.tag }}</div>
+                </div>
+                <div style="flex:none;text-align:center">
+                  <div style="font-size:22px">{{ d.weather.icon }}</div>
+                  <div style="font-size:12px;font-weight:800;color:#ffd97a">{{ d.weather.hi }}</div>
+                </div>
+              </button>
+              <sc-if value="{{ d.expanded }}" hint-placeholder-val="{{ false }}">
+                <div style="padding:2px 16px 18px">
+                  <p style="margin:0 0 12px;font-size:14px;line-height:1.5;color:#dcecf7">{{ d.blurb }}</p>
+                  <div style="display:flex;gap:7px;margin-bottom:15px">
+                    <div style="flex:1;text-align:center;padding:8px 4px;border-radius:12px;background:rgba(0,0,0,.2)"><div style="font-size:9px;font-weight:800;color:#9fc0d6">HIGH</div><div style="font-family:Fredoka;font-weight:600;color:#ffd97a">{{ d.weather.hi }}</div></div>
+                    <div style="flex:1;text-align:center;padding:8px 4px;border-radius:12px;background:rgba(0,0,0,.2)"><div style="font-size:9px;font-weight:800;color:#9fc0d6">LOW</div><div style="font-family:Fredoka;font-weight:600">{{ d.weather.lo }}</div></div>
+                    <div style="flex:1;text-align:center;padding:8px 4px;border-radius:12px;background:rgba(0,0,0,.2)"><div style="font-size:9px;font-weight:800;color:#9fc0d6">SEA</div><div style="font-family:Fredoka;font-weight:600;color:#7defd8">{{ d.weather.sea }}</div></div>
+                    <div style="flex:1.6;text-align:center;padding:8px 4px;border-radius:12px;background:rgba(0,0,0,.2)"><div style="font-size:9px;font-weight:800;color:#9fc0d6">JULY</div><div style="font-family:Fredoka;font-weight:600;font-size:12px">{{ d.weather.word }}</div></div>
+                  </div>
+                  <div style="font-size:11px;font-weight:800;letter-spacing:1px;color:#7defd8;margin-bottom:8px">🎯 TOP THINGS TO DO</div>
+                  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+                    <sc-for list="{{ d.exc }}" as="e" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+                        <div style="flex:1;font-weight:700;font-size:14px">{{ e.n }}</div>
+                        <div style="font-size:10px;font-weight:800;color:#04263c;background:#7defd8;padding:3px 8px;border-radius:999px">{{ e.v }}</div>
+                        <div style="font-size:11px;font-weight:700;color:#9fc0d6;min-width:58px;text-align:right">{{ e.t }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:8px">
+                    <div style="padding:11px 13px;border-radius:13px;background:rgba(251,191,36,.14);border:1px solid rgba(251,191,36,.28)"><span style="font-size:11px;font-weight:800;color:#ffd97a">⭐ DON'T MISS · </span><span style="font-size:13px;font-weight:700">{{ d.miss }}</span></div>
+                    <div style="padding:11px 13px;border-radius:13px;background:rgba(251,113,133,.14);border:1px solid rgba(251,113,133,.28)"><span style="font-size:11px;font-weight:800;color:#ffb0be">🍴 EAT · </span><span style="font-size:13px;font-weight:700">{{ d.eat }}</span></div>
+                    <div style="padding:11px 13px;border-radius:13px;background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.26)"><span style="font-size:11px;font-weight:800;color:#7defd8">💡 TIP · </span><span style="font-size:13px;font-weight:700">{{ d.tip }}</span></div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showShip }}" hint-placeholder-val="{{ false }}">
+      <section>
+        <h1 style="font-family:Fredoka;font-weight:700;font-size:30px;margin:18px 4px 4px">The Ship 🚢</h1>
+        <p style="margin:0 4px 14px;color:#a9c6da;font-weight:600;font-size:14px">Harmony of the Seas — an Oasis-Plus giant, and your floating resort for the week.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="8">
+            <div style="padding:13px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:10px">
+              <div style="font-size:23px">{{ s.icon }}</div>
+              <div style="min-width:0"><div style="font-family:Fredoka;font-weight:700;font-size:16px">{{ s.val }}</div><div style="font-size:9.5px;font-weight:800;letter-spacing:.5px;color:#8fb7d1">{{ s.label }}</div></div>
+            </div>
+          </sc-for>
+        </div>
+        <button onClick="{{ playHorn }}" style="width:100%;margin-top:14px;padding:15px;border-radius:18px;border:1px solid rgba(251,191,36,.4);background:linear-gradient(160deg,rgba(251,191,36,.24),rgba(251,146,60,.14));color:#ffd97a;font-family:Fredoka;font-weight:600;font-size:16px;cursor:pointer">📣 Sound the ship's horn!</button>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:14px;letter-spacing:.6px;color:#9fc0d6;margin:24px 4px 10px">🤯 FUN FACTS</h2>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ funFacts }}" as="f" hint-placeholder-count="8">
+            <div style="padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);font-size:13.5px;font-weight:600;line-height:1.45">{{ f }}</div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:14px;letter-spacing:.6px;color:#9fc0d6;margin:24px 4px 10px">🍽️ WHERE TO EAT</h2>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ dining }}" as="v" hint-placeholder-count="9">
+            <div style="display:flex;align-items:baseline;gap:10px;padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)">
+              <div style="font-family:Fredoka;font-weight:600;font-size:14px;flex:none">{{ v.n }}</div>
+              <div style="font-size:12px;color:#9fc0d6;font-weight:600">{{ v.d }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:14px;letter-spacing:.6px;color:#9fc0d6;margin:24px 4px 10px">🎢 PLAY ONBOARD</h2>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+          <sc-for list="{{ activities }}" as="a" hint-placeholder-count="10">
+            <div style="display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)"><div style="font-size:19px">{{ a.i }}</div><div style="font-weight:700;font-size:13px">{{ a.n }}</div></div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:14px;letter-spacing:.6px;color:#9fc0d6;margin:24px 4px 10px">🎭 SHOWS</h2>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ shows }}" as="sh" hint-placeholder-count="5">
+            <div style="padding:11px 13px;border-radius:13px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)"><div style="font-family:Fredoka;font-weight:600;font-size:14px">{{ sh.n }}</div><div style="font-size:12px;color:#9fc0d6;font-weight:600">{{ sh.d }}</div></div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:14px;letter-spacing:.6px;color:#9fc0d6;margin:24px 4px 12px">🕐 A DAY IN THE LIFE</h2>
+        <div style="padding-left:14px;border-left:2px dashed rgba(255,255,255,.22);display:flex;flex-direction:column;gap:13px">
+          <sc-for list="{{ rhythm }}" as="r" hint-placeholder-count="9">
+            <div style="display:flex;gap:12px;align-items:baseline"><div style="font-family:Fredoka;font-weight:700;color:#ffd97a;min-width:46px;font-size:14px">{{ r.t }}</div><div style="font-size:13.5px;font-weight:600">{{ r.e }}</div></div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showExtras }}" hint-placeholder-val="{{ false }}">
+      <section>
+        <h1 style="font-family:Fredoka;font-weight:700;font-size:30px;margin:18px 4px 4px">Extras 🎒</h1>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin:16px 4px 8px">
+          <h2 style="font-family:Fredoka;font-weight:600;font-size:16px;margin:0">🎒 Packing list</h2>
+          <button onClick="{{ resetChecks }}" style="border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#9fc0d6;font-weight:800;font-size:11px;padding:6px 12px;border-radius:999px;cursor:pointer">RESET</button>
+        </div>
+        <div style="height:12px;border-radius:999px;background:rgba(255,255,255,.1);overflow:hidden;border:1px solid rgba(255,255,255,.12)"><div style="height:100%;width:{{ packPct }};background:linear-gradient(90deg,#2dd4bf,#fbbf24);transition:width .3s"></div></div>
+        <div style="text-align:center;font-size:12px;font-weight:800;color:#8fb7d1;margin-top:6px">{{ packLabel }}</div>
+        <div style="display:flex;flex-direction:column;gap:14px;margin-top:14px">
+          <sc-for list="{{ checklist }}" as="cat" hint-placeholder-count="6">
+            <div>
+              <div style="font-family:Fredoka;font-weight:600;font-size:13.5px;color:#9fc0d6;margin-bottom:7px">{{ cat.icon }} {{ cat.cat }}</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="4">
+                  <button onClick="{{ it.toggle }}" style="display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:13px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.05);color:#eaf4fb;cursor:pointer;text-align:left;width:100%">
+                    <sc-if value="{{ it.done }}" hint-placeholder-val="{{ false }}"><div style="flex:none;width:22px;height:22px;border-radius:7px;background:#2dd4bf;color:#04263c;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px">✓</div></sc-if>
+                    <sc-if value="{{ it.pending }}" hint-placeholder-val="{{ true }}"><div style="flex:none;width:22px;height:22px;border-radius:7px;border:2px solid rgba(255,255,255,.3)"></div></sc-if>
+                    <div style="font-size:13.5px;font-weight:700">{{ it.label }}</div>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:16px;margin:26px 4px 10px">💶 Money &amp; language</h2>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ currency }}" as="c" hint-placeholder-count="4">
+            <div style="padding:12px 14px;border-radius:13px;background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.24);font-size:13px;font-weight:600;line-height:1.4">{{ c }}</div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+          <sc-for list="{{ phrases }}" as="p" hint-placeholder-count="3">
+            <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)">
+              <div style="font-family:Fredoka;font-weight:600;font-size:16px">{{ p.flag }} {{ p.lang }}</div>
+              <div style="font-size:11px;font-weight:700;color:#8fb7d1;margin-bottom:9px">{{ p.note }}</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <sc-for list="{{ p.items }}" as="ph" hint-placeholder-count="6">
+                  <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px"><span style="color:#9fc0d6;font-weight:600">{{ ph.en }}</span><span style="font-weight:800;color:#ffd97a">{{ ph.loc }}</span></div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <h2 style="font-family:Fredoka;font-weight:600;font-size:16px;margin:26px 4px 4px">📔 Memory journal</h2>
+        <p style="margin:0 4px 12px;color:#a9c6da;font-weight:600;font-size:13px">Jot a highlight &amp; a mood for each day — saved on this device.</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ journalDays }}" as="j" hint-placeholder-count="8">
+            <div style="padding:14px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)">
+              <div style="font-family:Fredoka;font-weight:600;font-size:14px;margin-bottom:9px">{{ j.flag }} {{ j.label }}</div>
+              <div style="display:flex;gap:6px;margin-bottom:9px;flex-wrap:wrap">
+                <sc-for list="{{ j.moods }}" as="m" hint-placeholder-count="6">
+                  <sc-if value="{{ m.active }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.pick }}" style="width:38px;height:38px;border-radius:12px;border:2px solid #fbbf24;background:rgba(251,191,36,.28);font-size:20px;cursor:pointer">{{ m.emoji }}</button></sc-if>
+                  <sc-if value="{{ m.idle }}" hint-placeholder-val="{{ true }}"><button onClick="{{ m.pick }}" style="width:38px;height:38px;border-radius:12px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);font-size:20px;cursor:pointer;opacity:.65">{{ m.emoji }}</button></sc-if>
+                </sc-for>
+              </div>
+              <textarea defaultValue="{{ j.note }}" onInput="{{ j.setNote }}" placeholder="Best bit of the day..." style="width:100%;min-height:56px;resize:vertical;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);color:#eaf4fb;font-family:Nunito;font-weight:600;font-size:13px;padding:10px"></textarea>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{ showGames }}" hint-placeholder-val="{{ false }}">
+      <section>
+        <h1 style="font-family:Fredoka;font-weight:700;font-size:30px;margin:18px 4px 4px">Deck Games 🎮</h1>
+        <p style="margin:0 4px 16px;color:#a9c6da;font-weight:600;font-size:14px">Four mini-games to pass a sea day — with sound, scores &amp; a mute button.</p>
+        <a href="games.dc.html" style="display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;padding:18px;border-radius:20px;background:linear-gradient(160deg,#7defd8,#2dd4bf);color:#04263c;font-family:Fredoka;font-weight:700;font-size:20px;box-shadow:0 14px 30px -16px rgba(0,0,0,.7)">🎮 Open the arcade →</a>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">🥌</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Shuffleboard</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Beat the First Mate</div></div>
+          </a>
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">⛳</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Mini-Golf</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">3 nautical holes</div></div>
+          </a>
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">🚤</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Harmony Racer</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Dodge &amp; grab coins</div></div>
+          </a>
+          <a href="games.dc.html" style="text-decoration:none;color:#eaf4fb;padding:16px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);min-height:118px;display:flex;flex-direction:column;justify-content:space-between">
+            <div style="font-size:34px">🏗️</div><div><div style="font-family:Fredoka;font-weight:600;font-size:16px;line-height:1.05">Shipwright</div><div style="font-size:11px;font-weight:700;color:#8fb7d1">Build without capsizing</div></div>
+          </a>
+        </div>
+      </section>
+    </sc-if>
+
+  </main>
+
+  <nav style="position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;justify-content:center;padding:8px 10px calc(8px + env(safe-area-inset-bottom))">
+    <div style="display:flex;gap:2px;width:100%;max-width:520px;padding:6px;border-radius:22px;background:rgba(5,26,44,.92);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.12);box-shadow:0 12px 30px -8px rgba(0,0,0,.7)">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <button onClick="{{ n.go }}" style="flex:1;border:0;background:none;cursor:pointer;padding:6px 2px;border-radius:16px;display:flex;flex-direction:column;align-items:center;gap:3px">
+          <sc-if value="{{ n.active }}" hint-placeholder-val="{{ false }}">
+            <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;border-radius:14px;background:linear-gradient(160deg,rgba(45,212,191,.28),rgba(251,191,36,.18))">
+              <div style="font-size:21px">{{ n.icon }}</div>
+              <div style="font-family:Fredoka;font-weight:600;font-size:10.5px;color:#fff">{{ n.label }}</div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ n.inactive }}" hint-placeholder-val="{{ true }}">
+            <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0">
+              <div style="font-size:21px;opacity:.62">{{ n.icon }}</div>
+              <div style="font-family:Fredoka;font-weight:600;font-size:10.5px;color:#7f9db3">{{ n.label }}</div>
+            </div>
+          </sc-if>
+        </button>
+      </sc-for>
+    </div>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:880}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const load = (k,d)=>{ try{ const v=localStorage.getItem(k); return v?JSON.parse(v):d; }catch(e){ return d; } };
+    this.state = {
+      tab: "home",
+      expandedDay: 1,
+      muted: load("hm_muted", false),
+      checked: load("hm_checked", {}),
+      moods: load("hm_moods", {}),
+      journalTick: 0
+    };
+    this.notes = load("hm_notes", {});
+
+    // ---- itinerary waypoints (viewBox coords + pct overlay + UTC times) ----
+    const U = (d,h,m)=>Date.UTC(2026,6,d,h,m); // July = month 6
+    this.WP = [
+      {name:"Barcelona",         cx:135, cy:404, arr:null,        dep:U(5,15,0)},
+      {name:"Palma de Mallorca", cx:166, cy:562, arr:U(6,8,0),    dep:U(6,17,0)},
+      {name:"La Spezia",         cx:614, cy:166, arr:U(8,8,0),    dep:U(8,19,0)},
+      {name:"Civitavecchia",     cx:737, cy:342, arr:U(9,7,0),    dep:U(9,19,0)},
+      {name:"Naples",            cx:892, cy:450, arr:U(10,7,0),   dep:U(10,18,0)},
+      {name:"Barcelona",         cx:135, cy:404, arr:U(12,5,0),   dep:null}
+    ];
+    this.routeD = "M135 404 L166 562 L614 166 L737 342 L892 450 L135 404";
+    this.tripStart = this.WP[0].dep;
+    this.tripEnd = this.WP[this.WP.length-1].arr;
+
+    this.stars = [];
+    const sr=(a,b)=>a+Math.random()*(b-a);
+    for(let i=0;i<26;i++){ this.stars.push({top:sr(2,42).toFixed(1)+"%",left:sr(2,96).toFixed(1)+"%",dur:sr(2.5,6).toFixed(1)+"s",delay:(-sr(0,5)).toFixed(1)+"s"}); }
+
+    this.crew = [
+      {emoji:"🧭",role:"Skipper",tag:"Dad",delay:"0s"},
+      {emoji:"🌺",role:"First Mate",tag:"Mum",delay:".4s"},
+      {emoji:"🏄",role:"Deckhand",tag:"18",delay:".8s"},
+      {emoji:"🎧",role:"Deckhand",tag:"15",delay:"1.2s"}
+    ];
+    this.tiles = [
+      {key:"days",  emoji:"📅",title:"Day plan",  sub:"8 days mapped", bg:"linear-gradient(160deg,#7defd8,#2dd4bf)"},
+      {key:"voyage",emoji:"🗺️",title:"Tracker",   sub:"where are we?", bg:"linear-gradient(160deg,#ffd97a,#fbbf24)"},
+      {key:"ship",  emoji:"🚢",title:"The ship",  sub:"stats & fun",   bg:"linear-gradient(160deg,#ffb0be,#fb7185)"},
+      {key:"extras",emoji:"🎒",title:"Extras",    sub:"pack & phrases", bg:"linear-gradient(160deg,#bfe0ff,#7dd3fc)"}
+    ];
+    this.navDef = [
+      {key:"home",  icon:"🏠",label:"Home"},
+      {key:"voyage",icon:"🗺️",label:"Voyage"},
+      {key:"days",  icon:"📅",label:"Days"},
+      {key:"ship",  icon:"🚢",label:"Ship"},
+      {key:"extras",icon:"🎒",label:"Extras"},
+      {key:"games", icon:"🎮",label:"Play"}
+    ];
+
+    this.moodOptions = ["😍","😎","🤩","😌","🥳","😴"];
+
+    this.DAYS = [
+      {id:1,day:"Day 1",dateShort:"JUL 5",port:"Barcelona",flag:"🇪🇸",kind:"Embark",accent:"#fbbf24",times:"BOARD 12–4 PM · SAIL 5 PM",tag:"All aboard — the adventure begins!",blurb:"Gaudí's dreamlike home port. Get here early: Sagrada Família, Park Güell and Gothic-Quarter tapas are worth a pre-cruise day before Harmony slips her lines at sunset.",weather:{icon:"☀️",hi:"29°",lo:"22°",sea:"24°",word:"Sunny & warm"},exc:[{n:"Sagrada Família",t:"Half day",v:"Icon"},{n:"Park Güell + Gràcia",t:"Half day",v:"Views"},{n:"Gothic Quarter tapas crawl",t:"Evening",v:"Foodie"},{n:"Barceloneta beach",t:"Flexible",v:"Chill"}],miss:"Sagrada Família at golden hour",eat:"Pan con tomate, jamón & vermut",tip:"Fly in a day early — embarkation is calmer and Gaudí deserves a full day."},
+      {id:2,day:"Day 2",dateShort:"JUL 6",port:"Palma de Mallorca",flag:"🇪🇸",kind:"Port",accent:"#2dd4bf",times:"DOCKED 8 AM – 5 PM",tag:"Honey-stone cathedral & turquoise coves.",blurb:"Mallorca's sunny capital. A vast Gothic cathedral rises straight from the marina, with old-town lanes, beach clubs and mountain villages all within easy reach.",weather:{icon:"☀️",hi:"31°",lo:"21°",sea:"26°",word:"Hot & sunny"},exc:[{n:"La Seu Cathedral & Old Town",t:"2–3 hrs",v:"Icon"},{n:"Sóller vintage train & valley",t:"Half day",v:"Scenic"},{n:"Caves of Drach boat tour",t:"Half day",v:"Wow"},{n:"Illetas beach club",t:"Flexible",v:"Chill"}],miss:"Sunlight through La Seu's rose window",eat:"Ensaïmada pastry & fresh seafood paella",tip:"The old town is walkable from the shuttle drop — skip the taxi."},
+      {id:3,day:"Day 3",dateShort:"JUL 7",port:"At Sea",flag:"🌊",kind:"Sea day",accent:"#7dd3fc",times:"FULL DAY AT SEA",tag:"Pure ship day — go play!",blurb:"A whole day of Harmony to yourselves as she powers toward Italy. FlowRider, the Ultimate Abyss, pools, shows and long lazy lunches.",weather:{icon:"☀️",hi:"27°",lo:"22°",sea:"~25°",word:"Open-sea breeze"},exc:[{n:"FlowRider surf lesson",t:"Anytime",v:"Thrill"},{n:"Ultimate Abyss drop",t:"10 sec 😅",v:"Dare"},{n:"Bionic Bar cocktail",t:"Anytime",v:"Fun"},{n:"Aqua & ice shows",t:"Evening",v:"Show"}],miss:"Sunset sail-away from the top deck",eat:"Poolside tacos then a specialty dinner",tip:"Book shows & specialty dining now — the good slots vanish fast."},
+      {id:4,day:"Day 4",dateShort:"JUL 8",port:"La Spezia",flag:"🇮🇹",kind:"Port",accent:"#2dd4bf",times:"DOCKED 8 AM – 7 PM",tag:"Gateway to the Italian Riviera.",blurb:"Trains whisk you to the pastel cliff-villages of the Cinque Terre, or go big with Pisa's leaning tower and Renaissance Florence.",weather:{icon:"☀️",hi:"28°",lo:"19°",sea:"24°",word:"Warm & clear"},exc:[{n:"Cinque Terre villages",t:"Full day",v:"Iconic"},{n:"Pisa Leaning Tower",t:"Half day",v:"Classic"},{n:"Florence & the Uffizi",t:"Full day",v:"Art"},{n:"Portovenere by boat",t:"Half day",v:"Scenic"}],miss:"Vernazza harbour from the cliff path",eat:"Pesto trofie & Ligurian focaccia",tip:"Cinque Terre OR Florence — pick one; both in a day is a scramble."},
+      {id:5,day:"Day 5",dateShort:"JUL 9",port:"Civitavecchia · Rome",flag:"🇮🇹",kind:"Port",accent:"#2dd4bf",times:"DOCKED 7 AM – 7 PM",tag:"The Eternal City awaits.",blurb:"The port for Rome — a 60–90 min transfer, but the Colosseum, Vatican and Trevi Fountain are unforgettable. An early start pays off.",weather:{icon:"☀️",hi:"31°",lo:"19°",sea:"24°",word:"Hot"},exc:[{n:"Colosseum & Roman Forum",t:"Full day",v:"Ancient"},{n:"Vatican & Sistine Chapel",t:"Half+ day",v:"Awe"},{n:"Trevi, Pantheon & gelato",t:"Flexible",v:"Stroll"},{n:"Ostia Antica ruins",t:"Half day",v:"Quiet"}],miss:"Tossing a coin into the Trevi Fountain",eat:"Cacio e pepe & real Roman gelato",tip:"Pre-book skip-the-line for Colosseum & Vatican — queues eat the day."},
+      {id:6,day:"Day 6",dateShort:"JUL 10",port:"Naples",flag:"🇮🇹",kind:"Port",accent:"#2dd4bf",times:"DOCKED 7 AM – 6 PM",tag:"Pizza, ruins & a legendary coast.",blurb:"Pizza's birthplace and a launchpad for legends — buried Pompeii, brooding Vesuvius, the isle of Capri and the cliff-hugging Amalfi Coast.",weather:{icon:"☀️",hi:"30°",lo:"21°",sea:"25°",word:"Hot & bright"},exc:[{n:"Pompeii & Vesuvius",t:"Full day",v:"History"},{n:"Capri & the Blue Grotto",t:"Full day",v:"Dream"},{n:"Amalfi Coast drive",t:"Full day",v:"Scenic"},{n:"Naples pizza pilgrimage",t:"2 hrs",v:"Foodie"}],miss:"A Pompeii street frozen since AD 79",eat:"A true Napoletana pizza margherita",tip:"Capri ferries & Amalfi roads jam up — go early or take a tour."},
+      {id:7,day:"Day 7",dateShort:"JUL 11",port:"At Sea",flag:"🌊",kind:"Sea day",accent:"#7dd3fc",times:"FULL DAY AT SEA",tag:"Last sea day — soak it up.",blurb:"The final full day at sea. Bank the sun, cash in the drinks package, catch the shows you missed and start the packing you're dreading.",weather:{icon:"☀️",hi:"28°",lo:"22°",sea:"~25°",word:"Calm & sunny"},exc:[{n:"Spa & thermal suite",t:"Anytime",v:"Relax"},{n:"Zip line across the deck",t:"5 min",v:"Thrill"},{n:"Trivia & casino night",t:"Evening",v:"Fun"},{n:"Farewell deck party",t:"Evening",v:"Vibes"}],miss:"One last Bionic Bar nightcap",eat:"Brunch big — you're home tomorrow",tip:"Set disembark bags out tonight; keep essentials for the morning."},
+      {id:8,day:"Day 8",dateShort:"JUL 12",port:"Barcelona",flag:"🇪🇸",kind:"Disembark",accent:"#fb7185",times:"ARRIVE 5:00 AM",tag:"Buen viaje — until next time!",blurb:"Back where you started. Grab an early churros con chocolate if your flight allows, then relive the whole week in your memory journal.",weather:{icon:"☀️",hi:"29°",lo:"22°",sea:"24°",word:"Sunny"},exc:[{n:"Early churros run",t:"If time",v:"Treat"},{n:"Left-luggage & last stroll",t:"Morning",v:"Chill"},{n:"Airport transfer",t:"Morning",v:"Logistics"}],miss:"Churros con chocolate before you fly",eat:"Chocolate con churros, obviously",tip:"Self-assist walk-off is fastest if you can carry your own bags."}
+    ];
+
+    this.STATS = [
+      {icon:"⚓",label:"CLASS",val:"Oasis Plus"},{icon:"📏",label:"LENGTH",val:"362 m"},
+      {icon:"⚖️",label:"TONNAGE",val:"227,700 GT"},{icon:"🧑‍🤝‍🧑",label:"GUESTS",val:"~5,500"},
+      {icon:"🧑‍✈️",label:"CREW",val:"~2,100"},{icon:"🏢",label:"DECKS",val:"18"},
+      {icon:"🚀",label:"CRUISE SPEED",val:"22 knots"},{icon:"🛠️",label:"BUILT · REFIT",val:"2016 · 2026"}
+    ];
+    this.FUNFACTS = [
+      "🗼 At 362 m she's longer than the Eiffel Tower is tall (330 m).",
+      "🛝 The Ultimate Abyss is the tallest slide at sea — a 10-storey, ~30 m plunge.",
+      "🤖 The Bionic Bar's robot arms shake and pour your cocktails.",
+      "🏄 Two FlowRider surf simulators pump thousands of gallons a minute.",
+      "🌳 Central Park grows 12,000+ live plants in the middle of the ship.",
+      "⛸️ Yes — there's a full ice-skating rink, at sea.",
+      "🍽️ Around 20 restaurants & cafés to work through in 7 nights.",
+      "🛏️ Roughly 2,700 staterooms across 16 guest decks."
+    ];
+    this.DINING = [
+      {n:"Main Dining Room",d:"3-deck classic multi-course dinners"},
+      {n:"Windjammer",d:"Sprawling all-day buffet"},
+      {n:"Wonderland",d:"Whimsical, mind-bending menu"},
+      {n:"Chops Grille",d:"Premium steakhouse"},
+      {n:"Jamie's Italian",d:"Rustic Italian by Jamie Oliver"},
+      {n:"150 Central Park",d:"Chef's tasting — dress up"},
+      {n:"Izumi",d:"Sushi & hot-rock cooking"},
+      {n:"Sorrento's",d:"Late-night pizza slices"},
+      {n:"Bionic Bar",d:"Robot-made cocktails"}
+    ];
+    this.ACTIVITIES = [
+      {i:"🏄",n:"FlowRider"},{i:"🛝",n:"Ultimate Abyss"},{i:"🌊",n:"Perfect Storm slides"},
+      {i:"🪢",n:"Zip line"},{i:"🧗",n:"Rock walls"},{i:"⛳",n:"Mini-golf"},
+      {i:"⛸️",n:"Ice rink"},{i:"🎰",n:"Casino Royale"},{i:"💆",n:"Vitality Spa"},{i:"🏀",n:"Sports court"}
+    ];
+    this.RHYTHM = [
+      {t:"6:30",e:"Sunrise yoga & early risers"},{t:"8:00",e:"Breakfast · shore tours depart"},
+      {t:"12:30",e:"Poolside lunch & FlowRider"},{t:"15:00",e:"Trivia, spa & sunbathing"},
+      {t:"18:00",e:"Sail-away from port 🎉"},{t:"19:30",e:"Dinner — early seating"},
+      {t:"21:00",e:"Headline show"},{t:"22:30",e:"Live music & casino"},{t:"00:00",e:"Star-gazing on deck"}
+    ];
+    this.SHOWS = [
+      {n:"Grease",d:"Full Broadway musical"},{n:"The Fine Line",d:"AquaTheater high-diving show"},
+      {n:"iSkate",d:"Ice-skating spectacular"},{n:"Comedy & headliners",d:"Nightly in the theatres"},
+      {n:"Deck party",d:"Sail-away with the live band"}
+    ];
+    this.PACK = [
+      {cat:"Docs & money",icon:"🛂",items:[{id:"p1",label:"Passports (all 4) + copies"},{id:"p2",label:"Cruise SetSail pass / boarding QR"},{id:"p3",label:"Cards + €30–50 cash"},{id:"p4",label:"Travel insurance details"},{id:"p5",label:"EU plug adapters"}]},
+      {cat:"Clothes",icon:"👕",items:[{id:"c1",label:"Swimwear ×2 + cover-ups"},{id:"c2",label:"Smart-casual dinner outfits"},{id:"c3",label:"One formal-night outfit"},{id:"c4",label:"Comfy walking shoes"},{id:"c5",label:"Light layer for sea breeze"},{id:"c6",label:"Sun hats & sunglasses"}]},
+      {cat:"Day-trip kit",icon:"🎒",items:[{id:"d1",label:"Daypack"},{id:"d2",label:"Refillable water bottle"},{id:"d3",label:"Reef-safe SPF50"},{id:"d4",label:"Power bank"},{id:"d5",label:"Comfortable sandals"}]},
+      {cat:"Health",icon:"💊",items:[{id:"h1",label:"Meds (+ copies of scripts)"},{id:"h2",label:"Sea-sickness bands / tablets"},{id:"h3",label:"After-sun / aloe"},{id:"h4",label:"Mini first-aid bits"}]},
+      {cat:"Tech",icon:"🔌",items:[{id:"t1",label:"Phones + chargers"},{id:"t2",label:"Headphones"},{id:"t3",label:"Camera"},{id:"t4",label:"Offline maps & downloads"}]},
+      {cat:"Teen-approved",icon:"🎧",items:[{id:"x1",label:"Cards / travel games"},{id:"x2",label:"Book or Kindle"},{id:"x3",label:"Group chat + meet-up plan"},{id:"x4",label:"Portable speaker (deck rules apply!)"}]}
+    ];
+    this.PHRASES = [
+      {lang:"Spanish",flag:"🇪🇸",note:"Barcelona, Palma & Spanish ports",items:[{en:"Hello",loc:"Hola"},{en:"Please",loc:"Por favor"},{en:"Thank you",loc:"Gracias"},{en:"Cheers!",loc:"¡Salud!"},{en:"How much?",loc:"¿Cuánto es?"},{en:"Two beers, please",loc:"Dos cervezas, por favor"}]},
+      {lang:"Catalan",flag:"🎗️",note:"A warm bonus in Barcelona",items:[{en:"Good day",loc:"Bon dia"},{en:"Thank you",loc:"Gràcies"},{en:"Goodbye",loc:"Adéu"}]},
+      {lang:"Italian",flag:"🇮🇹",note:"La Spezia, Rome & Naples",items:[{en:"Hi / Bye",loc:"Ciao"},{en:"Please",loc:"Per favore"},{en:"Thank you",loc:"Grazie"},{en:"Cheers!",loc:"Salute!"},{en:"How much?",loc:"Quanto costa?"},{en:"A coffee, please",loc:"Un caffè, per favore"}]}
+    ];
+    this.CURRENCY = [
+      "💶 Spain & Italy both use the Euro (€) — one currency all week!",
+      "💳 Cards work almost everywhere; keep €30–50 cash for markets, taxis & small cafés.",
+      "🧾 Tipping is modest — round up or leave 5–10% for great service.",
+      "🚢 Onboard is cashless: everything goes on your SeaPass (charged in USD)."
+    ];
+
+    this.tick = this.tick.bind(this);
+  }
+
+  componentDidMount(){ this.timer = setInterval(this.tick, 1000); }
+  componentWillUnmount(){ clearInterval(this.timer); this.stopAmbient(); }
+  tick(){ this.forceUpdate(); }
+
+  // ---------- AUDIO ----------
+  ensureAudio(){
+    if(this.actx) return;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this.actx = new AC();
+      this.master = this.actx.createGain();
+      this.master.gain.value = this.state.muted ? 0 : 0.55;
+      this.master.connect(this.actx.destination);
+      if(!this.state.muted) this.startAmbient();
+    }catch(e){}
+  }
+  resumeAudio(){ if(this.actx && this.actx.state==="suspended") this.actx.resume(); }
+  tone(freq,dur,type,vol,slideTo){
+    if(!this.actx || this.state.muted) return;
+    const t=this.actx.currentTime, o=this.actx.createOscillator(), g=this.actx.createGain();
+    o.type=type||"sine"; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol||0.2,t+0.015);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.02);
+  }
+  blip(){ this.ensureAudio(); this.resumeAudio(); this.tone(540,0.09,"triangle",0.16,720); }
+  ding(){ this.ensureAudio(); this.resumeAudio(); this.tone(880,0.12,"sine",0.18); setTimeout(()=>this.tone(1320,0.16,"sine",0.14),70); }
+  horn(){
+    this.ensureAudio(); this.resumeAudio();
+    if(!this.actx||this.state.muted) return;
+    const t=this.actx.currentTime, o=this.actx.createOscillator(), g=this.actx.createGain();
+    o.type="sawtooth"; o.frequency.setValueAtTime(110,t);
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(0.3,t+0.25);
+    g.gain.setValueAtTime(0.3,t+0.75);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+1.3);
+    const lp=this.actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=650;
+    o.connect(lp); lp.connect(g); g.connect(this.master); o.start(t); o.stop(t+1.35);
+  }
+  noiseBuffer(){
+    if(this._nb) return this._nb;
+    const len=this.actx.sampleRate*2, b=this.actx.createBuffer(1,len,this.actx.sampleRate), d=b.getChannelData(0);
+    let last=0;
+    for(let i=0;i<len;i++){ const w=Math.random()*2-1; last=(last+0.02*w)/1.02; d[i]=last*3.2; }
+    this._nb=b; return b;
+  }
+  startAmbient(){
+    if(!this.actx || this.ambient || this.state.muted) return;
+    const src=this.actx.createBufferSource(); src.buffer=this.noiseBuffer(); src.loop=true;
+    const lp=this.actx.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=480;
+    const g=this.actx.createGain(); g.gain.value=0.08;
+    const lfo=this.actx.createOscillator(); lfo.frequency.value=0.12;
+    const lfoG=this.actx.createGain(); lfoG.gain.value=0.05;
+    lfo.connect(lfoG); lfoG.connect(g.gain);
+    src.connect(lp); lp.connect(g); g.connect(this.master); src.start(); lfo.start();
+    this.ambient={src,lfo};
+  }
+  stopAmbient(){ if(this.ambient){ try{this.ambient.src.stop();this.ambient.lfo.stop();}catch(e){} this.ambient=null; } }
+  toggleMute(){
+    const m=!this.state.muted;
+    this.setState({muted:m});
+    try{ localStorage.setItem("hm_muted",JSON.stringify(m)); }catch(e){}
+    if(m){ if(this.master) this.master.gain.value=0; this.stopAmbient(); }
+    else { this.ensureAudio(); if(this.master) this.master.gain.value=0.55; this.startAmbient(); this.ding(); }
+  }
+
+  // ---------- NAV ----------
+  go(tab){ this.blip(); this.setState({tab}); if(window && window.scrollTo) window.scrollTo(0,0); }
+
+  toggleDay(id){ this.blip(); this.setState(s=>({expandedDay: s.expandedDay===id?null:id})); }
+
+  toggleCheck(id){
+    this.ding();
+    this.setState(s=>{ const c={...s.checked}; c[id]=!c[id]; try{localStorage.setItem("hm_checked",JSON.stringify(c));}catch(e){} return {checked:c}; });
+  }
+  resetChecks(){ this.blip(); this.setState({checked:{}}); try{localStorage.setItem("hm_checked","{}");}catch(e){} }
+
+  setMood(day,emoji){
+    this.blip();
+    this.setState(s=>{ const m={...s.moods}; m[day]=emoji; try{localStorage.setItem("hm_moods",JSON.stringify(m));}catch(e){} return {moods:m}; });
+  }
+  saveNote(day,val){ this.notes[day]=val; try{localStorage.setItem("hm_notes",JSON.stringify(this.notes));}catch(e){} }
+
+  // ---------- LIVE POSITION ----------
+  liveState(){
+    const wp=this.WP, now=Date.now();
+    const lerp=(a,b,f)=>a+(b-a)*f;
+    const pct=Math.max(0,Math.min(1,(now-this.tripStart)/(this.tripEnd-this.tripStart)));
+    let out={cx:wp[0].cx,cy:wp[0].cy,label:"Docked in Barcelona",sub:"Getting ready to sail",pct:0};
+    if(now < wp[0].dep){
+      out={cx:wp[0].cx,cy:wp[0].cy,label:"Docked in Barcelona",sub:"All aboard — sailing soon!",pct:0};
+    } else if(now >= this.tripEnd){
+      out={cx:wp[5].cx,cy:wp[5].cy,label:"Voyage complete 🎉",sub:"Home in Barcelona",pct:1};
+    } else {
+      for(let i=0;i<wp.length;i++){
+        const w=wp[i];
+        if(w.arr!=null && w.dep!=null && now>=w.arr && now<w.dep){ out={cx:w.cx,cy:w.cy,label:"Docked in "+w.name,sub:"Ashore for the day ⚓",pct}; break; }
+        const a=wp[i], b=wp[i+1];
+        if(b && now>=a.dep && now<b.arr){ const f=(now-a.dep)/(b.arr-a.dep); out={cx:lerp(a.cx,b.cx,f),cy:lerp(a.cy,b.cy,f),label:"At sea 🌊",sub:"Sailing to "+b.name,pct}; break; }
+      }
+    }
+    out.pctLabel = Math.round((out.pct)*100)+"%";
+    out.pct = (out.pct*100).toFixed(1)+"%";
+    return out;
+  }
+  countdownState(){
+    const now=Date.now(), t=this.tripStart, diff=t-now;
+    if(diff>0){
+      const s=Math.floor(diff/1000);
+      return {counting:true,launched:false,days:Math.floor(s/86400),hours:Math.floor(s%86400/3600),mins:Math.floor(s%3600/60),secs:s%60};
+    }
+    if(now>=this.tripEnd) return {counting:false,launched:true,dayLabel:"Voyage complete 🎉"};
+    const dayN=Math.min(8,Math.max(1,Math.floor((now-this.tripStart)/86400000)+1));
+    return {counting:false,launched:true,dayLabel:"Day "+dayN+" of 7"};
+  }
+
+  renderVals(){
+    const tab=this.state.tab;
+    const nav=this.navDef.map(n=>({icon:n.icon,label:n.label,active:tab===n.key,inactive:tab!==n.key,go:()=>this.go(n.key)}));
+    const tiles=this.tiles.map(t=>({emoji:t.emoji,title:t.title,sub:t.sub,bg:t.bg,go:()=>this.go(t.key)}));
+
+    // port label placement
+    const lp=[
+      {lx:110,ly:392,anchor:"end"},
+      {lx:196,ly:600,anchor:"start"},
+      {lx:600,ly:150,anchor:"end"},
+      {lx:723,ly:326,anchor:"end"},
+      {lx:892,ly:498,anchor:"middle"}
+    ];
+    const ports=this.WP.slice(0,5).map((w,i)=>({name:w.name.replace(" de Mallorca",""),cx:w.cx,cy:w.cy,lx:lp[i].lx,ly:lp[i].ly,anchor:lp[i].anchor}));
+
+    const legs=[
+      {icon:"🛳️",name:"Barcelona — depart",when:"Sun Jul 5 · 5:00 PM"},
+      {icon:"🏝️",name:"Palma de Mallorca",when:"Mon Jul 6 · 8 AM – 5 PM"},
+      {icon:"🌊",name:"Day at sea",when:"Tue Jul 7 · all day"},
+      {icon:"🍝",name:"La Spezia (Cinque Terre)",when:"Wed Jul 8 · 8 AM – 7 PM"},
+      {icon:"🏛️",name:"Civitavecchia (Rome)",when:"Thu Jul 9 · 7 AM – 7 PM"},
+      {icon:"🍕",name:"Naples",when:"Fri Jul 10 · 7 AM – 6 PM"},
+      {icon:"🌊",name:"Day at sea",when:"Sat Jul 11 · all day"},
+      {icon:"⚓",name:"Barcelona — arrive",when:"Sun Jul 12 · 5:00 AM"}
+    ];
+
+    const days=this.DAYS.map(d=>({...d,expanded:this.state.expandedDay===d.id,toggle:()=>this.toggleDay(d.id)}));
+    let tot=0,done=0;
+    const checklist=this.PACK.map(c=>({cat:c.cat,icon:c.icon,items:c.items.map(it=>{tot++;const dn=!!this.state.checked[it.id];if(dn)done++;return {id:it.id,label:it.label,done:dn,pending:!dn,toggle:()=>this.toggleCheck(it.id)};})}));
+    const journalDays=this.DAYS.map(d=>({id:d.id,label:d.day+" · "+d.port,flag:d.flag,note:this.notes[d.id]||"",setNote:(e)=>this.saveNote(d.id,e.target.value),moods:this.moodOptions.map(m=>{const act=this.state.moods[d.id]===m;return {emoji:m,active:act,idle:!act,pick:()=>this.setMood(d.id,m)};})}));
+
+    return {
+      soundIcon: this.state.muted ? "🔇" : "🔊",
+      days, checklist, journalDays,
+      stats:this.STATS, funFacts:this.FUNFACTS, dining:this.DINING, activities:this.ACTIVITIES, rhythm:this.RHYTHM, shows:this.SHOWS,
+      phrases:this.PHRASES, currency:this.CURRENCY,
+      packPct: (tot?done/tot*100:0).toFixed(0)+"%", packLabel: done+" / "+tot+" packed",
+      resetChecks: ()=>this.resetChecks(), playHorn: ()=>this.horn(),
+      toggleMute: ()=>this.toggleMute(),
+      showHome: tab==="home", showVoyage: tab==="voyage", showDays: tab==="days", showShip: tab==="ship", showExtras: tab==="extras", showGames: tab==="games",
+      nav, tiles, crew:this.crew, stars:this.stars,
+      goTracker: ()=>this.go("voyage"),
+      countdown: this.countdownState(),
+      live: this.liveState(),
+      ship: this.liveState(),
+      routeD: this.routeD, ports, legs
+    };
+  }
+}
+</script>
+</body>
+</html>
