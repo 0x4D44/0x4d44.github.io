@@ -29,7 +29,7 @@ window.ESSAYS = [
   {
     slug: "vamos-spanish",
     title: "¡Vamos!: Spanish Learning App",
-    tagline: "A Duolingo-style Spanish course in an iOS device frame: 26 units across six Spanish-speaking cities, each with vocabulary, sentences, grammar drills and listening exercises, plus streaks, XP, combos and badges. Text-to-speech reads every phrase aloud. Built on a tiny HTML-template runtime that renders React in the browser — no build step.",
+    tagline: "A Duolingo-style Spanish course in an iOS device frame: 26 units across six Spanish-speaking cities, each with vocabulary, sentences, grammar drills and listening exercises, plus streaks, XP, combos and badges. Text-to-speech reads every phrase aloud, with sound effects for taps, combos and wins. Built on a tiny HTML-template runtime that renders React in the browser — no build step.",
     url: "https://0x4d44.github.io/vamos-spanish/",
     illustration: "ill-vamos",
     date: "2026-07-02T20:00:00",

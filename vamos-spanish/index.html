@@ -143,9 +143,13 @@ input::placeholder{color:#b9a888}
             <div><div style="font:800 14px 'Nunito',sans-serif;color:#3d2c22">Voz en español</div><div style="font:700 11.5px 'Nunito',sans-serif;color:#8a7057">Text-to-speech on tap</div></div>
             <div onClick="{{ onToggleTts }}" style="width:50px;height:28px;border-radius:999px;background:{{ ttsBg }};display:flex;align-items:center;justify-content:{{ ttsJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fffdf8"></div></div>
           </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:2px solid #f1e7d2">
             <div><div style="font:800 14px 'Nunito',sans-serif;color:#3d2c22">Leer automáticamente</div><div style="font:700 11.5px 'Nunito',sans-serif;color:#8a7057">Speak each phrase as it appears</div></div>
             <div onClick="{{ onToggleAuto }}" style="width:50px;height:28px;border-radius:999px;background:{{ autoBg }};display:flex;align-items:center;justify-content:{{ autoJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fffdf8"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
+            <div><div style="font:800 14px 'Nunito',sans-serif;color:#3d2c22">Efectos de sonido</div><div style="font:700 11.5px 'Nunito',sans-serif;color:#8a7057">Taps, correct/wrong &amp; combos</div></div>
+            <div onClick="{{ onToggleSfx }}" style="width:50px;height:28px;border-radius:999px;background:{{ sfxBg }};display:flex;align-items:center;justify-content:{{ sfxJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fffdf8"></div></div>
           </div>
         </div>
         <div onClick="{{ onReset }}" style="text-align:center;font:800 13px 'Nunito',sans-serif;color:{{ resetFg }};padding:10px;cursor:pointer;border:2px dashed #e0cfae;border-radius:14px">{{ resetTxt }}</div>
@@ -325,11 +329,11 @@ input::placeholder{color:#b9a888}
 </x-import>
 
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;dailyGoal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;min&quot;:10,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;showCombo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;speechRate&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.95,&quot;min&quot;:0.6,&quot;max&quot;:1.3,&quot;step&quot;:0.05,&quot;unit&quot;:&quot;x&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Voice&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;dailyGoal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;min&quot;:10,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;showCombo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;speechRate&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.95,&quot;min&quot;:0.6,&quot;max&quot;:1.3,&quot;step&quot;:0.05,&quot;unit&quot;:&quot;x&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Voice&quot;},&quot;soundEffects&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Voice&quot;}}">
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    const def = { xp: 0, streak: 0, lastDay: '', dailyXp: 0, dailyDay: '', stars: {}, done: [], weak: [], badges: [], ttsOn: true, autoSpeak: true };
+    const def = { xp: 0, streak: 0, lastDay: '', dailyXp: 0, dailyDay: '', stars: {}, done: [], weak: [], badges: [], ttsOn: true, autoSpeak: true, sfxOn: true };
     let d = def;
     try { d = { ...def, ...(JSON.parse(localStorage.getItem('vamos.v1') || 'null') || {}) }; } catch (e) {}
     const today = this.dayKey(0);
@@ -363,6 +367,69 @@ class Component extends DCLogic {
     const low = lg.toLowerCase();
     u.voice = vs.find((v) => v.lang.toLowerCase().replace('_', '-') === low) || vs.find((v) => !v.lang.toLowerCase().includes('es-es') === !low.includes('es-es')) || vs[0] || null;
     speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }
+
+  // ---------------- sound effects (WebAudio synth, no assets) ----------------
+  ensureAudio() {
+    if (this._actx !== undefined) return this._actx;
+    try {
+      const AC = window.AudioContext || window.webkitAudioContext;
+      this._actx = new AC();
+      this._master = this._actx.createGain();
+      this._master.gain.value = 0.5;
+      // gentle low-pass keeps every tone warm & rounded, matching the cozy look
+      this._lp = this._actx.createBiquadFilter();
+      this._lp.type = 'lowpass'; this._lp.frequency.value = 5200;
+      this._master.connect(this._lp); this._lp.connect(this._actx.destination);
+    } catch (e) { this._actx = null; }
+    return this._actx;
+  }
+
+  // one plucked/marimba-ish voice
+  tone(freq, t0, dur, opts) {
+    const ac = this._actx; if (!ac) return;
+    const o = ac.createOscillator();
+    const g = ac.createGain();
+    o.type = (opts && opts.type) || 'triangle';
+    o.frequency.setValueAtTime(freq, t0);
+    if (opts && opts.glide) o.frequency.exponentialRampToValueAtTime(Math.max(30, opts.glide), t0 + dur);
+    const peak = (opts && opts.peak) != null ? opts.peak : 0.32;
+    const atk = (opts && opts.attack) || 0.006;
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(peak, t0 + atk);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(this._master);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+  }
+
+  sfx(name, arg) {
+    if ((this.props.soundEffects ?? true) === false) return;
+    if (!(this.state.data.sfxOn ?? true)) return;
+    const ac = this.ensureAudio(); if (!ac) return;
+    if (ac.state === 'suspended') { try { ac.resume(); } catch (e) {} }
+    const t = ac.currentTime + 0.001;
+    const M = 523.25; // C5
+    const semi = (n) => M * Math.pow(2, n / 12);
+    switch (name) {
+      case 'tap':      this.tone(430, t, 0.07, { type: 'sine', peak: 0.16 }); break;
+      case 'nav':      this.tone(560, t, 0.08, { type: 'sine', peak: 0.18 }); break;
+      case 'select':   this.tone(600, t, 0.09, { peak: 0.22 }); break;
+      case 'tile':     this.tone(660, t, 0.07, { peak: 0.24 }); this.tone(990, t, 0.05, { type: 'sine', peak: 0.08 }); break;
+      case 'untile':   this.tone(300, t, 0.08, { type: 'sine', peak: 0.16 }); break;
+      case 'start':    [semi(0), semi(7)].forEach((f, i) => this.tone(f, t + i * 0.06, 0.2, { peak: 0.28 })); break;
+      case 'correct':  [semi(0), semi(4), semi(7)].forEach((f, i) => this.tone(f, t + i * 0.07, 0.26, { peak: 0.3 })); break;
+      case 'combo': {  // rising arpeggio that climbs with the combo count
+        const step = Math.min(Math.max((arg || 3) - 2, 0), 8);
+        [0, 4, 7, 12].forEach((iv, i) => this.tone(semi(iv + step), t + i * 0.06, 0.24, { peak: 0.3 }));
+        break;
+      }
+      case 'wrong':    this.tone(300, t, 0.28, { type: 'triangle', peak: 0.26, glide: 150 }); break;
+      case 'matchPair':this.tone(semi(7), t, 0.16, { type: 'sine', peak: 0.26 }); this.tone(semi(12), t + 0.05, 0.16, { type: 'sine', peak: 0.2 }); break;
+      case 'star':     this.tone(semi(4 + (arg || 0) * 3), t, 0.3, { peak: 0.34 }); this.tone(semi(16 + (arg || 0) * 3), t, 0.18, { type: 'sine', peak: 0.1 }); break;
+      case 'complete': [0, 4, 7, 12, 16].forEach((iv, i) => this.tone(semi(iv), t + i * 0.1, 0.42, { peak: 0.32 })); break;
+      case 'badge':    [semi(12), semi(16), semi(19), semi(24)].forEach((f, i) => this.tone(f, t + i * 0.05, 0.22, { type: 'sine', peak: 0.22 })); break;
+      default: break;
+    }
   }
 
   // ---------------- lesson lifecycle ----------------
@@ -406,6 +473,8 @@ class Component extends DCLogic {
       ? { ok: true, title: combo >= 3 ? '¡Muy bien! Combo x' + combo : '¡Muy bien!', detail: '+' + gain + ' XP' + (bonus ? ' (bonus de combo +' + bonus + ')' : ''), bg: '#ddeee6', fg: '#20635b', btn: '#20635b', btnSh: '#164740' }
       : { ok: false, title: 'Respuesta correcta:', detail: correctShown, bg: '#f7ded9', fg: '#a03225', btn: '#c75b39', btnSh: '#9c3f26' };
     this.setState({ ls: nls, combo, fb });
+    if (ok) { if (combo >= 3) this.sfx('combo', combo); else this.sfx('correct'); }
+    else this.sfx('wrong');
     if (ok && ex.speak) this.speak(ex.speak, this.exLang());
   }
 
@@ -446,6 +515,11 @@ class Component extends DCLogic {
     if (ls.isPractice) award('practice');
     this.setData({ xp, dailyXp, dailyDay: today, streak, lastDay: today, done, stars: starMap, badges: [...have] });
     this.setState({ ls: { ...ls, phase: 'done', applied: true, stars, acc, newBadges: won }, fb: null });
+    // celebratory audio: fanfare, then a pop per earned star, then a badge sparkle
+    this.sfx('complete');
+    const nStars = ls.isPractice ? 3 : stars;
+    for (let i = 0; i < nStars; i++) setTimeout(() => this.sfx('star', i), 520 + i * 150);
+    if (won.length) setTimeout(() => this.sfx('badge'), 520 + nStars * 150 + 200);
   }
 
   quit() { if (window.speechSynthesis) speechSynthesis.cancel(); this.setState({ screen: 'home', ls: null, fb: null, combo: 0 }); }
@@ -470,16 +544,18 @@ class Component extends DCLogic {
       dailyLine: d.dailyXp >= goal ? '¡Meta cumplida! ' + d.dailyXp + ' XP hoy' : d.dailyXp + ' / ' + goal + ' XP hoy',
       doneCount: d.done.length, wordCount: d.done.length * 6,
       totalLessons: L ? L.UNITS.reduce((n, u) => n + u.lessons.length, 0) : 130,
-      onTabLearn: () => this.setState({ tab: 'learn' }),
-      onTabPractice: () => this.setState({ tab: 'practice' }),
-      onTabAwards: () => this.setState({ tab: 'awards' }),
-      onTabProfile: () => this.setState({ tab: 'profile' }),
+      onTabLearn: () => { this.sfx('nav'); this.setState({ tab: 'learn' }); },
+      onTabPractice: () => { this.sfx('nav'); this.setState({ tab: 'practice' }); },
+      onTabAwards: () => { this.sfx('nav'); this.setState({ tab: 'awards' }); },
+      onTabProfile: () => { this.sfx('nav'); this.setState({ tab: 'profile' }); },
       onQuit: () => this.quit(),
-      onStartPractice: () => this.startPractice(),
+      onStartPractice: () => { this.sfx('start'); this.startPractice(); },
       onToggleTts: () => this.setData({ ttsOn: !d.ttsOn }),
       onToggleAuto: () => this.setData({ autoSpeak: !d.autoSpeak }),
+      onToggleSfx: () => { const on = !(d.sfxOn ?? true); this.setData({ sfxOn: on }); if (on) setTimeout(() => this.sfx('correct'), 30); },
       ttsBg: d.ttsOn ? '#20635b' : '#d8c8a6', ttsJus: d.ttsOn ? 'flex-end' : 'flex-start',
       autoBg: d.autoSpeak ? '#20635b' : '#d8c8a6', autoJus: d.autoSpeak ? 'flex-end' : 'flex-start',
+      sfxBg: (d.sfxOn ?? true) ? '#20635b' : '#d8c8a6', sfxJus: (d.sfxOn ?? true) ? 'flex-end' : 'flex-start',
       resetTxt: S.confirmReset ? '¿Seguro? Toca otra vez para borrar todo' : 'Reiniciar progreso',
       resetFg: S.confirmReset ? '#a03225' : '#8a7057',
       onReset: () => {
@@ -576,7 +652,7 @@ class Component extends DCLogic {
       vals.lchar = { skin: '#e8a87c', hair: '#2b1c12', bigHairH: 34, lip: '#a4442a', chip: '#20635b', name: '', city: '', country: '' };
       vals.lsKicker = ''; vals.lsTitle = ''; vals.lsIntroTxt = ''; vals.tipTitle = ''; vals.tipBody = '';
     }
-    vals.onStartEx = () => { this.setState({ ls: { ...S.ls, phase: 'ex' } }); setTimeout(() => this.maybeAutoSpeak(), 250); };
+    vals.onStartEx = () => { this.sfx('start'); this.setState({ ls: { ...S.ls, phase: 'ex' } }); setTimeout(() => this.maybeAutoSpeak(), 250); };
 
     // exercise view
     const ex = this.curEx();
@@ -607,14 +683,14 @@ class Component extends DCLogic {
     }) : [];
 
     // tiles
-    vals.pickedTiles = ex && ex.type === 'tiles' ? S.picked.map((t, i) => ({ t, onRemove: () => { if (this.state.fb) return; const p = this.state.picked.slice(); p.splice(i, 1); this.setState({ picked: p }); } })) : [];
+    vals.pickedTiles = ex && ex.type === 'tiles' ? S.picked.map((t, i) => ({ t, onRemove: () => { if (this.state.fb) return; this.sfx('untile'); const p = this.state.picked.slice(); p.splice(i, 1); this.setState({ picked: p }); } })) : [];
     const usedCount = {};
     S.picked.forEach((t) => { usedCount[t] = (usedCount[t] || 0) + 1; });
     const seen = {};
     vals.bankTiles = ex && ex.type === 'tiles' ? ex.tiles.map((t) => {
       seen[t] = (seen[t] || 0) + 1;
       const used = (usedCount[t] || 0) >= seen[t];
-      return { t, op: used ? 0.35 : 1, bg: used ? '#e9dcc3' : '#fffdf8', fg: used ? '#b3a184' : '#3d2c22', sh: used ? '#d3c3a4' : '#e8d9bd', onPick: () => { if (this.state.fb || used) return; this.setState({ picked: [...this.state.picked, t] }); } };
+      return { t, op: used ? 0.35 : 1, bg: used ? '#e9dcc3' : '#fffdf8', fg: used ? '#b3a184' : '#3d2c22', sh: used ? '#d3c3a4' : '#e8d9bd', onPick: () => { if (this.state.fb || used) return; this.sfx('tile'); this.setState({ picked: [...this.state.picked, t] }); } };
     }) : [];
 
     // type input
@@ -652,7 +728,7 @@ class Component extends DCLogic {
     vals.fbHasDetail = !!fb && !!fb.detail;
     vals.fbBg = fb ? fb.bg : '#ddeee6'; vals.fbFg = fb ? fb.fg : '#20635b';
     vals.fbBtnBg = fb ? fb.btn : '#20635b'; vals.fbBtnSh = fb ? fb.btnSh : '#164740';
-    vals.onContinue = () => this.continueNext();
+    vals.onContinue = () => { this.sfx('tap'); this.continueNext(); };
 
     // results
     const stars = isLesson ? (ls.stars || 0) : 0;
@@ -692,16 +768,18 @@ class Component extends DCLogic {
       const hit = ex.pairs.some((p) => p[0] === sel.mSelL && p[1] === sel.mSelR);
       if (hit) {
         const mDone = [...this.state.mDone, sel.mSelL, sel.mSelR];
+        this.sfx('matchPair');
         this.speak(sel.mSelL, this.exLang());
         if (mDone.length >= ex.pairs.length * 2) {
           this.setState({ mDone, mSelL: null, mSelR: null });
           this.answer(!this.state.mErr, 'las parejas correctas');
         } else this.setState({ mDone, mSelL: null, mSelR: null });
       } else {
+        this.sfx('wrong');
         this.setState({ mErr: true, mFlash: sel.mSelR, mSelL: null, mSelR: null });
         setTimeout(() => this.setState({ mFlash: null }), 600);
       }
-    } else this.setState(sel);
+    } else { this.sfx('select'); this.setState(sel); }
   }
 
   darken(hex) {
