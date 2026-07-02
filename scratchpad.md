@@ -11,3 +11,13 @@ human-invoked review triages these — don't fix them inline.
   `undefinedm · NaNk` in the listing (visible on the live site). Fix: only emit the
   size span when both fields are present (or fall back to `—`). Pre-existing;
   unrelated to the Quarto import.
+- [ ] 2026-07-02 — Sibling PWA service workers do **origin-wide** cache cleanup:
+  `salient/sw.js:21` deletes every cache key `!== 'salient-v2'` on `activate`, and
+  focus/pylos/quarto do the same with their own names. Since all slugs share the
+  `0x4d44.github.io` origin (Cache Storage is per-origin), each app's SW **wipes the
+  others' offline caches** whenever it updates/activates — so updating one app
+  silently breaks the others' offline mode until each is revisited. Self-healing but
+  real. Fix: scope each `activate` cleanup to its own prefix (delete only
+  `keys.filter(k => k.startsWith('<app>-') && k !== VERSION)`), as `med-cruise/sw.js`
+  now does. A one-line sweep across the sibling SWs. Found via the med-cruise
+  offline review (Codex external pass).
