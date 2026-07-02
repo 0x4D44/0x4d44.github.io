@@ -70,30 +70,56 @@
   }
 
   // ---------- controls ----------
+  // How many documents carry a given tag ("all" = the whole catalog).
+  function tagCount(tag) {
+    if (tag === "all") return essays.length;
+    return essays.reduce((n, e) => n + (tagsOf(e).includes(tag) ? 1 : 0), 0);
+  }
+
+  // One control button. `count` (optional) renders a dim tally beside the label.
+  function makeButton(value, label, key, count) {
+    const b = el("button", {
+      type: "button",
+      "data-value": value,
+      "aria-pressed": state[key] === value ? "true" : "false",
+      onclick: () => {
+        state[key] = value;
+        saveState(state);
+        render();
+      },
+    });
+    b.appendChild(document.createTextNode(label));
+    if (count != null) b.appendChild(el("span", { class: "cnt" }, String(count)));
+    return b;
+  }
+
   function buildControlRow(rowId, options, key) {
     const row = document.getElementById(rowId);
     row.innerHTML = "";
-    options.forEach(([value, label]) => {
-      const b = el("button", {
-        type: "button",
-        "aria-pressed": state[key] === value ? "true" : "false",
-        onclick: () => {
-          state[key] = value;
-          saveState(state);
-          render();
-        },
-      });
-      b.textContent = label;
-      row.appendChild(b);
+    options.forEach(([value, label]) => row.appendChild(makeButton(value, label, key)));
+  }
+
+  // The filter is grouped by axis (form / subject) with a live per-tag count.
+  // "all" leads the first group; falls back to one flat group if TAG_GROUPS
+  // is absent.
+  function buildFilter() {
+    const container = document.getElementById("filter-row");
+    container.innerHTML = "";
+    const groups = window.TAG_GROUPS ||
+      [{ label: "", tags: (window.TAGS || ["all"]).filter(t => t !== "all") }];
+    groups.forEach((group, gi) => {
+      const chips = el("div", { class: "btn-row" });
+      const tags = gi === 0 ? ["all", ...group.tags] : group.tags;
+      tags.forEach(t => chips.appendChild(makeButton(t, "--" + t, "filter", tagCount(t))));
+      container.appendChild(el("div", { class: "filter-group" }, [
+        el("div", { class: "filter-group-label" }, group.label || ""),
+        chips,
+      ]));
     });
   }
 
   function buildControls() {
-    buildControlRow(
-      "filter-row",
-      (window.TAGS || ["all"]).map(t => [t, "--" + t]),
-      "filter"
-    );
+    buildFilter();
     buildControlRow(
       "sort-row",
       [
@@ -176,30 +202,20 @@
     return wrapper;
   }
 
+  // Stamp aria-pressed on every control button from current state, keyed by
+  // each button's own data-value — robust to grouping and reordering.
+  function refreshPressed() {
+    [["filter-row", "filter"], ["sort-row", "sort"], ["layout-row", "layout"]]
+      .forEach(([rowId, key]) => {
+        document.querySelectorAll(`#${rowId} button`).forEach(b => {
+          b.setAttribute("aria-pressed",
+            b.getAttribute("data-value") === state[key] ? "true" : "false");
+        });
+      });
+  }
+
   function render() {
-    // refresh pressed states
-    document.querySelectorAll("#filter-row button, #sort-row button, #layout-row button")
-      .forEach(b => b.setAttribute("aria-pressed", "false"));
-    function setPressed(rowId, value) {
-      document.querySelectorAll(`#${rowId} button`).forEach((b, i, all) => {
-        // value-to-label mapping: we stored by index, so cross-check textContent prefix
-      });
-    }
-    // simpler: re-stamp pressed by checking against current state via attribute on button
-    [
-      ["filter-row", state.filter, (window.TAGS||["all"]).map(t=>"--"+t)],
-      ["sort-row", state.sort, ["date↓","date↑","len↓","yr↑"]],
-      ["layout-row", state.layout, ["--table","--grid"]],
-    ].forEach(([rowId, val, labels]) => {
-      const map = {
-        "filter-row": (window.TAGS||["all"]),
-        "sort-row":   ["recent","oldest","length","year"],
-        "layout-row": ["table","grid"],
-      }[rowId];
-      document.querySelectorAll(`#${rowId} button`).forEach((b, i) => {
-        b.setAttribute("aria-pressed", map[i] === val ? "true" : "false");
-      });
-    });
+    refreshPressed();
 
     const listing = document.getElementById("listing");
     listing.innerHTML = "";

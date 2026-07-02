@@ -138,12 +138,41 @@ a:hover { color: var(--amber); }
 /* ---------- controls ---------- */
 .controls {
   margin-top: 22px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
-@media (max-width: 800px) {
-  .controls { grid-template-columns: 1fr; }
+
+/* filter: full-width frame, chips grouped by axis (form / subject) */
+.filter-groups {
+  display: grid;
+  gap: 9px;
+}
+.filter-group {
+  display: grid;
+  grid-template-columns: 66px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+.filter-group-label {
+  padding-top: 7px;            /* line the label up with the first row of chips */
+  font-size: 9.5px;
+  letter-spacing: 2px;
+  color: var(--dim);
+  text-transform: uppercase;
+}
+
+/* sort + view share a compact second row, each sized to its content */
+.controls-secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.controls-secondary .frame { flex: 0 0 auto; }   /* keep content width; wrap, don't squash */
+
+@media (max-width: 560px) {
+  .filter-group { grid-template-columns: 1fr; gap: 5px; }
+  .filter-group-label { padding-top: 2px; }
 }
 
 .frame {
@@ -183,6 +212,11 @@ a:hover { color: var(--amber); }
 .btn-row button[aria-pressed="true"] {
   background: var(--fg);
   color: var(--paper);
+}
+.btn-row button .cnt {
+  margin-left: 5px;
+  font-size: 10px;
+  opacity: 0.5;               /* inherits currentColor, so it flips when pressed */
 }
 
 /* ---------- listing ---------- */

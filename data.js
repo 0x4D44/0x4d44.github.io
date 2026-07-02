@@ -45,7 +45,7 @@ window.ESSAYS = [
     illustration: "ill-population",
     date: "2026-07-02T19:10:00",
     year: 2026,
-    tag: "software",
+    tag: "games",
     real: true,
   },
   {
@@ -67,7 +67,7 @@ window.ESSAYS = [
     illustration: "ill-harbour-hustle",
     date: "2026-07-02T18:00:00",
     year: 2026,
-    tags: ["software", "maritime"],
+    tags: ["games", "maritime"],
     real: true,
   },
   {
@@ -89,7 +89,7 @@ window.ESSAYS = [
     illustration: "ill-salient",
     date: "2026-07-01T13:00:00",
     year: 2026,
-    tag: "software",
+    tag: "games",
     real: true,
   },
   {
@@ -100,7 +100,7 @@ window.ESSAYS = [
     illustration: "ill-focus",
     date: "2026-07-01T12:00:00",
     year: 1963,
-    tag: "software",
+    tag: "games",
     real: true,
   },
   {
@@ -111,7 +111,7 @@ window.ESSAYS = [
     illustration: "ill-pylos",
     date: "2026-06-28T12:00:00",
     year: 1994,
-    tag: "software",
+    tag: "games",
     real: true,
   },
   {
@@ -122,7 +122,7 @@ window.ESSAYS = [
     illustration: "ill-coil",
     date: "2026-06-20T20:00:00",
     year: 2026,
-    tags: ["software"],
+    tags: ["games"],
     real: false,
   },
   {
@@ -133,7 +133,7 @@ window.ESSAYS = [
     illustration: "ill-quarto",
     date: "2026-06-20T19:30:00",
     year: 1991,
-    tag: "software",
+    tag: "games",
     real: true,
   },
   {
@@ -155,7 +155,7 @@ window.ESSAYS = [
     illustration: "ill-emu",
     date: "2026-06-20T22:30:00",
     year: 2026,
-    tags: ["rail", "software"],
+    tags: ["rail", "simulation"],
     real: true,
   },
   {
@@ -177,7 +177,7 @@ window.ESSAYS = [
     illustration: "ill-globe",
     date: "2026-06-14T15:30:00",
     year: 2026,
-    tags: ["software", "transport"],
+    tags: ["transport", "simulation"],
     real: true,
   },
   {
@@ -188,7 +188,7 @@ window.ESSAYS = [
     illustration: "ill-emu",
     date: "2026-06-14T15:00:00",
     year: 2026,
-    tags: ["rail", "software"],
+    tags: ["rail", "simulation"],
     real: true,
   },
   {
@@ -837,8 +837,21 @@ window.ESSAYS = [
   },
 ];
 
-// Tags shown in the filter row. "all" is always first.
-window.TAGS = ["all", "rail", "maritime", "transport", "fiction", "software", "comic", "history", "math", "science", "finance", "engineering"];
+// Filter vocabulary, split into two axes for the grouped filter row:
+//   form    — what a piece IS    (software / games / simulation / fiction / comic)
+//   subject — what it is ABOUT   (rail, history, engineering, …)
+// A piece may carry tags from both axes. The order below is the display
+// order of the chips; each chip's live document count is computed in app.js.
+// Rule of thumb for the form axis: `games` = you play it to win/progress;
+// `simulation` = you drive or inhabit a real-time model; `software` = tools
+// and technical write-ups (including code walkthroughs *about* games/sims).
+window.TAG_GROUPS = [
+  { label: "form",    tags: ["software", "games", "simulation", "fiction", "comic"] },
+  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance"] },
+];
+// Flat list ("all" first), derived from the groups, for any consumer that
+// just wants the plain vocabulary.
+window.TAGS = ["all", ...window.TAG_GROUPS.flatMap(g => g.tags)];
 
 window.fmtDate = function (iso) {
   const d = new Date(iso);

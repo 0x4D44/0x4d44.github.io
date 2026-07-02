@@ -87,11 +87,18 @@ undo it.
    line of flavour, then the tech. It's a hook, not a feature list.
 3. If it needs a new icon, add a `<symbol id="ill-…">` to the SVG sprite in
    `index.html` and set the entry's `illustration` to that id.
-4. If it introduces a new category, add the tag to `window.TAGS` in `data.js`.
-   The current vocabulary (after `"all"`) is: `rail`, `maritime`, `transport`,
-   `fiction`, `software`, `comic`, `history`, `math`, `science`, `finance`,
-   `engineering`. Reuse one of these where it fits; only extend `window.TAGS`
-   for a genuinely new category (a `tag` not listed there gets no filter chip).
+4. Tags live in `window.TAG_GROUPS` in `data.js`, split across two axes that
+   the filter row renders as separate labelled rows (each chip shows a live
+   document count; `window.TAGS` is derived from the groups, `"all"` first):
+   - **form** — what the piece *is*: `software`, `games`, `simulation`,
+     `fiction`, `comic`. Rule of thumb: `games` = you play it to win/progress;
+     `simulation` = you drive or inhabit a real-time model; `software` = tools
+     and technical write-ups (including code walkthroughs *about* a game/sim).
+   - **subject** — what it is *about*: `rail`, `history`, `engineering`,
+     `transport`, `science`, `maritime`, `math`, `finance`.
+   Reuse an existing tag where it fits (a piece may carry one from each axis).
+   Only extend the vocabulary for a genuinely new category — add it to the
+   right group in `TAG_GROUPS`; a `tag` not listed there gets no filter chip.
 
 ## Do not publish
 

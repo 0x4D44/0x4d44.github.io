@@ -3,6 +3,14 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-02 — Verifying this site's responsive layout with headless Chrome:
+  `chrome --headless=new --window-size=390,H` does **not** give a 390px CSS
+  viewport — headless-new clamps `innerWidth` to a **500px minimum**, and the
+  `--screenshot` PNG is still only 390px wide, so content past 500px is rendered
+  but cropped out of frame. That looks exactly like horizontal overflow but is a
+  screenshot artifact. To shoot a true narrow layout use `--window-size ≥ 500`
+  (e.g. 500 triggers the `max-width:560` mobile query with no cropping); measure
+  real widths by screenshotting a page that prints `innerWidth`/`scrollWidth`.
 - 2026-07-02 — `vamos-spanish` "design.zip" DC re-exports change **only**
   `index.html` (shipped in the zip as `vamos-spanish.dc.html`). The five sidecars
   (`support.js`, `lessons.js`, `lessons-extra-a/b.js`, `ios-frame.jsx`) come out
