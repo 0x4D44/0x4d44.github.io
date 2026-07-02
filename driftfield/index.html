@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Driftfield</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;height:100%;background:#05060a;overflow:hidden;}
+  *{box-sizing:border-box;}
+  input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:14px;background:transparent;cursor:pointer;margin:0;}
+  input[type=range]::-webkit-slider-runnable-track{height:2px;background:rgba(255,255,255,.16);border-radius:2px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;margin-top:-5px;border-radius:50%;background:#eaf0ff;box-shadow:0 0 8px rgba(150,195,255,.85);}
+  input[type=range]::-moz-range-track{height:2px;background:rgba(255,255,255,.16);border-radius:2px;}
+  input[type=range]::-moz-range-thumb{width:12px;height:12px;border:0;border-radius:50%;background:#eaf0ff;box-shadow:0 0 8px rgba(150,195,255,.85);}
+</style>
+</helmet>
+<div style="position:fixed;inset:0;background:#05060a;font-family:'Space Mono',monospace;" onPointerMove="{{ onMove }}" onPointerLeave="{{ onLeave }}">
+  <canvas ref="{{ canvasRef }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+
+  <div style="position:absolute;top:22px;left:22px;width:264px;padding:18px 18px 16px;border-radius:16px;background:rgba(9,13,24,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.09);box-shadow:0 18px 50px rgba(0,0,0,.45);color:#dbe3f5;">
+    <div style="font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;line-height:1;color:#eef3ff;letter-spacing:.5px;">Driftfield</div>
+    <div style="font-size:9.5px;letter-spacing:2.5px;text-transform:uppercase;opacity:.5;margin-top:7px;">a perlin flow toy</div>
+
+    <div style="height:1px;background:rgba(255,255,255,.08);margin:16px 0 15px;"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;opacity:.62;margin-bottom:7px;">
+      <span>Flow scale</span><span style="opacity:.85;font-size:10px;">{{ flowLabel }}</span>
+    </div>
+    <input type="range" min="4" max="60" step="1" value="{{ flowScale }}" onInput="{{ onFlow }}">
+
+    <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;opacity:.62;margin:16px 0 7px;">
+      <span>Speed</span><span style="opacity:.85;font-size:10px;">{{ speedLabel }}</span>
+    </div>
+    <input type="range" min="20" max="260" step="1" value="{{ speedPct }}" onInput="{{ onSpeed }}">
+
+    <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:9px;letter-spacing:1.6px;text-transform:uppercase;opacity:.62;margin:16px 0 7px;">
+      <span>Persistence</span><span style="opacity:.85;font-size:10px;">{{ trailLabel }}</span>
+    </div>
+    <input type="range" min="1" max="100" step="1" value="{{ trailPct }}" onInput="{{ onTrail }}">
+
+    <div style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;opacity:.62;margin:18px 0 8px;">Palette</div>
+    <div style="display:flex;gap:8px;">
+      <sc-for list="{{ palettes }}" as="p" hint-placeholder-count="3">
+        <div onClick="{{ p.pick }}" title="{{ p.name }}" style="flex:1;height:24px;border-radius:8px;cursor:pointer;background:{{ p.css }};box-shadow:{{ p.ring }};transition:box-shadow .15s;"></div>
+      </sc-for>
+    </div>
+
+    <div style="font-size:9px;letter-spacing:1.6px;text-transform:uppercase;opacity:.62;margin:18px 0 8px;">Cursor</div>
+    <div style="display:flex;gap:6px;">
+      <sc-for list="{{ modes }}" as="m" hint-placeholder-count="3">
+        <div onClick="{{ m.pick }}" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;cursor:pointer;font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:{{ m.fg }};background:{{ m.bg }};border:1px solid {{ m.bd }};transition:all .15s;">{{ m.name }}</div>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:16px;">
+      <div onClick="{{ togglePause }}" style="flex:1;text-align:center;padding:9px 0;border-radius:9px;cursor:pointer;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#0a0d16;background:#c9d6f2;font-weight:700;">{{ pauseLabel }}</div>
+      <div onClick="{{ reset }}" style="flex:1;text-align:center;padding:9px 0;border-radius:9px;cursor:pointer;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:#dbe3f5;border:1px solid rgba(255,255,255,.16);">Reset</div>
+    </div>
+  </div>
+
+  <div style="position:absolute;bottom:20px;right:24px;font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(219,227,245,.32);">move your cursor through the field</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Aurora&quot;,&quot;Ember&quot;,&quot;Ice&quot;],&quot;default&quot;:&quot;Aurora&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;mouseMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Swirl&quot;,&quot;Attract&quot;,&quot;Repel&quot;],&quot;default&quot;:&quot;Swirl&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;flowScale&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:22,&quot;min&quot;:4,&quot;max&quot;:60,&quot;step&quot;:1,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const palIdx = { Aurora: 0, Ember: 1, Ice: 2 }[props.palette] ?? 0;
+    const modeIdx = { Swirl: 0, Attract: 1, Repel: 2 }[props.mouseMode] ?? 0;
+    this.state = {
+      flowScale: props.flowScale ?? 22,   // higher = tighter swirls
+      speedPct: 100,
+      trailPct: 12,                        // persistence of trails
+      palette: palIdx,
+      mode: modeIdx,
+      paused: false,
+    };
+    this.canvasRef = React.createRef();
+    this.mouse = { x: 0, y: 0, active: false };
+    this.particles = [];
+    this.t = 0;
+    this.PAL = [
+      { name: "Aurora", stops: ["#0a3d3a", "#12b39a", "#6ee7a8", "#a9f0c8", "#8a7bff", "#c9b8ff"] },
+      { name: "Ember",  stops: ["#3a0a12", "#c2321f", "#ff7a2f", "#ffc861", "#ff5ea8", "#ffd0e6"] },
+      { name: "Ice",    stops: ["#08243f", "#1f6fd6", "#4fc3ff", "#b6e6ff", "#a9b8ff", "#eef4ff"] },
+    ];
+    this.buildPerm(1337);
+    this.grad256 = this.buildGradient(this.PAL[palIdx].stops);
+  }
+
+  // ---- Perlin permutation ----
+  buildPerm(seed) {
+    let s = seed >>> 0;
+    const rand = () => { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+    const p = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) p[i] = i;
+    for (let i = 255; i > 0; i--) { const j = (rand() * (i + 1)) | 0; const t = p[i]; p[i] = p[j]; p[j] = t; }
+    this.perm = new Uint8Array(512);
+    for (let i = 0; i < 512; i++) this.perm[i] = p[i & 255];
+  }
+  noise3(x, y, z) {
+    const P = this.perm;
+    const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+    const lerp = (a, b, t) => a + t * (b - a);
+    const grad = (h, x, y, z) => {
+      h &= 15; const u = h < 8 ? x : y; const v = h < 4 ? y : (h === 12 || h === 14 ? x : z);
+      return ((h & 1) === 0 ? u : -u) + ((h & 2) === 0 ? v : -v);
+    };
+    const X = Math.floor(x) & 255, Y = Math.floor(y) & 255, Z = Math.floor(z) & 255;
+    x -= Math.floor(x); y -= Math.floor(y); z -= Math.floor(z);
+    const u = fade(x), v = fade(y), w = fade(z);
+    const A = P[X] + Y, AA = P[A] + Z, AB = P[A + 1] + Z;
+    const B = P[X + 1] + Y, BA = P[B] + Z, BB = P[B + 1] + Z;
+    return lerp(
+      lerp(lerp(grad(P[AA], x, y, z), grad(P[BA], x - 1, y, z), u),
+           lerp(grad(P[AB], x, y - 1, z), grad(P[BB], x - 1, y - 1, z), u), v),
+      lerp(lerp(grad(P[AA + 1], x, y, z - 1), grad(P[BA + 1], x - 1, y, z - 1), u),
+           lerp(grad(P[AB + 1], x, y - 1, z - 1), grad(P[BB + 1], x - 1, y - 1, z - 1), u), v),
+      w);
+  }
+
+  // ---- palette gradient ----
+  hexRgb(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+  buildGradient(stops) {
+    const rgb = stops.map(this.hexRgb);
+    const out = new Array(256);
+    for (let i = 0; i < 256; i++) {
+      const f = i / 255 * (rgb.length - 1);
+      const a = Math.floor(f), b = Math.min(a + 1, rgb.length - 1), t = f - a;
+      out[i] = [
+        Math.round(rgb[a][0] + (rgb[b][0] - rgb[a][0]) * t),
+        Math.round(rgb[a][1] + (rgb[b][1] - rgb[a][1]) * t),
+        Math.round(rgb[a][2] + (rgb[b][2] - rgb[a][2]) * t),
+      ];
+    }
+    return out;
+  }
+
+  seed(n) {
+    const W = this.W, H = this.H, arr = [];
+    for (let i = 0; i < n; i++) arr.push({ x: Math.random() * W, y: Math.random() * H, vx: 0, vy: 0, life: (Math.random() * 220) | 0 });
+    this.particles = arr;
+  }
+
+  resize() {
+    const c = this.canvasRef.current; if (!c) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const W = c.clientWidth || window.innerWidth || 0;
+    const H = c.clientHeight || window.innerHeight || 0;
+    if (W < 2 || H < 2) return;               // mount not laid out yet — wait for the observer
+    this.W = W; this.H = H; this.dpr = dpr;
+    c.width = this.W * dpr; c.height = this.H * dpr;
+    const ctx = c.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); this.ctx = ctx;
+    ctx.fillStyle = "#05060a"; ctx.fillRect(0, 0, this.W, this.H);
+    const target = Math.min(4200, Math.max(1200, Math.round(this.W * this.H / 360)));
+    if (this.particles.length !== target) this.seed(target);
+  }
+
+  step(mouseOn) {
+    const ctx = this.ctx; if (!ctx || !this.W) return;
+    const TAU = Math.PI * 2;
+    const { flowScale, speedPct, trailPct } = this.state;
+    const W = this.W, H = this.H;
+    const fs = 1 / (flowScale * 14);              // spatial frequency
+    const spd = speedPct / 100;
+    const fade = 0.008 + (trailPct / 100) * 0.14; // lower = longer trails
+    this.t += 0.0022;
+
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "rgba(5,6,10," + fade + ")";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.globalCompositeOperation = "lighter";
+    const g = this.grad256, ps = this.particles, mo = this.mouse, mode = this.state.mode;
+    const useMouse = mouseOn && mo.active;
+    const R = 150, R2 = R * R, strength = 0.9;
+    for (let i = 0; i < ps.length; i++) {
+      const p = ps[i];
+      const ang = this.noise3(p.x * fs, p.y * fs, this.t) * TAU * 1.7;
+      p.vx = p.vx * 0.9 + Math.cos(ang) * 0.16;
+      p.vy = p.vy * 0.9 + Math.sin(ang) * 0.16;
+      if (useMouse) {
+        const dx = mo.x - p.x, dy = mo.y - p.y, d2 = dx * dx + dy * dy;
+        if (d2 < R2) {
+          const d = Math.sqrt(d2) + 0.001, f = (1 - d / R) * strength, nx = dx / d, ny = dy / d;
+          if (mode === 0) { p.vx += -ny * f * 1.4; p.vy += nx * f * 1.4; }
+          else if (mode === 1) { p.vx += nx * f; p.vy += ny * f; }
+          else { p.vx -= nx * f; p.vy -= ny * f; }
+        }
+      }
+      p.x += p.vx * spd; p.y += p.vy * spd;
+      if (p.x < 0) p.x += W; else if (p.x >= W) p.x -= W;
+      if (p.y < 0) p.y += H; else if (p.y >= H) p.y -= H;
+      if (--p.life <= 0) { p.x = Math.random() * W; p.y = Math.random() * H; p.vx = p.vy = 0; p.life = 160 + (Math.random() * 240 | 0); }
+      const ci = ((ang % TAU + TAU) % TAU) / TAU * 255 | 0;
+      const col = g[ci];
+      const sp = Math.min(1, (Math.abs(p.vx) + Math.abs(p.vy)) * 0.9);
+      ctx.fillStyle = "rgba(" + col[0] + "," + col[1] + "," + col[2] + "," + (0.28 + sp * 0.42) + ")";
+      ctx.fillRect(p.x, p.y, 1.5, 1.5);
+    }
+  }
+
+  ensureSized(tries) {
+    if (this._warmed) return;
+    this.resize();
+    if (this.W) { this.warmUp(); return; }            // sized — done
+    if (tries > 0) this._sizeTimer = setTimeout(() => this.ensureSized(tries - 1), 50);
+  }
+  componentDidMount() {
+    this._warmed = false;
+    // setTimeout fires even in a backgrounded iframe, unlike RAF / ResizeObserver — so first-sizing never stalls
+    this.ensureSized(40);
+    this._onResize = () => this.resize();
+    window.addEventListener("resize", this._onResize);
+    const c = this.canvasRef.current;
+    if (c && window.ResizeObserver) {
+      this._ro = new ResizeObserver(() => { const had = !!this.W; this.resize(); if (!had) this.warmUp(); });
+      this._ro.observe(c);
+    }
+    const loop = () => {
+      this._raf = requestAnimationFrame(loop);
+      if (!this.state.paused) this.step(true);
+    };
+    this._raf = requestAnimationFrame(loop);
+  }
+  warmUp() {
+    if (this._warmed || !this.W || !this.particles.length) return;   // needs a real size + seeded particles
+    this._warmed = true;
+    for (let i = 0; i < 150; i++) this.step(false);   // warm up trails so the first painted frame is already alive
+  }
+  componentWillUnmount() {
+    cancelAnimationFrame(this._raf);
+    clearTimeout(this._sizeTimer);
+    window.removeEventListener("resize", this._onResize);
+    if (this._ro) this._ro.disconnect();
+  }
+
+  setPalette(i) {
+    this.grad256 = this.buildGradient(this.PAL[i].stops);
+    this.setState({ palette: i });
+  }
+
+  renderVals() {
+    const s = this.state;
+    const modeNames = ["Swirl", "Attract", "Repel"];
+    const active = "rgba(200,215,245,.16)", idle = "rgba(255,255,255,.03)";
+    return {
+      canvasRef: this.canvasRef,
+      flowScale: s.flowScale, flowLabel: s.flowScale,
+      speedPct: s.speedPct, speedLabel: (s.speedPct / 100).toFixed(2) + "\u00d7",
+      trailPct: s.trailPct, trailLabel: s.trailPct + "%",
+      pauseLabel: s.paused ? "Play" : "Pause",
+      onFlow: e => this.setState({ flowScale: +e.target.value }),
+      onSpeed: e => this.setState({ speedPct: +e.target.value }),
+      onTrail: e => this.setState({ trailPct: +e.target.value }),
+      togglePause: () => this.setState(st => ({ paused: !st.paused })),
+      reset: () => { this.seed(this.particles.length); const c = this.canvasRef.current; if (c) { const x = c.getContext("2d"); x.fillStyle = "#05060a"; x.fillRect(0, 0, this.W, this.H); } },
+      onMove: e => { this.mouse.x = e.clientX; this.mouse.y = e.clientY; this.mouse.active = true; },
+      onLeave: () => { this.mouse.active = false; },
+      palettes: this.PAL.map((p, i) => ({
+        name: p.name,
+        css: "linear-gradient(90deg," + p.stops.join(",") + ")",
+        ring: s.palette === i ? "0 0 0 2px #05060a,0 0 0 3.5px rgba(230,238,255,.9)" : "0 0 0 1px rgba(255,255,255,.08)",
+        pick: () => this.setPalette(i),
+      })),
+      modes: modeNames.map((name, i) => ({
+        name,
+        fg: s.mode === i ? "#eef3ff" : "rgba(219,227,245,.55)",
+        bg: s.mode === i ? active : idle,
+        bd: s.mode === i ? "rgba(200,215,245,.3)" : "rgba(255,255,255,.07)",
+        pick: () => this.setState({ mode: i }),
+      })),
+    };
+  }
+}
+</script>
+</body>
+</html>
