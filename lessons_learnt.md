@@ -3,6 +3,12 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-02 — `vamos-spanish` "design.zip" DC re-exports change **only**
+  `index.html` (shipped in the zip as `vamos-spanish.dc.html`). The five sidecars
+  (`support.js`, `lessons.js`, `lessons-extra-a/b.js`, `ios-frame.jsx`) come out
+  byte-identical to what's committed, and the zip's `.thumbnail` is a design-tool
+  WebP preview — not a site asset, so skip it. `diff` every file before copying,
+  then cherry-pick just the HTML into `index.html`.
 - 2026-07-02 — A CSS `@keyframes` that animates `transform` fully **replaces**
   an element's base `transform`, including the centring offset. A modal centred
   with `transform:translate(-50%,-50%)` + `animation` whose keyframes only set
