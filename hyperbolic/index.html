@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hyperbolic — an interstellar visitor toy</title>
+<meta name="description" content="An orbital-mechanics toy: fly interstellar visitors — ʻOumuamua, Borisov, 3I/ATLAS, or your own — through the solar system on one-pass hyperbolic orbits. Real vis-viva + velocity-Verlet physics, to scale in AU.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%98%84%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg: #05080F;
+    --ink: #C9D6EC;
+    --ink-bright: #E9F1FC;
+    --muted: #63718A;
+    --ice: #8FD8FF;
+    --sun: #FFC069;
+    --hairline: rgba(143, 216, 255, 0.14);
+    --panel: rgba(9, 14, 26, 0.70);
+    --font-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    --font-body: system-ui, 'Segoe UI', sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', monospace;
+  }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    overflow: hidden;
+  }
+  #sky { position: fixed; inset: 0; display: block; }
+
+  .panel {
+    position: absolute;
+    background: var(--panel);
+    -webkit-backdrop-filter: blur(10px) saturate(1.15);
+    backdrop-filter: blur(10px) saturate(1.15);
+    border: 1px solid var(--hairline);
+    border-radius: 8px;
+  }
+
+  /* ---- title block (no panel; floats on space) ---- */
+  .masthead {
+    position: absolute; top: 22px; left: 26px;
+    max-width: 380px;
+    text-shadow: 0 1px 12px rgba(5, 8, 15, 0.9);
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 6px;
+  }
+  .eyebrow a { color: inherit; text-decoration: none; pointer-events: auto; }
+  .eyebrow a:hover { color: var(--ice); }
+  .masthead h1 {
+    font-family: var(--font-display); font-style: italic; font-weight: 400;
+    font-size: clamp(30px, 4vw, 44px); line-height: 1.02;
+    color: var(--ink-bright); margin: 0 0 8px; letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .masthead p {
+    font-size: 12.5px; line-height: 1.5; color: var(--ink);
+    opacity: 0.75; margin: 0; max-width: 40ch;
+  }
+  .masthead em { color: var(--ice); font-style: normal; }
+
+  /* ---- telemetry ---- */
+  .telemetry {
+    top: 22px; right: 22px;
+    padding: 12px 16px 13px;
+    font-family: var(--font-mono); font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    min-width: 208px;
+  }
+  .telemetry .name {
+    color: var(--ink-bright); font-size: 13px; letter-spacing: 0.03em;
+    padding-bottom: 8px; margin-bottom: 8px;
+    border-bottom: 1px solid var(--hairline);
+    display: flex; justify-content: space-between; gap: 12px;
+  }
+  .telemetry .state { color: var(--ice); }
+  .telemetry .state.peri { color: var(--sun); }
+  .telemetry .state.gone { color: var(--muted); }
+  .telemetry table { border-collapse: collapse; width: 100%; }
+  .telemetry td { padding: 1.5px 0; }
+  .telemetry td:first-child { color: var(--muted); padding-right: 18px; }
+  .telemetry td:last-child { text-align: right; color: var(--ink); }
+
+  /* ---- controls ---- */
+  .controls {
+    left: 22px; bottom: 22px;
+    padding: 14px 16px 12px;
+    width: 264px;
+  }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .chip {
+    font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.02em;
+    color: var(--ink); background: transparent;
+    border: 1px solid var(--hairline); border-radius: 99px;
+    padding: 4px 10px; cursor: pointer;
+  }
+  .chip:hover { border-color: rgba(143, 216, 255, 0.4); }
+  .chip.active { color: #04121C; background: var(--ice); border-color: var(--ice); }
+  .ctl { display: flex; flex-direction: column; gap: 4px; margin-bottom: 11px; }
+  .ctl-row { display: flex; justify-content: space-between; align-items: baseline; }
+  .ctl label { font-size: 10.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .ctl output { font-family: var(--font-mono); font-size: 12px; color: var(--ice); font-variant-numeric: tabular-nums; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 14px; background: transparent; cursor: pointer; margin: 0;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 2px; background: rgba(143, 216, 255, 0.22); border-radius: 1px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--ice); border: 2px solid #0A1322;
+    margin-top: -5px;
+  }
+  input[type=range]::-moz-range-track {
+    height: 2px; background: rgba(143, 216, 255, 0.22); border-radius: 1px;
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: var(--ice); border: 2px solid #0A1322;
+  }
+  .buttons { display: flex; gap: 8px; margin-top: 2px; }
+  .btn {
+    flex: 1; font-family: var(--font-body); font-size: 12px; color: var(--ink-bright);
+    background: rgba(143, 216, 255, 0.08);
+    border: 1px solid var(--hairline); border-radius: 6px;
+    padding: 6px 0; cursor: pointer;
+  }
+  .btn:hover { background: rgba(143, 216, 255, 0.16); }
+  .keys {
+    margin: 10px 0 0; font-family: var(--font-mono); font-size: 10px;
+    color: var(--muted); text-align: center;
+  }
+  .keys kbd { color: var(--ink); font-family: inherit; }
+
+  /* ---- footnote ---- */
+  .footnote {
+    position: absolute; right: 22px; bottom: 22px;
+    max-width: 340px; text-align: right;
+    font-size: 11px; line-height: 1.55; color: var(--muted);
+    text-shadow: 0 1px 8px rgba(5, 8, 15, 0.9);
+    pointer-events: none;
+  }
+  .footnote strong { color: var(--ink); font-weight: 500; }
+
+  button:focus-visible, input:focus-visible {
+    outline: 1.5px solid var(--ice); outline-offset: 2px; border-radius: 4px;
+  }
+
+  @media (max-width: 720px) {
+    .masthead { max-width: 62vw; }
+    .masthead p { display: none; }
+    .footnote { display: none; }
+    .telemetry { top: auto; bottom: 22px; right: 16px; min-width: 0; font-size: 11px; }
+    .controls { left: 16px; width: min(248px, 52vw); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="sky" aria-label="Orbital simulation: an interstellar object passing through the solar system"></canvas>
+
+<header class="masthead">
+  <p class="eyebrow"><a href="/">0x4d44 almanac</a> &middot; 2 July 2026</p>
+  <h1>Hyperbolic</h1>
+  <p>Every interstellar visitor rides an orbit with <em>e&thinsp;&gt;&thinsp;1</em> — unbound,
+  one pass, never coming back. Three have ever been seen. Set an approach and watch yours fall through.</p>
+</header>
+
+<section class="panel telemetry" aria-live="off">
+  <div class="name"><span id="tName">3I/ATLAS</span><span class="state" id="tState">INBOUND</span></div>
+  <table>
+    <tr><td>r&nbsp;&middot;&nbsp;sun dist</td><td id="tR">— AU</td></tr>
+    <tr><td>v&nbsp;&middot;&nbsp;speed</td><td id="tV">— km/s</td></tr>
+    <tr><td>e&nbsp;&middot;&nbsp;eccentricity</td><td id="tE">—</td></tr>
+    <tr><td>q&nbsp;&middot;&nbsp;perihelion</td><td id="tQ">— AU</td></tr>
+  </table>
+</section>
+
+<section class="panel controls">
+  <div class="chips" role="group" aria-label="Real visitor presets">
+    <button class="chip" data-preset="oumuamua">1I/&#699;Oumuamua</button>
+    <button class="chip" data-preset="borisov">2I/Borisov</button>
+    <button class="chip active" data-preset="atlas">3I/ATLAS</button>
+  </div>
+  <div class="ctl">
+    <div class="ctl-row"><label for="vinf">Excess speed v&#8734;</label><output id="vinfOut">58.0 km/s</output></div>
+    <input type="range" id="vinf" min="1" max="80" step="0.1" value="58">
+  </div>
+  <div class="ctl">
+    <div class="ctl-row"><label for="peri">Closest approach q</label><output id="periOut">1.36 AU</output></div>
+    <input type="range" id="peri" min="0.05" max="6" step="0.01" value="1.36">
+  </div>
+  <div class="ctl">
+    <div class="ctl-row"><label for="rate">Time rate</label><output id="rateOut">&times;0.30 yr/s</output></div>
+    <input type="range" id="rate" min="0" max="100" step="1" value="59">
+  </div>
+  <div class="buttons">
+    <button class="btn" id="newBtn">&#8635; New approach</button>
+    <button class="btn" id="pauseBtn">Pause</button>
+  </div>
+  <p class="keys"><kbd>space</kbd> pause &middot; <kbd>n</kbd> new approach</p>
+</section>
+
+<p class="footnote">
+  <strong>3I/ATLAS</strong> (found 1 July 2025) carries water ~30&times; richer in deuterium
+  than anything formed here — it condensed somewhere colder than 30&thinsp;K,
+  likely before the Sun existed.<br>
+  Physics: vis-viva &middot; velocity-Verlet &middot; to scale in AU out to Saturn.
+</p>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- constants (AU, years, solar masses) ----------
+  const MU = 4 * Math.PI * Math.PI;      // GM_sun in AU^3 / yr^2
+  const KMS = 4.74057;                    // km/s per AU/yr
+  const R_SPAWN = 28, R_GONE = 30;
+
+  const PLANETS = [
+    { name: '',        a: 0.387, hue: '#9AA3B2', px: 1.6 },
+    { name: '',        a: 0.723, hue: '#D8C9A3', px: 2.2 },
+    { name: 'Earth',   a: 1.000, hue: '#9CC4E4', px: 2.2 },
+    { name: 'Mars',    a: 1.524, hue: '#C98A6B', px: 1.8 },
+    { name: 'Jupiter', a: 5.203, hue: '#D9B48F', px: 3.4 },
+    { name: 'Saturn',  a: 9.537, hue: '#E3D3A3', px: 3.0 },
+  ];
+  PLANETS.forEach(p => { p.T = Math.pow(p.a, 1.5); p.th0 = Math.random() * Math.PI * 2; });
+
+  const PRESETS = {
+    oumuamua: { label: '1I/ʻOumuamua', v: 26.3, q: 0.256 },
+    borisov:  { label: '2I/Borisov',        v: 32.3, q: 2.007 },
+    atlas:    { label: '3I/ATLAS',          v: 58.0, q: 1.357 },
+  };
+
+  // ---------- canvas ----------
+  const canvas = document.getElementById('sky');
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, DPR = 1, scale = 1, cx = 0, cy = 0;
+  let starLayer = null;
+
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = W * DPR; canvas.height = H * DPR;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    cx = W / 2; cy = H * 0.5;
+    scale = (Math.min(W, H) / 2) / 11.8;   // view half-extent ~11.8 AU
+    starLayer = makeStars();
+  }
+
+  function makeStars() {
+    const off = document.createElement('canvas');
+    off.width = W * DPR; off.height = H * DPR;
+    const c = off.getContext('2d');
+    const n = Math.round((W * H) / 3400);
+    for (let i = 0; i < n; i++) {
+      const r = (0.35 + Math.random() * 0.95) * DPR;
+      const a = 0.10 + Math.pow(Math.random(), 2.2) * 0.55;
+      const cold = Math.random() < 0.28;
+      c.fillStyle = cold ? `rgba(160,200,255,${a})` : `rgba(220,228,240,${a})`;
+      c.beginPath();
+      c.arc(Math.random() * off.width, Math.random() * off.height, r, 0, Math.PI * 2);
+      c.fill();
+    }
+    return off;
+  }
+
+  const sx = x => cx + x * scale;
+  const sy = y => cy - y * scale;
+
+  // ---------- orbit state ----------
+  const sim = {
+    pos: { x: 0, y: 0 }, vel: { x: 0, y: 0 },
+    phase: 'inbound', name: '3I/ATLAS',
+    trail: [], conic: [], periPoint: null,
+    lastPush: { x: 0, y: 0 },
+    respawnAt: 0, periFlashUntil: 0,
+    planetT: Math.random() * 200,
+  };
+  let customSeq = 4;
+  let paused = false;
+  let speed = 0.3;                    // sim years per real second
+
+  function orbitFrom(vKms, q) {
+    const vinf = vKms / KMS;
+    const e = 1 + q * vinf * vinf / MU;
+    const p = q * (1 + e);
+    const h = Math.sqrt(MU * p);
+    const nuInf = Math.acos(-1 / e);
+    return { vinf, e, p, h, q, nuInf };
+  }
+
+  function spawn(vKms, q, name) {
+    const o = orbitFrom(vKms, q);
+    const omega = Math.random() * Math.PI * 2;         // orientation of perihelion
+    const mirror = Math.random() < 0.5 ? 1 : -1;       // prograde / retrograde
+    const co = Math.cos(omega), so = Math.sin(omega);
+    const place = (r, nu) => {
+      let x = r * Math.cos(nu), y = r * Math.sin(nu) * mirror;
+      return { x: x * co - y * so, y: x * so + y * co };
+    };
+
+    // exact perifocal state at r = R_SPAWN, inbound (nu negative)
+    const cosNu0 = Math.max(-1, Math.min(1, (o.p / R_SPAWN - 1) / o.e));
+    const nu0 = -Math.acos(cosNu0);
+    sim.pos = place(R_SPAWN, nu0);
+    let vx = -(MU / o.h) * Math.sin(nu0);
+    let vy = (MU / o.h) * (o.e + Math.cos(nu0)) * mirror;
+    sim.vel = { x: vx * co - vy * so, y: vx * so + vy * co };
+
+    // analytic conic for the faint dashed preview
+    sim.conic = [];
+    const lim = o.nuInf - 0.02;
+    for (let i = 0; i <= 420; i++) {
+      const nu = -lim + (2 * lim * i) / 420;
+      const r = o.p / (1 + o.e * Math.cos(nu));
+      if (r > 0 && r < 40) sim.conic.push(place(r, nu));
+    }
+    sim.periPoint = place(o.q, 0);
+
+    sim.orbit = o;
+    sim.name = name;
+    sim.phase = 'inbound';
+    sim.trail = [];
+    sim.lastPush = { ...sim.pos };
+    sim.respawnAt = 0;
+    sim.periFlashUntil = 0;
+  }
+
+  // ---------- integration (velocity Verlet, adaptive substeps) ----------
+  function accel(p) {
+    const r2 = p.x * p.x + p.y * p.y;
+    const r = Math.sqrt(r2);
+    const a = -MU / (r2 * r);
+    return { x: a * p.x, y: a * p.y, r };
+  }
+
+  function integrate(dtSim, now) {
+    if (sim.phase === 'gone') return;
+    let remaining = dtSim, guard = 0;
+    let a = accel(sim.pos);
+    while (remaining > 1e-9 && guard++ < 24000) {
+      const dt = Math.min(remaining, Math.max(2e-6, Math.min(0.01, 0.0015 * Math.pow(a.r, 1.5))));
+      sim.pos.x += sim.vel.x * dt + 0.5 * a.x * dt * dt;
+      sim.pos.y += sim.vel.y * dt + 0.5 * a.y * dt * dt;
+      const a2 = accel(sim.pos);
+      const vrBefore = sim.vel.x * sim.pos.x + sim.vel.y * sim.pos.y;
+      sim.vel.x += 0.5 * (a.x + a2.x) * dt;
+      sim.vel.y += 0.5 * (a.y + a2.y) * dt;
+      const vrAfter = sim.vel.x * sim.pos.x + sim.vel.y * sim.pos.y;
+      a = a2;
+      remaining -= dt;
+
+      if (sim.phase === 'inbound' && vrBefore <= 0 && vrAfter > 0) {
+        sim.phase = 'outbound';
+        sim.periFlashUntil = now + 1600;
+      }
+      const dx = sim.pos.x - sim.lastPush.x, dy = sim.pos.y - sim.lastPush.y;
+      if (dx * dx + dy * dy > 0.012 * 0.012) {
+        sim.trail.push({ x: sim.pos.x, y: sim.pos.y });
+        if (sim.trail.length > 4000) sim.trail.splice(0, sim.trail.length - 4000);
+        sim.lastPush = { x: sim.pos.x, y: sim.pos.y };
+      }
+    }
+    if (sim.phase === 'outbound' && a.r > R_GONE) {
+      sim.phase = 'gone';
+      sim.respawnAt = now + 1400;
+    }
+  }
+
+  // ---------- drawing ----------
+  function draw(now) {
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    ctx.fillStyle = '#05080F';
+    ctx.fillRect(0, 0, W, H);
+    ctx.drawImage(starLayer, 0, 0, W, H);
+
+    // planet orbits + planets
+    ctx.lineWidth = 1;
+    for (const p of PLANETS) {
+      ctx.strokeStyle = 'rgba(143,216,255,0.07)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, p.a * scale, 0, Math.PI * 2);
+      ctx.stroke();
+      const th = p.th0 + (2 * Math.PI * sim.planetT) / p.T;
+      const px = sx(p.a * Math.cos(th)), py = sy(p.a * Math.sin(th));
+      ctx.fillStyle = p.hue;
+      ctx.beginPath(); ctx.arc(px, py, p.px, 0, Math.PI * 2); ctx.fill();
+      if (p.name) {
+        ctx.fillStyle = 'rgba(120,140,170,0.5)';
+        ctx.font = '9.5px Consolas, monospace';
+        ctx.fillText(p.name, px + 6, py - 5);
+      }
+    }
+
+    // the Sun — the only warm thing on the page
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 30);
+    g.addColorStop(0, 'rgba(255,214,150,0.95)');
+    g.addColorStop(0.25, 'rgba(255,192,105,0.5)');
+    g.addColorStop(1, 'rgba(255,192,105,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#FFE7C2';
+    ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, Math.PI * 2); ctx.fill();
+
+    // analytic conic preview (dashed) + perihelion tick
+    if (sim.conic.length) {
+      ctx.save();
+      ctx.setLineDash([3, 6]);
+      ctx.strokeStyle = 'rgba(143,216,255,0.22)';
+      ctx.beginPath();
+      sim.conic.forEach((p, i) => i ? ctx.lineTo(sx(p.x), sy(p.y)) : ctx.moveTo(sx(p.x), sy(p.y)));
+      ctx.stroke();
+      ctx.restore();
+      ctx.strokeStyle = 'rgba(143,216,255,0.5)';
+      ctx.beginPath();
+      ctx.arc(sx(sim.periPoint.x), sy(sim.periPoint.y), 3, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    // travelled trail
+    if (sim.trail.length > 1) {
+      ctx.strokeStyle = 'rgba(143,216,255,0.34)';
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      sim.trail.forEach((p, i) => i ? ctx.lineTo(sx(p.x), sy(p.y)) : ctx.moveTo(sx(p.x), sy(p.y)));
+      ctx.lineTo(sx(sim.pos.x), sy(sim.pos.y));
+      ctx.stroke();
+    }
+
+    // comet: tail (anti-sunward) + coma + nucleus
+    const r = Math.hypot(sim.pos.x, sim.pos.y);
+    const px = sx(sim.pos.x), py = sy(sim.pos.y);
+    if (sim.phase !== 'gone') {
+      if (r < 6) {
+        const lenAU = Math.min(2.6, 0.45 / (r * r) + 0.04);
+        const ux = sim.pos.x / r, uy = sim.pos.y / r;
+        const tx = sx(sim.pos.x + ux * lenAU), ty = sy(sim.pos.y + uy * lenAU);
+        const alpha = Math.min(0.6, 0.55 / r);
+        const tg = ctx.createLinearGradient(px, py, tx, ty);
+        tg.addColorStop(0, `rgba(163,222,255,${alpha})`);
+        tg.addColorStop(1, 'rgba(163,222,255,0)');
+        ctx.strokeStyle = tg; ctx.lineWidth = 5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(tx, ty); ctx.stroke();
+        ctx.lineCap = 'butt';
+      }
+      const glowR = Math.max(4, Math.min(22, 15 / r));
+      const cg = ctx.createRadialGradient(px, py, 0, px, py, glowR);
+      cg.addColorStop(0, 'rgba(214,238,255,0.85)');
+      cg.addColorStop(0.4, 'rgba(143,216,255,0.28)');
+      cg.addColorStop(1, 'rgba(143,216,255,0)');
+      ctx.fillStyle = cg;
+      ctx.beginPath(); ctx.arc(px, py, glowR, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#EAF6FF';
+      ctx.beginPath(); ctx.arc(px, py, 1.8, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+
+  // ---------- telemetry ----------
+  const el = id => document.getElementById(id);
+  const tName = el('tName'), tState = el('tState'),
+        tR = el('tR'), tV = el('tV'), tE = el('tE'), tQ = el('tQ');
+
+  function updateTelemetry(now) {
+    const r = Math.hypot(sim.pos.x, sim.pos.y);
+    const v2 = sim.vel.x * sim.vel.x + sim.vel.y * sim.vel.y;
+    const hh = sim.pos.x * sim.vel.y - sim.pos.y * sim.vel.x;
+    const eps = v2 / 2 - MU / r;
+    const eLive = Math.sqrt(Math.max(0, 1 + 2 * eps * hh * hh / (MU * MU)));
+    tName.textContent = sim.name;
+    tR.textContent = r.toFixed(2) + ' AU';
+    tV.textContent = (Math.sqrt(v2) * KMS).toFixed(1) + ' km/s';
+    tE.textContent = eLive.toFixed(3);
+    tQ.textContent = sim.orbit.q.toFixed(2) + ' AU';
+    tState.className = 'state';
+    if (sim.phase === 'gone') {
+      tState.textContent = 'ESCAPED'; tState.classList.add('gone');
+    } else if (now < sim.periFlashUntil) {
+      tState.textContent = 'PERIHELION'; tState.classList.add('peri');
+    } else {
+      tState.textContent = sim.phase.toUpperCase();
+    }
+  }
+
+  // ---------- controls ----------
+  const vinfIn = el('vinf'), periIn = el('peri'), rateIn = el('rate');
+  const vinfOut = el('vinfOut'), periOut = el('periOut'), rateOut = el('rateOut');
+  const chips = [...document.querySelectorAll('.chip')];
+
+  let lastCustom = null;
+  function currentName() {
+    for (const key of Object.keys(PRESETS)) {
+      const p = PRESETS[key];
+      if (Math.abs(p.v - +vinfIn.value) < 0.05 && Math.abs(p.q - +periIn.value) < 0.005) return p.label;
+    }
+    // one designation per continuous tweak, not one per slider tick
+    if (!lastCustom || performance.now() - lastCustom.at > 1500) {
+      lastCustom = { label: `Visitor ${customSeq++}I`, at: performance.now() };
+    }
+    lastCustom.at = performance.now();
+    return lastCustom.label;
+  }
+  function syncChips() {
+    chips.forEach(c => {
+      const p = PRESETS[c.dataset.preset];
+      c.classList.toggle('active',
+        Math.abs(p.v - +vinfIn.value) < 0.05 && Math.abs(p.q - +periIn.value) < 0.005);
+    });
+  }
+  function readouts() {
+    vinfOut.textContent = (+vinfIn.value).toFixed(1) + ' km/s';
+    periOut.textContent = (+periIn.value).toFixed(2) + ' AU';
+    rateOut.textContent = '×' + speed.toFixed(2) + ' yr/s';
+  }
+  function respawnFromSliders() {
+    spawn(+vinfIn.value, +periIn.value, currentName());
+    syncChips(); readouts();
+  }
+
+  vinfIn.addEventListener('input', respawnFromSliders);
+  periIn.addEventListener('input', respawnFromSliders);
+  rateIn.addEventListener('input', () => {
+    speed = 0.02 * Math.pow(100, +rateIn.value / 100);   // 0.02 .. 2 yr/s, log
+    readouts();
+  });
+  chips.forEach(c => c.addEventListener('click', () => {
+    const p = PRESETS[c.dataset.preset];
+    vinfIn.value = p.v; periIn.value = p.q;
+    spawn(p.v, p.q, p.label);
+    syncChips(); readouts();
+  }));
+
+  const pauseBtn = el('pauseBtn');
+  function setPaused(v) { paused = v; pauseBtn.textContent = paused ? 'Resume' : 'Pause'; }
+  pauseBtn.addEventListener('click', () => setPaused(!paused));
+  el('newBtn').addEventListener('click', respawnFromSliders);
+  window.addEventListener('keydown', e => {
+    if (e.target !== document.body && e.target !== canvas) return;
+    if (e.code === 'Space') { e.preventDefault(); setPaused(!paused); }
+    if (e.key === 'n' || e.key === 'N') respawnFromSliders();
+  });
+
+  // ---------- main loop ----------
+  let lastTs = 0;
+  function frame(ts) {
+    const now = performance.now();
+    const dtReal = Math.min(0.05, (ts - lastTs) / 1000 || 0.016);
+    lastTs = ts;
+    if (!paused) {
+      const dtSim = speed * dtReal;
+      sim.planetT += dtSim;
+      integrate(dtSim, now);
+      if (sim.phase === 'gone' && sim.respawnAt && now > sim.respawnAt) respawnFromSliders();
+    }
+    draw(now);
+    updateTelemetry(now);
+    requestAnimationFrame(frame);
+  }
+
+  window.addEventListener('resize', resize);
+  resize();
+  spawn(PRESETS.atlas.v, PRESETS.atlas.q, PRESETS.atlas.label);
+  readouts(); syncChips();
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) setPaused(true);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

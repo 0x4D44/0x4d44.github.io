@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "hyperbolic",
+    title: "Hyperbolic",
+    tagline: "An orbital-mechanics toy: fling interstellar visitors through the solar system on one-pass hyperbolic orbits — ʻOumuamua, Borisov and 3I/ATLAS as presets, or dial in your own approach. Real vis-viva + velocity-Verlet physics, to scale out to Saturn. Vanilla JS on a canvas — no dependencies, no build step.",
+    url: "https://0x4d44.github.io/hyperbolic/",
+    illustration: "ill-comet",
+    date: "2026-07-02T22:19:00",
+    year: 2026,
+    tags: ["simulation", "science"],
+    real: true,
+  },
+  {
     slug: "midi-observatory",
     title: "Asterion MIDI Observatory",
     tagline: "A browser MIDI listening room: play generated demo constellations or upload .mid files, then drive a Web Audio synth with presets, per-channel controls, an animated sky visualizer and WAV export. Self-contained static app with a manifest and service worker — no runtime network calls.",
