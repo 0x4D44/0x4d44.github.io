@@ -1,0 +1,9 @@
+{
+  "name": "0x4d44-humanity-retention-programme",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node humanity-retention/tests/engine.test.mjs && node humanity-retention/tests/validate-static.mjs",
+    "build": "node humanity-retention/tests/validate-static.mjs"
+  }
+}

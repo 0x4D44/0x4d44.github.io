@@ -1,0 +1,15 @@
+{
+  "name": "Humanity Retention Programme",
+  "short_name": "Humanity Retention",
+  "description": "A satirical mobile-first outbreak containment strategy game inside a suspicious retro AI dashboard.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#09131f",
+  "theme_color": "#09131f",
+  "categories": ["games", "strategy", "entertainment"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
