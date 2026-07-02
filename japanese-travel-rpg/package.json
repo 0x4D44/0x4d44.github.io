@@ -1,0 +1,14 @@
+{
+  "name": "nihon-quest-travel-rpg",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static no-backend Japanese travel RPG language-learning PWA for GitHub Pages.",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "test": "node tests/self-check.mjs",
+    "serve": "python3 -m http.server 4173"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
