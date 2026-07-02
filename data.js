@@ -27,6 +27,17 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "class-55",
+    title: "Class 55",
+    tagline: "An interactive study of the Deltic — British Rail's Class 55. The triangular Napier opposed-piston engine that named it, the 3,300 hp locomotive that ruled the East Coast Main Line, and the racehorses and regiments its 22 machines carried. Animated engine schematic in vanilla JS on a canvas — no build step.",
+    url: "https://0x4d44.github.io/class-55/",
+    illustration: "ill-class55",
+    date: "2026-07-03T12:00:00",
+    year: 1961,
+    tags: ["rail", "engineering", "history"],
+    real: true,
+  },
+  {
     slug: "hyperbolic",
     title: "Hyperbolic",
     tagline: "An orbital-mechanics toy: fling interstellar visitors through the solar system on one-pass hyperbolic orbits — ʻOumuamua, Borisov and 3I/ATLAS as presets, or dial in your own approach. Real vis-viva + velocity-Verlet physics, to scale out to Saturn. Vanilla JS on a canvas — no dependencies, no build step.",

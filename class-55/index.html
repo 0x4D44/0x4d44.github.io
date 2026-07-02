@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CLASS 55 — The Deltic</title>
+<meta name="description" content="An interactive study of British Rail's Class 55 'Deltic': the triangular Napier opposed-piston engine that gave it its name, the 3,300 hp locomotive that ruled the East Coast Main Line, and the racehorses and regiments the fleet was named after.">
+<style>
+  :root{
+    --plate:#0B1E2A; --plate-2:#0e2634; --panel:#102b3b;
+    --ink:#DDEAEE; --ink-soft:#9fc0cc; --ink-faint:#6b8894;
+    --line:rgba(120,205,228,.24); --line-soft:rgba(120,205,228,.12);
+    --grid:rgba(120,205,228,.06);
+    --cyan:#57C8DC; --cyan-soft:#8FD9E7;
+    --amber:#F2A03D; --amber-soft:#ffcf7a; --fire:#ffe1a0;
+    --signal:#EE5A2B; --good:#7fce9a; --regt:#8fb8ff;
+    --font-body:"Saira",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    --font-mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--plate);color:var(--ink);
+    font-family:var(--font-body);font-size:16px;line-height:1.62;
+    background-image:
+      linear-gradient(var(--grid) 1px,transparent 1px),
+      linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:32px 32px;}
+  .wrap{max-width:940px;margin:0 auto;padding:0 22px}
+  .mono{font-family:var(--font-mono)}
+  a{color:var(--cyan)}
+  h1,h2,h3{line-height:1.12;letter-spacing:.4px;font-weight:800;margin:0}
+  .topnav{display:flex;justify-content:space-between;align-items:center;
+    padding:16px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+  .topnav a{color:var(--ink-soft);text-decoration:none}
+  .topnav .who{color:var(--ink-faint);font-family:var(--font-mono);letter-spacing:1px}
+
+  /* hero */
+  header.hero{padding:52px 0 26px}
+  .kicker{font-family:var(--font-mono);font-size:12px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--amber);margin-bottom:18px}
+  h1{font-size:clamp(44px,10vw,92px);color:var(--ink)}
+  h1 .sub{display:block;font-size:clamp(15px,2.6vw,20px);letter-spacing:.28em;
+    font-weight:600;color:var(--cyan-soft);text-transform:uppercase;margin-top:10px}
+  .lead{font-size:clamp(17px,2.3vw,21px);color:var(--ink-soft);max-width:44ch;margin:24px 0 0}
+  .lead strong{color:var(--ink);font-weight:700}
+
+  /* figure plate */
+  .plate{margin:38px 0;border:1px solid var(--line);border-radius:10px;
+    background:linear-gradient(180deg,var(--plate-2),#0a1a24);overflow:hidden}
+  .plate .bar{display:flex;gap:14px;justify-content:space-between;align-items:center;
+    padding:9px 14px;border-bottom:1px solid var(--line-soft);
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.12em;color:var(--ink-faint)}
+  .plate .bar .fno{color:var(--cyan)}
+  .plate .bar .r{color:var(--amber)}
+  .plate .body{padding:10px 8px 4px}
+  canvas{display:block;width:100%;max-width:620px;height:auto;margin:0 auto}
+  .readout{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;
+    font-family:var(--font-mono);font-size:12.5px;color:var(--ink-faint);
+    padding:4px 12px 12px;text-align:center}
+  .readout .now{color:var(--fire);font-weight:700}
+  .legend{display:flex;flex-wrap:wrap;gap:8px 20px;justify-content:center;
+    padding:2px 14px 16px;font-size:12.5px;color:var(--ink-faint)}
+  .legend b{color:var(--cyan-soft);font-weight:600}
+  .legend .k{display:inline-block;width:11px;height:11px;border-radius:2px;
+    vertical-align:-1px;margin-right:5px}
+
+  section{padding:22px 0;border-top:1px solid var(--line-soft)}
+  h2{font-size:clamp(24px,4vw,34px);color:var(--ink);margin-bottom:6px}
+  h2 .n{font-family:var(--font-mono);font-size:13px;color:var(--amber);
+    letter-spacing:.2em;display:block;margin-bottom:8px;font-weight:600}
+  p{max-width:66ch}
+  p .hl{color:var(--ink);font-weight:600}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:14px 34px}
+  @media(max-width:680px){.cols{grid-template-columns:1fr}}
+
+  /* spec strip */
+  .specs{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+    background:var(--line-soft);border:1px solid var(--line-soft);border-radius:8px;
+    overflow:hidden;margin:20px 0}
+  .specs div{background:var(--plate-2);padding:12px 14px}
+  .specs .v{font-family:var(--font-mono);font-size:20px;color:var(--cyan);font-weight:700}
+  .specs .l{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);margin-top:3px}
+  @media(max-width:680px){.specs{grid-template-columns:repeat(2,1fr)}}
+
+  /* roster */
+  .roster{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px}
+  .roster th,.roster td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  .roster th{position:sticky;top:0;background:var(--plate);color:var(--ink-faint);
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .roster td.no{font-family:var(--font-mono);color:var(--amber);white-space:nowrap}
+  .roster td.nm{color:var(--ink);font-weight:600}
+  .roster tr:hover td{background:rgba(120,205,228,.04)}
+  .pill{display:inline-block;font-size:10.5px;padding:1px 8px;border-radius:999px;
+    border:1px solid var(--line);white-space:nowrap}
+  .pill.h{color:var(--amber-soft);border-color:#5a4322}
+  .pill.re{color:var(--regt);border-color:#2b3d5e}
+  .roster caption{caption-side:bottom;text-align:left;color:var(--ink-faint);
+    font-size:12px;padding-top:10px;line-height:1.5}
+
+  .callout{border-left:3px solid var(--amber);background:var(--plate-2);
+    padding:14px 18px;border-radius:0 8px 8px 0;margin:20px 0}
+  .callout h3{font-size:16px;color:var(--amber-soft);margin-bottom:6px}
+  .callout p{max-width:none;color:var(--ink-soft);margin:0}
+  .derive{font-family:var(--font-mono);font-size:13px;color:var(--ink-soft);
+    background:#0a1a24;border:1px solid var(--line-soft);border-radius:8px;padding:14px 16px;margin-top:12px}
+  .derive .k{color:var(--amber-soft)} .derive .g{color:var(--good)} .derive .arr{color:var(--cyan)}
+
+  footer{padding:34px 0 60px;border-top:1px solid var(--line-soft);color:var(--ink-faint);font-size:13px}
+  footer .mono{font-size:12px;color:var(--ink-faint)}
+  .src{margin-top:8px}.src a{color:var(--ink-soft)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="topnav">
+    <a href="https://0x4d44.github.io/">&larr; 0x4D44 almanac</a>
+    <span class="who">RAIL · ENGINEERING · HISTORY</span>
+  </nav>
+
+  <header class="hero">
+    <div class="kicker">An interactive study · Napier Deltic · East Coast Main Line</div>
+    <h1>Deltic<span class="sub">British Rail Class 55 · 1961&ndash;1982</span></h1>
+    <p class="lead">Twenty-two locomotives, each carrying <strong>two triangular diesel engines</strong>
+      — and named, half after Derby winners and half after Army regiments. For twenty years the
+      <strong>Deltics</strong> were the fastest thing on the East Coast Main Line. The name comes
+      from the shape of the engine: a <strong>delta</strong>, &Delta;.</p>
+  </header>
+
+  <!-- ============ FIG 01: the engine ============ -->
+  <figure class="plate">
+    <div class="bar">
+      <span class="fno">FIG. 01</span>
+      <span>NAPIER DELTIC · OPPOSED-PISTON TWO-STROKE · SCHEMATIC</span>
+      <span class="r">3 CRANKS · N.T.S.</span>
+    </div>
+    <div class="body"><canvas id="engine" width="620" height="540" aria-label="Animated Napier Deltic engine schematic"></canvas></div>
+    <div class="readout">firing bank:&nbsp;<span class="now" id="fire">—</span>&nbsp;· the power stroke chases around the delta, 120° apart</div>
+    <div class="legend">
+      <span><span class="k" style="background:var(--cyan)"></span><b>3 crankshafts</b>, one per corner</span>
+      <span><span class="k" style="background:#3a3527"></span><b>3 cylinder banks</b> along the sides</span>
+      <span><span class="k" style="background:var(--amber)"></span><b>opposed pistons</b> — two per cylinder, no head</span>
+    </div>
+  </figure>
+
+  <!-- ============ why deltic ============ -->
+  <section>
+    <h2><span class="n">01 · THE ENGINE</span>Why it&rsquo;s called a Deltic</h2>
+    <p>The <span class="hl">Napier Deltic</span> was a two-stroke diesel built as an <span class="hl">inverted
+      triangle</span>: three banks of cylinders forming the three sides, and a <span class="hl">crankshaft
+      at each of the three corners</span>. There is no cylinder head. Instead each cylinder holds
+      <span class="hl">two pistons that race toward each other</span> — an opposed-piston design — so the
+      combustion space is the gap between them at the middle of the bore. One piston uncovers the
+      exhaust ports, the other the inlet ports, and the charge is swept straight through. The three
+      crankshafts are tied together by <span class="hl">phasing gears</span> and drive a single output
+      shaft; one crank runs slightly ahead so the exhaust piston always leads for clean scavenging.</p>
+    <p>Napier borrowed the opposed-piston trick from the wartime Junkers Jumo aircraft diesel, then did
+      something new with it — folding three banks into that <span class="hl">&Delta;</span>. The Greek
+      letter gave the engine, and later the locomotive, its name. It was first built for fast naval
+      craft; in its 18-cylinder railway form each engine gave 1,650&nbsp;hp, and English Electric hung
+      <span class="hl">two of them</span> in every Class&nbsp;55.</p>
+
+    <div class="specs" aria-label="Class 55 specifications">
+      <div><div class="v">22</div><div class="l">built 1961&ndash;62</div></div>
+      <div><div class="v">3,300</div><div class="l">horsepower (2 engines)</div></div>
+      <div><div class="v">100</div><div class="l">mph top speed</div></div>
+      <div><div class="v">Co-Co</div><div class="l">wheel arrangement</div></div>
+      <div><div class="v">36</div><div class="l">cylinders per loco</div></div>
+      <div><div class="v">72</div><div class="l">pistons per loco</div></div>
+      <div><div class="v">6</div><div class="l">preserved today</div></div>
+      <div><div class="v">&Delta;</div><div class="l">delta configuration</div></div>
+    </div>
+  </section>
+
+  <!-- ============ the locomotive ============ -->
+  <section>
+    <h2><span class="n">02 · THE LOCOMOTIVE</span>Masters of the East Coast</h2>
+    <div class="cols">
+      <p>English Electric built the 22 production Deltics at the Vulcan Foundry in 1961&ndash;62, after a
+        single powder-blue prototype (<span class="hl">DP1</span>, 1955, now in the Science Museum) proved
+        the idea. They took over the crack <span class="hl">King&rsquo;s Cross&ndash;Edinburgh</span>
+        expresses on the East Coast Main Line, where their sustained power let just 22 machines cover
+        work that had needed <span class="hl">55 Gresley Pacifics</span> in steam.</p>
+      <p>They were the most powerful single-unit diesel locomotives in the world when new, and held the
+        East Coast&rsquo;s fastest schedules until the High Speed Train arrived. Withdrawn in
+        <span class="hl">1981&ndash;82</span> as the HST took over, six survived into preservation — and
+        one, <span class="hl">55022</span>, still runs on the main line. The Deltic Preservation Society
+        keeps three more alive.</p>
+    </div>
+  </section>
+
+  <!-- ============ the names ============ -->
+  <section>
+    <h2><span class="n">03 · THE NAMES</span>Racehorses &amp; regiments</h2>
+    <p>How a Deltic was named depended on which depot it belonged to. <span class="hl">Finsbury Park</span>
+      in London kept the old LNER tradition and named its engines after <span class="pill h">racehorse</span>
+      classic winners. <span class="hl">Gateshead</span> chose regiments of the North-East of England, and
+      <span class="hl">Haymarket</span> in Edinburgh chose <span class="pill re">Scottish regiments</span>.
+      The eight racehorse names below are the <span class="hl">complete</span> set — there were exactly
+      eight — the other fourteen honour the British Army.</p>
+
+    <table class="roster">
+      <caption>All 22 production Deltics. TOPS numbers (55xxx) applied 1973; original numbers were
+        D9000&ndash;D9021, with D9000 becoming 55022. Named after: racehorses (Finsbury Park), English
+        regiments (Gateshead), Scottish regiments (Haymarket).</caption>
+      <thead><tr><th>55xxx</th><th>Name</th><th>Named after</th></tr></thead>
+      <tbody id="roster"></tbody>
+    </table>
+  </section>
+
+  <!-- ============ coda: the names ride on ============ -->
+  <section>
+    <h2><span class="n">04 · CODA</span>The names ride on</h2>
+    <p>The locomotives are gone from traffic, but the names keep turning up. One place they live on is
+      software: the author keeps a small fleet utility named — of course — <span class="hl">Deltic</span>,
+      which christens each cluster of build machines after one of these locomotives. It picks the name
+      <span class="hl">deterministically</span>, so every machine in a cluster agrees on it with no
+      coordination: take the cluster&rsquo;s anchor name, hash it with SHA-256, read the first eight hex
+      digits as a number, and index into a fixed list of ten.</p>
+
+    <div class="callout">
+      <h3>Worked example</h3>
+      <p>A cluster whose anchor is <span class="mono">WORKSHOP</span> resolves like this — the same
+        arithmetic the tool runs, and the same answer on every machine:</p>
+      <div class="derive">
+        <div><span class="k">sha256("WORKSHOP")</span> = e7fec7a8… </div>
+        <div>0x<span class="k">e7fec7a8</span> = 3,892,234,152</div>
+        <div>3,892,234,152 mod 10 = <span class="k">2</span> <span class="arr">&rarr;</span>
+          <span class="g">Pinza</span></div>
+      </div>
+    </div>
+    <p style="color:var(--ink-faint);font-size:13.5px">Ten names, indexed 0&ndash;9: all eight racehorse
+      Deltics, plus two of the best-loved regiment names — <span class="pill re">Royal Scots Grey</span>
+      (that&rsquo;s 55022, the preserved pioneer) and <span class="pill re">Gordon Highlander</span>. A tiny
+      homage, hashed into a build fleet.</p>
+  </section>
+
+  <footer>
+    <div>Built as a companion to <a href="https://0x4d44.github.io/class-47/">Class&nbsp;47</a> in the
+      0x4D44 almanac. Self-contained page — vanilla JS on a canvas, no dependencies, no build step. The
+      engine schematic is stylised; a real Deltic phases its exhaust crank about 20° ahead for two-stroke
+      scavenge.</div>
+    <div class="src">Sources:
+      <a href="https://en.wikipedia.org/wiki/British_Rail_Class_55">Class 55 (Wikipedia)</a> ·
+      <a href="https://en.wikipedia.org/wiki/Napier_Deltic">Napier Deltic (Wikipedia)</a> ·
+      <a href="https://oldmachinepress.com/2019/09/05/napier-deltic-opposed-piston-diesel-engine/">Old Machine Press</a>.</div>
+  </footer>
+
+</div>
+
+<script>
+// ---------- roster (verified against the Class 55 records) ----------
+const ROSTER = [
+  ["55001","St Paddy","1960 Derby &amp; St Leger winner","h"],
+  ["55002","The King's Own Yorkshire Light Infantry","English regiment · preserved at the NRM","re"],
+  ["55003","Meld","1955 fillies' Triple Crown","h"],
+  ["55004","Queen's Own Highlander","Scottish regiment","re"],
+  ["55005","The Prince of Wales's Own Regiment of Yorkshire","English regiment","re"],
+  ["55006","The Fife &amp; Forfar Yeomanry","Scottish regiment","re"],
+  ["55007","Pinza","1953 Derby (Sir Gordon Richards)","h"],
+  ["55008","The Green Howards","English regiment","re"],
+  ["55009","Alycidon","great stayer &amp; sire · preserved","h"],
+  ["55010","The King's Own Scottish Borderer","Scottish regiment","re"],
+  ["55011","The Royal Northumberland Fusiliers","English regiment","re"],
+  ["55012","Crepello","1957 Derby &amp; 2000 Guineas","h"],
+  ["55013","The Black Watch","Scottish regiment","re"],
+  ["55014","The Duke of Wellington's Regiment","English regiment","re"],
+  ["55015","Tulyar","1952 Derby &amp; St Leger · preserved","h"],
+  ["55016","Gordon Highlander","Scottish regiment · preserved","re"],
+  ["55017","The Durham Light Infantry","English regiment","re"],
+  ["55018","Ballymoss","1958 Arc de Triomphe","h"],
+  ["55019","Royal Highland Fusilier","Scottish regiment · preserved","re"],
+  ["55020","Nimbus","1949 Derby &amp; 2000 Guineas","h"],
+  ["55021","Argyll &amp; Sutherland Highlander","Scottish regiment","re"],
+  ["55022","Royal Scots Grey","the pioneer (D9000) · main-line certified","re"],
+];
+const tb=document.getElementById("roster");
+ROSTER.forEach(([no,nm,after,k])=>{
+  const tr=document.createElement("tr");
+  tr.innerHTML=`<td class="no">${no}</td><td class="nm">${nm}</td>`+
+    `<td><span class="pill ${k==='h'?'h':'re'}">${k==='h'?'racehorse':'regiment'}</span> ${after}</td>`;
+  tb.appendChild(tr);
+});
+
+// ---------- the Deltic engine animation (stylised schematic) ----------
+const c=document.getElementById("engine"), g=c.getContext("2d");
+const W=c.width,H=c.height,cx=W/2,cy=H/2-8;
+const side=320, triH=side*Math.sqrt(3)/2;
+const A={x:cx-side/2,y:cy-triH/3};    // top-left crank
+const B={x:cx+side/2,y:cy-triH/3};    // top-right crank
+const C={x:cx,       y:cy+2*triH/3};  // bottom apex crank
+const BANKS=[["A–B",A,B],["B–C",B,C],["C–A",C,A]];
+const css=getComputedStyle(document.documentElement);
+const CYAN=css.getPropertyValue("--cyan").trim()||"#57C8DC";
+const AMBER=css.getPropertyValue("--amber").trim()||"#F2A03D";
+
+function lerp(p,q,t){return {x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t};}
+function arc(p,r){g.beginPath();g.arc(p.x,p.y,r,0,Math.PI*2);g.closePath();}
+
+let t0=null;
+function frame(ts){
+  if(t0===null)t0=ts;
+  const t=(ts-t0)/1000;
+  const base=t*1.35*Math.PI*2;
+  g.clearRect(0,0,W,H);
+
+  // faint delta behind
+  g.strokeStyle="rgba(120,205,228,0.10)";g.lineWidth=1;
+  g.beginPath();g.moveTo(A.x,A.y);g.lineTo(B.x,B.y);g.lineTo(C.x,C.y);g.closePath();g.stroke();
+
+  let fireBank=-1,fireS=0;
+  BANKS.forEach((bk,k)=>{
+    const V1=bk[1],V2=bk[2];
+    const mid=lerp(V1,V2,0.5);
+    const ax={x:(V2.x-V1.x)/side,y:(V2.y-V1.y)/side};
+    const phase=base+k*(2*Math.PI/3);
+    const close=(1+Math.cos(phase))/2;   // 1 = pistons together (fire)
+    // combustion flash
+    if(close>0.80){
+      const s=(close-0.80)/0.20;
+      if(s>fireS){fireS=s;fireBank=k;}
+      const gr=g.createRadialGradient(mid.x,mid.y,0,mid.x,mid.y,40*s+8);
+      gr.addColorStop(0,`rgba(255,225,150,${0.9*s})`);
+      gr.addColorStop(0.5,`rgba(242,160,61,${0.5*s})`);
+      gr.addColorStop(1,"rgba(242,160,61,0)");
+      g.fillStyle=gr;arc(mid,40*s+8);g.fill();
+    }
+    // cylinder body along the side
+    const e1=lerp(V1,V2,0.22),e2=lerp(V1,V2,0.78);
+    g.lineCap="round";
+    g.strokeStyle="#26221a";g.lineWidth=24;g.beginPath();g.moveTo(e1.x,e1.y);g.lineTo(e2.x,e2.y);g.stroke();
+    g.strokeStyle="#3a3527";g.lineWidth=20;g.beginPath();g.moveTo(e1.x,e1.y);g.lineTo(e2.x,e2.y);g.stroke();
+    // opposed pistons
+    const gap=0.27-0.175*close;
+    const pistA=lerp(V1,V2,0.5-gap),pistB=lerp(V1,V2,0.5+gap);
+    const rot=Math.atan2(ax.y,ax.x);
+    [pistA,pistB].forEach(p=>{
+      g.save();g.translate(p.x,p.y);g.rotate(rot);
+      g.fillStyle="#e7dcbb";g.strokeStyle="#8a7f5f";g.lineWidth=1.2;
+      g.beginPath();g.rect(-6,-12,12,24);g.fill();g.stroke();
+      g.restore();
+    });
+    // connecting rods to the crank each piston is nearest
+    g.strokeStyle="rgba(242,160,61,0.5)";g.lineWidth=2.5;
+    g.beginPath();g.moveTo(pistA.x,pistA.y);g.lineTo(V1.x,V1.y);
+    g.moveTo(pistB.x,pistB.y);g.lineTo(V2.x,V2.y);g.stroke();
+    // bank label
+    g.fillStyle="rgba(143,217,231,0.6)";g.font="600 12px ui-monospace,monospace";g.textAlign="center";
+    const lp=lerp(mid,{x:cx,y:cy},-0.16);
+    g.fillText(bk[0],lp.x,lp.y);
+  });
+
+  // crankshafts (on top)
+  [A,B,C].forEach((V,i)=>{
+    g.fillStyle="#0a1a24";g.strokeStyle=CYAN;g.lineWidth=2;arc(V,16);g.fill();g.stroke();
+    const ang=base+i*2.4;
+    const pin={x:V.x+9*Math.cos(ang),y:V.y+9*Math.sin(ang)};
+    g.strokeStyle=CYAN;g.lineWidth=3;g.beginPath();g.moveTo(V.x,V.y);g.lineTo(pin.x,pin.y);g.stroke();
+    g.fillStyle=AMBER;arc(pin,3.5);g.fill();
+  });
+
+  // central phasing gear
+  g.fillStyle="#0a1a24";g.strokeStyle="rgba(120,205,228,0.5)";g.lineWidth=2;arc({x:cx,y:cy},11);g.fill();g.stroke();
+  g.fillStyle=CYAN;g.font="12px ui-monospace,monospace";g.textAlign="center";g.fillText("Δ",cx,cy+4);
+
+  document.getElementById("fire").textContent=fireBank>=0?BANKS[fireBank][0]:"—";
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
