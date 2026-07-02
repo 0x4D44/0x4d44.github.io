@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estimation Whist</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  html,body{margin:0;padding:0;background:#0c2418;}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  @keyframes ewIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+  @keyframes ewRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes ewFade{from{opacity:0}to{opacity:1}}
+  @keyframes ewPulse{0%,100%{opacity:.5}50%{opacity:1}}
+  @keyframes ewSheet{from{opacity:0;transform:translateX(-50%) translateY(16px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+  @keyframes ewOverCard{from{opacity:0;transform:translate(-50%,-50%) scale(.8)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+  @media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important;}}
+</style>
+</helmet>
+<div style="{{ rootStyle }}">
+  <div style="max-width:480px;width:100%;margin:0 auto;flex:1;display:flex;flex-direction:column;padding:14px 16px 14px;min-height:100vh;" data-screen-label="Table">
+
+    <!-- header -->
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:10px;">
+      <div>
+        <div style="font-size:10px;font-weight:600;letter-spacing:0.22em;color:var(--accent,#d4af37);">PARLOUR GAMES</div>
+        <h1 style="margin:2px 0 0;font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;font-size:27px;line-height:1;color:var(--text,#f1e8d2);">Estimation Whist</h1>
+        <a href="https://0x4d44.github.io/estimation-whist/" style="display:inline-block;margin-top:3px;font-size:10px;font-weight:600;color:var(--dim,rgba(241,232,210,0.64));text-decoration:underline;">Read the code tour &rarr;</a>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <button onClick="{{ onSound }}" style="{{ chromeBtnStyle }}">{{ soundLabel }}</button>
+        <button onClick="{{ onTheme }}" style="{{ chromeBtnStyle }}">{{ themeName }}</button>
+      </div>
+    </div>
+
+    <!-- status chips -->
+    <div style="display:flex;gap:6px;align-items:center;margin-top:10px;flex-wrap:wrap;">
+      <span style="flex:none;white-space:nowrap;padding:4px 9px;border-radius:99px;border:1px solid var(--pborder,rgba(212,175,55,0.24));font-size:11px;font-weight:600;color:var(--dim,rgba(241,232,210,0.64));">{{ roundChip }}</span>
+      <span style="{{ trumpChipStyle }}">{{ trumpChip }}</span>
+      <span style="flex:none;white-space:nowrap;padding:4px 9px;border-radius:99px;border:1px solid var(--pborder,rgba(212,175,55,0.24));font-size:11px;font-weight:600;color:var(--dim,rgba(241,232,210,0.64));">You {{ youScore }} pts</span>
+    </div>
+    <div role="status" aria-live="polite" style="margin-top:7px;min-height:18px;font-size:13px;font-weight:500;line-height:1.35;color:var(--dim,rgba(241,232,210,0.64));">{{ status }}</div>
+
+    <!-- coach -->
+    <sc-if value="{{ showCoach }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;margin-top:7px;padding:7px 10px;border-radius:10px;background:var(--panel,rgba(0,0,0,0.35));border:1px solid var(--pborder,rgba(212,175,55,0.24));font-size:12px;color:var(--text,#f1e8d2);">
+        <span style="width:7px;height:7px;border-radius:99px;background:var(--accent,#d4af37);animation:ewPulse 2s infinite;flex:none;"></span>
+        <span style="flex:1;min-width:0;">{{ coachLine }}</span>
+        <button onClick="{{ onCoach }}" style="border:none;background:none;color:var(--faint,rgba(241,232,210,0.3));font-size:10px;font-weight:700;letter-spacing:0.08em;cursor:pointer;padding:2px;">HIDE</button>
+      </div>
+    </sc-if>
+
+    <!-- opponents -->
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <sc-for list="{{ opponents }}" as="o" hint-placeholder-count="3">
+        <div style="{{ o.style }}">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <span style="font-size:12px;font-weight:700;color:var(--text,#f1e8d2);">{{ o.name }}</span>
+            <sc-if value="{{ o.isDealer }}" hint-placeholder-val="{{ false }}">
+              <span style="width:15px;height:15px;border-radius:99px;background:var(--accent,#d4af37);color:#1a140a;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;">D</span>
+            </sc-if>
+          </div>
+          <div style="font-size:10px;color:var(--faint,rgba(241,232,210,0.3));margin-top:1px;">{{ o.persona }}</div>
+          <div style="margin-top:4px;font-size:12px;font-weight:600;color:var(--accent,#d4af37);">{{ o.bidLine }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- felt table -->
+    <div style="position:relative;flex:1;min-height:212px;margin-top:10px;border-radius:16px;background:var(--felt,radial-gradient(120% 100% at 50% 30%, #26593c, #17422a 70%, #123322));border:1px solid var(--pborder,rgba(212,175,55,0.24));box-shadow:inset 0 0 44px rgba(0,0,0,0.35);overflow:hidden;">
+      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Fraunces',Georgia,serif;font-size:104px;color:rgba(255,255,255,0.06);pointer-events:none;">{{ trumpGlyph }}</div>
+      <sc-for list="{{ trickCards }}" as="t" hint-placeholder-count="0">
+        <div style="{{ t.style }}">
+          <div style="{{ t.cardStyle }}">
+            <span style="{{ t.cornerStyle }}"><span style="display:block;">{{ t.rank }}</span><span style="display:block;font-size:11px;">{{ t.suit }}</span></span>
+            <span style="{{ t.pipStyle }}">{{ t.suit }}</span>
+          </div>
+          <div style="text-align:center;font-size:10px;font-weight:600;color:var(--faint,rgba(241,232,210,0.3));margin-top:3px;">{{ t.who }}</div>
+        </div>
+      </sc-for>
+      <div style="position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:11px;color:var(--faint,rgba(241,232,210,0.3));pointer-events:none;">{{ tableMsg }}</div>
+    </div>
+
+    <!-- you -->
+    <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;border-radius:12px;background:var(--panel,rgba(0,0,0,0.35));border:1px solid var(--pborder,rgba(212,175,55,0.24));">
+      <span style="font-size:12px;font-weight:700;color:var(--text,#f1e8d2);">You</span>
+      <sc-if value="{{ youDealer }}" hint-placeholder-val="{{ false }}">
+        <span style="width:15px;height:15px;border-radius:99px;background:var(--accent,#d4af37);color:#1a140a;font-size:9px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;">D</span>
+      </sc-if>
+      <span style="flex:1;text-align:right;font-size:12px;font-weight:600;color:var(--accent,#d4af37);">{{ youBidLine }}</span>
+    </div>
+
+    <!-- hand -->
+    <div style="position:relative;height:106px;margin-top:8px;">
+      <sc-for list="{{ handCards }}" as="c" hint-placeholder-count="5">
+        <button onClick="{{ c.onTap }}" style="{{ c.style }}" style-hover="{{ c.hover }}" aria-label="{{ c.aria }}">
+          <span style="{{ c.corner }}"><span style="display:block;">{{ c.rank }}</span><span style="display:block;font-size:13px;margin-top:-1px;">{{ c.suit }}</span></span>
+          <span style="{{ c.pip }}">{{ c.suit }}</span>
+        </button>
+      </sc-for>
+    </div>
+
+    <!-- actions -->
+    <div style="display:flex;gap:7px;margin-top:10px;">
+      <button onClick="{{ onNew }}" style="{{ btnStyle }}">NEW</button>
+      <button onClick="{{ onUndo }}" style="{{ undoBtnStyle }}">UNDO</button>
+      <button onClick="{{ onScore }}" style="{{ btnStyle }}">SCORES</button>
+      <button onClick="{{ onHints }}" style="{{ btnStyle }}">{{ hintsLabel }}</button>
+      <button onClick="{{ onRules }}" style="{{ btnStyle }}">RULES</button>
+    </div>
+  </div>
+
+  <!-- bid sheet -->
+  <sc-if value="{{ showBid }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ bidSheetStyle }}" data-screen-label="Bid">
+      <div style="font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;font-size:22px;color:var(--text,#f1e8d2);">Your bid</div>
+      <div style="margin-top:4px;font-size:12px;color:var(--dim,rgba(241,232,210,0.64));">{{ bidSub }}</div>
+      <sc-if value="{{ hintsOn }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:9px;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:99px;border:1px solid var(--pborder,rgba(212,175,55,0.24));font-size:11px;font-weight:600;color:var(--accent,#d4af37);">Coach suggests {{ bidSuggest }}</div>
+      </sc-if>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+        <sc-for list="{{ bidOptions }}" as="b" hint-placeholder-count="6">
+          <button onClick="{{ b.onTap }}" style="{{ b.style }}">{{ b.label }}</button>
+        </sc-for>
+      </div>
+      <sc-if value="{{ bidNoteOn }}" hint-placeholder-val="{{ false }}">
+        <div style="margin-top:10px;font-size:11px;color:var(--danger,#d97a4a);">{{ bidNote }}</div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- round recap -->
+  <sc-if value="{{ showRecap }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:29;animation:ewFade 0.2s;"></div>
+    <div style="{{ sheetStyle }}" data-screen-label="Round recap">
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.2em;color:var(--accent,#d4af37);">ROUND {{ recapRound }} — {{ recapTrump }}</div>
+      <div style="font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;font-size:22px;color:var(--text,#f1e8d2);margin-top:2px;">{{ recapTitle }}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:12px;">
+        <sc-for list="{{ recapRows }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:var(--panel,rgba(0,0,0,0.35));border:1px solid var(--pborder,rgba(212,175,55,0.24));">
+            <span style="width:64px;font-size:12px;font-weight:700;color:var(--text,#f1e8d2);">{{ r.name }}</span>
+            <span style="flex:1;font-size:12px;color:var(--dim,rgba(241,232,210,0.64));">{{ r.line }}</span>
+            <span style="{{ r.deltaStyle }}">{{ r.delta }}</span>
+            <span style="width:44px;text-align:right;font-size:12px;font-weight:700;color:var(--text,#f1e8d2);">{{ r.total }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <button onClick="{{ onContinue }}" style="{{ primaryBtnStyle }}">{{ continueLabel }}</button>
+    </div>
+  </sc-if>
+
+  <!-- scorecard -->
+  <sc-if value="{{ showScore }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:29;animation:ewFade 0.2s;" onClick="{{ onScore }}"></div>
+    <div style="{{ tallSheetStyle }}" data-screen-label="Scorecard">
+      <div style="font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;font-size:22px;color:var(--text,#f1e8d2);">Scorecard</div>
+      <div style="display:grid;grid-template-columns:58px repeat(4,1fr);gap:4px;margin-top:10px;font-size:10px;font-weight:700;letter-spacing:0.06em;color:var(--faint,rgba(241,232,210,0.3));">
+        <div>RD</div><div>YOU</div><div>{{ opp1 }}</div><div>{{ opp2 }}</div><div>{{ opp3 }}</div>
+      </div>
+      <div style="flex:1;overflow-y:auto;min-height:0;margin-top:4px;display:flex;flex-direction:column;gap:3px;">
+        <sc-for list="{{ scoreRows }}" as="r" hint-placeholder-count="3">
+          <div style="display:grid;grid-template-columns:58px repeat(4,1fr);gap:4px;align-items:center;">
+            <div style="font-size:11px;font-weight:600;color:var(--dim,rgba(241,232,210,0.64));">{{ r.label }}</div>
+            <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="4">
+              <div style="{{ cell.style }}"><span style="font-weight:700;">{{ cell.bm }}</span><span style="font-size:10px;opacity:0.75;"> {{ cell.pts }}</span></div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:grid;grid-template-columns:58px repeat(4,1fr);gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid var(--pborder,rgba(212,175,55,0.24));font-size:13px;font-weight:700;color:var(--accent,#d4af37);">
+        <div style="font-size:10px;color:var(--faint,rgba(241,232,210,0.3));align-self:center;">TOTAL</div>
+        <div>{{ tot0 }}</div><div>{{ tot1 }}</div><div>{{ tot2 }}</div><div>{{ tot3 }}</div>
+      </div>
+      <button onClick="{{ onScore }}" style="{{ primaryBtnStyle }}">CLOSE</button>
+    </div>
+  </sc-if>
+
+  <!-- rules -->
+  <sc-if value="{{ showRules }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:29;animation:ewFade 0.2s;" onClick="{{ onRules }}"></div>
+    <div style="{{ tallSheetStyle }}" data-screen-label="Rules">
+      <div style="font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;font-size:22px;color:var(--text,#f1e8d2);">How to play</div>
+      <div style="flex:1;overflow-y:auto;min-height:0;margin-top:10px;font-size:13px;line-height:1.55;color:var(--dim,rgba(241,232,210,0.64));">
+        <p style="margin:0 0 12px;"><b style="color:var(--text,#f1e8d2);">The deal.</b> Round 1 deals one card each, round 2 deals two — up to {{ ruleMax }}, then back down to one. {{ ruleRounds }} rounds in all.</p>
+        <p style="margin:0 0 12px;"><b style="color:var(--text,#f1e8d2);">Trumps.</b> The trump suit rotates ♠ ♥ ♦ ♣, then a no-trump round, and repeats.</p>
+        <p style="margin:0 0 12px;"><b style="color:var(--text,#f1e8d2);">Bidding.</b> Each player bids exactly how many tricks they will take. The dealer bids last and may not bring the total bids level with the cards dealt — someone must always be wrong.</p>
+        <p style="margin:0 0 12px;"><b style="color:var(--text,#f1e8d2);">Play.</b> Follow the led suit if you can. The highest trump wins the trick, otherwise the highest card of the led suit. The winner leads next.</p>
+        <p style="margin:0 0 12px;"><b style="color:var(--text,#f1e8d2);">Scoring.</b> {{ ruleScoring }}</p>
+        <p style="margin:0 0 12px;"><b style="color:var(--text,#f1e8d2);">The table.</b> Each game seats three players from a household of twenty, and they are not equally good. Some play by feel, some by the book — and a few (Morse, GLaDOS, Grandmama) count every card and see deep into the deal. Elsa is a cat.</p>
+      </div>
+      <button onClick="{{ onRules }}" style="{{ primaryBtnStyle }}">GOT IT</button>
+    </div>
+  </sc-if>
+
+  <!-- game over -->
+  <sc-if value="{{ showOver }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:29;animation:ewFade 0.3s;"></div>
+    <div style="{{ overCardStyle }}" data-screen-label="Game over">
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.22em;color:var(--accent,#d4af37);">GAME OVER</div>
+      <div style="font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;font-size:26px;color:var(--text,#f1e8d2);margin-top:4px;">{{ winnerText }}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:14px;width:100%;">
+        <sc-for list="{{ standings }}" as="st" hint-placeholder-count="4">
+          <div style="{{ st.style }}">
+            <span style="width:22px;font-size:12px;font-weight:700;color:var(--faint,rgba(241,232,210,0.3));">{{ st.pos }}</span>
+            <span style="flex:1;font-size:13px;font-weight:700;text-align:left;">{{ st.name }}</span>
+            <span style="font-size:13px;font-weight:700;">{{ st.score }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="margin-top:12px;font-size:11px;color:var(--faint,rgba(241,232,210,0.3));">{{ statsLine }}</div>
+      <button onClick="{{ onNew }}" style="{{ primaryBtnStyle }}">PLAY AGAIN</button>
+    </div>
+  </sc-if>
+
+  <template id="__bundler_thumbnail">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="ewt-bg" cx="0.5" cy="0.3" r="1">
+          <stop offset="0%" stop-color="#2a553f"/><stop offset="100%" stop-color="#0c2418"/>
+        </radialGradient>
+      </defs>
+      <rect width="100" height="100" fill="url(#ewt-bg)"/>
+      <g transform="translate(50 46)">
+        <rect x="-26" y="-17" width="24" height="34" rx="3" fill="#faf5e8" transform="rotate(-12)"/>
+        <rect x="-12" y="-18" width="24" height="34" rx="3" fill="#f2ead6" transform="rotate(2)"/>
+        <rect x="2" y="-17" width="24" height="34" rx="3" fill="#faf5e8" transform="rotate(14)"/>
+        <text x="14" y="6" text-anchor="middle" font-family="Georgia, serif" font-size="15" fill="#b03a2e" transform="rotate(14)">♥</text>
+      </g>
+      <text x="50" y="88" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="10" fill="#d4af37" letter-spacing="0.5">Estimation Whist</text>
+    </svg>
+  </template>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:440,&quot;height&quot;:880},&quot;scoringMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;vanilla&quot;,&quot;squared&quot;],&quot;default&quot;:&quot;vanilla&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;House rules&quot;},&quot;hardScoring&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;House rules&quot;},&quot;maxCards&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:3,&quot;max&quot;:13,&quot;step&quot;:1,&quot;default&quot;:13,&quot;unit&quot;:&quot; cards&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;House rules&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.KEY = 'estwhi.dc.v3';
+    this.GLYPH = { S:'\u2660', H:'\u2665', D:'\u2666', C:'\u2663', N:'NT' };
+    this.RED = { H:true, D:true };
+    this.ROSTER = [
+      { name:'Ross', tag:'plays bold', bias:0.72, persona:'bold', skill:'fair' },
+      { name:'Father', tag:'plays canny', bias:0.5, persona:'canny', skill:'strong' },
+      { name:'Edith', tag:'plays wary', bias:0.3, persona:'wary', skill:'fair' },
+      { name:'Elliot', tag:'plays keen', bias:0.62, persona:'bold', skill:'fair' },
+      { name:'Zach', tag:'plays loose', bias:0.8, persona:'bold', skill:'fair' },
+      { name:'Arthur', tag:'plays steady', bias:0.48, persona:'canny', skill:'strong' },
+      { name:'Mother', tag:'plays patient', bias:0.38, persona:'wary', skill:'fair' },
+      { name:'Eric', tag:'plays hopeful', bias:0.7, persona:'bold', skill:'fair' },
+      { name:'Elsa', tag:'a cat', bias:0.55, persona:'wary', skill:'poor' },
+      { name:'Granny', tag:'plays shrewd', bias:0.45, persona:'canny', skill:'strong' },
+      { name:'Mrs R', tag:'plays proper', bias:0.52, persona:'canny', skill:'strong' },
+      { name:'Grandmama', tag:'takes no prisoners', bias:0.75, persona:'bold', skill:'expert' },
+      { name:'Nate', tag:'plays cool', bias:0.58, persona:'canny', skill:'strong' },
+      { name:'GLaDOS', tag:'still testing', bias:0.5, persona:'canny', skill:'expert' },
+      { name:'Michael Scott', tag:'world\u2019s best player', bias:0.85, persona:'bold', skill:'poor' },
+      { name:'Dwight', tag:'assistant to the winner', bias:0.68, persona:'bold', skill:'fair' },
+      { name:'Pam', tag:'plays kind', bias:0.4, persona:'wary', skill:'fair' },
+      { name:'Kevin', tag:'nice numbers', bias:0.65, persona:'wary', skill:'poor' },
+      { name:'Morse', tag:'deduces the lie', bias:0.5, persona:'canny', skill:'expert' },
+      { name:'Lewis', tag:'plays it straight', bias:0.48, persona:'canny', skill:'strong' },
+    ];
+    // Learned-linear bid weights from estwhi.pas v1.2.1 (Strong level)
+    this.LINW = [
+      0.754560, 0.420922, 0.795965, 0.531585, 0.403252, 0.280454, 0.192299,
+      0.217607, -0.420463, 0.333334, 0.193850, 0.167160, 0.070770,
+      -0.284631, 0.053994, 0.064615, 0.016347, 2.206450, 3.500096,
+    ];
+    // ESTWHI.EXE call-value tables, indexed 0=A,1=2..12=K
+    this.T1N = [1,0,0,0,0,0,0,0.1,0.2,0.3,0.4,0.5,0.8];
+    this.T1T = [1,0.1,0.2,0.2,0.3,0.3,0.3,0.4,0.7,0.9,1,1,1];
+    this.T2N = [1,0,0,0,0,0,0.1,0.1,0.1,0.1,0.1,0.4,1];
+    this.T2T = [1,0.1,0.1,0.1,0.1,0.2,0.2,0.3,0.3,0.4,0.5,0.9,1];
+    this.THEMES = {
+      tabletop: { name:'Tabletop',
+        bg:'radial-gradient(120% 80% at 50% 0%, #2a553f 0%, #163826 60%, #0c2418 100%)',
+        felt:'radial-gradient(120% 100% at 50% 30%, #26593c, #17422a 70%, #123322)',
+        panel:'linear-gradient(180deg, rgba(0,0,0,0.32), rgba(0,0,0,0.5))',
+        pborder:'rgba(212,175,55,0.24)', text:'#f1e8d2', dim:'rgba(241,232,210,0.64)', faint:'rgba(241,232,210,0.34)',
+        accent:'#d4af37', glow:'rgba(212,175,55,0.45)', success:'#a4c878', danger:'#d97a4a',
+        cardface:'#faf5e8', cardink:'#241c12', cardred:'#b03a2e' },
+      salon: { name:'Salon',
+        bg:'radial-gradient(120% 80% at 50% -10%, #232a3b 0%, #131826 55%, #0a0d15 100%)',
+        felt:'radial-gradient(120% 100% at 50% 30%, #222b42, #161d31 70%, #101524)',
+        panel:'linear-gradient(180deg, rgba(255,245,220,0.05), rgba(0,0,0,0.18))',
+        pborder:'rgba(200,154,75,0.22)', text:'#f1e6cf', dim:'rgba(241,230,207,0.62)', faint:'rgba(241,230,207,0.34)',
+        accent:'#c89a4b', glow:'rgba(217,170,90,0.45)', success:'#9ec07a', danger:'#d96a4a',
+        cardface:'#f6efdc', cardink:'#26190e', cardred:'#a83a2c' },
+      atelier: { name:'Atelier',
+        bg:'radial-gradient(120% 80% at 50% 0%, #f6ecd6 0%, #ecdfc2 60%, #d9c8a3 100%)',
+        felt:'radial-gradient(120% 100% at 50% 30%, #5f7f68, #4c6a54 70%, #3e5945)',
+        panel:'linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0.2))',
+        pborder:'rgba(60,40,20,0.2)', text:'#2b1d10', dim:'rgba(43,29,16,0.64)', faint:'rgba(43,29,16,0.38)',
+        accent:'#8e3a2a', glow:'rgba(142,58,42,0.35)', success:'#5a7a3a', danger:'#a93f23',
+        cardface:'#fffaf0', cardink:'#26190e', cardred:'#a83a2c' },
+    };
+    const saved = this.loadSave();
+    this.state = saved || {
+      theme:'tabletop', sound:true, hints:true, coachOn:true,
+      stats:{ games:0, wins:0, best:0 },
+      showRules:false, showScore:false,
+      ...this.freshGame(),
+    };
+  }
+
+  /* ---------- config ---------- */
+  maxCards(){ let m = parseInt(this.props.maxCards ?? 13, 10); if(!(m >= 3 && m <= 13)) m = 13; return m; }
+  totalRounds(){ return this.maxCards() * 2 - 1; }
+  cardsFor(r){ const m = this.maxCards(); return r <= m ? r : 2 * m - r; }
+  trumpFor(r){ return ['S','H','D','C','N'][(r - 1) % 5]; }
+  scoringMode(){ return this.props.scoringMode === 'squared' ? 'squared' : 'vanilla'; }
+
+  /* ---------- cards ---------- */
+  rankIdx(r){ return r === 14 ? 0 : r - 1; }
+  rankLabel(r){ return { 11:'J', 12:'Q', 13:'K', 14:'A' }[r] || String(r); }
+  sortHand(h){
+    const ord = { S:0, H:1, C:2, D:3 };
+    return h.slice().sort((a,b) => ord[a.s] - ord[b.s] || b.r - a.r);
+  }
+  deal(n){
+    const deck = [];
+    for(const s of ['S','H','D','C']) for(let r = 2; r <= 14; r++) deck.push({ s, r });
+    for(let i = deck.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); const t = deck[i]; deck[i] = deck[j]; deck[j] = t; }
+    return [0,1,2,3].map(i => this.sortHand(deck.slice(i * n, (i + 1) * n)));
+  }
+  dealRound(round, dealer){
+    const first = (dealer + 1) % 4;
+    return {
+      hands: this.deal(this.cardsFor(round)),
+      bids: [null,null,null,null], taken: [0,0,0,0],
+      bidTurn: first, trick: [], leader: first, turn: first,
+      seen: {}, voids: [{},{},{},{}],
+      trickComplete: false, trickWinner: null, sweeping: false, undoSnap: null,
+    };
+  }
+  freshGame(){
+    const dealer = 3;
+    const pool = this.ROSTER.slice();
+    const players = [];
+    for(let k = 0; k < 3; k++) players.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
+    return {
+      phase:'bid', round:1, dealer, players, scores:[0,0,0,0], history:[],
+      recap:null, standings:null, winnerText:'',
+      ...this.dealRound(1, dealer),
+    };
+  }
+
+  /* ---------- persistence ---------- */
+  loadSave(){
+    try {
+      const raw = localStorage.getItem(this.KEY);
+      if(!raw) return null;
+      const d = JSON.parse(raw);
+      if(!d || d.v !== 3 || !d.s || !Array.isArray(d.s.hands) || !Array.isArray(d.s.players) || !d.s.seen || !Array.isArray(d.s.voids) || !d.s.phase) return null;
+      return { ...d.s, showRules:false, showScore:false };
+    } catch(e){ return null; }
+  }
+  saveNow(){
+    try { localStorage.setItem(this.KEY, JSON.stringify({ v:3, s:this.state })); } catch(e){}
+  }
+
+  componentDidMount(){ this.drive(); }
+  componentDidUpdate(){ this.saveNow(); this.drive(); }
+  componentWillUnmount(){ clearTimeout(this._t); }
+
+  /* ---------- driver: schedules AI actions ---------- */
+  sig(){ const s = this.state; return [s.phase, s.round, s.bidTurn, s.turn, s.trick.length, s.trickComplete, s.sweeping].join('|'); }
+  drive(){
+    const s = this.state;
+    let delay = 0, fn = null;
+    if(s.phase === 'bid' && s.bidTurn !== 0 && s.bids[s.bidTurn] == null){
+      delay = 550; fn = () => this.aiBid();
+    } else if(s.phase === 'play'){
+      if(s.trickComplete && !s.sweeping){
+        const w = s.trickWinner;
+        delay = 900; fn = () => { this.sfx(w === 0 ? 'good' : 'tick'); this.setState({ sweeping:true }); };
+      } else if(s.trickComplete && s.sweeping){ delay = 480; fn = () => this.collect(); }
+      else if(!s.trickComplete && s.turn !== 0){ delay = 720; fn = () => this.aiTurn(); }
+    }
+    if(!fn) return;
+    const sig = this.sig();
+    clearTimeout(this._t);
+    this._t = setTimeout(() => { if(this.sig() === sig) fn(); }, delay);
+  }
+
+  /* ---------- bidding ---------- */
+  suggestBid(hand, trump, bias){
+    if(hand.length === 1){
+      const c = hand[0], ri = this.rankIdx(c.r);
+      if(trump !== 'N' && c.s === trump && (ri === 0 || ri >= 5)) return 1;
+      if(trump === 'N' && (ri === 0 || ri === 12)) return 1;
+      return 0;
+    }
+    const big = hand.length >= 6;
+    const tn = big ? this.T2N : this.T1N, tt = big ? this.T2T : this.T1T;
+    let total = 0;
+    for(const c of hand){
+      const ri = this.rankIdx(c.r);
+      total += (trump !== 'N' && c.s === trump) ? tt[ri] : tn[ri];
+    }
+    this._lastFrac = total - Math.floor(total);
+    return Math.max(0, Math.min(hand.length, Math.floor(total + bias)));
+  }
+  hookAdjust(bid, seat, bids, n){
+    const sum = bids.reduce((a,b,i) => i === seat ? a : a + (b || 0), 0);
+    if(sum + bid !== n) return bid;
+    let adj = (this._lastFrac >= 0.5 && bid < n) ? bid + 1 : bid - 1;
+    if(adj < 0) adj = bid + 1;
+    if(adj > n) adj = bid - 1;
+    return adj;
+  }
+  aiBid(){
+    const s = this.state, seat = s.bidTurn;
+    const trump = this.trumpFor(s.round), n = s.hands[seat].length;
+    const skill = this.pl(seat).skill || 'fair';
+    let bid;
+    if(skill === 'strong'){
+      const r = this.linBid(seat);
+      bid = this.nearestHook(seat, r.est, r.call, n);
+    } else if(skill === 'expert'){
+      const r = this.pimcBidVal(seat, 80);
+      bid = this.nearestHook(seat, r.mean, r.call, n);
+    } else {
+      bid = this.suggestBid(s.hands[seat], trump, this.pl(seat).bias);
+      if(seat === s.dealer) bid = this.hookAdjust(bid, seat, s.bids, n);
+    }
+    this.applyBid(seat, bid);
+  }
+  /* nearest-legal dealer hook for estimate-based bidders (LastBidderHook) */
+  nearestHook(seat, est, call, n){
+    const s = this.state;
+    if(seat !== s.dealer) return call;
+    const sum = s.bids.reduce((a,b,i) => i === seat ? a : a + (b || 0), 0);
+    if(sum + call !== n) return call;
+    if((est - (call - 1)) <= ((call + 1) - est) && call - 1 >= 0) call -= 1; else call += 1;
+    if(call < 0) call = 1;
+    if(call > n) call = Math.max(0, n - 1);
+    return call;
+  }
+  /* learned-linear bidder (Strong), weights from estwhi.pas *)*/
+  linBid(seat){
+    const s = this.state, trump = this.trumpFor(s.round);
+    const hand = s.hands[seat], n = hand.length;
+    const len = { S:0, H:0, D:0, C:0 };
+    let tlen = 0, tA = 0, tK = 0, tQ = 0, tJ = 0, tT = 0, ntA = 0, ntK = 0, ntQ = 0, ntJ = 0;
+    for(const c of hand){
+      len[c.s]++;
+      if(trump !== 'N' && c.s === trump){
+        tlen++;
+        if(c.r === 14) tA = 1; if(c.r === 13) tK = 1; if(c.r === 12) tQ = 1;
+        if(c.r === 11) tJ = 1; if(c.r === 10) tT = 1;
+      } else {
+        if(c.r === 14) ntA++; if(c.r === 13) ntK++; if(c.r === 12) ntQ++; if(c.r === 11) ntJ++;
+      }
+    }
+    let voids = 0, singles = 0;
+    for(const su of ['S','H','D','C']){
+      if(trump !== 'N' && su === trump) continue;
+      if(len[su] === 0) voids++; else if(len[su] === 1) singles++;
+    }
+    const W = this.LINW;
+    const est = W[0] + W[1]*tlen + W[2]*tA + W[3]*tK + W[4]*tQ + W[5]*tJ + W[6]*tT
+      + W[7]*ntA + W[8]*ntK + W[9]*ntQ + W[10]*ntJ + W[11]*voids + W[12]*singles
+      + W[13]*4 + W[14]*n + W[15]*tlen*voids + W[16]*tlen*singles
+      + W[17]*ntA/4 + W[18]*ntK/4;
+    let call = Math.trunc(est + 0.5);
+    if(call < 0) call = 0;
+    if(call > n) call = n;
+    return { est, call };
+  }
+  /* Expert bid: mean tricks over determinized natural-play rollouts (PimcBid) */
+  pimcBidVal(seat, nDet){
+    const s = this.state, trump = this.trumpFor(s.round);
+    const first = (s.dealer + 1) % 4, n = s.hands[seat].length;
+    let total = 0;
+    for(let d = 0; d < nDet; d++){
+      const hands = this.determinize(seat);
+      const taken = this.rollout(hands, [], first, [0,0,0,0], null, true, trump);
+      total += taken[seat];
+    }
+    const mean = total / nDet;
+    let call = Math.trunc(mean + 0.5);
+    if(call < 0) call = 0;
+    if(call > n) call = n;
+    return { mean, call };
+  }
+  applyBid(seat, bid){
+    const s = this.state;
+    const bids = s.bids.slice(); bids[seat] = bid;
+    const done = bids.every(b => b != null);
+    this.sfx('bid');
+    if(done){
+      const first = (s.dealer + 1) % 4;
+      this.setState({ bids, phase:'play', turn:first, leader:first });
+    } else {
+      this.setState({ bids, bidTurn:(seat + 1) % 4 });
+    }
+  }
+  onBid(nn){
+    const s = this.state;
+    if(s.phase !== 'bid' || s.bidTurn !== 0) return;
+    this.applyBid(0, nn);
+  }
+  forbiddenBid(){
+    const s = this.state;
+    if(s.dealer !== 0 || s.phase !== 'bid' || s.bidTurn !== 0) return -1;
+    const n = s.hands[0].length;
+    const f = n - s.bids.reduce((a,b,i) => i === 0 ? a : a + (b || 0), 0);
+    return (f >= 0 && f <= n) ? f : -1;
+  }
+
+  /* ---------- trick play ---------- */
+  legalIdx(hand, trick){
+    const all = hand.map((_,i) => i);
+    if(!trick.length) return all;
+    const lead = trick[0].card.s;
+    const follow = all.filter(i => hand[i].s === lead);
+    return follow.length ? follow : all;
+  }
+  beats(c, best, trump){
+    if(trump !== 'N'){
+      if(c.s === trump && best.s !== trump) return true;
+      if(c.s !== trump && best.s === trump) return false;
+    }
+    return c.s === best.s && c.r > best.r;
+  }
+  winnerOf(trick, trump){
+    let bi = 0;
+    for(let i = 1; i < trick.length; i++) if(this.beats(trick[i].card, trick[bi].card, trump)) bi = i;
+    return trick[bi].seat;
+  }
+  power(c, trump){ return (trump !== 'N' && c.s === trump ? 100 : 0) + c.r; }
+  /* Bid-aware greedy play (GreedyPlay): win cheaply while short of bid, duck once made */
+  greedyPick(hand, trick, need, forceWin, trump){
+    const wantWin = need > 0 || forceWin;
+    const legal = this.legalIdx(hand, trick);
+    const asc = legal.slice().sort((a,b) => this.power(hand[a], trump) - this.power(hand[b], trump));
+    if(!trick.length){
+      if(wantWin) return asc[asc.length - 1];
+      const nonTrump = asc.filter(i => trump === 'N' || hand[i].s !== trump);
+      return nonTrump.length ? nonTrump[0] : asc[0];
+    }
+    const wins = i => this.winnerOf([...trick, { seat:99, card: hand[i] }], trump) === 99;
+    if(wantWin){
+      for(const i of asc) if(wins(i)) return i;   // cheapest winner
+      return asc[0];                              // can't win: duck low
+    }
+    for(let k = asc.length - 1; k >= 0; k--) if(!wins(asc[k])) return asc[k]; // shed highest loser
+    return asc[0];
+  }
+  /* Deal random opponent hands consistent with seen cards + known voids (Determinize) */
+  determinize(me){
+    const s = this.state, seen = s.seen || {}, voids = s.voids || [{},{},{},{}];
+    const mine = {};
+    for(const c of s.hands[me]) mine[c.s + c.r] = true;
+    const pool = [];
+    for(const su of ['S','H','D','C']) for(let r = 2; r <= 14; r++){
+      if(!seen[su + r] && !mine[su + r]) pool.push({ s: su, r });
+    }
+    for(let i = pool.length - 1; i > 0; i--){
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    const hands = [null,null,null,null];
+    hands[me] = s.hands[me].slice();
+    const need = [0,0,0,0];
+    let total = 0;
+    for(let o = 0; o < 4; o++) if(o !== me){ hands[o] = []; need[o] = s.hands[o].length; total += need[o]; }
+    let a = 0;
+    while(total > 0 && a < pool.length){
+      const c = pool[a++];
+      let placed = false;
+      for(let o = 0; o < 4 && !placed; o++)
+        if(o !== me && need[o] > 0 && !voids[o][c.s]){ hands[o].push(c); need[o]--; total--; placed = true; }
+      if(!placed)
+        for(let o = 0; o < 4 && !placed; o++)
+          if(o !== me && need[o] > 0){ hands[o].push(c); need[o]--; total--; placed = true; }
+    }
+    return hands;
+  }
+  /* Play a world to the end of the round with greedy/natural play (RolloutPlayout) */
+  rollout(hands, trick, leader, taken, bids, forceWin, trump){
+    for(;;){
+      if(trick.length === 4){
+        const w = this.winnerOf(trick, trump);
+        taken[w]++; leader = w; trick = [];
+      }
+      if(!trick.length && hands.every(h => !h.length)) return taken;
+      const turn = (leader + trick.length) % 4;
+      const need = forceWin ? 1 : ((bids ? (bids[turn] ?? 0) : 0) - taken[turn]);
+      const idx = this.greedyPick(hands[turn], trick, need, forceWin, trump);
+      trick.push({ seat: turn, card: hands[turn][idx] });
+      hands[turn].splice(idx, 1);
+    }
+  }
+  /* Expert play: legal card maximising expected round points over rollouts (PimcPlay) */
+  pimcChoice(seat, nDet){
+    const s = this.state, trump = this.trumpFor(s.round);
+    const cards = this.cardsFor(s.round);
+    const sumBids = s.bids.reduce((a,b) => a + (b || 0), 0);
+    const legal = this.legalIdx(s.hands[seat], s.trick);
+    if(legal.length <= 1) return legal[0];
+    let bestI = legal[0], bestEV = -Infinity;
+    for(const li of legal){
+      let ev = 0;
+      for(let d = 0; d < nDet; d++){
+        const hands = this.determinize(seat);
+        const card = hands[seat][li];
+        hands[seat].splice(li, 1);
+        const trick = s.trick.map(t => ({ seat: t.seat, card: t.card }));
+        trick.push({ seat, card });
+        const taken = s.taken.slice();
+        this.rollout(hands, trick, s.leader, taken, s.bids, false, trump);
+        ev += this.scorePts(s.bids[seat], taken[seat], sumBids, cards);
+      }
+      if(ev > bestEV){ bestEV = ev; bestI = li; }
+    }
+    return bestI;
+  }
+  doPlay(seat, idx){
+    const s = this.state;
+    const hand = s.hands[seat];
+    const card = hand[idx];
+    const hands = s.hands.map((h,i) => i === seat ? h.filter((_,j) => j !== idx) : h);
+    const trick = [...s.trick, { seat, card }];
+    const seen = { ...s.seen, [card.s + card.r]: true };
+    let voids = s.voids;
+    if(s.trick.length){
+      const led = s.trick[0].card.s;
+      if(card.s !== led) voids = s.voids.map((v,i) => i === seat ? { ...v, [led]: true } : v);
+    }
+    this.sfx('card');
+    if(trick.length === 4){
+      const w = this.winnerOf(trick, this.trumpFor(s.round));
+      this.setState({ hands, trick, seen, voids, trickComplete:true, trickWinner:w });
+    } else {
+      this.setState({ hands, trick, seen, voids, turn:(seat + 1) % 4 });
+    }
+  }
+  aiTurn(){
+    const s = this.state, seat = s.turn;
+    const skill = this.pl(seat).skill || 'fair';
+    const legal = this.legalIdx(s.hands[seat], s.trick);
+    let idx;
+    if(skill === 'poor'){
+      idx = legal[Math.floor(Math.random() * legal.length)];
+    } else if(skill === 'expert'){
+      idx = this.pimcChoice(seat, 40);
+    } else {
+      const need = (s.bids[seat] ?? 0) - s.taken[seat];
+      idx = this.greedyPick(s.hands[seat], s.trick, need, false, this.trumpFor(s.round));
+    }
+    this.setState({ undoSnap:null });
+    this.doPlay(seat, idx);
+  }
+  onCard(idx){
+    const s = this.state;
+    if(s.phase !== 'play' || s.turn !== 0 || s.trickComplete) return;
+    if(!this.legalIdx(s.hands[0], s.trick).includes(idx)){ this.sfx('err'); return; }
+    const snap = JSON.parse(JSON.stringify({ hands: s.hands, trick: s.trick, turn: s.turn, seen: s.seen, voids: s.voids }));
+    this.setState({ undoSnap: snap });
+    this.doPlay(0, idx);
+  }
+  onUndo(){
+    const s = this.state;
+    if(!s.undoSnap) return;
+    clearTimeout(this._t);
+    this.sfx('bid');
+    this.setState({ ...s.undoSnap, trickComplete:false, trickWinner:null, sweeping:false, undoSnap:null });
+  }
+
+  /* ---------- scoring ---------- */
+  scorePts(bid, taken, sumBids, cards){
+    if(bid !== taken) return taken;
+    let bonus = 10;
+    if(this.props.hardScoring && bid === 0 && sumBids < cards) bonus = 0;
+    return this.scoringMode() === 'squared' ? taken * taken + bonus : taken + bonus;
+  }
+  collect(){
+    const s = this.state, w = s.trickWinner;
+    const taken = s.taken.slice(); taken[w]++;
+    const roundOver = s.hands.every(h => h.length === 0);
+    if(!roundOver){
+      this.setState({ taken, trick:[], leader:w, turn:w, trickComplete:false, trickWinner:null, sweeping:false, undoSnap:null });
+      return;
+    }
+    const cards = this.cardsFor(s.round);
+    const sumBids = s.bids.reduce((a,b) => a + b, 0);
+    const pts = [0,1,2,3].map(i => this.scorePts(s.bids[i], taken[i], sumBids, cards));
+    const scores = s.scores.map((v,i) => v + pts[i]);
+    const entry = { round: s.round, trump: this.trumpFor(s.round), cards, bids: s.bids.slice(), taken, pts };
+    this.sfx('round');
+    this.setState({
+      taken, trick:[], trickComplete:false, trickWinner:null, sweeping:false, undoSnap:null,
+      scores, history:[...s.history, entry], phase:'recap',
+      recap:{ round: s.round, isLast: s.round >= this.totalRounds() },
+    });
+  }
+  onContinue(){
+    const s = this.state;
+    if(s.recap && s.recap.isLast){ this.finish(); return; }
+    const round = s.round + 1, dealer = (s.dealer + 1) % 4;
+    this.sfx('deal');
+    this.setState({ round, dealer, phase:'bid', recap:null, ...this.dealRound(round, dealer) });
+  }
+  finish(){
+    const s = this.state;
+    const order = [0,1,2,3].sort((a,b) => s.scores[b] - s.scores[a]);
+    const top = Math.max(...s.scores);
+    const won = s.scores[0] === top;
+    const winnerName = this.seatName(order[0]);
+    const stats = {
+      games: (s.stats.games || 0) + 1,
+      wins: (s.stats.wins || 0) + (won ? 1 : 0),
+      best: Math.max(s.stats.best || 0, s.scores[0]),
+    };
+    this.sfx(won ? 'win' : 'round');
+    this.setState({
+      phase:'over', recap:null, stats,
+      standings: order.map((seat,i) => ({ seat, pos:i + 1 })),
+      winnerText: won ? 'You take the table' : winnerName + ' takes the table',
+    });
+  }
+
+  /* ---------- chrome ---------- */
+  onNew(){
+    this.sfx('deal');
+    this.setState({ ...this.freshGame(), showRules:false, showScore:false });
+  }
+  onTheme(){
+    const keys = Object.keys(this.THEMES);
+    const i = keys.indexOf(this.state.theme);
+    this.setState({ theme: keys[(i + 1) % keys.length] });
+  }
+  onSound(){ this.setState({ sound: !this.state.sound }); }
+  onHints(){ this.setState({ hints: !this.state.hints }); }
+  onCoach(){ this.setState({ coachOn:false }); }
+  onRules(){ this.setState({ showRules: !this.state.showRules }); }
+  onScore(){ this.setState({ showScore: !this.state.showScore }); }
+
+  /* ---------- sound ---------- */
+  note(ctx, freq, start, dur, type, gain){
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(gain, start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(start); o.stop(start + dur + 0.02);
+  }
+  sfx(kind){
+    if(!this.state.sound) return;
+    try {
+      const ctx = this._ac || (this._ac = new (window.AudioContext || window.webkitAudioContext)());
+      if(ctx.state === 'suspended') ctx.resume();
+      const t = ctx.currentTime;
+      if(kind === 'card'){ this.note(ctx, 300, t, 0.07, 'triangle', 0.1); this.note(ctx, 190, t + 0.02, 0.06, 'triangle', 0.07); }
+      else if(kind === 'bid'){ this.note(ctx, 440, t, 0.08, 'sine', 0.08); }
+      else if(kind === 'tick'){ this.note(ctx, 520, t, 0.06, 'sine', 0.06); }
+      else if(kind === 'good'){ this.note(ctx, 523, t, 0.1, 'sine', 0.09); this.note(ctx, 784, t + 0.09, 0.14, 'sine', 0.09); }
+      else if(kind === 'round'){ this.note(ctx, 392, t, 0.12, 'sine', 0.08); this.note(ctx, 523, t + 0.11, 0.12, 'sine', 0.08); this.note(ctx, 659, t + 0.22, 0.18, 'sine', 0.08); }
+      else if(kind === 'deal'){ this.note(ctx, 240, t, 0.05, 'triangle', 0.07); this.note(ctx, 320, t + 0.06, 0.05, 'triangle', 0.07); this.note(ctx, 400, t + 0.12, 0.05, 'triangle', 0.07); }
+      else if(kind === 'win'){ [523,659,784,1046].forEach((f,i) => this.note(ctx, f, t + i * 0.12, 0.2, 'sine', 0.09)); }
+      else if(kind === 'err'){ this.note(ctx, 120, t, 0.1, 'square', 0.05); }
+    } catch(e){}
+  }
+
+  /* ---------- view ---------- */
+  pl(i){
+    if(i === 0) return { name:'You', tag:'', bias:0.5, persona:'canny' };
+    const s = this.state;
+    return (s && Array.isArray(s.players)) ? s.players[i - 1] : this.ROSTER[i - 1];
+  }
+  seatName(i){ return this.pl(i).name; }
+  renderVals(){
+    const s = this.state;
+    const th = this.THEMES[s.theme] || this.THEMES.tabletop;
+    const trump = this.trumpFor(s.round);
+    const cards = this.cardsFor(s.round);
+    const trumpRed = this.RED[trump];
+    const myTurn = s.phase === 'play' && s.turn === 0 && !s.trickComplete;
+    const legal = myTurn ? this.legalIdx(s.hands[0], s.trick) : [];
+    let hintIdx = -1;
+    if(s.hints && myTurn){
+      const hk = s.round + '|' + s.hands[0].length + '|' + s.trick.length;
+      if(this._hint && this._hint.k === hk) hintIdx = this._hint.v;
+      else { hintIdx = this.pimcChoice(0, 24); this._hint = { k: hk, v: hintIdx }; }
+    }
+
+    const rootStyle = {
+      '--bg':th.bg, '--felt':th.felt, '--panel':th.panel, '--pborder':th.pborder,
+      '--text':th.text, '--dim':th.dim, '--faint':th.faint,
+      '--accent':th.accent, '--glow':th.glow, '--success':th.success, '--danger':th.danger,
+      '--cardface':th.cardface, '--cardink':th.cardink, '--cardred':th.cardred,
+      minHeight:'100vh', display:'flex', flexDirection:'column',
+      background:'var(--bg)', color:'var(--text)',
+      fontFamily:'"Inter", system-ui, sans-serif',
+    };
+    const btnBase = {
+      flex:1, padding:'9px 4px', borderRadius:'10px',
+      border:'1px solid var(--pborder)', background:'var(--panel)',
+      color:'var(--text)', fontSize:'10px', fontWeight:700, letterSpacing:'0.08em',
+      fontFamily:'inherit', cursor:'pointer',
+    };
+    const chromeBtnStyle = { ...btnBase, flex:'none', padding:'7px 10px' };
+    const sheetStyle = {
+      position:'fixed', left:'50%', transform:'translateX(-50%)', bottom:0,
+      width:'min(480px, 100vw)', maxHeight:'80vh', zIndex:30,
+      background:th.name === 'Atelier' ? '#f3e9d2' : '#141d16',
+      border:'1px solid var(--pborder)', borderBottom:'none',
+      borderRadius:'18px 18px 0 0', padding:'18px 18px 24px',
+      boxShadow:'0 -12px 40px rgba(0,0,0,0.4)', animation:'ewSheet 0.25s',
+      display:'flex', flexDirection:'column',
+      '--panel':th.panel, '--pborder':th.pborder, '--text':th.text, '--dim':th.dim,
+      '--faint':th.faint, '--accent':th.accent, '--danger':th.danger, '--success':th.success,
+      color:'var(--text)', fontFamily:'"Inter", system-ui, sans-serif',
+    };
+    if(s.theme === 'salon') sheetStyle.background = '#131a28';
+
+    /* status */
+    let status = '';
+    if(s.phase === 'bid'){
+      status = s.bidTurn === 0 ? 'Your bid \u2014 how many tricks will you take?' : this.seatName(s.bidTurn) + ' is weighing a bid\u2026';
+    } else if(s.phase === 'play'){
+      if(s.trickComplete) status = (s.trickWinner === 0 ? 'You take' : this.seatName(s.trickWinner) + ' takes') + ' the trick.';
+      else if(s.turn === 0) status = s.trick.length ? 'Your turn \u2014 follow ' + this.GLYPH[s.trick[0].card.s] + ' if you can.' : 'Your lead.';
+      else status = this.seatName(s.turn) + ' to play\u2026';
+    } else if(s.phase === 'recap'){ status = 'Round scored.'; }
+    else if(s.phase === 'over'){ status = 'The rubber is done.'; }
+
+    /* coach */
+    const need = (s.bids[0] ?? 0) - s.taken[0];
+    const left = s.hands[0].length + (s.trick.some(t => t.seat === 0) && !s.trickComplete ? 0 : 0);
+    let coachLine = '';
+    if(s.phase === 'play' && s.bids[0] != null){
+      if(need < 0) coachLine = 'Over your bid by ' + (-need) + ' \u2014 duck everything now.';
+      else if(need === 0) coachLine = 'Bid made \u2014 lose the rest (' + s.hands[0].length + ' cards to shed).';
+      else coachLine = 'You need ' + need + ' more trick' + (need === 1 ? '' : 's') + ' from ' + s.hands[0].length + ' card' + (s.hands[0].length === 1 ? '' : 's') + '.';
+    }
+
+    /* opponents */
+    const opponents = [1,2,3].map(i => {
+      const active = (s.phase === 'bid' && s.bidTurn === i) || (s.phase === 'play' && s.turn === i && !s.trickComplete);
+      return {
+        name: this.pl(i).name, persona: this.pl(i).tag, isDealer: s.dealer === i,
+        bidLine: s.bids[i] == null ? (s.phase === 'bid' && s.bidTurn === i ? 'bidding\u2026' : '\u2014')
+          : 'bid ' + s.bids[i] + ' \u00b7 made ' + s.taken[i],
+        style: {
+          flex:1, padding:'8px 10px', borderRadius:'12px', background:'var(--panel)',
+          border:'1px solid ' + (active ? 'var(--accent)' : 'var(--pborder)'),
+          boxShadow: active ? '0 0 14px var(--glow)' : 'none',
+          transition:'border-color 0.2s, box-shadow 0.2s', minWidth:0,
+        },
+      };
+    });
+
+    /* trick cards */
+    const POS = {
+      0:{ left:'50%', bottom:'10px', transform:'translateX(-50%)' },
+      1:{ left:'14px', top:'50%', transform:'translateY(-58%)' },
+      2:{ left:'50%', top:'8px', transform:'translateX(-50%)' },
+      3:{ right:'14px', top:'50%', transform:'translateY(-58%)' },
+    };
+    const ROT = { 0:'-2deg', 1:'-6deg', 2:'3deg', 3:'6deg' };
+    const XY = { 0:[0,80], 1:[-170,0], 2:[0,-80], 3:[170,0] };
+    const trickCards = s.trick.map(t => {
+      const red = this.RED[t.card.s];
+      const winner = s.trickComplete && t.seat === s.trickWinner;
+      const baseT = POS[t.seat].transform || '';
+      let sweepT = baseT;
+      if(s.sweeping && s.trickWinner != null){
+        const wxy = XY[s.trickWinner], cxy = XY[t.seat];
+        const dx = (wxy[0] - cxy[0]) + wxy[0] * 0.4;
+        const dy = (wxy[1] - cxy[1]) + wxy[1] * 0.4;
+        sweepT = baseT + ' translate(' + dx + 'px,' + dy + 'px) scale(0.72)';
+      }
+      return {
+        who: this.seatName(t.seat),
+        rank: this.rankLabel(t.card.r), suit: this.GLYPH[t.card.s],
+        style: {
+          position:'absolute', ...POS[t.seat],
+          transform: sweepT,
+          opacity: s.sweeping ? 0 : 1,
+          transition: s.sweeping ? 'transform 0.45s cubic-bezier(0.5,0,0.8,0.4), opacity 0.42s ease-in' : 'none',
+          zIndex: winner ? 3 : 2,
+          animation: s.sweeping ? 'none' : 'ewIn 0.22s',
+        },
+        cardStyle: {
+          position:'relative', width:'52px', height:'74px', borderRadius:'7px',
+          background:'var(--cardface)', border:'1px solid rgba(0,0,0,0.25)',
+          boxShadow: winner ? '0 0 0 2px var(--accent), 0 0 18px var(--glow)' : '0 4px 10px rgba(0,0,0,0.35)',
+          transform:'rotate(' + ROT[t.seat] + ')', transition:'box-shadow 0.25s',
+        },
+        cornerStyle: { position:'absolute', top:'5px', left:'6px', fontSize:'13px', fontWeight:700, lineHeight:1.02, color: red ? 'var(--cardred)' : 'var(--cardink)' },
+        pipStyle: { position:'absolute', right:'5px', bottom:'2px', fontSize:'24px', color: red ? 'var(--cardred)' : 'var(--cardink)' },
+      };
+    });
+    let tableMsg = '';
+    if(s.phase === 'play' && !s.trickComplete){
+      tableMsg = s.trick.length ? (s.trick[0].seat === 0 ? 'You led' : this.seatName(s.trick[0].seat) + ' led') : (s.turn === 0 ? 'your lead' : this.seatName(s.turn) + ' to lead');
+    } else if(s.phase === 'bid'){ tableMsg = 'bidding\u2026'; }
+
+    /* hand */
+    const n = s.hands[0].length;
+    const handCards = s.hands[0].map((c, i) => {
+      const red = this.RED[c.s];
+      const isLegal = myTurn && legal.includes(i);
+      const f = n > 1 ? i / (n - 1) : 0.5;
+      const dimmed = myTurn && !isLegal;
+      return {
+        rank: this.rankLabel(c.r), suit: this.GLYPH[c.s],
+        aria: this.rankLabel(c.r) + ' of ' + c.s,
+        onTap: () => this.onCard(i),
+        style: {
+          position:'absolute', bottom:0, left:'calc((100% - 66px) * ' + f + ')',
+          width:'66px', height:'96px', borderRadius:'9px', padding:0,
+          background:'var(--cardface)', border:'1px solid rgba(0,0,0,0.28)',
+          boxShadow: i === hintIdx ? '0 0 0 2px var(--accent), 0 0 14px var(--glow)' : '0 4px 10px rgba(0,0,0,0.35)',
+          cursor: isLegal ? 'pointer' : 'default',
+          opacity: dimmed ? 0.45 : 1,
+          transition:'transform 0.15s, opacity 0.2s, box-shadow 0.2s',
+          animation:'ewRise 0.35s ' + (i * 30) + 'ms both',
+          zIndex: i + 1, textAlign:'left', fontFamily:'inherit',
+        },
+        hover: isLegal ? { transform:'translateY(-12px)' } : {},
+        corner: { position:'absolute', top:'6px', left:'8px', fontSize:'16px', fontWeight:700, lineHeight:1.02, color: red ? 'var(--cardred)' : 'var(--cardink)' },
+        pip: { position:'absolute', right:'7px', bottom:'3px', fontSize:'30px', color: red ? 'var(--cardred)' : 'var(--cardink)' },
+      };
+    });
+
+    /* bid sheet */
+    const showBid = s.phase === 'bid' && s.bidTurn === 0;
+    const forbidden = this.forbiddenBid();
+    const bidOptions = showBid ? Array.from({ length: cards + 1 }, (_, i) => {
+      const off = i === forbidden;
+      return {
+        label: String(i),
+        onTap: () => { if(!off) this.onBid(i); },
+        style: {
+          width:'46px', height:'46px', borderRadius:'12px', fontFamily:'inherit',
+          border: off ? '1px dashed var(--danger)' : '1px solid var(--pborder)',
+          background: off ? 'transparent' : 'var(--panel)',
+          color: off ? 'var(--danger)' : 'var(--text)',
+          fontSize:'16px', fontWeight:700, cursor: off ? 'not-allowed' : 'pointer',
+          opacity: off ? 0.55 : 1,
+        },
+      };
+    }) : [];
+    const bidPos = ((0 - (s.dealer + 1)) % 4 + 4) % 4;
+    const bidSub = cards + ' card' + (cards === 1 ? '' : 's') + ' \u00b7 ' +
+      (trump === 'N' ? 'no trump' : 'trump ' + this.GLYPH[trump]) + ' \u00b7 you bid ' +
+      (s.dealer === 0 ? 'last' : ['1st','2nd','3rd'][bidPos] || '4th');
+    let bidSuggest = 0;
+    if(showBid){
+      const bk = 'b' + s.round + '|' + s.hands[0].length;
+      if(this._bh && this._bh.k === bk) bidSuggest = this._bh.v;
+      else { bidSuggest = this.pimcBidVal(0, 40).call; this._bh = { k: bk, v: bidSuggest }; }
+    }
+
+    /* recap */
+    const showRecap = s.phase === 'recap' && !!s.recap;
+    const lastH = s.history[s.history.length - 1];
+    const recapRows = (showRecap && lastH) ? [0,1,2,3].map(i => {
+      const exact = lastH.bids[i] === lastH.taken[i];
+      return {
+        name: this.seatName(i),
+        line: 'bid ' + lastH.bids[i] + ' \u00b7 made ' + lastH.taken[i],
+        delta: '+' + lastH.pts[i],
+        deltaStyle: { width:'40px', textAlign:'right', fontSize:'12px', fontWeight:700, color: exact ? 'var(--success)' : 'var(--dim)' },
+        total: s.scores[i],
+      };
+    }) : [];
+
+    /* scorecard */
+    const scoreRows = s.history.map(h => ({
+      label: h.round + ' ' + this.GLYPH[h.trump] + ' \u00d7' + h.cards,
+      cells: [0,1,2,3].map(i => {
+        const exact = h.bids[i] === h.taken[i];
+        return {
+          bm: h.bids[i] + '/' + h.taken[i], pts: '+' + h.pts[i],
+          style: { padding:'4px 6px', borderRadius:'7px', fontSize:'11px',
+            background: exact ? 'var(--panel)' : 'transparent',
+            border:'1px solid ' + (exact ? 'var(--pborder)' : 'transparent'),
+            color: exact ? 'var(--success)' : 'var(--dim)' },
+        };
+      }),
+    }));
+
+    /* game over */
+    const showOver = s.phase === 'over';
+    const standings = (s.standings || []).map(st => ({
+      pos: st.pos, name: this.seatName(st.seat), score: s.scores[st.seat],
+      style: {
+        display:'flex', alignItems:'center', gap:'8px', padding:'9px 12px', borderRadius:'10px',
+        background:'var(--panel)',
+        border:'1px solid ' + (st.seat === 0 ? 'var(--accent)' : 'var(--pborder)'),
+        color:'var(--text)',
+      },
+    }));
+    const st = s.stats || {};
+    const statsLine = (st.games || 0) + ' game' + (st.games === 1 ? '' : 's') + ' \u00b7 ' + (st.wins || 0) + ' won \u00b7 best score ' + (st.best || 0);
+
+    const ruleScoring = this.scoringMode() === 'squared'
+      ? 'One point per trick taken. Hit your bid exactly and score tricks\u00b2 + 10 instead.'
+      : 'One point per trick taken, plus a 10-point bonus for hitting your bid exactly.';
+
+    return {
+      rootStyle, chromeBtnStyle, btnStyle: btnBase,
+      undoBtnStyle: { ...btnBase, opacity: s.undoSnap ? 1 : 0.4, cursor: s.undoSnap ? 'pointer' : 'default' },
+      primaryBtnStyle: {
+        marginTop:'16px', width:'100%', padding:'13px', borderRadius:'12px', border:'none',
+        background:'var(--accent)', color: s.theme === 'atelier' ? '#fff6e6' : '#1a140a',
+        fontSize:'12px', fontWeight:800, letterSpacing:'0.1em', cursor:'pointer', fontFamily:'inherit',
+      },
+      sheetStyle,
+      bidSheetStyle: {
+        ...sheetStyle, bottom:'196px', borderRadius:'18px',
+        border:'1px solid var(--pborder)', maxHeight:'calc(100vh - 340px)',
+        boxShadow:'0 16px 44px rgba(0,0,0,0.5)',
+      },
+      tallSheetStyle: { ...sheetStyle, height:'min(620px, 86vh)' },
+      overCardStyle: {
+        position:'fixed', left:'50%', top:'50%', transform:'translate(-50%,-50%)',
+        width:'min(340px, calc(100vw - 40px))', zIndex:30, padding:'22px', borderRadius:'18px',
+        background: sheetStyle.background, border:'1px solid var(--pborder)',
+        boxShadow:'0 20px 60px rgba(0,0,0,0.5)', textAlign:'center', animation:'ewOverCard 0.3s',
+        display:'flex', flexDirection:'column', alignItems:'center',
+        '--panel':th.panel, '--pborder':th.pborder, '--text':th.text, '--dim':th.dim,
+        '--faint':th.faint, '--accent':th.accent, color:'var(--text)',
+        fontFamily:'"Inter", system-ui, sans-serif',
+      },
+
+      themeName: th.name.toUpperCase(),
+      soundLabel: s.sound ? '\u266a ON' : '\u266a OFF',
+      hintsLabel: s.hints ? 'HINTS \u00b7 ON' : 'HINTS \u00b7 OFF',
+      roundChip: 'Round ' + s.round + ' / ' + this.totalRounds() + ' \u00b7 ' + cards + (cards === 1 ? ' card' : ' cards'),
+      trumpChip: trump === 'N' ? 'No trump' : 'Trump ' + this.GLYPH[trump],
+      trumpChipStyle: {
+        flex:'none', whiteSpace:'nowrap',
+        padding:'4px 9px', borderRadius:'99px', fontSize:'11px', fontWeight:700,
+        border:'1px solid var(--pborder)', background:'var(--panel)',
+        color: trumpRed ? 'var(--danger)' : 'var(--text)',
+      },
+      trumpGlyph: this.GLYPH[trump],
+      youScore: s.scores[0],
+      status, showCoach: s.coachOn && s.phase === 'play' && !!coachLine, coachLine,
+      opponents, trickCards, tableMsg,
+      youDealer: s.dealer === 0,
+      youBidLine: s.bids[0] == null ? (showBid ? 'your bid\u2026' : '\u2014') : 'bid ' + s.bids[0] + ' \u00b7 made ' + s.taken[0],
+      handCards,
+      showBid, bidSub, bidOptions, bidSuggest, hintsOn: s.hints,
+      bidNoteOn: showBid && forbidden >= 0,
+      bidNote: forbidden >= 0 ? 'As dealer you can\u2019t bid ' + forbidden + ' \u2014 the bids must not add up to ' + cards + '.' : '',
+      showRecap,
+      recapRound: showRecap ? s.recap.round : 0,
+      recapTrump: showRecap ? (this.trumpFor(s.recap.round) === 'N' ? 'NO TRUMP' : this.GLYPH[this.trumpFor(s.recap.round)]) : '',
+      recapTitle: (showRecap && lastH && lastH.bids[0] === lastH.taken[0]) ? 'Spot on.' : 'The cards fall.',
+      recapRows,
+      continueLabel: (showRecap && s.recap.isLast) ? 'FINAL SCORES' : 'NEXT ROUND',
+      showScore: s.showScore, scoreRows,
+      opp1: this.pl(1).name.toUpperCase(), opp2: this.pl(2).name.toUpperCase(), opp3: this.pl(3).name.toUpperCase(),
+      tot0: s.scores[0], tot1: s.scores[1], tot2: s.scores[2], tot3: s.scores[3],
+      showRules: s.showRules,
+      ruleMax: this.maxCards(), ruleRounds: this.totalRounds(), ruleScoring,
+      showOver, standings, winnerText: s.winnerText, statsLine,
+      onNew: () => this.onNew(), onUndo: () => this.onUndo(),
+      onScore: () => this.onScore(), onHints: () => this.onHints(), onRules: () => this.onRules(),
+      onTheme: () => this.onTheme(), onSound: () => this.onSound(), onCoach: () => this.onCoach(),
+      onContinue: () => this.onContinue(),
+    };
+  }
+}
+</script>
+</body>
+</html>
