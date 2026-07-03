@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Almanac, as a Constellation</title>
+<meta name="description" content="Every document on 0x4d44.github.io drawn as a force-directed star map — each a star, with a line joining any two that share a tag.">
+<style>
+  :root{
+    --bg:#0b0e14; --panel:#121722; --ink:#d8dce6; --dim:#8b93a7;
+    --line:#232b3b; --amber:#e8b23a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+    -webkit-font-smoothing:antialiased;overflow:hidden}
+  #sky{position:fixed;inset:0;display:block}
+  #sky.drag{cursor:grabbing}
+  header{position:fixed;left:18px;top:14px;z-index:5;pointer-events:none;max-width:60%}
+  header h1{margin:0;font-size:15px;letter-spacing:.14em;text-transform:uppercase;color:var(--amber);font-weight:600}
+  header p{margin:4px 0 0;font-size:11px;color:var(--dim);letter-spacing:.03em;line-height:1.6}
+  header b{color:var(--ink);font-weight:600}
+  header .back{pointer-events:auto;color:var(--amber);text-decoration:none;border-bottom:1px dotted rgba(232,178,58,.5)}
+  header .back:hover{border-bottom-style:solid}
+  /* legend */
+  #legend{position:fixed;right:16px;top:14px;z-index:5;width:210px;background:rgba(18,23,34,.82);
+    border:1px solid var(--line);border-radius:9px;padding:11px 12px 12px;backdrop-filter:blur(6px)}
+  .grp{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);margin:2px 0 6px}
+  .grp:not(:first-child){margin-top:11px}
+  .chip{display:flex;align-items:center;gap:8px;padding:3px 5px;margin:1px -5px;border-radius:5px;
+    font-size:11px;cursor:pointer;user-select:none;color:var(--ink);transition:background .12s}
+  .chip:hover{background:rgba(255,255,255,.05)}
+  .chip.off{opacity:.34}
+  .dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;box-shadow:0 0 6px currentColor}
+  .chip .n{margin-left:auto;color:var(--dim);font-size:10px;font-variant-numeric:tabular-nums}
+  /* controls */
+  #ctl{position:fixed;left:18px;bottom:16px;z-index:5;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  button{font:inherit;font-size:11px;letter-spacing:.04em;color:var(--ink);background:var(--panel);
+    border:1px solid var(--line);border-radius:7px;padding:7px 12px;cursor:pointer;transition:border-color .12s,color .12s}
+  button:hover{border-color:var(--amber);color:var(--amber)}
+  #ctl .hint{color:var(--dim);font-size:10.5px;margin-left:4px}
+  /* tooltip */
+  #tip{position:fixed;z-index:10;max-width:320px;pointer-events:none;opacity:0;transform:translateY(4px);
+    transition:opacity .1s;background:rgba(16,20,29,.96);border:1px solid var(--line);border-left-width:3px;
+    border-radius:8px;padding:10px 12px;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  #tip.show{opacity:1;transform:none}
+  #tip .t{font-size:13px;font-weight:600;color:#fff;line-height:1.3}
+  #tip .t .draft{font-size:9px;letter-spacing:.1em;color:var(--amber);border:1px solid var(--amber);
+    border-radius:3px;padding:0 4px;margin-left:6px;vertical-align:2px}
+  #tip .meta{font-size:10px;color:var(--dim);margin:5px 0 7px;letter-spacing:.03em}
+  #tip .tl{font-size:11px;color:#c3c9d6;line-height:1.5}
+  #tip .open{font-size:10px;color:var(--amber);margin-top:7px;letter-spacing:.04em}
+  #tip .tags{margin-top:8px;display:flex;gap:5px;flex-wrap:wrap}
+  #tip .tg{font-size:9.5px;letter-spacing:.05em;padding:1px 6px;border-radius:20px;border:1px solid}
+  #err{position:fixed;inset:0;display:none;place-items:center;text-align:center;color:var(--dim);font-size:13px;padding:24px}
+</style>
+</head>
+<body>
+<canvas id="sky"></canvas>
+<header>
+  <h1>The Almanac, as a Constellation</h1>
+  <p><b id="count">…</b> documents, drawn as a star map. A line joins any two that share a tag.<br>
+     Drag a star • hover to read • <b>click a star to open it</b> • click a tag to isolate.
+     &nbsp;<a class="back" href="../">↩ back to the almanac</a></p>
+</header>
+<aside id="legend"></aside>
+<div id="ctl">
+  <button id="reseed">↻ Reseed</button>
+  <button id="freeze">⏸ Freeze</button>
+  <button id="reset" title="Show everything">◇ Show all</button>
+  <span class="hint" id="hint"></span>
+</div>
+<div id="tip"></div>
+<div id="err">Serve this page over HTTP (it reads the catalog from <code>../data.js</code>).<br>
+  From the repo root: <code>python -m http.server 8000</code> → open <code>/constellation/</code>.</div>
+
+<!-- The catalog is the single source of truth; the map is built live from it. -->
+<script src="../data.js"></script>
+<script>
+(function(){
+  "use strict";
+  const ES = window.ESSAYS;
+  if(!ES || !window.TAG_GROUPS){ document.getElementById("err").style.display="grid"; return; }
+  const groups = window.TAG_GROUPS;
+  const essays = ES.map(e => Object.assign({}, e, { tags: e.tags || [e.tag] }));
+  document.getElementById("count").textContent = essays.length;
+
+  // ---- palette (form + subject axes), with a safe fallback ----------------
+  const COLOR = {
+    software:"#e8b23a", games:"#46c98d", simulation:"#5aa0e6", fiction:"#d980b8", comic:"#ef8b4b",
+    rail:"#c85d5d", history:"#b58bd8", engineering:"#8fb04e", transport:"#4fbecf",
+    science:"#7d8be0", maritime:"#4fb6a8", math:"#d7a13a", finance:"#9db04a"
+  };
+  const col = t => COLOR[t] || "#8b93a7";
+  const FORM = groups[0].tags;                       // preferred colouring axis
+  const ALLTAGS = groups.flatMap(g=>g.tags);
+  const primaryTag = t => t.find(x=>FORM.includes(x)) || t[0];
+
+  // ---- build nodes ---------------------------------------------------------
+  const nodes = essays.map((e,i)=>{
+    const words = e.words || (e.readingMin? e.readingMin*220 : 700);
+    return { e, i, tags:e.tags, pt:primaryTag(e.tags),
+      r: 4.5 + Math.min(9, Math.sqrt(words)/14),
+      x:0, y:0, vx:0, vy:0 };
+  });
+  const N = nodes.length;
+
+  // co-tag adjacency (shared >=1 tag)
+  const share = (a,b)=>a.tags.some(t=>b.tags.includes(t));
+  const adj = nodes.map(()=>[]);
+  for(let a=0;a<N;a++) for(let b=a+1;b<N;b++) if(share(nodes[a],nodes[b])){adj[a].push(b);adj[b].push(a);}
+
+  // tag counts for legend
+  const tagCount = {}; ALLTAGS.forEach(t=>tagCount[t]=0);
+  essays.forEach(e=>e.tags.forEach(t=>{ if(t in tagCount) tagCount[t]++; }));
+
+  // usable field (keep stars clear of the header + legend panels)
+  function box(){ return { x:26, y:104, w:Math.max(320,innerWidth-26-236), h:Math.max(280,innerHeight-104-58) }; }
+  function cxb(){ const b=box(); return b.x+b.w/2; }
+  function cyb(){ const b=box(); return b.y+b.h/2; }
+
+  // ---- tag anchors on a ring (drives clustering) --------------------------
+  let anchor = {};
+  function layoutAnchors(){
+    const b=box(), R = Math.min(b.w,b.h)*0.40;
+    ALLTAGS.forEach((t,k)=>{
+      const a = (k/ALLTAGS.length)*Math.PI*2 - Math.PI/2;
+      anchor[t] = { x: cxb()+Math.cos(a)*R, y: cyb()+Math.sin(a)*R };
+    });
+  }
+  function target(n){
+    let tx=0,ty=0,c=0;
+    n.tags.forEach(t=>{ if(anchor[t]){tx+=anchor[t].x;ty+=anchor[t].y;c++;} });
+    return c? {x:tx/c,y:ty/c} : {x:cxb(),y:cyb()};
+  }
+  function seed(){
+    layoutAnchors();
+    nodes.forEach(n=>{
+      const tg=target(n);
+      n.x = tg.x + (Math.random()-.5)*120;
+      n.y = tg.y + (Math.random()-.5)*120;
+      n.vx=0; n.vy=0;
+    });
+  }
+
+  // ---- canvas --------------------------------------------------------------
+  const cv=document.getElementById("sky"), ctx=cv.getContext("2d");
+  let W=0,H=0,DPR=1;
+  function resize(){
+    DPR=Math.min(2,devicePixelRatio||1); W=innerWidth; H=innerHeight;
+    cv.width=W*DPR; cv.height=H*DPR; cv.style.width=W+"px"; cv.style.height=H+"px";
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    layoutAnchors();
+  }
+  addEventListener("resize", resize);
+
+  // ---- physics -------------------------------------------------------------
+  let running=true, hovered=null, dragging=null, filter=null;
+  function step(){
+    const CHARGE=3600, SPRING=0.0021, CENTER=0.0016, DAMP=0.90, MAXV=6;
+    const cx=cxb(), cy=cyb();
+    for(let a=0;a<N;a++){
+      const na=nodes[a];
+      for(let b=a+1;b<N;b++){
+        const nb=nodes[b];
+        let dx=na.x-nb.x, dy=na.y-nb.y, d2=dx*dx+dy*dy;
+        if(d2<0.01){dx=Math.random()-.5;dy=Math.random()-.5;d2=1;}
+        const d=Math.sqrt(d2), f=CHARGE/d2, fx=dx/d*f, fy=dy/d*f;
+        na.vx+=fx; na.vy+=fy; nb.vx-=fx; nb.vy-=fy;
+      }
+      const tg=target(na);
+      na.vx += (tg.x-na.x)*SPRING + (cx-na.x)*CENTER;
+      na.vy += (tg.y-na.y)*SPRING + (cy-na.y)*CENTER;
+    }
+    const b=box();
+    for(const n of nodes){
+      if(n===dragging) continue;
+      n.vx*=DAMP; n.vy*=DAMP;
+      n.vx=Math.max(-MAXV,Math.min(MAXV,n.vx)); n.vy=Math.max(-MAXV,Math.min(MAXV,n.vy));
+      n.x+=n.vx; n.y+=n.vy;
+      const m=n.r+4;
+      n.x=Math.max(b.x+m,Math.min(b.x+b.w-m,n.x));
+      n.y=Math.max(b.y+m,Math.min(b.y+b.h-m,n.y));
+    }
+  }
+
+  // nearest 2 co-tagged neighbours => faint "constellation" lines
+  function nearestLines(){
+    const out=[];
+    for(let a=0;a<N;a++){
+      const na=nodes[a];
+      const cand=adj[a].map(b=>{const nb=nodes[b];const dx=na.x-nb.x,dy=na.y-nb.y;return[b,dx*dx+dy*dy];})
+                        .sort((p,q)=>p[1]-q[1]).slice(0,2);
+      for(const [b] of cand) if(b>a) out.push([a,b]);
+    }
+    return out;
+  }
+
+  const dim = (n)=> filter && !n.tags.includes(filter);
+  function hex(h,a){ const n=parseInt(h.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; }
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    const lines = nearestLines();
+    ctx.lineWidth=1;
+    for(const [a,b] of lines){
+      const na=nodes[a], nb=nodes[b];
+      ctx.strokeStyle = (dim(na)||dim(nb)) ? "rgba(120,130,150,.04)" : "rgba(150,165,195,.13)";
+      ctx.beginPath(); ctx.moveTo(na.x,na.y); ctx.lineTo(nb.x,nb.y); ctx.stroke();
+    }
+    if(hovered!=null){
+      const h=nodes[hovered];
+      ctx.lineWidth=1.4; ctx.strokeStyle=hex(col(h.pt),0.42);
+      for(const b of adj[hovered]){
+        const nb=nodes[b];
+        ctx.beginPath(); ctx.moveTo(h.x,h.y); ctx.lineTo(nb.x,nb.y); ctx.stroke();
+      }
+    }
+    for(const n of nodes){
+      const c=col(n.pt);
+      const faded = dim(n) || (hovered!=null && hovered!==n.i && !adj[hovered].includes(n.i));
+      const isHot = hovered===n.i;
+      ctx.beginPath(); ctx.arc(n.x,n.y,n.r*(isHot?1.35:1),0,7);
+      if(!n.e.real){                                    // draft = hollow ring
+        ctx.lineWidth=1.8; ctx.strokeStyle=hex(c,faded?0.22:0.9);
+        ctx.fillStyle=hex(c,faded?0.05:0.14); ctx.fill(); ctx.stroke();
+      }else{
+        ctx.fillStyle = faded? hex(c,0.20) : c;
+        if(!faded){ ctx.shadowColor=c; ctx.shadowBlur=isHot?18:8; }
+        ctx.fill(); ctx.shadowBlur=0;
+      }
+      if(isHot){ ctx.lineWidth=1.5; ctx.strokeStyle="#fff"; ctx.stroke(); }
+    }
+  }
+
+  function frame(){ if(running) step(); draw(); requestAnimationFrame(frame); }
+
+  // ---- picking + interaction ----------------------------------------------
+  function pick(mx,my){
+    let best=null,bd=1e9;
+    for(const n of nodes){
+      const dx=mx-n.x,dy=my-n.y,d=dx*dx+dy*dy, r=(n.r+6)**2;
+      if(d<r && d<bd){bd=d;best=n;}
+    }
+    return best;
+  }
+  const tip=document.getElementById("tip");
+  function showTip(n,mx,my){
+    const e=n.e;
+    tip.style.borderLeftColor=col(n.pt);
+    const tags=n.tags.map(t=>`<span class="tg" style="color:${col(t)};border-color:${hex(col(t),.5)}">${t}</span>`).join("");
+    const rd=e.readingMin?`${e.readingMin} min · `:"";
+    const wd=e.words?`${e.words.toLocaleString()} words`:"interactive";
+    tip.innerHTML=`<div class="t">${e.title}${e.real?"":'<span class="draft">DRAFT</span>'}</div>`+
+      `<div class="meta">subject year ${e.year} · ${rd}${wd}</div>`+
+      `<div class="tl">${e.tagline}</div>`+
+      `<div class="tags">${tags}</div><div class="open">click to open ↗</div>`;
+    tip.classList.add("show");
+    const pad=14, w=tip.offsetWidth, h=tip.offsetHeight;
+    let x=mx+pad, y=my+pad;
+    if(x+w>innerWidth-8) x=mx-w-pad;
+    if(y+h>innerHeight-8) y=my-h-pad;
+    tip.style.left=x+"px"; tip.style.top=y+"px";
+  }
+  const hideTip=()=>tip.classList.remove("show");
+
+  let pressNode=null, pressX=0, pressY=0, moved=false;
+  cv.addEventListener("mousemove",ev=>{
+    const mx=ev.clientX,my=ev.clientY;
+    if(dragging){
+      dragging.x=mx; dragging.y=my; dragging.vx=0; dragging.vy=0;
+      if(Math.hypot(mx-pressX,my-pressY)>4) moved=true;
+      showTip(dragging,mx,my); return;
+    }
+    const n=pick(mx,my);
+    hovered = n? n.i : null;
+    if(n){ showTip(n,mx,my); cv.style.cursor="pointer"; } else { hideTip(); cv.style.cursor="default"; }
+  });
+  cv.addEventListener("mousedown",ev=>{
+    const n=pick(ev.clientX,ev.clientY);
+    if(n){ dragging=n; hovered=n.i; pressNode=n; pressX=ev.clientX; pressY=ev.clientY; moved=false; cv.classList.add("drag"); }
+  });
+  addEventListener("mouseup",()=>{
+    if(pressNode && !moved){ window.open(pressNode.e.url, "_blank", "noopener"); }
+    dragging=null; pressNode=null; cv.classList.remove("drag");
+  });
+  cv.addEventListener("mouseleave",()=>{ hideTip(); hovered=null; });
+
+  // ---- legend --------------------------------------------------------------
+  const legend=document.getElementById("legend");
+  groups.forEach(g=>{
+    const h=document.createElement("div"); h.className="grp"; h.textContent=g.label; legend.appendChild(h);
+    g.tags.forEach(t=>{
+      const row=document.createElement("div"); row.className="chip"; row.dataset.tag=t;
+      row.innerHTML=`<span class="dot" style="color:${col(t)};background:${col(t)}"></span>`+
+        `<span>${t}</span><span class="n">${tagCount[t]||0}</span>`;
+      row.onclick=()=>setFilter(filter===t?null:t);
+      legend.appendChild(row);
+    });
+  });
+  function setFilter(t){
+    filter=t;
+    document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("off", filter && c.dataset.tag!==filter));
+    document.getElementById("hint").textContent = filter? `isolating “${filter}” — ${tagCount[filter]} docs` : "";
+  }
+
+  // ---- controls ------------------------------------------------------------
+  document.getElementById("reseed").onclick=()=>{ seed(); running=true; setFreeze(false); };
+  const fb=document.getElementById("freeze");
+  function setFreeze(f){ running=!f; fb.textContent=running?"⏸ Freeze":"▶ Resume"; }
+  fb.onclick=()=>setFreeze(running);
+  document.getElementById("reset").onclick=()=>setFilter(null);
+
+  resize(); seed(); frame();
+})();
+</script>
+</body>
+</html>
