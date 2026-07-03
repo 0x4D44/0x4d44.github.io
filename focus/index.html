@@ -453,7 +453,7 @@ class Component extends DCLogic {
   undo(){
     const s = this.state; if (!s.hist.length || s.thinking) return;
     let hist = s.hist.slice(), snap = hist.pop();
-    if (this.isAI() && snap.game.turn === this.AI && hist.length) snap = hist.pop();
+    while (this.isAISeat(snap.game.turn) && hist.length) snap = hist.pop();
     this._recordKey = null;
     this.setState({ game: snap.game, moves: snap.moves, hist, sel: null, reserveMode: false, thinking: false, lastMove: null, aiAnim: null },
       () => this.persistGame());
@@ -885,7 +885,10 @@ class Component extends DCLogic {
       let coachLine = '';
       const coachActive = s.coachOn && this.isHumanTurn() && !s.thinking && !s.reserveMode;
       if (coachActive){
-        const cm = E.chooseMove(g, 'expert', () => 0.5);
+        const sig = JSON.stringify(g);
+        let cm;
+        if (this._coachSig === sig){ cm = this._coachCached; }
+        else { cm = E.chooseMove(g, 'expert', () => 0.5); this._coachSig = sig; this._coachCached = cm; }
         if (cm){
           this._coachMove = cm;
           if (cm.kind === 'reserve') coachLine = 'Coach: drop a reserve on ' + this.cellName(cm.to);

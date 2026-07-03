@@ -183,6 +183,14 @@ const ROPS = {
   PATINVERT:  { f: (s, d, p) => p ^ d,        t: "P XOR D" },
   DSTINVERT:  { f: (s, d, p) => d ? 0 : 1,    t: "NOT D" },
 };
+function RopPanel({ label, r, cvProps }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <div className="mono" style={{ fontSize: 10.5, marginBottom: 5, color: "var(--ink-soft)" }}>{label}</div>
+      <canvas ref={r} {...cvProps}></canvas>
+    </div>
+  );
+}
 function RopToy({ color }) {
   const [rop, setRop] = useState("SRCINVERT");
   const GW = 40, GH = 26, S = 5;
@@ -229,12 +237,6 @@ function RopToy({ color }) {
     if (rRef.current) draw(rRef.current, res, col, paper);
   }, [rop, S_, D_, P_, draw, color]);
   const cvProps = { width: GW * S, height: GH * S, style: { width: GW * S, height: GH * S, maxWidth: "100%" } };
-  const Panel = ({ label, r }) => (
-    <div style={{ textAlign: "center" }}>
-      <div className="mono" style={{ fontSize: 10.5, marginBottom: 5, color: "var(--ink-soft)" }}>{label}</div>
-      <canvas ref={r} {...cvProps}></canvas>
-    </div>
-  );
   return (
     <div className="toy" style={{ "--seg": color }}>
       <div className="toy-head">BitBlt · ternary raster operation</div>
@@ -246,11 +248,11 @@ function RopToy({ color }) {
           </select>
         </div>
         <div className="row" style={{ justifyContent: "space-between", gap: 8 }}>
-          <Panel label="source (S)" r={sRef} />
-          <Panel label="dest (D)" r={dRef} />
-          <Panel label="pattern (P)" r={pRef} />
+          <RopPanel label="source (S)" r={sRef} cvProps={cvProps} />
+          <RopPanel label="dest (D)" r={dRef} cvProps={cvProps} />
+          <RopPanel label="pattern (P)" r={pRef} cvProps={cvProps} />
           <span style={{ fontFamily: "var(--disp)", fontSize: 26, alignSelf: "center" }}>=</span>
-          <Panel label="result" r={rRef} />
+          <RopPanel label="result" r={rRef} cvProps={cvProps} />
         </div>
         <div className="legend2">
           Every BitBlt carries a raster-op: a truth table over Source, Destination and Pattern. Try{" "}

@@ -724,9 +724,23 @@ function RandomThings() {
   const [interval, setInterval] = useState(120);
   const [running, setRunning] = useState(true);
 
-  const FELT_W = 760;   // logical width; CSS scales
+  const feltRef = useRef(null);
+  const [FELT_W, setFeltW] = useState(760);   // measured felt width; CSS scales
   const FELT_H = 360;
   const THING = 31;
+
+  useEffect(() => {
+    const el = feltRef.current;
+    if (!el) return;
+    const apply = w => { if (w > 0) setFeltW(w); };
+    apply(el.clientWidth);
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(entries => {
+      for (const e of entries) apply(e.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
   const [positions, setPositions] = useState(() =>
     Array.from({ length: 6 }, () => ({
@@ -754,7 +768,7 @@ function RandomThings() {
       }));
     }, interval);
     return () => window.clearInterval(id);
-  }, [running, mult, interval]);
+  }, [running, mult, interval, FELT_W]);
 
   return (
     <Win title={`"Random things" — the drunkard's walk`} status="Inspired by the random walk. Inhabits the felt when no game is running.">
@@ -769,7 +783,7 @@ function RandomThings() {
         biggest single dialog in the options menu.
       </p>
       <div className="row row-2 gap-16" style={{ gridTemplateColumns: "1.2fr 1fr" }}>
-        <div className="felt" style={{ width: "100%", height: FELT_H }}>
+        <div className="felt" ref={feltRef} style={{ width: "100%", height: FELT_H }}>
           <div className="felt__logo">ESTWHI</div>
           {positions.slice(0, count).map((p, i) => (
             <div

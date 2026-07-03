@@ -31,6 +31,7 @@ function SnakeGame() {
   useEffectS(() => {
     const onKey = (e) => {
       const g = game.current; if (!g) return;
+      if (status !== "playing") return;
       const k = e.key;
       const map = { ArrowUp: { x: 0, y: -1 }, ArrowDown: { x: 0, y: 1 }, ArrowLeft: { x: -1, y: 0 }, ArrowRight: { x: 1, y: 0 } };
       if (map[k]) {
@@ -41,7 +42,7 @@ function SnakeGame() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [status]);
 
   useEffectS(() => {
     const ctx = canvasRef.current.getContext("2d");
@@ -284,11 +285,7 @@ function LogisticGraph() {
     ctx.beginPath(); ctx.arc(X(0), Y(P0), 4, 0, 7); ctx.fill();
   }, [r, K, P0]);
 
-  const tRef = window.useTypeset ? window.useTypeset(0) : useRefS(null);
-  useEffectS(() => {
-    if (window.MathJax && window.MathJax.typesetPromise && tRef.current)
-      window.MathJax.typesetPromise([tRef.current]).catch(() => {});
-  }, []);
+  const tRef = window.useTypeset(0);
 
   return (
     <div className="widget">

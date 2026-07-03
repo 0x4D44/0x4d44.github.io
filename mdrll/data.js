@@ -259,7 +259,7 @@ const STATS = {
   hlds: '64',
   journals: '63',
   tests: '349',
-  controllers: '12',
+  controllers: '14',
   version: '0.8.5'
 };
 
