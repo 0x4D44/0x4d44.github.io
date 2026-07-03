@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "flight",
+    title: "Flight",
+    tagline: "A browser flight simulator over an endless procedural world of towns, cities, mountains, oceans, deserts and forests. Seven aircraft — from a Cessna 172 to the A380 — each with its own tuned aerodynamics, a full amber-phosphor HUD, autopilot, inducible equipment failures and switchable flying aids. Synthesised engine and wind, day or night. Three.js on a hand-written flight model.",
+    url: "https://0x4d44.github.io/flight/",
+    illustration: "ill-aircraft",
+    date: "2026-07-03T12:00:00",
+    year: 2026,
+    tags: ["simulation", "software"],
+    real: true,
+  },
+  {
     slug: "quixo",
     title: "Quixo",
     tagline: "The sliding-cube strategy game: take a blank or friendly cube from the edge, turn it to your symbol and push it back in — the whole row shifts. Five in a row wins, but line up five of theirs and you've lost. A phone-first match against an AI in three hand-built themes. React, transpiled in the browser; installable offline.",
