@@ -66,7 +66,6 @@
     // ---- diffusion state ----
     var T = 28, t = T;
     var running=false, raf=null;
-    var seed = Math.random()*1000;
 
     function randn(){ // box-muller
       var u=Math.random(), v=Math.random();
@@ -166,7 +165,7 @@
     var rowA=document.createElement("div"); rowA.className="ctl-row"; rowA.style.marginTop="14px";
     var stepBtn=mkBtn("Step ▸", function(){ stop(); step(); });
     var runBtn=mkBtn("Denoise ▸", function(){ running?stop():start(); }); runBtn.classList.add("primary");
-    var resetBtn=mkBtn("Re-noise ↺", function(){ seed=Math.random()*1000; reset(); });
+    var resetBtn=mkBtn("Re-noise ↺", function(){ reset(); });
     rowA.appendChild(stepBtn); rowA.appendChild(runBtn); rowA.appendChild(resetBtn);
     right.appendChild(rowA);
 

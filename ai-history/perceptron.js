@@ -143,6 +143,7 @@
     }
 
     function loop() {
+      if (!running) return;
       var changed = trainEpoch();
       draw();
       if (changed === 0 || epoch > 400) { stop(); return; }

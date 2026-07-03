@@ -172,6 +172,7 @@
     }
 
     function loop() {
+      if (!running) return;
       step(); draw();
       var s = surfaces[cur];
       var g = s.g(pos[0], pos[1]);

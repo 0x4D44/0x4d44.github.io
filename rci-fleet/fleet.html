@@ -139,8 +139,6 @@ function filtered(){
     (!state.class||s.clsKey===state.class)&&
     (!state.region||s.regions.includes(state.region))&&
     (!state.q||s.name.toLowerCase().includes(state.q)||s.cls.toLowerCase().includes(state.q)));
-  const [k,desc]=[state.sort.replace('-',''),!state.sort.endsWith('-')];
-  // default semantics: gt/max/year => want descending unless name; '-' suffix flips
   r.sort((a,b)=>{
     if(state.sort==='name')return a.name.localeCompare(b.name);
     if(state.sort==='gt')return b.gt-a.gt;
@@ -155,7 +153,7 @@ function filtered(){
 
 function render(){
   const r=filtered();
-  document.getElementById('count').textContent=`${r.length} ship${r.length!==1?'s':''} · ${compactGt(r.reduce((a,s)=>a+s.gt,0)).toUpperCase()} combined GT`;
+  document.getElementById('count').textContent=`${r.length} ship${r.length!==1?'s':''} · ${String(compactGt(r.reduce((a,s)=>a+s.gt,0))).toUpperCase()} combined GT`;
   if(state.view==='grid') renderGrid(r); else renderScale(r);
 }
 

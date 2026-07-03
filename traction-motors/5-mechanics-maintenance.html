@@ -232,7 +232,6 @@
     const tg=target();
     T += (tg-T)*0.04;               // thermal lag
     const merc=document.getElementById('merc');
-    const h=Math.max(6,Math.min(span, T*span/1.0*0.78+ span*0.0));
     const top=Ybot-Math.min(span, T*span*0.85);
     merc.setAttribute('y', Math.max(Ytop,top)); merc.setAttribute('height', Ybot-Math.max(Ytop,top));
     const over=T>=1;

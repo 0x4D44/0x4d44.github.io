@@ -315,7 +315,6 @@
     const disp=EK.pistonPos(th,lam)*r_px;   // 0..150 px
     $('piston').setAttribute('transform','translate(0,'+disp.toFixed(2)+')');
     // gas rect grows with piston
-    const gtop=110+disp, gh=Math.max(2,170+0-gtop+ (170-110)); // chamber from head(110) to crown
     $('gas').setAttribute('y',110); $('gas').setAttribute('height',(disp+60).toFixed(1));
     const gs=gasStyle(phi); $('gas').setAttribute('fill',gs[0]); $('gas').setAttribute('opacity',gs[1].toFixed(2));
     // rod + crank

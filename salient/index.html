@@ -284,7 +284,7 @@ class Component extends DCLogic {
     var res = SE.resolve(g, from, to);
     if(!res) return;
     var ng = res.state;
-    var keepSel = !res.conquered && ng.terr[from].armies >= 2 ? from : (res.conquered && ng.terr[from].armies >= 2 ? from : null);
+    var keepSel = ng.terr[from].armies >= 2 ? from : null;
     this._fxLock = true;
     var fx = { from: from, to: to, roll: res.roll, losses: res.losses, conquered: res.conquered, defColor: defColor };
     this.setState(Object.assign({ game: ng, fx: fx, sel: res.conquered ? null : keepSel }, res.conquered ? { transfer: { from: from, to: to, mode: 'advance' } } : {}), () => this.saveJSON(this.STORE.game, ng));
@@ -584,7 +584,6 @@ class Component extends DCLogic {
       else if(g.phase === 'fortify'){ status = s.sel ? ('Move from ' + SE.BY_ID[s.sel].name + ' \u2014 tap a neighbouring land') : (cur.name + ': fortify a neighbour, or end your turn'); }
     }
     var coach = (g && SE && s.coachOn && human && !g.winner && !s.transfer) ? SE.coachSuggestion(g) : null;
-    var lost = g && g.winner && cur && false;
     var youWon = g && g.winner === 'p1' && g.players[0] && g.players[0].kind === 'human';
     var winCol = g && g.winner ? this.pidColor(g, g.winner) : t.accent;
     var btn = 'flex:1;min-width:0;padding:9px 3px;border-radius:11px;border:1px solid ' + t.panelBorder + ';background:' + t.panel + ';color:' + t.text + ';font:inherit;font-size:10.5px;font-weight:600;letter-spacing:.3px;cursor:pointer;transition:all .15s;';

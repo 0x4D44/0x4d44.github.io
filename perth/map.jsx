@@ -154,8 +154,9 @@ function Atlas() {
   });
   const [playing, setPlaying] = useState(false);
   const raf = useRef(null);
+  const iYear = Math.round(year);
 
-  useEffect(() => { localStorage.setItem("perth.year", String(year)); }, [year]);
+  useEffect(() => { localStorage.setItem("perth.year", String(iYear)); }, [iYear]);
 
   // play animation
   useEffect(() => {
@@ -175,8 +176,6 @@ function Atlas() {
     raf.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf.current);
   }, [playing]);
-
-  const iYear = Math.round(year);
 
   const activeEvents = useMemo(() => {
     return P.MAP_EVENTS.filter((e) => e.year <= iYear).sort((a, b) => b.year - a.year);

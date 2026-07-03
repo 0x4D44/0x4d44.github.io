@@ -78,11 +78,6 @@ function FourierBuilder() {
     if (shape === "saw")      { maxK = 30; coeff = (k) => (2 / Math.PI) * (k % 2 === 1 ? 1 : -1) / k; }
     if (shape === "triangle") { maxK = 49; coeff = (k) => (k % 2 === 1) ? (8 / (Math.PI * Math.PI)) * Math.pow(-1, (k - 1) / 2) / (k * k) : 0; }
 
-    for (let k = 1; k <= maxK; k++) {
-      const a = coeff(k);
-      if (a === 0) continue;
-      bars.push({ k, amp: Math.abs(a), used: k <= harm * 2 + 1 && (shape !== "saw" ? k % 2 === 1 || false : true) });
-    }
     // bars filtered to first `harm` non-zero coefficients
     const usedKs = [];
     let count = 0;
@@ -90,7 +85,6 @@ function FourierBuilder() {
       const a = coeff(k);
       if (a !== 0) { usedKs.push(k); count++; }
     }
-    bars.length = 0;
     for (let k = 1; k <= maxK; k++) {
       const a = coeff(k);
       if (a === 0) continue;

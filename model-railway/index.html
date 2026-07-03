@@ -660,7 +660,7 @@
         <p class="sect-sub" style="margin:6px 0 0;">Drag the supply-voltage slider — the highlighted band shows the maximum clock the chip can be run at and stay inside spec. The dashed marks show the handset’s two operating points.</p>
       </div>
       <div class="saoa-controls">
-        <label>V<sub>cc</sub> <input id="vcc-slider" type="range" min="180" max="500" value="260" step="1"/></label>
+        <label>V<sub>cc</sub> <input id="vcc-slider" type="range" min="180" max="450" value="260" step="1"/></label>
         <div class="saoa-readout">
           <span>V<sub>cc</sub> = <b id="vcc-out">2.60</b>&nbsp;V</span>
           <span>max clock = <b id="fmax-out">~5</b>&nbsp;MHz</span>
@@ -1750,6 +1750,7 @@ function lcTick(now) {
   const elapsed = (now - LC.started) / 1000; // seconds
   LC.t = elapsed;
   lcTime.textContent = elapsed.toFixed(1);
+  lcMarker.style.opacity = 1;
 
   // state machine: AMBER 0-2s, TRANSITION 2-3.5s, REDFLASH 3.5+
   if (elapsed < 2.0) {
@@ -1757,7 +1758,6 @@ function lcTick(now) {
     setLEDs('AMBER');
     lcWaves.classList.add('on');
     // marker position: 0-2s on first slice (flex 2)
-    lcMarker.style.opacity = 1;
     lcMarker.style.left = (elapsed / 2.0) * (2/7.5) * 100 + '%';
   } else if (elapsed < 3.5) {
     setLCState('TRANSITION');

@@ -146,7 +146,6 @@ function find(arr, id) { return (arr || []).find((x) => x.id === id); }
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 function fmtB(v) {
   if (v >= 100) return "$" + Math.round(v) + "B";
-  if (v >= 10) return "$" + v.toFixed(1) + "B";
   if (v >= 1) return "$" + v.toFixed(1) + "B";
   return "$" + Math.round(v * 1000) + "M";
 }

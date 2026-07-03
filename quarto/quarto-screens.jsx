@@ -449,34 +449,6 @@ function SetGroup({ theme, label, children }) {
   );
 }
 
-function SetRow({ theme, label, value, segment, selected }) {
-  return (
-    <div style={{
-      padding: '10px 14px', borderBottom: `1px solid ${theme.panelBorder}`,
-      display: 'flex', flexDirection: 'column', gap: 8,
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <div style={{ fontFamily: theme.fontUI, fontSize: 13, color: theme.text }}>{label}</div>
-        <div style={{ fontFamily: theme.fontDisplay, fontStyle: 'italic', fontSize: 12, color: theme.textDim }}>{value}</div>
-      </div>
-      <div style={{
-        display: 'flex', background: 'rgba(0,0,0,0.18)',
-        border: `1px solid ${theme.panelBorder}`, borderRadius: 8, padding: 2,
-      }}>
-        {segment.map((s, i) => (
-          <div key={s} style={{
-            flex: 1, textAlign: 'center', padding: '6px 0',
-            fontFamily: theme.fontUI, fontSize: 11, letterSpacing: '0.04em',
-            color: i === selected ? theme.chrome : theme.textDim,
-            background: i === selected ? theme.accent : 'transparent',
-            borderRadius: 6, transition: 'all .15s',
-          }}>{s}</div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function SetToggle({ theme, label, on, onChange }) {
   const toggle = () => onChange && onChange(!on);
   return (
@@ -499,21 +471,6 @@ function SetToggle({ theme, label, on, onChange }) {
           position: 'absolute', top: 2, left: on ? 19 : 2,
           transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
         }} />
-      </div>
-    </div>
-  );
-}
-
-function SetLink({ theme, label, v }) {
-  return (
-    <div style={{
-      padding: '14px', borderBottom: `1px solid ${theme.panelBorder}`,
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    }}>
-      <div style={{ fontFamily: theme.fontUI, fontSize: 13, color: theme.text }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: theme.textDim }}>
-        <span style={{ fontFamily: theme.fontDisplay, fontStyle: 'italic', fontSize: 12 }}>{v}</span>
-        <span style={{ fontSize: 14 }}>›</span>
       </div>
     </div>
   );

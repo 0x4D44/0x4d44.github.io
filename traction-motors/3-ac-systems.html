@@ -124,7 +124,7 @@
           </div>
         </div>
         <div class="figure-body" style="border-top:1px solid var(--plate-line);padding-top:16px">
-          <input id="freq" type="range" min="0" max="50" value="0" step="1" style="width:100%">
+          <input id="freqRange" type="range" min="0" max="50" value="0" step="1" style="width:100%">
           <div id="freqMarks" style="position:relative;height:18px;margin-top:4px;font-family:var(--font-mono);font-size:.62rem;color:var(--cyan-soft)"></div>
         </div>
         <div class="figure-cap"><b>DC (left) is perfect for commutation but useless for a transformer.</b> 50 Hz (right) is what the grid offers but tears the commutator apart. <b>16⅔ Hz</b> and <b>25 Hz</b> are the historical compromises — low enough to commutate, high enough to transform, and simple fractions of 50/60 Hz so they could be generated.</div>
@@ -218,7 +218,7 @@
   // commutator bars
   let b=''; for(let k=0;k<36;k++){ const a=k*10*Math.PI/180; b+=`<line x1="${180+Math.cos(a)*92}" y1="${150+Math.sin(a)*92}" x2="${180+Math.cos(a)*26}" y2="${150+Math.sin(a)*26}" stroke="var(--plate-line)" stroke-width="1"/>`; }
   barsG.innerHTML=b;
-  const fr=document.getElementById('freq');
+  const fr=document.getElementById('freqRange');
   // marks
   const marks=[{f:0,t:'DC'},{f:16.67,t:'16⅔'},{f:25,t:'25'},{f:50,t:'50 Hz'}];
   document.getElementById('freqMarks').innerHTML=marks.map(m=>`<span style="position:absolute;left:${m.f/50*100}%;transform:translateX(-50%)">▏${m.t}</span>`).join('');

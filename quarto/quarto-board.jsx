@@ -219,7 +219,7 @@ function HeldBar({ state, theme, pieceStyle }) {
 // The 4×4 board.
 // ─────────────────────────────────────────────────────────────
 
-function Board({ state, theme, onCellClick, pieceStyle, assists, hintCell, animationSpeed = 1 }) {
+function Board({ state, theme, onCellClick, pieceStyle, assists, hintCell }) {
   // ISO board renders as one composed SVG plinth — entirely different geometry.
   if (pieceStyle === 'iso' && window.IsoBoard) {
     const Iso = window.IsoBoard;
@@ -432,12 +432,6 @@ function AttrChip({ info, theme }) {
   // Pick the most informative ones (show up to 2 dots — different attributes)
   const glyphs = liveBits.slice(0, 2).map(({ bit, value }) => {
     // Tall=▲ Short=▽, Dark=●, Light=○, Round=⬭ Square=□, Hollow=◌ Solid=■
-    const m = [
-      [value ? '▲' : '▽'],   // tall/short
-      [value ? '●' : '○'],   // dark/light
-      [value ? '◌' : '◼'],   // round/square (using bold square fallback)
-      [value ? '◌' : '◼'],   // hollow/solid
-    ];
     // Use distinct glyphs for each bit
     const set = [
       [value ? '▲' : '▽'],   // bit 0 tall vs short

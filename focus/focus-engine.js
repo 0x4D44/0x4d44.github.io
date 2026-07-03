@@ -92,13 +92,6 @@
       },
     },
   };
-  // pinwheel as defined gives 5 blocks one colour / 4 the other (20/16); rebalance
-  // by swapping the central block so both sides hold 18.
-  function balancedPinwheel(board) {
-    // count and, if unequal, flip the centre 2x2 cells minimally — but simplest:
-    // the (br+bc) pattern over a 3x3 block grid is 5/4. Flip two cells in the
-    // centre block to even it to 18/18.
-  }
 
   function newGame(setupKey, np) {
     np = np === 4 ? 4 : 2;
@@ -125,7 +118,7 @@
       players: ['p1', 'p2'], turn: 'p1', winner: null,
     };
     // guarantee an exact 18/18 split regardless of pattern quirks
-    rebalance(s, setupKey);
+    rebalance(s);
     return s;
   }
   function countOnBoard(s, p) {

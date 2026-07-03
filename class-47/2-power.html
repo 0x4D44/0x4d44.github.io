@@ -156,12 +156,6 @@
     crank:`The signature feature: <b style="color:var(--cyan)">two separate crankshafts</b>, one per bank, <b>geared together</b> at the free end so they share the load and drive the generator as one. Few diesels are built this way.`,
     air:`Exhaust energy spins the <b style="color:var(--signal-2)">turbocharger</b>; the compressed charge air is then <b>cooled</b> before entering the cylinders, packing in more oxygen so more fuel can be burned — the route to 2,750&nbsp;bhp from this size of engine.`,
   };
-  function piston(x, baseY, topY, phase){
-    // returns y of piston crown given crank angle phase (0..2pi)
-    const throw_=26;
-    const cy = (baseY-60) - throw_*Math.cos(phase);
-    return cy;
-  }
   function draw(){
     const dim=(on)=> on? 1 : .16;
     const cyl = sys==='all'||sys==='cyl';
