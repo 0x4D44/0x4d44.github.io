@@ -3,6 +3,17 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-03 — A DC design-tool export (`*.dc.html` + `support.js`) can be shipped
+  **fully offline / zero-network** without a bundler: (1) vendor the *exact* unpkg
+  React UMD bytes it names — the `sha384` SRI hashes baked into `support.js` still
+  validate same-origin, so keep `integrity`/`crossorigin` and just repoint the URL;
+  (2) self-host the Google Fonts (grab the `latin`+`latin-ext` woff2, rewrite
+  `src:` to `./fonts/…`). No Babel is needed at runtime — the DC component is plain
+  ES6 bound by `support.js`'s own `{{ }}` engine (not JSX), confirmed by net-log
+  showing only react/react-dom fetched. Ship the readable `.dc.html` as `index.html`
+  (+ `support.js` sidecar), not the 219 KB pre-bundled single file — far easier to
+  edit (add PWA `<head>` tags + SW registration; swap the font `<link>`). Verify with
+  `chrome --headless=new --log-net-log` and assert no unpkg/googleapis hosts appear.
 - 2026-07-02 — Verifying this site's responsive layout with headless Chrome:
   `chrome --headless=new --window-size=390,H` does **not** give a 390px CSS
   viewport — headless-new clamps `innerWidth` to a **500px minimum**, and the
