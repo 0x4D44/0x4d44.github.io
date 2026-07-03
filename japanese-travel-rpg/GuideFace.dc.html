@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:relative;width:{{ px }};height:{{ px }};flex:none">
+  <div style="position:absolute;inset:0;border-radius:{{ radius }};background:{{ bg }};overflow:hidden">
+    <sc-if value="{{ long }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:7%;top:16%;width:86%;height:84%;background:{{ hair }};border-radius:46% 46% 42% 42%"></div>
+    </sc-if>
+    <div style="position:absolute;left:15%;top:18%;width:70%;height:78%;background:{{ skin }};border-radius:46% 46% 44% 44%"></div>
+    <div style="position:absolute;left:12%;top:11%;width:76%;height:{{ fringeH }};background:{{ hair }};border-radius:48% 48% 32% 32%"></div>
+    <div style="position:absolute;left:33%;top:50%;width:7.5%;height:9.5%;background:#2b1c12;border-radius:50%"></div>
+    <div style="position:absolute;right:33%;top:50%;width:7.5%;height:9.5%;background:#2b1c12;border-radius:50%"></div>
+    <div style="position:absolute;left:25%;top:59%;width:10%;height:5.5%;background:rgba(216,110,90,.32);border-radius:50%"></div>
+    <div style="position:absolute;right:25%;top:59%;width:10%;height:5.5%;background:rgba(216,110,90,.32);border-radius:50%"></div>
+    <div style="position:absolute;left:43%;top:65%;width:14%;height:7%;background:{{ lip }};border-radius:0 0 60% 60%"></div>
+
+    <sc-if value="{{ isScarf }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:14%;bottom:0;width:72%;height:17%;background:{{ wear }};border-radius:44% 44% 0 0"></div></sc-if>
+    <sc-if value="{{ isBand }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:11%;top:23%;width:78%;height:8%;background:{{ wear }};border-radius:3px"></div></sc-if>
+    <sc-if value="{{ isCap }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:10%;top:8%;width:80%;height:20%;background:{{ wear }};border-radius:48% 48% 18% 18%"></div><div style="position:absolute;left:6%;top:25%;width:50%;height:7%;background:{{ wear }};border-radius:0 0 8px 8px"></div></sc-if>
+    <sc-if value="{{ isBeanie }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:8%;top:4%;width:84%;height:30%;background:{{ wear }};border-radius:48% 48% 12% 12%"></div><div style="position:absolute;left:8%;top:29%;width:84%;height:8%;background:rgba(0,0,0,.16);border-radius:3px"></div><div style="position:absolute;left:45%;top:-3%;width:14%;height:12%;background:#fff;border-radius:50%"></div></sc-if>
+    <sc-if value="{{ isPhones }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;left:22%;top:6%;width:56%;height:9%;background:{{ wear }};border-radius:50% 50% 0 0"></div><div style="position:absolute;left:6%;top:42%;width:15%;height:22%;background:{{ wear }};border-radius:40%"></div><div style="position:absolute;right:6%;top:42%;width:15%;height:22%;background:{{ wear }};border-radius:40%"></div></sc-if>
+    <sc-if value="{{ isOrnament }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;right:12%;top:22%;width:15%;height:15%;background:{{ wear }};border-radius:50%"></div><div style="position:absolute;right:16.5%;top:26.5%;width:6%;height:6%;background:#f4d98a;border-radius:50%"></div></sc-if>
+  </div>
+  <sc-if value="{{ hasPin }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;right:-4%;bottom:-4%;width:{{ pinBox }};height:{{ pinBox }};border-radius:50%;background:#fffdf8;box-shadow:0 1px 3px rgba(0,0,0,.22);display:grid;place-items:center;font-size:{{ pinSize }};line-height:1">{{ pin }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;96px&quot;,&quot;height&quot;:&quot;96px&quot;},&quot;face&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:96,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals(){
+    const f=this.props.face||{};
+    const S=Number(this.props.size)||96;
+    return {
+      px:S+'px', radius:Math.round(S*0.28)+'px',
+      bg:f.bg||'#f0e6d0', skin:f.skin||'#eab98f', hair:f.hair||'#33261f', lip:f.lip||'#c26b56',
+      long:!!f.long, fringeH:(f.fringe||32)+'%',
+      isScarf:f.hat==='scarf', isBand:f.hat==='band', isCap:f.hat==='cap', isBeanie:f.hat==='beanie', isPhones:f.hat==='headphones', isOrnament:f.hat==='ornament',
+      wear:f.wear||'#2b5a86',
+      pin:f.pin||'', hasPin:!!f.pin, pinSize:Math.round(S*0.24)+'px', pinBox:Math.round(S*0.42)+'px',
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,27 +1,920 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1a2430">
-  <meta name="description" content="Nihon Quest: a calm retro Japanese travel RPG language-learning app for practical confidence in Japan.">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Nihon Quest">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Nihon Quest — Japanese Travel RPG</title>
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icons/icon.svg">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#23415d">
+<meta name="description" content="Nihon Quest: a Japanese travel RPG language-learning app with lessons, review, phrasebook and roleplay practice.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Nihon Quest">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Nihon Quest - Japanese Travel RPG</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon.svg">
+<script src="./support.js"></script>
+<script>if("serviceWorker" in navigator&&location.protocol!=="file:")addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));</script>
 </head>
 <body>
-  <noscript>
-    <main class="fatal pixel-card">
-      <h1>Nihon Quest</h1>
-      <p>This static app needs JavaScript to run lessons, local progress, audio buttons, review scheduling and roleplay practice.</p>
-    </main>
-  </noscript>
-  <div id="app" aria-live="polite"></div>
-  <script type="module" src="app.js"></script>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&family=Zen+Kaku+Gothic+New:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9e0cf;min-height:100vh;display:grid;place-items:center;padding:20px;box-sizing:border-box;font-family:'Zen Maru Gothic',sans-serif}
+@keyframes nqpulse{0%,100%{box-shadow:0 6px 0 #a63c1e,0 0 0 7px rgba(209,80,46,.18)}50%{box-shadow:0 6px 0 #a63c1e,0 0 0 13px rgba(209,80,46,.10)}}
+@keyframes nqstar{0%{transform:scale(.2) rotate(-30deg)}70%{transform:scale(1.25) rotate(8deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes nqup{from{opacity:0;transform:translateY(14px)}}
+@keyframes nqseal{0%{transform:scale(0) rotate(-18deg);opacity:0}60%{transform:scale(1.15) rotate(6deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+input::placeholder,textarea::placeholder{color:#a99e88}
+html[data-nq-rm="true"] *{animation:none!important;transition:none!important}
+</style>
+</helmet>
+
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#f4eee2;font-family:'Zen Maru Gothic',sans-serif;box-sizing:border-box;padding-top:62px;overflow:hidden">
+
+<!-- ═══════════ HOME (tabbed) ═══════════ -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;height:100%;min-height:0">
+
+  <!-- stats header -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 18px 10px;flex:none">
+    <div style="display:flex;align-items:center;gap:9px">
+      <div style="width:30px;height:30px;border-radius:9px;background:#23415d;display:grid;place-items:center;box-shadow:0 2px 0 #142838"><div style="width:13px;height:13px;background:#d1502e;border-radius:3px;transform:rotate(45deg)"></div></div>
+      <div style="line-height:1"><div style="font:900 16px 'Zen Maru Gothic',sans-serif;color:#23303c">Nihon Quest</div><div style="font:700 9px 'Zen Kaku Gothic New',sans-serif;color:#a08b5f;letter-spacing:2px">にほんクエスト</div></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <div style="display:flex;align-items:center;gap:6px;background:#f7e7d5;border-radius:999px;padding:5px 11px"><div style="width:10px;height:12px;background:#d1502e;border-radius:50% 50% 50% 50%/60% 60% 40% 40%"></div><span style="font:900 14px 'Zen Maru Gothic',sans-serif;color:#a63c1e">{{ streak }}</span></div>
+      <div style="display:flex;align-items:center;gap:6px;background:#e6eef4;border-radius:999px;padding:5px 11px"><div style="width:10px;height:10px;background:#2b5a86;border-radius:2px;transform:rotate(45deg)"></div><span style="font:900 14px 'Zen Maru Gothic',sans-serif;color:#23415d">{{ xp }} XP</span></div>
+    </div>
+  </div>
+
+  <div style="flex:1;overflow-y:auto;min-height:0;padding-bottom:12px">
+
+    <!-- ── JOURNEY (learn) ── -->
+    <sc-if value="{{ tabLearn }}" hint-placeholder-val="{{ true }}">
+      <!-- daily goal -->
+      <div style="margin:2px 18px 0;display:flex;align-items:center;gap:14px;background:#efe4cd;border-radius:18px;padding:12px 16px">
+        <div style="width:46px;height:46px;border-radius:50%;background:conic-gradient(#2b5a86 0 {{ dailyPctCss }},#dccfae {{ dailyPctCss }} 100%);display:grid;place-items:center;flex:none"><div style="width:34px;height:34px;border-radius:50%;background:#efe4cd;display:grid;place-items:center;font:900 11px 'Zen Maru Gothic',sans-serif;color:#23415d">{{ dailyPct }}%</div></div>
+        <div><div style="font:900 14px 'Zen Maru Gothic',sans-serif;color:#23303c">Today's goal</div><div style="font:700 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64">{{ dailyLine }}</div></div>
+      </div>
+
+      <!-- guide greeting -->
+      <div style="display:flex;gap:12px;align-items:flex-end;padding:16px 18px 4px">
+        <div style="flex:none;border-radius:16px;box-shadow:0 3px 0 #d8cbb0"><dc-import name="GuideFace" face="{{ greet.face }}" size="56" hint-size="56px,56px"></dc-import></div>
+        <div style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:16px 16px 16px 4px;padding:10px 14px;box-shadow:0 2px 0 #e7dcc6"><div style="font:900 12px 'Zen Maru Gothic',sans-serif;color:#2b5a86;margin-bottom:1px">{{ greet.name }} · {{ greet.role }}</div><div style="font:700 13px/1.35 'Zen Maru Gothic',sans-serif;color:#3a4650">{{ greet.line }}</div></div>
+      </div>
+
+      <!-- winding journey -->
+      <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:15px;padding:12px 0 8px">
+        <div style="position:absolute;top:26px;bottom:26px;left:50%;width:0;border-left:3px dashed #dccfae;z-index:0"></div>
+        <sc-for list="{{ journey }}" as="j" hint-placeholder-count="6">
+          <div style="width:100%;box-sizing:border-box;position:relative;z-index:1">
+            <sc-if value="{{ j.isBanner }}" hint-placeholder-val="{{ false }}">
+              <div style="margin:8px 18px 2px;background:#23415d;border-radius:16px;padding:11px 16px;box-shadow:0 4px 0 #142838"><div style="font:900 9px 'Zen Maru Gothic',sans-serif;color:rgba(255,253,248,.6);letter-spacing:2px">{{ j.kicker }}</div><div style="font:900 15px 'Zen Maru Gothic',sans-serif;color:#f4eee2">{{ j.region }}</div></div>
+            </sc-if>
+            <sc-if value="{{ j.isNode }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;align-items:center;transform:translateX({{ j.dx }}px);position:relative;width:130px;margin:0 auto">
+                <sc-if value="{{ j.isSide }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:{{ j.stubTop }};{{ j.stubDir }};width:20px;border-top:3px dashed #cdbf9f"></div></sc-if>
+                <sc-if value="{{ j.cur }}" hint-placeholder-val="{{ false }}"><div style="position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:#d1502e;color:#fff;font:900 9px 'Zen Maru Gothic',sans-serif;padding:3px 10px;border-radius:999px;letter-spacing:1px;z-index:2;white-space:nowrap">はじめる · START</div></sc-if>
+                <div onClick="{{ j.onTap }}" style="width:{{ j.size }}px;height:{{ j.size }}px;border-radius:{{ j.radius }};background:{{ j.bg }};box-shadow:{{ j.shadow }};display:grid;place-items:center;cursor:{{ j.cursor }};animation:{{ j.anim }};border:{{ j.ring }}">
+                  <sc-if value="{{ j.done }}" hint-placeholder-val="{{ false }}"><span style="font:900 24px 'Zen Maru Gothic',sans-serif;color:#fffdf8">✓</span></sc-if>
+                  <sc-if value="{{ j.cur }}" hint-placeholder-val="{{ false }}"><div style="width:0;height:0;border-left:17px solid #fffdf8;border-top:11px solid transparent;border-bottom:11px solid transparent;margin-left:4px"></div></sc-if>
+                  <sc-if value="{{ j.lock }}" hint-placeholder-val="{{ true }}"><div style="width:14px;height:11px;border-radius:3px;background:#b6a482;position:relative"><div style="position:absolute;top:-7px;left:2px;width:10px;height:8px;border:2.5px solid #b6a482;border-bottom:none;border-radius:6px 6px 0 0;box-sizing:border-box"></div></div></sc-if>
+                </div>
+                <div style="font:900 11px 'Zen Maru Gothic',sans-serif;color:{{ j.labelFg }};margin-top:6px;text-align:center;max-width:120px;line-height:1.2">{{ j.title }}</div>
+                <sc-if value="{{ j.isSide }}" hint-placeholder-val="{{ false }}"><div style="font:900 8px 'Zen Maru Gothic',sans-serif;color:#b08a3a;letter-spacing:1.5px;margin-top:2px">SIDE QUEST</div></sc-if>
+                <sc-if value="{{ j.done }}" hint-placeholder-val="{{ false }}"><div style="font:900 11px 'Zen Maru Gothic',sans-serif;color:#cf9f3a;letter-spacing:2px;margin-top:1px">{{ j.starsTxt }}</div></sc-if>
+              </div>
+            </sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- other tabs injected below -->
+    <sc-if value="{{ tabReview }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:8px 18px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font:900 24px 'Zen Maru Gothic',sans-serif;color:#23303c">Review</div>
+          <div style="font:700 12px 'Zen Kaku Gothic New',sans-serif;color:#a08b5f">復習</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div onClick="{{ onRevDaily }}" style="flex:1;text-align:center;background:{{ revDailyBg }};color:{{ revDailyFg }};border-radius:12px;padding:9px;font:900 13px 'Zen Maru Gothic',sans-serif;cursor:pointer">Daily · 5 min</div>
+          <div onClick="{{ onRevDeep }}" style="flex:1;text-align:center;background:{{ revDeepBg }};color:{{ revDeepFg }};border-radius:12px;padding:9px;font:900 13px 'Zen Maru Gothic',sans-serif;cursor:pointer">Deep study</div>
+        </div>
+        <div style="display:flex;gap:10px">
+          <div style="flex:1;background:#e6eef4;border-radius:14px;padding:11px 14px"><div style="font:900 20px 'Zen Maru Gothic',sans-serif;color:#23415d">{{ revDueN }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">cards due</div></div>
+          <div style="flex:1;background:#eef1e4;border-radius:14px;padding:11px 14px"><div style="font:900 20px 'Zen Maru Gothic',sans-serif;color:#566f3e">{{ revCount }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">reviewed today</div></div>
+        </div>
+
+        <sc-if value="{{ revHasCard }}" hint-placeholder-val="{{ true }}">
+          <div style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:20px;padding:20px 18px;box-shadow:0 3px 0 #e7dcc6;display:flex;flex-direction:column;align-items:center;gap:12px;min-height:220px;justify-content:center">
+            <div style="font:900 9px 'Zen Maru Gothic',sans-serif;color:#2b5a86;letter-spacing:2px">{{ revTypeTag }}</div>
+            <div style="display:flex;align-items:center;gap:12px">
+              <div onClick="{{ onSpeakRev }}" style="width:34px;height:34px;border-radius:10px;background:#2b5a86;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;box-shadow:0 3px 0 #1c4062"><div style="width:5px;height:9px;background:#fff;border-radius:1.5px"></div><div style="width:0;height:0;border-right:9px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:-2px"></div></div>
+              <div style="font:900 34px 'Zen Kaku Gothic New',sans-serif;color:#23303c;text-align:center">{{ revFront }}</div>
+            </div>
+            <sc-if value="{{ revShowReveal }}" hint-placeholder-val="{{ true }}">
+              <div onClick="{{ onReveal }}" style="margin-top:6px;background:#f0e6d0;border-radius:12px;padding:11px 24px;font:900 14px 'Zen Maru Gothic',sans-serif;color:#8a7d64;cursor:pointer">Reveal answer</div>
+            </sc-if>
+            <sc-if value="{{ revShowBack }}" hint-placeholder-val="{{ false }}">
+              <div style="font:700 16px 'Zen Maru Gothic',sans-serif;color:#3a4650;text-align:center">{{ revBack }}</div>
+              <div style="font:700 11px 'Zen Maru Gothic',sans-serif;color:#a08b5f">{{ revPrompt }}</div>
+            </sc-if>
+          </div>
+          <sc-if value="{{ revShowBack }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:7px">
+              <sc-for list="{{ grades }}" as="g" hint-placeholder-count="4">
+                <div onClick="{{ g.onTap }}" style="background:{{ g.bg }};color:{{ g.fg }};border-radius:12px;padding:11px 4px;text-align:center;font:900 13px 'Zen Maru Gothic',sans-serif;cursor:pointer">{{ g.t }}</div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </sc-if>
+      </div>
+      <sc-if value="{{ revHasCard }}" hint-placeholder-val="{{ false }}">
+        <div style="margin:0 18px;background:#eef1e4;border-radius:18px;padding:22px 18px;text-align:center"><div style="font:900 40px 'Zen Kaku Gothic New',sans-serif;color:#566f3e">済</div><div style="font:900 16px 'Zen Maru Gothic',sans-serif;color:#455038;margin-top:6px">All caught up!</div><div style="font:700 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;margin-top:2px">No cards due right now. Complete lessons to add more, or come back later.</div></div>
+      </sc-if>
+    </sc-if>
+    <sc-if value="{{ tabBook }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:8px 18px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font:900 24px 'Zen Maru Gothic',sans-serif;color:#23303c">Phrasebook</div>
+          <div style="font:700 12px 'Zen Kaku Gothic New',sans-serif;color:#a08b5f">単語帳</div>
+        </div>
+        <input value="{{ bookQ }}" onChange="{{ onQuery }}" placeholder="Search: allergy, where, ticket, 運休…" style="width:100%;box-sizing:border-box;font:700 15px 'Zen Maru Gothic',sans-serif;color:#23303c;background:#fffdf8;border:2px solid #e7dcc6;border-radius:14px;padding:12px 14px;outline:none">
+        <select onChange="{{ onSit }}" style="width:100%;box-sizing:border-box;font:700 14px 'Zen Maru Gothic',sans-serif;color:#3a4650;background:#fffdf8;border:2px solid #e7dcc6;border-radius:14px;padding:11px 12px;outline:none">
+          <sc-for list="{{ sitOptions }}" as="o" hint-placeholder-count="4">
+            <option value="{{ o.id }}" selected="{{ o.sel }}">{{ o.label }}</option>
+          </sc-for>
+        </select>
+        <div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#a08b5f">{{ bookCount }}</div>
+        <sc-for list="{{ phrases }}" as="p" hint-placeholder-count="6">
+          <div style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:16px;padding:13px 15px;display:flex;gap:12px;align-items:flex-start">
+            <div style="flex:1;min-width:0">
+              <div style="font:900 21px/1.3 'Zen Kaku Gothic New',sans-serif;color:#23303c">{{ p.jp }}</div>
+              <sc-if value="{{ p.showRomaji }}" hint-placeholder-val="{{ false }}"><div style="font:700 12px 'Zen Maru Gothic',sans-serif;color:#2b5a86;margin-top:2px">{{ p.romajiTxt }}</div></sc-if>
+              <div style="font:700 13.5px 'Zen Maru Gothic',sans-serif;color:#3a4650;margin-top:3px">{{ p.eng }}</div>
+              <div style="font:700 10.5px 'Zen Maru Gothic',sans-serif;color:#a08b5f;margin-top:3px">{{ p.meta }}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex:none;align-items:stretch">
+              <div onClick="{{ p.onSpeak }}" style="width:34px;height:34px;border-radius:10px;background:#2b5a86;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 0 #1c4062"><div style="width:5px;height:9px;background:#fff;border-radius:1.5px"></div><div style="width:0;height:0;border-right:9px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent;margin-left:-2px"></div></div>
+              <div onClick="{{ p.onHelp }}" style="background:{{ p.helpBg }};border:1.5px solid #e7dcc6;border-radius:9px;padding:4px 6px;text-align:center;font:800 10px 'Zen Maru Gothic',sans-serif;color:#6f7d84;cursor:pointer">{{ p.helpTxt }}</div>
+              <div onClick="{{ p.onFav }}" style="text-align:center;font:900 18px 'Zen Maru Gothic',sans-serif;color:{{ p.favFg }};cursor:pointer;line-height:1">{{ p.favTxt }}</div>
+            </div>
+          </div>
+        </sc-for>
+        <sc-if value="{{ bookEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#eef1e4;border-radius:16px;padding:22px 18px;text-align:center"><div style="font:900 15px 'Zen Maru Gothic',sans-serif;color:#455038">No matches</div><div style="font:700 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;margin-top:2px">Try another word, or clear the filter.</div></div>
+        </sc-if>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabKana }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:8px 18px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font:900 24px 'Zen Maru Gothic',sans-serif;color:#23303c">Kana &amp; Signs</div>
+          <div style="font:700 12px 'Zen Kaku Gothic New',sans-serif;color:#a08b5f">かな・記号</div>
+        </div>
+        <div style="font:900 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;letter-spacing:1px">{{ kanaHiraTitle }}</div>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:6px">
+          <sc-for list="{{ kanaHira }}" as="k" hint-placeholder-count="18">
+            <div onClick="{{ k.onTap }}" style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:10px;padding:9px 0;text-align:center;font:700 18px 'Zen Kaku Gothic New',sans-serif;color:#23303c;cursor:pointer">{{ k.t }}</div>
+          </sc-for>
+        </div>
+        <div style="font:900 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;letter-spacing:1px;margin-top:4px">{{ kanaKataTitle }}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ kanaKata }}" as="k" hint-placeholder-count="10">
+            <div onClick="{{ k.onTap }}" style="background:#e6eef4;border-radius:10px;padding:8px 12px;font:700 15px 'Zen Kaku Gothic New',sans-serif;color:#23415d;cursor:pointer">{{ k.t }}</div>
+          </sc-for>
+        </div>
+        <div style="font:900 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;letter-spacing:1px;margin-top:4px">Travel signs · 記号</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <sc-for list="{{ signList }}" as="s" hint-placeholder-count="8">
+            <div onClick="{{ s.onSpeak }}" style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:12px;padding:10px 12px;cursor:pointer"><div style="font:900 20px 'Zen Kaku Gothic New',sans-serif;color:#23303c">{{ s.text }}</div><div style="font:700 10.5px 'Zen Maru Gothic',sans-serif;color:#2b5a86;margin-top:1px">{{ s.reading }}</div><div style="font:700 12px 'Zen Maru Gothic',sans-serif;color:#3a4650;margin-top:1px">{{ s.meaning }}</div></div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabPass }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:8px 18px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div style="font:900 24px 'Zen Maru Gothic',sans-serif;color:#23303c">Passport</div>
+          <div style="font:700 12px 'Zen Kaku Gothic New',sans-serif;color:#a08b5f">手帳</div>
+        </div>
+        <div style="background:#23415d;border-radius:20px;padding:16px 18px;box-shadow:0 4px 0 #142838">
+          <div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#f4eee2">{{ passStamps }} / {{ passTotal }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:rgba(244,238,226,.7)">stamps collected</div></div>
+          <div style="height:10px;border-radius:999px;background:rgba(255,255,255,.15);overflow:hidden;margin:10px 0 8px"><div style="height:100%;width:{{ passPctCss }};background:#cf9f3a;border-radius:999px"></div></div>
+          <div style="display:flex;gap:16px"><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:rgba(244,238,226,.85)">{{ passPhrases }} phrases learned</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:rgba(244,238,226,.85)">{{ passSigns }} signs</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <sc-for list="{{ stampGrid }}" as="s" hint-placeholder-count="9">
+            <div style="background:{{ s.bg }};border:2px dashed {{ s.bd }};border-radius:16px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:6px">
+              <div style="width:44px;height:44px;border-radius:50%;border:2.5px solid {{ s.bd }};display:grid;place-items:center;font:900 20px 'Zen Kaku Gothic New',sans-serif;color:{{ s.fg }}">{{ s.seal }}</div>
+              <div style="font:800 9.5px 'Zen Maru Gothic',sans-serif;color:#6f7d84;text-align:center;line-height:1.2">{{ s.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ tabProfile }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:8px 18px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:60px;height:60px;border-radius:18px;background:#23415d;display:grid;place-items:center;font-size:30px;flex:none;box-shadow:0 3px 0 #142838">🧳</div>
+          <div><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#23303c">Traveller</div><div style="font:900 13px 'Zen Maru Gothic',sans-serif;color:#2b5a86">Level {{ profLevel }}</div></div>
+        </div>
+        <div style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:18px;padding:14px 16px">
+          <div style="display:flex;justify-content:space-between;font:800 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;margin-bottom:6px"><span>Level {{ profLevel }}</span><span>{{ profLevelLine }}</span></div>
+          <div style="height:12px;border-radius:999px;background:#e6dbc4;overflow:hidden"><div style="height:100%;width:{{ profLevelPct }};background:#2b5a86;border-radius:999px"></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="background:#fbeee6;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#a63c1e">{{ profStreak }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">day streak</div></div>
+          <div style="background:#e6eef4;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#23415d">{{ profXp }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">total XP</div></div>
+          <div style="background:#f0e6d0;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#9c7420">{{ profStamps }}/{{ profTotal }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">stamps</div></div>
+          <div style="background:#eef1e4;border-radius:16px;padding:12px 14px"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#566f3e">{{ profFav }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">saved phrases</div></div>
+        </div>
+
+        <!-- guides met -->
+        <div>
+          <div style="font:900 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;letter-spacing:1px;margin-bottom:8px">YOUR GUIDES</div>
+          <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px">
+            <sc-for list="{{ guides }}" as="g" hint-placeholder-count="4">
+              <div style="flex:none;width:84px;background:#fffdf8;border:2px solid #e7dcc6;border-radius:14px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:5px"><dc-import name="GuideFace" face="{{ g.face }}" size="40" hint-size="40px,40px"></dc-import><div style="font:900 11px 'Zen Maru Gothic',sans-serif;color:#23303c">{{ g.name }}</div><div style="font:700 8.5px 'Zen Maru Gothic',sans-serif;color:#a08b5f;text-align:center;line-height:1.2">{{ g.role }}</div></div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- settings -->
+        <div style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:18px;overflow:hidden">
+          <div style="padding:13px 16px;border-bottom:2px solid #f2ead7">
+            <div style="font:900 14px 'Zen Maru Gothic',sans-serif;color:#23303c;margin-bottom:8px">Romaji help</div>
+            <div style="display:flex;background:#f0e6d0;border-radius:11px;padding:3px">
+              <div onClick="{{ onRmAlways }}" style="flex:1;text-align:center;background:{{ rmAlwaysBg }};color:{{ rmAlwaysFg }};border-radius:9px;padding:7px;font:800 12px 'Zen Maru Gothic',sans-serif;cursor:pointer">Always</div>
+              <div onClick="{{ onRmFade }}" style="flex:1;text-align:center;background:{{ rmFadeBg }};color:{{ rmFadeFg }};border-radius:9px;padding:7px;font:800 12px 'Zen Maru Gothic',sans-serif;cursor:pointer">Fade out</div>
+              <div onClick="{{ onRmOff }}" style="flex:1;text-align:center;background:{{ rmOffBg }};color:{{ rmOffFg }};border-radius:9px;padding:7px;font:800 12px 'Zen Maru Gothic',sans-serif;cursor:pointer">Off</div>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:2px solid #f2ead7">
+            <div><div style="font:900 14px 'Zen Maru Gothic',sans-serif;color:#23303c">Sound effects</div><div style="font:700 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">Subtle chimes on answers</div></div>
+            <div onClick="{{ onToggleSfx }}" style="width:50px;height:28px;border-radius:999px;background:{{ sfxBg }};display:flex;align-items:center;justify-content:{{ sfxJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fff"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:2px solid #f2ead7">
+            <div><div style="font:900 14px 'Zen Maru Gothic',sans-serif;color:#23303c">Auto-play in review</div><div style="font:700 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">Speak the card when revealed</div></div>
+            <div onClick="{{ onToggleAuto }}" style="width:50px;height:28px;border-radius:999px;background:{{ autoBg }};display:flex;align-items:center;justify-content:{{ autoJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fff"></div></div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 16px">
+            <div><div style="font:900 14px 'Zen Maru Gothic',sans-serif;color:#23303c">Reduce motion</div><div style="font:700 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">Calmer transitions</div></div>
+            <div onClick="{{ onToggleMotion }}" style="width:50px;height:28px;border-radius:999px;background:{{ motionBg }};display:flex;align-items:center;justify-content:{{ motionJus }};padding:3px;box-sizing:border-box;cursor:pointer"><div style="width:22px;height:22px;border-radius:50%;background:#fff"></div></div>
+          </div>
+        </div>
+        <div onClick="{{ onReset }}" style="text-align:center;font:800 13px 'Zen Maru Gothic',sans-serif;color:{{ resetFg }};padding:10px;cursor:pointer;border:2px dashed #ddd0b4;border-radius:14px">{{ resetTxt }}</div>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- bottom nav -->
+  <div style="flex:none;display:flex;justify-content:space-around;align-items:center;border-top:2px solid #e6dbc4;padding:9px 2px 26px;background:#fffdf8">
+    <div onClick="{{ onTabLearn }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:54px"><div style="width:20px;height:20px;border-radius:6px;background:{{ nav1 }};transform:rotate(45deg)"></div><span style="font:900 9px 'Zen Maru Gothic',sans-serif;color:{{ nav1f }}">Journey</span></div>
+    <div onClick="{{ onTabReview }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:54px"><div style="width:21px;height:21px;border-radius:6px;border:3px solid {{ nav2 }};box-sizing:border-box"></div><span style="font:900 9px 'Zen Maru Gothic',sans-serif;color:{{ nav2f }}">Review</span></div>
+    <div onClick="{{ onTabBook }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:54px"><div style="width:18px;height:22px;border-radius:2px 4px 4px 2px;background:{{ nav3 }}"></div><span style="font:900 9px 'Zen Maru Gothic',sans-serif;color:{{ nav3f }}">Phrases</span></div>
+    <div onClick="{{ onTabKana }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:54px"><div style="width:22px;height:22px;display:grid;place-items:center;font:900 16px 'Zen Kaku Gothic New',sans-serif;color:{{ navKf }}">あ</div><span style="font:900 9px 'Zen Maru Gothic',sans-serif;color:{{ navKf }}">Kana</span></div>
+    <div onClick="{{ onTabPass }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:54px"><div style="width:21px;height:21px;border-radius:50%;background:{{ nav4 }}"></div><span style="font:900 9px 'Zen Maru Gothic',sans-serif;color:{{ nav4f }}">Passport</span></div>
+    <div onClick="{{ onTabProfile }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;width:54px"><div style="width:20px;height:20px;border-radius:50%;background:{{ nav5 }}"></div><span style="font:900 9px 'Zen Maru Gothic',sans-serif;color:{{ nav5f }}">Profile</span></div>
+  </div>
+</div>
+</sc-if>
+
+<!-- ═══════════ LESSON ═══════════ -->
+<sc-if value="{{ isLesson }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;height:100%;min-height:0">
+  <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 18px 10px">
+    <div onClick="{{ onQuit }}" style="width:34px;height:34px;border-radius:50%;background:#e6dbc4;display:grid;place-items:center;cursor:pointer;font:900 15px 'Zen Maru Gothic',sans-serif;color:#8a7d64;flex:none">✕</div>
+    <div style="flex:1;height:14px;border-radius:999px;background:#e6dbc4;overflow:hidden"><div style="height:100%;width:{{ lsPct }}%;background:#2b5a86;border-radius:999px;transition:width .3s ease"></div></div>
+    <sc-if value="{{ comboShow }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:5px;background:#f7e7d5;border-radius:999px;padding:4px 10px;flex:none"><div style="width:9px;height:9px;background:#d1502e;transform:rotate(45deg)"></div><span style="font:900 13px 'Zen Maru Gothic',sans-serif;color:#a63c1e">{{ comboTxt }}</span></div></sc-if>
+  </div>
+
+  <!-- intro -->
+  <sc-if value="{{ lsIntro }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;padding:16px 22px;gap:14px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:8px;animation:nqup .4s ease">
+        <div style="border-radius:27px;box-shadow:0 5px 0 #d8cbb0"><dc-import name="GuideFace" face="{{ lchar.face }}" size="96" hint-size="96px,96px"></dc-import></div>
+        <div style="background:#2b5a86;color:#fff;font:900 12px 'Zen Maru Gothic',sans-serif;padding:4px 14px;border-radius:999px">{{ lchar.name }} · {{ lchar.role }}</div>
+      </div>
+      <div style="background:#fffdf8;border:2px solid #e7dcc6;border-radius:20px;padding:16px 18px;box-shadow:0 3px 0 #e7dcc6;animation:nqup .4s .08s ease">
+        <div style="font:900 10px 'Zen Maru Gothic',sans-serif;color:#8a7d64;letter-spacing:1.5px;margin-bottom:4px">{{ lsKicker }}</div>
+        <div style="font:900 20px 'Zen Maru Gothic',sans-serif;color:#23303c;margin-bottom:6px">{{ lsTitle }}</div>
+        <div style="font:700 14px/1.5 'Zen Maru Gothic',sans-serif;color:#3a4650">{{ lsGoal }}</div>
+      </div>
+      <div style="background:#eef1e4;border-radius:20px;padding:14px 18px;animation:nqup .4s .16s ease">
+        <div style="font:900 10px 'Zen Maru Gothic',sans-serif;color:#566f3e;letter-spacing:1.5px;margin-bottom:4px">GRAMMAR · {{ tipTitle }}</div>
+        <div style="font:700 13px/1.5 'Zen Maru Gothic',sans-serif;color:#455038;margin-bottom:8px">{{ tipBody }}</div>
+        <div style="display:inline-block;font:700 13px 'Zen Kaku Gothic New',sans-serif;color:#2b5a86;background:#fffdf8;border:1px dashed #b9c6a3;border-radius:8px;padding:5px 10px">{{ tipPattern }}</div>
+      </div>
+      <sc-if value="{{ tip2Show }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#eef1e4;border-radius:20px;padding:14px 18px;animation:nqup .4s .2s ease">
+          <div style="font:900 10px 'Zen Maru Gothic',sans-serif;color:#566f3e;letter-spacing:1.5px;margin-bottom:4px">GRAMMAR · {{ tip2Title }}</div>
+          <div style="font:700 13px/1.5 'Zen Maru Gothic',sans-serif;color:#455038;margin-bottom:8px">{{ tip2Body }}</div>
+          <div style="display:inline-block;font:700 13px 'Zen Kaku Gothic New',sans-serif;color:#2b5a86;background:#fffdf8;border:1px dashed #b9c6a3;border-radius:8px;padding:5px 10px">{{ tip2Pattern }}</div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ cultureShow }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#f6ead6;border-radius:20px;padding:14px 18px;animation:nqup .4s .28s ease">
+          <div style="font:900 10px 'Zen Maru Gothic',sans-serif;color:#a63c1e;letter-spacing:1.5px;margin-bottom:8px">CULTURE · 文化</div>
+          <sc-for list="{{ culture }}" as="c" hint-placeholder-count="2">
+            <div style="margin-bottom:8px"><div style="font:900 13px 'Zen Maru Gothic',sans-serif;color:#3a4650;margin-bottom:1px">{{ c.title }}</div><div style="font:700 12.5px/1.5 'Zen Maru Gothic',sans-serif;color:#5d5443">{{ c.body }}</div></div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <div style="flex:1"></div>
+      <div onClick="{{ onStartEx }}" style="background:#d1502e;border-radius:18px;padding:16px;text-align:center;font:900 17px 'Zen Maru Gothic',sans-serif;color:#fff;box-shadow:0 4px 0 #a63c1e;cursor:pointer;margin-bottom:24px">Start · はじめる</div>
+    </div>
+  </sc-if>
+
+  <!-- exercise -->
+  <sc-if value="{{ lsEx }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;padding:10px 22px 0;gap:14px">
+      <div style="font:900 18px 'Zen Maru Gothic',sans-serif;color:#23303c">{{ exTitle }}</div>
+
+      <sc-if value="{{ exShowPrompt }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:11px;background:#fffdf8;border:2px solid #e7dcc6;border-radius:16px;padding:14px 16px">
+          <sc-if value="{{ exCanSpeak }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ onSpeakEx }}" style="width:38px;height:38px;border-radius:12px;background:#2b5a86;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;box-shadow:0 3px 0 #1c4062"><div style="width:6px;height:10px;background:#fff;border-radius:1.5px"></div><div style="width:0;height:0;border-right:11px solid #fff;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:-3px"></div><div style="width:5px;height:13px;border:2.5px solid #fff;border-left:none;border-radius:0 13px 13px 0;margin-left:3px"></div></div>
+          </sc-if>
+          <div style="font:900 21px/1.35 'Zen Kaku Gothic New',sans-serif;color:#23303c">{{ exPrompt }}</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ exIsListen }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;justify-content:center;padding:10px 0">
+          <div onClick="{{ onSpeakEx }}" style="width:92px;height:92px;border-radius:28px;background:#2b5a86;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 0 #1c4062"><div style="width:11px;height:18px;background:#fff;border-radius:2px"></div><div style="width:0;height:0;border-right:20px solid #fff;border-top:14px solid transparent;border-bottom:14px solid transparent;margin-left:-5px"></div><div style="width:8px;height:24px;border:4px solid #fff;border-left:none;border-radius:0 24px 24px 0;margin-left:5px"></div></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ exHasChoices }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ choices }}" as="c" hint-placeholder-count="4">
+            <div onClick="{{ c.onPick }}" style="background:{{ c.bg }};border:2px solid {{ c.bd }};border-radius:16px;padding:13px 16px;font:900 16px 'Zen Kaku Gothic New',sans-serif;color:{{ c.fg }};cursor:pointer;box-shadow:0 3px 0 {{ c.bd }}">{{ c.t }}</div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ exIsMatch }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ matchL }}" as="m" hint-placeholder-count="4">
+              <div onClick="{{ m.onPick }}" style="background:{{ m.bg }};border:2px solid {{ m.bd }};border-radius:14px;padding:12px 8px;font:900 18px 'Zen Kaku Gothic New',sans-serif;color:{{ m.fg }};cursor:pointer;text-align:center;opacity:{{ m.op }};box-shadow:0 3px 0 {{ m.bd }}">{{ m.t }}</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ matchR }}" as="m" hint-placeholder-count="4">
+              <div onClick="{{ m.onPick }}" style="background:{{ m.bg }};border:2px solid {{ m.bd }};border-radius:14px;padding:12px 8px;font:800 13px 'Zen Maru Gothic',sans-serif;color:{{ m.fg }};cursor:pointer;text-align:center;opacity:{{ m.op }};box-shadow:0 3px 0 {{ m.bd }}">{{ m.t }}</div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ exIsTiles }}" hint-placeholder-val="{{ false }}">
+        <div style="min-height:52px;border-bottom:2px dashed #d8cbb0;display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;padding:4px 0 10px">
+          <sc-for list="{{ pickedTiles }}" as="p" hint-placeholder-count="0">
+            <div onClick="{{ p.onRemove }}" style="background:#2b5a86;border-radius:12px;padding:9px 13px;font:700 16px 'Zen Kaku Gothic New',sans-serif;color:#fff;cursor:pointer;box-shadow:0 3px 0 #1c4062">{{ p.t }}</div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <sc-for list="{{ bankTiles }}" as="b" hint-placeholder-count="6">
+            <div onClick="{{ b.onPick }}" style="background:{{ b.bg }};border-radius:12px;padding:9px 13px;font:700 16px 'Zen Kaku Gothic New',sans-serif;color:{{ b.fg }};cursor:pointer;box-shadow:0 3px 0 {{ b.sh }};opacity:{{ b.op }}">{{ b.t }}</div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ exIsType }}" hint-placeholder-val="{{ false }}">
+        <input value="{{ typed }}" onChange="{{ onTyped }}" onKeyDown="{{ onTypedKey }}" placeholder="Type the English meaning…" style="width:100%;box-sizing:border-box;font:700 17px 'Zen Maru Gothic',sans-serif;color:#23303c;background:#fffdf8;border:2px solid #e7dcc6;border-radius:16px;padding:15px 16px;outline:none">
+      </sc-if>
+
+      <div style="flex:1"></div>
+
+      <sc-if value="{{ showCheck }}" hint-placeholder-val="{{ false }}">
+        <div onClick="{{ onCheck }}" style="background:{{ checkBg }};border-radius:18px;padding:15px;text-align:center;font:900 16px 'Zen Maru Gothic',sans-serif;color:{{ checkFg }};box-shadow:0 4px 0 {{ checkSh }};cursor:pointer;margin-bottom:24px">Check · こたえあわせ</div>
+      </sc-if>
+
+      <sc-if value="{{ fbShow }}" hint-placeholder-val="{{ false }}">
+        <div style="background:{{ fbBg }};border-radius:20px 20px 0 0;padding:16px 18px 30px;margin:0 -22px;animation:nqup .25s ease">
+          <div style="font:900 17px 'Zen Maru Gothic',sans-serif;color:{{ fbFg }}">{{ fbTitle }}</div>
+          <sc-if value="{{ fbHasDetail }}" hint-placeholder-val="{{ false }}"><div style="font:800 14px 'Zen Maru Gothic',sans-serif;color:{{ fbFg }};margin-top:2px">{{ fbDetail }}</div></sc-if>
+          <div onClick="{{ onContinue }}" style="margin-top:12px;background:{{ fbBtnBg }};border-radius:16px;padding:13px;text-align:center;font:900 16px 'Zen Maru Gothic',sans-serif;color:#fff;box-shadow:0 4px 0 {{ fbBtnSh }};cursor:pointer">Continue</div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- results -->
+  <sc-if value="{{ lsDone }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;align-items:center;padding:22px 22px;gap:12px">
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <sc-for list="{{ resStars }}" as="s" hint-placeholder-count="3">
+          <div style="font:900 42px 'Zen Maru Gothic',sans-serif;color:{{ s.c }};animation:nqstar .5s {{ s.delay }} ease">★</div>
+        </sc-for>
+      </div>
+      <div style="font:900 24px 'Zen Maru Gothic',sans-serif;color:#23303c">{{ resTitle }}</div>
+      <!-- stamp earned -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin:2px 0">
+        <div style="width:78px;height:78px;border-radius:50%;border:3px solid #d1502e;display:grid;place-items:center;color:#d1502e;font:900 26px 'Zen Kaku Gothic New',sans-serif;animation:nqseal .5s .2s both;background:#fbeee6">済</div>
+        <div style="font:900 12px 'Zen Maru Gothic',sans-serif;color:#a63c1e;letter-spacing:1px">{{ resStamp }}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-top:4px">
+        <div style="background:#e6eef4;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#23415d">+{{ resXp }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">XP earned</div></div>
+        <div style="background:#f0e6d0;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#a63c1e">{{ resAcc }}%</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">accuracy</div></div>
+        <div style="background:#fbeee6;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#d1502e">x{{ resCombo }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">best combo</div></div>
+        <div style="background:#eef1e4;border-radius:16px;padding:12px 14px;text-align:center"><div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#566f3e">{{ resStreak }}</div><div style="font:800 11px 'Zen Maru Gothic',sans-serif;color:#8a7d64">day streak</div></div>
+      </div>
+      <div style="flex:1"></div>
+      <div onClick="{{ onStartRoleplay }}" style="width:100%;box-sizing:border-box;background:#fffdf8;border:2px solid #2b5a86;border-radius:18px;padding:14px;text-align:center;font:900 15px 'Zen Maru Gothic',sans-serif;color:#2b5a86;cursor:pointer;margin-bottom:10px">Practise speaking · 会話</div>
+      <div onClick="{{ onQuit }}" style="width:100%;box-sizing:border-box;background:#d1502e;border-radius:18px;padding:16px;text-align:center;font:900 18px 'Zen Maru Gothic',sans-serif;color:#fff;box-shadow:0 4px 0 #a63c1e;cursor:pointer;margin-bottom:24px">Continue</div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- ═══════════ ROLEPLAY (speaking) ═══════════ -->
+<sc-if value="{{ isRoleplay }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;flex-direction:column;height:100%;min-height:0">
+  <div style="flex:none;display:flex;align-items:center;gap:12px;padding:8px 18px 10px">
+    <div onClick="{{ onRpQuit }}" style="width:34px;height:34px;border-radius:50%;background:#e6dbc4;display:grid;place-items:center;cursor:pointer;font:900 15px 'Zen Maru Gothic',sans-serif;color:#8a7d64;flex:none">✕</div>
+    <div style="flex:1"><div style="font:900 15px 'Zen Maru Gothic',sans-serif;color:#23303c">Speaking · 会話</div><div style="font:700 11px 'Zen Maru Gothic',sans-serif;color:#a08b5f">{{ rpStepTxt }}</div></div>
+  </div>
+
+  <sc-if value="{{ rpActive }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;padding:6px 22px 0;gap:14px">
+      <div style="display:flex;gap:12px;align-items:flex-start;animation:nqup .3s ease">
+        <div style="flex:none"><dc-import name="GuideFace" face="{{ rpFace }}" size="52" hint-size="52px,52px"></dc-import></div>
+        <div style="flex:1;background:#fffdf8;border:2px solid #e7dcc6;border-radius:16px 16px 16px 4px;padding:12px 14px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><div onClick="{{ onRpSpeakNpc }}" style="width:28px;height:28px;border-radius:8px;background:#2b5a86;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><div style="width:4px;height:8px;background:#fff;border-radius:1px"></div><div style="width:0;height:0;border-right:8px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:-2px"></div></div><div style="font:900 11px 'Zen Maru Gothic',sans-serif;color:#2b5a86">{{ rpGuide }}</div></div>
+          <div style="font:900 19px/1.4 'Zen Kaku Gothic New',sans-serif;color:#23303c">{{ rpNpc }}</div>
+        </div>
+      </div>
+      <div style="background:#eef1e4;border-radius:14px;padding:12px 14px"><div style="font:900 10px 'Zen Maru Gothic',sans-serif;color:#566f3e;letter-spacing:1.5px;margin-bottom:3px">YOUR GOAL</div><div style="font:700 13.5px/1.45 'Zen Maru Gothic',sans-serif;color:#455038">{{ rpGoal }}</div></div>
+      <textarea value="{{ rpInput }}" onChange="{{ onRpInput }}" placeholder="Type what you'd say (Japanese or romaji)…" style="width:100%;box-sizing:border-box;min-height:74px;resize:none;font:700 15px 'Zen Maru Gothic',sans-serif;color:#23303c;background:#fffdf8;border:2px solid #e7dcc6;border-radius:14px;padding:12px 14px;outline:none"></textarea>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div onClick="{{ onRpDictate }}" style="display:flex;align-items:center;gap:7px;background:#eef1e4;border-radius:12px;padding:9px 13px;cursor:pointer"><div style="width:9px;height:13px;background:#566f3e;border-radius:5px"></div><span style="font:800 12px 'Zen Maru Gothic',sans-serif;color:#566f3e">Dictate</span></div>
+        <sc-if value="{{ rpNoticeShow }}" hint-placeholder-val="{{ false }}"><div style="font:700 11.5px 'Zen Maru Gothic',sans-serif;color:#a08b5f">{{ rpNotice }}</div></sc-if>
+      </div>
+      <div onClick="{{ onRpCheck }}" style="background:{{ rpCheckBg }};border-radius:14px;padding:13px;text-align:center;font:900 15px 'Zen Maru Gothic',sans-serif;color:{{ rpCheckFg }};box-shadow:0 4px 0 {{ rpCheckSh }};cursor:pointer">Check gently</div>
+      <sc-if value="{{ rpFbShow }}" hint-placeholder-val="{{ false }}">
+        <div style="background:{{ rpFbBg }};border-radius:14px;padding:13px 15px"><div style="font:900 14px 'Zen Maru Gothic',sans-serif;color:{{ rpFbFg }}">{{ rpFbTitle }}</div><div style="font:700 12.5px/1.45 'Zen Maru Gothic',sans-serif;color:{{ rpFbFg }};margin-top:3px">{{ rpFbMsg }}</div></div>
+      </sc-if>
+      <sc-if value="{{ rpShowSafe }}" hint-placeholder-val="{{ false }}">
+        <div style="background:#fffdf8;border:2px dashed #cdbf9f;border-radius:14px;padding:12px 14px">
+          <div style="font:900 10px 'Zen Maru Gothic',sans-serif;color:#8a7d64;letter-spacing:1.5px;margin-bottom:8px">SAFE ANSWER</div>
+          <sc-for list="{{ rpSafe }}" as="s" hint-placeholder-count="1">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><div onClick="{{ s.onSpeak }}" style="width:30px;height:30px;border-radius:9px;background:#2b5a86;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none"><div style="width:4px;height:8px;background:#fff;border-radius:1px"></div><div style="width:0;height:0;border-right:8px solid #fff;border-top:6px solid transparent;border-bottom:6px solid transparent;margin-left:-2px"></div></div><div><div style="font:900 17px 'Zen Kaku Gothic New',sans-serif;color:#23303c">{{ s.jp }}</div><div style="font:700 11.5px 'Zen Maru Gothic',sans-serif;color:#3a4650">{{ s.eng }}</div></div></div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <div style="flex:1"></div>
+      <div onClick="{{ onRpNext }}" style="background:#d1502e;border-radius:16px;padding:15px;text-align:center;font:900 16px 'Zen Maru Gothic',sans-serif;color:#fff;box-shadow:0 4px 0 #a63c1e;cursor:pointer;margin-bottom:24px">{{ rpNextTxt }}</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ rpDone }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;overflow-y:auto;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;gap:12px">
+      <div style="border-radius:25px;box-shadow:0 5px 0 #d8cbb0;animation:nqseal .5s .1s both"><dc-import name="GuideFace" face="{{ rpFace }}" size="88" hint-size="88px,88px"></dc-import></div>
+      <div style="font:900 22px 'Zen Maru Gothic',sans-serif;color:#23303c">Speaking complete!</div>
+      <div style="font:700 13px/1.5 'Zen Maru Gothic',sans-serif;color:#8a7d64;text-align:center">{{ rpDoneSub }}</div>
+      <div style="background:#e6eef4;border-radius:14px;padding:10px 18px;font:900 14px 'Zen Maru Gothic',sans-serif;color:#23415d">+15 XP · 会話スタンプ</div>
+      <div onClick="{{ onRpQuit }}" style="margin-top:8px;background:#d1502e;border-radius:16px;padding:14px 44px;font:900 16px 'Zen Maru Gothic',sans-serif;color:#fff;box-shadow:0 4px 0 #a63c1e;cursor:pointer">Continue</div>
+    </div>
+  </sc-if>
+</div>
+</sc-if>
+
+</div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;402px&quot;,&quot;height&quot;:&quot;874px&quot;},&quot;dailyGoal&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:30,&quot;min&quot;:10,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;showCombo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Gameplay&quot;},&quot;speechRate&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:0.92,&quot;min&quot;:0.6,&quot;max&quot;:1.3,&quot;step&quot;:0.05,&quot;unit&quot;:&quot;x&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Voice&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { ready:false, screen:'home', tab:'learn', ls:null, combo:0, sel:null,
+      mSelL:null, mSelR:null, mDone:[], mErr:false, mFlash:null, fb:null, typed:'', picked:[], rpNotice:'',
+      q:'', sit:'all', help:[], reviewMode:'daily', revealed:false, confirmReset:false };
+    this.KEY = 'nihonquest.poc.v1';
+    this.FACES = {
+      emi:   {bg:'#e7eef4',skin:'#eab98f',hair:'#33261f',fringe:32,hat:'scarf',      wear:'#2b7a72',lip:'#c26b56',pin:'🧭'},
+      sora:  {bg:'#e6eef4',skin:'#f0c49c',hair:'#1d1a1f',fringe:28,hat:'headphones', wear:'#2b5a86',lip:'#c26b56',pin:'🚇'},
+      haruka:{bg:'#f3e7ea',skin:'#e8b78c',hair:'#241a1f',long:true,fringe:34,hat:'ornament',wear:'#c0392b',lip:'#c65a63',pin:'⛩️'},
+      daichi:{bg:'#f6ead6',skin:'#dc9a68',hair:'#3a2418',fringe:30,hat:'band',       wear:'#d1502e',lip:'#b85a48',pin:'🍜'},
+      mika:  {bg:'#e7f0e2',skin:'#edc199',hair:'#6b402d',fringe:36,hat:'cap',        wear:'#4f8a62',lip:'#c86b5a',pin:'🚌'},
+      kenji: {bg:'#e6eaef',skin:'#d9a373',hair:'#201a18',fringe:26,hat:'cap',        wear:'#23415d',lip:'#b5695a',pin:'🛟'},
+      yui:   {bg:'#e9eef6',skin:'#f1cba6',hair:'#7a5638',long:true,fringe:32,hat:'beanie',wear:'#5a86c4',lip:'#c86b5a',pin:'❄️'},
+    };
+  }
+  faceFor(id){ return this.FACES[id]||this.FACES.emi; }
+  dayKey(off){ const d=new Date(); d.setDate(d.getDate()+off); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+  componentDidMount(){
+    Promise.all([import('./content.js'), import('./engines.js'), import('./content-extra.js')]).then(([C,EN,X])=>{
+      this.C=C; this.EN=EN; this.chapters=C.chapters;
+      const EX=(X&&X.EXTRA)||{};
+      this.chapters.forEach(ch=>{ const x=EX[ch.id]; if(!x) return;
+        if(x.phrases) ch.phrases=x.phrases.map((p,i)=>({id:ch.id+'-p'+i, japanese:p.j, kana:p.j, romaji:p.r, english:p.e, politeness:p.pol||'safe polite', usage:p.u||'Traveller phrase', seg:p.seg||null, variants:[]}));
+        if(x.grammar) ch.grammar=x.grammar;
+        if(x.culture) ch.culture=x.culture;
+      });
+      this.allP=C.allPhrases();
+      this.pLookup=new Map(this.allP.map(x=>[x.id,x]));
+      this.CHUNKS=['です','ます','ください','どこ','はい','これ','を','は','が','ありがとう','すみません','お願いします'];
+      let saved=null; try{ saved=JSON.parse(localStorage.getItem(this.KEY)||'null'); }catch(e){}
+      this.P = EN.mergeProgress(saved&&saved.progress, C.chapters);
+      this.settings = EN.mergeSettings(saved&&saved.settings);
+      const g = saved&&saved.game || {};
+      const today=this.dayKey(0);
+      this.game = { xp:g.xp||0, streak:g.streak||0, lastDay:g.lastDay||'', dailyXp:g.dailyXp||0, dailyDay:g.dailyDay||'', stars:g.stars||{}, revDay:g.revDay||'', revCount:g.revCount||0 };
+      if(this.game.dailyDay!==today){ this.game.dailyXp=0; this.game.dailyDay=today; }
+      if(this.game.lastDay && this.game.lastDay!==today && this.game.lastDay!==this.dayKey(-1)) this.game.streak=0;
+      if(this.game.revDay!==today){ this.game.revDay=today; this.game.revCount=0; }
+      this.applyMotion();
+      this.setState({ ready:true });
+    });
+    if(window.speechSynthesis){ speechSynthesis.getVoices(); }
+  }
+  save(){ try{ localStorage.setItem(this.KEY, JSON.stringify({progress:this.P, settings:this.settings, game:this.game})); }catch(e){} }
+  speak(text){ if(!window.speechSynthesis||!text) return; const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; u.rate=this.props.speechRate ?? 0.92; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+
+  // ---- subtle sound effects (WebAudio, synthesized, no assets) ----
+  tone(freq, start, dur, type, gain){ const ac=this._ac; const o=ac.createOscillator(); const g=ac.createGain(); o.type=type||'sine'; o.frequency.value=freq; o.connect(g); g.connect(this._master); const t=ac.currentTime+start; g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(gain||0.05,t+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.03); }
+  sfx(kind){ if(this.settings&&this.settings.sfx===false) return;
+    try{ if(!this._ac){ this._ac=new (window.AudioContext||window.webkitAudioContext)(); this._master=this._ac.createGain(); this._master.gain.value=0.5; this._master.connect(this._ac.destination); } }catch(e){ return; }
+    const ac=this._ac; if(!ac) return; if(ac.state==='suspended') ac.resume();
+    if(kind==='tap'){ this.tone(440,0,0.05,'sine',0.028); }
+    else if(kind==='correct'){ this.tone(659.25,0,0.11,'sine',0.045); this.tone(987.77,0.075,0.15,'sine',0.04); }
+    else if(kind==='wrong'){ this.tone(207.65,0,0.16,'triangle',0.045); this.tone(164.81,0.06,0.2,'triangle',0.035); }
+    else if(kind==='match'){ this.tone(783.99,0,0.09,'sine',0.04); }
+    else if(kind==='complete'){ [523.25,659.25,783.99,1046.5].forEach((f,i)=>this.tone(f,i*0.1,0.3,'sine',0.045)); }
+    else if(kind==='reveal'){ this.tone(587.33,0,0.08,'sine',0.03); }
+  }
+
+  shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+  pick3(pool, excl){ return this.shuffle(pool.filter(x=>x!==excl)).slice(0,3); }
+
+  buildExercises(ch){
+    const ph=ch.phrases, sg=ch.signs;
+    const sameE=ph.map(p=>p.english), sameJ=ph.map(p=>p.japanese);
+    const engPool=this.allP.map(p=>p.english), jpPool=this.allP.map(p=>p.japanese);
+    const dist=(pool,same,excl)=>{ let o=this.shuffle(same.filter(x=>x!==excl)); if(o.length<3) o=o.concat(this.shuffle(pool.filter(x=>x!==excl&&o.indexOf(x)<0))); return o.slice(0,3); };
+    const trans=p=>({type:'translate', key:p.id, prompt:p.japanese, speak:p.japanese, answer:p.english, choices:this.shuffle([p.english,...dist(engPool,sameE,p.english)])});
+    const prod=p=>({type:'produce', key:p.id, prompt:p.english, speak:p.japanese, answer:p.japanese, choices:this.shuffle([p.japanese,...dist(jpPool,sameJ,p.japanese)])});
+    const listen=p=>({type:'listen', key:p.id, speak:p.japanese, answer:p.english, choices:this.shuffle([p.english,...dist(engPool,sameE,p.english)])});
+    const type=p=>({type:'type', key:p.id, prompt:p.japanese, speak:p.japanese, answer:p.english});
+    const tiles=p=>{ const seg=p.seg||[]; const pool=(this.CHUNKS||[]).filter(c=>seg.indexOf(c)<0); const d=this.shuffle(pool).slice(0,3); return {type:'tiles', key:p.id, prompt:p.english, speak:p.japanese, answer:p.japanese, tiles:this.shuffle([...seg,...d])}; };
+    const match={type:'match', key:'match:'+ch.id, left:sg.map(s=>s.text), right:this.shuffle(sg.map(s=>s.meaning)), pairs:Object.fromEntries(sg.map(s=>[s.text,s.meaning]))};
+    const ex3 = (ph[3]&&ph[3].seg&&ph[3].seg.length)?tiles(ph[3]):type(ph[3]||ph[0]);
+    return [trans(ph[0]), listen(ph[1]), prod(ph[2]), ex3, match, type(ph[4]||ph[1])];
+  }
+  doCheck(){ const ex=this.curEx(); if(!ex||this.state.fb) return; let ok=false;
+    if(ex.type==='tiles'){ ok=this.state.picked.join('')===ex.answer; }
+    else if(ex.type==='type'){ const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim(); const t=norm(this.state.typed); const parts=String(ex.answer).split('/').map(norm); ok=!!t&&parts.some(p=>p===t||(t.length>=4&&(p.includes(t)||t.includes(p)))); }
+    this.answer(ok, ex.answer);
+  }
+
+  startLesson(id){
+    this.sfx('tap');
+    const ch=this.C.chapterById(id);
+    this.setState({ screen:'lesson', ls:{ ch, exercises:this.buildExercises(ch), i:0, phase:'intro', right:0, wrong:0, comboMax:0, gained:0, applied:false }, combo:0, fb:null, sel:null, mSelL:null, mSelR:null, mDone:[], mErr:false, typed:'', picked:[] });
+  }
+  curEx(){ const ls=this.state.ls; return ls&&ls.phase==='ex'?ls.exercises[ls.i]:null; }
+
+  answer(ok, correctShown){
+    const ls=this.state.ls, ex=this.curEx(); if(!ex||this.state.fb) return;
+    const combo=ok?this.state.combo+1:0;
+    const bonus=ok?Math.min(Math.max(combo-1,0),5)*2:0;
+    const gain=ok?10+bonus:0;
+    const nls={...ls, right:ls.right+(ok?1:0), wrong:ls.wrong+(ok?0:1), comboMax:Math.max(ls.comboMax,combo), gained:ls.gained+gain};
+    const fb = ok
+      ? { title: combo>=3?'いいね! Combo x'+combo:'Correct! せいかい', detail:'+'+gain+' XP'+(bonus?' (combo +'+bonus+')':''), bg:'#e7f0dd', fg:'#4c6635', btn:'#6f8f52', btnSh:'#566f3e' }
+      : { title:'Correct answer:', detail:correctShown, bg:'#fbe3da', fg:'#a63c1e', btn:'#d1502e', btnSh:'#a63c1e' };
+    this.sfx(ok?'correct':'wrong');
+    this.setState({ ls:nls, combo, fb });
+    if(ok&&ex.speak) this.speak(ex.speak);
+  }
+  continueNext(){
+    const ls=this.state.ls; if(!ls) return;
+    if(ls.i+1>=ls.exercises.length){ this.finishLesson(); return; }
+    this.setState({ ls:{...ls,i:ls.i+1}, fb:null, sel:null, typed:'', picked:[], mSelL:null, mSelR:null, mDone:[], mErr:false });
+    setTimeout(()=>{ const e=this.curEx(); if(e&&e.type==='listen') this.speak(e.speak); },250);
+  }
+  pickMatch(side,t){
+    const S=this.state; if(S.mDone.includes(t)) return;
+    if(side==='l'){ if(S.mSelL===t){ this.setState({mSelL:null}); return;} this.setState({mSelL:t}, ()=>this.tryMatch()); }
+    else { if(S.mSelR===t){ this.setState({mSelR:null}); return;} this.setState({mSelR:t}, ()=>this.tryMatch()); }
+  }
+  tryMatch(){
+    const S=this.state, ex=this.curEx(); if(!ex||!S.mSelL||!S.mSelR) return;
+    const ok = ex.pairs[S.mSelL]===S.mSelR;
+    if(ok){
+      const done=[...S.mDone,S.mSelL,S.mSelR];
+      this.sfx('match');
+      this.setState({ mDone:done, mSelL:null, mSelR:null });
+      if(done.length>=ex.left.length*2){ setTimeout(()=>this.answer(!this.state.mErr, 'All pairs matched'),200); }
+    } else {
+      const flash=S.mSelR; this.setState({ mErr:true, mFlash:flash });
+      setTimeout(()=>this.setState({ mSelL:null, mSelR:null, mFlash:null }),450);
+    }
+  }
+  finishLesson(){
+    const ls=this.state.ls; if(!ls||ls.applied) return;
+    const total=ls.right+ls.wrong, acc=total?ls.right/total:0;
+    const stars=acc>=0.9?3:acc>=0.7?2:1;
+    const today=this.dayKey(0);
+    this.P=this.EN.completeLesson(this.P, ls.ch);
+    if(this.game.lastDay!==today) this.game.streak=this.game.lastDay===this.dayKey(-1)?this.game.streak+1:1;
+    this.game.xp+=ls.gained; this.game.dailyXp+=ls.gained; this.game.dailyDay=today; this.game.lastDay=today;
+    this.game.stars={...this.game.stars, [ls.ch.id]:Math.max(this.game.stars[ls.ch.id]||0, stars)};
+    this.save();
+    this.sfx('complete');
+    this.setState({ ls:{...ls, phase:'done', applied:true, stars, acc}, fb:null });
+  }
+  quit(){ if(window.speechSynthesis) speechSynthesis.cancel(); this.setState({ screen:'home', tab:'learn', ls:null, fb:null, combo:0 }); }
+  startRoleplay(ch){ this.sfx('tap'); if(window.speechSynthesis) speechSynthesis.cancel(); this.setState({ screen:'roleplay', rp:{ch, i:0, applied:false, done:false}, rpInput:'', rpFb:null, rpSafe:false }); setTimeout(()=>this.speak(ch.roleplay.npcLine),320); }
+  roleplayCheck(){ const S=this.state, rp=S.rp; if(!rp) return; const steps=rp.ch.roleplay.steps; const step=steps[Math.min(rp.i,steps.length-1)]; const fb=this.EN.scriptedFeedback(S.rpInput||'', step, this.pLookup); this.sfx(fb.quality==='understood'?'correct':fb.quality==='empty'?'reveal':'match'); this.setState({ rpFb:fb, rpSafe:true }); }
+  roleplayNext(){ const S=this.state, rp=S.rp; if(!rp) return; const steps=rp.ch.roleplay.steps; if(rp.i>=steps.length-1){ if(!rp.applied){ this.P=this.EN.completeRoleplay(this.P, rp.ch.id); this.game.xp+=15; this.save(); } this.sfx('complete'); this.setState({ rp:{...rp, applied:true, done:true}, rpFb:null, rpSafe:false }); return; } const ni=rp.i+1; this.setState({ rp:{...rp, i:ni}, rpInput:'', rpFb:null, rpSafe:false }); setTimeout(()=>this.speak(rp.ch.roleplay.steps[ni].npc),320); }
+  quitRoleplay(){ if(window.speechSynthesis) speechSynthesis.cancel(); this.setState({ screen:'home', tab:'learn', rp:null, rpFb:null, rpSafe:false }); }
+  setSetting(patch){ this.settings={...this.settings,...patch}; this.save(); this.applyMotion(); this.forceUpdate(); }
+  applyMotion(){ try{ document.documentElement.dataset.nqRm = (this.settings&&this.settings.reducedMotion)?'true':'false'; }catch(e){} }
+  dictate(){ const R=window.SpeechRecognition||window.webkitSpeechRecognition; if(!R){ this.setState({rpNotice:'Speech input is not supported in this browser.'}); return; } try{ const r=new R(); r.lang='ja-JP'; r.interimResults=false; r.onresult=e=>this.setState({rpInput:(e.results[0][0].transcript)||'', rpNotice:''}); r.onerror=()=>this.setState({rpNotice:'Could not hear — try again.'}); this.setState({rpNotice:'Listening…'}); r.start(); }catch(e){ this.setState({rpNotice:'Microphone unavailable.'}); } }
+  legFor(id){ const M=this.LEGS||(this.LEGS={
+    'uk-home':{en:'United Kingdom',jp:'イギリス · 出発'},'airport-flight':{en:'United Kingdom',jp:'イギリス · 出発'},
+    'arrival-japan':{en:'Arrival in Japan',jp:'到着'},
+    'tokyo-transport-hotel':{en:'Tokyo',jp:'東京'},'tokyo-food-conbini':{en:'Tokyo',jp:'東京'},'tokyo-shopping-attractions':{en:'Tokyo',jp:'東京'},
+    'kyoto-temples-etiquette':{en:'Kyoto & Nara',jp:'関西'},'nara-side':{en:'Kyoto & Nara',jp:'関西'},
+    'hakone-fuji-side':{en:'Fuji & Ryokan',jp:'富士 · 温泉'},'ryokan-onsen-side':{en:'Fuji & Ryokan',jp:'富士 · 温泉'},
+    'osaka-food-shopping':{en:'Osaka & the West',jp:'大阪 · 西日本'},'hiroshima-miyajima-side':{en:'Osaka & the West',jp:'大阪 · 西日本'},
+    'rural-transport-side':{en:'Rural & the North',jp:'東北 · 北海道'},'fukushima-resilience':{en:'Rural & the North',jp:'東北 · 北海道'},'tohoku-hokkaido-extension':{en:'Rural & the North',jp:'東北 · 北海道'},
+    'return-journey':{en:'Return Journey',jp:'帰国'}
+  }); return M[id]||{en:'Journey',jp:'旅'}; }
+  reset(){ if(!this.state.confirmReset){ this.setState({confirmReset:true}); setTimeout(()=>this.setState({confirmReset:false}),2500); return; } try{ localStorage.removeItem(this.KEY); }catch(e){} this.P=this.EN.mergeProgress(null, this.chapters); this.game={xp:0,streak:0,lastDay:'',dailyXp:0,dailyDay:this.dayKey(0),stars:{},revDay:this.dayKey(0),revCount:0}; this.save(); this.setState({confirmReset:false, tab:'profile'}); }
+
+  // review
+  gradeCard(card, grade){
+    this.P=this.EN.gradeReview(this.P, card.id, grade);
+    this.sfx(grade==='again'?'wrong':'match');
+    this.game.revCount+=1; this.save();
+    this.setState({ revealed:false });
+  }
+  // phrasebook
+  toggleFav(id){ this.P=this.EN.toggleFavourite(this.P, id); this.save(); this.forceUpdate(); }
+  toggleHelp(id){ const h=this.state.help.includes(id)?this.state.help.filter(x=>x!==id):[...this.state.help,id]; this.setState({help:h}); }
+
+  renderVals(){
+    const S=this.state, EN=this.EN, C=this.C;
+    const ready=S.ready;
+    const isLesson=S.screen==='lesson'&&!!S.ls;
+    const isRoleplay=S.screen==='roleplay'&&!!S.rp;
+    const isHome=!isLesson&&!isRoleplay;
+    const goal=this.props.dailyGoal ?? 30;
+    const showCombo=this.props.showCombo ?? true;
+    const game=this.game||{xp:0,streak:0,dailyXp:0,stars:{}};
+    const chapters=this.chapters||[];
+    const level=Math.floor(game.xp/150)+1;
+    const dailyPct=Math.min(100,Math.round((game.dailyXp/goal)*100));
+
+    const v={
+      ready, isHome, isLesson, isRoleplay,
+      tabLearn:S.tab==='learn', tabReview:S.tab==='review', tabBook:S.tab==='book', tabKana:S.tab==='kana', tabPass:S.tab==='pass', tabProfile:S.tab==='profile',
+      streak:game.streak, xp:game.xp, level, dailyPct, dailyPctCss:dailyPct+'%',
+      dailyLine: game.dailyXp>=goal ? 'Goal complete! '+game.dailyXp+' XP today' : game.dailyXp+' / '+goal+' XP today',
+      onTabLearn:()=>this.setState({tab:'learn'}), onTabReview:()=>this.setState({tab:'review',revealed:false}),
+      onTabBook:()=>this.setState({tab:'book'}), onTabKana:()=>this.setState({tab:'kana'}), onTabPass:()=>this.setState({tab:'pass'}), onTabProfile:()=>this.setState({tab:'profile'}),
+      onQuit:()=>this.quit(),
+      comboShow: showCombo && isLesson && S.combo>=2, comboTxt:'x'+S.combo,
+    };
+    // nav colors
+    const on='#2b5a86', off='#cdbf9f';
+    v.nav1=S.tab==='learn'?'#d1502e':off; v.nav1f=S.tab==='learn'?'#a63c1e':'#a8996f';
+    v.nav2=S.tab==='review'?on:off; v.nav2f=S.tab==='review'?on:'#a8996f';
+    v.nav3=S.tab==='book'?on:off; v.nav3f=S.tab==='book'?on:'#a8996f';
+    v.navKf=S.tab==='kana'?on:'#a8996f';
+    v.nav4=S.tab==='pass'?'#cf9f3a':off; v.nav4f=S.tab==='pass'?'#9c7420':'#a8996f';
+    v.nav5=S.tab==='profile'?on:off; v.nav5f=S.tab==='profile'?on:'#a8996f';
+
+    // journey
+    if(ready){
+      const rec=EN.nextRecommendedChapter(this.P, chapters);
+      let prevLeg=null, nodeIdx=0; const dxArr=[-52,-18,18,52,18,-18], journey=[];
+      chapters.forEach(ch=>{
+        const leg=this.legFor(ch.id);
+        if(leg.en!==prevLeg){ journey.push({ isBanner:true, isNode:false, id:'b-'+ch.id, region:leg.en, kicker:leg.jp, dx:0, cur:false, done:false, lock:false, isSide:false, size:0, radius:'50%', bg:'#000', shadow:'none', ring:'none', cursor:'default', title:'', starsTxt:'', stubDir:'', stubTop:'', onTap:()=>{} }); prevLeg=leg.en; }
+        const u=EN.routeUnlockState(ch, this.P, chapters);
+        const done=this.P.completedLessons.includes(ch.id);
+        const cur=ch.id===rec.id && !done;
+        const lock=!u.unlocked && !done;
+        const side=ch.routeType==='side';
+        const stars=game.stars[ch.id]||0;
+        const dx=dxArr[nodeIdx%dxArr.length]+(side?26:0); nodeIdx++;
+        const sz= cur?70:(side?54:60);
+        journey.push({ isBanner:false, isNode:true, id:ch.id, dx, title:ch.mapLabel, done, cur, lock, isSide:side,
+          stubDir: dx>0?'left:-20px':'right:-20px', stubTop:(sz/2)+'px',
+          size: sz, radius: side?'18px':'50%',
+          bg: done?'#cf9f3a':cur?'#d1502e':lock?'#e6dbc4':'#2b5a86',
+          shadow: done?'0 5px 0 #9c7420':cur?'0 6px 0 #a63c1e':lock?'0 5px 0 #d0c3a4':'0 5px 0 #1c4062',
+          ring: side&&!lock?'3px dashed #b9c6a3':'none',
+          anim: cur?'nqpulse 2s ease-in-out infinite':'none',
+          cursor: lock?'default':'pointer',
+          labelFg: lock?'#b6a482':'#3a4650',
+          starsTxt:'★★★'.slice(0,stars)||'★',
+          onTap: lock?()=>{}:()=>this.startLesson(ch.id) });
+      });
+      v.journey=journey;
+      const g=C.guideForChapter(rec);
+      v.greet={ sprite:g.sprite, face:this.faceFor(g.id), name:g.name, role:g.role, line: 'Next stop: '+rec.mapLabel+'. '+g.note.split('.')[0]+'.' };
+    } else { v.journey=[]; v.greet={sprite:'🧭',face:this.FACES.emi,name:'…',role:'',line:'Loading your journey…'}; }
+
+    // lesson
+    const ls=S.ls;
+    v.lsIntro=isLesson&&ls.phase==='intro'; v.lsEx=isLesson&&ls.phase==='ex'; v.lsDone=isLesson&&ls.phase==='done';
+    v.lsPct=isLesson?(ls.phase==='done'?100:Math.round((ls.i/ls.exercises.length)*100)):0;
+    if(isLesson){
+      const ch=ls.ch, g=C.guideForChapter(ch);
+      v.lchar={ sprite:g.sprite, face:this.faceFor(g.id), name:g.name, role:g.role };
+      v.lsKicker=(ch.routeType==='main'?'MAIN ROUTE':'SIDE TRIP')+' · '+ch.mapLabel.toUpperCase();
+      v.lsTitle=ch.title; v.lsGoal=ch.goal;
+      v.tipTitle=ch.grammar[0].title; v.tipBody=ch.grammar[0].body; v.tipPattern=ch.grammar[0].pattern;
+      v.tip2Show=!!ch.grammar[1]; v.tip2Title=ch.grammar[1]?ch.grammar[1].title:''; v.tip2Body=ch.grammar[1]?ch.grammar[1].body:''; v.tip2Pattern=ch.grammar[1]?ch.grammar[1].pattern:'';
+      v.culture=ch.culture.map(c=>({title:c.title, body:c.body})); v.cultureShow=ch.culture.length>0;
+    } else { v.lchar={sprite:'🧭',name:'',role:''}; v.lsKicker=''; v.lsTitle=''; v.lsGoal=''; v.tipTitle=''; v.tipBody=''; v.tipPattern=''; v.tip2Show=false; v.culture=[]; v.cultureShow=false; }
+    v.onStartEx=()=>{ this.setState({ls:{...S.ls,phase:'ex'}}); setTimeout(()=>{ const e=this.curEx(); if(e&&e.type==='listen') this.speak(e.speak); },250); };
+
+    const ex=this.curEx();
+    const titles={translate:'What does this mean?', produce:'How do you say it in Japanese?', listen:'Listen and choose', match:'Match the signs', tiles:'Build the sentence in Japanese', type:'Type the English meaning'};
+    v.exTitle=ex?titles[ex.type]:'';
+    v.exShowPrompt=!!ex&&(ex.type==='translate'||ex.type==='produce'||ex.type==='tiles'||ex.type==='type');
+    v.exPrompt=ex?(ex.prompt||''):'';
+    v.exCanSpeak=!!ex&&(ex.type==='translate'||ex.type==='type')&&!!ex.speak;
+    v.exIsListen=!!ex&&ex.type==='listen';
+    v.exIsMatch=!!ex&&ex.type==='match';
+    v.exIsTiles=!!ex&&ex.type==='tiles';
+    v.exIsType=!!ex&&ex.type==='type';
+    v.exHasChoices=!!ex&&(ex.type==='translate'||ex.type==='produce'||ex.type==='listen');
+    v.onSpeakEx=()=>{ const e=this.curEx(); if(e&&e.speak) this.speak(e.speak); };
+    const fb=S.fb;
+    v.choices = ex&&v.exHasChoices ? ex.choices.map(c=>{
+      let bg='#fffdf8', bd='#e7dcc6', fg='#23303c';
+      if(fb){ if(c===ex.answer){ bg='#e7f0dd'; bd='#6f8f52'; fg='#4c6635'; } else if(c===S.sel&&!fb.title.startsWith('Correct answer')){} else if(c===S.sel){ bg='#fbe3da'; bd='#d1502e'; fg='#a63c1e'; } else { fg='#b6a482'; } }
+      else if(c===S.sel){ bg='#e6eef4'; bd='#2b5a86'; }
+      return { t:c, bg, bd, fg, onPick:()=>{ if(this.state.fb) return; this.setState({sel:c}); this.answer(c===ex.answer, ex.answer); } };
+    }) : [];
+    const mk=(arr,side)=>arr.map(t=>{
+      const doneM=S.mDone.includes(t); const sel=(side==='l'?S.mSelL:S.mSelR)===t; const flash=S.mFlash===t;
+      let bg='#fffdf8',bd='#e7dcc6',fg='#23303c';
+      if(doneM){ bg='#e7f0dd'; bd='#bcd3a6'; fg='#7f9a63'; }
+      else if(flash){ bg='#fbe3da'; bd='#d1502e'; fg='#a63c1e'; }
+      else if(sel){ bg='#e6eef4'; bd='#2b5a86'; }
+      return { t, bg, bd, fg, op:doneM?0.55:1, onPick:()=>this.pickMatch(side,t) };
+    });
+    v.matchL = ex&&ex.type==='match'?mk(ex.left,'l'):[];
+    v.matchR = ex&&ex.type==='match'?mk(ex.right,'r'):[];
+    // tiles + type
+    v.pickedTiles = ex&&ex.type==='tiles'?(S.picked||[]).map((t,i)=>({t, onRemove:()=>{ if(this.state.fb) return; const p=this.state.picked.slice(); p.splice(i,1); this.setState({picked:p}); }})):[];
+    const _used={}; (S.picked||[]).forEach(t=>_used[t]=(_used[t]||0)+1); const _seen={};
+    v.bankTiles = ex&&ex.type==='tiles'?ex.tiles.map(t=>{ _seen[t]=(_seen[t]||0)+1; const u=(_used[t]||0)>=_seen[t]; return { t, op:u?0.35:1, bg:u?'#e6dbc4':'#fffdf8', fg:u?'#b6a482':'#23303c', sh:u?'#d3c3a4':'#e7dcc6', onPick:()=>{ if(this.state.fb||u) return; this.setState({picked:[...this.state.picked,t]}); } }; }):[];
+    v.typed=S.typed||''; v.onTyped=(e)=>this.setState({typed:e.target.value}); v.onTypedKey=(e)=>{ if(e.key==='Enter') this.doCheck(); };
+    const needsCheck=ex&&(ex.type==='tiles'||ex.type==='type');
+    v.showCheck=!!needsCheck&&!fb;
+    const canCheck=ex&&(ex.type==='tiles'?(S.picked||[]).length>0:(S.typed||'').trim().length>0);
+    v.checkBg=canCheck?'#d1502e':'#e6dbc4'; v.checkSh=canCheck?'#a63c1e':'#d3c3a4'; v.checkFg=canCheck?'#fff':'#b6a482';
+    v.onCheck=()=>this.doCheck();
+    v.fbShow=!!fb; v.fbTitle=fb?fb.title:''; v.fbDetail=fb?fb.detail:''; v.fbHasDetail=!!fb&&!!fb.detail;
+    v.fbBg=fb?fb.bg:'#e7f0dd'; v.fbFg=fb?fb.fg:'#4c6635'; v.fbBtnBg=fb?fb.btn:'#6f8f52'; v.fbBtnSh=fb?fb.btnSh:'#566f3e';
+    v.onContinue=()=>this.continueNext();
+    const stars=isLesson?(ls.stars||0):0;
+    v.resStars=[0,1,2].map(i=>({ c:i<stars?'#cf9f3a':'#ddd0b4', delay:(i*0.15)+'s' }));
+    v.resTitle=stars===3?'Perfect! かんぺき':stars===2?'Well done!':'Chapter complete!';
+    v.resStamp=isLesson?(ls.ch.stamp||''):'';
+    v.resXp=isLesson?ls.gained:0;
+    v.resAcc=isLesson&&(ls.right+ls.wrong)?Math.round((ls.right/(ls.right+ls.wrong))*100):0;
+    v.resCombo=isLesson?ls.comboMax:0; v.resStreak=game.streak;
+    v.onStartRoleplay=()=>{ if(isLesson) this.startRoleplay(ls.ch); };
+
+    // ---- REVIEW (SRS folded in) ----
+    if(ready){
+      const now=Date.now();
+      const due=EN.dueCards(this.P, now, S.reviewMode);
+      v.revDaily=S.reviewMode==='daily'; v.revDeep=S.reviewMode==='deep';
+      v.revDailyBg=v.revDaily?'#2b5a86':'#e6dbc4'; v.revDailyFg=v.revDaily?'#fff':'#8a7d64';
+      v.revDeepBg=v.revDeep?'#2b5a86':'#e6dbc4'; v.revDeepFg=v.revDeep?'#fff':'#8a7d64';
+      v.onRevDaily=()=>this.setState({reviewMode:'daily',revealed:false});
+      v.onRevDeep=()=>this.setState({reviewMode:'deep',revealed:false});
+      v.revCount=game.revCount||0; v.revDueN=due.length;
+      const card=due[0]; v.revHasCard=!!card;
+      if(card){
+        v.revTypeTag= card.type==='sign'?'SIGN · かんじ':'PHRASE · フレーズ';
+        v.revFront=card.front; v.revBack=card.back; v.revPrompt=card.prompt||'';
+        v.revShowBack=S.revealed; v.revShowReveal=!S.revealed;
+        v.onReveal=()=>{ this.sfx('reveal'); this.setState({revealed:true}); if(this.settings.autoSpeak) this.speak(card.front); };
+        v.onSpeakRev=()=>this.speak(card.front);
+        v.grades=[
+          {t:'Again', bg:'#fbe3da', fg:'#a63c1e', onTap:()=>this.gradeCard(card,'again')},
+          {t:'Hard', bg:'#f6ecd4', fg:'#9c7420', onTap:()=>this.gradeCard(card,'hard')},
+          {t:'Good', bg:'#e7f0dd', fg:'#4c6635', onTap:()=>this.gradeCard(card,'good')},
+          {t:'Easy', bg:'#e6eef4', fg:'#23415d', onTap:()=>this.gradeCard(card,'easy')},
+        ];
+      }
+    } else { v.revHasCard=false; v.grades=[]; }
+
+    // ---- PHRASEBOOK (folded in) ----
+    if(ready){
+      const results=EN.searchPhrasebook(S.q, this.allP, {situation:S.sit});
+      v.bookQ=S.q; v.onQuery=(e)=>this.setState({q:e.target.value});
+      v.sitOptions=[{id:'all',label:'All situations',sel:S.sit==='all'}].concat(chapters.map(c=>({id:c.id,label:c.mapLabel,sel:S.sit===c.id})));
+      v.onSit=(e)=>this.setState({sit:e.target.value});
+      v.bookCount=results.length+(results.length===1?' phrase':' phrases'); v.bookEmpty=results.length===0;
+      v.phrases=results.slice(0,50).map(p=>{
+        const show=EN.shouldShowRomaji(this.settings, p.order, S.help.includes(p.id));
+        const fav=this.P.favourites.includes(p.id);
+        return { jp:p.japanese, romajiTxt: show?p.romaji:'', showRomaji:show, eng:p.english,
+          meta:p.politeness+' · '+p.chapterTitle,
+          favTxt: fav?'★':'☆', favFg: fav?'#cf9f3a':'#b6a482',
+          helpTxt: show?'Hide':'Romaji', helpBg: show?'#e6eef4':'#f4eee2',
+          onSpeak:()=>this.speak(p.japanese), onHelp:()=>this.toggleHelp(p.id), onFav:()=>this.toggleFav(p.id) };
+      });
+    } else { v.phrases=[]; v.sitOptions=[]; v.bookEmpty=false; }
+
+    // ---- PASSPORT ----
+    if(ready){
+      const sum=EN.progressSummary(this.P, chapters);
+      v.passPct=sum.percent; v.passPctCss=sum.percent+'%';
+      v.passStamps=sum.done; v.passTotal=sum.total; v.passPhrases=sum.phrases; v.passSigns=sum.signs;
+      v.stampGrid=chapters.map(c=>{
+        const earned=this.P.stamps.includes(c.id);
+        return { label:c.mapLabel, seal: earned?'済':'未',
+          bd: earned?'#d1502e':'#d5c8a8', fg: earned?'#d1502e':'#b6a482', bg: earned?'#fbeee6':'#f1ead9' };
+      });
+    } else { v.stampGrid=[]; }
+
+    // ---- PROFILE ----
+    if(ready){
+      const st=this.settings;
+      v.profLevel=level; v.profLevelPct=Math.round(((game.xp%150)/150)*100)+'%'; v.profLevelLine=(game.xp%150)+' / 150 XP';
+      v.profDone=this.P.completedLessons.length; v.profTotal=chapters.length;
+      v.profStreak=game.streak; v.profXp=game.xp; v.profFav=this.P.favourites.length; v.profStamps=this.P.stamps.length;
+      v.guides=Object.values(this.C.guides).map(g=>({sprite:g.sprite, face:this.faceFor(g.id), name:g.name, role:g.role, home:g.home}));
+      v.rmAlways=st.romajiMode==='always'; v.rmFade=st.romajiMode==='fade'; v.rmOff=st.romajiMode==='mostly-off';
+      v.rmAlwaysBg=v.rmAlways?'#2b5a86':'transparent'; v.rmAlwaysFg=v.rmAlways?'#fff':'#8a7d64';
+      v.rmFadeBg=v.rmFade?'#2b5a86':'transparent'; v.rmFadeFg=v.rmFade?'#fff':'#8a7d64';
+      v.rmOffBg=v.rmOff?'#2b5a86':'transparent'; v.rmOffFg=v.rmOff?'#fff':'#8a7d64';
+      v.onRmAlways=()=>this.setSetting({romajiMode:'always'});
+      v.onRmFade=()=>this.setSetting({romajiMode:'fade'});
+      v.onRmOff=()=>this.setSetting({romajiMode:'mostly-off'});
+      v.autoOn=!!st.autoSpeak; v.autoBg=st.autoSpeak?'#6f8f52':'#d5c8a8'; v.autoJus=st.autoSpeak?'flex-end':'flex-start';
+      v.onToggleAuto=()=>this.setSetting({autoSpeak:!st.autoSpeak});
+      v.motionOn=!!st.reducedMotion; v.motionBg=st.reducedMotion?'#6f8f52':'#d5c8a8'; v.motionJus=st.reducedMotion?'flex-end':'flex-start';
+      v.onToggleMotion=()=>this.setSetting({reducedMotion:!st.reducedMotion});
+      const sfxOn=st.sfx!==false; v.sfxBg=sfxOn?'#6f8f52':'#d5c8a8'; v.sfxJus=sfxOn?'flex-end':'flex-start';
+      v.onToggleSfx=()=>{ this.setSetting({sfx:!sfxOn}); if(!sfxOn) this.sfx('correct'); };
+      v.resetTxt=S.confirmReset?'Tap again to erase everything':'Reset progress';
+      v.resetFg=S.confirmReset?'#a63c1e':'#8a7d64';
+      v.onReset=()=>this.reset();
+    } else { v.guides=[]; }
+
+    // ---- KANA & SIGNS ----
+    if(ready){
+      const decks=this.C.kanaDecks;
+      v.kanaHiraTitle=decks[0]?decks[0].title:''; v.kanaKataTitle=decks[1]?decks[1].title:'';
+      v.kanaHira=(decks[0]?decks[0].symbols:[]).map(s=>({t:s, onTap:()=>this.speak(s)}));
+      v.kanaKata=(decks[1]?decks[1].symbols:[]).map(s=>({t:s, onTap:()=>this.speak(s)}));
+      const seen={}, uniq=[]; this.C.allSigns().forEach(s=>{ if(!seen[s.text]){ seen[s.text]=1; uniq.push(s); } });
+      v.signList=uniq.map(s=>({text:s.text, reading:s.reading, meaning:s.meaning, onSpeak:()=>this.speak(s.text)}));
+    } else { v.kanaHira=[]; v.kanaKata=[]; v.signList=[]; }
+
+    // ---- ROLEPLAY (speaking) ----
+    const rp=S.rp;
+    v.rpDone=isRoleplay&&rp.done; v.rpActive=isRoleplay&&!rp.done;
+    if(isRoleplay){
+      const ch=rp.ch, steps=ch.roleplay.steps, i=Math.min(rp.i,steps.length-1), step=steps[i], g=C.guideForChapter(ch);
+      v.rpFace=this.faceFor(g.id); v.rpGuide=g.name; v.rpTitle=ch.roleplay.title;
+      v.rpStepTxt='Step '+(i+1)+' / '+steps.length;
+      v.rpNpc= i===0 ? ch.roleplay.npcLine : step.npc;
+      v.rpGoal=step.prompt;
+      v.rpInput=S.rpInput||'';
+      v.onRpInput=(e)=>this.setState({rpInput:e.target.value});
+      v.onRpCheck=()=>this.roleplayCheck();
+      v.onRpNext=()=>this.roleplayNext();
+      v.onRpSpeakNpc=()=>this.speak(v.rpNpc);
+      v.onRpQuit=()=>this.quitRoleplay();
+      v.onRpDictate=()=>this.dictate();
+      v.rpNotice=S.rpNotice||''; v.rpNoticeShow=!!S.rpNotice;
+      v.rpCanCheck=(S.rpInput||'').trim().length>0;
+      v.rpCheckBg=v.rpCanCheck?'#2b5a86':'#e6dbc4'; v.rpCheckFg=v.rpCanCheck?'#fff':'#b6a482'; v.rpCheckSh=v.rpCanCheck?'#1c4062':'#d3c3a4';
+      const fb=S.rpFb; v.rpFbShow=!!fb;
+      const cmap={understood:{bg:'#e7f0dd',fg:'#4c6635'},almost:{bg:'#f6ecd4',fg:'#9c7420'},empty:{bg:'#e6eef4',fg:'#23415d'}};
+      const cc=fb?(cmap[fb.quality]||cmap.understood):cmap.understood;
+      v.rpFbBg=cc.bg; v.rpFbFg=cc.fg; v.rpFbTitle=fb?fb.title:''; v.rpFbMsg=fb?fb.message:'';
+      v.rpShowSafe=S.rpSafe;
+      v.rpSafe=S.rpSafe?step.expectedPhraseIds.map(id=>this.pLookup.get(id)).filter(Boolean).map(p=>({jp:p.japanese, eng:p.english, onSpeak:()=>this.speak(p.japanese)})):[];
+      v.rpNextTxt= i>=steps.length-1 ? 'Finish speaking' : 'Next step';
+      v.rpDoneSub= rp.done ? g.name+' says you sounded polite and clear. Speaking stamp earned!' : '';
+    } else { v.rpActive=false; v.rpDone=false; v.rpSafe=[]; v.rpFace=this.FACES.emi; v.rpFbShow=false; v.rpShowSafe=false; }
+
+    return v;
+  }
+}
+</script>
 </body>
 </html>
