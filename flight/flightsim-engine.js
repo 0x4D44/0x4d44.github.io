@@ -373,7 +373,24 @@ var treeMesh, bldgMesh;
 var _raf = 0, _last = 0, _acc = 0, _lastRaf = 0;
 var input = { pitch:0, roll:0, yaw:0, thrRate:0 };
 var keys = {};
+var virtualInput = { pitch:0, roll:0, yaw:0, thrRate:0, yokeActive:false };
 var mouseYoke = false, mx=0, my=0;
+
+function clearInputState() {
+  keys = {};
+  input.pitch = 0; input.roll = 0; input.yaw = 0; input.thrRate = 0;
+  virtualInput.pitch = 0; virtualInput.roll = 0; virtualInput.yaw = 0; virtualInput.thrRate = 0;
+  virtualInput.yokeActive = false;
+}
+
+function setVirtualControls(ctrl) {
+  if (!ctrl) return;
+  if (Object.prototype.hasOwnProperty.call(ctrl, "pitch")) virtualInput.pitch = clamp(Number(ctrl.pitch) || 0, -1, 1);
+  if (Object.prototype.hasOwnProperty.call(ctrl, "roll")) virtualInput.roll = clamp(Number(ctrl.roll) || 0, -1, 1);
+  if (Object.prototype.hasOwnProperty.call(ctrl, "yaw")) virtualInput.yaw = clamp(Number(ctrl.yaw) || 0, -1, 1);
+  if (Object.prototype.hasOwnProperty.call(ctrl, "thrRate")) virtualInput.thrRate = clamp(Number(ctrl.thrRate) || 0, -1, 1);
+  if (Object.prototype.hasOwnProperty.call(ctrl, "yokeActive")) virtualInput.yokeActive = !!ctrl.yokeActive;
+}
 
 function makeSkyTexture(day) {
   var c = document.createElement("canvas"); c.width=16; c.height=256;
@@ -760,7 +777,9 @@ function applyAutopilot(dt, V, alt) {
 
 function doCrash(reason) {
   if (st.crashed) return;
-  st.crashed = true; FS.running = false;
+  st.crashed = true; FS.running = false; FS.paused = false;
+  FS._crashReason = reason || "terrain contact";
+  clearInputState();
   sound.crash();
   emit();
 }
@@ -841,6 +860,15 @@ var sound = (function(){
   }
   function resume(){ if(ctx && ctx.state==="suspended") ctx.resume(); }
   function setVol(v){ if(master) master.gain.linearRampToValueAtTime(v, ctx.currentTime+0.4); }
+  function stopContinuous(){
+    if(!ctx) return;
+    var t = ctx.currentTime;
+    [eng.g, eng.wg, wind.g].forEach(function(g){
+      if(!g) return;
+      g.gain.cancelScheduledValues(t);
+      g.gain.setTargetAtTime(0, t, 0.035);
+    });
+  }
   function update(){
     if(!ctx||!st||!acDef) return;
     var thr = st.engineN;
@@ -875,9 +903,9 @@ var sound = (function(){
   var lastStall=0, lastGear=0;
   function stall(){ var t=Date.now(); if(t-lastStall>380){ beep(420,0.22,0.12,"sawtooth"); lastStall=t; } }
   function warnBeep(){ var t=Date.now(); if(t-lastGear>700){ beep(760,0.12,0.1,"square"); lastGear=t; } }
-  function crash(){ if(!ctx) return; beep(80,0.6,0.3,"sawtooth"); beep(55,0.9,0.25,"sawtooth"); }
+  function crash(){ if(!ctx) return; stopContinuous(); beep(80,0.6,0.3,"sawtooth"); beep(55,0.9,0.25,"sawtooth"); }
   function click(){ beep(1200,0.04,0.05,"square"); }
-  return { init:init, resume:resume, update:update, setVol:setVol, stall:stall, warnBeep:warnBeep, crash:crash, click:click,
+  return { init:init, resume:resume, update:update, setVol:setVol, stopContinuous:stopContinuous, stall:stall, warnBeep:warnBeep, crash:crash, click:click,
            get ctx(){return ctx;} };
 })();
 
@@ -900,10 +928,6 @@ function onKey(e, down){
 }
 function readInput(dt){
   var p=0,r=0,y=0,tr=0;
-  if (keys["w"]||keys["arrowdown"]) p += 1;   // pull up? we map arrowup=nose down conventionally: choose intuitive
-  if (keys["s"]||keys["arrowup"]) p -= 1;
-  // Actually: ArrowUp = nose down (push), ArrowDown = nose up (pull). Use W/S too.
-  p = 0;
   if (keys["arrowdown"]||keys["s"]) p += 1;   // pull back -> nose up
   if (keys["arrowup"]||keys["w"]) p -= 1;     // push -> nose down
   if (FS.invertPitch) p = -p;
@@ -916,17 +940,23 @@ function readInput(dt){
   if (keys["="]||keys["+"]) tr += 1;
   if (keys["-"]||keys["_"]) tr -= 1;
 
-  // mouse yoke overrides pitch/roll
-  if (mouseYoke) {
+  // direct yokes override keyboard pitch/roll; touch takes precedence over mouse while held
+  var useVirtualYoke = virtualInput.yokeActive || Math.abs(virtualInput.pitch)>0.03 || Math.abs(virtualInput.roll)>0.03;
+  if (useVirtualYoke) {
+    input.pitch = lerp(input.pitch, clamp(FS.invertPitch ? -virtualInput.pitch : virtualInput.pitch, -1, 1), clamp(dt*12,0,1));
+    input.roll  = lerp(input.roll, clamp(virtualInput.roll, -1, 1), clamp(dt*14,0,1));
+  } else if (mouseYoke) {
     input.pitch = clamp(my, -1, 1);
     input.roll  = clamp(-mx, -1, 1);
   } else {
     input.pitch = lerp(input.pitch, p, clamp(dt*6,0,1));
     input.roll  = lerp(input.roll, r, clamp(dt*8,0,1));
   }
-  input.yaw = lerp(input.yaw, y, clamp(dt*6,0,1));
-  if (tr!==0 && !(FS.ap.on&&FS.ap.spd)) {
-    st.throttle = clamp(st.throttle + tr*dt*0.4, 0, 1);
+  var yawTarget = clamp(y + virtualInput.yaw, -1, 1);
+  var thrTarget = clamp(tr + virtualInput.thrRate, -1, 1);
+  input.yaw = lerp(input.yaw, yawTarget, clamp(dt*6,0,1));
+  if (thrTarget!==0 && !(FS.ap.on&&FS.ap.spd)) {
+    st.throttle = clamp(st.throttle + thrTarget*dt*0.4, 0, 1);
   }
 }
 
@@ -1288,14 +1318,16 @@ var api = {
   },
   start: function(){
     if (!acDef) api.selectAircraft(FS.aircraftKey);
+    clearInputState();
     sound.init(); sound.resume(); sound.setVol(0.9);
     st = freshState(acDef); st.crashed=false;
     FS.running = true; FS.paused=false; _acc=0; _last=0;
     // spawn moving forward, trimmed
     emit();
   },
-  pause: function(){ FS.paused = !FS.paused; if(FS.paused) sound.setVol(0.0); else sound.setVol(0.9); emit(); },
-  restart: function(){ FS._crashReason=""; st=freshState(acDef); st.crashed=false; FS.running=true; FS.paused=false; _acc=0; sound.setVol(0.9); emit(); },
+  stop: function(){ FS.running=false; FS.paused=false; clearInputState(); sound.stopContinuous(); sound.setVol(0.0); emit(); },
+  pause: function(){ FS.paused = !FS.paused; if(FS.paused){ clearInputState(); sound.setVol(0.0); } else sound.setVol(0.9); emit(); },
+  restart: function(){ FS._crashReason=""; clearInputState(); st=freshState(acDef); st.crashed=false; FS.running=true; FS.paused=false; _acc=0; sound.setVol(0.9); emit(); },
   setCamera: function(i){ FS.cameraMode = i%FS.cameraModes.length; emit(); },
   cycleCamera: cycleCamera,
   forceFrame: function(){ frame((typeof performance!=='undefined'?performance.now():Date.now())); },
@@ -1320,6 +1352,7 @@ var api = {
   setRandomFailures: function(on){ FS.failures.randomOn=on; FS.failures._rt=0; emit(); },
   setTime: function(t){ FS.timeOfDay=t; if(renderer) applyTime(); emit(); },
   setMouseYoke: function(on){ mouseYoke=on; },
+  setVirtualControls: setVirtualControls,
   setInvertPitch: function(on){ FS.invertPitch=!!on; },
   setHudColor: function(name){ var p=HUD_PRESETS[name]||HUD_PRESETS.amber; AMBER=p[0]; AMBER_DIM=p[1]; },
   teleportAlt: function(mult){ if(!st) return; st.pos.y = acDef.cruiseAlt*(mult||1); st.vel.set(0,0,-acDef.cruise); st.quat.identity(); emit(); },
