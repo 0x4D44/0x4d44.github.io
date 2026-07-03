@@ -228,7 +228,7 @@
     [...e.currentTarget.children].forEach(x=>x.classList.remove('on')); b.classList.add('on');
     type=b.dataset.t;
     if(type==='diesel'){ cr=18; $('cr').value=18; $('crLab').textContent='18.0 : 1'; heat=2.0; $('heat').value=2.0; $('heatName').textContent='Cutoff ratio (r_c)'; $('heatLab').textContent='2.00'; $('heat').min=1.4; $('heat').max=3.0; }
-    else { cr=10; $('cr').value=10; $('crLab').textContent='10.0 : 1'; heat=2.2; $('heat').value=2.2; $('heatName').textContent='Heat added (β)'; $('heatLab').textContent='2.2'; }
+    else { cr=10; $('cr').value=10; $('crLab').textContent='10.0 : 1'; heat=2.2; $('heat').value=2.2; $('heatName').textContent='Heat added (β)'; $('heatLab').textContent='2.2'; $('heat').min=1.4; $('heat').max=3.4; }
     render();
   });
   $('cr').addEventListener('input',e=>{ cr=+e.target.value; $('crLab').textContent=cr.toFixed(1)+' : 1'; render(); });

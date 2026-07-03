@@ -286,7 +286,7 @@
   requestAnimationFrame(tick);
   const btn=$('throttleBtn');
   const press=()=>{flooring=true;btn.classList.add('on');btn.textContent='⟱ FLOORED';};
-  const release=()=>{flooring=false;btn.textContent='⟱ HOLD to floor it';};
+  const release=()=>{flooring=false;btn.classList.remove('on');btn.textContent='⟱ HOLD to floor it';};
   btn.addEventListener('mousedown',press); btn.addEventListener('touchstart',e=>{e.preventDefault();press();});
   window.addEventListener('mouseup',release); btn.addEventListener('touchend',release);
   $('turboSz').addEventListener('input',e=>{ inertia=+e.target.value; $('szLab').textContent=inertia<12?'small (fast)':inertia<26?'medium':'large (laggy)'; });

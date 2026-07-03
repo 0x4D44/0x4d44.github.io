@@ -1057,7 +1057,7 @@ function drawHUD() {
   ctx.strokeStyle=AMBER_DIM; ctx.fillStyle=amber; ctx.globalAlpha=0.9;
   ctx.strokeRect(vsX, cy-70*dpr, 8*dpr, 140*dpr);
   var vsN = clamp(st.vs*3.2808*60/2000, -1, 1); // fpm/2000
-  ctx.fillRect(vsX, cy - vsN*70*dpr - (vsN>0?0:0), 8*dpr, -vsN*70*dpr);
+  ctx.fillRect(vsX, cy - vsN*70*dpr, 8*dpr, -vsN*70*dpr);
   ctx.textAlign="left"; ctx.font=(9*dpr)+"px 'JetBrains Mono',monospace";
   ctx.fillText(Math.round(st.vs*3.2808*60)+" fpm", vsX-2*dpr, cy+82*dpr);
 
@@ -1099,7 +1099,7 @@ function drawHUD() {
   if (FS.failures.hydraulics) warns.push("HYD LOW");
   if (FS.failures.gearStuck) warns.push("GEAR FAULT");
   if (FS.failures.instruments) warns.push("INST FAIL");
-  if (st.ias*1.9438 > acDef.vmax*1.9438) warns.push("OVERSPEED");
+  if (st.ias > acDef.vmax) warns.push("OVERSPEED");
   if (st.pos.y-groundHeight(st.pos.x,st.pos.z) < 150 && st.vs<-4 && st.gear<0.5 && !st.onGround) warns.push("TERRAIN");
   if (warns.length){
     ctx.textAlign="center"; ctx.font="bold "+(15*dpr)+"px 'JetBrains Mono',monospace";

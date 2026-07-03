@@ -838,7 +838,6 @@ class Component extends DCLogic {
 
     /* coach */
     const need = (s.bids[0] ?? 0) - s.taken[0];
-    const left = s.hands[0].length + (s.trick.some(t => t.seat === 0) && !s.trickComplete ? 0 : 0);
     let coachLine = '';
     if(s.phase === 'play' && s.bids[0] != null){
       if(need < 0) coachLine = 'Over your bid by ' + (-need) + ' \u2014 duck everything now.';

@@ -132,7 +132,6 @@ function arc(a,b){
 }
 
 let region='';
-function regionShipsFor(rn){return S.filter(s=>s.regions.includes(rn)).map(s=>s.name);}
 function show(i){
   const p=P[i]; const info=document.getElementById('info');
   const ships = S.filter(s=>s.homeport && s.homeport.includes(p.name.split(',')[0].replace('PortMiami','Miami')));

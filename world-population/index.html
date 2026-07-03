@@ -707,7 +707,6 @@
     })();
     window.addEventListener("resize", () => { layout(); draw(); });
     layout();
-    updateHUD(POP.yearFromT(t));
     draw();
     requestAnimationFrame(loop);
     if (/(?:^|[#&])about(?:&|$)/.test(location.hash)) { setAbout(true); autoplay = false; }
