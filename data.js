@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "fifty-hertz",
+    title: "Fifty Hertz",
+    tagline: "Hold Scotland's grid dead on 50 Hz from the 1953 NSHEB control room at Pitlochry. Fight a momentum-heavy needle, read the half-time TV-pickup surges coming, and catch them by pre-spinning Cruachan — the Hollow Mountain — across fifty years of Highland winters, sheep in the intake and generator trips as the tech sharpens under your hands. A grid-balancing arcade in vanilla JS on a canvas, with a synthesised WebAudio hum.",
+    url: "https://0x4d44.github.io/fifty-hertz/",
+    illustration: "ill-fiftyhertz",
+    date: "2026-07-03T19:40:00",
+    year: 1953,
+    tags: ["games", "engineering"],
+    real: true,
+  },
+  {
     slug: "morning-run",
     title: "Morning Run",
     tagline: "Find a running loop from your hotel, then track the run. It reads your GPS, asks OpenRouteService for a few foot-friendly loops of your chosen distance, and records the outing live — trail, pace, per-kilometre splits — with GPX export and saved history. An installable phone-first PWA: browser React on MapLibre GL and OpenStreetMap, no build step.",
