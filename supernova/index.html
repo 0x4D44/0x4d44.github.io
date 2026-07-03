@@ -243,6 +243,8 @@
     .sim-stage.tall { aspect-ratio: 1 / 1; }
     /* widgets that reflow to a vertical stack on phones need more height */
     .sim-stage.stack { aspect-ratio: 3 / 4; }
+    /* collapse stacks three panels (onion legend + scene + energy) — taller still */
+    .sim-stage.stack-tall { aspect-ratio: 9 / 16; }
   }
   .sim-stage [data-sim] { position: absolute; inset: 0; }
   .sim-fallback {
@@ -516,7 +518,7 @@
     </div>
 
     <figure class="sim">
-      <div class="sim-stage stack"><div data-sim="collapse"></div></div>
+      <div class="sim-stage stack-tall"><div data-sim="collapse"></div></div>
       <div class="sim-controls" data-sim-controls="collapse"></div>
       <figcaption><b>Core-collapse, step by step.</b> Watch the onion shells, the iron core reach its limit, the implosion, the bounce, the <em>stalled</em> shock, and the neutrino revival that finishes the job. Toggle Type II / Ib / Ic to peel the envelope.</figcaption>
     </figure>

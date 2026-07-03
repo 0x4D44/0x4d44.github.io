@@ -1,8 +1,8 @@
 /* ============================================================================
  * The Death of Stars — interactive widgets.
  * Each block registers one figure via SN.mount(id, init) against the harness
- * in sim.js. Built by a multi-agent pass, then integrated and reviewed.
- * Load AFTER sim.js (registrations must run before SN.boot on DOMContentLoaded).
+ * in sim.js. Built by a multi-agent pass, then integrated, reviewed, and made
+ * responsive for narrow screens. Load AFTER sim.js.
  * ==========================================================================*/
 
 /* ---- widget: birth ------------------------------------------------------- */
@@ -476,8 +476,11 @@ SN.mount("hr", function (host, controls) {
     if (w<2 || h<2) return;
     relayout(w,h);
     var px0=lay.px0, py0=lay.py0, pw=lay.pw, ph=lay.ph;
-    var fs = U.clamp(w*0.014, 9, 12);
-    var afs = U.clamp(w*0.013, 8, 11);
+    // narrow-width branch: desktop (w>=640) is byte-for-byte unchanged.
+    var narrow = w < 560;
+    var fs  = narrow ? U.clamp(w*0.014, 11, 12) : U.clamp(w*0.014, 9, 12);
+    var afs = narrow ? 11 : U.clamp(w*0.013, 8, 11);
+    var rfs = narrow ? 11 : U.clamp(w*0.015, 10, 13);
 
     ctx.clearRect(0,0,w,h);
     ctx.fillStyle=P.bg; ctx.fillRect(0,0,w,h);
@@ -508,15 +511,19 @@ SN.mount("hr", function (host, controls) {
       ctx.fillStyle=U.rgba(P.muted,0.9); ctx.textAlign="right";
       ctx.fillText("10"+sup(Math.round(log10(Ls[li]))), px0-6, yy);
     }
-    // temperature (vertical)
+    // temperature (vertical). On narrow, thin the labelled ticks so 11px
+    // labels don't collide, but keep every gridline and the reversed axis.
     var Ts=[40000,10000,6000,3000];
     ctx.textAlign="center"; ctx.textBaseline="top";
     for (var ti=0; ti<Ts.length; ti++){
       var xx=xFromT(Ts[ti]);
       ctx.strokeStyle=U.rgba(P.muted,0.14);
       ctx.beginPath(); ctx.moveTo(xx,py0); ctx.lineTo(xx,py0+ph); ctx.stroke();
-      ctx.fillStyle=U.rgba(P.muted,0.9);
-      ctx.fillText((Ts[ti]>=1000?(Ts[ti]/1000)+"k":Ts[ti]), xx, py0+ph+5);
+      var showTick = !narrow || (ti===0 || ti===2 || ti===3);
+      if (showTick){
+        ctx.fillStyle=U.rgba(P.muted,0.9);
+        ctx.fillText((Ts[ti]>=1000?(Ts[ti]/1000)+"k":Ts[ti]), xx, py0+ph+5);
+      }
     }
     // frame
     ctx.strokeStyle=U.rgba(P.muted,0.3); ctx.strokeRect(px0,py0,pw,ph);
@@ -539,7 +546,7 @@ SN.mount("hr", function (host, controls) {
 
     // region labels
     ctx.textAlign="left"; ctx.textBaseline="alphabetic";
-    ctx.font = "italic "+U.clamp(w*0.015,10,13)+"px ui-monospace, monospace";
+    ctx.font = "italic "+rfs+"px ui-monospace, monospace";
     // main sequence (rotated along band)
     var pA={x:xFromT(9000),y:yFromL(15)}, pB={x:xFromT(6000),y:yFromL(0.9)};
     var ang=Math.atan2(pB.y-pA.y, pB.x-pA.x);
@@ -547,12 +554,29 @@ SN.mount("hr", function (host, controls) {
     ctx.translate((pA.x+pB.x)/2+6,(pA.y+pB.y)/2-8);
     ctx.rotate(ang);
     ctx.fillStyle=U.rgba(P.ice,0.5);
-    ctx.fillText("main sequence",0,0);
+    ctx.fillText(narrow?"main seq.":"main sequence",0,0);
     ctx.restore();
+    // giants label: shorten and clamp within the plot on narrow so it can't
+    // run off the right edge.
+    var gLbl = narrow ? "giants" : "giants & supergiants";
     ctx.fillStyle=U.rgba(P.ember,0.55);
-    ctx.fillText("giants & supergiants", xFromT(5200), yFromL(6e4));
+    var gx = xFromT(5200);
+    if (narrow){
+      var gwid = ctx.measureText(gLbl).width;
+      gx = Math.min(gx, px0+pw-gwid-2);
+      gx = Math.max(px0+2, gx);
+    }
+    ctx.fillText(gLbl, gx, yFromL(6e4));
+    // white dwarfs label: clamp on narrow.
+    var wLbl = narrow ? "white dwarfs" : "white dwarfs";
     ctx.fillStyle=U.rgba(P.cyan,0.55);
-    ctx.fillText("white dwarfs", xFromT(30000), yFromL(3e-4));
+    var wx = xFromT(30000);
+    if (narrow){
+      var wwid = ctx.measureText(wLbl).width;
+      wx = Math.min(wx, px0+pw-wwid-2);
+      wx = Math.max(px0+2, wx);
+    }
+    ctx.fillText(wLbl, wx, yFromL(3e-4));
 
     // stars
     ctx.font = fs+"px ui-monospace, monospace";
@@ -577,6 +601,12 @@ SN.mount("hr", function (host, controls) {
       // label
       if (showLabels){
         var right = sx > px0+pw*0.6;
+        // On narrow, flip side if the label would clip off either plot edge.
+        if (narrow){
+          var tw = ctx.measureText(st.name).width;
+          if (!right && sx+(r+6)+tw > px0+pw) right=true;
+          else if (right && sx-(r+6)-tw < px0) right=false;
+        }
         ctx.textAlign = right?"right":"left";
         ctx.textBaseline="middle";
         ctx.fillStyle = i2===hovered? P.bright : U.rgba(P.ink,0.82);
@@ -601,7 +631,7 @@ SN.mount("hr", function (host, controls) {
       ctx.fillStyle=P.gold;
       ctx.beginPath(); ctx.arc(mx3,my3,2.2,0,U.TAU); ctx.fill();
       ctx.restore();
-      // marker readout (top-left)
+      // marker readout (top-left), fully clamped inside the canvas
       var lg=lifeGyr(Mm);
       var lifeStr = lg>=1 ? lg.toFixed(1)+" Gyr" : (lg*1000>=1? (lg*1000).toFixed(0)+" Myr" : (lg*1e6).toFixed(0)+" kyr");
       var lines=[
@@ -610,10 +640,10 @@ SN.mount("hr", function (host, controls) {
         "T ≈ "+ Math.round(Tm/10)*10 +" K",
         "life ≈ "+lifeStr
       ];
-      drawPanel(ctx, px0+8, py0+8, lines, P.gold, afs, "L–M relation  L∝M³·⁵");
+      drawPanel(ctx, px0+8, py0+8, lines, P.gold, afs, "L–M relation  L∝M³·⁵", w, h);
     }
 
-    // hover readout panel
+    // hover readout panel (clamped fully inside the canvas)
     if (hovered>=0){
       var s2=STARS[hovered];
       var hl=[
@@ -623,29 +653,33 @@ SN.mount("hr", function (host, controls) {
         "M = "+s2.M+" M☉",
         s2.note
       ];
-      var pw2 = Math.min(pw*0.62, 260);
+      var pw2 = narrow ? Math.min(pw-4, 220) : Math.min(pw*0.62, 260);
       var bx = px0+pw-8-pw2, by = py0+ph-8;
-      drawPanelWrap(ctx, bx, by, pw2, hl, bbStr(s2.T,1), afs);
+      drawPanelWrap(ctx, bx, by, pw2, hl, bbStr(s2.T,1), afs, w, h);
     }
 
     // axis titles
     ctx.font = afs+"px ui-monospace, monospace";
     ctx.fillStyle=U.rgba(P.muted,0.75);
     ctx.textAlign="center"; ctx.textBaseline="bottom";
-    ctx.fillText("← hotter    surface temperature (K)    cooler →", px0+pw/2, h-2);
+    var xtitle = narrow ? "← hot   temp (K)   cool →" : "← hotter    surface temperature (K)    cooler →";
+    ctx.fillText(xtitle, px0+pw/2, h-2);
     ctx.save();
     ctx.translate(11, py0+ph/2); ctx.rotate(-Math.PI/2);
     ctx.textBaseline="top"; ctx.textAlign="center";
-    ctx.fillText("luminosity (L☉)", 0, 0);
+    ctx.fillText(narrow?"luminosity (L☉)":"luminosity (L☉)", 0, 0);
     ctx.restore();
   }
 
-  function drawPanel(ctx,x,y,lines,accent,afs,footer){
+  function drawPanel(ctx,x,y,lines,accent,afs,footer,W,H){
     ctx.font = afs+"px ui-monospace, monospace";
     var lh=afs+5, w=0;
     for (var i=0;i<lines.length;i++) w=Math.max(w, ctx.measureText(lines[i]).width);
     if (footer) w=Math.max(w, ctx.measureText(footer).width);
     var pad=9, bw=w+pad*2, bh=lines.length*lh + (footer?lh:0) + pad*2 - 2;
+    // Clamp the whole panel box within [0,W]x[0,H]. No-op on desktop.
+    if (W!=null) x = Math.max(2, Math.min(x, W-bw-2));
+    if (H!=null) y = Math.max(2, Math.min(y, H-bh-2));
     ctx.fillStyle=U.rgba(P.bg,0.86);
     roundRect(ctx,x,y,bw,bh,7); ctx.fill();
     ctx.strokeStyle=U.rgba(accent,0.6); ctx.lineWidth=1; ctx.stroke();
@@ -658,7 +692,7 @@ SN.mount("hr", function (host, controls) {
     if (footer){ ctx.fillStyle=U.rgba(P.muted,0.8); ctx.fillText(footer, x+pad, yy); }
   }
 
-  function drawPanelWrap(ctx,x,y,maxw,lines,accent,afs){
+  function drawPanelWrap(ctx,x,y,maxw,lines,accent,afs,W,H){
     ctx.font = afs+"px ui-monospace, monospace";
     var lh=afs+5, pad=9, avail=maxw-pad*2;
     var out=[];
@@ -674,6 +708,9 @@ SN.mount("hr", function (host, controls) {
     }
     var bh=out.length*lh+pad*2-2;
     var yy0 = y-bh;
+    // Clamp the whole panel box within [0,W]x[0,H]. No-op on desktop.
+    if (W!=null) x = Math.max(2, Math.min(x, W-maxw-2));
+    if (H!=null) yy0 = Math.max(2, Math.min(yy0, H-bh-2));
     ctx.fillStyle=U.rgba(P.bg,0.9);
     roundRect(ctx,x,yy0,maxw,bh,7); ctx.fill();
     ctx.strokeStyle=U.rgba(accent,0.6); ctx.lineWidth=1; ctx.stroke();
@@ -851,29 +888,70 @@ SN.mount("fate", function (host, controls) {
   var debris = []; for (var di = 0; di < 12; di++) debris.push({ ang: rnd()*U.TAU, rad: 0.55 + rnd()*1.05, r: 0.6 + rnd()*1.4 });
 
   var layout = {};
+  // font size derived from base fs; on narrow widths never render text below 11px
+  function tfont(mult) {
+    var s = layout.fs * mult;
+    if (layout.narrow && s < 11) s = 11;
+    return s;
+  }
   function onResize(a) {
     var w = a.w, h = a.h;
     if (w < 2) return;
+    var narrow = w < 560;
     var pad = U.clamp(w * 0.022, 8, 18);
     var tlH = U.clamp(h * 0.20, 46, 84);
     var tlY = h - tlH - pad;
     var mainTop = pad, mainBottom = tlY - 6;
     var mainH = mainBottom - mainTop;
-    var leftW = w * 0.46;
-    var areaR = Math.min((leftW - pad*2) * 0.5, mainH * 0.40);
-    layout = {
-      w: w, h: h, pad: pad,
-      tlX: pad, tlY: tlY, tlW: w - pad*2, tlH: tlH,
-      mainTop: mainTop, mainBottom: mainBottom, mainH: mainH,
-      leftW: leftW,
-      starCx: pad + (leftW - pad) * 0.5,
-      starCy: mainTop + mainH * 0.5,
-      areaR: areaR,
-      minR: areaR * 0.16, maxR: areaR * 0.60, giantCapR: areaR * 1.0,
-      panelX: leftW + pad * 0.5, panelW: w - (leftW + pad * 0.5) - pad,
-      fs: U.clamp(w * 0.0155, 10, 13),
-      fsBig: U.clamp(mainH * 0.16, 22, 52)
-    };
+    // base font: keep desktop (>=640) exactly as before; raise floor to 11 below that
+    var fs = U.clamp(w * 0.0155, w < 640 ? 11 : 10, 13);
+    if (narrow) {
+      // stacked layout: star region on top, readout below, timeline at the bottom
+      var innerW = w - pad * 2;
+      var fsBigN = U.clamp(w * 0.085, 20, 34);
+      var prN = U.clamp(innerW * 0.11, 14, 26);
+      // conservative estimate of the readout block height so it never spills into the timeline
+      var estReadoutH = fsBigN * 1.25 + 3 * (fs * 1.85) + 2 + fs * 1.3 +
+        (prN * 1.5 + 2) + 5 * (fs * 1.35) + fs;
+      var starH = mainH - estReadoutH - 8;
+      if (starH < 84) starH = 84;
+      if (starH > mainH * 0.5) starH = mainH * 0.5;
+      var sarN = Math.min(innerW * 0.30, starH * 0.34);
+      layout = {
+        w: w, h: h, pad: pad, narrow: true,
+        tlX: pad, tlY: tlY, tlW: w - pad*2, tlH: tlH,
+        mainTop: mainTop, mainBottom: mainBottom, mainH: mainH,
+        leftW: w,
+        starCx: pad + innerW * 0.5,
+        starCy: mainTop + starH * 0.5,
+        areaR: sarN,
+        minR: sarN * 0.16, maxR: sarN * 0.60, giantCapR: sarN * 1.0,
+        panelX: pad, panelW: innerW,
+        readoutTop: mainTop + starH + 6,
+        stageLabelY: mainTop + starH - 3,
+        fs: fs,
+        fsBig: fsBigN
+      };
+    } else {
+      var leftW = w * 0.46;
+      var areaR = Math.min((leftW - pad*2) * 0.5, mainH * 0.40);
+      var fsBig = U.clamp(mainH * 0.16, 22, 52);
+      layout = {
+        w: w, h: h, pad: pad, narrow: false,
+        tlX: pad, tlY: tlY, tlW: w - pad*2, tlH: tlH,
+        mainTop: mainTop, mainBottom: mainBottom, mainH: mainH,
+        leftW: leftW,
+        starCx: pad + (leftW - pad) * 0.5,
+        starCy: mainTop + mainH * 0.5,
+        areaR: areaR,
+        minR: areaR * 0.16, maxR: areaR * 0.60, giantCapR: areaR * 1.0,
+        panelX: leftW + pad * 0.5, panelW: w - (leftW + pad * 0.5) - pad,
+        readoutTop: mainTop + fsBig * 0.4,
+        stageLabelY: mainBottom - 2,
+        fs: fs,
+        fsBig: fsBig
+      };
+    }
     var sr = U.rng(Math.floor(w) * 131 + 7);
     var stars = [];
     var n = 46;
@@ -1107,7 +1185,7 @@ SN.mount("fate", function (host, controls) {
 
   function drawReadout(ctx) {
     var px = layout.panelX, pw = layout.panelW, fs = layout.fs, fsB = layout.fsBig;
-    var y = layout.mainTop + fsB * 0.4;
+    var y = layout.readoutTop;
     var glyph = star.isSub ? "BD" : star.cls;
     var glCol = star.isSub ? CT.ember : hexToRgb(star.clsHex);
     ctx.save(); ctx.globalCompositeOperation = "lighter";
@@ -1119,7 +1197,7 @@ SN.mount("fate", function (host, controls) {
     ctx.font = "600 " + fsB + "px ui-monospace, monospace";
     ctx.fillStyle = rgbaC(glCol, 1);
     ctx.fillText(glyph, px, y + fsB * 0.78);
-    ctx.font = fs * 0.82 + "px ui-monospace, monospace";
+    ctx.font = tfont(0.82) + "px ui-monospace, monospace";
     ctx.fillStyle = P.muted;
     ctx.fillText(star.isSub ? "SUB-STELLAR" : "SPECTRAL CLASS", px + fsB * 1.5, y + fsB * 0.38);
     ctx.fillStyle = P.ink;
@@ -1134,10 +1212,10 @@ SN.mount("fate", function (host, controls) {
       ["LIFETIME (MS)", star.isSub ? "no fusion" : formatYr(star.life), CT.ice]
     ];
     for (var i = 0; i < rows.length; i++) {
-      ctx.font = fs * 0.82 + "px ui-monospace, monospace";
+      ctx.font = tfont(0.82) + "px ui-monospace, monospace";
       ctx.fillStyle = P.muted;
       ctx.fillText(rows[i][0], px, ry);
-      ctx.font = fs * 1.08 + "px ui-monospace, monospace";
+      ctx.font = tfont(1.08) + "px ui-monospace, monospace";
       ctx.fillStyle = rgbaC(rows[i][2], 1);
       var vw = ctx.measureText(rows[i][1]).width;
       ctx.fillText(rows[i][1], px + pw - vw, ry);
@@ -1146,17 +1224,27 @@ SN.mount("fate", function (host, controls) {
     ctx.strokeStyle = rgbaC(CT.muted, 0.28); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(px, ry - lh*0.35); ctx.lineTo(px + pw, ry - lh*0.35); ctx.stroke();
     ry += 2;
-    ctx.font = fs * 0.82 + "px ui-monospace, monospace";
+    ctx.font = tfont(0.82) + "px ui-monospace, monospace";
     ctx.fillStyle = P.muted;
     ctx.fillText("FINAL FATE", px, ry);
     ry += fs * 1.3;
     var pr = U.clamp(pw * 0.11, 14, 26);
     drawRemnantIcon(ctx, px + pr, ry + pr * 0.4, pr, star.remIcon, CT[iconTok(star.remCol)] || star.rgb, 0);
-    ctx.font = "600 " + (fs * 1.12) + "px ui-monospace, monospace";
+    ctx.font = "600 " + tfont(1.12) + "px ui-monospace, monospace";
     ctx.fillStyle = star.remCol;
-    ctx.fillText(star.remName, px + pr * 2 + 6, ry + pr * 0.2);
+    var remNameX = px + pr * 2 + 6;
+    var remNameMaxW = px + pw - remNameX;
+    var remNameStr = star.remName;
+    // keep the remnant name inside the panel on narrow widths
+    if (layout.narrow && ctx.measureText(remNameStr).width > remNameMaxW) {
+      while (remNameStr.length > 1 && ctx.measureText(remNameStr + "…").width > remNameMaxW) {
+        remNameStr = remNameStr.slice(0, -1);
+      }
+      remNameStr = remNameStr.replace(/[\s–-]+$/, "") + "…";
+    }
+    ctx.fillText(remNameStr, remNameX, ry + pr * 0.2);
     ry += pr * 1.5 + 2;
-    ctx.font = fs * 0.92 + "px ui-monospace, monospace";
+    ctx.font = tfont(0.92) + "px ui-monospace, monospace";
     ctx.fillStyle = P.ink;
     wrapText(ctx, star.remFate, px, ry, pw, fs * 1.35);
   }
@@ -1164,7 +1252,7 @@ SN.mount("fate", function (host, controls) {
   function drawTimeline(ctx, prog) {
     var x0 = layout.tlX, y0 = layout.tlY, w = layout.tlW, h = layout.tlH, fs = layout.fs;
     var barY = y0 + h * 0.42, barH = h * 0.36;
-    ctx.font = fs * 0.82 + "px ui-monospace, monospace";
+    ctx.font = tfont(0.82) + "px ui-monospace, monospace";
     ctx.textAlign = "left"; ctx.fillStyle = P.muted;
     ctx.fillText("LIFE STAGES · log time", x0, y0 + fs * 0.85);
     ctx.textAlign = "right"; ctx.fillText("remnant", x0 + w, y0 + fs * 0.85);
@@ -1181,7 +1269,7 @@ SN.mount("fate", function (host, controls) {
       ctx.fillStyle = rgbaC(c, isCur ? 0.42 : 0.20);
       ctx.fillRect(sx + 0.5, barY, sw - 1, barH);
       if (isCur) { ctx.fillStyle = rgbaC(c, 0.95); ctx.fillRect(sx + 0.5, barY - 2, sw - 1, 2); }
-      ctx.font = fs * 0.8 + "px ui-monospace, monospace";
+      ctx.font = tfont(0.8) + "px ui-monospace, monospace";
       if (sw > ctx.measureText(stages[i].label).width + 8) {
         ctx.fillStyle = isCur ? P.bright : P.ink;
         ctx.fillText(stages[i].label, sx + sw/2, barY + barH/2);
@@ -1229,9 +1317,9 @@ SN.mount("fate", function (host, controls) {
 
       var prog = displayProg();
       var st = drawStarViz(ctx, layout.starCx, layout.starCy, prog, t);
-      ctx.textAlign = "center"; ctx.font = "600 " + (layout.fs * 0.95) + "px ui-monospace, monospace";
+      ctx.textAlign = "center"; ctx.font = "600 " + tfont(0.95) + "px ui-monospace, monospace";
       ctx.fillStyle = st.stage.col;
-      ctx.fillText(st.stage.label, layout.starCx, layout.mainBottom - 2);
+      ctx.fillText(st.stage.label, layout.starCx, layout.stageLabelY);
       ctx.textAlign = "left";
 
       drawReadout(ctx);
@@ -1736,6 +1824,7 @@ SN.mount("collapse", function (host, controls) {
   var stageIndex = 0, stageProgress = 0, playing = false, stepPause = false;
   var type = "II";
   var LAST = 9;
+  var narrowW = false; // set every frame in draw()
 
   var STAGES = [
     { t: "Silicon burning", b: "A star above 8 M☉ fuses ever-heavier ash in nested shells. Each stage burns faster: carbon lasts centuries, neon about a year, oxygen months, silicon a single day." },
@@ -1760,6 +1849,8 @@ SN.mount("collapse", function (host, controls) {
     { n: "Si",   full: "Silicon",      col: C_SI,  Lout: -1.30, clk: "~ 1 day" },
     { n: "Fe",   full: "Iron core",    col: C_FE,  Lout: -2.10, clk: "inert · 1.4 M☉" }
   ];
+  // shortened burn labels for narrow gutters (keep the info, drop the words that overflow)
+  var SCLK = { "H": "envelope", "He": "shell", "C": "centuries", "O/Ne": "Ne 1yr O mo", "Si": "1 day", "Fe": "1.4 M☉" };
   var LMIN = -2.7;
 
   // particle direction tables (no per-frame alloc)
@@ -1772,6 +1863,14 @@ SN.mount("collapse", function (host, controls) {
   api.canvas.style.touchAction = "pan-y";
   var ctx = api.ctx;
   var lastDots = [];
+
+  // font floor helper: on narrow widths, never render on-canvas text below 11px.
+  // On wide widths this is identical to clamp() so desktop is byte-for-byte unchanged.
+  function ff(base, lo, hi) {
+    var L = lo, H = hi;
+    if (narrowW) { if (L < 11) L = 11; if (H < L) H = L; }
+    return clamp(base, L, H);
+  }
 
   // ---------- controls ----------
   var playBtn, stepBtn, replayBtn, chips = {};
@@ -1920,16 +2019,34 @@ SN.mount("collapse", function (host, controls) {
     ctx.fillStyle = pal.bg;
     ctx.fillRect(0, 0, w, h);
 
+    narrowW = w < 560;
+
     var pad = clamp(Math.min(w, h) * 0.03, 6, 16);
     var fBase = clamp(w / 62, 8.5, 13);
 
     // caption band
-    var capH = clamp(h * 0.28, 46, 96);
     var si = stageIndex, sp = stageProgress;
     var st = STAGES[si];
-    txt("STAGE " + si + " / " + LAST, pad, pad + fBase, "700 " + (fBase * 0.82).toFixed(1) + MONO, u.rgba(pal.muted, 0.9));
-    txt(st.t, pad, pad + fBase * 2.35, "700 " + (fBase * 1.35).toFixed(1) + SANS, pal.bright);
-    wrap(st.b, pad, pad + fBase * 3.9, w - pad * 2, fBase * 1.42, "400 " + (fBase * 0.98).toFixed(1) + SANS, pal.ink);
+    var cy0;
+    if (narrowW) {
+      // narrow: measured caption so bigger (>=11px) text never overlaps the panels
+      var sf = ff(fBase * 0.82, 8, 12);
+      var tf = Math.max(11.5, fBase * 1.35);
+      var bf2 = 11;
+      var cyw = pad + sf + 2;
+      txt("STAGE " + si + " / " + LAST, pad, cyw, "700 " + sf.toFixed(1) + MONO, u.rgba(pal.muted, 0.9));
+      cyw += tf + 4;
+      txt(st.t, pad, cyw, "700 " + tf.toFixed(1) + SANS, pal.bright);
+      cyw += bf2 + 6;
+      var endY = wrap(st.b, pad, cyw, w - pad * 2, bf2 * 1.34, "400 " + bf2.toFixed(1) + SANS, pal.ink);
+      cy0 = endY + pad + 4;
+    } else {
+      var capH = clamp(h * 0.28, 46, 96);
+      txt("STAGE " + si + " / " + LAST, pad, pad + fBase, "700 " + (fBase * 0.82).toFixed(1) + MONO, u.rgba(pal.muted, 0.9));
+      txt(st.t, pad, pad + fBase * 2.35, "700 " + (fBase * 1.35).toFixed(1) + SANS, pal.bright);
+      wrap(st.b, pad, pad + fBase * 3.9, w - pad * 2, fBase * 1.42, "400 " + (fBase * 0.98).toFixed(1) + SANS, pal.ink);
+      cy0 = pad + capH;
+    }
 
     // timeline dots (top-right of caption)
     lastDots.length = 0;
@@ -1949,19 +2066,33 @@ SN.mount("collapse", function (host, controls) {
     }
 
     // content layout
-    var cy0 = pad + capH;
     var contentH = h - cy0 - pad;
     if (contentH < 40) return;
     var gap = pad;
-    var leftW = (w - pad * 2 - gap) * 0.46;
-    var rightX = pad + leftW + gap;
-    var rightW = w - pad - rightX;
-    var collapseH = contentH * 0.60;
-    var energyH = contentH - collapseH - gap;
 
-    var onionR = { x: pad, y: cy0, w: leftW, h: contentH };
-    var collR = { x: rightX, y: cy0, w: rightW, h: collapseH };
-    var enR = { x: rightX, y: cy0 + collapseH + gap, w: rightW, h: energyH };
+    var onionR, collR, enR;
+    if (narrowW) {
+      // stack the two columns vertically: onion on top, collapse scene + energy beneath
+      var fullW = w - pad * 2;
+      var enH = clamp(contentH * 0.28, 104, 150);
+      var remain = contentH - enH - gap * 2;
+      if (remain < 80) { enH = Math.max(88, contentH * 0.28); remain = contentH - enH - gap * 2; }
+      var onH = Math.max(84, remain * 0.46);
+      var coH = remain - onH;
+      if (coH < 70) { coH = Math.max(70, remain * 0.5); onH = remain - coH; }
+      onionR = { x: pad, y: cy0, w: fullW, h: onH };
+      collR = { x: pad, y: cy0 + onH + gap, w: fullW, h: coH };
+      enR = { x: pad, y: cy0 + onH + gap + coH + gap, w: fullW, h: enH };
+    } else {
+      var leftW = (w - pad * 2 - gap) * 0.46;
+      var rightX = pad + leftW + gap;
+      var rightW = w - pad - rightX;
+      var collapseH = contentH * 0.60;
+      var energyH = contentH - collapseH - gap;
+      onionR = { x: pad, y: cy0, w: leftW, h: contentH };
+      collR = { x: rightX, y: cy0, w: rightW, h: collapseH };
+      enR = { x: rightX, y: cy0 + collapseH + gap, w: rightW, h: energyH };
+    }
 
     // panels
     ctx.fillStyle = u.rgba(pal.panel, 0.55); ctx.strokeStyle = u.rgba(pal.ink, 0.08); ctx.lineWidth = 1;
@@ -2045,7 +2176,8 @@ SN.mount("collapse", function (host, controls) {
       var bot = R.y + R.h - clamp(R.h * 0.10, 14, 26);
       var rh = (bot - top) / rows;
       var activeIdx = (si === 0) ? 4 : 5; // Si then Fe
-      var lf = clamp(fB * 0.82, 8.5, 11.5);
+      var lf = ff(fB * 0.82, 8.5, 11.5);
+      var clkF = narrowW ? 11 : (lf * 0.82);
       for (var j = fs; j < SHELLS.length; j++) {
         var s2 = SHELLS[j];
         var ry = top + (j - fs) * rh + rh * 0.5;
@@ -2055,10 +2187,10 @@ SN.mount("collapse", function (host, controls) {
         ctx.beginPath(); ctx.arc(lx + 5, ry - lf * 0.35, 4.5, 0, TAU); ctx.fill();
         if (hot) { ctx.beginPath(); ctx.arc(lx + 5, ry - lf * 0.35, 7, 0, TAU); ctx.strokeStyle = u.rgba(s2.col, 0.6); ctx.lineWidth = 1; ctx.stroke(); }
         txt(s2.n, lx + 15, ry - lf * 0.05, (hot ? "700 " : "600 ") + lf.toFixed(1) + SANS, hot ? pal.bright : pal.ink);
-        txt(s2.clk, lx + 15, ry + lf * 0.95, (lf * 0.82).toFixed(1) + MONO, hot ? u.rgba(s2.col, 0.95) : pal.muted);
+        txt(narrowW ? SCLK[s2.n] : s2.clk, lx + 15, ry + lf * 0.95, clkF.toFixed(1) + MONO, hot ? u.rgba(s2.col, 0.95) : pal.muted);
       }
       // acceleration punch
-      txt("collapse: < 1 s", lx, R.y + R.h - clamp(R.h * 0.02, 4, 8), "700 " + clamp(fB * 0.82, 8.5, 11).toFixed(1) + MONO, si >= 1 ? pal.ember : u.rgba(pal.ember, 0.7));
+      txt("collapse: < 1 s", lx, R.y + R.h - clamp(R.h * 0.02, 4, 8), "700 " + ff(fB * 0.82, 8.5, 11).toFixed(1) + MONO, si >= 1 ? pal.ember : u.rgba(pal.ember, 0.7));
     }
 
     // title
@@ -2108,7 +2240,7 @@ SN.mount("collapse", function (host, controls) {
         ctx.lineTo(cx + Math.cos(ang) * r2, cyc + Math.sin(ang) * r2);
         ctx.strokeStyle = u.rgba(pal.ember, 0.5); ctx.lineWidth = 1.5; ctx.stroke();
       }
-      txt("STALL", cx, cyc - sr - clamp(fB, 10, 14), "700 " + clamp(fB * 0.95, 9, 12).toFixed(1) + MONO, pal.ember, "center");
+      txt("STALL", cx, cyc - sr - clamp(fB, 10, 14), "700 " + ff(fB * 0.95, 9, 12).toFixed(1) + MONO, pal.ember, "center");
     }
 
     // active shock ring
@@ -2146,7 +2278,7 @@ SN.mount("collapse", function (host, controls) {
 
     // phase pill
     if (d.phase) {
-      var pf = clamp(fB * 0.9, 9, 12);
+      var pf = ff(fB * 0.9, 9, 12);
       ctx.font = "700 " + pf.toFixed(1) + MONO;
       var pw = ctx.measureText(d.phase).width + 14;
       var pcol = (si === 5) ? pal.ember : (si === 6 ? pal.cyan : (si === 8 ? pal.gold : pal.ink));
@@ -2164,27 +2296,69 @@ SN.mount("collapse", function (host, controls) {
     else if (si === 9) { big = "12 km"; sub = "neutron star"; bcol = pal.cyan; }
     if (big) {
       var fadeA = clamp(si === 3 ? 1 : (sp < 0.15 ? sp / 0.15 : 1), 0, 1);
-      var bf = clamp(fB * 1.9, 16, 30);
+      var bf = ff(fB * 1.9, 16, 30);
       txt(big, cx, cyc - rad * 0.42, "800 " + bf.toFixed(1) + MONO, u.rgba(bcol, 0.95 * fadeA), "center", "middle");
-      txt(sub, cx, cyc - rad * 0.42 + bf * 0.85, (clamp(fB * 0.82, 8.5, 11)).toFixed(1) + SANS, u.rgba(pal.muted, fadeA), "center", "middle");
+      txt(sub, cx, cyc - rad * 0.42 + bf * 0.85, ff(fB * 0.82, 8.5, 11).toFixed(1) + SANS, u.rgba(pal.muted, fadeA), "center", "middle");
     }
 
     // readouts (mono, bottom)
-    var rf = clamp(fB * 0.82, 8.5, 11).toFixed(1);
+    var rf = ff(fB * 0.82, 8.5, 11).toFixed(1);
     var densS = si >= 4 ? "2.7×10¹⁴ g/cm³" : (si >= 2 ? "10¹³ g/cm³" : "10⁹ g/cm³");
     var velS = "v " + (d.vel).toFixed(2) + "c";
-    txt(velS + "   ρ " + densS, R.x + 8, R.y + R.h - 8, rf + MONO, u.rgba(pal.ink, 0.85));
-    if (si === 9) txt("(≳ 25 M☉ → black hole)", R.x + R.w - 8, R.y + R.h - 8, rf + MONO, u.rgba(pal.violet, 0.85), "right");
-    else if (si >= 6 && si <= 8) txt("SN 1987A: ν ~3 h before light", R.x + R.w - 8, R.y + R.h - 8, rf + MONO, u.rgba(pal.cyan, 0.8), "right");
+    if (narrowW) {
+      // stack the left readout and the right annotation on separate lines so neither clips/overlaps
+      var annot = null, acol = null;
+      if (si === 9) { annot = "(≳ 25 M☉ → black hole)"; acol = u.rgba(pal.violet, 0.85); }
+      else if (si >= 6 && si <= 8) { annot = "SN 1987A: ν ~3 h before light"; acol = u.rgba(pal.cyan, 0.8); }
+      var by = R.y + R.h - 8;
+      if (annot) { txt(annot, R.x + 8, by, rf + MONO, acol, "left"); by -= (parseFloat(rf) + 4); }
+      txt(velS + "   ρ " + densS, R.x + 8, by, rf + MONO, u.rgba(pal.ink, 0.85));
+    } else {
+      txt(velS + "   ρ " + densS, R.x + 8, R.y + R.h - 8, rf + MONO, u.rgba(pal.ink, 0.85));
+      if (si === 9) txt("(≳ 25 M☉ → black hole)", R.x + R.w - 8, R.y + R.h - 8, rf + MONO, u.rgba(pal.violet, 0.85), "right");
+      else if (si >= 6 && si <= 8) txt("SN 1987A: ν ~3 h before light", R.x + R.w - 8, R.y + R.h - 8, rf + MONO, u.rgba(pal.cyan, 0.8), "right");
+    }
   }
 
   // ---------- energy budget ----------
   function drawEnergy(R, si, fB) {
-    var pf = clamp(fB * 0.92, 9, 12.5);
-    txt("ENERGY BUDGET — total ≈ 3×10⁴⁶ J", R.x + 10, R.y + pf + 6, "700 " + pf.toFixed(1) + MONO, pal.bright);
-
+    var pf = ff(fB * 0.92, 9, 12.5);
     var barX = R.x + 10;
     var barW = R.w - 20;
+
+    if (narrowW) {
+      // stacked, top-down layout so all the right-side text fits inside the panel
+      txt("ENERGY BUDGET — total ≈ 3×10⁴⁶ J", barX, R.y + pf + 6, "700 " + pf.toFixed(1) + MONO, pal.bright);
+      var barH = clamp(R.h * 0.16, 10, 16);
+      var barY = R.y + pf + 12;
+      var nvW = barW * 0.99;
+      var gg = ctx.createLinearGradient(barX, 0, barX + nvW, 0);
+      gg.addColorStop(0, u.rgba(pal.cyan, 0.9));
+      gg.addColorStop(1, u.rgba(pal.violet, 0.9));
+      ctx.fillStyle = gg; rr(barX, barY, nvW, barH, 3); ctx.fill();
+      var keX = barX + nvW, keW = Math.max(2, barW * 0.01);
+      ctx.fillStyle = u.rgba(pal.orange, 0.95); rr(keX, barY, keW, barH, 1.5); ctx.fill();
+      ctx.strokeStyle = u.rgba(pal.ink, 0.15); ctx.lineWidth = 1; rr(barX, barY, barW, barH, 3); ctx.stroke();
+
+      var lf = ff(fB * 0.80, 8, 10.8);
+      var ly = barY + barH + lf + 6;
+      txt("ν neutrinos  99%  ·  3×10⁴⁶ J", barX, ly, "700 " + lf.toFixed(1) + MONO, u.rgba(pal.ice, 0.95));
+      var kl = "kinetic 1% (10⁴⁴ J)  ·  light 0.01% (10⁴² J)";
+      ctx.font = lf.toFixed(1) + MONO;
+      var y2 = ly + lf + 5;
+      if (ctx.measureText(kl).width <= barW) {
+        txt(kl, barX, y2, lf.toFixed(1) + MONO, u.rgba(pal.gold, 0.92));
+        var y3 = y2 + lf + 5;
+        if (y3 <= R.y + R.h - 2) txt("the sparkle on a neutrino iceberg", barX, y3, lf.toFixed(1) + SANS, u.rgba(pal.muted, 0.95));
+      } else {
+        txt("kinetic 1% (10⁴⁴ J)", barX, y2, lf.toFixed(1) + MONO, u.rgba(pal.gold, 0.92));
+        txt("light 0.01% (10⁴² J)", barX, y2 + lf + 5, lf.toFixed(1) + MONO, u.rgba(pal.gold, 0.92));
+      }
+      return;
+    }
+
+    txt("ENERGY BUDGET — total ≈ 3×10⁴⁶ J", R.x + 10, R.y + pf + 6, "700 " + pf.toFixed(1) + MONO, pal.bright);
+
     var barY = R.y + R.h * 0.44;
     var barH = clamp(R.h * 0.20, 9, 18);
 
@@ -2200,7 +2374,7 @@ SN.mount("collapse", function (host, controls) {
     // outline
     ctx.strokeStyle = u.rgba(pal.ink, 0.15); ctx.lineWidth = 1; rr(barX, barY, barW, barH, 3); ctx.stroke();
 
-    var lf = clamp(fB * 0.80, 8, 10.8).toFixed(1);
+    var lf = ff(fB * 0.80, 8, 10.8).toFixed(1);
     // neutrino label inside/under
     txt("ν neutrinos  99%  ·  3×10⁴⁶ J", barX + 4, barY - 4, "700 " + lf + MONO, u.rgba(pal.ice, 0.95));
 
@@ -2295,10 +2469,19 @@ SN.mount("typeia", function (host, controls) {
   function onResize(a) {
     var W = a.w, H = a.h; if (W < 2 || H < 2) return;
     L.W = W; L.H = H;
-    L.sw = U.clamp(W * 0.40, 118, 380);
-    L.sx = 0; L.sy = 0; L.sh = H;
+    // Narrow (mobile) screens stack the scene on top and the light-curve panel
+    // below at full width. Wide (>=560, incl. all desktop >=640) keeps the
+    // original side-by-side layout byte-for-byte.
+    L.narrow = W < 560;
     var pad = 8;
-    L.lcx = L.sw + pad; L.lcy = 6; L.lcw = W - L.sw - pad - 10; L.lch = H - 12;
+    if (L.narrow) {
+      L.sw = W; L.sx = 0; L.sy = 0; L.sh = Math.round(H * 0.45);
+      L.lcx = 4; L.lcy = L.sh + pad; L.lcw = W - 8; L.lch = H - L.lcy - 6;
+    } else {
+      L.sw = U.clamp(W * 0.40, 118, 380);
+      L.sx = 0; L.sy = 0; L.sh = H;
+      L.lcx = L.sw + pad; L.lcy = 6; L.lcw = W - L.sw - pad - 10; L.lch = H - 12;
+    }
     L.plx = L.lcx + 30; L.ply = L.lcy + 20; L.plw = L.lcw - 30 - 8; L.plh = L.lch - 20 - 26;
     L.wdx = L.sx + L.sw * 0.62; L.wdy = L.sy + L.sh * 0.40;
     L.compx = L.sx + L.sw * 0.20; L.compy = L.sy + L.sh * 0.30;
@@ -2316,6 +2499,9 @@ SN.mount("typeia", function (host, controls) {
 
   // ---------- helpers ----------
   function txt(s, x, y, col, size, align, mono, weight) {
+    // On narrow screens keep all on-canvas text readable (>=11px). Desktop
+    // (>=560px canvas) is untouched, so its rendering is unchanged.
+    if (api.w < 560 && size < 11) size = 11;
     ctx.fillStyle = col;
     ctx.font = (weight ? weight + " " : "") + size + "px " + (mono ? "ui-monospace, monospace" : "ui-sans-serif, system-ui, sans-serif");
     ctx.textAlign = align || "left"; ctx.textBaseline = "alphabetic";
@@ -2367,7 +2553,9 @@ SN.mount("typeia", function (host, controls) {
 
   function drawSingle(t) {
     var p = U.clamp(state.pt / ACC_DUR, 0, 1);
-    var cr = L.sw * 0.15;
+    // On narrow the scene is full-width but short — size the companion off the
+    // scene height so it never clips the top edge or crowds the mass strip.
+    var cr = L.narrow ? L.sh * 0.15 : L.sw * 0.15;
     starBall(L.compx, L.compy, cr, P.gold);
     // accretion disk
     ctx.save(); ctx.translate(L.wdx, L.wdy); ctx.scale(1, 0.30);
@@ -2551,7 +2739,9 @@ SN.mount("typeia", function (host, controls) {
     txt("18 d rise", xOf(12), yOf(-18.2), U.rgba(P.ink, 0.7), s - 2, "center", true);
     txt("Ni-56 (6 d)", xOf(30), yOf(-18.4), U.rgba(P.orange, 0.8), s - 2, "left");
     txt("Co-56 tail (77 d)", xOf(72), yOf(-16.4), U.rgba(P.ember, 0.85), s - 2, "center");
-    if (dMax > 14) txt("briefly rivals its whole galaxy", xOf(20), yOf(-19.7), U.rgba(P.gold, 0.8), s - 2, "left");
+    // Secondary flavour line — dropped on narrow (would collide with the peak
+    // label once text is floored to 11px).
+    if (dMax > 14 && !L.narrow) txt("briefly rivals its whole galaxy", xOf(20), yOf(-19.7), U.rgba(P.gold, 0.8), s - 2, "left");
     if (state.showCC) txt("Ia: no remnant", L.plx + L.plw - 3, L.ply + L.plh - 6, U.rgba(P.gold, 0.85), s - 1, "right", false, "600");
   }
 
@@ -2561,7 +2751,7 @@ SN.mount("typeia", function (host, controls) {
     pathMag(ccMag, 100, U.rgba(P.ice, 0.25), 3);
     pathMag(ccMag, 100, P.ice, 1.5);
     txt("Type II-P plateau (H recombination)", xOf(50), yOf(-16.6), U.rgba(P.ice, 0.9), s - 2, "center");
-    txt("core-collapse: leaves neutron star / black hole", L.plx + 3, L.ply + L.plh - 6, U.rgba(P.ice, 0.85), s - 1, "left");
+    txt(L.narrow ? "leaves neutron star or black hole" : "core-collapse: leaves neutron star / black hole", L.plx + 3, L.ply + L.plh - 6, U.rgba(P.ice, 0.85), s - 1, "left");
   }
 
   function drawSCFamily(s) {
@@ -2578,7 +2768,7 @@ SN.mount("typeia", function (host, controls) {
     }
     var msg = state.corr > 0.5 ? "corrected — peaks converge at −19.3" : "raw peaks differ by ~1.4 mag";
     txt(msg, xOf(50), L.ply + s + 4, state.corr > 0.5 ? P.green : P.orange, s - 1, "center", false, "600");
-    txt("Phillips: brighter → declines slower", xOf(60), yOf(-15.4), U.rgba(P.ink, 0.75), s - 2, "center");
+    txt(L.narrow ? "brighter → declines slower" : "Phillips: brighter → declines slower", xOf(60), yOf(-15.4), U.rgba(P.ink, 0.75), s - 2, "center");
     txt("the ruler that revealed dark energy (1998)", L.plx + 3, L.ply + L.plh - 6, U.rgba(P.violet, 0.85), s - 1, "left");
   }
 
@@ -2682,6 +2872,9 @@ SN.mount("grb", function (host, controls) {
   var orbPhase = 0;
   var fs = 11;
 
+  // narrow-layout state (only used when isNarrow)
+  var isNarrow = false, nHudH = 0, nLcH = 0;
+
   // layout
   var cx = 0, cy = 0, R = 10, Rstar = 4, Reye = 9;
   function onResize(a) { layout(a); }
@@ -2693,6 +2886,23 @@ SN.mount("grb", function (host, controls) {
     Reye = R * 0.98;
   }
   layout(api);
+
+  // narrow layout: full-width HUD strip at top, light-curve strip at bottom,
+  // shrunken central visual centred in the remaining band.
+  function narrowLayout(w, h) {
+    nHudH = 8 + fs * 14.4;
+    nLcH = Math.max(h * 0.26, 74);
+    cx = w * 0.5;
+    var top = nHudH + 6;
+    var bottom = nLcH + 8;
+    var avail = h - top - bottom;
+    if (avail < 46) avail = 46;
+    cy = top + avail * 0.5;
+    R = Math.min(w * 0.40, avail * 0.42);
+    if (R < 12) R = 12;
+    Rstar = R * 0.42;
+    Reye = R * 0.92;
+  }
 
   // ---- timelines ----
   var LONG = [
@@ -2787,6 +2997,13 @@ SN.mount("grb", function (host, controls) {
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = col || P.ink;
     ctx.fillText(str, x, y);
+  }
+  function clipText(str, maxW, size) {
+    ctx.font = size.toFixed(1) + "px ui-monospace, monospace";
+    if (ctx.measureText(str).width <= maxW) return str;
+    var s = str;
+    while (s.length > 1 && ctx.measureText(s + "…").width > maxW) s = s.slice(0, -1);
+    return s + "…";
   }
   function roundRect(x, y, w, h, r) {
     ctx.beginPath();
@@ -3005,7 +3222,7 @@ SN.mount("grb", function (host, controls) {
     ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 14, 0, U.TAU); ctx.fill();
     ctx.fillStyle = U.rgba(col, 0.95); ctx.beginPath(); ctx.arc(0, 0, 3.2, 0, U.TAU); ctx.fill();
     ctx.restore();
-    txt("you", x + (x < cx ? -6 : 6), y - 8, col, fs * 0.9, x < cx ? "right" : "left");
+    txt("you", x + (x < cx ? -6 : 6), y - 8, col, isNarrow ? 11 : fs * 0.9, x < cx ? "right" : "left");
   }
 
   function drawCone(s, ch) {
@@ -3061,7 +3278,49 @@ SN.mount("grb", function (host, controls) {
     return "kilonova  +" + U.map(s, 4.6, 12, 0.2, 14).toFixed(1) + " d";
   }
 
+  // narrow HUD: single full-width strip along the top, everything left-aligned
+  // so no line clips the right edge. All text >= 11px.
+  function drawHUDNarrow(ph) {
+    var w = api.w;
+    var pad = 8;
+    var x = pad + 2;
+    var rw = w - pad * 2 - 4;
+    var rh = fs * 1.42;
+    ctx.fillStyle = U.rgba(P.panel, 0.55);
+    ctx.strokeStyle = U.rgba(P.muted, 0.25); ctx.lineWidth = 1;
+    roundRect(4, 4, w - 8, nHudH - 8, 5); ctx.fill(); ctx.stroke();
+
+    var y = 6 + fs * 1.2;
+    txt(channel === "long" ? "COLLAPSAR — long GRB" : "NS MERGER — short GRB", x, y, P.muted, fs); y += rh;
+    txt(clipText(ph.label, rw, fs), x, y, P.bright, fs); y += rh;
+    txt(timeLabel(scene), x, y, P.ice, fs); y += rh;
+
+    var Lapp = lumLinear(scene, viewAngle, channel);
+    txt("θ view " + viewAngle + "°    θ jet ±5°", x, y, P.bright, fs); y += rh;
+    txt("Γ >100  v>0.9999c", x, y, P.bright, fs); y += rh;
+    if (channel === "long") txt("E_kin ~1e45 J (~10× SN)", x, y, P.bright, fs);
+    else txt("ejecta ~0.05 M☉  r-proc", x, y, P.bright, fs);
+    y += rh;
+    txt("L_app " + fmtExp(Lapp) + " W", x, y, P.bright, fs); y += rh;
+
+    // badge
+    var inBeam = viewAngle <= halfAngleDeg;
+    var vis = beamVis(viewAngle);
+    var bcol, btxt;
+    if (inBeam) { bcol = P.gold; btxt = "IN BEAM — γ-ray burst"; }
+    else if (vis > 0.05) { bcol = P.orange; btxt = "GRAZING — weak burst"; }
+    else { bcol = P.muted; btxt = channel === "long" ? "OFF-AXIS — SN only" : "OFF-AXIS — kilonova only"; }
+    ctx.font = fs.toFixed(1) + "px ui-monospace, monospace";
+    var bwB = Math.min(rw + 4, ctx.measureText(btxt).width + 16);
+    ctx.fillStyle = U.rgba(bcol, 0.18); ctx.strokeStyle = U.rgba(bcol, 0.7); ctx.lineWidth = 1;
+    roundRect(x - 3, y - fs, bwB, fs * 1.7, 4); ctx.fill(); ctx.stroke();
+    txt(btxt, x, y + fs * 0.28, bcol, fs);
+    y += rh + fs * 0.7;
+    txt("beaming: two 5° cones ≈ 0.4% of sky", x, y, U.rgba(P.muted, 0.85), fs);
+  }
+
   function drawHUD(ph) {
+    if (isNarrow) { drawHUDNarrow(ph); return; }
     txt(channel === "long" ? "COLLAPSAR — long GRB" : "NS MERGER — short GRB", 12, fs * 1.6, P.muted, fs * 0.95);
     txt(ph.label, 12, fs * 3.0, P.bright, fs * 1.05);
     txt(timeLabel(scene), 12, fs * 4.4, P.ice, fs * 0.95);
@@ -3102,6 +3361,41 @@ SN.mount("grb", function (host, controls) {
 
   function drawLightCurve() {
     var w = api.w, h = api.h;
+    if (isNarrow) {
+      var bw = w - 16, bx = 8;
+      var bh = nLcH - 14;
+      var by = h - bh - 8;
+      var lf = 11;
+      ctx.fillStyle = U.rgba(P.panel, 0.55); ctx.strokeStyle = U.rgba(P.muted, 0.25); ctx.lineWidth = 1;
+      roundRect(bx - 6, by - 6, bw + 12, bh + 12, 5); ctx.fill(); ctx.stroke();
+      var loMin = 32, loMax = 48;
+      var X = function (s) { return bx + (s / SCENE_MAX) * bw; };
+      var Y = function (lg) { return by + bh - (U.clamp(lg, loMin, loMax) - loMin) / (loMax - loMin) * bh; };
+      var gl = [35, 40, 45];
+      for (var i = 0; i < gl.length; i++) {
+        var y = Y(gl[i]);
+        ctx.strokeStyle = U.rgba(P.muted, 0.15); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(bx, y); ctx.lineTo(bx + bw, y); ctx.stroke();
+        txt("10^" + gl[i], bx + 2, y - 2, U.rgba(P.muted, 0.7), lf);
+      }
+      var n = 100, k, s, lg, x2, y2;
+      ctx.strokeStyle = U.rgba(P.gold, 0.30); ctx.lineWidth = 1; ctx.beginPath();
+      for (k = 0; k <= n; k++) { s = k / n * SCENE_MAX; lg = log10(lumLinear(s, 0, channel)); x2 = X(s); y2 = Y(lg); if (k === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2); }
+      ctx.stroke();
+      ctx.strokeStyle = U.rgba(P.cyan, 0.9); ctx.lineWidth = 1.6; ctx.beginPath();
+      for (k = 0; k <= n; k++) { s = k / n * SCENE_MAX; lg = log10(lumLinear(s, viewAngle, channel)); x2 = X(s); y2 = Y(lg); if (k === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2); }
+      ctx.stroke();
+      var xp = X(scene);
+      ctx.strokeStyle = U.rgba(P.bright, 0.5); ctx.setLineDash([2, 3]);
+      ctx.beginPath(); ctx.moveTo(xp, by); ctx.lineTo(xp, by + bh); ctx.stroke(); ctx.setLineDash([]);
+      var cl = log10(lumLinear(scene, viewAngle, channel));
+      ctx.fillStyle = P.cyan; ctx.beginPath(); ctx.arc(xp, Y(cl), 3, 0, U.TAU); ctx.fill();
+      txt("you", bx + bw - 3, by + lf + 1, P.cyan, lf, "right");
+      txt("on-axis", bx + bw - 3, by + lf * 2 + 3, U.rgba(P.gold, 0.8), lf, "right");
+      txt("apparent L (log W)", bx + 3, by + bh - 3, U.rgba(P.ink, 0.9), lf);
+      txt("time →", bx + bw - 3, by + bh - 3, U.rgba(P.muted, 0.7), lf, "right");
+      return;
+    }
     var bw = w * 0.32, bx = w - bw - 8;
     var bh = Math.max(h * 0.28, 52);
     var by = h - bh - 8;
@@ -3140,10 +3434,19 @@ SN.mount("grb", function (host, controls) {
 
   function drawGW(s, t) {
     if (s > 4.6) return;
-    var bw = R * 1.2, bx = cx - bw * 0.5, bh = Math.min(R * 0.32, 46);
-    var by = cy + R * 1.05;
-    if (by + bh > api.h - 6) by = api.h - bh - 6;
-    if (bx < 6) bx = 6;
+    var bw, bx, bh, by;
+    if (isNarrow) {
+      bw = Math.min(api.w - 16, 220);
+      bx = (api.w - bw) * 0.5;
+      bh = Math.max(Math.min(R * 0.5, 44), 34);
+      by = (api.h - nLcH - 12) - bh - 4;
+      if (by < 4) by = 4;
+    } else {
+      bw = R * 1.2; bx = cx - bw * 0.5; bh = Math.min(R * 0.32, 46);
+      by = cy + R * 1.05;
+      if (by + bh > api.h - 6) by = api.h - bh - 6;
+      if (bx < 6) bx = 6;
+    }
     ctx.fillStyle = U.rgba(P.panel, 0.6); ctx.strokeStyle = U.rgba(P.muted, 0.3); ctx.lineWidth = 1;
     roundRect(bx, by, bw, bh, 4); ctx.fill(); ctx.stroke();
     var appear = U.clamp(s / 1.2, 0, 1);
@@ -3159,15 +3462,18 @@ SN.mount("grb", function (host, controls) {
       if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
     }
     ctx.stroke();
-    txt("GW strain h(t) — chirp", bx + 4, by + fs, U.rgba(P.muted, 0.85), fs * 0.8);
-    txt("GW170817: γ-flash +1.7 s", bx + 4, by + bh - 4, U.rgba(P.ice, 0.9), fs * 0.8);
+    var lf = isNarrow ? 11 : fs * 0.8;
+    txt(isNarrow ? "GW chirp h(t)" : "GW strain h(t) — chirp", bx + 4, by + (isNarrow ? lf : fs), U.rgba(P.muted, 0.85), lf);
+    txt(isNarrow ? "γ-flash +1.7 s" : "GW170817: γ-flash +1.7 s", bx + 4, by + bh - 4, U.rgba(P.ice, 0.9), lf);
   }
 
   // ---- main draw ----
   function draw(dt, t) {
     var w = api.w, h = api.h;
     if (w < 2 || h < 2) return;
-    fs = U.clamp(w * 0.017, 9, 12.5);
+    isNarrow = w < 560;
+    fs = isNarrow ? U.clamp(w * 0.017, 11, 12.5) : U.clamp(w * 0.017, 9, 12.5);
+    if (isNarrow) narrowLayout(w, h);
     var bg = ctx.createLinearGradient(0, 0, 0, h);
     bg.addColorStop(0, P.bg); bg.addColorStop(1, "#02030a");
     ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
@@ -3392,6 +3698,9 @@ SN.mount("forge", function (host, controls) {
   // ---- state ----
   var state = { hover:-1, pinned:-1, set:[true,true,true,true,true,true,true], allActive:true };
 
+  // ---- narrow pan state ----
+  var panX = 0, panMin = 0, panMax = 0;
+
   function setCount(){ var c=0; for(var i=0;i<7;i++) if(state.set[i]) c++; return c; }
   function setAll(){ for(var i=0;i<7;i++) state.set[i]=true; state.allActive=true; }
   function onlyThis(i){ if(!state.set[i]) return false; return setCount()===1; }
@@ -3435,6 +3744,8 @@ SN.mount("forge", function (host, controls) {
   var ctx = api.ctx;
   var LAY = null;
 
+  function isNarrow(){ return api.w < 560; }
+
   // ---- geometry helpers ----
   function rrect(x,y,w,h,r){
     if(r>w/2)r=w/2; if(r>h/2)r=h/2; if(r<0)r=0;
@@ -3447,22 +3758,69 @@ SN.mount("forge", function (host, controls) {
     ctx.closePath();
   }
   function computeLayout(w,h){
-    var pad = u.clamp(w*0.02, 6, 16);
-    var headH = u.clamp(w*0.03, 12, 20);
-    var gy0 = pad + headH + 6;
-    var availH = h - gy0 - pad;
-    var availW = w - 2*pad;
-    var cell = Math.min(availW/18, availH/9.5);
-    if (cell < 4) cell = 4;
-    var gridW = 18*cell;
-    var gridX = (w - gridW)/2;
-    var gridH = 9.4*cell;
-    var gridY = gy0 + Math.max(0,(availH-gridH)*0.22);
-    var box = { x: gridX + 2*cell + 3, y: gridY + 3, w: 10*cell - 6, h: 2.85*cell - 6 };
-    return { cell:cell, gridX:gridX, gridY:gridY, pad:pad, headY:pad, box:box };
+    if (w >= 560){
+      // ---- WIDE / DESKTOP LAYOUT (unchanged) ----
+      var pad = u.clamp(w*0.02, 6, 16);
+      var headH = u.clamp(w*0.03, 12, 20);
+      var gy0 = pad + headH + 6;
+      var availH = h - gy0 - pad;
+      var availW = w - 2*pad;
+      var cell = Math.min(availW/18, availH/9.5);
+      if (cell < 4) cell = 4;
+      var gridW = 18*cell;
+      var gridX = (w - gridW)/2;
+      var gridH = 9.4*cell;
+      var gridY = gy0 + Math.max(0,(availH-gridH)*0.22);
+      var box = { x: gridX + 2*cell + 3, y: gridY + 3, w: 10*cell - 6, h: 2.85*cell - 6 };
+      panMin = 0; panMax = 0;
+      return { cell:cell, gridX:gridX, gridY:gridY, pad:pad, headY:pad, box:box, narrow:false, pannable:false };
+    }
+
+    // ---- NARROW / MOBILE LAYOUT ----
+    var npad = u.clamp(w*0.02, 6, 12);
+    var nheadH = Math.round(u.clamp(w*0.028, 11, 16));
+    var hintH = 14;
+    var ngy0 = npad + nheadH + hintH + 6;
+    var infoMin = u.clamp(h*0.24, 84, 132);
+    var gAvail = h - ngy0 - npad - infoMin - 6;
+    if (gAvail < 80) gAvail = 80;
+    var ncell = gAvail/9.5;
+    if (ncell < 28) ncell = 28;   // finger-friendly minimum (symbol >= 11px)
+    if (ncell > 56) ncell = 56;
+    var gh = 9.4*ncell;
+    var stripTop = ngy0 + gh + 6;
+    var ninfoH = h - stripTop - npad;
+    if (ninfoH < 70){
+      ninfoH = 70;
+      stripTop = h - ninfoH - npad;
+      // if the grid would now dip into the strip, shrink cells to fit
+      if (ngy0 + 9.4*ncell > stripTop){
+        ncell = (stripTop - ngy0 - 6)/9.4;
+        if (ncell < 16) ncell = 16;
+        gh = 9.4*ncell;
+      }
+    }
+    var navailW = w - 2*npad;
+    var ngridW = 18*ncell;
+    var ngridX, pmin=0, pmax=0;
+    if (ngridW <= navailW){
+      ngridX = (w - ngridW)/2;
+    } else {
+      ngridX = npad;
+      pmin = navailW - ngridW;   // most-negative pan (reveals right edge)
+      pmax = 0;
+    }
+    panMin = pmin; panMax = pmax;
+    var nbox = { x: npad, y: stripTop, w: navailW, h: ninfoH };
+    return {
+      cell: ncell, gridX: ngridX, gridY: ngy0, pad: npad, headY: npad,
+      box: nbox, narrow: true, pannable: (ngridW > navailW),
+      hintY: npad + nheadH + 2
+    };
   }
+  function gridOriginX(){ return LAY.gridX + (LAY.narrow ? panX : 0); }
   function cellRect(el){
-    return { x: LAY.gridX + (el.gx-1)*LAY.cell, y: LAY.gridY + el.gy*LAY.cell, w: LAY.cell, h: LAY.cell };
+    return { x: gridOriginX() + (el.gx-1)*LAY.cell, y: LAY.gridY + el.gy*LAY.cell, w: LAY.cell, h: LAY.cell };
   }
   function hitTest(px,py){
     if(!LAY) return -1;
@@ -3476,6 +3834,7 @@ SN.mount("forge", function (host, controls) {
   // ---- drawing ----
   function drawCell(el, pulse){
     var r = cellRect(el), cell = LAY.cell;
+    var narrow = LAY.narrow;
     var p = Math.max(1, cell*0.06);
     var x=r.x+p, y=r.y+p, w=r.w-2*p, h=r.h-2*p;
     var rad = Math.max(2, cell*0.12);
@@ -3516,11 +3875,13 @@ SN.mount("forge", function (host, controls) {
     ctx.shadowBlur = Math.max(1, cell*0.14);
     ctx.fillStyle = pal.white;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.font = "600 " + Math.max(7, Math.round(cell*0.4)) + "px ui-sans-serif, system-ui, sans-serif";
+    ctx.font = "600 " + Math.max(narrow?11:7, Math.round(cell*0.4)) + "px ui-sans-serif, system-ui, sans-serif";
     ctx.fillText(el.sym, x+w/2, y+h*0.57);
     ctx.shadowBlur = 0;
-    if (cell > 13){
-      ctx.font = Math.max(6, Math.round(cell*0.24)) + "px ui-monospace, monospace";
+    // atomic number (secondary annotation) — kept legible; dropped on narrow when it would crowd
+    var showZ = cell > 13 && (!narrow || cell >= 34);
+    if (showZ){
+      ctx.font = (narrow ? Math.max(11, Math.round(cell*0.24)) : Math.max(6, Math.round(cell*0.24))) + "px ui-monospace, monospace";
       ctx.textAlign = "left"; ctx.textBaseline = "top";
       ctx.fillStyle = u.rgba(pal.white, 0.82);
       ctx.fillText(""+el.z, x+cell*0.08, y+cell*0.05);
@@ -3529,7 +3890,7 @@ SN.mount("forge", function (host, controls) {
   }
 
   function drawPlaceholder(gx, gy, label){
-    var x = LAY.gridX + (gx-1)*LAY.cell, y = LAY.gridY + gy*LAY.cell, cell=LAY.cell;
+    var x = gridOriginX() + (gx-1)*LAY.cell, y = LAY.gridY + gy*LAY.cell, cell=LAY.cell;
     var p = Math.max(1, cell*0.06);
     ctx.save();
     ctx.globalAlpha = 0.6;
@@ -3540,7 +3901,7 @@ SN.mount("forge", function (host, controls) {
     ctx.setLineDash([]);
     ctx.fillStyle = u.rgba(pal.muted, 0.85);
     ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.font = Math.max(6, Math.round(cell*0.22)) + "px ui-monospace, monospace";
+    ctx.font = Math.max(LAY.narrow?11:6, Math.round(cell*0.22)) + "px ui-monospace, monospace";
     ctx.fillText(label, x+cell/2, y+cell/2);
     ctx.restore();
   }
@@ -3585,6 +3946,7 @@ SN.mount("forge", function (host, controls) {
 
   function drawReadout(){
     var b = LAY.box; if (b.w < 40 || b.h < 24) return;
+    var narrow = LAY.narrow;
     ctx.save();
     rrect(b.x, b.y, b.w, b.h, 6);
     ctx.fillStyle = u.rgba(pal.panel, 0.92); ctx.fill();
@@ -3593,22 +3955,28 @@ SN.mount("forge", function (host, controls) {
 
     var idx = state.hover>=0 ? state.hover : state.pinned;
     var padL = 10, ix = b.x+padL, iy = b.y+9;
-    var big = u.clamp(b.h*0.17, 11, 18);
-    var mid = u.clamp(b.h*0.11, 9, 13);
-    var sm  = u.clamp(b.h*0.095, 8, 12);
+    var big = u.clamp(b.h*0.17, narrow?12:11, 18);
+    var mid = u.clamp(b.h*0.11, narrow?11:9, 13);
+    var sm  = u.clamp(b.h*0.095, narrow?11:8, 12);
 
     if (idx < 0){
       ctx.textAlign="left"; ctx.textBaseline="top";
       ctx.fillStyle = pal.bright;
       ctx.font = "600 " + Math.round(big) + "px ui-sans-serif, system-ui, sans-serif";
-      ctx.fillText("A periodic table of cosmic origins", ix, iy);
+      ctx.fillText(narrow ? "Cosmic origins" : "A periodic table of cosmic origins", ix, iy);
       iy += big*1.35;
       ctx.fillStyle = pal.ink;
       ctx.font = Math.round(sm) + "px ui-sans-serif, system-ui, sans-serif";
-      iy = wrap("H + He are about 98% of ordinary matter; everything heavier is the other ~1-2%.", ix, iy, b.w-2*padL, sm*1.3, 2);
+      iy = wrap(narrow
+                ? "H + He are ~98% of ordinary matter; heavier elements are the rest."
+                : "H + He are about 98% of ordinary matter; everything heavier is the other ~1-2%.",
+                ix, iy, b.w-2*padL, sm*1.3, 2);
       iy += 2;
       ctx.fillStyle = pal.muted;
-      wrap("Tap any element for its origin story. Tap a legend chip to isolate one source.", ix, iy, b.w-2*padL, sm*1.3, 2);
+      wrap(narrow
+           ? "Tap an element. Drag the table sideways to explore."
+           : "Tap any element for its origin story. Tap a legend chip to isolate one source.",
+           ix, iy, b.w-2*padL, sm*1.3, 2);
       ctx.restore();
       return;
     }
@@ -3672,24 +4040,61 @@ SN.mount("forge", function (host, controls) {
 
   // ---- pointer ----
   var interacting = false;
+  var downOnCanvas = false, dragStartX = 0, dragStartY = 0, dragBasePan = 0, dragMoved = false, panGesture = false;
   function toLocal(e){
     var r = api.canvas.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
   api.canvas.addEventListener("pointermove", function(e){
     var pt = toLocal(e);
+    if (interacting && isNarrow()){
+      var dx = pt.x - dragStartX, dy = pt.y - dragStartY;
+      if (!panGesture && LAY && LAY.pannable && Math.abs(dx) > 4 && Math.abs(dx) >= Math.abs(dy)){
+        panGesture = true;
+      }
+      if (panGesture){
+        dragMoved = true;
+        panX = dragBasePan + dx;
+        if (panX < panMin) panX = panMin;
+        if (panX > panMax) panX = panMax;
+        state.hover = -1;
+        if (e.pointerType === "touch") e.preventDefault();
+        return;
+      }
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
+      state.hover = hitTest(pt.x, pt.y);
+      return;
+    }
     state.hover = hitTest(pt.x, pt.y);
     if (interacting && e.pointerType === "touch") e.preventDefault();
   });
   api.canvas.addEventListener("pointerleave", function(){ state.hover = -1; });
   api.canvas.addEventListener("pointerdown", function(e){
-    interacting = true;
+    interacting = true; downOnCanvas = true;
     var pt = toLocal(e);
+    if (isNarrow()){
+      dragStartX = pt.x; dragStartY = pt.y; dragBasePan = panX; dragMoved = false; panGesture = false;
+      state.hover = hitTest(pt.x, pt.y);
+      return;
+    }
     var idx = hitTest(pt.x, pt.y);
     if (idx >= 0){ state.pinned = (state.pinned===idx) ? -1 : idx; state.hover = idx; }
     else state.pinned = -1;
   });
-  window.addEventListener("pointerup", function(){ interacting = false; });
+  window.addEventListener("pointerup", function(e){
+    if (downOnCanvas && isNarrow() && !dragMoved){
+      var pt = toLocal(e);
+      var inBox = LAY && LAY.box &&
+                  pt.x>=LAY.box.x && pt.x<=LAY.box.x+LAY.box.w &&
+                  pt.y>=LAY.box.y && pt.y<=LAY.box.y+LAY.box.h;
+      if (!inBox){
+        var idx = hitTest(pt.x, pt.y);
+        if (idx >= 0){ state.pinned = (state.pinned===idx) ? -1 : idx; state.hover = idx; }
+        else state.pinned = -1;
+      }
+    }
+    interacting = false; downOnCanvas = false; panGesture = false;
+  });
 
   // ---- loop ----
   updateChips();
@@ -3699,14 +4104,30 @@ SN.mount("forge", function (host, controls) {
     ctx.clearRect(0,0,w,h);
     ctx.fillStyle = pal.bg; ctx.fillRect(0,0,w,h);
     LAY = computeLayout(w,h);
+    var narrow = LAY.narrow;
+    // keep pan within bounds each frame
+    if (narrow){
+      if (panX < panMin) panX = panMin;
+      if (panX > panMax) panX = panMax;
+    } else {
+      panX = 0;
+    }
     var cell = LAY.cell;
     var pulse = reduced ? 1 : (0.7 + 0.3*Math.sin(t*3));
 
     // headline
     ctx.textAlign="center"; ctx.textBaseline="top";
     ctx.fillStyle = u.rgba(pal.ink, 0.85);
-    ctx.font = Math.round(u.clamp(w*0.02, 9, 13)) + "px ui-sans-serif, system-ui, sans-serif";
-    ctx.fillText("The forge — where every element was made", w/2, LAY.headY);
+    ctx.font = Math.round(u.clamp(w*0.02, narrow?11:9, 13)) + "px ui-sans-serif, system-ui, sans-serif";
+    ctx.fillText(narrow ? "The forge — every element's origin" : "The forge — where every element was made", w/2, LAY.headY);
+
+    // narrow pan hint
+    if (narrow && LAY.pannable){
+      ctx.textAlign="center"; ctx.textBaseline="top";
+      ctx.fillStyle = u.rgba(pal.muted, 0.9);
+      ctx.font = "11px ui-sans-serif, system-ui, sans-serif";
+      ctx.fillText("‹ drag sideways · swipe → ›", w/2, LAY.hintY);
+    }
 
     // f-block markers
     drawPlaceholder(3, 5, "57-71");
@@ -3889,18 +4310,35 @@ SN.mount("remnants", function (host, controls) {
     L.scaleH = scaleH;
     L.mainH = mainH;
     L.wide = wide;
-    L.fs = clamp(w * 0.017, 10, 13);
     if (wide) {
+      // ---- desktop / wide: unchanged ----
+      L.fs = clamp(w * 0.017, 10, 13);
+      L.noteFs = L.fs * 0.92;
       L.cx = w * 0.30;
       L.cy = mainH * 0.50;
       L.R = Math.min(mainH * 0.34, w * 0.15);
       L.px = w * 0.555;
       L.pw = w * 0.40;
       L.compact = false;
+      L.readTop = 0;
     } else {
+      // ---- narrow: vertical stack (visual on top, readout below, ladder pinned) ----
+      var fsN = clamp(w * 0.030, 11, 13);   // font floor >= 11
+      L.fs = fsN;
+      L.noteFs = Math.max(11, fsN * 0.86);
+      var lh = fsN * 1.7;
+      // reserved readout height: title + gap + 5 data lines + up to 3 note lines
+      var readH = fsN * 1.2 + lh * 1.5 + 5 * lh + fsN * 0.6 + 3 * (fsN * 1.35) + fsN * 0.5;
+      var top = 8;
+      var gapVR = 14;                        // gap between visual and readout
+      var visArea = mainH - readH - top - gapVR;
+      if (visArea < 44) visArea = 44;        // keep a minimum visual band
+      var R = Math.min(visArea * 0.46, w * 0.20);
+      R = clamp(R, 18, w * 0.24);
+      L.R = R;
       L.cx = w * 0.50;
-      L.cy = mainH * 0.40;
-      L.R = Math.min(mainH * 0.28, w * 0.24);
+      L.cy = top + visArea * 0.5;
+      L.readTop = top + visArea + gapVR + fsN;  // title baseline
       L.px = w * 0.06;
       L.pw = w * 0.88;
       L.compact = true;
@@ -4161,17 +4599,17 @@ SN.mount("remnants", function (host, controls) {
   function drawReadout(ctx, w, inf) {
     var fs = L.fs;
     var mono = "px ui-monospace, SFMono-Regular, Menlo, monospace";
+    var top = L.wide ? (L.cy - L.R * 0.9) : L.readTop;
     // title
-    text(ctx, inf.name, L.px, L.wide ? L.cy - L.R * 0.9 : L.mainH - (L.compact ? 118 : 130),
-      (fs * 1.55).toFixed(1) + mono, P.bright, "left");
+    text(ctx, inf.name, L.px, top, (fs * 1.55).toFixed(1) + mono, P.bright, "left");
     // accent underline
     ctx.strokeStyle = rgba(inf.color, 0.8);
     ctx.lineWidth = 2;
-    var uy = (L.wide ? L.cy - L.R * 0.9 : L.mainH - (L.compact ? 118 : 130)) + 6;
+    var uy = top + 6;
     ctx.beginPath(); ctx.moveTo(L.px, uy); ctx.lineTo(L.px + fs * 3.4, uy); ctx.stroke();
 
     var lh = fs * 1.7;
-    var y0 = (L.wide ? L.cy - L.R * 0.9 : L.mainH - (L.compact ? 118 : 130)) + lh * 1.5;
+    var y0 = top + lh * 1.5;
     var maxLines = L.compact ? 5 : inf.lines.length;
     var i;
     var labW = fs * 6.2;
@@ -4182,9 +4620,10 @@ SN.mount("remnants", function (host, controls) {
       text(ctx, val, L.px + labW, yy, fs.toFixed(1) + mono, lab ? P.ink : mix(P.ink, inf.color, 0.5), "left");
     }
 
-    // note line
+    // note line (narrow: clamp so it never spills into the size ladder)
     var ny = y0 + Math.min(inf.lines.length, maxLines) * lh + fs * 0.6;
-    wrapText(ctx, inf.note, L.px, ny, L.pw, fs * 1.35, (fs * 0.92).toFixed(1) + mono, P.muted);
+    var maxY = L.wide ? 1e9 : (L.mainH - fs * 0.4);
+    wrapText(ctx, inf.note, L.px, ny, L.pw, fs * 1.35, L.noteFs.toFixed(1) + mono, P.muted, maxY);
 
     // pulsar light curve
     if (state.sel === "pulsar" && !L.compact) {
@@ -4222,23 +4661,26 @@ SN.mount("remnants", function (host, controls) {
     ctx.restore();
   }
 
-  function wrapText(ctx, s, x, y, maxW, lh, font, color) {
+  function wrapText(ctx, s, x, y, maxW, lh, font, color, maxY) {
+    if (maxY == null) maxY = 1e9;
     ctx.font = font;
     var words = s.split(" ");
     var line = "", i, yy = y;
     for (i = 0; i < words.length; i++) {
       var test = line ? line + " " + words[i] : words[i];
       if (ctx.measureText(test).width > maxW && line) {
+        if (yy > maxY) return;
         text(ctx, line, x, yy, font, color, "left");
         line = words[i]; yy += lh;
       } else line = test;
     }
-    if (line) text(ctx, line, x, yy, font, color, "left");
+    if (line && yy <= maxY) text(ctx, line, x, yy, font, color, "left");
   }
 
   // ---- scale ladder ---------------------------------------------------
   function drawScale(ctx, w, h) {
     var y = L.sy, x0 = L.x0, x1 = L.x1;
+    var narrow = !L.wide;
     function xf(km) { return mapv(clamp(log10(km), 0, 6), 0, 6, x0, x1); }
     // baseline
     ctx.strokeStyle = rgba(P.muted, 0.35);
@@ -4246,26 +4688,36 @@ SN.mount("remnants", function (host, controls) {
     ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x1, y); ctx.stroke();
     // decade ticks
     var d, labels = ["1", "10", "100", "1k", "10k", "100k", "1M"];
+    var labFont = narrow ? "11px ui-monospace, monospace" : "9px ui-monospace, monospace";
     for (d = 0; d <= 6; d++) {
       var tx = mapv(d, 0, 6, x0, x1);
       ctx.strokeStyle = rgba(P.muted, 0.25);
       ctx.beginPath(); ctx.moveTo(tx, y - 3); ctx.lineTo(tx, y + 3); ctx.stroke();
-      text(ctx, labels[d], tx, y + 15, "9px ui-monospace, monospace", rgba(P.muted, 0.8), "center");
+      // narrow: label every other decade so 11px glyphs never crowd
+      if (!narrow || d % 2 === 0) {
+        text(ctx, labels[d], tx, y + 15, labFont, rgba(P.muted, 0.8), "center");
+      }
     }
-    // reference ticks (faint)
-    refTick(ctx, xf(6371), y, "Earth", P.muted);
-    refTick(ctx, xf(696000), y, "Sun", mix(P.gold, P.muted, 0.4));
+    // reference ticks (faint) — desktop only; dropped on narrow to avoid crowding
+    if (!narrow) {
+      refTick(ctx, xf(6371), y, "Earth", P.muted);
+      refTick(ctx, xf(696000), y, "Sun", mix(P.gold, P.muted, 0.4));
+    }
 
     // remnant markers
     var M = state.bhMass;
-    marker(ctx, xf(2.95 * M), y, "BH", P.orange, state.sel === "black-hole", -1);
-    marker(ctx, xf(11), y, "NS", P.cyan, state.sel === "neutron-star" || state.sel === "pulsar" || state.sel === "magnetar", 1);
-    marker(ctx, xf(6000), y, "WD", mix(P.white, P.blue, 0.45), state.sel === "white-dwarf", -1);
+    marker(ctx, xf(2.95 * M), y, "BH", P.orange, state.sel === "black-hole", -1, narrow);
+    marker(ctx, xf(11), y, "NS", P.cyan, state.sel === "neutron-star" || state.sel === "pulsar" || state.sel === "magnetar", 1, narrow);
+    marker(ctx, xf(6000), y, "WD", mix(P.white, P.blue, 0.45), state.sel === "white-dwarf", -1, narrow);
 
     // title + honesty note
-    text(ctx, "SIZE LADDER · log radius (km)", x0, y - L.scaleH * 0.30, "9px ui-monospace, monospace", P.muted, "left");
-    var noteFont = w < 480 ? "8px ui-monospace, monospace" : "9px ui-monospace, monospace";
-    text(ctx, "linear scale would make the NS & BH vanish", x1, y - L.scaleH * 0.30, noteFont, rgba(P.muted, 0.75), "right");
+    if (narrow) {
+      text(ctx, "SIZE LADDER (log km)", x0, y - L.scaleH * 0.30, "11px ui-monospace, monospace", P.muted, "left");
+    } else {
+      text(ctx, "SIZE LADDER · log radius (km)", x0, y - L.scaleH * 0.30, "9px ui-monospace, monospace", P.muted, "left");
+      var noteFont = w < 480 ? "8px ui-monospace, monospace" : "9px ui-monospace, monospace";
+      text(ctx, "linear scale would make the NS & BH vanish", x1, y - L.scaleH * 0.30, noteFont, rgba(P.muted, 0.75), "right");
+    }
   }
 
   function refTick(ctx, x, y, label, color) {
@@ -4286,15 +4738,16 @@ SN.mount("remnants", function (host, controls) {
     ctx.stroke();
   }
 
-  function marker(ctx, x, y, label, color, active, dir) {
+  function marker(ctx, x, y, label, color, active, dir, narrow) {
     var r = active ? 5 : 3.5;
     if (active) glow(ctx, x, y, 1, 16, color, 0.5);
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.fill();
     ctx.strokeStyle = rgba(P.bg, 0.9); ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(x, y, r, 0, TAU); ctx.stroke();
-    var ly = dir < 0 ? y - 12 : y + 24;
-    text(ctx, label, x, ly, (active ? "10px" : "9px") + " ui-monospace, monospace",
+    var ly = dir < 0 ? y - 12 : y + (narrow ? 20 : 24);
+    var f = narrow ? (active ? "12px" : "11px") : (active ? "10px" : "9px");
+    text(ctx, label, x, ly, f + " ui-monospace, monospace",
       active ? P.bright : rgba(color, 0.9), "center");
   }
 
