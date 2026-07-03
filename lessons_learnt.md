@@ -3,6 +3,18 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-03 — Verifying an animated / WebGL document (Three.js entries like
+  `flight`, `emu-cab`, `night-cab`) with headless Chrome: `--dump-dom` NEVER
+  returns — the page's perpetual `requestAnimationFrame` loop keeps virtual time
+  alive, so the DOM dump (and `--virtual-time-budget`) waits forever and the
+  harness kills it with an **empty** file. Use `--screenshot=out.png` instead: it
+  fires on the `load` event regardless of the rAF loop and gives a visual
+  boot/menu confirmation. Enable WebGL headless with
+  `--use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader`, and bound
+  the run with a background watchdog `kill` (macOS has no `timeout`). The `flight`
+  DC export also needs its `support.js` sidecar copied alongside `index.html` —
+  the export's own integration note lists only the `.dc.html` + engine, but the
+  `<head>` loads `./support.js`.
 - 2026-07-03 — A DC design-tool export (`*.dc.html` + `support.js`) can be shipped
   **fully offline / zero-network** without a bundler: (1) vendor the *exact* unpkg
   React UMD bytes it names — the `sha384` SRI hashes baked into `support.js` still
