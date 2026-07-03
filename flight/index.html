@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
+<script src="flightsim-engine.js?v=11"></script>
+<style>
+  html,body{margin:0;padding:0;background:#0b0e12;overflow:hidden;height:100%;}
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+  @keyframes fsblink{0%,100%{opacity:1}50%{opacity:.35}}
+  @keyframes fsscan{0%{transform:translateY(0)}100%{transform:translateY(4px)}}
+  .fs-scan{background-image:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,0.10) 2px 3px);}
+  .fs-scroll::-webkit-scrollbar{width:8px}
+  .fs-scroll::-webkit-scrollbar-thumb{background:rgba(160,90,24,.4)}
+</style>
+</helmet>
+
+<div style="position:fixed;inset:0;width:100vw;height:100vh;background:#0b0e12;font-family:'JetBrains Mono',ui-monospace,monospace;overflow:hidden;">
+
+  <!-- 3D world -->
+  <div ref="{{ worldRef }}" style="position:absolute;inset:0;z-index:1;cursor:crosshair;"></div>
+  <!-- phosphor HUD canvas -->
+  <canvas ref="{{ hudRef }}" style="position:absolute;inset:0;z-index:4;pointer-events:none;"></canvas>
+  <div class="fs-scan" aria-hidden="true" style="position:absolute;inset:0;z-index:5;pointer-events:none;opacity:.5;mix-blend-mode:overlay;"></div>
+
+  <!-- ============ BOOT ============ -->
+  <sc-if value="{{ booting }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0b0e12;color:#ffbf6b;gap:18px;">
+      <div style="font-size:12px;letter-spacing:4px;color:#6a7a5a;">0x4D44 :: ALMANAC</div>
+      <div style="font-size:clamp(26px,5vw,46px);font-weight:700;letter-spacing:-1px;color:#f1e9d0;">$ flight --boot</div>
+      <div style="font-size:12px;letter-spacing:2px;color:#a05a18;animation:fsblink 1s steps(2) infinite;">spooling turbines &middot; generating terrain &middot; arming instruments _</div>
+    </div>
+  </sc-if>
+
+  <!-- ============ PRE-FLIGHT MENU ============ -->
+  <sc-if value="{{ screenMenu }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:20;display:flex;pointer-events:none;">
+      <!-- left config panel (amber paper) -->
+      <div class="fs-scroll" style="pointer-events:auto;width:min(470px,86vw);height:100%;overflow-y:auto;background:linear-gradient(180deg,#f4edd6,#efe6cb);color:#1a2418;border-right:1px solid rgba(26,36,24,.4);box-shadow:2px 0 30px rgba(0,0,0,.5);padding:22px 22px 40px;">
+        <div style="font-size:10px;letter-spacing:3px;color:#6a7a5a;">&#9472;&#9472;&#9472; 0x4D44 :: FLIGHT &#9472;&#9472; A FLYABLE ALMANAC &#9472;&#9472;</div>
+        <h1 style="font-size:clamp(30px,4.4vw,44px);line-height:.96;letter-spacing:-2px;margin:8px 0 4px;font-weight:700;"><span style="color:#a05a18;">$</span> pre&#8209;flight <span style="color:#a05a18;">--setup</span></h1>
+        <p style="margin:6px 0 16px;font-size:12.5px;color:#3a4232;line-height:1.55;max-width:40ch;">Seven aircraft, one endless procedural world of towns, cities, mountains, oceans, deserts and forests. Real aerodynamics &mdash; with flying aids you can switch off when you're ready.</p>
+
+        <div style="font-size:9.5px;letter-spacing:2px;color:#6a7a5a;margin:2px 0 8px;">&#9484;&#9472;&#9472; select:aircraft &#9472;&#9472;</div>
+        <div style="display:flex;flex-direction:column;gap:7px;">
+          <sc-for list="{{ aircraft }}" as="a" hint-placeholder-count="7">
+            <button type="button" data-key="{{ a.key }}" onClick="{{ onPickCard }}" style="{{ a.style }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px;">
+                <span style="font-weight:700;font-size:14px;letter-spacing:.3px;">{{ a.name }}</span>
+                <span style="font-size:9.5px;letter-spacing:1.5px;color:#a05a18;">{{ a.cat }}</span>
+              </div>
+              <div style="font-size:11px;color:#3a4232;line-height:1.45;margin-top:3px;">{{ a.desc }}</div>
+              <div style="display:flex;gap:14px;margin-top:6px;font-size:10px;letter-spacing:.5px;color:#5a6450;">
+                <span>STALL {{ a.stall }}kt</span><span>CRUISE {{ a.cruise }}kt</span><span>VNE {{ a.vmax }}kt</span>
+                <span style="margin-left:auto;color:#a05a18;letter-spacing:0;">{{ a.bars }}</span>
+              </div>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;">
+          <div>
+            <div style="font-size:9.5px;letter-spacing:2px;color:#6a7a5a;margin-bottom:6px;">&#9484;&#9472; time &#9472;</div>
+            <div style="display:flex;gap:6px;">
+              <button type="button" onClick="{{ setDay }}" style="{{ dayStyle }}">DAY</button>
+              <button type="button" onClick="{{ setNight }}" style="{{ nightStyle }}">NIGHT</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9.5px;letter-spacing:2px;color:#6a7a5a;margin-bottom:6px;">&#9484;&#9472; controls &#9472;</div>
+            <div style="display:flex;gap:6px;">
+              <button type="button" onClick="{{ setKbd }}" style="{{ kbdStyle }}">KEYS</button>
+              <button type="button" onClick="{{ setMouse }}" style="{{ mouseStyle }}">MOUSE</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-size:9.5px;letter-spacing:2px;color:#6a7a5a;margin:16px 0 6px;">&#9484;&#9472; flying aids &#9472;&#9472; <span style="color:#3a6a2a;">green = beginner-friendly</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <button type="button" data-aid="stability"    onClick="{{ onToggleAid }}" style="{{ aidStabilityStyle }}"><span>Auto-stability</span><span>{{ aidStabilityTxt }}</span></button>
+          <button type="button" data-aid="autoTrim"      onClick="{{ onToggleAid }}" style="{{ aidTrimStyle }}"><span>Auto-trim</span><span>{{ aidTrimTxt }}</span></button>
+          <button type="button" data-aid="stallProtect"  onClick="{{ onToggleAid }}" style="{{ aidStallStyle }}"><span>Stall protect</span><span>{{ aidStallTxt }}</span></button>
+          <button type="button" data-aid="easyLand"      onClick="{{ onToggleAid }}" style="{{ aidLandStyle }}"><span>Easy landing</span><span>{{ aidLandTxt }}</span></button>
+        </div>
+
+        <button type="button" onClick="{{ start }}" style="margin-top:20px;width:100%;padding:15px;background:#1a2418;color:#f1e9d0;border:none;font:inherit;font-size:15px;font-weight:700;letter-spacing:3px;cursor:pointer;">&#9654;&nbsp; START FLIGHT</button>
+        <div style="display:flex;justify-content:space-between;margin-top:12px;font-size:10.5px;color:#6a7a5a;">
+          <a href="https://0x4d44.github.io/" style="color:#a05a18;text-decoration:none;">&larr; back to almanac</a>
+          <span>spawns airborne &middot; trimmed &middot; ready</span>
+        </div>
+      </div>
+
+      <!-- right: live 3D preview label -->
+      <div style="flex:1;position:relative;pointer-events:none;">
+        <div style="position:absolute;left:24px;bottom:24px;color:#f1e9d0;text-shadow:0 1px 6px rgba(0,0,0,.8);">
+          <div style="font-size:10px;letter-spacing:3px;color:#ffbf6b;">NOW PREVIEWING</div>
+          <div style="font-size:clamp(24px,3vw,38px);font-weight:700;letter-spacing:-1px;line-height:1;">{{ selName }}</div>
+          <div style="font-size:12px;color:#cdb079;margin-top:4px;letter-spacing:1px;">{{ selCat }} &middot; {{ selMass }}</div>
+        </div>
+        <div style="position:absolute;right:22px;top:22px;text-align:right;color:#e9dcc0;font-size:10.5px;letter-spacing:1.5px;text-shadow:0 1px 6px rgba(0,0,0,.8);opacity:.85;">
+          <div>&#9472; live 3D preview &#9472;</div>
+          <div style="color:#8fa0b5;">orbiting</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ============ FLYING CHROME ============ -->
+  <sc-if value="{{ screenFly }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:15;pointer-events:none;color:#f1e9d0;">
+
+      <!-- top-left status -->
+      <div style="position:absolute;top:14px;left:14px;display:flex;gap:8px;align-items:center;pointer-events:auto;">
+        <button type="button" onClick="{{ goMenu }}" style="padding:7px 12px;background:rgba(18,16,10,.82);border:1px solid rgba(255,191,107,.4);color:#ffbf6b;font:inherit;font-size:11px;letter-spacing:2px;cursor:pointer;">&#9776; MENU</button>
+        <button type="button" onClick="{{ cycleCam }}" style="padding:7px 12px;background:rgba(18,16,10,.82);border:1px solid rgba(255,191,107,.4);color:#f1e9d0;font:inherit;font-size:11px;letter-spacing:1.5px;cursor:pointer;min-width:118px;text-align:left;">CAM &#183; {{ camName }}</button>
+        <div style="padding:7px 12px;background:rgba(18,16,10,.6);border:1px solid rgba(255,191,107,.2);font-size:11px;letter-spacing:1px;">
+          <span style="font-weight:700;">{{ acNameLabel }}</span>
+          <span style="color:#8fa0b5;">&#183; over {{ biomeLabel }}</span>
+        </div>
+      </div>
+
+      <!-- right control rail -->
+      <div style="position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:auto;width:250px;">
+        <div style="display:flex;gap:6px;">
+          <button type="button" data-panel="ap"   onClick="{{ onPanel }}" style="{{ tabApStyle }}">AUTOPILOT</button>
+          <button type="button" data-panel="fail" onClick="{{ onPanel }}" style="{{ tabFailStyle }}">FAILURES</button>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button type="button" data-panel="aids" onClick="{{ onPanel }}" style="{{ tabAidsStyle }}">AIDS</button>
+          <button type="button" data-panel="help" onClick="{{ onPanel }}" style="{{ tabHelpStyle }}">HELP</button>
+        </div>
+
+        <!-- AUTOPILOT panel -->
+        <sc-if value="{{ showAP }}" hint-placeholder-val="{{ false }}">
+          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,191,107,.4);padding:12px;">
+            <button type="button" onClick="{{ toggleAP }}" style="{{ apMasterStyle }}"><span>AUTOPILOT</span><span>{{ apMasterTxt }}</span></button>
+            <div style="height:1px;background:rgba(255,191,107,.2);margin:10px 0;"></div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" data-mode="hdg" onClick="{{ onApArm }}" style="{{ apHdgStyle }}">HDG</button>
+                <button type="button" data-k="tgtHdg" data-d="-5" onClick="{{ onApNudge }}" style="{{ stepStyle }}">&#9664;</button>
+                <span style="flex:1;text-align:center;font-size:15px;font-weight:700;color:#ffbf6b;">{{ apHdgTxt }}</span>
+                <button type="button" data-k="tgtHdg" data-d="5" onClick="{{ onApNudge }}" style="{{ stepStyle }}">&#9654;</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" data-mode="alt" onClick="{{ onApArm }}" style="{{ apAltStyle }}">ALT</button>
+                <button type="button" data-k="tgtAlt" data-d="-152" onClick="{{ onApNudge }}" style="{{ stepStyle }}">&#9660;</button>
+                <span style="flex:1;text-align:center;font-size:15px;font-weight:700;color:#ffbf6b;">{{ apAltTxt }}</span>
+                <button type="button" data-k="tgtAlt" data-d="152" onClick="{{ onApNudge }}" style="{{ stepStyle }}">&#9650;</button>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <button type="button" data-mode="spd" onClick="{{ onApArm }}" style="{{ apSpdStyle }}">SPD</button>
+                <button type="button" data-k="tgtSpd" data-d="-5.14" onClick="{{ onApNudge }}" style="{{ stepStyle }}">&#9664;</button>
+                <span style="flex:1;text-align:center;font-size:15px;font-weight:700;color:#ffbf6b;">{{ apSpdTxt }}</span>
+                <button type="button" data-k="tgtSpd" data-d="5.14" onClick="{{ onApNudge }}" style="{{ stepStyle }}">&#9654;</button>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- FAILURES panel -->
+        <sc-if value="{{ showFail }}" hint-placeholder-val="{{ false }}">
+          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,106,90,.45);padding:12px;">
+            <div style="font-size:10px;letter-spacing:2px;color:#ff9a8a;margin-bottom:9px;">&#9888; INDUCE FAILURE</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+              <button type="button" data-fail="engine"      onClick="{{ onFail }}" style="{{ failEngineStyle }}">Engine out</button>
+              <button type="button" data-fail="hydraulics"  onClick="{{ onFail }}" style="{{ failHydStyle }}">Hydraulics</button>
+              <button type="button" data-fail="gearStuck"   onClick="{{ onFail }}" style="{{ failGearStyle }}">Gear jam</button>
+              <button type="button" data-fail="instruments" onClick="{{ onFail }}" style="{{ failInstStyle }}">Instruments</button>
+            </div>
+            <button type="button" onClick="{{ onFailRandom }}" style="{{ failRandStyle }}"><span>Random gremlins</span><span>{{ failRandTxt }}</span></button>
+            <button type="button" onClick="{{ onFailClear }}" style="margin-top:6px;width:100%;padding:8px;background:rgba(58,106,42,.25);border:1px solid rgba(143,227,154,.4);color:#8fe39a;font:inherit;font-size:11px;letter-spacing:1.5px;cursor:pointer;">&#10003; REPAIR ALL</button>
+          </div>
+        </sc-if>
+
+        <!-- AIDS panel -->
+        <sc-if value="{{ showAids }}" hint-placeholder-val="{{ false }}">
+          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,191,107,.4);padding:12px;display:flex;flex-direction:column;gap:6px;">
+            <button type="button" data-aid="stability"   onClick="{{ onToggleAid }}" style="{{ aidStabilityStyle }}"><span>Auto-stability</span><span>{{ aidStabilityTxt }}</span></button>
+            <button type="button" data-aid="autoTrim"     onClick="{{ onToggleAid }}" style="{{ aidTrimStyle }}"><span>Auto-trim</span><span>{{ aidTrimTxt }}</span></button>
+            <button type="button" data-aid="stallProtect" onClick="{{ onToggleAid }}" style="{{ aidStallStyle }}"><span>Stall protect</span><span>{{ aidStallTxt }}</span></button>
+            <button type="button" data-aid="easyLand"     onClick="{{ onToggleAid }}" style="{{ aidLandStyle }}"><span>Easy landing</span><span>{{ aidLandTxt }}</span></button>
+            <div style="display:flex;gap:6px;margin-top:2px;">
+              <button type="button" onClick="{{ aidsAllOn }}" style="flex:1;padding:7px;background:rgba(58,106,42,.25);border:1px solid rgba(143,227,154,.4);color:#8fe39a;font:inherit;font-size:10.5px;letter-spacing:1px;cursor:pointer;">ALL ON</button>
+              <button type="button" onClick="{{ aidsAllOff }}" style="flex:1;padding:7px;background:rgba(255,106,90,.18);border:1px solid rgba(255,106,90,.4);color:#ff9a8a;font:inherit;font-size:10.5px;letter-spacing:1px;cursor:pointer;">ALL OFF &middot; expert</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- HELP panel -->
+        <sc-if value="{{ showHelp }}" hint-placeholder-val="{{ false }}">
+          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,191,107,.4);padding:12px;font-size:11px;line-height:1.9;color:#e9dcc0;letter-spacing:.5px;">
+            <div style="font-size:10px;letter-spacing:2px;color:#ffbf6b;margin-bottom:6px;">&#9484;&#9472; controls &#9472;</div>
+            <div><b style="color:#ffbf6b;">&uarr;&darr; / W S</b> &nbsp;pitch (nose down / up)</div>
+            <div><b style="color:#ffbf6b;">&larr;&rarr; / A D</b> &nbsp;roll</div>
+            <div><b style="color:#ffbf6b;">Q E</b> &nbsp;rudder / yaw</div>
+            <div><b style="color:#ffbf6b;">Shift / Ctrl</b> &nbsp;throttle up / down</div>
+            <div><b style="color:#ffbf6b;">G</b> gear &nbsp; <b style="color:#ffbf6b;">F / V</b> flaps &nbsp; <b style="color:#ffbf6b;">B</b> brakes</div>
+            <div><b style="color:#ffbf6b;">C</b> camera &nbsp; <b style="color:#ffbf6b;">P</b> pause</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- bottom key hint bar -->
+      <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:16px;padding:6px 16px;background:rgba(14,12,7,.55);border:1px solid rgba(255,191,107,.18);font-size:10.5px;letter-spacing:1px;color:#cdb079;white-space:nowrap;max-width:94vw;overflow:hidden;pointer-events:none;">
+        <span><b style="color:#ffbf6b;">&uarr;&darr;&larr;&rarr;</b> fly</span>
+        <span><b style="color:#ffbf6b;">Shift/Ctrl</b> thr</span>
+        <span><b style="color:#ffbf6b;">G</b> gear</span>
+        <span><b style="color:#ffbf6b;">F/V</b> flap</span>
+        <span><b style="color:#ffbf6b;">B</b> brake</span>
+        <span><b style="color:#ffbf6b;">C</b> cam</span>
+        <span><b style="color:#ffbf6b;">P</b> pause</span>
+      </div>
+
+      <!-- PAUSE -->
+      <sc-if value="{{ paused }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:22;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(11,14,18,.7);backdrop-filter:blur(2px);pointer-events:auto;gap:16px;">
+          <div style="font-size:clamp(30px,6vw,60px);font-weight:700;letter-spacing:6px;color:#ffbf6b;">PAUSED</div>
+          <button type="button" onClick="{{ pause }}" style="padding:12px 28px;background:#1a2418;color:#f1e9d0;border:none;font:inherit;font-size:14px;letter-spacing:3px;cursor:pointer;">&#9654; RESUME &middot; P</button>
+        </div>
+      </sc-if>
+
+      <!-- CRASH -->
+      <sc-if value="{{ crashed }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;z-index:23;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(40,8,8,.55);backdrop-filter:blur(2px);pointer-events:auto;gap:12px;">
+          <div style="font-size:11px;letter-spacing:5px;color:#ff9a8a;">&#9632; SIGNAL LOST</div>
+          <div style="font-size:clamp(30px,6vw,58px);font-weight:700;letter-spacing:2px;color:#ff6a5a;">FLIGHT ENDED</div>
+          <div style="font-size:13px;color:#e9dcc0;letter-spacing:1px;">{{ crashReason }}</div>
+          <div style="display:flex;gap:10px;margin-top:10px;">
+            <button type="button" onClick="{{ restart }}" style="padding:12px 24px;background:#1a2418;color:#f1e9d0;border:none;font:inherit;font-size:14px;letter-spacing:2px;cursor:pointer;">&#8635; RESPAWN</button>
+            <button type="button" onClick="{{ goMenu }}" style="padding:12px 24px;background:transparent;color:#ffbf6b;border:1px solid rgba(255,191,107,.5);font:inherit;font-size:14px;letter-spacing:2px;cursor:pointer;">&#9776; MENU</button>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;hudPhosphor&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;amber&quot;,&quot;green&quot;,&quot;ice&quot;],&quot;default&quot;:&quot;amber&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;HUD&quot;},&quot;defaultAircraft&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cessna172&quot;,&quot;businessjet&quot;,&quot;f16&quot;,&quot;b757&quot;,&quot;b767&quot;,&quot;b747&quot;,&quot;a380&quot;],&quot;default&quot;:&quot;cessna172&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Flight&quot;},&quot;invertPitch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Flight&quot;}}">
+class Component extends DCLogic {
+  state = { booting:true, screen:"menu", snap:null, selKey:null, panel:null };
+
+  get AC(){
+    return [
+      {key:"cessna172", name:"Cessna 172", cat:"Light prop", desc:"Docile four-seat trainer. Forgiving, slow, honest.", stall:52, cruise:120, vmax:175, mass:"1.1 t", agility:1.0},
+      {key:"businessjet", name:"Meridian J-40", cat:"Business jet", desc:"Swept-wing light jet. Quick, clean, business-class calm.", stall:101, cruise:398, vmax:515, mass:"8.5 t", agility:1.15},
+      {key:"f16", name:"F-16 Falcon", cat:"Fighter", desc:"Fly-by-wire dogfighter. Afterburner, vicious roll, unforgiving.", stall:120, cruise:505, vmax:1166, mass:"12 t", agility:2.4},
+      {key:"b757", name:"Boeing 757", cat:"Narrowbody", desc:"Overpowered narrowbody \u2014 famous climb rate, twin-jet grace.", stall:128, cruise:466, vmax:583, mass:"95 t", agility:0.72},
+      {key:"b767", name:"Boeing 767", cat:"Widebody", desc:"Transatlantic widebody. Big, smooth, deliberate.", stall:136, cruise:486, vmax:583, mass:"135 t", agility:0.66},
+      {key:"b747", name:"Boeing 747", cat:"Jumbo", desc:"Queen of the Skies. Four engines, upper deck, immense inertia.", stall:148, cruise:496, vmax:583, mass:"320 t", agility:0.55},
+      {key:"a380", name:"Airbus A380", cat:"Superjumbo", desc:"The largest passenger jet ever \u2014 full double-deck. Serene, colossal.", stall:152, cruise:496, vmax:583, mass:"510 t", agility:0.5},
+    ];
+  }
+
+  componentDidMount(){
+    this._tries = 0;
+    this._boot = () => {
+      if (window.FlightSim && window.THREE && this.worldEl && this.hudEl) {
+        const eng = window.FlightSim;
+        this.eng = eng;
+        const initKey = (this.props.defaultAircraft && this.AC.some(a=>a.key===this.props.defaultAircraft)) ? this.props.defaultAircraft : "cessna172";
+        eng.setHudColor(this.props.hudPhosphor || "amber");
+        eng.setInvertPitch(!!this.props.invertPitch);
+        eng.boot(this.worldEl, this.hudEl, {
+          onReady: (snap) => { eng.selectAircraft(initKey); eng.setCamera(3); this.setState({booting:false, snap:eng.getState(), selKey:initKey}); },
+          onState: (snap) => { this.setState({snap}); },
+        });
+      } else if (this._tries++ < 200) {
+        setTimeout(this._boot, 60);
+      }
+    };
+    this._boot();
+  }
+  componentWillUnmount(){ if (this.eng && this.eng.resize) window.removeEventListener("resize", this.eng.resize); }
+
+  // ---- helpers ----
+  pill(on){ return "display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid rgba(255,191,107,.3);background:"+(on?"#a05a18":"rgba(255,191,107,.06)")+";color:"+(on?"#f9f0da":"#cdb079")+";cursor:pointer;font:inherit;font-size:11px;letter-spacing:.8px;width:100%;text-align:left;"; }
+  pillG(on){ return "display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border:1px solid "+(on?"rgba(143,227,154,.5)":"rgba(255,191,107,.28)")+";background:"+(on?"rgba(58,106,42,.35)":"rgba(255,191,107,.05)")+";color:"+(on?"#8fe39a":"#cdb079")+";cursor:pointer;font:inherit;font-size:11px;letter-spacing:.6px;width:100%;text-align:left;"; }
+  tab(on){ return "padding:7px 10px;background:"+(on?"#a05a18":"rgba(18,16,10,.82)")+";border:1px solid rgba(255,191,107,.4);color:"+(on?"#f9f0da":"#ffbf6b")+";font:inherit;font-size:10.5px;letter-spacing:1.5px;cursor:pointer;flex:1;"; }
+  seg(on){ return "flex:1;padding:8px 6px;background:"+(on?"#1a2418":"rgba(255,255,255,.3)")+";color:"+(on?"#f1e9d0":"#1a2418")+";border:1px solid #1a2418;font:inherit;font-size:11px;letter-spacing:1.5px;cursor:pointer;"; }
+  arm(on){ return "width:46px;padding:6px 0;background:"+(on?"#3a6a2a":"rgba(255,191,107,.08)")+";color:"+(on?"#dff5d6":"#ffbf6b")+";border:1px solid rgba(255,191,107,.35);font:inherit;font-size:11px;font-weight:700;letter-spacing:1px;cursor:pointer;"; }
+  failB(on){ return "padding:9px 6px;background:"+(on?"#8a2018":"rgba(255,106,90,.1)")+";color:"+(on?"#ffd9d2":"#ff9a8a")+";border:1px solid rgba(255,106,90,.4);font:inherit;font-size:11px;letter-spacing:.5px;cursor:pointer;"; }
+  step(){ return "width:30px;padding:5px 0;background:rgba(255,191,107,.1);color:#ffbf6b;border:1px solid rgba(255,191,107,.35);font:inherit;font-size:12px;cursor:pointer;"; }
+  cardStyle(sel){ return "display:block;width:100%;padding:10px 12px;border:1px solid "+(sel?"#a05a18":"rgba(26,36,24,.25)")+";background:"+(sel?"rgba(160,90,24,.12)":"rgba(255,255,255,.38)")+";cursor:pointer;font:inherit;color:#1a2418;box-shadow:"+(sel?"inset 3px 0 0 #a05a18":"none")+";"; }
+  bars(ag){ const n = Math.max(1,Math.min(5,Math.round(ag*2))); return "\u25cf".repeat(n)+"\u25cb".repeat(5-n); }
+
+  renderVals(){
+    const s = this.state;
+    const snap = s.snap || {};
+    const aids = snap.aids || {stability:true,autoTrim:true,stallProtect:true,easyLand:true};
+    const ap = snap.ap || {on:false,hdg:false,alt:false,spd:false,tgtHdg:0,tgtAlt:0,tgtSpd:0};
+    const fail = snap.failures || {};
+    const telem = snap.telem || {};
+    const selKey = s.selKey || "cessna172";
+    const sel = this.AC.find(a=>a.key===selKey) || this.AC[0];
+    const pad3 = n => String(((Math.round(n)%360)+360)%360).padStart(3,"0");
+
+    const aircraft = this.AC.map(a => Object.assign({}, a, {
+      bars: this.bars(a.agility),
+      style: this.cardStyle(a.key===selKey),
+    }));
+
+    return {
+      // refs
+      worldRef: el => { if(el) this.worldEl = el; },
+      hudRef: el => { if(el) this.hudEl = el; },
+      // screen flags
+      booting: s.booting,
+      screenMenu: !s.booting && s.screen==="menu",
+      screenFly: !s.booting && s.screen==="fly",
+      paused: !!(snap.paused) && !snap.crashed,
+      crashed: !!snap.crashed,
+      crashReason: snap.crashReason || "terrain contact",
+
+      // menu
+      aircraft,
+      selName: sel.name, selCat: sel.cat, selMass: sel.mass,
+      dayStyle: this.seg(snap.timeOfDay!=="night"), nightStyle: this.seg(snap.timeOfDay==="night"),
+      kbdStyle: this.seg(!this._mouse), mouseStyle: this.seg(!!this._mouse),
+
+      // aids (shared menu + panel)
+      aidStabilityStyle:this.pillG(aids.stability), aidStabilityTxt:aids.stability?"ON":"OFF",
+      aidTrimStyle:this.pillG(aids.autoTrim), aidTrimTxt:aids.autoTrim?"ON":"OFF",
+      aidStallStyle:this.pillG(aids.stallProtect), aidStallTxt:aids.stallProtect?"ON":"OFF",
+      aidLandStyle:this.pillG(aids.easyLand), aidLandTxt:aids.easyLand?"ON":"OFF",
+
+      // flying top
+      camName: snap.cameraName || "Chase",
+      acNameLabel: (snap.aircraft && snap.aircraft.name) || sel.name,
+      biomeLabel: telem.biome || "the world",
+
+      // tabs
+      tabApStyle:this.tab(s.panel==="ap"), tabFailStyle:this.tab(s.panel==="fail"),
+      tabAidsStyle:this.tab(s.panel==="aids"), tabHelpStyle:this.tab(s.panel==="help"),
+      showAP:s.panel==="ap", showFail:s.panel==="fail", showAids:s.panel==="aids", showHelp:s.panel==="help",
+
+      // autopilot
+      apMasterStyle:this.pill(ap.on), apMasterTxt:ap.on?"ENGAGED":"OFF",
+      apHdgStyle:this.arm(ap.hdg), apAltStyle:this.arm(ap.alt), apSpdStyle:this.arm(ap.spd),
+      apHdgTxt: pad3(ap.tgtHdg)+"\u00b0",
+      apAltTxt: Math.round((ap.tgtAlt||0)*3.2808).toLocaleString()+"ft",
+      apSpdTxt: Math.round((ap.tgtSpd||0)*1.9438)+"kt",
+      stepStyle:this.step(),
+
+      // failures
+      failEngineStyle:this.failB(fail.engine), failHydStyle:this.failB(fail.hydraulics),
+      failGearStyle:this.failB(fail.gearStuck), failInstStyle:this.failB(fail.instruments),
+      failRandStyle:"display:flex;align-items:center;justify-content:space-between;margin-top:8px;padding:8px 10px;background:"+(fail.randomOn?"#8a5018":"rgba(255,191,107,.06)")+";color:"+(fail.randomOn?"#ffe0b0":"#ffbf6b")+";border:1px solid rgba(255,191,107,.35);font:inherit;font-size:11px;letter-spacing:.6px;cursor:pointer;width:100%;",
+      failRandTxt: fail.randomOn?"ARMED":"off",
+
+      // handlers
+      onPickCard: e => { const k=e.currentTarget.dataset.key; this.eng && this.eng.selectAircraft(k); this.setState({selKey:k}); },
+      start: () => { this.eng && this.eng.start(); this.eng && this.eng.setCamera(0); this.setState({screen:"fly", panel:null}); },
+      goMenu: () => { if(this.eng){ this.eng.pause && (this.state.snap && this.state.snap.paused ? null : null); this.eng.setCamera(3); } this.setState({screen:"menu"}); if(this.eng){ this.eng.selectAircraft(this.state.selKey||"cessna172"); } },
+      setDay: () => this.eng && this.eng.setTime("day"),
+      setNight: () => this.eng && this.eng.setTime("night"),
+      setKbd: () => { this._mouse=false; this.eng && this.eng.setMouseYoke(false); this.forceUpdate(); },
+      setMouse: () => { this._mouse=true; this.eng && this.eng.setMouseYoke(true); this.forceUpdate(); },
+      onToggleAid: e => this.eng && this.eng.toggleAid(e.currentTarget.dataset.aid),
+      aidsAllOn: () => this.eng && this.eng.setAllAids(true),
+      aidsAllOff: () => this.eng && this.eng.setAllAids(false),
+      cycleCam: () => this.eng && this.eng.cycleCamera(),
+      onPanel: e => { const p=e.currentTarget.dataset.panel; this.setState({panel: s.panel===p?null:p}); },
+      toggleAP: () => this.eng && this.eng.toggleAP(),
+      onApArm: e => this.eng && this.eng.setAPMode(e.currentTarget.dataset.mode),
+      onApNudge: e => this.eng && this.eng.nudgeAP(e.currentTarget.dataset.k, parseFloat(e.currentTarget.dataset.d)),
+      onFail: e => { const k=e.currentTarget.dataset.fail; const cur=(this.state.snap&&this.state.snap.failures)||{}; this.eng && this.eng.triggerFailure(k, !cur[k]); },
+      onFailRandom: () => { const cur=(this.state.snap&&this.state.snap.failures)||{}; this.eng && this.eng.setRandomFailures(!cur.randomOn); },
+      onFailClear: () => this.eng && this.eng.clearFailures(),
+      pause: () => this.eng && this.eng.pause(),
+      restart: () => this.eng && this.eng.restart(),
+    };
+  }
+}
+</script>
+</body>
+</html>
