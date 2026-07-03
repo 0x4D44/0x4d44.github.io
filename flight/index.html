@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
 <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
-<script src="flightsim-engine.js?v=11"></script>
+<script src="flightsim-engine.js?v=12"></script>
 <style>
   html,body{margin:0;padding:0;background:#0b0e12;overflow:hidden;height:100%;}
   *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
@@ -21,6 +21,42 @@
   .fs-scan{background-image:repeating-linear-gradient(0deg,transparent 0 2px,rgba(0,0,0,0.10) 2px 3px);}
   .fs-scroll::-webkit-scrollbar{width:8px}
   .fs-scroll::-webkit-scrollbar-thumb{background:rgba(160,90,24,.4)}
+  .fs-fly-ui{position:absolute;inset:0;z-index:15;pointer-events:none;color:#f1e9d0;}
+  .fs-top-status{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;right:284px;display:flex;gap:8px;align-items:center;pointer-events:auto;min-width:0;}
+  .fs-top-button{flex:0 0 auto;}
+  .fs-top-info{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fs-panel-rail{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:auto;width:250px;}
+  .fs-rail-tabs{display:flex;gap:6px;width:100%;}
+  .fs-panel-card{width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,191,107,.4);padding:12px;}
+  .fs-panel-card--fail{border-color:rgba(255,106,90,.45);}
+  .fs-bottom-hints{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:16px;padding:6px 16px;background:rgba(14,12,7,.55);border:1px solid rgba(255,191,107,.18);font-size:10.5px;letter-spacing:1px;color:#cdb079;white-space:nowrap;max-width:94vw;overflow:hidden;pointer-events:none;}
+  .fs-touch-controls{position:absolute;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:18;display:none;align-items:flex-end;justify-content:space-between;gap:12px;pointer-events:none;touch-action:none;user-select:none;}
+  .fs-touch-pad{position:relative;width:clamp(118px,30vw,148px);aspect-ratio:1;border-radius:50%;border:1px solid rgba(255,191,107,.45);background:radial-gradient(circle at 50% 50%,rgba(255,191,107,.16),rgba(14,12,7,.74) 62%,rgba(14,12,7,.9));box-shadow:0 8px 28px rgba(0,0,0,.42);pointer-events:auto;touch-action:none;}
+  .fs-touch-cross{position:absolute;left:18%;right:18%;top:50%;height:1px;background:rgba(255,191,107,.28);}
+  .fs-touch-cross-v{left:50%;right:auto;top:18%;bottom:18%;width:1px;height:auto;}
+  .fs-touch-stick{position:absolute;left:50%;top:50%;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,191,107,.75);background:rgba(255,191,107,.22);box-shadow:0 0 16px rgba(255,191,107,.22);pointer-events:none;}
+  .fs-touch-actions{display:grid;grid-template-columns:repeat(3,44px);grid-auto-rows:42px;gap:7px;pointer-events:auto;}
+  .fs-touch-btn{display:flex;align-items:center;justify-content:center;width:44px;height:42px;border:1px solid rgba(255,191,107,.45);background:rgba(14,12,7,.78);color:#ffbf6b;font:inherit;font-size:14px;font-weight:700;letter-spacing:0;cursor:pointer;touch-action:none;user-select:none;}
+  .fs-touch-btn:active{background:#a05a18;color:#f9f0da;}
+  @media (max-width:920px){
+    .fs-top-status{right:274px;}
+    .fs-top-info{display:none!important;}
+  }
+  @media (max-width:720px){
+    .fs-top-status{top:max(8px,env(safe-area-inset-top));left:10px;right:10px;gap:6px;flex-wrap:wrap;}
+    .fs-top-button{padding:7px 9px!important;font-size:10px!important;letter-spacing:1.2px!important;min-width:0!important;}
+    .fs-panel-rail{top:calc(max(8px,env(safe-area-inset-top)) + 42px);right:10px;width:min(230px,calc(100vw - 20px));gap:6px;}
+    .fs-rail-tabs{gap:5px;}
+    .fs-panel-card{width:min(230px,calc(100vw - 20px));max-height:calc(100vh - 210px);overflow-y:auto;}
+  }
+  @media (pointer:coarse), (max-width:780px){
+    .fs-bottom-hints{display:none;}
+    .fs-touch-controls{display:flex;}
+  }
+  @media (max-width:430px){
+    .fs-touch-actions{grid-template-columns:repeat(3,40px);grid-auto-rows:40px;gap:6px;}
+    .fs-touch-btn{width:40px;height:40px;font-size:13px;}
+  }
 </style>
 </helmet>
 
@@ -116,32 +152,32 @@
 
   <!-- ============ FLYING CHROME ============ -->
   <sc-if value="{{ screenFly }}" hint-placeholder-val="{{ false }}">
-    <div style="position:absolute;inset:0;z-index:15;pointer-events:none;color:#f1e9d0;">
+    <div class="fs-fly-ui">
 
       <!-- top-left status -->
-      <div style="position:absolute;top:14px;left:14px;display:flex;gap:8px;align-items:center;pointer-events:auto;">
-        <button type="button" onClick="{{ goMenu }}" style="padding:7px 12px;background:rgba(18,16,10,.82);border:1px solid rgba(255,191,107,.4);color:#ffbf6b;font:inherit;font-size:11px;letter-spacing:2px;cursor:pointer;">&#9776; MENU</button>
-        <button type="button" onClick="{{ cycleCam }}" style="padding:7px 12px;background:rgba(18,16,10,.82);border:1px solid rgba(255,191,107,.4);color:#f1e9d0;font:inherit;font-size:11px;letter-spacing:1.5px;cursor:pointer;min-width:118px;text-align:left;">CAM &#183; {{ camName }}</button>
-        <div style="padding:7px 12px;background:rgba(18,16,10,.6);border:1px solid rgba(255,191,107,.2);font-size:11px;letter-spacing:1px;">
+      <div class="fs-top-status">
+        <button class="fs-top-button" type="button" onClick="{{ goMenu }}" style="padding:7px 12px;background:rgba(18,16,10,.82);border:1px solid rgba(255,191,107,.4);color:#ffbf6b;font:inherit;font-size:11px;letter-spacing:2px;cursor:pointer;">&#9776; MENU</button>
+        <button class="fs-top-button" type="button" onClick="{{ cycleCam }}" style="padding:7px 12px;background:rgba(18,16,10,.82);border:1px solid rgba(255,191,107,.4);color:#f1e9d0;font:inherit;font-size:11px;letter-spacing:1.5px;cursor:pointer;min-width:118px;text-align:left;">CAM &#183; {{ camName }}</button>
+        <div class="fs-top-info" style="padding:7px 12px;background:rgba(18,16,10,.6);border:1px solid rgba(255,191,107,.2);font-size:11px;letter-spacing:1px;">
           <span style="font-weight:700;">{{ acNameLabel }}</span>
           <span style="color:#8fa0b5;">&#183; over {{ biomeLabel }}</span>
         </div>
       </div>
 
       <!-- right control rail -->
-      <div style="position:absolute;top:14px;right:14px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:auto;width:250px;">
-        <div style="display:flex;gap:6px;">
+      <div class="fs-panel-rail">
+        <div class="fs-rail-tabs">
           <button type="button" data-panel="ap"   onClick="{{ onPanel }}" style="{{ tabApStyle }}">AUTOPILOT</button>
           <button type="button" data-panel="fail" onClick="{{ onPanel }}" style="{{ tabFailStyle }}">FAILURES</button>
         </div>
-        <div style="display:flex;gap:6px;">
+        <div class="fs-rail-tabs">
           <button type="button" data-panel="aids" onClick="{{ onPanel }}" style="{{ tabAidsStyle }}">AIDS</button>
           <button type="button" data-panel="help" onClick="{{ onPanel }}" style="{{ tabHelpStyle }}">HELP</button>
         </div>
 
         <!-- AUTOPILOT panel -->
         <sc-if value="{{ showAP }}" hint-placeholder-val="{{ false }}">
-          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,191,107,.4);padding:12px;">
+          <div class="fs-panel-card">
             <button type="button" onClick="{{ toggleAP }}" style="{{ apMasterStyle }}"><span>AUTOPILOT</span><span>{{ apMasterTxt }}</span></button>
             <div style="height:1px;background:rgba(255,191,107,.2);margin:10px 0;"></div>
             <div style="display:flex;flex-direction:column;gap:8px;">
@@ -169,7 +205,7 @@
 
         <!-- FAILURES panel -->
         <sc-if value="{{ showFail }}" hint-placeholder-val="{{ false }}">
-          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,106,90,.45);padding:12px;">
+          <div class="fs-panel-card fs-panel-card--fail">
             <div style="font-size:10px;letter-spacing:2px;color:#ff9a8a;margin-bottom:9px;">&#9888; INDUCE FAILURE</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
               <button type="button" data-fail="engine"      onClick="{{ onFail }}" style="{{ failEngineStyle }}">Engine out</button>
@@ -184,7 +220,7 @@
 
         <!-- AIDS panel -->
         <sc-if value="{{ showAids }}" hint-placeholder-val="{{ false }}">
-          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,191,107,.4);padding:12px;display:flex;flex-direction:column;gap:6px;">
+          <div class="fs-panel-card" style="display:flex;flex-direction:column;gap:6px;">
             <button type="button" data-aid="stability"   onClick="{{ onToggleAid }}" style="{{ aidStabilityStyle }}"><span>Auto-stability</span><span>{{ aidStabilityTxt }}</span></button>
             <button type="button" data-aid="autoTrim"     onClick="{{ onToggleAid }}" style="{{ aidTrimStyle }}"><span>Auto-trim</span><span>{{ aidTrimTxt }}</span></button>
             <button type="button" data-aid="stallProtect" onClick="{{ onToggleAid }}" style="{{ aidStallStyle }}"><span>Stall protect</span><span>{{ aidStallTxt }}</span></button>
@@ -198,7 +234,7 @@
 
         <!-- HELP panel -->
         <sc-if value="{{ showHelp }}" hint-placeholder-val="{{ false }}">
-          <div style="width:250px;background:rgba(14,12,7,.9);border:1px solid rgba(255,191,107,.4);padding:12px;font-size:11px;line-height:1.9;color:#e9dcc0;letter-spacing:.5px;">
+          <div class="fs-panel-card" style="font-size:11px;line-height:1.9;color:#e9dcc0;letter-spacing:.5px;">
             <div style="font-size:10px;letter-spacing:2px;color:#ffbf6b;margin-bottom:6px;">&#9484;&#9472; controls &#9472;</div>
             <div><b style="color:#ffbf6b;">&uarr;&darr; / W S</b> &nbsp;pitch (nose down / up)</div>
             <div><b style="color:#ffbf6b;">&larr;&rarr; / A D</b> &nbsp;roll</div>
@@ -211,7 +247,7 @@
       </div>
 
       <!-- bottom key hint bar -->
-      <div style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:16px;padding:6px 16px;background:rgba(14,12,7,.55);border:1px solid rgba(255,191,107,.18);font-size:10.5px;letter-spacing:1px;color:#cdb079;white-space:nowrap;max-width:94vw;overflow:hidden;pointer-events:none;">
+      <div class="fs-bottom-hints">
         <span><b style="color:#ffbf6b;">&uarr;&darr;&larr;&rarr;</b> fly</span>
         <span><b style="color:#ffbf6b;">Shift/Ctrl</b> thr</span>
         <span><b style="color:#ffbf6b;">G</b> gear</span>
@@ -219,6 +255,26 @@
         <span><b style="color:#ffbf6b;">B</b> brake</span>
         <span><b style="color:#ffbf6b;">C</b> cam</span>
         <span><b style="color:#ffbf6b;">P</b> pause</span>
+      </div>
+
+      <!-- mobile touch controls -->
+      <div class="fs-touch-controls">
+        <div class="fs-touch-pad" onPointerDown="{{ onTouchYokeStart }}" onPointerMove="{{ onTouchYokeMove }}" onPointerUp="{{ onTouchYokeEnd }}" onPointerCancel="{{ onTouchYokeEnd }}" onContextMenu="{{ stopTouchEvent }}" aria-label="Pitch and roll">
+          <div class="fs-touch-cross"></div>
+          <div class="fs-touch-cross fs-touch-cross-v"></div>
+          <div class="fs-touch-stick" style="{{ touchStickStyle }}"></div>
+        </div>
+        <div class="fs-touch-actions">
+          <button type="button" class="fs-touch-btn" data-k="thrRate" data-v="1" onPointerDown="{{ onTouchHoldStart }}" onPointerUp="{{ onTouchHoldEnd }}" onPointerCancel="{{ onTouchHoldEnd }}" onPointerLeave="{{ onTouchHoldEnd }}" aria-label="Throttle up">+</button>
+          <button type="button" class="fs-touch-btn" data-k="thrRate" data-v="-1" onPointerDown="{{ onTouchHoldStart }}" onPointerUp="{{ onTouchHoldEnd }}" onPointerCancel="{{ onTouchHoldEnd }}" onPointerLeave="{{ onTouchHoldEnd }}" aria-label="Throttle down">-</button>
+          <button type="button" class="fs-touch-btn" onClick="{{ pause }}" aria-label="Pause">&#10073;&#10073;</button>
+          <button type="button" class="fs-touch-btn" data-k="yaw" data-v="1" onPointerDown="{{ onTouchHoldStart }}" onPointerUp="{{ onTouchHoldEnd }}" onPointerCancel="{{ onTouchHoldEnd }}" onPointerLeave="{{ onTouchHoldEnd }}" aria-label="Yaw left">&#8634;</button>
+          <button type="button" class="fs-touch-btn" data-k="yaw" data-v="-1" onPointerDown="{{ onTouchHoldStart }}" onPointerUp="{{ onTouchHoldEnd }}" onPointerCancel="{{ onTouchHoldEnd }}" onPointerLeave="{{ onTouchHoldEnd }}" aria-label="Yaw right">&#8635;</button>
+          <button type="button" class="fs-touch-btn" onClick="{{ toggleGear }}" aria-label="Gear">G</button>
+          <button type="button" class="fs-touch-btn" onClick="{{ flapsUp }}" aria-label="Flaps up">F+</button>
+          <button type="button" class="fs-touch-btn" onClick="{{ flapsDown }}" aria-label="Flaps down">F-</button>
+          <button type="button" class="fs-touch-btn" onClick="{{ toggleBrakes }}" aria-label="Brakes">B</button>
+        </div>
       </div>
 
       <!-- PAUSE -->
@@ -248,7 +304,7 @@
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;hudPhosphor&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;amber&quot;,&quot;green&quot;,&quot;ice&quot;],&quot;default&quot;:&quot;amber&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;HUD&quot;},&quot;defaultAircraft&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;cessna172&quot;,&quot;businessjet&quot;,&quot;f16&quot;,&quot;b757&quot;,&quot;b767&quot;,&quot;b747&quot;,&quot;a380&quot;],&quot;default&quot;:&quot;cessna172&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Flight&quot;},&quot;invertPitch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Flight&quot;}}">
 class Component extends DCLogic {
-  state = { booting:true, screen:"menu", snap:null, selKey:null, panel:null };
+  state = { booting:true, screen:"menu", snap:null, selKey:null, panel:null, touchX:0, touchY:0 };
 
   get AC(){
     return [
@@ -294,6 +350,42 @@ class Component extends DCLogic {
   cardStyle(sel){ return "display:block;width:100%;padding:10px 12px;border:1px solid "+(sel?"#a05a18":"rgba(26,36,24,.25)")+";background:"+(sel?"rgba(160,90,24,.12)":"rgba(255,255,255,.38)")+";cursor:pointer;font:inherit;color:#1a2418;box-shadow:"+(sel?"inset 3px 0 0 #a05a18":"none")+";"; }
   bars(ag){ const n = Math.max(1,Math.min(5,Math.round(ag*2))); return "\u25cf".repeat(n)+"\u25cb".repeat(5-n); }
 
+  clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+  stopTouchEvent(e){ if(e && e.preventDefault) e.preventDefault(); }
+  updateTouchYoke(e, capture){
+    if(!this.eng) return;
+    this.stopTouchEvent(e);
+    if(capture && e.currentTarget && e.currentTarget.setPointerCapture && e.pointerId != null) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+    const r = e.currentTarget.getBoundingClientRect();
+    const rawX = ((e.clientX - r.left) - r.width / 2) / (r.width * 0.38);
+    const rawY = ((e.clientY - r.top) - r.height / 2) / (r.height * 0.38);
+    const mag = Math.hypot(rawX, rawY);
+    const x = mag > 1 ? rawX / mag : this.clamp(rawX, -1, 1);
+    const y = mag > 1 ? rawY / mag : this.clamp(rawY, -1, 1);
+    this._touchYoke = true;
+    this.eng.setVirtualControls({ pitch:y, roll:-x, yokeActive:true });
+    this.setState({ touchX:x, touchY:y });
+  }
+  releaseTouchYoke(e){
+    this.stopTouchEvent(e);
+    this._touchYoke = false;
+    if(this.eng) this.eng.setVirtualControls({ pitch:0, roll:0, yokeActive:false });
+    this.setState({ touchX:0, touchY:0 });
+  }
+  setTouchHold(e, active){
+    this.stopTouchEvent(e);
+    if(active && e.currentTarget && e.currentTarget.setPointerCapture && e.pointerId != null) {
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch(err) {}
+    }
+    const k = e.currentTarget.dataset.k;
+    if(!this.eng || !k) return;
+    const next = {};
+    next[k] = active ? parseFloat(e.currentTarget.dataset.v || "0") : 0;
+    this.eng.setVirtualControls(next);
+  }
+
   renderVals(){
     const s = this.state;
     const snap = s.snap || {};
@@ -338,6 +430,7 @@ class Component extends DCLogic {
       camName: snap.cameraName || "Chase",
       acNameLabel: (snap.aircraft && snap.aircraft.name) || sel.name,
       biomeLabel: telem.biome || "the world",
+      touchStickStyle: "transform:translate(calc(-50% + "+Math.round((s.touchX||0)*42)+"px),calc(-50% + "+Math.round((s.touchY||0)*42)+"px));",
 
       // tabs
       tabApStyle:this.tab(s.panel==="ap"), tabFailStyle:this.tab(s.panel==="fail"),
@@ -361,7 +454,7 @@ class Component extends DCLogic {
       // handlers
       onPickCard: e => { const k=e.currentTarget.dataset.key; this.eng && this.eng.selectAircraft(k); this.setState({selKey:k}); },
       start: () => { this.eng && this.eng.start(); this.eng && this.eng.setCamera(0); this.setState({screen:"fly", panel:null}); },
-      goMenu: () => { if(this.eng){ this.eng.pause && (this.state.snap && this.state.snap.paused ? null : null); this.eng.setCamera(3); } this.setState({screen:"menu"}); if(this.eng){ this.eng.selectAircraft(this.state.selKey||"cessna172"); } },
+      goMenu: () => { if(this.eng){ this.eng.stop && this.eng.stop(); this.eng.setCamera(3); } this.releaseTouchYoke(); this.setState({screen:"menu", panel:null}); if(this.eng){ this.eng.selectAircraft(this.state.selKey||"cessna172"); } },
       setDay: () => this.eng && this.eng.setTime("day"),
       setNight: () => this.eng && this.eng.setTime("night"),
       setKbd: () => { this._mouse=false; this.eng && this.eng.setMouseYoke(false); this.forceUpdate(); },
@@ -379,6 +472,16 @@ class Component extends DCLogic {
       onFailClear: () => this.eng && this.eng.clearFailures(),
       pause: () => this.eng && this.eng.pause(),
       restart: () => this.eng && this.eng.restart(),
+      toggleGear: () => this.eng && this.eng.toggleGear(),
+      flapsUp: () => this.eng && this.eng.stepFlaps(1),
+      flapsDown: () => this.eng && this.eng.stepFlaps(-1),
+      toggleBrakes: () => this.eng && this.eng.toggleBrakes(),
+      stopTouchEvent: e => this.stopTouchEvent(e),
+      onTouchYokeStart: e => this.updateTouchYoke(e, true),
+      onTouchYokeMove: e => { if(this._touchYoke) this.updateTouchYoke(e, false); },
+      onTouchYokeEnd: e => this.releaseTouchYoke(e),
+      onTouchHoldStart: e => this.setTouchHold(e, true),
+      onTouchHoldEnd: e => this.setTouchHold(e, false),
     };
   }
 }
