@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "barcelona",
+    title: "Barcelona · Aperture Modernisme",
+    tagline: "A fun, bilingual (Spanish/English) field manual for two days in Barcelona — Gaudí's Sagrada Família, the aquarium under the sea, and the great cruise port — narrated by four cartoon guides who are half Catalan legend, half GLaDOS from Portal. A live map, a phrasebook that speaks aloud, and a two-day plan. Vanilla JS on Leaflet; content web-checked by a multi-agent pass.",
+    url: "https://0x4d44.github.io/barcelona/",
+    illustration: "ill-barcelona",
+    date: "2026-07-03T17:30:00",
+    year: 2026,
+    tags: ["software", "history"],
+    real: true,
+  },
+  {
     slug: "supernova",
     title: "The Death of Stars",
     tagline: "How stars are born, live and die — and what they leave behind. An interactive almanac from cold molecular cloud to supernova and beyond: dial a star's mass to read its fate, bounce a collapsing core, forge the elements in a periodic table of origins, and weigh white dwarfs against neutron stars and black holes. Vanilla JS on a canvas; fact-checked by a multi-agent research pass.",
