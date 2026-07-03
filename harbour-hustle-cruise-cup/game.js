@@ -867,6 +867,16 @@
     el.raceCards.replaceChildren(fragment);
   }
 
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "\"": "&quot;",
+      "'": "&#39;",
+    }[c]));
+  }
+
   function renderScores() {
     const scores = [...save.highScores]
       .sort((a, b) => b.score - a.score || a.time - b.time)
@@ -882,8 +892,8 @@
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${index + 1}</td>
-        <td>${score.raceName}</td>
-        <td>${score.captain}</td>
+        <td>${escapeHtml(score.raceName)}</td>
+        <td>${escapeHtml(score.captain)}</td>
         <td>${ordinal(score.place)}</td>
         <td>${formatTime(score.time)}</td>
         <td>${score.score.toLocaleString()}</td>

@@ -444,7 +444,6 @@ class Component extends DCLogic {
     if (!this.L) return;
     const d = this.state.data;
     const exercises = this.L.buildPractice(d.weak, d.done);
-    const unit = this.L.UNITS[0];
     this.setState({ screen: 'lesson', ls: { isPractice: true, unit: null, lesson: null, exercises, i: 0, phase: 'ex', right: 0, wrong: 0, comboMax: 0, gained: 0, applied: false, newBadges: [] }, combo: 0, fb: null, typed: '', picked: [], mSelL: null, mSelR: null, mDone: [], mErr: false });
     setTimeout(() => this.maybeAutoSpeak(), 250);
   }

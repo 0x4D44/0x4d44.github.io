@@ -70,8 +70,9 @@ function Nav() {
             <a href="#" className="btn" style={{ marginLeft: 12 }} onClick={(e) => {
               e.preventDefault();
               navigator.clipboard && navigator.clipboard.writeText("git clone https://github.com/0x4D44/mddosem.git");
-              e.currentTarget.querySelector(".lbl").textContent = "copied ✓";
-              setTimeout(() => { try { e.currentTarget.querySelector(".lbl").textContent = "$ git clone"; } catch {} }, 1400);
+              const lbl = e.currentTarget.querySelector(".lbl");
+              lbl.textContent = "copied ✓";
+              setTimeout(() => { lbl.textContent = "$ git clone"; }, 1400);
             }}>
               <span className="lbl">$ git clone</span>
             </a>

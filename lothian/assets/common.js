@@ -190,7 +190,7 @@ function ledBlind(canvas, messages, opt={}){
     ctx.shadowBlur=0; off+=o.speed;
     requestAnimationFrame(draw);
   }
-  function start(){ resize(); buildMatrix(); draw(); }
+  let started=false; function start(){ if(started) return; started=true; resize(); buildMatrix(); draw(); }
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(start); setTimeout(()=>{ if(!matrix) start(); }, 400); }
   else start();
   addEventListener('resize',()=>{ dpr=Math.min(devicePixelRatio||1,2); resize(); });
@@ -208,7 +208,7 @@ function barChart(host, data, opt={}){
   data.forEach((d,i)=>{
     const bh=ih*(d.v/max);
     const x=o.pad+i*bw+bw*0.16, y=o.pad+ih-bh, w=bw*0.68;
-    const col=d.est?o.color:o.color;
+    const col=o.color;
     bars+=`<rect class="bar" data-i="${i}" x="${x.toFixed(1)}" y="${(o.pad+ih).toFixed(1)}" width="${w.toFixed(1)}" height="0" rx="3"
       fill="${d.col||col}" opacity="${d.est?0.55:1}" style="--y:${y.toFixed(1)};--h:${bh.toFixed(1)}"/>`;
     bars+=`<text x="${(x+w/2).toFixed(1)}" y="${o.h-12}" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--ink-3)">${d.y}</text>`;
