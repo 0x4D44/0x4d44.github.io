@@ -1,0 +1,170 @@
+/* Morning Run — phone-first UI over a full-bleed map. */
+:root {
+  --bg: #0a1512;
+  --panel: rgba(10, 26, 20, 0.92);
+  --panel-solid: #0d2019;
+  --ink: #eaf3ee;
+  --sub: #8fa89c;
+  --line: rgba(255, 255, 255, 0.10);
+  --accent: #22c55e;
+  --accent-ink: #04140b;
+  --blue: #3b82f6;
+  --amber: #f59e0b;
+  --danger: #ef4444;
+  --radius: 16px;
+  --shadow: 0 -8px 30px rgba(0, 0, 0, 0.45);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; margin: 0; }
+body {
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+  overscroll-behavior: none;
+}
+a { color: var(--accent); }
+
+.mr-app { position: fixed; inset: 0; overflow: hidden; }
+.mr-map { position: absolute; inset: 0; background: #14231d; }
+
+/* keep maplibre's own attribution + controls clear of the sheet */
+.maplibregl-ctrl-bottom-right { bottom: env(safe-area-inset-bottom); }
+.maplibregl-ctrl-top-right { top: calc(56px + env(safe-area-inset-top)); }
+
+/* ---- top bar ---- */
+.mr-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  background: linear-gradient(180deg, rgba(6, 16, 12, 0.85), rgba(6, 16, 12, 0));
+  pointer-events: none;
+}
+.mr-top > * { pointer-events: auto; }
+.mr-brand { display: flex; align-items: center; gap: 8px; font-weight: 700; letter-spacing: .2px; text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+.mr-brand-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px rgba(34,197,94,.25); }
+.mr-top-actions { display: flex; gap: 8px; }
+.mr-icon-btn {
+  font: inherit; font-size: 13px; font-weight: 600; color: var(--ink);
+  background: rgba(10, 26, 20, 0.7); border: 1px solid var(--line);
+  padding: 7px 12px; border-radius: 999px; cursor: pointer; backdrop-filter: blur(6px);
+}
+.mr-icon-btn:active { transform: scale(.96); }
+
+/* ---- toast ---- */
+.mr-toast-live:empty { display: none; }
+.mr-toast {
+  position: absolute; left: 12px; right: 12px; top: calc(58px + env(safe-area-inset-top)); z-index: 20;
+  background: #3a1416; border: 1px solid rgba(239,68,68,.5); color: #ffd9d9;
+  padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.35;
+  box-shadow: 0 6px 20px rgba(0,0,0,.4);
+}
+
+/* ---- bottom sheet ---- */
+.mr-sheet {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 6;
+  background: var(--panel); backdrop-filter: blur(14px);
+  border-top: 1px solid var(--line);
+  border-radius: 22px 22px 0 0;
+  box-shadow: var(--shadow);
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+  max-height: 76vh; overflow-y: auto;
+}
+@media (min-width: 620px) {
+  .mr-sheet { left: 50%; right: auto; transform: translateX(-50%); width: 460px; border-radius: 22px; bottom: 18px; }
+}
+.mr-sheet-tall { max-height: 82vh; }
+.mr-sheet-h { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .09em; color: var(--sub); margin: 4px 2px 12px; }
+.mr-sheet-h .mr-sub { text-transform: none; letter-spacing: 0; font-weight: 500; }
+.mr-sub { color: var(--sub); font-size: 13px; }
+.mr-center { text-align: center; }
+.mr-pad { padding: 22px 0; }
+.mr-note { color: var(--sub); font-size: 12.5px; line-height: 1.45; margin-top: 12px; }
+
+/* ---- hotel row ---- */
+.mr-hotel-row { display: flex; align-items: center; gap: 12px; justify-content: space-between; margin-bottom: 18px; }
+.mr-hotel-row .mr-btn { flex: none; white-space: nowrap; padding: 11px 16px; }
+.mr-hotel-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mr-hotel-info strong { font-size: 16px; }
+.mr-hotel-info .mr-sub { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ---- chips ---- */
+.mr-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.mr-chip {
+  font: inherit; font-weight: 600; font-size: 14px; color: var(--ink);
+  background: rgba(255,255,255,.05); border: 1px solid var(--line);
+  padding: 9px 15px; border-radius: 999px; cursor: pointer;
+}
+.mr-chip.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.mr-chip:active { transform: scale(.96); }
+
+/* ---- slider ---- */
+.mr-slider { width: 100%; margin: 6px 0 4px; accent-color: var(--accent); height: 26px; }
+
+/* ---- buttons ---- */
+.mr-btn {
+  font: inherit; font-weight: 700; font-size: 15px; border-radius: 14px;
+  padding: 13px 16px; cursor: pointer; border: 1px solid var(--line);
+  background: rgba(255,255,255,.06); color: var(--ink); transition: transform .05s;
+}
+.mr-btn:active { transform: scale(.98); }
+.mr-btn:disabled { opacity: .5; cursor: default; }
+.mr-btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.mr-btn-ghost { background: rgba(255,255,255,.06); }
+.mr-btn-stop { background: var(--danger); color: #fff; border-color: var(--danger); }
+.mr-wide { width: 100%; margin-top: 14px; }
+.mr-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+.mr-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 16px; }
+
+/* ---- route cards ---- */
+.mr-routes { display: flex; flex-direction: column; gap: 10px; }
+.mr-route-card {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  font: inherit; color: var(--ink); cursor: pointer;
+  background: rgba(255,255,255,.04); border: 1px solid var(--line);
+  border-radius: 14px; padding: 13px 14px;
+}
+.mr-route-card.on { border-color: var(--accent); background: rgba(34,197,94,.10); }
+.mr-route-swatch { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+.mr-route-main { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; }
+.mr-route-main strong { font-size: 15px; }
+.mr-route-check { color: var(--accent); font-weight: 800; font-size: 18px; }
+
+/* ---- live stats ---- */
+.mr-stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 6px; }
+.mr-stat { text-align: center; padding: 8px 4px; }
+.mr-stat-v { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 22px; letter-spacing: -.5px; }
+.mr-stat-big .mr-stat-v { font-size: 26px; }
+.mr-stat-l { color: var(--sub); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin-top: 3px; }
+.mr-paused { text-align: center; color: var(--amber); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; font-size: 13px; margin: 4px 0; }
+
+/* ---- splits ---- */
+.mr-splits { margin-top: 14px; border-top: 1px solid var(--line); }
+.mr-splits-h, .mr-split { display: grid; grid-template-columns: 40px 1fr 1fr; gap: 8px; padding: 7px 4px; align-items: center; }
+.mr-splits-h { color: var(--sub); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
+.mr-split { border-bottom: 1px solid rgba(255,255,255,.05); font-size: 14px; }
+.mr-split span:last-child, .mr-splits-h span:last-child { text-align: right; }
+.mr-mono { font-family: "IBM Plex Mono", monospace; }
+
+/* ---- history ---- */
+.mr-hist { display: flex; flex-direction: column; }
+.mr-hist-row { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding: 4px 0; }
+.mr-hist-main { flex: 1 1 auto; min-width: 0; text-align: left; font: inherit; color: var(--ink); background: none; border: none; cursor: pointer; padding: 8px 2px; display: flex; flex-direction: column; gap: 3px; }
+.mr-hist-main strong { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mr-hist-acts { display: flex; gap: 6px; flex: none; }
+.mr-mini { font: inherit; font-size: 12px; font-weight: 600; color: var(--ink); background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 8px; padding: 6px 9px; cursor: pointer; min-height: 40px; min-width: 40px; }
+.mr-mini-del { color: #ffbcbc; }
+
+/* ---- settings modal ---- */
+.mr-modal-wrap { position: absolute; inset: 0; z-index: 30; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; justify-content: center; }
+@media (min-width: 620px) { .mr-modal-wrap { align-items: center; } }
+.mr-modal { width: 100%; max-width: 460px; background: var(--panel-solid); border: 1px solid var(--line); border-radius: 22px 22px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); box-shadow: var(--shadow); }
+@media (min-width: 620px) { .mr-modal { border-radius: 18px; } }
+.mr-field-l { display: block; font-size: 13px; font-weight: 600; color: var(--sub); margin: 14px 2px 6px; }
+.mr-input { width: 100%; font: inherit; font-size: 15px; color: var(--ink); background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 12px; padding: 12px 13px; }
+.mr-input:focus { outline: none; border-color: var(--accent); }
+
+/* ---- map markers ---- */
+.mr-hotel-pin { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); border: 3px solid #04140b; box-shadow: 0 0 0 3px rgba(34,197,94,.35), 0 2px 6px rgba(0,0,0,.5); }
+.mr-pos-dot { width: 18px; height: 18px; border-radius: 50%; background: var(--blue); border: 3px solid #fff; box-shadow: 0 0 0 6px rgba(59,130,246,.30); animation: mr-pulse 1.8s ease-out infinite; }
+@keyframes mr-pulse { 0% { box-shadow: 0 0 0 3px rgba(59,130,246,.45); } 70% { box-shadow: 0 0 0 14px rgba(59,130,246,0); } 100% { box-shadow: 0 0 0 3px rgba(59,130,246,0); } }
