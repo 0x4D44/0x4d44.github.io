@@ -465,7 +465,15 @@ class Component extends DCLogic {
     const gain = ok ? base + bonus : 0;
     const nls = { ...ls, right: ls.right + (ok ? 1 : 0), wrong: ls.wrong + (ok ? 0 : 1), comboMax: Math.max(ls.comboMax, combo), gained: ls.gained + gain };
     let weak = this.state.data.weak;
-    if (!ok && ex.key && !ex.key.startsWith('match:')) weak = [...new Set([...weak, ex.key])].slice(-40);
+    // Only track weak keys that Practice can rebuild: buildPractice resolves a
+    // weak key against the vocab pool (pair[0]), so only the vocab-word types
+    // (choice/choiceRev/listen/type, all keyed on pair[0]) come back as
+    // exercises. Sentence types (tiles/fill, keyed on a whole sentence/question)
+    // and match never resolve, so tracking them leaves permanent "difficult
+    // words" that can never be practised away. Type is the right discriminator,
+    // not a space check — multi-word vocab like "buenos días" is still trackable.
+    const trackable = ex.type === 'choice' || ex.type === 'choiceRev' || ex.type === 'listen' || ex.type === 'type';
+    if (!ok && ex.key && trackable) weak = [...new Set([...weak, ex.key])].slice(-40);
     else if (ok && ex.key) weak = weak.filter((w) => w !== ex.key);
     if (weak !== this.state.data.weak) this.setData({ weak });
     const fb = ok
