@@ -59,18 +59,9 @@
 
   // ---------- status bar ----------
   function buildStatusbar() {
-    const tot = essays.length;
-    const words = essays.reduce((s, e) => s + (e.words || 0), 0);
-    // Count distinct *subject*-axis tags only — not the form axis
-    // (software/games/…). Fall back to all tags if no subject axis is defined.
-    const subjectAxis = (window.TAG_GROUPS || []).find(g => g.label === "subject");
-    const subjectTags = subjectAxis ? new Set(subjectAxis.tags) : null;
-    const subjects = new Set(
-      essays.flatMap(tagsOf).filter(t => !subjectTags || subjectTags.has(t))
-    ).size;
-    const last = essays.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
+    const { total, words, subjects, last } = window.siteStats();
     document.getElementById("stat-tot").textContent =
-      `tot=${tot}  words=${words.toLocaleString()}  subjects=${subjects}`;
+      `tot=${total}  words=${words.toLocaleString()}  subjects=${subjects}`;
     document.getElementById("stat-last").textContent =
       last ? `last=${window.fmtDate(last.date)}` : "";
     document.getElementById("build-date").textContent = window.fmtDate(new Date().toISOString().slice(0,10));

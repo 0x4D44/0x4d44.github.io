@@ -75,10 +75,8 @@
 <script src="data.js"></script>
 <script>
   (function () {
-    const essays = window.ESSAYS || [];
-    const words = essays.reduce((s, e) => s + (e.words || 0), 0);
-    const last = essays.slice().sort((a,b)=>b.date.localeCompare(a.date))[0];
-    document.getElementById("about-entries").textContent = String(essays.length);
+    const { total, words, last } = window.siteStats();
+    document.getElementById("about-entries").textContent = String(total);
     document.getElementById("about-words").textContent = words.toLocaleString();
     document.getElementById("about-updated").textContent = last ? window.fmtDate(last.date) : "—";
   })();
