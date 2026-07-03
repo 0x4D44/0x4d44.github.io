@@ -931,7 +931,10 @@ window.TAG_GROUPS = [
 window.TAGS = ["all", ...window.TAG_GROUPS.flatMap(g => g.tags)];
 
 window.fmtDate = function (iso) {
-  const d = new Date(iso);
   const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  return `${String(d.getDate()).padStart(2,"0")} ${m[d.getMonth()]} ${d.getFullYear()}`;
+  // Format from the YYYY-MM-DD prefix directly, so a bare date isn't shifted a
+  // day by timezone (new Date("2025-11-02") is UTC midnight → prior day west of UTC).
+  const [y, mo, d] = String(iso).slice(0, 10).split("-").map(Number);
+  if (!y || !mo || !d) return "";
+  return `${String(d).padStart(2,"0")} ${m[mo - 1]} ${y}`;
 };

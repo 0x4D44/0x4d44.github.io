@@ -32,6 +32,7 @@
   function el(tag, attrs, children) {
     const e = document.createElement(tag);
     if (attrs) for (const k in attrs) {
+      if (attrs[k] == null) continue;
       if (k === "class") e.className = attrs[k];
       else if (k === "html") e.innerHTML = attrs[k];
       else if (k.startsWith("on")) e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
@@ -60,8 +61,14 @@
   function buildStatusbar() {
     const tot = essays.length;
     const words = essays.reduce((s, e) => s + (e.words || 0), 0);
-    const subjects = new Set(essays.flatMap(tagsOf)).size;
-    const last = essays.slice().sort((a, b) => b.date.localeCompare(a.date))[0];
+    // Count distinct *subject*-axis tags only — not the form axis
+    // (software/games/…). Fall back to all tags if no subject axis is defined.
+    const subjectAxis = (window.TAG_GROUPS || []).find(g => g.label === "subject");
+    const subjectTags = subjectAxis ? new Set(subjectAxis.tags) : null;
+    const subjects = new Set(
+      essays.flatMap(tagsOf).filter(t => !subjectTags || subjectTags.has(t))
+    ).size;
+    const last = essays.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0];
     document.getElementById("stat-tot").textContent =
       `tot=${tot}  words=${words.toLocaleString()}  subjects=${subjects}`;
     document.getElementById("stat-last").textContent =
@@ -144,10 +151,10 @@
   function sortedFiltered() {
     let list = essays.slice();
     if (state.filter !== "all") list = list.filter(e => tagsOf(e).includes(state.filter));
-    if (state.sort === "recent") list.sort((a, b) => b.date.localeCompare(a.date));
-    if (state.sort === "oldest") list.sort((a, b) => a.date.localeCompare(b.date));
+    if (state.sort === "recent") list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    if (state.sort === "oldest") list.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
     if (state.sort === "length") list.sort((a, b) => (b.words || 0) - (a.words || 0));
-    if (state.sort === "year")   list.sort((a, b) => a.year - b.year);
+    if (state.sort === "year")   list.sort((a, b) => (a.year || 0) - (b.year || 0));
     return list;
   }
 
