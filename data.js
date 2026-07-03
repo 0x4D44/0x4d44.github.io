@@ -73,10 +73,10 @@ window.ESSAYS = [
   {
     slug: "midi-observatory",
     title: "Asterion MIDI Observatory",
-    tagline: "A browser MIDI listening room: play generated demo constellations or upload .mid files, then drive a Web Audio synth with presets, per-channel controls, an animated sky visualizer and WAV export. Self-contained static app with a manifest and service worker — no runtime network calls.",
+    tagline: "A celestial in-browser MIDI listening room: play curated demo pieces or drop in .mid files, then drive a Web Audio synth across four live visualizer scenes — constellations, spectrogram, oscilloscope and piano roll. Per-channel mixer, presets with reverb, loop/shuffle and WAV export. Self-contained offline PWA — no runtime network calls.",
     url: "https://0x4d44.github.io/midi-observatory/",
     illustration: "ill-wave",
-    date: "2026-07-02T20:22:00",
+    date: "2026-07-03T01:10:00",
     year: 2026,
     tag: "software",
     real: true,
