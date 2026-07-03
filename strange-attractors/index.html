@@ -745,7 +745,13 @@
 
   doResize();
   selectSys("lorenz");
-  requestAnimationFrame(loop);
+  if(reduce){
+    // prefers-reduced-motion: build the trajectories once and hold a single
+    // static frame instead of animating the pen head, comet, twin dots and strip.
+    for(var pf=0; pf<190; pf++){ tickScope(); tickTwin(); }
+  } else {
+    requestAnimationFrame(loop);
+  }
 })();
 </script>
 </body>

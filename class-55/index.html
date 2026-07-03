@@ -285,6 +285,8 @@ ROSTER.forEach(([no,nm,after,k])=>{
 // ---------- the Deltic engine animation (stylised schematic) ----------
 const c=document.getElementById("engine"), g=c.getContext("2d");
 const W=c.width,H=c.height,cx=W/2,cy=H/2-8;
+const dpr=Math.max(1,window.devicePixelRatio||1);
+c.width=W*dpr;c.height=H*dpr;g.scale(dpr,dpr);
 const side=320, triH=side*Math.sqrt(3)/2;
 const A={x:cx-side/2,y:cy-triH/3};    // top-left crank
 const B={x:cx+side/2,y:cy-triH/3};    // top-right crank

@@ -123,6 +123,14 @@ const ArchDiagram = () => {
                      opacity={dim ? 0.28 : 1}
                      onMouseEnter={() => setHover(m.id)}
                      onMouseLeave={() => setHover(null)}
+                     onFocus={() => setHover(m.id)}
+                     onBlur={() => setHover(null)}
+                     onKeyDown={(e) => {
+                       if (e.key === "Enter" || e.key === " ") {
+                         e.preventDefault();
+                         setPicked(m.id);
+                       }
+                     }}
                      onClick={() => setPicked(m.id)}
                      tabIndex={0}>
                     <rect

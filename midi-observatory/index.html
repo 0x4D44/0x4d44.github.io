@@ -106,7 +106,7 @@ input[type=range]{accent-color:#5effa8}
               <div style="position:relative;height:5px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden;">
                 <div ref="{{ chan.meterRef }}" style="position:absolute;inset:0;transform-origin:left;transform:scaleX(0);background:linear-gradient(90deg,#5effa8,#6fe6ff);"></div>
               </div>
-              <input type="range" min="0" max="100" defaultValue="{{ chan.volPct }}" onInput="{{ chan.onVol }}" style="width:100%;height:4px;">
+              <input key="vol{{ chan.i }}" type="range" min="0" max="100" defaultValue="{{ chan.volPct }}" onInput="{{ chan.onVol }}" style="width:100%;height:4px;">
             </div>
             <button onClick="{{ chan.onMute }}" style="{{ chan.muteStyle }}">{{ chan.muteLabel }}</button>
           </div>
@@ -344,7 +344,7 @@ class Component extends DCLogic {
   prev(){ const n=this.state.tracks.length; if(!n)return; if(this.pos>1.5){ this.pos=0; if(this.state.playing){ this.quiet(.04); this.scheduleFrom(0); } return; } const idx=this.state.shuffle?this.pickNext(false):(this.state.track+n-1)%n; this.hardStop(); this.setState({track:idx,playing:false},()=>{ this.pos=0; this.play(); }); }
   select(i){ this.hardStop(); this.pos=0; this.setState({track:i,playing:false}); }
   move(i,dir){ const j=i+dir; const tr=this.state.tracks.slice(); if(j<0||j>=tr.length)return; [tr[i],tr[j]]=[tr[j],tr[i]]; let track=this.state.track; if(track===i)track=j; else if(track===j)track=i; this.setState({tracks:tr,track}); }
-  async del(i){ const tr=this.state.tracks.slice(); const removed=tr[i]; tr.splice(i,1); let track=Math.max(0,Math.min(this.state.track,tr.length-1)); this.hardStop(); this.pos=0; this.setState({tracks:tr,track,playing:false}); if(removed&&removed.src==='upload')this.idbDel(removed.id); }
+  async del(i){ const tr=this.state.tracks.slice(); const removed=tr[i]; tr.splice(i,1); let track=this.state.track; if(i<track)track--; track=Math.max(0,Math.min(track,tr.length-1)); this.hardStop(); this.pos=0; this.setState({tracks:tr,track,playing:false}); if(removed&&removed.src==='upload')this.idbDel(removed.id); }
   setScene(k){ this.setState({scene:k}); if(k==='spectrogram'||k==='oscilloscope')this.clearSky(); }
   reschedule(){ if(!this.state.playing)return; const pos=Math.min(this.curPos(),this.dur()); this.quiet(.05); this.ended=false; this.pos=pos; this.scheduleFrom(pos); }
   seek(frac){ const dur=this.dur(); const was=this.state.playing; this.pos=Math.max(0,Math.min(1,frac))*dur; if(was){ this.quiet(.03); this.ended=false; this.scheduleFrom(this.pos); } }

@@ -514,7 +514,8 @@ class Component extends DCLogic {
       this.C=C; this.EN=EN; this.chapters=C.chapters;
       const EX=(X&&X.EXTRA)||{};
       this.chapters.forEach(ch=>{ const x=EX[ch.id]; if(!x) return;
-        if(x.phrases) ch.phrases=x.phrases.map((p,i)=>({id:ch.id+'-p'+i, japanese:p.j, kana:p.j, romaji:p.r, english:p.e, politeness:p.pol||'safe polite', usage:p.u||'Traveller phrase', seg:p.seg||null, variants:[]}));
+        if(x.phrases){ ch.phrases=x.phrases.map((p,i)=>({id:ch.id+'-p'+i, japanese:p.j, kana:p.j, romaji:p.r, english:p.e, politeness:p.pol||'safe polite', usage:p.u||'Traveller phrase', seg:p.seg||null, variants:[]}));
+          if(ch.roleplay&&ch.roleplay.steps) ch.roleplay.steps.forEach((st,i)=>{ const np=ch.phrases[i]; if(!np) return; st.expectedPhraseIds=[np.id]; st.acceptKeywords=[np.japanese, np.japanese.replace('。',''), (np.english||'').split(' ')[0], np.id.split('-')[0]]; }); }
         if(x.grammar) ch.grammar=x.grammar;
         if(x.culture) ch.culture=x.culture;
       });

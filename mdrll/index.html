@@ -22,7 +22,7 @@
   <h1 class="hero-title">Reading the<br>flux off a<br><span class="accent">dead disk.</span></h1>
   <p class="hero-subtitle">
     <strong style="color:var(--text)">mdrll</strong> is a Rust CLI that decodes 200 MHz flux-transition captures from
-    1980s ST-506 hard disks into raw <code class="mono" style="color:var(--amber)">.ima</code> images. Twelve controller
+    1980s ST-506 hard disks into raw <code class="mono" style="color:var(--amber)">.ima</code> images. Fourteen controller
     formats. Two encoding families. Six source files. Two months from blank repo to byte-exact recovery on real captures.
   </p>
 
@@ -58,7 +58,7 @@
   <h2 class="section-title">Six files. No traits. No subdirectories.</h2>
   <p class="section-lede">
     The original HLD called for a five-file crate with one streaming pipeline and no abstraction layer
-    over the two encoding variants. That structure survived two months of feature pressure and twelve
+    over the two encoding variants. That structure survived two months of feature pressure and fourteen
     new controller formats — a single new file (<code class="mono" style="color:var(--amber)">tests/differential_harness.rs</code>)
     was added; every controller plugged into the existing modules.
   </p>
@@ -78,7 +78,7 @@
 <!-- ── Controller zoo ────────────────────────────────────────────────── -->
 <section class="shell">
   <div class="section-label">03 · controller zoo</div>
-  <h2 class="section-title">Twelve formats. Each its own animal.</h2>
+  <h2 class="section-title">Fourteen formats. Each its own animal.</h2>
   <p class="section-lede">
     The first design assumed one universal sector format. Reality: every controller in the wild
     had its own twist on framing, sync, address marks, CRC polynomial, or all four. Each card

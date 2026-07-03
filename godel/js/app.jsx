@@ -85,14 +85,24 @@ function App() {
     return () => { obs.disconnect(); window.removeEventListener("scroll", onScroll); };
   }, []);
 
-  // typeset prose once everything has mounted
+  // typeset prose once everything has mounted (await MathJax startup, not a fixed delay)
   useEffectApp(() => {
-    const t = setTimeout(() => {
-      if (window.MathJax && window.MathJax.typesetPromise) {
+    let cancelled = false;
+    const typeset = () => {
+      if (!cancelled && window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise().catch(() => {});
       }
-    }, 200);
-    return () => clearTimeout(t);
+    };
+    const whenReady = () => {
+      if (cancelled) return;
+      if (window.MathJax && window.MathJax.startup && window.MathJax.startup.promise) {
+        window.MathJax.startup.promise.then(typeset).catch(() => {});
+      } else {
+        setTimeout(whenReady, 50);
+      }
+    };
+    whenReady();
+    return () => { cancelled = true; };
   }, []);
 
   return (

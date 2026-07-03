@@ -687,6 +687,8 @@ function Hero() {
   const [heroYear, setHeroYear] = useState(START);
   useEffect(() => {
     let id;
+    let timeoutId;
+    let holding = false;
     let y = START;
     let holdUntil = 0;
     let last = performance.now();
@@ -698,19 +700,20 @@ function Hero() {
         return;
       }
       y += dt * 2.2;          // ~2 years per second — slow enough to read
-      if (y >= END) {
+      if (y >= END && !holding) {
         y = END;
+        holding = true;
         holdUntil = now + HOLD_MS;
         setHeroYear(y);
         // After hold, snap back to start
-        setTimeout(() => { y = START; setHeroYear(START); }, HOLD_MS);
-      } else {
+        timeoutId = setTimeout(() => { y = START; holding = false; setHeroYear(START); }, HOLD_MS);
+      } else if (!holding) {
         setHeroYear(y);
       }
       id = requestAnimationFrame(step);
     };
     id = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(id);
+    return () => { cancelAnimationFrame(id); clearTimeout(timeoutId); };
   }, []);
 
   return (

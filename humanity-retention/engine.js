@@ -145,6 +145,7 @@ export function applyAction(input, actionId, regionId) {
   });
   Object.entries(action.effect || {}).forEach(([key, value]) => {
     if (["infection", "cooperation", "labs", "misinformation", "shield"].includes(key)) return;
+    if (action.scope === "region" && key === "economy") return;
     applyMeterEffect(state.meters, key, value);
   });
   if (action.scope === "region") {

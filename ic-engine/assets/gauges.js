@@ -37,7 +37,7 @@
     // ticks + numbers
     for(let i=0;i<=spec.ticks;i++){
       const f=i/spec.ticks, a=A0+f*SWEEP;
-      const o=pt(a,R), inr=pt(a,R-(i% (1)===0?7:5));
+      const o=pt(a,R), inr=pt(a,R-7);
       const major=el('line',{x1:o[0],y1:o[1],x2:inr[0],y2:inr[1],class:'g-tick'}); svg.appendChild(major);
       const np=pt(a,R-15), val=spec.min+f*(spec.max-spec.min);
       const t=el('text',{x:np[0],y:np[1]+2.6,class:'g-num','text-anchor':'middle'});

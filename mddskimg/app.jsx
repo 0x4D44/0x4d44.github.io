@@ -159,7 +159,7 @@ function Hero() {
           <div className="cell"><span className="n">18</span><span className="l">filesystems</span></div>
           <div className="cell"><span className="n">9</span><span className="l">partition schemes</span></div>
           <div className="cell"><span className="n">~7,100</span><span className="l">tests</span></div>
-          <div className="cell"><span className="n">69</span><span className="l">fuzz targets</span></div>
+          <div className="cell"><span className="n">77</span><span className="l">fuzz targets</span></div>
         </div>
       </div>
       <HeroTerminal />
@@ -654,7 +654,7 @@ function Fuzzing() {
         <span className="num">§ 09</span><span>Fuzzing</span><span className="rule" />
       </div>
       <div className="split-2" style={{ alignItems: "end", marginBottom: 24 }}>
-        <h2>69 coverage-guided targets.</h2>
+        <h2>77 coverage-guided targets.</h2>
         <p className="lead">
           Every parser, every directory decoder, every mutation verb has a <code>cargo-fuzz</code>
           target with a seed corpus. The campaign script runs smoke + overnight modes against
@@ -844,7 +844,7 @@ function Foot() {
         <h4>// quality</h4>
         <ul>
           <li><a href="#testing">Three-tier testing</a></li>
-          <li><a href="#fuzz">69 fuzz targets</a></li>
+          <li><a href="#fuzz">77 fuzz targets</a></li>
           <li><a href="#corpus">Real-world corpus</a></li>
         </ul>
       </div>

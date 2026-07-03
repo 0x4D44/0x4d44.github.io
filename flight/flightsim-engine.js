@@ -946,7 +946,7 @@ function readInput(dt){
     input.pitch = lerp(input.pitch, clamp(FS.invertPitch ? -virtualInput.pitch : virtualInput.pitch, -1, 1), clamp(dt*12,0,1));
     input.roll  = lerp(input.roll, clamp(virtualInput.roll, -1, 1), clamp(dt*14,0,1));
   } else if (mouseYoke) {
-    input.pitch = clamp(my, -1, 1);
+    input.pitch = clamp(FS.invertPitch ? -my : my, -1, 1);
     input.roll  = clamp(-mx, -1, 1);
   } else {
     input.pitch = lerp(input.pitch, p, clamp(dt*6,0,1));
@@ -1179,6 +1179,7 @@ function drawHeadingTape(ctx, cx, y, w, dpr){
    LOOP
    ============================================================ */
 function frame(t) {
+  if (_raf) cancelAnimationFrame(_raf);
   _raf = requestAnimationFrame(frame);
   _lastRaf = (typeof performance!=='undefined'?performance.now():Date.now());
   try {
