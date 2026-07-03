@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Barcelona · Aperture Modernisme — a 2-day interactive guide</title>
+  <meta name="description" content="A fun, bilingual (Spanish/English) interactive guide to two days in Barcelona — the Sagrada Família, L'Aquàrium and the cruise port — narrated by four cartoon guides who are half Catalan legend, half GLaDOS. Live map, phrasebook with speech, and a 2-day plan.">
+  <meta property="og:title" content="Barcelona · Aperture Modernisme">
+  <meta property="og:description" content="Two days, three landmarks, four sardonic bilingual guides. An interactive Barcelona field manual.">
+  <meta name="theme-color" content="#0a0c11">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- top bar -->
+  <header class="topbar">
+    <div class="wrap">
+      <a class="brand" href="#top">
+        <span id="brandEye" class="aperture-eye" style="width:26px;height:26px;display:inline-block"></span>
+        <span><b>BARCELONA</b> · <span>Aperture Modernisme</span></span>
+      </a>
+      <nav class="nav" id="nav"></nav>
+      <div class="lang" role="group" aria-label="language">
+        <button id="langEN">EN</button>
+        <button id="langES">ES</button>
+      </div>
+    </div>
+  </header>
+
+  <a id="top"></a>
+
+  <!-- HERO -->
+  <section class="hero" id="hero"></section>
+
+  <!-- GUIDES -->
+  <section class="section" id="guides"></section>
+
+  <!-- MAP -->
+  <section class="section" id="map-sec"></section>
+
+  <!-- PLACES -->
+  <section class="section" id="places" style="padding-bottom:0"></section>
+
+  <!-- PHRASEBOOK -->
+  <section class="section" id="phrases"></section>
+
+  <!-- PLAN -->
+  <section class="section" id="plan"></section>
+
+  <!-- FOOTER -->
+  <footer class="foot" id="foot"></footer>
+
+  <!-- overlays -->
+  <div class="modal-back" id="modalBack" aria-hidden="true"></div>
+  <div class="hud" id="hud" aria-live="polite"></div>
+  <div class="toast-wrap" id="toasts" aria-live="polite"></div>
+
+  <!-- scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="assets.js"></script>
+  <script src="content.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
