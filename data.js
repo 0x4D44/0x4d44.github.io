@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "morning-run",
+    title: "Morning Run",
+    tagline: "Find a running loop from your hotel, then track the run. It reads your GPS, asks OpenRouteService for a few foot-friendly loops of your chosen distance, and records the outing live — trail, pace, per-kilometre splits — with GPX export and saved history. An installable phone-first PWA: browser React on MapLibre GL and OpenStreetMap, no build step.",
+    url: "https://0x4d44.github.io/morning-run/",
+    illustration: "ill-run",
+    date: "2026-07-03T19:30:00",
+    year: 2026,
+    tags: ["software", "transport"],
+    real: true,
+  },
+  {
     slug: "supernova",
     title: "The Death of Stars",
     tagline: "How stars are born, live and die — and what they leave behind. An interactive almanac from cold molecular cloud to supernova and beyond: dial a star's mass to read its fate, bounce a collapsing core, forge the elements in a periodic table of origins, and weigh white dwarfs against neutron stars and black holes. Vanilla JS on a canvas; fact-checked by a multi-agent research pass.",
