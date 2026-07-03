@@ -3,6 +3,16 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-03 — `japanese-travel-rpg` (Nihon Quest, a DC export) wraps its whole
+  UI in a **fixed 402x874 `IOSDevice` frame** (`ios-frame.jsx`) centred in a
+  `min-height:100vh;padding:20px` body — so on any phone (viewport < ~914px) the
+  frame overflowed and its pinned bottom tab bar dropped below the fold. Fix:
+  cap the frame with `maxWidth:calc(100vw-40px)`/`maxHeight:calc(100dvh-40px)`
+  (mockup size is a *max*, not a fixed size; `dvh` tracks the mobile URL bar,
+  degrades to the fixed height on old browsers) + body `min-height:100dvh`. Also:
+  its `sw.js` is **cache-first**, so a fix reaches installed PWAs only if you
+  bump the `nihon-quest-vN` cache name — and `tests/self-check.mjs` asserts that
+  exact string, so bump the SW cache and the test assertion together.
 - 2026-07-03 — Verifying an animated / WebGL document (Three.js entries like
   `flight`, `emu-cab`, `night-cab`) with headless Chrome: `--dump-dom` NEVER
   returns — the page's perpetual `requestAnimationFrame` loop keeps virtual time
