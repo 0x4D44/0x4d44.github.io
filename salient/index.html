@@ -194,6 +194,7 @@ class Component extends DCLogic {
       sel: null, fx: null, transfer: null, panX: 0, panY: 0, zoom: 1,
     };
     this._aiBusy = false; this._fxLock = false; this._ptrs = new Map(); this._mdrag = null;
+    this._boardEl = null; this._wheelHandler = e => this.onWheel(e);
   }
   optLevel(){ return this.props.aiLevel === 'easy' ? 'easy' : 'hard'; }
   optPreset(){ var labels = ['You + 2 AI','You + 3 AI','2P + 2 AI','3 Players','4 Players']; var i = labels.indexOf(this.props.opponents); return i < 0 ? 0 : i; }
@@ -356,6 +357,7 @@ class Component extends DCLogic {
 
   /* ---------- view gestures (wheel + two-finger / right-drag) ---------- */
   onWheel(e){ e.preventDefault(); this.setState({ zoom: this.clampZoom(this.state.zoom * Math.exp(-e.deltaY * 0.0012)) }); }
+  setBoardRef(el){ if(this._boardEl === el) return; if(this._boardEl){ this._boardEl.removeEventListener('wheel', this._wheelHandler); } this._boardEl = el; if(el){ el.addEventListener('wheel', this._wheelHandler, { passive: false }); } }
   onPDown(e){
     if(e.pointerType === 'mouse'){ if(e.button === 2 || e.button === 1){ e.preventDefault(); try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){ } this._mdrag = { x: e.clientX, y: e.clientY }; } return; }
     this._ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -501,7 +503,8 @@ class Component extends DCLogic {
     var reset = this.viewDirty() ? h('button', { key: 'rv', onClick: () => this.resetView(), title: 'Reset view', style: { position: 'absolute', top: '4px', right: '4px', zIndex: 5, width: '32px', height: '32px', borderRadius: '9px', border: '1px solid ' + t.panelBorder, background: t.panel, color: t.text, font: 'inherit', fontSize: '15px', cursor: 'pointer', lineHeight: '1', backdropFilter: 'blur(4px)' } }, '\u27f2') : null;
     return h('div', {
       onPointerDown: e => this.onPDown(e), onPointerMove: e => this.onPMove(e), onPointerUp: e => this.onPUp(e), onPointerCancel: e => this.onPUp(e),
-      onContextMenu: e => e.preventDefault(), onWheel: e => this.onWheel(e), onDoubleClick: () => this.resetView(),
+      ref: el => this.setBoardRef(el),
+      onContextMenu: e => e.preventDefault(), onDoubleClick: () => this.resetView(),
       style: { position: 'relative', width: '100%', minHeight: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', touchAction: 'none' },
     }, [reset, svg]);
   }

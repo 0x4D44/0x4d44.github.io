@@ -605,7 +605,16 @@ class Component extends DCLogic {
     let coachLine = 'Coach is off';
     const coachActive = s.mode === 'ai' && s.level === 'novice' && !s.winner && !s.thinking && s.phase === 'play' && isHuman;
     if(coachActive && s.coachOn){
-      const cm = PylosEngine.chooseMove({ levels: s.levels, reserves: s.reserves, turn: cur, winner: null }, 'expert', () => 0);
+      // memoize on a position signature (excludes view state) so pan/zoom/rotate don't rerun the search
+      const sig = JSON.stringify(s.levels) + '|' + s.reserves.p1 + ',' + s.reserves.p2 + '|' + cur;
+      let cm;
+      if(this._coachSig === sig){
+        cm = this._coachMoveCache;
+      } else {
+        cm = PylosEngine.chooseMove({ levels: s.levels, reserves: s.reserves, turn: cur, winner: null }, 'expert', () => 0);
+        this._coachSig = sig;
+        this._coachMoveCache = cm;
+      }
       if(cm){
         this._coachMove = cm;
         if(cm.dst.l === 3) coachLine = '★ Winning move — crown the apex!';

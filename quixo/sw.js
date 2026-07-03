@@ -49,7 +49,26 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // cache-first for everything else (assets, fonts, scripts)
+  // same-origin scripts (.js/.jsx): stale-while-revalidate so bug fixes
+  // reach returning users on the next load without a VERSION bump
+  const isScript = url.origin === self.location.origin && /\.m?jsx?$/.test(url.pathname);
+  if (isScript) {
+    e.respondWith(
+      caches.match(req).then(cached => {
+        const network = fetch(req).then(res => {
+          if (res && res.status === 200 && (res.type === 'basic' || res.type === 'cors')) {
+            const copy = res.clone();
+            caches.open(VERSION).then(c => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        }).catch(() => cached);
+        return cached || network;
+      })
+    );
+    return;
+  }
+
+  // cache-first for everything else (assets, fonts)
   e.respondWith(
     caches.match(req).then(cached => {
       if (cached) return cached;

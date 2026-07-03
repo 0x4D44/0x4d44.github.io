@@ -288,7 +288,7 @@ window.READEX_DATA = {
     }
   ],
 
-  // 69 fuzz targets, grouped
+  // 77 fuzz targets, grouped
   fuzzTargets: [
     // parsers (superblock, layout, structural)
     { n: "mbr_partition_parse", g: "parse" },

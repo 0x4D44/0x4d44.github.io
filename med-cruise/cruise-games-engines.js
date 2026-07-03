@@ -302,6 +302,7 @@
     ];
   };
   Golf.prototype.reset = function () {
+    this._gen = (this._gen || 0) + 1;
     this.hi = 0;
     this.ballR = 15; this.holeR = 24;
     this.total = 0; this.parTotal = 0;
@@ -389,11 +390,11 @@
     this.total += this.strokes; this.parTotal += this.cur.par;
     var diff = this.strokes - this.cur.par;
     var name = diff <= -1 ? "Birdie! 🐦" : diff === 0 ? "Par 👍" : diff === 1 ? "Bogey" : "+" + diff;
-    var self = this;
+    var self = this, gen = this._gen;
     if (this.hi < this.holes.length - 1) {
       this.emit({ msg: "Hole " + (this.hi + 1) + ": " + name + " (" + this.strokes + ")", strokes: this.strokes });
       setTimeout(function () {
-        if (!self.running) return;
+        if (!self.running || self._gen !== gen) return;
         self._loadHole(self.hi + 1);
         self.emit({ hole: self.hi + 1, par: self.cur.par, strokes: 0, total: self.total, msg: "Next hole! Drag to putt." });
       }, 1100);

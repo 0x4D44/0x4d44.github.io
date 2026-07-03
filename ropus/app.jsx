@@ -13,17 +13,14 @@ function Waveform() {
     return () => cancelAnimationFrame(raf);
   }, []);
   const bars = 96;
-  const heights = useMemo(() => {
-    const out = [];
-    for (let i = 0; i < bars; i++) {
-      const f1 = Math.sin(i * 0.22 + t * 1.7) * 0.5 + 0.5;
-      const f2 = Math.sin(i * 0.07 + t * 0.6) * 0.5 + 0.5;
-      const f3 = Math.sin(i * 0.45 - t * 2.4) * 0.4 + 0.5;
-      const env = Math.exp(-Math.pow((i / bars - 0.5) * 2.2, 2));
-      out.push((f1 * 0.45 + f2 * 0.35 + f3 * 0.2) * env);
-    }
-    return out;
-  }, [t]);
+  const heights = [];
+  for (let i = 0; i < bars; i++) {
+    const f1 = Math.sin(i * 0.22 + t * 1.7) * 0.5 + 0.5;
+    const f2 = Math.sin(i * 0.07 + t * 0.6) * 0.5 + 0.5;
+    const f3 = Math.sin(i * 0.45 - t * 2.4) * 0.4 + 0.5;
+    const env = Math.exp(-Math.pow((i / bars - 0.5) * 2.2, 2));
+    heights.push((f1 * 0.45 + f2 * 0.35 + f3 * 0.2) * env);
+  }
 
   return (
     <div className="waveform">
