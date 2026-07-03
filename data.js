@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "constellation",
+    title: "The Almanac, as a Constellation",
+    tagline: "This catalog, drawn as a star map. Every document is a star — sized by length, coloured by tag — and a line joins any two that share one, so the whole almanac clusters itself. Drag a star, hover to read it, click to open it, or isolate a tag. Built live from data.js; vanilla JS on a canvas, no build step.",
+    url: "https://0x4d44.github.io/constellation/",
+    illustration: "ill-constellation",
+    date: "2026-07-03T13:30:00",
+    year: 2026,
+    tags: ["software"],
+    real: true,
+  },
+  {
     slug: "flight",
     title: "Flight",
     tagline: "A browser flight simulator over an endless procedural world of towns, cities, mountains, oceans, deserts and forests. Seven aircraft — from a Cessna 172 to the A380 — each with its own tuned aerodynamics, a full amber-phosphor HUD, autopilot, inducible equipment failures and switchable flying aids. Synthesised engine and wind, day or night. Three.js on a hand-written flight model.",
