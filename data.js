@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "supernova",
+    title: "The Death of Stars",
+    tagline: "How stars are born, live and die — and what they leave behind. An interactive almanac from cold molecular cloud to supernova and beyond: dial a star's mass to read its fate, bounce a collapsing core, forge the elements in a periodic table of origins, and weigh white dwarfs against neutron stars and black holes. Vanilla JS on a canvas; fact-checked by a multi-agent research pass.",
+    url: "https://0x4d44.github.io/supernova/",
+    illustration: "ill-supernova",
+    date: "2026-07-03T16:00:00",
+    year: 2026,
+    tags: ["science", "software"],
+    real: true,
+  },
+  {
     slug: "constellation",
     title: "The Almanac, as a Constellation",
     tagline: "This catalog, drawn as a star map. Every document is a star — sized by length, coloured by tag — and a line joins any two that share one, so the whole almanac clusters itself. Drag a star, hover to read it, click to open it, or isolate a tag. Built live from data.js; vanilla JS on a canvas, no build step.",
