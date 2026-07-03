@@ -460,7 +460,7 @@ window.ESSAYS = [
     real: true,
   },
   {
-    slug: "ecml",
+    slug: "ecml-timeline",
     title: "The Long Run",
     tagline: "A timeline of the East Coast Main Line, 1862–2025.",
     url: "https://0x4d44.github.io/ecml-timeline/",
@@ -473,7 +473,7 @@ window.ESSAYS = [
     real: true,
   },
   {
-    slug: "ai-watched",
+    slug: "the-ai-who-watched",
     title: "The AI Who Watched",
     tagline: "“Watch the cat,” she said. It watched. A fable on the gap between what we tell an AI and what we mean.",
     url: "https://0x4d44.github.io/the-ai-who-watched/",
@@ -603,7 +603,7 @@ window.ESSAYS = [
     real: true,
   },
   {
-    slug: "east-coast-main-line",
+    slug: "ecml",
     title: "The East Coast Main Line",
     tagline: "An interactive history of Britain's East Coast Main Line, 1825–1991.",
     url: "https://0x4d44.github.io/ecml/",
@@ -937,4 +937,23 @@ window.fmtDate = function (iso) {
   const [y, mo, d] = String(iso).slice(0, 10).split("-").map(Number);
   if (!y || !mo || !d) return "";
   return `${String(d).padStart(2,"0")} ${m[mo - 1]} ${y}`;
+};
+
+// Aggregate stats over the catalog, shared by the listing status bar (app.js)
+// and the about page. `subjects` counts distinct *subject*-axis tags only (not
+// the form axis), falling back to all tags when no subject axis is defined.
+// `last` is the most recent entry (by date), or null for an empty catalog.
+window.siteStats = function () {
+  const essays = window.ESSAYS || [];
+  const tagsOf = (e) => e.tags || (e.tag ? [e.tag] : []);
+  const subjectAxis = (window.TAG_GROUPS || []).find(g => g.label === "subject");
+  const subjectTags = subjectAxis ? new Set(subjectAxis.tags) : null;
+  return {
+    total: essays.length,
+    words: essays.reduce((s, e) => s + (e.words || 0), 0),
+    subjects: new Set(
+      essays.flatMap(tagsOf).filter(t => !subjectTags || subjectTags.has(t))
+    ).size,
+    last: essays.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""))[0] || null,
+  };
 };
