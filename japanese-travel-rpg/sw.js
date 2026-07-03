@@ -1,4 +1,4 @@
-const CACHE = "nihon-quest-v2";
+const CACHE = "nihon-quest-v3";
 const ASSETS = [
   "./",
   "./index.html",

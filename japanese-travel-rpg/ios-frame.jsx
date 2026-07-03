@@ -204,7 +204,14 @@ function IOSDevice({
 }) {
   return (
     <div style={{
-      width, height, borderRadius: 48, overflow: 'hidden',
+      // Treat the design size as a maximum, not a fixed size: on any screen
+      // smaller than the mockup (phones) the frame shrinks to the visible
+      // viewport so the pinned bottom tab bar is never pushed below the fold.
+      // 40px = the <body>'s 20px top+bottom (and left+right) padding. `dvh`
+      // tracks the mobile URL bar; browsers without it just keep `height`.
+      width, height,
+      maxWidth: 'calc(100vw - 40px)', maxHeight: 'calc(100dvh - 40px)',
+      borderRadius: 48, overflow: 'hidden',
       position: 'relative', background: dark ? '#000' : '#F2F2F7',
       boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
       fontFamily: '-apple-system, system-ui, sans-serif',

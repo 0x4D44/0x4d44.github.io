@@ -1,5 +1,5 @@
 // @ts-check
-export const APP_VERSION="1.0.1";
+export const APP_VERSION="1.0.2";
 const p=(id,j,e,pol="safe polite",usage="Traveller-safe phrase")=>({id,japanese:j,kana:j,romaji:id.replaceAll("-"," "),english:e,politeness:pol,usage,variants:[]});
 const sign=(id,t,r,m)=>({id,text:t,reading:r,meaning:m,where:"Travel signs and notices",note:""});
 const gram=(title,body,pattern)=>({title,body,pattern,examples:[pattern]});
