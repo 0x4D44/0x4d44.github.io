@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Quixo engine tests</title>
+<style>
+  body { font: 14px/1.5 ui-monospace, Menlo, monospace; background:#0e1320; color:#e8e2d0; padding:20px; }
+  h1 { font-size:18px; }
+  .pass { color:#7fd18b; } .fail { color:#ff6b6b; font-weight:700; }
+  #summary { font-size:16px; margin:12px 0; }
+  pre { white-space:pre-wrap; }
+</style>
+</head>
+<body>
+<h1>Quixo engine tests</h1>
+<div id="summary">running…</div>
+<pre id="log"></pre>
+<script>
+// Unregister any active service worker for this scope, then load the engine fresh
+// (the SW caches scripts cache-first; a stale engine would invalidate the run).
+(async () => {
+  try {
+    const regs = await (navigator.serviceWorker?.getRegistrations?.() || []);
+    await Promise.all(regs.map(r => r.unregister()));
+  } catch (e) {}
+  const s = document.createElement('script');
+  s.src = 'quixo-engine.jsx?cachebust=' + Date.now();
+  s.onload = run;
+  s.onerror = () => { document.getElementById('summary').innerHTML =
+    '<span class="fail">FAILED to load quixo-engine.jsx</span>'; };
+  document.body.appendChild(s);
+})();
+
+function run() {
+  const QE = window.QuixoEngine;
+  const { legalMoves, legalDests, shiftBoard, findLine, moveWinner, applyMove,
+          createInitialState, undoPlayerTurn, replayHistory, lineName } = QE;
+  const results = { pass: 0, fail: 0, failures: [] };
+  const logEl = document.getElementById('log');
+  function check(name, cond, detail) {
+    if (cond) { results.pass++; logEl.innerHTML += `<span class="pass">PASS</span> ${name}\n`; }
+    else { results.fail++; results.failures.push(name + (detail ? ' — ' + detail : ''));
+      logEl.innerHTML += `<span class="fail">FAIL</span> ${name}${detail ? ' — ' + detail : ''}\n`; }
+  }
+  const blank = () => Array(25).fill(null);
+  const S = (board, extra) => Object.assign(
+    { board, current: 'ai', phase: 'play', winner: null, winLine: null,
+      difficulty: 'hard', history: [], moveCount: 0, lastMove: null }, extra);
+  const idx = (r, c) => r * 5 + c;
+
+  // Deterministic PRNG (mulberry32) for reproducible randomness.
+  function mulberry32(a) {
+    return function () { a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  }
+  QE._setRandom(mulberry32(0xC0FFEE));
+
+  // ── M1: move generation on an empty board ──
+  // 16 perimeter cubes; corners give 2 pushes, edges 3 ⇒ 4·2 + 12·3 = 44.
+  {
+    const moves = legalMoves(blank(), 'you');
+    check('M1 empty board has 44 legal moves', moves.length === 44, `got ${moves.length}`);
+    check('M1 corner 0 has dests {4, 20}',
+      JSON.stringify(legalDests(0).slice().sort((a,b)=>a-b)) === '[4,20]',
+      JSON.stringify(legalDests(0)));
+    check('M1 edge (0,2) has dests {0, 4, 22}',
+      JSON.stringify(legalDests(2).slice().sort((a,b)=>a-b)) === '[0,4,22]',
+      JSON.stringify(legalDests(2)));
+  }
+
+  // ── M2: you may not take the opponent's cube ──
+  {
+    const b = blank(); b[0] = 'ai';
+    const moves = legalMoves(b, 'you');
+    check('M2 opponent cube is untouchable', !moves.some(m => m.src === 0));
+    check('M2 own cube is takeable', legalMoves(b, 'ai').some(m => m.src === 0));
+  }
+
+  // ── M3: shift mechanics ──
+  // Row 0 = [A, B, C, D, E]; take src (0,1)=B, push in from right end (0,4).
+  // Expect [A, C, D, E, who] on row 0.
+  {
+    const b = blank();
+    b[0] = 'you'; b[1] = 'ai'; b[2] = null; b[3] = 'you'; b[4] = 'ai';
+    const b2 = shiftBoard(b, 1, 4, 'ai');
+    const row = [b2[0], b2[1], b2[2], b2[3], b2[4]];
+    check('M3 row shift toward the gap',
+      JSON.stringify(row) === JSON.stringify(['you', null, 'you', 'ai', 'ai']),
+      JSON.stringify(row));
+    check('M3 other rows untouched', b2.slice(5).every(v => v == null));
+  }
+  {
+    // Column shift: take (0,2), push in from bottom (4,2).
+    const b = blank();
+    b[idx(0,2)] = 'you'; b[idx(2,2)] = 'ai';
+    const b2 = shiftBoard(b, idx(0,2), idx(4,2), 'you');
+    check('M3 column shift moves the ai cube up one',
+      b2[idx(1,2)] === 'ai' && b2[idx(2,2)] == null && b2[idx(4,2)] === 'you',
+      JSON.stringify([b2[idx(1,2)], b2[idx(2,2)], b2[idx(4,2)]]));
+  }
+
+  // ── M4: line detection & naming ──
+  {
+    const b = blank();
+    [0,6,12,18,24].forEach(i => b[i] = 'you');
+    const line = findLine(b, 'you');
+    check('M4 finds the long diagonal', !!line && lineName(line) === 'the long diagonal',
+      line ? lineName(line) : 'null');
+  }
+
+  // ── M5: the mover-loses rule ──
+  // Suicide happens via a PERPENDICULAR shift: column 3 holds four circles
+  // (rows 0–3) and a fifth circle waits at (4,3). You take the blank corner
+  // (4,0) and push in from the right end (4,4): row 4 slides left, the
+  // circle at (4,3) lands on (4,2) → the AI's column 3 completes. You made
+  // the move; the AI wins.
+  {
+    const b = blank();
+    [0,1,2,3].forEach(r => b[idx(r,2)] = 'ai');
+    b[idx(4,3)] = 'ai';
+    const st = S(b, { current: 'you' });
+    const after = applyMove(st, idx(4,0), idx(4,4));
+    check('M5 completing THEIR five loses immediately',
+      after.phase === 'ended' && after.winner === 'ai',
+      `phase=${after.phase} winner=${after.winner}`);
+    check('M5 the losing line is column 3', lineName(after.winLine) === 'column 3',
+      lineName(after.winLine));
+  }
+
+  // ── M6: winning normally ──
+  // Row 2 = [you, you, you, you, null]; you take blank (2,4)... (2,4) is a
+  // perimeter cell. Push from the LEFT end (2,0): your cross enters at (2,0),
+  // the four crosses slide right → five crosses across row 2... wait — the
+  // row already holds four crosses in cols 0..3; entering at col 0 pushes
+  // them to cols 1..4 ⇒ row 2 all crosses. Win.
+  {
+    const b = blank();
+    [0,1,2,3].forEach(c => b[idx(2,c)] = 'you');
+    const st = S(b, { current: 'you' });
+    const after = applyMove(st, idx(2,4), idx(2,0));
+    check('M6 five of your own wins', after.winner === 'you' && lineName(after.winLine) === 'row 3',
+      `winner=${after.winner} line=${lineName(after.winLine)}`);
+  }
+
+  // ── A1: every difficulty takes a clean immediate win ──
+  {
+    const b = blank();
+    [0,1,2,3].forEach(c => b[idx(2,c)] = 'ai');
+    for (const diff of ['easy', 'medium', 'hard']) {
+      const m = QE.aiChooseMove(S(b, { current: 'ai' }), diff);
+      const b2 = shiftBoard(b, m.src, m.dest, 'ai');
+      check(`A1 ${diff} takes the immediate win`, moveWinner(b2, 'ai') === 'ai',
+        `move ${JSON.stringify(m)}`);
+    }
+  }
+
+  // ── A2: every difficulty refuses suicide when avoidable ──
+  // Mirror of M5 with the colours swapped: column 3 holds four CROSSES
+  // (rows 0–3) plus a fifth cross at (4,3). Taking (4,0) and pushing from
+  // (4,4) would complete YOUR five — a legal but suicidal move. Plenty of
+  // safe moves exist; no difficulty should pick a losing one.
+  {
+    const b = blank();
+    [0,1,2,3].forEach(r => b[idx(r,2)] = 'you');
+    b[idx(4,3)] = 'you';
+    // sanity: the suicide really is on the menu
+    const su = shiftBoard(b, idx(4,0), idx(4,4), 'ai');
+    check('A2 setup: the suicidal push exists', moveWinner(su, 'ai') === 'you');
+    for (const diff of ['easy', 'medium', 'hard']) {
+      const m = QE.aiChooseMove(S(b, { current: 'ai' }), diff);
+      const b2 = shiftBoard(b, m.src, m.dest, 'ai');
+      check(`A2 ${diff} avoids completing your five`, moveWinner(b2, 'ai') !== 'you',
+        `move ${JSON.stringify(m)}`);
+    }
+  }
+
+  // ── A3: medium & hard never leave an immediate winning reply when avoidable ──
+  {
+    const b = blank();
+    // Give you a strong column-1 threat: rows 1–3 crosses at col 0 plus (4,0).
+    [1,2,3].forEach(r => b[idx(r,0)] = 'you');
+    b[idx(4,0)] = 'you';
+    for (const diff of ['medium', 'hard']) {
+      const m = QE.aiChooseMove(S(b, { current: 'ai' }), diff);
+      const b2 = shiftBoard(b, m.src, m.dest, 'ai');
+      const youWinNext = legalMoves(b2, 'you').some(m2 =>
+        moveWinner(shiftBoard(b2, m2.src, m2.dest, 'you'), 'you') === 'you');
+      check(`A3 ${diff} blocks / avoids your immediate win`, !youWinNext,
+        `move ${JSON.stringify(m)}`);
+    }
+  }
+
+  // ── H1: undo rewinds the player's move and the AI reply ──
+  {
+    let st = createInitialState({ difficulty: 'medium', whoStarts: 'you' });
+    st = applyMove(st, 0, 4);              // you
+    st = applyMove(st, 20, 24);            // ai
+    st = applyMove(st, 2, 22);             // you
+    st = applyMove(st, 10, 14);            // ai
+    const undone = undoPlayerTurn(st);
+    check('H1 undo strips back to before your last move',
+      undone.moveCount === 2 && undone.current === 'you',
+      `moveCount=${undone.moveCount} current=${undone.current}`);
+    // and the remaining history replays identically
+    const re = replayHistory(st.history, st.difficulty);
+    check('H1 full replay reproduces the board',
+      JSON.stringify(re.board) === JSON.stringify(st.board));
+  }
+
+  // ── H2: state transitions never mutate their input ──
+  {
+    const st = createInitialState({});
+    const frozen = JSON.stringify(st);
+    applyMove(st, 0, 4);
+    check('H2 applyMove is pure', JSON.stringify(st) === frozen);
+  }
+
+  // ── AI smoke: medium vs easy self-play finishes legally ──
+  // (Easy's pinned RNG also breaks the cycles two deterministic engines fall into.)
+  {
+    let st = createInitialState({ difficulty: 'medium', whoStarts: 'you' });
+    let guard = 0, ok = true;
+    while (st.phase === 'play' && guard++ < QE.MOVE_CAP + 2) {
+      const diff = st.current === 'you' ? 'medium' : 'easy';
+      const m = QE.aiChooseMove(st, diff);
+      if (!m) { ok = false; break; }
+      const next = applyMove(st, m.src, m.dest);
+      if (next === st) { ok = false; break; }   // illegal move proposed
+      st = next;
+    }
+    check('SMOKE medium-vs-easy self-play ends legally',
+      ok && st.phase === 'ended', `phase=${st.phase} winner=${st.winner} moves=${st.moveCount}`);
+    logEl.innerHTML += `      · self-play result: ${st.winner} in ${st.moveCount} moves\n`;
+  }
+
+  const s = document.getElementById('summary');
+  s.innerHTML = results.fail === 0
+    ? `<span class="pass">ALL ${results.pass} TESTS PASS</span>`
+    : `<span class="fail">${results.fail} FAILED</span> / ${results.pass + results.fail}`;
+}
+</script>
+</body>
+</html>

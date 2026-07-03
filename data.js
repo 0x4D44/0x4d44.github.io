@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "quixo",
+    title: "Quixo",
+    tagline: "The sliding-cube strategy game: take a blank or friendly cube from the edge, turn it to your symbol and push it back in — the whole row shifts. Five in a row wins, but line up five of theirs and you've lost. A phone-first match against an AI in three hand-built themes. React, transpiled in the browser; installable offline.",
+    url: "https://0x4d44.github.io/quixo/",
+    illustration: "ill-quixo",
+    date: "2026-07-03T00:55:00",
+    year: 1995,
+    tag: "games",
+    real: true,
+  },
+  {
     slug: "driftfield",
     title: "Driftfield",
     tagline: "A Perlin-noise flow-field toy: steer thousands of particles through live vector currents, then tune scale, speed, trails, palettes and cursor forces. React via the design-runtime export, painting directly to canvas - no build step.",
