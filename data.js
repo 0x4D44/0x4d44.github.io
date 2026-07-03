@@ -95,10 +95,10 @@ window.ESSAYS = [
   {
     slug: "japanese-travel-rpg",
     title: "Nihon Quest",
-    tagline: "A mobile-first Japanese travel RPG for getting around Japan: follow a UK-to-Japan route through airports, stations, konbini, temples and side trips, learning practical phrases, signs and etiquette as you go. Offline PWA with SRS review, searchable phrasebook, speech buttons, scripted roleplay and optional BYO-key AI practice.",
+    tagline: "A mobile-first Japanese travel RPG in an iOS device frame: follow a UK-to-Japan route through airports, stations, konbini, temples and side trips, earning stamps while learning practical phrases, signs and etiquette. Includes SRS review, searchable phrasebook, speech buttons, guide characters, XP, combos and scripted roleplay. Design-runtime React export - no build step.",
     url: "https://0x4d44.github.io/japanese-travel-rpg/",
     illustration: "ill-nihon-quest",
-    date: "2026-07-02T18:35:00",
+    date: "2026-07-03T00:58:00",
     year: 2026,
     tag: "software",
     real: true,

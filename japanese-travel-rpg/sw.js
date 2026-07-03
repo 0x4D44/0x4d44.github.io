@@ -1,10 +1,12 @@
-const CACHE = "nihon-quest-v1";
+const CACHE = "nihon-quest-v2";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./app.js",
+  "./support.js",
+  "./GuideFace.dc.html",
+  "./ios-frame.jsx",
   "./content.js",
+  "./content-extra.js",
   "./engines.js",
   "./manifest.webmanifest",
   "./icons/icon.svg"
