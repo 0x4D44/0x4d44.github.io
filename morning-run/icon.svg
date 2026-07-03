@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Morning Run">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0f3d2e"/>
+      <stop offset="1" stop-color="#0a2a20"/>
+    </linearGradient>
+    <linearGradient id="route" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#4ade80"/>
+      <stop offset="1" stop-color="#22c55e"/>
+    </linearGradient>
+  </defs>
+  <!-- maskable-safe: keep content within the central 80% -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <!-- sun on the horizon: the 'morning' -->
+  <circle cx="366" cy="150" r="46" fill="#fbbf24" opacity="0.95"/>
+  <!-- winding route -->
+  <path d="M150 402
+           C 150 340, 236 344, 236 300
+           C 236 256, 150 262, 150 214
+           C 150 168, 250 176, 300 150"
+        fill="none" stroke="url(#route)" stroke-width="26"
+        stroke-linecap="round" stroke-linejoin="round"
+        stroke-dasharray="2 46"/>
+  <path d="M150 402
+           C 150 340, 236 344, 236 300
+           C 236 256, 150 262, 150 214
+           C 150 168, 250 176, 300 150"
+        fill="none" stroke="url(#route)" stroke-width="26"
+        stroke-linecap="round" stroke-linejoin="round" opacity="0.35"/>
+  <!-- start marker at the hotel -->
+  <circle cx="150" cy="402" r="30" fill="#0a2a20" stroke="#4ade80" stroke-width="12"/>
+  <circle cx="150" cy="402" r="9" fill="#4ade80"/>
+</svg>

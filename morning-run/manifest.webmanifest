@@ -1,0 +1,16 @@
+{
+  "name": "Morning Run",
+  "short_name": "Run",
+  "description": "Find a running loop from your hotel and track the run — route suggestions, live pace & splits, GPX export.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a2a20",
+  "theme_color": "#0f3d2e",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

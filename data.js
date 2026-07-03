@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "morning-run",
+    title: "Morning Run",
+    tagline: "Find a running loop from your hotel, then track the run. It reads your GPS, asks OpenRouteService for a few foot-friendly loops of your chosen distance, and records the outing live — trail, pace, per-kilometre splits — with GPX export and saved history. An installable phone-first PWA: browser React on MapLibre GL and OpenStreetMap, no build step.",
+    url: "https://0x4d44.github.io/morning-run/",
+    illustration: "ill-run",
+    date: "2026-07-03T19:30:00",
+    year: 2026,
+    tags: ["software", "transport"],
+    real: true,
+  },
+  {
     slug: "barcelona",
     title: "Barcelona · Aperture Modernisme",
     tagline: "A fun, bilingual (Spanish/English) field manual for two days in Barcelona — Gaudí's Sagrada Família, the aquarium under the sea, and the great cruise port — narrated by four cartoon guides who are half Catalan legend, half GLaDOS from Portal. A live map, a phrasebook that speaks aloud, and a two-day plan. Vanilla JS on Leaflet; content web-checked by a multi-agent pass.",
