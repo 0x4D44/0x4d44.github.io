@@ -107,7 +107,7 @@ header {
 
 /* ---- mode row ---- */
 .modes {
-  display: flex; gap: 6px; align-items: center;
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
   padding: 8px 2px 4px;
 }
 .seg {
@@ -116,7 +116,8 @@ header {
 }
 .seg button {
   border: 0; background: transparent; color: var(--muted);
-  padding: 6px 13px; border-radius: 999px; font-weight: 600; font-size: 13px;
+  padding: 6px 11px; border-radius: 999px; font-weight: 600; font-size: 12.5px;
+  display: inline-flex; align-items: center;
 }
 .seg button.on { background: var(--accent-btn); color: #fff; }
 .spacer { flex: 1; }
@@ -273,12 +274,38 @@ header {
 .legend .txt b { color: var(--accent); }
 
 .result { text-align: center; }
+.result .rlabel { color: var(--muted); font-weight: 600; font-size: 13px; text-align: center; }
 .result .word {
   font-family: 'Zen Maru Gothic', sans-serif; font-weight: 900;
-  font-size: 40px; color: var(--accent); margin: 6px 0 2px;
+  font-size: 40px; color: var(--accent); margin: 6px 0 0; cursor: pointer; line-height: 1.05;
 }
-.result .rom { font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 15px; }
-.result .mean { font-size: 18px; font-weight: 600; margin: 8px 0 2px; }
+.result .word .spk { font-size: 18px; margin-left: 8px; vertical-align: middle; opacity: .7; }
+.result .kanji {
+  text-align: center; font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 24px; font-weight: 700; color: var(--ink); margin: 2px 0;
+}
+.result .rom {
+  font-family: 'JetBrains Mono', monospace; color: var(--muted); font-size: 15px;
+  display: flex; gap: 8px; align-items: center; justify-content: center; flex-wrap: wrap;
+}
+.result .pos, .result .lvlchip {
+  font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .06em; padding: 2px 7px; border-radius: 999px;
+}
+.result .pos { background: var(--accent-soft); color: var(--accent); }
+.result .lvlchip { background: var(--line); color: var(--muted); }
+.result .mean { font-size: 18px; font-weight: 600; margin: 8px 0 2px; text-align: center; }
+.example {
+  display: flex; gap: 10px; align-items: flex-start; justify-content: flex-start;
+  margin: 14px 0 2px; padding: 12px; background: var(--bg); border-radius: 12px; text-align: left;
+}
+.example .jp { font-size: 16px; line-height: 1.5; color: var(--ink); }
+.example .exen { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+.spkbtn {
+  border: 0; background: var(--accent-soft); color: var(--accent);
+  width: 30px; height: 30px; border-radius: 50%; font-size: 14px; flex: none;
+  display: grid; place-items: center;
+}
 .stats { display: flex; justify-content: center; gap: 22px; margin: 16px 0 6px; }
 .stat b { display: block; font-size: 26px; font-family: 'Zen Maru Gothic', sans-serif; }
 .stat span { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
@@ -306,3 +333,35 @@ header {
 
 footer { text-align: center; color: var(--muted); font-size: 11px; padding: 6px 0 2px; }
 footer a { color: var(--muted); }
+
+/* ============================================================ v2 additions */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* Colour-blind palette — Okabe-Ito blue/orange. Higher specificity than the
+   :root defaults (and the dark-mode @media :root), so it wins in both themes. */
+:root[data-palette="cb"] {
+  --correct: #0072b2;          /* blue (white text) */
+  --present: #e69f00;          /* orange (dark text) */
+  --tile-ink-present: #1a1300;
+  --hint: #6d4bd0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile.reveal, .tile.pop, .row.bad, .toast, .scrim, .modal { animation: none !important; }
+}
+
+.badge {
+  display: inline-grid; place-items: center; min-width: 16px; height: 16px;
+  padding: 0 4px; margin-left: 5px; border-radius: 8px;
+  background: var(--accent-btn); color: #fff; font-size: 10px; font-weight: 800; vertical-align: middle;
+}
+.seg button.on .badge { background: rgba(255,255,255,.3); }
+
+.empty-review { text-align: center; max-width: 300px; padding: 20px; }
+.empty-review .big { font-size: 44px; margin-bottom: 8px; }
+.empty-review p { color: var(--muted); line-height: 1.5; font-size: 14px; margin: 8px 0 16px; }
+
+.bigbtn.dark { background: var(--ink); color: var(--bg); }
