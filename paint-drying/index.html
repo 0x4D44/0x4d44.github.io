@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Emulsion Observatory — Watch Paint Dry</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23cdc4b6'/><rect x='6' y='6' width='15' height='7' rx='1.5' fill='%237a5c3e'/><path d='M13.5 13v4H17v3.5' fill='none' stroke='%2323201b' stroke-width='2'/><rect x='14' y='20' width='6' height='6' rx='1' fill='%237a5c3e'/></svg>">
+<meta name="description" content="A patient real-time simulation of a freshly painted wall drying. Temperature and humidity really do change the dry time. Watch as long as you dare.">
+<style>
+  :root{
+    --paper:#f3efe6; --ink:#23201b; --muted:#6f685c; --line:#d8d1c3;
+    --panel:#faf7f0; --accent:#7a5c3e; --good:#3f7a4e; --warm:#b98a4e;
+    --shadow:0 1px 0 rgba(255,255,255,.6),0 14px 34px -18px rgba(40,32,20,.5);
+    --mono:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--serif); color:var(--ink); background:var(--paper);
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(255,255,255,.5), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(120,100,70,.018) 0 2px, transparent 2px 4px);
+    line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px; margin:0 auto; padding:26px 20px 60px}
+  header.masthead{border-bottom:2px solid var(--ink); padding-bottom:14px; margin-bottom:22px}
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.28em; text-transform:uppercase; color:var(--accent)}
+  h1{font-size:clamp(28px,5vw,46px); margin:.15em 0 .1em; font-weight:600; letter-spacing:-.01em}
+  .dek{color:var(--muted); font-style:italic; max-width:60ch; margin:0}
+  .home{float:right; font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); text-decoration:none; border:1px solid var(--line); padding:6px 10px; border-radius:5px; background:var(--panel)}
+  .home:hover{color:var(--ink); border-color:var(--accent)}
+
+  .stage{display:grid; grid-template-columns:1.6fr .95fr; gap:22px; align-items:start}
+  @media(max-width:860px){ .stage{grid-template-columns:1fr} }
+
+  /* The wall / observation window */
+  .frame{
+    position:relative; border-radius:8px; overflow:hidden;
+    box-shadow:var(--shadow); background:#111;
+    border:10px solid #efe9dc; outline:1px solid var(--line);
+  }
+  #wall{display:block; width:100%; height:auto; background:#333}
+  .plaque{
+    position:absolute; left:12px; bottom:12px; z-index:3;
+    font-family:var(--mono); font-size:11px; letter-spacing:.06em;
+    background:rgba(20,17,12,.62); color:#f4efe4; padding:7px 10px; border-radius:5px;
+    backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px); max-width:70%;
+  }
+  .plaque b{color:#ffd9a3; font-weight:600}
+  .glass{position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:linear-gradient(125deg, rgba(255,255,255,.10), transparent 34%);}
+
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:8px; box-shadow:var(--shadow)}
+  .panel h2{font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin:0; padding:12px 14px 0}
+  .panel .body{padding:12px 14px 14px}
+
+  /* Instrument readouts */
+  .gauge{display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:6px 0; border-bottom:1px dotted var(--line)}
+  .gauge:last-child{border-bottom:0}
+  .gauge .k{font-size:14px; color:var(--muted)}
+  .gauge .v{font-family:var(--mono); font-size:14px; color:var(--ink); text-align:right; font-variant-numeric:tabular-nums}
+  .phasepill{display:inline-block; font-family:var(--mono); font-size:12px; letter-spacing:.1em; text-transform:uppercase; padding:3px 9px; border-radius:999px; border:1px solid var(--line); background:#fff; color:var(--accent)}
+  .bar{height:8px; border-radius:6px; background:#e7e0d1; overflow:hidden; margin-top:6px; border:1px solid var(--line)}
+  .bar>i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--warm),var(--good)); transition:width .25s linear}
+
+  /* Controls */
+  .row{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 2px}
+  label.ctl{font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); display:block; margin:12px 0 4px}
+  .seg{display:flex; flex-wrap:wrap; gap:6px}
+  .seg button{font-family:var(--mono); font-size:12px; padding:6px 10px; border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:6px; cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--ink); color:#f6f1e6; border-color:var(--ink)}
+  .seg button:hover{border-color:var(--accent)}
+  .swatches{display:grid; grid-template-columns:repeat(4,1fr); gap:7px}
+  .sw{position:relative; border:1px solid rgba(0,0,0,.15); border-radius:6px; height:40px; cursor:pointer; overflow:hidden; padding:0; box-shadow:inset 0 -14px 18px -14px rgba(0,0,0,.35)}
+  .sw span{position:absolute; left:5px; bottom:3px; font-family:var(--mono); font-size:8.5px; letter-spacing:.02em; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.7); line-height:1.1}
+  .sw[aria-pressed="true"]{outline:2px solid var(--ink); outline-offset:1px}
+  .sw:focus-visible, .seg button:focus-visible, .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  input[type=range]{width:100%; accent-color:var(--accent)}
+  .env{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .btnrow{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap}
+  .btn{font-family:var(--mono); font-size:12px; letter-spacing:.05em; padding:9px 12px; border-radius:7px; border:1px solid var(--ink); background:var(--ink); color:#f6f1e6; cursor:pointer}
+  .btn.ghost{background:#fff; color:var(--ink)}
+  .btn:hover{filter:brightness(1.06)}
+  .customwrap{display:flex; align-items:center; gap:8px; margin-top:8px; font-family:var(--mono); font-size:11px; color:var(--muted)}
+  input[type=color]{width:34px; height:26px; border:1px solid var(--line); border-radius:5px; background:#fff; padding:2px; cursor:pointer}
+
+  /* Log + achievements */
+  .log{font-family:var(--mono); font-size:11.5px; color:var(--muted); max-height:150px; overflow:auto; line-height:1.7}
+  .log b{color:var(--ink); font-weight:600}
+  .ach{display:flex; flex-wrap:wrap; gap:7px}
+  .badge{font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; padding:5px 9px; border-radius:999px; border:1px dashed var(--line); color:var(--muted); background:#fff}
+  .badge.on{border-style:solid; border-color:var(--good); color:var(--good); background:#f1f7f1}
+
+  .colophon{margin-top:34px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:13.5px; max-width:74ch}
+  .colophon h3{font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin:0 0 6px}
+  .fine{font-size:11.5px; font-style:italic}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <a class="home" href="../">← the almanac</a>
+    <div class="kicker">The Emulsion Observatory · Est. 2026</div>
+    <h1>Watch Paint Dry</h1>
+    <p class="dek">A patient simulation of a freshly painted wall returning to a state of rest. Temperature and humidity really do change the dry time. There is no winning. There is only the wall.</p>
+  </header>
+
+  <div class="stage">
+    <!-- OBSERVATION WINDOW -->
+    <section class="frame">
+      <canvas id="wall" width="720" height="460" aria-label="A wall of drying paint"></canvas>
+      <div class="glass"></div>
+      <div class="plaque" id="plaque">Applying first coat…</div>
+    </section>
+
+    <!-- INSTRUMENTS + CONTROLS -->
+    <div>
+      <section class="panel" style="margin-bottom:16px">
+        <h2>Drying telemetry</h2>
+        <div class="body">
+          <div class="gauge"><span class="k">Phase</span><span class="v"><span class="phasepill" id="g-phase">Wet</span></span></div>
+          <div class="gauge"><span class="k">Elapsed (paint-time)</span><span class="v" id="g-elapsed">just applied</span></div>
+          <div class="gauge"><span class="k">Time you have watched</span><span class="v" id="g-watch">0:00</span></div>
+          <div class="gauge"><span class="k">Surface sheen</span><span class="v" id="g-sheen">100%</span></div>
+          <div class="gauge"><span class="k">Solvent off-gassed</span><span class="v" id="g-voc">0%</span></div>
+          <div class="gauge"><span class="k">Film hardness</span><span class="v" id="g-hard">wet — 6B</span></div>
+          <div class="gauge"><span class="k">Cure to hardened film</span><span class="v" id="g-curepct">0%</span></div>
+          <div class="bar"><i id="g-curebar"></i></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Specification</h2>
+        <div class="body">
+          <label class="ctl">Colour</label>
+          <div class="swatches" id="swatches"></div>
+          <div class="customwrap">
+            <input type="color" id="custom" value="#8899a6" aria-label="Custom colour">
+            <span>…or mix your own. Name pending.</span>
+          </div>
+
+          <label class="ctl">Finish</label>
+          <div class="seg" id="finish"></div>
+
+          <div class="env">
+            <div>
+              <label class="ctl">Room temp · <span id="tempV">20</span>°C</label>
+              <input type="range" id="temp" min="5" max="35" step="1" value="20" aria-label="Room temperature in degrees Celsius">
+            </div>
+            <div>
+              <label class="ctl">Humidity · <span id="humV">50</span>%</label>
+              <input type="range" id="hum" min="20" max="95" step="1" value="50" aria-label="Relative humidity, percent">
+            </div>
+          </div>
+
+          <label class="ctl">Observation speed</label>
+          <div class="seg" id="speed"></div>
+
+          <div class="btnrow">
+            <button class="btn" id="recoat">Apply a fresh coat</button>
+            <button class="btn ghost" id="sound">Extractor fan: off</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="stage" style="margin-top:16px">
+    <section class="panel">
+      <h2>Curator's log</h2>
+      <div class="body"><div class="log" id="log"></div></div>
+    </section>
+    <section class="panel">
+      <h2>Certificates of patience</h2>
+      <div class="body"><div class="ach" id="ach"></div>
+        <p class="fine" style="margin:12px 0 0">Awarded for time genuinely spent watching. They persist between visits.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="colophon">
+    <h3>About this instrument</h3>
+    <p>This began as a dare. A boy asked, mostly joking, for a website where you could watch paint dry — so we built one and took it seriously. The wall is a coarse film model: thousands of little patches of emulsion, each losing its wet <em>sheen</em> at a slightly different moment, so a drying front creeps across the surface the way it does on a real wall (edges and thin spots first). The clock is honest to the physics: a coat that is <em>touch-dry</em> in twenty minutes at 20&nbsp;°C and 50% humidity will loiter for hours in a cold, damp room, and a full <em>cure</em> to a hardened film takes weeks. Warm it up, open a window, and watch the numbers fall.</p>
+    <p class="fine">Vanilla JavaScript on a single canvas. No frameworks, no build step, no paint fumes. The extractor-fan hum, if you switch it on, is synthesised. Best enjoyed slowly.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var cv = document.getElementById('wall');
+  var ctx = cv.getContext('2d');
+  var reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- Named swatches (a nod to a certain English colour card) ----------
+  var COLOURS = [
+    {name:"Elephant's Breath", hex:"#cdc4b6"},
+    {name:"Skimming Stone",    hex:"#d8d1c4"},
+    {name:"Borrowed Light",    hex:"#dfe6e3"},
+    {name:"Dead Salmon",       hex:"#b79a90"},
+    {name:"Railings",          hex:"#33373b"},
+    {name:"Hague Blue",        hex:"#2c3a45"},
+    {name:"Calke Green",       hex:"#6f7355"},
+    {name:"India Yellow",      hex:"#c8932f"}
+  ];
+
+  // ---- Finish profiles. Durations are paint-time MINUTES at the reference
+  //      climate (20C / 50% RH). glossMax is peak wet-sheen strength. --------
+  var FINISHES = {
+    Matt:     {touch:20, recoat:120, hard:360,  cure:20160, gloss:0.16},
+    Eggshell: {touch:30, recoat:180, hard:480,  cure:30240, gloss:0.34},
+    Satin:    {touch:45, recoat:240, hard:600,  cure:36000, gloss:0.55},
+    Gloss:    {touch:90, recoat:360, hard:960,  cure:43200, gloss:0.95}
+  };
+  var HARDNESS = ["6B","5B","4B","3B","2B","B","HB","F","H","2H"]; // soft → hard
+
+  var SPEEDS = [
+    {label:"Real time",   mpr:1/60},   // paint-minutes per real second
+    {label:"×60",         mpr:1},
+    {label:"×360",        mpr:6},
+    {label:"×3600",       mpr:60}
+  ];
+
+  var ACH = [
+    {id:"s30",  t:30,  name:"First Coat"},
+    {id:"s120", t:120, name:"Touch-Dry Club"},
+    {id:"s300", t:300, name:"Connoisseur of Emulsion"},
+    {id:"s600", t:600, name:"Zen Master of Latency"},
+    {id:"s1800",t:1800,name:"The Wall & I are One"}
+  ];
+
+  // ---- State -------------------------------------------------------------
+  var state = {
+    colour: COLOURS[0].hex,
+    colourName: COLOURS[0].name,
+    finish: "Matt",
+    temp: 20, hum: 50,
+    speed: 2,              // index into SPEEDS
+    paintMin: 0,           // elapsed paint-time in minutes
+    watchSec: 0,           // real seconds watched
+    lastPhase: -1,
+    coat: 1
+  };
+  var LSK = "0x4d44.paintdry.v1";
+  var earned = {};
+  try{ earned = JSON.parse(localStorage.getItem(LSK)) || {}; }catch(e){ earned = {}; }
+
+  // ---- Film grid (per-cell dry offsets) ----------------------------------
+  var cols=0, rows=0, cell=12, off=null, edge=null;
+  function seedGrid(){
+    cols = Math.max(20, Math.ceil(cv.width/cell));
+    rows = Math.max(14, Math.ceil(cv.height/cell));
+    off = new Float32Array(cols*rows);
+    edge = new Float32Array(cols*rows);
+    for(var y=0;y<rows;y++){
+      for(var x=0;x<cols;x++){
+        var i=y*cols+x;
+        // organic blotch field via layered sines + jitter (no external noise)
+        var n = Math.sin(x*0.7+y*0.31)*0.5 + Math.sin(x*0.19-y*0.53)*0.35
+              + Math.sin((x+y)*0.27)*0.25;
+        n = (n+1.1)/2.2;                 // ~0..1
+        var jitter = ((x*73+y*151+x*y*13)%97)/97;
+        n = n*0.7 + jitter*0.3;
+        // edges & top dry a little sooner (thinner film, more airflow)
+        var ex = Math.min(x, cols-1-x)/(cols*0.5);
+        var ey = Math.min(y, rows-1-y)/(rows*0.5);
+        var e = Math.min(1, (Math.min(ex,ey)*1.15));
+        edge[i] = 0.78 + e*0.34;         // >1 dries later (centre), <1 sooner
+        off[i] = n;                      // 0 dries first, 1 dries last
+      }
+    }
+  }
+
+  // ---- Colour helpers ----------------------------------------------------
+  function hexToRgb(h){ h=h.replace('#',''); if(h.length===3) h=h.replace(/./g,'$&$&');
+    return {r:parseInt(h.substr(0,2),16),g:parseInt(h.substr(2,2),16),b:parseInt(h.substr(4,2),16)}; }
+  function mix(a,b,t){ return {r:a.r+(b.r-a.r)*t,g:a.g+(b.g-a.g)*t,b:a.b+(b.b-a.b)*t}; }
+  function css(c){ return 'rgb('+(c.r|0)+','+(c.g|0)+','+(c.b|0)+')'; }
+  function shade(c,f){ return {r:c.r*f,g:c.g*f,b:c.b*f}; }
+
+  // ---- Environment → dry-rate multiplier (real physics-ish) --------------
+  // Warmer = faster (lower multiplier); damper = slower (higher multiplier).
+  function envFactor(){
+    var tempF = Math.pow(2,(20-state.temp)/9);   // 29C≈0.5×, 11C≈2×
+    var humF  = Math.pow(2,(state.hum-50)/38);    // 88%≈2×, 12%… clamped below
+    return Math.max(0.28, Math.min(4.5, tempF*humF));
+  }
+  function durations(){
+    var f=FINISHES[state.finish], m=envFactor();
+    return {touch:f.touch*m, recoat:f.recoat*m, hard:f.hard*m, cure:f.cure*m, gloss:f.gloss};
+  }
+
+  // ---- Phase model -------------------------------------------------------
+  var PHASES = ["Wet","Touch-dry","Recoat-ready","Hard-dry","Curing","Cured"];
+  function phaseIndex(d){
+    var t=state.paintMin;
+    if(t < d.touch)  return 0;
+    if(t < d.recoat) return 1;
+    if(t < d.hard)   return 2;
+    if(t < d.cure*0.5) return 3;
+    if(t < d.cure)   return 4;
+    return 5;
+  }
+  // Global surface-dry progress 0..1 (drives the visible sheen loss)
+  function surfaceProgress(d){ return Math.min(1, state.paintMin/(d.touch*1.4)); }
+  function cureProgress(d){ return Math.min(1, state.paintMin/d.cure); }
+
+  // ---- Render ------------------------------------------------------------
+  function render(){
+    var d = durations();
+    var base = hexToRgb(state.colour);
+    var wetCol = shade(base, 0.86);            // wet emulsion reads a touch darker
+    var dryCol = mix(base, {r:255,g:255,b:255}, state.finish==="Gloss"?0.0:0.05); // matte dries a hair lighter
+    var sp = surfaceProgress(d);
+    var glossMax = d.gloss;
+
+    for(var y=0;y<rows;y++){
+      for(var x=0;x<cols;x++){
+        var i=y*cols+x;
+        // local drying threshold: cell wet until progress passes its offset
+        var thr = off[i]*edge[i];
+        // wetness with a soft transition band around the threshold.
+        // Drive to 1.3 so even the last, thickest centre cells reach w=0
+        // (thr can approach ~1.12) — the wall must go truly still when cured.
+        var w = 1 - smooth(thr-0.14, thr+0.14, sp*1.3);
+        var c = mix(dryCol, wetCol, w);
+        // gentle vertical roller streak texture, stronger as it goes matte.
+        // Indexed by pixel (x*cell) so the streak spacing is fixed regardless
+        // of cell size.
+        var streak = Math.sin(x*cell*0.14)* (2.2*(1-w));
+        c = {r:c.r-streak, g:c.g-streak, b:c.b-streak};
+        ctx.fillStyle = css(c);
+        ctx.fillRect(x*cell, y*cell, cell+1, cell+1);
+      }
+    }
+
+    // Wet specular sheen: a broad soft highlight, fading as surface dries.
+    var sheen = Math.max(0, 1-sp) * glossMax;
+    if(sheen>0.01){
+      var t = reduceMotion ? 0 : state.paintMin*0.03;
+      var gx = cv.width*(0.32+0.14*Math.sin(t*0.6));
+      var gy = cv.height*(0.30+0.10*Math.cos(t*0.5));
+      var g = ctx.createRadialGradient(gx,gy,10, gx,gy, cv.width*0.85);
+      g.addColorStop(0,'rgba(255,255,255,'+(0.55*sheen)+')');
+      g.addColorStop(0.35,'rgba(255,255,255,'+(0.16*sheen)+')');
+      g.addColorStop(1,'rgba(255,255,255,0)');
+      ctx.globalCompositeOperation='lighter';
+      ctx.fillStyle=g; ctx.fillRect(0,0,cv.width,cv.height);
+      // a faint second glint for gloss finishes
+      if(glossMax>0.4){
+        var g2=ctx.createLinearGradient(0,0,cv.width,cv.height);
+        g2.addColorStop(0,'rgba(255,255,255,0)');
+        g2.addColorStop(0.5,'rgba(255,255,255,'+(0.10*sheen)+')');
+        g2.addColorStop(1,'rgba(255,255,255,0)');
+        ctx.fillStyle=g2; ctx.fillRect(0,0,cv.width,cv.height);
+      }
+      ctx.globalCompositeOperation='source-over';
+    }
+
+    // Vignette for the framed-window feel
+    var vg=ctx.createRadialGradient(cv.width/2,cv.height/2,cv.height*0.35, cv.width/2,cv.height/2,cv.height*0.85);
+    vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(1,'rgba(0,0,0,0.16)');
+    ctx.fillStyle=vg; ctx.fillRect(0,0,cv.width,cv.height);
+  }
+  function smooth(a,b,x){ if(x<=a)return 0; if(x>=b)return 1; var t=(x-a)/(b-a); return t*t*(3-2*t); }
+
+  // ---- Readouts ----------------------------------------------------------
+  function fmtPaint(min){
+    if(min<1) return "just applied";
+    var m=Math.floor(min);
+    if(m<60) return m+" min";
+    var h=Math.floor(m/60);
+    if(h<24) return h+" h "+(m%60)+" m";
+    var day=Math.floor(h/24);
+    return day+" d "+(h%24)+" h";
+  }
+  function fmtWatch(s){ var m=Math.floor(s/60), ss=Math.floor(s%60); return m+":"+(ss<10?"0":"")+ss; }
+
+  var elP=document.getElementById('g-phase'), elE=document.getElementById('g-elapsed'),
+      elW=document.getElementById('g-watch'), elS=document.getElementById('g-sheen'),
+      elV=document.getElementById('g-voc'), elH=document.getElementById('g-hard'),
+      elC=document.getElementById('g-curepct'), elCB=document.getElementById('g-curebar'),
+      plaque=document.getElementById('plaque');
+
+  function updateReadouts(){
+    var d=durations(), ph=phaseIndex(d), sp=surfaceProgress(d), cp=cureProgress(d);
+    elP.textContent=PHASES[ph];
+    elE.textContent=fmtPaint(state.paintMin);
+    elW.textContent=fmtWatch(state.watchSec);
+    elS.textContent=Math.round(Math.max(0,1-sp)*100)+"%";
+    elV.textContent=Math.round(sp*100)+"%";
+    var hi=Math.min(HARDNESS.length-1, Math.floor(cp*(HARDNESS.length-1)+ (ph>=1?0:-6)));
+    hi=Math.max(0,hi);
+    elH.textContent=(ph===0?"wet — ":"")+HARDNESS[hi];
+    elC.textContent=Math.round(cp*100)+"%";
+    elCB.style.width=(cp*100)+"%";
+
+    var msg;
+    if(ph===0) msg="Coat "+state.coat+" · <b>"+state.colourName+"</b> — surface wet, sheen high.";
+    else if(ph===1) msg="Touch-dry. Tacky to a careful finger. Do not lean.";
+    else if(ph===2) msg="Ready for a recoat, should you wish to prolong this.";
+    else if(ph===3) msg="Hard-dry. It resists a fingernail. The drama subsides.";
+    else if(ph===4) msg="Curing. Solvent all but gone; the film hardens for weeks.";
+    else msg="Fully cured. The wall has achieved perfect stillness. Well watched.";
+    plaque.innerHTML=msg;
+
+    // log phase transitions
+    if(ph>state.lastPhase){
+      for(var k=Math.max(0,state.lastPhase+1);k<=ph;k++){
+        logLine(fmtPaint(state.paintMin), PHASES[k]);
+      }
+      state.lastPhase=ph;
+    }
+  }
+
+  var logEl=document.getElementById('log');
+  function logLine(stamp, phase){
+    var div=document.createElement('div');
+    div.innerHTML="<b>"+stamp+"</b> — surface reached <b>"+phase+"</b>.";
+    logEl.insertBefore(div, logEl.firstChild);
+  }
+
+  // ---- Achievements ------------------------------------------------------
+  var achEl=document.getElementById('ach');
+  function renderAch(){
+    achEl.innerHTML="";
+    ACH.forEach(function(a){
+      var b=document.createElement('span');
+      b.className="badge"+(earned[a.id]?" on":"");
+      b.textContent=(earned[a.id]?"✓ ":"")+a.name;
+      b.title=(earned[a.id]?"Earned":"Watch for "+fmtWatch(a.t));
+      achEl.appendChild(b);
+    });
+  }
+  function checkAch(){
+    var changed=false;
+    ACH.forEach(function(a){ if(!earned[a.id] && state.watchSec>=a.t){ earned[a.id]=true; changed=true; } });
+    if(changed){ try{localStorage.setItem(LSK,JSON.stringify(earned));}catch(e){} renderAch(); }
+  }
+
+  // ---- Controls UI -------------------------------------------------------
+  var swWrap=document.getElementById('swatches');
+  COLOURS.forEach(function(c){
+    var b=document.createElement('button');
+    b.className="sw"; b.style.background=c.hex; b.setAttribute('aria-pressed', c.hex===state.colour);
+    b.innerHTML='<span>'+c.name+'</span>';
+    b.title=c.name;
+    b.onclick=function(){ state.colour=c.hex; state.colourName=c.name; document.getElementById('custom').value=c.hex; syncSw(); };
+    swWrap.appendChild(b);
+  });
+  function syncSw(){ [].forEach.call(swWrap.children,function(el,i){ el.setAttribute('aria-pressed', COLOURS[i].hex===state.colour); }); }
+  document.getElementById('custom').addEventListener('input', function(e){
+    state.colour=e.target.value; state.colourName="Bespoke ("+e.target.value+")"; syncSw();
+  });
+
+  function seg(id, items, get, set, label){
+    var wrap=document.getElementById(id);
+    items.forEach(function(it,idx){
+      var b=document.createElement('button');
+      b.textContent=label(it,idx);
+      b.onclick=function(){ set(it,idx); [].forEach.call(wrap.children,function(el,j){ el.setAttribute('aria-pressed', j===get()); }); };
+      wrap.appendChild(b);
+    });
+    [].forEach.call(wrap.children,function(el,j){ el.setAttribute('aria-pressed', j===get()); });
+  }
+  seg('finish', Object.keys(FINISHES), function(){return Object.keys(FINISHES).indexOf(state.finish);},
+      function(it){ state.finish=it; }, function(it){return it;});
+  seg('speed', SPEEDS, function(){return state.speed;}, function(it,i){ state.speed=i; }, function(it){return it.label;});
+
+  document.getElementById('temp').addEventListener('input',function(e){ state.temp=+e.target.value; document.getElementById('tempV').textContent=state.temp; });
+  document.getElementById('hum').addEventListener('input',function(e){ state.hum=+e.target.value; document.getElementById('humV').textContent=state.hum; });
+
+  document.getElementById('recoat').addEventListener('click',function(){
+    state.paintMin=0; state.lastPhase=-1; state.coat++;
+    logEl.innerHTML=""; logLine("00 min","Wet (new coat "+state.coat+")");
+    state.lastPhase=0;
+  });
+
+  // ---- Optional ambient extractor-fan hum --------------------------------
+  var actx=null, fanGain=null, fanOn=false;
+  document.getElementById('sound').addEventListener('click',function(){
+    var btn=this;
+    try{
+      if(!actx){
+        actx=new (window.AudioContext||window.webkitAudioContext)();
+        var len=actx.sampleRate*2, buf=actx.createBuffer(1,len,actx.sampleRate), data=buf.getChannelData(0);
+        var last=0;
+        for(var i=0;i<len;i++){ var wn=Math.random()*2-1; last=(last+0.02*wn)/1.02; data[i]=last*3.2; } // brownish
+        var src=actx.createBufferSource(); src.buffer=buf; src.loop=true;
+        var lp=actx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=420;
+        fanGain=actx.createGain(); fanGain.gain.value=0;
+        src.connect(lp); lp.connect(fanGain); fanGain.connect(actx.destination); src.start();
+      }
+      if(actx.state==='suspended') actx.resume();
+      fanOn=!fanOn;
+      fanGain.gain.setTargetAtTime(fanOn?0.08:0, actx.currentTime, 0.4);
+      btn.textContent="Extractor fan: "+(fanOn?"on":"off");
+    }catch(e){ btn.textContent="Extractor fan: unavailable"; }
+  });
+
+  // ---- Responsive canvas -------------------------------------------------
+  function resize(){
+    var w=Math.min(760, cv.parentElement.clientWidth-0);
+    var h=Math.round(w*0.64);
+    cv.width=Math.round(w); cv.height=h;
+    seedGrid();
+  }
+  window.addEventListener('resize', resize);
+
+  // ---- Main loop ---------------------------------------------------------
+  var prev=null;
+  function loop(ts){
+    if(prev==null) prev=ts;
+    var dt=Math.min(0.1,(ts-prev)/1000); prev=ts;
+    state.watchSec+=dt;
+    state.paintMin+=dt*SPEEDS[state.speed].mpr;
+    render();
+    updateReadouts();
+    checkAch();
+    requestAnimationFrame(loop);
+  }
+
+  // ---- Boot --------------------------------------------------------------
+  resize();
+  renderAch();
+  logLine("00 min","Wet");
+  state.lastPhase=0;
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
