@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "japanese-wordle",
+    title: "Kotoba",
+    tagline: "A Wordle for learning Japanese: guess a JLPT N5 word in kana. Beyond the usual green/amber tiles, gojūon hint pips show when your kana shares the consonant row or vowel column with the answer — teaching the 五十音 table as you play. Type romaji or tap the kana keyboard. Browser React, no build step.",
+    url: "https://0x4d44.github.io/japanese-wordle/",
+    illustration: "ill-kotoba",
+    date: "2026-07-04T10:00:00",
+    year: 2026,
+    tag: "games",
+    real: true,
+  },
+  {
     slug: "fifty-hertz",
     title: "Fifty Hertz",
     tagline: "Hold Scotland's grid dead on 50 Hz from the 1953 NSHEB control room at Pitlochry. Fight a momentum-heavy needle, read the half-time TV-pickup surges coming, and catch them by pre-spinning Cruachan — the Hollow Mountain — across fifty years of Highland winters, sheep in the intake and generator trips as the tech sharpens under your hands. A grid-balancing arcade in vanilla JS on a canvas, with a synthesised WebAudio hum.",
