@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "nettles",
+    title: "The Nettle",
+    tagline: "Everything about the stinging nettle: how it grows, how its glass-needle sting actually works, what it developed from, and the thousand things — soup, cloth, medicine, myth — people have made from it. Magnify a trichome and fire it, tour the family tree, and rank the world's most agonising nettles. Vanilla JS, drawn live in SVG; fact-checked by a multi-agent research pass.",
+    url: "https://0x4d44.github.io/nettles/",
+    illustration: "ill-nettle",
+    date: "2026-07-04T12:00:00",
+    year: 2026,
+    tags: ["science", "history"],
+    real: true,
+  },
+  {
     slug: "japanese-wordle",
     title: "Kotoba",
     tagline: "A Wordle for learning Japanese: guess a JLPT N5 word in kana. Beyond the usual green/amber tiles, gojūon hint pips show when your kana shares the consonant row or vowel column with the answer — teaching the 五十音 table as you play. Type romaji or tap the kana keyboard. Browser React, no build step.",
