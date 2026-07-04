@@ -38,6 +38,17 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "paint-drying",
+    title: "Watch Paint Dry",
+    tagline: "A wall of fresh emulsion, drying in real time — and yes, that is the whole thing. Choose a colour and finish, then watch the wet sheen fade to matt as a drying front creeps across the surface. Warm the room or drop the humidity and the dry-time genuinely moves. Deadpan telemetry, and certificates for your patience. Vanilla JS on a canvas.",
+    url: "https://0x4d44.github.io/paint-drying/",
+    illustration: "ill-paint",
+    date: "2026-07-04T13:00:00",
+    year: 2026,
+    tags: ["simulation", "science"],
+    real: true,
+  },
+  {
     slug: "fifty-hertz",
     title: "Fifty Hertz",
     tagline: "Hold Scotland's grid dead on 50 Hz from the 1953 NSHEB control room at Pitlochry. Fight a momentum-heavy needle, read the half-time TV-pickup surges coming, and catch them by pre-spinning Cruachan — the Hollow Mountain — across fifty years of Highland winters, sheep in the intake and generator trips as the tech sharpens under your hands. A grid-balancing arcade in vanilla JS on a canvas, with a synthesised WebAudio hum.",
