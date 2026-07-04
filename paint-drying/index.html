@@ -125,6 +125,27 @@
   .cert .sig .line{border-top:1px solid var(--ink); padding-top:5px; font-size:11px; color:var(--muted); font-family:var(--mono)}
   .cert .scribble{font-family:"Segoe Script","Brush Script MT","Comic Sans MS",cursive; font-size:24px; color:#3a3630; transform:rotate(-3deg); display:inline-block; margin:0 0 4px 6px; line-height:1}
   .cert .seal{width:74px; height:74px; border-radius:50%; border:2px solid var(--accent); color:var(--accent); display:flex; align-items:center; justify-content:center; text-align:center; font-family:var(--mono); font-size:8px; letter-spacing:.08em; line-height:1.3; flex:0 0 auto; transform:rotate(-6deg)}
+  /* --- Diversions (amusements that cannot be won) --- */
+  .games{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+  @media(max-width:620px){ .games{grid-template-columns:1fr} }
+  .game{border:1px solid var(--line); border-radius:7px; padding:12px; background:#fff}
+  .game h4{font-family:var(--mono); font-size:12px; letter-spacing:.05em; margin:0 0 10px; color:var(--ink); font-weight:600}
+  .game .tag2{font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--warm); border:1px solid var(--line); border-radius:999px; padding:2px 6px; margin-left:5px; white-space:nowrap}
+  .gstat{font-family:var(--serif); font-style:italic; font-size:12.5px; color:var(--muted); min-height:2.6em; margin-top:9px}
+  .gfoot{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; flex-wrap:wrap}
+  .tally{font-family:var(--mono); font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums}
+  .btn.sm{padding:5px 9px; font-size:11px}
+  .ttt,.mole{display:grid; grid-template-columns:repeat(3,1fr); gap:5px; width:150px}
+  .ttt button{aspect-ratio:1; border:1px solid var(--line); background:var(--panel); font-family:var(--mono); font-size:22px; font-weight:600; color:var(--ink); cursor:pointer; border-radius:4px; line-height:1; padding:0}
+  .ttt button:hover:not(:disabled){border-color:var(--accent)}
+  .ttt button:disabled{cursor:default; color:var(--muted)}
+  .rps{display:flex; gap:6px}
+  .rps button{flex:1; font-family:var(--mono); font-size:12px; padding:9px 4px; border:1px solid var(--line); background:var(--panel); border-radius:6px; cursor:pointer; color:var(--ink)}
+  .rps button:hover{border-color:var(--accent)}
+  .mole button{aspect-ratio:1; border-radius:50%; border:1px solid var(--line); background:radial-gradient(circle at 50% 34%, #efe8d8, #d7cdb6); cursor:pointer; box-shadow:inset 0 5px 9px -4px rgba(0,0,0,.45); padding:0}
+  .mole button:hover{border-color:var(--accent)}
+  .coin{width:46px; height:46px; border-radius:50%; border:2px solid var(--warm); color:var(--warm); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:11px; letter-spacing:.03em; background:#f5edd8}
+  .sw:focus-visible, .ttt button:focus-visible, .rps button:focus-visible, .mole button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
   #certprint{display:none}
   /* Only isolate the certificate for print once one has been issued; before
      that, an ordinary Ctrl+P just prints the page (not a blank sheet). */
@@ -244,6 +265,41 @@
       <div class="certwrap" id="certwrap" hidden>
         <div class="cert" id="cert"></div>
         <div class="btnrow"><button class="btn ghost" id="printcert">Print certificate</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Diversions</h2>
+    <div class="body">
+      <p class="fine" style="margin:0 0 12px">While the paint dries, the Observatory provides a small selection of amusements. For the avoidance of doubt, none of them can be won.</p>
+      <div class="games">
+        <div class="game">
+          <h4>Noughts &amp; Crosses <span class="tag2">Draw Edition</span></h4>
+          <div class="ttt" id="ttt"></div>
+          <div class="gstat" id="ttt-stat">Your move (X). Winning is not permitted for either side.</div>
+          <div class="gfoot"><button class="btn ghost sm" id="ttt-reset">New game</button> <span class="tally" id="ttt-tally">Played 0 · Won 0 · Lost 0 · Drawn 0</span></div>
+        </div>
+        <div class="game">
+          <h4>Rock, Paper, Scissors <span class="tag2">Mirror Opponent</span></h4>
+          <div class="rps" id="rps">
+            <button data-m="Rock">Rock</button><button data-m="Paper">Paper</button><button data-m="Scissors">Scissors</button>
+          </div>
+          <div class="gstat" id="rps-stat">Choose your throw. The opponent has studied you closely.</div>
+          <div class="gfoot"><span class="tally" id="rps-tally">Draws 0 · Wins 0 · Losses 0</span></div>
+        </div>
+        <div class="game">
+          <h4>Whack-a-Mole <span class="tag2">No Moles</span></h4>
+          <div class="mole" id="mole"></div>
+          <div class="gstat" id="mole-stat">Press Start and watch closely. The moles are protected at this site.</div>
+          <div class="gfoot"><button class="btn ghost sm" id="mole-start">Start (30 s)</button> <span class="tally" id="mole-tally">Score 0</span></div>
+        </div>
+        <div class="game">
+          <h4>Coin Toss <span class="tag2">Balanced Coin</span></h4>
+          <div class="coin" id="coin">·</div>
+          <div class="gstat" id="coin-stat">A remarkably well-balanced coin.</div>
+          <div class="gfoot"><button class="btn ghost sm" id="coin-toss">Toss</button> <span class="tally" id="coin-tally">Heads 0 · Tails 0 · Edge 0</span></div>
+        </div>
       </div>
     </div>
   </section>
@@ -706,6 +762,93 @@
       btn.textContent="Extractor fan: "+(fanOn?"on":"off");
     }catch(e){ btn.textContent="Extractor fan: unavailable"; }
   });
+
+  // ---- Diversions (amusements that cannot be won) --------------------------
+  // Noughts & Crosses: winning is not permitted for either side. A move that
+  // would complete a line is refused; the opponent likewise never completes
+  // one (declining its turn if it must). The game therefore always draws.
+  (function(){
+    var wrap=document.getElementById('ttt'), stat=document.getElementById('ttt-stat'), tallyEl=document.getElementById('ttt-tally');
+    var board, over, played=0, drawn=0;
+    var LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    function lineOf(mark){ for(var i=0;i<8;i++){ var l=LINES[i]; if(board[l[0]]===mark&&board[l[1]]===mark&&board[l[2]]===mark) return true; } return false; }
+    function completes(i,mark){ board[i]=mark; var w=lineOf(mark); board[i]=''; return w; }
+    function oRespond(){
+      var cands=[], i;
+      for(i=0;i<9;i++){ if(board[i]==='' && !completes(i,'O')) cands.push(i); }
+      if(!cands.length) return;                       // every move would win — O declines
+      var block=cands.filter(function(c){ return completes(c,'X'); });   // spoil the player's line
+      if(block.length){ board[block[0]]='O'; return; }
+      var order=[4,0,2,6,8,1,3,5,7];
+      for(i=0;i<order.length;i++){ if(cands.indexOf(order[i])>=0){ board[order[i]]='O'; return; } }
+    }
+    function xStuck(){ for(var i=0;i<9;i++){ if(board[i]==='' && !completes(i,'X')) return false; } return true; }
+    function render(){ wrap.innerHTML='';
+      for(var i=0;i<9;i++){ (function(i){ var b=document.createElement('button');
+        b.textContent=board[i]; b.disabled=over||board[i]!==''; b.setAttribute('aria-label','cell '+(i+1)+(board[i]?': '+board[i]:': empty'));
+        b.onclick=function(){ move(i); }; wrap.appendChild(b); })(i); } }
+    function move(i){ if(over||board[i])return;
+      if(completes(i,'X')){ stat.textContent='That move would win the game, which is not permitted. Choose another.'; return; }
+      board[i]='X';
+      if(board.indexOf('')<0){ return finish(); }
+      oRespond();
+      if(board.indexOf('')<0 || xStuck()){ return finish(); }
+      stat.textContent='Your move. Winning remains off the table.'; render();
+    }
+    function finish(){ over=true; played++; drawn++;
+      stat.textContent='A draw. As mandated — a fair and equitable outcome.';
+      tallyEl.textContent='Played '+played+' · Won 0 · Lost 0 · Drawn '+drawn;
+      render();
+      obsRecord('Diversion concluded (noughts & crosses). Result: draw.', true);
+    }
+    function reset(){ board=['','','','','','','','','']; over=false;
+      stat.textContent='Your move (X). Winning is not permitted for either side.'; render(); }
+    document.getElementById('ttt-reset').addEventListener('click', reset);
+    reset();
+  })();
+
+  // Rock, Paper, Scissors: the opponent mirrors your throw. Every round a draw.
+  (function(){
+    var stat=document.getElementById('rps-stat'), tallyEl=document.getElementById('rps-tally');
+    var draws=0, wins=0, losses=0;
+    document.getElementById('rps').addEventListener('click', function(e){
+      var m=e.target && e.target.getAttribute && e.target.getAttribute('data-m'); if(!m)return;
+      draws++;
+      stat.textContent='You played '+m+'. The opponent played '+m+'. A draw.';
+      tallyEl.textContent='Draws '+draws+' · Wins '+wins+' · Losses '+losses;
+    });
+  })();
+
+  // Whack-a-Mole: a genuine 30-second countdown over a grid of holes. No mole
+  // ever appears. The final score is 0.
+  (function(){
+    var grid=document.getElementById('mole'), stat=document.getElementById('mole-stat'),
+        tallyEl=document.getElementById('mole-tally'), startBtn=document.getElementById('mole-start');
+    var running=false, left=0, timer=null;
+    for(var i=0;i<9;i++){ var b=document.createElement('button'); b.setAttribute('aria-label','empty hole');
+      b.onclick=function(){ if(running) stat.textContent='Nothing there.'; };
+      grid.appendChild(b); }
+    startBtn.addEventListener('click', function(){ if(running)return; running=true; left=30;
+      stat.textContent='In progress. Watch closely for moles.'; tallyEl.textContent='Score 0 · '+left+' s';
+      timer=setInterval(function(){ left--; tallyEl.textContent='Score 0 · '+left+' s';
+        if(left<=0){ clearInterval(timer); running=false;
+          stat.textContent='Time. Final score: 0. The moles are protected at this site.';
+          tallyEl.textContent='Score 0';
+          obsRecord('Diversion concluded (whack-a-mole). Moles encountered: 0.', true);
+        } }, 1000);
+    });
+  })();
+
+  // Coin Toss: a remarkably balanced coin. It lands on its edge.
+  (function(){
+    var coin=document.getElementById('coin'), stat=document.getElementById('coin-stat'),
+        tallyEl=document.getElementById('coin-tally'); var edge=0;
+    document.getElementById('coin-toss').addEventListener('click', function(){
+      edge++; coin.textContent='EDGE';
+      stat.textContent='The coin has come to rest on its edge. Please try again.';
+      tallyEl.textContent='Heads 0 · Tails 0 · Edge '+edge;
+    });
+  })();
 
   // ---- Responsive canvas -------------------------------------------------
   function resize(){
