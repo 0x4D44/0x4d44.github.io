@@ -96,6 +96,43 @@
   .colophon h3{font-family:var(--mono); font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--accent); margin:0 0 6px}
   .fine{font-size:11.5px; font-style:italic}
   a{color:var(--accent)}
+
+  /* --- Boring Pack v1: instrumentation, datasheet, certificate --- */
+  .cam{position:absolute; top:10px; right:12px; z-index:3; font-family:var(--mono); font-size:10px; letter-spacing:.06em; color:#f4efe4; background:rgba(20,17,12,.5); padding:4px 7px; border-radius:4px; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px)}
+  .cam .rec{color:#e5654a; animation:blink 1.6s steps(1) infinite}
+  @keyframes blink{50%{opacity:.12}}
+  @media(prefers-reduced-motion:reduce){ .cam .rec{animation:none} }
+  .tds{font-family:var(--mono); font-size:12px}
+  .tds .r{display:flex; justify-content:space-between; gap:14px; padding:4px 0; border-bottom:1px dotted var(--line)}
+  .tds .r:last-child{border-bottom:0}
+  .tds .r .k{color:var(--muted)}
+  .tds .r .v{color:var(--ink); text-align:right; font-variant-numeric:tabular-nums}
+  .obs{max-height:190px}
+  .obs div{color:var(--muted); padding:1px 0}
+  .obs .evt{color:var(--accent)}
+  .certwrap{margin-top:14px}
+  .cert{position:relative; border:2px solid var(--accent); border-radius:6px; padding:22px 24px; background:#fffdf8; color:#2a2620; font-family:var(--serif); overflow:hidden}
+  .cert .crown{font-family:var(--mono); font-size:10px; letter-spacing:.28em; text-transform:uppercase; color:var(--accent); text-align:center}
+  .cert h3{font-size:24px; text-align:center; margin:6px 0 2px; letter-spacing:.02em; font-weight:600}
+  .cert .sub{text-align:center; font-style:italic; color:var(--muted); margin:0 0 14px}
+  .cert p{margin:8px 0; font-size:15px; line-height:1.6}
+  .cert .stamp{position:absolute; top:24px; right:24px; transform:rotate(-11deg); border:3px double currentColor; border-radius:6px; padding:5px 12px; font-family:var(--mono); font-size:13px; font-weight:700; letter-spacing:.12em; opacity:.92}
+  .cert .stamp.cured{color:#3f7a4e}
+  .cert .stamp.wip{color:#b98a4e}
+  .cert .meta{display:flex; flex-wrap:wrap; gap:6px 26px; font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-top:12px}
+  .cert .sig{display:flex; justify-content:space-between; align-items:flex-end; margin-top:26px; gap:20px}
+  .cert .sigcol{flex:1; min-width:0}
+  .cert .sig .line{border-top:1px solid var(--ink); padding-top:5px; font-size:11px; color:var(--muted); font-family:var(--mono)}
+  .cert .scribble{font-family:"Segoe Script","Brush Script MT","Comic Sans MS",cursive; font-size:24px; color:#3a3630; transform:rotate(-3deg); display:inline-block; margin:0 0 4px 6px; line-height:1}
+  .cert .seal{width:74px; height:74px; border-radius:50%; border:2px solid var(--accent); color:var(--accent); display:flex; align-items:center; justify-content:center; text-align:center; font-family:var(--mono); font-size:8px; letter-spacing:.08em; line-height:1.3; flex:0 0 auto; transform:rotate(-6deg)}
+  #certprint{display:none}
+  /* Only isolate the certificate for print once one has been issued; before
+     that, an ordinary Ctrl+P just prints the page (not a blank sheet). */
+  @media print{
+    body.certified{background:#fff}
+    body.certified .wrap{display:none !important}
+    body.certified #certprint{display:block !important; padding:24px}
+  }
 </style>
 </head>
 <body>
@@ -113,6 +150,7 @@
       <canvas id="wall" width="720" height="460" aria-label="A wall of drying paint"></canvas>
       <div class="glass"></div>
       <div class="plaque" id="plaque">Applying first coat…</div>
+      <div class="cam"><span class="rec">●</span> REC · CAM 01 · WALL A · <span id="camtime">00:00:00</span></div>
     </section>
 
     <!-- INSTRUMENTS + CONTROLS -->
@@ -121,8 +159,10 @@
         <h2>Drying telemetry</h2>
         <div class="body">
           <div class="gauge"><span class="k">Phase</span><span class="v"><span class="phasepill" id="g-phase">Wet</span></span></div>
+          <div class="gauge"><span class="k">Surface activity index</span><span class="v" id="g-exc">0.0</span></div>
           <div class="gauge"><span class="k">Elapsed (paint-time)</span><span class="v" id="g-elapsed">just applied</span></div>
           <div class="gauge"><span class="k">Time you have watched</span><span class="v" id="g-watch">0:00</span></div>
+          <div class="gauge"><span class="k">Observed here, all visits</span><span class="v" id="g-life">—</span></div>
           <div class="gauge"><span class="k">Surface sheen</span><span class="v" id="g-sheen">100%</span></div>
           <div class="gauge"><span class="k">Solvent off-gassed</span><span class="v" id="g-voc">0%</span></div>
           <div class="gauge"><span class="k">Film hardness</span><span class="v" id="g-hard">wet — 6B</span></div>
@@ -180,12 +220,43 @@
     </section>
   </div>
 
+  <div class="stage" style="margin-top:16px">
+    <section class="panel">
+      <h2>Technical data sheet</h2>
+      <div class="body"><div class="tds" id="tds"></div>
+        <p class="fine" style="margin:10px 0 0">Indicative values only, for a nominal 12&nbsp;m² wall at the stated conditions. For guidance only; subject to revision without notice.</p>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Continuous observation record</h2>
+      <div class="body">
+        <div class="log obs" id="obslog"></div>
+        <p class="fine" style="margin:10px 0 0">An automatic record of all events observed at this station. Retained indefinitely.</p>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Certification</h2>
+    <div class="body">
+      <p class="fine" style="margin:0 0 10px">The Emulsion Observatory will, on request, issue a formal certificate attesting to the wall's current condition. A certificate stamped <b>Fully Cured</b> is reserved for the truly patient.</p>
+      <button class="btn" id="issue">Issue certificate</button>
+      <div class="certwrap" id="certwrap" hidden>
+        <div class="cert" id="cert"></div>
+        <div class="btnrow"><button class="btn ghost" id="printcert">Print certificate</button></div>
+      </div>
+    </div>
+  </section>
+
   <div class="colophon">
     <h3>About this instrument</h3>
     <p>This began as a dare. A boy asked, mostly joking, for a website where you could watch paint dry — so we built one and took it seriously. The wall is a coarse film model: thousands of little patches of emulsion, each losing its wet <em>sheen</em> at a slightly different moment, so a drying front creeps across the surface the way it does on a real wall (edges and thin spots first). The clock is honest to the physics: a coat that is <em>touch-dry</em> in twenty minutes at 20&nbsp;°C and 50% humidity will loiter for hours in a cold, damp room, and a full <em>cure</em> to a hardened film takes weeks. Warm it up, open a window, and watch the numbers fall.</p>
     <p class="fine">Vanilla JavaScript on a single canvas. No frameworks, no build step, no paint fumes. The extractor-fan hum, if you switch it on, is synthesised. Best enjoyed slowly.</p>
   </div>
 </div>
+
+<!-- print-only mirror of the certificate, kept outside .wrap so print CSS can isolate it -->
+<div id="certprint"></div>
 
 <script>
 (function(){
@@ -216,6 +287,14 @@
   };
   var HARDNESS = ["6B","5B","4B","3B","2B","B","HB","F","H","2H"]; // soft → hard
 
+  // ---- Per-finish datasheet figures (as boring and specific as possible) ---
+  var TDS = {
+    Matt:     {gu:"2 GU @ 60°",  solids:"36–40%", voc:"< 5 g/L (trace)"},
+    Eggshell: {gu:"12 GU @ 60°", solids:"38–42%", voc:"18 g/L"},
+    Satin:    {gu:"35 GU @ 60°", solids:"40–44%", voc:"29 g/L"},
+    Gloss:    {gu:"88 GU @ 60°", solids:"46–52%", voc:"41 g/L"}
+  };
+
   var SPEEDS = [
     {label:"Real time",   mpr:1/60},   // paint-minutes per real second
     {label:"×60",         mpr:1},
@@ -241,11 +320,19 @@
     paintMin: 0,           // elapsed paint-time in minutes
     watchSec: 0,           // real seconds watched
     lastPhase: -1,
-    coat: 1
+    coat: 1,
+    obsClock: 0,           // real-seconds accumulator for the observation record
+    saveClock: 0           // real-seconds accumulator for lifetime persistence
   };
   var LSK = "0x4d44.paintdry.v1";
+  var LSK_LIFE = "0x4d44.paintdry.life.v1";   // cumulative watch seconds, all visits
   var earned = {};
   try{ earned = JSON.parse(localStorage.getItem(LSK)) || {}; }catch(e){ earned = {}; }
+  var lifeBase = 0;
+  try{ lifeBase = parseFloat(localStorage.getItem(LSK_LIFE)) || 0; }catch(e){ lifeBase = 0; }
+  function saveLife(){ try{ localStorage.setItem(LSK_LIFE, String(lifeBase + state.watchSec)); }catch(e){} }
+  window.addEventListener('pagehide', saveLife);
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) saveLife(); });
 
   // ---- Film grid (per-cell dry offsets) ----------------------------------
   var cols=0, rows=0, cell=12, off=null, edge=null;
@@ -377,11 +464,20 @@
     return day+" d "+(h%24)+" h";
   }
   function fmtWatch(s){ var m=Math.floor(s/60), ss=Math.floor(s%60); return m+":"+(ss<10?"0":"")+ss; }
+  function fmtLife(s){ s=Math.floor(s);
+    if(s<60) return s+" s";
+    if(s<3600) return Math.floor(s/60)+" min "+(s%60)+" s";
+    var h=Math.floor(s/3600); return h+" h "+Math.floor((s%3600)/60)+" min";
+  }
+  function pad2(n){ return (n<10?"0":"")+n; }
+  function clockHMS(){ var t=new Date(); return pad2(t.getHours())+":"+pad2(t.getMinutes())+":"+pad2(t.getSeconds()); }
 
   var elP=document.getElementById('g-phase'), elE=document.getElementById('g-elapsed'),
       elW=document.getElementById('g-watch'), elS=document.getElementById('g-sheen'),
       elV=document.getElementById('g-voc'), elH=document.getElementById('g-hard'),
       elC=document.getElementById('g-curepct'), elCB=document.getElementById('g-curebar'),
+      elExc=document.getElementById('g-exc'), elLife=document.getElementById('g-life'),
+      camTime=document.getElementById('camtime'),
       plaque=document.getElementById('plaque');
 
   function updateReadouts(){
@@ -397,6 +493,11 @@
     elC.textContent=Math.round(cp*100)+"%";
     elCB.style.width=(cp*100)+"%";
 
+    // Grade of excitement: holds at 0.0, dips to -0.1 on rare occasion.
+    elExc.textContent = (Math.sin(state.watchSec*0.13) < -0.82) ? "-0.1" : "0.0";
+    elLife.textContent = fmtLife(lifeBase + state.watchSec);
+    camTime.textContent = clockHMS();
+
     var msg;
     if(ph===0) msg="Coat "+state.coat+" · <b>"+state.colourName+"</b> — surface wet, sheen high.";
     else if(ph===1) msg="Touch-dry. Tacky to a careful finger. Do not lean.";
@@ -410,9 +511,11 @@
     if(ph>state.lastPhase){
       for(var k=Math.max(0,state.lastPhase+1);k<=ph;k++){
         logLine(fmtPaint(state.paintMin), PHASES[k]);
+        obsRecord("Phase change noted: surface reached "+PHASES[k]+".", true);
       }
       state.lastPhase=ph;
     }
+    updateTDS(d);
   }
 
   var logEl=document.getElementById('log');
@@ -420,6 +523,103 @@
     var div=document.createElement('div');
     div.innerHTML="<b>"+stamp+"</b> — surface reached <b>"+phase+"</b>.";
     logEl.insertBefore(div, logEl.firstChild);
+  }
+
+  // ---- Continuous observation record (dutifully logs that nothing happened) --
+  var obsEl=document.getElementById('obslog');
+  var NOCHANGE=[
+    "No change observed.",
+    "No change observed.",
+    "No change observed.",
+    "Surface remains as previously described.",
+    "No change observed.",
+    "Wall stationary. No action required.",
+    "No change observed. Logged for completeness.",
+    "Conditions nominal. No change observed."
+  ];
+  var obsCount=0;
+  function obsRecord(text, isEvent){
+    var div=document.createElement('div');
+    if(isEvent) div.className="evt";
+    div.textContent=clockHMS()+" — "+text;
+    obsEl.insertBefore(div, obsEl.firstChild);
+    while(obsEl.childNodes.length>60) obsEl.removeChild(obsEl.lastChild);
+  }
+
+  // ---- Technical data sheet (rebuilt only when an input changes) ------------
+  var tdsEl=document.getElementById('tds'), tdsSig="";
+  function tdsRow(k,v){ return '<div class="r"><span class="k">'+k+'</span><span class="v">'+v+'</span></div>'; }
+  function updateTDS(d){
+    var f=state.finish, t=TDS[f];
+    var sig=[state.colourName,f,state.temp,state.hum].join("|");
+    if(sig===tdsSig) return;
+    tdsSig=sig;
+    tdsEl.innerHTML=
+      tdsRow("Product", "Observatory Emulsion") +
+      tdsRow("Colour", state.colourName) +
+      tdsRow("Colour reference", state.colour.toUpperCase()) +
+      tdsRow("Finish / sheen", f+" · "+t.gu) +
+      tdsRow("Volume solids", t.solids) +
+      tdsRow("VOC content", t.voc) +
+      tdsRow("Spreading rate", "12 m²/L per coat") +
+      tdsRow("Recommended coats", "2") +
+      tdsRow("Conditions", state.temp+" °C · "+state.hum+"% RH") +
+      tdsRow("Touch dry", fmtPaint(d.touch)) +
+      tdsRow("Recoat interval", fmtPaint(d.recoat)) +
+      tdsRow("Hard dry", fmtPaint(d.hard)) +
+      tdsRow("Full cure", fmtPaint(d.cure)) +
+      tdsRow("Application", "Brush, roller or spray") +
+      tdsRow("Flash point", "N/A (water-based)") +
+      tdsRow("Test method", "BS 3900 (notionally)") +
+      tdsRow("Shelf life", "36 months, unopened");
+  }
+
+  // ---- Certificate of drying -----------------------------------------------
+  var certEl=document.getElementById('cert'), certPrint=document.getElementById('certprint'),
+      certWrap=document.getElementById('certwrap');
+  function refNo(){
+    var n=Math.floor(Math.random()*900000)+100000;
+    return "EO-2026-"+n;
+  }
+  function todayStr(){
+    var m=["January","February","March","April","May","June","July","August","September","October","November","December"];
+    var t=new Date(); return t.getDate()+" "+m[t.getMonth()]+" "+t.getFullYear();
+  }
+  function buildCert(){
+    var d=durations(), ph=phaseIndex(d), cured=(ph>=5);
+    var stamp=cured
+      ? '<div class="stamp cured">FULLY CURED</div>'
+      : '<div class="stamp wip">DRYING IN PROGRESS</div>';
+    var attain=cured
+      ? "attained the condition of a <b>fully cured film</b>, and requires no further observation"
+      : "reached the condition of <b>"+PHASES[ph]+"</b>, and continues to dry in an orderly fashion";
+    return ''
+      + '<div class="crown">The Emulsion Observatory · Established 2026</div>'
+      + '<h3>Certificate of Drying</h3>'
+      + '<div class="sub">issued to the patient observer</div>'
+      + stamp
+      + '<p>This is to certify that a wall, coated in <b>'+state.colourName+'</b> ('+state.finish
+      + ' finish), and observed under controlled conditions of <b>'+state.temp+'&nbsp;°C</b> and <b>'
+      + state.hum+'% relative humidity</b>, has as of the date below '+attain+'.</p>'
+      + '<div class="meta">'
+      + '<span>Ref: '+refNo()+'</span>'
+      + '<span>Elapsed (paint-time): '+fmtPaint(state.paintMin)+'</span>'
+      + '<span>Observed: '+fmtWatch(state.watchSec)+'</span>'
+      + '<span>Coat: '+state.coat+'</span>'
+      + '<span>Issued: '+todayStr()+'</span>'
+      + '</div>'
+      + '<div class="sig">'
+      + '<div class="sigcol"><span class="scribble">A. Decorator</span><div class="line">Duty Observer, for and on behalf of the Observatory</div></div>'
+      + '<div class="seal">THE<br>EMULSION<br>OBSERVATORY</div>'
+      + '</div>';
+  }
+  function issueCert(){
+    var html=buildCert();
+    certEl.innerHTML=html;
+    certPrint.innerHTML='<div class="cert">'+html+'</div>';
+    certWrap.hidden=false;
+    document.body.classList.add('certified');
+    obsRecord("Certificate of drying issued.", true);
   }
 
   // ---- Achievements ------------------------------------------------------
@@ -476,6 +676,13 @@
     state.paintMin=0; state.lastPhase=-1; state.coat++;
     logEl.innerHTML=""; logLine("00 min","Wet (new coat "+state.coat+")");
     state.lastPhase=0;
+    obsRecord("Fresh coat applied (coat "+state.coat+"). Observation resumes.", true);
+  });
+
+  // ---- Certificate buttons -------------------------------------------------
+  document.getElementById('issue').addEventListener('click', issueCert);
+  document.getElementById('printcert').addEventListener('click', function(){
+    try{ window.print(); }catch(e){}
   });
 
   // ---- Optional ambient extractor-fan hum --------------------------------
@@ -510,12 +717,25 @@
   window.addEventListener('resize', resize);
 
   // ---- Main loop ---------------------------------------------------------
+  var OBS_EVERY=15;   // real seconds between "no change observed" entries
   var prev=null;
   function loop(ts){
     if(prev==null) prev=ts;
     var dt=Math.min(0.1,(ts-prev)/1000); prev=ts;
     state.watchSec+=dt;
     state.paintMin+=dt*SPEEDS[state.speed].mpr;
+
+    // Continuous observation record: dutifully note the absence of events.
+    state.obsClock+=dt;
+    if(state.obsClock>=OBS_EVERY){
+      state.obsClock=0;
+      obsRecord(NOCHANGE[obsCount % NOCHANGE.length], false);
+      obsCount++;
+    }
+    // Persist the lifetime tally every few seconds.
+    state.saveClock+=dt;
+    if(state.saveClock>=5){ state.saveClock=0; saveLife(); }
+
     render();
     updateReadouts();
     checkAch();
@@ -527,6 +747,9 @@
   renderAch();
   logLine("00 min","Wet");
   state.lastPhase=0;
+  updateTDS(durations());
+  obsRecord("Observation commenced. Awaiting developments.", true);
+  elLife.textContent=fmtLife(lifeBase);
   requestAnimationFrame(loop);
 })();
 </script>
