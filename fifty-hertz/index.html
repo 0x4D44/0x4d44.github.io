@@ -206,10 +206,13 @@ const Audio_ = {
   _buildPurr() {
     const ac = this.ac;
     const g = ac.createGain(); g.gain.value = 0; g.connect(this.master);
-    const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = 1760;
-    const trem = ac.createOscillator(); trem.type = 'sine'; trem.frequency.value = 0.3;
-    const tg = ac.createGain(); tg.gain.value = 0.5; trem.connect(tg); tg.connect(g.gain);
-    o.connect(g); o.start(); trem.start();
+    // warm, low "on-spec" shimmer — a soft major third above the 100Hz beat, gently
+    // low-passed so it never reads as a shrill whine.
+    const o = ac.createOscillator(); o.type = 'sine'; o.frequency.value = 262; // C4, warm
+    const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700; lp.connect(g);
+    const trem = ac.createOscillator(); trem.type = 'sine'; trem.frequency.value = 0.45;
+    const tg = ac.createGain(); tg.gain.value = 0.004; trem.connect(tg); tg.connect(g.gain); // subtle depth, not ±0.5
+    o.connect(lp); o.start(); trem.start();
     this.purr = o; this.purrGain = g;
   },
   setMute(m) {
@@ -220,6 +223,7 @@ const Audio_ = {
   tick(f, playing, imbalance) {
     if (!this.ok) return;
     const t = this.ac.currentTime;
+    const dtA = this._lastT ? Math.min(0.1, t - this._lastT) : 0; this._lastT = t;
     const dev = Math.abs(f - 50);
     // hum bed
     const humOn = playing ? 0.06 : 0.03;
@@ -240,8 +244,10 @@ const Audio_ = {
     } else {
       this.alarmGain.gain.setTargetAtTime(0, t, 0.15);
     }
-    // perfect-hold purr
-    this.purrGain.gain.setTargetAtTime(playing && dev < 0.08 ? 0.03 : 0, t, 0.25);
+    // perfect-hold purr — only fades in after you've held on-spec for ~1.5s, so it
+    // rewards a steady hand rather than blaring the instant a shift starts.
+    if (playing && dev < 0.06) this._holdT = (this._holdT || 0) + dtA; else this._holdT = 0;
+    this.purrGain.gain.setTargetAtTime(this._holdT > 1.5 ? 0.014 : 0, t, 0.5);
   },
   // one-shot transients
   blip(freq, dur, type, vol, glideTo) {
