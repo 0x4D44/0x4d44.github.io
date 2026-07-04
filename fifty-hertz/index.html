@@ -761,22 +761,26 @@ function onPointerDown(px, py, id) {
     case 'tile': {
       G.selected = hit.data;
       const s = G.stations[hit.data];
-      drag = { st: s, startY: p.y, startTarget: s.commanded, rect: hit };
+      drag = { st: s, rect: hit };
+      // tap-to-set: dispatch immediately to where the finger landed, then track
+      setStationFromPointer(s, hit, p.x);
       Audio_.click();
       break;
     }
   }
 }
+// Horizontal drag/tap along the tile's output bar sets target 0..cap.
+// (The bar geometry matches drawTile: bx = x+12, bw = w-24.)
+function setStationFromPointer(s, r, lx) {
+  if (s.state === 'TRIPPED') return;
+  const bx = r.x + 12, bw = r.w - 24;
+  const rel = clamp((lx - bx) / bw, 0, 1);
+  commandStation(s, Math.round(rel * s.cap));
+}
 function onPointerMove(px, py) {
   if (!drag) return;
   const p = toLogical(px, py);
-  const r = drag.rect;
-  // vertical drag over tile output region sets target 0..cap
-  const rel = clamp((r.y + r.h - p.y) / r.h, 0, 1);
-  const s = drag.st;
-  if (s.state === 'TRIPPED') return;
-  const v = Math.round(rel * s.cap);
-  commandStation(s, v);
+  setStationFromPointer(drag.st, drag.rect, p.x);
 }
 function onPointerUp() { drag = null; }
 
