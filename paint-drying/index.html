@@ -146,6 +146,28 @@
   .mole button:hover{border-color:var(--accent)}
   .coin{width:46px; height:46px; border-radius:50%; border:2px solid var(--warm); color:var(--warm); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:11px; letter-spacing:.03em; background:#f5edd8}
   .sw:focus-visible, .ttt button:focus-visible, .rps button:focus-visible, .mole button:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  /* --- Room forecast --- */
+  .forecast{display:grid; grid-template-columns:repeat(5,1fr); gap:10px}
+  @media(max-width:560px){ .forecast{grid-template-columns:repeat(2,1fr)} }
+  .fc{border:1px solid var(--line); border-radius:7px; padding:12px 10px; text-align:center; background:#fff}
+  .fc .d{font-family:var(--mono); font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--accent)}
+  .fc .ic{display:block; margin:9px auto 7px; color:var(--warm)}
+  .fc .t{font-family:var(--mono); font-size:18px; color:var(--ink); font-variant-numeric:tabular-nums}
+  .fc .h{font-family:var(--mono); font-size:10.5px; color:var(--muted); margin-top:2px}
+  .fc .o{font-style:italic; font-size:11.5px; color:var(--muted); margin-top:7px}
+  /* --- FAQ (every answer is No) --- */
+  .faq details{border-bottom:1px dotted var(--line); padding:8px 0}
+  .faq details:last-child{border-bottom:0}
+  .faq summary{cursor:pointer; font-family:var(--serif); font-size:14px; color:var(--ink); list-style:none; display:flex; justify-content:space-between; gap:10px; align-items:center}
+  .faq summary::-webkit-details-marker{display:none}
+  .faq summary::after{content:"+"; font-family:var(--mono); color:var(--accent)}
+  .faq details[open] summary::after{content:"\2212"}
+  .faq .a{font-family:var(--mono); font-size:14px; color:var(--accent); padding:6px 0 2px}
+  /* --- Now serving --- */
+  .queue{text-align:center}
+  .qnow{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+  .qnum{font-family:var(--mono); font-size:46px; color:var(--ink); line-height:1.15; font-variant-numeric:tabular-nums}
+  .qticket{font-family:var(--serif); font-style:italic; font-size:12.5px; color:var(--muted); min-height:1.5em; margin:4px 0 8px}
   #certprint{display:none}
   /* Only isolate the certificate for print once one has been issued; before
      that, an ordinary Ctrl+P just prints the page (not a blank sheet). */
@@ -303,6 +325,39 @@
       </div>
     </div>
   </section>
+
+  <section class="panel" style="margin-top:16px">
+    <h2>Five-day room forecast</h2>
+    <div class="body">
+      <div class="forecast" id="forecast"></div>
+      <p class="fine" style="margin:11px 0 0">Indoor conditions are not expected to vary. The forecast reflects the room settings above.</p>
+    </div>
+  </section>
+
+  <div class="stage" style="margin-top:16px">
+    <section class="panel">
+      <h2>Frequently asked questions</h2>
+      <div class="body faq">
+        <details><summary>Is the paint dry yet?</summary><div class="a">No.</div></details>
+        <details><summary>Will it be dry soon?</summary><div class="a">No.</div></details>
+        <details><summary>Can I make it dry any faster?</summary><div class="a">No.</div></details>
+        <details><summary>Is something about to happen?</summary><div class="a">No.</div></details>
+        <details><summary>Have I missed anything?</summary><div class="a">No.</div></details>
+        <details><summary>Can any of the diversions be won?</summary><div class="a">No.</div></details>
+        <details><summary>Is this the whole website?</summary><div class="a">No.</div></details>
+        <details><summary>Are there any further questions?</summary><div class="a">No.</div></details>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>Now serving</h2>
+      <div class="body queue">
+        <div class="qnow">Now serving</div>
+        <div class="qnum" id="q-now">—</div>
+        <div class="qticket" id="q-ticket">Please take a ticket and wait to be served.</div>
+        <div class="btnrow" style="justify-content:center"><button class="btn ghost sm" id="q-take">Take a ticket</button></div>
+      </div>
+    </section>
+  </div>
 
   <div class="colophon">
     <h3>About this instrument</h3>
@@ -847,6 +902,47 @@
       edge++; coin.textContent='EDGE';
       stat.textContent='The coin has come to rest on its edge. Please try again.';
       tallyEl.textContent='Heads 0 · Tails 0 · Edge '+edge;
+    });
+  })();
+
+  // ---- Five-day room forecast (identical every day; tracks the sliders) -----
+  (function(){
+    var wrap=document.getElementById('forecast');
+    var DAYS=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var ICON='<svg class="ic" width="38" height="22" viewBox="0 0 38 22" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="19" cy="7" r="3.2"/><path d="M10 13 h18"/><path d="M6 17 h26"/></svg>';
+    function build(){
+      var now=new Date(), html='';
+      for(var i=0;i<5;i++){
+        var d=new Date(now.getTime()+i*86400000);
+        var label=i===0?'Today':i===1?'Tomorrow':DAYS[d.getDay()];
+        html+='<div class="fc"><div class="d">'+label+'</div>'+ICON
+          +'<div class="t">'+state.temp+'°C</div>'
+          +'<div class="h">'+state.hum+'% RH</div>'
+          +'<div class="o">Settled. Indoors.</div></div>';
+      }
+      wrap.innerHTML=html;
+    }
+    build();
+    document.getElementById('temp').addEventListener('input', build);
+    document.getElementById('hum').addEventListener('input', build);
+  })();
+
+  // ---- Now serving (a ticket queue that does not advance) -------------------
+  (function(){
+    var numEl=document.getElementById('q-now'), tEl=document.getElementById('q-ticket'), btn=document.getElementById('q-take');
+    var serving=41, ticket=null, waits=0;
+    var WAITMSG=['Please continue to wait.','Thank you for your patience.','You have not been forgotten.','Your custom is valued.','Please continue to wait.'];
+    numEl.textContent=serving;
+    btn.addEventListener('click', function(){
+      if(ticket===null){
+        ticket=serving + 70 + Math.floor(Math.random()*40);      // 111–150
+        tEl.textContent='Your ticket: '+ticket+'. Please wait to be served.';
+        btn.textContent='Wait';
+        obsRecord('Ticket '+ticket+' issued at the counter. Now serving '+serving+'.', true);
+      } else {
+        tEl.textContent='Ticket '+ticket+'. '+WAITMSG[waits % WAITMSG.length]+' Now serving '+serving+'.';
+        waits++;
+      }
     });
   })();
 
