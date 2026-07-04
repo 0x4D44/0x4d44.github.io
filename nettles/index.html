@@ -1,0 +1,1205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Nettle — a complete almanac of Urtica dioica</title>
+<meta name="description" content="Everything about the stinging nettle: how it grows, how it stings, how it defends itself, what it developed from, and the thousand things people have made from it — an interactive, illustrated almanac.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg:      #0b1410;
+    --bg2:     #0f1b15;
+    --panel:   rgba(18,32,25,0.66);
+    --panel-solid: #10201a;
+    --ink:     #cfe0cf;
+    --bright:  #f0f6ec;
+    --muted:   #7e9280;
+    --faint:   #536159;
+    --hair:    rgba(150,200,160,0.14);
+    --hair-2:  rgba(150,200,160,0.28);
+
+    --leaf:    #6fb04a;
+    --leaf-dk: #3f7d34;
+    --leaf-lt: #a6d977;
+    --stem:    #86b96a;
+    --sap:     #c8e89a;
+    --gold:    #e7c766;
+    --amber:   #eaa14a;
+    --sting:   #f2e14b;
+    --wheal:   #e8607a;
+    --wheal-dk:#c23a58;
+    --violet:  #b98bff;
+    --sky:     #7fc5e8;
+    --paper:   #efe7d2;
+
+    --accent:  var(--leaf-lt);
+
+    --font-display: "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", Georgia, serif;
+    --font-body: system-ui, "Segoe UI", Roboto, -apple-system, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+    --maxw: 1180px;
+    --prose: 66ch;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  #field {
+    position: fixed; inset: 0; z-index: -2;
+    background:
+      radial-gradient(1200px 900px at 80% -10%, rgba(80,150,70,0.14), transparent 60%),
+      radial-gradient(1000px 800px at 10% 110%, rgba(60,120,80,0.12), transparent 60%),
+      linear-gradient(180deg, var(--bg) 0%, var(--bg2) 100%);
+  }
+
+  a { color: var(--leaf-lt); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  /* ---------- top bar + reading progress ---------- */
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 10px 18px;
+    background: linear-gradient(var(--bg), rgba(11,20,16,0));
+    pointer-events: none;
+  }
+  .topbar .home {
+    pointer-events: auto;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .topbar .home:hover { color: var(--leaf-lt); text-decoration: none; }
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--leaf-dk), var(--leaf-lt), var(--sting));
+    z-index: 50; transition: width 0.1s linear;
+  }
+
+  /* ---------- layout ---------- */
+  main { max-width: var(--maxw); margin: 0 auto; padding: 0 20px 120px; }
+  section { padding: 46px 0; border-top: 1px solid var(--hair); }
+  section:first-of-type { border-top: none; }
+  .prose { max-width: var(--prose); }
+  .prose p { margin: 0 0 1.1em; }
+  h1, h2, h3 { font-family: var(--font-display); color: var(--bright); font-weight: 600; line-height: 1.14; }
+  h2 { font-size: clamp(1.7rem, 4vw, 2.5rem); margin: 0 0 0.5em; }
+  h3 { font-size: 1.3rem; margin: 1.8em 0 0.5em; color: var(--leaf-lt); }
+  .kicker {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--leaf); margin: 0 0 10px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .kicker::before { content: ""; width: 26px; height: 1px; background: var(--leaf); display: inline-block; }
+  em { color: var(--sap); font-style: italic; }
+  strong { color: var(--bright); font-weight: 600; }
+  .latin { font-style: italic; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    min-height: 100svh; display: grid; grid-template-columns: 1.05fr 0.95fr;
+    align-items: center; gap: 30px; border-top: none;
+    padding: 90px 0 60px;
+  }
+  @media (max-width: 900px) { .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 78px; } }
+  .hero h1 {
+    font-size: clamp(2.6rem, 8vw, 5.2rem); margin: 0.1em 0 0.3em; letter-spacing: -0.01em;
+    color: var(--bright);
+  }
+  .hero h1 .latin { display: block; font-size: 0.32em; letter-spacing: 0.16em; color: var(--leaf);
+    font-style: normal; text-transform: uppercase; margin-top: 0.9em; font-family: var(--font-mono); }
+  .hero .lede { font-size: clamp(1.05rem, 2.4vw, 1.32rem); color: var(--ink); max-width: 40ch; }
+  .hero .lede em { color: var(--sting); font-style: normal; }
+  .hero-art { position: relative; display: flex; justify-content: center; }
+  .hero-art svg { width: 100%; max-width: 460px; height: auto; filter: drop-shadow(0 30px 50px rgba(0,0,0,0.5)); }
+  .scrollcue { margin-top: 26px; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .scrollcue .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--sting);
+    animation: pulse 1.8s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+  /* ---------- stat row ---------- */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 30px 0 0; }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat { background: var(--panel); border: 1px solid var(--hair); border-radius: 12px; padding: 16px 16px 14px; }
+  .stat .v { font-family: var(--font-display); font-size: 1.9rem; color: var(--leaf-lt); line-height: 1; }
+  .stat .l { font-size: 12.5px; color: var(--muted); margin-top: 8px; line-height: 1.35; }
+
+  /* ---------- panels / cards ---------- */
+  .panel { background: var(--panel); border: 1px solid var(--hair); border-radius: 16px; padding: 22px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  @media (max-width: 820px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  .note { font-size: 13.5px; color: var(--muted); font-style: italic; }
+  .tag-mono { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--leaf); }
+
+  /* ---------- figure ---------- */
+  figure { margin: 0; }
+  figcaption { font-size: 13px; color: var(--muted); margin-top: 10px; font-style: italic; text-align: center; }
+
+  /* ---------- buttons / controls ---------- */
+  button, .btn { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.08em; }
+  .ctl {
+    background: var(--panel-solid); color: var(--ink); border: 1px solid var(--hair-2);
+    border-radius: 9px; padding: 9px 15px; cursor: pointer; text-transform: uppercase;
+    letter-spacing: 0.12em; transition: all 0.15s;
+  }
+  .ctl:hover { border-color: var(--leaf); color: var(--bright); background: rgba(111,176,74,0.12); }
+  .ctl.active { background: var(--leaf-dk); border-color: var(--leaf-lt); color: var(--bright); }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; border-radius: 4px;
+    background: var(--hair-2); outline: none; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px;
+    border-radius: 50%; background: var(--leaf-lt); cursor: pointer; border: 2px solid var(--bg); }
+  input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%;
+    background: var(--leaf-lt); cursor: pointer; border: 2px solid var(--bg); }
+
+  .footer { text-align: center; color: var(--muted); font-size: 13px; padding: 40px 0 0;
+    border-top: 1px solid var(--hair); margin-top: 30px; }
+  .footer a { color: var(--leaf-lt); }
+
+  /* ---------- lede / drop cap ---------- */
+  .lede-big { font-size: clamp(1.1rem, 2.6vw, 1.45rem); color: var(--bright); line-height: 1.55; max-width: 44ch; }
+  .prose .dropcap::first-letter { font-family: var(--font-display); font-size: 3.4em; float: left;
+    line-height: 0.8; padding: 0.05em 0.12em 0 0; color: var(--leaf-lt); }
+
+  /* ---------- anatomy hotspots ---------- */
+  .anatomy { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 26px; align-items: center; }
+  @media (max-width: 860px) { .anatomy { grid-template-columns: 1fr; } }
+  .anatomy-art { position: relative; }
+  .anatomy-art svg { width: 100%; height: auto; }
+  .hotspot { cursor: pointer; }
+  .hotspot circle.ring { fill: rgba(11,20,16,0.7); stroke: var(--sting); stroke-width: 1.6; transition: all 0.18s; }
+  .hotspot:hover circle.ring, .hotspot.active circle.ring { fill: var(--sting); }
+  .hotspot text { fill: var(--sting); font-family: var(--font-mono); font-size: 12px; font-weight: 700; pointer-events: none; }
+  .hotspot:hover text, .hotspot.active text { fill: #10201a; }
+  .anatomy-info { min-height: 190px; }
+  .anatomy-info .idx { font-family: var(--font-mono); color: var(--sting); font-size: 13px; letter-spacing: 0.14em; }
+  .anatomy-info h3 { margin: 6px 0 8px; color: var(--bright); }
+  .anatomy-info p { margin: 0; color: var(--ink); }
+  .anatomy-hint { font-size: 12.5px; color: var(--muted); margin-top: 14px; font-style: italic; }
+
+  /* ---------- the sting stage ---------- */
+  .sting-wrap { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 26px; align-items: stretch; }
+  @media (max-width: 900px) { .sting-wrap { grid-template-columns: 1fr; } }
+  .sting-stage { background: linear-gradient(180deg, #0c1712, #0a130f); border: 1px solid var(--hair-2);
+    border-radius: 16px; overflow: hidden; position: relative; }
+  .sting-stage svg { display: block; width: 100%; height: auto; }
+  .sting-ctls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 9px; overflow: hidden; }
+  .seg button { background: transparent; color: var(--muted); border: none; padding: 9px 14px; cursor: pointer;
+    text-transform: uppercase; letter-spacing: 0.1em; }
+  .seg button.active { background: var(--leaf-dk); color: var(--bright); }
+  .cocktail { display: flex; flex-direction: column; gap: 8px; }
+  .chem { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center;
+    padding: 11px 13px; border: 1px solid var(--hair); border-radius: 11px; background: var(--panel);
+    opacity: 0.42; transition: all 0.4s; }
+  .chem.lit { opacity: 1; border-color: var(--chemc); box-shadow: 0 0 0 1px var(--chemc) inset, 0 6px 20px rgba(0,0,0,0.3); }
+  .chem .dot { width: 13px; height: 13px; border-radius: 50%; background: var(--chemc); box-shadow: 0 0 10px var(--chemc); }
+  .chem .nm { color: var(--bright); font-weight: 600; font-size: 14.5px; }
+  .chem .nm small { display: block; color: var(--muted); font-weight: 400; font-size: 12px; font-family: var(--font-mono); }
+  .chem .role { font-size: 12.5px; color: var(--ink); text-align: right; max-width: 20ch; }
+
+  /* ---------- myth cards ---------- */
+  .myth { border-left: 3px solid var(--wheal); padding: 4px 0 4px 16px; margin: 18px 0; }
+  .myth .m-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--wheal); }
+  .myth h3 { margin: 4px 0 6px; color: var(--bright); font-size: 1.12rem; }
+  .myth p { margin: 0; }
+  .truth { border-left-color: var(--leaf-lt); }
+  .truth .m-tag { color: var(--leaf-lt); }
+
+  /* ---------- cladogram ---------- */
+  .clado svg { width: 100%; height: auto; }
+  .clado .branch { stroke: var(--hair-2); stroke-width: 1.6; fill: none; }
+  .clado .node { cursor: pointer; }
+  .clado .node rect { fill: var(--panel-solid); stroke: var(--hair-2); rx: 8; transition: all 0.16s; }
+  .clado .node:hover rect, .clado .node.on rect { stroke: var(--leaf-lt); fill: rgba(111,176,74,0.16); }
+  .clado .node text { fill: var(--ink); font-size: 13px; }
+  .clado .node.self rect { stroke: var(--sting); }
+  .clado .node.self text { fill: var(--sting); }
+  .clado-info { margin-top: 12px; min-height: 60px; color: var(--ink); font-size: 14.5px; }
+  .clado-info b { color: var(--leaf-lt); }
+
+  /* ---------- lifecycle ---------- */
+  .cycle { display: grid; grid-template-columns: 1fr 1fr; gap: 26px; align-items: center; }
+  @media (max-width: 860px) { .cycle { grid-template-columns: 1fr; } }
+  .cycle-art { background: linear-gradient(180deg, #0c1712, #0a130f); border: 1px solid var(--hair);
+    border-radius: 16px; overflow: hidden; }
+  .cycle-art svg { display: block; width: 100%; height: auto; }
+  .cycle-stage-name { font-family: var(--font-display); font-size: 1.5rem; color: var(--leaf-lt); margin: 0 0 2px; }
+  .cycle-month { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .cycle-slider { width: 100%; margin: 20px 0 4px; }
+  .season-ticks { display: flex; justify-content: space-between; font-family: var(--font-mono);
+    font-size: 11px; color: var(--faint); letter-spacing: 0.1em; }
+
+  /* ---------- sting-o-meter ---------- */
+  .som-row { display: grid; grid-template-columns: 190px 1fr; gap: 14px; align-items: center; margin: 0 0 10px;
+    padding: 12px; border: 1px solid var(--hair); border-radius: 12px; background: var(--panel); cursor: pointer;
+    transition: border-color 0.15s; }
+  .som-row:hover { border-color: var(--hair-2); }
+  @media (max-width: 640px) { .som-row { grid-template-columns: 1fr; gap: 8px; } }
+  .som-name { font-weight: 600; color: var(--bright); font-size: 15px; }
+  .som-name .l { display: block; font-style: italic; color: var(--muted); font-size: 12.5px; font-weight: 400; }
+  .som-bars { display: flex; flex-direction: column; gap: 7px; }
+  .som-bar-track { height: 12px; background: rgba(255,255,255,0.05); border-radius: 6px; overflow: hidden; position: relative; }
+  .som-bar-fill { height: 100%; width: 0; border-radius: 6px; transition: width 1s cubic-bezier(.2,.7,.3,1); }
+  .som-lab { font-family: var(--font-mono); font-size: 10.5px; color: var(--muted); letter-spacing: 0.08em; }
+  .som-detail { grid-column: 1 / -1; font-size: 13.5px; color: var(--ink); border-top: 1px dashed var(--hair);
+    margin-top: 4px; padding-top: 10px; display: none; }
+  .som-row.open .som-detail { display: block; }
+
+  /* ---------- nutrition bars ---------- */
+  .nut-row { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: center; margin-bottom: 12px; }
+  .nut-label { font-size: 13px; color: var(--ink); }
+  .nut-bars { display: flex; flex-direction: column; gap: 5px; }
+  .nut-bar { height: 15px; border-radius: 4px; display: flex; align-items: center; padding-left: 8px;
+    font-family: var(--font-mono); font-size: 10.5px; color: #071008; white-space: nowrap; width: 0; transition: width 1.1s cubic-bezier(.2,.7,.3,1); }
+  .nut-n { background: linear-gradient(90deg, var(--leaf-lt), var(--leaf)); }
+  .nut-s { background: rgba(255,255,255,0.16); color: var(--ink); }
+
+  /* ---------- timeline ---------- */
+  .tl { position: relative; margin: 20px 0 0; padding-left: 4px; }
+  .tl::before { content: ""; position: absolute; left: 9px; top: 6px; bottom: 6px; width: 2px;
+    background: linear-gradient(var(--leaf-dk), var(--hair-2)); }
+  .tl-item { position: relative; padding: 0 0 26px 40px; }
+  .tl-item::before { content: ""; position: absolute; left: 3px; top: 4px; width: 14px; height: 14px;
+    border-radius: 50%; background: var(--bg2); border: 2px solid var(--leaf-lt); }
+  .tl-item.warn::before { border-color: var(--wheal); }
+  .tl-when { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; color: var(--sting); }
+  .tl-item h3 { margin: 3px 0 5px; font-size: 1.12rem; color: var(--bright); }
+  .tl-item p { margin: 0; font-size: 14.5px; }
+
+  /* ---------- use cards ---------- */
+  .use-card { background: var(--panel); border: 1px solid var(--hair); border-radius: 14px; padding: 20px;
+    transition: transform 0.16s, border-color 0.16s; }
+  .use-card:hover { transform: translateY(-3px); border-color: var(--hair-2); }
+  .use-card .ic { width: 42px; height: 42px; margin-bottom: 12px; color: var(--leaf-lt); }
+  .use-card h3 { margin: 0 0 8px; color: var(--leaf-lt); font-size: 1.16rem; }
+  .use-card ul { margin: 8px 0 0; padding-left: 18px; font-size: 14px; color: var(--ink); }
+  .use-card li { margin-bottom: 7px; }
+
+  /* ---------- quiz ---------- */
+  .quiz { max-width: 720px; }
+  .q-progress { font-family: var(--font-mono); font-size: 12px; color: var(--muted); letter-spacing: 0.12em; }
+  .q-question { font-family: var(--font-display); font-size: 1.4rem; color: var(--bright); margin: 8px 0 18px; }
+  .q-opts { display: flex; flex-direction: column; gap: 10px; }
+  .q-opt { text-align: left; background: var(--panel); border: 1px solid var(--hair-2); border-radius: 11px;
+    padding: 13px 16px; color: var(--ink); cursor: pointer; font-size: 15px; font-family: var(--font-body);
+    letter-spacing: 0; transition: all 0.14s; }
+  .q-opt:hover:not(:disabled) { border-color: var(--leaf); background: rgba(111,176,74,0.1); }
+  .q-opt.correct { border-color: var(--leaf-lt); background: rgba(111,176,74,0.2); color: var(--bright); }
+  .q-opt.wrong { border-color: var(--wheal); background: rgba(226,58,88,0.16); color: var(--bright); }
+  .q-explain { margin: 16px 0 0; padding: 14px 16px; border-radius: 11px; background: rgba(255,255,255,0.03);
+    border: 1px solid var(--hair); font-size: 14px; color: var(--ink); display: none; }
+  .q-explain.show { display: block; }
+  .q-next { margin-top: 18px; }
+  .q-result { text-align: center; padding: 20px 0; }
+  .q-result .score { font-family: var(--font-display); font-size: 3.4rem; color: var(--leaf-lt); }
+
+  .pill { display: inline-block; font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--leaf-lt); border: 1px solid var(--hair-2); border-radius: 30px;
+    padding: 3px 11px; margin: 2px 4px 2px 0; }
+  .callout { background: linear-gradient(120deg, rgba(111,176,74,0.1), rgba(242,225,75,0.05));
+    border: 1px solid var(--hair-2); border-left: 3px solid var(--sting); border-radius: 12px;
+    padding: 16px 20px; margin: 22px 0; }
+  .callout b { color: var(--sting); }
+
+  .srcnote { font-size: 12px; color: var(--faint); }
+
+  ::selection { background: rgba(242,225,75,0.28); color: var(--bright); }
+</style>
+</head>
+<body>
+<div id="field"></div>
+<div class="progress" id="progress"></div>
+<div class="topbar">
+  <a class="home" href="https://0x4d44.github.io/">◂ 0x4d44 · the almanac</a>
+  <span class="tag-mono" style="pointer-events:none">Urtica dioica</span>
+</div>
+
+<main>
+  <!-- HERO -->
+  <header class="hero">
+    <div>
+      <p class="kicker">A complete field almanac</p>
+      <h1>The Nettle<span class="latin">Urtica dioica</span></h1>
+      <p class="lede">The plant that <em>bites back</em>. How it grows, how it stings, how it feeds and clothes and heals us — and the deep-time story of what it developed from.</p>
+      <div class="scrollcue"><span class="dot"></span> Scroll, and mind the leaves</div>
+    </div>
+    <div class="hero-art" id="heroArt"></div>
+  </header>
+
+  <!-- AT A GLANCE -->
+  <section id="glance">
+    <p class="kicker">At a glance</p>
+    <div class="prose">
+      <p class="lede-big">The stinging nettle is the most familiar plant almost nobody looks at closely. It grows where we throw things away, it punishes the careless hand — and hidden inside that sting is a self-loading glass syringe, a deep-time family secret, and a thousand years of soup, cloth, medicine and myth.</p>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="v">~63</div><div class="l">species in genus <span class="latin">Urtica</span> worldwide (2016 revision)</div></div>
+      <div class="stat"><div class="v">0.9–2 m</div><div class="l">typical height; a clone creeps ~0.5 m a year on yellow rhizomes</div></div>
+      <div class="stat"><div class="v">100+</div><div class="l">invertebrate species feed on a single nettle patch</div></div>
+      <div class="stat"><div class="v">1753</div><div class="l">named <span class="latin">Urtica dioica</span> L. by Linnaeus — "the burning plant of two houses"</div></div>
+    </div>
+  </section>
+
+  <!-- ANATOMY -->
+  <section id="anatomy">
+    <p class="kicker">Anatomy</p>
+    <h2>The parts of a nettle</h2>
+    <div class="prose"><p>Every feature of <span class="latin">Urtica dioica</span> is a clue you can read in a hedgerow. Tap a marker to learn what it is — and how to tell a true stinging nettle from its harmless impostors.</p></div>
+    <div class="anatomy panel" style="margin-top:20px">
+      <div class="anatomy-art" id="anatomyArt"></div>
+      <div>
+        <div class="anatomy-info panel" id="anatomyInfo">
+          <div class="idx">SELECT A MARKER</div>
+          <h3>A hedgerow reference</h3>
+          <p>The nettle carries its own identity kit: opposite toothed leaves, a grooved (not truly square) stem, drooping green flower-tassels, and — under a lens — the hollow glass hairs that give it its name. Its bright-yellow creeping roots are unmistakable once you've dug one up.</p>
+        </div>
+        <p class="anatomy-hint">Tip: the classic lookalike, <em>white dead-nettle</em> (<span class="latin">Lamium album</span>), copies the leaves but has a genuinely square stem, big white flowers, and <strong>no sting at all</strong> — it isn't even in the nettle family.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- THE STING -->
+  <section id="sting">
+    <p class="kicker">The sting · the centrepiece</p>
+    <h2>A glass hypodermic, self-loaded</h2>
+    <div class="prose">
+      <p class="dropcap">The sting is not a chemical splash — it is a <strong>machine</strong>. Each stinging hair, or <em>trichome</em>, is a single hollow cell drawn out into a needle and stiffened with <strong>silica</strong>: literally glass, the same silicon dioxide as a window pane. It ends in a tiny round bead. Brush against it and the bead snaps off at a pre-scored <em>line of weakness</em>, leaving a bevelled, needle-sharp point — the same oblique tip a factory grinds onto a medical hypodermic. The point pierces your skin; the same motion squeezes the swollen base, and a cocktail of chemicals is injected up the hollow shaft. One gesture does both. Touch it below.</p>
+    </div>
+
+    <div class="sting-wrap" style="margin-top:8px">
+      <div>
+        <div class="sting-stage" id="stingStage"></div>
+        <div class="sting-ctls">
+          <button class="ctl" id="stingFire">▶ Touch the nettle</button>
+          <button class="ctl" id="stingReset">⟲ Reset</button>
+          <span class="seg" id="stingMode" role="group" aria-label="contact mode">
+            <button data-mode="brush" class="active">Brush lightly</button>
+            <button data-mode="grasp">Grasp firmly</button>
+          </span>
+        </div>
+        <p class="note" id="stingCaption" style="margin-top:12px">A single stinging hair, magnified some 40×. Brush it and watch the tip shear.</p>
+      </div>
+      <div>
+        <p class="tag-mono" style="color:var(--muted)">What gets injected</p>
+        <div class="cocktail" id="cocktail"></div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:34px">
+      <div>
+        <h3>"Grasp the nettle"</h3>
+        <p>The old proverb is real botany. The hairs are brittle and angled; a <strong>light brush</strong> lets them snap and inject, but a <strong>firm grasp</strong>, moving with the lie of the hairs, flattens them before they can break the skin. Playwright Aaron Hill fixed it in verse around 1750: <em>"Tender-handed stroke a nettle, / And it stings you for your pains; / Grasp it like a man of mettle, / And it soft as silk remains."</em> Try both modes above.</p>
+      </div>
+      <div>
+        <div class="myth">
+          <div class="m-tag">Myth</div>
+          <h3>"It's the formic acid — like an ant."</h3>
+          <p>The school-textbook answer, and largely wrong. Formic acid is present only in traces; in tests, even 10% formic acid barely stung. The immediate itch is <strong>histamine, acetylcholine and serotonin</strong>; the long, dull burn is now pinned on <strong>oxalic and tartaric acids</strong> (Fu et al., <span class="latin">Annals of Botany</span>, 2006) — the acid families of rhubarb leaves and wine.</p>
+        </div>
+        <div class="myth truth">
+          <div class="m-tag">Also a myth</div>
+          <h3>"Rub a dock leaf on it."</h3>
+          <p>Comforting, but it isn't chemistry. Dock sap is acidic too, so it neutralises nothing; in trials a dock leaf worked no better than a <strong>lettuce leaf</strong>. Any relief is cool sap evaporating, plus the placebo of doing something.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DEFENCE -->
+  <section id="defence">
+    <p class="kicker">Why it stings</p>
+    <h2>A weapon aimed at mammals, not bugs</h2>
+    <div class="grid2">
+      <div class="prose">
+        <p>The sting is an <strong>anti-grazing defence</strong>, and its target is you and the cattle and deer — not insects, whose small mouthparts slip between the hairs. The evidence is beautifully direct. On the Japanese nettle <span class="latin">Urtica thunbergiana</span>, deer avoid the hairiest plants and browse bald ones hardest. Clip a nettle and it grows back <em>hairier</em>: the defence is <strong>inducible</strong>, tuned to how much it's being eaten.</p>
+        <p>The most striking proof is in <strong>Nara Park</strong>, Japan, where sika deer have been protected as sacred for some <strong>1,200 years</strong>. Under that unrelenting browsing pressure, the local nettles have evolved dramatically <strong>denser stings</strong> than deer-free populations nearby — evolution you can measure against a temple's calendar.</p>
+      </div>
+      <div class="prose">
+        <p>And here is the twist: the sting is also a <strong>nursery</strong>. Because grazers stay away, a nettle patch is one of the safest places a caterpillar can grow. Over <strong>100 invertebrate species</strong> live on nettles, and five of Britain's showiest butterflies — the <strong>small tortoiseshell, peacock, red admiral, comma</strong> and <strong>painted lady</strong> — raise their young in silken tents on the leaves. The weapon that keeps the cow off keeps the caterpillar's enemies off too.</p>
+        <div class="callout"><b>A garden starter-pistol.</b> In early spring, nettle-only aphids explode on the fresh growth and become the first big meal for waking ladybirds — kick-starting the whole garden food chain weeks before anything else is going.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIFECYCLE -->
+  <section id="grow">
+    <p class="kicker">How it grows</p>
+    <h2>A year in the life</h2>
+    <div class="prose"><p>Nettle plays both hands of reproduction: it seeds prolifically <em>and</em> creeps clonally on bright-yellow underground runners. Drag through the year to watch a patch wake, flower, seed and die back.</p></div>
+    <div class="cycle panel" style="margin-top:18px">
+      <div class="cycle-art" id="cycleArt"></div>
+      <div>
+        <div class="cycle-month" id="cycleMonth">MARCH</div>
+        <div class="cycle-stage-name" id="cycleStage">Spring emergence</div>
+        <p id="cycleText" style="min-height:96px;margin:6px 0 0">Fresh green shoots push up from last year's rhizomes. This is the forager's window — the young tops, before flowering, are at their most tender and vitamin-rich.</p>
+        <input type="range" min="0" max="11" value="2" class="cycle-slider" id="cycleSlider" aria-label="month of the year">
+        <div class="season-ticks"><span>JAN</span><span>APR</span><span>JUL</span><span>OCT</span><span>DEC</span></div>
+        <button class="ctl" id="pollenBtn" style="margin-top:16px">✷ Fire the pollen catapult</button>
+      </div>
+    </div>
+    <div class="prose" style="margin-top:26px">
+      <h3>The plant that marks a lost farmstead</h3>
+      <p>Nettle is a <strong>nitrogen-and-phosphate junkie</strong> — an Ellenberg nitrogen value of 8 out of 9. It craves the enriched, disturbed ground left by dung heaps, middens, byres and buried bone. So a dense stand of nettles in the middle of nowhere is often an <strong>archaeological marker</strong>: it grows over the phosphate ghost of a vanished building, farmyard or settlement. A single sunlit shoot can set <strong>10,000–20,000 seeds</strong>; the clone also shoulders outward about half a metre a year. Belt and braces.</p>
+    </div>
+  </section>
+
+  <!-- FAMILY TREE -->
+  <section id="family">
+    <p class="kicker">What it developed from</p>
+    <h2>The nettle's surprising cousins</h2>
+    <div class="prose">
+      <p>Molecular botany rearranged the family album. The old order "Urticales" was dissolved into an expanded <strong>Rosales</strong> — so the nettle now sits among the <em>urticalean rosids</em>, cheek by jowl with some very famous plants. Its closest kin are the <strong>figs and mulberries</strong>; a branch over are <strong>hops and cannabis</strong>; and further still, the elms. Hover the tree.</p>
+    </div>
+    <div class="clado panel" id="clado" style="margin-top:18px"></div>
+    <div class="clado-info" id="cladoInfo">Hover a family to see the nettle's relationship to it.</div>
+    <div class="prose" style="margin-top:24px">
+      <h3>The sting was invented a dozen times over</h3>
+      <p>Within the whole nettle family the stinging hair evolved <strong>just once</strong>, in the tribe Urticeae. But zoom out to all flowering plants and it's a textbook case of <strong>convergent evolution</strong>: the silica-needle-over-a-reservoir design arose <strong>independently at least a dozen times</strong> across roughly seven unrelated families. Some, in the Loasaceae, even tip their needles with <em>hydroxyapatite</em> — the mineral of your own tooth enamel and bone.</p>
+      <div class="callout"><b>A genome doubling tracks the sting.</b> The common stinging nettle is a tetraploid (2n = 52); its near-stingless, fen-dwelling relative <span class="latin">U. galeopsifolia</span> is a diploid (2n = 26). And despite the name <span class="latin">dioica</span> ("two houses" — separate male and female plants), true separate sexes are actually the <em>exception</em> across the genus, not the rule.</div>
+    </div>
+  </section>
+
+  <!-- USES -->
+  <section id="uses">
+    <p class="kicker">A thousand uses</p>
+    <h2>Food, drink, cloth and compost</h2>
+    <div class="prose"><p>Cook, dry or crush a nettle and the brittle hairs shatter and the venom breaks down — the weapon becomes one of the most useful plants of the temperate world. It has fed, clothed, watered and fertilised people for millennia.</p></div>
+    <div class="grid3" style="margin-top:20px">
+      <div class="use-card">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 14h16a8 8 0 0 1-16 0z"/><path d="M7 14V8a5 5 0 0 1 10 0v6"/><path d="M3 20h18"/></svg>
+        <h3>Food &amp; drink</h3>
+        <ul>
+          <li><strong>Nettle soup &amp; porridge</strong> — a classic spring tonic; Samuel Pepys ate it in 1661 and called it "very good."</li>
+          <li><strong>Nettle beer</strong> bittered ale <em>before</em> hops took over in the 1600s. Fresh nettle cordial turns bright pink and tastes of apricot.</li>
+          <li><strong>Cornish Yarg</strong> — a cheese hand-wrapped in nettle leaves. "Yarg" is just "Gray" spelled backwards, after the couple who revived it.</li>
+          <li>Forage the <strong>young spring tops only</strong> — after flowering, gritty calcium <em>cystoliths</em> form that can irritate the kidneys.</li>
+        </ul>
+      </div>
+      <div class="use-card">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v3H4z"/><path d="M6 9v9M10 9v9M14 9v9M18 9v9"/><path d="M4 18h16"/></svg>
+        <h3>Fibre &amp; cloth</h3>
+        <ul>
+          <li>Nettle is a true <strong>bast fibre</strong>, kin to ramie — "the linen of the poor," once woven into Scots cloth, sheets and tablecloths.</li>
+          <li>A <strong>2,800-year-old Danish burial cloth</strong> was found to be nettle, not flax — and likely imported ~1,000 km from the Austrian Alps: Bronze Age luxury fabric.</li>
+          <li>In <strong>WWI</strong>, blockaded of cotton, Germany harvested 1,300+ tonnes of nettles in a year for <em>Nesseltuch</em> uniform cloth.</li>
+          <li>Revived today: the Defra-backed <strong>STING</strong> project spun nettle into Oeko-Tex-certified upholstery fabric with Camira.</li>
+        </ul>
+      </div>
+      <div class="use-card">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3v6"/><path d="M9 6l3-3 3 3"/><path d="M5 12c3 0 4 2 7 2s4-2 7-2"/><path d="M5 12l1.5 7h11L19 12"/></svg>
+        <h3>Garden &amp; dye</h3>
+        <ul>
+          <li><strong>Nettle liquid feed</strong> — rot nettles in water for a fortnight for a free, nitrogen-rich fertiliser (roughly 2-0.5-1.5 NPK). Legendarily smelly; dilute 1:10.</li>
+          <li>The leftover sludge is a fine <strong>compost activator</strong>.</li>
+          <li>A traditional <strong>natural dye</strong>: leaves give greens and yellows; roots with alum give yellow; iron darkens it toward black.</li>
+          <li>A biodiversity magnet — leave a patch for the butterflies.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:34px; align-items:start">
+      <div>
+        <h3>Ounce for ounce, it out-mineralises spinach</h3>
+        <p>Blanched, a nettle is a low-calorie powerhouse: about <strong>481 mg of calcium per 100 g</strong> — three to four times cooked spinach — with less oxalate blocking its absorption. It carries huge amounts of vitamin K and A, useful iron, and the dried leaf runs to a quarter or more <strong>protein by weight</strong>. It was a genuine spring tonic and famine food; it helped keep people alive in the Irish Great Famine.</p>
+        <p class="note">Cooked nettle, per 100 g vs cooked spinach (USDA). Bars scaled to the larger value.</p>
+      </div>
+      <div class="panel" id="nutrition"></div>
+    </div>
+  </section>
+
+  <!-- MEDICINE -->
+  <section id="medicine">
+    <p class="kicker">Medicine</p>
+    <h2>Old remedy, modern evidence</h2>
+    <div class="prose">
+      <p>Nettle is one of the oldest plants in the Western pharmacopoeia — Hippocrates, Dioscorides, Galen and Pliny all wrote it up two millennia ago. Most folk claims are just that, but a few have survived real clinical trials. The crucial rule: <strong>root and leaf are different medicines.</strong> Get the part wrong and you're taking the wrong drug.</p>
+    </div>
+    <div class="grid2" style="margin-top:16px">
+      <div class="panel">
+        <span class="pill">Root</span>
+        <h3 style="margin-top:8px">The prostate one</h3>
+        <p>Nettle <strong>root</strong> is an approved herbal medicine in Germany (Commission E) for the urinary symptoms of an enlarged prostate (BPH). It doesn't shrink the gland like a drug; it eases the obstruction via hormone-modulating lignans and a lectin that blocks a growth-factor signal. In a <strong>558-patient</strong> double-blind trial, symptom scores fell from 19.8 to 11.8, and <strong>81% improved versus 16%</strong> on placebo.</p>
+        <p class="srcnote">Safarinejad, 2005. Its key compound is now, ironically, sold to bodybuilders as a "testosterone booster" — same molecule, opposite marketing.</p>
+      </div>
+      <div class="panel">
+        <span class="pill">Leaf</span>
+        <h3 style="margin-top:8px">The anti-inflammatory one</h3>
+        <p>Nettle <strong>leaf</strong> extract genuinely blocks <span class="latin">NF-κB</span>, the master switch of inflammation, and behaves as a multi-target antihistamine. Evidence is real but modest for hayfever (freeze-dried leaf) and joint pain. And <strong>urtication</strong> — deliberately stinging arthritic joints, a folk trick since Roman times — actually beat placebo in a small controlled trial for thumb-base arthritis.</p>
+        <p class="srcnote">The "placebo" in that trial was white dead-nettle: it looks almost identical but can't sting — an elegant blind.</p>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:22px"><b>Evidence, honestly.</b> Strongest: nettle-root for BPH symptoms. Plausible: leaf for allergy and joints. Purely traditional (no good trials): "blood-building" for anaemia, and boosting breast-milk. This is a page about a plant, not medical advice.</div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="history">
+    <p class="kicker">History &amp; folklore</p>
+    <h2>Ten thousand years of nettles</h2>
+    <div class="prose"><p>The nettle has shadowed human settlement for as long as there have been dung heaps to grow on. It has been spun into prehistoric "silk," flogged onto Roman legs, charmed against serpents, woven into fairy tales and eaten competitively in a Dorset pub.</p></div>
+    <div class="tl" style="margin-top:6px">
+      <div class="tl-item"><div class="tl-when">c. 940–750 BC · Bronze Age Denmark</div><h3>Buried in nettle "silk"</h3><p>A cremated Dane at Lusehøj, Funen, was wrapped in fine cloth long assumed to be local flax. In 2012, crystal and fibre analysis proved it was <strong>nettle</strong> — and strontium isotopes suggested it was imported ~1,000 km from the Austrian Alps. Bronze Age haute couture.</p></div>
+      <div class="tl-item"><div class="tl-when">1st century AD · Rome</div><h3>Urtication, and a tall tale</h3><p>Pliny the Elder records flogging numb limbs with nettles to restore warmth and ease pain. The claim that soldiers introduced a special "Roman nettle" to Britain to whip themselves warm, though, is a <strong>myth</strong> — debunked as far back as 1586.</p></div>
+      <div class="tl-item"><div class="tl-when">10th century · Anglo-Saxon England</div><h3>The Nine Herbs Charm</h3><p>Nettle ("stiðe") is one of nine sacred plants in a healing charm from the <span class="latin">Lacnunga</span> that names the god <strong>Woden</strong> — a rare survival of English pagan verse, invoked against poison and serpents.</p></div>
+      <div class="tl-item"><div class="tl-when">1838 · Copenhagen</div><h3>The Wild Swans</h3><p>In Hans Christian Andersen's tale, Elisa must weave shirts from churchyard nettles — crushing them barefoot, in total silence, for years — to free her eleven swan-brothers. Pain and self-sacrifice made literal.</p></div>
+      <div class="tl-item"><div class="tl-when">1939–45 · Wartime Britain</div><h3>Picked by the ton</h3><p>Schoolchildren were sent to gather nettles by the hundred-ton, so their <strong>chlorophyll</strong> could be turned into green dye for army camouflage netting.</p></div>
+      <div class="tl-item"><div class="tl-when">1986 → today · Marshwood, Dorset</div><h3>The World Nettle Eating Championship</h3><p>Born of a farmers' argument over the longest nettle, competitors now strip and eat the leaves from 2-foot raw stalks for an hour, mouths blackening. The record: <strong>104 feet</strong> of nettles (Phil Thorne, 2018). No mouthwash allowed.</p></div>
+    </div>
+  </section>
+
+  <!-- DANGEROUS COUSINS -->
+  <section id="danger">
+    <p class="kicker">The dangerous cousins</p>
+    <h2>The sting-o-meter</h2>
+    <div class="prose">
+      <p>The European nettle is the <em>gentle</em> one. The same silica-needle blueprint, scaled up and re-armed in warmer parts of the world, produces plants that have killed livestock, hospitalised botanists, and inspired some of the grimmest folklore in nature. Bars show relative <strong>peak pain</strong> and how <strong>long</strong> it lasts — click a row for the toxin.</p>
+    </div>
+    <div id="stingometer" style="margin-top:18px"></div>
+    <div class="callout" style="margin-top:6px"><b>Venom in a shrub.</b> In 2020, University of Queensland scientists found the gympie-gympie's agony comes from <em>gympietides</em> — mini-proteins folded into the same "inhibitor cystine knot" as <strong>spider and cone-snail venoms</strong>, jamming the human pain channel Na<sub>V</sub>1.7 open. A plant independently evolved a neurotoxin. Its hairs can stay in your skin six months, and a 100-year-old museum specimen can still sting.</div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz">
+    <p class="kicker">Test yourself</p>
+    <h2>The nettle quiz</h2>
+    <div class="prose"><p>Eight questions. No dock leaves allowed.</p></div>
+    <div class="quiz panel" id="quizBox" style="margin-top:16px"></div>
+  </section>
+
+  <!-- FIRST AID -->
+  <section id="firstaid">
+    <p class="kicker">If you get stung</p>
+    <h2>What actually helps</h2>
+    <div class="grid2">
+      <div class="prose">
+        <p><strong>Don't rub it</strong> — you'll break more hairs and press the chemicals in. If you can, lift out the embedded hairs first: a strip of tape pressed on and peeled off, or a gentle wash, lifts the silica needles. Then cool it.</p>
+        <p>Cool water, a cold compress, and time do most of the work; an ordinary <strong>antihistamine cream</strong> or tablet targets the actual histamine. The wheal usually fades within a few hours — the common nettle's sting is short-lived, whatever the dock-leaf folklore promises.</p>
+      </div>
+      <div class="prose">
+        <p>And the counter-intuitive trick from the proverb: if you must handle nettles bare-handed, <strong>grip firmly and confidently</strong> in the direction the hairs lie, rather than brushing. Flattened hairs can't break the skin. Better still — <strong>gloves</strong>.</p>
+        <div class="callout"><b>The bright side.</b> That patch you're cursing is feeding a hundred insects and a nursery of butterflies. Cut the young tops in spring for soup and you'll have taken a free multivitamin off a plant most people only ever meet by accident.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p><strong style="color:var(--leaf-lt)">The Nettle</strong> · <span class="latin">Urtica dioica</span> — a complete field almanac</p>
+    <p class="srcnote" style="max-width:70ch;margin:10px auto 0">Compiled from botanical, ecological, historical and clinical sources including Kew, the BSBI, USDA nutrient data, <span class="latin">Annals of Botany</span> (Fu et al., 2006), <span class="latin">Scientific Reports</span> (Bergfjord/Holst et al., 2012), <span class="latin">Science Advances</span> (Vetter &amp; Durek, 2020) and the German Commission E. Illustrations drawn live in SVG. Informational only — not medical or foraging advice; never eat a wild plant you cannot identify with certainty.</p>
+    <p style="margin-top:16px"><a href="https://0x4d44.github.io/">← back to the almanac</a></p>
+  </footer>
+</main>
+
+<script>
+// ============================================================
+// The Nettle — interactive almanac. Vanilla JS, no build step.
+// ============================================================
+(function(){
+  "use strict";
+  var $ = function(s, r){ return (r||document).querySelector(s); };
+  var $$ = function(s, r){ return Array.prototype.slice.call((r||document).querySelectorAll(s)); };
+  var lerp = function(a,b,t){ return a + (b-a)*t; };
+
+  // reading progress
+  var prog = $("#progress");
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    prog.style.width = (max > 0 ? (h.scrollTop / max * 100) : 0) + "%";
+  }
+  document.addEventListener("scroll", onScroll, {passive:true});
+  onScroll();
+
+  // ---------------------------------------------------------
+  // Procedural nettle leaf: a coarsely toothed, acuminate,
+  // cordate-based leaf built as an SVG path. Base at origin,
+  // tip along +x, symmetric about the x-axis.
+  // ---------------------------------------------------------
+  function nettleLeaf(L, W, teeth){
+    // smooth half-width along the blade (s: 0=base .. 1=tip)
+    function hw(s){
+      var base = Math.pow(Math.sin(Math.PI*s), 0.72);     // 0 at both ends, pointed tip
+      var lobe = 0.34*Math.exp(-Math.pow((s-0.10)/0.07,2)); // small cordate basal lobes
+      return W*(0.5*base + lobe*0.5);
+    }
+    function cx(s){ return L*s; }
+    // build one toothed margin (base -> tip), y>0 side
+    function margin(sign){
+      var pts = [];
+      for (var i=0;i<=teeth;i++){
+        var s0 = lerp(0.05, 0.965, i/teeth);
+        var s1 = lerp(0.05, 0.965, (i+0.5)/teeth);
+        // notch (slightly inset, on the blade)
+        pts.push([cx(s0), sign*hw(s0)*0.90]);
+        if (i<teeth){
+          // tooth apex: outset and nudged toward the tip (forward-pointing)
+          pts.push([cx(s1)+L*0.018, sign*hw(s1)*1.16]);
+        }
+      }
+      return pts;
+    }
+    var right = margin(1);
+    var left  = margin(-1).reverse();
+    function poly(pts, first){
+      var d = "";
+      for (var i=0;i<pts.length;i++){
+        d += (i===0 && first ? "M" : "L") + pts[i][0].toFixed(1) + " " + pts[i][1].toFixed(1) + " ";
+      }
+      return d;
+    }
+    var tip = [L, 0];
+    var d = poly(right, true) + "L"+tip[0]+" "+tip[1]+" " + poly(left, false) + "Z";
+    // midrib + lateral veins to the tooth sinuses
+    var veins = "M0 0 C"+(L*0.35)+" "+(W*0.02)+" "+(L*0.7)+" "+(W*0.01)+" "+L+" 0 ";
+    for (var i=1;i<teeth;i++){
+      var s = lerp(0.14, 0.9, i/teeth);
+      var mx = cx(s)*0.86, my = 0;
+      veins += "M"+mx.toFixed(1)+" "+my+" L"+(cx(s)).toFixed(1)+" "+( hw(s)*0.9).toFixed(1)+" ";
+      veins += "M"+mx.toFixed(1)+" "+my+" L"+(cx(s)).toFixed(1)+" "+(-hw(s)*0.9).toFixed(1)+" ";
+    }
+    return { outline: d, veins: veins };
+  }
+
+  // Build an SVG <g> string for a placed leaf.
+  function leafGroup(x, y, rot, scale, L, W, teeth, gid, flip){
+    var lf = nettleLeaf(L, W, teeth);
+    var sy = (flip? -scale : scale);
+    return '<g transform="translate('+x+','+y+') rotate('+rot+') scale('+scale+','+sy+')">'
+      + '<path d="'+lf.outline+'" fill="url(#'+gid+')" stroke="#2f5f28" stroke-width="'+(1.1/scale)+'" stroke-linejoin="round"/>'
+      + '<path d="'+lf.veins+'" fill="none" stroke="#2f5f28" stroke-opacity="0.55" stroke-width="'+(0.8/scale)+'" stroke-linecap="round"/>'
+      + '</g>';
+  }
+
+  // ---------------------------------------------------------
+  // Hero: a botanical nettle sprig
+  // ---------------------------------------------------------
+  function buildHero(){
+    var host = $("#heroArt");
+    if (!host) return;
+    var W = 400, H = 580;
+    var defs = ''
+      + '<defs>'
+      + '<linearGradient id="lg1" x1="0" y1="0" x2="0" y2="1">'
+      +   '<stop offset="0" stop-color="#8fc65f"/><stop offset="0.55" stop-color="#5aa03e"/><stop offset="1" stop-color="#3c7830"/>'
+      + '</linearGradient>'
+      + '<linearGradient id="lg2" x1="0" y1="0" x2="0" y2="1">'
+      +   '<stop offset="0" stop-color="#a6d977"/><stop offset="0.6" stop-color="#69ac47"/><stop offset="1" stop-color="#437f34"/>'
+      + '</linearGradient>'
+      + '<linearGradient id="stemg" x1="0" y1="0" x2="1" y2="0">'
+      +   '<stop offset="0" stop-color="#4d7f3c"/><stop offset="0.5" stop-color="#89bd68"/><stop offset="1" stop-color="#3f6d31"/>'
+      + '</linearGradient>'
+      + '<radialGradient id="glow" cx="0.5" cy="0.4" r="0.6">'
+      +   '<stop offset="0" stop-color="rgba(200,232,154,0.16)"/><stop offset="1" stop-color="rgba(200,232,154,0)"/>'
+      + '</radialGradient>'
+      + '</defs>';
+
+    var s = '<circle cx="200" cy="250" r="230" fill="url(#glow)"/>';
+    // main stem
+    s += '<path d="M200 560 C196 460 204 380 200 300 C197 240 203 180 200 90" fill="none" stroke="url(#stemg)" stroke-width="9" stroke-linecap="round"/>';
+    // fine stinging-hair fuzz on the stem
+    var fuzz = '';
+    for (var i=0;i<46;i++){
+      var t = i/46, yy = lerp(540,120,t), side = (i%2?1:-1);
+      fuzz += '<line x1="'+(200+side*4)+'" y1="'+yy+'" x2="'+(200+side*10)+'" y2="'+(yy-5)+'" stroke="#bfe08a" stroke-opacity="0.5" stroke-width="0.8"/>';
+    }
+    s += fuzz;
+    // opposite (decussate) leaf pairs, decreasing up the stem
+    // pair at y=470
+    s += leafGroup(200,470, 200, 1.35, 150, 96, 9, 'lg1', false);
+    s += leafGroup(200,470, -20, 1.35, 150, 96, 9, 'lg2', true);
+    // flower tassels (drooping panicles) at that axil
+    s += tassel(210,468, 18, 40, false);
+    s += tassel(190,468, -18, 40, true);
+    // pair at y=350 (rotated ~90 to camera => appears fore/back, draw smaller)
+    s += leafGroup(200,352, 168, 1.02, 150, 92, 9, 'lg2', false);
+    s += leafGroup(200,352, 12, 1.02, 150, 92, 9, 'lg1', true);
+    s += tassel(208,350, 22, 30, false);
+    // pair at y=232
+    s += leafGroup(200,236, 205, 0.78, 150, 90, 8, 'lg1', false);
+    s += leafGroup(200,236, -25, 0.78, 150, 90, 8, 'lg2', true);
+    // young crown
+    s += leafGroup(200,120, 250, 0.5, 150, 90, 7, 'lg2', false);
+    s += leafGroup(200,120, -70, 0.5, 150, 90, 7, 'lg1', true);
+    s += leafGroup(200,116, 200, 0.34, 150, 90, 6, 'lg1', false);
+
+    host.innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A botanical illustration of a stinging nettle sprig">'+defs+s+'</svg>';
+  }
+
+  // drooping flower tassel (panicle of tiny green flowers)
+  function tassel(x,y,ang,len,flip){
+    var g = '<g transform="translate('+x+','+y+') rotate('+ang+')">';
+    g += '<path d="M0 0 Q'+(len*0.3)+' '+(len*0.5)+' '+(len*0.2)+' '+len+'" fill="none" stroke="#7fae5f" stroke-width="1.4"/>';
+    for (var i=0;i<10;i++){
+      var t=i/10, px = lerp(0, len*0.22, t)+ (i%2?2:-2), py = lerp(2,len,t);
+      g += '<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(2.0-t*0.6).toFixed(1)+'" fill="#cfe6a0" stroke="#7fae5f" stroke-width="0.4"/>';
+    }
+    return g+'</g>';
+  }
+
+  buildHero();
+
+  // ---------------------------------------------------------
+  // ANATOMY — labelled botanical plate with hotspots
+  // ---------------------------------------------------------
+  var ANATOMY = [
+    { n:1, x:96,  y:250, t:"Leaves — opposite &amp; toothed",
+      d:"Leaves grow in opposite pairs, each pair set at right angles to the last (decussate). They are coarsely saw-toothed, taper to a point, and have a heart-shaped base. Both surfaces bristle with hairs." },
+    { n:2, x:206, y:410, t:"Stem — grooved, not truly square",
+      d:"A key ID point: the nettle's stem is rounded with four longitudinal grooves — NOT the properly square stem of the mint-family dead-nettles it's often confused with." },
+    { n:3, x:238, y:338, t:"Stinging hairs (trichomes)",
+      d:"Hollow, silica-stiffened glass needles, roughly a millimetre long, standing among softer non-stinging hairs on stem and leaf. Each is a self-loading hypodermic — see 'The Sting' below." },
+    { n:4, x:274, y:262, t:"Flowers — drooping green catkins",
+      d:"Tiny, petal-less, wind-pollinated flowers hang in branched tassels from the leaf axils. Plants are usually single-sex: male flowers catapult pollen into the wind; female tassels look denser and droop lower." },
+    { n:5, x:132, y:556, t:"Rhizome — bright yellow, creeping",
+      d:"Below ground, vivid yellow rhizomes and stolons creep outward ~0.5 m a year, cloning the plant into dense patches. Dig one up and the colour is unmistakable." },
+    { n:6, x:200, y:104, t:"Growing tip — the forager's prize",
+      d:"The tender young top, taken in spring before the plant flowers, is the part to pick for soup and tea — highest in vitamins and free of the gritty cystoliths that form later." }
+  ];
+
+  function buildAnatomy(){
+    var host = $("#anatomyArt");
+    if (!host) return;
+    var defs = '<defs>'
+      + '<linearGradient id="alg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fc65f"/><stop offset="1" stop-color="#3c7830"/></linearGradient>'
+      + '<linearGradient id="alg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6d977"/><stop offset="1" stop-color="#437f34"/></linearGradient>'
+      + '<linearGradient id="rhz" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e7c766"/><stop offset="1" stop-color="#c79a3a"/></linearGradient>'
+      + '<linearGradient id="astem" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4d7f3c"/><stop offset="0.5" stop-color="#89bd68"/><stop offset="1" stop-color="#3f6d31"/></linearGradient>'
+      + '</defs>';
+    var s = '';
+    // soil
+    s += '<rect x="0" y="505" width="400" height="115" fill="#1a1005" opacity="0.55"/>';
+    s += '<line x1="0" y1="505" x2="400" y2="505" stroke="#3a2a12" stroke-width="2"/>';
+    // yellow rhizome below soil
+    s += '<path d="M40 560 C120 540 170 585 210 560 C250 535 320 575 372 552" fill="none" stroke="url(#rhz)" stroke-width="8" stroke-linecap="round"/>';
+    s += '<path d="M210 560 C205 535 202 520 205 505" fill="none" stroke="url(#rhz)" stroke-width="6" stroke-linecap="round"/>';
+    for (var r=0;r<7;r++){ var rx=60+r*46; s += '<line x1="'+rx+'" y1="'+(560-Math.sin(r)*6)+'" x2="'+(rx-6)+'" y2="'+(575-Math.sin(r)*6)+'" stroke="#c79a3a" stroke-width="2.4" stroke-linecap="round"/>'; }
+    // main stem
+    s += '<path d="M205 505 C201 440 208 380 204 300 C201 240 207 180 202 96" fill="none" stroke="url(#astem)" stroke-width="8" stroke-linecap="round"/>';
+    // stem fuzz
+    for (var i=0;i<34;i++){ var t=i/34, yy=lerp(495,120,t), side=(i%2?1:-1); s += '<line x1="'+(204+side*4)+'" y1="'+yy+'" x2="'+(204+side*9)+'" y2="'+(yy-5)+'" stroke="#bfe08a" stroke-opacity="0.55" stroke-width="0.8"/>'; }
+    // leaf pairs
+    s += leafGroup(204,460, 202, 1.15, 150, 96, 9, 'alg1', false);
+    s += leafGroup(204,460, -22, 1.15, 150, 96, 9, 'alg2', true);
+    s += leafGroup(204,344, 168, 0.92, 150, 92, 9, 'alg2', false);
+    s += leafGroup(204,344, 12, 0.92, 150, 92, 9, 'alg1', true);
+    s += leafGroup(204,232, 206, 0.7, 150, 90, 8, 'alg1', false);
+    s += leafGroup(204,232, -26, 0.7, 150, 90, 8, 'alg2', true);
+    s += leafGroup(202,120, 250, 0.44, 150, 90, 7, 'alg2', false);
+    s += leafGroup(202,120, -70, 0.44, 150, 90, 7, 'alg1', true);
+    // flower tassels at upper axil
+    s += tassel(214,342, 20, 34, false);
+    s += tassel(196,342, -20, 34, true);
+    // hotspots
+    var hs = '';
+    ANATOMY.forEach(function(h){
+      hs += '<g class="hotspot" data-n="'+h.n+'" tabindex="0" role="button" aria-label="'+h.t.replace(/&amp;/g,'and')+'">'
+        + '<circle class="ring" cx="'+h.x+'" cy="'+h.y+'" r="14"/>'
+        + '<text x="'+h.x+'" y="'+(h.y+4)+'" text-anchor="middle">'+h.n+'</text></g>';
+    });
+    host.innerHTML = '<svg viewBox="0 0 400 620" xmlns="http://www.w3.org/2000/svg">'+defs+s+hs+'</svg>';
+    var info = $("#anatomyInfo");
+    function select(n){
+      var h = ANATOMY.filter(function(a){return a.n===n;})[0]; if(!h) return;
+      $$(".hotspot", host).forEach(function(g){ g.classList.toggle("active", +g.getAttribute("data-n")===n); });
+      info.innerHTML = '<div class="idx">'+h.n+' / '+ANATOMY.length+'</div><h3>'+h.t+'</h3><p>'+h.d+'</p>';
+    }
+    $$(".hotspot", host).forEach(function(g){
+      var n = +g.getAttribute("data-n");
+      g.addEventListener("click", function(){ select(n); });
+      g.addEventListener("keydown", function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); select(n);} });
+    });
+  }
+  buildAnatomy();
+
+  // ---------------------------------------------------------
+  // THE STING — trichome animation + chemical cocktail
+  // ---------------------------------------------------------
+  var CHEMS = [
+    { nm:"Histamine", sub:"the wheal", role:"Vasodilation, itch and the raised bump", c:"#e8607a" },
+    { nm:"Acetylcholine", sub:"~1% of the fluid", role:"Neurotransmitter — the burning", c:"#eaa14a" },
+    { nm:"Serotonin", sub:"5-HT", role:"Sensitises the pain fibres", c:"#b98bff" },
+    { nm:"Leukotrienes", sub:"B4 · C4", role:"Amplify and prolong the inflammation", c:"#7fc5e8" },
+    { nm:"Oxalic &amp; tartaric acid", sub:"the real long burn", role:"Drive the drawn-out ache (2006 finding)", c:"#f2e14b" },
+    { nm:"Formic acid", sub:"traces only", role:"The famous culprit — but barely involved", c:"#7e9a6f" }
+  ];
+  function buildCocktail(){
+    var host = $("#cocktail"); if(!host) return;
+    host.innerHTML = CHEMS.map(function(c,i){
+      return '<div class="chem" data-i="'+i+'" style="--chemc:'+c.c.replace(/&amp;/g,'&')+'">'
+        + '<span class="dot"></span>'
+        + '<div class="nm">'+c.nm+'<small>'+c.sub+'</small></div>'
+        + '<div class="role">'+c.role+'</div></div>';
+    }).join("");
+  }
+  buildCocktail();
+
+  function buildStingStage(){
+    var host = $("#stingStage"); if(!host) return;
+    var svg = ''
+    + '<svg viewBox="0 0 420 340" xmlns="http://www.w3.org/2000/svg" aria-label="A magnified stinging hair">'
+    + '<defs>'
+    + '<linearGradient id="silica" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#dfeecf"/><stop offset="0.5" stop-color="#a9c98f"/><stop offset="1" stop-color="#6f9457"/></linearGradient>'
+    + '<linearGradient id="fluidg" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#eaa14a"/><stop offset="1" stop-color="#e8607a"/></linearGradient>'
+    + '<linearGradient id="skingr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a2530"/><stop offset="1" stop-color="#2a1a22"/></linearGradient>'
+    + '<clipPath id="tubeclip"><rect x="200" y="96" width="18" height="212" rx="9"/></clipPath>'
+    + '</defs>'
+    // skin/dermis band
+    + '<g id="skin">'
+    +   '<rect x="0" y="0" width="420" height="66" fill="url(#skingr)"/>'
+    +   '<path d="M0 66 Q105 60 210 66 T420 66" fill="none" stroke="#c98b9a" stroke-width="2" opacity="0.7"/>'
+    +   '<text x="14" y="24" fill="#8b6b76" font-family="ui-monospace,monospace" font-size="11" letter-spacing="1.5">YOUR SKIN</text>'
+    +   '<ellipse id="wheal" cx="209" cy="62" rx="60" ry="18" fill="#e8607a" style="opacity:0;transform-box:fill-box;transform-origin:center;transform:scale(.2);transition:transform .6s,opacity .6s"/>'
+    + '</g>'
+    // hair
+    + '<g id="hair" style="transition:transform .45s cubic-bezier(.3,.7,.2,1);transform-box:fill-box;transform-origin:50% 97%">'
+    +   '<ellipse cx="209" cy="300" rx="48" ry="36" fill="url(#silica)" stroke="#5c7a48" stroke-width="1.4"/>'
+    +   '<ellipse id="reservoir" cx="209" cy="304" rx="36" ry="26" fill="url(#fluidg)" opacity="0.9" style="transition:opacity 1s"/>'
+    +   '<rect x="200" y="96" width="18" height="212" rx="9" fill="url(#silica)" stroke="#5c7a48" stroke-width="1.2"/>'
+    +   '<g clip-path="url(#tubeclip)"><rect id="fluid" x="200" y="96" width="18" height="212" fill="url(#fluidg)" style="transform:translateY(212px);transition:transform 1.2s ease-in"/></g>'
+    +   '<path id="bevel" d="M200 100 L218 100 L209 80 Z" fill="url(#silica)" stroke="#5c7a48" stroke-width="1" style="opacity:0;transition:opacity .3s"/>'
+    +   '<circle id="cap" cx="209" cy="92" r="13" fill="url(#silica)" stroke="#5c7a48" stroke-width="1.4" style="transition:transform .55s cubic-bezier(.4,0,.6,1),opacity .55s"/>'
+    +   '<text x="250" y="300" fill="#7e9280" font-family="ui-monospace,monospace" font-size="11">reservoir</text>'
+    +   '<text x="250" y="200" fill="#7e9280" font-family="ui-monospace,monospace" font-size="11">silica shaft</text>'
+    + '</g>'
+    + '</svg>';
+    host.innerHTML = svg;
+  }
+  buildStingStage();
+
+  (function stingCtl(){
+    var stage = $("#stingStage"); if(!stage) return;
+    var mode = "brush";
+    var timers = [];
+    var cap, hair, bevel, fluid, reservoir, wheal, caption;
+    function grab(){
+      cap=$("#cap",stage); hair=$("#hair",stage); bevel=$("#bevel",stage);
+      fluid=$("#fluid",stage); reservoir=$("#reservoir",stage); wheal=$("#wheal",stage);
+      caption=$("#stingCaption");
+    }
+    grab();
+    function clearT(){ timers.forEach(clearTimeout); timers=[]; }
+    function T(fn,ms){ timers.push(setTimeout(fn,ms)); }
+    function litAll(on){ $$(".chem").forEach(function(c){ c.classList.toggle("lit", !!on); }); }
+    function reset(){
+      clearT(); grab();
+      hair.style.transform="none";
+      cap.style.transform="none"; cap.style.opacity="1";
+      bevel.style.opacity="0";
+      fluid.style.transform="translateY(212px)";
+      reservoir.style.opacity="0.9";
+      wheal.style.opacity="0"; wheal.style.transform="scale(.2)";
+      litAll(false);
+      caption.textContent = mode==="brush"
+        ? "A single stinging hair, magnified ~40×. Brush it and watch the tip shear."
+        : "Grasp mode: grip firmly and the hairs flatten before they can break the skin.";
+    }
+    function fire(){
+      reset();
+      if (mode==="grasp"){
+        caption.textContent = "Gripping firmly…";
+        T(function(){ hair.style.transform="rotate(-68deg) translateY(6px)"; caption.textContent="The hairs bend flat, so the tips can't pierce."; }, 60);
+        T(function(){ caption.textContent="Flattened — no sting. This is the botany behind ‘grasp the nettle.’"; }, 900);
+        return;
+      }
+      caption.textContent = "Contact…";
+      T(function(){ hair.style.transform="translateY(-32px)"; }, 60);
+      T(function(){
+        cap.style.transform="translate(34px,-78px) rotate(90deg)"; cap.style.opacity="0";
+        bevel.style.opacity="1";
+        caption.textContent = "The brittle glass tip shears off — leaving a bevelled needle.";
+      }, 420);
+      T(function(){
+        fluid.style.transform="translateY(0)"; reservoir.style.opacity="0.28";
+        caption.textContent = "Piercing the skin squeezes the base — venom is injected up the shaft.";
+      }, 820);
+      CHEMS.forEach(function(_,i){ T(function(){ var c=$('.chem[data-i="'+i+'"]'); if(c) c.classList.add("lit"); }, 1050 + i*230); });
+      T(function(){
+        wheal.style.opacity="0.85"; wheal.style.transform="scale(1)";
+        caption.textContent = "A wheal rises within minutes — histamine at work. The itch can last hours.";
+      }, 2650);
+    }
+    $("#stingFire").addEventListener("click", fire);
+    $("#stingReset").addEventListener("click", reset);
+    $$("#stingMode button").forEach(function(b){
+      b.addEventListener("click", function(){
+        $$("#stingMode button").forEach(function(x){x.classList.remove("active");});
+        b.classList.add("active"); mode=b.getAttribute("data-mode"); reset();
+      });
+    });
+  })();
+
+  // ---------------------------------------------------------
+  // LIFECYCLE — a year in the life
+  // ---------------------------------------------------------
+  var CYCLE = [
+    {m:"January", s:"Dormant", g:0, fl:0, sd:0, bf:0, col:"#7a6a3a", t:"Nothing above ground. The clone survives the winter entirely as living yellow rhizomes below the frost line, waiting."},
+    {m:"February", s:"Dormant", g:0.03, fl:0, sd:0, bf:0, col:"#7a6a3a", t:"The first crimson-tinged shoot-tips begin to swell at the rhizome nodes, still hugging the soil."},
+    {m:"March", s:"Spring emergence", g:0.28, fl:0, sd:0, bf:0, col:"#6fb04a", t:"Fresh green shoots push up fast. This is the forager's window — the young tops are tender and at their most vitamin-rich."},
+    {m:"April", s:"Rapid growth", g:0.5, fl:0, sd:0, bf:1, col:"#6fb04a", t:"Growth accelerates on the lengthening days. Nettle-only aphids swarm the new leaves — the first food for waking ladybirds."},
+    {m:"May", s:"Approaching flower", g:0.75, fl:0, sd:0, bf:1, col:"#5aa03e", t:"Nearly full height. Butterfly eggs — small tortoiseshell, peacock — hatch into caterpillars that spin silken tents on the tips."},
+    {m:"June", s:"Flowering", g:0.95, fl:1, sd:0, bf:1, col:"#5aa03e", t:"Drooping green flower-tassels open. On warm dry days the male flowers spring their stamens and fire visible puffs of pollen into the wind."},
+    {m:"July", s:"Full flower", g:1, fl:1, sd:0, bf:1, col:"#4f9438", t:"Peak. A dense patch is now a thicket up to 2 m tall, humming with insects and hiding butterfly larvae."},
+    {m:"August", s:"Setting seed", g:1, fl:0.5, sd:1, bf:1, col:"#5a8a3a", t:"Female tassels hang heavy with seed — 10,000–20,000 from a single sunlit shoot. Gritty cystoliths now make the leaves unpleasant to eat."},
+    {m:"September", s:"Seeding & senescing", g:0.95, fl:0, sd:1, bf:0, col:"#8a9a3a", t:"Seed rains down and feeds finches and buntings. The oldest leaves start to yellow from the base up."},
+    {m:"October", s:"Senescence", g:0.8, fl:0, sd:0.4, bf:0, col:"#b39a3a", t:"The patch turns gold and brown. The plant pulls resources down into the rhizomes for next year."},
+    {m:"November", s:"Dying back", g:0.4, fl:0, sd:0, bf:0, col:"#8a7038", t:"Aerial stems collapse into a brown tangle. The living plant retreats entirely underground."},
+    {m:"December", s:"Dormant", g:0.08, fl:0, sd:0, bf:0, col:"#7a6a3a", t:"Bare stalks and rhizomes. Below ground the clone is intact and ready — a nettle patch can hold the same ground for decades."}
+  ];
+  function drawCycle(idx, puff){
+    var host=$("#cycleArt"); if(!host) return;
+    var st=CYCLE[idx]; var H=340, W=440;
+    var soilY=280;
+    var s='';
+    s+='<defs><linearGradient id="clg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+shade(st.col,1.25)+'"/><stop offset="1" stop-color="'+shade(st.col,0.7)+'"/></linearGradient>'
+     + '<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(120,180,120,0.05)"/><stop offset="1" stop-color="rgba(120,180,120,0)"/></linearGradient></defs>';
+    s+='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="url(#sky)"/>';
+    // soil
+    s+='<rect x="0" y="'+soilY+'" width="'+W+'" height="'+(H-soilY)+'" fill="#1a1005" opacity="0.5"/>';
+    s+='<line x1="0" y1="'+soilY+'" x2="'+W+'" y2="'+soilY+'" stroke="#3a2a12" stroke-width="2"/>';
+    // rhizome always
+    s+='<path d="M40 '+(soilY+26)+' C140 '+(soilY+12)+' 200 '+(soilY+40)+' 240 '+(soilY+22)+' C300 '+(soilY+2)+' 360 '+(soilY+30)+' 410 '+(soilY+14)+'" fill="none" stroke="#c79a3a" stroke-width="6" stroke-linecap="round"/>';
+    // stems (3 shoots) scaled by growth
+    var cxs=[150,220,290];
+    cxs.forEach(function(cx,k){
+      var g=Math.max(0.02, st.g*(k===1?1:0.82));
+      var top=soilY-g*200;
+      var col=st.g<0.12?'#7a6a3a':'url(#clg)';
+      s+='<path d="M'+cx+' '+soilY+' C'+(cx-4)+' '+lerp(soilY,top,0.5)+' '+(cx+4)+' '+lerp(soilY,top,0.7)+' '+cx+' '+top+'" fill="none" stroke="'+col+'" stroke-width="'+(3+g*3)+'" stroke-linecap="round"/>';
+      if (st.g>0.18){
+        // a couple of small leaves
+        for (var L=0;L<3;L++){
+          var ly=lerp(soilY-14, top+6, L/2.2), ls=(0.12+g*0.16), side=(L%2?1:-1);
+          s+=leafGroup(cx, ly, side>0?200:-20, ls*(k===1?1:0.85), 150, 92, 7, side>0?'clg':'clg', side<0);
+        }
+      }
+      if (st.fl>0 && k!==1){
+        s+=tassel(cx+6, top+18, 24, 26*st.fl, false);
+      }
+      if (st.sd>0){
+        for (var d=0; d<4; d++){ s+='<circle cx="'+(cx+(d-1.5)*5)+'" cy="'+(top+16+d*3)+'" r="1.6" fill="#cbb26a" opacity="'+st.sd+'"/>'; }
+      }
+    });
+    // pollen puff
+    if (puff){
+      for (var p=0;p<16;p++){ var pa=Math.PI*(0.2+Math.random?0:0)+ (p/16)*Math.PI; var px=220+Math.cos(p)*26+(p*2), py=(soilY-st.g*200)+8-Math.abs(Math.sin(p))*30; s+='<circle class="pollen" cx="'+(226+ (p%6-3)*10)+'" cy="'+((soilY-st.g*200)+6-(p*3))+'" r="2.2" fill="#e7d06a"><animate attributeName="opacity" from="1" to="0" dur="1.1s" fill="freeze"/><animate attributeName="cy" from="'+((soilY-st.g*200)+6)+'" to="'+((soilY-st.g*200)-70-(p%5)*10)+'" dur="1.1s" fill="freeze"/></circle>'; }
+    }
+    // butterflies
+    if (st.bf){
+      [[80,120],[360,90]].forEach(function(b){
+        s+='<g transform="translate('+b[0]+','+b[1]+')" opacity="0.9"><path d="M0 0 C-12 -10 -18 2 -4 6 C-12 12 -4 18 0 6 C4 18 12 12 4 6 C18 2 12 -10 0 0 Z" fill="#e08a4a" stroke="#7a3a12" stroke-width="0.8"/></g>';
+      });
+    }
+    host.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+    $("#cycleMonth").textContent=st.m.toUpperCase();
+    $("#cycleStage").textContent=st.s;
+    $("#cycleText").textContent=st.t;
+  }
+  function shade(hex, f){
+    var c=hex.replace('#',''); var r=parseInt(c.substr(0,2),16), g=parseInt(c.substr(2,2),16), b=parseInt(c.substr(4,2),16);
+    r=Math.min(255,Math.round(r*f)); g=Math.min(255,Math.round(g*f)); b=Math.min(255,Math.round(b*f));
+    return 'rgb('+r+','+g+','+b+')';
+  }
+  (function cycleCtl(){
+    var sl=$("#cycleSlider"); if(!sl) return;
+    drawCycle(+sl.value, false);
+    sl.addEventListener("input", function(){ drawCycle(+sl.value, false); });
+    $("#pollenBtn").addEventListener("click", function(){
+      sl.value=6; drawCycle(6, true);
+    });
+  })();
+
+  // ---------------------------------------------------------
+  // CLADOGRAM — the nettle's relatives
+  // ---------------------------------------------------------
+  var CLADO = {
+    Ulmaceae: { label:"Ulmaceae — elms", rel:"The <b>elms</b>. The first branch to split off in this group — the nettle's most distant cousins here, but still far closer than roses or grasses." },
+    Cannabaceae: { label:"Cannabaceae — hops &amp; cannabis", rel:"<b>Hops and hemp/cannabis</b>. One branch over from the nettle: your beer's bittering plant and cannabis are the nettle's cousins." },
+    Moraceae: { label:"Moraceae — figs &amp; mulberries", rel:"<b>Figs, mulberries, breadfruit and jackfruit</b> — the nettle's <i>closest</i> relatives of all. Sister family to Urticaceae." },
+    Urticaceae: { label:"Urticaceae — NETTLES", rel:"<b>The nettle family itself</b>: nettles, pellitory, ramie, and the fearsome tropical stinging trees. The sting evolved once, here, in the tribe Urticeae." }
+  };
+  function buildClado(){
+    var host=$("#clado"); if(!host) return;
+    var tips={Ulmaceae:45, Cannabaceae:110, Moraceae:180, Urticaceae:245};
+    var lx=480;
+    var br=''
+      + 'M40 103 L90 103 '
+      + 'M90 45 L90 161 M90 45 L'+lx+' 45 M90 161 L190 161 '
+      + 'M190 110 L190 212 M190 110 L'+lx+' 110 M190 212 L300 212 '
+      + 'M300 180 L300 245 M300 180 L'+lx+' 180 M300 245 L'+lx+' 245 ';
+    var s='<path class="branch" d="'+br+'"/>';
+    s+='<text x="24" y="99" fill="#7e9280" font-family="ui-monospace,monospace" font-size="11">ROSALES</text>';
+    s+='<text x="24" y="115" fill="#536159" font-family="ui-monospace,monospace" font-size="9">(roses · apples)</text>';
+    Object.keys(tips).forEach(function(k){
+      var y=tips[k], self=(k==="Urticaceae");
+      s+='<g class="node'+(self?' self':'')+'" data-k="'+k+'" tabindex="0">'
+        + '<rect x="'+lx+'" y="'+(y-15)+'" width="216" height="30"/>'
+        + '<text x="'+(lx+12)+'" y="'+(y+5)+'">'+CLADO[k].label+'</text></g>';
+    });
+    host.innerHTML='<svg class="clado" viewBox="0 0 720 290" xmlns="http://www.w3.org/2000/svg">'+s+'</svg>';
+    var info=$("#cladoInfo");
+    function show(k){
+      $$(".node",host).forEach(function(n){ n.classList.toggle("on", n.getAttribute("data-k")===k); });
+      info.innerHTML=CLADO[k].rel;
+    }
+    $$(".node",host).forEach(function(n){
+      var k=n.getAttribute("data-k");
+      n.addEventListener("mouseenter", function(){ show(k); });
+      n.addEventListener("click", function(){ show(k); });
+      n.addEventListener("focus", function(){ show(k); });
+    });
+    show("Urticaceae");
+  }
+  buildClado();
+
+  // ---------------------------------------------------------
+  // NUTRITION bars (nettle vs spinach, cooked /100g)
+  // ---------------------------------------------------------
+  var NUT=[
+    {k:"Calcium", n:481, s:136, u:"mg"},
+    {k:"Fibre", n:6.9, s:2.4, u:"g"},
+    {k:"Vitamin K", n:499, s:493, u:"µg"},
+    {k:"Protein", n:2.7, s:2.9, u:"g"}
+  ];
+  function buildNutrition(){
+    var host=$("#nutrition"); if(!host) return;
+    host.innerHTML = NUT.map(function(r){
+      return '<div class="nut-row"><div class="nut-label">'+r.k+'</div><div class="nut-bars">'
+        + '<div class="nut-bar nut-n" data-w="'+(r.n/Math.max(r.n,r.s)*100)+'">nettle '+r.n+' '+r.u+'</div>'
+        + '<div class="nut-bar nut-s" data-w="'+(r.s/Math.max(r.n,r.s)*100)+'">spinach '+r.s+' '+r.u+'</div>'
+        + '</div></div>';
+    }).join("");
+  }
+  buildNutrition();
+
+  // ---------------------------------------------------------
+  // STING-O-METER — dangerous cousins
+  // ---------------------------------------------------------
+  var SPECIES=[
+    {nm:"Common nettle", l:"Urtica dioica · Europe", pain:2, dur:8, dl:"minutes–hours", c:"#6fb04a",
+     note:"The one you know. Histamine, acetylcholine and serotonin for the immediate itch; oxalic and tartaric acid for the lingering ache. The sting fades within hours."},
+    {nm:"Small nettle", l:"Urtica urens · Europe", pain:3, dur:10, dl:"hours", c:"#86b96a",
+     note:"An ankle-high annual, half the leaf size of the common nettle — but widely reputed to sting harder per hair than its bigger cousin."},
+    {nm:"Ongaonga", l:"Urtica ferox · New Zealand", pain:7, dur:55, dl:"hours–days", c:"#eaa14a",
+     note:"A tree nettle up to 3 m with unusually long 6 mm hairs. Credited with a documented human death in 1961 (fatal paralysis in ~5 hours) and the deaths of dogs and horses. It stings via novel peptides, not the 'triterpene' long blamed."},
+    {nm:"Giant stinging tree", l:"Dendrocnide excelsa · Australia", pain:8, dur:80, dl:"hours–months", c:"#c23a58",
+     note:"A rainforest giant reaching 35–40 m with a buttressed base over 6 m wide. Minor stings pass in an hour or two; severe ones can last months. A main source of the gympietide toxins studied in 2020."},
+    {nm:"Gympie-gympie", l:"Dendrocnide moroides · Australia", pain:10, dur:100, dl:"weeks–months (–years)", c:"#e8607a",
+     note:"Among the most painful stings on Earth — 'like being burnt with hot acid and electrocuted at the same time.' Its gympietides jam the human pain channel NaV1.7 like spider venom. The silica hairs linger in skin ~6 months and the pain can recur for years with hot or cold water."}
+  ];
+  function buildStingometer(){
+    var host=$("#stingometer"); if(!host) return;
+    host.innerHTML = SPECIES.map(function(sp,i){
+      return '<div class="som-row" data-i="'+i+'">'
+        + '<div class="som-name">'+sp.nm+'<span class="l">'+sp.l+'</span></div>'
+        + '<div class="som-bars">'
+        +   '<div><div class="som-lab">peak pain</div><div class="som-bar-track"><div class="som-bar-fill" data-w="'+(sp.pain*10)+'" style="background:'+sp.c+'"></div></div></div>'
+        +   '<div><div class="som-lab">how long it lasts · '+sp.dl+'</div><div class="som-bar-track"><div class="som-bar-fill" data-w="'+Math.min(sp.dur,100)+'" style="background:'+sp.c+';opacity:0.5"></div></div></div>'
+        + '</div>'
+        + '<div class="som-detail">'+sp.note+'</div>'
+        + '</div>';
+    }).join("");
+    $$(".som-row",host).forEach(function(row){
+      row.addEventListener("click", function(){ row.classList.toggle("open"); });
+    });
+  }
+  buildStingometer();
+
+  // ---------------------------------------------------------
+  // Reveal bar animations on scroll
+  // ---------------------------------------------------------
+  function fillBars(scope){ $$(".nut-bar[data-w],.som-bar-fill[data-w]", scope).forEach(function(b){ b.style.width=b.getAttribute("data-w")+"%"; }); }
+  if ("IntersectionObserver" in window){
+    var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ fillBars(e.target); io.unobserve(e.target); } }); }, {threshold:0.2});
+    ["#nutrition","#stingometer"].forEach(function(sel){ var el=$(sel); if(el) io.observe(el); });
+  } else { fillBars(document); }
+
+  // ---------------------------------------------------------
+  // QUIZ
+  // ---------------------------------------------------------
+  var QUIZ=[
+    {q:"What is a nettle's stinging hair mostly made of?", a:1,
+     o:["Chitin, like an insect shell","Silica — literally glass","Crystallised formic acid","Wax"],
+     e:"The shaft is silicified — silicon dioxide, the same stuff as a window pane — stiffened lower down with calcium. It snaps like a tiny glass ampoule."},
+    {q:"The old 'it's the formic acid' explanation is…", a:1,
+     o:["Exactly right","Largely a myth — the lasting burn is oxalic & tartaric acid","True only for tree nettles","About the roots, not the leaves"],
+     e:"Formic acid is present only in traces; even 10% formic acid barely stings in tests. Histamine/acetylcholine/serotonin give the immediate itch; oxalic and tartaric acids drive the long ache."},
+    {q:"Which of these is a close botanical relative of the nettle?", a:2,
+     o:["The rose","Bracken fern","Hops and cannabis","Wheat"],
+     e:"Nettles sit in Rosales among the 'urticalean rosids' — closest to figs and mulberries, with hops and cannabis (Cannabaceae) one branch over."},
+    {q:"Why does gripping a nettle firmly sting less than brushing it?", a:1,
+     o:["The sap washes the venom away","A firm grip flattens the hairs so they can't pierce","Pressure closes the plant's pores","It doesn't — that's a myth"],
+     e:"The brittle angled hairs snap and inject on a light touch, but a bold grasp bends them flat before they can break the skin — the real botany behind 'grasp the nettle.'"},
+    {q:"A dense nettle patch in the middle of a field often marks…", a:2,
+     o:["Buried metal","An underground spring","Old human habitation (phosphate-rich ground)","Pure clay soil"],
+     e:"Nettle is a nitrogen-and-phosphate junkie. It thrives on ground enriched by old dung heaps, middens and buried bone, so a nettle stand can flag a vanished farmstead or settlement."},
+    {q:"Which butterfly raises its caterpillars on nettles?", a:1,
+     o:["Monarch","Small tortoiseshell","Cabbage white","Swallowtail"],
+     e:"Small tortoiseshell, peacock, red admiral, comma and painted lady all depend on nettles — the sting keeps grazers (and many predators) away from their young."},
+    {q:"A 2,800-year-old Danish burial cloth turned out to be woven from…", a:2,
+     o:["Flax","Wool","Nettle fibre","Silk"],
+     e:"The Lusehøj textile, long assumed to be flax, was shown in 2012 to be nettle — and isotopes suggest it was imported ~1,000 km from the Austrian Alps: Bronze Age luxury cloth."},
+    {q:"Australia's gympie-gympie causes weeks of agony because its toxins…", a:1,
+     o:["Are unusually strong acids","Are venom-like peptides that jam sodium channels","Cause a bacterial infection","Are mildly radioactive"],
+     e:"Its 'gympietides' are mini-proteins with the same molecular knot as spider and cone-snail venoms; they hold the human pain channel NaV1.7 open. A shrub that evolved a neurotoxin."}
+  ];
+  (function quiz(){
+    var box=$("#quizBox"); if(!box) return;
+    var i=0, score=0, answered=false;
+    function render(){
+      answered=false;
+      var Q=QUIZ[i];
+      box.innerHTML='<div class="q-progress">QUESTION '+(i+1)+' / '+QUIZ.length+' · SCORE '+score+'</div>'
+        + '<div class="q-question">'+Q.q+'</div>'
+        + '<div class="q-opts">'+Q.o.map(function(o,k){ return '<button class="q-opt" data-k="'+k+'">'+o+'</button>'; }).join("")+'</div>'
+        + '<div class="q-explain" id="qexp">'+Q.e+'</div>'
+        + '<div class="q-next"></div>';
+      $$(".q-opt",box).forEach(function(b){ b.addEventListener("click", function(){ pick(+b.getAttribute("data-k")); }); });
+    }
+    function pick(k){
+      if(answered) return; answered=true;
+      var Q=QUIZ[i];
+      $$(".q-opt",box).forEach(function(b){
+        var kk=+b.getAttribute("data-k"); b.disabled=true;
+        if(kk===Q.a) b.classList.add("correct");
+        else if(kk===k) b.classList.add("wrong");
+      });
+      if(k===Q.a) score++;
+      $("#qexp").classList.add("show");
+      var nx=$(".q-next",box);
+      nx.innerHTML='<button class="ctl">'+(i<QUIZ.length-1?"Next question →":"See your score →")+'</button>';
+      $(".ctl",nx).addEventListener("click", function(){ i++; if(i<QUIZ.length) render(); else result(); });
+    }
+    function result(){
+      var msg = score===QUIZ.length?"A true nettle scholar. Grasp one with confidence."
+        : score>=6?"Strong — you'd survive a Dorset pub garden."
+        : score>=4?"A fair hand. Mind the young tops."
+        : "Best keep your gloves on. Scroll back up.";
+      box.innerHTML='<div class="q-result"><div class="q-progress">RESULT</div>'
+        + '<div class="score">'+score+' / '+QUIZ.length+'</div>'
+        + '<p style="color:var(--ink);max-width:40ch;margin:6px auto 18px">'+msg+'</p>'
+        + '<button class="ctl" id="qretry">⟲ Try again</button></div>';
+      $("#qretry").addEventListener("click", function(){ i=0; score=0; render(); });
+    }
+    render();
+  })();
+
+})();
+</script>
+</body>
+</html>
