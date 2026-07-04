@@ -5,19 +5,21 @@
   --bg: #f6f0e6;
   --panel: #fffdf8;
   --ink: #23201c;
-  --muted: #7c7264;
+  --muted: #6f6456;
   --line: #e2d8c6;
-  --accent: #b3402f;          /* hinomaru red */
+  --accent: #b3402f;          /* hinomaru red — brand/text */
+  --accent-btn: #b3402f;      /* red used as a button fill (needs 4.5:1 vs white) */
   --accent-soft: #f0d9d2;
 
-  --correct: #4f9d69;         /* green — right kana, right place */
-  --present: #d8a531;         /* amber — kana is elsewhere */
-  --absent:  #b7ab97;         /* grey — kana not in word */
+  --correct: #358050;         /* green — right kana, right place (white text) */
+  --present: #e6ad2b;         /* amber — kana elsewhere (DARK text; amber is bright) */
+  --tile-ink-present: #23201c;
+  --absent:  #7c7362;         /* grey — kana not in word (white text) */
   --tile-empty: #fffdf8;
   --tile-border: #d8cdb8;
   --tile-filled-border: #b7a98c;
 
-  --hint: #7b5cd6;            /* purple — gojūon axis hint */
+  --hint: #6d4bd0;            /* purple — gojūon axis hint */
   --key: #ece3d2;
   --key-ink: #2a2620;
 
@@ -29,17 +31,18 @@
     --bg: #16130f;
     --panel: #201b15;
     --ink: #f2ead9;
-    --muted: #9c917e;
+    --muted: #a89d89;
     --line: #322a20;
-    --accent: #e0705f;
+    --accent: #e0705f;         /* lighter red for text/brand on the dark bg */
+    --accent-btn: #b8483a;     /* darker red for button fills (4.5:1 vs white) */
     --accent-soft: #3a231e;
-    --correct: #4f9d69;
-    --present: #cf9f36;
+    --correct: #358050;
+    --present: #e6ad2b;
     --absent: #4a4235;
     --tile-empty: #1c1812;
     --tile-border: #3a3125;
     --tile-filled-border: #5a4e3b;
-    --hint: #a98cf0;
+    --hint: #6d4bd0;
     --key: #322a1f;
     --key-ink: #eadfca;
     --shadow: 0 1px 0 rgba(0,0,0,.3), 0 10px 30px -18px #000;
@@ -115,7 +118,7 @@ header {
   border: 0; background: transparent; color: var(--muted);
   padding: 6px 13px; border-radius: 999px; font-weight: 600; font-size: 13px;
 }
-.seg button.on { background: var(--accent); color: #fff; }
+.seg button.on { background: var(--accent-btn); color: #fff; }
 .spacer { flex: 1; }
 .lenpick {
   display: inline-flex; align-items: center; gap: 4px;
@@ -159,9 +162,10 @@ header {
 
 .tile.correct, .tile.present, .tile.absent { color: #fff; border-color: transparent; }
 .tile.correct { background: var(--correct); }
-.tile.present { background: var(--present); }
+.tile.present { background: var(--present); color: var(--tile-ink-present); }
 .tile.absent  { background: var(--absent); }
-.tile.correct .romaji, .tile.present .romaji, .tile.absent .romaji { color: rgba(255,255,255,.85); }
+.tile.correct .romaji, .tile.absent .romaji { color: rgba(255,255,255,.9); }
+.tile.present .romaji { color: rgba(35,32,28,.9); }
 .tile.reveal { animation: flip .5s ease both; }
 @keyframes flip {
   0% { transform: rotateX(0); }
@@ -208,8 +212,8 @@ header {
 .key:active { transform: translateY(1px); }
 .key.blank { background: transparent; pointer-events: none; }
 .key.correct { background: var(--correct); color: #fff; }
-.key.present { background: var(--present); color: #fff; }
-.key.absent  { background: var(--absent); color: rgba(255,255,255,.85); }
+.key.present { background: var(--present); color: var(--tile-ink-present); }
+.key.absent  { background: var(--absent); color: rgba(255,255,255,.92); }
 .kb-section-label {
   text-align: center; color: var(--muted);
   font-size: 10px; font-weight: 700; letter-spacing: .14em;
@@ -223,11 +227,11 @@ header {
   letter-spacing: .04em; text-transform: uppercase;
 }
 .kb-actions { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 6px; }
-.key.enter { background: var(--accent); color: #fff; }
+.key.enter { background: var(--accent-btn); color: #fff; }
 .key.del { background: var(--panel); border: 1px solid var(--line); color: var(--ink); }
 .key.small-toggle.on { outline: 2px solid var(--accent); }
 .key.mod { background: var(--panel); border: 1px solid var(--line); color: var(--accent); font-weight: 900; }
-.key.mod.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+.key.mod.on { background: var(--accent-btn); color: #fff; border-color: var(--accent-btn); }
 
 /* ---- toast ---- */
 .toast-wrap {
@@ -288,7 +292,7 @@ header {
 }
 .dist-row .bar.hi { background: var(--correct); }
 .bigbtn {
-  border: 0; background: var(--accent); color: #fff;
+  border: 0; background: var(--accent-btn); color: #fff;
   padding: 12px 20px; border-radius: 12px; font-weight: 700; font-size: 15px;
   width: 100%; margin-top: 6px;
 }
