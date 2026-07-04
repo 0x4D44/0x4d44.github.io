@@ -80,8 +80,9 @@
   });
   // alternate romanisations
   var ALT = {
-    si: "し", ti: "ち", tu: "つ", hu: "ふ", zi: "じ",
-    di: "ぢ", du: "づ", wo: "を", fu: "ふ", ja: "じゃ",
+    si: "し", ti: "ち", tu: "つ", hu: "ふ", fu: "ふ",
+    zi: "じ", ji: "じ", zu: "ず",   // common: じ/ず (rare ぢ/づ are di/du)
+    di: "ぢ", du: "づ", wo: "を", ja: "じゃ",
     ju: "じゅ", jo: "じょ", she: "しぇ", che: "ちぇ"
   };
   Object.keys(ALT).forEach(function (k) { TOKENS[k] = ALT[k]; });

@@ -29,7 +29,7 @@ window.ESSAYS = [
   {
     slug: "japanese-wordle",
     title: "Kotoba",
-    tagline: "A Wordle for learning Japanese: guess a JLPT N5 word in kana. Beyond the usual green/amber tiles, gojūon hint pips show when your kana shares the consonant row or vowel column with the answer — teaching the 五十音 table as you play. Type romaji or tap the kana keyboard. Browser React, no build step.",
+    tagline: "A Wordle for learning Japanese: guess a JLPT N5/N4 word in kana. Beyond green/amber tiles, gojūon hint pips show when your kana shares the consonant row or vowel column with the answer — teaching the 五十音 table as you play. It speaks each word, shows the kanji and an example, and resurfaces your misses on a spaced schedule. Installable offline; browser React, no build step.",
     url: "https://0x4d44.github.io/japanese-wordle/",
     illustration: "ill-kotoba",
     date: "2026-07-04T10:00:00",

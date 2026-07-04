@@ -5,7 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Kotoba — a Japanese kana Wordle</title>
   <meta name="description" content="Kotoba: a Wordle for learning Japanese. Guess a JLPT N5 word in kana, with gojūon two-axis hints that teach the 五十音 table as you play. Type romaji or tap the on-screen kana keyboard." />
-  <meta name="theme-color" content="#b3402f" />
+  <meta name="theme-color" content="#b3402f" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#16130f" media="(prefers-color-scheme: dark)" />
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Kotoba" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -23,5 +32,13 @@
   <script src="kana.js"></script>
   <script src="words.js"></script>
   <script type="text/babel" src="app.jsx"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
 </body>
 </html>
