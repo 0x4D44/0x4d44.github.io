@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Electric Wake — diesel-electric cruise propulsion</title>
+<meta name="description" content="An interactive technical almanac entry explaining diesel-electric cruise ship propulsion, Azipods, power plants, motors, voltages, currents, efficiencies and speed-power tradeoffs." />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="paper" aria-hidden="true"></div>
+<div class="grid-glow" aria-hidden="true"></div>
+
+<header class="hero" id="top">
+  <nav class="topbar" aria-label="Page">
+    <a href="../" class="back">← almanac</a>
+    <a href="#plant">plant</a>
+    <a href="#pods">azipods</a>
+    <a href="#math">math</a>
+    <a href="#machines">machines</a>
+    <a href="#sim">simulator</a>
+  </nav>
+  <div class="hero-grid">
+    <div>
+      <p class="kicker">0x4D44 :: MARINE ENGINEERING FILE</p>
+      <h1>The Electric Wake</h1>
+      <p class="lede">A cruise ship does not usually have one enormous diesel engine turning one long shaft. The fashionable large-ship answer is a floating power station: medium-speed diesels drive alternators, an 11 kV switchboard moves tens of megawatts around the vessel, converters synthesize motor frequency, and azimuthing pods turn electricity directly into vectored thrust.</p>
+      <p class="lede small">This is a technical cutaway, not a sales brochure. The numerical cases are either published ship particulars or representative engineering models, and every calculator says what it is assuming.</p>
+    </div>
+    <aside class="hero-panel" aria-label="Live propulsion visual">
+      <canvas id="wakeCanvas" width="780" height="420"></canvas>
+      <div class="pod-visor" aria-hidden="true">
+        <svg viewBox="0 0 420 210" role="img" aria-label="Animated stern pod diagram">
+          <defs>
+            <linearGradient id="sea" x1="0" x2="1"><stop offset="0" stop-color="#0e2d34"/><stop offset="1" stop-color="#10212a"/></linearGradient>
+          </defs>
+          <path class="hull" d="M35 56 L300 56 Q350 58 392 84 Q355 118 282 122 L86 122 Q54 116 35 56 Z" />
+          <path class="deck" d="M88 43 H272 M116 30 H240 M155 19 H215" />
+          <g class="podSpin" id="heroPodA" transform="translate(250 132) rotate(18)">
+            <ellipse class="pod" cx="0" cy="0" rx="48" ry="18" />
+            <line class="strut" x1="0" y1="-38" x2="0" y2="-13" />
+            <g class="prop">
+              <circle cx="-50" cy="0" r="6" />
+              <path d="M-56 0 q-24 -16 -30 8 q18 8 30 -8" />
+              <path d="M-56 0 q-24 16 -30 -8 q18 -8 30 8" />
+            </g>
+            <path class="thrust" d="M-86 0 C-120 -12 -145 -10 -174 -4 M-86 0 C-120 12 -145 10 -174 4" />
+          </g>
+          <g class="podSpin delay" id="heroPodB" transform="translate(323 133) rotate(-18)">
+            <ellipse class="pod" cx="0" cy="0" rx="42" ry="16" />
+            <line class="strut" x1="0" y1="-36" x2="0" y2="-12" />
+            <g class="prop"><circle cx="-44" cy="0" r="5"/><path d="M-49 0 q-20 -13 -26 7 q16 7 26 -7"/><path d="M-49 0 q-20 13 -26 -7 q16 -7 26 7"/></g>
+            <path class="thrust" d="M-74 0 C-101 -9 -126 -7 -154 -2 M-74 0 C-101 9 -126 7 -154 2" />
+          </g>
+          <text x="36" y="168">rotating motor pods vector thrust; no rudder required</text>
+        </svg>
+      </div>
+    </aside>
+  </div>
+</header>
+
+<main>
+  <section class="panel dashboard" id="plant">
+    <div class="section-head">
+      <p class="kicker">01 :: ship as power station</p>
+      <h2>What diesel-electric means on a cruise ship</h2>
+      <p>Several engine-generator sets feed a common high-voltage bus. The bus does not care whether a megawatt is about to become propeller torque, chilled-water compression, galley heat, theatre lighting or a bow thruster. This is the architectural trick: the engines can be started, stopped and loaded near their efficient range while the ship's consumers take exactly the electrical power they need.</p>
+    </div>
+
+    <div class="control-strip" id="scenarioControls" aria-label="Scenario controls"></div>
+
+    <div class="metrics" id="metrics" aria-live="polite"></div>
+
+    <div class="two-col">
+      <div class="card schematic-card">
+        <h3>Single-line diagram</h3>
+        <p>The animated pulses are active power. In the real plant there are protection relays, synchronising gear, bus-tie breakers, harmonic filters, excitation systems, PMS logic and blackout recovery layers between every box.</p>
+        <svg id="singleLine" viewBox="0 0 1000 560" role="img" aria-label="Diesel electric cruise ship single line diagram"></svg>
+      </div>
+      <div class="card">
+        <h3>Why use a common electrical plant?</h3>
+        <dl class="stacked">
+          <dt>Load sharing</dt><dd>Six medium-speed engines can behave like one elastic prime mover. At hotel speed one or two engines sleep; at full sea speed five or six share the bus.</dd>
+          <dt>Redundancy</dt><dd>A failed engine, alternator, transformer, drive, bus section or even pod reduces capability rather than ending the voyage. Segregated switchboard rooms and bus-ties keep faults local.</dd>
+          <dt>Layout freedom</dt><dd>No tunnel shaftline has to run from engine room to propeller. Engine rooms can be placed for stability, funnel routing, fire zones and noise isolation.</dd>
+          <dt>Good part-load operation</dt><dd>Medium-speed diesels are happiest at substantial load. A power-management system keeps online sets in their efficient band instead of dragging one huge engine at low load.</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="pods">
+    <div class="section-head">
+      <p class="kicker">02 :: why azipods work</p>
+      <h2>A pod is a propeller, motor and rudder in one submerged machine</h2>
+      <p>An Azipod-style unit is not just a thruster bolted below the stern. It moves the propulsion motor into a steerable gondola, couples the propeller directly to the motor shaft, and uses a variable-frequency drive to set torque and rpm. That creates hydrodynamic, manoeuvring and machinery-layout advantages.</p>
+    </div>
+
+    <div class="pod-grid">
+      <article class="card pod-card">
+        <h3>Pulling propeller</h3>
+        <svg viewBox="0 0 420 180" class="mini-pod" aria-hidden="true">
+          <path class="stream" d="M12 92 C74 72 120 72 176 86 S286 102 402 78" />
+          <path class="stream alt" d="M12 126 C72 108 126 106 182 116 S302 142 402 126" />
+          <g transform="translate(224 88)"><ellipse class="pod" cx="0" cy="0" rx="70" ry="24"/><line class="strut" x1="0" y1="-55" x2="0" y2="-20"/><g class="prop"><circle cx="-72" cy="0" r="7"/><path d="M-79 0 q-34 -22 -42 10 q25 12 42 -10"/><path d="M-79 0 q-34 22 -42 -10 q25 -12 42 10"/></g></g>
+        </svg>
+        <p>The propeller works ahead of the pod body in cleaner water, so the inflow is less disturbed than behind a boss, shaft brackets and rudder. The pod body then sits in the propeller race and can be shaped as a small foil.</p>
+      </article>
+      <article class="card pod-card">
+        <h3>Full thrust vectoring</h3>
+        <div class="thruster-map" id="thrusterMap" aria-hidden="true"></div>
+        <p>The same 20 MW can point nearly anywhere in azimuth. At harbour speed the ship can yaw, crab and brake without needing a conventional rudder flow. Multiple pods let the bridge command force and moment instead of shaft rpm and rudder angle.</p>
+      </article>
+      <article class="card pod-card">
+        <h3>Reverse without drama</h3>
+        <svg viewBox="0 0 420 180" class="mini-pod" aria-hidden="true">
+          <g class="reversePod" transform="translate(210 92) rotate(180)"><ellipse class="pod" cx="0" cy="0" rx="72" ry="24"/><line class="strut" x1="0" y1="-54" x2="0" y2="-20"/><g class="prop"><circle cx="-74" cy="0" r="7"/><path d="M-82 0 q-34 -22 -44 10 q26 12 44 -10"/><path d="M-82 0 q-34 22 -44 -10 q26 -12 44 10"/></g></g>
+          <path class="thrust big" d="M292 92 C338 74 372 74 404 88 M292 92 C338 110 372 110 404 96" />
+          <text x="26" y="150">turn the pod, not the ship</text>
+        </svg>
+        <p>For astern thrust, the pod turns. The propeller still sees a controlled inflow and the electric drive simply changes torque and speed. The ship can stop and back down with less dependence on rudder effectiveness.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="panel" id="sim">
+    <div class="section-head">
+      <p class="kicker">03 :: voyage load simulator</p>
+      <h2>Slide the ship from hotel mode to full sea speed</h2>
+      <p>Propulsive power rises roughly with the cube of speed near service conditions, while hotel load is large but comparatively steady. The result is why cruise itineraries are sensitive to speed: adding a few knots can demand tens of megawatts and another diesel on the board.</p>
+    </div>
+
+    <div class="sim-grid">
+      <form class="card controls" id="plantForm">
+        <label>Ship case <select id="scenario"></select></label>
+        <label>Speed <output id="speedOut"></output><input id="speed" type="range" min="0" max="25" step="0.1" value="18" /></label>
+        <label>Hotel load <output id="hotelOut"></output><input id="hotel" type="range" min="6" max="38" step="0.5" value="18" /></label>
+        <label>Sea margin <output id="marginOut"></output><input id="margin" type="range" min="0" max="30" step="1" value="12" /></label>
+        <label>Bus voltage <select id="bus"><option value="11">11 kV</option><option value="6.6">6.6 kV</option><option value="13.8">13.8 kV</option></select></label>
+        <label>Power factor <output id="pfOut"></output><input id="pf" type="range" min="0.82" max="1" step="0.01" value="0.95" /></label>
+      </form>
+      <div class="card chart-card">
+        <h3>Power split over speed</h3>
+        <canvas id="powerChart" width="920" height="520" aria-label="Power demand chart"></canvas>
+      </div>
+      <div class="card chart-card">
+        <h3>Efficiency and losses</h3>
+        <canvas id="lossChart" width="920" height="520" aria-label="Efficiency loss chart"></canvas>
+      </div>
+      <div class="card results" id="simResults" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <section class="panel" id="math">
+    <div class="section-head">
+      <p class="kicker">04 :: arithmetic underneath the romance</p>
+      <h2>Megawatts, volts, amps and fuel</h2>
+      <p>The most useful numbers are simple enough to do on a napkin. A 20 MW pod is about a thousand amps per phase at 11 kV. Drop the bus to 6.6 kV and the current jumps by two thirds, making copper, breakers and heat harder. That is why large cruise ships distribute propulsion power at medium voltage and only step down near hotel consumers.</p>
+    </div>
+
+    <div class="math-grid">
+      <article class="card formula">
+        <h3>Three-phase current</h3>
+        <code>I = P / (√3 × V × pf)</code>
+        <p>For <b>20 MW</b> at <b>11 kV</b>, <b>pf 0.95</b>: <span id="exampleCurrent"></span>. The same pod at 6.6 kV is <span id="exampleCurrent66"></span>. Real drives also have harmonic filters, cooling pumps and short-time overload ratings.</p>
+      </article>
+      <article class="card formula">
+        <h3>Speed-power cube</h3>
+        <code>P₂ ≈ P₁ × (V₂/V₁)³</code>
+        <p>Cutting from 22 kn to 18 kn can nearly halve propulsion power, before weather and hull fouling. This is why slow steaming is powerful even on ships dominated by hotel loads.</p>
+      </article>
+      <article class="card formula">
+        <h3>Specific fuel model</h3>
+        <code>fuel ≈ kWh × SFOC(load)</code>
+        <p>The simulator uses a representative medium-speed curve: poor below 30% load, best around 70–85%, then slightly worse at overload. It is a teaching model, not an engine guarantee.</p>
+      </article>
+    </div>
+
+    <div class="card wide">
+      <h3>Worked bus-current table</h3>
+      <table id="currentTable">
+        <thead><tr><th>Consumer</th><th>Power</th><th>11 kV @ pf .95</th><th>6.6 kV @ pf .95</th><th>690 V @ pf .90</th><th>Why it matters</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" id="machines">
+    <div class="section-head">
+      <p class="kicker">05 :: the hardware stack</p>
+      <h2>From fuel rack to propeller disk</h2>
+      <p>The words “diesel-electric” hide a chain of machines and control loops. Each stage is efficient in isolation, but at cruise-ship scale the small losses become megawatts of heat that must be removed by fresh-water, sea-water and ventilation systems.</p>
+    </div>
+
+    <div class="machine-list">
+      <article class="card machine">
+        <span class="index">A</span><h3>Medium-speed diesel or dual-fuel engines</h3>
+        <p>Four-stroke engines around 500–750 rpm are small enough to package in several genset rooms and large enough to produce 8–20 MW apiece. Multiple engine sizes are common: big sets cover sea speed, smaller sets cover port and night loads without wasting fuel.</p>
+      </article>
+      <article class="card machine">
+        <span class="index">B</span><h3>Alternators and excitation</h3>
+        <p>Each engine spins a synchronous generator. Automatic voltage regulators control excitation; governors and the PMS control real-power sharing. Before a breaker closes, voltage, frequency and phase angle must synchronise with the bus.</p>
+      </article>
+      <article class="card machine">
+        <span class="index">C</span><h3>Medium-voltage switchboards</h3>
+        <p>6.6 kV and 11 kV switchboards are typical at this scale. Bus sections, tie breakers and protective relays decide whether a fault is merely an alarm, a tripped feeder, a split bus, or a blackout recovery sequence.</p>
+      </article>
+      <article class="card machine">
+        <span class="index">D</span><h3>Transformers</h3>
+        <p>Propulsion transformers adapt the bus to drive input and add isolation. Ship-service transformers step down to 690 V motor control centres, then lower distribution for galleys, cabins, lighting, entertainment, HVAC controls and electronics.</p>
+      </article>
+      <article class="card machine">
+        <span class="index">E</span><h3>Variable-frequency drives</h3>
+        <p>Large marine drives rectify AC to a DC link and synthesize controlled-frequency AC for the motor. The propeller is fixed-pitch, so rpm and torque come from the inverter rather than from blade pitch.</p>
+      </article>
+      <article class="card machine">
+        <span class="index">F</span><h3>Pod motor and bearings</h3>
+        <p>Full-size cruise pods usually use large AC motors in the gondola, directly coupled to the propeller shaft. The pod needs shaft seals, thrust bearings, steering motors, cooling circuits and condition monitoring because maintenance access is expensive.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="panel" id="examples">
+    <div class="section-head">
+      <p class="kicker">06 :: comparison matrix</p>
+      <h2>Representative cruise-ship propulsion arrangements</h2>
+      <p>Exact shipyard data varies by hull, year and refit. The table separates published Oasis-class examples from teaching cases used by the simulator.</p>
+    </div>
+    <div class="card wide">
+      <table id="exampleTable">
+        <thead><tr><th>Case</th><th>Generating plant</th><th>Installed electric</th><th>Propulsion</th><th>Speed</th><th>Notes</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel sources" id="sources">
+    <div class="section-head">
+      <p class="kicker">07 :: source notes</p>
+      <h2>What the numbers are anchored to</h2>
+      <p>This page keeps runtime network access at zero. The source trail used while building it included Wärtsilä 46F product data, public Oasis and Utopia class particulars, ABB/Azipod technical descriptions, and standard naval-architecture speed-power relationships. Where the page says “representative”, it is using a didactic model rather than a manufacturer-certified value.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <a href="#top">↑ back to top</a>
+  <span>// diesel-electric propulsion, rendered live in vanilla JS</span>
+</footer>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
