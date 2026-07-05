@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node humanity-retention/tests/engine.test.mjs && node humanity-retention/tests/validate-static.mjs",
-    "build": "node humanity-retention/tests/validate-static.mjs"
+    "test": "node humanity-retention/tests/engine.test.mjs && node humanity-retention/tests/validate-static.mjs && node cruise-propulsion/tests/validate-static.mjs",
+    "build": "node humanity-retention/tests/validate-static.mjs && node cruise-propulsion/tests/validate-static.mjs"
   }
 }
