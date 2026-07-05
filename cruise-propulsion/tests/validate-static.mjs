@@ -12,14 +12,14 @@ const mustExist = ['index.html', 'styles.css', 'app.js'];
 for (const file of mustExist) assert.ok(existsSync(join(appDir, file)), `${file} exists`);
 
 const index = readFileSync(join(appDir, 'index.html'), 'utf8');
-assert.match(index, /<link rel="stylesheet" href="styles\.css"\s*\/>/, 'index links stylesheet');
-assert.match(index, /<script type="module" src="app\.js"><\/script>/, 'index loads module app');
-assert.match(index, /id="plant"/, 'plant section exists');
-assert.match(index, /id="pods"/, 'pods section exists');
-assert.match(index, /id="math"/, 'math section exists');
-assert.match(index, /id="sim"/, 'simulator section exists');
+assert.match(index, /<link rel=\x22stylesheet\x22 href=\x22styles\.css\x22\s*\/>/, 'index links stylesheet');
+assert.match(index, /<script type=\x22module\x22 src=\x22app\.js\x22><\/script>/, 'index loads module app');
+assert.match(index, /id=\x22plant\x22/, 'plant section exists');
+assert.match(index, /id=\x22pods\x22/, 'pods section exists');
+assert.match(index, /id=\x22math\x22/, 'math section exists');
+assert.match(index, /id=\x22sim\x22/, 'simulator section exists');
 
-for (const match of index.matchAll(/(?:href|src)="([^"]+)"/g)) {
+for (const match of index.matchAll(/(?:href|src)=\x22([^\x22]+)\x22/g)) {
   const ref = match[1];
   if (ref.startsWith('#') || ref === '../') continue;
   assert.ok(!/^(https?:)?\/\//.test(ref), `no runtime external URL: ${ref}`);
@@ -44,8 +44,8 @@ for (const file of mustExist) {
 const rootApp = join(root, 'app.js');
 if (existsSync(rootApp)) {
   const listing = readFileSync(rootApp, 'utf8');
-  assert.match(listing, /slug: "cruise-propulsion"/, 'almanac listing injects cruise-propulsion slug');
-  assert.match(listing, /url: "https:\/\/0x4d44\.github\.io\/cruise-propulsion\/"/, 'almanac URL is absolute');
+  assert.match(listing, /slug: ['\x22]cruise-propulsion['\x22]/, 'almanac listing injects cruise-propulsion slug');
+  assert.match(listing, /url: ['\x22]https:\/\/0x4d44\.github\.io\/cruise-propulsion\/['\x22]/, 'almanac URL is absolute');
 }
 
 console.log('cruise-propulsion static validation passed');
