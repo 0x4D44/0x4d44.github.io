@@ -41,11 +41,8 @@ for (const file of mustExist) {
   assert.doesNotMatch(text, /https?:\/\//, `${file} has no runtime external URL`);
 }
 
-const rootApp = join(root, 'app.js');
-if (existsSync(rootApp)) {
-  const listing = readFileSync(rootApp, 'utf8');
-  assert.match(listing, /slug: ['\x22]cruise-propulsion['\x22]/, 'almanac listing injects cruise-propulsion slug');
-  assert.match(listing, /url: ['\x22]https:\/\/0x4d44\.github\.io\/cruise-propulsion\/['\x22]/, 'almanac URL is absolute');
-}
+const data = readFileSync(join(root, 'data.js'), 'utf8');
+assert.match(data, /slug: ['\x22]cruise-propulsion['\x22]/, 'almanac data contains cruise-propulsion slug');
+assert.match(data, /url: ['\x22]https:\/\/0x4d44\.github\.io\/cruise-propulsion\/['\x22]/, 'almanac URL is absolute');
 
 console.log('cruise-propulsion static validation passed');
