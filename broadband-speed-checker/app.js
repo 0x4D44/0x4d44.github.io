@@ -3,6 +3,10 @@
 
   const STORE_KEY = "0x4d44.broadband.v1";
   const LOCATE_URL = "https://locate.measurementlab.net/v2/nearest/ndt/ndt7?client_name=0x4d44-line-rate";
+  // NDT7 requires this WebSocket subprotocol on the upgrade request; the
+  // M-Lab server rejects the handshake with a 4xx (browser reports it as a
+  // generic WebSocket error) if it is missing.
+  const NDT7_SUBPROTOCOL = "net.measurementlab.ndt.v7";
   const MAX_POINTS = 72;
   const $ = (id) => document.getElementById(id);
   const state = { running: false, abort: null, latest: null, sockets: new Set(), series: { download: [], upload: [], ping: [] } };
@@ -203,7 +207,7 @@
   function timeWebSocketOpen(url, signal) {
     return new Promise((resolve, reject) => {
       const started = performance.now();
-      const ws = trackSocket(new WebSocket(url), signal);
+      const ws = trackSocket(new WebSocket(url, NDT7_SUBPROTOCOL), signal);
       const timeout = setTimeout(() => finish(new Error("Ping timed out")), 6000);
       const onAbort = () => finish(abortError());
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
@@ -251,7 +255,7 @@
     $("downloadPhase").textContent = "running";
     status("Testing download", "Receiving a short NDT7 stream and calculating throughput.");
     return new Promise((resolve, reject) => {
-      const ws = trackSocket(new WebSocket(url), signal);
+      const ws = trackSocket(new WebSocket(url, NDT7_SUBPROTOCOL), signal);
       ws.binaryType = "arraybuffer";
       let opened = 0, received = 0, frames = 0, texts = 0, last = 0, closed = false;
       const hard = setTimeout(() => finish(null), 17000);
@@ -301,7 +305,7 @@
     $("uploadPhase").textContent = "running";
     status("Testing upload", "Sending bounded chunks to the NDT7 upload endpoint.");
     return new Promise((resolve, reject) => {
-      const ws = trackSocket(new WebSocket(url), signal);
+      const ws = trackSocket(new WebSocket(url, NDT7_SUBPROTOCOL), signal);
       const chunk = new Uint8Array(64 * 1024);
       const targetMs = Math.max(3000, seconds * 1000);
       const maxBuffer = 8 * 1024 * 1024;
