@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "cruise-propulsion",
+    title: "The Electric Wake",
+    tagline: "A deep interactive cutaway of diesel-electric cruise propulsion: medium-speed gensets, 11 kV switchboards, transformers, VFDs, pod motors and the 20 MW Azipods that turn thrust into steering. Trace megawatts from fuel rack to propeller, calculate currents, compare engine plants and watch the load-sharing system breathe. Vanilla JS on SVG and canvas — no dependencies, no build step.",
+    url: "https://0x4d44.github.io/cruise-propulsion/",
+    illustration: "ill-ship",
+    date: "2026-07-05T12:00:00",
+    year: 2026,
+    readingMin: 32,
+    words: 7600,
+    tags: ["software", "engineering", "maritime"],
+    real: true,
+  },
+  {
     slug: "nettles",
     title: "The Nettle",
     tagline: "Everything about the stinging nettle: how it grows, how its glass-needle sting actually works, what it developed from, and the thousand things — soup, cloth, medicine, myth — people have made from it. Magnify a trichome and fire it, tour the family tree, and rank the world's most agonising nettles. Vanilla JS, drawn live in SVG; fact-checked by a multi-agent research pass.",
