@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Line Rate — Broadband Speed Checker</title>
+<meta name="description" content="A private, browser-local broadband speed checker: download, upload, ping, GPS and stored history." />
+<meta name="theme-color" content="#07131f" />
+<link rel="stylesheet" href="style.css" />
+
+</head>
+<body>
+  <main class="shell">
+    <div class="topbar">
+      <a class="back" href="../">← 0x4D44 almanac</a>
+      <span><span class="live-dot">●</span> HTTPS only · local history · M-Lab NDT7</span>
+    </div>
+
+    <section class="hero" aria-labelledby="title">
+      <div>
+        <div class="kicker">broadband / telemetry / local recorder</div>
+        <h1 id="title">Line Rate</h1>
+        <p class="lede">A polished speed check for real connections: nearby test-server discovery, download and upload throughput, repeated ping samples, optional GPS fix, and a durable browser-local log.</p>
+        <div class="hero-actions">
+          <button class="btn primary" id="startBtn" type="button">Start full test</button>
+          <button class="btn" id="stopBtn" type="button" disabled>Stop</button>
+          <button class="btn" id="copyBtn" type="button">Copy latest</button>
+        </div>
+        <div class="notice" role="note">
+          <span>⚠</span>
+          <span>The network test sends temporary traffic to public Measurement Lab NDT7 servers. GPS coordinates and saved results stay in this browser unless you copy or export them.</span>
+        </div>
+      </div>
+      <div class="radar" aria-hidden="true">
+        <div class="radar-pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
+        <div class="radar-label"><strong id="statusLine">Idle — ready to run</strong><span id="statusDetail">Press Start. Allow location access to attach a GPS fix.</span></div>
+      </div>
+    </section>
+
+    <section class="grid" aria-label="Current test results">
+      <article class="card download" aria-live="polite">
+        <div class="card-title"><span>downlink</span><span id="downloadPhase">waiting</span></div>
+        <div class="metric"><span class="value" id="downloadValue">—</span><span class="unit">Mbps</span></div>
+        <div class="submetric" id="downloadMeta">0 MB received</div>
+        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
+          <path class="gridline" d="M0 20H320M0 45H320" />
+          <polyline id="downloadSpark" points="" />
+        </svg>
+        <div class="dial" id="downloadDial" style="--pct:0"></div>
+      </article>
+
+      <article class="card upload" aria-live="polite">
+        <div class="card-title"><span>uplink</span><span id="uploadPhase">waiting</span></div>
+        <div class="metric"><span class="value" id="uploadValue">—</span><span class="unit">Mbps</span></div>
+        <div class="submetric" id="uploadMeta">0 MB sent</div>
+        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
+          <path class="gridline" d="M0 20H320M0 45H320" />
+          <polyline id="uploadSpark" points="" />
+        </svg>
+        <div class="dial" id="uploadDial" style="--pct:0"></div>
+      </article>
+
+      <article class="card latency" aria-live="polite">
+        <div class="card-title"><span>ping</span><span id="pingPhase">waiting</span></div>
+        <div class="metric"><span class="value" id="pingValue">—</span><span class="unit">ms</span></div>
+        <div class="submetric" id="pingMeta">median of WebSocket setup samples</div>
+        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
+          <path class="gridline" d="M0 20H320M0 45H320" />
+          <polyline id="pingSpark" points="" />
+        </svg>
+        <div class="dial" id="pingDial" style="--pct:0"></div>
+      </article>
+
+      <article class="card location" aria-live="polite">
+        <div class="card-title"><span>GPS fix</span><span id="locationPhase">optional</span></div>
+        <div class="metric"><span class="value" id="locationValue">—</span><span class="unit">m</span></div>
+        <div class="submetric" id="locationMeta">accuracy after permission</div>
+        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
+          <path class="gridline" d="M0 35H320M160 0V70" />
+          <polyline id="locationSpark" points="160,35" />
+        </svg>
+        <div class="dial" id="locationDial" style="--pct:0"></div>
+      </article>
+    </section>
+
+    <section class="grid" aria-label="Controls and test status">
+      <div class="steps" id="steps">
+        <div class="step" data-step="location"><span class="num">01</span><span>GPS location</span><span class="state">idle</span></div>
+        <div class="step" data-step="server"><span class="num">02</span><span>Find NDT7 server</span><span class="state">idle</span></div>
+        <div class="step" data-step="ping"><span class="num">03</span><span>Ping samples</span><span class="state">idle</span></div>
+        <div class="step" data-step="download"><span class="num">04</span><span>Download throughput</span><span class="state">idle</span></div>
+        <div class="step" data-step="upload"><span class="num">05</span><span>Upload throughput</span><span class="state">idle</span></div>
+        <div class="step" data-step="save"><span class="num">06</span><span>Store result</span><span class="state">idle</span></div>
+      </div>
+
+      <article class="card controls">
+        <div class="card-title"><span>control panel</span><span id="runId">no run</span></div>
+        <div class="control-row">
+          <label class="toggle"><input type="checkbox" id="gpsToggle" checked /> include GPS</label>
+          <label class="toggle"><input type="checkbox" id="serverToggle" checked /> use public M-Lab</label>
+          <label class="toggle">upload seconds <select id="durationSelect"><option value="6">6</option><option value="10" selected>10</option><option value="15">15</option></select></label>
+        </div>
+        <div class="server-box" aria-label="Selected test server">
+          <div class="kv"><div class="k">server</div><div class="v" id="serverName">—</div></div>
+          <div class="kv"><div class="k">location</div><div class="v" id="serverLocation">—</div></div>
+          <div class="kv"><div class="k">protocol</div><div class="v" id="serverProtocol">NDT7 WebSocket</div></div>
+        </div>
+        <div class="log-box" id="logBox" aria-live="polite">// waiting for operator</div>
+      </article>
+    </section>
+
+    <section class="grid" aria-label="Saved test history">
+      <article class="card full">
+        <div class="history-head">
+          <div>
+            <div class="card-title" style="margin-bottom:8px"><span>stored measurements</span><span id="historyCount">0 rows</span></div>
+            <div class="submetric">Saved in localStorage under <code>0x4d44.broadband.v1</code>.</div>
+          </div>
+          <div class="history-actions">
+            <button class="btn small" id="exportJsonBtn" type="button">Export JSON</button>
+            <button class="btn small" id="exportCsvBtn" type="button">Export CSV</button>
+            <button class="btn small warn" id="clearBtn" type="button">Clear</button>
+          </div>
+        </div>
+        <div id="historyMount"></div>
+      </article>
+    </section>
+
+    <p class="footer">Built as a single static HTML app. No account, no backend, no build step.</p>
+  </main>
+
+<script src="app.js"></script>
+</body>
+</html>
