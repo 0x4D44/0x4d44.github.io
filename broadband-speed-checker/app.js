@@ -40,6 +40,19 @@
     return average(d);
   }
   function mbps(byteCount, ms) { return byteCount * 8 / Math.max(1, ms) / 1000; }
+  // Record a (time, cumulative-bytes) mark and return the throughput over the
+  // trailing `windowMs` window. Used to track the peak *sustained* rate, which
+  // ignores both the slow-start ramp and any mid-run stall — far more robust
+  // than differencing byte totals across the whole connection.
+  function windowRate(marks, now, totalBytes, windowMs) {
+    marks.push([now, totalBytes]);
+    while (marks.length > 3 && now - marks[0][0] > windowMs * 1.5) marks.shift();
+    let ref = marks[0];
+    for (let k = marks.length - 1; k >= 0; k -= 1) { if (now - marks[k][0] >= windowMs) { ref = marks[k]; break; } }
+    const dt = now - ref[0];
+    const db = totalBytes - ref[1];
+    return dt >= windowMs * 0.5 && db >= 0 ? mbps(db, dt) : NaN;
+  }
   function speedPct(v) { return Number.isFinite(v) ? Math.max(0.02, Math.min(1, Math.log10(v + 1) / Math.log10(1200))) : 0; }
   function pingPct(v) { return Number.isFinite(v) ? Math.max(0.03, Math.min(1, 1 - Math.min(v, 250) / 250)) : 0; }
   function setDial(id, pct) { $(id).style.setProperty("--pct", String(Math.max(0, Math.min(1, pct || 0)))); }
@@ -275,8 +288,8 @@
     return new Promise((resolve, reject) => {
       const ws = trackSocket(new WebSocket(url, NDT7_SUBPROTOCOL), signal);
       ws.binaryType = "arraybuffer";
-      let opened = 0, received = 0, frames = 0, texts = 0, last = 0, closed = false, warmBytes = null, warmAt = 0;
-      const WARMUP_MS = 2000;
+      let opened = 0, received = 0, frames = 0, texts = 0, last = 0, closed = false, peak = 0;
+      const marks = [];
       const hard = setTimeout(() => finish(null), 17000);
       const onAbort = () => finish(abortError());
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
@@ -284,11 +297,14 @@
         const now = performance.now();
         if (!force && now - last < 180) return;
         last = now;
-        const rate = mbps(received, now - opened);
-        pushSeries("download", rate);
-        $("downloadValue").textContent = fmt(rate);
+        // Live meter = current 1s throughput; headline = the peak we sustain.
+        const wr = windowRate(marks, now, received, 1000);
+        const shown = Number.isFinite(wr) ? wr : mbps(received, now - opened);
+        if (Number.isFinite(wr) && wr > peak) peak = wr;
+        pushSeries("download", shown);
+        $("downloadValue").textContent = fmt(shown);
         $("downloadMeta").textContent = `${bytes(received)} received · ${frames} frames`;
-        setDial("downloadDial", speedPct(rate));
+        setDial("downloadDial", speedPct(shown));
       }
       function finish(value) {
         if (closed) return;
@@ -298,25 +314,24 @@
         try { ws.close(1000, "done"); } catch (_) {}
         if (value instanceof Error || (value && value.name === "AbortError")) { reject(value); return; }
         const ms = Math.max(1, performance.now() - opened);
-        const fullRate = mbps(received, ms);
-        // Report steady-state throughput: drop the first ~2s of TCP slow-start
-        // rather than averaging over the whole cold connection.
-        const rate = (warmBytes !== null && ms - warmAt > 500) ? mbps(received - warmBytes, ms - warmAt) : fullRate;
-        sample(true);
+        const avg = mbps(received, ms);
+        // Peak sustained throughput is the honest "how fast can this line go"
+        // figure; it survives a slow start and a mid-run stall. Fall back to
+        // the whole-connection average if the run was too short to window.
+        const rate = peak > 0 ? peak : avg;
         $("downloadValue").textContent = fmt(rate);
         setDial("downloadDial", speedPct(rate));
         $("downloadPhase").textContent = "complete";
-        $("downloadMeta").textContent = `${bytes(received)} received · ${fmt(ms / 1000, 1)}s · ${texts} server frames`;
+        $("downloadMeta").textContent = `${bytes(received)} · peak ${fmt(rate)} · avg ${fmt(avg)} Mbps · ${fmt(ms / 1000, 1)}s`;
         step("download", "done", "done");
-        log(`Download ${fmt(rate)} Mbps steady · ${fmt(fullRate)} avg over ${fmt(ms / 1000, 1)}s`);
-        resolve({ mbps: rate, avgMbps: fullRate, bytes: received, durationSec: ms / 1000, frames, serverMessages: texts });
+        log(`Download ${fmt(rate)} Mbps peak · ${fmt(avg)} avg over ${fmt(ms / 1000, 1)}s`);
+        resolve({ mbps: rate, avgMbps: avg, bytes: received, durationSec: ms / 1000, frames, serverMessages: texts });
       }
       ws.onopen = () => { opened = performance.now(); last = opened; };
       ws.onmessage = (event) => {
         if (typeof event.data === "string") { texts += 1; return; }
         received += event.data && event.data.byteLength ? event.data.byteLength : 0;
         frames += 1;
-        if (warmBytes === null && performance.now() - opened >= WARMUP_MS) { warmBytes = received; warmAt = performance.now() - opened; }
         sample(false);
       };
       ws.onerror = () => finish(new Error("Download WebSocket failed"));
@@ -333,7 +348,8 @@
       const chunk = new Uint8Array(64 * 1024);
       const targetMs = Math.max(3000, seconds * 1000);
       const maxBuffer = 8 * 1024 * 1024;
-      let opened = 0, sent = 0, texts = 0, last = 0, draining = 0, closed = false, srvBytes = 0, srvMs = 0;
+      let opened = 0, sent = 0, texts = 0, last = 0, draining = 0, closed = false, srvBytes = 0, srvMs = 0, peak = 0;
+      const marks = [];
       const hard = setTimeout(() => finish(null), targetMs + 9000);
       const onAbort = () => finish(abortError());
       crypto.getRandomValues(chunk.subarray(0, 1024));
@@ -341,17 +357,20 @@
       // The client's `sent` total counts bytes handed to send() — including
       // data still sitting in the OS/network buffer — so it overstates the
       // rate. The server echoes back how much it has actually received; prefer
-      // that once it starts arriving.
-      const uploadRate = (now) => srvBytes > 0 ? mbps(srvBytes, srvMs || (now - opened)) : mbps(sent, now - opened);
+      // that once it starts arriving (the byte basis switches to server counts
+      // and `marks` is reset in onmessage so the window deltas stay consistent).
       function sample(force) {
         const now = performance.now();
         if (!force && now - last < 220) return;
         last = now;
-        const rate = uploadRate(now);
-        pushSeries("upload", rate);
-        $("uploadValue").textContent = fmt(rate);
-        $("uploadMeta").textContent = `${bytes(srvBytes || sent)} ${srvBytes > 0 ? "received" : "sent"} · buffer ${bytes(ws.bufferedAmount || 0)}`;
-        setDial("uploadDial", speedPct(rate));
+        const counter = srvBytes > 0 ? srvBytes : sent;
+        const wr = windowRate(marks, now, counter, 1000);
+        const shown = Number.isFinite(wr) ? wr : mbps(counter, now - opened);
+        if (Number.isFinite(wr) && wr > peak) peak = wr;
+        pushSeries("upload", shown);
+        $("uploadValue").textContent = fmt(shown);
+        $("uploadMeta").textContent = `${bytes(counter)} ${srvBytes > 0 ? "received" : "sent"} · buffer ${bytes(ws.bufferedAmount || 0)}`;
+        setDial("uploadDial", speedPct(shown));
       }
       function pump() {
         if (closed || ws.readyState !== WebSocket.OPEN) return;
@@ -379,14 +398,16 @@
         try { ws.close(1000, "done"); } catch (_) {}
         if (value instanceof Error || (value && value.name === "AbortError")) { reject(value); return; }
         const ms = Math.max(1, performance.now() - opened);
-        const rate = uploadRate(performance.now());
-        sample(true);
+        const counter = srvBytes > 0 ? srvBytes : sent;
+        const avg = mbps(counter, srvBytes > 0 ? (srvMs || ms) : ms);
+        const rate = peak > 0 ? peak : avg;
         $("uploadValue").textContent = fmt(rate);
+        setDial("uploadDial", speedPct(rate));
         $("uploadPhase").textContent = "complete";
-        $("uploadMeta").textContent = `${bytes(srvBytes || sent)} ${srvBytes > 0 ? "received" : "sent"} · ${fmt(ms / 1000, 1)}s · ${texts} server frames`;
+        $("uploadMeta").textContent = `${bytes(counter)} ${srvBytes > 0 ? "received" : "sent"} · peak ${fmt(rate)} · avg ${fmt(avg)} Mbps · ${fmt(ms / 1000, 1)}s`;
         step("upload", "done", "done");
-        log(`Upload ${fmt(rate)} Mbps${srvBytes > 0 ? " (server-measured)" : ""} over ${fmt(ms / 1000, 1)}s`);
-        resolve({ mbps: rate, bytes: srvBytes || sent, durationSec: ms / 1000, serverMessages: texts });
+        log(`Upload ${fmt(rate)} Mbps peak${srvBytes > 0 ? " (server-measured)" : ""} · ${fmt(avg)} avg over ${fmt(ms / 1000, 1)}s`);
+        resolve({ mbps: rate, avgMbps: avg, bytes: counter, durationSec: ms / 1000, serverMessages: texts });
       }
       ws.onopen = () => { opened = performance.now(); last = opened; pump(); };
       ws.onmessage = (event) => {
@@ -396,6 +417,7 @@
           const m = JSON.parse(event.data);
           const ai = m.AppInfo || (m.TCPInfo ? { NumBytes: m.TCPInfo.BytesReceived, ElapsedTime: m.TCPInfo.ElapsedTime } : null);
           if (ai && Number.isFinite(ai.NumBytes) && ai.NumBytes > srvBytes) {
+            if (srvBytes === 0) { marks.length = 0; peak = 0; }
             srvBytes = ai.NumBytes;
             srvMs = Number.isFinite(ai.ElapsedTime) ? ai.ElapsedTime / 1000 : (performance.now() - opened);
           }
