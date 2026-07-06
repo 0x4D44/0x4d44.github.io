@@ -16,6 +16,28 @@
 
 window.ESSAYS = [
   {
+    slug: "broadband-speed-checker",
+    title: "Line Rate",
+    tagline: "A private broadband speed checker: find a nearby M-Lab NDT7 server, measure WebSocket download and upload throughput, sample ping, request a GPS fix and keep every result in browser-local history. Vanilla JS with localStorage — no backend, no build step.",
+    url: "https://0x4d44.github.io/broadband-speed-checker/",
+    illustration: "ill-wave",
+    date: "2026-07-06T12:00:00",
+    year: 2026,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
+    slug: "shipshape",
+    title: "Shipshape",
+    tagline: "A phone-first, offline maintenance log for tiny upper-body and core duties across the day. Bridge, engine room and log screens turn small ring, weight and bodyweight sets into kept watches, with home and hotel-gym plans, low-energy and travel modes, and honest partial credit. An installable vanilla-JS PWA — IndexedDB and a service worker, no backend.",
+    url: "https://0x4d44.github.io/shipshape/",
+    illustration: "ill-anchor",
+    date: "2026-07-06T11:00:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "cruise-propulsion",
     title: "The Electric Wake",
     tagline: "A deep interactive cutaway of diesel-electric cruise propulsion: medium-speed gensets, 11 kV switchboards, transformers, VFDs, pod motors and the 20 MW Azipods that turn thrust into steering. Trace megawatts from fuel rack to propeller, calculate currents, compare engine plants and watch the load-sharing system breathe. Vanilla JS on SVG and canvas — no dependencies, no build step.",
