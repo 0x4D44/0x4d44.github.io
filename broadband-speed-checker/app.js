@@ -178,30 +178,48 @@
     if (!match) return "";
     return Array.isArray(match[1]) ? match[1][0] : match[1];
   }
-  async function locateServer(signal) {
+  // The Locate API returns several nearby servers; return them all as ordered
+  // candidates so the run can fall back if the first one won't accept a socket.
+  async function locateServers(signal) {
     step("server", "active", "locating");
-    status("Locating test server", "Asking Measurement Lab for a nearby NDT7 endpoint.");
+    status("Locating test server", "Asking Measurement Lab for nearby NDT7 endpoints.");
     if (!$("serverToggle").checked) throw new Error("Public M-Lab testing is disabled.");
-    const res = await fetch(`${LOCATE_URL}&cb=${Date.now()}`, { cache: "no-store", signal });
-    if (!res.ok) throw new Error(`Locate API returned HTTP ${res.status}`);
-    const data = await res.json();
-    const item = (data.results || [])[0];
-    if (!item) throw new Error("No NDT7 server was returned.");
-    const downloadUrl = ndtUrl(item.urls, "download");
-    const uploadUrl = ndtUrl(item.urls, "upload");
-    if (!downloadUrl || !uploadUrl) throw new Error("The selected server did not advertise WebSocket test URLs.");
-    const server = {
-      machine: item.machine || item.hostname || new URL(downloadUrl).hostname,
-      city: item.location && (item.location.city || item.location.metro),
-      country: item.location && item.location.country,
-      downloadUrl,
-      uploadUrl,
-    };
-    $("serverName").textContent = server.machine;
-    $("serverLocation").textContent = [server.city, server.country].filter(Boolean).join(", ") || "nearby";
+    let data = null;
+    let lastErr = null;
+    for (let attempt = 0; attempt < 2 && !data; attempt += 1) {
+      checkAbort(signal);
+      try {
+        const res = await fetch(`${LOCATE_URL}&cb=${Date.now()}`, { cache: "no-store", signal });
+        if (res.status === 429) {
+          const retry = res.headers.get("retry-after");
+          throw new Error(`Measurement Lab is rate-limiting your network's IP (HTTP 429)${retry ? ` — try again in ~${retry}s` : " — try again shortly"}.`);
+        }
+        if (!res.ok) throw new Error(`Locate API returned HTTP ${res.status}`);
+        data = await res.json();
+      } catch (err) {
+        if (err && err.name === "AbortError") throw err;
+        if (/rate-limiting/.test(err.message || "")) throw err;
+        lastErr = err;
+        if (attempt === 0) { log(`Locate retry: ${err.message || err}`); await new Promise((r) => setTimeout(r, 800)); }
+      }
+    }
+    if (!data) throw lastErr || new Error("Could not reach the Measurement Lab locate service.");
+    const servers = (data.results || []).map((item) => {
+      const downloadUrl = ndtUrl(item.urls, "download");
+      const uploadUrl = ndtUrl(item.urls, "upload");
+      if (!downloadUrl || !uploadUrl) return null;
+      return {
+        machine: item.machine || item.hostname || new URL(downloadUrl).hostname,
+        city: item.location && (item.location.city || item.location.metro),
+        country: item.location && item.location.country,
+        downloadUrl,
+        uploadUrl,
+      };
+    }).filter(Boolean);
+    if (!servers.length) throw new Error("No usable NDT7 server was returned.");
     step("server", "done", "selected");
-    log(`Server ${server.machine}`);
-    return server;
+    log(`Locate returned ${servers.length} server${servers.length === 1 ? "" : "s"}`);
+    return servers;
   }
 
   function timeWebSocketOpen(url, signal) {
@@ -257,7 +275,8 @@
     return new Promise((resolve, reject) => {
       const ws = trackSocket(new WebSocket(url, NDT7_SUBPROTOCOL), signal);
       ws.binaryType = "arraybuffer";
-      let opened = 0, received = 0, frames = 0, texts = 0, last = 0, closed = false;
+      let opened = 0, received = 0, frames = 0, texts = 0, last = 0, closed = false, warmBytes = null, warmAt = 0;
+      const WARMUP_MS = 2000;
       const hard = setTimeout(() => finish(null), 17000);
       const onAbort = () => finish(abortError());
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
@@ -279,20 +298,25 @@
         try { ws.close(1000, "done"); } catch (_) {}
         if (value instanceof Error || (value && value.name === "AbortError")) { reject(value); return; }
         const ms = Math.max(1, performance.now() - opened);
-        const rate = mbps(received, ms);
+        const fullRate = mbps(received, ms);
+        // Report steady-state throughput: drop the first ~2s of TCP slow-start
+        // rather than averaging over the whole cold connection.
+        const rate = (warmBytes !== null && ms - warmAt > 500) ? mbps(received - warmBytes, ms - warmAt) : fullRate;
         sample(true);
         $("downloadValue").textContent = fmt(rate);
+        setDial("downloadDial", speedPct(rate));
         $("downloadPhase").textContent = "complete";
         $("downloadMeta").textContent = `${bytes(received)} received · ${fmt(ms / 1000, 1)}s · ${texts} server frames`;
         step("download", "done", "done");
-        log(`Download ${fmt(rate)} Mbps over ${fmt(ms / 1000, 1)}s`);
-        resolve({ mbps: rate, bytes: received, durationSec: ms / 1000, frames, serverMessages: texts });
+        log(`Download ${fmt(rate)} Mbps steady · ${fmt(fullRate)} avg over ${fmt(ms / 1000, 1)}s`);
+        resolve({ mbps: rate, avgMbps: fullRate, bytes: received, durationSec: ms / 1000, frames, serverMessages: texts });
       }
       ws.onopen = () => { opened = performance.now(); last = opened; };
       ws.onmessage = (event) => {
         if (typeof event.data === "string") { texts += 1; return; }
         received += event.data && event.data.byteLength ? event.data.byteLength : 0;
         frames += 1;
+        if (warmBytes === null && performance.now() - opened >= WARMUP_MS) { warmBytes = received; warmAt = performance.now() - opened; }
         sample(false);
       };
       ws.onerror = () => finish(new Error("Download WebSocket failed"));
@@ -309,19 +333,24 @@
       const chunk = new Uint8Array(64 * 1024);
       const targetMs = Math.max(3000, seconds * 1000);
       const maxBuffer = 8 * 1024 * 1024;
-      let opened = 0, sent = 0, texts = 0, last = 0, draining = 0, closed = false;
+      let opened = 0, sent = 0, texts = 0, last = 0, draining = 0, closed = false, srvBytes = 0, srvMs = 0;
       const hard = setTimeout(() => finish(null), targetMs + 9000);
       const onAbort = () => finish(abortError());
       crypto.getRandomValues(chunk.subarray(0, 1024));
       if (signal) signal.addEventListener("abort", onAbort, { once: true });
+      // The client's `sent` total counts bytes handed to send() — including
+      // data still sitting in the OS/network buffer — so it overstates the
+      // rate. The server echoes back how much it has actually received; prefer
+      // that once it starts arriving.
+      const uploadRate = (now) => srvBytes > 0 ? mbps(srvBytes, srvMs || (now - opened)) : mbps(sent, now - opened);
       function sample(force) {
         const now = performance.now();
         if (!force && now - last < 220) return;
         last = now;
-        const rate = mbps(sent, now - opened);
+        const rate = uploadRate(now);
         pushSeries("upload", rate);
         $("uploadValue").textContent = fmt(rate);
-        $("uploadMeta").textContent = `${bytes(sent)} sent · buffer ${bytes(ws.bufferedAmount || 0)}`;
+        $("uploadMeta").textContent = `${bytes(srvBytes || sent)} ${srvBytes > 0 ? "received" : "sent"} · buffer ${bytes(ws.bufferedAmount || 0)}`;
         setDial("uploadDial", speedPct(rate));
       }
       function pump() {
@@ -350,17 +379,28 @@
         try { ws.close(1000, "done"); } catch (_) {}
         if (value instanceof Error || (value && value.name === "AbortError")) { reject(value); return; }
         const ms = Math.max(1, performance.now() - opened);
-        const rate = mbps(sent, ms);
+        const rate = uploadRate(performance.now());
         sample(true);
         $("uploadValue").textContent = fmt(rate);
         $("uploadPhase").textContent = "complete";
-        $("uploadMeta").textContent = `${bytes(sent)} sent · ${fmt(ms / 1000, 1)}s · ${texts} server frames`;
+        $("uploadMeta").textContent = `${bytes(srvBytes || sent)} ${srvBytes > 0 ? "received" : "sent"} · ${fmt(ms / 1000, 1)}s · ${texts} server frames`;
         step("upload", "done", "done");
-        log(`Upload ${fmt(rate)} Mbps over ${fmt(ms / 1000, 1)}s`);
-        resolve({ mbps: rate, bytes: sent, durationSec: ms / 1000, serverMessages: texts });
+        log(`Upload ${fmt(rate)} Mbps${srvBytes > 0 ? " (server-measured)" : ""} over ${fmt(ms / 1000, 1)}s`);
+        resolve({ mbps: rate, bytes: srvBytes || sent, durationSec: ms / 1000, serverMessages: texts });
       }
       ws.onopen = () => { opened = performance.now(); last = opened; pump(); };
-      ws.onmessage = (event) => { if (typeof event.data === "string") texts += 1; };
+      ws.onmessage = (event) => {
+        if (typeof event.data !== "string") return;
+        texts += 1;
+        try {
+          const m = JSON.parse(event.data);
+          const ai = m.AppInfo || (m.TCPInfo ? { NumBytes: m.TCPInfo.BytesReceived, ElapsedTime: m.TCPInfo.ElapsedTime } : null);
+          if (ai && Number.isFinite(ai.NumBytes) && ai.NumBytes > srvBytes) {
+            srvBytes = ai.NumBytes;
+            srvMs = Number.isFinite(ai.ElapsedTime) ? ai.ElapsedTime / 1000 : (performance.now() - opened);
+          }
+        } catch (_) {}
+      };
       ws.onerror = () => finish(new Error("Upload WebSocket failed"));
       ws.onclose = () => finish(null);
     });
@@ -385,8 +425,28 @@
     try {
       status("Running", "Collecting location, latency, download and upload data.");
       parts.location = await getLocation(signal); checkAbort(signal);
-      parts.server = await locateServer(signal); checkAbort(signal);
-      parts.ping = await measurePing(parts.server, signal); checkAbort(signal);
+      const servers = await locateServers(signal); checkAbort(signal);
+      // Use the ping stage as the reachability probe: walk the candidate list
+      // and keep the first server that actually accepts a WebSocket.
+      let pingErr = null;
+      for (let i = 0; i < servers.length; i += 1) {
+        const candidate = servers[i];
+        $("serverName").textContent = candidate.machine;
+        $("serverLocation").textContent = [candidate.city, candidate.country].filter(Boolean).join(", ") || "nearby";
+        log(`Server ${candidate.machine}${servers.length > 1 ? ` (${i + 1}/${servers.length})` : ""}`);
+        try {
+          parts.ping = await measurePing(candidate, signal);
+          parts.server = candidate;
+          break;
+        } catch (err) {
+          if (err && err.name === "AbortError") throw err;
+          pingErr = err;
+          log(`No response from ${candidate.machine}, trying next server…`);
+        }
+        checkAbort(signal);
+      }
+      if (!parts.server) throw new Error(`No returned NDT7 server accepted a connection${pingErr ? ` (${pingErr.message})` : ""}.`);
+      checkAbort(signal);
       parts.download = await runDownload(parts.server.downloadUrl, signal); checkAbort(signal);
       parts.upload = await runUpload(parts.server.uploadUrl, Number($("durationSelect").value) || 10, signal); checkAbort(signal);
       step("save", "active", "saving");
