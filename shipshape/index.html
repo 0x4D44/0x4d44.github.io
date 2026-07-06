@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#152029" />
+<meta name="description" content="Shipshape: a private offline maintenance log for tiny upper-body and core duties across the day." />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="stylesheet" href="styles.css" />
+<title>Shipshape — maintenance log for the long voyage</title>
+</head>
+<body>
+<div class="ambient" aria-hidden="true"></div>
+<div id="app" aria-live="polite"></div>
+<noscript>
+  <main class="loading error">
+    <h1>Shipshape needs JavaScript</h1>
+    <p>The logbook, local storage, offline shell and duty controls are all browser-side JavaScript. No external service is contacted.</p>
+  </main>
+</noscript>
+<script type="module" src="app.js"></script>
+</body>
+</html>
