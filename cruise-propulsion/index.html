@@ -28,7 +28,7 @@
       <p class="lede small">This is a technical cutaway, not a sales brochure. The numerical cases are either published ship particulars or representative engineering models, and every calculator says what it is assuming.</p>
     </div>
     <aside class="hero-panel" aria-label="Live propulsion visual">
-      <canvas id="wakeCanvas" width="780" height="420"></canvas>
+      <canvas id="wakeCanvas" width="780" height="420" aria-hidden="true"></canvas>
       <div class="pod-visor" aria-hidden="true">
         <svg viewBox="0 0 420 210" role="img" aria-label="Animated stern pod diagram">
           <defs>
@@ -134,7 +134,7 @@
       <form class="card controls" id="plantForm">
         <label>Ship case <select id="scenario"></select></label>
         <label>Speed <output id="speedOut"></output><input id="speed" type="range" min="0" max="25" step="0.1" value="18" /></label>
-        <label>Hotel load <output id="hotelOut"></output><input id="hotel" type="range" min="6" max="38" step="0.5" value="18" /></label>
+        <label>Hotel load <output id="hotelOut"></output><input id="hotel" type="range" min="5" max="38" step="0.5" value="18" /></label>
         <label>Sea margin <output id="marginOut"></output><input id="margin" type="range" min="0" max="30" step="1" value="12" /></label>
         <label>Bus voltage <select id="bus"><option value="11">11 kV</option><option value="6.6">6.6 kV</option><option value="13.8">13.8 kV</option></select></label>
         <label>Power factor <output id="pfOut"></output><input id="pf" type="range" min="0.82" max="1" step="0.01" value="0.95" /></label>
