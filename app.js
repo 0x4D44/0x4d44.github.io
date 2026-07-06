@@ -8,11 +8,7 @@
   "use strict";
 
   const STATE_KEY = "0x4d44.listing.v1";
-  const CATALOG_EXTENSIONS = ["broadband-speed-checker/catalog.js"];
   const defaults = { filter: "all", sort: "recent", layout: "table" };
-
-  let state = Object.assign({}, defaults);
-  let essays = [];
 
   function loadState() {
     try {
@@ -23,6 +19,8 @@
     try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch (_) {}
   }
 
+  const state = loadState();
+  const essays = window.ESSAYS || [];
   // A page may carry one `tag` (string) or several via `tags` (array).
   const tagsOf = (e) => e.tags || (e.tag ? [e.tag] : []);
   const hasNumber = (v) => Number.isFinite(v);
@@ -57,21 +55,6 @@
     use.setAttribute("href", "#" + symbolId);
     svg.appendChild(use);
     return svg;
-  }
-
-  function loadCatalogExtension(src) {
-    return new Promise((resolve) => {
-      const s = document.createElement("script");
-      s.src = src;
-      s.async = false;
-      s.onload = resolve;
-      s.onerror = resolve;
-      document.head.appendChild(s);
-    });
-  }
-
-  function loadCatalogExtensions() {
-    return Promise.all(CATALOG_EXTENSIONS.map(loadCatalogExtension));
   }
 
   // ---------- status bar ----------
@@ -263,16 +246,10 @@
     }
   }
 
-  function init() {
-    state = loadState();
-    essays = window.ESSAYS || [];
+  // ---------- init ----------
+  document.addEventListener("DOMContentLoaded", function () {
     buildStatusbar();
     buildControls();
     render();
-  }
-
-  // ---------- init ----------
-  document.addEventListener("DOMContentLoaded", function () {
-    loadCatalogExtensions().then(init);
   });
 })();
