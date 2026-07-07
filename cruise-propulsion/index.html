@@ -1,253 +1,576 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>The Electric Wake — diesel-electric cruise propulsion</title>
-<meta name="description" content="An interactive technical almanac entry explaining diesel-electric cruise ship propulsion, Azipods, power plants, motors, voltages, currents, efficiencies and speed-power tradeoffs." />
-<link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
 </head>
 <body>
-<div class="paper" aria-hidden="true"></div>
-<div class="grid-glow" aria-hidden="true"></div>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#0b1116}
+  a{color:var(--brass);text-decoration:none}
+  a:hover{color:var(--green)}
+  input[type=range]{accent-color:var(--brass)}
+  @keyframes dash{to{stroke-dashoffset:-36}}
+  @keyframes alarmPulse{0%,100%{box-shadow:0 0 0 1px var(--red),0 0 8px rgba(232,101,78,.2)}50%{box-shadow:0 0 0 1px var(--red),0 0 22px rgba(232,101,78,.65)}}
+  @media (prefers-reduced-motion: reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</helmet>
+<div ref="{{ setRoot }}" data-screen-label="Electric Wake" style="--bg:#0e161c;--ink:#eef2ef;--muted:#9fb0ad;--dim:#6d807d;--brass:#d8ae5a;--brass2:#a9863c;--green:#57d497;--cyan:#6fb2d6;--red:#e8654e;--line:rgba(216,174,90,0.22);color:var(--ink);font-family:'IBM Plex Mono',ui-monospace,monospace;line-height:1.6;min-height:100vh;background:repeating-linear-gradient(0deg,transparent 0 47px,rgba(111,178,214,.045) 47px 48px),radial-gradient(circle at 20% -5%,rgba(216,174,90,.10),transparent 40%),linear-gradient(180deg,#0e161c 0%,#0b1116 60%,#080c10 100%);color-scheme:dark;scroll-behavior:smooth">
 
-<header class="hero" id="top">
-  <nav class="topbar" aria-label="Page">
-    <a href="../" class="back">← almanac</a>
-    <a href="#plant">plant</a>
-    <a href="#pods">azipods</a>
-    <a href="#math">math</a>
-    <a href="#machines">machines</a>
-    <a href="#sim">simulator</a>
+  <nav aria-label="Page" style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:14px clamp(18px,4vw,56px);border-bottom:1px solid var(--line);background:linear-gradient(180deg,rgba(28,38,45,.92),rgba(10,15,19,.92));position:sticky;top:0;backdrop-filter:blur(14px);z-index:20;box-shadow:0 2px 0 rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.06)">
+    <a href="#top" style="border:1px solid rgba(216,174,90,.45);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);font-family:'Saira Condensed',sans-serif;font-weight:600">☰ almanac</a>
+    <a href="#plant" style="border:1px solid var(--line);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Saira Condensed',sans-serif">plant</a>
+    <a href="#pods" style="border:1px solid var(--line);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Saira Condensed',sans-serif">azipods</a>
+    <a href="#math" style="border:1px solid var(--line);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Saira Condensed',sans-serif">math</a>
+    <a href="#machines" style="border:1px solid var(--line);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Saira Condensed',sans-serif">machines</a>
+    <a href="#sim" style="border:1px solid var(--line);padding:7px 11px;border-radius:4px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-family:'Saira Condensed',sans-serif">simulator</a>
   </nav>
-  <div class="hero-grid">
+
+  <header id="top" style="width:min(1440px,calc(100% - 32px));margin-inline:auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(340px,0.86fr);gap:clamp(24px,5vw,64px);align-items:center;padding:clamp(40px,7vw,90px) 0 44px">
     <div>
-      <p class="kicker">0x4D44 :: MARINE ENGINEERING FILE</p>
-      <h1>The Electric Wake</h1>
-      <p class="lede">A cruise ship does not usually have one enormous diesel engine turning one long shaft. The fashionable large-ship answer is a floating power station: medium-speed diesels drive alternators, an 11 kV switchboard moves tens of megawatts around the vessel, converters synthesize motor frequency, and azimuthing pods turn electricity directly into vectored thrust.</p>
-      <p class="lede small">This is a technical cutaway, not a sales brochure. The numerical cases are either published ship particulars or representative engineering models, and every calculator says what it is assuming.</p>
+      <p style="color:var(--brass);letter-spacing:.18em;text-transform:uppercase;font-size:12px;margin:0 0 14px">0x4D44 :: MARINE ENGINEERING FILE</p>
+      <h1 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(56px,9vw,140px);line-height:.92;letter-spacing:-.01em;text-transform:uppercase;margin:0;text-shadow:0 0 30px rgba(216,174,90,.18)">The Electric Wake</h1>
+      <p style="font-size:clamp(17px,1.8vw,22px);color:#cdd9d5;max-width:70ch;margin:22px 0 0">A cruise ship does not usually have one enormous diesel engine turning one long shaft. The fashionable large-ship answer is a floating power station: medium-speed diesels drive alternators, an 11 kV switchboard moves tens of megawatts around the vessel, converters synthesize motor frequency, and azimuthing pods turn electricity directly into vectored thrust.</p>
+      <p style="font-size:15px;color:var(--muted);max-width:70ch;margin:14px 0 0">This is a technical cutaway, not a sales brochure. The numerical cases are either published ship particulars or representative engineering models, and every calculator says what it is assuming.</p>
     </div>
-    <aside class="hero-panel" aria-label="Live propulsion visual">
-      <canvas id="wakeCanvas" width="780" height="420" aria-hidden="true"></canvas>
-      <div class="pod-visor" aria-hidden="true">
-        <svg viewBox="0 0 420 210" role="img" aria-label="Animated stern pod diagram">
-          <defs>
-            <linearGradient id="sea" x1="0" x2="1"><stop offset="0" stop-color="#0e2d34"/><stop offset="1" stop-color="#10212a"/></linearGradient>
-          </defs>
-          <path class="hull" d="M35 56 L300 56 Q350 58 392 84 Q355 118 282 122 L86 122 Q54 116 35 56 Z" />
-          <path class="deck" d="M88 43 H272 M116 30 H240 M155 19 H215" />
-          <g class="podSpin" id="heroPodA" transform="translate(250 132) rotate(18)">
-            <ellipse class="pod" cx="0" cy="0" rx="48" ry="18" />
-            <line class="strut" x1="0" y1="-38" x2="0" y2="-13" />
-            <g class="prop">
-              <circle cx="-50" cy="0" r="6" />
-              <path d="M-56 0 q-24 -16 -30 8 q18 8 30 -8" />
-              <path d="M-56 0 q-24 16 -30 -8 q18 -8 30 8" />
+    <aside aria-label="Live propulsion visual" style="justify-self:center;width:100%">
+      <div id="porthole" style="position:relative;aspect-ratio:1;width:min(100%,520px);margin-inline:auto;border-radius:50%;padding:22px;background:linear-gradient(150deg,#3c4852,#1a232a 70%);box-shadow:0 24px 64px rgba(0,0,0,.55),inset 0 2px 8px rgba(255,255,255,.14),inset 0 -6px 14px rgba(0,0,0,.5);border:2px solid rgba(216,174,90,.5)">
+        <div id="portholeGlass" style="position:relative;width:100%;height:100%;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,#0c1a1f,#0a1418);box-shadow:inset 0 0 46px rgba(0,0,0,.75),inset 0 0 0 3px rgba(216,174,90,.28)">
+          <canvas id="wakeCanvas" width="560" height="560" aria-hidden="true" style="position:absolute;inset:0;width:100%;height:100%;opacity:.85"></canvas>
+          <svg viewBox="0 0 420 210" role="img" aria-label="Animated stern pod diagram" style="position:absolute;left:0;right:0;top:50%;transform:translateY(-46%);width:100%;filter:drop-shadow(0 18px 20px rgba(0,0,0,.5))">
+            <path d="M35 56 L300 56 Q350 58 392 84 Q355 118 282 122 L86 122 Q54 116 35 56 Z" style="fill:rgba(10,18,21,.9);stroke:var(--green);stroke-width:2;stroke-linejoin:round"></path>
+            <path d="M88 43 H272 M116 30 H240 M155 19 H215" style="fill:none;stroke:var(--green);stroke-width:2;stroke-linecap:round;opacity:.7"></path>
+            <g transform="translate(232 120)">
+              <g id="heroWagA" transform="rotate(-6)">
+                <line x1="0" y1="0" x2="0" y2="26" style="stroke:var(--brass);stroke-width:5;stroke-linecap:round"></line>
+                <ellipse cx="0" cy="40" rx="46" ry="16" style="fill:rgba(9,17,20,.94);stroke:var(--brass);stroke-width:2"></ellipse>
+                <path d="M40 40 C 78 30 108 30 152 37 M40 40 C 78 50 108 50 152 43" style="fill:none;stroke:var(--cyan);stroke-width:2;stroke-linecap:round;stroke-dasharray:8 10;animation:dash 1.4s linear infinite"></path>
+                <g transform="translate(-46 40)">
+                  <g id="heroPropA">
+                    <circle r="24" style="fill:none;stroke:var(--green);stroke-width:1;opacity:.35"></circle>
+                    <path d="M0 0 C -4 -7 -4 -18 0 -24 C 4 -18 4 -7 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.4;stroke-linejoin:round"></path>
+                    <path d="M0 0 C 7 -4 18 -4 24 0 C 18 4 7 4 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.4;stroke-linejoin:round"></path>
+                    <path d="M0 0 C 4 7 4 18 0 24 C -4 18 -4 7 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.4;stroke-linejoin:round"></path>
+                    <path d="M0 0 C -7 4 -18 4 -24 0 C -18 -4 -7 -4 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.4;stroke-linejoin:round"></path>
+                    <circle r="4" style="fill:var(--brass)"></circle>
+                  </g>
+                </g>
+              </g>
             </g>
-            <path class="thrust" d="M-86 0 C-120 -12 -145 -10 -174 -4 M-86 0 C-120 12 -145 10 -174 4" />
-          </g>
-          <g class="podSpin delay" id="heroPodB" transform="translate(323 133) rotate(-18)">
-            <ellipse class="pod" cx="0" cy="0" rx="42" ry="16" />
-            <line class="strut" x1="0" y1="-36" x2="0" y2="-12" />
-            <g class="prop"><circle cx="-44" cy="0" r="5"/><path d="M-49 0 q-20 -13 -26 7 q16 7 26 -7"/><path d="M-49 0 q-20 13 -26 -7 q16 -7 26 7"/></g>
-            <path class="thrust" d="M-74 0 C-101 -9 -126 -7 -154 -2 M-74 0 C-101 9 -126 7 -154 2" />
-          </g>
-          <text x="36" y="168">rotating motor pods vector thrust; no rudder required</text>
-        </svg>
+            <g transform="translate(308 121)">
+              <g id="heroWagB" transform="rotate(6)">
+                <line x1="0" y1="0" x2="0" y2="24" style="stroke:var(--brass);stroke-width:4.5;stroke-linecap:round"></line>
+                <ellipse cx="0" cy="36" rx="40" ry="14" style="fill:rgba(9,17,20,.94);stroke:var(--brass);stroke-width:2"></ellipse>
+                <path d="M35 36 C 68 27 96 27 134 33 M35 36 C 68 45 96 45 134 39" style="fill:none;stroke:var(--cyan);stroke-width:2;stroke-linecap:round;stroke-dasharray:8 10;animation:dash 1.6s linear infinite"></path>
+                <g transform="translate(-40 36)">
+                  <g id="heroPropB">
+                    <circle r="21" style="fill:none;stroke:var(--green);stroke-width:1;opacity:.35"></circle>
+                    <path d="M0 0 C -3.5 -6 -3.5 -16 0 -21 C 3.5 -16 3.5 -6 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.2;stroke-linejoin:round"></path>
+                    <path d="M0 0 C 6 -3.5 16 -3.5 21 0 C 16 3.5 6 3.5 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.2;stroke-linejoin:round"></path>
+                    <path d="M0 0 C 3.5 6 3.5 16 0 21 C -3.5 16 -3.5 6 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.2;stroke-linejoin:round"></path>
+                    <path d="M0 0 C -6 3.5 -16 3.5 -21 0 C -16 -3.5 -6 -3.5 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.2;stroke-linejoin:round"></path>
+                    <circle r="3.5" style="fill:var(--brass)"></circle>
+                  </g>
+                </g>
+              </g>
+            </g>
+            <text x="30" y="176" style="fill:var(--muted);font-size:12px;letter-spacing:.05em">rotating motor pods vector thrust; no rudder required</text>
+          </svg>
+        </div>
+      </div>
+      <div style="margin:22px auto 0;max-width:520px;border:1px solid var(--line);border-radius:8px;padding:16px 18px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#26333c,#151d23);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 10px 30px rgba(0,0,0,.4);position:relative">
+        <div style="font-family:'Saira Condensed',sans-serif;font-weight:700;letter-spacing:.16em;font-size:12px;color:var(--brass);text-transform:uppercase;margin-bottom:10px">Engine Order Telegraph</div>
+        <div id="eot" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px"></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px"><span style="font-family:'Saira Condensed',sans-serif;font-weight:700;letter-spacing:.16em;font-size:12px;color:var(--brass);text-transform:uppercase">Helm · Azimuth</span><span id="helmOut" style="color:var(--green);font-size:13px">0°</span></div>
+        <input id="helm" type="range" min="-35" max="35" step="1" value="0" style="width:100%">
       </div>
     </aside>
-  </div>
-</header>
+  </header>
 
-<main>
-  <section class="panel dashboard" id="plant">
-    <div class="section-head">
-      <p class="kicker">01 :: ship as power station</p>
-      <h2>What diesel-electric means on a cruise ship</h2>
-      <p>Several engine-generator sets feed a common high-voltage bus. The bus does not care whether a megawatt is about to become propeller torque, chilled-water compression, galley heat, theatre lighting or a bow thruster. This is the architectural trick: the engines can be started, stopped and loaded near their efficient range while the ship's consumers take exactly the electrical power they need.</p>
-    </div>
+  <main style="width:min(1440px,calc(100% - 32px));margin-inline:auto;display:grid;gap:28px;padding-bottom:64px">
 
-    <div class="control-strip" id="scenarioControls" aria-label="Scenario controls"></div>
-
-    <div class="metrics" id="metrics" aria-live="polite"></div>
-
-    <div class="two-col">
-      <div class="card schematic-card">
-        <h3>Single-line diagram</h3>
-        <p>The animated pulses are active power. In the real plant there are protection relays, synchronising gear, bus-tie breakers, harmonic filters, excitation systems, PMS logic and blackout recovery layers between every box.</p>
-        <svg id="singleLine" viewBox="0 0 1000 560" role="img" aria-label="Diesel electric cruise ship single line diagram"></svg>
+    <section class="panel" id="plant" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,4vw,48px);background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#233139,#141d23);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;scroll-margin-top:80px">
+      <div style="max-width:1060px;margin-bottom:26px">
+        <p style="color:var(--brass);letter-spacing:.16em;text-transform:uppercase;font-size:12px;margin:0 0 12px">01 :: ship as power station</p>
+        <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(32px,5vw,64px);line-height:1;letter-spacing:0;margin:0;text-transform:uppercase">What diesel-electric means on a cruise ship</h2>
+        <p style="color:var(--muted);font-size:16px">Several engine-generator sets feed a common high-voltage bus. The bus does not care whether a megawatt is about to become propeller torque, chilled-water compression, galley heat, theatre lighting or a bow thruster. This is the architectural trick: the engines can be started, stopped and loaded near their efficient range while the ship's consumers take exactly the electrical power they need.</p>
       </div>
-      <div class="card">
-        <h3>Why use a common electrical plant?</h3>
-        <dl class="stacked">
-          <dt>Load sharing</dt><dd>Six medium-speed engines can behave like one elastic prime mover. At hotel speed one or two engines sleep; at full sea speed five or six share the bus.</dd>
-          <dt>Redundancy</dt><dd>A failed engine, alternator, transformer, drive, bus section or even pod reduces capability rather than ending the voyage. Segregated switchboard rooms and bus-ties keep faults local.</dd>
-          <dt>Layout freedom</dt><dd>No tunnel shaftline has to run from engine room to propeller. Engine rooms can be placed for stability, funnel routing, fire zones and noise isolation.</dd>
-          <dt>Good part-load operation</dt><dd>Medium-speed diesels are happiest at substantial load. A power-management system keeps online sets in their efficient band instead of dragging one huge engine at low load.</dd>
-        </dl>
+      <div id="scenarioControls" aria-label="Scenario controls" style="display:flex;flex-wrap:wrap;gap:10px;margin:22px 0"></div>
+      <div id="metrics" aria-live="polite" style="display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:12px;margin:20px 0 28px"></div>
+      <div style="display:grid;gap:18px;grid-template-columns:minmax(0,1.25fr) minmax(300px,0.75fr)">
+        <div class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow-x:auto;min-height:560px">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:clamp(19px,2.2vw,27px);color:var(--brass);margin:0 0 6px;text-transform:uppercase;letter-spacing:.01em">Single-line diagram</h3>
+          <p style="color:var(--muted);margin:0 0 8px">The animated pulses are active power. In the real plant there are protection relays, synchronising gear, bus-tie breakers, harmonic filters, excitation systems, PMS logic and blackout recovery layers between every box.</p>
+          <svg id="singleLine" viewBox="0 0 1000 560" role="img" aria-label="Diesel electric cruise ship single line diagram" style="width:100%;min-height:420px"></svg>
+        </div>
+        <div class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow:hidden">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:clamp(19px,2.2vw,27px);color:var(--brass);margin:0 0 6px;text-transform:uppercase;letter-spacing:.01em">Why use a common electrical plant?</h3>
+          <dl style="margin:16px 0 0">
+            <dt style="color:var(--green);font-weight:600;margin-top:16px">Load sharing</dt><dd style="margin:4px 0 0;color:var(--muted)">Six medium-speed engines can behave like one elastic prime mover. At hotel speed one or two engines sleep; at full sea speed five or six share the bus.</dd>
+            <dt style="color:var(--green);font-weight:600;margin-top:16px">Redundancy</dt><dd style="margin:4px 0 0;color:var(--muted)">A failed engine, alternator, transformer, drive, bus section or even pod reduces capability rather than ending the voyage. Segregated switchboard rooms and bus-ties keep faults local.</dd>
+            <dt style="color:var(--green);font-weight:600;margin-top:16px">Layout freedom</dt><dd style="margin:4px 0 0;color:var(--muted)">No tunnel shaftline has to run from engine room to propeller. Engine rooms can be placed for stability, funnel routing, fire zones and noise isolation.</dd>
+            <dt style="color:var(--green);font-weight:600;margin-top:16px">Good part-load operation</dt><dd style="margin:4px 0 0;color:var(--muted)">Medium-speed diesels are happiest at substantial load. A power-management system keeps online sets in their efficient band instead of dragging one huge engine at low load.</dd>
+          </dl>
+        </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="panel" id="pods">
-    <div class="section-head">
-      <p class="kicker">02 :: why azipods work</p>
-      <h2>A pod is a propeller, motor and rudder in one submerged machine</h2>
-      <p>An Azipod-style unit is not just a thruster bolted below the stern. It moves the propulsion motor into a steerable gondola, couples the propeller directly to the motor shaft, and uses a variable-frequency drive to set torque and rpm. That creates hydrodynamic, manoeuvring and machinery-layout advantages.</p>
-    </div>
+    <div class="seam" aria-hidden="true" style="height:12px;border-radius:6px;margin:2px 40px;background:repeating-linear-gradient(58deg,#5f4718 0 4px,#e6cf96 4px 7px,#a9863c 7px 11px,#5f4718 11px 14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),inset 0 -2px 3px rgba(0,0,0,.5),0 2px 5px rgba(0,0,0,.35);opacity:.85"></div>
 
-    <div class="pod-grid">
-      <article class="card pod-card">
-        <h3>Pulling propeller</h3>
-        <svg viewBox="0 0 420 180" class="mini-pod" aria-hidden="true">
-          <path class="stream" d="M12 92 C74 72 120 72 176 86 S286 102 402 78" />
-          <path class="stream alt" d="M12 126 C72 108 126 106 182 116 S302 142 402 126" />
-          <g transform="translate(224 88)"><ellipse class="pod" cx="0" cy="0" rx="70" ry="24"/><line class="strut" x1="0" y1="-55" x2="0" y2="-20"/><g class="prop"><circle cx="-72" cy="0" r="7"/><path d="M-79 0 q-34 -22 -42 10 q25 12 42 -10"/><path d="M-79 0 q-34 22 -42 -10 q25 -12 42 10"/></g></g>
-        </svg>
-        <p>The propeller works ahead of the pod body in cleaner water, so the inflow is less disturbed than behind a boss, shaft brackets and rudder. The pod body then sits in the propeller race and can be shaped as a small foil.</p>
-      </article>
-      <article class="card pod-card">
-        <h3>Full thrust vectoring</h3>
-        <div class="thruster-map" id="thrusterMap" aria-hidden="true"></div>
-        <p>The same 20 MW can point nearly anywhere in azimuth. At harbour speed the ship can yaw, crab and brake without needing a conventional rudder flow. Multiple pods let the bridge command force and moment instead of shaft rpm and rudder angle.</p>
-      </article>
-      <article class="card pod-card">
-        <h3>Reverse without drama</h3>
-        <svg viewBox="0 0 420 180" class="mini-pod" aria-hidden="true">
-          <g class="reversePod" transform="translate(210 92) rotate(180)"><ellipse class="pod" cx="0" cy="0" rx="72" ry="24"/><line class="strut" x1="0" y1="-54" x2="0" y2="-20"/><g class="prop"><circle cx="-74" cy="0" r="7"/><path d="M-82 0 q-34 -22 -44 10 q26 12 44 -10"/><path d="M-82 0 q-34 22 -44 -10 q26 -12 44 10"/></g></g>
-          <path class="thrust big" d="M292 92 C338 74 372 74 404 88 M292 92 C338 110 372 110 404 96" />
-          <text x="26" y="150">turn the pod, not the ship</text>
-        </svg>
-        <p>For astern thrust, the pod turns. The propeller still sees a controlled inflow and the electric drive simply changes torque and speed. The ship can stop and back down with less dependence on rudder effectiveness.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="panel" id="sim">
-    <div class="section-head">
-      <p class="kicker">03 :: voyage load simulator</p>
-      <h2>Slide the ship from hotel mode to full sea speed</h2>
-      <p>Propulsive power rises roughly with the cube of speed near service conditions, while hotel load is large but comparatively steady. The result is why cruise itineraries are sensitive to speed: adding a few knots can demand tens of megawatts and another diesel on the board.</p>
-    </div>
-
-    <div class="sim-grid">
-      <form class="card controls" id="plantForm">
-        <label>Ship case <select id="scenario"></select></label>
-        <label>Speed <output id="speedOut"></output><input id="speed" type="range" min="0" max="25" step="0.1" value="18" /></label>
-        <label>Hotel load <output id="hotelOut"></output><input id="hotel" type="range" min="5" max="38" step="0.5" value="18" /></label>
-        <label>Sea margin <output id="marginOut"></output><input id="margin" type="range" min="0" max="30" step="1" value="12" /></label>
-        <label>Bus voltage <select id="bus"><option value="11">11 kV</option><option value="6.6">6.6 kV</option><option value="13.8">13.8 kV</option></select></label>
-        <label>Power factor <output id="pfOut"></output><input id="pf" type="range" min="0.82" max="1" step="0.01" value="0.95" /></label>
-      </form>
-      <div class="card chart-card">
-        <h3>Power split over speed</h3>
-        <canvas id="powerChart" width="920" height="520" aria-label="Power demand chart"></canvas>
+    <section class="panel" id="pods" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,4vw,48px);background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#233139,#141d23);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;scroll-margin-top:80px">
+      <div style="max-width:1060px;margin-bottom:26px">
+        <p style="color:var(--brass);letter-spacing:.16em;text-transform:uppercase;font-size:12px;margin:0 0 12px">02 :: why azipods work</p>
+        <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(32px,5vw,64px);line-height:1;margin:0;text-transform:uppercase">A pod is a propeller, motor and rudder in one submerged machine</h2>
+        <p style="color:var(--muted);font-size:16px">An Azipod-style unit is not just a thruster bolted below the stern. It moves the propulsion motor into a steerable gondola, couples the propeller directly to the motor shaft, and uses a variable-frequency drive to set torque and rpm. That creates hydrodynamic, manoeuvring and machinery-layout advantages.</p>
       </div>
-      <div class="card chart-card">
-        <h3>Efficiency and losses</h3>
-        <canvas id="lossChart" width="920" height="520" aria-label="Efficiency loss chart"></canvas>
+      <div style="display:grid;gap:18px;grid-template-columns:repeat(3,minmax(0,1fr))">
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow:hidden">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 10px;text-transform:uppercase">Pulling propeller</h3>
+          <svg viewBox="0 0 420 180" aria-hidden="true" style="width:100%;min-height:170px">
+            <path d="M12 92 C74 72 120 72 176 86 S286 102 402 78" style="fill:none;stroke:var(--cyan);stroke-width:2;opacity:.6;stroke-dasharray:9 12;animation:dash var(--flowSlow,3s) linear infinite"></path>
+            <path d="M12 126 C72 108 126 106 182 116 S302 142 402 126" style="fill:none;stroke:var(--cyan);stroke-width:2;opacity:.35;stroke-dasharray:9 12;animation:dash var(--flowSlow,3.8s) linear infinite"></path>
+            <g transform="translate(232 92)">
+              <ellipse cx="0" cy="0" rx="66" ry="22" style="fill:rgba(9,17,20,.9);stroke:var(--brass);stroke-width:2"></ellipse>
+              <line x1="0" y1="-54" x2="0" y2="-20" style="stroke:var(--brass);stroke-width:5;stroke-linecap:round"></line>
+              <g transform="translate(-66 0)">
+                <g>
+                  <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 0 0" to="360 0 0" dur="0.5s" repeatCount="indefinite"></animateTransform>
+                  <circle r="30" style="fill:none;stroke:var(--green);stroke-width:1;opacity:.3"></circle>
+                  <path d="M0 0 C -5 -9 -5 -24 0 -30 C 5 -24 5 -9 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                  <path d="M0 0 C 9 -5 24 -5 30 0 C 24 5 9 5 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                  <path d="M0 0 C 5 9 5 24 0 30 C -5 24 -5 9 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                  <path d="M0 0 C -9 5 -24 5 -30 0 C -24 -5 -9 -5 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                  <circle r="5" style="fill:var(--brass)"></circle>
+                </g>
+              </g>
+            </g>
+          </svg>
+          <p style="color:var(--muted)">The propeller works ahead of the pod body in cleaner water, so the inflow is less disturbed than behind a boss, shaft brackets and rudder. The pod body then sits in the propeller race and can be shaped as a small foil.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow:hidden">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 10px;text-transform:uppercase">Full thrust vectoring</h3>
+          <div id="thrusterMap" aria-hidden="true" style="height:180px;border:1px solid var(--line);border-radius:50%;width:180px;margin:16px auto;background:radial-gradient(circle at center,rgba(87,212,151,.10),transparent 58%);position:relative"></div>
+          <p style="color:var(--muted)">The same 20 MW can point nearly anywhere in azimuth. At harbour speed the ship can yaw, crab and brake without needing a conventional rudder flow. Multiple pods let the bridge command force and moment instead of shaft rpm and rudder angle.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow:hidden">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 10px;text-transform:uppercase">Reverse without drama</h3>
+          <svg viewBox="0 0 420 180" aria-hidden="true" style="width:100%;min-height:170px">
+            <g transform="translate(210 88)">
+              <g>
+                <animateTransform attributeName="transform" attributeType="XML" type="rotate" dur="6s" repeatCount="indefinite" calcMode="spline" keyTimes="0;0.5;1" keySplines="0.42 0 0.58 1;0.42 0 0.58 1" values="150 0 0;210 0 0;150 0 0"></animateTransform>
+                <ellipse cx="0" cy="0" rx="70" ry="23" style="fill:rgba(9,17,20,.9);stroke:var(--brass);stroke-width:2"></ellipse>
+                <line x1="0" y1="-54" x2="0" y2="-20" style="stroke:var(--brass);stroke-width:5;stroke-linecap:round"></line>
+                <g transform="translate(-70 0)">
+                  <g>
+                    <animateTransform attributeName="transform" attributeType="XML" type="rotate" from="0 0 0" to="360 0 0" dur="0.5s" repeatCount="indefinite"></animateTransform>
+                    <circle r="30" style="fill:none;stroke:var(--green);stroke-width:1;opacity:.3"></circle>
+                    <path d="M0 0 C -5 -9 -5 -24 0 -30 C 5 -24 5 -9 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                    <path d="M0 0 C 9 -5 24 -5 30 0 C 24 5 9 5 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                    <path d="M0 0 C 5 9 5 24 0 30 C -5 24 -5 9 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                    <path d="M0 0 C -9 5 -24 5 -30 0 C -24 -5 -9 -5 0 0 Z" style="fill:none;stroke:var(--green);stroke-width:2.6;stroke-linejoin:round"></path>
+                    <circle r="5" style="fill:var(--brass)"></circle>
+                  </g>
+                </g>
+              </g>
+            </g>
+            <text x="24" y="158" style="fill:var(--muted);font-size:13px;letter-spacing:.05em">turn the pod, not the ship</text>
+          </svg>
+          <p style="color:var(--muted)">For astern thrust, the pod turns. The propeller still sees a controlled inflow and the electric drive simply changes torque and speed. The ship can stop and back down with less dependence on rudder effectiveness.</p>
+        </article>
       </div>
-      <div class="card results" id="simResults" aria-live="polite"></div>
-    </div>
-  </section>
+    </section>
 
-  <section class="panel" id="math">
-    <div class="section-head">
-      <p class="kicker">04 :: arithmetic underneath the romance</p>
-      <h2>Megawatts, volts, amps and fuel</h2>
-      <p>The most useful numbers are simple enough to do on a napkin. A 20 MW pod is about a thousand amps per phase at 11 kV. Drop the bus to 6.6 kV and the current jumps by two thirds, making copper, breakers and heat harder. That is why large cruise ships distribute propulsion power at medium voltage and only step down near hotel consumers.</p>
-    </div>
+    <div class="seam" aria-hidden="true" style="height:12px;border-radius:6px;margin:2px 40px;background:repeating-linear-gradient(58deg,#5f4718 0 4px,#e6cf96 4px 7px,#a9863c 7px 11px,#5f4718 11px 14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),inset 0 -2px 3px rgba(0,0,0,.5),0 2px 5px rgba(0,0,0,.35);opacity:.85"></div>
 
-    <div class="math-grid">
-      <article class="card formula">
-        <h3>Three-phase current</h3>
-        <code>I = P / (√3 × V × pf)</code>
-        <p>For <b>20 MW</b> at <b>11 kV</b>, <b>pf 0.95</b>: <span id="exampleCurrent"></span>. The same pod at 6.6 kV is <span id="exampleCurrent66"></span>. Real drives also have harmonic filters, cooling pumps and short-time overload ratings.</p>
-      </article>
-      <article class="card formula">
-        <h3>Speed-power cube</h3>
-        <code>P₂ ≈ P₁ × (V₂/V₁)³</code>
-        <p>Cutting from 22 kn to 18 kn can nearly halve propulsion power, before weather and hull fouling. This is why slow steaming is powerful even on ships dominated by hotel loads.</p>
-      </article>
-      <article class="card formula">
-        <h3>Specific fuel model</h3>
-        <code>fuel ≈ kWh × SFOC(load)</code>
-        <p>The simulator uses a representative medium-speed curve: poor below 30% load, best around 70–85%, then slightly worse at overload. It is a teaching model, not an engine guarantee.</p>
-      </article>
-    </div>
+    <section class="panel" id="sim" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,4vw,48px);background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#233139,#141d23);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;scroll-margin-top:80px">
+      <div style="max-width:1060px;margin-bottom:26px">
+        <p style="color:var(--brass);letter-spacing:.16em;text-transform:uppercase;font-size:12px;margin:0 0 12px">03 :: voyage load simulator</p>
+        <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(32px,5vw,64px);line-height:1;margin:0;text-transform:uppercase">Slide the ship from hotel mode to full sea speed</h2>
+        <p style="color:var(--muted);font-size:16px">Propulsive power rises roughly with the cube of speed near service conditions, while hotel load is large but comparatively steady. The result is why cruise itineraries are sensitive to speed: adding a few knots can demand tens of megawatts and another diesel on the board.</p>
+      </div>
+      <div id="simAlarm" style="display:none;align-items:center;gap:12px;margin:0 0 18px;padding:12px 16px;border:1px solid var(--red);border-radius:6px;background:rgba(232,101,78,.10);color:#ffd7ce;font-size:13px;letter-spacing:.02em;animation:alarmPulse 1.1s ease-in-out infinite"><span style="font-family:'Saira Condensed',sans-serif;font-weight:700;letter-spacing:.14em;color:var(--red);text-transform:uppercase;white-space:nowrap">⚠ Overload</span><span id="simAlarmMsg"></span></div>
+      <div style="display:grid;gap:18px;grid-template-columns:minmax(250px,0.72fr) minmax(0,1fr) minmax(0,1fr);align-items:stretch">
+        <form class="card" id="plantForm" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);display:grid;align-content:start;gap:16px">
+          <label style="color:var(--muted);display:grid;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.08em">Ship case <select id="scenario" style="font:inherit;color:var(--ink);background:rgba(8,13,16,.86);border:1px solid var(--line);border-radius:4px;padding:10px 12px"></select></label>
+          <label style="color:var(--muted);display:grid;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.08em">Speed <output id="speedOut" style="color:var(--brass);float:right"></output><input id="speed" type="range" min="0" max="25" step="0.1" value="18" style="width:100%"></label>
+          <label style="color:var(--muted);display:grid;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.08em">Hotel load <output id="hotelOut" style="color:var(--brass);float:right"></output><input id="hotel" type="range" min="5" max="38" step="0.5" value="18" style="width:100%"></label>
+          <label style="color:var(--muted);display:grid;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.08em">Sea margin <output id="marginOut" style="color:var(--brass);float:right"></output><input id="margin" type="range" min="0" max="30" step="1" value="12" style="width:100%"></label>
+          <label style="color:var(--muted);display:grid;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.08em">Bus voltage <select id="bus" style="font:inherit;color:var(--ink);background:rgba(8,13,16,.86);border:1px solid var(--line);border-radius:4px;padding:10px 12px"><option value="11">11 kV</option><option value="6.6">6.6 kV</option><option value="13.8">13.8 kV</option></select></label>
+          <label style="color:var(--muted);display:grid;gap:7px;font-size:13px;text-transform:uppercase;letter-spacing:.08em">Power factor <output id="pfOut" style="color:var(--brass);float:right"></output><input id="pf" type="range" min="0.82" max="1" step="0.01" value="0.95" style="width:100%"></label>
+        </form>
+        <div class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow-x:auto">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 10px;text-transform:uppercase">Power split over speed</h3>
+          <canvas id="powerChart" width="920" height="520" aria-label="Power demand chart" style="width:100%;height:auto;display:block;min-width:0"></canvas>
+        </div>
+        <div class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow-x:auto">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 10px;text-transform:uppercase">Efficiency and losses</h3>
+          <canvas id="lossChart" width="920" height="520" aria-label="Efficiency loss chart" style="width:100%;height:auto;display:block;min-width:0"></canvas>
+        </div>
+        <div class="card" id="simResults" aria-live="polite" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:12px"></div>
+      </div>
+    </section>
 
-    <div class="card wide">
-      <h3>Worked bus-current table</h3>
-      <table id="currentTable">
-        <thead><tr><th>Consumer</th><th>Power</th><th>11 kV @ pf .95</th><th>6.6 kV @ pf .95</th><th>690 V @ pf .90</th><th>Why it matters</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
+    <div class="seam" aria-hidden="true" style="height:12px;border-radius:6px;margin:2px 40px;background:repeating-linear-gradient(58deg,#5f4718 0 4px,#e6cf96 4px 7px,#a9863c 7px 11px,#5f4718 11px 14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),inset 0 -2px 3px rgba(0,0,0,.5),0 2px 5px rgba(0,0,0,.35);opacity:.85"></div>
 
-  <section class="panel" id="machines">
-    <div class="section-head">
-      <p class="kicker">05 :: the hardware stack</p>
-      <h2>From fuel rack to propeller disk</h2>
-      <p>The words “diesel-electric” hide a chain of machines and control loops. Each stage is efficient in isolation, but at cruise-ship scale the small losses become megawatts of heat that must be removed by fresh-water, sea-water and ventilation systems.</p>
-    </div>
+    <section class="panel" id="math" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,4vw,48px);background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#233139,#141d23);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;scroll-margin-top:80px">
+      <div style="max-width:1060px;margin-bottom:26px">
+        <p style="color:var(--brass);letter-spacing:.16em;text-transform:uppercase;font-size:12px;margin:0 0 12px">04 :: arithmetic underneath the romance</p>
+        <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(32px,5vw,64px);line-height:1;margin:0;text-transform:uppercase">Megawatts, volts, amps and fuel</h2>
+        <p style="color:var(--muted);font-size:16px">The most useful numbers are simple enough to do on a napkin. A 20 MW pod is about a thousand amps per phase at 11 kV. Drop the bus to 6.6 kV and the current jumps by two thirds, making copper, breakers and heat harder. That is why large cruise ships distribute propulsion power at medium voltage and only step down near hotel consumers.</p>
+      </div>
+      <div style="display:grid;gap:18px;grid-template-columns:repeat(3,minmax(0,1fr))">
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 6px;text-transform:uppercase">Three-phase current</h3>
+          <code style="display:block;padding:14px;border:1px solid var(--line);border-radius:6px;color:var(--green);background:rgba(0,0,0,.28);margin:16px 0">I = P / (√3 × V × pf)</code>
+          <p style="color:var(--muted)">For <b style="color:var(--ink)">20 MW</b> at <b style="color:var(--ink)">11 kV</b>, <b style="color:var(--ink)">pf 0.95</b>: <span id="exampleCurrent" style="color:var(--green)"></span>. The same pod at 6.6 kV is <span id="exampleCurrent66" style="color:var(--green)"></span>. Real drives also have harmonic filters, cooling pumps and short-time overload ratings.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 6px;text-transform:uppercase">Speed-power cube</h3>
+          <code style="display:block;padding:14px;border:1px solid var(--line);border-radius:6px;color:var(--green);background:rgba(0,0,0,.28);margin:16px 0">P₂ ≈ P₁ × (V₂/V₁)³</code>
+          <p style="color:var(--muted)">Cutting from 22 kn to 18 kn can nearly halve propulsion power, before weather and hull fouling. This is why slow steaming is powerful even on ships dominated by hotel loads.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 6px;text-transform:uppercase">Specific fuel model</h3>
+          <code style="display:block;padding:14px;border:1px solid var(--line);border-radius:6px;color:var(--green);background:rgba(0,0,0,.28);margin:16px 0">fuel ≈ kWh × SFOC(load)</code>
+          <p style="color:var(--muted)">The simulator uses a representative medium-speed curve: poor below 30% load, best around 70–85%, then slightly worse at overload. It is a teaching model, not an engine guarantee.</p>
+        </article>
+      </div>
+      <div class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow-x:auto;margin-top:18px">
+        <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:22px;color:var(--brass);margin:0 0 10px;text-transform:uppercase">Worked bus-current table</h3>
+        <table style="width:100%;border-collapse:collapse;min-width:820px">
+          <thead><tr>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Consumer</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Power</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">11 kV @ pf .95</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">6.6 kV @ pf .95</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">690 V @ pf .90</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Why it matters</th>
+          </tr></thead>
+          <tbody id="currentTable"></tbody>
+        </table>
+      </div>
+    </section>
 
-    <div class="machine-list">
-      <article class="card machine">
-        <span class="index">A</span><h3>Medium-speed diesel or dual-fuel engines</h3>
-        <p>Four-stroke engines around 500–750 rpm are small enough to package in several genset rooms and large enough to produce 8–20 MW apiece. Multiple engine sizes are common: big sets cover sea speed, smaller sets cover port and night loads without wasting fuel.</p>
-      </article>
-      <article class="card machine">
-        <span class="index">B</span><h3>Alternators and excitation</h3>
-        <p>Each engine spins a synchronous generator. Automatic voltage regulators control excitation; governors and the PMS control real-power sharing. Before a breaker closes, voltage, frequency and phase angle must synchronise with the bus.</p>
-      </article>
-      <article class="card machine">
-        <span class="index">C</span><h3>Medium-voltage switchboards</h3>
-        <p>6.6 kV and 11 kV switchboards are typical at this scale. Bus sections, tie breakers and protective relays decide whether a fault is merely an alarm, a tripped feeder, a split bus, or a blackout recovery sequence.</p>
-      </article>
-      <article class="card machine">
-        <span class="index">D</span><h3>Transformers</h3>
-        <p>Propulsion transformers adapt the bus to drive input and add isolation. Ship-service transformers step down to 690 V motor control centres, then lower distribution for galleys, cabins, lighting, entertainment, HVAC controls and electronics.</p>
-      </article>
-      <article class="card machine">
-        <span class="index">E</span><h3>Variable-frequency drives</h3>
-        <p>Large marine drives rectify AC to a DC link and synthesize controlled-frequency AC for the motor. The propeller is fixed-pitch, so rpm and torque come from the inverter rather than from blade pitch.</p>
-      </article>
-      <article class="card machine">
-        <span class="index">F</span><h3>Pod motor and bearings</h3>
-        <p>Full-size cruise pods usually use large AC motors in the gondola, directly coupled to the propeller shaft. The pod needs shaft seals, thrust bearings, steering motors, cooling circuits and condition monitoring because maintenance access is expensive.</p>
-      </article>
-    </div>
-  </section>
+    <div class="seam" aria-hidden="true" style="height:12px;border-radius:6px;margin:2px 40px;background:repeating-linear-gradient(58deg,#5f4718 0 4px,#e6cf96 4px 7px,#a9863c 7px 11px,#5f4718 11px 14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),inset 0 -2px 3px rgba(0,0,0,.5),0 2px 5px rgba(0,0,0,.35);opacity:.85"></div>
 
-  <section class="panel" id="examples">
-    <div class="section-head">
-      <p class="kicker">06 :: comparison matrix</p>
-      <h2>Representative cruise-ship propulsion arrangements</h2>
-      <p>Exact shipyard data varies by hull, year and refit. The table separates published Oasis-class examples from teaching cases used by the simulator.</p>
-    </div>
-    <div class="card wide">
-      <table id="exampleTable">
-        <thead><tr><th>Case</th><th>Generating plant</th><th>Installed electric</th><th>Propulsion</th><th>Speed</th><th>Notes</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
+    <section class="panel" id="machines" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,4vw,48px);background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#233139,#141d23);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;scroll-margin-top:80px">
+      <div style="max-width:1060px;margin-bottom:26px">
+        <p style="color:var(--brass);letter-spacing:.16em;text-transform:uppercase;font-size:12px;margin:0 0 12px">05 :: the hardware stack</p>
+        <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(32px,5vw,64px);line-height:1;margin:0;text-transform:uppercase">From fuel rack to propeller disk</h2>
+        <p style="color:var(--muted);font-size:16px">The words “diesel-electric” hide a chain of machines and control loops. Each stage is efficient in isolation, but at cruise-ship scale the small losses become megawatts of heat that must be removed by fresh-water, sea-water and ventilation systems.</p>
+      </div>
+      <div style="display:grid;gap:16px;grid-template-columns:repeat(3,minmax(0,1fr))">
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <span style="display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--brass);color:var(--brass);margin-bottom:12px;font-family:'Saira Condensed',sans-serif;font-weight:700">A</span>
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:21px;color:var(--brass);margin:0 0 8px;text-transform:uppercase">Medium-speed diesel or dual-fuel engines</h3>
+          <p style="color:var(--muted)">Four-stroke engines around 500–750 rpm are small enough to package in several genset rooms and large enough to produce 8–20 MW apiece. Multiple engine sizes are common: big sets cover sea speed, smaller sets cover port and night loads without wasting fuel.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <span style="display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--brass);color:var(--brass);margin-bottom:12px;font-family:'Saira Condensed',sans-serif;font-weight:700">B</span>
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:21px;color:var(--brass);margin:0 0 8px;text-transform:uppercase">Alternators and excitation</h3>
+          <p style="color:var(--muted)">Each engine spins a synchronous generator. Automatic voltage regulators control excitation; governors and the PMS control real-power sharing. Before a breaker closes, voltage, frequency and phase angle must synchronise with the bus.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <span style="display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--brass);color:var(--brass);margin-bottom:12px;font-family:'Saira Condensed',sans-serif;font-weight:700">C</span>
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:21px;color:var(--brass);margin:0 0 8px;text-transform:uppercase">Medium-voltage switchboards</h3>
+          <p style="color:var(--muted)">6.6 kV and 11 kV switchboards are typical at this scale. Bus sections, tie breakers and protective relays decide whether a fault is merely an alarm, a tripped feeder, a split bus, or a blackout recovery sequence.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <span style="display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--brass);color:var(--brass);margin-bottom:12px;font-family:'Saira Condensed',sans-serif;font-weight:700">D</span>
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:21px;color:var(--brass);margin:0 0 8px;text-transform:uppercase">Transformers</h3>
+          <p style="color:var(--muted)">Propulsion transformers adapt the bus to drive input and add isolation. Ship-service transformers step down to 690 V motor control centres, then lower distribution for galleys, cabins, lighting, entertainment, HVAC controls and electronics.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <span style="display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--brass);color:var(--brass);margin-bottom:12px;font-family:'Saira Condensed',sans-serif;font-weight:700">E</span>
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:21px;color:var(--brass);margin:0 0 8px;text-transform:uppercase">Variable-frequency drives</h3>
+          <p style="color:var(--muted)">Large marine drives rectify AC to a DC link and synthesize controlled-frequency AC for the motor. The propeller is fixed-pitch, so rpm and torque come from the inverter rather than from blade pitch.</p>
+        </article>
+        <article class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6)">
+          <span style="display:inline-grid;place-items:center;width:36px;height:36px;border-radius:50%;border:1px solid var(--brass);color:var(--brass);margin-bottom:12px;font-family:'Saira Condensed',sans-serif;font-weight:700">F</span>
+          <h3 style="font-family:'Saira Condensed',sans-serif;font-weight:600;font-size:21px;color:var(--brass);margin:0 0 8px;text-transform:uppercase">Pod motor and bearings</h3>
+          <p style="color:var(--muted)">Full-size cruise pods usually use large AC motors in the gondola, directly coupled to the propeller shaft. The pod needs shaft seals, thrust bearings, steering motors, cooling circuits and condition monitoring because maintenance access is expensive.</p>
+        </article>
+      </div>
+    </section>
 
-  <section class="panel sources" id="sources">
-    <div class="section-head">
-      <p class="kicker">07 :: source notes</p>
-      <h2>What the numbers are anchored to</h2>
-      <p>This page keeps runtime network access at zero. The source trail used while building it included Wärtsilä 46F product data, public Oasis and Utopia class particulars, ABB/Azipod technical descriptions, and standard naval-architecture speed-power relationships. Where the page says “representative”, it is using a didactic model rather than a manufacturer-certified value.</p>
-    </div>
-  </section>
-</main>
+    <div class="seam" aria-hidden="true" style="height:12px;border-radius:6px;margin:2px 40px;background:repeating-linear-gradient(58deg,#5f4718 0 4px,#e6cf96 4px 7px,#a9863c 7px 11px,#5f4718 11px 14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),inset 0 -2px 3px rgba(0,0,0,.5),0 2px 5px rgba(0,0,0,.35);opacity:.85"></div>
 
-<footer class="footer">
-  <a href="#top">↑ back to top</a>
-  <span>// diesel-electric propulsion, rendered live in vanilla JS</span>
-</footer>
+    <section class="panel" id="examples" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,4vw,48px);background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#233139,#141d23);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;scroll-margin-top:80px">
+      <div style="max-width:1060px;margin-bottom:26px">
+        <p style="color:var(--brass);letter-spacing:.16em;text-transform:uppercase;font-size:12px;margin:0 0 12px">06 :: comparison matrix</p>
+        <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(32px,5vw,64px);line-height:1;margin:0;text-transform:uppercase">Representative cruise-ship propulsion arrangements</h2>
+        <p style="color:var(--muted);font-size:16px">Exact shipyard data varies by hull, year and refit. The table separates published Oasis-class examples from teaching cases used by the simulator.</p>
+      </div>
+      <div class="card" style="position:relative;border:1px solid var(--line);border-radius:8px;padding:clamp(18px,2.4vw,26px);background:rgba(9,16,20,.6);overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:820px">
+          <thead><tr>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Case</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Generating plant</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Installed electric</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Propulsion</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Speed</th>
+            <th style="border-bottom:1px solid rgba(216,174,90,.3);padding:12px 10px;text-align:left;color:var(--brass);font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-family:'Saira Condensed',sans-serif">Notes</th>
+          </tr></thead>
+          <tbody id="exampleTable"></tbody>
+        </table>
+      </div>
+    </section>
 
-<script type="module" src="app.js"></script>
+    <div class="seam" aria-hidden="true" style="height:12px;border-radius:6px;margin:2px 40px;background:repeating-linear-gradient(58deg,#5f4718 0 4px,#e6cf96 4px 7px,#a9863c 7px 11px,#5f4718 11px 14px);box-shadow:inset 0 1px 1px rgba(255,255,255,.25),inset 0 -2px 3px rgba(0,0,0,.5),0 2px 5px rgba(0,0,0,.35);opacity:.85"></div>
+
+    <section class="panel" id="sources" style="position:relative;border:1px solid var(--line);border-radius:10px;padding:clamp(22px,4vw,48px);background:repeating-linear-gradient(90deg,rgba(255,255,255,.014) 0 2px,transparent 2px 5px),linear-gradient(158deg,#233139,#141d23);box-shadow:0 18px 50px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.05);overflow:hidden;scroll-margin-top:80px">
+      <div style="max-width:1060px">
+        <p style="color:var(--brass);letter-spacing:.16em;text-transform:uppercase;font-size:12px;margin:0 0 12px">07 :: source notes</p>
+        <h2 style="font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:clamp(32px,5vw,64px);line-height:1;margin:0;text-transform:uppercase">What the numbers are anchored to</h2>
+        <p style="color:var(--muted);font-size:16px">This page keeps runtime network access at zero. The source trail used while building it included Wärtsilä 46F product data, public Oasis and Utopia class particulars, ABB/Azipod technical descriptions, and standard naval-architecture speed-power relationships. Where the page says “representative”, it is using a didactic model rather than a manufacturer-certified value.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer style="width:min(1440px,calc(100% - 32px));margin-inline:auto;color:var(--dim);padding:0 0 44px;display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between">
+    <a href="#top">↑ back to top</a>
+    <span>// diesel-electric propulsion, rendered live in vanilla JS</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;brass&quot;,&quot;copper&quot;,&quot;steel&quot;],&quot;default&quot;:&quot;brass&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Fittings&quot;},&quot;flowSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:2,&quot;min&quot;:0.6,&quot;max&quot;:5,&quot;step&quot;:0.1,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Fittings&quot;}}">
+class Component extends DCLogic {
+  setRoot = (el) => { if (el) this.root = el; };
+
+  renderVals() { return { setRoot: this.setRoot }; }
+
+  componentDidMount() {
+    this.SHIPS = [
+      {id:'oasis', name:'Oasis-class diesel', badge:'published reference', engines:[['Wärtsilä 12V46D',3,13.86],['Wärtsilä 16V46D',3,18.48]], pods:[3,20,'ABB Azipod, all azimuthing'], bow:[4,5.5], max:24.5, service:22, hotel:18, bus:11, note:'Published mega-ship reference: six medium-speed diesel generating sets, a 97 MW electrical plant, three 20 MW azimuthing pods and a 24.5 kn maximum-speed figure.'},
+      {id:'utopia', name:'LNG Oasis-class six-pack', badge:'published reference', engines:[['Wärtsilä W12V46TS-DF',6,15.6]], pods:[3,20,'ABB Azipod, all azimuthing'], bow:[4,3.5], max:22.5, service:20.5, hotel:19, bus:11, note:'Modern dual-fuel teaching case anchored to the published six-by-15.6 MW and three-by-20 MW pod arrangement; the speed cap here is a simulator parameter.'},
+      {id:'panamax', name:'Panamax twin-pod cruise ship', badge:'teaching model', engines:[['12 MW medium-speed set',2,12],['9 MW medium-speed set',2,9]], pods:[2,14,'azimuthing electric pods'], bow:[3,2.2], max:22, service:19.5, hotel:12, bus:6.6, note:'Representative smaller high-voltage cruise plant with fewer engines, twin pods and a lower hotel load.'},
+      {id:'expedition', name:'Ice-capable expedition ship', badge:'teaching model', engines:[['4.5 MW medium-speed set',4,4.5]], pods:[2,5.5,'ice-strengthened azimuthing pods'], bow:[2,1.2], max:16.5, service:14, hotel:5.8, bus:6.6, note:'Representative expedition plant where redundancy and manoeuvrability matter more than high transit speed.'}
+    ];
+    this.LOSSES = [['transformer',0.992],['VFD / filters',0.985],['pod motor',0.968],['bearings + seals',0.988],['propulsor inflow',0.965]];
+    this.init();
+  }
+
+  componentWillUnmount() { if (this._raf) cancelAnimationFrame(this._raf); }
+
+  $(s) { return this.root.querySelector(s); }
+  $$(s) { return [...this.root.querySelectorAll(s)]; }
+
+  // ---- numeric model (ported) ----
+  clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  sum(a,f){ return a.reduce((x,y)=>x+f(y),0); }
+  f(v,d=1){ return Number(v).toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d}); }
+  f0(v){ return Number(v).toLocaleString(undefined,{maximumFractionDigits:0}); }
+  genMW(s){ return this.sum(s.engines,e=>e[1]*e[2]); }
+  podMW(s){ return s.pods[0]*s.pods[1]; }
+  bowMW(s){ return s.bow[0]*s.bow[1]; }
+  chain(){ return this.LOSSES.reduce((a,e)=>a*e[1],1); }
+  amps(mw,kv,pf){ return mw*1000/(Math.sqrt(3)*kv*pf); }
+  engines(s){ return s.engines.flatMap(e=>Array.from({length:e[1]},(_,i)=>({model:e[0],mw:e[2],label:`${e[0]} #${i+1}`}))); }
+  propAt(kn,margin,s){ return this.clamp(this.podMW(s)*Math.pow(this.clamp(kn/s.max,0,1.08),3)*(1+margin/100),0,this.podMW(s)); }
+  sfoc(load){ let x=this.clamp(load,0.12,1.08); let eff=0.466-0.14*(x-0.78)**2; if(x<0.35)eff-=(0.35-x)*0.16; if(x>0.95)eff-=(x-0.95)*0.05; eff=this.clamp(eff,0.305,0.468); return 3600/(42.7*eff); }
+  chooseEngines(s,loadMW){
+    const list=this.engines(s); const need=loadMW/0.86; let best=null;
+    for(let mask=1;mask<(1<<list.length);mask++){
+      const pick=list.filter((_,i)=>mask&(1<<i)); const cap=this.sum(pick,e=>e.mw); if(cap<need)continue;
+      const score=cap*10+pick.length*0.06; if(!best||score<best.score)best={pick,cap,score};
+    }
+    if(!best)best={pick:list,cap:this.genMW(s),score:Infinity};
+    const load=loadMW/Math.max(best.cap,0.01); return {...best,load,sfoc:this.sfoc(load)};
+  }
+  model(){
+    const r=this.ref;
+    const s=this.SHIPS.find(x=>x.id===r.scenario.value)||this.SHIPS[0];
+    const speed=+r.speed.value, hotel=+r.hotel.value, margin=+r.margin.value, bus=+r.bus.value, pf=+r.pf.value;
+    const shaft=this.propAt(speed,margin,s), propBus=shaft/this.chain(), total=propBus+hotel, online=this.chooseEngines(s,total), fuel=total*online.sfoc*24/1000;
+    return {s,speed,hotel,margin,bus,pf,shaft,propBus,total,online,fuel};
+  }
+
+  init(){
+    const amap={brass:'#d8ae5a',copper:'#c47a4a',steel:'#8fb0c4'};
+    const accent=this.props.accent||'brass';
+    this.root.style.setProperty('--brass', amap[accent]||amap.brass);
+    const fs=+this.props.flowSpeed||2;
+    this.root.style.setProperty('--flow', fs+'s');
+    this.root.style.setProperty('--flowSlow', (fs*1.7).toFixed(2)+'s');
+    const r = { scenario:this.$('#scenario'), speed:this.$('#speed'), hotel:this.$('#hotel'), margin:this.$('#margin'), bus:this.$('#bus'), pf:this.$('#pf') };
+    this.ref = r;
+    r.scenario.innerHTML = this.SHIPS.map(s=>`<option value='${s.id}'>${s.name}</option>`).join('');
+    r.scenario.value=this.SHIPS[0].id; r.speed.max=this.SHIPS[0].max; r.speed.value=this.SHIPS[0].service; r.hotel.value=this.SHIPS[0].hotel; r.bus.value=this.SHIPS[0].bus;
+    const btnBase="color:var(--ink);background:rgba(8,13,16,.86);border:1px solid var(--line);border-radius:4px;padding:10px 13px;cursor:pointer;font:inherit;font-family:'Saira Condensed',sans-serif;font-size:15px;letter-spacing:.02em;text-transform:uppercase";
+    this.$('#scenarioControls').innerHTML=this.SHIPS.map(s=>`<button type='button' data-id='${s.id}' style="${btnBase}">${s.name}</button>`).join('');
+    this.$$('#scenarioControls button').forEach(b=>b.addEventListener('click',()=>{const s=this.SHIPS.find(x=>x.id===b.dataset.id);r.scenario.value=s.id;r.speed.max=s.max;r.speed.value=s.service;r.hotel.value=s.hotel;r.bus.value=s.bus;this.render();}));
+    Object.values(r).forEach(el=>el.addEventListener('input',()=>this.render()));
+    r.scenario.addEventListener('change',()=>{const s=this.SHIPS.find(x=>x.id===r.scenario.value);r.speed.max=s.max;r.speed.value=s.service;r.hotel.value=s.hotel;r.bus.value=s.bus;this.render();});
+    this.buildCompass();
+    // bridge console: engine order telegraph + helm
+    this.cmd={thrust:1,azimuth:0};
+    this.podAngle={a:0,b:0};
+    this.propAngle=0;
+    const orders=[['FULL ASTERN',-1],['SLOW ASTERN',-0.5],['STOP',0],['SLOW AHEAD',0.5],['FULL AHEAD',1]];
+    const eb="font:inherit;font-family:'Saira Condensed',sans-serif;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);background:rgba(8,13,16,.86);border:1px solid var(--line);border-radius:4px;padding:9px 4px;cursor:pointer;line-height:1.1";
+    this.$('#eot').innerHTML=orders.map(o=>`<button type='button' data-t='${o[1]}' style="${eb}">${o[0]}</button>`).join('');
+    this.$$('#eot button').forEach(b=>b.addEventListener('click',()=>{this.cmd.thrust=+b.dataset.t;this.updateEOT();}));
+    const helm=this.$('#helm'); helm.addEventListener('input',()=>{this.cmd.azimuth=+helm.value;this.$('#helmOut').textContent=`${helm.value}°`;});
+    this.updateEOT();
+    this.addRivets();
+    this.tables();
+    this.render();
+    this.wake();
+    this.$('#heroPropA') && this.$('#heroPropA').setAttribute('transform','rotate(22)');
+    this.$('#heroPropB') && this.$('#heroPropB').setAttribute('transform','rotate(-14)');
+    this._raf=requestAnimationFrame(()=>this.loop());
+  }
+
+  metrics(x){
+    const m=[['installed generation',`${this.f(this.genMW(x.s))} MW`],['propulsion pods',`${x.s.pods[0]} × ${this.f(x.s.pods[1])} MW`],['online sets',`${x.online.pick.length} / ${this.engines(x.s).length}`],['bus current',`${this.f0(this.amps(x.total,x.bus,x.pf))} A`],['fuel model',`${this.f(x.fuel,0)} t/day`]];
+    const tile="border:1px solid var(--line);background:rgba(6,11,14,.6);border-radius:6px;padding:16px 16px 14px;position:relative";
+    this.$('#metrics').innerHTML=m.map(e=>`<div style="${tile}"><div style="font-family:'Saira Condensed',sans-serif;font-size:38px;color:var(--green);line-height:1;letter-spacing:-.01em">${e[1]}</div><div style="color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.14em;margin-top:8px">${e[0]}</div></div>`).join('');
+  }
+
+  singleLine(x){
+    const box="fill:rgba(18,28,34,.94);stroke:var(--cyan);stroke-width:1.6";
+    const boxAlt="fill:rgba(18,28,34,.94);stroke:var(--brass);stroke-width:1.6";
+    const bus="stroke:var(--brass);stroke-width:7;stroke-linecap:round";
+    const feed="stroke:var(--cyan);stroke-width:3;fill:none;stroke-linecap:round;stroke-dasharray:11 11;animation:dash var(--flow,2s) linear infinite";
+    const feedSlow="stroke:var(--cyan);stroke-width:3;fill:none;stroke-linecap:round;stroke-dasharray:11 11;animation:dash var(--flowSlow,3.4s) linear infinite";
+    const label="fill:var(--ink);font-size:18px;font-weight:700;font-family:'Saira Condensed',sans-serif";
+    const sub="fill:var(--muted);font-size:12px";
+    const mw="fill:var(--green);font-size:13px";
+    const brk="fill:var(--brass)";
+    const blocks=x.s.engines.map((e,i)=>{const y=72+i*86;return `<rect x='34' y='${y}' width='184' height='52' rx='8' style="${box}"/><text x='52' y='${y+22}' style="${label}">${e[1]} × ${e[0]}</text><text x='52' y='${y+42}' style="${sub}">${this.f(e[1]*e[2])} MW block</text><path d='M218 ${y+26} H392' style="${feed}"/><circle cx='304' cy='${y+26}' r='5' style="${brk}"/>`;}).join('');
+    this.$('#singleLine').innerHTML=`${blocks}<line x1='405' y1='44' x2='405' y2='404' style="${bus}"/><text x='430' y='58' style="${label}">${this.f(x.bus).replace('.0','')} kV MAIN SWITCHBOARD</text><text x='430' y='80' style="${sub}">segmented bus, tie breakers, PMS, protection relays</text><path d='M405 138 H610 V112 H724' style="${feed}"/><path d='M405 216 H610 V216 H724' style="${feed}"/><path d='M405 294 H610 V320 H724' style="${feed}"/><rect x='724' y='74' width='226' height='78' rx='12' style="${boxAlt}"/><rect x='724' y='178' width='226' height='78' rx='12' style="${boxAlt}"/><rect x='724' y='282' width='226' height='78' rx='12' style="${boxAlt}"/><text x='744' y='106' style="${label}">propulsion transformer</text><text x='744' y='128' style="${sub}">isolation + drive voltage match</text><text x='744' y='210' style="${label}">VFD / inverter</text><text x='744' y='232' style="${sub}">torque, rpm and braking control</text><text x='744' y='314' style="${label}">${x.s.pods[0]} × pod motor</text><text x='744' y='336' style="${sub}">${x.s.pods[2]}</text><path d='M405 384 H546 V470 H704' style="${feedSlow}"/><rect x='704' y='430' width='244' height='82' rx='12' style="${box}"/><text x='728' y='462' style="${label}">hotel transformers</text><text x='728' y='484' style="${sub}">690 V → 440/230/110 V consumers</text><text x='728' y='504' style="${mw}">HVAC, galleys, pumps, theatre, cabins</text><text x='36' y='472' style="${mw}">live case: ${this.f(x.total)} MW on bus · ${this.f(x.shaft)} MW shaft · ${this.f(x.hotel)} MW hotel</text>`;
+  }
+
+  results(x){
+    const reserve=this.genMW(x.s)-x.total, util=x.online.load, warn=reserve<0||util>0.94;
+    const tile="border:1px solid var(--line);border-radius:6px;padding:14px;background:rgba(0,0,0,.24)";
+    const bcol=warn?"var(--red)":"var(--green)";
+    const t=(v,l,col)=>`<div style="${tile}"><b style="display:block;color:${col||'var(--green)'};font-size:24px;line-height:1.05;font-family:'Saira Condensed',sans-serif">${v}</b><span style="color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.08em">${l}</span></div>`;
+    this.$('#simResults').innerHTML=
+      t(`${this.f(x.shaft)} MW`,'pod shaft demand')+
+      t(`${this.f(x.total)} MW`,'total bus load')+
+      t(`${this.f0(this.amps(x.propBus,x.bus,x.pf))} A`,'propulsion feeder current')+
+      t(`${this.f0(this.amps(x.total,x.bus,x.pf))} A`,'aggregate current equivalent')+
+      `<div style="${tile}${warn?';animation:alarmPulse 1.1s ease-in-out infinite;border-color:var(--red)':''}"><b style="display:block;color:${bcol};font-size:24px;line-height:1.05;font-family:'Saira Condensed',sans-serif">${this.f(util*100,0)}%</b><span style="color:var(--dim);font-size:11px;text-transform:uppercase;letter-spacing:.08em">online engine loading</span></div>`+
+      t(`${this.f(x.online.sfoc,0)} g/kWh`,'SFOC model')+
+      t(`${this.f(x.fuel,0)} t/day`,'fuel estimate')+
+      t(`${this.f(reserve)} MW`,'installed reserve',reserve<0?'var(--red)':'var(--green)')+
+      `<div style="${tile};grid-column:1 / -1;color:var(--muted)"><b style="display:block;color:var(--green);font-size:24px;line-height:1.05;font-family:'Saira Condensed',sans-serif"></b>${x.s.note} Online selection: ${x.online.pick.map(e=>e.mw.toFixed(1)).join(' + ')} MW = ${this.f(x.online.cap)} MW.</div>`;
+  }
+
+  render(){
+    const x=this.model(); const r=this.ref;
+    r.speed.max=x.s.max;
+    this.$('#speedOut').textContent=`${this.f(x.speed)} kn`;
+    this.$('#hotelOut').textContent=`${this.f(x.hotel)} MW`;
+    this.$('#marginOut').textContent=`${this.f(x.margin,0)}%`;
+    this.$('#pfOut').textContent=this.f(x.pf,2);
+    this.$('#exampleCurrent').textContent=`${this.f0(this.amps(20,11,0.95))} A`;
+    this.$('#exampleCurrent66').textContent=`${this.f0(this.amps(20,6.6,0.95))} A`;
+    this.$$('#scenarioControls button').forEach(b=>{const on=b.dataset.id===x.s.id; b.style.color=on?'#06100e':'var(--ink)'; b.style.background=on?'var(--brass)':'rgba(8,13,16,.86)'; b.style.borderColor=on?'var(--brass)':'var(--line)'; b.style.boxShadow=on?'0 0 22px rgba(216,174,90,.3)':'none';});
+    const reserve=this.genMW(x.s)-x.total, warn=reserve<0||x.online.load>0.94;
+    const al=this.$('#simAlarm');
+    if(al){ al.style.display=warn?'flex':'none'; const msg=this.$('#simAlarmMsg'); if(msg) msg.textContent = reserve<0 ? `Demand exceeds installed generation by ${this.f(Math.abs(reserve))} MW — reduce speed or add capacity.` : `Online sets at ${this.f(x.online.load*100,0)}% — beyond safe continuous loading; bring another engine online.`; }
+    this.metrics(x); this.singleLine(x); this.results(x); this.drawPower(x); this.drawLoss(x);
+  }
+
+  axes(ctx,w,h,pad,max,label){
+    ctx.strokeStyle='rgba(216,174,90,.28)'; ctx.beginPath(); ctx.moveTo(pad,pad); ctx.lineTo(pad,h-pad); ctx.lineTo(w-pad,h-pad); ctx.stroke();
+    ctx.fillStyle='rgba(238,242,239,.8)'; ctx.font="15px 'IBM Plex Mono',monospace"; ctx.fillText(label,pad,pad-12);
+    ctx.font="12px 'IBM Plex Mono',monospace";
+    for(let i=0;i<=4;i++){let y=h-pad-i/4*(h-2*pad);ctx.strokeStyle='rgba(111,178,214,.10)';ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-pad,y);ctx.stroke();ctx.fillStyle='rgba(159,176,173,.74)';ctx.fillText(`${this.f0(max*i/4)} MW`,10,y+4);}
+  }
+  drawPower(x){
+    const c=this.$('#powerChart'),ctx=c.getContext('2d'),w=c.width,h=c.height,p=58,max=Math.max(this.genMW(x.s),this.podMW(x.s)+x.hotel)*1.08;
+    ctx.clearRect(0,0,w,h); ctx.fillStyle='rgba(6,11,14,.86)'; ctx.fillRect(0,0,w,h); this.axes(ctx,w,h,p,max,'propulsion cubic + hotel load');
+    const line=(pts,col,lw)=>{ctx.beginPath();pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();};
+    let prop=[],hot=[],tot=[];
+    for(let i=0;i<=100;i++){let kn=i/100*x.s.max;let pb=this.propAt(kn,x.margin,x.s)/this.chain();let px=p+kn/x.s.max*(w-2*p);let y=v=>h-p-v/max*(h-2*p);prop.push([px,y(pb)]);hot.push([px,y(x.hotel)]);tot.push([px,y(pb+x.hotel)]);}
+    line(tot,'#d8ae5a',4); line(prop,'#6fb2d6',3); line(hot,'#57d497',2);
+    let sx=p+x.speed/x.s.max*(w-2*p); ctx.setLineDash([5,7]); ctx.strokeStyle='rgba(255,255,255,.55)'; ctx.beginPath(); ctx.moveTo(sx,p); ctx.lineTo(sx,h-p); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font="13px 'IBM Plex Mono',monospace";
+    ctx.fillStyle='#d8ae5a';ctx.fillText('total bus',w-178,44);ctx.fillStyle='#6fb2d6';ctx.fillText('propulsion feed',w-178,64);ctx.fillStyle='#57d497';ctx.fillText('hotel',w-178,84);
+  }
+  drawLoss(x){
+    const c=this.$('#lossChart'),ctx=c.getContext('2d'),w=c.width,h=c.height,left=62,top=70,bh=34,gap=28,max=Math.max(x.propBus,1);
+    ctx.clearRect(0,0,w,h); ctx.fillStyle='rgba(6,11,14,.86)'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='rgba(238,242,239,.8)'; ctx.font="15px 'IBM Plex Mono',monospace"; ctx.fillText('electrical propulsion path: bus MW → useful shaft/propulsor MW',32,32);
+    let p=x.propBus;
+    this.LOSSES.forEach((e,i)=>{const out=p*e[1],y=top+i*(bh+gap),wi=p/max*(w-240),wo=out/max*(w-240);ctx.fillStyle='rgba(111,178,214,.20)';ctx.fillRect(left,y,wi,bh);ctx.fillStyle='rgba(87,212,151,.74)';ctx.fillRect(left,y,wo,bh);ctx.strokeStyle='rgba(216,174,90,.26)';ctx.strokeRect(left,y,wi,bh);ctx.fillStyle='#d8ae5a';ctx.font="13px 'IBM Plex Mono',monospace";ctx.fillText(e[0],left,y-8);ctx.fillStyle='rgba(238,242,239,.78)';ctx.fillText(`${this.f(p-out,2)} MW heat`,left+wi+12,y+13);ctx.fillStyle='rgba(159,176,173,.76)';ctx.fillText(`${this.f(e[1]*100)}%`,left+wi+12,y+30);p=out;});
+    ctx.fillStyle='#57d497'; ctx.font="18px 'IBM Plex Mono',monospace"; ctx.fillText(`chain: ${this.f(this.chain()*100)}%`,left,h-30);
+  }
+
+  buildCompass(){
+    const m=this.$('#thrusterMap'); if(!m||m.dataset.ready) return; m.dataset.ready=1;
+    const R=78;
+    for(let i=0;i<36;i++){const major=i%9===0;const t=document.createElement('div');t.style.cssText=`position:absolute;left:50%;top:50%;width:${major?2:1}px;height:${major?13:7}px;background:${major?'var(--brass)':'rgba(159,176,173,.55)'};transform-origin:center center;transform:translate(-50%,-50%) rotate(${i*10}deg) translateY(-${R}px)`;m.appendChild(t);}
+    [['N',0],['E',90],['S',180],['W',270]].forEach(([lab,deg])=>{const el=document.createElement('div');el.textContent=lab;el.style.cssText=`position:absolute;left:50%;top:50%;color:var(--brass);font-family:'Saira Condensed',sans-serif;font-weight:700;font-size:13px;transform:translate(-50%,-50%) rotate(${deg}deg) translateY(-${R-16}px) rotate(${-deg}deg)`;m.appendChild(el);});
+    const hub=document.createElement('div');hub.style.cssText='position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;background:var(--brass);transform:translate(-50%,-50%);box-shadow:0 0 8px rgba(216,174,90,.6)';m.appendChild(hub);
+    const n=document.createElement('div');n.style.cssText='position:absolute;left:50%;top:50%;width:44%;height:2px;background:linear-gradient(90deg,transparent,var(--green));transform-origin:left center;box-shadow:0 0 12px rgba(87,212,151,.5);border-radius:2px';
+    const head=document.createElement('div');head.style.cssText='position:absolute;right:-1px;top:50%;width:0;height:0;border-left:9px solid var(--green);border-top:5px solid transparent;border-bottom:5px solid transparent;transform:translateY(-50%)';
+    n.appendChild(head); m.appendChild(n); this.needle=n;
+  }
+
+  addRivets(){
+    this.$$('.panel').forEach(p=>{
+      if(p.dataset.riv) return; p.dataset.riv=1;
+      [['top:12px','left:12px'],['top:12px','right:12px'],['bottom:12px','left:12px'],['bottom:12px','right:12px']].forEach(([a,b])=>{
+        const r=document.createElement('span');
+        r.style.cssText=`position:absolute;${a};${b};width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f2e3bf,#b9923f 55%,#5f4718);box-shadow:0 1px 2px rgba(0,0,0,.55),inset 0 -1px 1px rgba(0,0,0,.4);pointer-events:none;z-index:3`;
+        p.appendChild(r);
+      });
+    });
+    // porthole ring rivets
+    const ring=this.$('#porthole'); if(ring && !ring.dataset.riv){ring.dataset.riv=1;const rad=ring.clientWidth/2-11;for(let i=0;i<16;i++){const s=document.createElement('span');s.style.cssText=`position:absolute;left:50%;top:50%;width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f2e3bf,#b9923f 55%,#5f4718);box-shadow:0 1px 2px rgba(0,0,0,.6);transform:translate(-50%,-50%) rotate(${i*22.5}deg) translateY(-${rad}px);pointer-events:none;z-index:4`;ring.appendChild(s);} }
+  }
+
+  tables(){
+    const td="border-bottom:1px solid rgba(216,174,90,.16);padding:12px 10px;text-align:left;vertical-align:top;color:#c9d6d2;font-size:13px";
+    const sm="color:var(--dim);display:block";
+    const consumers=[['One large pod',20,'Drive, transformer and motor feeders are kiloamp equipment even at medium voltage.'],['One 15.6 MW genset',15.6,'A single alternator feeder is close to a cruise pod in electrical scale.'],['Bow-thruster group',14,'Short-time harbour loads can rival a small propulsion train.'],['Hotel load block',18,'HVAC, galleys and cabins can consume the equivalent of a small power station.'],['690 V motor-control centre',2.5,'At low voltage the same MW becomes very high current, so distribution is local.']];
+    this.$('#currentTable').innerHTML=consumers.map(r=>`<tr><td style="${td}">${r[0]}</td><td style="${td}">${this.f(r[1])} MW</td><td style="${td}">${this.f0(this.amps(r[1],11,.95))} A</td><td style="${td}">${this.f0(this.amps(r[1],6.6,.95))} A</td><td style="${td}">${this.f0(this.amps(r[1],.69,.9))} A</td><td style="${td}">${r[2]}</td></tr>`).join('');
+    this.$('#exampleTable').innerHTML=this.SHIPS.map(s=>`<tr><td style="${td}">${s.name}<small style="${sm}">${s.badge}</small></td><td style="${td}">${s.engines.map(e=>`${e[1]} × ${e[0]} (${this.f(e[2])} MW)`).join('<br>')}</td><td style="${td}">${this.f(this.genMW(s))} MW</td><td style="${td}">${s.pods[0]} × ${this.f(s.pods[1])} MW pods<br><small style="${sm}">${this.f(this.bowMW(s))} MW bow thrusters</small></td><td style="${td}">${this.f(s.max)} kn model cap<br><small style="${sm}">${this.f(s.service)} kn service slider</small></td><td style="${td}">${s.note}</td></tr>`).join('');
+  }
+
+  wake(){
+    const c=this.$('#wakeCanvas'); if(!c) return; const ctx=c.getContext('2d'),w=c.width,h=c.height,t=performance.now()/1000;
+    ctx.clearRect(0,0,w,h);
+    const g=ctx.createLinearGradient(0,0,w,h); g.addColorStop(0,'rgba(8,22,26,.95)'); g.addColorStop(1,'rgba(9,15,19,.95)'); ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+    ctx.lineWidth=1;
+    for(let i=0;i<48;i++){const y=i/48*h,amp=6+12*Math.sin(i*.37+t*.7);ctx.beginPath();for(let x=0;x<=w;x+=18){const yy=y+Math.sin(x*.018+t*1.6+i*.6)*amp;if(x===0)ctx.moveTo(x,yy);else ctx.lineTo(x,yy);}ctx.strokeStyle=`rgba(111,178,214,${.04+i/2000})`;ctx.stroke();}
+    for(let i=0;i<80;i++){const x=Math.abs((Math.sin(i*12.989+t*.2)*43758.5453)%1)*w, y=(i*53+t*38)%h;ctx.fillStyle='rgba(216,174,90,.12)';ctx.fillRect(x,y,1.4,1.4);}
+  }
+
+  updateEOT(){
+    this.$$('#eot button').forEach(b=>{const on=+b.dataset.t===this.cmd.thrust; b.style.color=on?'#06100e':'var(--muted)'; b.style.background=on?'var(--brass)':'rgba(8,13,16,.86)'; b.style.borderColor=on?'var(--brass)':'var(--line)'; b.style.fontWeight=on?'700':'400'; b.style.boxShadow=on?'0 0 16px rgba(216,174,90,.3)':'none';});
+  }
+
+  loop(){
+    this.wake();
+    const t=performance.now()/1000;
+    const astern=this.cmd.thrust<0?180:0;
+    const sway=Math.sin(t*0.7)*2.2;
+    const ta=this.cmd.azimuth+astern+sway;
+    this.podAngle.a+=((ta-4)-this.podAngle.a)*0.07;
+    this.podAngle.b+=((ta+4)-this.podAngle.b)*0.07;
+    const wa=this.$('#heroWagA'), wb=this.$('#heroWagB');
+    if(wa) wa.setAttribute('transform',`rotate(${this.podAngle.a.toFixed(2)})`);
+    if(wb) wb.setAttribute('transform',`rotate(${this.podAngle.b.toFixed(2)})`);
+    const rate=1.5+Math.abs(this.cmd.thrust)*9;
+    this.propAngle=(this.propAngle+rate)%360;
+    const pa=this.$('#heroPropA'), pb=this.$('#heroPropB');
+    if(pa) pa.setAttribute('transform',`rotate(${this.propAngle.toFixed(2)})`);
+    if(pb) pb.setAttribute('transform',`rotate(${((this.propAngle*1.1)%360).toFixed(2)})`);
+    if(this.needle) this.needle.style.transform=`rotate(${this.cmd.azimuth-90}deg)`;
+    this._raf=requestAnimationFrame(()=>this.loop());
+  }
+}
+</script>
 </body>
 </html>
