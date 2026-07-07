@@ -221,7 +221,7 @@ a { color: var(--accent); }
 /* ---- cruise tracking (full-screen lap panel) ---- */
 .mr-cruise { position: absolute; inset: 0; z-index: 6; overflow-y: auto; display: flex; flex-direction: column; align-items: center; padding: calc(64px + env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom)); background: radial-gradient(120% 80% at 50% -10%, #0f3d2e 0%, #0a1512 55%, #061009 100%); }
 .mr-cruise-inner { width: 100%; max-width: 440px; display: flex; flex-direction: column; align-items: center; }
-.mr-auto-pill { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px; color: var(--sub); background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+.mr-auto-pill { display: inline-flex; align-items: center; gap: 8px; font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 13px; border-radius: 999px; color: var(--sub); background: rgba(255,255,255,.05); border: 1px solid var(--line); cursor: pointer; }
 .mr-auto-pill.on { color: #bbf7d0; background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.4); }
 .mr-auto-pill .mr-auto-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sub); }
 .mr-auto-pill.on .mr-auto-dot { background: var(--accent); animation: mr-pulse 1.8s ease-out infinite; }
@@ -231,6 +231,7 @@ a { color: var(--accent); }
 .mr-ring-c { transition: stroke-dashoffset .5s ease; }
 .mr-ring-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 .mr-ring-count { font-family: "IBM Plex Mono", monospace; font-weight: 600; font-size: 74px; line-height: 1; letter-spacing: -2px; }
+.mr-ring-frac { font-size: 40px; color: var(--sub); letter-spacing: -1px; } /* estimated part of the lap count */
 .mr-ring-l { color: var(--sub); font-size: 12px; text-transform: uppercase; letter-spacing: .12em; margin-top: 6px; }
 .mr-ring-of { color: var(--sub); font-size: 13px; margin-top: 4px; }
 
@@ -250,8 +251,12 @@ a { color: var(--accent); }
 .mr-laplist-h span:last-child, .mr-laprow span:last-child { text-align: right; }
 .mr-laprow { font-size: 14px; border-bottom: 1px solid rgba(255,255,255,.05); }
 
-.mr-lap-btn { width: 100%; margin-top: 20px; font: inherit; font-weight: 800; font-size: 20px; letter-spacing: .06em; border-radius: 18px; padding: 22px 16px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); box-shadow: 0 8px 24px rgba(34,197,94,.28); }
-.mr-lap-btn:active { transform: scale(.98); }
+.mr-lap-btn { position: relative; overflow: hidden; width: 100%; margin-top: 20px; font: inherit; font-weight: 800; font-size: 20px; letter-spacing: .06em; border-radius: 18px; padding: 22px 16px; cursor: pointer; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); box-shadow: 0 8px 24px rgba(34,197,94,.28); touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.mr-lap-btn.holding { transform: scale(.985); }
+/* fill sweeps left→right over the hold duration; snaps back if released early */
+.mr-lap-fill { position: absolute; inset: 0; transform: scaleX(0); transform-origin: left; background: rgba(255,255,255,.28); transition: transform 120ms linear; pointer-events: none; }
+.mr-lap-btn.holding .mr-lap-fill { transform: scaleX(1); }
+.mr-lap-label { position: relative; z-index: 1; }
 
 /* ship badge (summary + history) */
 .mr-badge-ship { font-size: 11px; font-weight: 700; letter-spacing: .05em; color: var(--blue); background: rgba(59,130,246,.14); border: 1px solid rgba(59,130,246,.4); border-radius: 6px; padding: 2px 7px; flex: none; }
