@@ -1,6 +1,10 @@
 /* geo.js — pure helpers for Morning Run: distance math, formatting,
    splits, GPX, OpenRouteService round-trip routing, reverse geocode,
-   and IndexedDB run history. Attaches window.RunLib. No framework. */
+   and IndexedDB run history. Attaches window.RunLib. No framework.
+
+   Ship-track additions (see the SHIP TRACK block below):
+   a curated cruise-ship track-length database, fuzzy name matching,
+   and GPS+AIS vessel detection. */
 (function () {
   "use strict";
 
@@ -256,7 +260,185 @@
       .catch(function () { return null; });
   }
 
+  // ======================================================================
+  // SHIP TRACK — cruise-ship jogging-track database + vessel detection
+  // ======================================================================
+  //
+  // Lap lengths (metres, one full lap of the promenade / jogging track) are
+  // COMMUNITY ESTIMATES read from published deck plans. They vary by deck and
+  // are not official. Always confirm against the posted "X laps = 1 mile" sign
+  // and let the runner fine-tune. Contributions welcome.
+  var SHIPS = [
+    { n: "Icon of the Seas", l: "Royal Caribbean", m: 380 },
+    { n: "Star of the Seas", l: "Royal Caribbean", m: 380 },
+    { n: "Wonder of the Seas", l: "Royal Caribbean", m: 400 },
+    { n: "Symphony of the Seas", l: "Royal Caribbean", m: 400 },
+    { n: "Harmony of the Seas", l: "Royal Caribbean", m: 400 },
+    { n: "Oasis of the Seas", l: "Royal Caribbean", m: 400 },
+    { n: "Allure of the Seas", l: "Royal Caribbean", m: 400 },
+    { n: "Utopia of the Seas", l: "Royal Caribbean", m: 400 },
+    { n: "Quantum of the Seas", l: "Royal Caribbean", m: 335 },
+    { n: "Anthem of the Seas", l: "Royal Caribbean", m: 335 },
+    { n: "Ovation of the Seas", l: "Royal Caribbean", m: 335 },
+    { n: "Odyssey of the Seas", l: "Royal Caribbean", m: 335 },
+    { n: "Spectrum of the Seas", l: "Royal Caribbean", m: 335 },
+    { n: "Navigator of the Seas", l: "Royal Caribbean", m: 402 },
+    { n: "Mariner of the Seas", l: "Royal Caribbean", m: 402 },
+    { n: "Adventure of the Seas", l: "Royal Caribbean", m: 402 },
+    { n: "Explorer of the Seas", l: "Royal Caribbean", m: 402 },
+    { n: "Voyager of the Seas", l: "Royal Caribbean", m: 402 },
+    { n: "Freedom of the Seas", l: "Royal Caribbean", m: 360 },
+    { n: "Liberty of the Seas", l: "Royal Caribbean", m: 360 },
+    { n: "Independence of the Seas", l: "Royal Caribbean", m: 360 },
+    { n: "Carnival Celebration", l: "Carnival", m: 400 },
+    { n: "Carnival Jubilee", l: "Carnival", m: 400 },
+    { n: "Carnival Mardi Gras", l: "Carnival", m: 400 },
+    { n: "Carnival Vista", l: "Carnival", m: 300 },
+    { n: "Carnival Horizon", l: "Carnival", m: 300 },
+    { n: "Carnival Panorama", l: "Carnival", m: 300 },
+    { n: "Carnival Breeze", l: "Carnival", m: 290 },
+    { n: "Carnival Dream", l: "Carnival", m: 290 },
+    { n: "Carnival Magic", l: "Carnival", m: 290 },
+    { n: "Norwegian Prima", l: "Norwegian", m: 400 },
+    { n: "Norwegian Viva", l: "Norwegian", m: 400 },
+    { n: "Norwegian Aqua", l: "Norwegian", m: 400 },
+    { n: "Norwegian Encore", l: "Norwegian", m: 450 },
+    { n: "Norwegian Bliss", l: "Norwegian", m: 450 },
+    { n: "Norwegian Joy", l: "Norwegian", m: 450 },
+    { n: "Norwegian Escape", l: "Norwegian", m: 450 },
+    { n: "Norwegian Epic", l: "Norwegian", m: 430 },
+    { n: "MSC World Europa", l: "MSC Cruises", m: 420 },
+    { n: "MSC World America", l: "MSC Cruises", m: 420 },
+    { n: "MSC Virtuosa", l: "MSC Cruises", m: 380 },
+    { n: "MSC Grandiosa", l: "MSC Cruises", m: 380 },
+    { n: "MSC Meraviglia", l: "MSC Cruises", m: 380 },
+    { n: "MSC Bellissima", l: "MSC Cruises", m: 380 },
+    { n: "MSC Seascape", l: "MSC Cruises", m: 360 },
+    { n: "MSC Seashore", l: "MSC Cruises", m: 360 },
+    { n: "MSC Seaside", l: "MSC Cruises", m: 360 },
+    { n: "Sun Princess", l: "Princess Cruises", m: 360 },
+    { n: "Sky Princess", l: "Princess Cruises", m: 340 },
+    { n: "Enchanted Princess", l: "Princess Cruises", m: 340 },
+    { n: "Discovery Princess", l: "Princess Cruises", m: 340 },
+    { n: "Regal Princess", l: "Princess Cruises", m: 340 },
+    { n: "Royal Princess", l: "Princess Cruises", m: 340 },
+    { n: "Celebrity Beyond", l: "Celebrity Cruises", m: 300 },
+    { n: "Celebrity Ascent", l: "Celebrity Cruises", m: 300 },
+    { n: "Celebrity Apex", l: "Celebrity Cruises", m: 300 },
+    { n: "Celebrity Edge", l: "Celebrity Cruises", m: 300 },
+    { n: "Disney Wish", l: "Disney Cruise Line", m: 400 },
+    { n: "Disney Treasure", l: "Disney Cruise Line", m: 400 },
+    { n: "Disney Dream", l: "Disney Cruise Line", m: 400 },
+    { n: "Disney Fantasy", l: "Disney Cruise Line", m: 400 },
+    { n: "Disney Magic", l: "Disney Cruise Line", m: 350 },
+    { n: "Disney Wonder", l: "Disney Cruise Line", m: 350 },
+    { n: "Queen Mary 2", l: "Cunard", m: 620 },
+    { n: "Queen Anne", l: "Cunard", m: 360 },
+    { n: "Queen Elizabeth", l: "Cunard", m: 384 },
+    { n: "Queen Victoria", l: "Cunard", m: 384 },
+    { n: "Rotterdam", l: "Holland America", m: 293 },
+    { n: "Koningsdam", l: "Holland America", m: 293 },
+    { n: "Nieuw Statendam", l: "Holland America", m: 293 },
+    { n: "Iona", l: "P&O Cruises", m: 400 },
+    { n: "Arvia", l: "P&O Cruises", m: 400 },
+    { n: "Britannia", l: "P&O Cruises", m: 360 },
+    { n: "Scarlet Lady", l: "Virgin Voyages", m: 400 },
+    { n: "Valiant Lady", l: "Virgin Voyages", m: 400 },
+    { n: "Resilient Lady", l: "Virgin Voyages", m: 400 },
+    { n: "Brilliant Lady", l: "Virgin Voyages", m: 400 },
+    { n: "Costa Smeralda", l: "Costa Cruises", m: 400 },
+    { n: "Costa Toscana", l: "Costa Cruises", m: 400 }
+  ];
+
+  function normName(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
+
+  // Fuzzy-match a free-text / AIS vessel name to the database.
+  // Returns {ship, score} (score 0..1) or null below a 0.5 threshold.
+  function matchShipByName(name) {
+    var q = normName(name);
+    if (!q) return null;
+    var qTokens = q.split(" ");
+    var best = null, bestScore = 0;
+    SHIPS.forEach(function (s) {
+      var n = normName(s.n);
+      var score;
+      if (n === q) score = 1;
+      else if (n.indexOf(q) >= 0 || q.indexOf(n) >= 0) score = 0.85;
+      else {
+        var nTokens = n.split(" "), hit = 0;
+        nTokens.forEach(function (t) { if (t.length > 1 && qTokens.indexOf(t) >= 0) hit++; });
+        score = hit / Math.max(nTokens.length, qTokens.length);
+      }
+      if (score > bestScore) { bestScore = score; best = s; }
+    });
+    return best && bestScore >= 0.5 ? { ship: best, score: bestScore } : null;
+  }
+
+  function shipLapMetres(ship) { return ship ? ship.m : 0; }
+  function lapsPerUnit(ship, units) { return ship && ship.m ? unitMetres(units) / ship.m : 0; }
+  function listShips() { return SHIPS.slice(); }
+  function searchShips(term) {
+    var q = normName(term);
+    if (!q) return SHIPS.slice();
+    return SHIPS.filter(function (s) { return normName(s.n).indexOf(q) >= 0 || normName(s.l).indexOf(q) >= 0; });
+  }
+
+  // Detect the vessel you're aboard from a GPS fix + an AIS provider.
+  // opts: {lat, lon, aisKey, endpoint, radiusM}
+  //   endpoint (optional): a URL template with {lat} {lon} {key} {radius}
+  //     placeholders that returns JSON — either an array or {data:[...]} of
+  //     vessels shaped [{name|SHIPNAME, lat|LAT, lon|LON, type|SHIPTYPE}].
+  //   aisKey (optional): used with the default MarineTraffic export URL when no
+  //     endpoint is given.
+  // Resolves {vesselName, distanceM, ship, confidence(0..100)} or rejects.
+  // NOTE: most AIS providers require server-side calls (CORS / key secrecy).
+  // Point `endpoint` at a tiny proxy of your own for production use.
+  function detectShip(opts) {
+    opts = opts || {};
+    if (opts.lat == null || opts.lon == null) return Promise.reject(new Error("no-position"));
+    if (!opts.aisKey && !opts.endpoint) return Promise.reject(new Error("no-ais-config"));
+    var r = opts.radiusM || 3000;
+    var url;
+    if (opts.endpoint) {
+      url = opts.endpoint
+        .replace("{lat}", opts.lat).replace("{lon}", opts.lon)
+        .replace("{key}", encodeURIComponent(opts.aisKey || "")).replace("{radius}", r);
+    } else {
+      var d = 0.05; // ~5.5 km box
+      url = "https://services.marinetraffic.com/api/exportvessels/v:8/" +
+        encodeURIComponent(opts.aisKey) +
+        "/MINLAT:" + (opts.lat - d) + "/MAXLAT:" + (opts.lat + d) +
+        "/MINLON:" + (opts.lon - d) + "/MAXLON:" + (opts.lon + d) + "/protocol:jsono";
+    }
+    return fetch(url).then(function (res) {
+      if (!res.ok) { var e = new Error("AIS " + res.status); e.status = res.status; throw e; }
+      return res.json();
+    }).then(function (j) {
+      var rows = Array.isArray(j) ? j : (j.data || j.vessels || j.features || []);
+      var best = null, bestD = Infinity;
+      rows.forEach(function (v) {
+        var p = v.properties || v;
+        var lat = p.lat != null ? +p.lat : (p.LAT != null ? +p.LAT : null);
+        var lon = p.lon != null ? +p.lon : (p.LON != null ? +p.LON : null);
+        var name = p.name || p.SHIPNAME || p.shipname || "";
+        var type = String(p.type || p.SHIPTYPE || p.shiptype || "");
+        if (lat == null || lon == null || isNaN(lat) || isNaN(lon)) return;
+        // AIS ship-type 60-69 = passenger. Keep unknown types too.
+        if (type && !/^6\d?$/.test(type) && type.toLowerCase().indexOf("passenger") < 0) return;
+        var dist = haversine(opts.lat, opts.lon, lat, lon);
+        if (dist < bestD) { bestD = dist; best = { name: name, dist: dist }; }
+      });
+      if (!best) throw new Error("no-vessel");
+      var m = matchShipByName(best.name);
+      var prox = Math.max(0, 1 - best.dist / r);
+      var conf = Math.round((0.5 * prox + 0.5 * (m ? m.score : 0.4)) * 100);
+      return { vesselName: best.name, distanceM: best.dist, ship: m ? m.ship : null, confidence: conf };
+    });
+  }
+
   // ---- IndexedDB run history -------------------------------------------
+  // Ship runs are stored in the same object store as GPS runs, distinguished
+  // by run.ship === true (plus run.laps / run.lapLenM / run.shipName).
   var DB_NAME = "morning-run";
   var STORE = "runs";
   function openDB() {
@@ -311,6 +493,15 @@
     downloadGPX: downloadGPX,
     fetchRoundTrips: fetchRoundTrips,
     reverseGeocode: reverseGeocode,
+    // ship track
+    SHIPS: SHIPS,
+    listShips: listShips,
+    searchShips: searchShips,
+    matchShipByName: matchShipByName,
+    shipLapMetres: shipLapMetres,
+    lapsPerUnit: lapsPerUnit,
+    detectShip: detectShip,
+    // history
     saveRun: saveRun,
     deleteRun: deleteRun,
     getRun: getRun,
