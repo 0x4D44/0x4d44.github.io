@@ -10,7 +10,7 @@
    Because that CDN runtime and the map tiles both require the network, a cold
    offline launch will not fully boot — the SW gives fast repeat loads and a
    resilient shell, not a true offline app. */
-const CACHE = "morning-run-v3";
+const CACHE = "morning-run-v4";
 const SHELL = [
   "./",
   "./index.html",
