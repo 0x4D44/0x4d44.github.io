@@ -264,51 +264,71 @@
   // SHIP TRACK — cruise-ship jogging-track database + vessel detection
   // ======================================================================
   //
-  // Lap lengths (metres, one full lap of the promenade / jogging track) are
-  // COMMUNITY ESTIMATES read from published deck plans. They vary by deck and
-  // are not official. Always confirm against the posted "X laps = 1 mile" sign
-  // and let the runner fine-tune. Contributions welcome.
+  // `m` = metres for ONE full lap of the ship's outdoor jogging/promenade
+  // track — the TRACK loop, not the ship's hull length (a promenade runs down
+  // one side and back, so a lap is often ~2x the hull). Values are derived
+  // from the posted onboard "X laps = 1 mile" signs where a source exists
+  // (metres = 1609.344 / laps-per-mile). Confidence per class:
+  //   [V] verified — onboard sign photo or official cruise-line page
+  //   [R] reported — a credible blog / deck-plan / reviewer states a distance
+  //   [E] estimate — no per-ship source; inferred from a sister platform or
+  //       hull size, so treat with extra caution
+  // Signs round and tracks differ by deck, so the UI always says "estimate"
+  // and lets the runner confirm the posted sign and fine-tune. Contributions
+  // welcome — prefer a photographed "laps = 1 mile" sign over a deck plan.
   var SHIPS = [
-    { n: "Icon of the Seas", l: "Royal Caribbean", m: 380 },
-    { n: "Star of the Seas", l: "Royal Caribbean", m: 380 },
-    { n: "Wonder of the Seas", l: "Royal Caribbean", m: 400 },
-    { n: "Symphony of the Seas", l: "Royal Caribbean", m: 400 },
-    { n: "Harmony of the Seas", l: "Royal Caribbean", m: 400 },
-    { n: "Oasis of the Seas", l: "Royal Caribbean", m: 400 },
-    { n: "Allure of the Seas", l: "Royal Caribbean", m: 400 },
-    { n: "Utopia of the Seas", l: "Royal Caribbean", m: 400 },
-    { n: "Quantum of the Seas", l: "Royal Caribbean", m: 335 },
-    { n: "Anthem of the Seas", l: "Royal Caribbean", m: 335 },
-    { n: "Ovation of the Seas", l: "Royal Caribbean", m: 335 },
-    { n: "Odyssey of the Seas", l: "Royal Caribbean", m: 335 },
-    { n: "Spectrum of the Seas", l: "Royal Caribbean", m: 335 },
-    { n: "Navigator of the Seas", l: "Royal Caribbean", m: 402 },
-    { n: "Mariner of the Seas", l: "Royal Caribbean", m: 402 },
-    { n: "Adventure of the Seas", l: "Royal Caribbean", m: 402 },
-    { n: "Explorer of the Seas", l: "Royal Caribbean", m: 402 },
-    { n: "Voyager of the Seas", l: "Royal Caribbean", m: 402 },
-    { n: "Freedom of the Seas", l: "Royal Caribbean", m: 360 },
-    { n: "Liberty of the Seas", l: "Royal Caribbean", m: 360 },
-    { n: "Independence of the Seas", l: "Royal Caribbean", m: 360 },
-    { n: "Carnival Celebration", l: "Carnival", m: 400 },
-    { n: "Carnival Jubilee", l: "Carnival", m: 400 },
-    { n: "Carnival Mardi Gras", l: "Carnival", m: 400 },
-    { n: "Carnival Vista", l: "Carnival", m: 300 },
-    { n: "Carnival Horizon", l: "Carnival", m: 300 },
-    { n: "Carnival Panorama", l: "Carnival", m: 300 },
-    { n: "Carnival Breeze", l: "Carnival", m: 290 },
-    { n: "Carnival Dream", l: "Carnival", m: 290 },
-    { n: "Carnival Magic", l: "Carnival", m: 290 },
-    { n: "Norwegian Prima", l: "Norwegian", m: 400 },
-    { n: "Norwegian Viva", l: "Norwegian", m: 400 },
-    { n: "Norwegian Aqua", l: "Norwegian", m: 400 },
-    { n: "Norwegian Encore", l: "Norwegian", m: 450 },
-    { n: "Norwegian Bliss", l: "Norwegian", m: 450 },
-    { n: "Norwegian Joy", l: "Norwegian", m: 450 },
-    { n: "Norwegian Escape", l: "Norwegian", m: 450 },
-    { n: "Norwegian Epic", l: "Norwegian", m: 430 },
-    { n: "MSC World Europa", l: "MSC Cruises", m: 420 },
-    { n: "MSC World America", l: "MSC Cruises", m: 420 },
+    // Royal Caribbean · Icon-class — RCCL official 2,197 ft ≈ 670 m [V]
+    { n: "Icon of the Seas", l: "Royal Caribbean", m: 670 },
+    { n: "Star of the Seas", l: "Royal Caribbean", m: 670 },
+    // Oasis-class — Deck 5, 2.4 laps/mile ≈ 670 m [V]
+    { n: "Wonder of the Seas", l: "Royal Caribbean", m: 670 },
+    { n: "Symphony of the Seas", l: "Royal Caribbean", m: 670 },
+    { n: "Harmony of the Seas", l: "Royal Caribbean", m: 670 },
+    { n: "Oasis of the Seas", l: "Royal Caribbean", m: 670 },
+    { n: "Allure of the Seas", l: "Royal Caribbean", m: 670 },
+    { n: "Utopia of the Seas", l: "Royal Caribbean", m: 670 },
+    // Quantum-class — Deck 15, ~553 m [R]
+    { n: "Quantum of the Seas", l: "Royal Caribbean", m: 553 },
+    { n: "Anthem of the Seas", l: "Royal Caribbean", m: 553 },
+    { n: "Ovation of the Seas", l: "Royal Caribbean", m: 553 },
+    { n: "Odyssey of the Seas", l: "Royal Caribbean", m: 553 },
+    { n: "Spectrum of the Seas", l: "Royal Caribbean", m: 553 },
+    // Voyager-class — Deck 12, 5 laps/mile ≈ 322 m [R]
+    { n: "Navigator of the Seas", l: "Royal Caribbean", m: 322 },
+    { n: "Mariner of the Seas", l: "Royal Caribbean", m: 322 },
+    { n: "Adventure of the Seas", l: "Royal Caribbean", m: 322 },
+    { n: "Explorer of the Seas", l: "Royal Caribbean", m: 322 },
+    { n: "Voyager of the Seas", l: "Royal Caribbean", m: 322 },
+    // Freedom-class — 4 laps/mile ≈ 402 m [R]
+    { n: "Freedom of the Seas", l: "Royal Caribbean", m: 402 },
+    { n: "Liberty of the Seas", l: "Royal Caribbean", m: 402 },
+    { n: "Independence of the Seas", l: "Royal Caribbean", m: 402 },
+    // Carnival · Excel-class — 7 laps/mile ≈ 230 m [R]
+    { n: "Carnival Celebration", l: "Carnival", m: 230 },
+    { n: "Carnival Jubilee", l: "Carnival", m: 230 },
+    { n: "Carnival Mardi Gras", l: "Carnival", m: 230 },
+    // Vista-class — 7 laps/mile ≈ 230 m (Horizon official) [V]
+    { n: "Carnival Vista", l: "Carnival", m: 230 },
+    { n: "Carnival Horizon", l: "Carnival", m: 230 },
+    { n: "Carnival Panorama", l: "Carnival", m: 230 },
+    // Dream-class — Deck 5 Lanai promenade, 2.5 laps/mile ≈ 644 m [R]
+    { n: "Carnival Breeze", l: "Carnival", m: 644 },
+    { n: "Carnival Dream", l: "Carnival", m: 644 },
+    { n: "Carnival Magic", l: "Carnival", m: 644 },
+    // Norwegian · Prima-class — Ocean Blvd loop, ~1/3 mile ≈ 536 m; no true track [E]
+    { n: "Norwegian Prima", l: "Norwegian", m: 536 },
+    { n: "Norwegian Viva", l: "Norwegian", m: 536 },
+    { n: "Norwegian Aqua", l: "Norwegian", m: 536 },
+    // Breakaway-Plus — 8 laps/mile ≈ 201 m [R]
+    { n: "Norwegian Encore", l: "Norwegian", m: 201 },
+    { n: "Norwegian Bliss", l: "Norwegian", m: 201 },
+    { n: "Norwegian Joy", l: "Norwegian", m: 201 },
+    { n: "Norwegian Escape", l: "Norwegian", m: 201 },
+    // Epic — 3.8 laps/mile ≈ 424 m [R]
+    { n: "Norwegian Epic", l: "Norwegian", m: 424 },
+    // MSC — no credible per-class track length found anywhere; top-deck loop guess [E]
+    { n: "MSC World Europa", l: "MSC Cruises", m: 400 },
+    { n: "MSC World America", l: "MSC Cruises", m: 400 },
     { n: "MSC Virtuosa", l: "MSC Cruises", m: 380 },
     { n: "MSC Grandiosa", l: "MSC Cruises", m: 380 },
     { n: "MSC Meraviglia", l: "MSC Cruises", m: 380 },
@@ -316,38 +336,53 @@
     { n: "MSC Seascape", l: "MSC Cruises", m: 360 },
     { n: "MSC Seashore", l: "MSC Cruises", m: 360 },
     { n: "MSC Seaside", l: "MSC Cruises", m: 360 },
-    { n: "Sun Princess", l: "Princess Cruises", m: 360 },
-    { n: "Sky Princess", l: "Princess Cruises", m: 340 },
-    { n: "Enchanted Princess", l: "Princess Cruises", m: 340 },
-    { n: "Discovery Princess", l: "Princess Cruises", m: 340 },
-    { n: "Regal Princess", l: "Princess Cruises", m: 340 },
-    { n: "Royal Princess", l: "Princess Cruises", m: 340 },
-    { n: "Celebrity Beyond", l: "Celebrity Cruises", m: 300 },
-    { n: "Celebrity Ascent", l: "Celebrity Cruises", m: 300 },
-    { n: "Celebrity Apex", l: "Celebrity Cruises", m: 300 },
-    { n: "Celebrity Edge", l: "Celebrity Cruises", m: 300 },
-    { n: "Disney Wish", l: "Disney Cruise Line", m: 400 },
-    { n: "Disney Treasure", l: "Disney Cruise Line", m: 400 },
-    { n: "Disney Dream", l: "Disney Cruise Line", m: 400 },
-    { n: "Disney Fantasy", l: "Disney Cruise Line", m: 400 },
-    { n: "Disney Magic", l: "Disney Cruise Line", m: 350 },
-    { n: "Disney Wonder", l: "Disney Cruise Line", m: 350 },
+    // Princess · Sphere-class — Deck 19, 6.7 laps/mile ≈ 240 m [R]
+    { n: "Sun Princess", l: "Princess Cruises", m: 240 },
+    // Royal-class — Deck 18, 7 laps/mile ≈ 230 m [R]
+    { n: "Sky Princess", l: "Princess Cruises", m: 230 },
+    { n: "Enchanted Princess", l: "Princess Cruises", m: 230 },
+    { n: "Discovery Princess", l: "Princess Cruises", m: 230 },
+    { n: "Regal Princess", l: "Princess Cruises", m: 230 },
+    { n: "Royal Princess", l: "Princess Cruises", m: 230 },
+    // Celebrity · Edge-class — stretched hulls (Beyond/Ascent) ~5 laps/mile ≈ 322 m,
+    // original hulls (Apex/Edge) 4.5 laps/mile ≈ 358 m [R]
+    { n: "Celebrity Beyond", l: "Celebrity Cruises", m: 322 },
+    { n: "Celebrity Ascent", l: "Celebrity Cruises", m: 322 },
+    { n: "Celebrity Apex", l: "Celebrity Cruises", m: 358 },
+    { n: "Celebrity Edge", l: "Celebrity Cruises", m: 358 },
+    // Disney · Wish-class — no continuous track; Dream-class proxy [E]
+    { n: "Disney Wish", l: "Disney Cruise Line", m: 644 },
+    { n: "Disney Treasure", l: "Disney Cruise Line", m: 644 },
+    // Dream-class — 2.5 laps/mile ≈ 644 m [V]
+    { n: "Disney Dream", l: "Disney Cruise Line", m: 644 },
+    { n: "Disney Fantasy", l: "Disney Cruise Line", m: 644 },
+    // Magic-class — 3 laps/mile ≈ 536 m [V]
+    { n: "Disney Magic", l: "Disney Cruise Line", m: 536 },
+    { n: "Disney Wonder", l: "Disney Cruise Line", m: 536 },
+    // Cunard · QM2 — promenade circuit measures ~620 m (Cunard signs 3 laps/mile) [V]
     { n: "Queen Mary 2", l: "Cunard", m: 620 },
-    { n: "Queen Anne", l: "Cunard", m: 360 },
-    { n: "Queen Elizabeth", l: "Cunard", m: 384 },
-    { n: "Queen Victoria", l: "Cunard", m: 384 },
-    { n: "Rotterdam", l: "Holland America", m: 293 },
-    { n: "Koningsdam", l: "Holland America", m: 293 },
-    { n: "Nieuw Statendam", l: "Holland America", m: 293 },
-    { n: "Iona", l: "P&O Cruises", m: 400 },
-    { n: "Arvia", l: "P&O Cruises", m: 400 },
-    { n: "Britannia", l: "P&O Cruises", m: 360 },
-    { n: "Scarlet Lady", l: "Virgin Voyages", m: 400 },
-    { n: "Valiant Lady", l: "Virgin Voyages", m: 400 },
-    { n: "Resilient Lady", l: "Virgin Voyages", m: 400 },
-    { n: "Brilliant Lady", l: "Virgin Voyages", m: 400 },
-    { n: "Costa Smeralda", l: "Costa Cruises", m: 400 },
-    { n: "Costa Toscana", l: "Costa Cruises", m: 400 }
+    // Queen Anne — 2.5 laps/mile ≈ 644 m [R]
+    { n: "Queen Anne", l: "Cunard", m: 644 },
+    // Vista-class (Elizabeth/Victoria) — ~3.3 laps/mile ≈ 483 m [R]
+    { n: "Queen Elizabeth", l: "Cunard", m: 483 },
+    { n: "Queen Victoria", l: "Cunard", m: 483 },
+    // Holland America · Pinnacle-class — Deck 3 promenade, 3 laps/mile ≈ 536 m [R]
+    { n: "Rotterdam", l: "Holland America", m: 536 },
+    { n: "Koningsdam", l: "Holland America", m: 536 },
+    { n: "Nieuw Statendam", l: "Holland America", m: 536 },
+    // P&O · Excel-class (Iona/Arvia) — rooftop, 21 laps = 5 km ≈ 230 m [R]
+    { n: "Iona", l: "P&O Cruises", m: 230 },
+    { n: "Arvia", l: "P&O Cruises", m: 230 },
+    // Britannia — 7 laps/mile ≈ 230 m [R]
+    { n: "Britannia", l: "P&O Cruises", m: 230 },
+    // Virgin Voyages · Lady-class — "The Runway", ~6.3 laps/mile ≈ 255 m [R]
+    { n: "Scarlet Lady", l: "Virgin Voyages", m: 255 },
+    { n: "Valiant Lady", l: "Virgin Voyages", m: 255 },
+    { n: "Resilient Lady", l: "Virgin Voyages", m: 255 },
+    { n: "Brilliant Lady", l: "Virgin Voyages", m: 255 },
+    // Costa · Helios/Excel platform (sister of Iona & AIDAnova); ~240 m [E]
+    { n: "Costa Smeralda", l: "Costa Cruises", m: 240 },
+    { n: "Costa Toscana", l: "Costa Cruises", m: 240 }
   ];
 
   function normName(s) { return String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(); }
@@ -385,31 +420,24 @@
 
   // Detect the vessel you're aboard from a GPS fix + an AIS provider.
   // opts: {lat, lon, aisKey, endpoint, radiusM}
-  //   endpoint (optional): a URL template with {lat} {lon} {key} {radius}
-  //     placeholders that returns JSON — either an array or {data:[...]} of
+  //   endpoint (REQUIRED): a URL template with {lat} {lon} {key} {radius}
+  //     placeholders that returns JSON — either a bare array or {data:[...]} of
   //     vessels shaped [{name|SHIPNAME, lat|LAT, lon|LON, type|SHIPTYPE}].
-  //   aisKey (optional): used with the default MarineTraffic export URL when no
-  //     endpoint is given.
+  //     No free AIS API is reachable directly from a browser (WebSocket-only
+  //     and/or no CORS), so `endpoint` must point at your own small proxy — the
+  //     bundled Cloudflare Worker (ais-proxy.worker.js) bridges aisstream.io to
+  //     exactly this shape. See Settings for setup.
+  //   aisKey (optional): substituted into {key}; may be blank if the proxy
+  //     holds the provider key itself (e.g. as a Worker secret).
   // Resolves {vesselName, distanceM, ship, confidence(0..100)} or rejects.
-  // NOTE: most AIS providers require server-side calls (CORS / key secrecy).
-  // Point `endpoint` at a tiny proxy of your own for production use.
   function detectShip(opts) {
     opts = opts || {};
     if (opts.lat == null || opts.lon == null) return Promise.reject(new Error("no-position"));
-    if (!opts.aisKey && !opts.endpoint) return Promise.reject(new Error("no-ais-config"));
+    if (!opts.endpoint) return Promise.reject(new Error("no-endpoint"));
     var r = opts.radiusM || 3000;
-    var url;
-    if (opts.endpoint) {
-      url = opts.endpoint
-        .replace("{lat}", opts.lat).replace("{lon}", opts.lon)
-        .replace("{key}", encodeURIComponent(opts.aisKey || "")).replace("{radius}", r);
-    } else {
-      var d = 0.05; // ~5.5 km box
-      url = "https://services.marinetraffic.com/api/exportvessels/v:8/" +
-        encodeURIComponent(opts.aisKey) +
-        "/MINLAT:" + (opts.lat - d) + "/MAXLAT:" + (opts.lat + d) +
-        "/MINLON:" + (opts.lon - d) + "/MAXLON:" + (opts.lon + d) + "/protocol:jsono";
-    }
+    var url = opts.endpoint
+      .replace("{lat}", opts.lat).replace("{lon}", opts.lon)
+      .replace("{key}", encodeURIComponent(opts.aisKey || "")).replace("{radius}", r);
     return fetch(url).then(function (res) {
       if (!res.ok) { var e = new Error("AIS " + res.status); e.status = res.status; throw e; }
       return res.json();

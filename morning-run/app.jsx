@@ -762,7 +762,7 @@ function App() {
                   <button className="mr-btn mr-btn-primary" onClick={runDetect}>⌖ Detect ship</button>
                 </div>
               )}
-              <div className="mr-note" style={{ marginTop: 8, marginBottom: 4 }}>Lap lengths are community estimates from deck plans — confirm the posted “laps = 1 mile” sign and fine-tune below.</div>
+              <div className="mr-note" style={{ marginTop: 8, marginBottom: 4 }}>Lap lengths come from each ship’s onboard “laps = 1 mile” sign where known, but vary by ship and deck — confirm the posted sign and fine-tune below.</div>
 
               <div className="mr-sheet-h" style={{ marginTop: 18 }}>Track length</div>
               <div className="mr-seg">
@@ -1125,7 +1125,7 @@ function DetectModal({ step, result, err, acc, onConfirm, onManual, onClose }) {
   function errText() {
     if (err === "perm") return "Location permission was denied — enable it for this site to auto-detect, or choose your ship manually.";
     if (err === "nofix" || err === "no-geo") return "Couldn't get a GPS fix. Try again by a window or on deck, or choose your ship manually.";
-    if (err === "no-ais-config") return "Auto-match needs an AIS provider key (add one in Settings)." + (acc != null ? " We have your position (±" + Math.round(acc) + " m) — choose your ship to match its track." : " Choose your ship manually for now.");
+    if (err === "no-endpoint" || err === "no-ais-config") return "Auto-detect needs the AIS proxy set up in Settings (free — see the note there)." + (acc != null ? " We have your position (±" + Math.round(acc) + " m) — choose your ship to match its track." : " Choose your ship manually for now.");
     if (err === "no-vessel") return "No large passenger vessel found near your position. Choose your ship manually.";
     return "Couldn't confirm a vessel automatically. Choose your ship manually.";
   }
@@ -1191,13 +1191,13 @@ function Settings({ orsKey, aisKey, aisEndpoint, units, onClose, onSave }) {
         </div>
 
         <label className="mr-field-l">AIS provider key <span className="mr-sub">(optional)</span></label>
-        <input className="mr-input" type="text" value={ak} placeholder="for ship auto-detect"
+        <input className="mr-input" type="text" value={ak} placeholder="aisstream.io API key"
           onChange={(e) => setAk(e.target.value)} autoComplete="off" spellCheck="false" />
-        <label className="mr-field-l">AIS endpoint template <span className="mr-sub">(optional)</span></label>
-        <input className="mr-input" type="text" value={ep} placeholder="https://your-proxy/vessels?lat={lat}&lon={lon}&r={radius}"
+        <label className="mr-field-l">AIS proxy endpoint <span className="mr-sub">(optional)</span></label>
+        <input className="mr-input" type="text" value={ep} placeholder="https://your-worker.workers.dev/?lat={lat}&lon={lon}&key={key}&radius={radius}"
           onChange={(e) => setEp(e.target.value)} autoComplete="off" spellCheck="false" />
         <div className="mr-note">
-          Ship auto-detect matches your GPS position to nearby vessels. Most AIS APIs must be called through your own small proxy (CORS + key secrecy) — point the endpoint at it; use {"{lat} {lon} {key} {radius}"} placeholders. Leave blank to pick your ship by name.
+          Lets “Detect ship” name your vessel from nearby AIS traffic. Get a free key at <a href="https://aisstream.io/" target="_blank" rel="noopener">aisstream.io</a> (create it on the <a href="https://aisstream.io/apikeys" target="_blank" rel="noopener">API keys</a> page). It’s WebSocket-only and blocks browsers, so it needs a small proxy — deploy the free Cloudflare Worker bundled at <span className="mr-mono">morning-run/ais-proxy.worker.js</span> (steps in the file), paste its URL above with the {"{lat} {lon} {key} {radius}"} placeholders, and Detect works near coast &amp; port. Coastal coverage only; leave blank to just pick your ship by name.
         </div>
 
         <label className="mr-field-l">Units</label>
