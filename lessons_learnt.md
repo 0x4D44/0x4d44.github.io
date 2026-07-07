@@ -3,6 +3,15 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-07 — Replacing or removing a document that shipped a
+  `tests/validate-static.mjs` (or any per-doc test) silently breaks
+  `npm test` / `npm run build`: the **root `package.json`** hard-codes each
+  doc's test path into a single `&&`-chained `test`/`build` script
+  (`… && node <slug>/tests/validate-static.mjs && …`), so deleting the file
+  leaves a dangling `node` call that exits non-zero and fails the whole gate.
+  When you retire/replace a doc, prune its segment from **both** scripts. (Hit
+  swapping `cruise-propulsion`'s hand-built vanilla-JS essay for its DC-export
+  rebuild — same slug, new `index.html` + `support.js`.)
 - 2026-07-03 — `japanese-travel-rpg` (Nihon Quest, a DC export) wraps its whole
   UI in a **fixed 402x874 `IOSDevice` frame** (`ios-frame.jsx`) centred in a
   `min-height:100vh;padding:20px` body — so on any phone (viewport < ~914px) the
