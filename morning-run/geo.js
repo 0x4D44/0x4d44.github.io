@@ -418,6 +418,31 @@
     return SHIPS.filter(function (s) { return normName(s.n).indexOf(q) >= 0 || normName(s.l).indexOf(q) >= 0; });
   }
 
+  // ---- lap timing helpers (pure; shared by the cruise screen) -----------
+  // A whole lap run faster than this is treated as a miscount (e.g. an
+  // accidental double-tap, or a lap length set too long). ~7 m/s = 25 km/h is
+  // beyond a sustained human lap on a ship deck.
+  var MAX_LAP_SPEED = 7.0; // metres/second
+  // Minimum believable seconds for one lap of `lapM` metres.
+  function minLapSeconds(lapM) { return lapM > 0 ? lapM / MAX_LAP_SPEED : 0; }
+  // Median of a list of numbers (ms). 0 for an empty list. Robust to a single
+  // outlier lap, so the auto-count threshold and the fractional-lap estimate
+  // don't get skewed by one odd lap.
+  function medianMs(list) {
+    if (!list || !list.length) return 0;
+    var a = list.slice().sort(function (x, y) { return x - y; });
+    var mid = Math.floor(a.length / 2);
+    return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+  }
+  // Fraction (0..cap) of the way through the current lap, from its elapsed ms
+  // and the expected lap ms. Capped just below 1 so the count never shows the
+  // next whole lap before it is actually logged.
+  function lapFraction(curMs, estMs, cap) {
+    if (!(estMs > 0) || !(curMs > 0)) return 0;
+    var c = cap != null ? cap : 0.9;
+    return Math.max(0, Math.min(c, curMs / estMs));
+  }
+
   // Detect the vessel you're aboard from a GPS fix + an AIS provider.
   // opts: {lat, lon, aisKey, endpoint, radiusM}
   //   endpoint (REQUIRED): a URL template with {lat} {lon} {key} {radius}
@@ -529,6 +554,10 @@
     shipLapMetres: shipLapMetres,
     lapsPerUnit: lapsPerUnit,
     detectShip: detectShip,
+    // lap timing
+    minLapSeconds: minLapSeconds,
+    medianMs: medianMs,
+    lapFraction: lapFraction,
     // history
     saveRun: saveRun,
     deleteRun: deleteRun,

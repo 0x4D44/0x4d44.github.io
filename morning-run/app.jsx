@@ -19,6 +19,7 @@ const MAX_ACC = 35;      // metres — reject GPS fixes worse than this
 const MIN_MOVE = 3;      // metres — ignore sub-jitter movement
 const MAX_SPEED = 12;    // m/s — reject teleport glitches (~43 km/h)
 const AT_SEA_SPEED = 1.4; // m/s — a GPS fix moving this fast suggests you're aboard a vehicle/ship
+const HOLD_MS = 500;      // press-and-hold time to log a lap (guards against accidental taps)
 
 const MAP_STYLE = {
   version: 8,
@@ -92,6 +93,8 @@ function App() {
   const [goalM, setGoalM] = useState(() => Math.round((localStorage.getItem(LS_UNITS) === "mi" ? 3 : 5) * (localStorage.getItem(LS_UNITS) === "mi" ? 1609.344 : 1000)));
   const [autoCount, setAutoCount] = useState(true);
   const [laps, setLaps] = useState([]);          // [{ms, auto}]
+  const [cBegun, setCBegun] = useState(false);   // ship run: first LAP press (start line) done?
+  const [holding, setHolding] = useState(false); // LAP button hold-to-log in progress
   const [flashMsg, setFlashMsg] = useState(null);
 
   // ---- imperative map state (outside React render) ----------------------
@@ -122,6 +125,9 @@ function App() {
   const cTickRef = useRef(null);
   const cLapsRef = useRef([]);
   const cStartedAtRef = useRef(0);
+  const cBegunRef = useRef(false);    // mirror of cBegun for the interval/handlers
+  const cAutoRef = useRef(true);      // mirror of autoCount, read live by the tick
+  const holdRef = useRef(null);       // hold-to-log timer
   const detTimersRef = useRef([]);
   const flashTimerRef = useRef(null);
 
@@ -455,8 +461,16 @@ function App() {
     const lp = parseFloat(lapsPer) || 0;
     return lp > 0 ? L.unitMetres(units) / lp : 0;
   }
-  function cActiveMs() { let ms = cElapsedRef.current; if (cRunRef.current && !cPausedRef.current) ms += nowMs() - cResumeRef.current; return ms; }
+  // Active elapsed ms since the FIRST lap press (the start line). 0 until then,
+  // so the walk from "Start ship run" to the start line is never counted.
+  function cActiveMs() {
+    if (!cBegunRef.current) return 0;
+    let ms = cElapsedRef.current;
+    if (cRunRef.current && !cPausedRef.current) ms += nowMs() - cResumeRef.current;
+    return ms;
+  }
   function cCompletedMs() { return cLapsRef.current.reduce((s, l) => s + l.ms, 0); }
+  function cMinLapSec() { return L.minLapSeconds(lapLenM()); }
 
   function doFlash(msg) {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
@@ -475,10 +489,12 @@ function App() {
     if (len <= 0) { flash("Enter a valid lap length first."); return; }
     cLapsRef.current = [];
     cElapsedRef.current = 0;
-    cStartedAtRef.current = nowMs();
-    cResumeRef.current = nowMs();
+    cStartedAtRef.current = 0;
+    cBegunRef.current = false;
     cRunRef.current = true;
     cPausedRef.current = false;
+    cAutoRef.current = autoCount;
+    setCBegun(false);
     setLaps([]);
     setPaused(false);
     setPhase("cruise");
@@ -488,29 +504,84 @@ function App() {
   }
 
   function onCruiseTick() {
-    if (!cRunRef.current || cPausedRef.current) return;
+    if (!cRunRef.current || cPausedRef.current || !cBegunRef.current) return;
     const done = cCompletedMs();
-    // auto-count: after lap 1, advance when the current lap reaches the running average
-    if (autoCount && cLapsRef.current.length >= 1) {
+    // auto-count: after the first completed lap, advance when the current lap
+    // reaches the typical (median) lap time — and never below the plausible floor.
+    if (cAutoRef.current && cLapsRef.current.length >= 1) {
       const cur = cActiveMs() - done;
-      const avg = done / cLapsRef.current.length;
-      if (cur >= avg && cur > 3000) { addLap(true); return; }
+      const thr = L.medianMs(cLapsRef.current.map((l) => l.ms));
+      if (cur >= thr && cur / 1000 >= cMinLapSec()) { addLap(true); return; }
     }
     setLive({ dist: 0, dur: cActiveMs() / 1000 }); // force re-render for the running clock
   }
 
   function addLap(auto) {
     const cur = cActiveMs() - cCompletedMs();
-    if (cur < 1500) return;
+    // Reject an implausibly fast lap: an accidental double-tap, or a lap length
+    // set too long. Scales with the ship's lap length.
+    const minSec = cMinLapSec();
+    if (cur / 1000 < minSec) {
+      if (!auto) doFlash("Too fast for a " + Math.round(lapLenM()) + " m lap — tap ignored. Undo or check the lap length.");
+      return;
+    }
     const next = cLapsRef.current.concat([{ ms: cur, auto: !!auto }]);
     cLapsRef.current = next;
     setLaps(next);
     doFlash((auto ? "Auto lap " : "Lap ") + next.length + " · " + L.fmtDuration(cur / 1000));
   }
-  function tapLap() { addLap(false); }
+
+  // The LAP button after a completed hold: the first press marks the start line
+  // and begins timing; every press after that logs a lap.
+  function lapAction() {
+    if (!cRunRef.current) return;
+    if (!cBegunRef.current) {
+      cBegunRef.current = true;
+      cStartedAtRef.current = nowMs();
+      cResumeRef.current = nowMs();
+      cElapsedRef.current = 0;
+      setCBegun(true);
+      doFlash("Timing started at the start line — go!");
+      return;
+    }
+    addLap(false);
+  }
+
+  function undoLap() {
+    const arr = cLapsRef.current;
+    if (!arr.length) { doFlash("No lap to undo."); return; }
+    const removed = arr[arr.length - 1];
+    const next = arr.slice(0, -1);
+    cLapsRef.current = next;
+    setLaps(next);
+    // The removed lap's time flows back into the current lap automatically
+    // (it's no longer in cCompletedMs), so nothing is lost.
+    doFlash("Removed lap " + arr.length + " · " + L.fmtDuration(removed.ms / 1000));
+  }
+
+  function toggleAuto() {
+    setAutoCount((v) => { const nv = !v; cAutoRef.current = nv; return nv; });
+  }
+
+  // ---- hold-to-log (press and hold guards against accidental taps) -------
+  function lapHoldStart(e) {
+    if (holdRef.current) return;
+    if (e) { try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} }
+    setHolding(true);
+    holdRef.current = setTimeout(() => {
+      holdRef.current = null;
+      setHolding(false);
+      lapAction();
+      if (navigator.vibrate) { try { navigator.vibrate(30); } catch (_) {} }
+    }, HOLD_MS);
+  }
+  function lapHoldCancel() {
+    if (holdRef.current) { clearTimeout(holdRef.current); holdRef.current = null; }
+    setHolding(false);
+  }
 
   function cTogglePause() {
-    if (!cRunRef.current) return;
+    if (!cRunRef.current || !cBegunRef.current) return;
     if (!cPausedRef.current) {
       cElapsedRef.current += nowMs() - cResumeRef.current;
       cPausedRef.current = true;
@@ -525,16 +596,25 @@ function App() {
   }
 
   function finishCruise() {
-    if (!cPausedRef.current) cElapsedRef.current += nowMs() - cResumeRef.current;
+    const wasBegun = cBegunRef.current;
+    if (wasBegun && !cPausedRef.current) cElapsedRef.current += nowMs() - cResumeRef.current;
     cRunRef.current = false;
     cPausedRef.current = false;
+    cBegunRef.current = false;
     if (cTickRef.current) { clearInterval(cTickRef.current); cTickRef.current = null; }
     releaseWake();
+    lapHoldCancel();
+    // Never started (no first press at the start line): nothing to record.
+    if (!wasBegun) { setPhase("setup"); return; }
     const len = lapLenM();
-    const lapsArr = cLapsRef.current.slice();
-    // finalize a partial current lap into the record
-    const cur = cElapsedRef.current - lapsArr.reduce((s, l) => s + l.ms, 0);
-    if (cur > 3000) lapsArr.push({ ms: cur, auto: false });
+    const lapsArr = cLapsRef.current.slice();       // completed whole laps only
+    const total = cElapsedRef.current;              // full active ms
+    // The leftover current lap counts as a FRACTION, not a whole lap, so the
+    // distance isn't inflated by finishing mid-lap.
+    const partialMs = Math.max(0, total - lapsArr.reduce((s, l) => s + l.ms, 0));
+    const est = L.medianMs(lapsArr.map((l) => l.ms));
+    const partialFrac = est > 0 ? Math.min(1, partialMs / est) : 0;
+    const lapsFloat = lapsArr.length + partialFrac;
     const started = cStartedAtRef.current;
     const dateStr = new Date(started).toLocaleString(undefined,
       { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -547,8 +627,9 @@ function App() {
       laps: lapsArr,
       lapLenM: len,
       lapsCount: lapsArr.length,
-      distance: lapsArr.length * len,
-      duration: cElapsedRef.current / 1000,
+      lapsFloat: lapsFloat,
+      distance: lapsFloat * len,
+      duration: total / 1000,
       goalM: goalM,
       units,
       points: []
@@ -644,11 +725,18 @@ function App() {
   const cTotalMs = cActiveMs();
   const cCompleted = cCompletedMs();
   const cCurMs = cTotalMs - cCompleted;
-  const cDistanceM = laps.length * cLen;
   const cAvgLapMs = laps.length ? cCompleted / laps.length : 0;
+  // Estimate how far into the current lap we are (needs ≥1 completed lap for a
+  // lap-time estimate). Fractional laps make the big number tick 1.1, 1.2, …
+  // and give a smoother distance/ring than whole laps alone.
+  const cEstLapMs = L.medianMs(laps.map((l) => l.ms));
+  const cLapFrac = cBegun && laps.length >= 1 ? L.lapFraction(cCurMs, cEstLapMs, 0.9) : 0;
+  const cShownLaps = laps.length + cLapFrac;
+  const cFracDigit = Math.floor(cLapFrac * 10); // 0..9 for the dimmed decimal
+  const cDistanceM = cShownLaps * cLen;
   const hasGoal = goalM != null;
   const lapsNeeded = hasGoal && cLen > 0 ? goalM / cLen : 0;
-  const cProgress = lapsNeeded > 0 ? Math.max(0, Math.min(1, laps.length / lapsNeeded)) : 0;
+  const cProgress = lapsNeeded > 0 ? Math.max(0, Math.min(1, cShownLaps / lapsNeeded)) : 0;
   const RING_R = 100, RING_C = 2 * Math.PI * RING_R;
 
   const goalChoices = DIST_CHOICES[units].map((d) => Math.round(d * L.unitMetres(units))).concat([null]);
@@ -801,10 +889,10 @@ function App() {
                 {goalM != null && cLen > 0 ? (goalM / cLen).toFixed(1) + " laps to reach " + L.fmtDistance(goalM, units) : "Free run — no goal set"}
               </div>
 
-              <div className="mr-switch-row" onClick={() => setAutoCount((v) => !v)}>
+              <div className="mr-switch-row" onClick={toggleAuto}>
                 <span className="mr-switch-txt">
                   <strong>Auto-count laps</strong>
-                  <span className="mr-sub">Learns your rhythm from lap 1, then advances automatically. The LAP button is always there to correct it.</span>
+                  <span className="mr-sub">After your first lap, advances automatically at your typical lap time. You can toggle this during the run, and the LAP button always corrects it.</span>
                 </span>
                 <button className={"mr-switch" + (autoCount ? " on" : "")} aria-pressed={autoCount} aria-label="Auto-count laps" />
               </div>
@@ -860,10 +948,10 @@ function App() {
       {phase === "cruise" && (
         <div className="mr-cruise">
           <div className="mr-cruise-inner">
-            <div className={"mr-auto-pill" + (autoCount ? " on" : "")}>
+            <button className={"mr-auto-pill" + (autoCount ? " on" : "")} onClick={toggleAuto} aria-pressed={autoCount}>
               <span className="mr-auto-dot" />
-              {autoCount ? "Auto-count on — learns from lap 1" : "Auto-count off — tap LAP each lap"}
-            </div>
+              {autoCount ? "Auto-count on — tap to turn off" : "Auto-count off — tap to turn on"}
+            </button>
 
             <div className="mr-ring">
               <svg width="230" height="230" viewBox="0 0 230 230">
@@ -873,15 +961,23 @@ function App() {
                   strokeDasharray={RING_C} strokeDashoffset={RING_C * (1 - cProgress)} />
               </svg>
               <div className="mr-ring-center">
-                <div className="mr-ring-count">{laps.length}</div>
+                <div className="mr-ring-count">
+                  {laps.length}{cLapFrac > 0 && <span className="mr-ring-frac">.{cFracDigit}</span>}
+                </div>
                 <div className="mr-ring-l">laps</div>
                 <div className="mr-ring-of">{hasGoal && cLen > 0 ? "of " + lapsNeeded.toFixed(1) : "no goal"}</div>
               </div>
             </div>
 
             <div className="mr-cur">
-              <div className="mr-cur-v">{L.fmtDuration(cCurMs / 1000)}</div>
-              <div className="mr-cur-l">current lap</div>
+              {cBegun ? (
+                <>
+                  <div className="mr-cur-v">{L.fmtDuration(cCurMs / 1000)}</div>
+                  <div className="mr-cur-l">current lap</div>
+                </>
+              ) : (
+                <div className="mr-cur-l" style={{ fontSize: 13, letterSpacing: 0 }}>Hold LAP at the start line to begin timing</div>
+              )}
             </div>
 
             {paused && <div className="mr-paused" style={{ marginBottom: 12 }}>Paused</div>}
@@ -926,11 +1022,23 @@ function App() {
               </div>
             )}
 
-            <button className="mr-lap-btn" onClick={tapLap}>＋ LAP</button>
+            <button
+              className={"mr-lap-btn" + (holding ? " holding" : "")}
+              onPointerDown={lapHoldStart}
+              onPointerUp={lapHoldCancel}
+              onPointerLeave={lapHoldCancel}
+              onPointerCancel={lapHoldCancel}
+              onContextMenu={(e) => e.preventDefault()}
+              aria-label={cBegun ? "Hold to log a lap" : "Hold to start timing at the start line"}
+            >
+              <span className="mr-lap-fill" style={{ transitionDuration: holding ? HOLD_MS + "ms" : "120ms" }} />
+              <span className="mr-lap-label">{holding ? "HOLD…" : (cBegun ? "＋ HOLD FOR LAP" : "HOLD AT START LINE")}</span>
+            </button>
             <div className="mr-row-2" style={{ width: "100%" }}>
-              <button className="mr-btn mr-btn-ghost" onClick={cTogglePause}>{paused ? "Resume" : "Pause"}</button>
-              <button className="mr-btn mr-btn-stop" onClick={finishCruise}>Finish</button>
+              <button className="mr-btn mr-btn-ghost" onClick={undoLap} disabled={!laps.length}>↩ Undo lap</button>
+              <button className="mr-btn mr-btn-ghost" onClick={cTogglePause} disabled={!cBegun}>{paused ? "Resume" : "Pause"}</button>
             </div>
+            <button className="mr-btn mr-btn-stop mr-wide" onClick={finishCruise} style={{ marginTop: 10 }}>Finish</button>
           </div>
         </div>
       )}
@@ -1020,7 +1128,7 @@ function SummarySheet({ run, units, onSave, onExport, onDone }) {
           <Stat label="avg / lap" value={avgPace} />
         </div>
         <div className="mr-sub mr-center">
-          {laps.length} laps · {lpm} each{run.goalM != null ? " · goal " + L.fmtDistance(run.goalM, u) : ""}
+          {run.lapsFloat != null && run.lapsFloat > laps.length ? run.lapsFloat.toFixed(1) : laps.length} laps · {lpm} each{run.goalM != null ? " · goal " + L.fmtDistance(run.goalM, u) : ""}
         </div>
         {laps.length > 0 && (
           <div className="mr-splits">
