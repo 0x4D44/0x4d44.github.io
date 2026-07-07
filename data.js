@@ -97,12 +97,12 @@ window.ESSAYS = [
   {
     slug: "morning-run",
     title: "Morning Run",
-    tagline: "Find a running loop from your hotel, then track the run. It reads your GPS, asks OpenRouteService for a few foot-friendly loops of your chosen distance, and records the outing live — trail, pace, per-kilometre splits — with GPX export and saved history. An installable phone-first PWA: browser React on MapLibre GL and OpenStreetMap, no build step.",
+    tagline: "Find a running loop from your hotel and track it live — or switch to Ship track to count laps of a moving cruise-ship deck, where GPS can't measure stride. Pick your ship (or auto-detect it), set the lap length, and it projects your finish. Browser React on MapLibre GL, no build step.",
     url: "https://0x4d44.github.io/morning-run/",
     illustration: "ill-run",
-    date: "2026-07-03T19:30:00",
+    date: "2026-07-07T12:00:00",
     year: 2026,
-    tags: ["software", "transport"],
+    tags: ["software", "transport", "maritime"],
     real: true,
   },
   {
