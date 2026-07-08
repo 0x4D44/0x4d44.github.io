@@ -1,0 +1,3 @@
+# Vendored runtime files are loaded with SRI hashes; keep checkout bytes stable.
+broadband-speed-checker/vendor/*.js -text
+broadband-speed-checker/fonts/*.woff2 -text
