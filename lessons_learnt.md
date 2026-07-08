@@ -3,6 +3,13 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-08 — `Line Rate UI Overhaul.zip` is a Design Canvas export
+  (`Line Rate.dc.html` + `support.js` + `.thumbnail`), not a vanilla app
+  patch. Ship the `.dc.html` as `broadband-speed-checker/index.html`, skip the
+  thumbnail, self-host the DC runtime's React/Babel and Google-font assets, and
+  keep production-specific behavior that the export resets for preview:
+  `settings.live` should default true and the storage key remains
+  `0x4d44.broadband.v1` so existing browser-local history survives.
 - 2026-07-07 — Replacing or removing a document that shipped a
   `tests/validate-static.mjs` (or any per-doc test) silently breaks
   `npm test` / `npm run build`: the **root `package.json`** hard-codes each

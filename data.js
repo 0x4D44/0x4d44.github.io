@@ -18,7 +18,7 @@ window.ESSAYS = [
   {
     slug: "broadband-speed-checker",
     title: "Line Rate",
-    tagline: "A private broadband speed checker: find a nearby M-Lab NDT7 server, measure WebSocket download and upload throughput, sample ping, request a GPS fix and keep every result in browser-local history. Vanilla JS with localStorage — no backend, no build step.",
+    tagline: "A private broadband speed checker: run a live M-Lab NDT7 test, measure peak-sustained download and upload throughput, sample ping, request a GPS fix, and keep every result in browser-local history. Design-runtime React export with self-hosted assets — no backend, no build step.",
     url: "https://0x4d44.github.io/broadband-speed-checker/",
     illustration: "ill-wave",
     date: "2026-07-06T12:00:00",
