@@ -68,6 +68,47 @@ for (const flag of flagsRequired) {
   assert.ok(flagsSet.has(flag), `required flag is settable: ${flag}`);
 }
 
+/* mechanics: no strictly dominant choice (both sides pure effects only) */
+{
+  const KEYS = ["leadership", "team", "you", "headcount"];
+  const extras = (s) => !!(s.setFlags || s.clearFlags || s.followup || s.ending || s.homily);
+  const geq = (a, b) => KEYS.every((k) => (a[k] || 0) >= (b[k] || 0));
+  for (const card of CARDS) {
+    if (extras(card.left) || extras(card.right)) continue;
+    const le = card.left.effects || {};
+    const re = card.right.effects || {};
+    if (JSON.stringify(le) === JSON.stringify(re)) continue;
+    assert.ok(!geq(le, re), `${card.id}: left choice strictly dominates`);
+    assert.ok(!geq(re, le), `${card.id}: right choice strictly dominates`);
+  }
+}
+
+/* mechanics: reorg cards must always release the flag (else reorg deck jams on) */
+for (const card of CARDS) {
+  if (!(card.requiresFlags || []).includes("reorg_looms")) continue;
+  for (const side of ["left", "right"]) {
+    const s = card[side];
+    const releases = (s.clearFlags || []).includes("reorg_looms") || s.followup || s.ending;
+    assert.ok(releases, `${card.id}.${side} must clear reorg_looms, chain onward, or end the run`);
+  }
+}
+
+/* mechanics: no cheap bespoke endings (must sit behind once or a flag gate) */
+for (const card of CARDS) {
+  for (const side of ["left", "right"]) {
+    if (!card[side].ending) continue;
+    assert.ok(card.once || (card.requiresFlags || []).length,
+      `${card.id}.${side}: bespoke ending must be once-gated or flag-gated`);
+  }
+}
+
+/* mechanics: sane weights and quarter windows */
+for (const card of CARDS) {
+  assert.ok((card.weight || 1) <= 3, `${card.id} weight within cap`);
+  assert.ok((card.minQuarter || 1) <= 12, `${card.id} reachable before the final quarter`);
+  if (card.maxQuarter) assert.ok(card.maxQuarter >= (card.minQuarter || 1), `${card.id} quarter window sane`);
+}
+
 /* every ritual slot in the engine cycle has at least one card */
 for (const ritual of RITUAL_CYCLE) {
   assert.ok(CARDS.some((c) => c.kind === "ritual" && c.ritual === ritual), `ritual card exists: ${ritual}`);

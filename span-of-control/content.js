@@ -42,6 +42,7 @@ export const CARDS = [
     right: {
       label: "“We’ll find the bandwidth”",
       effects: { leadership: 6, team: -7, you: -3 },
+      setFlags: ["quickwin-taken"],
       quip: "The team finds the bandwidth. You find a way to say ‘bandwidth’ without wincing.",
       homily: "h-bandwidth",
     },
@@ -171,7 +172,7 @@ export const CARDS = [
     right: {
       label: "Lend Marcus — he’s keen",
       effects: { headcount: -1, leadership: 4, team: -4 },
-      quip: "Marcus is now ‘dotted-line’. The dots are load-bearing. You have lost a Marcus.",
+      quip: "Marcus is now ‘matrixed’. He waves from Colin’s stand-up like an exchange student who is not coming home.",
     },
   },
 
@@ -221,7 +222,7 @@ export const CARDS = [
     cast: "company",
     kind: "memo",
     title: "Meeting Reduction Initiative",
-    text: "All managers must attend a 90-minute workshop on reducing meetings. Attendance is mandatory. A pre-read has been attached to the pre-meeting.",
+    text: "All managers must attend a 90-minute workshop on reducing meetings. Attendance is mandatory. There is, somehow, also a waiting list.",
     left: {
       label: "Attend, visibly",
       effects: { leadership: 2, you: -4 },
@@ -236,26 +237,6 @@ export const CARDS = [
   },
 
   // ---- the do-the-work trap -------------------------------------------------
-  {
-    id: "trap-dashboard",
-    cast: "you",
-    kind: "postit",
-    title: "6:05pm",
-    text: "The dashboard bug embarrassing Diane is right there. You used to fix things like this in an hour. The cursor blinks. It knows you.",
-    left: {
-      label: "Close the laptop — assign it tomorrow",
-      effects: { you: 2, leadership: -2 },
-      quip: "Delegation: the hardest commit is the one you don’t make.",
-      homily: "h-delegate",
-    },
-    right: {
-      label: "Crack your knuckles. You’ve still got it",
-      effects: { you: 6, team: -6, leadership: -3 },
-      setFlags: ["did-work"],
-      quip: "You’ve still got it. The team now has a manager who does drive-by commits.",
-      homily: "h-code",
-    },
-  },
   {
     id: "trap-relapse",
     cast: "you",
@@ -434,7 +415,7 @@ export const CARDS = [
     left: {
       label: "Volunteer a saving before she asks",
       effects: { headcount: -1, leadership: 4, team: -3 },
-      quip: "Janet nods once. In Finance, that is a standing ovation.",
+      quip: "Janet nods once and closes the laptop. You have been costed, and provisionally kept.",
     },
     right: {
       label: "Defend every seat",
@@ -467,7 +448,7 @@ export const CARDS = [
     kind: "ritual",
     ritual: "survey",
     title: "Engagement survey results",
-    text: "Your team’s engagement is 62%. Saskia says this is ‘a real opportunity’ and books a workshop about why people dislike workshops.",
+    text: "Your team’s engagement is 62%. Saskia calls this ‘a rich listening opportunity’ and circulates a nine-step framework for spontaneous conversation.",
     left: {
       label: "Run honest listening sessions",
       effects: { team: 6, you: -4 },
@@ -584,7 +565,7 @@ export const CARDS = [
         "you": 3,
         "leadership": -2
       },
-      "quip": "The room stays booked. Facilities explains that the booking is ‘load-bearing’."
+      "quip": "The room stays booked. Facilities explains the booking ‘predates the current system’, which is not an answer to the question you asked."
     },
     "right": {
       "label": "Attend one, out of respect",
@@ -592,7 +573,7 @@ export const CARDS = [
         "you": -3,
         "leadership": 2
       },
-      "quip": "Nobody joins. At the half-hour, minutes circulate anyway. You are marked as attended, which is true, which is worse."
+      "quip": "Nobody joins. At half past, an action arrives in your name: ‘carry forward’. It has been carried forward 341 times."
     }
   },
   {
@@ -965,12 +946,12 @@ export const CARDS = [
       "quip": "Marcus asks why. You have no answer that survives contact with Marcus."
     },
     "right": {
-      "label": "Reply: “Great challenge — let’s park it”",
+      "label": "Reply: “Adding this to the programme FAQ”",
       "effects": {
         "leadership": 3,
         "team": -4
       },
-      "quip": "You parked the truth. The parking lot is where the programme keeps it."
+      "quip": "There is now an FAQ. It contains one question and no answer, which the programme calls alignment."
     }
   },
   {
@@ -1854,7 +1835,7 @@ export const CARDS = [
         "leadership": 3,
         "team": -4
       },
-      "quip": "The ticket unblocks itself within the hour. Funny, that."
+      "quip": "The ticket unblocks within the hour. The blockage, it turns out, was never in the gateway."
     },
     "right": {
       "label": "Route around him — build the workaround",
@@ -1965,7 +1946,7 @@ export const CARDS = [
         "team": -3,
         "you": -2
       },
-      "quip": "‘Signals’ turns out to mean posting. You post. Your rank rises. Your soul raises a ticket."
+      "quip": "‘Signals’ turns out to mean posting. You post. Your rank rises. You have never respected the table less, or checked it more."
     },
     "right": {
       "label": "Ignore it, pointedly",
@@ -2064,17 +2045,17 @@ export const CARDS = [
       "label": "Accept, with thanks",
       "effects": {
         "team": 4,
-        "leadership": 2,
+        "leadership": -3,
         "you": 2
       },
-      "quip": "His engineers are excellent and leave on Friday, as promised. Gratitude, you note, is also a dependency."
+      "quip": "His engineers are excellent and leave on Friday, as promised. In the exec channel, the incident is now ‘the one Colin’s people fixed’."
     },
     "right": {
       "label": "Decline politely. Contain it in-house",
       "effects": {
         "team": -3,
         "you": -4,
-        "leadership": -2
+        "leadership": 3
       },
       "quip": "The team pulls a hard week. Colin’s offer sits in your inbox, unanswered, radiating reasonableness."
     }
@@ -2222,7 +2203,7 @@ export const CARDS = [
     "cast": "colin",
     "kind": "chat",
     "title": "DM",
-    "text": "‘Mate — heads up. I’ve block-booked the Nightingale Room for the Initiative, all quarter. Your stand-up can have the pod on four. It’s cosy!’ The pod seats three. You are nine. The Initiative meets fortnightly.",
+    "text": "‘Mate — heads up. I’ve block-booked the Brunel Room for the Initiative, all quarter. Your stand-up can have the pod on four. It’s cosy!’ The pod seats three. You are nine. The Initiative meets fortnightly.",
     "requiresFlags": [
       "colin-war"
     ],
@@ -2233,7 +2214,7 @@ export const CARDS = [
         "team": 3,
         "you": -2
       },
-      "quip": "Facilities rules the room belongs to whoever booked it first, in 2019. She left in 2021. The room is legally haunted."
+      "quip": "Facilities finds in your favour, effective next quarter. Meanwhile the Initiative keeps the room and you keep the ruling."
     },
     "right": {
       "label": "Cede the room; hold stand-up in the corridor",
@@ -2444,7 +2425,7 @@ export const CARDS = [
         "team": 3,
         "you": -2
       },
-      "quip": "Janet concedes the charge is opaque. Opacity, she notes, is billed at cost. Your challenge is filed under ‘noted’."
+      "quip": "Janet forwards your challenge, without comment, to a mailbox called TRANSFORMATION-QUERIES. The reply arrives from the consultant, serene, billable."
     },
     "right": {
       "label": "Absorb it; quietly cut the team’s training budget",
@@ -2681,7 +2662,8 @@ export const CARDS = [
       "setFlags": [
         "did-work"
       ],
-      "quip": "Two hours. You drove the whole time. Marcus learned a great deal about watching."
+      "quip": "Two hours. You drove the whole time. Marcus learned a great deal about watching.",
+      "homily": "h-code"
     },
     "right": {
       "label": "Route him to Priya — she should be mentoring by now",
@@ -2689,7 +2671,8 @@ export const CARDS = [
         "team": 5,
         "you": -5
       },
-      "quip": "Priya explains it better than you would have. You check the thread eleven times to confirm this. It stays true."
+      "quip": "Priya explains it better than you would have. You check the thread eleven times to confirm this. It stays true.",
+      "homily": "h-delegate"
     }
   },
   {
@@ -2697,7 +2680,7 @@ export const CARDS = [
     "cast": "greg",
     "kind": "chat",
     "title": "#sprint-planning",
-    "text": "‘There’s a ticket with your name on it. Nobody assigned it — you did work once, and the board learned your face. I can take it off. The board will remember that too.’",
+    "text": "‘There’s a ticket with your name on it. Nobody assigned it; the board appears to have learned. I can remove it. Telling you first seemed polite.’",
     "requiresFlags": [
       "did-work"
     ],
@@ -2881,6 +2864,9 @@ export const CARDS = [
     "title": "RE: that quick win",
     "text": "The two-day favour from March has users now. Real ones, with opinions and a distribution list. Diane calls it ‘an organic bet that paid off’ and wants a roadmap. No one has ever been budgeted to it. It pages Greg.",
     "once": true,
+    "requiresFlags": [
+      "quickwin-taken"
+    ],
     "left": {
       "label": "Ask for a req to staff it properly",
       "effects": {
@@ -2896,7 +2882,7 @@ export const CARDS = [
         "team": -5,
         "you": -2
       },
-      "quip": "The desk has no sides left. The quick win is now load-bearing revenue."
+      "quip": "The desk has no sides left. The quick win now has customers, an SLA, and no budget line anywhere."
     }
   },
   {
@@ -3111,7 +3097,7 @@ export const CARDS = [
 export const HOMILIES = [
   { id: "h-bandwidth", text: "Bandwidth is infinite on the org chart and finite everywhere else.", attribution: "Dr. Lin Prosper, ‘Thoughtfluence’" },
   { id: "h-strategy", text: "Strategy is the things you were going to do anyway, arranged in a triangle.", attribution: "Barry Vantage, ‘The Courage to Delegate Courage’" },
-  { id: "h-meetings", text: "A meeting is a room where minutes are kept and hours are lost.", attribution: "Stitched on a cushion in HR" },
+  { id: "h-meetings", text: "A meeting is a room where minutes are kept and hours are lost. Nobody has ever found the minutes.", attribution: "Stitched on a cushion in HR" },
   { id: "h-headcount", text: "You are not your headcount. You are, however, nothing without it.", attribution: "Barry Vantage, ‘The Courage to Delegate Courage’" },
   { id: "h-delegate", text: "Delegation is letting go of the things you could do, to make time for the things nobody should.", attribution: "Poster in Stairwell B" },
   { id: "h-visibility", text: "It is not enough to work. One must be seen to work. Being seen, in fact, suffices.", attribution: "LinkedIn, 4:51am" },

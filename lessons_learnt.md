@@ -3,6 +3,12 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-09 — A Workflow lens agent that dies mid-run (account session
+  limit, auth drop) surfaces in the tool result's `<failures>` list, but the
+  script's own aggregation happily returns its stage as an EMPTY findings
+  array — indistinguishable from a clean pass. Never treat an empty lens
+  result as "no findings" without checking `<failures>`/journal.jsonl first;
+  re-run the dead lenses (by hand if limits persist).
 - 2026-07-08 — `Line Rate UI Overhaul.zip` is a Design Canvas export
   (`Line Rate.dc.html` + `support.js` + `.thumbnail`), not a vanilla app
   patch. Ship the `.dc.html` as `broadband-speed-checker/index.html`, skip the
