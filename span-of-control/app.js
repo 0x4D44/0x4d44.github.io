@@ -241,10 +241,9 @@ let homilyContinue = null;
 function showHomily(id, done) {
   const homily = homilyById(id);
   if (!homily) { done(); return; }
-  if (!store.homilies.includes(id)) {
-    store.homilies.push(id);
-    storage.save(store);
-  }
+  if (store.homilies.includes(id)) { done(); return; } // only NEW wisdom interrupts
+  store.homilies.push(id);
+  storage.save(store);
   $("wisdom-count").textContent = String(store.homilies.length);
   $("homily-text").textContent = `“${homily.text}”`;
   $("homily-attr").textContent = `— ${homily.attribution}`;
