@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Span of Control — a wry card game about middle management. Too senior for the coal-face, too junior for the direction, measured only by the size of your team." />
+  <meta name="theme-color" content="#1f3557" />
+  <title>Span of Control — a middle management simulator</title>
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="field-texture" aria-hidden="true"></div>
+
+  <header class="chrome">
+    <div class="chrome-brand">
+      <svg class="crest" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="8" y="13" width="8" height="8" rx="1"/></svg>
+      <span class="brand-name">Consolidated Progress <span class="plc">plc</span></span>
+      <span class="brand-sub">Manager Self-Service Portal</span>
+    </div>
+    <nav class="chrome-actions">
+      <button id="btn-wisdom" class="chrome-btn" type="button" aria-label="The Laminated Wisdom collection">Wisdom <span id="wisdom-count" class="badge">0</span></button>
+      <button id="btn-mute" class="chrome-btn" type="button" aria-label="Toggle sound">Sound: on</button>
+    </nav>
+  </header>
+
+  <main id="main">
+    <!-- ======================= menu / intranet landing ==================== -->
+    <section id="screen-menu" class="screen">
+      <div class="masthead">
+        <p class="masthead-eyebrow">Internal use only · Restricted to layers 4–6</p>
+        <h1 class="masthead-title">Span<br/>of<br/>Control</h1>
+        <p class="masthead-sub">a middle management simulator</p>
+      </div>
+      <article class="memo intro-memo">
+        <header class="memo-head">
+          <span class="memo-stamp">MEMO</span>
+          <dl>
+            <div><dt>From</dt><dd>Leadership (via several layers)</dd></div>
+            <div><dt>To</dt><dd>You, apparently</dd></div>
+            <div><dt>Re</dt><dd>Your team</dd></div>
+          </dl>
+        </header>
+        <p>Congratulations on your team of four. You are now too senior to do the
+        work and too junior to decide what the work is. Decisions will arrive
+        from above, fully formed; work will happen below, regardless. Your job
+        is everything in between.</p>
+        <p>Route. Translate. Absorb. Above all, mind your <em>headcount</em> —
+        your title is recalculated from it continuously, and nothing else about
+        you is measured at all.</p>
+        <p class="memo-controls">Swipe the card, or use the buttons, or ← / → on a keyboard.
+        Keep every gauge away from both ends. Both ends. Yes, both.</p>
+      </article>
+      <div class="menu-stats" id="menu-stats" aria-label="Your record"></div>
+      <button id="btn-start" class="btn-primary" type="button">Accept the role <span class="btn-note">(you did, technically, apply)</span></button>
+      <p class="small-print">© Consolidated Progress plc. Alignment is everyone’s job. This portal is best viewed in a browser.</p>
+    </section>
+
+    <!-- ============================ game ================================= -->
+    <section id="screen-game" class="screen hidden">
+      <div class="hud">
+        <div class="meters" role="group" aria-label="Your standing">
+          <div class="meter" id="meter-leadership" data-meter="leadership">
+            <span class="meter-label">Leadership</span>
+            <div class="meter-track"><div class="meter-fill"></div></div>
+          </div>
+          <div class="meter" id="meter-team" data-meter="team">
+            <span class="meter-label">Team</span>
+            <div class="meter-track"><div class="meter-fill"></div></div>
+          </div>
+          <div class="meter" id="meter-you" data-meter="you">
+            <span class="meter-label">You</span>
+            <div class="meter-track"><div class="meter-fill"></div></div>
+          </div>
+          <div class="meter meter-headcount" id="meter-headcount">
+            <span class="meter-label">Headcount</span>
+            <span class="headcount-value" id="headcount-value">4</span>
+          </div>
+        </div>
+        <div class="title-line">
+          <span id="job-title" class="job-title">Manager</span>
+          <span id="week-indicator" class="week-indicator">Q1 · W1</span>
+        </div>
+      </div>
+
+      <div class="card-zone">
+        <div id="card-anchor" class="card-anchor">
+          <article id="card" class="card" aria-live="polite">
+            <header class="card-head" id="card-head"></header>
+            <h2 class="card-title" id="card-title"></h2>
+            <p class="card-text" id="card-text"></p>
+            <div class="card-affects" id="card-affects" aria-hidden="true"></div>
+          </article>
+          <div class="drag-hint drag-hint-left" id="drag-hint-left" aria-hidden="true"></div>
+          <div class="drag-hint drag-hint-right" id="drag-hint-right" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <div class="choices">
+        <button id="btn-left" class="btn-choice btn-choice-left" type="button"></button>
+        <button id="btn-right" class="btn-choice btn-choice-right" type="button"></button>
+      </div>
+      <p id="quip" class="quip" aria-live="polite"></p>
+    </section>
+
+    <!-- ====================== ending: a document ========================= -->
+    <section id="screen-ending" class="screen hidden">
+      <article class="document" id="ending-doc">
+        <header class="doc-letterhead">
+          <svg class="crest crest-dark" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="8" y="13" width="8" height="8" rx="1"/></svg>
+          <span>Consolidated Progress plc</span>
+          <span class="doc-kind" id="ending-kind"></span>
+        </header>
+        <h2 class="doc-title" id="ending-title"></h2>
+        <div class="doc-body" id="ending-body"></div>
+        <p class="doc-epitaph" id="ending-epitaph"></p>
+      </article>
+      <div class="ending-stats" id="ending-stats"></div>
+      <div class="ending-actions">
+        <button id="btn-again" class="btn-primary" type="button">Re-apply for your own job</button>
+        <button id="btn-ending-wisdom" class="btn-secondary" type="button">Review the Laminated Wisdom</button>
+      </div>
+    </section>
+
+    <!-- ================== the Laminated Wisdom (corkboard) ================ -->
+    <section id="screen-wisdom" class="screen hidden">
+      <div class="wisdom-head">
+        <h2 class="wisdom-title">The Laminated Wisdom</h2>
+        <p class="wisdom-sub" id="wisdom-progress"></p>
+        <button id="btn-wisdom-back" class="btn-secondary" type="button">Back to your desk</button>
+      </div>
+      <div class="corkboard" id="corkboard"></div>
+    </section>
+  </main>
+
+  <!-- homily unlock overlay -->
+  <div id="homily-pop" class="overlay hidden" role="dialog" aria-modal="true" aria-label="New laminated wisdom">
+    <div class="homily-card">
+      <span class="homily-banner">New laminated wisdom</span>
+      <blockquote id="homily-text"></blockquote>
+      <cite id="homily-attr"></cite>
+      <button id="btn-homily-ok" class="btn-primary" type="button">Pin it up</button>
+    </div>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
