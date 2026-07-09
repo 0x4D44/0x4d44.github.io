@@ -397,7 +397,8 @@ $("btn-mute").addEventListener("click", () => {
 /* ------------------------------ boot ------------------------------ */
 $("btn-mute").textContent = store.muted ? "Sound: off" : "Sound: on";
 renderMenu();
-show("menu");
+if (window.location.hash === "#play") startRun();
+else show("menu");
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {

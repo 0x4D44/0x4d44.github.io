@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "span-of-control",
+    title: "Span of Control",
+    tagline: "A wry Reigns-style card game about middle management: too senior for the coal-face, too junior for the direction, and scored — like all middle managers — purely on headcount. Swipe through emails, reorgs and quarterly rituals; collect laminated management wisdom. Vanilla JS on a deterministic, tested engine; installable offline PWA.",
+    url: "https://0x4d44.github.io/span-of-control/",
+    illustration: "ill-org-chart",
+    date: "2026-07-09T23:30:00",
+    year: 2026,
+    tags: ["games", "work"],
+    real: true,
+  },
+  {
     slug: "broadband-speed-checker",
     title: "Line Rate",
     tagline: "A private broadband speed checker: run a live M-Lab NDT7 test, measure peak-sustained download and upload throughput, sample ping, request a GPS fix, and keep every result in browser-local history. Design-runtime React export with self-hosted assets — no backend, no build step.",
@@ -1047,7 +1058,7 @@ window.ESSAYS = [
 // and technical write-ups (including code walkthroughs *about* games/sims).
 window.TAG_GROUPS = [
   { label: "form",    tags: ["software", "games", "simulation", "fiction", "comic"] },
-  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance"] },
+  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "work"] },
 ];
 // Flat list ("all" first), derived from the groups, for any consumer that
 // just wants the plain vocabulary.

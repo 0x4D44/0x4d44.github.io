@@ -105,9 +105,9 @@ for (const ritual of RITUAL_CYCLE) {
 
 /* volume: the game needs a career's worth of material */
 const nonRitual = CARDS.filter((c) => c.kind !== "ritual");
-assert.ok(nonRitual.length >= 18, `enough decision cards: ${nonRitual.length}`);
-assert.ok(HOMILIES.length >= 12, `enough laminated wisdom: ${HOMILIES.length}`);
-assert.ok(ENDINGS.length >= 10, `enough exits: ${ENDINGS.length}`);
+assert.ok(nonRitual.length >= 100, `enough decision cards: ${nonRitual.length}`);
+assert.ok(HOMILIES.length >= 40, `enough laminated wisdom: ${HOMILIES.length}`);
+assert.ok(ENDINGS.length >= 15, `enough exits: ${ENDINGS.length}`);
 const early = nonRitual.filter((c) => !c.minQuarter || c.minQuarter <= 1).length;
 assert.ok(early >= 12, `enough early-game cards: ${early}`);
 
