@@ -8,6 +8,7 @@ export const RECENT_WINDOW = 15;
 export const WEEKS_PER_QUARTER = 12;
 export const FINAL_QUARTER = 12;
 export const HEADCOUNT_APEX = 40;
+export const QUARTER_REGRESSION = 4;
 export const RITUAL_CYCLE = ["perf-review", "budget", "planning", "survey"];
 
 // --- deterministic RNG (mulberry32 over an integer state kept on the run) ---
@@ -208,6 +209,13 @@ export function choose(state, content, side) {
   let reorgRolled = false;
   if (state.weekCount % WEEKS_PER_QUARTER === 0) {
     const quarter = quarterOf(state); // the quarter we are entering
+    // Regression to the middle: each quarter close, every gauge drifts back
+    // toward 50. Reputations fade, grudges soften, nothing you built lasts.
+    // (It is also what keeps extreme standings from ending every career.)
+    for (const key of METER_KEYS) {
+      const v = state.meters[key];
+      state.meters[key] = v + Math.sign(50 - v) * Math.min(QUARTER_REGRESSION, Math.abs(50 - v));
+    }
     state.pendingRitual = RITUAL_CYCLE[(quarter - 1) % RITUAL_CYCLE.length];
     if (!state.flags.reorg_looms && rand(state) < reorgChance(state.headcount, quarter)) {
       state.flags.reorg_looms = true;
