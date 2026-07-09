@@ -111,7 +111,6 @@
             <div style="text-align:center;padding:12px 4px;border-radius:18px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1)">
               <div style="font-size:30px;animation:bobFast 3s ease-in-out infinite;animation-delay:{{ c.delay }}">{{ c.emoji }}</div>
               <div style="font-family:Fredoka;font-weight:600;font-size:13px;margin-top:4px">{{ c.role }}</div>
-              <div style="font-size:10px;color:#89acc4;font-weight:700">{{ c.tag }}</div>
             </div>
           </sc-for>
         </div>
@@ -469,10 +468,10 @@ class Component extends DCLogic {
     for(let i=0;i<26;i++){ this.stars.push({top:sr(2,42).toFixed(1)+"%",left:sr(2,96).toFixed(1)+"%",dur:sr(2.5,6).toFixed(1)+"s",delay:(-sr(0,5)).toFixed(1)+"s"}); }
 
     this.crew = [
-      {emoji:"🧭",role:"Skipper",tag:"Dad",delay:"0s"},
-      {emoji:"🌺",role:"First Mate",tag:"Mum",delay:".4s"},
-      {emoji:"🏄",role:"Deckhand",tag:"18",delay:".8s"},
-      {emoji:"🎧",role:"Deckhand",tag:"15",delay:"1.2s"}
+      {emoji:"🧭",role:"Captain",delay:"0s"},
+      {emoji:"🌺",role:"First Mate",delay:".4s"},
+      {emoji:"🛠️",role:"Chief Engineer",delay:".8s"},
+      {emoji:"🧽",role:"Desk scrubber",delay:"1.2s"}
     ];
     this.tiles = [
       {key:"days",  emoji:"📅",title:"Day plan",  sub:"8 days mapped", bg:"linear-gradient(160deg,#7defd8,#2dd4bf)"},

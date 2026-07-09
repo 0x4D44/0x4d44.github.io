@@ -11,7 +11,7 @@
 //  - Cache cleanup is scoped to this app's prefix, so sibling PWAs on the same
 //    origin (salient, focus, …) keep their offline caches.
 // Bump VERSION whenever a CORE/immutable asset changes.
-const VERSION = 'medcruise-v2';
+const VERSION = 'medcruise-v3';
 const PREFIX = 'medcruise-';
 
 const CORE = [
