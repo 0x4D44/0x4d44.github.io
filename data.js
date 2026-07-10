@@ -27,6 +27,17 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "tidecall",
+    title: "Tidecall",
+    tagline: "A tidal estimation-whist variant where Slack Water scores zero and High Tide scores double, so you must predict not only how many tricks you’ll win, but when. Sail eleven rounds against three AI rivals with soundings, a living tide table and Web Audio. Offline vanilla JS, canvas and CSS — no build step.",
+    url: "https://0x4d44.github.io/tidecall/",
+    illustration: "ill-tidecall",
+    date: "2026-07-09T22:00:00",
+    year: 2026,
+    tags: ["games", "maritime"],
+    real: true,
+  },
+  {
     slug: "broadband-speed-checker",
     title: "Line Rate",
     tagline: "A private broadband speed checker: run a live M-Lab NDT7 test, measure peak-sustained download and upload throughput, sample ping, request a GPS fix, and keep every result in browser-local history. Design-runtime React export with self-hosted assets — no backend, no build step.",
