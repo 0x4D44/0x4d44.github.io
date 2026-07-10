@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "emdtime",
+    title: "Decet",
+    tagline: "A base-10 timekeeping system on a re-tuned Earth: make the day exactly 10,000 SI seconds and the clock becomes a four-digit decimal counter — .5000 is midday — with a leap-free 4,000-day year. Live decimal clock, converter, calendar and an orbital-mechanics tuner. React + TypeScript on a fully-tested core; no backend.",
+    url: "https://0x4d44.github.io/emdtime/",
+    illustration: "ill-globe",
+    date: "2026-07-10T18:45:00",
+    year: 2026,
+    tags: ["science", "math", "software"],
+    real: true,
+  },
+  {
     slug: "cruise-line",
     title: "Wake & Fortune",
     tagline: "A deterministic cruise-line tycoon: start with one ageing ship, shape your brand, price cabins, design newbuilds and outsail four rival AIs across a 24-quarter campaign. Markets, routes, crew, debt and guest satisfaction all meet the balance sheet. Offline vanilla JavaScript on a tested simulation engine; installable PWA.",
