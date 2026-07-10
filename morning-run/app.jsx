@@ -997,6 +997,24 @@ function App() {
               </div>
             </div>
 
+            <button
+              className={"mr-lap-btn" + (holding ? " holding" : "")}
+              onPointerDown={lapHoldStart}
+              onPointerUp={lapHoldCancel}
+              onPointerLeave={lapHoldCancel}
+              onPointerCancel={lapHoldCancel}
+              onContextMenu={(e) => e.preventDefault()}
+              aria-label={cBegun ? "Hold to log a lap" : "Hold to start timing at the start line"}
+            >
+              <span className="mr-lap-fill" style={{ transitionDuration: holding ? HOLD_MS + "ms" : "120ms" }} />
+              <span className="mr-lap-label">{holding ? "HOLD…" : (cBegun ? "＋ HOLD FOR LAP" : "HOLD AT START LINE")}</span>
+            </button>
+            <div className="mr-row-2" style={{ width: "100%" }}>
+              <button className="mr-btn mr-btn-ghost" onClick={undoLap} disabled={!laps.length}>↩ Undo lap</button>
+              <button className="mr-btn mr-btn-ghost" onClick={cTogglePause} disabled={!cBegun}>{paused ? "Resume" : "Pause"}</button>
+            </div>
+            <button className="mr-btn mr-btn-stop mr-wide" onClick={finishCruise} style={{ marginTop: 10 }}>Finish</button>
+
             {laps.length > 0 && (
               <div className="mr-laplist">
                 <div className="mr-laplist-h"><span>lap</span><span>time</span><span>pace</span><span>vs prev</span></div>
@@ -1021,24 +1039,6 @@ function App() {
                 })}
               </div>
             )}
-
-            <button
-              className={"mr-lap-btn" + (holding ? " holding" : "")}
-              onPointerDown={lapHoldStart}
-              onPointerUp={lapHoldCancel}
-              onPointerLeave={lapHoldCancel}
-              onPointerCancel={lapHoldCancel}
-              onContextMenu={(e) => e.preventDefault()}
-              aria-label={cBegun ? "Hold to log a lap" : "Hold to start timing at the start line"}
-            >
-              <span className="mr-lap-fill" style={{ transitionDuration: holding ? HOLD_MS + "ms" : "120ms" }} />
-              <span className="mr-lap-label">{holding ? "HOLD…" : (cBegun ? "＋ HOLD FOR LAP" : "HOLD AT START LINE")}</span>
-            </button>
-            <div className="mr-row-2" style={{ width: "100%" }}>
-              <button className="mr-btn mr-btn-ghost" onClick={undoLap} disabled={!laps.length}>↩ Undo lap</button>
-              <button className="mr-btn mr-btn-ghost" onClick={cTogglePause} disabled={!cBegun}>{paused ? "Resume" : "Pause"}</button>
-            </div>
-            <button className="mr-btn mr-btn-stop mr-wide" onClick={finishCruise} style={{ marginTop: 10 }}>Finish</button>
           </div>
         </div>
       )}
