@@ -1,0 +1,13 @@
+{
+  "name": "Wake & Fortune — Cruise Line Tycoon",
+  "short_name": "Wake & Fortune",
+  "description": "Build, finance and operate a cruise line against four computer-controlled rivals.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061528",
+  "theme_color": "#071a31",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "cruise-line",
+    title: "Wake & Fortune",
+    tagline: "A deterministic cruise-line tycoon: start with one ageing ship, shape your brand, price cabins, design newbuilds and outsail four rival AIs across a 24-quarter campaign. Markets, routes, crew, debt and guest satisfaction all meet the balance sheet. Offline vanilla JavaScript on a tested simulation engine; installable PWA.",
+    url: "https://0x4d44.github.io/cruise-line/",
+    illustration: "ill-wake-fortune",
+    date: "2026-07-10T15:37:00",
+    year: 2026,
+    tags: ["games", "maritime", "finance"],
+    real: true,
+  },
+  {
     slug: "span-of-control",
     title: "Span of Control",
     tagline: "A wry Reigns-style card game about middle management: too senior for the coal-face, too junior for the direction, and scored — like all middle managers — purely on headcount. Swipe through emails, reorgs and quarterly rituals; collect laminated management wisdom. Vanilla JS on a deterministic, tested engine; installable offline PWA.",

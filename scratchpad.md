@@ -21,3 +21,10 @@ human-invoked review triages these — don't fix them inline.
   `keys.filter(k => k.startsWith('<app>-') && k !== VERSION)`), as `med-cruise/sw.js`
   now does. A one-line sweep across the sibling SWs. Found via the med-cruise
   offline review (Codex external pass).
+- [ ] 2026-07-10 — `cruise-line/engine.mjs:1161` validates the main numeric
+  save fields but not ship feature IDs, order/rival structure, liveries, or the
+  campaign status. A corrupted same-version localStorage payload can therefore
+  pass restoration and later crash rendering (for example at
+  `cruise-line/app.mjs:418`, which dereferences each feature ID). Normal saves
+  are valid and version-gated; harden the boundary with malformed-save tests in
+  a separate persistence pass.
