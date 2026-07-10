@@ -17,10 +17,10 @@ The game is vanilla HTML, CSS and JavaScript. It has no runtime dependencies and
 ## Test the simulation
 
 ```bash
-node --test cruise-line/engine.test.mjs
+node --test cruise-line/*.test.mjs
 ```
 
-The tests cover all focus/difficulty openings, seeded determinism, market and operating controls, ship design, construction and delivery, progression locks, refits, repairs, rival-AI stability and save restoration.
+The tests cover all focus/difficulty openings, seeded determinism, market and operating controls, ship design, construction and delivery, progression locks, refits, repairs, rival-AI stability, save restoration and the static offline shell.
 
 ## Architecture
 
