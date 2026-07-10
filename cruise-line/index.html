@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="description" content="Wake &amp; Fortune — build, finance and operate a cruise line against four computer-controlled rivals." />
+  <meta name="theme-color" content="#071a31" />
+  <meta name="color-scheme" content="dark" />
+  <title>Wake &amp; Fortune — Cruise Line Tycoon</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to the game</a>
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+
+  <section id="start-screen" class="start-screen" aria-labelledby="game-title">
+    <div class="hero-ocean" aria-hidden="true">
+      <div class="sun"></div>
+      <div class="hero-cloud cloud-a"></div>
+      <div class="hero-cloud cloud-b"></div>
+      <svg class="hero-ship" viewBox="0 0 760 250">
+        <defs>
+          <linearGradient id="heroHull" x1="0" x2="1"><stop stop-color="#163d70"/><stop offset="1" stop-color="#0a203e"/></linearGradient>
+          <linearGradient id="heroGlass" x1="0" x2="1"><stop stop-color="#59ddff"/><stop offset="1" stop-color="#9c80ff"/></linearGradient>
+        </defs>
+        <path class="hero-wake" d="M82 211 C250 191 452 226 710 202" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="13" stroke-linecap="round"/>
+        <path d="M92 164H684L629 216H168Z" fill="url(#heroHull)"/>
+        <path d="M130 124H626V167H130Z" fill="#fffaf0"/>
+        <path d="M171 88H582V125H171Z" fill="#f7fbff"/>
+        <path d="M220 54H536V90H220Z" fill="#fff"/>
+        <rect x="266" y="30" width="68" height="27" rx="8" fill="#ff7b5f"/>
+        <rect x="342" y="36" width="68" height="21" rx="7" fill="#ffcb55"/>
+        <path d="M568 93h42v31h-42z" fill="#eff7ff"/>
+        <g fill="url(#heroGlass)">
+          <rect x="150" y="138" width="48" height="12" rx="6"/><rect x="207" y="138" width="48" height="12" rx="6"/><rect x="264" y="138" width="48" height="12" rx="6"/><rect x="321" y="138" width="48" height="12" rx="6"/><rect x="378" y="138" width="48" height="12" rx="6"/><rect x="435" y="138" width="48" height="12" rx="6"/><rect x="492" y="138" width="48" height="12" rx="6"/><rect x="549" y="138" width="48" height="12" rx="6"/>
+          <rect x="195" y="101" width="52" height="11" rx="5"/><rect x="255" y="101" width="52" height="11" rx="5"/><rect x="315" y="101" width="52" height="11" rx="5"/><rect x="375" y="101" width="52" height="11" rx="5"/><rect x="435" y="101" width="52" height="11" rx="5"/><rect x="495" y="101" width="52" height="11" rx="5"/>
+          <rect x="244" y="67" width="48" height="10" rx="5"/><rect x="301" y="67" width="48" height="10" rx="5"/><rect x="358" y="67" width="48" height="10" rx="5"/><rect x="415" y="67" width="48" height="10" rx="5"/><rect x="472" y="67" width="48" height="10" rx="5"/>
+        </g>
+        <circle cx="636" cy="181" r="15" fill="#ffcc55"/><path d="M636 169v24M624 181h24" stroke="#0e3158" stroke-width="5"/>
+      </svg>
+      <div class="wave wave-1"></div><div class="wave wave-2"></div><div class="wave wave-3"></div>
+    </div>
+
+    <div class="start-copy">
+      <div class="eyebrow"><span>0x4D44 presents</span><span class="eyebrow-line"></span><span>Company strategy game</span></div>
+      <h1 id="game-title"><span>Wake</span> <i>&amp;</i> <span>Fortune</span></h1>
+      <p class="hero-kicker">Build the ships. Price the cabins. Outsail the competition.</p>
+      <p class="hero-body">Start with one ageing vessel and turn a promising little line into the world’s most valuable cruise brand. Every quarter, your product, routes, prices, people and balance sheet meet the market — and four rivals with plans of their own.</p>
+      <div class="hero-pills" aria-label="Game features">
+        <span>⚓ 5 company levels</span><span>🛳️ Custom shipyard</span><span>🌍 9 markets</span><span>🏁 4 rival AIs</span><span>💾 Auto-save</span>
+      </div>
+      <div class="start-actions">
+        <button id="continue-game" class="button button-primary button-large hidden" type="button"><span>Continue company</span><small id="continue-summary"></small></button>
+        <button id="new-game" class="button button-ghost button-large" type="button">Start a new line</button>
+      </div>
+      <p class="start-footnote">A deterministic 24-quarter campaign. No accounts, adverts or network connection required.</p>
+    </div>
+
+    <form id="new-game-form" class="setup-drawer hidden" aria-labelledby="setup-title">
+      <div class="setup-head">
+        <div><p class="section-kicker">Company formation</p><h2 id="setup-title">Name the line. Choose the promise.</h2></div>
+        <button id="close-setup" class="icon-button" type="button" aria-label="Close company setup">×</button>
+      </div>
+      <label class="field-label" for="company-name">Cruise line name</label>
+      <div class="name-row"><input id="company-name" name="companyName" maxlength="36" value="North Star Cruises" autocomplete="organization" /><button id="random-name" class="button button-small button-ghost" type="button">Surprise me</button></div>
+      <fieldset class="setup-fieldset"><legend>Brand focus</legend><div id="focus-options" class="focus-options"></div></fieldset>
+      <fieldset class="setup-fieldset"><legend>Difficulty</legend><div id="difficulty-options" class="difficulty-options"></div></fieldset>
+      <div class="setup-footer"><p>Focus shapes guest demand and your starting ship, but you can rebrand later.</p><button class="button button-primary" type="submit">Launch the company</button></div>
+    </form>
+  </section>
+
+  <div id="game-shell" class="game-shell hidden">
+    <header class="topbar">
+      <button id="brand-home" class="brand" type="button" aria-label="Open the bridge">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 48 48"><path d="M8 30h32l-5 8H13z"/><path d="M14 19h21v12H14z"/><path d="M20 12h10v8H20z"/><path d="M5 41c7-3 12 3 19 0s12 3 19 0" fill="none"/></svg></span>
+        <span><strong id="company-title">North Star Cruises</strong><small id="company-focus">Premium escape</small></span>
+      </button>
+      <div class="topbar-centre">
+        <div class="quarter-block"><span id="quarter-label">Year 1 · Q1</span><strong id="season-label">Winter</strong></div>
+        <div class="level-block"><div class="level-line"><span id="level-badge">⚓</span><strong id="level-name">Harbour upstart</strong><span id="level-count">Level 1 / 5</span></div><div class="level-track" aria-label="Progress to next level"><span id="level-progress"></span></div></div>
+      </div>
+      <div class="topbar-actions">
+        <div class="top-stat"><span>Cash</span><strong id="cash-stat">£240m</strong></div>
+        <div class="top-stat desktop-only"><span>Forecast</span><strong id="profit-stat">+£0m</strong></div>
+        <button id="sound-toggle" class="icon-button" type="button" aria-label="Mute sound">♫</button>
+        <button id="advance-quarter" class="button button-primary advance-button" type="button"><span>Set sail</span><small>Run quarter</small></button>
+      </div>
+    </header>
+
+    <nav id="game-nav" class="game-nav" aria-label="Company departments">
+      <button class="nav-tab active" data-tab="bridge" type="button"><span>◈</span><strong>Bridge</strong><small>Overview</small></button>
+      <button class="nav-tab" data-tab="fleet" type="button"><span>▰</span><strong>Fleet</strong><small>Ships</small></button>
+      <button class="nav-tab" data-tab="markets" type="button"><span>◎</span><strong>Markets</strong><small>Routes &amp; fares</small></button>
+      <button class="nav-tab" data-tab="brand" type="button"><span>✦</span><strong>Brand</strong><small>Product &amp; people</small></button>
+      <button class="nav-tab" data-tab="shipyard" type="button"><span>⌁</span><strong>Shipyard</strong><small>Newbuilds</small><em id="shipyard-unlock" class="nav-badge hidden">New</em></button>
+      <button class="nav-tab" data-tab="finance" type="button"><span>↗</span><strong>Finance</strong><small>Value &amp; debt</small></button>
+    </nav>
+
+    <main id="main-content" class="main-content" tabindex="-1">
+      <section id="panel-bridge" class="tab-panel active"><div id="bridge-content"></div></section>
+      <section id="panel-fleet" class="tab-panel"><div id="fleet-content"></div></section>
+      <section id="panel-markets" class="tab-panel"><div id="markets-content"></div></section>
+      <section id="panel-brand" class="tab-panel"><div id="brand-content"></div></section>
+      <section id="panel-shipyard" class="tab-panel"><div id="shipyard-content"></div></section>
+      <section id="panel-finance" class="tab-panel"><div id="finance-content"></div></section>
+    </main>
+
+    <footer class="statusbar">
+      <span id="save-status">● Saved locally</span><span id="forecast-status">Forecast updates as you plan.</span><button id="help-button" type="button">How to play</button><button id="reset-button" type="button">New company</button>
+    </footer>
+  </div>
+
+  <div id="modal-layer" class="modal-layer hidden" role="presentation">
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <section id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button id="modal-close" class="icon-button modal-close" type="button" aria-label="Close dialog">×</button>
+      <div id="modal-content"></div>
+    </section>
+  </div>
+
+  <div id="toast-region" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+  <noscript><div class="noscript">Wake &amp; Fortune needs JavaScript to run.</div></noscript>
+  <script type="module" src="app.mjs"></script>
+</body>
+</html>

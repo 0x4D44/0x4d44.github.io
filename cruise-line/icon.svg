@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Wake and Fortune cruise ship icon">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5bdef9"/><stop offset="1" stop-color="#927bff"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#1274a8"/><stop offset="1" stop-color="#061528"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#071a31"/>
+  <circle cx="385" cy="119" r="58" fill="#ffd166" opacity=".95"/>
+  <path d="M0 322c81-34 148 29 236 0s173 33 276-5v195H0z" fill="url(#sea)"/>
+  <path d="M75 276h362l-48 104H133z" fill="#08152b"/>
+  <path d="M116 217h282v64H116z" fill="#f4f8fc"/>
+  <path d="M154 165h211v55H154z" fill="#fff"/>
+  <path d="M200 120h118v48H200z" fill="#f7fbff"/>
+  <rect x="223" y="86" width="62" height="37" rx="10" fill="#ff8164"/>
+  <g fill="url(#sky)">
+    <rect x="137" y="239" width="39" height="12" rx="6"/><rect x="187" y="239" width="39" height="12" rx="6"/><rect x="237" y="239" width="39" height="12" rx="6"/><rect x="287" y="239" width="39" height="12" rx="6"/><rect x="337" y="239" width="39" height="12" rx="6"/>
+    <rect x="177" y="183" width="35" height="11" rx="5"/><rect x="222" y="183" width="35" height="11" rx="5"/><rect x="267" y="183" width="35" height="11" rx="5"/><rect x="312" y="183" width="35" height="11" rx="5"/>
+    <rect x="217" y="138" width="30" height="10" rx="5"/><rect x="257" y="138" width="30" height="10" rx="5"/>
+  </g>
+  <path d="M38 411c80-35 139 31 218 0s139 30 218-3" fill="none" stroke="#dff8ff" stroke-width="18" stroke-linecap="round" opacity=".85"/>
+</svg>
