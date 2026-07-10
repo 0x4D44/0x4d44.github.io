@@ -115,6 +115,15 @@ real origin for Babel:
 python -m http.server 8000      # then open http://localhost:8000/
 ```
 
+Native ES-module documents (`*.mjs`, currently `cruise-line`) also require a
+JavaScript MIME type. Python 3.14 on Windows serves `.mjs` as `text/plain`, which
+Chrome refuses for a module script. Register the type before starting that
+preview:
+
+```
+python -c "import http.server,mimetypes; mimetypes.add_type('text/javascript','.mjs'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler,port=8000,bind='127.0.0.1')"
+```
+
 ## Deployment
 
 GitHub Pages serves `main` directly. Push to `main` to deploy. CDN objects can

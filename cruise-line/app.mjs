@@ -44,6 +44,7 @@ import {
   validateShipDesign,
   quoteShipDesign,
 } from "./engine.mjs";
+import { ADVISERS, TOUR_TABS, guidanceFor } from "./guidance.mjs";
 import { clearGame, loadGame, loadPrefs, saveGame, savePrefs } from "./storage.mjs";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -207,7 +208,7 @@ function initialiseShipyard() {
   };
 }
 
-function startGame(nextState) {
+function startGame(nextState, showIntroduction = false) {
   state = nextState;
   state.selectedTab = state.selectedTab || "bridge";
   marketFilter = "all";
@@ -217,6 +218,7 @@ function startGame(nextState) {
   renderAll();
   persist();
   $("#main-content").focus({ preventScroll: true });
+  if (showIntroduction && !prefs.guidanceTourComplete) requestAnimationFrame(openGuidanceIntroduction);
 }
 
 function renderAll() {
@@ -271,7 +273,24 @@ function renderPanel(tab) {
 }
 
 function panelHeader(kicker, title, description, actions = "") {
-  return `<header class="panel-head"><div><p class="section-kicker">${e(kicker)}</p><h1>${e(title)}</h1><p>${e(description)}</p></div>${actions ? `<div class="panel-actions">${actions}</div>` : ""}</header>`;
+  const advisers = `<button class="button button-small button-ghost" data-action="open-guidance">${prefs.guidanceEnabled === false ? "Ask the advisers" : "Board advisers"}</button>`;
+  return `<header class="panel-head"><div><p class="section-kicker">${e(kicker)}</p><h1>${e(title)}</h1><p>${e(description)}</p></div><div class="panel-actions">${advisers}${actions}</div></header>`;
+}
+
+function guidanceCard(tab, forecast) {
+  if (prefs.guidanceEnabled === false) return "";
+  const guidance = guidanceFor({ state, forecast, tab });
+  const touring = !prefs.guidanceTourComplete;
+  const finalStep = touring && guidance.tourStep === TOUR_TABS.length;
+  const action = finalStep
+    ? `<button class="button button-small button-primary" data-action="complete-guidance">Finish induction</button>`
+    : `<button class="button button-small button-primary" data-tab-target="${e(guidance.action.tab)}">${e(guidance.action.label)} →</button>`;
+  return `<aside class="adviser-card" style="--adviser:${e(guidance.adviser.colour)}">
+    <button class="adviser-dismiss" type="button" data-action="hide-guidance" aria-label="Hide board advisers">×</button>
+    <div class="adviser-avatar" aria-hidden="true">${guidance.adviser.icon}</div>
+    <div class="adviser-copy"><p class="adviser-kicker">${touring && guidance.tourStep > 0 ? `Board induction · ${guidance.tourStep} / ${TOUR_TABS.length}` : "Board adviser"}</p><h2>${e(guidance.title)}</h2><p>${e(guidance.body)}</p><small>${e(guidance.adviser.name)} · ${e(guidance.adviser.role)}</small></div>
+    <div class="adviser-action">${action}</div>
+  </aside>`;
 }
 
 function currentRisk(forecast) {
@@ -301,7 +320,7 @@ function routeMap() {
     const y = mapY(market.map.y);
     return `
     <g class="map-port ${unlocked.has(market.id) ? "" : "locked"}" data-market-jump="${e(market.id)}" style="--port-colour:${unlocked.has(market.id) ? focusColour : "#70879b"}" transform="translate(${market.map.x} ${y})" role="button" tabindex="0" aria-label="${e(market.name)}${unlocked.has(market.id) ? "" : `, unlocks at level ${market.unlockLevel}`}">
-      <circle r="1.65"></circle><text y="3.8">${e(market.short)}</text>
+      <circle class="map-hit" r="4.5"></circle><circle r="1.65"></circle><text y="3.8">${e(market.short)}</text>
     </g>`;
   }).join("");
   return `<div class="route-map">
@@ -347,7 +366,8 @@ function renderBridge() {
   const risk = currentRisk(forecast);
   const last = state.company.history.at(-1);
   const content = $("#bridge-content");
-  content.innerHTML = `${panelHeader("Executive bridge", "Your line at a glance", "Deploy the fleet, tune the proposition and run the next quarter when the plan is ready.", `<button class="button button-small button-ghost" data-action="open-help">How the quarter works</button>`)}
+  content.innerHTML = `${panelHeader("Executive bridge", "Your line at a glance", "Deploy the fleet, tune the proposition and run the next quarter when the plan is ready.")}
+    ${guidanceCard("bridge", forecast)}
     <div class="kpi-grid">
       <div class="kpi" style="--kpi:var(--green)"><span class="kpi-label">Forecast profit</span><strong class="kpi-value ${classForNumber(forecast.operatingProfit)}">${money(forecast.operatingProfit, true)}</strong><span class="kpi-delta">after interest and central costs</span></div>
       <div class="kpi" style="--kpi:var(--cyan)"><span class="kpi-label">Company value</span><strong class="kpi-value">${money(enterpriseValue(state))}</strong><span class="kpi-delta">fleet, cash and brand less debt</span></div>
@@ -402,6 +422,7 @@ function renderFleet() {
   const forecast = forecastQuarter(state);
   const results = Object.fromEntries(forecast.shipResults.map((result) => [result.shipId, result]));
   $("#fleet-content").innerHTML = `${panelHeader("Fleet operations", "Every ship is a strategy", "Deploy ships to unlocked markets, monitor condition and use refits to keep the product relevant.", `<button class="button button-small button-primary" data-tab-target="shipyard">Order a ship</button>`)}
+    ${guidanceCard("fleet", forecast)}
     ${state.company.orders.length ? `<article class="card" style="margin-bottom:.85rem"><div class="card-head"><div><h2>Under construction</h2><p>Capacity arrives only when the yard counter reaches zero.</p></div></div><div class="card-pad order-list">${state.company.orders.map((order) => {
       const progress = 1 - order.quartersRemaining / Math.max(1, order.ship.buildQuarters);
       return `<div class="order-row"><span class="milestone-badge" style="width:42px;height:42px;font-size:1.2rem">${HULLS[order.ship.hullId].icon}</span><div><h4>${e(order.ship.name)}</h4><p>${e(HULLS[order.ship.hullId].name)} · ${integer(order.ship.pax)} guests · ${order.finance} finance</p><div class="meter order-progress"><span style="width:${Math.max(8,progress*100)}%"></span></div></div><strong>${order.quartersRemaining}Q left</strong></div>`;
@@ -448,6 +469,7 @@ function renderMarkets() {
   });
   const actions = `<div class="segmented" aria-label="Filter markets"><button class="${marketFilter === "all" ? "active" : ""}" data-market-filter="all">All</button><button class="${marketFilter === "unlocked" ? "active" : ""}" data-market-filter="unlocked">Unlocked</button><button class="${marketFilter === "deployed" ? "active" : ""}" data-market-filter="deployed">Deployed</button></div>`;
   $("#markets-content").innerHTML = `${panelHeader("Revenue management", "Markets, fares and competition", "Seasonality changes every quarter. Your rivals have already filed their deployments and prices, so use the information.", actions)}
+    ${guidanceCard("markets", forecast)}
     <div class="market-grid">${cards.map((market) => {
       const isUnlocked = unlocked.has(market.id);
       const result = resultByMarket[market.id];
@@ -482,8 +504,9 @@ function renderBrand() {
     { id: "sustainabilitySpend", label: "Efficiency programme", description: "Procurement, itinerary and energy work that improves the long-run sustainability score.", min: 0, max: 18, step: .5, value: state.company.sustainabilitySpend, format: (v) => money(v), note: "Per quarter" },
   ];
   $("#brand-content").innerHTML = `${panelHeader("Commercial strategy", "What should your line stand for?", "A clear promise creates demand. Marketing finds guests; people and operations decide whether they come back.")}
+    ${guidanceCard("brand", forecast)}
     <article class="card" style="margin-bottom:.85rem"><div class="card-head"><div><h2>Brand position</h2><p>Rebranding costs cash and two reputation points while customers relearn the promise.</p></div><span class="inline-badge" style="border-color:${e(focus.colour)}">${focus.icon} Current: ${e(focus.name)}</span></div><div class="card-pad"><div class="focus-grid">${Object.values(FOCUSES).map((option) => `<button class="focus-card ${option.id === state.company.focusId ? "active" : ""}" style="--focus:${e(option.colour)}" data-action="rebrand" data-focus="${e(option.id)}" ${option.id === state.company.focusId ? "disabled" : ""}><span class="focus-icon">${option.icon}</span><h3>${e(option.name)}</h3><p>${e(option.tagline)}</p><small>${option.id === state.company.focusId ? "Current proposition" : `Rebrand: ${money(14 + state.company.reputation * .18)}`}</small></button>`).join("")}</div></div></article>
-    <div class="grid grid-2">
+    <div class="grid grid-2 brand-controls">
       <article class="card"><div class="card-head"><div><h2>Marketing mix</h2><p>Spend is £m per quarter. Different channels fit different audiences.</p></div><strong>${money(marketingTotal)}</strong></div><div class="control-list">${Object.values(MARKETING_CHANNELS).map((channel) => `<div class="control-row"><div class="control-copy"><h3>${channel.icon} ${e(channel.name)}</h3><p>${e(channel.description)}</p></div><input type="range" min="0" max="18" step=".5" value="${state.company.marketing[channel.id]}" data-marketing="${e(channel.id)}"/><div class="control-value"><strong data-marketing-output="${e(channel.id)}">${money(state.company.marketing[channel.id])}</strong><span>per quarter</span></div></div>`).join("")}</div></article>
       <article class="card"><div class="card-head"><div><h2>People &amp; operations</h2><p>Cost discipline matters, but neglected ships and guests remember.</p></div></div><div class="control-list">${operations.map((control) => `<div class="control-row"><div class="control-copy"><h3>${e(control.label)}</h3><p>${e(control.description)}</p></div><input type="range" min="${control.min}" max="${control.max}" step="${control.step}" value="${control.value}" data-operation="${e(control.id)}"/><div class="control-value"><strong data-operation-output="${e(control.id)}">${e(control.format(control.value))}</strong><span>${e(control.note)}</span></div></div>`).join("")}</div></article>
     </div>
@@ -506,6 +529,7 @@ function financeSplit(cost, finance) {
 
 function renderShipyard() {
   normaliseShipyard();
+  const forecast = forecastQuarter(state);
   const level = levelForState(state).id;
   const quote = quoteShipDesign(shipyardDesign);
   const hull = HULLS[shipyardDesign.hullId];
@@ -514,6 +538,7 @@ function renderShipyard() {
   const canAfford = state.company.cash - split.cash >= -35 && split.debt <= availableCredit(state) + .01;
   const slotText = `${shipyardDesign.features.length} / ${hull.featureSlots} feature slots`;
   $("#shipyard-content").innerHTML = `${panelHeader("Newbuild programme", "Design the next competitive advantage", "Hull scale, cabin density, speed and features alter both the economics and which guests want to sail.", `<span class="inline-badge">Credit available ${money(availableCredit(state))}</span>`)}
+    ${guidanceCard("shipyard", forecast)}
     <div class="shipyard-layout">
       <div class="card builder">
         <section class="builder-section"><h2>1 · Hull class</h2><p>Scale brings lower unit costs, but a larger fixed bet and fewer suitable markets.</p><div class="option-grid">${Object.values(HULLS).map((option) => `<label class="option-choice"><input type="radio" name="hull" value="${e(option.id)}" data-design-field="hullId" ${shipyardDesign.hullId === option.id ? "checked" : ""} ${option.unlockLevel <= level ? "" : "disabled"}/><span class="option-tile"><strong>${option.icon} ${e(option.name)}</strong><span>${e(option.description)}</span><small>${option.unlockLevel <= level ? `${money(option.cost)} base · ${integer(option.pax)} guests` : `Unlocks at level ${option.unlockLevel}`}</small></span></label>`).join("")}</div></section>
@@ -576,6 +601,7 @@ function renderFinance() {
   const chartHistory = state.company.history.map((item) => ({ ...item, value: item.value }));
   if (!chartHistory.length || chartHistory.at(-1).quarter !== state.quarter) chartHistory.push({ label: quarterLabel(state.quarter), value });
   $("#finance-content").innerHTML = `${panelHeader("Capital & competition", "Finance the fleet without losing the company", "Company value combines cash, ships and brand strength, less debt. The final ranking also rewards reputation and market share.", `<span class="inline-badge">Borrowing room ${money(availableCredit(state))}</span>`)}
+    ${guidanceCard("finance", forecast)}
     <div class="finance-grid">
       <div class="grid">
         <article class="card"><div class="card-head"><div><h2>Company value</h2><p>Quarter-end history; current plan shown at the right edge.</p></div><strong>${money(value)}</strong></div><div class="card-pad">${chartSvg(chartHistory)}</div></article>
@@ -611,8 +637,19 @@ function closeModal(force = false) {
   lastFocused?.focus?.();
 }
 
+function adviserRoster() {
+  return `<div class="adviser-roster">${Object.values(ADVISERS).map((adviser) => `<div class="adviser-person" style="--adviser:${e(adviser.colour)}"><span>${adviser.icon}</span><div><b>${e(adviser.name)}</b><small>${e(adviser.role)}</small></div></div>`).join("")}</div>`;
+}
+
 function openHelp() {
-  openModal(`<div class="modal-inner"><p class="modal-kicker">How to play</p><h2 id="modal-title">One quarter at a time</h2><p class="modal-lede">Wake &amp; Fortune is a company game, not a clicker. The board forecast is deterministic from your current plan; an event is drawn when you set sail.</p><div class="help-steps"><div class="help-step"><b>1 · Position</b><p>Choose a brand promise and build ships that suit the guests and markets you pursue.</p></div><div class="help-step"><b>2 · Allocate</b><p>Deploy every available ship, set fares, fund marketing and decide how much care the operation receives.</p></div><div class="help-step"><b>3 · Compete</b><p>Rivals publish capacity before each quarter. Out-design, out-price or route around them.</p></div><div class="help-step"><b>4 · Finance</b><p>Newbuild deposits are paid immediately. Debt creates capacity sooner but interest and credit limits bite.</p></div><div class="help-step"><b>5 · Advance</b><p>Reputation, company value, fleet size and lifetime passengers unlock five company levels.</p></div><div class="help-step"><b>6 · Win</b><p>Finish the 24-quarter campaign at the top with a global brand, or achieve level 5 and the #1 rank early.</p></div></div><div class="info-box" style="margin-top:1rem">Tip: the forecast excludes surprise events, but it fully reflects every route, fare, ship and spending control.</div><div class="modal-actions"><button class="button button-primary" data-action="close-modal">Back to the bridge</button></div></div>`);
+  const guidanceAction = prefs.guidanceEnabled === false
+    ? `<button class="button button-secondary" data-action="enable-guidance">Show advisers</button>`
+    : `<button class="button button-ghost" data-action="hide-guidance">Hide advisers</button>`;
+  openModal(`<div class="modal-inner"><p class="modal-kicker">How to play</p><h2 id="modal-title">One quarter at a time</h2><p class="modal-lede">Wake &amp; Fortune is a company game, not a clicker. The forecast is deterministic from your current plan; the random event arrives only when you press Set sail.</p>${adviserRoster()}<div class="help-steps"><div class="help-step"><b>1 · Read</b><p>Start on the Bridge. Profit, occupancy, satisfaction, value and share describe the plan before chance intervenes.</p></div><div class="help-step"><b>2 · Deploy</b><p>Match each ship to a market, then compare seasonality, rival capacity and fare positioning.</p></div><div class="help-step"><b>3 · Deliver</b><p>Fund service, crew and maintenance before using marketing to fill the remaining cabins.</p></div><div class="help-step"><b>4 · Finance</b><p>Newbuild cash and debt leave now; useful capacity arrives after the yard finishes.</p></div><div class="help-step"><b>5 · Advance</b><p>Return to the live forecast, make the trade-off deliberately, then Set sail.</p></div><div class="help-step"><b>6 · Win</b><p>Grow value, reputation, fleet and passengers across 24 quarters while outranking four rivals.</p></div></div><div class="info-box" style="margin-top:1rem">The adviser strip changes with the active department and warns when the current plan crosses a dangerous threshold.</div><div class="modal-actions">${guidanceAction}<button class="button button-ghost" data-action="replay-guidance">Replay board induction</button><button class="button button-ghost" data-action="reset-game">New company</button><button class="button button-primary" data-action="close-modal">Back to the company</button></div></div>`);
+}
+
+function openGuidanceIntroduction() {
+  openModal(`<div class="modal-inner"><p class="modal-kicker">Mandatory board induction</p><h2 id="modal-title">Three advisers have been assigned to your experiment</h2><p class="modal-lede">They will explain the five-department decision loop, flag dangerous plans and occasionally object to the concept of uncontrolled buoyancy.</p>${adviserRoster()}<div class="info-box" style="margin-top:1rem">Follow the adviser strip from Bridge → Fleet → Markets → Brand → Finance. The numbers update before you commit the quarter.</div><div class="modal-actions"><button class="button button-ghost" data-action="hide-guidance">Skip the induction</button><button class="button button-primary" data-action="start-guided-tour" data-autofocus>Begin guided tour</button></div></div>`);
 }
 
 function openRefit(shipId) {
@@ -668,7 +705,39 @@ function handleButton(button) {
   const action = button.dataset.action;
   if (!action) return;
   if (action === "close-modal") { closeModal(); return; }
-  if (action === "open-help") { openHelp(); return; }
+  if (action === "open-help" || action === "open-guidance") { openHelp(); return; }
+  if (action === "start-guided-tour" || action === "replay-guidance") {
+    prefs.guidanceEnabled = true;
+    prefs.guidanceTourComplete = false;
+    savePrefs(prefs);
+    closeModal();
+    switchTab("bridge");
+    return;
+  }
+  if (action === "complete-guidance") {
+    prefs.guidanceEnabled = true;
+    prefs.guidanceTourComplete = true;
+    savePrefs(prefs);
+    switchTab("bridge");
+    toast("Board induction complete. The advisers will keep watching each department.", "success", "✓");
+    return;
+  }
+  if (action === "hide-guidance") {
+    prefs.guidanceEnabled = false;
+    prefs.guidanceTourComplete = true;
+    savePrefs(prefs);
+    if (!$("#modal-layer").classList.contains("hidden")) closeModal();
+    if (state) renderPanel(state.selectedTab);
+    return;
+  }
+  if (action === "enable-guidance") {
+    prefs.guidanceEnabled = true;
+    savePrefs(prefs);
+    closeModal();
+    if (state) renderPanel(state.selectedTab);
+    return;
+  }
+  if (action === "reset-game") { closeModal(); resetGamePrompt(); return; }
   if (action === "refit-ship") { openRefit(button.dataset.ship); return; }
   if (action === "choose-refit") {
     const ship = state.company.fleet.find((item) => item.id === button.dataset.ship);
@@ -868,7 +937,7 @@ function bindEvents() {
     const companyName = String(data.get("companyName") || "North Star Cruises").trim();
     const nextState = createNewGame({ companyName, focusId: data.get("focusId"), difficulty: data.get("difficulty"), seed: `${companyName}-${data.get("focusId")}-${Date.now()}` });
     beep("success");
-    startGame(nextState);
+    startGame(nextState, true);
   });
   $("#brand-home").addEventListener("click", () => switchTab("bridge"));
   $("#advance-quarter").addEventListener("click", runQuarter);

@@ -48,7 +48,7 @@ export function clearGame() {
 }
 
 export function loadPrefs() {
-  const defaults = { muted: false, reducedMotion: false, compactNumbers: false };
+  const defaults = { muted: false, reducedMotion: false, compactNumbers: false, guidanceEnabled: true, guidanceTourComplete: false };
   if (!storageAvailable()) return defaults;
   try {
     return { ...defaults, ...(JSON.parse(localStorage.getItem(PREFS_KEY) || "null") || {}) };

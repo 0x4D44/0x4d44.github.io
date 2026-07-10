@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "wake-and-fortune-";
-const CACHE = `${CACHE_PREFIX}v1`;
+const CACHE = `${CACHE_PREFIX}v2`;
 const ASSETS = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "./engine.mjs",
   "./content.mjs",
   "./storage.mjs",
+  "./guidance.mjs",
   "./icon.svg",
   "./manifest.webmanifest",
 ];
