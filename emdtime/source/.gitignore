@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+dist-ssr/
+
+# vite / vitest / ts caches
+.vite/
+*.tsbuildinfo
+coverage/
+
+# editor / os
+.DS_Store
+*.local
+.idea/
+.vscode/
+
+# logs & temp
+*.log
+*.tmp
+
+# python (solver tooling)
+__pycache__/
+.venv/
+venv/
