@@ -1,0 +1,7 @@
+{
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node engine.test.js && node validate-static.test.js"
+  }
+}

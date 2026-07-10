@@ -1,0 +1,19 @@
+{
+  "name": "Tidecall",
+  "short_name": "Tidecall",
+  "description": "Estimation whist where Slack Water scores zero and High Tide scores double.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#061a22",
+  "theme_color": "#071a22",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

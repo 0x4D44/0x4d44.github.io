@@ -3,6 +3,12 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-10 — Service-worker `CacheStorage` is shared across the whole
+  `0x4d44.github.io` origin, not isolated by the worker's `/slug/` scope. Each
+  document PWA must namespace its cache and delete only stale keys with its own
+  prefix during activation; filtering every key except the current cache wipes
+  the offline assets of sibling almanac apps. Add a per-document regression
+  assertion whenever a new service worker ships.
 - 2026-07-09 — A Workflow lens agent that dies mid-run (account session
   limit, auth drop) surfaces in the tool result's `<failures>` list, but the
   script's own aggregation happily returns its stage as an EMPTY findings

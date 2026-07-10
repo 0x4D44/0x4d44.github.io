@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node humanity-retention/tests/engine.test.mjs && node humanity-retention/tests/validate-static.mjs && node shipshape/tests/engine.test.mjs && node shipshape/tests/storage.test.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/engine.test.mjs && node span-of-control/tests/content.test.mjs && node span-of-control/tests/validate-static.mjs",
-    "build": "node humanity-retention/tests/validate-static.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/validate-static.mjs"
+    "test": "node humanity-retention/tests/engine.test.mjs && node humanity-retention/tests/validate-static.mjs && node shipshape/tests/engine.test.mjs && node shipshape/tests/storage.test.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/engine.test.mjs && node span-of-control/tests/content.test.mjs && node span-of-control/tests/validate-static.mjs && node tidecall/engine.test.js && node tidecall/validate-static.test.js",
+    "build": "node humanity-retention/tests/validate-static.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/validate-static.mjs && node tidecall/validate-static.test.js"
   }
 }
