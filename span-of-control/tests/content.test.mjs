@@ -93,6 +93,32 @@ for (const card of CARDS) {
   }
 }
 
+/* mechanics: a staged arc must be strictly ordered. engine.draw() plays a queued
+   follow-up only if it is still isEligible(), and isEligible() knows nothing about
+   arc order — so a `once` follow-up target must be unlocked by the very choice
+   that queues it. Otherwise the open deck can draw the finale before its own
+   set-up (up-vision-final's 82 slides landing before v7's 31), and because it is
+   `once` the queued copy is then silently discarded.
+   Repeatable pool cards are exempt: the reorg pair share the engine's reorg_looms
+   flag and are deliberately unordered. */
+{
+  const byId = new Map(CARDS.map((c) => [c.id, c]));
+  for (const card of CARDS) {
+    for (const side of ["left", "right"]) {
+      const followup = card[side].followup;
+      if (!followup) continue;
+      const target = byId.get(followup.card);
+      if (!target || !target.once) continue;
+      const required = target.requiresFlags || [];
+      const granted = card[side].setFlags || [];
+      assert.ok(required.length,
+        `${card.id}.${side} -> ${target.id}: a once follow-up must be flag-gated, else the deck draws it unbidden`);
+      assert.ok(required.some((f) => granted.includes(f)),
+        `${card.id}.${side} -> ${target.id}: must set one of its gate flags [${required}], sets [${granted}]`);
+    }
+  }
+}
+
 /* mechanics: no cheap bespoke endings (must sit behind once or a flag gate) */
 for (const card of CARDS) {
   for (const side of ["left", "right"]) {

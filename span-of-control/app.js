@@ -237,7 +237,13 @@ function choose(side) {
 }
 
 /* ------------------------------ homily overlay ------------------------------ */
+// The overlay declares role="dialog" aria-modal="true", so it must behave like a
+// modal: the page behind it goes `inert` (out of the tab order and the a11y
+// tree), focus moves into the dialog, and lands back where it started on close.
 let homilyContinue = null;
+let homilyReturnFocus = null;
+const behindOverlay = () => [document.querySelector("header.chrome"), $("main")];
+
 function showHomily(id, done) {
   const homily = homilyById(id);
   if (!homily) { done(); return; }
@@ -247,12 +253,20 @@ function showHomily(id, done) {
   $("wisdom-count").textContent = String(store.homilies.length);
   $("homily-text").textContent = `“${homily.text}”`;
   $("homily-attr").textContent = `— ${homily.attribution}`;
+  // capture focus before inerting: inerting its ancestor would blur it first
+  homilyReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   $("homily-pop").classList.remove("hidden");
+  for (const el of behindOverlay()) el?.setAttribute("inert", "");
+  $("btn-homily-ok").focus();
   sfx.chime();
   homilyContinue = done;
 }
 $("btn-homily-ok").addEventListener("click", () => {
   $("homily-pop").classList.add("hidden");
+  for (const el of behindOverlay()) el?.removeAttribute("inert"); // before refocusing
+  const back = homilyReturnFocus;
+  homilyReturnFocus = null;
+  if (back?.isConnected) back.focus();
   const go = homilyContinue;
   homilyContinue = null;
   if (go) go();

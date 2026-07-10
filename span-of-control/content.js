@@ -2967,6 +2967,9 @@ export const CARDS = [
         "team": 3,
         "you": 3
       },
+      "setFlags": [
+        "up-vision-tightened"
+      ],
       "followup": {
         "card": "up-vision-final",
         "delay": 2
@@ -2979,6 +2982,9 @@ export const CARDS = [
         "leadership": 5,
         "you": -5
       },
+      "setFlags": [
+        "up-vision-tightened"
+      ],
       "homily": "h-up-vision",
       "followup": {
         "card": "up-vision-final",
@@ -2995,7 +3001,7 @@ export const CARDS = [
     "text": "The Vision Deck premieres at the offsite. It is eighty-two slides and opens with a drone shot of a bridge. Your name appears once, under ‘contributors’, between Legal and the drone operator.",
     "once": true,
     "requiresFlags": [
-      "up-vision"
+      "up-vision-tightened"
     ],
     "left": {
       "label": "Attend the readout; applaud your own slide",

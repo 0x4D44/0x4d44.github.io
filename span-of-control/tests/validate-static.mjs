@@ -33,7 +33,7 @@ assert.ok(manifest.icons?.length, "manifest has icons");
 for (const icon of manifest.icons) assert.ok(existsSync(join(appDir, icon.src)), `manifest icon exists: ${icon.src}`);
 
 const sw = readFileSync(join(appDir, "sw.js"), "utf8");
-assert.match(sw, /CACHE_NAME = CACHE_PREFIX \+ "v1"/, "sw cache version pinned (bump this assertion WITH the sw version)");
+assert.match(sw, /CACHE_NAME = CACHE_PREFIX \+ "v2"/, "sw cache version pinned (bump this assertion WITH the sw version)");
 assert.match(sw, /startsWith\(CACHE_PREFIX\)/, "sw cleans only this app's cache family");
 for (const file of mustExist.filter((f) => f !== "sw.js")) {
   assert.ok(sw.includes(`"${file}"`), `service worker precaches ${file}`);
