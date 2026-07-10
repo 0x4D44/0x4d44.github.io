@@ -2,7 +2,7 @@
 // change or installed clients will keep the old build (and keep the test in
 // tests/validate-static.mjs in step with the name).
 const CACHE_PREFIX = "span-of-control-";
-const CACHE_NAME = CACHE_PREFIX + "v1";
+const CACHE_NAME = CACHE_PREFIX + "v2";
 
 const ASSETS = [
   "./",
