@@ -751,7 +751,34 @@ export const SHIP_NAMES = [
 ];
 
 export const COMPANY_NAMES = [
-  "North Star Cruises", "Horizon & Tide", "Starboard Voyages", "Aperture Cruise Co.", "Coral Crown", "Compass & Wake", "Blue Lantern Cruises", "Silver Current",
+  "Ministry of Mild Peril Voyages",
+  "The Admiralty of Snacks",
+  "Mandatory Leisure Directorate",
+  "Mostly Afloat plc",
+  "Committee for Applied Deckchairs",
+  "Bureau of Acceptable Sunsets",
+  "Maritime Optimisation Laboratory",
+  "Department of Buoyancy",
+  "Compulsory Horizons Group",
+  "Upper Deck Research Collective",
+  "Wake Compliance Authority",
+  "Cruise Dynamics (Probably)",
+  "Oceanic Amenities Test Facility",
+  "The Floating Expense Account",
+  "Premium Biscuit Navigation",
+  "Deckchair Propulsion Group",
+  "Cabin Pressure Holdings",
+  "Whimsy & Ballast",
+  "Reasonably Seaworthy Adventures",
+  "The Institute of Better Portholes",
+  "Applied Holiday Sciences",
+  "Provisional Paradise Bureau",
+  "Seaborne Synergy Committee",
+  "Guest Containment Partners",
+  "The Unscheduled Fjord Company",
+  "Form 27B Ocean Holidays",
+  "Bureaucratic Mermaid Ventures",
+  "North Atlantic Customer Experiment",
 ];
 
 export const TIPS = [
