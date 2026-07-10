@@ -434,6 +434,11 @@
     var mid = Math.floor(a.length / 2);
     return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
   }
+  // Arithmetic mean of completed lap durations (ms). 0 for an empty list.
+  function meanMs(list) {
+    if (!list || !list.length) return 0;
+    return list.reduce(function (sum, value) { return sum + value; }, 0) / list.length;
+  }
   // Fraction (0..cap) of the way through the current lap, from its elapsed ms
   // and the expected lap ms. Capped just below 1 so the count never shows the
   // next whole lap before it is actually logged.
@@ -557,6 +562,7 @@
     // lap timing
     minLapSeconds: minLapSeconds,
     medianMs: medianMs,
+    meanMs: meanMs,
     lapFraction: lapFraction,
     // history
     saveRun: saveRun,
