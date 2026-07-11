@@ -28,6 +28,8 @@ export function CalendarView({ config }: Props) {
           <p className="muted">
             Nested pure base-10{config.calendar[0]?.name === "season" ? " (bar the one physics-forced ×4)" : ""}. The
             orbit is tuned so a revolution is an exact whole number of days — <b>no leap years, ever</b>.
+            That's bought by moving the orbit, not by counting in tens: the real Earth's year is
+            365.2422 days — not a whole number — so leap days stay no matter how you count.
           </p>
         </div>
 

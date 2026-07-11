@@ -42,6 +42,10 @@ describe("views render without throwing (both presets)", () => {
       const html = renderToStaticMarkup(<AboutView config={cfg} />);
       expect(html).toContain("unit ladder");
       expect(html).toContain("Honest consequences");
+      // the road-not-taken section: the fork and its historical precedent
+      expect(html).toContain("road not taken");
+      expect(html).toContain("1793");
+      expect(html).toContain("0.864");
     });
   }
 });
