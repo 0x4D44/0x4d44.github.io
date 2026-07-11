@@ -4,8 +4,8 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#140a33"/>
-<title>UNO, By the Book</title>
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎴</text></svg>'/>
+<title>Onu, By the Book</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🐍</text></svg>'/>
 <style>
 :root{
   --red:#ed1c24; --blue:#0072bc; --green:#00a651; --yellow:#ffde00;
@@ -341,7 +341,7 @@ header{
 <div id="app">
   <header>
     <a id="logo" href="https://0x4d44.github.io/" title="Back to the almanac">
-      <span class="tiles"><span class="tile">U</span><span class="tile">N</span><span class="tile">O</span></span>
+      <span class="tiles"><span class="tile">O</span><span class="tile">N</span><span class="tile">U</span></span>
       <small>BY&nbsp;THE&nbsp;BOOK</small>
     </a>
     <div id="scores"></div>
@@ -374,7 +374,7 @@ header{
     <button class="bigbtn" id="playDrawnBtn">Play it!</button>
     <button class="bigbtn" id="keepBtn">Keep it</button>
   </div>
-  <button class="bigbtn hidden" id="unoBtn">UNO!</button>
+  <button class="bigbtn hidden" id="unoBtn">ONU!</button>
 </div>
 
 <div id="cop">
@@ -389,11 +389,12 @@ header{
 </div>
 
 <div id="splash">
-  <div class="bigtiles"><div class="tile">U</div><div class="tile">N</div><div class="tile">O</div></div>
+  <div class="bigtiles"><div class="tile">O</div><div class="tile">N</div><div class="tile">U</div></div>
   <h1>BY THE BOOK</h1>
   <p>Four players. 108 cards. <b>Every official rule enforced.</b><br>
-     Beat Turbo, Pickles and Luna to <b>500 points</b> — and don't forget to shout UNO!</p>
-  <div class="copintro"><span>👮</span><span><b>Officer Reggie Rules</b> is on duty tonight. He'll pop up to keep everyone honest — no stacking, no fibbing, no forgotten UNO calls on his beat.</span></div>
+     Three snakes from the pit — Cobra, Python, Mamba and friends — stand between
+     you and <b>500 points</b>. And don't forget to shout ONU!</p>
+  <div class="copintro"><span>👮</span><span><b>Officer Reggie Rules</b> is on duty tonight. He'll pop up to keep everyone honest — no stacking, no fibbing, no forgotten ONU calls on his beat. Especially from the snakes.</span></div>
   <button class="bigbtn" id="startBtn">DEAL ME IN!</button>
 </div>
 
@@ -409,7 +410,7 @@ const sleep = ms => new Promise(r=>setTimeout(r,ms));
 function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
 /* ================= audio ================= */
-let AC=null, soundOn = localStorage.getItem("uno.sound")!=="off";
+let AC=null, soundOn = localStorage.getItem("onu.sound")!=="off";
 function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended") AC.resume(); return AC; }
 function tone(f,dur,type,gain,when,fend){
   const c=ac(); if(!c||!soundOn) return;
@@ -474,7 +475,13 @@ function cardEl(card, back){
 }
 
 /* ================= state ================= */
-const AI_NAMES=[{n:"Turbo",a:"🤖"},{n:"Pickles",a:"🦖"},{n:"Luna",a:"🦊"}];
+// The pit: every AI opponent is a snake. Three are drawn at random each
+// match; the hue tints the 🐍 so each species reads differently at the table.
+const SNAKES=[
+  {n:"Cobra",hue:315},{n:"Python",hue:0},{n:"Mamba",hue:200},{n:"Viper",hue:60},
+  {n:"Boa",hue:250},{n:"Adder",hue:160},{n:"Anaconda",hue:30},{n:"Sidewinder",hue:110},
+  {n:"Rattler",hue:340},{n:"Taipan",hue:90},
+];
 const state={
   players:[], deck:[], discard:[], discardRots:[],
   cur:0, dir:1, color:"R", skipNext:false,
@@ -499,17 +506,21 @@ function humanP(){ return state.players[0]; }
 
 /* ================= DOM refs ================= */
 const oppEls=[];
+function avatarHtml(p){
+  return `<span style="filter:hue-rotate(${p.hue||0}deg)">${p.avatar}</span>`;
+}
 function buildSeats(){
+  const pit=shuffle(SNAKES.slice()).slice(0,3);
   state.players=[
-    {name:"You", avatar:"🙂", human:true, hand:[], saidUno:false},
-    ...AI_NAMES.map(x=>({name:x.n, avatar:x.a, human:false, hand:[], saidUno:false})),
+    {name:"You", avatar:"🙂", hue:0, human:true, hand:[], saidUno:false},
+    ...pit.map(x=>({name:x.n, avatar:"🐍", hue:x.hue, human:false, hand:[], saidUno:false})),
   ];
   const row=$("oppRow"); row.innerHTML="";
   for(let i=1;i<=3;i++){
     const p=state.players[i];
     const el=document.createElement("div");
     el.className="opp";
-    el.innerHTML=`<span class="avatar">${p.avatar}</span><div class="nm">${p.name}</div>
+    el.innerHTML=`<span class="avatar" style="filter:hue-rotate(${p.hue}deg)">${p.avatar}</span><div class="nm">${p.name}</div>
       <div class="fan"></div><div class="cnt"></div>`;
     row.appendChild(el); oppEls[i]=el;
   }
@@ -518,7 +529,7 @@ function buildSeats(){
 /* ================= rendering ================= */
 function renderScores(){
   $("scores").innerHTML = state.players.map((p,i)=>
-    `<span class="scorechip">${p.avatar} ${p.name} <b>${state.scores[i]}</b></span>`).join("");
+    `<span class="scorechip">${avatarHtml(p)} ${p.name} <b>${state.scores[i]}</b></span>`).join("");
 }
 function renderOpps(){
   for(let i=1;i<=3;i++){
@@ -530,7 +541,7 @@ function renderOpps(){
     el.querySelector(".cnt").textContent = p.hand.length + (p.hand.length===1?" card":" cards");
     let flag=el.querySelector(".unoflag");
     if(p.hand.length===1 && p.saidUno){
-      if(!flag){ flag=document.createElement("div"); flag.className="unoflag"; flag.textContent="UNO!"; el.appendChild(flag); }
+      if(!flag){ flag=document.createElement("div"); flag.className="unoflag"; flag.textContent="ONU!"; el.appendChild(flag); }
     } else if(flag) flag.remove();
   }
 }
@@ -644,7 +655,7 @@ async function penaltyDraw(pIdx, n, why){
   await drawCards(pIdx, n, true);
 }
 
-/* ================= UNO calls & catching ================= */
+/* ================= ONU calls & catching ================= */
 function openCatch(offender){
   state.catch={p:offender};
   renderButtons();
@@ -654,18 +665,18 @@ function openCatch(offender){
     setTimeout(()=>{
       if(state.catch && state.catch.p===offender && !p.saidUno){
         p.saidUno=true; state.catch=null;
-        bubble(offender,"UNO! (phew!)",true); snd("uno"); render();
+        bubble(offender,"ONU! (phew!)",true); snd("uno"); render();
       }
     }, T(irnd(2600,4600)));
   } else {
-    // the table is watching you…
-    const watcher=AI_NAMES[irnd(0,2)].n;
+    // the pit is watching you…
+    const watcherIdx=irnd(1,3);
     setTimeout(async ()=>{
       if(state.catch && state.catch.p===0 && !p.saidUno && Math.random()<0.75){
         state.catch=null; renderButtons();
-        bubble(irnd(1,3),"GOTCHA!",true); snd("whistle");
+        bubble(watcherIdx,"GOTCHA!",true); snd("whistle");
         await penaltyDraw(0,2,"caught! +2");
-        copSay("BUSTED! "+watcher+" caught you with one card and no UNO call. That's a two-card penalty — say it BEFORE your card lands next time!", true);
+        copSay("BUSTED! "+state.players[watcherIdx].name+" caught you with one card and no ONU call. That's a two-card penalty — say it BEFORE your card lands next time!", true);
         render();
       }
     }, T(irnd(1600,3400)));
@@ -676,9 +687,9 @@ $("unoBtn").addEventListener("click",()=>{
   const p=humanP();
   if(state.catch && state.catch.p===0){         // late call, but in time!
     p.saidUno=true; state.catch=null;
-    bubble(0,"UNO!",true); snd("uno"); render();
+    bubble(0,"ONU!",true); snd("uno"); render();
   } else if(p.hand.length===2){
-    p.saidUno=true; bubble(0,"UNO!",true); snd("uno"); renderButtons();
+    p.saidUno=true; bubble(0,"ONU!",true); snd("uno"); renderButtons();
   }
 });
 $("gotchaBtn").addEventListener("click", async ()=>{
@@ -686,7 +697,7 @@ $("gotchaBtn").addEventListener("click", async ()=>{
   const off=state.catch.p; state.catch=null; renderButtons();
   snd("whistle"); bubble(0,"GOTCHA!",true);
   await penaltyDraw(off,2,"caught! +2");
-  copSay("Sharp eyes! "+state.players[off].name+" forgot to call UNO and got caught — that's two penalty cards, straight from the rulebook.", true);
+  copSay("Sharp eyes! "+state.players[off].name+" forgot to call ONU and got caught — that's two penalty cards, straight from the rulebook. Never trust a snake to follow procedure.", true);
   render();
 });
 
@@ -715,9 +726,9 @@ async function doPlay(pIdx, cardIdx, chosenColor){
   if(card.c==="W" || pIdx!==0) say(state.players[pIdx].name+" played "+describe(card)+(card.c==="W"?" — colour is "+COLOR_NAME[chosenColor]+"!":""));
   render();
 
-  // UNO obligations
+  // ONU obligations
   if(p.hand.length===1){
-    if(p.saidUno){ bubble(pIdx,"UNO!",true); snd("uno"); }
+    if(p.saidUno){ bubble(pIdx,"ONU!",true); snd("uno"); }
     else openCatch(pIdx);
   } else p.saidUno=false;
 
@@ -848,7 +859,7 @@ function aiChoose(p){
 }
 async function aiTurn(g){
   const p=state.players[state.cur];
-  say(p.name+" is thinking…");
+  say(p.name+" is coiled in thought…");
   render();
   await sleep(T(irnd(900,1900) + (state.catch?1200:0)));   // linger a little when a catch is on
   if(!alive(g)) return;
@@ -861,7 +872,7 @@ async function aiTurn(g){
       idx=p.hand.indexOf(card);
     } else return;
   }
-  // UNO etiquette (mostly)
+  // ONU etiquette (mostly — snakes forget)
   if(p.hand.length===2 && Math.random()<0.85){ p.saidUno=true; }
   const card=p.hand[idx];
   const col = card.c==="W" ? aiPickColor(p.hand.filter((c,i)=>i!==idx)) : null;
@@ -1007,12 +1018,12 @@ async function endRound(g){
   renderScores();
   const rows=state.players.map((p,i)=>{
     const left=p.hand.reduce((a,c)=>a+cardPoints(c),0);
-    return `<tr class="${i===w?"winner":""}"><td>${p.avatar} ${p.name}</td>
+    return `<tr class="${i===w?"winner":""}"><td>${avatarHtml(p)} ${p.name}</td>
       <td>${i===w?"went out! +"+pts+" pts":left+" pts left in hand"}</td>
       <td><b>${state.scores[i]}</b></td></tr>`;
   }).join("");
   const spill=state.players.map((p,i)=> i===w?"":
-    `<div style="margin-top:6px"><b>${p.avatar} ${p.name}</b><div class="minihand">${p.hand.map(c=>cardEl(c).outerHTML).join("")}</div></div>`).join("");
+    `<div style="margin-top:6px"><b>${avatarHtml(p)} ${p.name}</b><div class="minihand">${p.hand.map(c=>cardEl(c).outerHTML).join("")}</div></div>`).join("");
   await askModal({
     title:(w===0?"🎉 YOU WIN THE ROUND!":"🏁 "+winner.name+" wins the round"),
     body:`<p>${winner.name} scores <b>${pts} points</b> from everyone's leftover cards
@@ -1026,13 +1037,14 @@ async function endRound(g){
     if(w===0){ snd("fanfare"); confetti(320); }
     await askModal({
       title:(w===0?"👑 CHAMPION! 👑":"👑 "+winner.name+" takes the match"),
-      body:`<p style="font-size:40px;margin:6px 0">${winner.avatar}</p>
+      body:`<p style="font-size:40px;margin:6px 0">${avatarHtml(winner)}</p>
         <p><b>${winner.name}</b> reached <b>${state.scores[w]}</b> points — first to 500 wins, straight from the rulebook.</p>
-        <p>${w===0?"Officer Reggie salutes a champion who never bent a single rule. 👮":"Rematch? Officer Reggie believes in you. 👮"}</p>`,
+        <p>${w===0?"Officer Reggie salutes a champion who never bent a single rule. 👮":"Rematch? Three fresh snakes are already slithering to the table. 👮"}</p>`,
       buttons:[{t:"NEW MATCH 🔄",v:true}],
     });
     if(!alive(g)) return;
     state.scores=[0,0,0,0]; state.round=1;
+    buildSeats();   // a new match draws three fresh snakes from the pit
   } else {
     state.round++;
   }
@@ -1089,7 +1101,7 @@ $("rulesBtn").addEventListener("click",()=>{
       <li>You may draw even if you <i>can</i> play — but then you may only play the card you just drew.</li>
       <li><b>Skip</b> = next player misses a go. <b>Reverse</b> = direction flips. <b>+2</b> = next player draws two and misses a go. <b>No stacking</b> — ever!</li>
       <li><b>Wild Draw Four</b> is only legal if you hold <b>no card of the current colour</b>. The victim may <b>challenge</b>: guilty → you draw 4; innocent → they draw 6.</li>
-      <li>Down to two cards? Shout <b>UNO</b> before your card lands. Caught silent with one card = <b>draw 2</b>.</li>
+      <li>Down to two cards? Shout <b>ONU</b> before your card lands. Caught silent with one card = <b>draw 2</b>.</li>
       <li><b>Going out:</b> the winner scores everyone's leftovers — numbers face value, Skip/Reverse/+2 = 20, Wilds = 50. <b>First to 500 wins the match.</b></li>
     </ul>`,
     buttons:[{t:"Got it, Officer! 👮",v:true}],
@@ -1099,7 +1111,7 @@ $("rulesBtn").addEventListener("click",()=>{
 /* ================= Officer Reggie Rules ================= */
 const COP_TIPS=[
   "Match the top card by COLOUR or by NUMBER/SYMBOL. A Wild goes on anything — that's the whole game, citizen.",
-  "Down to two cards? Shout UNO before your card touches the pile! Get caught silent and it's a two-card penalty.",
+  "Down to two cards? Shout ONU before your card touches the pile! Get caught silent and it's a two-card penalty.",
   "The Wild Draw Four is only legal when you hold NO card of the current colour. Numbers don't count — only colour!",
   "Suspect an illegal +4? CHALLENGE it! Guilty: they draw the four. Innocent: you draw six. Gamble responsibly.",
   "You cannot stack Draw Twos. +2 means draw two and miss a go. 'Stacking' is a playground myth and I will not have it on my beat.",
@@ -1109,9 +1121,10 @@ const COP_TIPS=[
   "Scoring, by the book: number cards face value, Skip/Reverse/+2 are worth 20, Wilds are worth 50. First to 500 takes the match.",
   "When the draw pile runs dry, we shuffle the discards back in — every card except the top one. Nothing up my sleeve.",
   "You CAN go out on an action card — and its effect still hits the next player. Perfectly legal. Devastating, but legal.",
-  "A late UNO call still counts — right up until somebody catches you. After that, it's two cards and no appeals.",
+  "A late ONU call still counts — right up until somebody catches you. After that, it's two cards and no appeals.",
   "A challenged player must show their hand to prove that +4 was clean. No fibbing on my watch.",
   "Even the first flipped card gets obeyed: flip a Skip and the first player is skipped. Flip a Wild Draw Four? Back in the deck it goes.",
+  "Keep both eyes on the snakes. They bluff their Draw Fours, they 'forget' their ONU calls, and they hiss when challenged. All within the rules… mostly.",
 ];
 let copTimer=null, copOpen=false, lastTip=-1, lastCopAt=Date.now();
 function copSay(msg, urgent){
@@ -1160,7 +1173,7 @@ function confetti(n){
 /* ================= header buttons & boot ================= */
 $("sndBtn").addEventListener("click",()=>{
   soundOn=!soundOn;
-  localStorage.setItem("uno.sound", soundOn?"on":"off");
+  localStorage.setItem("onu.sound", soundOn?"on":"off");
   $("sndBtn").textContent=soundOn?"🔊":"🔇";
   if(soundOn) snd("pop");
 });
@@ -1168,13 +1181,13 @@ $("sndBtn").textContent=soundOn?"🔊":"🔇";
 $("newBtn").addEventListener("click", async ()=>{
   const ok=await askModal({title:"Start a new match?", body:"<p>Scores go back to zero and a fresh hand is dealt.</p>",
     buttons:[{t:"New match!",v:true},{t:"Keep playing",v:false}]});
-  if(ok){ gen++; state.scores=[0,0,0,0]; state.round=1; startRound(); }
+  if(ok){ gen++; state.scores=[0,0,0,0]; state.round=1; buildSeats(); startRound(); }
 });
 $("startBtn").addEventListener("click",()=>{
   ac(); snd("win");
   $("splash").remove();
   startRound();
-  setTimeout(()=>copSay("Evening, all. Officer Reggie Rules, Rule Police. Play fair, call your UNOs, and nobody gets a penalty card. Well… almost nobody."), T(2500));
+  setTimeout(()=>copSay("Evening, all. Officer Reggie Rules, Rule Police, serpent division. Play fair, call your ONUs, and nobody gets a penalty card. Well… almost nobody. I'm looking at you, "+state.players[irnd(1,3)].name+"."), T(2500));
 });
 
 buildSeats();
@@ -1182,7 +1195,7 @@ render();
 say("Press DEAL ME IN to start!");
 
 /* test hook for automated smoke checks */
-window.__uno={ state, snd, T:()=>{}, fast(v){ state.fast=v; } };
+window.__onu={ state, snd, T:()=>{}, fast(v){ state.fast=v; } };
 </script>
 </body>
 </html>
