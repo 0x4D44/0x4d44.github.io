@@ -28,3 +28,17 @@ human-invoked review triages these — don't fix them inline.
   `cruise-line/app.mjs:418`, which dereferences each feature ID). Normal saves
   are valid and version-gated; harden the boundary with malformed-save tests in
   a separate persistence pass.
+- [ ] 2026-07-10 — Decet: decide whether to formalize a multi-rotation "long-day"
+  super-unit for sleep (a 2.78-h Standard day decouples sleep from one rotation) or
+  leave it to culture. Design-study question, non-blocking. (`emdtime/source/`)
+- [ ] 2026-07-10 — Decet: epoch is currently 2000-01-01T00:00:00 UTC (clean & simple).
+  A "true" standard would anchor to an equinox for sky-recoverability (HLD §7), which
+  would add leap-second/TAI handling. Out of scope for the design study.
+  (`emdtime/source/wrk_docs/2026.07.10 - HLD - Decet base-10 time system.md`)
+- [ ] 2026-07-10 — Decet: leap seconds are ignored in `convert.ts` (continuous atomic
+  model). Fine for a decimal reckoning; a production civil converter would apply the
+  leap table at the UTC display boundary only.
+  (`emdtime/source/src/core/convert.ts`)
+- [ ] 2026-07-10 — Decet: `npm audit` reports dev-only advisories in the vite/esbuild
+  toolchain. Dev dependencies only (not shipped); revisit if the app is ever deployed
+  as a service. (`emdtime/source/package.json`)
