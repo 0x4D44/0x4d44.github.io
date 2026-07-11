@@ -3,6 +3,19 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-11 — Headless drives that "play" a document with synthetic `el.click()` /
+  `dispatchEvent` bypass browser hit-testing entirely, so they cannot catch the whole
+  class of "invisible thing eats real taps" bugs. `brilliancy` shipped its full 8-round
+  auto-play green while `#overlay { display: grid }` was silently defeating the
+  `hidden` attribute (an author `display` beats the UA `[hidden]` rule) — a transparent
+  `position:fixed; inset:0; z-index:50` layer that would have softlocked every real
+  user at the first tap. Two rules: any element you hide via the `hidden` attribute but
+  style with `display:` needs an explicit `#el[hidden]{display:none}`; and every drive
+  script should assert `getComputedStyle(overlay).display === "none"` plus
+  `document.elementFromPoint(...)` actually returning the control it aims at — that
+  probe is cheap and catches what synthetic clicks never will. (Related: CSS selectors
+  can't reach inside `<use>` shadow clones either — style symbol innards with inline
+  `style="fill:var(--cut)"`, custom properties do inherit through the boundary.)
 - 2026-07-11 — In the hand-built vanilla-JS games (`tidecall`, and the same shape
   elsewhere), a monolithic `render()` that `replaceChildren()`s each subtree on every
   state tick is the flicker engine: every rebuilt node with an `animation:` (e.g.

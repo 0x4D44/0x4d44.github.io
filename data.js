@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "brilliancy",
+    title: "Brilliancy",
+    tagline: "A chess power-fantasy for people who cannot play chess: eight rounds at a wind-battered winter invitational where your every instinct is a legendary masterstroke — queen sacrifices, zugzwang, gold coins, a smug machine. Secretly replays seven immortal games move for move, all validated by a real embedded chess engine. Offline vanilla JS; no build step.",
+    url: "https://0x4d44.github.io/brilliancy/",
+    illustration: "ill-brilliancy",
+    date: "2026-07-11T21:30:00",
+    year: 1858,
+    tags: ["games", "history"],
+    real: true,
+  },
+  {
     slug: "onu",
     title: "Onu, By the Book",
     tagline: "The classic shedding card game, played strictly by the book against three snakes drawn from a pit of ten — Cobra, Python, Mamba and friends. Official scoring to 500, Wild Draw Four challenges, ONU-call penalties — and Officer Reggie Rules, the Rule Policeman who pops up to keep everyone honest. Vanilla JS, no build step.",
