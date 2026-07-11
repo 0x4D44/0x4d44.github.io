@@ -11,6 +11,9 @@
    offline launch will not fully boot — the SW gives fast repeat loads and a
    resilient shell, not a true offline app. */
 const CACHE = "morning-run-v5";
+// Cache Storage is per-origin — scope cleanup to this app's own keys so activating
+// this SW never wipes sibling almanac PWAs' offline caches.
+const PREFIX = "morning-run-";
 const SHELL = [
   "./",
   "./index.html",
@@ -34,7 +37,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

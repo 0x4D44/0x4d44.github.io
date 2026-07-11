@@ -1,4 +1,7 @@
 const CACHE = "nihon-quest-v3";
+// Cache Storage is per-origin — scope cleanup to this app's own keys so activating
+// this SW never wipes sibling almanac PWAs' offline caches.
+const PREFIX = "nihon-quest-";
 const ASSETS = [
   "./",
   "./index.html",
@@ -18,7 +21,7 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(keys.filter((key) => key.startsWith(PREFIX) && key !== CACHE).map((key) => caches.delete(key)))).then(() => self.clients.claim())
   );
 });
 

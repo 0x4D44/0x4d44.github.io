@@ -1,6 +1,9 @@
 /* Kotoba service worker — offline app shell.
    Bump CACHE on any asset change to roll a fresh cache to installed users. */
 const CACHE = "kotoba-v2";
+// Cache Storage is per-origin — scope cleanup to this app's own keys so activating
+// this SW never wipes sibling almanac PWAs' offline caches.
+const PREFIX = "kotoba-";
 
 const CORE = [
   "./", "./index.html", "./styles.css", "./kana.js", "./words.js", "./app.jsx",
@@ -24,7 +27,7 @@ self.addEventListener("install", (e) => {
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

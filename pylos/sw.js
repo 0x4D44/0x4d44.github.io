@@ -1,6 +1,9 @@
 // Pylos — offline service worker. Cache-first for the app shell so the
 // game launches with no network once installed.
 const CACHE = 'pylos-v4';
+// Cache Storage is per-origin — scope cleanup to this app's own keys so activating
+// this SW never wipes sibling almanac PWAs' offline caches.
+const PREFIX = 'pylos-';
 const ASSETS = [
   './',
   'index.html',
@@ -18,7 +21,7 @@ self.addEventListener('install', (e) => {
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())
   );
 });
 

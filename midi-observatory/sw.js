@@ -3,6 +3,9 @@
 // fonts) so the observatory works with no network after the first visit.
 // Bump CACHE whenever the shipped assets change so old caches are purged on activate.
 const CACHE = 'asterion-midi-observatory-v2';
+// Cache Storage is per-origin — scope cleanup to this app's own keys so activating
+// this SW never wipes sibling almanac PWAs' offline caches.
+const PREFIX = 'asterion-midi-observatory-';
 const ASSETS = [
   "./",
   "./index.html",
@@ -32,7 +35,7 @@ self.addEventListener('install', e => e.waitUntil(
 ));
 self.addEventListener('activate', e => e.waitUntil(
   caches.keys()
-    .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    .then(keys => Promise.all(keys.filter(k => k.startsWith(PREFIX) && k !== CACHE).map(k => caches.delete(k))))
     .then(() => self.clients.claim())
 ));
 self.addEventListener('fetch', e => {
