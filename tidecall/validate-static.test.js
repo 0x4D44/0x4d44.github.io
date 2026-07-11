@@ -104,6 +104,15 @@ test('face-card watermark attribute targets the element its CSS reads', () => {
   assert.doesNotMatch(app, /\bnode\.dataset\.face\b/, 'data-face must not be set on the card button');
 });
 
+test('hand cards offer a touch tap-to-raise affordance', () => {
+  // On touch there is no hover to disambiguate the overlapped fan, so the first tap raises
+  // a card and a second tap plays it. Guard the ui state field, the (hover: none) gate, and
+  // the CSS class so the affordance can't be silently dropped by a future refactor.
+  assert.match(app, /raisedCard/, 'app tracks a raised card in ui state');
+  assert.match(app, /matchMedia\('\(hover: none\)'\)/, 'the raise gate is scoped to touch (no-hover) pointers');
+  assert.match(styles, /\.playing-card\.playable\.raised/, 'styles define the raised-card lift');
+});
+
 test('the page has no external runtime dependency', () => {
   const externalScripts = matches(html, /<script[^>]+src=["'](https?:\/\/[^"']+)["']/g);
   const externalStyles = matches(html, /<link[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*rel=["']stylesheet["']/g);

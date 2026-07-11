@@ -3,7 +3,7 @@
 const CACHE_PREFIX = 'tidecall-';
 // Bump on every shipped asset change: the fetch handler is cache-first, so a returning
 // visitor (or an installed PWA) only sees new CSS/JS when the cache name changes.
-const CACHE = `${CACHE_PREFIX}v2`;
+const CACHE = `${CACHE_PREFIX}v3`;
 const ASSETS = [
   './',
   './index.html',

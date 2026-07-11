@@ -79,6 +79,7 @@
     modal: null,
     bidHint: null,
     cardHint: null,
+    raisedCard: null,
     statusOverride: '',
     collecting: false,
   };
@@ -470,6 +471,9 @@
     });
 
     const yourTurn = game.phase === 'play' && game.turn === 0;
+    // A raised card is only meaningful during your own play turn; drop it otherwise so a
+    // stale raise can't be second-tapped into a play once the turn has moved on.
+    if (!yourTurn) ui.raisedCard = null;
     const centre = (hand.length - 1) / 2;
     hand.forEach((card, index) => {
       let node = view.handNodes.get(card.id);
@@ -486,6 +490,7 @@
       node.classList.toggle('playable', playable);
       node.classList.toggle('illegal', yourTurn && !playable);
       node.classList.toggle('suggested', ui.cardHint === card.id);
+      node.classList.toggle('raised', playable && ui.raisedCard === card.id);
       if (playable) node.removeAttribute('aria-disabled');
       else node.setAttribute('aria-disabled', 'true');
     });
@@ -661,6 +666,7 @@
     try {
       E.playCard(game, 0, cardId);
       ui.cardHint = null;
+      ui.raisedCard = null;
       sound.play('card');
       vibrate(9);
       saveGame();
@@ -1096,7 +1102,18 @@
   function handleHandClick(event) {
     const node = event.target.closest('.playing-card');
     if (!node || !node.classList.contains('playable')) return;
-    humanPlay(node.dataset.cardId);
+    const cardId = node.dataset.cardId;
+    // Touch has no hover to preview the overlapped fan (cards expose only a ~40px sliver),
+    // so the first tap on a playable card raises it and a second tap on the raised card
+    // plays it; tapping a different card moves the raise. Mouse/keyboard keep instant play —
+    // their :hover / :focus-visible lift is already the preview, and an Enter/Space
+    // activation (a native click) still plays on the first press.
+    if (window.matchMedia('(hover: none)').matches && ui.raisedCard !== cardId) {
+      ui.raisedCard = cardId;
+      renderHand();
+      return;
+    }
+    humanPlay(cardId);
   }
 
   function bindEvents() {

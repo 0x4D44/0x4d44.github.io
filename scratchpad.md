@@ -51,11 +51,18 @@ human-invoked review triages these — don't fix them inline.
 - [ ] 2026-07-10 — Decet: `npm audit` reports dev-only advisories in the vite/esbuild
   toolchain. Dev dependencies only (not shipped); revisit if the app is ever deployed
   as a service. (`emdtime/source/package.json`)
-- [ ] 2026-07-11 — Tidecall: overlapped hand cards expose a ~40–42px tap strip at 7–8
+- [x] 2026-07-11 — Tidecall: overlapped hand cards expose a ~40–42px tap strip at 7–8
   cards (`width + margin-left`), just under the 44px guideline, and there is no touch
   affordance — `:hover`/`:focus-visible` lift never fires on a phone, so the player
   taps a sliver with no disambiguation. Not a regression (the strip is unchanged), but a
   real touch-UX gap. Options: tap-to-raise-then-play, or wrap to two rows at n≥7.
+  (Done 2026-07-11: implemented tap-to-raise-then-play. On coarse/no-hover pointers
+  (`matchMedia('(hover: none)')`) the first tap on a playable card raises + rings it and a
+  second tap plays it; tapping another card moves the raise; it clears when the turn leaves
+  seat 0. Mouse/keyboard keep instant play — their hover/focus lift is the preview and an
+  Enter/Space native click still plays at once. `ui.raisedCard` + a `.raised` class toggled
+  in renderHand's reconcile loop (no flicker); `.raised` lift scoped to `@media (hover:none)`;
+  `sw.js` bumped `tidecall-v2`→`v3`; static test guards the affordance.)
 - [ ] 2026-07-11 — DARMOK: the whole SPA renders inside one `aria-live="polite"`
   container (`darmok/index.html:16`), and `render()` replaces `#app` wholesale on nav /
   answers, so a screen reader re-announces the entire rebuilt view each time; the
