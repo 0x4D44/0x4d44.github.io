@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "uno",
+    title: "Uno!",
+    tagline: "The classic shed-your-hand card game, playable against three cartoon bots: call UNO in time, catch the bots when they forget, and challenge a dodgy Draw Four. Officer Reg U. Lation — the Rule Policeman — pops up to keep the table honest, with full official rules and scoring to 500. Vanilla JS, no build step.",
+    url: "https://0x4d44.github.io/uno/",
+    illustration: "ill-uno",
+    date: "2026-07-11T12:00:00",
+    year: 1971,
+    tag: "games",
+    real: true,
+  },
+  {
     slug: "emdtime",
     title: "Decet",
     tagline: "A base-10 timekeeping system on a re-tuned Earth: make the day exactly 10,000 SI seconds and the clock becomes a four-digit decimal counter — .5000 is midday — with a leap-free 4,000-day year. Live decimal clock, converter, calendar and an orbital-mechanics tuner. React + TypeScript on a fully-tested core; no backend.",

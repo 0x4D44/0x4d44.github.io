@@ -1,0 +1,1397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uno! · with the Rule Policeman</title>
+<meta name="description" content="Play the classic card game against three cartoon bots — with Officer Reg U. Lation, the Rule Policeman, keeping everyone honest.">
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect x="6" y="4" width="52" height="56" rx="10" fill="%23e02020"/><ellipse cx="32" cy="32" rx="18" ry="26" fill="%23fff" transform="rotate(-30 32 32)"/><text x="32" y="44" font-size="34" font-weight="bold" font-family="Arial" text-anchor="middle" fill="%23e02020">1</text></svg>'>
+<style>
+  :root{
+    --red:#ff4757; --yellow:#ffd23f; --green:#2ed573; --blue:#3aa0ff;
+    --red2:#d81e2b; --yellow2:#e8b400; --green2:#12a94e; --blue2:#0d6fd8;
+    --ink:#1c0f33;
+    --cw: clamp(56px, 9.5vw, 92px);
+    --cur: #ffffff;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  html{ background:#170538; }
+  body{
+    font-family:"Arial Rounded MT Bold","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    background:#170538
+      radial-gradient(1200px 700px at 50% 30%, #4c1a86 0%, #2c0d59 55%, #170538 100%) no-repeat;
+    min-height:100vh;
+    color:#fff; overflow:hidden;
+    -webkit-user-select:none; user-select:none;
+  }
+  .blob{ position:fixed; border-radius:50%; filter:blur(70px); opacity:.35; pointer-events:none; z-index:0;
+    animation:blobfloat 14s ease-in-out infinite alternate; }
+  .blob.b1{ width:44vw; height:44vw; background:var(--red);   left:-14vw; top:-14vw; }
+  .blob.b2{ width:38vw; height:38vw; background:var(--blue);  right:-12vw; top:8vh; animation-delay:-4s; }
+  .blob.b3{ width:36vw; height:36vw; background:var(--green); left:6vw; bottom:-16vh; animation-delay:-8s; }
+  .blob.b4{ width:30vw; height:30vw; background:var(--yellow);right:4vw; bottom:-12vh; animation-delay:-11s; }
+  @keyframes blobfloat{ from{ transform:translateY(0) scale(1);} to{ transform:translateY(4vh) scale(1.12);} }
+
+  #app{ position:relative; z-index:1; height:100%; display:flex; flex-direction:column; }
+
+  /* ---------- header ---------- */
+  header{
+    display:flex; align-items:center; gap:12px; padding:8px 14px;
+    flex:0 0 auto;
+  }
+  header .back{ color:#cdbdf3; text-decoration:none; font-size:13px; white-space:nowrap; opacity:.85; }
+  header .back:hover{ color:#fff; }
+  .logo{ display:flex; gap:3px; align-items:center; font-weight:900; }
+  .logo span{
+    display:inline-block; padding:2px 8px; border-radius:9px; font-size:clamp(17px,2.6vw,25px);
+    color:#fff; text-shadow:0 2px 0 rgba(0,0,0,.35); box-shadow:0 3px 0 rgba(0,0,0,.3);
+    animation:wiggle 3.2s ease-in-out infinite;
+  }
+  .logo span:nth-child(1){ background:var(--red2); transform:rotate(-6deg); }
+  .logo span:nth-child(2){ background:var(--yellow2); transform:rotate(4deg); animation-delay:.2s; }
+  .logo span:nth-child(3){ background:var(--green2); transform:rotate(-3deg); animation-delay:.4s; }
+  .logo span:nth-child(4){ background:var(--blue2); transform:rotate(6deg); animation-delay:.6s; }
+  @keyframes wiggle{ 0%,100%{ translate:0 0; } 50%{ translate:0 -3px; } }
+  #roundInfo{ font-size:12.5px; color:#d9ccff; margin-left:6px; }
+  header .spacer{ flex:1; }
+  .hbtn{
+    border:0; cursor:pointer; font:inherit; font-weight:700; color:#fff;
+    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.25);
+    padding:6px 12px; border-radius:999px; font-size:13px;
+  }
+  .hbtn:hover{ background:rgba(255,255,255,.24); }
+
+  /* ---------- table ---------- */
+  main{ flex:1; display:flex; flex-direction:column; min-height:0; padding:0 10px 6px; }
+
+  #oppRow{ flex:0 0 auto; display:flex; justify-content:center; gap:clamp(10px,4vw,60px); padding:2px 0 6px; }
+  .seat{
+    display:flex; flex-direction:column; align-items:center; gap:3px; position:relative;
+    padding:6px 12px 8px; border-radius:16px; transition:transform .25s, box-shadow .25s, background .25s;
+  }
+  .seat .avatar{
+    width:clamp(40px,6vw,56px); height:clamp(40px,6vw,56px); border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:clamp(22px,3.4vw,32px); background:var(--hue,#555);
+    box-shadow:0 3px 8px rgba(0,0,0,.4), inset 0 -4px 0 rgba(0,0,0,.18);
+  }
+  .seat .nm{ font-size:12.5px; font-weight:700; }
+  .seat .sc{ font-size:11px; color:#ffd76b; }
+  .seat .fan{ display:flex; height:26px; margin-top:2px; }
+  .seat .fan .mini{
+    width:17px; height:25px; border-radius:3px; background:#191921; border:1.5px solid #fff;
+    margin-left:-9px; box-shadow:0 1px 2px rgba(0,0,0,.4); position:relative;
+  }
+  .seat .fan .mini:first-child{ margin-left:0; }
+  .seat .fan .mini::after{
+    content:""; position:absolute; inset:3px 2px; border-radius:50%;
+    background:var(--red2); transform:rotate(-30deg);
+  }
+  .seat .cnt{
+    position:absolute; top:-2px; right:0px; background:#fff; color:var(--ink);
+    min-width:22px; padding:1px 5px; border-radius:999px; font-size:12px; font-weight:900; text-align:center;
+    box-shadow:0 2px 4px rgba(0,0,0,.35);
+  }
+  .seat.active{
+    background:rgba(255,255,255,.10);
+    box-shadow:0 0 0 3px #ffd23f, 0 0 26px rgba(255,210,63,.55);
+    transform:scale(1.06);
+  }
+  .bubble{
+    position:absolute; top:-26px; left:50%; transform:translateX(-50%);
+    background:#fff; color:var(--ink); font-weight:900; font-size:14px;
+    padding:4px 11px; border-radius:12px; white-space:nowrap;
+    box-shadow:0 3px 10px rgba(0,0,0,.4); z-index:30;
+    animation:bubblepop 1.5s ease forwards;
+  }
+  .bubble::after{
+    content:""; position:absolute; left:50%; bottom:-6px; transform:translateX(-50%);
+    border:6px solid transparent; border-top-color:#fff; border-bottom:0;
+  }
+  @keyframes bubblepop{
+    0%{ transform:translateX(-50%) scale(.3); opacity:0; }
+    12%{ transform:translateX(-50%) scale(1.15); opacity:1; }
+    20%,80%{ transform:translateX(-50%) scale(1); opacity:1; }
+    100%{ transform:translateX(-50%) scale(.85); opacity:0; }
+  }
+
+  /* ---------- center ---------- */
+  #centerZone{ flex:1; display:flex; align-items:center; justify-content:center; gap:clamp(18px,5vw,64px); position:relative; min-height:0; }
+  #dirRing{ position:absolute; width:min(46vh,420px); height:min(46vh,420px); opacity:.5; pointer-events:none; }
+  #dirRing svg{ width:100%; height:100%; animation:spin 9s linear infinite; }
+  #dirRing.ccw svg{ animation-direction:reverse; transform:scaleX(-1); }
+  @keyframes spin{ to{ rotate:360deg; } }
+
+  .pile{ position:relative; width:var(--cw); height:calc(var(--cw)*1.5); }
+  #drawPile .card{ position:absolute; }
+  #drawPile .card:nth-child(1){ translate:-4px 4px; rotate:-3deg; }
+  #drawPile .card:nth-child(2){ translate:2px 0px; rotate:2deg; }
+  #drawPile .card:nth-child(3){ translate:0 -3px; }
+  #drawPile.clickable{ cursor:pointer; }
+  #drawPile.clickable .card:nth-child(3){ animation:beckon 1.2s ease-in-out infinite; }
+  @keyframes beckon{ 0%,100%{ translate:0 -3px; } 50%{ translate:0 -10px; } }
+  #drawPile .lbl, #discardWrap .lbl{
+    position:absolute; bottom:-22px; left:50%; transform:translateX(-50%);
+    font-size:11px; color:#cdbdf3; white-space:nowrap;
+  }
+  #discardWrap{ position:relative; }
+  #discardWrap::before{
+    content:""; position:absolute; inset:-14%;
+    border-radius:22%;
+    border:4px solid var(--cur);
+    box-shadow:0 0 34px var(--cur), inset 0 0 22px rgba(0,0,0,.25);
+    transition:border-color .4s, box-shadow .4s;
+  }
+  #discard .card{ position:absolute; }
+  .colorBadge{
+    position:absolute; top:-10px; right:-10px; width:26px; height:26px; border-radius:50%;
+    background:var(--cur); border:3px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.4); z-index:5;
+  }
+
+  #statusBar{
+    position:absolute; bottom:2px; left:50%; transform:translateX(-50%);
+    background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.18);
+    padding:5px 16px; border-radius:999px; font-size:clamp(12px,1.8vw,15px); font-weight:700;
+    white-space:nowrap; max-width:94vw; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  /* ---------- me ---------- */
+  #meZone{ flex:0 0 auto; display:flex; align-items:flex-end; justify-content:center; gap:14px; padding:20px 4px 8px; position:relative; }
+  #meSeat{ padding:4px 10px 6px; }
+  #hand{ display:flex; justify-content:center; align-items:flex-end; padding-top:16px; max-width:78vw; }
+  #hand .card{ margin-left:calc(var(--cw)*-0.48); transition:transform .16s, box-shadow .16s; flex:0 1 auto; }
+  #hand .card:first-child{ margin-left:0; }
+  #hand .card.playable{ cursor:pointer; transform:translateY(-14px); box-shadow:0 0 0 3px #fff, 0 0 18px 4px var(--glow,#fff), 0 8px 16px rgba(0,0,0,.45); }
+  #hand .card.playable:hover{ transform:translateY(-26px) scale(1.05); z-index:5; }
+  #hand .card.dim{ filter:brightness(.62) saturate(.7); }
+
+  #unoBtn{
+    border:0; cursor:pointer; font:inherit; font-weight:900; letter-spacing:1px;
+    font-size:clamp(15px,2.4vw,21px); color:#fff; padding:14px 20px; border-radius:50%;
+    width:clamp(66px,9vw,88px); height:clamp(66px,9vw,88px);
+    background:radial-gradient(circle at 35% 30%, #ff7b6b, #d81e2b 70%);
+    box-shadow:0 5px 0 #8f0f18, 0 8px 18px rgba(0,0,0,.5);
+    display:none; align-self:center;
+  }
+  #unoBtn.on{ display:block; animation:unopulse 1s ease-in-out infinite; }
+  #unoBtn.said{ display:block; animation:none; background:radial-gradient(circle at 35% 30%, #55e58a, #12a94e 70%); box-shadow:0 5px 0 #0a6b2f, 0 8px 18px rgba(0,0,0,.5); }
+  #unoBtn:active{ translate:0 3px; box-shadow:0 2px 0 #8f0f18; }
+  @keyframes unopulse{ 0%,100%{ scale:1; } 50%{ scale:1.12; } }
+
+  #catchBtn{
+    position:fixed; left:50%; top:38%; transform:translate(-50%,-50%);
+    border:0; cursor:pointer; font:inherit; font-weight:900; font-size:clamp(16px,3vw,24px);
+    color:#fff; padding:16px 30px; border-radius:20px;
+    background:linear-gradient(#ff9f43,#e0640f);
+    box-shadow:0 6px 0 #9c4508, 0 12px 30px rgba(0,0,0,.55);
+    display:none; z-index:60; animation:unopulse .7s ease-in-out infinite;
+  }
+  #catchBtn.on{ display:block; }
+
+  /* ---------- cards ---------- */
+  .card{
+    position:relative; width:var(--cw); height:calc(var(--cw)*1.5);
+    border-radius:calc(var(--cw)*.13); background:#fff;
+    box-shadow:0 3px 8px rgba(0,0,0,.4);
+  }
+  .card .inner{
+    position:absolute; inset:5.5%; border-radius:calc(var(--cw)*.09);
+    background:var(--cc,#333); overflow:hidden;
+  }
+  .card.red{   --cc:var(--red2);   --glow:var(--red); }
+  .card.yellow{--cc:var(--yellow2);--glow:var(--yellow); }
+  .card.green{ --cc:var(--green2); --glow:var(--green); }
+  .card.blue{  --cc:var(--blue2);  --glow:var(--blue); }
+  .card.wild{  --cc:#191921;       --glow:#fff; }
+  .card .oval{
+    position:absolute; left:11%; right:11%; top:13%; bottom:13%;
+    background:#fff; border-radius:50%; transform:rotate(-32deg); opacity:.94;
+  }
+  .card.wild .oval{
+    background:conic-gradient(var(--red) 0 25%, var(--blue) 0 50%, var(--yellow) 0 75%, var(--green) 0 100%);
+    opacity:1; border:calc(var(--cw)*.03) solid #fff;
+  }
+  .card .face{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-size:calc(var(--cw)*.52); font-weight:900; color:var(--cc);
+    text-shadow:2px 2px 0 rgba(0,0,0,.18);
+  }
+  .card .face.small{ font-size:calc(var(--cw)*.4); }
+  .card .face svg{ width:52%; height:auto; }
+  .card.wild .face{ color:#fff; text-shadow:2px 2px 0 rgba(0,0,0,.5); }
+  .card .pip{
+    position:absolute; color:#fff; font-weight:900; font-size:calc(var(--cw)*.18);
+    text-shadow:1px 1px 0 rgba(0,0,0,.4); line-height:1;
+  }
+  .card .pip svg{ width:calc(var(--cw)*.17); height:auto; display:block; }
+  .card .pip .dot{ width:calc(var(--cw)*.17); height:calc(var(--cw)*.17); border-radius:50%;
+    background:conic-gradient(var(--red) 0 25%, var(--blue) 0 50%, var(--yellow) 0 75%, var(--green) 0 100%);
+    border:1.5px solid #fff; }
+  .card .pip.tl{ top:5%; left:8%; }
+  .card .pip.br{ bottom:5%; right:8%; transform:rotate(180deg); }
+  .card.back .inner{ background:#191921; }
+  .card.back .oval{
+    background:var(--red2); opacity:1; display:flex; align-items:center; justify-content:center;
+  }
+  .card.back .face{ color:#ffd23f; font-style:italic; font-size:calc(var(--cw)*.3);
+    text-shadow:2px 2px 0 rgba(0,0,0,.45); transform:rotate(-32deg); }
+
+  .flying{ position:fixed; z-index:80; pointer-events:none; margin:0 !important;
+    transition:transform .38s cubic-bezier(.5,1.4,.6,1), opacity .38s; will-change:transform; }
+
+  /* ---------- policeman ---------- */
+  #cop{
+    position:fixed; left:12px; bottom:0; z-index:70; width:clamp(96px,13vw,140px);
+    transform:translateY(115%); transition:transform .45s cubic-bezier(.34,1.56,.64,1);
+    pointer-events:none;
+  }
+  #cop.show{ transform:translateY(6%); }
+  #cop.angry svg{ animation:copshake .3s linear 4; }
+  @keyframes copshake{ 0%,100%{ rotate:0deg; } 25%{ rotate:-4deg; } 75%{ rotate:4deg; } }
+  #cop svg{ width:100%; display:block; filter:drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+  #copBubble{
+    position:absolute; bottom:92%; left:34%; width:clamp(200px,32vw,330px);
+    background:#fff; color:var(--ink); border-radius:16px; padding:10px 13px;
+    font-size:clamp(12px,1.7vw,14.5px); font-weight:700; line-height:1.4;
+    box-shadow:0 6px 20px rgba(0,0,0,.45);
+  }
+  #copBubble::after{
+    content:""; position:absolute; left:24px; bottom:-9px;
+    border:10px solid transparent; border-top-color:#fff; border-bottom:0;
+  }
+  #copBubble .who{ font-size:10.5px; letter-spacing:1px; color:#27408b; text-transform:uppercase; margin-bottom:2px; }
+
+  /* ---------- modals ---------- */
+  .modal{
+    position:fixed; inset:0; z-index:90; display:none;
+    align-items:center; justify-content:center; background:rgba(12,3,32,.72);
+    backdrop-filter:blur(3px);
+  }
+  .modal.on{ display:flex; }
+  .panel{
+    background:linear-gradient(#ffffff,#f0ecff); color:var(--ink);
+    border-radius:22px; padding:22px 26px; max-width:min(520px,92vw); max-height:86vh; overflow:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,.6); text-align:center;
+    animation:panelin .3s cubic-bezier(.34,1.56,.64,1);
+  }
+  @keyframes panelin{ from{ transform:scale(.7); opacity:0; } to{ transform:scale(1); opacity:1; } }
+  .panel h2{ font-size:24px; margin-bottom:10px; }
+  .panel p{ margin:8px 0; font-size:14.5px; line-height:1.45; }
+  .bigbtn{
+    border:0; cursor:pointer; font:inherit; font-weight:900; color:#fff; font-size:17px;
+    padding:12px 26px; border-radius:999px; margin:10px 6px 2px;
+    background:linear-gradient(#8a5cf5,#5f2ecc); box-shadow:0 4px 0 #3c1e85, 0 8px 18px rgba(0,0,0,.3);
+  }
+  .bigbtn:active{ translate:0 3px; box-shadow:0 1px 0 #3c1e85; }
+  .bigbtn.red{ background:linear-gradient(#ff7b6b,#d81e2b); box-shadow:0 4px 0 #8f0f18, 0 8px 18px rgba(0,0,0,.3); }
+  .bigbtn.grey{ background:linear-gradient(#9aa0b4,#5d6375); box-shadow:0 4px 0 #3a3f4e, 0 8px 18px rgba(0,0,0,.3); }
+  .swatches{ display:flex; gap:14px; justify-content:center; margin-top:14px; }
+  .swatch{
+    width:70px; height:70px; border-radius:18px; border:4px solid #fff; cursor:pointer;
+    box-shadow:0 4px 12px rgba(0,0,0,.35); transition:transform .12s;
+  }
+  .swatch:hover{ transform:scale(1.12) rotate(-4deg); }
+  #choiceCardBox{ display:flex; justify-content:center; margin:12px 0 4px; }
+  #chalBar{ height:8px; border-radius:4px; background:#ddd; overflow:hidden; margin-top:14px; }
+  #chalBar i{ display:block; height:100%; background:linear-gradient(90deg,#ff9f43,#d81e2b); width:100%; }
+  #chalBar.run i{ animation:chalrun 6s linear forwards; }
+  @keyframes chalrun{ from{ width:100%; } to{ width:0; } }
+  table.scores{ margin:12px auto 4px; border-collapse:collapse; font-size:14.5px; min-width:280px; }
+  table.scores th, table.scores td{ padding:6px 12px; border-bottom:1px solid #d8d2ee; text-align:left; }
+  table.scores td:nth-child(2), table.scores td:nth-child(3), table.scores td:nth-child(4),
+  table.scores th:nth-child(2), table.scores th:nth-child(3), table.scores th:nth-child(4){ text-align:right; }
+  table.scores tr.win td{ background:#fff3c2; font-weight:900; border-radius:6px; }
+  .rules-list{ text-align:left; font-size:13.5px; line-height:1.5; }
+  .rules-list li{ margin:7px 0 7px 18px; }
+  .rules-list b{ color:#5f2ecc; }
+
+  /* ---------- start overlay ---------- */
+  #startOverlay .panel{ max-width:min(560px,94vw); }
+  .biglogo{ display:flex; gap:6px; justify-content:center; margin:6px 0 14px; }
+  .biglogo span{
+    display:inline-block; padding:8px 16px; border-radius:14px; font-size:clamp(30px,7vw,52px);
+    font-weight:900; color:#fff; text-shadow:0 3px 0 rgba(0,0,0,.35); box-shadow:0 5px 0 rgba(0,0,0,.28);
+    animation:wiggle 2.6s ease-in-out infinite;
+  }
+  .biglogo span:nth-child(1){ background:var(--red2); transform:rotate(-7deg); }
+  .biglogo span:nth-child(2){ background:var(--yellow2); transform:rotate(5deg); animation-delay:.15s; }
+  .biglogo span:nth-child(3){ background:var(--green2); transform:rotate(-4deg); animation-delay:.3s; }
+  .biglogo span:nth-child(4){ background:var(--blue2); transform:rotate(7deg); animation-delay:.45s; }
+  .copintro{ display:flex; align-items:center; gap:12px; text-align:left;
+    background:#eef1ff; border-radius:14px; padding:10px 14px; margin-top:12px; }
+  .copintro svg{ width:56px; flex:0 0 auto; }
+  .copintro p{ font-size:13px; margin:0; }
+  .homelink{ display:block; margin-top:14px; font-size:12px; color:#7a6fa8; }
+
+  #confetti{ position:fixed; inset:0; z-index:85; pointer-events:none; }
+  #autotest{ position:fixed; top:4px; right:6px; z-index:99; font-size:11px; color:#9f9; font-family:monospace; }
+
+  @media (max-width:640px){
+    :root{ --cw: clamp(46px, 12vw, 64px); }
+    #hand{ flex-wrap:nowrap; max-width:none; width:100%; overflow-x:auto; padding-bottom:6px; }
+    #copBubble{ width:min(66vw,300px); }
+    .seat{ padding:4px 7px 6px; }
+    #oppRow{ gap:6px; }
+  }
+</style>
+</head>
+<body>
+<div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div>
+
+<div id="app">
+  <header>
+    <a class="back" href="../">← almanac</a>
+    <div class="logo"><span>U</span><span>N</span><span>O</span><span>!</span></div>
+    <div id="roundInfo"></div>
+    <div class="spacer"></div>
+    <button class="hbtn" id="btnRules">📖 Rules</button>
+    <button class="hbtn" id="btnSound">🔊</button>
+    <button class="hbtn" id="btnNew">↺ New game</button>
+  </header>
+
+  <main>
+    <div id="oppRow"></div>
+
+    <div id="centerZone">
+      <div id="dirRing">
+        <svg viewBox="0 0 100 100" fill="none" stroke="#ffd23f" stroke-width="2.5" stroke-linecap="round">
+          <path d="M50 8 A42 42 0 0 1 92 50"/>
+          <path d="M50 92 A42 42 0 0 1 8 50"/>
+          <path d="M92 50 l-7 -9 M92 50 l7 -9" stroke-width="3"/>
+          <path d="M8 50 l-7 9 M8 50 l7 9" stroke-width="3"/>
+        </svg>
+      </div>
+      <div class="pile" id="drawPile" title="Draw pile">
+        <span class="lbl">DRAW</span>
+      </div>
+      <div id="discardWrap">
+        <div class="pile" id="discard"></div>
+        <span class="lbl">DISCARD</span>
+      </div>
+      <div id="statusBar">Welcome!</div>
+    </div>
+
+    <div id="meZone">
+      <div class="seat" id="meSeat"></div>
+      <div id="hand"></div>
+      <button id="unoBtn">UNO!</button>
+    </div>
+  </main>
+</div>
+
+<button id="catchBtn">👮 CATCH! No UNO call!</button>
+
+<div id="cop">
+  <div id="copBubble">
+    <div class="who">Officer Reg U. Lation · Rule Police</div>
+    <div id="copText"></div>
+  </div>
+  <svg viewBox="0 0 120 150">
+    <path d="M28 150 Q28 104 60 104 Q92 104 92 150 Z" fill="#27408b"/>
+    <path d="M28 150 Q28 104 60 104 Q92 104 92 150" fill="none" stroke="#1d2f66" stroke-width="2"/>
+    <circle cx="60" cy="76" r="26" fill="#ffd9b3"/>
+    <path d="M49 87 Q60 96 71 87" stroke="#7a4a21" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    <circle cx="51" cy="74" r="3.6" fill="#221"/>
+    <circle cx="69" cy="74" r="3.6" fill="#221"/>
+    <path d="M45 67 q6 -4 11 -1 M64 66 q6 -3 11 1" stroke="#7a4a21" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M31 60 Q60 30 89 60 L89 67 Q60 55 31 67 Z" fill="#27408b"/>
+    <path d="M28 64 Q60 53 92 64 L94 71 Q60 59 26 71 Z" fill="#1d2f66"/>
+    <circle cx="60" cy="49" r="5.5" fill="#ffd23f" stroke="#b8860b" stroke-width="1.5"/>
+    <circle cx="45" cy="120" r="5" fill="#ffd23f" stroke="#b8860b"/>
+    <path d="M60 104 Q76 100 84 110" stroke="#d8d8e2" stroke-width="2.4" fill="none"/>
+    <rect x="78" y="104" width="16" height="8" rx="4" fill="#ffd23f" stroke="#b8860b" stroke-width="1.4"/>
+    <circle cx="88" cy="118" r="8" fill="#ffd23f" stroke="#b8860b" stroke-width="1.4"/>
+    <circle cx="88" cy="118" r="2.4" fill="#b8860b"/>
+  </svg>
+</div>
+
+<canvas id="confetti"></canvas>
+<div id="autotest"></div>
+
+<!-- ------------ modals ------------ -->
+<div class="modal" id="startOverlay">
+  <div class="panel">
+    <div class="biglogo"><span>U</span><span>N</span><span>O</span><span>!</span></div>
+    <p><b>You against three cartoon card sharks.</b><br>
+    Match the top card by <b>colour</b>, <b>number</b> or <b>symbol</b> — first to empty their
+    hand wins the round, first to <b>500 points</b> wins the match.</p>
+    <div class="copintro">
+      <svg viewBox="0 0 120 150">
+        <path d="M28 150 Q28 104 60 104 Q92 104 92 150 Z" fill="#27408b"/>
+        <circle cx="60" cy="76" r="26" fill="#ffd9b3"/>
+        <path d="M49 87 Q60 96 71 87" stroke="#7a4a21" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+        <circle cx="51" cy="74" r="3.6" fill="#221"/><circle cx="69" cy="74" r="3.6" fill="#221"/>
+        <path d="M31 60 Q60 30 89 60 L89 67 Q60 55 31 67 Z" fill="#27408b"/>
+        <path d="M28 64 Q60 53 92 64 L94 71 Q60 59 26 71 Z" fill="#1d2f66"/>
+        <circle cx="60" cy="49" r="5.5" fill="#ffd23f"/>
+      </svg>
+      <p><b>Officer Reg U. Lation</b> of the Rule Police is on patrol: he'll remind everyone of
+      the official rules, blow the whistle on missed <b>UNO</b> calls, and hear
+      <b>Wild Draw Four challenges</b>. Play fair!</p>
+    </div>
+    <button class="bigbtn red" id="startBtn">🎴 Deal me in!</button>
+    <button class="bigbtn grey" id="startRules">Read the rules</button>
+    <a class="homelink" href="https://0x4d44.github.io/">Part of the 0x4d44 almanac</a>
+  </div>
+</div>
+
+<div class="modal" id="rulesModal">
+  <div class="panel">
+    <h2>👮 The Official Rulebook</h2>
+    <ul class="rules-list">
+      <li><b>The deck:</b> 108 cards. Each colour has one 0, two of 1–9, two Skips, two Reverses and two Draw Twos — plus four Wilds and four Wild Draw Fours.</li>
+      <li><b>The deal:</b> every player gets <b>7 cards</b>; the next card starts the discard pile.</li>
+      <li><b>On your turn:</b> play a card matching the top card's <b>colour, number or symbol</b> — or a Wild.</li>
+      <li><b>Can't play (or don't want to)?</b> Draw <b>one</b> card. If it can be played, you may play it immediately; otherwise your turn ends.</li>
+      <li><b>Skip ⊘:</b> the next player misses a turn.</li>
+      <li><b>Reverse ⇄:</b> direction of play flips. (With only two players it acts like a Skip.)</li>
+      <li><b>Draw Two +2:</b> the next player draws two cards and misses a turn. <b>No stacking</b> — that's a house rule!</li>
+      <li><b>Wild:</b> play on anything and choose the new colour.</li>
+      <li><b>Wild Draw Four:</b> choose the colour; the next player draws four and misses a turn. <b>Only legal when you hold no card of the current colour</b> — and the victim may <b>challenge</b>: if you're guilty, <i>you</i> draw the four; if you're innocent, the challenger draws <b>six</b>.</li>
+      <li><b>Say “UNO!”</b> when you play your second-to-last card. Caught silent before the next turn begins? <b>Draw two.</b></li>
+      <li><b>First flip:</b> if the starting card is an action card its effect applies; a Wild Draw Four is shuffled back.</li>
+      <li><b>Empty draw pile:</b> reshuffle the discard pile (keep the top card) and play on.</li>
+      <li><b>Scoring:</b> the round's winner scores everyone else's cards — number cards face value, action cards <b>20</b>, Wilds <b>50</b>. First to <b>500</b> wins the match.</li>
+    </ul>
+    <button class="bigbtn" id="rulesClose">Got it!</button>
+  </div>
+</div>
+
+<div class="modal" id="colorModal">
+  <div class="panel">
+    <h2>Pick a colour!</h2>
+    <div class="swatches">
+      <button class="swatch" data-c="red"    style="background:var(--red2)"></button>
+      <button class="swatch" data-c="yellow" style="background:var(--yellow2)"></button>
+      <button class="swatch" data-c="green"  style="background:var(--green2)"></button>
+      <button class="swatch" data-c="blue"   style="background:var(--blue2)"></button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="choiceModal">
+  <div class="panel">
+    <h2>You drew…</h2>
+    <div id="choiceCardBox"></div>
+    <p>It's playable! Play it now, or keep it?</p>
+    <button class="bigbtn red" id="choicePlay">Play it!</button>
+    <button class="bigbtn grey" id="choiceKeep">Keep it</button>
+  </div>
+</div>
+
+<div class="modal" id="challengeModal">
+  <div class="panel">
+    <h2>🚨 Wild Draw Four!</h2>
+    <p id="chalText"></p>
+    <p style="font-size:13px">If they're <b>guilty</b> (they held the colour), <i>they</i> draw 4.<br>
+    If they're <b>innocent</b>, <i>you</i> draw 6!</p>
+    <button class="bigbtn red" id="chalYes">👮 Challenge!</button>
+    <button class="bigbtn grey" id="chalNo">Take the 4 cards</button>
+    <div id="chalBar"><i></i></div>
+  </div>
+</div>
+
+<div class="modal" id="roundModal">
+  <div class="panel">
+    <h2 id="roundTitle"></h2>
+    <div id="roundBody"></div>
+    <button class="bigbtn" id="roundBtn"></button>
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   UNO! — a self-contained, rule-stickler edition of the classic card
+   game: you vs three bots, official rules, and Officer Reg U. Lation
+   (the Rule Policeman) keeping the table honest. Vanilla JS, no build.
+   ===================================================================== */
+
+const $ = s => document.querySelector(s);
+const COLORS = ['red','yellow','green','blue'];
+const COLOR_NAMES = { red:'Red', yellow:'Yellow', green:'Green', blue:'Blue' };
+const COLOR_HEX = { red:'#ff4757', yellow:'#ffd23f', green:'#2ed573', blue:'#3aa0ff' };
+const TARGET = 500;
+const ABORT = Symbol('abort');
+
+const SKIP_SVG = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="3.2"/><line x1="6" y1="6" x2="18" y2="18" stroke="currentColor" stroke-width="3.2"/></svg>';
+const REV_SVG  = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 3.5l7 5.5-7 5.5V11H8V7h6V3.5z"/><path d="M10 20.5L3 15l7-5.5V13h6v4h-6v3.5z"/></svg>';
+
+/* ---------------- game state ---------------- */
+const G = {
+  players: [], draw: [], disc: [],
+  color: null, dir: 1, turn: 0, skipFlag: false,
+  round: 0, roundOver: false, winner: null, topRot: 0,
+  phase: 'start',        // start | play | between
+  sound: true, fast: false,
+  handClick: null, drawClick: null, unoClick: null,
+};
+let gen = 0;
+let promptCancel = null;
+
+function ck(g){ if (g !== gen) throw ABORT; }
+function run(fn){ fn().catch(e => { if (e !== ABORT) console.error(e); }); }
+const wait = ms => new Promise(r => setTimeout(r, G.fast ? 0 : ms));
+
+function cancelPrompt(){ if (promptCancel) promptCancel(); }
+// One interactive prompt at a time. setup(finish) arms the UI and may
+// return a cleanup fn; a game reset resolves the prompt with null.
+function askUI(setup){
+  return new Promise(res => {
+    let done = false, cleanup = null;
+    const finish = v => {
+      if (done) return;
+      done = true; promptCancel = null;
+      if (cleanup) cleanup();
+      res(v);
+    };
+    promptCancel = () => finish(null);
+    cleanup = setup(finish) || null;
+  });
+}
+
+/* ---------------- deck & rules ---------------- */
+let nextCardId = 0;
+function buildDeck(){
+  const d = [];
+  for (const c of COLORS){
+    d.push({ id: nextCardId++, color: c, kind: 'num', num: 0 });
+    for (let n = 1; n <= 9; n++){
+      d.push({ id: nextCardId++, color: c, kind: 'num', num: n });
+      d.push({ id: nextCardId++, color: c, kind: 'num', num: n });
+    }
+    for (const k of ['skip','rev','draw2']){
+      d.push({ id: nextCardId++, color: c, kind: k });
+      d.push({ id: nextCardId++, color: c, kind: k });
+    }
+  }
+  for (let i = 0; i < 4; i++){
+    d.push({ id: nextCardId++, color: 'wild', kind: 'wild' });
+    d.push({ id: nextCardId++, color: 'wild', kind: 'wild4' });
+  }
+  return d; // 108
+}
+function shuffle(a){
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function topCard(){ return G.disc[G.disc.length - 1]; }
+function canPlay(card){
+  if (card.kind === 'wild' || card.kind === 'wild4') return true;
+  if (card.color === G.color) return true;
+  const t = topCard();
+  if (!t) return true;
+  if (t.kind === 'num' && card.kind === 'num') return t.num === card.num;
+  if (t.kind !== 'num' && t.kind !== 'wild' && t.kind !== 'wild4') return t.kind === card.kind;
+  return false;
+}
+function nextIdx(i, steps = 1){
+  let n = i;
+  for (let s = 0; s < steps; s++) n = (n + G.dir + 4) % 4;
+  return n;
+}
+function scoreHand(hand){
+  return hand.reduce((s, c) =>
+    s + (c.kind === 'num' ? c.num : (c.kind === 'wild' || c.kind === 'wild4') ? 50 : 20), 0);
+}
+function cardName(c){
+  if (c.kind === 'num')   return COLOR_NAMES[c.color] + ' ' + c.num;
+  if (c.kind === 'skip')  return COLOR_NAMES[c.color] + ' Skip';
+  if (c.kind === 'rev')   return COLOR_NAMES[c.color] + ' Reverse';
+  if (c.kind === 'draw2') return COLOR_NAMES[c.color] + ' Draw Two';
+  if (c.kind === 'wild')  return 'Wild';
+  return 'Wild Draw Four';
+}
+function refillDraw(){
+  if (G.draw.length || G.disc.length <= 1) return;
+  const top = G.disc.pop();
+  G.draw = shuffle(G.disc);
+  G.disc = [top];
+  copTipEvent('reshuffle');
+}
+function totalCards(){
+  return G.draw.length + G.disc.length + G.players.reduce((s, p) => s + p.hand.length, 0);
+}
+
+/* ---------------- card rendering ---------------- */
+function faceOf(card){
+  if (card.kind === 'num')   return { face: String(card.num), pip: String(card.num), small: false };
+  if (card.kind === 'skip')  return { face: SKIP_SVG, pip: SKIP_SVG, small: false };
+  if (card.kind === 'rev')   return { face: REV_SVG, pip: REV_SVG, small: false };
+  if (card.kind === 'draw2') return { face: '+2', pip: '+2', small: true };
+  if (card.kind === 'wild')  return { face: '', pip: '<div class="dot"></div>', small: true };
+  return { face: '+4', pip: '+4', small: true };
+}
+function cardHTML(card, extra = ''){
+  if (card === 'back'){
+    return '<div class="card back ' + extra + '"><div class="inner"><div class="oval"></div><div class="face">UNO</div></div></div>';
+  }
+  const f = faceOf(card);
+  return '<div class="card ' + card.color + ' ' + extra + '" data-id="' + card.id + '">' +
+    '<div class="inner"><div class="oval"></div>' +
+    '<div class="face' + (f.small ? ' small' : '') + '">' + f.face + '</div>' +
+    '<div class="pip tl">' + f.pip + '</div><div class="pip br">' + f.pip + '</div>' +
+    '</div></div>';
+}
+function cardEl(card, extra = ''){
+  const t = document.createElement('div');
+  t.innerHTML = cardHTML(card, extra);
+  return t.firstChild;
+}
+
+/* ---------------- rendering ---------------- */
+function renderAll(){
+  if (G.fast) return;
+  renderSeats(); renderCenter(); renderHand(); renderHeader();
+}
+function renderHeader(){
+  $('#roundInfo').textContent = G.round ? ('Round ' + G.round + ' · first to ' + TARGET) : '';
+}
+function seatEl(pi){ return pi === 0 ? $('#meSeat') : $('#seat' + pi); }
+function seatInner(p, pi){
+  const fan = Math.min(p.hand.length, 8);
+  let minis = '';
+  for (let i = 0; i < fan; i++) minis += '<div class="mini"></div>';
+  return '<div class="cnt">' + p.hand.length + '</div>' +
+    '<div class="avatar" style="--hue:' + p.hue + '">' + p.emoji + '</div>' +
+    '<div class="nm">' + p.name + '</div>' +
+    '<div class="sc">★ ' + p.score + '</div>' +
+    (pi === 0 ? '' : '<div class="fan">' + minis + '</div>');
+}
+function renderSeats(){
+  const row = $('#oppRow');
+  let html = '';
+  for (let pi = 1; pi <= 3; pi++){
+    const p = G.players[pi];
+    if (!p) break;
+    html += '<div class="seat' + (G.phase === 'play' && G.turn === pi ? ' active' : '') +
+      '" id="seat' + pi + '">' + seatInner(p, pi) + '</div>';
+  }
+  row.innerHTML = html;
+  const me = G.players[0];
+  if (me){
+    const ms = $('#meSeat');
+    ms.innerHTML = seatInner(me, 0);
+    ms.classList.toggle('active', G.phase === 'play' && G.turn === 0);
+  }
+}
+function renderCenter(){
+  const dp = $('#drawPile');
+  dp.querySelectorAll('.card').forEach(e => e.remove());
+  const stack = Math.min(3, Math.max(1, G.draw.length));
+  for (let i = 0; i < stack; i++) dp.insertBefore(cardEl('back'), dp.firstChild);
+  dp.classList.toggle('clickable', !!G.drawClick);
+
+  const dc = $('#discard');
+  dc.innerHTML = '';
+  const t = topCard();
+  if (t){
+    const el = cardEl(t);
+    el.style.transform = 'rotate(' + G.topRot + 'deg)';
+    dc.appendChild(el);
+    if (t.color === 'wild' && G.color){
+      const b = document.createElement('div');
+      b.className = 'colorBadge';
+      dc.appendChild(b);
+    }
+  }
+  const hex = G.color ? COLOR_HEX[G.color] : '#ffffff';
+  document.documentElement.style.setProperty('--cur', hex);
+  $('#dirRing').classList.toggle('ccw', G.dir === -1);
+}
+function renderHand(){
+  const me = G.players[0];
+  const hand = $('#hand');
+  hand.innerHTML = '';
+  if (!me) return;
+  for (const c of me.hand){
+    const playable = !!G.handClick && canPlay(c);
+    const el = cardEl(c, playable ? 'playable' : (G.handClick ? 'dim' : ''));
+    if (playable) el.addEventListener('click', () => { if (G.handClick) G.handClick(c); });
+    hand.appendChild(el);
+  }
+  const ub = $('#unoBtn');
+  if (me.saidUno && me.hand.length <= 2){
+    ub.className = 'said'; ub.textContent = 'UNO ✓'; ub.style.display = 'block';
+  } else if (G.unoClick){
+    ub.className = 'on'; ub.textContent = 'UNO!'; ub.style.display = 'block';
+  } else {
+    ub.className = ''; ub.textContent = 'UNO!'; ub.style.display = 'none';
+  }
+}
+function setStatus(t){ if (!G.fast) $('#statusBar').textContent = t; }
+function showBubble(pi, text){
+  if (G.fast) return;
+  const seat = seatEl(pi);
+  if (!seat) return;
+  const b = document.createElement('div');
+  b.className = 'bubble'; b.textContent = text;
+  seat.appendChild(b);
+  setTimeout(() => b.remove(), 1500);
+}
+
+/* ---------------- flying-card animation ---------------- */
+function rectOf(el){ return el.getBoundingClientRect(); }
+function flyBetween(html, r1, r2){
+  if (G.fast) return Promise.resolve();
+  return new Promise(res => {
+    const w = document.createElement('div');
+    w.innerHTML = html;
+    const el = w.firstChild;
+    el.classList.add('flying');
+    el.style.left = r1.left + 'px'; el.style.top = r1.top + 'px';
+    document.body.appendChild(el);
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const dx = r2.left + r2.width / 2 - (r1.left + r1.width / 2);
+      const dy = r2.top + r2.height / 2 - (r1.top + r1.height / 2);
+      el.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(' + (Math.random() * 30 - 15) + 'deg)';
+    }));
+    setTimeout(() => { el.remove(); res(); }, 400);
+  });
+}
+function handCardRect(card){
+  const el = $('#hand [data-id="' + card.id + '"]');
+  return el ? rectOf(el) : rectOf($('#meSeat'));
+}
+
+/* ---------------- audio ---------------- */
+let AC = null;
+function ac(){
+  if (!G.sound || G.fast) return null;
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); } catch(e){ return null; }
+  if (AC && AC.state === 'suspended') AC.resume().catch(() => {});
+  return AC;
+}
+function tone(f, t0, dur, type = 'square', vol = 0.14){
+  const a = ac(); if (!a) return;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.value = f;
+  g.gain.setValueAtTime(0.0001, a.currentTime + t0);
+  g.gain.exponentialRampToValueAtTime(vol, a.currentTime + t0 + 0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + t0 + dur);
+  o.connect(g); g.connect(a.destination);
+  o.start(a.currentTime + t0); o.stop(a.currentTime + t0 + dur + 0.03);
+}
+const sfxPlay    = () => { tone(330, 0, .06, 'triangle', .2); tone(495, .05, .07, 'triangle', .16); };
+const sfxDraw    = () => tone(210, 0, .06, 'sawtooth', .1);
+const sfxUno     = () => { tone(660, 0, .12, 'square', .16); tone(880, .12, .2, 'square', .16); };
+const sfxBad     = () => { tone(200, 0, .18, 'sawtooth', .16); tone(150, .16, .28, 'sawtooth', .16); };
+const sfxWhistle = () => { for (let i = 0; i < 10; i++) tone(i % 2 ? 2450 : 2050, i * .05, .045, 'square', .1); };
+const sfxFanfare = () => [523, 659, 784, 1047, 1319].forEach((f, i) => tone(f, i * .12, .3, 'triangle', .18));
+
+/* ---------------- Officer Reg U. Lation ---------------- */
+let copTimer = null, lastCopAt = 0;
+function copSay(text, opts = {}){
+  if (G.fast) return;
+  $('#copText').innerHTML = text;
+  const cop = $('#cop');
+  cop.classList.add('show');
+  cop.classList.toggle('angry', !!opts.angry);
+  lastCopAt = Date.now();
+  clearTimeout(copTimer);
+  copTimer = setTimeout(() => cop.classList.remove('show'), opts.dur || (opts.angry ? 8500 : 7500));
+  if (opts.angry) sfxWhistle();
+}
+function copPenalty(t){ copSay('📢 ' + t, { angry: true }); }
+
+const EVENT_TIPS = {
+  draw2:    { max: 2, text: 'Rulebook, section 4: a <b>Draw Two</b> means the next player picks up two cards <b>and</b> misses their turn. And no stacking Draw Twos — that&rsquo;s a house rule, not the law!' },
+  rev:      { max: 2, text: '<b>Reverse</b>: the direction of play flips! (In a two-player game it would act like a Skip — I checked.)' },
+  skip:     { max: 2, text: '<b>Skip</b>: the next player misses a whole turn. The rulebook shows no mercy.' },
+  wild:     { max: 2, text: 'A <b>Wild</b> may be played on anything, and the player names the new colour. Perfectly legal. I&rsquo;m watching anyway.' },
+  wild4:    { max: 3, text: '<b>Wild Draw Four</b>: only legal if the player holds <b>no card of the current colour</b>. Smell something fishy? You may <b>challenge</b>!' },
+  drawPlay: { max: 2, text: 'Can&rsquo;t play? Draw <b>one</b> card. If it&rsquo;s playable you may play it straight away — otherwise, turn over. Them&rsquo;s the rules.' },
+  reshuffle:{ max: 2, text: 'Draw pile&rsquo;s empty! By the book: shuffle the discard pile — keeping the top card — and carry on.' },
+  unoOk:    { max: 2, text: 'Textbook! Always announce <b>“UNO”</b> when you play your second-to-last card. I love to hear it.' },
+  firstW4:  { max: 1, text: 'A <b>Wild Draw Four</b> can&rsquo;t start the discard pile — back into the deck it goes. Section 2, paragraph 3!' },
+  scoring:  { max: 2, text: 'Official scoring: number cards face value, action cards <b>20</b>, Wilds <b>50</b>. First to <b>' + TARGET + '</b> takes the match!' },
+};
+function copTipEvent(k){
+  const e = EVENT_TIPS[k];
+  if (!e || (e.n || 0) >= e.max) return;
+  e.n = (e.n || 0) + 1;
+  copSay('👮 ' + e.text);
+}
+const RULE_TIPS = [
+  'Reminder: match the top card by <b>colour, number or symbol</b> — or play a Wild. Anything else and you&rsquo;ll hear my whistle.',
+  'You must say <b>“UNO”</b> when you play your second-to-last card. Caught silent = <b>two cards</b>. I&rsquo;m always listening.',
+  'You may draw a card even if you <i>can</i> play — sometimes the law allows a little strategy.',
+  'A <b>Wild Draw Four</b> played while holding the current colour is a serious offence. Challenge suspicious behaviour!',
+  'Only <b>one</b> card may be played per turn. I&rsquo;ve seen things at family tables you wouldn&rsquo;t believe.',
+  'The deck holds <b>108 cards</b>: 76 numbers, 24 action cards, 8 Wilds. I count them every night.',
+  'A false challenge is costly: challenge an innocent Wild Draw Four and you draw <b>six</b>.',
+  'If the last card of a round is a Draw Two or Wild Draw Four, the next player must still pick up. The rulebook never sleeps.',
+  'Zero cards? You win the round and score everyone else&rsquo;s hands. Numbers at face value, actions 20, Wilds 50.',
+  'Keep your cards where I can&rsquo;t see them — but where <i>you</i> can. Tidy hand, tidy mind.',
+];
+let tipCursor = Math.floor(Math.random() * RULE_TIPS.length);
+setInterval(() => {
+  if (G.fast || G.phase !== 'play' || document.hidden) return;
+  if (Date.now() - lastCopAt < 50000) return;
+  if ($('#cop').classList.contains('show')) return;
+  tipCursor = (tipCursor + 1) % RULE_TIPS.length;
+  copSay('👮 ' + RULE_TIPS[tipCursor]);
+}, 9000);
+
+/* ---------------- confetti ---------------- */
+const confettiParts = [];
+let confettiRunning = false;
+function confettiBurst(n = 160){
+  if (G.fast) return;
+  const cv = $('#confetti');
+  cv.width = innerWidth; cv.height = innerHeight;
+  const cols = [COLOR_HEX.red, COLOR_HEX.yellow, COLOR_HEX.green, COLOR_HEX.blue, '#ffffff'];
+  for (let i = 0; i < n; i++){
+    confettiParts.push({
+      x: innerWidth / 2 + (Math.random() - .5) * 200,
+      y: innerHeight * .35,
+      vx: (Math.random() - .5) * 14,
+      vy: -6 - Math.random() * 9,
+      w: 6 + Math.random() * 7, h: 4 + Math.random() * 5,
+      r: Math.random() * Math.PI, vr: (Math.random() - .5) * .3,
+      c: cols[i % cols.length],
+    });
+  }
+  if (!confettiRunning){ confettiRunning = true; requestAnimationFrame(confettiTick); }
+}
+function confettiTick(){
+  const cv = $('#confetti'), cx = cv.getContext('2d');
+  cx.clearRect(0, 0, cv.width, cv.height);
+  for (let i = confettiParts.length - 1; i >= 0; i--){
+    const p = confettiParts[i];
+    p.x += p.vx; p.y += p.vy; p.vy += .32; p.vx *= .99; p.r += p.vr;
+    if (p.y > cv.height + 30){ confettiParts.splice(i, 1); continue; }
+    cx.save(); cx.translate(p.x, p.y); cx.rotate(p.r);
+    cx.fillStyle = p.c; cx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    cx.restore();
+  }
+  if (confettiParts.length){ requestAnimationFrame(confettiTick); }
+  else { confettiRunning = false; cx.clearRect(0, 0, cv.width, cv.height); }
+}
+
+/* ---------------- draws & plays ---------------- */
+async function drawAnimated(pi, n, g){
+  const p = G.players[pi];
+  for (let i = 0; i < n; i++){
+    refillDraw();
+    if (!G.draw.length) break;
+    const card = G.draw.pop();
+    if (!G.fast){
+      const r1 = rectOf($('#drawPile'));
+      const r2 = pi === 0 ? rectOf($('#hand')) : rectOf(seatEl(pi));
+      sfxDraw();
+      await flyBetween(cardHTML('back'), r1, r2);
+    }
+    ck(g);
+    p.hand.push(card);
+    if (p.hand.length > 1) p.saidUno = false;
+    renderAll();
+    await wait(120); ck(g);
+  }
+}
+
+async function doPlay(g, pi, card){
+  const p = G.players[pi];
+  // Wild Draw Four legality is judged against the colour in play *before* the card lands.
+  const legalW4 = card.kind !== 'wild4' ||
+    !p.hand.some(c => c.color === G.color && c.id !== card.id);
+  let chosen = null;
+  if (card.color === 'wild'){
+    chosen = p.isHuman ? await pickColorHuman(g) : botColor(pi);
+    ck(g);
+    if (!chosen) chosen = COLORS[Math.floor(Math.random() * 4)];
+  }
+  if (!G.fast){
+    const r1 = pi === 0 ? handCardRect(card) : rectOf(seatEl(pi));
+    await flyBetween(cardHTML(card), r1, rectOf($('#discard')));
+    ck(g);
+  }
+  const ix = p.hand.findIndex(c => c.id === card.id);
+  if (ix >= 0) p.hand.splice(ix, 1);
+  G.disc.push(card);
+  G.color = chosen || card.color;
+  G.topRot = Math.random() * 24 - 12;
+  sfxPlay();
+  setStatus(p.name + (pi === 0 ? ' play' : ' plays') + ' ' + cardName(card) +
+    (chosen ? ' → ' + COLOR_NAMES[chosen] : ''));
+  renderAll();
+
+  if (p.hand.length === 1) await unoMoment(g, pi);
+  ck(g);
+  if (p.hand.length === 0){ G.roundOver = true; G.winner = pi; }
+
+  switch (card.kind){
+    case 'rev':
+      G.dir *= -1; copTipEvent('rev'); break;
+    case 'skip':
+      G.skipFlag = true; copTipEvent('skip');
+      if (!G.roundOver) showBubble(nextIdx(pi), 'skipped!');
+      break;
+    case 'draw2': {
+      const v = nextIdx(pi);
+      copTipEvent('draw2'); showBubble(v, '+2!');
+      await drawAnimated(v, 2, g);
+      G.skipFlag = true;
+      break;
+    }
+    case 'wild':
+      copTipEvent('wild'); break;
+    case 'wild4':
+      await resolveWild4(g, pi, legalW4); break;
+  }
+  ck(g);
+  renderAll();
+}
+
+async function resolveWild4(g, offender, legal){
+  const vi = nextIdx(offender);
+  const off = G.players[offender], victim = G.players[vi];
+  copTipEvent('wild4');
+  let challenged = false;
+  if (G.fast){
+    challenged = Math.random() < 0.2;
+  } else if (victim.isHuman){
+    challenged = await modalChallenge(g, off.name);
+  } else {
+    await wait(900); ck(g);
+    challenged = Math.random() < (off.isHuman ? 0.4 : 0.18);
+  }
+  ck(g);
+  if (!challenged){
+    showBubble(vi, '+4!');
+    await drawAnimated(vi, 4, g);
+    G.skipFlag = true;
+    return;
+  }
+  showBubble(vi, 'CHALLENGE!');
+  sfxWhistle();
+  await wait(800); ck(g);
+  if (!legal){
+    copPenalty(off.name + ' played a Wild Draw Four while still holding a matching colour. <b>GUILTY!</b> Four cards — and ' + victim.name + (victim.isHuman ? ' keep your' : ' keeps their') + ' turn.');
+    sfxBad();
+    await drawAnimated(offender, 4, g);
+    // successful challenge: the victim is not skipped
+  } else {
+    copPenalty('Challenge overruled — ' + off.name + ' was <b>innocent</b>! ' + victim.name + (victim.isHuman ? ', that&rsquo;s' : ' draws') + ' <b>six</b> cards.');
+    sfxBad();
+    await drawAnimated(vi, 6, g);
+    G.skipFlag = true;
+  }
+}
+
+/* ---------------- UNO calls ---------------- */
+async function unoMoment(g, pi){
+  const p = G.players[pi];
+  if (G.fast){ p.saidUno = true; return; }
+  if (p.saidUno){
+    showBubble(pi, 'UNO!'); sfxUno(); copTipEvent('unoOk');
+    return;
+  }
+  if (p.isHuman){
+    setStatus('One card left — quick, say UNO!');
+    const result = await askUI(finish => {
+      G.unoClick = () => finish('said');
+      renderHand();
+      const timers = [setTimeout(() => finish('safe'), 2100)];
+      if (Math.random() < 0.6)
+        timers.push(setTimeout(() => finish('caught'), 800 + Math.random() * 1100));
+      return () => { timers.forEach(clearTimeout); G.unoClick = null; renderHand(); };
+    });
+    ck(g);
+    if (result === 'said' || result === 'safe'){
+      p.saidUno = true;
+      showBubble(pi, 'UNO!'); sfxUno();
+      if (result === 'safe') copSay('👮 Hmm. I&rsquo;ll allow it — but say <b>“UNO”</b> louder next time. The rulebook has ears.');
+    } else if (result === 'caught'){
+      const catcher = G.players[1 + Math.floor(Math.random() * 3)];
+      showBubble(G.players.indexOf(catcher), 'No UNO call!');
+      copPenalty('CAUGHT! ' + catcher.name + ' spotted it — you never said <b>“UNO”</b>. Two cards, by the book.');
+      sfxBad();
+      await drawAnimated(pi, 2, g);
+    }
+  } else {
+    if (Math.random() < 0.25){
+      showBubble(pi, '…');
+      const caught = await askUI(finish => {
+        const btn = $('#catchBtn');
+        btn.classList.add('on');
+        const h = () => finish(true);
+        btn.addEventListener('click', h);
+        const t = setTimeout(() => finish(false), 2600);
+        return () => { clearTimeout(t); btn.classList.remove('on'); btn.removeEventListener('click', h); };
+      });
+      ck(g);
+      if (caught){
+        copPenalty('Well spotted! ' + p.name + ' never said <b>“UNO”</b> — that&rsquo;s a two-card penalty. Justice is served.');
+        sfxBad();
+        await drawAnimated(pi, 2, g);
+      } else {
+        p.saidUno = true;
+      }
+    } else {
+      p.saidUno = true;
+      showBubble(pi, 'UNO!'); sfxUno();
+    }
+  }
+}
+
+/* ---------------- bot brain ---------------- */
+function botColor(pi){
+  const counts = { red: 0, yellow: 0, green: 0, blue: 0 };
+  for (const c of G.players[pi].hand) if (c.color !== 'wild') counts[c.color]++;
+  let best = null, bn = -1;
+  for (const c of COLORS) if (counts[c] > bn){ bn = counts[c]; best = c; }
+  return bn > 0 ? best : COLORS[Math.floor(Math.random() * 4)];
+}
+function botPick(p){
+  const playable = p.hand.filter(canPlay);
+  if (!playable.length) return null;
+  const nxt = G.players[nextIdx(G.turn)];
+  const colorCount = col => p.hand.filter(x => x.color === col).length;
+  const legalW4 = !p.hand.some(c => c.color === G.color);
+  const scored = [];
+  for (const c of playable){
+    let s;
+    if (c.kind === 'num') s = 10 + c.num * 0.1 + colorCount(c.color);
+    else if (c.kind === 'wild') s = p.hand.length <= 2 ? 22 : 4;
+    else if (c.kind === 'wild4'){
+      // an honest bot only plays it legally — mostly.
+      if (!legalW4 && Math.random() >= 0.12) continue;
+      s = nxt.hand.length <= 2 ? 26 : 6;
+    }
+    else s = 13 + colorCount(c.color) + (nxt.hand.length <= 2 ? 14 : 0);
+    scored.push({ c, s: s + Math.random() });
+  }
+  if (!scored.length) return null;
+  scored.sort((a, b) => b.s - a.s);
+  return scored[0].c;
+}
+async function botTurn(g, pi){
+  const p = G.players[pi];
+  setStatus(p.name + ' is thinking…');
+  await wait(650 + Math.random() * 750); ck(g);
+  const card = botPick(p);
+  if (card){ await doPlay(g, pi, card); return; }
+  await drawAnimated(pi, 1, g); ck(g);
+  const drawn = p.hand[p.hand.length - 1];
+  if (drawn && canPlay(drawn)){
+    const dodgyW4 = drawn.kind === 'wild4' &&
+      p.hand.some(c => c.color === G.color && c.id !== drawn.id);
+    if (!dodgyW4 || Math.random() < 0.12){
+      await wait(500); ck(g);
+      await doPlay(g, pi, drawn);
+      return;
+    }
+  }
+  setStatus(p.name + ' draws and passes');
+  await wait(450); ck(g);
+}
+
+/* ---------------- human turn ---------------- */
+async function humanTurn(g, pi){
+  const p = G.players[pi];
+  const playable = p.hand.filter(canPlay);
+  setStatus(playable.length ? 'Your turn — play a card, or draw' : 'Nothing playable — tap the draw pile!');
+  const action = await askUI(finish => {
+    G.handClick = c => finish({ type: 'play', card: c });
+    G.drawClick = () => finish({ type: 'draw' });
+    if (p.hand.length === 2 && !p.saidUno) G.unoClick = () => {
+      p.saidUno = true; showBubble(0, 'UNO!'); sfxUno(); renderHand();
+    };
+    renderAll();
+    return () => { G.handClick = null; G.drawClick = null; G.unoClick = null; renderAll(); };
+  });
+  ck(g);
+  if (!action) throw ABORT;
+  if (action.type === 'play'){ await doPlay(g, pi, action.card); return; }
+  // draw one
+  await drawAnimated(pi, 1, g); ck(g);
+  const drawn = p.hand[p.hand.length - 1];
+  if (drawn && canPlay(drawn)){
+    copTipEvent('drawPlay');
+    const choice = await modalDrawnChoice(g, drawn);
+    ck(g);
+    if (choice === 'play'){ await doPlay(g, pi, drawn); return; }
+    setStatus('Kept it — turn over');
+  } else {
+    copTipEvent('drawPlay');
+    setStatus('No luck — turn passes');
+  }
+  await wait(600); ck(g);
+}
+
+/* ---------------- modals ---------------- */
+function showModal(id, on){ $(id).classList.toggle('on', on); }
+function pickColorHuman(g){
+  return askUI(finish => {
+    showModal('#colorModal', true);
+    const hs = [];
+    document.querySelectorAll('#colorModal .swatch').forEach(b => {
+      const h = () => finish(b.dataset.c);
+      b.addEventListener('click', h); hs.push([b, h]);
+    });
+    return () => { showModal('#colorModal', false); hs.forEach(([b, h]) => b.removeEventListener('click', h)); };
+  });
+}
+function modalDrawnChoice(g, card){
+  return askUI(finish => {
+    $('#choiceCardBox').innerHTML = cardHTML(card);
+    showModal('#choiceModal', true);
+    const hp = () => finish('play'), hk = () => finish('keep');
+    $('#choicePlay').addEventListener('click', hp);
+    $('#choiceKeep').addEventListener('click', hk);
+    return () => {
+      showModal('#choiceModal', false);
+      $('#choicePlay').removeEventListener('click', hp);
+      $('#choiceKeep').removeEventListener('click', hk);
+    };
+  }).then(v => v || 'keep');
+}
+function modalChallenge(g, offName){
+  return askUI(finish => {
+    $('#chalText').innerHTML = '<b>' + offName + '</b> just hit you with a Wild Draw Four. Do you believe they have no card of the current colour… or do you <b>challenge</b>?';
+    showModal('#challengeModal', true);
+    const bar = $('#chalBar');
+    bar.classList.remove('run'); void bar.offsetWidth; bar.classList.add('run');
+    const hy = () => finish(true), hn = () => finish(false);
+    $('#chalYes').addEventListener('click', hy);
+    $('#chalNo').addEventListener('click', hn);
+    const t = setTimeout(() => finish(false), 6000);
+    return () => {
+      clearTimeout(t); showModal('#challengeModal', false);
+      $('#chalYes').removeEventListener('click', hy);
+      $('#chalNo').removeEventListener('click', hn);
+    };
+  }).then(v => !!v);
+}
+
+/* ---------------- round / match flow ---------------- */
+function freshPlayers(){
+  return [
+    { name: 'You',       emoji: '😀', isHuman: true,  hand: [], score: 0, saidUno: false, hue: '#7c4dff' },
+    { name: 'Robo-Rita', emoji: '🤖', isHuman: false, hand: [], score: 0, saidUno: false, hue: '#ff6f91' },
+    { name: 'Dino Dave', emoji: '🦖', isHuman: false, hand: [], score: 0, saidUno: false, hue: '#2ec4b6' },
+    { name: 'Zippy',     emoji: '⚡', isHuman: false, hand: [], score: 0, saidUno: false, hue: '#f4a422' },
+  ];
+}
+function newMatch(){
+  G.players = freshPlayers();
+  if (G.fast) for (const p of G.players) p.isHuman = false;
+  G.round = 0;
+  run(startRound);
+}
+async function startRound(){
+  const g = ++gen;
+  cancelPrompt();
+  $('#catchBtn').classList.remove('on');
+  G.round++;
+  G.dir = 1; G.skipFlag = false; G.roundOver = false; G.winner = null;
+  G.draw = shuffle(buildDeck()); G.disc = []; G.color = null;
+  for (const p of G.players){ p.hand = []; p.saidUno = false; }
+  G.phase = 'play';
+  renderAll();
+  setStatus('Round ' + G.round + ' — dealing…');
+  // deal 7 each
+  for (let k = 0; k < 7; k++){
+    for (let pi = 0; pi < 4; pi++) G.players[pi].hand.push(G.draw.pop());
+    renderAll();
+    await wait(90); ck(g);
+  }
+  // flip the first card (a Wild Draw Four goes back in)
+  let first = G.draw.pop();
+  while (first.kind === 'wild4'){
+    G.draw.push(first); shuffle(G.draw);
+    copTipEvent('firstW4');
+    first = G.draw.pop();
+  }
+  G.disc.push(first);
+  G.color = first.color === 'wild' ? null : first.color;
+  G.topRot = Math.random() * 24 - 12;
+  G.turn = 0;
+  renderAll();
+  // first-flip effects, by the book
+  if (first.kind === 'rev'){ G.dir = -1; G.turn = 3; copTipEvent('rev'); }
+  else if (first.kind === 'skip'){ G.turn = 1; copTipEvent('skip'); showBubble(0, 'skipped!'); }
+  else if (first.kind === 'draw2'){
+    copTipEvent('draw2'); showBubble(0, '+2!');
+    await drawAnimated(0, 2, g); ck(g);
+    G.turn = 1;
+  }
+  else if (first.kind === 'wild'){
+    setStatus('A Wild starts the pile — you pick the colour!');
+    const c = G.players[0].isHuman ? await pickColorHuman(g) : botColor(0);
+    ck(g);
+    G.color = c || COLORS[Math.floor(Math.random() * 4)];
+  }
+  renderAll();
+  await loop(g);
+}
+async function loop(g){
+  let guard = 0;
+  while (true){
+    ck(g);
+    if (++guard > 3000) throw new Error('round failed to terminate');
+    renderAll();
+    const pi = G.turn, p = G.players[pi];
+    if (p.isHuman && !G.fast) await humanTurn(g, pi);
+    else await botTurn(g, pi);
+    ck(g);
+    if (G.fast && totalCards() !== 108) throw new Error('card conservation broken: ' + totalCards());
+    if (G.roundOver){ await endRound(g); return; }
+    let steps = 1 + (G.skipFlag ? 1 : 0);
+    G.skipFlag = false;
+    G.turn = nextIdx(G.turn, steps);
+  }
+}
+async function endRound(g){
+  G.phase = 'between';
+  const w = G.players[G.winner];
+  let gained = 0;
+  for (const p of G.players) if (p !== w) gained += scoreHand(p.hand);
+  w.score += gained;
+  const matchOver = w.score >= TARGET;
+  if (G.fast){
+    if (!matchOver){ startRound(); return; }
+    G.matchDone = true; return;
+  }
+  setStatus(w.name + (w.isHuman ? ' win' : ' wins') + ' the round!');
+  if (w.isHuman){ confettiBurst(200); sfxFanfare(); } else sfxBad();
+  copTipEvent('scoring');
+  await wait(1000); ck(g);
+  let rows = '';
+  const order = [...G.players].sort((a, b) => b.score - a.score);
+  for (const p of order){
+    rows += '<tr class="' + (p === w ? 'win' : '') + '"><td>' + p.emoji + ' ' + p.name +
+      '</td><td>' + p.hand.length + ' cards</td><td>' + (p === w ? '+' + gained : 'gave ' + scoreHand(p.hand) + ' pts') +
+      '</td><td><b>' + p.score + '</b></td></tr>';
+  }
+  const table = '<table class="scores"><tr><th>Player</th><th>Left</th><th>Round</th><th>Total</th></tr>' + rows + '</table>';
+  if (matchOver){
+    confettiBurst(320);
+    if (w.isHuman) sfxFanfare();
+    $('#roundTitle').innerHTML = w.isHuman ? '🏆 YOU WIN THE MATCH!' : '🏆 ' + w.name + ' wins the match!';
+    $('#roundBody').innerHTML = '<p>' + w.name + ' reached ' + TARGET + ' points!</p>' + table;
+    $('#roundBtn').textContent = 'New match';
+    await askUI(finish => {
+      showModal('#roundModal', true);
+      const h = () => finish(true);
+      $('#roundBtn').addEventListener('click', h);
+      return () => { showModal('#roundModal', false); $('#roundBtn').removeEventListener('click', h); };
+    });
+    ck(g);
+    newMatch();
+  } else {
+    $('#roundTitle').innerHTML = (w.isHuman ? '🎉 You take round ' : '😤 ' + w.name + ' takes round ') + G.round + '!';
+    $('#roundBody').innerHTML = table +
+      '<p style="font-size:12.5px;color:#7a6fa8">Winner scores everyone else&rsquo;s cards: numbers at face value, actions 20, Wilds 50.</p>';
+    $('#roundBtn').textContent = 'Next round ▶';
+    await askUI(finish => {
+      showModal('#roundModal', true);
+      const h = () => finish(true);
+      $('#roundBtn').addEventListener('click', h);
+      return () => { showModal('#roundModal', false); $('#roundBtn').removeEventListener('click', h); };
+    });
+    ck(g);
+    run(startRound);
+  }
+}
+
+/* ---------------- wiring ---------------- */
+$('#drawPile').addEventListener('click', () => { if (G.drawClick) G.drawClick(); });
+$('#unoBtn').addEventListener('click', () => { if (G.unoClick) G.unoClick(); });
+$('#btnRules').addEventListener('click', () => showModal('#rulesModal', true));
+$('#startRules').addEventListener('click', () => showModal('#rulesModal', true));
+$('#rulesClose').addEventListener('click', () => showModal('#rulesModal', false));
+$('#btnNew').addEventListener('click', () => {
+  gen++; cancelPrompt();
+  ['#colorModal','#choiceModal','#challengeModal','#roundModal'].forEach(id => showModal(id, false));
+  newMatch();
+});
+const store = {
+  load(){ try { return JSON.parse(localStorage.getItem('0x4d44.uno.v1')) || {}; } catch(e){ return {}; } },
+  save(o){ try { localStorage.setItem('0x4d44.uno.v1', JSON.stringify(o)); } catch(e){} },
+};
+const prefs = store.load();
+G.sound = prefs.sound !== false;
+function renderSound(){ $('#btnSound').textContent = G.sound ? '🔊' : '🔇'; }
+renderSound();
+$('#btnSound').addEventListener('click', () => {
+  G.sound = !G.sound; prefs.sound = G.sound; store.save(prefs); renderSound();
+});
+document.addEventListener('pointerdown', () => ac(), { once: true });
+$('#startBtn').addEventListener('click', () => {
+  showModal('#startOverlay', false);
+  ac();
+  newMatch();
+  setTimeout(() => copSay('👮 Officer Reg U. Lation, Rule Police. I&rsquo;ll be keeping an eye on this table — play fair, call your <b>UNO</b>s, and nobody gets penalised. Probably.'), 1400);
+});
+
+/* ---------------- boot / autotest ---------------- */
+const params = new URLSearchParams(location.search);
+if (params.has('autotest')){
+  // Headless engine check: all-bot matches at full speed, verifying card
+  // conservation and round termination. Result lands in #autotest + title.
+  (async () => {
+    G.fast = true; G.sound = false;
+    showModal('#startOverlay', false);
+    let matches = 0, err = null;
+    try {
+      while (matches < 3){
+        G.matchDone = false;
+        G.players = freshPlayers();
+        for (const p of G.players) p.isHuman = false;
+        G.round = 0;
+        let rounds = 0;
+        while (!G.matchDone){
+          if (++rounds > 300) throw new Error('match failed to finish');
+          // startRound recurses via endRound in fast mode only for non-final
+          // rounds; drive it manually round by round instead.
+          G.dir = 1; G.skipFlag = false; G.roundOver = false; G.winner = null;
+          G.draw = shuffle(buildDeck()); G.disc = []; G.color = null;
+          G.round++;
+          for (const p of G.players){ p.hand = []; p.saidUno = false; }
+          for (let k = 0; k < 7; k++) for (const p of G.players) p.hand.push(G.draw.pop());
+          let first = G.draw.pop();
+          while (first.kind === 'wild4'){ G.draw.push(first); shuffle(G.draw); first = G.draw.pop(); }
+          G.disc.push(first);
+          G.color = first.color === 'wild' ? botColor(0) : first.color;
+          G.turn = first.kind === 'rev' ? 3 : (first.kind === 'skip' || first.kind === 'draw2') ? 1 : 0;
+          if (first.kind === 'rev') G.dir = -1;
+          if (first.kind === 'draw2') await drawAnimated(0, 2, gen);
+          let guard = 0;
+          while (!G.roundOver){
+            if (++guard > 3000) throw new Error('round failed to terminate');
+            await botTurn(gen, G.turn);
+            if (totalCards() !== 108) throw new Error('card conservation broken: ' + totalCards());
+            if (G.roundOver) break;
+            const steps = 1 + (G.skipFlag ? 1 : 0);
+            G.skipFlag = false;
+            G.turn = nextIdx(G.turn, steps);
+          }
+          const w = G.players[G.winner];
+          let gained = 0;
+          for (const p of G.players) if (p !== w) gained += scoreHand(p.hand);
+          w.score += gained;
+          if (w.score >= TARGET) G.matchDone = true;
+        }
+        matches++;
+      }
+    } catch(e){ err = e; }
+    const deckOK = buildDeck().length === 108;
+    const verdict = (!err && deckOK) ? 'AUTOTEST PASS (' + matches + ' matches)' : 'AUTOTEST FAIL: ' + (err ? err.message : 'deck size');
+    document.title = verdict;
+    $('#autotest').textContent = verdict;
+  })();
+} else if (params.has('demo')){
+  showModal('#startOverlay', false);
+  newMatch();
+} else {
+  showModal('#startOverlay', true);
+}
+</script>
+</body>
+</html>
