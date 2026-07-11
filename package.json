@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node humanity-retention/tests/engine.test.mjs && node humanity-retention/tests/validate-static.mjs && node shipshape/tests/engine.test.mjs && node shipshape/tests/storage.test.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/engine.test.mjs && node span-of-control/tests/content.test.mjs && node span-of-control/tests/validate-static.mjs && node tidecall/engine.test.js && node tidecall/validate-static.test.js && node --test cruise-line/engine.test.mjs cruise-line/guidance.test.mjs cruise-line/static.test.mjs morning-run/tests/layout.test.mjs",
-    "build": "node humanity-retention/tests/validate-static.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/validate-static.mjs && node tidecall/validate-static.test.js && node --test cruise-line/static.test.mjs morning-run/tests/layout.test.mjs"
+    "test": "node brilliancy/tests/engine.test.mjs && node brilliancy/tests/scenes.test.mjs && node brilliancy/tests/validate-static.mjs && node humanity-retention/tests/engine.test.mjs && node humanity-retention/tests/validate-static.mjs && node shipshape/tests/engine.test.mjs && node shipshape/tests/storage.test.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/engine.test.mjs && node span-of-control/tests/content.test.mjs && node span-of-control/tests/validate-static.mjs && node tidecall/engine.test.js && node tidecall/validate-static.test.js && node --test cruise-line/engine.test.mjs cruise-line/guidance.test.mjs cruise-line/static.test.mjs morning-run/tests/layout.test.mjs",
+    "build": "node brilliancy/tests/validate-static.mjs && node humanity-retention/tests/validate-static.mjs && node shipshape/tests/validate-static.mjs && node span-of-control/tests/validate-static.mjs && node tidecall/validate-static.test.js && node --test cruise-line/static.test.mjs morning-run/tests/layout.test.mjs"
   }
 }
