@@ -68,6 +68,15 @@ test('service worker only retires Tidecall caches', () => {
   assert.doesNotMatch(worker, /keys\.filter\(\(key\) => key !== CACHE\)/);
 });
 
+test('round/match modals cannot be dismissed by the close control or scrim', () => {
+  // Closing a round/match modal lets drive() immediately re-open it (the phase is still
+  // at its boundary), which flashed the modal and re-fired the win sound/confetti. The
+  // ✕/scrim must skip those two modals, and the redundant direct close listener that
+  // bypassed the delegated guard must be gone. (Regression guard for the reopen bug.)
+  assert.match(app, /ui\.modal === 'round' \|\| ui\.modal === 'match'\)\s*return/, 'delegated close must skip round/match');
+  assert.doesNotMatch(app, /\[data-close-modal\]', dom\.modalLayer\)\.forEach/, 'the redundant direct close listener must be removed');
+});
+
 test('face-card watermark attribute targets the element its CSS reads', () => {
   // The watermark is drawn by `.card-art::before { content: attr(data-face) }`; attr()
   // resolves against .card-art, so data-face must be written there, not on the button,

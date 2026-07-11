@@ -768,6 +768,9 @@
     const opts = options || {};
     if (opts.wide) $('#modal', dom.modalLayer).classList.add('wide');
     else $('#modal', dom.modalLayer).classList.remove('wide');
+    // Round-recap and match-end must be advanced via their own buttons, so drop the ✕
+    // rather than leave a control that does nothing.
+    $('.modal-close', dom.modalLayer).hidden = type === 'round' || type === 'match';
     requestAnimationFrame(() => {
       const focusable = $('button:not([disabled]), [href], input:not([disabled])', dom.modalLayer);
       if (focusable) focusable.focus({ preventScroll: true });
@@ -1033,7 +1036,13 @@
   function handleModalClick(event) {
     const target = event.target.closest('button, [data-close-modal]');
     if (!target) return;
-    if (target.matches('[data-close-modal]')) closeModal(true);
+    if (target.matches('[data-close-modal]')) {
+      // Round-recap and match-end are required decisions: closing them would just let
+      // drive() re-open the same modal (the phase is still at its boundary), so the ✕
+      // and scrim ignore them — matching the Escape handler. Advance via their buttons.
+      if (ui.modal === 'round' || ui.modal === 'match') return;
+      closeModal(true);
+    }
     else if (target.matches('[data-continue-round]')) continueAfterRound();
     else if (target.matches('[data-confirm-new]')) {
       closeModal(false);
@@ -1098,7 +1107,8 @@
     dom.hintButton.addEventListener('click', takeCardSounding);
     dom.bidHintButton.addEventListener('click', takeBidSounding);
     dom.modalLayer.addEventListener('click', handleModalClick);
-    $$('[data-close-modal]', dom.modalLayer).forEach((el) => el.addEventListener('click', () => closeModal(true)));
+    // The static ✕ and scrim already bubble to handleModalClick above; a second direct
+    // listener here only duplicated the close and bypassed its round/match guard.
     $$('input[name="difficulty"]').forEach((input) => input.addEventListener('change', () => {
       settings.difficulty = input.value;
       saveSettings();
