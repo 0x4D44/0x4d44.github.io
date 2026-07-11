@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "uno",
+    title: "UNO, By the Book",
+    tagline: "The classic shedding card game, played strictly by the book: three cartoon AI rivals, official scoring to 500, Wild Draw Four challenges, UNO-call penalties — and Officer Reggie Rules, the Rule Policeman who pops up to keep everyone honest. Big glossy cards, confetti and synthesised fanfares. Vanilla JS, no build step.",
+    url: "https://0x4d44.github.io/uno/",
+    illustration: "ill-uno",
+    date: "2026-07-11T12:00:00",
+    year: 2026,
+    tag: "games",
+    real: true,
+  },
+  {
     slug: "darmok",
     title: "DARMOK: Starfleet Japanese Academy",
     tagline: "A 12-week Japanese course in a full LCARS interface: real grammar briefings (the anti-Duolingo), 500+ words with furigana and speech, and holodeck drills where every answer is explained. Spaced-repetition reviews, a rōmaji-to-kana typing IME, Starfleet ranks instead of streaks. Offline vanilla JS; no build step. そうしよう。",
