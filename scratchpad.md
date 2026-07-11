@@ -37,20 +37,26 @@ human-invoked review triages these — don't fix them inline.
   are valid and version-gated; harden the boundary with malformed-save tests in
   a separate persistence pass. (Promoted 2026-07-11: ALM-REQ-KILN-00001, Draft —
   gap re-confirmed on origin/main; validateState still stops at prices + forecast.)
-- [ ] 2026-07-10 — Decet: decide whether to formalize a multi-rotation "long-day"
+- [x] 2026-07-10 — Decet: decide whether to formalize a multi-rotation "long-day"
   super-unit for sleep (a 2.78-h Standard day decouples sleep from one rotation) or
   leave it to culture. Design-study question, non-blocking. (`emdtime/source/`)
-- [ ] 2026-07-10 — Decet: epoch is currently 2000-01-01T00:00:00 UTC (clean & simple).
+  (Resolved 2026-07-11: already a standing HLD §10 open question — "formalize a long-day
+  super-unit for sleep, or leave it to culture?" — the durable home for a parked, non-
+  blocking design fork. Nothing to build.)
+- [x] 2026-07-10 — Decet: epoch is currently 2000-01-01T00:00:00 UTC (clean & simple).
   A "true" standard would anchor to an equinox for sky-recoverability (HLD §7), which
   would add leap-second/TAI handling. Out of scope for the design study.
   (`emdtime/source/wrk_docs/2026.07.10 - HLD - Decet base-10 time system.md`)
-- [ ] 2026-07-10 — Decet: leap seconds are ignored in `convert.ts` (continuous atomic
+  (Resolved 2026-07-11: folded into HLD §10 open-questions as the "Epoch anchoring" bullet.)
+- [x] 2026-07-10 — Decet: leap seconds are ignored in `convert.ts` (continuous atomic
   model). Fine for a decimal reckoning; a production civil converter would apply the
   leap table at the UTC display boundary only.
   (`emdtime/source/src/core/convert.ts`)
-- [ ] 2026-07-10 — Decet: `npm audit` reports dev-only advisories in the vite/esbuild
+  (Resolved 2026-07-11: folded into HLD §10 open-questions as the "Leap seconds" bullet.)
+- [x] 2026-07-10 — Decet: `npm audit` reports dev-only advisories in the vite/esbuild
   toolchain. Dev dependencies only (not shipped); revisit if the app is ever deployed
   as a service. (`emdtime/source/package.json`)
+  (Resolved 2026-07-11: folded into HLD §10 open-questions as the "Tooling / ops" bullet.)
 - [x] 2026-07-11 — Tidecall: overlapped hand cards expose a ~40–42px tap strip at 7–8
   cards (`width + margin-left`), just under the 44px guideline, and there is no touch
   affordance — `:hover`/`:focus-visible` lift never fires on a phone, so the player
