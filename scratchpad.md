@@ -56,3 +56,13 @@ human-invoked review triages these — don't fix them inline.
   affordance — `:hover`/`:focus-visible` lift never fires on a phone, so the player
   taps a sliver with no disambiguation. Not a regression (the strip is unchanged), but a
   real touch-UX gap. Options: tap-to-raise-then-play, or wrap to two rows at n≥7.
+- [ ] 2026-07-11 — DARMOK: the whole SPA renders inside one `aria-live="polite"`
+  container (`darmok/index.html:16`), and `render()` replaces `#app` wholesale on nav /
+  answers, so a screen reader re-announces the entire rebuilt view each time; the
+  `#cascade` boot ticker (rewritten every 900ms, inside the live region) would also
+  chatter. Verbose but not broken. Fix: scope a live region to the status/feedback
+  node only and drop it from `#app`.
+- [ ] 2026-07-11 — DARMOK: on mobile several controls sit under the 44px touch
+  guideline — nav-rail buttons ~38px tall (`.rail-btn` in the `max-width:760px` block,
+  `darmok/lcars.css:966`) and the vocab audio ▶ buttons 30×30 (`.say.small`). Tappable
+  but tight; review deemed non-blocking. Bump min-height / hit-area if polishing.
