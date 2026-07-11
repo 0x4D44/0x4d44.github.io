@@ -563,6 +563,12 @@ body.sound-muted .sound-off { display: block; }
 .hand .playing-card.playable:hover,.hand .playing-card.playable:focus-visible { --lift: -14px; z-index: 20 !important; filter: drop-shadow(0 16px 16px rgba(0, 7, 10, 0.38)) drop-shadow(0 0 8px rgba(119, 242, 221, 0.2)); }
 .hand .playing-card.illegal { opacity: 0.42; filter: grayscale(0.45); cursor: not-allowed; }
 .hand .playing-card.suggested { box-shadow: 0 0 0 2px var(--cyan), 0 0 25px rgba(119, 242, 221, 0.34); }
+/* Touch has no hover to preview the overlapped fan, so a first tap raises a playable card
+   (handleHandClick) and a second tap plays it. The raise reuses the --lift transform and
+   rings the card so it reads as "armed". Mouse/keyboard keep the pure :hover lift above. */
+@media (hover: none) {
+  .hand .playing-card.playable.raised { --lift: -16px; z-index: 20 !important; box-shadow: 0 0 0 2px var(--cyan), 0 0 26px rgba(119, 242, 221, 0.4); filter: drop-shadow(0 16px 16px rgba(0, 7, 10, 0.4)); }
+}
 
 /* Everything printed on a card is sized in em against the card's own width (the card's
    font-size IS --card-w), so a bigger card is a genuinely more legible card rather than
