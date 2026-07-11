@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "darmok",
+    title: "DARMOK: Starfleet Japanese Academy",
+    tagline: "A 12-week Japanese course in a full LCARS interface: real grammar briefings (the anti-Duolingo), 500+ words with furigana and speech, and holodeck drills where every answer is explained. Spaced-repetition reviews, a rōmaji-to-kana typing IME, Starfleet ranks instead of streaks. Offline vanilla JS; no build step. そうしよう。",
+    url: "https://0x4d44.github.io/darmok/",
+    illustration: "ill-darmok",
+    date: "2026-07-11T12:00:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "emdtime",
     title: "Decet",
     tagline: "A base-10 timekeeping system on a re-tuned Earth: make the day exactly 10,000 SI seconds and the clock becomes a four-digit decimal counter — .5000 is midday — with a leap-free 4,000-day year. Live decimal clock, converter, calendar and an orbital-mechanics tuner. React + TypeScript on a fully-tested core; no backend.",
