@@ -1158,22 +1158,69 @@ export function serialisableState(state) {
   return JSON.parse(JSON.stringify(state));
 }
 
+const CAMPAIGN_STATUSES = new Set(["planning", "bankrupt", "won", "finished"]);
+
+// Validate a ship's registry references + numeric shape — shared by the player fleet and
+// the ships attached to build orders. A corrupted same-version save can carry an unknown
+// feature / cabin-plan / speed id or a bad livery: quoteShipDesign silently filters those
+// on *creation*, but the render path (app.mjs) indexes FEATURES/CABIN_PLANS/HULLS directly
+// and throws `Cannot read properties of undefined` on an unknown id — so such a save must be
+// rejected here, before loadGame hands it to a render that would crash mid-screen.
+function validateShipRefs(ship, label, errors) {
+  if (!ship || typeof ship !== "object") {
+    errors.push(`${label} is not an object.`);
+    return;
+  }
+  if (!HULLS[ship.hullId]) errors.push(`${label}: unknown hull ${ship.hullId}.`);
+  if (!CABIN_PLANS[ship.cabinPlanId]) errors.push(`${label}: unknown cabin plan ${ship.cabinPlanId}.`);
+  if (!SPEEDS[ship.speedId]) errors.push(`${label}: unknown speed ${ship.speedId}.`);
+  if (!Array.isArray(ship.features)) errors.push(`${label}: features is not an array.`);
+  else for (const id of ship.features) if (!FEATURES[id]) errors.push(`${label}: unknown feature ${id}.`);
+  if (typeof ship.livery !== "string" || !/^#[0-9a-f]{6}$/i.test(ship.livery)) errors.push(`${label}: invalid livery.`);
+  for (const key of ["pax", "condition", "bookValue", "fuel", "crew"]) {
+    if (!Number.isFinite(ship[key])) errors.push(`${label} ${key} is not finite.`);
+  }
+}
+
 export function validateState(state) {
   const errors = [];
   if (!state || typeof state !== "object") return ["State is not an object."];
   if (!DIFFICULTIES[state.difficultyId]) errors.push("Unknown difficulty.");
   if (!FOCUSES[state.company?.focusId]) errors.push("Unknown company focus.");
+  if (!CAMPAIGN_STATUSES.has(state.status)) errors.push(`Unknown campaign status ${state.status}.`);
   for (const key of ["cash", "debt", "reputation", "sustainability", "serviceSpend", "maintenance", "crewPay"]) {
     if (!Number.isFinite(state.company?.[key])) errors.push(`Company ${key} is not finite.`);
   }
   const shipIds = new Set();
   for (const ship of state.company?.fleet ?? []) {
-    if (shipIds.has(ship.id)) errors.push(`Duplicate ship id ${ship.id}.`);
-    shipIds.add(ship.id);
-    if (!HULLS[ship.hullId]) errors.push(`Unknown hull ${ship.hullId}.`);
-    if (!MARKETS[ship.routeId]) errors.push(`Unknown route ${ship.routeId}.`);
-    for (const key of ["pax", "condition", "bookValue", "fuel", "crew"]) {
-      if (!Number.isFinite(ship[key])) errors.push(`${ship.name} ${key} is not finite.`);
+    if (shipIds.has(ship?.id)) errors.push(`Duplicate ship id ${ship?.id}.`);
+    shipIds.add(ship?.id);
+    validateShipRefs(ship, `Ship ${ship?.name ?? ship?.id ?? "?"}`, errors);
+    if (ship && !MARKETS[ship.routeId]) errors.push(`Unknown route ${ship.routeId}.`);
+  }
+  if (!Array.isArray(state.company?.orders)) {
+    errors.push("Company orders is not an array.");
+  } else {
+    for (const order of state.company.orders) {
+      if (!order || typeof order !== "object") {
+        errors.push("An order is not an object.");
+        continue;
+      }
+      validateShipRefs(order.ship, `Order ${order.ship?.name ?? order.id ?? "?"}`, errors);
+      if (!Number.isFinite(order.quartersRemaining)) errors.push(`Order ${order.id ?? "?"} quartersRemaining is not finite.`);
+    }
+  }
+  if (!Array.isArray(state.rivals)) {
+    errors.push("Rivals is not an array.");
+  } else {
+    for (const rival of state.rivals) {
+      if (!rival || typeof rival !== "object") {
+        errors.push("A rival is not an object.");
+        continue;
+      }
+      const label = rival.id ?? rival.name ?? "?";
+      if (!Array.isArray(rival.fleet)) errors.push(`Rival ${label} fleet is not an array.`);
+      if (!Array.isArray(rival.orders)) errors.push(`Rival ${label} orders is not an array.`);
     }
   }
   for (const [marketId, price] of Object.entries(state.company?.prices ?? {})) {

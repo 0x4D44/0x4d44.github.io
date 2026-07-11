@@ -1,11 +1,11 @@
 # ALM-REQ-KILN-00001 — Harden the cruise-line save-restore boundary against corrupted same-version payloads
 
-- **State:** Draft
+- **State:** Implemented
 - **Priority:** Should
 - **Area:** cruise-line
 - **Raised:** 2026-07-11
-- **Implemented-by:** —
-- **Satisfied-by:** —
+- **Implemented-by:** `cruise-line/engine.mjs` — `validateShipRefs` + the extended `validateState` (feature / cabin-plan / speed ids, livery, orders, rivals, campaign status)
+- **Satisfied-by:** `cruise-line/engine.test.mjs` — the "Malformed-save hardening (ALM-REQ-KILN-00001)" test block
 - **Violated-by:** —
 - **Flow:** light
 - **Claimed-by:** —
@@ -17,7 +17,7 @@
 - **Owner since:** -
 - **Owner until:** -
 - **Auto attempts:** 0
-- **State history:** Draft (2026-07-11)
+- **State history:** Draft (2026-07-11) → Implemented (2026-07-11, hand-built oracle-first on Arthur's go; awaits human accept → Satisfied)
 
 ## Statement
 The cruise-line save-restore boundary must validate the full shape of a restored
