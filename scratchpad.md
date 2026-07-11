@@ -3,14 +3,17 @@
 Out-of-scope observations spotted while working on something else. A separate,
 human-invoked review triages these — don't fix them inline.
 
-- [ ] 2026-06-20 — `app.js:146` (also `:135-136` grid, `:169` focus) builds the
+- [x] 2026-06-20 — `app.js:146` (also `:135-136` grid, `:169` focus) builds the
   listing meta line as `` `${essay.readingMin}m · ${(essay.words/1000).toFixed(1)}k` ``
   with no guard for entries that omit `readingMin`/`words`. Every stat-less card —
   the playable apps/games `night-cab`, `the-second-world-war`, `world-population`,
   `worldviewer`, `emu-cab`, `quarto`, and now `pylos` — therefore renders literal
   `undefinedm · NaNk` in the listing (visible on the live site). Fix: only emit the
   size span when both fields are present (or fall back to `—`). Pre-existing;
-  unrelated to the Quarto import.
+  unrelated to the Quarto import. (Already fixed: `app.js:26-30` now defines
+  `hasNumber` and guards each field — `readingText`/`wordsText` return `""` when the
+  value isn't finite and the parts are `.filter(Boolean)`-ed, so a stat-less card
+  emits no meta text instead of `undefinedm · NaNk`. Verified on origin/main.)
 - [x] 2026-07-02 — Sibling PWA service workers do **origin-wide** cache cleanup:
   `salient/sw.js:21` deletes every cache key `!== 'salient-v2'` on `activate`, and
   focus/pylos/quarto do the same with their own names. Since all slugs share the
@@ -26,13 +29,14 @@ human-invoked review triages these — don't fix them inline.
   japanese-wordle, japanese-travel-rpg; the note's original four had grown to nine as
   more apps shipped the same pattern. med-cruise/humanity-retention/shipshape were
   already scoped. SW-logic change needs no cache-version bump; suite green.)
-- [ ] 2026-07-10 — `cruise-line/engine.mjs:1161` validates the main numeric
+- [x] 2026-07-10 — `cruise-line/engine.mjs:1161` validates the main numeric
   save fields but not ship feature IDs, order/rival structure, liveries, or the
   campaign status. A corrupted same-version localStorage payload can therefore
   pass restoration and later crash rendering (for example at
   `cruise-line/app.mjs:418`, which dereferences each feature ID). Normal saves
   are valid and version-gated; harden the boundary with malformed-save tests in
-  a separate persistence pass.
+  a separate persistence pass. (Promoted 2026-07-11: ALM-REQ-KILN-00001, Draft —
+  gap re-confirmed on origin/main; validateState still stops at prices + forecast.)
 - [ ] 2026-07-10 — Decet: decide whether to formalize a multi-rotation "long-day"
   super-unit for sleep (a 2.78-h Standard day decouples sleep from one rotation) or
   leave it to culture. Design-study question, non-blocking. (`emdtime/source/`)
