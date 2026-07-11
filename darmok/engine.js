@@ -167,7 +167,7 @@
       srs: {},         // vocabKey -> {s, due, seen, lapses}
       medals: [],
       reviews: 0,      // total SRS answers
-      settings: { sound: true, speech: true, rate: 0.9, romaji: true, furigana: true, booted: false },
+      settings: { sound: true, speech: true, rate: 0.9, romaji: true, furigana: true, booted: false, onboarded: false },
     };
   };
   DK.load = function () {
@@ -349,7 +349,11 @@
       picks.forEach((v, i) => auto.push(DK.genExercise(v, kinds[i % kinds.length])));
     } else {
       const picks = DK.sample(vocab, Math.min(5, vocab.length));
-      const kinds = DK.shuffle(["meaning", "reverse", "listen", "meaning", "typeback"]);
+      // First exposure is recognition-only. A word just met once in the vocab list
+      // should be *recognised* (meaning / reverse / listen), not *produced* from
+      // memory — typeback (recall/production) is deferred to Review shifts and the
+      // SRS drill, where the word has already been seen with spacing.
+      const kinds = DK.shuffle(["meaning", "reverse", "listen", "meaning", "reverse"]);
       picks.forEach((v, i) => auto.push(DK.genExercise(v, kinds[i % kinds.length])));
     }
     return authored.concat(DK.shuffle(auto));
