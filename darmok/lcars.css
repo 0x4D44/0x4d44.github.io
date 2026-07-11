@@ -245,6 +245,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   text-transform: uppercase;
   color: var(--peach);
   white-space: nowrap;
+  /* Let the label shrink and ellipsize instead of forcing page-wide horizontal
+     scroll on a narrow phone when the condensed UI font hasn't loaded (FOUT /
+     blocked CDN) — the longest label ("Vocabulary Database · N entries") in
+     fallback fonts otherwise overflows ~360px viewports. */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tbar .rule { flex: 1; height: 4px; border-radius: 2px; background: #3a2c14; }
 .tbar.lilacs .cap { background: var(--lilac); } .tbar.lilacs .lab { color: var(--lilac); }

@@ -150,13 +150,16 @@
         <div class="boot-line" style="animation-delay:2.4s">Universal translator offline — manual acquisition required</div>
         <div class="boot-skip">TAP TO ENGAGE</div>
       </div>`;
+    let finished = false;
     const fin = () => {
+      if (finished) return; // idempotent: skip-click and auto-advance must not both render
+      finished = true;
       P.settings.booted = true;
       DK.save(P);
       render();
     };
-    document.getElementById("boot").addEventListener("click", () => { snd("nav"); fin(); });
-    setTimeout(fin, 4200);
+    const skipTimer = setTimeout(fin, 4200);
+    document.getElementById("boot").addEventListener("click", () => { clearTimeout(skipTimer); snd("nav"); fin(); });
   }
 
   /* ----------------------------------------------------------
