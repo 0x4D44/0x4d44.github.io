@@ -11,7 +11,7 @@ human-invoked review triages these — don't fix them inline.
   `undefinedm · NaNk` in the listing (visible on the live site). Fix: only emit the
   size span when both fields are present (or fall back to `—`). Pre-existing;
   unrelated to the Quarto import.
-- [ ] 2026-07-02 — Sibling PWA service workers do **origin-wide** cache cleanup:
+- [x] 2026-07-02 — Sibling PWA service workers do **origin-wide** cache cleanup:
   `salient/sw.js:21` deletes every cache key `!== 'salient-v2'` on `activate`, and
   focus/pylos/quarto do the same with their own names. Since all slugs share the
   `0x4d44.github.io` origin (Cache Storage is per-origin), each app's SW **wipes the
@@ -20,7 +20,12 @@ human-invoked review triages these — don't fix them inline.
   real. Fix: scope each `activate` cleanup to its own prefix (delete only
   `keys.filter(k => k.startsWith('<app>-') && k !== VERSION)`), as `med-cruise/sw.js`
   now does. A one-line sweep across the sibling SWs. Found via the med-cruise
-  offline review (Codex external pass).
+  offline review (Codex external pass). (Done 2026-07-11: added a per-app `PREFIX`
+  const and scoped the `activate` filter to `startsWith(PREFIX)` in all nine still-buggy
+  siblings — salient, focus, pylos, quarto, quixo, morning-run, midi-observatory,
+  japanese-wordle, japanese-travel-rpg; the note's original four had grown to nine as
+  more apps shipped the same pattern. med-cruise/humanity-retention/shipshape were
+  already scoped. SW-logic change needs no cache-version bump; suite green.)
 - [ ] 2026-07-10 — `cruise-line/engine.mjs:1161` validates the main numeric
   save fields but not ship feature IDs, order/rival structure, liveries, or the
   campaign status. A corrupted same-version localStorage payload can therefore
