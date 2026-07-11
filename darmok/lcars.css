@@ -1065,3 +1065,80 @@ input.name-in {
 .ob-dots i { width: 7px; height: 7px; border-radius: 50%; background: #2b3a49; }
 .ob-dots i.on { background: var(--blue); box-shadow: 0 0 8px rgba(153, 204, 255, .5); }
 .onboard .btnrow { justify-content: center; }
+
+/* ============================================================
+   Kanji breakdowns — tappable glyphs, reference grid, modal
+   ============================================================ */
+.kj { cursor: pointer; border-bottom: 2px dotted rgba(255, 204, 153, .55); transition: color .15s, border-color .15s; }
+.kj:hover, .kj:focus { color: var(--amber); border-bottom-color: var(--amber); }
+
+.kanji-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
+  gap: 8px; margin: 12px 0 6px;
+}
+.kanji-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 6px; min-height: 76px;
+  background: #0d0b08; border: 1px solid #241c10; border-radius: 10px;
+  color: var(--text); cursor: pointer; text-align: center;
+  transition: border-color .15s, background .15s;
+}
+.kanji-cell:hover { border-color: var(--gold); background: #1b160c; }
+.kanji-cell:active { transform: scale(.97); }
+.kc-char { font-family: var(--font-jp); font-size: 30px; line-height: 1; color: var(--amber); }
+.kc-m { font-size: 11px; color: var(--dim); line-height: 1.2; }
+
+.kanji-scrim {
+  position: fixed; inset: 0; z-index: 70;
+  background: rgba(0, 0, 0, .74);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; overflow-y: auto;
+  animation: data-in .18s ease both;
+}
+.kanji-modal {
+  position: relative;
+  width: min(480px, 100%);
+  max-height: calc(100dvh - 40px); overflow-y: auto;
+  background: #0b0f16; border: 1px solid #2a2016;
+  border-top: 4px solid var(--gold);
+  border-radius: 18px; padding: 24px 22px 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .6);
+}
+.kd-x {
+  position: absolute; top: 12px; right: 12px;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: #1a140c; border: 1px solid #3a2c14; color: var(--peach);
+  font-size: 15px; cursor: pointer;
+}
+.kd-x:hover { background: var(--gold); color: #000; }
+.kd-top { display: flex; gap: 18px; align-items: center; margin-bottom: 6px; padding-right: 30px; }
+.kd-glyph {
+  position: relative; flex: 0 0 auto;
+  font-family: var(--font-jp); font-size: 72px; line-height: 1; color: var(--amber);
+  padding-right: 6px;
+}
+.kd-say { position: absolute; bottom: -2px; right: -6px; }
+.kd-meta { min-width: 0; }
+.kd-mean { font-size: 19px; color: var(--text); font-weight: 600; margin-bottom: 8px; line-height: 1.25; }
+.kd-read { display: flex; align-items: baseline; gap: 8px; margin-top: 4px; }
+.kd-lab { flex: 0 0 auto; font-family: var(--font-jp); font-size: 13px; color: var(--dim); width: 1.4em; }
+.kd-vals { display: flex; flex-wrap: wrap; gap: 5px; }
+.kd-vals span {
+  font-family: var(--font-jp); font-size: 14px; padding: 2px 8px; border-radius: 10px;
+  background: #171208; border: 1px solid #33280f;
+}
+.kd-vals.on span { color: var(--amber); }
+.kd-vals.kun span { color: var(--blue); border-color: #1e3346; background: #0a1119; }
+.kd-sec { margin-top: 16px; }
+.kd-h {
+  font-family: var(--font-ui); font-size: 11px; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 7px;
+}
+.kd-rad { display: flex; align-items: center; gap: 12px; padding: 6px 0; border-top: 1px solid #1c160d; }
+.kd-rad:first-of-type { border-top: none; }
+.kd-radc { flex: 0 0 auto; font-family: var(--font-jp); font-size: 26px; color: var(--peach); width: 1.4em; text-align: center; }
+.kd-radm { color: var(--text); font-size: 14.5px; }
+.kd-p { color: var(--text); font-size: 15px; line-height: 1.55; margin: 0; }
+.kd-cn .kd-h { color: var(--lilac); }
+.kd-cn { background: #14101d; border: 1px solid #2b2342; border-left: 4px solid var(--lilac); border-radius: 6px 12px 12px 6px; padding: 12px 14px; }

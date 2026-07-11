@@ -356,7 +356,7 @@
         <div class="vgrid ${P.settings.romaji ? "" : "no-romaji"}">
           ${l.vocab.map((v) => `
             <div class="vcard">
-              <div class="v-jp">${DK.ruby(v[0])}</div>
+              <div class="v-jp">${DK.rubyK(v[0])}</div>
               ${v[1] && v[1] !== DK.plain(v[0]) ? `<div class="v-kana">${DK.esc(v[1])}</div>` : ""}
               <div class="v-romaji">${DK.esc(v[2] || "")}</div>
               <div class="v-en">${DK.esc(v[3])}</div>
@@ -748,9 +748,76 @@
   /* ----------------------------------------------------------
      REFERENCE
      ---------------------------------------------------------- */
+  /* ---------- Kanji breakdown (modal + reference grid) ---------- */
+  function kanjiReady() { return !!(window.DK && DK.KANJI && Object.keys(DK.KANJI).length); }
+
+  function kanjiModalHtml(ch) {
+    const k = kanjiReady() && DK.KANJI[ch];
+    if (!k) return "";
+    const readRow = (lab, arr, cls) => (arr && arr.length)
+      ? `<div class="kd-read"><span class="kd-lab">${lab}</span><span class="kd-vals ${cls}">${arr.map((r) => `<span>${DK.esc(r)}</span>`).join("")}</span></div>`
+      : "";
+    const kun = (k.kun || []).map((x) => x.replace(/\./g, "・"));
+    const rad = (k.rad && k.rad.length)
+      ? `<div class="kd-sec"><div class="kd-h">Built from</div>${k.rad.map((r) => `<div class="kd-rad"><span class="kd-radc">${DK.esc(r.c)}</span><span class="kd-radm">${DK.esc(r.m)}</span></div>`).join("")}</div>`
+      : "";
+    const mn = k.mn ? `<div class="kd-sec"><div class="kd-h">Mnemonic</div><p class="kd-p">${DK.esc(k.mn)}</p></div>` : "";
+    const cn = k.cn ? `<div class="kd-sec kd-cn"><div class="kd-h">日本 vs 中文</div><p class="kd-p">${DK.esc(k.cn)}</p></div>` : "";
+    const say = (k.on && k.on[0]) || (k.kun && k.kun[0] && k.kun[0].replace(/\./g, "")) || ch;
+    return `
+      <div class="kanji-scrim">
+        <div class="kanji-modal" role="dialog" aria-modal="true" aria-label="Kanji ${ch}">
+          <button class="kd-x" data-act="close-kanji" aria-label="Close">✕</button>
+          <div class="kd-top">
+            <div class="kd-glyph">${ch}<button class="say small kd-say" data-say="${DK.esc(say)}">▶</button></div>
+            <div class="kd-meta">
+              <div class="kd-mean">${DK.esc(k.m)}</div>
+              ${readRow("音", k.on, "on")}
+              ${readRow("訓", kun, "kun")}
+            </div>
+          </div>
+          ${rad}${mn}${cn}
+        </div>
+      </div>`;
+  }
+  function openKanji(ch) {
+    if (!kanjiReady() || !DK.KANJI[ch]) return;
+    closeKanji();
+    S.kanjiOpen = ch;
+    document.body.insertAdjacentHTML("beforeend", kanjiModalHtml(ch));
+  }
+  function closeKanji() {
+    S.kanjiOpen = null;
+    const m = document.querySelector(".kanji-scrim");
+    if (m) m.remove();
+  }
+  // Ordered, de-duplicated kanji actually taught, grouped by mission.
+  function kanjiByWeek() {
+    const seen = new Set();
+    return DK.CURRICULUM.map((w) => {
+      const chars = [];
+      w.lessons.forEach((l) => (l.vocab || []).forEach((v) => {
+        DK.plain(v[0]).replace(/[㐀-䶿一-鿿]/g, (ch) => {
+          if (kanjiReady() && DK.KANJI[ch] && !seen.has(ch)) { seen.add(ch); chars.push(ch); }
+          return ch;
+        });
+      }));
+      return { n: w.n, name: w.name, chars };
+    }).filter((g) => g.chars.length);
+  }
+  function kanjiTabHtml() {
+    if (!kanjiReady()) return `<p class="viewsub">Kanji database offline.</p>`;
+    const groups = kanjiByWeek();
+    const total = new Set(groups.flatMap((g) => g.chars)).size;
+    return `<p class="viewsub">All ${total} kanji in the course. Tap one for its meaning, readings, and the radicals it is built from.</p>`
+      + groups.map((g) => `
+        <div class="tbar"><div class="cap"></div><div class="lab">Mission ${g.n} · ${DK.esc(g.name)}</div><div class="rule"></div></div>
+        <div class="kanji-grid">${g.chars.map((ch) => `<button class="kanji-cell" data-kanji="${ch}"><span class="kc-char">${ch}</span><span class="kc-m">${DK.esc((DK.KANJI[ch].m || "").split(/[;,(，、]/)[0].trim())}</span></button>`).join("")}</div>`).join("");
+  }
+
   function viewReference() {
     const tabs = [
-      ["hira", "Hiragana"], ["kata", "Katakana"], ["grammar", "Grammar Index"], ["verbs", "Verb Engine"], ["numbers", "Numbers"],
+      ["hira", "Hiragana"], ["kata", "Katakana"], ["kanji", "Kanji"], ["grammar", "Grammar Index"], ["verbs", "Verb Engine"], ["numbers", "Numbers"],
     ];
     let body = "";
     if (S.refTab === "hira" || S.refTab === "kata") {
@@ -764,6 +831,8 @@
         });
       });
       body += "</div>";
+    } else if (S.refTab === "kanji") {
+      body = kanjiTabHtml();
     } else if (S.refTab === "grammar") {
       body = `<p class="viewsub">Every grammar point in the course. Tap one to reopen its briefing.</p>`;
       DK.CURRICULUM.forEach((w, wi) => {
@@ -971,8 +1040,12 @@
   }
 
   document.addEventListener("click", (e) => {
-    const t = e.target.closest("[data-nav],[data-act],[data-say],[data-choice],[data-tab],[data-setting],[data-rate],[data-place],[data-unplace],[data-mleft],[data-mright]");
+    // Tap on the kanji-modal backdrop closes it.
+    if (e.target.classList && e.target.classList.contains("kanji-scrim")) { closeKanji(); return; }
+    const t = e.target.closest("[data-nav],[data-act],[data-say],[data-choice],[data-tab],[data-setting],[data-rate],[data-place],[data-unplace],[data-mleft],[data-mright],[data-kanji]");
     if (!t) return;
+
+    if (t.dataset.kanji) { snd("tap"); openKanji(t.dataset.kanji); return; }
 
     if (t.dataset.say !== undefined) {
       snd("tap");
