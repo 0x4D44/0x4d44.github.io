@@ -47,11 +47,6 @@ human-invoked review triages these — don't fix them inline.
 - [ ] 2026-07-10 — Decet: `npm audit` reports dev-only advisories in the vite/esbuild
   toolchain. Dev dependencies only (not shipped); revisit if the app is ever deployed
   as a service. (`emdtime/source/package.json`)
-- [x] 2026-07-11 — Tidecall: modal-reopen, confetti-lock, viewport-overflow and
-  face-card-watermark bugs, plus the dead `@keyframes active-dot` / shadowed `.slot-*`
-  `--rot` — all fixed on `task/20260711-FIX-HUM-tidecall-modal-reopen-confetti-lock-view`
-  (commits `ccd7a8a`/`0c9e4eb`/`9eb7730`/`526ec2f`/`9bf516d`; see the JRN of the same
-  date). The C overflow fix covered all three tiers (≤560/≤820/desktop), not just ≤560.
 - [ ] 2026-07-11 — Tidecall: overlapped hand cards expose a ~40–42px tap strip at 7–8
   cards (`width + margin-left`), just under the 44px guideline, and there is no touch
   affordance — `:hover`/`:focus-visible` lift never fires on a phone, so the player
