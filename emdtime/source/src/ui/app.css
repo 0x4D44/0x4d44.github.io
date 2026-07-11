@@ -912,6 +912,36 @@
 .sev-major .cons-dot {
   background: var(--accent-warm);
 }
+.fork-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 2px 0 12px;
+}
+.fork-card {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--accent-warm);
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+.fork-card.alt {
+  border-top-color: var(--good);
+}
+.fork-head {
+  font-weight: 650;
+  font-size: 13.5px;
+  margin-bottom: 7px;
+}
+.fork-card p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+.fork-card b {
+  color: var(--text);
+}
 
 /* ============================ RESPONSIVE ============================ */
 @media (max-width: 760px) {
@@ -923,6 +953,7 @@
   .conv-two,
   .tuner-grid,
   .cons-grid,
+  .fork-grid,
   .preset-cards {
     grid-template-columns: 1fr;
   }

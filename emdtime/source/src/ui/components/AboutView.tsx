@@ -16,6 +16,9 @@ const EVERYDAY = [
 export function AboutView({ config }: Props) {
   const grav = gravityFraction(config.daySeconds);
   const insol = insolation(config.aAU);
+  const dayHours = config.daySeconds / 3600;
+  const weekHours = (config.daySeconds * 10) / 3600;
+  const shortDay = config.daySeconds < 20000;
 
   return (
     <div className="view about-view">
@@ -45,7 +48,57 @@ export function AboutView({ config }: Props) {
             time-of-day is a 4-digit decimal counter whose every prefix <i>is</i> the fraction of the day
             — <span className="mono">.5000</span> is midday. The gentler <b>Terra</b> model trades that
             pure counter for a near-normal equator. Either way the orbit is tuned so a year is an exact
-            whole number of days: <b>no leap years, ever</b>.
+            whole number of days: <b>no leap years, ever</b> — a win <i>bought</i> by moving the orbit.
+            On the real Earth the year is 365.2422 days — not a whole number — so leap days are
+            unavoidable no matter how you count.
+          </p>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-head">
+          <h2>The road not taken</h2>
+          <p className="muted">
+            Decimal time forces a sacrifice. Decet picks one of two — and the other needs no planet.
+          </p>
+        </div>
+        <div className="prose">
+          <p>
+            The day isn't a power of ten: 86,400 seconds won't fall into clean decimal places. So a
+            decimal clock has to give up one of its two anchors — the atomic second, or the 24-hour
+            day. There are exactly two roads:
+          </p>
+        </div>
+        <div className="fork-grid">
+          <div className="fork-card">
+            <div className="fork-head">Freeze the second → move the planet</div>
+            <p>
+              Keep the atomic second exact and the day <i>must</i> shrink to a power of ten — so you
+              re-spin the Earth to a 10,000 s rotation. <b>This is Decet.</b> The clock becomes a
+              flawless 4-digit day-fraction; the bill is a re-engineered world (the consequences below).
+            </p>
+          </div>
+          <div className="fork-card alt">
+            <div className="fork-head">Freeze the day → move the second</div>
+            <p>
+              Keep the 24-hour day everyone lives by and redefine the <i>second</i> instead:
+              10 h × 100 min × 100 s = 100,000 decimal seconds of 0.864 s each. The same prize — every
+              clock prefix is a fraction of the day — <b>on the real Earth, no planetary engineering.</b>
+            </p>
+          </div>
+        </div>
+        <div className="prose">
+          <p>
+            The second road isn't hypothetical: revolutionary France <b>made it law in 1793</b> and put
+            it on public records from 1794 — then suspended it in 1795. What beat it wasn't physics but
+            cost and habit: re-facing the nation's clocks for a change nobody was asking for. (Swatch's
+            <span className="mono">.beats</span> and astronomers' fractional days quietly echo the same
+            idea today.)
+          </p>
+          <p>
+            So Decet freezes the second <i>by choice</i>, not by law of nature — the brief prizes an
+            unbroken atomic timeline over social continuity. Freeze the other end and the planet keeps
+            its gravity, its climate, and its familiar day.
           </p>
         </div>
       </section>
@@ -103,9 +156,13 @@ export function AboutView({ config }: Props) {
             severity={grav > 0.95 ? "mild" : "major"}
           />
           <Consequence
-            title="Short day / night"
-            body={`A ${(config.daySeconds / 3600).toFixed(1)}-hour rotation ${config.daySeconds < 20000 ? "decouples sleep from daylight — society layers an informal multi-day cycle" : "is shorter than 24 h but still workable"}.`}
-            severity={config.daySeconds < 20000 ? "major" : "mild"}
+            title={shortDay ? "No unit you live by" : "Short day"}
+            body={
+              shortDay
+                ? `The ${dayHours.toFixed(1)}-hour rotation is too short to sleep by, and the next rung up — the 10-day week — runs ${weekHours.toFixed(0)} h but packs ten short light/dark cycles into it, not one. So no single unit is "light, then dark, that you sleep through": the day keeps its name but loses its job. The deepest cost, and the hardest to engineer away.`
+                : `A ${dayHours.toFixed(1)}-hour rotation is shorter than 24 h — livable, but sleep and the working day no longer map onto a single rotation.`
+            }
+            severity={shortDay ? "major" : "moderate"}
           />
           <Consequence
             title="Cooler climate"
