@@ -13,6 +13,8 @@
     refTab: "hira",
     lesson: null, // {wi, li, phase, queue, idx, firstTry:{}, wrongTotal, medals:[]}
     drill: null,
+    onboard: null,   // number = orientation step showing; null = hidden
+    kanjiOpen: null, // a kanji char whose breakdown modal is open
   };
   window.APP = { S, P, go }; // for tests
 
@@ -244,7 +246,7 @@
 
       <div class="tbar lilacs"><div class="cap"></div><div class="lab">Commendations · ${earned}/${MEDALS.length}</div><div class="rule"></div></div>
       <div class="medals">${MEDALS.slice(0, 6).map(medalHtml).join("")}</div>
-      <div class="btnrow"><button class="btn ghost" data-nav="log">FULL SERVICE RECORD</button></div>
+      <div class="btnrow"><button class="btn ghost" data-nav="log">FULL SERVICE RECORD</button><button class="btn ghost" data-act="orientation">▸ ORIENTATION</button></div>
     `;
   }
   function medalHtml(m) {
@@ -398,6 +400,87 @@
       <div id="excard">${exerciseHtml(ex)}</div>`;
   }
 
+  /* ---------- Lt. Cmdr. Data: progressive hints ---------- */
+  function maxHints(ex) {
+    if (ex.t === "type") return ex.show ? 2 : 1;
+    if (ex.t === "mc" || ex.t === "listen") return 2;
+    if (ex.t === "build") return ex.tokens && ex.tokens[1] ? 2 : 1;
+    if (ex.t === "match") return 1;
+    return 0;
+  }
+  function hintLines(ex) {
+    const out = [];
+    if (ex.t === "type") {
+      const reading = DK.plain(DK.readingForm(ex.show || (ex.accept && ex.accept[0]) || ""));
+      if (reading) out.push(`The reading is 「${DK.esc(reading)}」 — enter that in rōmaji.`);
+      if (ex.show) out.push(`In writing: ${DK.ruby(ex.show)}`);
+    } else if (ex.t === "mc" || ex.t === "listen") {
+      out.push("I have eliminated two incorrect options for you.");
+      const rd = DK.plain(DK.readingForm(ex.choices[ex.a]));
+      if (rd) out.push(`The correct entry reads 「${DK.esc(rd)}」.`);
+    } else if (ex.t === "build") {
+      if (ex.tokens && ex.tokens[0]) out.push(`Begin with 「${DK.esc(ex.tokens[0])}」.`);
+      if (ex.tokens && ex.tokens[1]) out.push(`Then 「${DK.esc(ex.tokens[1])}」 comes next.`);
+    } else if (ex.t === "match") {
+      const p = ex.pairs && ex.pairs[0];
+      if (p) out.push(`One correct pairing: ${DK.ruby(p[0])} = ${DK.esc(p[1])}.`);
+    }
+    return out;
+  }
+  // The comm panel + ASK DATA button shown under a live (un-answered) exercise.
+  function dataAssistHtml(ex) {
+    const L = S.lesson || S.drill;
+    if (!L || L.answered) return "";
+    const mx = maxHints(ex);
+    if (!mx) return "";
+    const shown = Math.min(ex._hints || 0, mx);
+    const lines = hintLines(ex).slice(0, shown);
+    const nudge = ex._dataNudge && !lines.length;
+    const panel = (lines.length || nudge) ? `
+      <div class="data-panel">
+        <div class="data-badge">◈</div>
+        <div class="data-body">
+          <div class="data-name">LT. CMDR. DATA</div>
+          ${nudge ? `<div class="data-line">I have observed some difficulty, Officer. Permit me to assist — it is no trouble at all.</div>` : ""}
+          ${lines.map((l) => `<div class="data-line">${l}</div>`).join("")}
+        </div>
+      </div>` : "";
+    const btn = shown < mx
+      ? `<button class="btn ghost assist-btn" data-act="hint">${shown ? "DATA, MORE ◈" : "ASK DATA ◈"}</button>`
+      : "";
+    return `<div class="assist">${panel}${btn}</div>`;
+  }
+
+  /* ---------- Orientation (first-run tour, narrated by Data) ---------- */
+  const ONBOARD = [
+    { t: "Lt. Commander Data reporting", b: "I am the ship's operations officer — and your language instructor. Allow me to orient you before your first duty shift. It will take under a minute." },
+    { t: "Missions &amp; duty shifts", b: "The course is twelve <b>missions</b>, each about five <b>duty shifts</b> — roughly three months of study. Nothing is locked; you may begin, repeat, or revisit any shift whenever you wish." },
+    { t: "How a shift runs", b: "Each shift has three parts: a <b>Mission Briefing</b> that genuinely explains the grammar, a <b>Vocabulary Database</b> with audio and furigana, and a <b>Holodeck Simulation</b> where every answer — right or wrong — is explained." },
+    { t: "No hearts. No streaks.", b: "There is no punishment here. Rank is <b>earned and never lost</b>; an error is merely data. I will quietly bring difficult words back until they are secure." },
+    { t: "When uncertain, ask me", b: "In any exercise, tap <b>ASK DATA&nbsp;◈</b> and I will narrow the options or reveal the reading. Type answers in rōmaji — <b>ko-n-ni-chi-ha → こんにちは</b> — the console converts it to kana as you type." },
+    { t: "The writing system", b: "Tap any <b>kanji</b> — in a word, on a card, or in the Reference database — and I will show its meaning, its readings, and the radicals it is built from. Understanding a character beats memorising it." },
+  ];
+  function onboardHtml() {
+    const i = S.onboard || 0;
+    const s = ONBOARD[i];
+    if (!s) return "";
+    const last = i + 1 >= ONBOARD.length;
+    return `
+      <div class="onboard-scrim">
+        <div class="onboard" role="dialog" aria-modal="true" aria-label="Orientation">
+          <div class="data-badge big">◈</div>
+          <div class="ob-step">ORIENTATION · ${i + 1} / ${ONBOARD.length}</div>
+          <h2 class="ob-title">${s.t}</h2>
+          <p class="ob-body">${s.b}</p>
+          <div class="ob-dots">${ONBOARD.map((_, k) => `<i class="${k === i ? "on" : ""}"></i>`).join("")}</div>
+          <div class="btnrow">
+            <button class="btn big" data-act="onboard-next">${last ? "BEGIN ▸" : "CONTINUE ▸"}</button>
+            ${last ? "" : `<button class="btn ghost" data-act="onboard-skip">SKIP</button>`}
+          </div>
+        </div>
+      </div>`;
+  }
+
   /* ---------- exercise rendering ---------- */
   const JP_RE = /[぀-ヿ一-鿿]/;
 
@@ -406,12 +489,18 @@
     let body = "";
     if (ex.t === "mc" || ex.t === "listen") {
       const jpChoices = ex.choices.some((c) => JP_RE.test(c));
+      // 50/50: the first hint fades two wrong options (chosen once, kept stable).
+      if ((ex._hints || 0) >= 1 && !ex._hidden) {
+        const wrong = ex.choices.map((_, i) => i).filter((i) => i !== ex.a);
+        ex._hidden = DK.shuffle(wrong).slice(0, Math.min(2, Math.max(0, wrong.length - 1)));
+      }
+      const hidden = ex._hidden || [];
       body = `
         ${ex.q ? `<div class="ex-q">${DK.md(ex.q)}</div>` : ""}
         ${ex.t === "listen" ? `<div class="ex-jp"><button class="say" data-say="${DK.esc(ex.speak)}">▶</button><span style="color:var(--dim);font-size:15px">play again</span></div>` : ""}
         ${ex.jp && ex.t !== "listen" ? `<div class="ex-jp">${ex.speak !== false ? `<button class="say" data-say="${DK.esc(ex.speakText || DK.plain(ex.jp))}">▶</button>` : ""}<span>${DK.ruby(ex.jp).replace(/(＿＿+|___+)/g, '<span class="blank">［&nbsp;?&nbsp;］</span>')}</span></div>` : ""}
         <div class="choices ${jpChoices && ex.choices.every((c) => c.length <= 6) ? "two-col" : ""}">
-          ${ex.choices.map((c, i) => `<button class="choice" data-choice="${i}" ${JP_RE.test(c) ? 'style="font-size:20px"' : ""}><span class="ck">${i + 1}</span>${DK.ruby(c)}</button>`).join("")}
+          ${ex.choices.map((c, i) => `<button class="choice ${hidden.includes(i) ? "hint-out" : ""}" data-choice="${i}" ${hidden.includes(i) ? "disabled" : ""} ${JP_RE.test(c) ? 'style="font-size:20px"' : ""}><span class="ck">${i + 1}</span>${DK.ruby(c)}</button>`).join("")}
         </div>`;
     } else if (ex.t === "type") {
       body = `
@@ -445,7 +534,7 @@
           ${ex._right.map((c, i) => `<button class="choice mright ${ex._done.has(c.i) ? "done" : ""}" data-mright="${i}">${DK.esc(c.txt)}</button>`).join("")}
         </div>`;
     }
-    return `<div class="ex-card"><div class="ex-kind">${kind}</div>${body}<div id="feedback"></div></div>`;
+    return `<div class="ex-card"><div class="ex-kind">${kind}</div>${body}${dataAssistHtml(ex)}<div id="feedback"></div></div>`;
   }
 
   function feedbackHtml(ok, ex, userWrongText) {
@@ -483,13 +572,19 @@
     L.results = L.results || [];
     L.results[L.idx] = ok;
     if (!ex._retry) {
-      L.firstTry[L.idx] = ok;
+      // A hint-assisted correct answer isn't a clean first try (medals / score).
+      L.firstTry[L.idx] = ok && !ex._assisted;
     }
+    L.streakWrong = ok ? 0 : (L.streakWrong || 0) + 1;
     if (!ok) {
       L.wrongTotal++;
-      // requeue once at the end
+      // requeue once at the end; if the officer is struggling, Data pre-offers help
+      // on the retry (fresh hint state + a proactive nudge in the comm panel).
       if (!ex._retry) {
-        const copy = Object.assign({}, ex, { _retry: true, _bank: null, _placed: null, _left: null, _right: null, _done: null });
+        const copy = Object.assign({}, ex, {
+          _retry: true, _bank: null, _placed: null, _left: null, _right: null, _done: null,
+          _hints: 0, _hidden: null, _assisted: false, _dataNudge: L.streakWrong >= 2,
+        });
         L.queue.push(copy);
         L.total = L.queue.length;
       }
@@ -814,6 +909,8 @@
      ---------------------------------------------------------- */
   function render() {
     if (!P.settings.booted) { boot(); return; }
+    // First-run orientation: fire once, on the bridge, until the officer completes it.
+    if (!P.settings.onboarded && S.onboard === null && S.view === "bridge") S.onboard = 0;
     let inner = "";
     if (S.view === "bridge") inner = viewBridge();
     else if (S.view === "missions") inner = viewMissions();
@@ -822,6 +919,7 @@
     else if (S.view === "reference") inner = viewReference();
     else if (S.view === "log") inner = viewLog();
     $app.innerHTML = frame(inner, S.view === "lesson" ? "missions" : S.view);
+    if (typeof S.onboard === "number") $app.insertAdjacentHTML("beforeend", onboardHtml());
     document.body.classList.toggle("no-furi", !P.settings.furigana);
     document.body.classList.toggle("no-romaji", !P.settings.romaji);
     startCascade();
@@ -954,7 +1052,7 @@
 
     const act = t.dataset.act;
     if (!act) return;
-    snd(act === "next-ex" ? "tap" : "nav");
+    snd(act === "next-ex" || act === "hint" ? "tap" : "nav");
 
     if (act === "toggle-mission") {
       const wi = parseInt(t.dataset.wi, 10);
@@ -1012,6 +1110,21 @@
         DK.reset();
         location.reload();
       }
+    } else if (act === "hint") {
+      if (!L || L.answered) return;
+      const ex = L.queue[L.idx];
+      ex._hints = (ex._hints || 0) + 1;
+      ex._assisted = true;
+      ex._dataNudge = false;
+      rerenderEx();
+    } else if (act === "orientation") {
+      S.onboard = 0; render();
+    } else if (act === "onboard-next") {
+      S.onboard = (S.onboard || 0) + 1;
+      if (S.onboard >= ONBOARD.length) { S.onboard = null; P.settings.onboarded = true; DK.save(P); }
+      render();
+    } else if (act === "onboard-skip") {
+      S.onboard = null; P.settings.onboarded = true; DK.save(P); render();
     }
   });
 
