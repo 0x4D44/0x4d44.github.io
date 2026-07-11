@@ -29,7 +29,7 @@ window.ESSAYS = [
   {
     slug: "onu",
     title: "Onu, By the Book",
-    tagline: "The classic shedding card game, played strictly by the book against three snakes drawn from a pit of ten — Cobra, Python, Mamba and friends. Official scoring to 500, Wild Draw Four challenges, ONU-call penalties — and Officer Reggie Rules, the Rule Policeman who pops up to keep everyone honest. Vanilla JS, no build step.",
+    tagline: "The classic shedding game in three forms: rules-strict Onu, double-sided Onu Flip and house-rule Onu Chaos. Face three snakes drawn from a pit of ten, each with a learnable playing personality, while Officer Reggie Rules keeps the table honest. Offline vanilla JavaScript on a deterministic tested core; no backend.",
     url: "https://0x4d44.github.io/onu/",
     illustration: "ill-onu",
     date: "2026-07-11T12:00:00",
