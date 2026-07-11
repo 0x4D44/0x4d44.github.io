@@ -194,23 +194,23 @@ test("validateState rejects an unknown ship feature id", () => {
 test("validateState rejects unknown cabin-plan and speed ids", () => {
   const badCabin = malformedBase();
   badCabin.company.fleet[0].cabinPlanId = "penthouse";
-  assert.ok(validateState(badCabin).some((m) => m.includes("cabin plan")));
+  assert.ok(validateState(badCabin).some((m) => m.includes("penthouse")));
 
   const badSpeed = malformedBase();
   badSpeed.company.fleet[0].speedId = "warp";
-  assert.ok(validateState(badSpeed).some((m) => m.includes("speed")));
+  assert.ok(validateState(badSpeed).some((m) => m.includes("warp")));
 });
 
 test("validateState rejects a malformed ship livery", () => {
   const saved = malformedBase();
   saved.company.fleet[0].livery = "royal-blue";
-  assert.ok(validateState(saved).some((m) => m.includes("livery")));
+  assert.ok(validateState(saved).some((m) => m.includes("livery") && m.includes("royal-blue")));
 });
 
 test("validateState rejects malformed build orders", () => {
   const noShip = malformedBase();
   noShip.company.orders.push({ id: "o1", quartersRemaining: 2 });
-  assert.ok(validateState(noShip).length > 0, "order with no ship");
+  assert.ok(validateState(noShip).some((m) => m.includes("Order o1")), "order with no ship");
 
   const badHull = malformedBase();
   const badHullShip = JSON.parse(JSON.stringify(badHull.company.fleet[0]));
@@ -235,12 +235,42 @@ test("validateState rejects malformed rival structure", () => {
   const rivalNoFleet = malformedBase();
   delete rivalNoFleet.rivals[0].fleet;
   assert.ok(validateState(rivalNoFleet).some((m) => m.includes("fleet")));
+
+  const rivalOrdersNotArray = malformedBase();
+  rivalOrdersNotArray.rivals[0].orders = "nope";
+  assert.ok(validateState(rivalOrdersNotArray).some((m) => m.includes("Rival") && m.includes("orders")));
+
+  const rivalNullOrder = malformedBase();
+  rivalNullOrder.rivals[0].orders = [null];
+  assert.ok(validateState(rivalNullOrder).some((m) => m.includes("Rival") && m.includes("non-object order")));
+
+  const rivalBadShip = malformedBase();
+  rivalBadShip.rivals[0].fleet[0].hullId = "starship";
+  assert.ok(validateState(rivalBadShip).some((m) => m.includes("Rival") && m.includes("hull")));
 });
 
 test("validateState rejects an unknown campaign status", () => {
   const saved = malformedBase();
   saved.status = "victory-lap";
-  assert.ok(validateState(saved).some((m) => m.includes("status")));
+  assert.ok(validateState(saved).some((m) => m.includes("victory-lap")));
+});
+
+test("validateState rejects other structural corruptions (defensive depth)", () => {
+  const featuresNotArray = malformedBase();
+  featuresNotArray.company.fleet[0].features = "none";
+  assert.ok(validateState(featuresNotArray).some((m) => m.includes("features is not an array")));
+
+  const nonObjectOrder = malformedBase();
+  nonObjectOrder.company.orders.push(null);
+  assert.ok(validateState(nonObjectOrder).some((m) => m.includes("An order is not an object")));
+
+  const nonObjectRival = malformedBase();
+  nonObjectRival.rivals.push(null);
+  assert.ok(validateState(nonObjectRival).some((m) => m.includes("A rival is not an object")));
+
+  const newsNotArray = malformedBase();
+  newsNotArray.news = null;
+  assert.ok(validateState(newsNotArray).some((m) => m.includes("News is not an array")));
 });
 
 test("a corrupt feature id passes the forecast gate but validateState still catches it", () => {
