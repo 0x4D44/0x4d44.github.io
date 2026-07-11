@@ -16,11 +16,11 @@
 
 window.ESSAYS = [
   {
-    slug: "uno",
-    title: "UNO, By the Book",
-    tagline: "The classic shedding card game, played strictly by the book: three cartoon AI rivals, official scoring to 500, Wild Draw Four challenges, UNO-call penalties — and Officer Reggie Rules, the Rule Policeman who pops up to keep everyone honest. Big glossy cards, confetti and synthesised fanfares. Vanilla JS, no build step.",
-    url: "https://0x4d44.github.io/uno/",
-    illustration: "ill-uno",
+    slug: "onu",
+    title: "Onu, By the Book",
+    tagline: "The classic shedding card game, played strictly by the book against three snakes drawn from a pit of ten — Cobra, Python, Mamba and friends. Official scoring to 500, Wild Draw Four challenges, ONU-call penalties — and Officer Reggie Rules, the Rule Policeman who pops up to keep everyone honest. Vanilla JS, no build step.",
+    url: "https://0x4d44.github.io/onu/",
+    illustration: "ill-onu",
     date: "2026-07-11T12:00:00",
     year: 2026,
     tag: "games",
