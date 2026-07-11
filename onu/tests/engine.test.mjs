@@ -27,7 +27,7 @@ function state(mode = "classic", hands = [[], [], [], []], top = null, drawPile 
     mode, side: "light", players: hands.map((hand, i) => ({ name: `P${i}`, profile: SNAKES[i % SNAKES.length].id, hand, saidOnu: false })),
     drawPile, discardPile: [top], turn: 0, direction: 1,
     currentColor: activeFace(top, mode, "light").color,
-    dealer: 3, pendingStack: null, pendingChallenge: null, catchPlayer: null,
+    dealer: 3, pendingStack: null, catchPlayer: null,
     jumpWindow: null, winner: null, roundVoid: false, noProgressTurns: 0, lastPlayer: null,
   };
 }
@@ -280,6 +280,31 @@ test("Chaos pending-stack table covers Draw Two stack/accept and rejects mixed t
   assert.equal(r.gameState.turn, 3);
 });
 
+test("Chaos stacking preserves Onu declaration and defers an omitted call until the penalty resolves", () => {
+  const setup = () => state("chaos", [
+    [cf("R", "draw2"), cf("Y", "1")],
+    [cf("G", "draw2"), cf("B", "8")],
+    [cf("B", "2")],
+    [cf("Y", "2")],
+  ], cf("R", "4"), Array.from({ length: 8 }, (_, i) => cf("G", String(i % 9 + 1))));
+
+  let s = setup();
+  let r = transition(s, { type: "play", playerIndex: 0, cardIndex: 0, saidOnu: true });
+  r = transition(r.gameState, { type: "stack", playerIndex: 1, cardIndex: 0, saidOnu: false });
+  assert.equal(r.gameState.players[1].saidOnu, false);
+  assert.equal(r.gameState.catchPlayer, 1, "the omitted call remains queued behind the stack");
+  r = transition(r.gameState, { type: "acceptPenalty", playerIndex: 2 });
+  assert.equal(r.request?.type, "catch");
+  assert.equal(r.request?.playerIndex, 1);
+
+  s = setup();
+  r = transition(s, { type: "play", playerIndex: 0, cardIndex: 0, saidOnu: true });
+  r = transition(r.gameState, { type: "stack", playerIndex: 1, cardIndex: 0, saidOnu: true });
+  r = transition(r.gameState, { type: "acceptPenalty", playerIndex: 2 });
+  assert.notEqual(r.request?.type, "catch", "a declared stacked card must not create a catch window");
+  assert.equal(r.gameState.players[1].saidOnu, true);
+});
+
 test("Chaos supports a three-W4 chain and challenges only the latest offender for the entire stack", () => {
   const w0 = cf("W", "wildDraw4"), w1 = cf("W", "wildDraw4"), w2 = cf("W", "wildDraw4");
   let s = state("chaos", [[w0, cf("Y", "1")], [w1, cf("G", "1")], [w2, cf("B", "9")], [cf("R", "1")]], cf("R", "5"), Array.from({ length: 12 }, (_, i) => cf(i % 2 ? "Y" : "G", String(i % 9 + 1))));
@@ -367,6 +392,23 @@ test("Skip and Reverse resolve before an identical jumping action resolves again
     if (symbol === "skip") assert.equal(r.gameState.turn, 0);
     else { assert.equal(r.gameState.direction, 1); assert.equal(r.gameState.turn, 3); }
   }
+});
+
+test("a jumping Chaos 7 can resolve its required swap target", () => {
+  const first = cf("R", "7"), mate = cf("R", "7");
+  let s = state("chaos", [
+    [first, cf("Y", "3")],
+    [cf("G", "4"), cf("G", "5")],
+    [mate, cf("B", "6")],
+    [cf("Y", "8")],
+  ], cf("R", "2"));
+  let r = transition(s, { type: "play", playerIndex: 0, cardId: first.id, target: 1, saidOnu: true });
+  assert.equal(r.request?.type, "jump");
+  r = transition(r.gameState, { type: "jump", playerIndex: 2, cardId: mate.id, saidOnu: true });
+  assert.equal(r.request?.type, "chooseTarget");
+  r = transition(r.gameState, { type: "jump", playerIndex: 2, cardId: mate.id, target: 3, saidOnu: true });
+  assert.equal(r.gameState.lastPlayer, 2);
+  assert.equal(r.gameState.players[3].hand.some(card => card.id === mate.id), false);
 });
 
 test("Chaos Draw-to-Match terminates and voids a round after a full exhausted lap", () => {

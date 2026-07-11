@@ -361,7 +361,7 @@ export function createGameState({ mode = "classic", players = defaultPlayers(), 
   const state = {
     mode, side: "light", players: clone(players), drawPile: mode === "flip" ? buildFlipDeck(rng) : buildClassicDeck(rng),
     discardPile: [], turn: 0, direction: 1, currentColor: null, dealer,
-    pendingStack: null, pendingChallenge: null, catchPlayer: null, jumpWindow: null,
+    pendingStack: null, catchPlayer: null, catchQueue: [], jumpWindow: null,
     winner: null, roundVoid: false, noProgressTurns: 0, lastPlayer: null,
   };
   state.players.forEach(player => { player.hand ??= []; player.saidOnu ??= false; });
@@ -417,12 +417,30 @@ function requestForPending(state) {
 function determineWinner(state) {
   const empty = state.players.findIndex(player => player.hand.length === 0);
   state.winner = empty < 0 ? null : empty;
-  if (state.winner != null) { state.catchPlayer = null; state.jumpWindow = null; }
+  if (state.winner != null) { state.catchPlayer = null; state.catchQueue = []; state.jumpWindow = null; }
+}
+
+function queueCatch(state, playerIndex) {
+  state.catchQueue ??= [];
+  if (state.catchPlayer == null) state.catchPlayer = playerIndex;
+  else if (state.catchPlayer !== playerIndex && !state.catchQueue.includes(playerIndex)) state.catchQueue.push(playerIndex);
+}
+
+function normalizeCatchQueue(state) {
+  const queued = [state.catchPlayer, ...(state.catchQueue ?? [])]
+    .filter((index, position, all) => index != null && all.indexOf(index) === position)
+    .filter((index) => {
+      const player = state.players[index];
+      return player?.hand.length === 1 && !player.saidOnu && !player.transferImmune;
+    });
+  state.catchPlayer = queued.shift() ?? null;
+  state.catchQueue = queued;
 }
 
 function finishResolvedPlay(state, playedCard) {
   determineWinner(state);
   if (state.winner != null || state.pendingStack) return null;
+  normalizeCatchQueue(state);
   if (state.catchPlayer != null) return { type: "catch", playerIndex: state.catchPlayer };
   const candidates = jumpCandidates(state, playedCard, state.lastPlayer);
   state.jumpWindow = candidates.length ? { cardId: playedCard.id, candidates } : null;
@@ -487,13 +505,12 @@ function resolvePlay(state, command, rng, events, jumping = false) {
       amount, target, latestOffender: playerIndex, latestCardId: card.id,
       latestLegal: wasLegal, chosenColor: command.color, priorColor,
     };
-    state.pendingChallenge = clone(state.pendingStack);
     state.turn = target;
   } else state.turn = nextSeat(state, playerIndex);
 
   const holder = state.players.findIndex(p => p.hand === playedPacketHand);
   const playedPacket = holder < 0 ? null : state.players[holder];
-  if (playedPacket?.hand.length === 1 && !playedPacket.saidOnu && !playedPacket.transferImmune) state.catchPlayer = holder;
+  if (playedPacket?.hand.length === 1 && !playedPacket.saidOnu && !playedPacket.transferImmune) queueCatch(state, holder);
   if (state.pendingStack) return { request: requestForPending(state) };
   return { request: finishResolvedPlay(state, card) };
 }
@@ -516,7 +533,6 @@ function resolvePenalty(state, challenged, rng, events) {
   }
   state.turn = outcome.targetKeepsTurn ? target : nextSeat(state, target);
   state.pendingStack = null;
-  state.pendingChallenge = null;
   return finishResolvedPlay(state, topCard(state));
 }
 
@@ -533,7 +549,7 @@ export function transition(gameState, command, rng = Math.random) {
   const pendingType = state.pendingRequest?.type;
   const allowed = {
     chooseColor: state.pendingRequest?.cardId ? [state.pendingRequest.action === "stack" ? "stack" : "play"] : ["chooseStarterColor"],
-    chooseTarget: ["play"], playDrawn: ["play", "keepDrawn"],
+    chooseTarget: ["play", "jump"], playDrawn: ["play", "keepDrawn"],
     penaltyResponse: ["stack", "accept", "acceptPenalty", "challenge"],
     catch: ["callOnu", "catch", "passCatch"], jump: ["jump", "passJump"],
   };
@@ -598,7 +614,11 @@ export function transition(gameState, command, rng = Math.random) {
     }
     const priorColor = state.currentColor;
     const legal = !state.players[playerIndex].hand.some(other => other.id !== card.id && activeFace(other, state)?.color === priorColor);
-    state.players[playerIndex].hand.splice(index, 1);
+    const player = state.players[playerIndex];
+    player.hand.splice(index, 1);
+    player.transferImmune = false;
+    player.saidOnu = player.hand.length === 1 ? !!command.saidOnu : false;
+    if (player.hand.length === 1 && !player.saidOnu) queueCatch(state, playerIndex);
     state.discardPile.push(card);
     state.currentColor = f.color === "W" ? command.color : f.color;
     pending.amount += pending.kind === "draw2" ? 2 : 4;
@@ -608,7 +628,6 @@ export function transition(gameState, command, rng = Math.random) {
     pending.priorColor = priorColor;
     pending.chosenColor = command.color ?? null;
     pending.target = nextSeat(state, playerIndex);
-    state.pendingChallenge = pending.kind === "wildDraw4" ? clone(pending) : null;
     state.turn = pending.target;
     state.lastPlayer = playerIndex;
     events.push({ type: "stack", playerIndex, amount: pending.amount });

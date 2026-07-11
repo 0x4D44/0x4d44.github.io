@@ -81,6 +81,7 @@ function cancelSession() {
   modalCancel = null;
   reactionOpen = false;
   modalOpen = false;
+  $("cop")?.classList.remove("show");
 }
 
 // ---------- sound -----------------------------------------------------------
@@ -291,6 +292,7 @@ function askDialog({ title, body = "", buttons, safe = 0 }) {
   const previous = document.activeElement;
   modalOpen = true;
   $("newBtn").disabled = true;
+  $("rulesBtn").disabled = true;
   return new Promise((resolve) => {
     const wrap = document.createElement("div");
     wrap.id = "modalWrap";
@@ -303,7 +305,9 @@ function askDialog({ title, body = "", buttons, safe = 0 }) {
     const row = document.createElement("div"); row.className = "btnrow";
     modal.append(heading, content, row); wrap.appendChild(modal); document.body.appendChild(wrap);
     const finish = (value) => {
-      wrap.remove(); modalOpen = false; modalCancel = null; $("newBtn").disabled = reactionOpen;
+      wrap.remove(); modalOpen = false; modalCancel = null;
+      $("newBtn").disabled = reactionOpen;
+      $("rulesBtn").disabled = reactionOpen;
       previous?.focus?.(); resolve(value);
     };
     modalCancel = () => finish(null);
@@ -435,7 +439,18 @@ async function handlePenalty(request, g) {
       const id = await askDialog({ title: "Choose a card to stack", buttons: eligible.map((item) => ({ label: faceName(activeFace(item, game)), value: item.id })) });
       card = eligible.find((item) => item.id === id);
     }
-    if (card) await applyCommand({ type: "stack", playerIndex: request.playerIndex, cardId: card.id }, g);
+    let saidOnu = false;
+    if (card && player.hand.length === 2) {
+      saidOnu = player.human
+        ? await askDialog({
+          title: "Call Onu with the stack?",
+          body: "<p>Your stack leaves one card. Call Onu now or risk being caught after the penalty resolves.</p>",
+          buttons: [{ label: "Call ONU", value: true }, { label: "Stack silently", value: false, kind: "quiet" }],
+        })
+        : chooseAiDecision("callOnu", game, request.playerIndex, player.profile, rng);
+    }
+    if (!alive(g)) return;
+    if (card) await applyCommand({ type: "stack", playerIndex: request.playerIndex, cardId: card.id, saidOnu }, g);
     else await applyCommand({ type: "acceptPenalty", playerIndex: request.playerIndex }, g);
   } else await applyCommand({ type: "acceptPenalty", playerIndex: request.playerIndex }, g);
 }
@@ -503,8 +518,9 @@ async function handleJump(request, g) {
   } else {
     const jumps = chooseAiDecision("jump", game, candidate.playerIndex, player.profile, rng);
     if (jumps) {
-      await sleep(chooseAiDecision("jumpDelay", game, candidate.playerIndex, player.profile, rng), g);
-      if (alive(g)) await applyCommand({ type: "jump", playerIndex: candidate.playerIndex, cardId: candidate.cardId, saidOnu: player.hand.length === 2 && chooseAiDecision("callOnu", game, candidate.playerIndex, player.profile, rng) }, g);
+      say(`${player.name} is poised to Jump-In…`);
+      const outcome = await waitForReaction("jump", chooseAiDecision("jumpDelay", game, candidate.playerIndex, player.profile, rng), g);
+      if (alive(g) && outcome === "timeout") await applyCommand({ type: "jump", playerIndex: candidate.playerIndex, cardId: candidate.cardId, saidOnu: player.hand.length === 2 && chooseAiDecision("callOnu", game, candidate.playerIndex, player.profile, rng) }, g);
     } else await applyCommand({ type: "passJump" }, g);
   }
 }
@@ -657,4 +673,18 @@ window.__onu = {
   cancel() { cancelSession(); },
   fast(value = true) { fast = value; },
   snapshot() { return game ? structuredClone(game) : null; },
+  _loadFixture(nextGame, { request = null, seed = 1 } = {}) {
+    cancelSession();
+    game = structuredClone(nextGame);
+    assertState(game);
+    selectedMode = game.mode;
+    rng = createSeededRng(seed);
+    scores = [0, 0, 0, 0]; round = 1; dealer = game.dealer;
+    playerTemplates = game.players.map(({ name, human, profile }) => ({ name, human, profile }));
+    phase = "busy";
+    $("splash").classList.add("hidden");
+    render();
+    const g = generation;
+    queueMicrotask(() => request ? handleRequest(request, {}, g) : runRound(g));
+  },
 };
