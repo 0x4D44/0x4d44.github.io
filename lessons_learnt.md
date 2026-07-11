@@ -22,7 +22,30 @@ Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
   the same small print enlarged. None of this is caught by `validate-static.test.js`
   (CSS and renderHand are unguarded) — verify in a real browser at 360×640 and 390×844,
   and bump the cache-first `sw.js` `CACHE` version or returning visitors never see it.
-
+- 2026-07-11 — Design-Canvas (DC) export documents (inline `style=""` on every
+  element, `support.js` runtime) frequently ship with **no responsive media
+  queries at all** — desktop-only. On a real phone the asymmetric grids collapse
+  their flexible column to near-0px (cruise-propulsion's hero prose set one word
+  per line; its simulator form column was 13px wide). Fix with an added `<style>`
+  block of `@media (max-width: …)` rules: inline styles outrank any selector, so
+  the reflow rules **must** use `!important`, and add class hooks to the grid
+  divs rather than editing their inline styles (keeps desktop bit-for-bit
+  identical, since the hooks only bite inside the query). Also watch content-box
+  overflow — an element sized `width:min(100%,Npx)` with padding+border measures
+  `100% + padding + border`, invisible on desktop (gap absorbs it) but a sideways
+  scroll on a phone; `box-sizing:border-box` fixes it.
+- 2026-07-11 — Auditing these DC docs headless is booby-trapped twice over.
+  (1) `chrome.kill()` on Windows leaves the renderer children alive holding the
+  debug port; a *derived* debug port then attaches to a stale browser and results
+  go non-deterministic — use an OS-assigned free port and `taskkill /T /F` on
+  your own pid tree ONLY (dev boxes routinely have dozens of the user's real
+  Chrome processes; never blanket-kill chrome.exe). (2) The page pulls React from
+  unpkg (blocked in-sandbox) and compiles a large template, so a boot check at a
+  fixed delay races the compiler and cries "blank page" under load — inject the
+  vendored React UMD (`broadband-speed-checker/vendor/*.js`; `loadReactUmd()`
+  short-circuits on `window.React`) and *poll* for the ready condition, don't
+  sample once. A flaky oracle invents phantom root causes — twice I wrongly
+  blamed CSS for what was harness flake.
 - 2026-07-10 — Service-worker `CacheStorage` is shared across the whole
   `0x4d44.github.io` origin, not isolated by the worker's `/slug/` scope. Each
   document PWA must namespace its cache and delete only stale keys with its own
