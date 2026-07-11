@@ -1176,7 +1176,7 @@ function validateShipRefs(ship, label, errors) {
   if (!SPEEDS[ship.speedId]) errors.push(`${label}: unknown speed ${ship.speedId}.`);
   if (!Array.isArray(ship.features)) errors.push(`${label}: features is not an array.`);
   else for (const id of ship.features) if (!FEATURES[id]) errors.push(`${label}: unknown feature ${id}.`);
-  if (typeof ship.livery !== "string" || !/^#[0-9a-f]{6}$/i.test(ship.livery)) errors.push(`${label}: invalid livery.`);
+  if (typeof ship.livery !== "string" || !/^#[0-9a-f]{6}$/i.test(ship.livery)) errors.push(`${label}: invalid livery ${ship.livery}.`);
   for (const key of ["pax", "condition", "bookValue", "fuel", "crew"]) {
     if (!Number.isFinite(ship[key])) errors.push(`${label} ${key} is not finite.`);
   }
@@ -1188,6 +1188,7 @@ export function validateState(state) {
   if (!DIFFICULTIES[state.difficultyId]) errors.push("Unknown difficulty.");
   if (!FOCUSES[state.company?.focusId]) errors.push("Unknown company focus.");
   if (!CAMPAIGN_STATUSES.has(state.status)) errors.push(`Unknown campaign status ${state.status}.`);
+  if (!Array.isArray(state.news)) errors.push("News is not an array."); // app.mjs renders state.news.slice(...) unguarded
   for (const key of ["cash", "debt", "reputation", "sustainability", "serviceSpend", "maintenance", "crewPay"]) {
     if (!Number.isFinite(state.company?.[key])) errors.push(`Company ${key} is not finite.`);
   }
@@ -1219,8 +1220,25 @@ export function validateState(state) {
         continue;
       }
       const label = rival.id ?? rival.name ?? "?";
-      if (!Array.isArray(rival.fleet)) errors.push(`Rival ${label} fleet is not an array.`);
-      if (!Array.isArray(rival.orders)) errors.push(`Rival ${label} orders is not an array.`);
+      if (!Array.isArray(rival.fleet)) {
+        errors.push(`Rival ${label} fleet is not an array.`);
+      } else {
+        for (const ship of rival.fleet) validateShipRefs(ship, `Rival ${label} ship ${ship?.name ?? "?"}`, errors);
+      }
+      // rivalEnterpriseValue reduces over rival.orders on every rank/render, so a null/bad
+      // element crashes the bridge — element-level checks, like the player orders above.
+      if (!Array.isArray(rival.orders)) {
+        errors.push(`Rival ${label} orders is not an array.`);
+      } else {
+        for (const order of rival.orders) {
+          if (!order || typeof order !== "object") {
+            errors.push(`Rival ${label} has a non-object order.`);
+            continue;
+          }
+          validateShipRefs(order.ship, `Rival ${label} order ${order.ship?.name ?? "?"}`, errors);
+          if (!Number.isFinite(order.quartersRemaining)) errors.push(`Rival ${label} order quartersRemaining is not finite.`);
+        }
+      }
     }
   }
   for (const [marketId, price] of Object.entries(state.company?.prices ?? {})) {
