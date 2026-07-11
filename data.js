@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "vector-gp",
+    title: "Vector GP",
+    tagline: "A flat-shaded polygon grand prix in the spirit of the great early-90s racing sims: a 16-round world championship, 13 invented teams and 26 invented drivers, a cockpit with mirrors and rev LEDs, and the six classic switchable driver aids — from full novice to no-net ace. FM-synthesised V12, vanilla JS on a 640×400 canvas; no build step.",
+    url: "https://0x4d44.github.io/vector-gp/",
+    illustration: "ill-vectorgp",
+    date: "2026-07-11T22:30:00",
+    year: 1991,
+    tags: ["games", "transport"],
+    real: true,
+  },
+  {
     slug: "brilliancy",
     title: "Brilliancy",
     tagline: "A chess power-fantasy for people who cannot play chess: eight rounds at a wind-battered winter invitational where your every instinct is a legendary masterstroke — queen sacrifices, zugzwang, gold coins, a smug machine. Secretly replays seven immortal games move for move, all validated by a real embedded chess engine. Offline vanilla JS; no build step.",
