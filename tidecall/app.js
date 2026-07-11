@@ -342,7 +342,10 @@
     node.dataset.cardId = card.id;
     node.classList.toggle('red', meta.colour === 'red');
     node.classList.toggle('face-card', card.r >= 11);
-    if (card.r >= 11) node.dataset.face = E.rankLabel(card.r);
+    // The watermark is drawn by `.card-art::before { content: attr(data-face) }`, and
+    // attr() resolves against the pseudo-element's own element — so data-face must live
+    // on .card-art, not the card button, or the J/Q/K/A ghost never renders.
+    if (card.r >= 11) $('.card-art', node).dataset.face = E.rankLabel(card.r);
     const rank = E.rankLabel(card.r);
     $$('.card-corner b', node).forEach((el) => { el.textContent = rank; });
     $$('.card-corner i', node).forEach((el) => { el.textContent = meta.glyph; });

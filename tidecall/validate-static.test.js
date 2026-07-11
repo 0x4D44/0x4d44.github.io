@@ -68,6 +68,14 @@ test('service worker only retires Tidecall caches', () => {
   assert.doesNotMatch(worker, /keys\.filter\(\(key\) => key !== CACHE\)/);
 });
 
+test('face-card watermark attribute targets the element its CSS reads', () => {
+  // The watermark is drawn by `.card-art::before { content: attr(data-face) }`; attr()
+  // resolves against .card-art, so data-face must be written there, not on the button,
+  // or the J/Q/K/A ghost never renders (regression guard for the wrong-node bug).
+  assert.match(app, /\$\('\.card-art', node\)\.dataset\.face/, 'data-face must be set on .card-art');
+  assert.doesNotMatch(app, /\bnode\.dataset\.face\b/, 'data-face must not be set on the card button');
+});
+
 test('the page has no external runtime dependency', () => {
   const externalScripts = matches(html, /<script[^>]+src=["'](https?:\/\/[^"']+)["']/g);
   const externalStyles = matches(html, /<link[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*rel=["']stylesheet["']/g);
