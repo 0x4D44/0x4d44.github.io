@@ -136,6 +136,23 @@
     return DK.esc(s).replace(KANJI_RUN, "<ruby>$1<rt>$2</rt></ruby>");
   };
 
+  // Like DK.ruby, but every kanji that has a breakdown in DK.KANJI becomes a
+  // tappable span (opens its breakdown). Kanji here always sit inside a furigana
+  // run, so we only need to tapify the base of each run.
+  const ONE_KANJI = /[㐀-䶿一-鿿々〆〇ヶ]/g;
+  function tapifyKanji(base) {
+    return base.replace(ONE_KANJI, function (ch) {
+      return (window.DK && DK.KANJI && DK.KANJI[ch])
+        ? '<span class="kj" data-kanji="' + ch + '">' + ch + "</span>"
+        : ch;
+    });
+  }
+  DK.rubyK = function (s) {
+    return DK.esc(s).replace(KANJI_RUN, function (_m, base, read) {
+      return "<ruby>" + tapifyKanji(base) + "<rt>" + read + "</rt></ruby>";
+    });
+  };
+
   // Strip [readings] for TTS / plain display
   DK.plain = function (s) {
     return String(s).replace(KANJI_RUN, "$1");
