@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#140a33"/>
+<title>UNO, By the Book</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎴</text></svg>'/>
+<style>
+:root{
+  --red:#ed1c24; --blue:#0072bc; --green:#00a651; --yellow:#ffde00;
+  --red2:#a30f14; --blue2:#004a7c; --green2:#006b34; --yellow2:#c7ad00;
+  --ink:#fff;
+  --cw:clamp(58px, 11vw, 92px);
+  --panel:rgba(255,255,255,.08);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  margin:0; color:var(--ink);
+  font-family:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 700px at 50% -10%, #4b2bb3 0%, #2a1560 45%, #140a33 100%);
+  overflow:hidden;
+  display:flex; flex-direction:column;
+}
+body::before{ /* slow drifting glow so the felt feels alive */
+  content:""; position:fixed; inset:-40%;
+  background:
+    radial-gradient(500px 300px at 20% 30%, rgba(237,28,36,.14), transparent 70%),
+    radial-gradient(500px 300px at 80% 20%, rgba(0,114,188,.16), transparent 70%),
+    radial-gradient(500px 300px at 60% 80%, rgba(0,166,81,.13), transparent 70%),
+    radial-gradient(500px 300px at 30% 75%, rgba(255,222,0,.10), transparent 70%);
+  animation:bgdrift 26s ease-in-out infinite alternate;
+  pointer-events:none; z-index:0;
+}
+@keyframes bgdrift{ from{transform:rotate(0deg) scale(1);} to{transform:rotate(8deg) scale(1.12);} }
+body.shake{ animation:shake .5s; }
+@keyframes shake{
+  10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-7px)} 40%,60%{transform:translateX(7px)}
+}
+#app{position:relative; z-index:1; display:flex; flex-direction:column; height:100%;}
+
+/* ---------- header ---------- */
+header{
+  display:flex; align-items:center; gap:10px; padding:8px 12px;
+  flex:none; user-select:none;
+}
+#logo{display:flex; align-items:baseline; gap:8px; text-decoration:none; color:inherit;}
+#logo .tiles{display:flex; gap:2px;}
+#logo .tile{
+  width:26px; height:32px; border-radius:6px; display:grid; place-items:center;
+  font-weight:900; font-size:19px; color:#fff; text-shadow:1px 2px 0 rgba(0,0,0,.35);
+  box-shadow:0 3px 0 rgba(0,0,0,.35);
+}
+#logo .tile:nth-child(1){background:linear-gradient(160deg,var(--red),var(--red2)); transform:rotate(-7deg);}
+#logo .tile:nth-child(2){background:linear-gradient(160deg,var(--yellow),var(--yellow2)); transform:rotate(4deg);}
+#logo .tile:nth-child(3){background:linear-gradient(160deg,var(--blue),var(--blue2)); transform:rotate(-3deg);}
+#logo small{font-size:10px; letter-spacing:.22em; opacity:.85; font-weight:700;}
+#scores{display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; justify-content:flex-end;}
+.scorechip{
+  background:var(--panel); border:1px solid rgba(255,255,255,.18); border-radius:999px;
+  padding:3px 10px; font-size:12px; font-weight:700; display:flex; gap:6px; align-items:center;
+}
+.scorechip b{color:var(--yellow);}
+.hbtn{
+  background:var(--panel); border:1px solid rgba(255,255,255,.22); color:#fff;
+  border-radius:10px; padding:6px 9px; font-size:15px; cursor:pointer; line-height:1;
+}
+.hbtn:hover{background:rgba(255,255,255,.18);}
+
+/* ---------- opponents ---------- */
+#oppRow{display:flex; justify-content:space-around; gap:8px; padding:2px 8px 6px; flex:none;}
+.opp{
+  position:relative; text-align:center; padding:8px 10px 10px; border-radius:16px;
+  background:var(--panel); border:2px solid rgba(255,255,255,.12); min-width:110px;
+  transition:box-shadow .3s, border-color .3s, transform .3s;
+}
+.opp.active{
+  border-color:var(--yellow);
+  box-shadow:0 0 18px rgba(255,222,0,.55), inset 0 0 14px rgba(255,222,0,.12);
+  transform:translateY(2px) scale(1.04);
+}
+.opp .avatar{font-size:30px; line-height:1; display:inline-block;}
+.opp.active .avatar{animation:bob 1s ease-in-out infinite;}
+@keyframes bob{50%{transform:translateY(-5px) rotate(-6deg);}}
+.opp .nm{font-weight:800; font-size:13px; margin-top:2px;}
+.opp .fan{display:flex; justify-content:center; margin-top:5px; height:26px;}
+.opp .mini{
+  width:17px; height:25px; border-radius:3px; margin-left:-8px; flex:none;
+  background:linear-gradient(150deg,#2b1a5e,#14093a);
+  border:1px solid rgba(255,255,255,.4);
+  box-shadow:0 1px 3px rgba(0,0,0,.5);
+}
+.opp .mini:first-child{margin-left:0;}
+.opp .cnt{font-size:11px; opacity:.85; margin-top:3px; font-weight:700;}
+.opp .unoflag{
+  position:absolute; top:-9px; right:-6px; background:var(--red); color:#fff;
+  font-size:10px; font-weight:900; border-radius:999px; padding:2px 7px;
+  box-shadow:0 2px 5px rgba(0,0,0,.5); transform:rotate(8deg);
+}
+
+/* ---------- center table ---------- */
+#center{flex:1; display:flex; align-items:center; justify-content:center; gap:clamp(14px,5vw,56px); min-height:0; position:relative;}
+.pilewrap{text-align:center; position:relative;}
+#drawPile{position:relative; width:var(--cw); aspect-ratio:63/88; cursor:pointer;}
+#drawPile .layer{position:absolute; inset:0;}
+#drawPile .layer:nth-child(1){transform:translate(5px,5px);}
+#drawPile .layer:nth-child(2){transform:translate(2.5px,2.5px);}
+#drawPile.canDraw{animation:beckon 1.2s ease-in-out infinite;}
+@keyframes beckon{50%{transform:translateY(-6px);}}
+#deckCnt{margin-top:8px; font-size:11px; opacity:.8; font-weight:700;}
+#discard{position:relative; width:var(--cw); aspect-ratio:63/88;}
+#discard .card{position:absolute; inset:0;}
+#colorHalo{
+  position:absolute; inset:-14px; border-radius:24px; pointer-events:none;
+  transition:box-shadow .4s;
+}
+#dirChip{
+  position:absolute; left:50%; top:-38px; transform:translateX(-50%);
+  font-size:22px; opacity:.9; transition:transform .5s;
+}
+#tableInfo{
+  position:absolute; bottom:6px; left:50%; transform:translateX(-50%);
+  font-size:11px; font-weight:700; letter-spacing:.08em; opacity:.75; white-space:nowrap;
+}
+
+/* ---------- cards ---------- */
+.card{
+  position:relative; width:var(--cw); aspect-ratio:63/88; flex:none;
+  border-radius:calc(var(--cw)*.13); background:#fff;
+  box-shadow:0 5px 12px rgba(0,0,0,.45);
+  user-select:none;
+}
+.card .bg{
+  position:absolute; inset:5.5%; border-radius:calc(var(--cw)*.09);
+  background:linear-gradient(160deg,var(--c1),var(--c2));
+  overflow:hidden;
+}
+.card.cR .bg{--c1:var(--red); --c2:var(--red2);}
+.card.cB .bg{--c1:var(--blue); --c2:var(--blue2);}
+.card.cG .bg{--c1:var(--green); --c2:var(--green2);}
+.card.cY .bg{--c1:var(--yellow); --c2:var(--yellow2);}
+.card.cW .bg{--c1:#26262b; --c2:#000;}
+.card .oval{
+  position:absolute; left:50%; top:50%; width:74%; height:96%;
+  transform:translate(-50%,-50%) rotate(26deg);
+  background:rgba(255,255,255,.94); border-radius:50%;
+  box-shadow:inset 0 0 0 2px rgba(0,0,0,.06);
+}
+.card.cW .oval{
+  background:conic-gradient(var(--red) 0 90deg, var(--blue) 90deg 180deg,
+             var(--yellow) 180deg 270deg, var(--green) 270deg 360deg);
+  opacity:.95;
+}
+.card .val{
+  position:absolute; inset:0; display:grid; place-items:center;
+  font-weight:900; font-size:calc(var(--cw)*.42); color:var(--vc,#333);
+  text-shadow:2px 2px 0 rgba(0,0,0,.16); line-height:1;
+}
+.card.cR .val{--vc:var(--red);} .card.cB .val{--vc:var(--blue);}
+.card.cG .val{--vc:var(--green);} .card.cY .val{--vc:#b89f00;}
+.card.cW .val{--vc:#fff; text-shadow:2px 2px 3px rgba(0,0,0,.75);}
+.card .idx{
+  position:absolute; font-weight:900; font-size:calc(var(--cw)*.17);
+  color:#fff; text-shadow:1px 1px 0 rgba(0,0,0,.35);
+}
+.card .idx.tl{top:6%; left:9%;} .card .idx.br{bottom:6%; right:9%; transform:rotate(180deg);}
+.card.back .bg{background:linear-gradient(150deg,#31207a,#120735);}
+.card.back .oval{
+  background:linear-gradient(160deg,var(--red),var(--red2));
+  width:70%; height:88%;
+}
+.card.back .val{color:#fff; text-shadow:2px 3px 0 rgba(0,0,0,.4); font-size:calc(var(--cw)*.5);}
+
+/* ---------- status + hand ---------- */
+#status{
+  text-align:center; font-weight:800; font-size:clamp(13px,2.4vw,17px);
+  min-height:24px; padding:2px 10px; flex:none; letter-spacing:.02em;
+}
+#status.turn{color:var(--yellow); animation:pulse 1.1s ease-in-out infinite;}
+@keyframes pulse{50%{opacity:.55; transform:scale(.985);}}
+#handWrap{
+  flex:none; padding:14px 10px calc(10px + env(safe-area-inset-bottom));
+  overflow-x:auto; overflow-y:visible; scrollbar-width:thin;
+}
+#hand{
+  display:flex; justify-content:safe center; align-items:flex-end;
+  min-height:calc(var(--cw)*1.62); width:max-content; margin:0 auto; padding:0 14px;
+}
+#hand .card{margin-left:calc(var(--cw)*-.32); cursor:pointer; transition:transform .18s, box-shadow .18s, filter .18s;}
+#hand .card:first-child{margin-left:0;}
+#hand .card.playable{
+  box-shadow:0 0 0 3px #fff, 0 0 20px 4px rgba(255,222,0,.75), 0 6px 14px rgba(0,0,0,.5);
+  transform:translateY(-12px);
+  animation:ready 1.6s ease-in-out infinite;
+}
+@keyframes ready{50%{transform:translateY(-17px);}}
+#hand .card.dull{filter:grayscale(.45) brightness(.75);}
+#hand .card.justDrawn{animation:popIn .4s cubic-bezier(.2,1.6,.4,1);}
+#hand .card.wiggle{animation:wiggle .35s;}
+@keyframes wiggle{25%{transform:translateX(-6px) rotate(-3deg);}75%{transform:translateX(6px) rotate(3deg);}}
+@keyframes popIn{from{transform:scale(.2) rotate(-14deg); opacity:0;}}
+
+/* ---------- action buttons ---------- */
+#actions{
+  position:fixed; right:12px; bottom:calc(14px + env(safe-area-inset-bottom));
+  display:flex; flex-direction:column; gap:10px; z-index:40; align-items:flex-end;
+}
+.bigbtn{
+  border:none; border-radius:999px; padding:13px 24px; font-size:19px; font-weight:900;
+  cursor:pointer; color:#fff; letter-spacing:.05em;
+  box-shadow:0 5px 0 rgba(0,0,0,.35), 0 8px 20px rgba(0,0,0,.4);
+  transition:transform .1s;
+  font-family:inherit;
+}
+.bigbtn:active{transform:translateY(4px); box-shadow:0 1px 0 rgba(0,0,0,.35);}
+#unoBtn{background:linear-gradient(160deg,var(--red),var(--red2)); animation:unopulse .8s ease-in-out infinite;}
+@keyframes unopulse{50%{transform:scale(1.09) rotate(-2deg);}}
+#gotchaBtn{background:linear-gradient(160deg,#7b2ff7,#4a12a8);}
+#drawnBar{display:flex; gap:8px;}
+#playDrawnBtn{background:linear-gradient(160deg,var(--green),var(--green2)); font-size:15px; padding:10px 18px;}
+#keepBtn{background:linear-gradient(160deg,#666,#333); font-size:15px; padding:10px 18px;}
+.hidden{display:none !important;}
+
+/* ---------- speech bubbles ---------- */
+.bubble{
+  position:fixed; z-index:60; transform:translate(-50%,-100%);
+  background:#fff; color:#222; font-weight:900; font-size:16px;
+  padding:7px 13px; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,.4);
+  animation:bubbleUp 1.5s ease forwards; pointer-events:none; white-space:nowrap;
+}
+.bubble.shout{font-size:22px; color:var(--red); border:3px solid var(--red);}
+@keyframes bubbleUp{
+  0%{opacity:0; transform:translate(-50%,-70%) scale(.4);}
+  15%{opacity:1; transform:translate(-50%,-110%) scale(1.08);}
+  80%{opacity:1; transform:translate(-50%,-120%) scale(1);}
+  100%{opacity:0; transform:translate(-50%,-150%) scale(.9);}
+}
+
+/* ---------- Officer Reggie Rules ---------- */
+#cop{
+  position:fixed; left:12px; bottom:calc(12px + env(safe-area-inset-bottom));
+  width:min(340px, calc(100vw - 24px)); z-index:80;
+  transform:translateY(130%) rotate(-2deg); transition:transform .55s cubic-bezier(.2,1.35,.4,1);
+  filter:drop-shadow(0 10px 24px rgba(0,0,0,.55));
+}
+#cop.show{transform:translateY(0) rotate(0deg);}
+#copCard{
+  background:linear-gradient(170deg,#173a75,#0d1f42); border-radius:18px;
+  border:3px solid #fff; overflow:hidden;
+}
+#copLights{height:12px; display:flex;}
+#copLights div{flex:1;}
+#copLights .l1{background:var(--red); animation:flash 0.6s steps(1) infinite;}
+#copLights .l2{background:#1f6fff; animation:flash 0.6s steps(1) infinite .3s;}
+@keyframes flash{50%{opacity:.25;}}
+#copBody{display:flex; gap:10px; padding:10px 12px 12px; align-items:flex-start;}
+#copFace{font-size:44px; line-height:1; flex:none; animation:copbob 1.4s ease-in-out infinite; transform-origin:bottom center;}
+@keyframes copbob{50%{transform:rotate(5deg) translateY(-2px);}}
+#copText{font-size:13.5px; line-height:1.45;}
+#copText .tt{
+  font-size:10px; letter-spacing:.18em; font-weight:900; color:#ffd23f;
+  display:block; margin-bottom:3px;
+}
+#copDismiss{
+  display:block; margin:0 12px 12px auto; border:none; border-radius:999px;
+  background:#ffd23f; color:#173a75; font-weight:900; padding:6px 14px; cursor:pointer;
+  font-family:inherit; font-size:12px;
+}
+
+/* ---------- modals ---------- */
+#modalWrap{
+  position:fixed; inset:0; z-index:100; display:grid; place-items:center;
+  background:rgba(8,3,26,.72); backdrop-filter:blur(3px);
+}
+.modal{
+  background:linear-gradient(170deg,#2d1a6b,#170b3f);
+  border:3px solid rgba(255,255,255,.85); border-radius:22px;
+  padding:22px 24px; width:min(480px, calc(100vw - 32px));
+  max-height:86vh; overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,.6);
+  animation:popIn .35s cubic-bezier(.2,1.5,.4,1); text-align:center;
+}
+.modal h2{margin:0 0 10px; font-size:24px; letter-spacing:.03em;}
+.modal p{font-size:15px; line-height:1.5; margin:8px 0;}
+.modal .btnrow{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:16px;}
+.modal ul{text-align:left; font-size:14px; line-height:1.55; padding-left:20px;}
+.colorpick{display:flex; gap:12px; justify-content:center; margin-top:14px;}
+.colorpick button{
+  width:64px; height:64px; border-radius:16px; border:3px solid #fff; cursor:pointer;
+  transition:transform .12s; box-shadow:0 5px 12px rgba(0,0,0,.45);
+}
+.colorpick button:hover{transform:scale(1.12) rotate(-4deg);}
+.minihand{display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:10px 0; --cw:44px;}
+.scoretable{width:100%; border-collapse:collapse; margin-top:10px; font-size:14px;}
+.scoretable td,.scoretable th{padding:6px 8px; border-bottom:1px solid rgba(255,255,255,.15); text-align:left;}
+.scoretable td:last-child,.scoretable th:last-child{text-align:right;}
+.scoretable tr.winner{color:var(--yellow); font-weight:900;}
+
+/* ---------- splash ---------- */
+#splash{
+  position:fixed; inset:0; z-index:120; display:flex; flex-direction:column;
+  align-items:center; justify-content:center; gap:18px; text-align:center;
+  background:radial-gradient(900px 600px at 50% 30%, #4b2bb3, #140a33 75%);
+  padding:20px;
+}
+#splash .bigtiles{display:flex; gap:8px;}
+#splash .bigtiles .tile{
+  width:78px; height:104px; border-radius:16px; display:grid; place-items:center;
+  font-size:60px; font-weight:900; color:#fff; text-shadow:2px 4px 0 rgba(0,0,0,.35);
+  box-shadow:0 8px 0 rgba(0,0,0,.35), 0 14px 30px rgba(0,0,0,.5);
+  animation:tiledance 2.2s ease-in-out infinite;
+}
+#splash .bigtiles .tile:nth-child(1){background:linear-gradient(160deg,var(--red),var(--red2)); transform:rotate(-8deg); animation-delay:0s;}
+#splash .bigtiles .tile:nth-child(2){background:linear-gradient(160deg,var(--yellow),var(--yellow2)); transform:rotate(3deg); animation-delay:.18s;}
+#splash .bigtiles .tile:nth-child(3){background:linear-gradient(160deg,var(--blue),var(--blue2)); transform:rotate(-2deg); animation-delay:.36s;}
+@keyframes tiledance{50%{transform:translateY(-14px) rotate(6deg);}}
+#splash h1{margin:0; font-size:15px; letter-spacing:.4em; font-weight:900; opacity:.9;}
+#splash p{max-width:420px; font-size:15px; line-height:1.55; opacity:.9; margin:0;}
+#startBtn{
+  background:linear-gradient(160deg,var(--green),var(--green2)); font-size:24px; padding:16px 44px;
+}
+#splash .copintro{font-size:13px; opacity:.85; display:flex; align-items:center; gap:8px; max-width:420px;}
+#splash .copintro span:first-child{font-size:34px;}
+#splash a{color:#ffd23f;}
+
+#fx{position:fixed; inset:0; z-index:110; pointer-events:none;}
+
+@media (max-width:560px){
+  .opp{min-width:88px; padding:6px 6px 8px;}
+  .opp .avatar{font-size:24px;}
+  #logo small{display:none;}
+  .scorechip{font-size:10px; padding:2px 7px; gap:4px;}
+  #logo .tile{width:20px; height:25px; font-size:14px;}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <a id="logo" href="https://0x4d44.github.io/" title="Back to the almanac">
+      <span class="tiles"><span class="tile">U</span><span class="tile">N</span><span class="tile">O</span></span>
+      <small>BY&nbsp;THE&nbsp;BOOK</small>
+    </a>
+    <div id="scores"></div>
+    <button class="hbtn" id="rulesBtn" title="The rules">📖</button>
+    <button class="hbtn" id="sndBtn" title="Sound on/off">🔊</button>
+    <button class="hbtn" id="newBtn" title="New match">↺</button>
+  </header>
+
+  <div id="oppRow"></div>
+
+  <div id="center">
+    <div class="pilewrap">
+      <div id="drawPile"></div>
+      <div id="deckCnt"></div>
+    </div>
+    <div class="pilewrap">
+      <div id="dirChip">⟳</div>
+      <div id="discard"><div id="colorHalo"></div></div>
+    </div>
+    <div id="tableInfo"></div>
+  </div>
+
+  <div id="status"></div>
+  <div id="handWrap"><div id="hand"></div></div>
+</div>
+
+<div id="actions">
+  <button class="bigbtn hidden" id="gotchaBtn">👮 GOTCHA!</button>
+  <div id="drawnBar" class="hidden">
+    <button class="bigbtn" id="playDrawnBtn">Play it!</button>
+    <button class="bigbtn" id="keepBtn">Keep it</button>
+  </div>
+  <button class="bigbtn hidden" id="unoBtn">UNO!</button>
+</div>
+
+<div id="cop">
+  <div id="copCard">
+    <div id="copLights"><div class="l1"></div><div class="l2"></div><div class="l1"></div><div class="l2"></div></div>
+    <div id="copBody">
+      <div id="copFace">👮</div>
+      <div id="copText"><span class="tt">OFFICER REGGIE RULES · RULE POLICE</span><span id="copMsg"></span></div>
+    </div>
+    <button id="copDismiss">Understood, Officer!</button>
+  </div>
+</div>
+
+<div id="splash">
+  <div class="bigtiles"><div class="tile">U</div><div class="tile">N</div><div class="tile">O</div></div>
+  <h1>BY THE BOOK</h1>
+  <p>Four players. 108 cards. <b>Every official rule enforced.</b><br>
+     Beat Turbo, Pickles and Luna to <b>500 points</b> — and don't forget to shout UNO!</p>
+  <div class="copintro"><span>👮</span><span><b>Officer Reggie Rules</b> is on duty tonight. He'll pop up to keep everyone honest — no stacking, no fibbing, no forgotten UNO calls on his beat.</span></div>
+  <button class="bigbtn" id="startBtn">DEAL ME IN!</button>
+</div>
+
+<canvas id="fx"></canvas>
+
+<script>
+"use strict";
+/* ================= utils ================= */
+const $ = id => document.getElementById(id);
+const rnd = (a,b) => a + Math.random()*(b-a);
+const irnd = (a,b) => Math.floor(rnd(a,b+1));
+const sleep = ms => new Promise(r=>setTimeout(r,ms));
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ================= audio ================= */
+let AC=null, soundOn = localStorage.getItem("uno.sound")!=="off";
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended") AC.resume(); return AC; }
+function tone(f,dur,type,gain,when,fend){
+  const c=ac(); if(!c||!soundOn) return;
+  const t=c.currentTime+(when||0);
+  const o=c.createOscillator(), g=c.createGain();
+  o.type=type||"sine"; o.frequency.setValueAtTime(f,t);
+  if(fend) o.frequency.exponentialRampToValueAtTime(fend,t+dur);
+  g.gain.setValueAtTime(0.0001,t);
+  g.gain.exponentialRampToValueAtTime(gain||0.12,t+0.015);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+  o.connect(g); g.connect(c.destination);
+  o.start(t); o.stop(t+dur+0.05);
+}
+function snd(name){
+  switch(name){
+    case "flip":  tone(700,0.07,"triangle",0.10); tone(1100,0.05,"triangle",0.06,0.03); break;
+    case "draw":  tone(300,0.09,"triangle",0.10,0,220); break;
+    case "pop":   tone(520,0.08,"square",0.06); break;
+    case "uno":   tone(660,0.12,"square",0.10); tone(990,0.16,"square",0.10,0.10); break;
+    case "buzz":  tone(120,0.25,"sawtooth",0.09); break;
+    case "whistle": tone(2100,0.14,"square",0.06,0,2500); tone(2100,0.22,"square",0.06,0.18,2600); break;
+    case "penalty": tone(220,0.16,"sawtooth",0.09); tone(165,0.22,"sawtooth",0.09,0.14); break;
+    case "win":   [523,659,784,1047].forEach((f,i)=>tone(f,0.22,"triangle",0.12,i*0.13)); break;
+    case "fanfare": [523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f,0.24,"triangle",0.13,i*0.15)); break;
+    case "lose":  tone(392,0.3,"triangle",0.1); tone(311,0.4,"triangle",0.1,0.25); break;
+  }
+  if(navigator.vibrate && (name==="penalty"||name==="whistle")) navigator.vibrate(60);
+}
+
+/* ================= cards ================= */
+const COLORS=["R","Y","G","B"];
+const COLOR_NAME={R:"Red",Y:"Yellow",G:"Green",B:"Blue"};
+const COLOR_CSS={R:"var(--red)",Y:"var(--yellow)",G:"var(--green)",B:"var(--blue)"};
+const GLYPH={skip:"⊘",rev:"⇄",d2:"+2",wild:"✦",w4:"+4"};
+let cardId=0;
+function buildDeck(){
+  const d=[];
+  for(const c of COLORS){
+    d.push({c,v:"0",id:++cardId});
+    for(const v of ["1","2","3","4","5","6","7","8","9","skip","rev","d2"]){
+      d.push({c,v,id:++cardId}); d.push({c,v,id:++cardId});
+    }
+  }
+  for(let i=0;i<4;i++){ d.push({c:"W",v:"wild",id:++cardId}); d.push({c:"W",v:"w4",id:++cardId}); }
+  return shuffle(d);
+}
+function glyphOf(card){ return GLYPH[card.v] || card.v; }
+function cardPoints(card){
+  if(card.c==="W") return 50;
+  if(["skip","rev","d2"].includes(card.v)) return 20;
+  return parseInt(card.v,10);
+}
+function cardEl(card, back){
+  const el=document.createElement("div");
+  if(back){ el.className="card back"; el.innerHTML='<div class="bg"><div class="oval"></div></div><div class="val">!</div>'; return el; }
+  el.className="card c"+card.c;
+  const g=glyphOf(card);
+  el.innerHTML=`<div class="bg"><div class="oval"></div></div>
+    <div class="val">${g}</div>
+    <span class="idx tl">${g}</span><span class="idx br">${g}</span>`;
+  return el;
+}
+
+/* ================= state ================= */
+const AI_NAMES=[{n:"Turbo",a:"🤖"},{n:"Pickles",a:"🦖"},{n:"Luna",a:"🦊"}];
+const state={
+  players:[], deck:[], discard:[], discardRots:[],
+  cur:0, dir:1, color:"R", skipNext:false,
+  round:1, dealer:3, scores:[0,0,0,0],
+  phase:"idle", roundOver:false, drawnId:null,
+  catch:null, fast:false,
+  seen:{w4:false,reshuffle:false,caught:false,challenge:false},
+};
+const T = ms => state.fast ? Math.min(ms,20) : ms;
+let gen=0;
+const alive = g => g===gen;
+
+function nextIdx(i){ return (i+state.dir+4)%4; }
+function topCard(){ return state.discard[state.discard.length-1]; }
+function isPlayable(card){
+  if(card.c==="W") return true;
+  if(card.c===state.color) return true;
+  const t=topCard();
+  return !!t && t.c!=="W" && t.v===card.v;
+}
+function humanP(){ return state.players[0]; }
+
+/* ================= DOM refs ================= */
+const oppEls=[];
+function buildSeats(){
+  state.players=[
+    {name:"You", avatar:"🙂", human:true, hand:[], saidUno:false},
+    ...AI_NAMES.map(x=>({name:x.n, avatar:x.a, human:false, hand:[], saidUno:false})),
+  ];
+  const row=$("oppRow"); row.innerHTML="";
+  for(let i=1;i<=3;i++){
+    const p=state.players[i];
+    const el=document.createElement("div");
+    el.className="opp";
+    el.innerHTML=`<span class="avatar">${p.avatar}</span><div class="nm">${p.name}</div>
+      <div class="fan"></div><div class="cnt"></div>`;
+    row.appendChild(el); oppEls[i]=el;
+  }
+}
+
+/* ================= rendering ================= */
+function renderScores(){
+  $("scores").innerHTML = state.players.map((p,i)=>
+    `<span class="scorechip">${p.avatar} ${p.name} <b>${state.scores[i]}</b></span>`).join("");
+}
+function renderOpps(){
+  for(let i=1;i<=3;i++){
+    const p=state.players[i], el=oppEls[i];
+    el.classList.toggle("active", state.cur===i && !state.roundOver);
+    const fan=el.querySelector(".fan");
+    fan.innerHTML="";
+    for(let k=0;k<Math.min(p.hand.length,9);k++) fan.appendChild(Object.assign(document.createElement("div"),{className:"mini"}));
+    el.querySelector(".cnt").textContent = p.hand.length + (p.hand.length===1?" card":" cards");
+    let flag=el.querySelector(".unoflag");
+    if(p.hand.length===1 && p.saidUno){
+      if(!flag){ flag=document.createElement("div"); flag.className="unoflag"; flag.textContent="UNO!"; el.appendChild(flag); }
+    } else if(flag) flag.remove();
+  }
+}
+function renderPiles(){
+  const dp=$("drawPile"); dp.innerHTML="";
+  for(let i=0;i<3;i++){ const l=document.createElement("div"); l.className="layer"; l.appendChild(cardEl(null,true)); dp.appendChild(l); }
+  dp.classList.toggle("canDraw", state.phase==="human");
+  $("deckCnt").textContent = state.deck.length+" in deck";
+  const dis=$("discard");
+  dis.querySelectorAll(".card").forEach(e=>e.remove());
+  const show=state.discard.slice(-5);
+  show.forEach((c,i)=>{
+    const rot=state.discardRots[state.discard.length-show.length+i]||0;
+    const el=cardEl(c);
+    el.style.transform=`rotate(${rot}deg)`;
+    dis.insertBefore(el, $("colorHalo"));
+  });
+  const cc=COLOR_CSS[state.color]||"transparent";
+  $("colorHalo").style.boxShadow = state.color ? `0 0 26px 8px ${cc}, inset 0 0 18px ${cc}` : "none";
+  $("dirChip").textContent = state.dir===1 ? "⟳" : "⟲";
+  $("dirChip").style.transform = `translateX(-50%) scaleX(${state.dir===1?1:-1})`;
+  $("tableInfo").textContent = state.color ? ("COLOUR: "+COLOR_NAME[state.color].toUpperCase()+"  ·  ROUND "+state.round) : "";
+}
+function renderHand(){
+  const hand=$("hand"); hand.innerHTML="";
+  const p=humanP();
+  const canAct = state.phase==="human";
+  p.hand.forEach((card,i)=>{
+    const el=cardEl(card);
+    const play=isPlayable(card);
+    if(canAct && play) el.classList.add("playable");
+    else if(canAct) el.classList.add("dull");
+    if(card.id===state.drawnId) el.classList.add("justDrawn");
+    el.addEventListener("click",()=>onHandClick(i,el));
+    hand.appendChild(el);
+  });
+}
+function renderButtons(){
+  const p=humanP();
+  const unoShow = (state.phase==="human" && p.hand.length===2 && !p.saidUno)
+               || (state.catch && state.catch.p===0);
+  $("unoBtn").classList.toggle("hidden",!unoShow);
+  $("gotchaBtn").classList.toggle("hidden", !(state.catch && state.catch.p!==0));
+  $("drawnBar").classList.toggle("hidden", state.phase!=="drawn");
+}
+function render(){ renderScores(); renderOpps(); renderPiles(); renderHand(); renderButtons(); }
+function say(text, cls){ const s=$("status"); s.textContent=text; s.className=cls||""; }
+function bubble(pIdx, text, shout){
+  const seat = pIdx===0 ? $("hand") : oppEls[pIdx];
+  const r=seat.getBoundingClientRect();
+  const b=document.createElement("div");
+  b.className="bubble"+(shout?" shout":"");
+  b.textContent=text;
+  b.style.left=(r.left+r.width/2)+"px";
+  b.style.top=(pIdx===0? r.top : r.bottom+34)+"px";
+  document.body.appendChild(b);
+  setTimeout(()=>b.remove(),1600);
+}
+
+/* ================= fly animation ================= */
+function centerOf(el){ const r=el.getBoundingClientRect(); return {x:r.left+r.width/2, y:r.top+r.height/2, w:r.width}; }
+function flyCard(faceEl, from, to, dur){
+  const cw=parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--cw"))||80;
+  faceEl.style.position="fixed"; faceEl.style.zIndex=70; faceEl.style.margin=0;
+  faceEl.style.width="var(--cw)";
+  faceEl.style.left=(from.x-cw/2)+"px"; faceEl.style.top=(from.y-cw*88/63/2)+"px";
+  document.body.appendChild(faceEl);
+  const dx=to.x-from.x, dy=to.y-from.y;
+  requestAnimationFrame(()=>{
+    faceEl.style.transition=`transform ${dur}ms cubic-bezier(.45,-.1,.3,1.15)`;
+    faceEl.style.transform=`translate(${dx}px,${dy}px) rotate(${irnd(-16,16)}deg)`;
+  });
+  return sleep(dur).then(()=>faceEl.remove());
+}
+function seatEl(pIdx){ return pIdx===0 ? $("hand") : oppEls[pIdx]; }
+
+/* ================= deck ops ================= */
+function takeFromDeck(){
+  if(state.deck.length===0){
+    if(state.discard.length<=1) return null;
+    const top=state.discard.pop();
+    state.deck=shuffle(state.discard.splice(0));
+    state.discard=[top]; state.discardRots=[state.discardRots.pop()||0];
+    if(!state.seen.reshuffle){ state.seen.reshuffle=true;
+      copSay("Draw pile empty! By the book: shuffle the discards back in — all except the top card. Play on!", true);
+    }
+  }
+  return state.deck.pop() || null;
+}
+async function drawCards(pIdx, n, quiet){
+  const p=state.players[pIdx];
+  let last=null;
+  for(let i=0;i<n;i++){
+    const card=takeFromDeck(); if(!card) break;
+    last=card;
+    const face = pIdx===0 ? cardEl(card) : cardEl(null,true);
+    snd("draw");
+    await flyCard(face, centerOf($("drawPile")), centerOf(seatEl(pIdx)), T(320));
+    p.hand.push(card);
+    if(p.hand.length>1) p.saidUno=false;
+    if(pIdx===0) state.drawnId=card.id;
+    render();
+  }
+  if(!quiet && n>1) bubble(pIdx, "+"+n+" cards!");
+  return last;
+}
+async function penaltyDraw(pIdx, n, why){
+  snd("penalty");
+  bubble(pIdx, why? why : ("+"+n+"!"));
+  if(pIdx===0 && n>=4){ document.body.classList.add("shake"); setTimeout(()=>document.body.classList.remove("shake"),520); }
+  await drawCards(pIdx, n, true);
+}
+
+/* ================= UNO calls & catching ================= */
+function openCatch(offender){
+  state.catch={p:offender};
+  renderButtons();
+  const p=state.players[offender];
+  if(!p.human){
+    // the AI may remember on its own before anyone pounces
+    setTimeout(()=>{
+      if(state.catch && state.catch.p===offender && !p.saidUno){
+        p.saidUno=true; state.catch=null;
+        bubble(offender,"UNO! (phew!)",true); snd("uno"); render();
+      }
+    }, T(irnd(2600,4600)));
+  } else {
+    // the table is watching you…
+    const watcher=AI_NAMES[irnd(0,2)].n;
+    setTimeout(async ()=>{
+      if(state.catch && state.catch.p===0 && !p.saidUno && Math.random()<0.75){
+        state.catch=null; renderButtons();
+        bubble(irnd(1,3),"GOTCHA!",true); snd("whistle");
+        await penaltyDraw(0,2,"caught! +2");
+        copSay("BUSTED! "+watcher+" caught you with one card and no UNO call. That's a two-card penalty — say it BEFORE your card lands next time!", true);
+        render();
+      }
+    }, T(irnd(1600,3400)));
+  }
+}
+function closeCatch(){ if(state.catch){ state.catch=null; renderButtons(); } }
+$("unoBtn").addEventListener("click",()=>{
+  const p=humanP();
+  if(state.catch && state.catch.p===0){         // late call, but in time!
+    p.saidUno=true; state.catch=null;
+    bubble(0,"UNO!",true); snd("uno"); render();
+  } else if(p.hand.length===2){
+    p.saidUno=true; bubble(0,"UNO!",true); snd("uno"); renderButtons();
+  }
+});
+$("gotchaBtn").addEventListener("click", async ()=>{
+  if(!(state.catch && state.catch.p!==0)) return;
+  const off=state.catch.p; state.catch=null; renderButtons();
+  snd("whistle"); bubble(0,"GOTCHA!",true);
+  await penaltyDraw(off,2,"caught! +2");
+  copSay("Sharp eyes! "+state.players[off].name+" forgot to call UNO and got caught — that's two penalty cards, straight from the rulebook.", true);
+  render();
+});
+
+/* ================= play resolution ================= */
+async function doPlay(pIdx, cardIdx, chosenColor){
+  closeCatch();
+  const p=state.players[pIdx];
+  const card=p.hand[cardIdx];
+  const priorColor=state.color;
+
+  // fly it to the pile
+  let from;
+  if(pIdx===0){
+    const el=$("hand").children[cardIdx];
+    from = el ? centerOf(el) : centerOf($("hand"));
+  } else from = centerOf(oppEls[pIdx]);
+  p.hand.splice(cardIdx,1);
+  if(pIdx===0) renderHand();
+  await flyCard(cardEl(card), from, centerOf($("discard")), T(380));
+
+  state.discard.push(card);
+  state.discardRots.push(irnd(-14,14));
+  state.color = card.c==="W" ? chosenColor : card.c;
+  state.drawnId=null;
+  snd("flip");
+  if(card.c==="W" || pIdx!==0) say(state.players[pIdx].name+" played "+describe(card)+(card.c==="W"?" — colour is "+COLOR_NAME[chosenColor]+"!":""));
+  render();
+
+  // UNO obligations
+  if(p.hand.length===1){
+    if(p.saidUno){ bubble(pIdx,"UNO!",true); snd("uno"); }
+    else openCatch(pIdx);
+  } else p.saidUno=false;
+
+  // going out
+  if(p.hand.length===0){ state.roundOver=true; state.roundWinner=pIdx; }
+
+  // card effects (still apply when going out — official)
+  switch(card.v){
+    case "rev":
+      state.dir*=-1; renderPiles();
+      bubble(pIdx,"REVERSE!");
+      break;
+    case "skip":{
+      const v=nextIdx(pIdx);
+      state.skipNext=true;
+      bubble(v,"SKIPPED!");
+      break;
+    }
+    case "d2":{
+      const v=nextIdx(pIdx);
+      await sleep(T(350));
+      await penaltyDraw(v,2);
+      state.skipNext=true;
+      break;
+    }
+    case "w4":
+      await resolveW4(pIdx, priorColor);
+      break;
+  }
+  render();
+}
+function describe(card){
+  if(card.v==="wild") return "a Wild";
+  if(card.v==="w4") return "a WILD DRAW FOUR";
+  if(card.v==="d2") return "a Draw Two";
+  if(card.v==="skip") return "a Skip";
+  if(card.v==="rev") return "a Reverse";
+  return COLOR_NAME[card.c]+" "+card.v;
+}
+
+/* Wild Draw Four: legality + challenge, straight from the rulebook */
+async function resolveW4(pIdx, priorColor){
+  const offender=state.players[pIdx];
+  const victim=nextIdx(pIdx);
+  const vp=state.players[victim];
+  const wasLegal = !offender.hand.some(c=>c.c===priorColor);
+  if(!state.seen.w4){ state.seen.w4=true;
+    setTimeout(()=>copSay("A Wild Draw Four! Reminder: it's only LEGAL if the player had no card of the current colour. Think they're bluffing? The next player may CHALLENGE — guilty means THEY draw the four."),T(1200));
+  }
+  await sleep(T(500));
+  let challenged=false;
+  if(vp.human){
+    challenged = await askModal({
+      title:"⚡ WILD DRAW FOUR!",
+      body:`<p><b>${offender.name}</b> played a Wild Draw Four and chose <b style="color:${COLOR_CSS[state.color]}">${COLOR_NAME[state.color]}</b>.</p>
+            <p>Challenge it? If ${offender.name} still held a <b>${COLOR_NAME[priorColor]}</b> card, it was illegal — they draw 4 instead. But if it was clean, <b>you draw 6</b>.</p>`,
+      buttons:[{t:"⚖️ CHALLENGE!",v:true},{t:"Fair cop — draw 4",v:false}],
+    });
+  } else {
+    challenged = Math.random()<0.28;
+  }
+  if(challenged){
+    snd("whistle");
+    const handHtml='<div class="minihand">'+offender.hand.map(c=>cardEl(c).outerHTML).join("")+"</div>";
+    if(!wasLegal){
+      await askModal({
+        title:"🚨 GUILTY!",
+        body:`<p><b>${offender.name}</b> was still holding ${COLOR_NAME[priorColor]}! The challenge stands: <b>${offender.name} draws 4</b> and ${vp.name==="You"?"you play":vp.name+" plays"} on.</p>${handHtml}`,
+        buttons:[{t:"Justice! ⚖️",v:true}],
+      });
+      await penaltyDraw(pIdx,4,"guilty! +4");
+      copSay("Case closed. An illegal Draw Four, challenged and convicted — the four cards go back to the offender. The chosen colour still stands, mind.", true);
+      state.seen.challenge=true;
+      return; // victim is NOT skipped after a successful challenge
+    } else {
+      await askModal({
+        title:"😇 ALL LEGAL",
+        body:`<p><b>${offender.name}</b> had no ${COLOR_NAME[priorColor]} at all. A clean play — so the challenger draws <b>6</b> and misses a turn.</p>${handHtml}`,
+        buttons:[{t:"Fair enough…",v:true}],
+      });
+      await penaltyDraw(victim,6,"+6!");
+      state.skipNext=true;
+      if(!state.seen.challenge){ state.seen.challenge=true;
+        copSay("A failed challenge costs six cards — four plus two for the cheek. Challenge wisely!", true);
+      }
+      return;
+    }
+  }
+  await penaltyDraw(victim,4);
+  state.skipNext=true;
+}
+
+/* ================= AI brain ================= */
+function aiPickColor(hand){
+  const cnt={R:0,Y:0,G:0,B:0};
+  hand.forEach(c=>{ if(c.c!=="W") cnt[c.c]++; });
+  let best="R",bn=-1;
+  for(const c of COLORS) if(cnt[c]>bn){bn=cnt[c];best=c;}
+  return bn>0 ? best : COLORS[irnd(0,3)];
+}
+function aiChoose(p){
+  const idxs=p.hand.map((c,i)=>i).filter(i=>isPlayable(p.hand[i]));
+  if(!idxs.length) return -1;
+  const nextP=state.players[nextIdx(state.cur)];
+  const score=i=>{
+    const c=p.hand[i];
+    let s=0;
+    if(c.v==="w4") s = (nextP.hand.length<=2?40:2);      // hoard the nuke
+    else if(c.c==="W") s = (p.hand.length<=3?30:4);
+    else{
+      s=10;
+      if(["d2","skip","rev"].includes(c.v)) s += (nextP.hand.length<=2?25:8);
+      s += p.hand.filter(x=>x.c===c.c).length;           // shed the long colour
+    }
+    return s + Math.random()*3;
+  };
+  idxs.sort((a,b)=>score(b)-score(a));
+  // by the book: prefer a legal w4 (no current-colour card); bluff rarely
+  const top=idxs[0];
+  if(p.hand[top].v==="w4"){
+    const hasColor=p.hand.some((c,i)=>i!==top && c.c===state.color);
+    if(hasColor && Math.random()>0.12){
+      const alt=idxs.find(i=>p.hand[i].v!=="w4");
+      if(alt!==undefined) return alt;
+    }
+  }
+  return top;
+}
+async function aiTurn(g){
+  const p=state.players[state.cur];
+  say(p.name+" is thinking…");
+  render();
+  await sleep(T(irnd(900,1900) + (state.catch?1200:0)));   // linger a little when a catch is on
+  if(!alive(g)) return;
+  let idx=aiChoose(p);
+  if(idx<0){
+    const card=await drawCards(state.cur,1,true);
+    say(p.name+" draws a card.");
+    await sleep(T(600)); if(!alive(g)) return;
+    if(card && isPlayable(card) && Math.random()<0.95){
+      idx=p.hand.indexOf(card);
+    } else return;
+  }
+  // UNO etiquette (mostly)
+  if(p.hand.length===2 && Math.random()<0.85){ p.saidUno=true; }
+  const card=p.hand[idx];
+  const col = card.c==="W" ? aiPickColor(p.hand.filter((c,i)=>i!==idx)) : null;
+  await doPlay(state.cur, idx, col);
+}
+
+/* ================= human turn ================= */
+let uiResolve=null;
+function waitUI(){ return new Promise(r=>uiResolve=r); }
+function uiAct(a){ if(uiResolve){ const r=uiResolve; uiResolve=null; r(a); } }
+
+async function onHandClick(i, el){
+  if(state.phase!=="human") return;
+  const card=humanP().hand[i];
+  if(!card) return;
+  if(!isPlayable(card)){
+    el.classList.remove("wiggle"); void el.offsetWidth; el.classList.add("wiggle");
+    snd("buzz"); say("That doesn't match — colour "+COLOR_NAME[state.color]+" or the top symbol!");
+    return;
+  }
+  if(card.c==="W"){
+    const col=await pickColor(); if(col===null) return;
+    uiAct({type:"play", index:i, color:col});
+  } else uiAct({type:"play", index:i});
+}
+$("drawPile").addEventListener("click",()=>{ if(state.phase==="human") uiAct({type:"draw"}); });
+$("playDrawnBtn").addEventListener("click", async ()=>{
+  if(state.phase!=="drawn") return;
+  const p=humanP(), card=p.hand.find(c=>c.id===state.drawnId);
+  if(!card) return;
+  let col=null;
+  if(card.c==="W"){ col=await pickColor(); if(col===null) return; }
+  uiAct({type:"playDrawn", color:col});
+});
+$("keepBtn").addEventListener("click",()=>{ if(state.phase==="drawn") uiAct({type:"keep"}); });
+
+async function humanTurn(g){
+  state.phase="human"; render();
+  say("YOUR TURN — play a glowing card, or tap the deck to draw","turn");
+  while(true){
+    const act=await waitUI(); if(!alive(g)) return;
+    if(act.type==="play"){
+      state.phase="busy"; render();
+      await doPlay(0, act.index, act.color);
+      return;
+    }
+    if(act.type==="draw"){
+      state.phase="busy"; render(); closeCatch();
+      const card=await drawCards(0,1,true);
+      if(!alive(g)) return;
+      if(card && isPlayable(card)){
+        state.phase="drawn"; render();
+        say("You drew "+describe(card)+" — play it, or keep it?");
+        const a2=await waitUI(); if(!alive(g)) return;
+        state.phase="busy"; render();
+        if(a2.type==="playDrawn"){
+          const p=humanP();
+          await doPlay(0, p.hand.findIndex(c=>c.id===state.drawnId), a2.color);
+        } else { state.drawnId=null; say("Kept it. Turn passes."); await sleep(T(700)); }
+      } else {
+        say(card?"No luck — the turn passes.":"Nothing left to draw — turn passes.");
+        await sleep(T(900));
+        state.drawnId=null;
+      }
+      state.phase="busy"; render();
+      return;
+    }
+  }
+}
+
+/* ================= rounds & match ================= */
+function dealNew(){
+  cardId=0;
+  state.deck=buildDeck(); state.discard=[]; state.discardRots=[];
+  state.dir=1; state.skipNext=false; state.roundOver=false; state.roundWinner=-1;
+  state.catch=null; state.drawnId=null;
+  state.players.forEach(p=>{ p.hand=[]; p.saidUno=false; });
+  for(let k=0;k<7;k++) for(const p of state.players) p.hand.push(state.deck.pop());
+  // flip the starter — a Wild Draw Four goes back in (official)
+  let starter=state.deck.pop();
+  while(starter.v==="w4"){ state.deck.splice(irnd(0,state.deck.length),0,starter); starter=state.deck.pop(); }
+  state.discard.push(starter); state.discardRots.push(irnd(-10,10));
+  state.color = starter.c==="W" ? null : starter.c;
+  return starter;
+}
+async function startRound(){
+  const g=++gen;
+  state.dealer=(state.round-1)%4;
+  const starter=dealNew();
+  state.cur=nextIdx(state.dealer);
+  state.phase="busy";
+  render();
+  say("Round "+state.round+" — dealing…");
+  snd("pop");
+  await sleep(T(700)); if(!alive(g)) return;
+
+  // starter-card effects, by the book
+  if(starter.c==="W"){
+    if(state.players[state.cur].human){
+      say("A Wild starts the round — you pick the colour!");
+      state.color=await pickColor(true);
+    } else {
+      state.color=aiPickColor(state.players[state.cur].hand);
+      say(state.players[state.cur].name+" picks "+COLOR_NAME[state.color]+" to start.");
+      await sleep(T(900));
+    }
+    render();
+  } else if(starter.v==="skip"){
+    bubble(state.cur,"SKIPPED!"); say("The flip was a Skip — "+state.players[state.cur].name+" misses the first go!");
+    await sleep(T(1000)); state.cur=nextIdx(state.cur);
+  } else if(starter.v==="rev"){
+    state.dir=-1; state.cur=(state.dealer+3)%4; // dealer's right starts (dir is now -1)
+    say("The flip was a Reverse — play runs the other way!");
+    render(); await sleep(T(1000));
+  } else if(starter.v==="d2"){
+    say("The flip was a Draw Two — "+state.players[state.cur].name+" draws and misses a go!");
+    await penaltyDraw(state.cur,2); state.cur=nextIdx(state.cur);
+  }
+  if(!alive(g)) return;
+  roundLoop(g);
+}
+async function roundLoop(g){
+  while(alive(g)){
+    render();
+    const p=state.players[state.cur];
+    if(p.human) await humanTurn(g); else await aiTurn(g);
+    if(!alive(g)) return;
+    if(state.roundOver){ endRound(g); return; }
+    state.cur=nextIdx(state.cur);
+    if(state.skipNext){ state.cur=nextIdx(state.cur); state.skipNext=false; }
+    await sleep(T(250));
+  }
+}
+async function endRound(g){
+  state.phase="idle"; closeCatch(); render();
+  const w=state.roundWinner;
+  const pts=state.players.reduce((s,p,i)=> i===w? s : s+p.hand.reduce((a,c)=>a+cardPoints(c),0), 0);
+  state.scores[w]+=pts;
+  const winner=state.players[w];
+  say(winner.name+(w===0?" win":" wins")+" the round!");
+  if(w===0){ snd("win"); confetti(150); } else snd("lose");
+  const matchOver=state.scores[w]>=500;
+  renderScores();
+  const rows=state.players.map((p,i)=>{
+    const left=p.hand.reduce((a,c)=>a+cardPoints(c),0);
+    return `<tr class="${i===w?"winner":""}"><td>${p.avatar} ${p.name}</td>
+      <td>${i===w?"went out! +"+pts+" pts":left+" pts left in hand"}</td>
+      <td><b>${state.scores[i]}</b></td></tr>`;
+  }).join("");
+  const spill=state.players.map((p,i)=> i===w?"":
+    `<div style="margin-top:6px"><b>${p.avatar} ${p.name}</b><div class="minihand">${p.hand.map(c=>cardEl(c).outerHTML).join("")}</div></div>`).join("");
+  await askModal({
+    title:(w===0?"🎉 YOU WIN THE ROUND!":"🏁 "+winner.name+" wins the round"),
+    body:`<p>${winner.name} scores <b>${pts} points</b> from everyone's leftover cards
+      <small>(numbers face value · Skip/Reverse/+2 = 20 · Wilds = 50)</small>.</p>
+      <table class="scoretable"><tr><th>Player</th><th>Round</th><th>Total</th></tr>${rows}</table>
+      ${spill}`,
+    buttons:[{t:matchOver?"Final result! 🏆":"Next round ▶",v:true}],
+  });
+  if(!alive(g)) return;
+  if(matchOver){
+    if(w===0){ snd("fanfare"); confetti(320); }
+    await askModal({
+      title:(w===0?"👑 CHAMPION! 👑":"👑 "+winner.name+" takes the match"),
+      body:`<p style="font-size:40px;margin:6px 0">${winner.avatar}</p>
+        <p><b>${winner.name}</b> reached <b>${state.scores[w]}</b> points — first to 500 wins, straight from the rulebook.</p>
+        <p>${w===0?"Officer Reggie salutes a champion who never bent a single rule. 👮":"Rematch? Officer Reggie believes in you. 👮"}</p>`,
+      buttons:[{t:"NEW MATCH 🔄",v:true}],
+    });
+    if(!alive(g)) return;
+    state.scores=[0,0,0,0]; state.round=1;
+  } else {
+    state.round++;
+  }
+  startRound();
+}
+
+/* ================= modals ================= */
+let modalOpen=0;
+function askModal({title,body,buttons}){
+  return new Promise(res=>{
+    modalOpen++;
+    const wrap=document.createElement("div"); wrap.id="modalWrap";
+    const m=document.createElement("div"); m.className="modal";
+    m.innerHTML=`<h2>${title}</h2>${body}<div class="btnrow"></div>`;
+    const row=m.querySelector(".btnrow");
+    buttons.forEach(b=>{
+      const btn=document.createElement("button");
+      btn.className="bigbtn"; btn.style.fontSize="16px"; btn.style.padding="11px 22px";
+      btn.style.background = b.v ? "linear-gradient(160deg,var(--green),var(--green2))"
+                                 : "linear-gradient(160deg,#666,#333)";
+      btn.textContent=b.t;
+      btn.onclick=()=>{ wrap.remove(); modalOpen--; res(b.v); };
+      row.appendChild(btn);
+    });
+    wrap.appendChild(m); document.body.appendChild(wrap);
+  });
+}
+function pickColor(noCancel){
+  return new Promise(res=>{
+    modalOpen++;
+    const wrap=document.createElement("div"); wrap.id="modalWrap";
+    const m=document.createElement("div"); m.className="modal";
+    m.innerHTML=`<h2>Pick a colour!</h2><div class="colorpick"></div>`+
+      (noCancel?"":`<div class="btnrow"><button class="bigbtn" style="font-size:13px;padding:8px 16px;background:linear-gradient(160deg,#666,#333)">✕ never mind</button></div>`);
+    const row=m.querySelector(".colorpick");
+    for(const c of COLORS){
+      const b=document.createElement("button");
+      b.style.background=`linear-gradient(160deg,${COLOR_CSS[c]},${COLOR_CSS[c]})`;
+      b.title=COLOR_NAME[c];
+      b.onclick=()=>{ wrap.remove(); modalOpen--; snd("pop"); res(c); };
+      row.appendChild(b);
+    }
+    const cancel=m.querySelector(".btnrow button");
+    if(cancel) cancel.onclick=()=>{ wrap.remove(); modalOpen--; res(null); };
+    wrap.appendChild(m); document.body.appendChild(wrap);
+  });
+}
+$("rulesBtn").addEventListener("click",()=>{
+  askModal({
+    title:"📖 The Rules (the REAL ones)",
+    body:`<ul>
+      <li><b>Match</b> the top card by <b>colour</b> or by <b>number/symbol</b>. Wilds go on anything.</li>
+      <li><b>Can't play?</b> Draw ONE card. If it fits you may play it at once; otherwise the turn passes.</li>
+      <li>You may draw even if you <i>can</i> play — but then you may only play the card you just drew.</li>
+      <li><b>Skip</b> = next player misses a go. <b>Reverse</b> = direction flips. <b>+2</b> = next player draws two and misses a go. <b>No stacking</b> — ever!</li>
+      <li><b>Wild Draw Four</b> is only legal if you hold <b>no card of the current colour</b>. The victim may <b>challenge</b>: guilty → you draw 4; innocent → they draw 6.</li>
+      <li>Down to two cards? Shout <b>UNO</b> before your card lands. Caught silent with one card = <b>draw 2</b>.</li>
+      <li><b>Going out:</b> the winner scores everyone's leftovers — numbers face value, Skip/Reverse/+2 = 20, Wilds = 50. <b>First to 500 wins the match.</b></li>
+    </ul>`,
+    buttons:[{t:"Got it, Officer! 👮",v:true}],
+  });
+});
+
+/* ================= Officer Reggie Rules ================= */
+const COP_TIPS=[
+  "Match the top card by COLOUR or by NUMBER/SYMBOL. A Wild goes on anything — that's the whole game, citizen.",
+  "Down to two cards? Shout UNO before your card touches the pile! Get caught silent and it's a two-card penalty.",
+  "The Wild Draw Four is only legal when you hold NO card of the current colour. Numbers don't count — only colour!",
+  "Suspect an illegal +4? CHALLENGE it! Guilty: they draw the four. Innocent: you draw six. Gamble responsibly.",
+  "You cannot stack Draw Twos. +2 means draw two and miss a go. 'Stacking' is a playground myth and I will not have it on my beat.",
+  "Can't play? Draw ONE card only. If it fits, you may play it immediately — otherwise the turn moves along. Keep the line moving!",
+  "You MAY draw from the pile even when you could play — sneaky, but legal. You may then only play the card you just drew.",
+  "Reverse flips the direction of play. Skip does what it says on the card. And in a two-player game, a Reverse acts as a Skip. The more you know!",
+  "Scoring, by the book: number cards face value, Skip/Reverse/+2 are worth 20, Wilds are worth 50. First to 500 takes the match.",
+  "When the draw pile runs dry, we shuffle the discards back in — every card except the top one. Nothing up my sleeve.",
+  "You CAN go out on an action card — and its effect still hits the next player. Perfectly legal. Devastating, but legal.",
+  "A late UNO call still counts — right up until somebody catches you. After that, it's two cards and no appeals.",
+  "A challenged player must show their hand to prove that +4 was clean. No fibbing on my watch.",
+  "Even the first flipped card gets obeyed: flip a Skip and the first player is skipped. Flip a Wild Draw Four? Back in the deck it goes.",
+];
+let copTimer=null, copOpen=false, lastTip=-1, lastCopAt=Date.now();
+function copSay(msg, urgent){
+  if(copOpen && !urgent) return;
+  $("copMsg").textContent=msg;
+  $("cop").classList.add("show");
+  copOpen=true; lastCopAt=Date.now();
+  snd("whistle");
+  clearTimeout(copTimer);
+  copTimer=setTimeout(copHide, 11000);
+}
+function copHide(){ $("cop").classList.remove("show"); copOpen=false; clearTimeout(copTimer); }
+$("copDismiss").addEventListener("click",()=>{ snd("pop"); copHide(); });
+setInterval(()=>{
+  if(copOpen || modalOpen>0 || state.phase==="idle" || state.fast) return;
+  if(Date.now()-lastCopAt < irnd(45000,80000)) return;
+  let t; do{ t=irnd(0,COP_TIPS.length-1); }while(t===lastTip);
+  lastTip=t;
+  copSay(COP_TIPS[t]);
+}, 8000);
+
+/* ================= confetti ================= */
+function confetti(n){
+  const cv=$("fx"), ctx=cv.getContext("2d");
+  cv.width=innerWidth; cv.height=innerHeight;
+  const cols=["#ed1c24","#0072bc","#00a651","#ffde00","#ffffff","#ff7ab8"];
+  const ps=Array.from({length:n},()=>({
+    x:rnd(0,cv.width), y:rnd(-cv.height*0.4,0),
+    vx:rnd(-1.4,1.4), vy:rnd(2.2,5.2), rot:rnd(0,Math.PI*2), vr:rnd(-0.2,0.2),
+    w:rnd(6,12), h:rnd(8,16), c:cols[irnd(0,cols.length-1)],
+  }));
+  const t0=performance.now();
+  (function frame(t){
+    const dt=(t-t0);
+    ctx.clearRect(0,0,cv.width,cv.height);
+    for(const p of ps){
+      p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+      ctx.fillStyle=p.c; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+    }
+    if(dt<3200) requestAnimationFrame(frame);
+    else ctx.clearRect(0,0,cv.width,cv.height);
+  })(t0);
+}
+
+/* ================= header buttons & boot ================= */
+$("sndBtn").addEventListener("click",()=>{
+  soundOn=!soundOn;
+  localStorage.setItem("uno.sound", soundOn?"on":"off");
+  $("sndBtn").textContent=soundOn?"🔊":"🔇";
+  if(soundOn) snd("pop");
+});
+$("sndBtn").textContent=soundOn?"🔊":"🔇";
+$("newBtn").addEventListener("click", async ()=>{
+  const ok=await askModal({title:"Start a new match?", body:"<p>Scores go back to zero and a fresh hand is dealt.</p>",
+    buttons:[{t:"New match!",v:true},{t:"Keep playing",v:false}]});
+  if(ok){ gen++; state.scores=[0,0,0,0]; state.round=1; startRound(); }
+});
+$("startBtn").addEventListener("click",()=>{
+  ac(); snd("win");
+  $("splash").remove();
+  startRound();
+  setTimeout(()=>copSay("Evening, all. Officer Reggie Rules, Rule Police. Play fair, call your UNOs, and nobody gets a penalty card. Well… almost nobody."), T(2500));
+});
+
+buildSeats();
+render();
+say("Press DEAL ME IN to start!");
+
+/* test hook for automated smoke checks */
+window.__uno={ state, snd, T:()=>{}, fast(v){ state.fast=v; } };
+</script>
+</body>
+</html>
