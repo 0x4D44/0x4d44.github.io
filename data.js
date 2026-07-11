@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "uno",
+    title: "UNO, By the Book",
+    tagline: "The classic shedding card game, played strictly by the book: three cartoon AI rivals, official scoring to 500, Wild Draw Four challenges, UNO-call penalties — and Officer Reggie Rules, the Rule Policeman who pops up to keep everyone honest. Big glossy cards, confetti and synthesised fanfares. Vanilla JS, no build step.",
+    url: "https://0x4d44.github.io/uno/",
+    illustration: "ill-uno",
+    date: "2026-07-11T12:00:00",
+    year: 2026,
+    tag: "games",
+    real: true,
+  },
+  {
     slug: "emdtime",
     title: "Decet",
     tagline: "A base-10 timekeeping system on a re-tuned Earth: make the day exactly 10,000 SI seconds and the clock becomes a four-digit decimal counter — .5000 is midday — with a leap-free 4,000-day year. Live decimal clock, converter, calendar and an orbital-mechanics tuner. React + TypeScript on a fully-tested core; no backend.",
