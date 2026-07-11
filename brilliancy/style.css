@@ -109,7 +109,17 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 /* ── table layout ────────────────────────────────────────────────────────── */
 
 #table { display: grid; grid-template-columns: minmax(0, 58fr) minmax(0, 42fr); gap: 18px; align-items: start; }
-#arena { min-width: 0; }
+/* The arena must fit the window: since the board's height follows its width
+   (aspect-ratio 1), cap the arena's WIDTH by the viewport height so the whole
+   board plus both clocks are visible without scrolling (iPad landscape etc.).
+   The 340px floor keeps short-landscape phones usable. */
+#arena {
+  min-width: 0;
+  width: 100%;
+  max-width: max(calc(100vh - 300px), 340px);
+  max-width: max(calc(100dvh - 300px), 340px);
+  margin-inline: auto;
+}
 #booth { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 
 /* nameplates */
@@ -215,19 +225,25 @@ button:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
   pointer-events: none;
 }
 .sq.lastmove::after { opacity: 1; background: rgba(233, 200, 119, .22); }
+/* Guided-move hints: a gold ring edged in dark walnut so it reads on BOTH
+   square colours (plain gold disappears into the cream squares). */
 .sq.pulse-from::after {
   opacity: 1;
-  background: radial-gradient(circle, rgba(233,200,119,.4), transparent 70%);
-  animation: pulse 1.4s ease-in-out infinite;
+  background: radial-gradient(circle, rgba(233,200,119,.5), rgba(233,200,119,0) 72%);
+  box-shadow: inset 0 0 0 4px rgba(233,200,119,.95), inset 0 0 0 6px rgba(43,26,6,.85);
+  animation: pulse 1.2s ease-in-out infinite;
 }
 .sq.pulse-to::after {
   opacity: 1;
-  box-shadow: inset 0 0 0 3px rgba(233,200,119,.85);
+  box-shadow: inset 0 0 0 4px rgba(233,200,119,.95), inset 0 0 0 6px rgba(43,26,6,.85);
   animation: pulse 1.05s ease-in-out infinite;
 }
 .sq.trail::after { opacity: 1; background: rgba(233,200,119,.3); transition: opacity 1.2s; }
-.sq.selected::after { opacity: 1; box-shadow: inset 0 0 0 3px rgba(233,200,119,.9); }
-@keyframes pulse { 50% { filter: brightness(1.5); } }
+.sq.selected::after {
+  opacity: 1;
+  box-shadow: inset 0 0 0 4px rgba(233,200,119,.95), inset 0 0 0 6px rgba(43,26,6,.9);
+}
+@keyframes pulse { 50% { transform: scale(.9); filter: brightness(1.35); } }
 
 /* pieces */
 #pieces { position: absolute; inset: 0; pointer-events: none; }

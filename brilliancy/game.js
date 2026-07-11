@@ -43,7 +43,7 @@ const sleepRaw = (ms) => new Promise((r) => setTimeout(r, ms));
 // ── sound ───────────────────────────────────────────────────────────────────
 
 const SFX = (() => {
-  let ctx = null, master = null, murmurGain = null, muted = store.read().muted ?? false;
+  let ctx = null, master = null, muted = store.read().muted ?? false;
 
   function ensure() {
     if (ctx) return true;
@@ -52,18 +52,6 @@ const SFX = (() => {
       master = ctx.createGain();
       master.gain.value = muted ? 0 : 0.5;
       master.connect(ctx.destination);
-      // crowd murmur bed: looping filtered noise, gain 0 until raised
-      const len = ctx.sampleRate * 2;
-      const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-      const d = buf.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < len; i++) { last = (last + (Math.random() * 2 - 1) * 0.02) * 0.995; d[i] = last * 18; }
-      const src = ctx.createBufferSource();
-      src.buffer = buf; src.loop = true;
-      const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 420;
-      murmurGain = ctx.createGain(); murmurGain.gain.value = 0;
-      src.connect(lp).connect(murmurGain).connect(master);
-      src.start();
       return true;
     } catch { return false; }
   }
@@ -112,7 +100,6 @@ const SFX = (() => {
       const n = Math.floor(dur * 26);
       for (let i = 0; i < n; i++) setTimeout(() => noise(0.045, { freq: 1500 + Math.random() * 2500, gain: 0.1 + Math.random() * 0.14 }), Math.random() * dur * 1000);
     },
-    murmur(level, ramp = 1.2) { if (ensure() && murmurGain) { murmurGain.gain.cancelScheduledValues(now()); murmurGain.gain.linearRampToValueAtTime(level * 0.5, now() + ramp); } },
     silence(ms) {
       if (!ensure() || !master) return;
       const g = master.gain;
@@ -680,7 +667,6 @@ const Director = {
     card.appendChild(actions);
     Overlay.show(card);
     await Overlay.waitFor(btn);
-    SFX.murmur(0.12);
     await Overlay.hide();
   },
 
@@ -835,7 +821,6 @@ const Director = {
         if (beat.stamp) { await FX.stamp(beat.stamp); }
         if (beat.evalFlicker !== undefined) await Eval.flicker(beat.evalFlicker, beat.eval);
         else if (beat.eval !== undefined) Eval.set(beat.eval, { slam: true });
-        SFX.murmur(0.3); setTimeout(() => SFX.murmur(0.12, 3), 2500);
         if (beat.after) await Feed.script(beat.after);
       } else if (beat.type === "combo" || (comboUntil >= ply && isYours)) {
         if (beat.type === "combo") {
@@ -852,14 +837,12 @@ const Director = {
         await Board.animate(move, { instant: comboStep > 0 });
         Sheet.addSan(sans[ply], states[ply].turn, fullmove);
         SFX.blip(comboStep);
-        SFX.murmur(Math.min(0.65, 0.15 + comboStep * 0.07), 0.4);
         Feed.say("beat", comboLines[comboLineIdx++ % comboLines.length], { type: false });
         comboStep++;
         await sleepRaw(Math.min(90, 25 + comboStep * 8)); // growing hit-stop
         if (beat.eval !== undefined) Eval.set(beat.eval);
         if (ply >= comboUntil) {
           comboUntil = -1;
-          SFX.murmur(0.14, 2.5);
           if (beat.after) await Feed.script(beat.after);
         }
       } else {
@@ -888,7 +871,7 @@ const Director = {
     }
     await this.ritual(scene, out);
     await Feed.script(out.say);
-    if (out.kind !== "machine") { SFX.applause(2.6); SFX.murmur(0.35); setTimeout(() => SFX.murmur(0.08, 4), 3000); }
+    if (out.kind !== "machine") SFX.applause(2.6);
     await sleep(1400);
     document.body.classList.remove("mach-mode");
     $("#board").classList.remove("mono");
