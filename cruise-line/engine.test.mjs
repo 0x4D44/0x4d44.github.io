@@ -160,3 +160,95 @@ test("save-state serialisation preserves a valid playable state", () => {
   assert.deepEqual(validateState(restored), []);
   assertFiniteReport(forecastQuarter(restored));
 });
+
+// --- Malformed-save hardening (ALM-REQ-KILN-00001) ---
+// A corrupted same-version localStorage payload must be rejected by validateState so it
+// never reaches the render path: app.mjs indexes FEATURES/CABIN_PLANS/HULLS and reads
+// order.ship / rival.fleet directly, and throws on an unknown id or missing structure.
+function malformedBase() {
+  return JSON.parse(JSON.stringify(serialisableState(createNewGame({ seed: "malformed" }))));
+}
+
+test("validateState accepts a well-formed save carrying a build order", () => {
+  const saved = malformedBase();
+  const orderShipCopy = JSON.parse(JSON.stringify(saved.company.fleet[0]));
+  orderShipCopy.id = "order-ship-test";
+  saved.company.orders.push({
+    id: "order-test",
+    ship: orderShipCopy,
+    quartersRemaining: 3,
+    finance: "cash",
+    cashPaid: 0,
+    debtRaised: 0,
+  });
+  assert.deepEqual(validateState(saved), []);
+});
+
+test("validateState rejects an unknown ship feature id", () => {
+  const saved = malformedBase();
+  saved.company.fleet[0].features = ["not-a-real-feature"];
+  const errors = validateState(saved);
+  assert.ok(errors.some((m) => m.includes("not-a-real-feature")), errors.join(" | "));
+});
+
+test("validateState rejects unknown cabin-plan and speed ids", () => {
+  const badCabin = malformedBase();
+  badCabin.company.fleet[0].cabinPlanId = "penthouse";
+  assert.ok(validateState(badCabin).some((m) => m.includes("cabin plan")));
+
+  const badSpeed = malformedBase();
+  badSpeed.company.fleet[0].speedId = "warp";
+  assert.ok(validateState(badSpeed).some((m) => m.includes("speed")));
+});
+
+test("validateState rejects a malformed ship livery", () => {
+  const saved = malformedBase();
+  saved.company.fleet[0].livery = "royal-blue";
+  assert.ok(validateState(saved).some((m) => m.includes("livery")));
+});
+
+test("validateState rejects malformed build orders", () => {
+  const noShip = malformedBase();
+  noShip.company.orders.push({ id: "o1", quartersRemaining: 2 });
+  assert.ok(validateState(noShip).length > 0, "order with no ship");
+
+  const badHull = malformedBase();
+  const badHullShip = JSON.parse(JSON.stringify(badHull.company.fleet[0]));
+  badHullShip.hullId = "starship";
+  badHull.company.orders.push({ id: "o2", ship: badHullShip, quartersRemaining: 2 });
+  assert.ok(validateState(badHull).some((m) => m.includes("hull")));
+
+  const badQuarters = malformedBase();
+  badQuarters.company.orders.push({ id: "o3", ship: JSON.parse(JSON.stringify(badQuarters.company.fleet[0])), quartersRemaining: "soon" });
+  assert.ok(validateState(badQuarters).some((m) => m.includes("quartersRemaining")));
+
+  const ordersNotArray = malformedBase();
+  ordersNotArray.company.orders = "nope";
+  assert.ok(validateState(ordersNotArray).some((m) => m.includes("orders")));
+});
+
+test("validateState rejects malformed rival structure", () => {
+  const rivalsNotArray = malformedBase();
+  rivalsNotArray.rivals = {};
+  assert.ok(validateState(rivalsNotArray).some((m) => m.includes("Rivals")));
+
+  const rivalNoFleet = malformedBase();
+  delete rivalNoFleet.rivals[0].fleet;
+  assert.ok(validateState(rivalNoFleet).some((m) => m.includes("fleet")));
+});
+
+test("validateState rejects an unknown campaign status", () => {
+  const saved = malformedBase();
+  saved.status = "victory-lap";
+  assert.ok(validateState(saved).some((m) => m.includes("status")));
+});
+
+test("a corrupt feature id passes the forecast gate but validateState still catches it", () => {
+  // Proves WHY the id checks are needed: forecastQuarter reads the precomputed ship.appeal
+  // snapshot, never FEATURES, so a bogus feature id yields a finite forecast and slips past
+  // the old numeric/forecast gate — only the explicit id check rejects it before render.
+  const saved = malformedBase();
+  saved.company.fleet[0].features = ["ghost-feature"];
+  assertFiniteReport(forecastQuarter(saved));
+  assert.ok(validateState(saved).some((m) => m.includes("ghost-feature")));
+});
