@@ -236,6 +236,7 @@
 
   function setScreen(name) {
     ui.screen = name;
+    ui.raisedCard = null; // a screen change (home/continue/new game) cancels any pending raise
     const home = name === 'home';
     dom.home.hidden = !home;
     dom.game.hidden = home;
@@ -768,6 +769,9 @@
     cancelScheduledAction();
     focusBeforeModal = document.activeElement;
     ui.modal = type;
+    ui.raisedCard = null; // opening a modal pauses the game; disarm any half-done two-tap so
+                          // it can't be re-armed on resume and played by a single tap
+
     hideBidSheet();
     dom.modalContent.innerHTML = html;
     dom.modalLayer.hidden = false;
@@ -1104,11 +1108,12 @@
     if (!node || !node.classList.contains('playable')) return;
     const cardId = node.dataset.cardId;
     // Touch has no hover to preview the overlapped fan (cards expose only a ~40px sliver),
-    // so the first tap on a playable card raises it and a second tap on the raised card
-    // plays it; tapping a different card moves the raise. Mouse/keyboard keep instant play —
-    // their :hover / :focus-visible lift is already the preview, and an Enter/Space
-    // activation (a native click) still plays on the first press.
-    if (window.matchMedia('(hover: none)').matches && ui.raisedCard !== cardId) {
+    // so the first *pointer* tap on a playable card raises it and a second tap plays it;
+    // tapping a different card moves the raise. Mouse keeps instant play (its pointer has
+    // hover). A keyboard Enter/Space activation is a synthesized click with `detail === 0`
+    // (a genuine pointer tap has `detail >= 1`), so it skips the raise and plays on the first
+    // press — even on a touch device with an attached keyboard.
+    if (event.detail !== 0 && window.matchMedia('(hover: none)').matches && ui.raisedCard !== cardId) {
       ui.raisedCard = cardId;
       renderHand();
       return;
