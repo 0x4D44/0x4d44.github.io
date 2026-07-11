@@ -428,8 +428,10 @@ body.sound-muted .sound-off { display: block; }
   grid-template-columns: minmax(150px, 190px) minmax(540px, 1fr) minmax(160px, 210px);
   gap: 14px;
   align-items: stretch;
-  min-height: calc(100vh - 94px - var(--safe-top) - var(--safe-bottom));
-  min-height: calc(100dvh - 94px - var(--safe-top) - var(--safe-bottom));
+  /* Subtract the real fixed chrome around .game-layout: app-shell padding 14+22 +
+     topbar 56 + game-screen padding-top 14 = 106px. Understating it scrolls the board. */
+  min-height: calc(100vh - 106px - var(--safe-top) - var(--safe-bottom));
+  min-height: calc(100dvh - 106px - var(--safe-top) - var(--safe-bottom));
 }
 
 .panel-glass {
@@ -660,7 +662,10 @@ body.sound-muted .sound-off { display: block; }
   .game-layout { display: block; min-height: auto; }
   .right-rail { display: none; }
   .game-screen { padding-top: 9px; }
-  .table-column { min-height: calc(100dvh - 90px); grid-template-rows: auto auto minmax(250px, 1fr) auto auto; }
+  /* Real chrome here: app-shell padding 14+22 (this tier only changes left/right) +
+     topbar 56 + game-screen padding-top 9 = 101px. Also subtract the safe insets the
+     app-shell padding adds — this rule previously omitted them, over-tall on notches. */
+  .table-column { min-height: calc(100dvh - 101px - var(--safe-top) - var(--safe-bottom)); grid-template-rows: auto auto minmax(250px, 1fr) auto auto; }
   .card-table { min-height: 270px; }
   .slot-west { left: 12%; }.slot-east { right: 12%; }
   .hand { --card-max: min(104px, 20dvh); --card-min: 56px; --card-step: clamp(40px, 7cqw, 58px); }
@@ -678,7 +683,9 @@ body.sound-muted .sound-off { display: block; }
   .difficulty-picker { display: grid; grid-template-columns: repeat(3, 1fr); }.difficulty-picker span { min-width: 0; padding: 8px; }.difficulty-picker small { display: none; }
   .hero-instrument { width: 92vw; margin-left: -3vw; }.hero-tide { width: 66px; height: 66px; }.hero-tide b { font-size: 24px; }.hero-tide span { font-size: 6px; }
   .rule-ribbon { display: none; }
-  .table-column { gap: 6px; min-height: calc(100dvh - 64px - var(--safe-top) - var(--safe-bottom)); grid-template-rows: auto auto minmax(235px, 1fr) auto auto; }
+  /* Real chrome here: app-shell padding 8+8 + topbar 48 + game-screen padding-top 9 =
+     73px (was 64, which scrolled the board ~9px on a phone). */
+  .table-column { gap: 6px; min-height: calc(100dvh - 73px - var(--safe-top) - var(--safe-bottom)); grid-template-rows: auto auto minmax(235px, 1fr) auto auto; }
   .tide-track-wrap { padding: 7px 8px 8px; }.tide-track-labels { margin-bottom: 5px; }.tide-node { height: 28px; gap: 2px; }.tide-node b { font-size: 12px; }.tide-node small { display: none; }
   .opponents { gap: 4px; }.opponent { grid-template-columns: auto minmax(0,1fr); gap: 5px; padding: 6px; }.avatar { width: 27px; height: 27px; font-size: 11px; }.opponent-copy small,.mini-hand { display: none; }.opponent-copy b { font-size: 8px; }.opponent-call { font-size: 7px; margin-top: 2px; }
   .card-table { min-height: 235px; }.trick-slot { --card-w: clamp(50px, 17vw, 68px); }.slot-north { top: 5%; }.slot-south { bottom: 5%; }.slot-west { left: 7%; }.slot-east { right: 7%; }.table-callout { width: 86px; }.table-callout strong { font-size: 27px; }.table-callout small { max-width: 70px; font-size: 8px; }

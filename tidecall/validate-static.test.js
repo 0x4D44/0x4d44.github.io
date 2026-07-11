@@ -9,6 +9,7 @@ const read = (name) => fs.readFileSync(path.join(ROOT, name), 'utf8');
 const html = read('index.html');
 const app = read('app.js');
 const worker = read('sw.js');
+const styles = read('styles.css');
 
 function test(name, fn) {
   try {
@@ -66,6 +67,17 @@ test('service worker only retires Tidecall caches', () => {
   assert.match(worker, /const CACHE_PREFIX = ['"]tidecall-['"]/);
   assert.match(worker, /key\.startsWith\(CACHE_PREFIX\) && key !== CACHE/);
   assert.doesNotMatch(worker, /keys\.filter\(\(key\) => key !== CACHE\)/);
+});
+
+test('the game board min-height subtracts the real chrome at every tier', () => {
+  // Each game-screen tier hand-computes the fixed chrome to subtract from 100dvh; when
+  // it understates it, the board is taller than the viewport and the page scrolls.
+  // Measured-correct values: desktop 106, ≤820 101, ≤560 73. (Regression guard.)
+  assert.match(styles, /100dvh - 106px - var\(--safe-top\)/, 'desktop game-layout chrome');
+  assert.match(styles, /100dvh - 101px - var\(--safe-top\)/, '≤820 table-column chrome');
+  assert.match(styles, /100dvh - 73px - var\(--safe-top\)/, '≤560 table-column chrome');
+  assert.doesNotMatch(styles, /100dvh - 64px/, 'stale ≤560 constant');
+  assert.doesNotMatch(styles, /100dvh - 90px/, 'stale ≤820 constant (also lacked safe insets)');
 });
 
 test('the confetti animation cancels a live burst before starting a new one', () => {
