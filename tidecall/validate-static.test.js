@@ -110,6 +110,7 @@ test('hand cards offer a touch tap-to-raise affordance', () => {
   // the CSS class so the affordance can't be silently dropped by a future refactor.
   assert.match(app, /raisedCard/, 'app tracks a raised card in ui state');
   assert.match(app, /matchMedia\('\(hover: none\)'\)/, 'the raise gate is scoped to touch (no-hover) pointers');
+  assert.match(app, /event\.detail !== 0/, 'a keyboard activation (detail 0) bypasses the raise and plays on first press');
   assert.match(styles, /\.playing-card\.playable\.raised/, 'styles define the raised-card lift');
 });
 
