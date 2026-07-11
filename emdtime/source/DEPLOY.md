@@ -32,5 +32,13 @@ works from the `/emdtime/` subpath.
 
 ## Archive
 
-The original standalone repo `0x4D44/emdtime` is kept as a frozen archive (it also
-holds the working journal and scratchpad). This monorepo copy is authoritative.
+This repo is the **only** master. The original standalone repo `0x4D44/emdtime` is
+retired: everything it held now lives here — the source (byte-identical when checked
+on 2026-07-11), the HLD, the working journal
+(`wrk_journals/2026.07.10 - JRN - Decet base-10 time system.md`), and its open
+scratchpad items (merged into the root `scratchpad.md`). The standalone is kept only
+as a read-only GitHub archive, preserving the source's original 3-commit history that
+the import into this repo flattened.
+
+**Never develop Decet in the standalone repo.** A fix pushed there does not reach the
+live site — the site is served from this repo.
