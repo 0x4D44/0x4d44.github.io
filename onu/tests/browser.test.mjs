@@ -21,6 +21,28 @@ const MIME = {
   ".css": "text/css", ".svg": "image/svg+xml", ".png": "image/png",
 };
 
+let fixtureSequence = 0;
+function testCard(color, symbol) {
+  fixtureSequence += 1;
+  return { id: `browser-${fixtureSequence}`, faces: { classic: { color, symbol, points: /^\d+$/.test(symbol) ? Number(symbol) : 20 } } };
+}
+
+function testGame({ mode = "classic", hands, top, drawPile = [], turn = 0, lastPlayer = null, catchPlayer = null }) {
+  return {
+    mode, side: "light",
+    players: hands.map((hand, index) => ({
+      name: index === 0 ? "You" : ["Adder", "Cobra", "Python"][index - 1],
+      human: index === 0,
+      profile: index === 0 ? undefined : ["adder", "cobra", "python"][index - 1],
+      hand, saidOnu: false,
+    })),
+    drawPile, discardPile: [top], turn, direction: 1, currentColor: top.faces.classic.color,
+    dealer: 3, pendingStack: null, pendingRequest: null,
+    catchPlayer, catchQueue: [], jumpWindow: null, winner: null, roundVoid: false,
+    noProgressTurns: 0, lastPlayer,
+  };
+}
+
 let stage = "starting";
 let chrome;
 let server;
@@ -183,6 +205,10 @@ try {
     return response.result.value;
   }
 
+  async function loadFixture(state, options = {}) {
+    await evaluate(`window.__onu._loadFixture(${JSON.stringify(state)}, ${JSON.stringify(options)})`);
+  }
+
   async function key(key, code = key) {
     const virtualKey = key === "Enter" ? 13 : key === "Tab" ? 9 : 32;
     const params = { key, code, windowsVirtualKeyCode: virtualKey, nativeVirtualKeyCode: virtualKey };
@@ -225,13 +251,16 @@ try {
       return {
         x, y, width: rect.width, height: rect.height,
         hit: Boolean(hit && (hit === node || node.contains(hit))),
+        hitTag: hit?.tagName ?? null,
+        hitId: hit?.id ?? null,
+        hitClass: hit?.className ?? null,
         disabled: Boolean(node.disabled),
       };
     })()`);
     assert.equal(target.error, undefined, `${selector} should exist`);
     assert.ok(target.width > 0 && target.height > 0, `${selector} should have a visible box`);
     assert.equal(target.disabled, false, `${selector} should be enabled`);
-    assert.equal(target.hit, true, `${selector} should win hit-testing at its centre`);
+    assert.equal(target.hit, true, `${selector} should win hit-testing at its centre: ${JSON.stringify(target)}`);
     return target;
   }
 
@@ -384,6 +413,91 @@ try {
     await poll("rules dialog to close", async () => evaluate("!document.querySelector('#modalWrap')"));
     assert.equal(await evaluate("document.activeElement === document.querySelector('#rulesBtn')"), true, `${label}: closing rules should restore focus`);
 
+    trace(`driving required controls at ${label}`);
+    await evaluate("window.__onu.fast(false)");
+    const drawTop = testCard("R", "5");
+    const drawn = testCard("B", "2");
+    const drawState = testGame({
+      hands: [[testCard("G", "1")], [testCard("Y", "2")], [testCard("G", "3")], [testCard("B", "4")]],
+      top: drawTop, drawPile: [drawn],
+    });
+    await loadFixture(drawState);
+    await poll("a human draw fixture", async () => evaluate("window.__onu.phase === 'human'"));
+    await pointerClick("#drawPile");
+    await poll("the draw control to mutate the hand", async () => evaluate("window.__onu.state.players[0].hand.length === 2"));
+    await focusAndKey("#newBtn");
+    await poll("new-match during draw sequencing", async () => evaluate("Boolean(document.querySelector('#modalWrap'))"));
+    await focusAndKey("#modalWrap .btnrow button:nth-child(3)");
+    await poll("draw cancellation to return to the chooser", async () => evaluate("window.__onu.state === null && window.__onu.phase === 'splash'"));
+    const cancelledDraw = await evaluate("JSON.stringify({ state: window.__onu.snapshot(), phase: window.__onu.phase })");
+    await delay(350);
+    assert.equal(await evaluate("JSON.stringify({ state: window.__onu.snapshot(), phase: window.__onu.phase })"), cancelledDraw, `${label}: cancelling during draw sequencing should stop stale mutations`);
+
+    await evaluate("window.__onu.fast(false)");
+    const wild = testCard("W", "wild");
+    const colorState = testGame({
+      hands: [[wild, testCard("Y", "2")], [testCard("G", "1")], [testCard("B", "1")], [testCard("Y", "1")]],
+      top: testCard("R", "5"), drawPile: [testCard("B", "7")],
+    });
+    await loadFixture(colorState);
+    await poll("a colour-choice fixture", async () => evaluate("window.__onu.phase === 'human'"));
+    await focusAndKey("#onuBtn");
+    await pointerClick(`[data-card-id="${wild.id}"]`);
+    await poll("the colour prompt", async () => evaluate("document.querySelector('#modalTitle')?.textContent === 'Pick a colour'"));
+    await focusAndKey("#modalWrap .btnrow button:first-child");
+    await poll("the colour choice to resolve", async () => evaluate(`window.__onu.state.discardPile.at(-1).id === ${JSON.stringify(wild.id)} && window.__onu.state.currentColor === "R"`));
+
+    const seven = testCard("R", "7");
+    const targetState = testGame({
+      mode: "chaos",
+      hands: [[seven, testCard("Y", "2")], [testCard("G", "3"), testCard("G", "4")], [testCard("B", "3")], [testCard("Y", "3")]],
+      top: testCard("R", "5"), drawPile: [testCard("B", "8")],
+    });
+    await loadFixture(targetState);
+    await poll("a target-choice fixture", async () => evaluate("window.__onu.phase === 'human'"));
+    await focusAndKey("#onuBtn");
+    await pointerClick(`[data-card-id="${seven.id}"]`);
+    await poll("the swap-target prompt", async () => evaluate("document.querySelector('#modalTitle')?.textContent === 'Swap hands with whom?'"));
+    await focusAndKey("#modalWrap .btnrow button:first-child");
+    await poll("the target choice to resolve", async () => evaluate(`window.__onu.state.discardPile.at(-1).id === ${JSON.stringify(seven.id)}`));
+
+    const caughtCard = testCard("G", "6");
+    const catchState = testGame({
+      mode: "chaos", catchPlayer: 1,
+      hands: [[testCard("R", "1")], [caughtCard], [testCard("B", "2")], [testCard("Y", "2")]],
+      top: testCard("R", "4"), drawPile: [testCard("B", "8"), testCard("G", "8")], lastPlayer: 1,
+    });
+    await loadFixture(catchState, { request: { type: "catch", playerIndex: 1 }, seed: 1 });
+    await poll("the Catch control", async () => evaluate("!document.querySelector('#gotchaBtn').classList.contains('hidden')"));
+    await pointerClick("#gotchaBtn");
+    await poll("the catch penalty", async () => evaluate("window.__onu.state.players[1].hand.length === 3"));
+
+    const humanMate = testCard("R", "5");
+    const humanJumpState = testGame({
+      mode: "chaos", lastPlayer: 1, turn: 2,
+      hands: [[humanMate, testCard("Y", "1"), testCard("G", "1")], [testCard("B", "1")], [testCard("B", "2")], [testCard("Y", "2")]],
+      top: testCard("R", "5"), drawPile: [testCard("G", "9")],
+    });
+    await loadFixture(humanJumpState, { request: { type: "jump", candidates: [{ playerIndex: 0, cardIndex: 0, cardId: humanMate.id }] } });
+    await poll("the human Jump-In control", async () => evaluate("!document.querySelector('#jumpBtn').classList.contains('hidden')"));
+    await assertHitTest("#jumpBtn");
+    await key("J", "KeyJ");
+    await poll("the J shortcut to play the exact match", async () => evaluate("window.__onu.state.lastPlayer === 0"));
+
+    const aiMate = testCard("R", "6");
+    const aiJumpState = testGame({
+      mode: "chaos", lastPlayer: 0, turn: 2,
+      hands: [[testCard("Y", "1")], [aiMate, testCard("B", "2"), testCard("G", "2")], [testCard("B", "3")], [testCard("Y", "3")]],
+      top: testCard("R", "6"), drawPile: [testCard("G", "9")],
+    });
+    await evaluate("window.__onu.fast(false)");
+    await loadFixture(aiJumpState, { request: { type: "jump", candidates: [{ playerIndex: 1, cardIndex: 0, cardId: aiMate.id }] }, seed: 1 });
+    await poll("the AI Jump-In reaction lock", async () => evaluate("document.querySelector('#newBtn').disabled"));
+    assert.equal(await evaluate("document.querySelector('#newBtn').click(); Boolean(document.querySelector('#modalWrap'))"), false, `${label}: new-match must not open during an AI reaction`);
+    await poll("the AI Jump-In to resolve", async () => evaluate("window.__onu.state.lastPlayer === 1"), 3_000);
+    await assertNoOverflow(width, `${label} required controls`);
+    await evaluate("window.__onu.cancel()");
+
     trace(`checking seeded Flip boot at ${label}`);
     await evaluate(`window.__onu.fast(true); window.__onu.startMode("flip", ${width + 500})`);
     await poll("a seeded Flip match", async () => evaluate("window.__onu.state?.mode === 'flip'"));
@@ -416,5 +530,4 @@ try {
 } finally {
   clearTimeout(watchdog);
   cleanup();
-  process.exit(process.exitCode ?? 0);
 }
