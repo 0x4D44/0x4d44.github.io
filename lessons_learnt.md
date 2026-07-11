@@ -3,6 +3,26 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-11 — In the hand-built vanilla-JS games (`tidecall`, and the same shape
+  elsewhere), a monolithic `render()` that `replaceChildren()`s each subtree on every
+  state tick is the flicker engine: every rebuilt node with an `animation:` (e.g.
+  `.playing-card { animation: card-in }`) *restarts* that animation, so the player's
+  hand re-deals itself every time an opponent bids or plays — and, conversely, any
+  `transition:` written to animate a state change (the tide marker advancing, a card's
+  hover lift) is *dead*, because a freshly-inserted node has no prior computed style to
+  transition from. Fix by reconciling: keep a `Map` of id→node, reuse nodes and only
+  toggle their classes/attributes, and `replaceChildren()` only when a stable key
+  changes. Gotcha: card ids repeat across rounds (`S14` is the ace every deal), so key
+  the hand cache by round index too, or round N+1 silently reuses round N's nodes.
+  Switch per-node click handlers to one delegated listener on the container once nodes
+  outlive a render, or they stack up. Card *size* is best driven the same structural
+  way — `.hand{container-type:inline-size}` + a JS-set `--hand-count`, so a 3-card round
+  deals big cards and an 8-card round packs down, and put the card's internal glyphs in
+  `em` against `font-size:var(--card-w)` so a bigger card is genuinely more legible, not
+  the same small print enlarged. None of this is caught by `validate-static.test.js`
+  (CSS and renderHand are unguarded) — verify in a real browser at 360×640 and 390×844,
+  and bump the cache-first `sw.js` `CACHE` version or returning visitors never see it.
+
 - 2026-07-10 — Service-worker `CacheStorage` is shared across the whole
   `0x4d44.github.io` origin, not isolated by the worker's `/slug/` scope. Each
   document PWA must namespace its cache and delete only stale keys with its own

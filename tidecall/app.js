@@ -83,6 +83,23 @@
     collecting: false,
   };
 
+  // Rendering is reconciled, not rebuilt: a card node lives for as long as the card
+  // is in the hand, so an opponent's bid or card cannot restart its deal-in animation.
+  // `view` remembers what is already on screen; a key change means a genuine re-deal.
+  const view = {
+    handKey: '',
+    handNodes: new Map(),
+    tideKey: '',
+    standingsKey: '',
+  };
+
+  function resetView() {
+    view.handKey = '';
+    view.handNodes = new Map();
+    view.tideKey = '';
+    view.standingsKey = '';
+  }
+
   function readJSON(key, fallback) {
     try {
       const value = localStorage.getItem(key);
@@ -273,6 +290,7 @@
     ui.bidHint = null;
     ui.cardHint = null;
     ui.statusOverride = '';
+    resetView();
     clearSavedGame();
     saveGame();
     setScreen('game');
@@ -291,6 +309,7 @@
     game = restored;
     settings.difficulty = game.difficulty || settings.difficulty;
     saveSettings();
+    resetView();
     setScreen('game');
     sound.play('click');
     render();
@@ -338,20 +357,28 @@
   }
 
   function renderTideTrack() {
-    dom.tideTrack.replaceChildren();
     const current = Math.min(game.trickIndex, game.handSize - 1);
-    for (let index = 0; index < game.handSize; index += 1) {
-      const value = E.trickValue(game.tide, index);
-      const node = document.createElement('div');
-      node.className = 'tide-node';
-      if (index < game.trickIndex || game.phase === 'roundEnd' || game.phase === 'matchEnd') node.classList.add('past');
-      if (index === current && game.phase === 'play') node.classList.add('current');
-      if (value === 0) node.classList.add('slack');
-      if (value === 2) node.classList.add('surge');
-      node.innerHTML = `<small>${index + 1}</small><b>${value}</b>`;
-      node.title = value === 0 ? `Trick ${index + 1}: Slack Water, zero marks` : value === 2 ? `Trick ${index + 1}: High Tide, two marks` : `Trick ${index + 1}: one mark`;
-      dom.tideTrack.appendChild(node);
+    // The tide table is fixed for the round; only "past" and "current" move within it.
+    const tideKey = `${game.roundIndex}:${game.tide.slack}:${game.tide.surge}`;
+    if (view.tideKey !== tideKey) {
+      view.tideKey = tideKey;
+      dom.tideTrack.replaceChildren();
+      for (let index = 0; index < game.handSize; index += 1) {
+        const value = E.trickValue(game.tide, index);
+        const node = document.createElement('div');
+        node.className = 'tide-node';
+        if (value === 0) node.classList.add('slack');
+        if (value === 2) node.classList.add('surge');
+        node.innerHTML = `<small>${index + 1}</small><b>${value}</b>`;
+        node.title = value === 0 ? `Trick ${index + 1}: Slack Water, zero marks` : value === 2 ? `Trick ${index + 1}: High Tide, two marks` : `Trick ${index + 1}: one mark`;
+        dom.tideTrack.appendChild(node);
+      }
     }
+    const done = game.phase === 'roundEnd' || game.phase === 'matchEnd';
+    Array.from(dom.tideTrack.children).forEach((node, index) => {
+      node.classList.toggle('past', index < game.trickIndex || done);
+      node.classList.toggle('current', index === current && game.phase === 'play');
+    });
     const value = E.trickValue(game.tide, current);
     dom.currentTideLabel.textContent = game.phase === 'roundEnd' || game.phase === 'matchEnd'
       ? 'ROUND COMPLETE'
@@ -368,24 +395,33 @@
       if (game.bids[seat] == null) call.textContent = active && game.phase === 'bid' ? 'READING…' : 'CALL —';
       else call.textContent = `CALL ${game.bids[seat]} · ${game.marks[seat]}/${game.bids[seat]}`;
       const miniHand = $('.mini-hand', panel);
-      miniHand.replaceChildren();
       const visibleBacks = Math.min(4, game.hands[seat].length);
-      for (let i = 0; i < visibleBacks; i += 1) {
-        const back = document.createElement('i');
-        back.className = 'mini-card';
-        miniHand.appendChild(back);
+      if (miniHand.childElementCount !== visibleBacks) {
+        miniHand.replaceChildren();
+        for (let i = 0; i < visibleBacks; i += 1) {
+          const back = document.createElement('i');
+          back.className = 'mini-card';
+          miniHand.appendChild(back);
+        }
       }
       panel.setAttribute('aria-label', `${seatName(seat)}, ${game.scores[seat]} points${active ? ', taking a turn' : ''}`);
     });
   }
 
   function renderTrick() {
-    $$('.trick-slot').forEach((slot) => slot.replaceChildren());
-    game.trick.forEach((play) => {
-      const slot = $(`.trick-slot[data-seat="${play.seat}"]`);
+    // Keep the cards already on the table: only the newly played one should fly in.
+    const bySeat = new Map(game.trick.map((play) => [play.seat, play]));
+    $$('.trick-slot').forEach((slot) => {
+      const play = bySeat.get(Number(slot.dataset.seat));
+      const current = slot.firstElementChild;
+      if (!play) {
+        if (current) slot.replaceChildren();
+        return;
+      }
+      if (current && current.dataset.cardId === play.card.id) return;
       const card = createCardElement(play.card, { static: true });
       card.style.setProperty('--rot', `${[-1, -7, 2, 7][play.seat]}deg`);
-      slot.appendChild(card);
+      slot.replaceChildren(card);
     });
 
     const index = Math.min(game.trickIndex, game.handSize - 1);
@@ -409,38 +445,66 @@
   }
 
   function renderHand() {
-    dom.hand.replaceChildren();
     const hand = game.hands[0] || [];
+    // Card ids repeat across rounds (`S14` is the ace of spades every deal), so the
+    // round is part of the key: a new deal builds fresh nodes and deals them in, while
+    // everything inside a round reuses the nodes already on the table.
+    const handKey = `${game.roundIndex}`;
+    if (view.handKey !== handKey) {
+      view.handKey = handKey;
+      view.handNodes = new Map();
+      dom.hand.replaceChildren();
+    }
+
     const legalIds = game.phase === 'play' && game.turn === 0 && !game.trickComplete
       ? new Set(E.legalCards(hand, game.trick).map((card) => card.id))
       : new Set();
+    const live = new Set(hand.map((card) => card.id));
+    view.handNodes.forEach((node, id) => {
+      if (live.has(id)) return;
+      node.remove();
+      view.handNodes.delete(id);
+    });
+
+    const yourTurn = game.phase === 'play' && game.turn === 0;
     const centre = (hand.length - 1) / 2;
     hand.forEach((card, index) => {
-      const node = createCardElement(card);
+      let node = view.handNodes.get(card.id);
+      if (!node) {
+        node = createCardElement(card);
+        node.style.setProperty('--index', index);
+        view.handNodes.set(card.id, node);
+        dom.hand.appendChild(node);
+      }
       const rotation = (index - centre) * Math.min(4.2, 18 / Math.max(1, hand.length - 1));
-      node.style.setProperty('--index', index);
       node.style.setProperty('--rot', `${rotation.toFixed(2)}deg`);
       node.style.zIndex = String(index + 1);
       const playable = legalIds.has(card.id);
       node.classList.toggle('playable', playable);
-      node.classList.toggle('illegal', game.phase === 'play' && game.turn === 0 && !playable);
+      node.classList.toggle('illegal', yourTurn && !playable);
       node.classList.toggle('suggested', ui.cardHint === card.id);
-      if (playable) node.addEventListener('click', () => humanPlay(card.id));
+      if (playable) node.removeAttribute('aria-disabled');
       else node.setAttribute('aria-disabled', 'true');
-      dom.hand.appendChild(node);
     });
+    // The cards size themselves to the hand: fewer cards, bigger cards (see styles.css).
+    dom.hand.style.setProperty('--hand-count', String(hand.length));
   }
 
   function renderStandings() {
     const standings = E.standings(game);
-    dom.standings.replaceChildren();
-    standings.forEach((entry) => {
-      const li = document.createElement('li');
-      if (entry.seat === 0) li.classList.add('you');
-      const persona = E.PERSONAS[entry.seat].label;
-      li.innerHTML = `<span>${escapeHtml(entry.name)}<small>${escapeHtml(persona)}</small></span><b>${entry.score}</b>`;
-      dom.standings.appendChild(li);
-    });
+    // Scores only move at a round boundary; leave the list alone the rest of the time.
+    const standingsKey = standings.map((entry) => `${entry.seat}:${entry.score}`).join('|');
+    if (view.standingsKey !== standingsKey) {
+      view.standingsKey = standingsKey;
+      dom.standings.replaceChildren();
+      standings.forEach((entry) => {
+        const li = document.createElement('li');
+        if (entry.seat === 0) li.classList.add('you');
+        const persona = E.PERSONAS[entry.seat].label;
+        li.innerHTML = `<span>${escapeHtml(entry.name)}<small>${escapeHtml(persona)}</small></span><b>${entry.score}</b>`;
+        dom.standings.appendChild(li);
+      });
+    }
     const position = standings.findIndex((entry) => entry.seat === 0) + 1;
     dom.youPlace.textContent = ordinal(position);
     const scoreRatio = E.clamp((game.scores[0] + 25) / 245, 0, 1);
@@ -542,6 +606,7 @@
     }
 
     dom.bidGlimpse.replaceChildren();
+    dom.bidGlimpse.style.setProperty('--glimpse-count', String(game.handSize));
     game.hands[0].forEach((card, index) => {
       const micro = document.createElement('span');
       micro.className = `micro-card${suitMeta(card.s).colour === 'red' ? ' red' : ''}`;
@@ -1011,7 +1076,15 @@
     showToast(settings.sound ? 'Sound on.' : 'Sound muted.');
   }
 
+  function handleHandClick(event) {
+    const node = event.target.closest('.playing-card');
+    if (!node || !node.classList.contains('playable')) return;
+    humanPlay(node.dataset.cardId);
+  }
+
   function bindEvents() {
+    // Delegated: card nodes outlive a render now, so per-node listeners would stack up.
+    dom.hand.addEventListener('click', handleHandClick);
     dom.newButton.addEventListener('click', beginNewGame);
     dom.continueButton.addEventListener('click', continueGame);
     dom.homeRulesButton.addEventListener('click', openRules);

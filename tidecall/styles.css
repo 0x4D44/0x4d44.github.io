@@ -518,7 +518,7 @@ body.sound-muted .sound-off { display: block; }
 .table-wave path + path { opacity: 0.45; animation-direction: reverse; }
 .trump-watermark { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: rgba(226, 242, 235, 0.035); font-family: Georgia, serif; font-size: min(20vw, 210px); }
 
-.trick-slot { position: absolute; z-index: 4; width: clamp(54px, 7.2vw, 86px); aspect-ratio: 0.69; }
+.trick-slot { position: absolute; z-index: 4; --card-w: clamp(54px, 7.2vw, 86px); width: var(--card-w); aspect-ratio: 0.69; }
 .slot-north { left: 50%; top: 7%; transform: translateX(-50%); --from-x: 0; --from-y: -90px; --rot: -2deg; }
 .slot-south { left: 50%; bottom: 7%; transform: translateX(-50%); --from-x: 0; --from-y: 90px; --rot: 2deg; }
 .slot-west { left: 18%; top: 50%; transform: translateY(-50%); --from-x: -90px; --from-y: 0; --rot: -8deg; }
@@ -549,25 +549,32 @@ body.sound-muted .sound-off { display: block; }
 .hint-button { padding: 7px 9px; border: 1px solid var(--line); color: var(--muted); background: transparent; font-size: 7px; font-weight: 800; letter-spacing: 0.12em; cursor: pointer; }
 .hint-button:hover { color: var(--cyan); border-color: var(--line-strong); }
 
-.hand { min-height: 116px; display: flex; justify-content: center; align-items: flex-end; padding-top: 8px; overflow: visible; }
-.hand .playing-card { width: clamp(60px, 7.6vw, 94px); margin-left: clamp(-26px, -2.2vw, -13px); transform: translateY(var(--lift, 0)) rotate(var(--rot, 0deg)); transform-origin: 50% 120%; animation: card-in 360ms cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--index, 0) * 35ms); }
+/* The hand is a size container, so a card can size itself against the space the hand
+   actually has. --card-step is the strip of each covered card that stays visible (its
+   rank and suit, and its tap target); the top card takes whatever width is left over,
+   capped by --card-max. Fewer cards in the hand therefore means bigger cards. */
+.hand { container-type: inline-size; --hand-count: 1; --card-max: 94px; --card-min: 58px; --card-step: 68px; min-height: 116px; display: flex; justify-content: center; align-items: flex-end; padding-top: 8px; overflow: visible; }
+.hand .playing-card { --card-w: clamp(var(--card-min), calc(100cqw - (var(--hand-count) - 1) * var(--card-step)), var(--card-max)); width: var(--card-w); margin-left: calc(var(--card-step) - var(--card-w)); transform: translateY(var(--lift, 0)) rotate(var(--rot, 0deg)); transform-origin: 50% 120%; animation: card-in 360ms cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--index, 0) * 35ms); }
 .hand .playing-card:first-child { margin-left: 0; }
 .hand .playing-card.playable { cursor: pointer; }
 .hand .playing-card.playable:hover,.hand .playing-card.playable:focus-visible { --lift: -14px; z-index: 20 !important; filter: drop-shadow(0 16px 16px rgba(0, 7, 10, 0.38)) drop-shadow(0 0 8px rgba(119, 242, 221, 0.2)); }
 .hand .playing-card.illegal { opacity: 0.42; filter: grayscale(0.45); cursor: not-allowed; }
 .hand .playing-card.suggested { box-shadow: 0 0 0 2px var(--cyan), 0 0 25px rgba(119, 242, 221, 0.34); }
 
-.playing-card { position: relative; aspect-ratio: 0.69; overflow: hidden; padding: 0; border: 1px solid rgba(255, 255, 255, 0.74); border-radius: 7px; color: var(--card-ink); background: linear-gradient(145deg, #fffced, var(--card) 55%, #e7dcc5); box-shadow: 0 8px 18px rgba(0, 8, 12, 0.32), inset 0 0 0 1px rgba(26, 64, 66, 0.08); transition: transform 180ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease, filter 180ms ease, box-shadow 180ms ease; }
+/* Everything printed on a card is sized in em against the card's own width (the card's
+   font-size IS --card-w), so a bigger card is a genuinely more legible card rather than
+   the same small print on a larger rectangle. */
+.playing-card { position: relative; aspect-ratio: 0.69; overflow: hidden; padding: 0; border: 1px solid rgba(255, 255, 255, 0.74); border-radius: 7px; color: var(--card-ink); background: linear-gradient(145deg, #fffced, var(--card) 55%, #e7dcc5); box-shadow: 0 8px 18px rgba(0, 8, 12, 0.32), inset 0 0 0 1px rgba(26, 64, 66, 0.08); font-size: var(--card-w, 76px); transition: transform 180ms cubic-bezier(.2,.8,.2,1), width 200ms cubic-bezier(.2,.8,.2,1), margin-left 200ms cubic-bezier(.2,.8,.2,1), opacity 180ms ease, filter 180ms ease, box-shadow 180ms ease; }
 .playing-card.red { color: var(--red); }
-.playing-card::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(17, 57, 61, 0.14); border-radius: 4px; pointer-events: none; }
-.card-corner { position: absolute; z-index: 2; left: 8px; top: 6px; display: grid; text-align: center; font-family: Georgia, serif; line-height: 0.95; }
-.card-corner b { font-size: clamp(13px, 1.6vw, 20px); font-weight: 600; }
-.card-corner i { margin-top: 2px; font-size: clamp(9px, 1.1vw, 14px); font-style: normal; }
-.card-corner.bottom { left: auto; top: auto; right: 8px; bottom: 6px; transform: rotate(180deg); }
+.playing-card::before { content: ""; position: absolute; inset: 0.055em; border: 1px solid rgba(17, 57, 61, 0.14); border-radius: 4px; pointer-events: none; }
+.card-corner { position: absolute; z-index: 2; left: 0.075em; top: 0.06em; display: grid; text-align: center; font-family: Georgia, serif; line-height: 0.95; }
+.card-corner b { font-size: 0.21em; font-weight: 600; }
+.card-corner i { font-size: 0.145em; margin-top: 0.12em; font-style: normal; }
+.card-corner.bottom { left: auto; top: auto; right: 0.075em; bottom: 0.06em; transform: rotate(180deg); }
 .card-art { position: absolute; inset: 24% 13% 13%; display: grid; place-items: center; }
-.pip-main { font-family: Georgia, serif; font-size: clamp(30px, 4.8vw, 58px); font-style: normal; filter: drop-shadow(0 2px rgba(255, 255, 255, 0.65)); }
+.pip-main { font-family: Georgia, serif; font-size: 0.6em; font-style: normal; filter: drop-shadow(0 2px rgba(255, 255, 255, 0.65)); }
 .card-art svg { position: absolute; inset: auto 0 0; width: 100%; fill: none; stroke: currentColor; stroke-width: 1; opacity: 0.28; }
-.playing-card.face-card .card-art::before { content: attr(data-face); position: absolute; color: rgba(19, 57, 60, 0.13); font-family: Georgia, serif; font-size: clamp(42px, 6vw, 72px); font-weight: 700; }
+.playing-card.face-card .card-art::before { content: attr(data-face); position: absolute; color: rgba(19, 57, 60, 0.13); font-family: Georgia, serif; font-size: 0.75em; font-weight: 700; }
 .playing-card.red.face-card .card-art::before { color: rgba(185, 54, 68, 0.13); }
 
 .standings-list { list-style: none; margin: 11px 0 0; padding: 0; counter-reset: fleet; }
@@ -597,8 +604,12 @@ body.sound-muted .sound-off { display: block; }
 .bid-panel { position: relative; width: min(720px, calc(100% - 24px)); margin-bottom: max(12px, var(--safe-bottom)); padding: clamp(22px, 4vw, 38px); border: 1px solid var(--line-strong); background: linear-gradient(145deg, rgba(8, 44, 52, 0.97), rgba(2, 20, 27, 0.98)); box-shadow: 0 30px 100px rgba(0, 5, 8, 0.65); animation: modal-in 260ms cubic-bezier(.2,.8,.2,1); }
 .bid-panel h2 { margin: 8px 0 0; font-family: Georgia, serif; font-size: clamp(26px, 5vw, 42px); font-weight: 400; letter-spacing: -0.025em; }
 .bid-panel > p:not(.eyebrow) { max-width: 580px; margin: 9px 0 0; color: var(--muted); font-family: Georgia, serif; font-size: 13px; line-height: 1.5; }
-.bid-hand-glimpse { display: flex; justify-content: center; min-height: 64px; margin-top: 18px; }
-.bid-hand-glimpse .micro-card { width: 42px; aspect-ratio: 0.69; display: grid; place-items: center; margin-left: -9px; border: 1px solid rgba(255,255,255,.72); border-radius: 4px; color: var(--card-ink); background: var(--card); font-family: Georgia, serif; font-size: 13px; box-shadow: 0 7px 12px rgba(0,0,0,.22); transform: rotate(var(--rot)); }
+/* The glimpse is the preview of the hand shown over the table while you bid — the very
+   first look you get at a new deal. It uses the same hand-count-aware model as the hand
+   (app.js sets --glimpse-count): a 3-card round shows big, legible cards, and an 8-card
+   round packs down to stay inside the panel. Its glyph scales with the card too. */
+.bid-hand-glimpse { container-type: inline-size; --glimpse-count: 3; --mc-max: 46px; --mc-step: 33px; --mc-min: 38px; display: flex; justify-content: center; min-height: 64px; margin-top: 18px; }
+.bid-hand-glimpse .micro-card { --mc-w: clamp(var(--mc-min), calc(100cqw - (var(--glimpse-count) - 1) * var(--mc-step)), var(--mc-max)); width: var(--mc-w); aspect-ratio: 0.69; display: grid; place-items: center; margin-left: calc(var(--mc-step) - var(--mc-w)); border: 1px solid rgba(255,255,255,.72); border-radius: 4px; color: var(--card-ink); background: var(--card); font-family: Georgia, serif; font-size: calc(var(--mc-w) * 0.34); box-shadow: 0 7px 12px rgba(0,0,0,.22); transform: rotate(var(--rot)); }
 .bid-hand-glimpse .micro-card:first-child { margin-left: 0; }.bid-hand-glimpse .micro-card.red { color: var(--red); }
 .bid-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(64px, 1fr)); gap: 8px; margin-top: 20px; }
 .bid-option { min-height: 66px; border: 1px solid var(--line); color: var(--ink); background: rgba(3, 22, 29, 0.54); cursor: pointer; transition: transform 150ms ease, border-color 150ms ease, background 150ms ease; }
@@ -652,7 +663,7 @@ body.sound-muted .sound-off { display: block; }
   .table-column { min-height: calc(100dvh - 90px); grid-template-rows: auto auto minmax(250px, 1fr) auto auto; }
   .card-table { min-height: 270px; }
   .slot-west { left: 12%; }.slot-east { right: 12%; }
-  .hand .playing-card { width: clamp(58px, 12vw, 82px); margin-left: clamp(-27px, -4vw, -15px); }
+  .hand { --card-max: min(104px, 20dvh); --card-min: 56px; --card-step: clamp(40px, 7cqw, 58px); }
   .topbar { grid-template-columns: 1fr auto; }
   .voyage-readout { display: none !important; }
 }
@@ -670,17 +681,27 @@ body.sound-muted .sound-off { display: block; }
   .table-column { gap: 6px; min-height: calc(100dvh - 64px - var(--safe-top) - var(--safe-bottom)); grid-template-rows: auto auto minmax(235px, 1fr) auto auto; }
   .tide-track-wrap { padding: 7px 8px 8px; }.tide-track-labels { margin-bottom: 5px; }.tide-node { height: 28px; gap: 2px; }.tide-node b { font-size: 12px; }.tide-node small { display: none; }
   .opponents { gap: 4px; }.opponent { grid-template-columns: auto minmax(0,1fr); gap: 5px; padding: 6px; }.avatar { width: 27px; height: 27px; font-size: 11px; }.opponent-copy small,.mini-hand { display: none; }.opponent-copy b { font-size: 8px; }.opponent-call { font-size: 7px; margin-top: 2px; }
-  .card-table { min-height: 235px; }.trick-slot { width: clamp(50px, 17vw, 68px); }.slot-north { top: 5%; }.slot-south { bottom: 5%; }.slot-west { left: 7%; }.slot-east { right: 7%; }.table-callout { width: 86px; }.table-callout strong { font-size: 27px; }.table-callout small { max-width: 70px; font-size: 8px; }
+  .card-table { min-height: 235px; }.trick-slot { --card-w: clamp(50px, 17vw, 68px); }.slot-north { top: 5%; }.slot-south { bottom: 5%; }.slot-west { left: 7%; }.slot-east { right: 7%; }.table-callout { width: 86px; }.table-callout strong { font-size: 27px; }.table-callout small { max-width: 70px; font-size: 8px; }
   .status-line { min-height: 15px; font-size: 10px; }
-  .player-dock { padding: 7px 6px 2px; }.player-name { min-width: 80px; }.player-name small { display: none; }.hint-button { padding: 6px; }.hand { min-height: 98px; padding-top: 4px; }.hand .playing-card { width: clamp(52px, 18vw, 69px); margin-left: clamp(-28px, -7vw, -18px); }.card-corner { left: 5px; top: 5px; }.card-corner.bottom { right: 5px; bottom: 5px; }
-  .bid-panel { width: calc(100% - 12px); margin-bottom: max(6px,var(--safe-bottom)); padding: 20px 15px; }.bid-options { grid-template-columns: repeat(5,1fr); gap: 5px; }.bid-option { min-height: 53px; }.bid-option b { font-size: 21px; }.bid-hand-glimpse { min-height: 50px; }.bid-hand-glimpse .micro-card { width: 34px; }
+  .player-dock { padding: 7px 6px 2px; }.player-name { min-width: 80px; }.player-name small { display: none; }.hint-button { padding: 6px; }
+  /* Phone: the hand takes the width it needs and the (very roomy) card table gives it
+     back. --card-max is also held under 17dvh so a tall fan cannot push the table off
+     a short screen. A three-card round now deals 118px cards, not 69px ones. */
+  .hand { min-height: 104px; padding-top: 4px; --card-max: min(118px, 17dvh); --card-min: 52px; --card-step: clamp(30px, 10.5cqw, 44px); }
+  .bid-panel { width: calc(100% - 12px); margin-bottom: max(6px,var(--safe-bottom)); padding: 20px 15px; }.bid-options { grid-template-columns: repeat(5,1fr); gap: 5px; }.bid-option { min-height: 53px; }.bid-option b { font-size: 21px; }.bid-hand-glimpse { min-height: 74px; --mc-max: 62px; --mc-step: 34px; --mc-min: 40px; }
   .modal-layer { padding: 8px; }.modal { padding: 24px 17px; max-height: 90dvh; }.modal-rule-grid { grid-template-columns: 1fr; }.result-row { grid-template-columns: 1fr auto; }.result-row span { grid-column: 1 / -1; grid-row: 2; }
+}
+
+/* Short phone (e.g. 360x640): let the trick table give up more room to the hand. */
+@media (max-width: 560px) and (max-height: 700px) {
+  .table-column { grid-template-rows: auto auto minmax(190px, 1fr) auto auto; }
+  .card-table { min-height: 190px; }
 }
 
 @media (max-height: 680px) and (min-width: 821px) {
   .game-layout { min-height: 580px; }
   .score-orbit { width: 94px; margin: 12px auto; }.score-orbit b { font-size: 26px; }
-  .card-table { min-height: 220px; }.hand { min-height: 96px; }.hand .playing-card { width: 68px; }
+  .card-table { min-height: 220px; }.hand { min-height: 96px; --card-max: 68px; --card-step: 48px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
