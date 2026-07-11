@@ -916,7 +916,12 @@
       <div class="modal-actions"><button type="button" data-close-modal>KEEP PLAYING</button><button class="modal-primary" type="button" data-confirm-new>NEW VOYAGE</button></div>`);
   }
 
+  let celebrateRaf = 0;
   function celebrate(count) {
+    // One shared canvas, so one owner: cancel any live burst before starting a new one.
+    // Two overlapping loops would each clearRect the other's particles every frame,
+    // erasing the earlier burst and leaving a zombie loop running.
+    if (celebrateRaf) cancelAnimationFrame(celebrateRaf);
     const canvas = dom.celebrationCanvas;
     const ctx = canvas.getContext('2d');
     const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -959,10 +964,10 @@
         ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
         ctx.restore();
       });
-      if (alive) requestAnimationFrame(frame);
-      else ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      if (alive) celebrateRaf = requestAnimationFrame(frame);
+      else { ctx.clearRect(0, 0, window.innerWidth, window.innerHeight); celebrateRaf = 0; }
     }
-    requestAnimationFrame(frame);
+    celebrateRaf = requestAnimationFrame(frame);
   }
 
   function startSeaCanvas() {

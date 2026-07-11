@@ -68,6 +68,13 @@ test('service worker only retires Tidecall caches', () => {
   assert.doesNotMatch(worker, /keys\.filter\(\(key\) => key !== CACHE\)/);
 });
 
+test('the confetti animation cancels a live burst before starting a new one', () => {
+  // celebrate() drives one shared canvas; without cancelling the prior rAF loop, two
+  // overlapping bursts clearRect each other every frame — the earlier burst is erased
+  // and a zombie loop keeps running. (Regression guard for the single-owner fix.)
+  assert.match(app, /if \(celebrateRaf\) cancelAnimationFrame\(celebrateRaf\)/, 'celebrate must cancel the live loop');
+});
+
 test('round/match modals cannot be dismissed by the close control or scrim', () => {
   // Closing a round/match modal lets drive() immediately re-open it (the phase is still
   // at its boundary), which flashed the modal and re-fired the win sound/confetti. The
