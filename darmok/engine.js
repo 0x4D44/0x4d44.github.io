@@ -185,7 +185,7 @@
   DK.save = function (p) {
     try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) { /* private mode */ }
   };
-  DK.reset = function () { localStorage.removeItem(KEY); };
+  DK.reset = function () { try { localStorage.removeItem(KEY); } catch (e) { /* private mode */ } };
 
   /* ----------------------------------------------------------
      Ranks & XP
