@@ -561,8 +561,9 @@
         The <b>Mersenne Twister</b> (1997) ended the era of lattice disasters for ordinary work and
         remains the default in Python, R and MATLAB — enormous period, excellent statistics. Its modern
         successors are smaller and faster and pass even harder tests: <b>PCG</b> (2014) and the
-        <b>xoshiro / xorshift</b> family, now the default in NumPy, Rust and much of the games industry.
-        The <code>mulberry32</code> you have been watching is a tiny cousin of these. All of them are
+        <b>xoshiro / xorshift</b> family, now the default in NumPy, Rust and much of the games industry
+        — all of which you can put on the bench above, alongside the Twister and the respectable old
+        <b>MINSTD</b>. The <code>mulberry32</code> you have been watching is a tiny cousin of these. All of them are
         wonderful for simulation and shuffling — and <b>none is safe for secrets</b>. Observe enough
         output and you can solve for the state and predict every number to come.</p>
       <p><b>Cryptographic generators (CSPRNGs)</b> close that door. Built on the same primitives as
@@ -593,10 +594,13 @@
       <p>A single self-contained page. Every generator runs live in your browser — nothing is
         pre-rendered, nothing phones home — and every plot is drawn from numbers computed on the spot.
         The <b>crypto</b> reference is your platform's real cryptographic generator
-        (<code>crypto.getRandomValues</code>); <b>mulberry32</b> and <b>xorshift32</b> are genuine
-        modern PRNGs; <b>RANDU</b>, the <b>toy LCG</b> (multiplier 5), <b>middle-square</b> and the
-        <b>low-bit LCG</b> are the historical cautionary tales, implemented exactly as described so
-        their flaws are real, not staged.</p>
+        (<code>crypto.getRandomValues</code>); the <b>Mersenne Twister</b>, <b>PCG32</b>,
+        <b>xoshiro128**</b>, <b>mulberry32</b> and <b>xorshift32</b> are genuine modern PRNGs
+        implemented from their reference definitions; <b>MINSTD</b> is the 1988 Park–Miller
+        "minimal standard"; and <b>RANDU</b>, the <b>toy LCG</b> (multiplier 5),
+        <b>middle-square</b> and the <b>low-bit LCG</b> are the historical cautionary tales.
+        Every one is implemented exactly as described, so the flaws — and the passes — are real,
+        not staged.</p>
       <p>The 15-plane collapse of RANDU follows from
         <span class="num">uₙ₊₂ = 6uₙ₊₁ − 9uₙ (mod 1)</span>, a relation you can derive in three lines
         from its multiplier. The test bench uses ordinary Pearson χ² with Wilson–Hilferty critical
@@ -671,6 +675,72 @@
       return (x & 1);                                    // 0 or 1
     };
   }
+  // Park–Miller "minimal standard" (Lehmer, 1988): xₙ₊₁ = 16807·xₙ mod (2³¹−1).
+  // A carefully chosen LCG — far better than RANDU — but still a lattice underneath.
+  function minstd(seed){
+    var m = 2147483647;                       // 2^31 - 1 (prime)
+    var x = (seed>>>0) % m; if(x===0) x = 1;
+    return function(){ x = (16807 * x) % m; return x / m; };   // 16807·x < 2^53, exact
+  }
+  // xoshiro128** (Blackman & Vigna, 2018): 128-bit state, all 32-bit ops.
+  // The modern default in NumPy, Rust and much of the games industry.
+  function xoshiro128ss(seed){
+    var sm = seed>>>0;
+    function sm32(){ sm=(sm+0x9E3779B9)|0; var z=sm; z=Math.imul(z^(z>>>16),0x21F0AAAD);
+      z=Math.imul(z^(z>>>15),0x735A2D97); return (z^(z>>>15))>>>0; }
+    var s0=sm32(), s1=sm32(), s2=sm32(), s3=sm32();
+    if((s0|s1|s2|s3)===0) s0=1;
+    function rotl(x,k){ return ((x<<k)|(x>>>(32-k)))>>>0; }
+    return function(){
+      var result = Math.imul(rotl(Math.imul(s1,5)>>>0, 7), 9) >>> 0;
+      var t = (s1 << 9) >>> 0;
+      s2 ^= s0; s3 ^= s1; s1 ^= s2; s0 ^= s3; s2 ^= t; s3 = rotl(s3, 11);
+      return (result>>>0) / 4294967296;
+    };
+  }
+  // PCG32 (O'Neill, 2014): a 64-bit LCG whose output is permuted (XSH-RR) so the
+  // raw lattice never surfaces. BigInt keeps the 64-bit arithmetic exact.
+  function pcg32(seed){
+    var MUL = 6364136223846793005n, INC = 1442695040888963407n, MASK = (1n<<64n)-1n;
+    var state = (BigInt(seed>>>0) + INC) & MASK;
+    state = (state * MUL + INC) & MASK;
+    return function(){
+      var old = state;
+      state = (old * MUL + INC) & MASK;
+      var xorshifted = Number((((old >> 18n) ^ old) >> 27n) & 0xFFFFFFFFn) >>> 0;
+      var rot = Number(old >> 59n);
+      var out = ((xorshifted >>> rot) | (xorshifted << ((-rot) & 31))) >>> 0;
+      return out / 4294967296;
+    };
+  }
+  // Mersenne Twister MT19937 (Matsumoto & Nishimura, 1997): 624-word state,
+  // period 2¹⁹⁹³⁷−1. The default in Python, R and MATLAB.
+  function mt19937(seed){
+    var mt = new Uint32Array(624), idx = 624;
+    mt[0] = seed>>>0;
+    for(var i=1;i<624;i++){
+      var prev = (mt[i-1] ^ (mt[i-1] >>> 30)) >>> 0;
+      mt[i] = (Math.imul(1812433253, prev) + i) >>> 0;
+    }
+    function generate(){
+      for(var i=0;i<624;i++){
+        var y = ((mt[i] & 0x80000000) | (mt[(i+1)%624] & 0x7fffffff)) >>> 0;
+        var n = (mt[(i+397)%624] ^ (y >>> 1)) >>> 0;
+        if(y & 1) n = (n ^ 0x9908b0df) >>> 0;
+        mt[i] = n;
+      }
+      idx = 0;
+    }
+    return function(){
+      if(idx >= 624) generate();
+      var y = mt[idx++];
+      y ^= y >>> 11;
+      y ^= (y << 7) & 0x9d2c5680;
+      y ^= (y << 15) & 0xefc60000;
+      y ^= y >>> 18;
+      return (y>>>0) / 4294967296;
+    };
+  }
   // Platform CSPRNG, buffered.
   function cryptoGen(){
     var c = window.crypto || window.msCrypto;
@@ -693,8 +763,12 @@
   function makeGen(key, seed){
     switch(key){
       case "crypto":   return cryptoGen();
+      case "mersenne": return mt19937(seed || 1);
+      case "pcg":      return pcg32(seed || 1);
+      case "xoshiro":  return xoshiro128ss(seed || 1);
       case "mulberry": return mulberry32(seed || 1);
       case "xorshift": return xorshift32(seed || 1);
+      case "minstd":   return minstd(seed || 1);
       case "randu":    return randu(seed || 1);
       case "toy":      return toyLCG(seed || 1);
       case "middle":   return middleSquare((seed % 9000) + 1000);
@@ -709,10 +783,26 @@
       short:"CSPRNG",
       how:"Your platform's cryptographic generator. Built on cipher-grade primitives; unpredictable by design and safe for secrets.",
       seeing:"Even fog. This is what genuine independence looks like — the standard everything else is measured against." },
+    mersenne:{ name:"Mersenne Twister", c:"#38C6E0", good:true, sub:"Matsumoto & Nishimura, 1997",
+      short:"MT19937",
+      how:"624 words of state and a period of 2¹⁹⁹³⁷−1. The default in Python, R and MATLAB, and the generator that ended the era of lattice disasters for everyday work.",
+      seeing:"Even fog. MT leaves no lattice the eye or these tests can find — the reason it became the world's workhorse." },
+    pcg:     { name:"PCG32", c:"#58D68D", good:true, sub:"O'Neill, 2014",
+      short:"PRNG",
+      how:"A fast 64-bit LCG whose output is permuted by a bit-rotation, hiding the lattice the raw LCG would show. Small, fast and hard to distinguish from random.",
+      seeing:"Even fog. The permutation step scrambles the underlying lattice, so PCG passes where its bare LCG core would fail." },
+    xoshiro: { name:"xoshiro128**", c:"#67C6A0", good:true, sub:"Blackman & Vigna, 2018",
+      short:"PRNG",
+      how:"128 bits of state stirred by shifts, rotations and XORs, with a multiply-based scrambler on the output. The modern default in NumPy, Rust and games.",
+      seeing:"Even fog. A state-of-the-art PRNG — fast, tiny and statistically clean to the limits of these tests." },
     mulberry:{ name:"mulberry32", c:"#46CBB0", good:true, sub:"a good modern PRNG",
       short:"PRNG",
       how:"A tiny, fast, high-quality PRNG in the spirit of PCG and xoshiro. 32 bits of state, one multiply-and-mix per number.",
       seeing:"Even fog. A well-designed PRNG scatters pairs on a lattice so fine that no eye and few tests can resolve it." },
+    minstd:  { name:"MINSTD", c:"#C9A94E", good:true, sub:"Park–Miller, 1988 · the ‘minimal standard’",
+      short:"LCG",
+      how:"The 1988 ‘minimal standard’: xₙ₊₁ = 16807·xₙ mod (2³¹−1). A carefully chosen LCG, far better than RANDU — yet still, being an LCG, a lattice underneath.",
+      seeing:"Even fog here. A respectable LCG hides its lattice well in low dimensions; it takes finer, higher-dimensional tests than these to expose it." },
     xorshift:{ name:"xorshift32", c:"#7FD1A6", good:true, sub:"Marsaglia, 2003",
       short:"PRNG",
       how:"Three shifts and three XORs on a 32-bit word. Fast and historically important; the family it started now powers NumPy and Rust.",
@@ -777,7 +867,7 @@
     var octx = off.getContext("2d");
     var img = octx.createImageData(N, N);
     var key = "crypto", geom = {w:1,h:1,dpr:1};
-    var keys = ["crypto","mulberry","randu","toy","lowbit","middle"];
+    var keys = ["crypto","mulberry","xoshiro","minstd","randu","toy","lowbit","middle"];
 
     function paint(){
       var gen = makeGen(key, nextSeed());
@@ -830,7 +920,7 @@
     var cv = document.getElementById("pairCanvas"), ctx = cv.getContext("2d");
     var key = "crypto", gen = makeGen("crypto", nextSeed());
     var prev = gen(), count = 0, geom = {w:1,h:1,dpr:1};
-    var keys = ["crypto","mulberry","randu","toy"];
+    var keys = ["crypto","pcg","mulberry","minstd","randu","toy"];
 
     function clearPlot(){
       ctx.setTransform(geom.dpr,0,0,geom.dpr,0,0);
@@ -884,7 +974,7 @@
     var key = "randu", pts = [], geom = {w:1,h:1,dpr:1};
     var yaw = 0.6, tilt = 0.5, autoSpin = false;
     var target = null;   // {yaw,tilt} to ease toward
-    var keys = ["randu","toy","mulberry","crypto"];
+    var keys = ["randu","minstd","toy","mulberry","crypto"];
     var NPTS = reduce ? 4000 : 7000;
 
     function build(){
@@ -946,7 +1036,8 @@
       document.getElementById("cubeName").textContent = g.name;
       document.getElementById("cubeSub").textContent = (k==="randu") ? "IBM, 1960s · 15 planes"
         : (k==="toy" ? "multiplier 5 · a coarse lattice"
-        : (g.good ? "a good generator · solid cloud" : g.sub));
+        : (k==="minstd" ? "Park–Miller · a fine lattice"
+        : (g.good ? "a good generator · solid cloud" : g.sub)));
       var eq = document.getElementById("cubeEq");
       var body = document.getElementById("cubeBody");
       if(k==="randu"){
@@ -955,10 +1046,18 @@
       } else if(k==="toy"){
         eq.innerHTML = "uₙ₊₁ ≈ 5·uₙ &nbsp;→&nbsp; a <b>coarse</b> lattice";
         body.textContent = "The multiplier-5 lattice is coarse in every dimension. The triples sit on a small, obvious grid of sheets from almost any angle.";
+      } else if(k==="minstd"){
+        eq.innerHTML = "a well-chosen multiplier — a <b>fine</b> lattice";
+        body.textContent = "MINSTD is a lattice too, but a far finer one — thousands of planes, so close they read as a near-solid cloud. Better than RANDU, yet the same underlying flaw. There is no 15-plane angle to find.";
       } else {
         eq.innerHTML = "no low-order relation — a <b>solid</b> cloud";
         body.textContent = "A good generator fills the cube. Rotate all you like: there is no angle at which the points collapse into sheets. This is the goal.";
       }
+      // The ‘Reveal’ snap is RANDU-specific (its 15-plane normal); dim it elsewhere.
+      var snapBtn = document.getElementById("cubeSnap");
+      snapBtn.disabled = (k !== "randu");
+      snapBtn.style.opacity = (k !== "randu") ? "0.4" : "";
+      snapBtn.style.cursor = (k !== "randu") ? "not-allowed" : "";
       build();
     }
     function snap(){
@@ -1007,7 +1106,7 @@
     var cv = document.getElementById("mcCanvas"), ctx = cv.getContext("2d");
     var key = "mulberry", gen = makeGen("mulberry", nextSeed());
     var inside=0, total=0, fast=true, geom={w:1,h:1,dpr:1};
-    var keys = ["mulberry","crypto","randu","toy"];
+    var keys = ["mulberry","crypto","mersenne","randu","toy"];
     var PI = Math.PI;
 
     function plotBox(){ var m = 12; var s = Math.min(geom.w, geom.h) - 2*m; return { x0:(geom.w-s)/2, y0:(geom.h-s)/2, s:s }; }
@@ -1075,7 +1174,7 @@
   (function(){
     var rowsEl = document.getElementById("benchRows");
     var statusEl = document.getElementById("benchStatus");
-    var order = ["crypto","mulberry","xorshift","randu","toy","middle"];
+    var order = ["crypto","mersenne","pcg","xoshiro","mulberry","xorshift","minstd","randu","toy","middle"];
     var SAMPLES = 200000;
     var results = {};
 
