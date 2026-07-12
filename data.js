@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "j-space",
+    title: "The Silent Workspace",
+    tagline: "An interactive, scrollytelling explainer for Anthropic's 2026 paper on the 'global workspace' inside language models. Meet the Jacobian lens, watch a hidden “spider” drive an answer from mid-network, sweep the ignition threshold, and see why a &lt;10% sliver of a model's activations behaves like a reportable mind. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/j-space/",
+    illustration: "ill-jspace",
+    date: "2026-07-12T19:30:00",
+    year: 2026,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
     slug: "randomness",
     title: "The Shape of Chance",
     tagline: "How computers fake randomness — and how to catch them. A live instrument for seeing the hidden shapes in pseudo-random numbers: bitmaps you read by eye, the lattice of lines in a scatter plot, RANDU's infamous 15 planes in 3-D, Monte-Carlo π, and a χ² test bench that sorts the good generators from the bad. Vanilla JS on a canvas; no build step.",
