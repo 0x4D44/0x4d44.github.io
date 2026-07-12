@@ -217,6 +217,36 @@
   .legend span{display:inline-flex; align-items:center; gap:7px}
   .legend i{width:10px; height:10px; border-radius:50%; display:inline-block}
 
+  /* ---------- oracle (predictability) ---------- */
+  .oracle{position:relative; border:1px solid var(--line2); border-radius:4px;
+    background:radial-gradient(120% 120% at 50% 0%, #0d1119 0%, #07090d 78%);
+    overflow:hidden; box-shadow:inset 0 0 60px rgba(0,0,0,.6);
+    min-width:0; min-height:440px; display:flex; flex-direction:column}
+  .or-head{display:flex; align-items:center; justify-content:space-between;
+    padding:11px 13px; border-bottom:1px solid var(--line)}
+  .or-status{font-family:var(--mono); font-size:11px; letter-spacing:.14em;
+    text-transform:uppercase; padding:3px 9px; border-radius:2px; border:1px solid currentColor}
+  .or-status.obs{color:var(--mut)}
+  .or-status.locked{color:var(--good)}
+  .or-status.guess{color:var(--bad)}
+  .or-tag{font-family:var(--mono); font-size:10px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--faint)}
+  .oraclelog{flex:1; overflow:hidden; padding:8px 13px 12px;
+    display:flex; flex-direction:column; justify-content:flex-end; gap:3px}
+  .orow{display:grid; grid-template-columns:38px 1fr 1fr 18px; align-items:center;
+    gap:8px; font-family:var(--mono); font-size:13px; font-variant-numeric:tabular-nums;
+    padding:3px 0; opacity:.35; transition:opacity .2s}
+  .orow.live{opacity:1}
+  .orow .oi{color:var(--faint); font-size:11px}
+  .orow .oa{color:var(--fg); letter-spacing:.04em}
+  .orow .op{font-size:11.5px; letter-spacing:.03em}
+  .orow.ok .op{color:var(--good)} .orow.no .op{color:var(--bad)}
+  .orow .om{text-align:center; font-size:13px}
+  .orow.ok .om{color:var(--good)} .orow.no .om{color:var(--bad)}
+  .orow .op.obs{color:var(--faint)}
+  .orow .oa .hh{color:var(--gold)}   /* highlight the bits the oracle predicted right */
+  #orLaw b{color:var(--gold); font-weight:400}
+
   /* ---------- colophon ---------- */
   .colophon{padding:44px 0 80px; border-top:1px solid var(--line); margin-top:44px}
   .colophon .col{max-width:680px}
@@ -236,6 +266,11 @@
   @media (max-width:560px){
     .bench-wrap{overflow-x:auto}
     .bench{min-width:560px}
+    .or-tag{display:none}
+    .or-head{padding:9px 11px}
+    .oraclelog{padding:6px 11px 10px}
+    .orow{grid-template-columns:26px 1fr auto 14px; gap:6px; font-size:11px}
+    .orow .op{font-size:10px}
   }
   @media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto} }
 </style>
@@ -542,6 +577,69 @@
       <div class="bench-foot">
         <span>χ² tests reject at the <b>0.1%</b> level · autocorrelation &amp; mean at ±4σ.</span>
         <span id="benchLegend">Click a row to inspect it above.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY · THE ORACLE -->
+  <section class="story">
+    <div class="col">
+      <p class="kicker">Predict the next number</p>
+      <h2>The oracle</h2>
+      <p>Every test so far has asked whether a stream <i>looks</i> random. Here is a sharper question,
+        the one that matters for a password or an encryption key: given the numbers you've already
+        seen, can someone <b>predict the next one</b>? A pseudo-random generator is deterministic — its
+        next output is a fixed function of its hidden state — so if an observer can recover that state
+        from the output, the entire future is an open book.</p>
+      <p>For a linear generator this is embarrassingly easy. Watch the oracle below. It knows nothing
+        about the machine it's facing — not the multiplier, not the modulus. It simply collects a few
+        outputs, takes differences, and solves for the hidden constants by taking a
+        <b>greatest common divisor</b>. Within a handful of numbers it has reconstructed the exact
+        formula and calls every future "random" number in advance. Then point it at the cryptographic
+        generator: it never gains an inch, and guessing a 32-bit number blind is one chance in
+        <span class="num">4,294,967,296</span>.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       6 · THE ORACLE  (predictability)
+  ==================================================================== -->
+  <section class="instr" style="padding-top:8px">
+    <div class="col">
+      <div class="chips" id="orChips" role="group" aria-label="Choose a generator to attack"></div>
+      <div class="rig">
+        <div class="oracle">
+          <div class="or-head">
+            <span class="or-status obs" id="orStatus">Observing</span>
+            <span class="or-tag">raw 32-bit output · hex</span>
+          </div>
+          <div class="oraclelog" id="orLog" aria-live="polite"></div>
+        </div>
+        <aside class="readout">
+          <div>
+            <div class="r-name" id="orName">Toy LCG</div>
+            <div class="r-sub" id="orSub">multiplier 5 · an open book</div>
+          </div>
+          <div>
+            <p class="r-label">Recovered law</p>
+            <div class="eqline" id="orLaw">— observing —</div>
+          </div>
+          <div>
+            <p class="r-label">Oracle accuracy</p>
+            <div class="r-name" id="orRate" style="font-size:32px; font-variant-numeric:tabular-nums">—</div>
+            <div class="r-sub" id="orRateSub">predictions not yet begun</div>
+          </div>
+          <div class="spacer"></div>
+          <div class="controls">
+            <button class="btn" id="orReset">↻ Restart</button>
+          </div>
+        </aside>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--good)"></i>oracle called it</span>
+        <span><i style="background:var(--bad)"></i>oracle wrong</span>
+        <span class="note">The Mersenne Twister isn't safe either — a cleverer attacker rebuilds its
+          whole state from 624 outputs. Only a cryptographic generator resists every attack.</span>
       </div>
     </div>
   </section>
@@ -1281,6 +1379,189 @@
     }
     // kick off shortly after load
     setTimeout(run, 60);
+  })();
+
+  // =========================================================================
+  //  6 · THE ORACLE  (predictability: CSPRNG vs PRNG)
+  // =========================================================================
+  (function(){
+    // -- BigInt helpers ------------------------------------------------------
+    function babs(x){ return x < 0n ? -x : x; }
+    function bgcd(a,b){ a=babs(a); b=babs(b); while(b){ var t=a%b; a=b; b=t; } return a; }
+    function bmod(a,m){ var r=a%m; return r<0n ? r+m : r; }
+    function modinv(a,m){
+      a=bmod(a,m); var or_=a, r=m, os=1n, s=0n;
+      while(r!==0n){ var q=or_/r; var t=or_-q*r; or_=r; r=t; t=os-q*s; os=s; s=t; }
+      if(or_!==1n) return null;
+      return bmod(os,m);
+    }
+    // Recover (a, c, m) of an LCG from consecutive full outputs. Returns null
+    // until enough observations pin the parameters and they verify exactly.
+    function crackLCG(obs){
+      var n = obs.length; if(n < 6) return null;
+      var D = []; for(var i=0;i<n-1;i++) D.push(obs[i+1]-obs[i]);
+      var m = 0n;
+      for(var i=0;i<D.length-2;i++){
+        var z = D[i+2]*D[i] - D[i+1]*D[i+1];          // each ≡ 0 (mod m)
+        m = bgcd(m, babs(z));
+      }
+      // Real LCG moduli here are huge (2³¹, 2³²); reject tiny gcds that would
+      // otherwise let random noise masquerade as a low-modulus "law".
+      if(m < 1048576n) return null;
+      var a = null;
+      for(var j=0;j<D.length-1;j++){
+        var inv = modinv(bmod(D[j],m), m);
+        if(inv !== null){ a = bmod(D[j+1]*inv, m); break; }
+      }
+      if(a === null) return null;
+      var c = bmod(obs[1] - a*obs[0], m);
+      for(var k=0;k<n-1;k++){                          // verify against every pair seen
+        if(bmod(a*obs[k]+c, m) !== bmod(obs[k+1], m)) return null;
+      }
+      return { a:a, c:c, m:m };
+    }
+    // -- integer sources -----------------------------------------------------
+    function intSource(key, seed){
+      if(key==="toy"){ var x=seed>>>0; return function(){ x=(Math.imul(5,x)+1)>>>0; return BigInt(x>>>0); }; }
+      if(key==="minstd"){ var m=2147483647, y=(seed>>>0)%m; if(y===0)y=1;
+        return function(){ y=(16807*y)%m; return BigInt(y); }; }
+      var c = window.crypto || window.msCrypto;         // crypto (CSPRNG)
+      if(c && c.getRandomValues){ var buf=new Uint32Array(256), i=buf.length;
+        return function(){ if(i>=buf.length){ c.getRandomValues(buf); i=0; } return BigInt(buf[i++]>>>0); }; }
+      var z=seed>>>0; return function(){ z=(Math.imul(1664525,z)+1013904223)>>>0; return BigInt(z>>>0); };
+    }
+    function hex8(bi){ return bi.toString(16).toUpperCase().padStart(8,"0"); }
+    // Compare actual vs predicted hex, wrapping matching leading nibbles in <b>.
+    function markHex(pred, act){
+      var p=hex8(pred), a=hex8(act), out="", diverged=false;
+      for(var i=0;i<8;i++){
+        if(!diverged && p[i]===a[i]) out += '<span class="hh">'+a[i]+'</span>';
+        else { diverged=true; out += a[i]; }
+      }
+      return out;
+    }
+
+    var keys = ["toy","minstd","crypto"];
+    var key = "toy", src = null, obs = [], law = null;
+    var cand = null, candKey = "", streak = 0, CONFIRM = 5;   // hypothesis + held-out confirmation
+    var seen = 0, preds = 0, hits = 0, gaveUp = false, rows = [];
+    var timer = null, SPEED = 620, LOGMAX = 15;
+
+    var logEl = document.getElementById("orLog");
+    var statusEl = document.getElementById("orStatus");
+    var lawEl = document.getElementById("orLaw");
+    var rateEl = document.getElementById("orRate");
+    var rateSubEl = document.getElementById("orRateSub");
+
+    function reset(){
+      var seedSrc = mulberry32(nextSeed());               // vary the LCG seed per run
+      var seed = (seedSrc()*4294967296)>>>0;
+      src = intSource(key, seed);
+      obs = []; law = null; cand = null; candKey = ""; streak = 0;
+      seen = 0; preds = 0; hits = 0; gaveUp = false; rows = [];
+      setStatus("obs","Observing");
+      lawEl.innerHTML = "— observing —";
+      rateEl.textContent = "—";
+      rateSubEl.textContent = "predictions not yet begun";
+      logEl.innerHTML = "";
+    }
+    function setStatus(cls, text){ statusEl.className = "or-status "+cls; statusEl.textContent = text; }
+
+    function pushRow(html, cls){
+      rows.push('<div class="orow '+cls+'">'+html+'</div>');
+      while(rows.length > LOGMAX) rows.shift();
+      logEl.innerHTML = rows.join("");
+      // mark the last row live
+      var kids = logEl.children;
+      for(var i=0;i<kids.length;i++) kids[i].classList.toggle("live", i===kids.length-1);
+    }
+    function updateRate(){
+      if(preds===0){ rateEl.textContent="—"; return; }
+      var pct = Math.round(100*hits/preds);
+      rateEl.textContent = pct + "%";
+      rateEl.style.color = pct>=95 ? "var(--good)" : (pct<=5 ? "var(--bad)" : "var(--fg)");
+      rateSubEl.textContent = hits + " of " + preds + " calls correct";
+    }
+
+    function apply(rule){ return bmod(rule.a*obs[obs.length-1] + rule.c, rule.m); }
+    function showLaw(rule){
+      lawEl.innerHTML = 'xₙ₊₁ = <b>'+rule.a.toString()+'</b>·xₙ + <b>'+rule.c.toString()+'</b> mod <b>'+rule.m.toString()+'</b>';
+    }
+
+    function tick(){
+      var idx = seen + 1;
+      // 1 · oracle commits to a prediction for the upcoming number
+      var predicted = null, mode = "collect";
+      if(law){ predicted = apply(law); mode = "law"; }
+      else if(cand){ predicted = apply(cand); mode = "test"; }         // testing a hypothesis
+      else if(gaveUp){ predicted = BigInt((mulberry32(nextSeed())()*4294967296)>>>0); mode = "guess"; }
+      // 2 · reveal the true number
+      var actual = src();
+      var hit = (predicted !== null) && (predicted === actual);
+      // 3 · log the round
+      if(mode === "law" || mode === "guess"){
+        preds++; if(hit) hits++;
+        pushRow('<span class="oi">#'+idx+'</span>'
+              + '<span class="oa">'+ (hit ? markHex(predicted,actual) : hex8(actual)) +'</span>'
+              + '<span class="op">'+(mode==="law"?'→ ':'guess ')+hex8(predicted)+'</span>'
+              + '<span class="om">'+(hit?'✓':'✗')+'</span>', hit?"ok":"no");
+        updateRate();
+      } else if(mode === "test"){
+        pushRow('<span class="oi">#'+idx+'</span>'
+              + '<span class="oa">'+ (hit ? markHex(predicted,actual) : hex8(actual)) +'</span>'
+              + '<span class="op obs">test '+hex8(predicted)+'</span>'
+              + '<span class="om">'+(hit?'✓':'✗')+'</span>', "");
+        streak = hit ? streak+1 : 0;
+      } else {
+        pushRow('<span class="oi">#'+idx+'</span>'
+              + '<span class="oa">'+hex8(actual)+'</span>'
+              + '<span class="op obs">collecting…</span>'
+              + '<span class="om"></span>', "");
+      }
+      obs.push(actual); seen++;
+
+      // 4 · promote a hypothesis that has now been confirmed on held-out numbers
+      if(!law && cand && streak >= CONFIRM){
+        law = cand;
+        setStatus("locked","Locked on"); showLaw(law);
+        preds = 0; hits = 0;                                            // score the confirmed law cleanly
+        rateSubEl.textContent = "formula confirmed after "+seen+" outputs";
+        return;
+      }
+      // 5 · (re)derive the hypothesis from everything seen so far
+      if(!law && !gaveUp){
+        var found = crackLCG(obs);
+        if(found){
+          var kf = found.a+"|"+found.c+"|"+found.m;
+          if(kf !== candKey){ cand = found; candKey = kf; streak = 0; }  // a new hypothesis to test
+          setStatus("test","Testing"); showLaw(cand);
+          rateSubEl.textContent = "testing a hypothesis on new outputs";
+        } else {
+          cand = null; candKey = ""; streak = 0;
+          if(seen >= 16){
+            gaveUp = true;
+            setStatus("guess","Guessing");
+            lawEl.innerHTML = 'no linear law — <b>1 in 4.29 billion</b> per guess';
+          } else setStatus("obs","Observing");
+        }
+      }
+    }
+
+    function start(){ if(timer) clearInterval(timer); if(!reduce) timer = setInterval(tick, SPEED); }
+    function select(k){
+      key = k; var g = G[k];
+      document.getElementById("orName").textContent = g.name;
+      document.getElementById("orSub").textContent =
+        (k==="toy") ? "multiplier 5 · an open book" :
+        (k==="minstd") ? "Park–Miller · still an open book" :
+        "cryptographic · unbreakable";
+      reset(); start();
+    }
+
+    buildChips(document.getElementById("orChips"), keys, "toy", select);
+    document.getElementById("orReset").addEventListener("click", function(){ reset(); start(); });
+    select("toy");
+    if(reduce){ for(var s=0;s<22;s++) tick(); }        // static: run enough to lock the LCG
   })();
 
   // =========================================================================
