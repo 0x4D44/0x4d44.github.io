@@ -88,6 +88,24 @@ function buildTrack(def) {
     const a = pts[(i + N - 1) % N], b = pts[(i + 1) % N];
     pts[i].c = wrapA(b.h - a.h) / (2 * STEP);
   }
+  // rotate the loop so s=0 sits well into the longest straight: the grid
+  // then forms up on the straight behind the line, with a run to turn 1
+  {
+    let bestLen = 0, bestStart = 0, run = 0, runStart = 0;
+    for (let i = 0; i < N * 2; i++) {
+      if (Math.abs(pts[i % N].c) < 0.0028) {
+        if (run === 0) runStart = i;
+        run++;
+      } else {
+        if (run > bestLen && runStart < N) { bestLen = run; bestStart = runStart % N; }
+        run = 0;
+      }
+    }
+    if (run > bestLen && runStart < N) { bestLen = run; bestStart = runStart % N; }
+    bestLen = Math.min(bestLen, N);
+    const k = (bestStart + Math.floor(bestLen * 0.65)) % N;
+    if (k) { const cut = pts.splice(0, k); pts.push(...cut); }
+  }
   const curvS = new Float32Array(N);
   for (let i = 0; i < N; i++) {
     let s = 0;
@@ -142,7 +160,11 @@ function buildTrack(def) {
     } else if (themed === "coast" && i % 13 === 6) {
       objs.push({ i, d: (rng() < 0.5 ? 1 : -1) * (wHalf + 8 + rng() * 18), w: 4, h: 6 + rng() * 3, t: "palm" });
     } else if (def.street && i % 7 === 3) {
-      objs.push({ i, d: (rng() < 0.5 ? 1 : -1) * (wHalf + 6 + rng() * 6), w: 14, h: 10 + rng() * 14, t: "bldg", v: rng() });
+      objs.push({
+        i, d: (rng() < 0.5 ? 1 : -1) * (wHalf + 5 + rng() * 5),
+        w: 12 + rng() * 10, h: 9 + rng() * 16, dep: 8 + rng() * 8,
+        t: "bldg", v: rng(),
+      });
     }
   }
   // braking boards: 150/100/50 m before big speed drops
@@ -386,12 +408,13 @@ function playerStep(dt) {
   const pc = R.player;
   if (pc.retired || pc.finished) { R.pv = Math.max(0, R.pv - 15 * dt); }
 
-  // --- inputs
-  const sTgt = (k["ArrowLeft"] ? -1 : 0) + (k["ArrowRight"] ? 1 : 0);
+  // --- inputs (A/Z throttle/brake, ,/. steer; arrows as fallback)
+  const inL = k["Comma"] || k["ArrowLeft"], inR = k["Period"] || k["ArrowRight"];
+  const sTgt = (inL ? -1 : 0) + (inR ? 1 : 0);
   const sRate = sTgt !== 0 ? 3.2 : 5.5;
   R.steer += clamp(sTgt - R.steer, -sRate * dt, sRate * dt);
-  let thr = (k["ArrowUp"] && !pc.finished && !pc.retired) ? 1 : 0;
-  let brk = k["ArrowDown"] ? 1 : 0;
+  let thr = ((k["KeyA"] || k["ArrowUp"]) && !pc.finished && !pc.retired) ? 1 : 0;
+  let brk = (k["KeyZ"] || k["ArrowDown"]) ? 1 : 0;
   if (R.phase === "grid") { brk = 1; thr = 0; }
 
   // --- track position
@@ -461,7 +484,8 @@ function playerStep(dt) {
     if (R.spinT <= 0 || R.pv < 5) R.spinT = 0;
   } else if (R.pv > 0.5) {
     const dMax = clamp(0.34 - R.pv * 0.0024, 0.05, 0.34);
-    const yawWant = R.pv / 3.5 * Math.tan(R.steer * dMax);
+    // steer +1 = right; positive yaw is a LEFT turn in this frame, so negate
+    const yawWant = -R.pv / 3.5 * Math.tan(R.steer * dMax);
     const latNeed = Math.abs(R.pv * yawWant);
     const grip = aLatMax(R.pv) * surfGrip * dmgMul;
     if (latNeed <= grip) yaw = yawWant;
@@ -763,96 +787,215 @@ function toCam(px, py, pz) {
 // NOTE: with fwd=(cos h, sin h), right=(sin h, -cos h):
 //   xc = dx*sin - dy*cos ; zc = dx*cos + dy*sin
 
-function carModel(team, dark) {
-  const [A, B, D] = VGP_TEAMS[team].colors;
-  return { A, B, D, dark };
+// ---- lit-face pipeline: world-space quads with normal-based shading,
+// painter-sorted per object, so boxes read as genuinely 3D solids.
+const L_DIR = (() => {
+  const v = [0.42, 0.30, 0.855];
+  const m = Math.hypot(v[0], v[1], v[2]);
+  return [v[0] / m, v[1] / m, v[2] / m];
+})();
+
+// faces: {v:[[wx,wy,wz],...], col:"#hex", br?:mult} or {v, flat:"cssColor"}
+function drawFacesLit(ctx, faces, horizonY, fog) {
+  const out = [];
+  for (const f of faces) {
+    const cv = [];
+    let zsum = 0, behind = 0;
+    for (const p of f.v) {
+      const c = toCam(p[0], p[1], p[2]);
+      cv.push(c); zsum += c[1];
+      if (c[1] < NEAR) behind++;
+    }
+    if (behind === f.v.length) continue;
+    let col;
+    if (f.flat) col = f.flat;
+    else {
+      const [a, b, c2] = f.v;
+      const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2];
+      const wx = c2[0] - a[0], wy = c2[1] - a[1], wz = c2[2] - a[2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      const m = Math.hypot(nx, ny, nz) || 1;
+      const d = Math.abs((nx * L_DIR[0] + ny * L_DIR[1] + nz * L_DIR[2]) / m);
+      col = shade(f.col, (0.52 + 0.48 * d) * (f.br || 1) * fog);
+    }
+    out.push({ cv, z: zsum / f.v.length, col });
+  }
+  out.sort((p, q) => q.z - p.z);
+  for (const f of out) fillPoly3(ctx, f.cv, f.col, horizonY);
 }
 
-// draw one AI car (world pos x,y heading h) as flat-shaded boxes
+// axis-aligned-to-`ang` box: 4 walls + roof
+function boxFaces(faces, cx, cy, ang, halfAlong, halfAcross, y0, y1, col, br) {
+  const ca = Math.cos(ang), sa = Math.sin(ang);
+  const cr = [[+halfAlong, +halfAcross], [+halfAlong, -halfAcross],
+              [-halfAlong, -halfAcross], [-halfAlong, +halfAcross]]
+    .map(p => [cx + ca * p[0] - sa * p[1], cy + sa * p[0] + ca * p[1]]);
+  for (let i = 0; i < 4; i++) {
+    const a = cr[i], b = cr[(i + 1) % 4];
+    faces.push({ v: [[a[0], a[1], y0], [b[0], b[1], y0], [b[0], b[1], y1], [a[0], a[1], y1]], col, br });
+  }
+  faces.push({ v: cr.map(p => [p[0], p[1], y1]), col, br: (br || 1) * 1.1 });
+}
+
+// draw one AI car as a closed flat-shaded polygon model
 function drawCar(ctx, c, horizonY, fog) {
   const dcx = c.x - camX, dcy = c.y - camY;
   if (dcx * dcx + dcy * dcy < 5) return;   // overlapping the camera
-  const cols = VGP_TEAMS[c.team].colors;
+  const [colA, colB, colD] = VGP_TEAMS[c.team].colors;
   const ch = Math.cos(c.h), sh = Math.sin(c.h);
   // car-local: lx right, lz forward, ly up; right vec = (sin h, -cos h)
-  const P = (lx, lz, ly) => toCam(c.x + ch * lz + sh * lx, c.y + sh * lz - ch * lx, ly);
-  const Q = (pts, col) => fillPoly3(ctx, pts, col, horizonY);
-  const bodyF = fog < 1 ? fog : 1;
-  const mainC = shade(cols[0], 0.95 * bodyF), sideC = shade(cols[0], 0.72 * bodyF);
-  const accC = shade(cols[1], 0.9 * bodyF), darkC = shade(cols[2], 0.85 * bodyF);
-  const tyre = shade("#181818", bodyF), tyreT = shade("#303030", bodyF);
-  // shadow
-  Q([P(-1.1, 2.3, 0.02), P(1.1, 2.3, 0.02), P(1.1, -2.3, 0.02), P(-1.1, -2.3, 0.02)], "rgba(0,0,0,0.30)");
-  // wheels (rear then front)
-  for (const [wx, wz] of [[-0.92, -1.45], [0.92, -1.45], [-0.86, 1.45], [0.86, 1.45]]) {
-    const r = 0.33, w2 = 0.18;
-    Q([P(wx - w2, wz - r, 0), P(wx - w2, wz + r, 0), P(wx - w2, wz + r, r * 2), P(wx - w2, wz - r, r * 2)], tyre);
-    Q([P(wx + w2, wz - r, 0), P(wx + w2, wz + r, 0), P(wx + w2, wz + r, r * 2), P(wx + w2, wz - r, r * 2)], tyre);
-    Q([P(wx - w2, wz - r, r * 2), P(wx - w2, wz + r, r * 2), P(wx + w2, wz + r, r * 2), P(wx + w2, wz - r, r * 2)], tyreT);
+  const Pw = (lx, lz, ly) => [c.x + ch * lz + sh * lx, c.y + sh * lz - ch * lx, ly];
+  // ground shadow first — everything else sits on top of it
+  fillPoly3(ctx, [
+    toCam(...Pw(-1.12, 2.5, 0.02)), toCam(...Pw(1.12, 2.5, 0.02)),
+    toCam(...Pw(1.12, -2.4, 0.02)), toCam(...Pw(-1.12, -2.4, 0.02)),
+  ], "rgba(0,0,0,0.30)", horizonY);
+
+  const faces = [];
+  const q = (col, br, ...pts) => faces.push({ v: pts.map(p => Pw(p[0], p[1], p[2])), col, br });
+
+  // tub / floor box
+  q(colA, 1.0, [-0.72, 1.0, 0.46], [0.72, 1.0, 0.46], [0.72, -1.8, 0.46], [-0.72, -1.8, 0.46]);
+  q(colA, 0.9, [-0.72, 1.0, 0.12], [-0.72, -1.8, 0.12], [-0.72, -1.8, 0.46], [-0.72, 1.0, 0.46]);
+  q(colA, 0.9, [0.72, 1.0, 0.12], [0.72, -1.8, 0.12], [0.72, -1.8, 0.46], [0.72, 1.0, 0.46]);
+  q(colD, 0.8, [-0.72, -1.8, 0.12], [0.72, -1.8, 0.12], [0.72, -1.8, 0.46], [-0.72, -1.8, 0.46]);
+  // nose (tapered box)
+  q(colA, 1.05, [-0.45, 1.0, 0.50], [0.45, 1.0, 0.50], [0.26, 2.45, 0.40], [-0.26, 2.45, 0.40]);
+  q(colA, 0.9, [-0.45, 1.0, 0.15], [-0.45, 1.0, 0.50], [-0.26, 2.45, 0.40], [-0.26, 2.45, 0.18]);
+  q(colA, 0.9, [0.45, 1.0, 0.15], [0.45, 1.0, 0.50], [0.26, 2.45, 0.40], [0.26, 2.45, 0.18]);
+  q(colB, 1.0, [-0.26, 2.45, 0.18], [0.26, 2.45, 0.18], [0.26, 2.45, 0.40], [-0.26, 2.45, 0.40]);
+  // front wing + endplates
+  q(colB, 1.0, [-1.02, 2.72, 0.20], [1.02, 2.72, 0.20], [1.02, 2.25, 0.20], [-1.02, 2.25, 0.20]);
+  q(colB, 0.85, [-1.02, 2.72, 0.10], [1.02, 2.72, 0.10], [1.02, 2.72, 0.20], [-1.02, 2.72, 0.20]);
+  q(colD, 0.9, [-1.02, 2.20, 0.06], [-1.02, 2.80, 0.06], [-1.02, 2.80, 0.35], [-1.02, 2.20, 0.35]);
+  q(colD, 0.9, [1.02, 2.20, 0.06], [1.02, 2.80, 0.06], [1.02, 2.80, 0.35], [1.02, 2.20, 0.35]);
+  // sidepods
+  for (const s of [-1, 1]) {
+    q(colA, 1.0, [s * 0.72, 0.5, 0.52], [s * 1.0, 0.5, 0.52], [s * 1.0, -1.6, 0.52], [s * 0.72, -1.6, 0.52]);
+    q(colA, 0.9, [s * 1.0, 0.5, 0.12], [s * 1.0, -1.6, 0.12], [s * 1.0, -1.6, 0.52], [s * 1.0, 0.5, 0.52]);
+    q(colD, 0.7, [s * 0.72, 0.5, 0.12], [s * 1.0, 0.5, 0.12], [s * 1.0, 0.5, 0.52], [s * 0.72, 0.5, 0.52]);
   }
-  // floor / sidepods
-  Q([P(-0.72, 1.0, 0.15), P(0.72, 1.0, 0.15), P(0.72, -1.7, 0.15), P(-0.72, -1.7, 0.15)], sideC);
-  Q([P(-0.72, 1.0, 0.15), P(-0.72, -1.7, 0.15), P(-0.72, -1.7, 0.52), P(-0.72, 1.0, 0.42)], sideC);
-  Q([P(0.72, 1.0, 0.15), P(0.72, -1.7, 0.15), P(0.72, -1.7, 0.52), P(0.72, 1.0, 0.42)], sideC);
-  Q([P(-0.72, -1.7, 0.52), P(0.72, -1.7, 0.52), P(0.72, 1.0, 0.42), P(-0.72, 1.0, 0.42)], mainC);
-  // nose (tapering)
-  Q([P(-0.30, 2.35, 0.32), P(0.30, 2.35, 0.32), P(0.55, 0.9, 0.5), P(-0.55, 0.9, 0.5)], mainC);
-  Q([P(-0.30, 2.35, 0.14), P(-0.30, 2.35, 0.32), P(-0.55, 0.9, 0.5), P(-0.55, 0.9, 0.14)], sideC);
-  Q([P(0.30, 2.35, 0.14), P(0.30, 2.35, 0.32), P(0.55, 0.9, 0.5), P(0.55, 0.9, 0.14)], sideC);
-  // front wing
-  Q([P(-0.95, 2.55, 0.12), P(0.95, 2.55, 0.12), P(0.95, 2.15, 0.16), P(-0.95, 2.15, 0.16)], accC);
-  // cockpit + engine cover
-  Q([P(-0.34, 0.9, 0.52), P(0.34, 0.9, 0.52), P(0.30, -0.4, 0.78), P(-0.30, -0.4, 0.78)], mainC);
-  Q([P(-0.30, -0.4, 0.78), P(0.30, -0.4, 0.78), P(0.16, -1.6, 0.5), P(-0.16, -1.6, 0.5)], accC);
+  // cockpit hump + screen
+  q(colA, 1.0, [-0.36, 0.75, 0.46], [0.36, 0.75, 0.46], [0.30, 0.35, 0.85], [-0.30, 0.35, 0.85]);
+  q(colA, 1.05, [-0.30, 0.35, 0.85], [0.30, 0.35, 0.85], [0.30, -0.5, 0.85], [-0.30, -0.5, 0.85]);
+  q(colA, 0.85, [-0.36, 0.75, 0.46], [-0.30, 0.35, 0.85], [-0.30, -0.5, 0.85], [-0.36, -0.5, 0.46]);
+  q(colA, 0.85, [0.36, 0.75, 0.46], [0.30, 0.35, 0.85], [0.30, -0.5, 0.85], [0.36, -0.5, 0.46]);
   // helmet
-  Q([P(-0.16, 0.15, 0.62), P(0.16, 0.15, 0.62), P(0.16, -0.18, 0.86), P(-0.16, -0.18, 0.86)], darkC);
-  // rear wing
-  Q([P(-0.85, -2.2, 0.62), P(0.85, -2.2, 0.62), P(0.85, -1.85, 0.72), P(-0.85, -1.85, 0.72)], accC);
-  Q([P(-0.85, -2.25, 0.3), P(-0.85, -2.25, 0.78), P(-0.85, -1.8, 0.78), P(-0.85, -1.8, 0.3)], darkC);
-  Q([P(0.85, -2.25, 0.3), P(0.85, -2.25, 0.78), P(0.85, -1.8, 0.78), P(0.85, -1.8, 0.3)], darkC);
+  q(colD, 1.1, [-0.17, 0.62, 0.80], [0.17, 0.62, 0.80], [0.17, 0.28, 1.02], [-0.17, 0.28, 1.02]);
+  q(colD, 0.9, [-0.17, 0.62, 0.80], [-0.17, 0.28, 1.02], [-0.17, 0.14, 0.85], [-0.17, 0.42, 0.72]);
+  q(colD, 0.9, [0.17, 0.62, 0.80], [0.17, 0.28, 1.02], [0.17, 0.14, 0.85], [0.17, 0.42, 0.72]);
+  // engine cover taper
+  q(colB, 1.0, [-0.30, -0.5, 0.85], [0.30, -0.5, 0.85], [0.14, -1.78, 0.50], [-0.14, -1.78, 0.50]);
+  q(colB, 0.85, [-0.30, -0.5, 0.85], [-0.14, -1.78, 0.50], [-0.14, -1.78, 0.46], [-0.30, -0.5, 0.46]);
+  q(colB, 0.85, [0.30, -0.5, 0.85], [0.14, -1.78, 0.50], [0.14, -1.78, 0.46], [0.30, -0.5, 0.46]);
+  // rear wing: two elements + endplates
+  q(colB, 1.05, [-0.88, -2.02, 0.78], [0.88, -2.02, 0.78], [0.88, -2.30, 0.78], [-0.88, -2.30, 0.78]);
+  q(colB, 0.8, [-0.88, -2.30, 0.70], [0.88, -2.30, 0.70], [0.88, -2.30, 0.78], [-0.88, -2.30, 0.78]);
+  q(colB, 0.8, [-0.88, -2.02, 0.70], [0.88, -2.02, 0.70], [0.88, -2.02, 0.78], [-0.88, -2.02, 0.78]);
+  q(colB, 0.95, [-0.88, -2.00, 0.42], [0.88, -2.00, 0.42], [0.88, -2.20, 0.38], [-0.88, -2.20, 0.38]);
+  q(colD, 0.9, [-0.88, -1.90, 0.28], [-0.88, -2.35, 0.28], [-0.88, -2.35, 0.88], [-0.88, -1.90, 0.88]);
+  q(colD, 0.9, [0.88, -1.90, 0.28], [0.88, -2.35, 0.28], [0.88, -2.35, 0.88], [0.88, -1.90, 0.88]);
+  // gearbox block
+  q("#26262a", 1.0, [-0.28, -1.8, 0.50], [0.28, -1.8, 0.50], [0.28, -2.1, 0.42], [-0.28, -2.1, 0.42]);
+  q("#26262a", 0.8, [-0.28, -2.1, 0.10], [0.28, -2.1, 0.10], [0.28, -2.1, 0.42], [-0.28, -2.1, 0.42]);
+  // wheels: solid boxes (outer, inner, front, back, top)
+  for (const [wc, wz, r, w2, hgt] of [
+    [0.96, -1.55, 0.35, 0.19, 0.68], [-0.96, -1.55, 0.35, 0.19, 0.68],
+    [0.90, 1.55, 0.31, 0.15, 0.60], [-0.90, 1.55, 0.31, 0.15, 0.60],
+  ]) {
+    for (const s of [-1, 1])
+      q("#1c1c1e", 1.0, [wc + s * w2, wz - r, 0.02], [wc + s * w2, wz + r, 0.02], [wc + s * w2, wz + r, hgt], [wc + s * w2, wz - r, hgt]);
+    q("#161618", 1.0, [wc - w2, wz + r, 0.02], [wc + w2, wz + r, 0.02], [wc + w2, wz + r, hgt], [wc - w2, wz + r, hgt]);
+    q("#161618", 1.0, [wc - w2, wz - r, 0.02], [wc + w2, wz - r, 0.02], [wc + w2, wz - r, hgt], [wc - w2, wz - r, hgt]);
+    q("#2e2e32", 1.15, [wc - w2, wz - r, hgt], [wc - w2, wz + r, hgt], [wc + w2, wz + r, hgt], [wc + w2, wz - r, hgt]);
+  }
+  drawFacesLit(ctx, faces, horizonY, fog);
 }
 
 function drawObject(ctx, o, trk, horizonY, fog) {
   const sm = trk.pts[o.i];
   const nx = -Math.sin(sm.h), ny = Math.cos(sm.h);
   const bx = sm.x + nx * o.d, by = sm.y + ny * o.d;
-  // billboard along road direction
   const fx = Math.cos(sm.h), fy = Math.sin(sm.h);
   const hw = o.w / 2;
-  const V = (dl, z) => toCam(bx + fx * dl, by + fy * dl, z);
-  const Q = (a, b, c2, d2, col) => fillPoly3(ctx, [a, b, c2, d2], col, horizonY);
-  const f = fog;
+  const faces = [];
+  // flat panel spanning along the road direction (for boards etc.)
+  const panel = (col, br, l0, l1, z0, z1, off) => {
+    const ox = nx * (off || 0), oy = ny * (off || 0);
+    faces.push({
+      v: [[bx + fx * l0 + ox, by + fy * l0 + oy, z0], [bx + fx * l1 + ox, by + fy * l1 + oy, z0],
+          [bx + fx * l1 + ox, by + fy * l1 + oy, z1], [bx + fx * l0 + ox, by + fy * l0 + oy, z1]],
+      col, br,
+    });
+  };
+  const toRoad = -Math.sign(o.d);   // unit factor: offsets toward the track
+
   if (o.t === "tree" || o.t === "palm") {
-    Q(V(-0.25, 0), V(0.25, 0), V(0.25, o.h * 0.4), V(-0.25, o.h * 0.4), shade("#5a4028", f));
-    Q(V(-hw, o.h * 0.3), V(hw, o.h * 0.3), V(hw * 0.5, o.h), V(-hw * 0.5, o.h), shade(o.t === "palm" ? "#4a8a3a" : "#2e6e2e", f));
+    // crossed billboards -> reads as a volume from every angle
+    const leaf = o.t === "palm" ? "#4a8a3a" : "#2e6e2e";
+    const trunk = "#5a4028";
+    panel(trunk, 1, -0.22, 0.22, 0, o.h * 0.45);
+    faces.push({
+      v: [[bx + nx * -0.22, by + ny * -0.22, 0], [bx + nx * 0.22, by + ny * 0.22, 0],
+          [bx + nx * 0.22, by + ny * 0.22, o.h * 0.45], [bx + nx * -0.22, by + ny * -0.22, o.h * 0.45]],
+      col: trunk, br: 0.85,
+    });
+    panel(leaf, 1, -hw, hw, o.h * 0.32, o.h);
+    faces.push({
+      v: [[bx + nx * -hw, by + ny * -hw, o.h * 0.32], [bx + nx * hw, by + ny * hw, o.h * 0.32],
+          [bx + nx * hw * 0.4, by + ny * hw * 0.4, o.h], [bx + nx * -hw * 0.4, by + ny * -hw * 0.4, o.h]],
+      col: leaf, br: 0.85,
+    });
   } else if (o.t === "cactus") {
-    Q(V(-0.3, 0), V(0.3, 0), V(0.3, o.h), V(-0.3, o.h), shade("#4a7a3a", f));
-    Q(V(-hw, o.h * 0.45), V(hw, o.h * 0.45), V(hw, o.h * 0.62), V(-hw, o.h * 0.62), shade("#4a7a3a", f));
+    panel("#4a7a3a", 1, -0.3, 0.3, 0, o.h);
+    panel("#4a7a3a", 0.9, -hw, hw, o.h * 0.45, o.h * 0.62);
   } else if (o.t === "stand") {
-    Q(V(-hw, 0), V(hw, 0), V(hw, o.h), V(-hw, o.h), shade("#7a7a88", f));
-    Q(V(-hw, o.h * 0.25), V(hw, o.h * 0.25), V(hw, o.h * 0.9), V(-hw, o.h * 0.9), shade("#38384a", f));
-    // crowd dots as stripes
-    Q(V(-hw * 0.95, o.h * 0.3), V(hw * 0.95, o.h * 0.3), V(hw * 0.95, o.h * 0.42), V(-hw * 0.95, o.h * 0.42), shade("#c05050", f));
-    Q(V(-hw * 0.95, o.h * 0.5), V(hw * 0.95, o.h * 0.5), V(hw * 0.95, o.h * 0.62), V(-hw * 0.95, o.h * 0.62), shade("#5060c0", f));
-    Q(V(-hw * 0.95, o.h * 0.7), V(hw * 0.95, o.h * 0.7), V(hw * 0.95, o.h * 0.82), V(-hw * 0.95, o.h * 0.82), shade("#c0b050", f));
-    Q(V(-hw, o.h), V(hw, o.h), V(hw * 0.8, o.h * 1.18), V(-hw * 0.8, o.h * 1.18), shade("#e8e8e8", f));
+    const dep = 9, cx2 = bx + nx * toRoad * -dep / 2, cy2 = by + ny * toRoad * -dep / 2;
+    boxFaces(faces, cx2, cy2, sm.h, hw, dep / 2, 0, o.h, "#6e6e7c", 1);
+    // crowd stripes on the facade toward the track
+    const fx2 = bx + nx * toRoad * 0.06, fy2 = by + ny * toRoad * 0.06;
+    for (const [z0, z1, col] of [
+      [o.h * 0.22, o.h * 0.90, "#34344a"],
+      [o.h * 0.28, o.h * 0.40, "#c05050"], [o.h * 0.48, o.h * 0.60, "#5060c0"], [o.h * 0.68, o.h * 0.80, "#c0b050"],
+    ]) {
+      faces.push({
+        v: [[fx2 + fx * -hw * 0.96, fy2 + fy * -hw * 0.96, z0], [fx2 + fx * hw * 0.96, fy2 + fy * hw * 0.96, z0],
+            [fx2 + fx * hw * 0.96, fy2 + fy * hw * 0.96, z1], [fx2 + fx * -hw * 0.96, fy2 + fy * -hw * 0.96, z1]],
+        col, br: 1,
+      });
+    }
+    // white roof slab with overhang
+    boxFaces(faces, cx2 + nx * toRoad * 1.2, cy2 + ny * toRoad * 1.2, sm.h, hw + 0.8, dep / 2 + 1.2, o.h, o.h + 0.6, "#e0e0e4", 1.05);
   } else if (o.t === "board") {
     const cols = [["#d02020", "#e8e8e8"], ["#2040c0", "#e8d020"], ["#108040", "#e8e8e8"], ["#e8e8e8", "#202020"]];
     const [c1, c2] = cols[o.n % 4];
-    Q(V(-hw, 1.2), V(hw, 1.2), V(hw, 1.2 + o.h), V(-hw, 1.2 + o.h), shade(c1, f));
-    Q(V(-hw * 0.8, 1.2 + o.h * 0.3), V(hw * 0.8, 1.2 + o.h * 0.3), V(hw * 0.8, 1.2 + o.h * 0.7), V(-hw * 0.8, 1.2 + o.h * 0.7), shade(c2, f));
-    Q(V(-hw * 0.9, 0), V(-hw * 0.7, 0), V(-hw * 0.7, 1.2), V(-hw * 0.9, 1.2), shade("#888888", f));
-    Q(V(hw * 0.7, 0), V(hw * 0.9, 0), V(hw * 0.9, 1.2), V(hw * 0.7, 1.2), shade("#888888", f));
+    panel("#888888", 1, -hw * 0.9, -hw * 0.7, 0, 1.2);
+    panel("#888888", 1, hw * 0.7, hw * 0.9, 0, 1.2);
+    panel(c1, 1, -hw, hw, 1.2, 1.2 + o.h);
+    panel(c2, 1, -hw * 0.8, hw * 0.8, 1.2 + o.h * 0.3, 1.2 + o.h * 0.7, toRoad * 0.04);
   } else if (o.t === "brkboard") {
-    Q(V(-hw, 0.4), V(hw, 0.4), V(hw, 0.4 + o.h), V(-hw, 0.4 + o.h), shade("#e8e8e8", f));
+    panel("#e8e8e8", 1, -hw, hw, 0.4, 0.4 + o.h);
     for (let s = 0; s < o.n; s++)
-      Q(V(-hw * 0.7, 0.7 + s * 0.55), V(hw * 0.7, 0.7 + s * 0.55), V(hw * 0.7, 0.95 + s * 0.55), V(-hw * 0.7, 0.95 + s * 0.55), shade("#d02020", f));
+      panel("#d02020", 1, -hw * 0.7, hw * 0.7, 0.7 + s * 0.55, 0.95 + s * 0.55, toRoad * 0.04);
   } else if (o.t === "bldg") {
     const base = o.v < 0.33 ? "#9a8a7a" : o.v < 0.66 ? "#8a929a" : "#a29a8a";
-    Q(V(-hw, 0), V(hw, 0), V(hw, o.h), V(-hw, o.h), shade(base, f));
-    for (let fl = 1.5; fl < o.h - 1; fl += 2.6)
-      Q(V(-hw * 0.9, fl), V(hw * 0.9, fl), V(hw * 0.9, fl + 1.1), V(-hw * 0.9, fl + 1.1), shade("#4a5668", f * 0.9));
+    const dep = o.dep || 11;
+    // box centre sits away from the road so the facade lands at o.d
+    const cx2 = bx + nx * toRoad * -dep / 2, cy2 = by + ny * toRoad * -dep / 2;
+    boxFaces(faces, cx2, cy2, sm.h, hw, dep / 2, 0, o.h, base, 1);
+    // window bands on the road-facing facade
+    const wx2 = bx + nx * toRoad * 0.06, wy2 = by + ny * toRoad * 0.06;
+    for (let fl = 1.6; fl < o.h - 1.2; fl += 2.7) {
+      faces.push({
+        v: [[wx2 + fx * -hw * 0.92, wy2 + fy * -hw * 0.92, fl], [wx2 + fx * hw * 0.92, wy2 + fy * hw * 0.92, fl],
+            [wx2 + fx * hw * 0.92, wy2 + fy * hw * 0.92, fl + 1.15], [wx2 + fx * -hw * 0.92, wy2 + fy * -hw * 0.92, fl + 1.15]],
+        col: "#46526a", br: 1,
+      });
+    }
+    // rooftop plant box for the taller blocks
+    if (o.h > 16) boxFaces(faces, cx2, cy2, sm.h, hw * 0.3, dep * 0.2, o.h, o.h + 2.2, "#787064", 0.9);
   }
+  drawFacesLit(ctx, faces, horizonY, fog);
 }
 
 function renderRace() {
@@ -1055,15 +1198,12 @@ function drawCockpit(ctx) {
   ctx.fillText(String(Math.round(R.pv * 3.6)).padStart(3, " "), dx + 128, dy + 24);
   ctx.fillStyle = "#786830"; ctx.font = "8px monospace";
   ctx.fillText("KMH", dx + 128, dy + 13);
-  // suggested gear (aid)
+  // suggested gear (aid) — steady display
   if (G.aids.sugGear && R.sugGear && R.sugGear !== R.gear && !R.player.retired) {
-    const flash = (R.time * 4 | 0) & 1;
-    if (flash) {
-      ctx.fillStyle = "#0a0a0a"; ctx.fillRect(dx + 158, dy + 3, 20, 24);
-      ctx.fillStyle = R.sugGear < R.gear ? "#e05050" : "#50a0e8";
-      ctx.font = "bold 20px monospace"; ctx.textAlign = "center";
-      ctx.fillText(String(R.sugGear), dx + 168, dy + 23);
-    }
+    ctx.fillStyle = "#0a0a0a"; ctx.fillRect(dx + 158, dy + 3, 20, 24);
+    ctx.fillStyle = R.sugGear < R.gear ? "#e05050" : "#50a0e8";
+    ctx.font = "bold 20px monospace"; ctx.textAlign = "center";
+    ctx.fillText(String(R.sugGear), dx + 168, dy + 23);
   }
 
   // mirrors
@@ -1410,9 +1550,10 @@ function screenAids() {
 function screenControls() {
   showMenu(menuFrame("CONTROLS",
     `<div class="ctrl">
-      <div>&#8593; ACCELERATE &nbsp;&nbsp; &#8595; BRAKE</div>
-      <div>&#8592; &#8594; STEER</div>
-      <div>A SHIFT UP &nbsp;&nbsp; Z SHIFT DOWN <span class="dim">(manual box)</span></div>
+      <div>A ACCELERATE &nbsp;&nbsp; Z BRAKE</div>
+      <div>, STEER LEFT &nbsp;&nbsp; . STEER RIGHT</div>
+      <div class="dim">(ARROW KEYS WORK TOO)</div>
+      <div>SPACE SHIFT UP &nbsp;&nbsp; X SHIFT DOWN <span class="dim">(manual box)</span></div>
       <div>1–6 TOGGLE DRIVER AIDS</div>
       <div>ESC PAUSE &nbsp;&nbsp; M MUTE</div>
       <div class="dim" style="margin-top:12px">SIX AIDS, AS TRADITION DEMANDS: AUTO BRAKES, AUTO GEARS,<br>
@@ -1519,11 +1660,11 @@ function onKey(e, down) {
   if (down && !SFX.ac && (G.screen !== "title" || k === "Enter")) SFX.init();
 
   if (G.screen === "race" && G.race && !G.race.paused) {
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyZ", "Space"].includes(k)) e.preventDefault();
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyZ", "Comma", "Period", "Space", "KeyX"].includes(k)) e.preventDefault();
     G.keys[k] = down;
     if (down && !e.repeat) {
-      if (k === "KeyA" && !G.aids.autoGears && G.race.gear < 6) { G.race.gear++; SFX.shift(); }
-      if (k === "KeyZ" && !G.aids.autoGears && G.race.gear > 1) { G.race.gear--; SFX.shift(); }
+      if (k === "Space" && !G.aids.autoGears && G.race.gear < 6) { G.race.gear++; SFX.shift(); }
+      if (k === "KeyX" && !G.aids.autoGears && G.race.gear > 1) { G.race.gear--; SFX.shift(); }
       const aidIdx = ["Digit1", "Digit2", "Digit3", "Digit4", "Digit5", "Digit6"].indexOf(k);
       if (aidIdx >= 0) {
         const a = AIDS_DEF[aidIdx];
