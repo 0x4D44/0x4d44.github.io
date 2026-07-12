@@ -182,6 +182,11 @@ header{
              var(--yellow) 180deg 270deg, var(--green) 270deg 360deg);
   opacity:.95;
 }
+/* Dark-side wild: the wheel shows the four flipped colours you pick from. */
+.card.cW.wDark .oval{
+  background:conic-gradient(#ff2e97 0 90deg, #1ffff0 90deg 180deg,
+             #ff9d18 180deg 270deg, #b878ff 270deg 360deg);
+}
 .card .val{
   position:absolute; inset:0; display:grid; place-items:center;
   font-weight:900; font-size:calc(var(--cw)*.42); color:var(--vc,#333);
