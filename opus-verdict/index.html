@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Opus 4.8 Verdict — an on-device AI-writing detector</title>
+<meta name="description" content="Paste any text and get a transparent, explainable verdict on how AI-written it looks — a confidence gauge, per-sentence highlighting, and a full breakdown of the writing-style signals. Runs entirely in your browser.">
+<style>
+  :root{
+    --paper:#faf7f0; --ink:#211e18; --muted:#6b6459; --faint:#8c8478;
+    --line:#e4ddcf; --line2:#d6cdba; --card:#fffdf8;
+    --accent:#c25a2c; --accent-ink:#a1481f;
+    --human:#3f7d4e; --human-bg:#e8f2e6; --human-line:#bcd9bd;
+    --ai:#c0392b; --ai-bg:#fbe7e3; --ai-line:#eec3ba;
+    --mix:#b8791f; --mix-bg:#f7edda; --mix-line:#e8d2a4;
+    --mono:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --serif:"Newsreader", Georgia, "Times New Roman", serif;
+    --sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:#161311; --ink:#ece6da; --muted:#a49b8c; --faint:#7d7566;
+      --line:#2c2721; --line2:#3a342b; --card:#1e1a16;
+      --accent:#e07845; --accent-ink:#e88a5b;
+      --human:#7dc68c; --human-bg:#1c2a1e; --human-line:#2f4a33;
+      --ai:#e8776a; --ai-bg:#2c1a17; --ai-line:#4d2a24;
+      --mix:#e0ac5b; --mix-bg:#2a2317; --mix-line:#4a3d24;
+    }
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent-ink)}
+  .wrap{max-width:1120px; margin:0 auto; padding:28px 22px 90px}
+
+  /* ---- header ---- */
+  .top{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:30px}
+  .brand{display:flex; align-items:center; gap:14px}
+  .mark{width:46px; height:46px; flex:none; color:var(--accent)}
+  .brand h1{font-family:var(--serif); font-weight:600; font-size:26px; letter-spacing:-.01em; line-height:1.05}
+  .brand .sub{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); margin-top:3px}
+  .back{font-family:var(--mono); font-size:12px; letter-spacing:.06em; text-decoration:none; color:var(--muted); border:1px solid var(--line2); padding:7px 12px; border-radius:8px; white-space:nowrap}
+  .back:hover{border-color:var(--accent); color:var(--accent-ink)}
+
+  .lede{max-width:720px; margin:-6px 0 26px; color:var(--muted); font-size:15.5px}
+  .lede strong{color:var(--ink); font-weight:600}
+
+  /* ---- layout ---- */
+  .grid{display:grid; grid-template-columns:1fr; gap:20px}
+  @media(min-width:900px){ .grid{grid-template-columns:1.05fr .95fr} }
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:18px}
+  .card h2{font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); margin-bottom:12px; font-weight:600}
+
+  /* ---- input ---- */
+  textarea{
+    width:100%; min-height:300px; resize:vertical; background:transparent; color:var(--ink);
+    border:1px solid var(--line2); border-radius:10px; padding:14px 15px; font-family:var(--serif);
+    font-size:16px; line-height:1.62; outline:none;
+  }
+  textarea:focus{border-color:var(--accent)}
+  textarea::placeholder{color:var(--faint)}
+  .toolbar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:12px}
+  .btn{font-family:var(--sans); font-size:14px; font-weight:600; border:1px solid var(--line2); background:transparent; color:var(--ink); padding:9px 15px; border-radius:9px; cursor:pointer}
+  .btn:hover{border-color:var(--accent)}
+  .btn.primary{background:var(--accent); border-color:var(--accent); color:#fff}
+  .btn.primary:hover{background:var(--accent-ink); border-color:var(--accent-ink)}
+  .btn:disabled{opacity:.45; cursor:default}
+  .count{font-family:var(--mono); font-size:12px; color:var(--faint); margin-left:auto}
+  .samples{margin-top:14px; display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  .samples span{font-family:var(--mono); font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint)}
+  .chip{font-family:var(--mono); font-size:12px; border:1px dashed var(--line2); background:transparent; color:var(--muted); padding:6px 11px; border-radius:20px; cursor:pointer}
+  .chip:hover{border-color:var(--accent); border-style:solid; color:var(--accent-ink)}
+
+  /* ---- result ---- */
+  .verdict{text-align:center; padding:8px 4px 4px}
+  .gauge{position:relative; width:230px; height:126px; margin:0 auto -14px}
+  .gauge svg{width:100%; height:100%; overflow:visible}
+  .gauge .needle{transition:transform .9s cubic-bezier(.22,1,.36,1); transform-origin:115px 115px}
+  .gscore{text-align:center}
+  .gscore b{font-family:var(--mono); font-size:36px; font-weight:600; letter-spacing:-.02em; display:block; line-height:1}
+  .gscore small{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint)}
+  .label{display:inline-block; font-family:var(--serif); font-weight:600; font-size:23px; margin-top:6px; padding:2px 4px}
+  .label.human{color:var(--human)} .label.ai{color:var(--ai)} .label.mix{color:var(--mix)}
+  .conf{font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:2px}
+  .conf b{color:var(--ink)}
+  .btn.copy{font-size:12px; padding:6px 13px; margin-top:14px; font-family:var(--mono); letter-spacing:.04em}
+  .empty{color:var(--faint); text-align:center; font-size:14.5px; padding:44px 12px; font-family:var(--serif); font-style:italic}
+
+  /* ---- signals ---- */
+  .signals{margin-top:16px; display:flex; flex-direction:column; gap:11px}
+  .sig{}
+  .sig .row{display:flex; align-items:baseline; justify-content:space-between; gap:10px}
+  .sig .name{font-size:13.5px; font-weight:600}
+  .sig .val{font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+  .bar{height:7px; background:var(--line); border-radius:5px; margin-top:5px; overflow:hidden}
+  .bar i{display:block; height:100%; border-radius:5px; width:0; transition:width .8s cubic-bezier(.22,1,.36,1)}
+  .sig .desc{font-size:12.5px; color:var(--muted); margin-top:4px; line-height:1.5}
+
+  /* ---- highlighted output ---- */
+  .out{margin-top:20px}
+  .legend{display:flex; gap:16px; flex-wrap:wrap; font-family:var(--mono); font-size:11px; color:var(--muted); margin-bottom:12px; align-items:center}
+  .legend i{display:inline-block; width:26px; height:11px; border-radius:3px; vertical-align:middle; margin-right:6px}
+  .reading{font-family:var(--serif); font-size:16.5px; line-height:1.85}
+  .sent{border-radius:4px; padding:1px 1px; cursor:help; transition:background .2s; position:relative}
+  .sent:hover{outline:1px solid var(--accent)}
+  .tip{position:fixed; z-index:50; max-width:300px; background:var(--ink); color:var(--paper); font-family:var(--sans); font-size:12.5px; line-height:1.5; padding:10px 12px; border-radius:9px; box-shadow:0 8px 30px rgba(0,0,0,.28); pointer-events:none; opacity:0; transition:opacity .12s; }
+  .tip.on{opacity:1}
+  .tip b{font-family:var(--mono); font-size:11px; letter-spacing:.05em; text-transform:uppercase; display:block; margin-bottom:5px; color:#fff}
+  .tip ul{margin:0; padding-left:16px}
+  .tip li{margin:2px 0}
+  .tip .none{color:#c9c1b3; font-style:italic}
+
+  /* ---- methodology ---- */
+  details.method{margin-top:26px; border:1px solid var(--line); border-radius:14px; background:var(--card); padding:0 18px}
+  details.method>summary{cursor:pointer; list-style:none; padding:16px 0; font-family:var(--mono); font-size:11.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--faint); font-weight:600; display:flex; align-items:center; justify-content:space-between}
+  details.method>summary::-webkit-details-marker{display:none}
+  details.method>summary::after{content:"+"; font-size:16px; color:var(--muted)}
+  details.method[open]>summary::after{content:"–"}
+  .method-body{padding:2px 0 22px; max-width:760px}
+  .method-body p{color:var(--muted); font-size:14.5px; margin:0 0 12px}
+  .method-body h3{font-family:var(--serif); font-size:17px; margin:20px 0 8px; color:var(--ink)}
+  .method-body code{font-family:var(--mono); font-size:12.5px; background:var(--paper); border:1px solid var(--line); border-radius:5px; padding:1px 5px}
+  .method-body .note{border-left:3px solid var(--accent); padding:8px 0 8px 14px; margin:14px 0; color:var(--ink); font-size:14px}
+
+  footer{margin-top:40px; padding-top:20px; border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--faint); display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap}
+  footer a{color:var(--muted); text-decoration:none}
+  footer a:hover{color:var(--accent-ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="top">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 40 L20 8 L28 8 L40 40"/>
+        <path d="M14 26 L34 26"/>
+        <circle cx="24" cy="34" r="1.6" fill="currentColor" stroke="none"/>
+        <path d="M6 14 q4 3 0 6" opacity=".5"/>
+        <path d="M42 14 q-4 3 0 6" opacity=".5"/>
+      </svg>
+      <div>
+        <h1>Opus&nbsp;4.8 Verdict</h1>
+        <div class="sub">On-device AI-writing detector</div>
+      </div>
+    </div>
+    <a class="back" href="https://0x4d44.github.io/">← the almanac</a>
+  </div>
+
+  <p class="lede">Paste any passage and get a <strong>verdict on how AI-written it looks</strong> — a confidence
+  gauge, sentence-by-sentence highlighting, and a full breakdown of the writing-style signals behind the score.
+  It runs <strong>entirely in your browser</strong>: no upload, no account, no model call. And unlike the
+  black-box detectors, it shows its working.</p>
+
+  <div class="grid">
+    <!-- INPUT -->
+    <section class="card">
+      <h2>Text to examine</h2>
+      <textarea id="input" placeholder="Paste an essay, an email, a paragraph of a report — anything from a sentence or two up to a few thousand words. The more you give it, the more confident the verdict."></textarea>
+      <div class="toolbar">
+        <button class="btn primary" id="run">Analyze</button>
+        <button class="btn" id="clear">Clear</button>
+        <span class="count" id="count">0 words</span>
+      </div>
+      <div class="samples">
+        <span>Try:</span>
+        <button class="chip" data-sample="human">a human classic</button>
+        <button class="chip" data-sample="ai">a chatbot answer</button>
+        <button class="chip" data-sample="mixed">a mixed draft</button>
+      </div>
+    </section>
+
+    <!-- RESULT -->
+    <section class="card" id="resultCard">
+      <h2>Verdict</h2>
+      <div id="verdict">
+        <div class="empty">Nothing examined yet.<br>Paste some text and press <b>Analyze</b>.</div>
+      </div>
+      <div class="signals" id="signals"></div>
+    </section>
+  </div>
+
+  <!-- HIGHLIGHTED OUTPUT -->
+  <section class="card out" id="outCard" style="display:none">
+    <h2>Sentence-level analysis</h2>
+    <div class="legend">
+      <span><i style="background:var(--human-bg);border:1px solid var(--human-line)"></i>reads human</span>
+      <span><i style="background:var(--mix-bg);border:1px solid var(--mix-line)"></i>ambiguous</span>
+      <span><i style="background:var(--ai-bg);border:1px solid var(--ai-line)"></i>reads machine-made</span>
+      <span style="color:var(--faint)">hover a sentence for the signals it tripped</span>
+    </div>
+    <div class="reading" id="reading"></div>
+  </section>
+
+  <!-- METHODOLOGY -->
+  <details class="method">
+    <summary>How the verdict is reached — and how much to trust it</summary>
+    <div class="method-body">
+      <p>Real production detectors (Pangram, the tool this is modelled on) run a neural network trained on
+      roughly a million labelled human and machine documents. That needs a server and a GPU. <b>Opus&nbsp;4.8
+      Verdict is the honest client-side cousin:</b> a transparent, explainable heuristics engine that measures
+      the writing-style fingerprints large language models tend to leave, then adds them up. Everything happens
+      in a few milliseconds of JavaScript on your own machine.</p>
+
+      <h3>The signals it weighs</h3>
+      <p>Each signal returns a 0–100 "how machine-like" score; the overall verdict is their weighted average.</p>
+      <p><b>Burstiness</b> — humans mix very short sentences with long ones; models pace themselves evenly. Low
+      variance in sentence length is the single strongest tell. <b>Machine vocabulary</b> — the density of the
+      words and phrases LLMs over-reach for (<code>delve</code>, <code>tapestry</code>, <code>testament to</code>,
+      <code>navigate the complexities</code>, <code>it's important to note</code>…). <b>Transition density</b> —
+      over-signposting with <code>moreover</code>, <code>furthermore</code>, <code>however</code>. <b>Em-dash
+      habit</b> — the tell-tale over-use of the em-dash. <b>Formulaic openers</b> — many sentences starting the
+      same way (<code>The…</code>, <code>This…</code>, <code>It is…</code>). <b>Rule-of-three</b> — the model's
+      love of tidy three-item lists. <b>Hedging</b> and <b>lexical repetition</b> round it out.</p>
+
+      <div class="note">This is a <b>writing-style signal, not proof.</b> Polished human writing (a legal brief,
+      a press release) can score high; deliberately messy AI output can score low. Use it to raise a question,
+      never to settle one. No detector — this one included — should be the sole basis for an accusation.</div>
+
+      <p style="color:var(--faint);font-size:13px">Built for the 0x4D44 almanac. Named for the model that wrote
+      the engine, Claude&nbsp;Opus&nbsp;4.8. Fully offline · no dependencies · no build step · view source.</p>
+    </div>
+  </details>
+
+  <footer>
+    <span>Opus 4.8 Verdict · on-device, explainable AI-text detection</span>
+    <a href="https://0x4d44.github.io/">← back to the almanac</a>
+  </footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+"use strict";
+(function(){
+  // ---------------------------------------------------------------------------
+  // Curated machine-writing lexicon. Multiword phrases and single-word tells the
+  // current generation of chat models reach for far more often than people do.
+  // ---------------------------------------------------------------------------
+  var PHRASES = [
+    "it's important to note","it is important to note","it's worth noting","it is worth noting",
+    "in today's fast-paced world","in the ever-evolving","in the realm of","when it comes to",
+    "plays a crucial role","plays a vital role","a testament to","at the end of the day",
+    "navigate the complexities","navigating the complexities","a wide range of","a myriad of",
+    "in conclusion","in summary","to summarize","it's essential to","it is essential to",
+    "not only that","but also","dive into","delving into","let's delve","rich tapestry",
+    "ever-changing landscape","fast-paced world","gain a deeper understanding","shed light on",
+    "when it comes down to","the world of","in this digital age","first and foremost",
+    "it goes without saying","needless to say","the bottom line","take it to the next level"
+  ];
+  var WORDS = [
+    "delve","delved","delves","tapestry","testament","underscore","underscores","underscoring",
+    "leverage","leveraging","moreover","furthermore","additionally","consequently","notably",
+    "arguably","crucial","pivotal","realm","landscape","nuanced","robust","seamless","seamlessly",
+    "foster","fostering","myriad","plethora","showcase","showcases","showcasing","boasts","boasting",
+    "meticulous","meticulously","intricate","intricacies","vibrant","bustling","harness","harnessing",
+    "cultivate","resonate","resonates","holistic","comprehensive","versatile","streamline","empower",
+    "empowers","unlock","unlocking","elevate","embark","embarking","paramount","multifaceted",
+    "profound","invaluable","transformative","unwavering","commendable","utilize","utilizing",
+    "facilitate","endeavor","endeavour","spearhead","synergy","paradigm","aforementioned"
+  ];
+  var TRANSITIONS = ["however","moreover","furthermore","additionally","consequently","nevertheless",
+    "nonetheless","therefore","thus","hence","meanwhile","subsequently","accordingly","ultimately",
+    "notably","similarly","conversely","indeed","overall"];
+  var HEDGES = ["can help","may","might","often","generally","typically","usually","in many cases",
+    "some","various","several","potentially","arguably","tends to","in general","for instance",
+    "for example","a variety of"];
+  var FORMULAIC_OPENERS = ["the","this","these","those","it","in","as","by","with","while","when",
+    "however","moreover","furthermore","additionally","one","there"];
+
+  // ---------------------------------------------------------------------------
+  // helpers
+  // ---------------------------------------------------------------------------
+  function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
+  function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  function words(text){ return (text.toLowerCase().match(/[a-z0-9']+/g)) || []; }
+
+  // Split into sentences while preserving the exact source text (incl. trailing
+  // whitespace) so we can re-render the passage verbatim with highlighting.
+  function splitSentences(text){
+    var out=[], re=/[^.!?\n]+[.!?]*[\)"'”’]*(\s+|\n+|$)/g, m;
+    while((m=re.exec(text))!==null){
+      if(m[0].length===0){ re.lastIndex++; continue; }
+      out.push(m[0]);
+    }
+    if(out.length===0 && text.length) out.push(text);
+    return out;
+  }
+
+  function countMatches(hay, needle){
+    // whole-phrase, case-insensitive, non-overlapping
+    var n=0, i=0;
+    while(true){ var j=hay.indexOf(needle,i); if(j<0) break; n++; i=j+needle.length; }
+    return n;
+  }
+  function countWordHits(tokens, set){
+    var n=0; for(var i=0;i<tokens.length;i++){ if(set[tokens[i]]) n++; } return n;
+  }
+  function toSet(arr){ var s={}; for(var i=0;i<arr.length;i++) s[arr[i]]=1; return s; }
+  var WORDSET=toSet(WORDS), TRANSET=toSet(TRANSITIONS), OPENERSET=toSet(FORMULAIC_OPENERS);
+
+  // ---------------------------------------------------------------------------
+  // the engine
+  // ---------------------------------------------------------------------------
+  function analyze(text){
+    var lc = text.toLowerCase();
+    var toks = words(text);
+    var W = toks.length;
+    var sentsRaw = splitSentences(text);
+    var sents = sentsRaw.map(function(s){ return s.trim(); }).filter(function(s){ return s.length>0; });
+    var S = sents.length;
+
+    // ---- per-sentence word counts (burstiness) ----
+    var lens = sents.map(function(s){ return ((s.toLowerCase().match(/[a-z0-9']+/g))||[]).length; })
+                    .filter(function(n){ return n>0; });
+    var mean = lens.reduce(function(a,b){return a+b;},0)/(lens.length||1);
+    var variance = lens.reduce(function(a,b){return a+(b-mean)*(b-mean);},0)/(lens.length||1);
+    var sd = Math.sqrt(variance);
+    var cv = mean>0 ? sd/mean : 0;                       // coefficient of variation
+    var burst = clamp((0.62-cv)/0.44, 0, 1);             // low variance -> AI-like
+
+    // ---- machine vocabulary density ----
+    var phraseHits=0, phraseFound=[];
+    for(var i=0;i<PHRASES.length;i++){ var c=countMatches(lc, PHRASES[i]); if(c){ phraseHits+=c; phraseFound.push(PHRASES[i]); } }
+    var wordHits = countWordHits(toks, WORDSET);
+    var tellsAbs = phraseHits + wordHits;
+    var tellsPer1k = W>0 ? (phraseHits*2.2 + wordHits) / W * 1000 : 0;
+    var vocab = clamp(tellsPer1k/18, 0, 1);
+
+    // ---- transition density (per sentence) ----
+    var transHits = countWordHits(toks, TRANSET);
+    var transPerSent = S>0 ? transHits/S : 0;
+    var trans = clamp(transPerSent/0.42, 0, 1);
+
+    // ---- em-dash habit ----
+    var emdash = (text.match(/—/g)||[]).length + (text.match(/ - /g)||[]).length*0.5;
+    var emPer1k = W>0 ? emdash/W*1000 : 0;
+    var dash = clamp(emPer1k/6.5, 0, 1);
+
+    // ---- formulaic / repeated openers ----
+    var openers = sents.map(function(s){ var m=s.toLowerCase().match(/[a-z0-9']+/); return m?m[0]:""; });
+    var uniqOpen = {}; var formulaic=0;
+    openers.forEach(function(o){ uniqOpen[o]=(uniqOpen[o]||0)+1; if(OPENERSET[o]) formulaic++; });
+    var repeated = 0; Object.keys(uniqOpen).forEach(function(k){ if(uniqOpen[k]>1) repeated += uniqOpen[k]-1; });
+    var repFrac = S>0 ? repeated/S : 0;
+    var formFrac = S>0 ? formulaic/S : 0;
+    var opener = clamp((repFrac-0.1)/0.5*0.6 + formFrac*0.7, 0, 1);
+
+    // ---- rule of three ----
+    var triads = (text.match(/\b[\w'-]+,\s+[\w'-]+,?\s+and\s+[\w'-]+/gi)||[]).length
+               + (lc.match(/not only[\s\S]{0,60}?but also/g)||[]).length;
+    var triadPerSent = S>0 ? triads/S : 0;
+    var triad = clamp(triadPerSent/0.28, 0, 1);
+
+    // ---- hedging ----
+    var hedge=0; for(i=0;i<HEDGES.length;i++){ hedge += countMatches(lc, HEDGES[i]); }
+    var hedgePerSent = S>0 ? hedge/S : 0;
+    var hedging = clamp((hedgePerSent-0.15)/0.7, 0, 1);
+
+    // ---- lexical repetition (MATTR-ish) ----
+    var win=Math.min(45, W), mattr=1;
+    if(W>=15){
+      var sum=0,n=0;
+      for(i=0;i+win<=W;i+=Math.max(1,Math.floor(win/3))){
+        var seen={},u=0; for(var k=i;k<i+win;k++){ if(!seen[toks[k]]){seen[toks[k]]=1;u++;} }
+        sum+=u/win; n++;
+      }
+      mattr = n?sum/n:1;
+    }
+    var repetition = clamp((0.78-mattr)/0.32, 0, 1);
+
+    var signals = [
+      {key:"burst", name:"Burstiness", w:0.22, score:burst,
+       val:"CV "+cv.toFixed(2),
+       desc: burst>0.6 ? "Sentence lengths are unusually even — a machine hallmark."
+             : burst>0.35 ? "Sentence-length variation is middling."
+             : "Sentences vary in length the way human writing does."},
+      {key:"vocab", name:"Machine vocabulary", w:0.24, score:vocab,
+       val:tellsPer1k.toFixed(1)+" /1k",
+       desc: vocab>0.5 ? ("Dense with model-favoured wording"+(phraseFound.length?" (e.g. “"+phraseFound[0]+"”)":"")+".")
+             : vocab>0.2 ? "A few tell-tale words, nothing decisive."
+             : "Little of the stock LLM vocabulary."},
+      {key:"trans", name:"Transition density", w:0.13, score:trans,
+       val:transHits+" markers",
+       desc: trans>0.5 ? "Heavily sign-posted with connectives." : "Connective use looks natural."},
+      {key:"opener", name:"Formulaic openers", w:0.12, score:opener,
+       val:Math.round(formFrac*100)+"% stock",
+       desc: opener>0.5 ? "Many sentences open the same, boiler-plate way." : "Sentence openings are varied."},
+      {key:"dash", name:"Em-dash habit", w:0.08, score:dash,
+       val:emPer1k.toFixed(1)+" /1k",
+       desc: dash>0.5 ? "The em-dash is doing a lot of work here." : "Em-dash use is unremarkable."},
+      {key:"triad", name:"Rule-of-three", w:0.09, score:triad,
+       val:triads+" triads",
+       desc: triad>0.5 ? "Fond of tidy three-item lists." : "No particular taste for triads."},
+      {key:"hedge", name:"Hedging", w:0.06, score:hedging,
+       val:hedge+" hedges",
+       desc: hedging>0.5 ? "Cushioned with qualifiers." : "Not especially hedged."},
+      {key:"rep", name:"Lexical repetition", w:0.06, score:repetition,
+       val:"MATTR "+mattr.toFixed(2),
+       desc: repetition>0.5 ? "Vocabulary recycles more than usual." : "Word choice stays fresh."}
+    ];
+
+    var overall = 0, wsum=0;
+    signals.forEach(function(s){ overall += s.score*s.w; wsum += s.w; });
+    overall = overall/wsum*100;
+
+    // Corroborated escalation. Rhythm signals (burstiness, openers) go quiet on
+    // short, varied passages and can drag an otherwise machine-worded paragraph down
+    // into the human zone, hurting recall. So the high-precision signals set a FLOOR
+    // under the verdict — but deliberately biased toward precision, because a false
+    // "AI" verdict is the costly error here:
+    //   • Stock vocabulary ALONE only lifts text into the "uncertain" band (~≤48).
+    //     Formal human writing that happens to say "leverage / robust / comprehensive"
+    //     is genuinely ambiguous, and "uncertain" is the honest answer — not "AI".
+    //   • Reaching "Likely AI" needs CORROBORATION: dense vocabulary AND a second
+    //     sustained signal (transitions, triads, formulaic openers or the em-dash
+    //     habit) both firing. Two independent tells is the real machine fingerprint.
+    // Gated on enough text + several hits, and it only ever lifts, so clean human
+    // text (vocab≈0) is untouched and the near-zero false-positive margin holds.
+    if(W>=40 && tellsAbs>=3){
+      var corroborate = Math.min(vocab, Math.max(trans, triad, opener, dash));
+      overall = Math.max(overall, vocab*48, corroborate*74);
+    }
+    overall = clamp(overall, 0, 100);
+
+    // confidence: grows with text length and with distance from the fence
+    var lenConf = clamp((W-25)/275, 0, 1);
+    var decisiveness = Math.abs(overall-50)/50;
+    var confV = clamp(0.35*lenConf + 0.4*lenConf*decisiveness + 0.25*decisiveness, 0, 1);
+    var confLabel = W<20 ? "Very low" : confV>0.7 ? "High" : confV>0.45 ? "Moderate" : confV>0.22 ? "Low" : "Very low";
+
+    // ---- per-sentence scoring for highlighting ----
+    var perSentence = sents.map(function(s){
+      var slc=s.toLowerCase(), st=(slc.match(/[a-z0-9']+/g))||[], reasons=[], sc=0;
+      var swordHits=countWordHits(st, WORDSET);
+      var sPhr=0; for(var p=0;p<PHRASES.length;p++){ if(slc.indexOf(PHRASES[p])>=0){ sPhr++; reasons.push("phrase “"+PHRASES[p]+"”"); } }
+      if(swordHits){ sc+=Math.min(0.4,swordHits*0.22); if(swordHits) reasons.push(swordHits+" machine-favoured word"+(swordHits>1?"s":"")); }
+      sc += Math.min(0.35, sPhr*0.3);
+      var stTrans=countWordHits(st, TRANSET); if(stTrans){ sc+=Math.min(0.2,stTrans*0.16); reasons.push("transition word"); }
+      var op=st[0]||""; if(OPENERSET[op]){ sc+=0.08; }
+      if((s.match(/—/g)||[]).length){ sc+=0.12; reasons.push("em-dash"); }
+      if(/\b[\w'-]+,\s+[\w'-]+,?\s+and\s+[\w'-]+/.test(s)){ sc+=0.16; reasons.push("rule-of-three list"); }
+      var wl=st.length;
+      if(wl>0 && Math.abs(wl-mean)<mean*0.22 && S>=4){ sc+=0.14; reasons.push("very average length"); }
+      if(wl>34){ sc-=0.12; } if(wl>0 && wl<6){ sc-=0.14; }
+      // blend a little of the document-level pressure so isolated sentences aren't wild
+      sc = clamp(sc,0,1)*0.7 + (overall/100)*0.3;
+      return {text:s, score:clamp(sc,0,1), reasons:reasons};
+    });
+
+    return {overall:overall, signals:signals, conf:confV, confLabel:confLabel,
+            words:W, sentences:S, perSentence:perSentence, sentsRaw:sentsRaw};
+  }
+
+  // ---------------------------------------------------------------------------
+  // verdict banding
+  // ---------------------------------------------------------------------------
+  function band(score){
+    if(score<22) return {cls:"human", label:"Human-written", color:"var(--human)"};
+    if(score<40) return {cls:"human", label:"Likely human", color:"var(--human)"};
+    if(score<60) return {cls:"mix",   label:"Uncertain — mixed signals", color:"var(--mix)"};
+    if(score<80) return {cls:"ai",    label:"Likely AI-generated", color:"var(--ai)"};
+    return {cls:"ai", label:"AI-generated", color:"var(--ai)"};
+  }
+  function sentColor(score){
+    if(score<0.4) return {bg:"var(--human-bg)", ln:"var(--human-line)"};
+    if(score<0.62) return {bg:"var(--mix-bg)", ln:"var(--mix-line)"};
+    return {bg:"var(--ai-bg)", ln:"var(--ai-line)"};
+  }
+
+  // ---------------------------------------------------------------------------
+  // rendering
+  // ---------------------------------------------------------------------------
+  var $=function(id){ return document.getElementById(id); };
+  var input=$("input"), tip=$("tip");
+
+  function render(res){
+    var b=band(res.overall);
+    var deg = -90 + (res.overall/100)*180;
+    var v='<div class="verdict">'+
+      '<div class="gauge">'+
+        '<svg viewBox="0 0 230 130">'+
+          '<path d="M15 115 A100 100 0 0 1 215 115" fill="none" stroke="var(--line)" stroke-width="14" stroke-linecap="round"/>'+
+          '<path d="M15 115 A100 100 0 0 1 79 24" fill="none" stroke="var(--human)" stroke-width="14" stroke-linecap="round" opacity=".85"/>'+
+          '<path d="M92 18 A100 100 0 0 1 138 18" fill="none" stroke="var(--mix)" stroke-width="14" opacity=".85"/>'+
+          '<path d="M151 24 A100 100 0 0 1 215 115" fill="none" stroke="var(--ai)" stroke-width="14" stroke-linecap="round" opacity=".85"/>'+
+          '<g class="needle" style="transform:rotate('+deg.toFixed(1)+'deg)">'+
+            '<line x1="115" y1="115" x2="115" y2="35" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>'+
+          '</g>'+
+          '<circle cx="115" cy="115" r="6" fill="var(--ink)"/>'+
+        '</svg>'+
+      '</div>'+
+      '<div class="gscore"><b style="color:'+b.color+'">'+Math.round(res.overall)+'</b><small>/100 machine-like</small></div>'+
+      '<div class="label '+b.cls+'">'+b.label+'</div>'+
+      '<div class="conf">Confidence: <b>'+res.confLabel+'</b> · '+res.words+' words · '+res.sentences+' sentences</div>'+
+      '<button class="btn copy" id="copyReport" type="button">Copy report</button>'+
+      '</div>';
+    $("verdict").innerHTML=v;
+    var cr=$("copyReport"); if(cr) cr.addEventListener("click", function(){ copyReport(res, b); });
+
+    var sig="";
+    res.signals.forEach(function(s){
+      var pct=Math.round(s.score*100);
+      var col = s.score<0.4?"var(--human)":s.score<0.62?"var(--mix)":"var(--ai)";
+      sig+='<div class="sig"><div class="row"><span class="name">'+s.name+'</span>'+
+           '<span class="val">'+s.val+'</span></div>'+
+           '<div class="bar"><i style="background:'+col+';width:'+pct+'%"></i></div>'+
+           '<div class="desc">'+s.desc+'</div></div>';
+    });
+    $("signals").innerHTML=sig;
+
+    // highlighted passage — re-render raw text verbatim, wrapping each sentence
+    var reading="", si=0;
+    res.sentsRaw.forEach(function(raw){
+      var trimmed=raw.trim();
+      if(trimmed.length===0){ reading+=esc(raw); return; }
+      var ps=res.perSentence[si] || {score:res.overall/100, reasons:[]};
+      si++;
+      var c=sentColor(ps.score);
+      var lead=raw.match(/^\s*/)[0], tail=raw.match(/\s*$/)[0];
+      var rj=JSON.stringify(ps.reasons).replace(/"/g,"&quot;");
+      reading += esc(lead)+'<span class="sent" style="background:'+c.bg+';box-shadow:inset 0 0 0 1px '+c.ln+'" '+
+                 'data-score="'+Math.round(ps.score*100)+'" data-reasons="'+rj+'">'+
+                 esc(trimmed)+'</span>'+esc(tail);
+    });
+    $("reading").innerHTML=reading;
+    $("outCard").style.display="";
+    bindTips();
+  }
+
+  // ---- tooltips on highlighted sentences ----
+  function bindTips(){
+    var spans=$("reading").querySelectorAll(".sent");
+    spans.forEach(function(sp){
+      sp.addEventListener("mouseenter", function(e){ showTip(sp); });
+      sp.addEventListener("mousemove", moveTip);
+      sp.addEventListener("mouseleave", hideTip);
+    });
+  }
+  function showTip(sp){
+    var sc=sp.getAttribute("data-score");
+    var reasons=[]; try{ reasons=JSON.parse(sp.getAttribute("data-reasons")); }catch(e){}
+    var head = sc<40?"Reads human":sc<62?"Ambiguous":"Reads machine-made";
+    var body = reasons.length ? "<ul>"+reasons.map(function(r){return "<li>"+esc(r)+"</li>";}).join("")+"</ul>"
+                              : '<div class="none">No strong machine tells in this sentence.</div>';
+    tip.innerHTML="<b>"+head+" · "+sc+"/100</b>"+body;
+    tip.classList.add("on");
+  }
+  function moveTip(e){
+    var pad=14, w=tip.offsetWidth, h=tip.offsetHeight;
+    var x=e.clientX+pad, y=e.clientY+pad;
+    if(x+w>window.innerWidth-8) x=e.clientX-w-pad;
+    if(y+h>window.innerHeight-8) y=e.clientY-h-pad;
+    tip.style.left=x+"px"; tip.style.top=y+"px";
+  }
+  function hideTip(){ tip.classList.remove("on"); }
+
+  // ---- copy a plain-text report to the clipboard ----
+  function copyReport(res, b){
+    var lines = [];
+    lines.push("Opus 4.8 Verdict — AI-writing analysis");
+    lines.push("=======================================");
+    lines.push("Verdict:    " + b.label + "  (" + Math.round(res.overall) + "/100 machine-like)");
+    lines.push("Confidence: " + res.confLabel + "  ·  " + res.words + " words, " + res.sentences + " sentences");
+    lines.push("");
+    lines.push("Signals (0 = human, 100 = machine-like):");
+    res.signals.forEach(function(s){
+      lines.push("  " + (s.name+" ................").slice(0,20) + " " +
+                 String(Math.round(s.score*100)).padStart(3) + "   " + s.val);
+    });
+    lines.push("");
+    lines.push("Note: an explainable writing-style signal, not proof. Not a basis for accusation.");
+    lines.push("Generated on-device by https://0x4d44.github.io/opus-verdict/");
+    var text = lines.join("\n");
+    var btn = $("copyReport");
+    var done = function(ok){ if(btn){ btn.textContent = ok ? "Copied ✓" : "Copy failed";
+      setTimeout(function(){ if(btn) btn.textContent="Copy report"; }, 1600); } };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){done(true);}, function(){fallback();});
+    } else { fallback(); }
+    function fallback(){
+      try{ var ta=document.createElement("textarea"); ta.value=text;
+        ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+        ta.select(); var ok=document.execCommand("copy"); document.body.removeChild(ta); done(ok);
+      }catch(e){ done(false); }
+    }
+  }
+
+  // ---- word counter ----
+  function updateCount(){
+    var w=words(input.value).length;
+    $("count").textContent=w+" word"+(w===1?"":"s");
+  }
+
+  // ---------------------------------------------------------------------------
+  // samples
+  // ---------------------------------------------------------------------------
+  var SAMPLES={
+    human:"It was the best of times, it was the worst of times, it was the age of wisdom, it was the age of foolishness. We had everything before us, we had nothing before us. I paused at the door. Rain. The kind that gets into your bones and stays there, arguing with you for the rest of the week. My grandmother used to say the weather remembered things people chose to forget. I never knew what she meant until the night the river came up over the wall and took the low field, and old Tomlin stood on his porch and laughed like a man who had won a bet nobody else knew he'd made.",
+    ai:"In today's fast-paced world, effective communication plays a crucial role in fostering meaningful connections. Moreover, it is important to note that leveraging the right strategies can significantly enhance your ability to navigate the complexities of modern discourse. Additionally, by cultivating a robust and versatile skill set, individuals can unlock their full potential and embark on a transformative journey. Furthermore, a comprehensive understanding of these nuanced dynamics empowers professionals to showcase their expertise, streamline their workflows, and ultimately elevate their outcomes. In conclusion, delving into these principles offers a testament to the enduring value of clear, intentional, and thoughtful communication.",
+    mixed:"I spent the weekend rebuilding the carburettor and swearing at it. In today's fast-paced world of vintage motoring, it is important to note that patience is paramount. The float chamber was gummed solid — years of stale fuel. Furthermore, leveraging a proper ultrasonic cleaner can significantly streamline the restoration process and elevate your results. Anyway, it fired on the third pull and I nearly fell off the stool. Consequently, the intricate interplay of fuel and air was, at last, restored to its former glory."
+  };
+
+  // ---------------------------------------------------------------------------
+  // wire-up
+  // ---------------------------------------------------------------------------
+  function run(){
+    var text=input.value.trim();
+    if(text.length<1){ return; }
+    render(analyze(text));
+    $("resultCard").scrollIntoView({behavior:"smooth", block:"nearest"});
+  }
+  $("run").addEventListener("click", run);
+  $("clear").addEventListener("click", function(){
+    input.value=""; updateCount(); $("outCard").style.display="none";
+    $("verdict").innerHTML='<div class="empty">Nothing examined yet.<br>Paste some text and press <b>Analyze</b>.</div>';
+    $("signals").innerHTML=""; input.focus();
+  });
+  input.addEventListener("input", updateCount);
+  input.addEventListener("keydown", function(e){ if((e.metaKey||e.ctrlKey)&&e.key==="Enter") run(); });
+  document.querySelectorAll(".chip").forEach(function(c){
+    c.addEventListener("click", function(){ input.value=SAMPLES[c.getAttribute("data-sample")]; updateCount(); run(); });
+  });
+  updateCount();
+})();
+</script>
+</body>
+</html>
