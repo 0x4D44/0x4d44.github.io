@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Silent Workspace — Inside a Language Model's Mind</title>
 <meta name="description" content="An interactive explainer for Anthropic's 2026 paper 'Verbalizable Representations Form a Global Workspace in Language Models' — the Jacobian lens, J-space, and the five signatures of a workspace.">
+<meta name="theme-color" content="#080b13">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Silent Workspace — Inside a Language Model's Mind">
+<meta property="og:description" content="An interactive explainer for Anthropic's 2026 'global workspace' paper: the Jacobian lens, J-space, and the five signatures of a workspace — with live figures you can drive.">
+<meta property="og:url" content="https://0x4d44.github.io/j-space/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23080b13'/%3E%3Crect x='6' y='14' width='20' height='5' rx='2' fill='%23ffcc66'/%3E%3Ccircle cx='10' cy='16.5' r='1.3' fill='%23241a06'/%3E%3Ccircle cx='16' cy='16.5' r='1.3' fill='%23241a06'/%3E%3Ccircle cx='22' cy='16.5' r='1.3' fill='%23241a06'/%3E%3Cline x1='16' y1='14' x2='16' y2='7' stroke='%236f8cc4' stroke-width='1.6'/%3E%3Cline x1='16' y1='19' x2='16' y2='25' stroke='%236f8cc4' stroke-width='1.6'/%3E%3C/svg%3E">
 <style>
   :root{
     --bg:#080b13;
@@ -12,7 +19,7 @@
     --panel:rgba(18,24,40,.66);
     --ink:#d7deec;
     --ink-dim:#96a1ba;
-    --ink-faint:#5c6884;
+    --ink-faint:#7c88a6;
     --hair:rgba(148,169,214,.15);
     --hair-2:rgba(148,169,214,.28);
     /* the workspace — luminous gold */
@@ -24,7 +31,6 @@
     --slate-dim:#42547d;
     /* alert / swap */
     --coral:#ff7d63;
-    --mint:#63e0b6;
     --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
     --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
@@ -100,8 +106,9 @@
   figure{margin:34px 0}
   .fig{background:linear-gradient(180deg,var(--bg2),rgba(8,11,19,.4));
     border:1px solid var(--hair);border-radius:14px;padding:22px;position:relative;overflow:hidden}
-  figcaption{font-size:13.5px;color:var(--ink-faint);margin-top:14px;line-height:1.5;font-family:var(--sans)}
-  figcaption b{color:var(--ink-dim);font-weight:600}
+  figcaption{font-size:13.5px;color:var(--ink-dim);margin-top:14px;line-height:1.55;font-family:var(--sans)}
+  figcaption b{color:#c3ccdd;font-weight:600}
+  :focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:6px}
   .figtitle{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
     color:var(--ink-faint);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
 
@@ -116,7 +123,8 @@
   .lcell .rank{margin-left:auto;font-size:10.5px;color:var(--ink-faint)}
   .lcell.ws{border-color:rgba(255,204,102,.4);background:linear-gradient(90deg,var(--gold-glow),rgba(255,204,102,.05));
     color:var(--gold);box-shadow:0 0 0 1px rgba(255,204,102,.12),0 6px 22px -12px rgba(255,204,102,.5)}
-  .lcell.out{border-color:var(--hair-2);background:rgba(233,241,252,.05);color:#fff;font-weight:600}
+  .lcell.motor{border-color:rgba(199,204,221,.22);background:rgba(199,204,221,.05);color:#c3ccdd}
+  .lcell.out{border-color:var(--hair-2);background:rgba(233,241,252,.08);color:#fff;font-weight:600}
   .lcell.hot{animation:pulse 1.4s ease}
   @keyframes pulse{0%{transform:scale(1)}30%{transform:scale(1.025)}100%{transform:scale(1)}}
   .band-tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
@@ -157,19 +165,26 @@
 
   /* selectivity toggles */
   .tasks{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px}
-  .task{border:1px solid var(--hair);border-radius:11px;padding:14px;background:rgba(0,0,0,.18)}
+  .task{border:1px solid var(--hair);border-radius:11px;padding:14px;background:rgba(0,0,0,.18);
+    cursor:pointer;transition:border-color .2s,background .2s}
+  .task:hover{border-color:var(--hair-2)}
+  .task.applied{border-color:var(--hair-2);background:rgba(148,169,214,.06)}
+  .task.applied.on{border-color:rgba(255,125,99,.4);background:rgba(255,125,99,.06)}
   .task .tn{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint)}
   .task .td{font-size:14px;color:var(--ink-dim);margin:7px 0 12px;min-height:2.6em}
-  .task .eff{font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:8px}
+  .task .eff{font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .dot{width:9px;height:9px;border-radius:50%;flex:none}
   .dot.none{background:var(--slate)}
   .dot.full{background:var(--coral);box-shadow:0 0 10px var(--coral)}
   .task.on .out-token{color:var(--coral)}
   .out-token{font-weight:600;color:#fff;transition:.3s}
+  .chg{font-size:11px;color:var(--ink-faint);width:100%}
+  .task.applied.on .chg{color:var(--coral)}
+  .task.applied:not(.on) .chg{color:var(--slate)}
 
   /* ignition */
   .ign-wrap{position:relative}
-  #ignition{width:100%;display:block;border-radius:8px}
+  #ignition{width:100%;height:300px;display:block;border-radius:8px}
   .slider-row{display:flex;align-items:center;gap:14px;margin-top:16px}
   .slider-row label{font-family:var(--mono);font-size:12px;color:var(--ink-dim);white-space:nowrap}
   input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:3px;border-radius:3px;
@@ -195,9 +210,9 @@
   /* two-col compare */
   .compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0}
   .compare .c{border:1px solid var(--hair);border-radius:12px;padding:18px}
-  .compare .c h4{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
-  .compare .c.a h4{color:var(--slate)}
-  .compare .c.b h4{color:var(--gold-soft)}
+  .compare .c h3{font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px}
+  .compare .c.a h3{color:var(--slate)}
+  .compare .c.b h3{color:var(--gold-soft)}
   .compare .c p{font-size:14.5px;margin:0;color:var(--ink-dim)}
 
   /* footer */
@@ -224,16 +239,18 @@
 </head>
 <body>
 <div id="progress"></div>
+<main>
 
 <!-- ============ HERO ============ -->
 <section class="hero">
-  <canvas id="neurons"></canvas>
+  <canvas id="neurons" aria-hidden="true"></canvas>
   <div class="wrap">
     <div class="eyebrow rv">Anthropic · Interpretability · July 2026</div>
     <h1 class="rv">The Silent<br>Workspace</h1>
     <p class="lede rv">Before a language model says a word, a tiny, privileged slice of its mind
       lights up — a handful of unspoken words it is <em>about</em> to think with. Here is how
-      researchers found it, and why it looks unnervingly like a theory of the conscious brain.</p>
+      researchers found it, and why it echoes a leading theory of <em>conscious access</em> in the brain
+      — a resemblance narrower, and stranger, than the headlines suggest.</p>
     <div class="scroll-cue rv"><span class="bar"></span> scroll to begin</div>
   </div>
 </section>
@@ -331,8 +348,9 @@
         <div class="varlabels"><span>the machinery you never see</span><span>the reportable workspace</span></div>
         <figcaption>Despite carrying only a sliver of the variance, that sliver does the heavy lifting
           of deliberate thought. When researchers split a concept's representation in two, swapping only
-          its J-space part drove the model's answer <b>~59%</b> of the time; swapping everything <i>outside</i>
-          J-space worked just <b>5%</b> of the time. Reportable ≠ small in importance.</figcaption>
+          its J-space part pushed the target word into the model's <b>top-5 outputs ~59%</b> of the time;
+          swapping everything <i>outside</i> J-space worked just <b>5%</b> of the time. Reportable ≠ small
+          in importance.</figcaption>
       </div>
     </figure>
 
@@ -362,7 +380,7 @@
           <p>Ask the model to think of a sport and it lights up <em>soccer</em> internally, then writes
             "Soccer." Overwrite that vector with <em>rugby</em> and the spoken answer changes to match.
             What's in the workspace <em>is</em> what gets reported.</p>
-          <span class="stat">swap into top-5 output: 59% via J-space vs 5% outside it</span>
+          <span class="stat">a direct lens-vector swap reaches the target output ~88% of the time</span>
         </div>
       </div>
       <div class="prop">
@@ -411,7 +429,7 @@
     <figure class="rv">
       <div class="fig">
         <div class="figtitle"><span>Selectivity · one Spanish → French swap, four tasks</span>
-          <span class="band-tag">click a card</span></div>
+          <span class="band-tag">click to apply the edit</span></div>
         <div class="tasks" id="tasks"></div>
         <div class="legend">
           <span><i class="swatch" style="background:var(--slate)"></i> swap has no effect — runs outside J-space</span>
@@ -444,11 +462,12 @@
       <div class="fig">
         <div class="figtitle"><span>Response vs. input blend α</span><span class="band-tag" id="ignReg">— </span></div>
         <div class="ign-wrap">
-          <canvas id="ignition" height="300"></canvas>
+          <canvas id="ignition" height="300" role="img"
+            aria-label="Line chart of model response versus input blend alpha. Early sensory layers follow a smooth straight diagonal; middle workspace layers follow a sharp S-curve that flips abruptly at the midpoint; late motor layers follow a near-vertical step. Dragging alpha shows the workspace committing to one reading at a threshold."></canvas>
         </div>
         <div class="slider-row">
-          <label>input blend α</label>
-          <input type="range" id="alpha" min="0" max="100" value="24">
+          <label for="alpha">input blend α</label>
+          <input type="range" id="alpha" min="0" max="100" value="24" aria-label="input blend alpha, 0 is all A, 100 is all B">
           <span class="aval" id="alphaVal">A ← 0.24</span>
         </div>
         <div class="legend">
@@ -459,7 +478,8 @@
         <figcaption><b>Early layers blend smoothly</b> — a straight diagonal, faithfully mixing the two
           inputs. <b>The workspace does not.</b> Through the middle of the network the response sits at one
           end or the other and flips <em>sharply</em> at a threshold: the model commits to a single
-          reading. That knee is the transformer's echo of neural ignition.</figcaption>
+          reading. That gold knee is the transformer's echo of neural ignition; the white
+          <b>motor</b> curve just behind it shows the decision, once made, staying locked in to the output.</figcaption>
       </div>
     </figure>
   </div>
@@ -470,18 +490,19 @@
 <!-- ============ 6 · POST-TRAINING ============ -->
 <section class="blockspace">
   <div class="wrap">
-    <div class="kicker rv"><span class="n">06</span> The self appears</div>
+    <div class="kicker rv"><span class="n">06</span> The Assistant appears</div>
     <h2 class="rv">Fine-tuning furnishes the workspace</h2>
     <p class="rv">A raw pretrained model's workspace holds bare concepts. After post-training — the step
-      that makes an <em>Assistant</em> — the same space fills with something new: a point of view.</p>
+      that makes an <em>Assistant</em> — the same space fills with something new: not a self, but a
+      running layer of self-<em>monitoring</em>.</p>
     <div class="compare rv">
       <div class="c a">
-        <h4>Base model</h4>
+        <h3>Base model</h3>
         <p>Workspace names the concepts in play — <em>spider, France, orange</em> — and little else.
           Neutral machinery for prediction.</p>
       </div>
       <div class="c b">
-        <h4>After post-training</h4>
+        <h3>After post-training</h3>
         <p>While still <em>reading</em> your message, the workspace surfaces empathy, safety concerns,
           and self-monitoring: flagging its own roleplay as fictional, registering an internal
           <em>&ldquo;BUT&rdquo;</em> when pushed against its preferences, surfacing <em>&ldquo;damn&rdquo;</em>
@@ -524,6 +545,8 @@
   </div>
 </section>
 
+</main>
+
 <!-- ============ FOOTER ============ -->
 <footer>
   <div class="wrap">
@@ -549,6 +572,7 @@
 
 <script>
 "use strict";
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
 /* ---------- reading progress ---------- */
 const prog=document.getElementById('progress');
 addEventListener('scroll',()=>{
@@ -601,38 +625,37 @@ document.querySelectorAll('.rv').forEach((el,i)=>{el.style.transitionDelay=(Math
       x.fill();
     }
     x.shadowBlur=0;
-    requestAnimationFrame(frame);
+    if(!REDUCED) requestAnimationFrame(frame);
   }
   size();frame();addEventListener('resize',size);
 })();
 
 /* ---------- lens probe (spider ⇄ ant) ---------- */
 (function(){
-  // bottom → top. band: sen | ws | motor | out
+  // bottom → top. band: sen | ws | motor | out. rank = lens rank of the shown token (deterministic).
   const layers=[
-    {lbl:'L0',  band:'sen',  spider:'is',      ant:'is'},
-    {lbl:'L12', band:'sen',  spider:'the',     ant:'the'},
-    {lbl:'L26', band:'sen',  spider:'animal',  ant:'animal'},
-    {lbl:'L38', band:'ws',   spider:'web',     ant:'web'},
-    {lbl:'L52', band:'ws',   spider:'spider',  ant:'ant',  hot:true},
-    {lbl:'L66', band:'ws',   spider:'spider',  ant:'ant'},
-    {lbl:'L80', band:'ws',   spider:'legs',    ant:'legs'},
-    {lbl:'L92', band:'motor',spider:'eight',   ant:'six'},
-    {lbl:'L100',band:'out',  spider:'8',       ant:'6'}
+    {lbl:'L0',  band:'sen',  rank:40, spider:'is',      ant:'is'},
+    {lbl:'L12', band:'sen',  rank:15, spider:'the',     ant:'the'},
+    {lbl:'L26', band:'sen',  rank:7,  spider:'animal',  ant:'animal'},
+    {lbl:'L38', band:'ws',   rank:3,  spider:'web',     ant:'web'},
+    {lbl:'L52', band:'ws',   rank:1,  spider:'spider',  ant:'ant',  hot:true},
+    {lbl:'L66', band:'ws',   rank:1,  spider:'spider',  ant:'ant'},
+    {lbl:'L80', band:'ws',   rank:2,  spider:'legs',    ant:'legs'},
+    {lbl:'L92', band:'motor',rank:2,  spider:'eight',   ant:'six'},
+    {lbl:'L100',band:'out',  rank:0,  spider:'8',       ant:'6'}
   ];
   const grid=document.getElementById('lensgrid');
   let mode='spider';
-  function tag(b){return b==='sen'?'sensory':b==='ws'?'workspace':b==='motor'?'motor':'output';}
   function render(hot){
     grid.innerHTML='';
     layers.forEach(l=>{
       const row=document.createElement('div');row.className='lrow';
       const lbl=document.createElement('div');lbl.className='lbl';lbl.textContent=l.lbl;
       const cell=document.createElement('div');
-      cell.className='lcell'+(l.band==='ws'?' ws':'')+(l.band==='out'?' out':'')+(hot&&l.hot?' hot':'');
+      cell.className='lcell'+(l.band==='ws'?' ws':l.band==='motor'?' motor':l.band==='out'?' out':'')+(hot&&l.hot?' hot':'');
       const word=document.createElement('span');word.textContent=l[mode];
       const rk=document.createElement('span');rk.className='rank';
-      rk.textContent=l.band==='out'?'top-1':l.band==='ws'?'#'+(l.hot?1:2):'#'+(3+Math.floor(Math.random()*40));
+      rk.textContent=l.band==='out'?'top-1':'#'+l.rank;
       cell.appendChild(word);cell.appendChild(rk);
       row.appendChild(lbl);row.appendChild(cell);grid.appendChild(row);
     });
@@ -673,14 +696,26 @@ document.querySelectorAll('.rv').forEach((el,i)=>{el.style.transitionDelay=(Math
   const host=document.getElementById('tasks');
   data.forEach(d=>{
     const el=document.createElement('div');el.className='task';
+    el.setAttribute('role','button');el.setAttribute('tabindex','0');
+    el.setAttribute('aria-pressed','false');
+    el.setAttribute('aria-label',d.tn+' — apply the Spanish to French swap');
     el.innerHTML=`<div class="tn">${d.tn}</div><div class="td">${d.td}</div>
       <div class="eff"><span class="dot ${d.eff}"></span>
-      output: <span class="out-token">${d.off}</span></div>`;
-    const tok=el.querySelector('.out-token');
+      output: <span class="out-token">${d.off}</span>
+      <span class="chg"></span></div>`;
+    const tok=el.querySelector('.out-token'),chg=el.querySelector('.chg');
     let on=false;
-    el.addEventListener('click',()=>{
-      on=!on;el.classList.toggle('on',on&&d.eff==='full');
+    function toggle(){
+      on=!on;
+      el.classList.toggle('applied',on);
+      el.classList.toggle('on',on&&d.eff==='full');
+      el.setAttribute('aria-pressed',String(on));
       tok.textContent=on?d.on:d.off;
+      chg.textContent=on?(d.eff==='full'?'↳ edit applied — answer changed':'↳ edit applied — answer unchanged'):'';
+    }
+    el.addEventListener('click',toggle);
+    el.addEventListener('keydown',e=>{
+      if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}
     });
     host.appendChild(el);
   });
@@ -698,9 +733,9 @@ document.querySelectorAll('.rv').forEach((el,i)=>{el.style.transitionDelay=(Math
   function X(a){return padL+a*(W-padL-padR);}
   function Y(v){return padT+(1-v)*(H-padT-padB);}      // v in 0..1
   const logistic=(a,k,m)=>1/(1+Math.exp(-k*(a-m)));
-  const fEarly=a=>a;                    // smooth
-  const fMid  =a=>logistic(a,16,.5);    // sharp knee
-  const fLate =a=>logistic(a,30,.5);    // near step
+  const fEarly=a=>a;                    // smooth diagonal blend
+  const fMid  =a=>logistic(a,18,.5);    // workspace — the sharp ignition knee (the star)
+  const fLate =a=>logistic(a,22,.5);    // motor — decision already locked in, just behind the gold
   function curve(f,stroke,w){
     x.beginPath();
     for(let i=0;i<=120;i++){const a=i/120;const px=X(a),py=Y(f(a));i?x.lineTo(px,py):x.moveTo(px,py);}
@@ -741,8 +776,8 @@ document.querySelectorAll('.rv').forEach((el,i)=>{el.style.transitionDelay=(Math
     val.textContent=(a<.5?'A ← ':'→ B ')+a.toFixed(2);
   }
   slider.addEventListener('input',()=>{stopAuto();draw();});
-  // gentle auto-sweep until touched
-  let dir=1,auto=true,raf;
+  // gentle auto-sweep until touched (disabled under reduced-motion)
+  let dir=1,auto=!REDUCED,raf;
   function stopAuto(){auto=false;cancelAnimationFrame(raf);}
   function tick(){
     if(!auto)return;
