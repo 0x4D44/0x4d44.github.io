@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "randomness",
+    title: "The Shape of Chance",
+    tagline: "How computers fake randomness — and how to catch them. A live instrument for seeing the hidden shapes in pseudo-random numbers: bitmaps you read by eye, the lattice of lines in a scatter plot, RANDU's infamous 15 planes in 3-D, Monte-Carlo π, and a χ² test bench that sorts the good generators from the bad. Vanilla JS on a canvas; no build step.",
+    url: "https://0x4d44.github.io/randomness/",
+    illustration: "ill-randomness",
+    date: "2026-07-12T16:30:00",
+    year: 1968,
+    tags: ["software", "math", "science"],
+    real: true,
+  },
+  {
     slug: "opus-verdict",
     title: "Opus 4.8 Verdict",
     tagline: "An on-device AI-writing detector in the spirit of Pangram — but one that shows its working. Paste any passage for a machine-likeness verdict: a confidence gauge, sentence-by-sentence highlighting, and a breakdown of the tells (burstiness, stock LLM vocabulary, formulaic openers, the em-dash habit). No upload, no model call; explainable heuristics in vanilla JS.",

@@ -1,0 +1,1206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Shape of Chance — How Computers Fake Randomness</title>
+<meta name="description" content="A computer cannot be random; it fakes it, and the fakes have shapes. A self-contained instrument for seeing the hidden lattices in pseudo-random numbers — from the RANDU disaster to the modern generators that pass — with the statistical judges that tell good from bad.">
+<style>
+  :root{
+    --ink:#0A0C11; --ink2:#0E121A; --ink3:#131926;
+    --line:#1E2635; --line2:#2A3446;
+    --paper:#ECE7DA; --fg:#C7CCD6; --mut:#7C8494; --faint:#4E5766;
+    --gold:#E8B24C;
+    --good:#46CBB0; --good2:#5AACF2;
+    --bad:#F0708A; --bad2:#F07AB4; --warn:#B48CF2;
+    --serif:"Iowan Old Style","Palatino Linotype","Book Antiqua",Palatino,Georgia,serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0; background:var(--ink)}
+  html{-webkit-text-size-adjust:100%}
+  img,canvas,svg{max-width:100%}
+  .wrap{
+    background:
+      radial-gradient(1200px 700px at 50% -10%, #10151f 0%, rgba(16,21,31,0) 60%),
+      var(--ink);
+    color:var(--fg); font-family:var(--sans);
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  .col{max-width:1080px; margin:0 auto; padding:0 24px}
+  a{color:var(--gold); text-decoration:none; border-bottom:1px solid rgba(232,178,76,.35)}
+  a:hover{border-bottom-color:var(--gold)}
+
+  /* ---------- top nav ---------- */
+  .topnav{max-width:1080px; margin:0 auto; padding:20px 24px 0}
+  .backlink{font-family:var(--mono); font-size:11.5px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--mut); border:none}
+  .backlink:hover{color:var(--paper); border:none}
+
+  /* ---------- masthead ---------- */
+  .mast{padding:40px 0 30px}
+  .eyebrow{
+    font-family:var(--mono); font-size:11.5px; letter-spacing:.30em;
+    text-transform:uppercase; color:var(--mut); margin:0 0 20px;
+    display:flex; align-items:center; gap:14px;
+  }
+  .eyebrow::after{content:""; flex:1; height:1px;
+    background:linear-gradient(90deg,var(--line2),transparent)}
+  h1{
+    font-family:var(--serif); font-weight:600; color:var(--paper);
+    font-size:clamp(40px,8vw,74px); line-height:1.02; letter-spacing:-.015em;
+    margin:0; text-wrap:balance;
+  }
+  h1 em{font-style:italic; color:var(--gold)}
+  .dek{
+    margin:22px 0 0; max-width:62ch; color:var(--mut);
+    font-size:clamp(16px,2.2vw,19px); line-height:1.55;
+  }
+  .dek b{color:var(--fg); font-weight:600}
+
+  /* ---------- section scaffolding ---------- */
+  .instr{padding:6px 0 8px}
+  .lead{max-width:680px; margin:0 auto 20px}
+  .lead .col{padding:0}
+  .kicker{font-family:var(--mono); font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--gold); margin:0 0 10px}
+  h2{font-family:var(--serif); font-weight:600; color:var(--paper);
+    font-size:clamp(24px,4vw,32px); line-height:1.15; margin:0 0 14px;
+    letter-spacing:-.01em; text-wrap:balance}
+  .story p, .lead p{margin:0 0 16px; font-size:17px; color:var(--fg)}
+  .story p b, .lead p b{color:var(--paper); font-weight:600}
+  .num{font-variant-numeric:tabular-nums; font-family:var(--mono);
+    font-size:.92em; color:var(--gold)}
+
+  /* ---------- rng chips ---------- */
+  .chips{display:flex; gap:8px; overflow-x:auto; padding:4px 0 14px;
+    scrollbar-width:thin; scrollbar-color:var(--line2) transparent;}
+  .chip{
+    flex:0 0 auto; cursor:pointer; font-family:var(--mono);
+    font-size:12.5px; letter-spacing:.01em; color:var(--mut);
+    background:var(--ink2); border:1px solid var(--line);
+    padding:8px 13px 8px 11px; border-radius:2px;
+    display:inline-flex; align-items:center; gap:8px; white-space:nowrap;
+    transition:color .15s,border-color .15s,background .15s;
+  }
+  .chip .dot{width:8px; height:8px; border-radius:50%; background:var(--c);
+    box-shadow:0 0 8px var(--c); flex:0 0 auto}
+  .chip .tag{font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--faint)}
+  .chip:hover{color:var(--fg); border-color:var(--line2)}
+  .chip[aria-pressed="true"]{color:var(--paper); background:var(--ink3);
+    border-color:color-mix(in srgb,var(--c) 55%,var(--line2))}
+  .chip[aria-pressed="true"] .tag{color:var(--c)}
+  .chip:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+
+  /* ---------- instrument layout ---------- */
+  .rig{display:grid; grid-template-columns:1fr 300px; gap:18px; align-items:stretch}
+  .screen{
+    position:relative; border:1px solid var(--line2); border-radius:4px;
+    background:radial-gradient(120% 120% at 50% 0%, #0d1119 0%, #07090d 78%);
+    overflow:hidden; box-shadow:inset 0 0 60px rgba(0,0,0,.6);
+    aspect-ratio:1/1;
+  }
+  .screen.wide{aspect-ratio:16/10}
+  .screen canvas{display:block; width:100%; height:100%; touch-action:none}
+  .screen.grab canvas{cursor:grab}
+  .screen.grab canvas:active{cursor:grabbing}
+  .scanlines{position:absolute; inset:0; pointer-events:none; opacity:.5;
+    background:repeating-linear-gradient(180deg,rgba(255,255,255,.014) 0 1px,transparent 1px 3px)}
+  .hint{position:absolute; left:12px; bottom:10px; pointer-events:none;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.05em;
+    color:var(--faint); text-transform:uppercase}
+  .badge{position:absolute; right:12px; top:11px; pointer-events:none;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.14em;
+    color:var(--faint); text-transform:uppercase;
+    background:rgba(7,9,13,.66); padding:3px 7px; border-radius:2px}
+  .hint{background:rgba(7,9,13,.66); padding:3px 7px; border-radius:2px}
+  .verdict{position:absolute; left:12px; top:11px; pointer-events:none;
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.12em;
+    text-transform:uppercase; padding:3px 8px; border-radius:2px;
+    background:rgba(7,9,13,.72); border:1px solid currentColor}
+  .verdict.ok{color:var(--good)}
+  .verdict.no{color:var(--bad)}
+
+  .readout{
+    border:1px solid var(--line); border-radius:4px; background:var(--ink2);
+    padding:18px; display:flex; flex-direction:column; gap:15px;
+  }
+  .r-name{font-family:var(--serif); font-size:23px; color:var(--paper); line-height:1.1}
+  .r-sub{font-family:var(--mono); font-size:10.5px; letter-spacing:.06em;
+    color:var(--mut); margin-top:6px; text-transform:uppercase}
+  .r-label{font-family:var(--mono); font-size:10px; letter-spacing:.20em;
+    text-transform:uppercase; color:var(--faint); margin:0 0 8px}
+  .r-body{font-size:14px; color:var(--fg); line-height:1.5}
+  .r-body b{color:var(--paper)}
+  .eqline{font-family:var(--mono); font-size:12.5px; color:var(--fg);
+    background:var(--ink3); border:1px solid var(--line); border-radius:3px;
+    padding:9px 11px; line-height:1.5; overflow-x:auto; white-space:nowrap}
+  .eqline b{color:var(--gold); font-weight:400}
+  .spacer{flex:1}
+  .stat{display:grid; grid-template-columns:auto 1fr; gap:3px 12px;
+    font-family:var(--mono); font-size:12px; font-variant-numeric:tabular-nums}
+  .stat b{color:var(--faint); font-weight:400}
+  .stat span{color:var(--fg); text-align:right}
+
+  .controls{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:14px}
+  .btn{
+    cursor:pointer; font-family:var(--mono); font-size:12px;
+    letter-spacing:.05em; color:var(--paper); background:var(--ink3);
+    border:1px solid var(--line2); border-radius:2px; padding:9px 15px;
+    text-transform:uppercase; transition:background .15s,border-color .15s;
+  }
+  .btn:hover{background:#1a2130; border-color:#38445c}
+  .btn.primary{color:var(--ink); background:var(--gold); border-color:var(--gold)}
+  .btn.primary:hover{background:#f0bf63}
+  .btn:focus-visible{outline:2px solid var(--gold); outline-offset:2px}
+  .toggle{display:inline-flex; gap:0; border:1px solid var(--line2); border-radius:2px; overflow:hidden}
+  .toggle button{cursor:pointer; font-family:var(--mono); font-size:11.5px; letter-spacing:.04em;
+    text-transform:uppercase; color:var(--mut); background:var(--ink2); border:none;
+    padding:8px 13px}
+  .toggle button[aria-pressed="true"]{color:var(--ink); background:var(--fg)}
+  .note{font-family:var(--mono); font-size:11px; color:var(--faint); letter-spacing:.02em}
+
+  /* ---------- story blocks ---------- */
+  .story{padding:40px 0 8px}
+  .story .col{max-width:680px}
+  .story h2{margin-top:6px}
+  blockquote{
+    margin:26px 0; padding:4px 0 4px 22px; border-left:2px solid var(--gold);
+    font-family:var(--serif); font-style:italic; font-size:21px; line-height:1.4;
+    color:var(--paper);
+  }
+  blockquote cite{display:block; margin-top:12px; font-family:var(--mono);
+    font-style:normal; font-size:11px; letter-spacing:.1em; color:var(--mut);
+    text-transform:uppercase}
+  .divider{max-width:1080px; margin:34px auto 0; padding:0 24px}
+  .divider hr{border:none; border-top:1px solid var(--line); margin:0}
+
+  .aside{
+    margin:26px 0; border:1px solid var(--line); border-left:2px solid var(--warn);
+    border-radius:4px; background:var(--ink2); padding:18px 20px;
+  }
+  .aside .r-label{color:var(--warn)}
+  .aside p{font-size:15px; margin:0 0 12px}
+  .aside p:last-child{margin-bottom:0}
+  .aside code{font-family:var(--mono); font-size:12.5px; color:var(--gold);
+    background:var(--ink3); padding:1px 5px; border-radius:3px}
+
+  /* ---------- test bench table ---------- */
+  .bench{border:1px solid var(--line); border-radius:4px; background:var(--ink2); overflow:hidden}
+  .bench-head{display:grid; grid-template-columns:1.4fr repeat(5,1fr);
+    font-family:var(--mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--faint); border-bottom:1px solid var(--line)}
+  .bench-head>div{padding:12px 10px}
+  .bench-head>div+div{text-align:center; border-left:1px solid var(--line)}
+  .brow{display:grid; grid-template-columns:1.4fr repeat(5,1fr); align-items:center;
+    border-bottom:1px solid var(--line); cursor:pointer; transition:background .12s}
+  .brow:last-child{border-bottom:none}
+  .brow:hover{background:var(--ink3)}
+  .brow[aria-pressed="true"]{background:var(--ink3)}
+  .brow>div{padding:13px 10px; font-family:var(--mono); font-size:12px}
+  .brow>div+div{text-align:center; border-left:1px solid var(--line)}
+  .bname{display:flex; align-items:center; gap:9px; color:var(--paper)}
+  .bname .dot{width:8px;height:8px;border-radius:50%;background:var(--c);box-shadow:0 0 7px var(--c);flex:0 0 auto}
+  .cell-v{font-variant-numeric:tabular-nums}
+  .pass{color:var(--good)}
+  .fail{color:var(--bad)}
+  .pass::before{content:"PASS  "; font-size:8.5px; letter-spacing:.1em; color:var(--faint)}
+  .fail::before{content:"FAIL  "; font-size:8.5px; letter-spacing:.1em; color:var(--faint)}
+  .bench-foot{padding:12px 14px; font-family:var(--mono); font-size:11px; color:var(--mut);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px}
+
+  .legend{display:flex; gap:18px; margin-top:12px; font-family:var(--mono);
+    font-size:11.5px; color:var(--mut); flex-wrap:wrap}
+  .legend span{display:inline-flex; align-items:center; gap:7px}
+  .legend i{width:10px; height:10px; border-radius:50%; display:inline-block}
+
+  /* ---------- colophon ---------- */
+  .colophon{padding:44px 0 80px; border-top:1px solid var(--line); margin-top:44px}
+  .colophon .col{max-width:680px}
+  .colophon h2{font-family:var(--mono); font-size:11px; letter-spacing:.22em;
+    text-transform:uppercase; color:var(--mut); margin:0 0 16px; font-weight:400}
+  .colophon p{font-size:15px; color:var(--mut); margin:0 0 14px}
+  .colophon p b{color:var(--fg); font-weight:600}
+  .colophon .src{font-family:var(--mono); font-size:12.5px; line-height:2}
+
+  @media (max-width:820px){
+    .rig{grid-template-columns:1fr}
+    .screen{aspect-ratio:1/1}
+    .bench-head, .brow{grid-template-columns:1.2fr repeat(5,1fr)}
+    .bench-head>div, .brow>div{padding:9px 5px; font-size:10.5px}
+    .pass::before,.fail::before{content:""}
+  }
+  @media (max-width:560px){
+    .bench-wrap{overflow-x:auto}
+    .bench{min-width:560px}
+  }
+  @media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav class="topnav"><a class="backlink" href="https://0x4d44.github.io/">← 0x4D44 · The Almanac</a></nav>
+
+  <header class="mast col">
+    <p class="eyebrow">How computers fake randomness — and how to catch them</p>
+    <h1>The Shape of <em>Chance</em></h1>
+    <p class="dek">A digital computer is a machine for doing exactly the same thing every time. Ask
+      it for a <b>random</b> number and it can only pretend — it runs a little recipe that
+      churns out numbers <i>looking</i> scrambled while being utterly determined. The good news:
+      the pretending leaves marks. Every fake randomness has a <b>shape</b>. This is an instrument
+      for seeing those shapes — the hidden lattices, the ghostly planes — and the machines that
+      tell an honest generator from a liar.</p>
+  </header>
+
+  <!-- ===================================================================
+       1 · THE BITMAP
+  ==================================================================== -->
+  <section class="instr">
+    <div class="col">
+      <div class="lead"><div class="col">
+        <p class="kicker">Sixteen thousand coin flips</p>
+        <h2>Some fakes you can see</h2>
+        <p>Here is the simplest possible test. Flip a coin for each cell of a grid — black for
+          tails, white for heads — using one generator at a time. Real randomness should look
+          like <b>television static</b>: no grain, no weave, no repeat. Step through the six
+          generators below. Three are respectable; three are not. Watch which ones betray
+          themselves to the naked eye — and note the one that doesn't.</p>
+      </div></div>
+
+      <div class="chips" id="bmChips" role="group" aria-label="Choose a generator"></div>
+      <div class="rig">
+        <div class="screen">
+          <canvas id="bmCanvas" aria-label="A grid of black-and-white cells filled by the chosen generator"></canvas>
+          <div class="scanlines"></div>
+          <div class="badge">128 × 128 · 1 bit</div>
+          <div class="verdict" id="bmVerdict"></div>
+        </div>
+        <aside class="readout">
+          <div>
+            <div class="r-name" id="bmName">crypto</div>
+            <div class="r-sub" id="bmKind">cryptographic · the reference</div>
+          </div>
+          <div>
+            <p class="r-label">How it works</p>
+            <div class="r-body" id="bmBody"></div>
+          </div>
+          <div class="spacer"></div>
+          <div class="controls">
+            <button class="btn primary" id="bmRoll">↻ Reflip</button>
+          </div>
+          <p class="note" id="bmNote"></p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY 1 -->
+  <section class="story">
+    <div class="col">
+      <p class="kicker">The bargain</p>
+      <h2>Nothing here is random</h2>
+      <p>A pseudo-random number generator — a <b>PRNG</b> — is a tiny machine with a hidden number
+        inside it, its <b>state</b>. Each time you ask for a number it stirs the state with a fixed
+        arithmetic recipe and hands you a piece of the result. Give it the same starting state — the
+        <b>seed</b> — and it will produce the same "random" sequence forever after. That is not a bug;
+        it is the whole point. It is what lets a game replay, a simulation reproduce, a shuffle be
+        audited.</p>
+      <p>Because the state is a finite number, the machine must eventually return to a state it has
+        visited before — and from there it can only repeat. Every PRNG runs on a loop. The length of
+        that loop is its <b>period</b>. A good modern generator has a period so vast
+        (<span class="num">2¹⁹⁹³⁷ − 1</span> for the Mersenne Twister) that you could never reach the
+        seam. A careless one loops in seconds.</p>
+      <p>So we strike a bargain. We give up <i>true</i> randomness — impossible on a deterministic
+        machine — and in exchange we ask only that the numbers be <b>indistinguishable</b> from random
+        by any test we care about. The bitmap above is the crudest such test: does it <i>look</i>
+        random? It is a weak test. The generator that sailed through it is about to fail a harder one
+        badly — and the failure is beautiful.</p>
+    </div>
+  </section>
+  <div class="divider"><hr></div>
+
+  <!-- ===================================================================
+       2 · THE PAIRS PLOT
+  ==================================================================== -->
+  <section class="instr" style="padding-top:34px">
+    <div class="col">
+      <div class="lead"><div class="col">
+        <p class="kicker">Plot the numbers against each other</p>
+        <h2>The hidden lattice</h2>
+        <p>Take the stream of numbers and pair them up — each number against the one that follows it —
+          then drop a dot at <span class="num">(uₙ, uₙ₊₁)</span> for every pair. If the numbers are
+          truly independent, the dots should fill the square like <b>even fog</b>. But an arithmetic
+          recipe leaves an arithmetic fingerprint: the pairs are forced onto a <b>lattice</b> of
+          parallel lines. Choose a good generator and the lattice is so fine you cannot see it. Choose
+          a poor one and the lines leap out.</p>
+      </div></div>
+
+      <div class="chips" id="pairChips" role="group" aria-label="Choose a generator"></div>
+      <div class="rig">
+        <div class="screen">
+          <canvas id="pairCanvas" aria-label="Scatter plot of consecutive pairs from the chosen generator"></canvas>
+          <div class="scanlines"></div>
+          <div class="badge" id="pairBadge">0 pairs</div>
+        </div>
+        <aside class="readout">
+          <div>
+            <div class="r-name" id="pairName">crypto</div>
+            <div class="r-sub" id="pairSub">the reference · even fog</div>
+          </div>
+          <div>
+            <p class="r-label">What you're seeing</p>
+            <div class="r-body" id="pairBody"></div>
+          </div>
+          <div class="spacer"></div>
+          <div class="controls">
+            <button class="btn" id="pairReset">↻ Restart</button>
+          </div>
+          <p class="note">Each frame adds a few hundred fresh pairs.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY 2 -->
+  <section class="story">
+    <div class="col">
+      <p class="kicker">A theorem, 1968</p>
+      <h2>Random numbers fall mainly in the planes</h2>
+      <p>The lines are not an accident of a bad multiplier — they are a law. In 1968 George Marsaglia
+        proved that the output of every <b>linear congruential generator</b>, the workhorse recipe
+        <span class="num">xₙ₊₁ = (a·xₙ + c) mod m</span>, is doomed to lie on a lattice. Stack the
+        numbers into pairs and they sit on a family of parallel <b>lines</b>; into triples and they
+        sit on a family of parallel <b>planes</b>; into <i>d</i>-tuples and they lie on
+        <i>(d−1)</i>-dimensional sheets. The only question a good design answers is: how many sheets,
+        and how close together? Marsaglia titled his paper, with perfect economy,
+        <em>Random Numbers Fall Mainly in the Planes</em>.</p>
+      <blockquote>
+        A little theory would have gone a long way… the generator RANDU is entirely unsuitable
+        for high-dimensional Monte Carlo work.
+        <cite>after Marsaglia &amp; Knuth</cite>
+      </blockquote>
+      <p>Which brings us to the villain of the story. <b>RANDU</b> was IBM's linear congruential
+        generator, shipped in the 1960s on the Scientific Subroutine Package and copied into countless
+        Fortran programs across the mainframe world. Its recipe was
+        <span class="num">xₙ₊₁ = 65539 · xₙ mod 2³¹</span>. In one dimension it is uniform. In two
+        dimensions it looks like fog — you just saw it pass the pairs plot cleanly. For years, nobody
+        looked in three.</p>
+      <p>When you do, RANDU collapses. Its triples do not merely sit on a lattice — they sit on
+        <b>just fifteen planes</b>, with vast empty gulfs between them. A decade of published science
+        that leaned on RANDU for three-dimensional sampling was quietly built on a grid of fifteen
+        sheets pretending to be a solid cube. Rotate the cube below and find the angle where the
+        planes line up edge-on. There is no hiding it once you know where to look.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       3 · RANDU IN 3D
+  ==================================================================== -->
+  <section class="instr" style="padding-top:8px">
+    <div class="col">
+      <div class="chips" id="cubeChips" role="group" aria-label="Choose a generator"></div>
+      <div class="rig">
+        <div class="screen grab">
+          <canvas id="cubeCanvas" aria-label="Rotatable 3-D scatter of consecutive triples from the chosen generator"></canvas>
+          <div class="scanlines"></div>
+          <div class="badge">(uₙ, uₙ₊₁, uₙ₊₂) · 3-space</div>
+          <div class="hint">Drag to rotate</div>
+        </div>
+        <aside class="readout">
+          <div>
+            <div class="r-name" id="cubeName">RANDU</div>
+            <div class="r-sub" id="cubeSub">IBM, 1960s · 15 planes</div>
+          </div>
+          <div>
+            <p class="r-label">The plane relation</p>
+            <div class="eqline" id="cubeEq">9·uₙ − 6·uₙ₊₁ + uₙ₊₂ ≡ <b>integer</b></div>
+          </div>
+          <div>
+            <p class="r-label">What you're seeing</p>
+            <div class="r-body" id="cubeBody"></div>
+          </div>
+          <div class="spacer"></div>
+          <div class="controls">
+            <button class="btn primary" id="cubeSnap">⟲ Reveal the planes</button>
+            <button class="btn" id="cubeSpin">Auto-spin</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </section>
+  <div class="divider"><hr></div>
+
+  <!-- STORY 3 -->
+  <section class="story">
+    <div class="col">
+      <p class="kicker">Randomness, put to work</p>
+      <h2>Throwing darts at π</h2>
+      <p>Why does any of this matter beyond the pretty pictures? Because we use these numbers to
+        <b>compute</b>. The purest example is Monte Carlo integration: to measure an area, throw random
+        darts at it and count how many land inside. Fence a quarter-circle inside a unit square, rain
+        darts uniformly across the square, and the fraction landing inside the arc must approach the
+        ratio of the areas — <span class="num">π⁄4</span>. Multiply by four and you have measured
+        <b>π</b> with nothing but a coin and patience.</p>
+      <p>This is where a generator's shape becomes a scientific error rather than a curiosity. Darts
+        that secretly lie on a lattice do not cover the square evenly; they over-sample some regions
+        and starve others, and the estimate drifts to a wrong answer that no amount of extra darts will
+        fix. Below, watch a good generator home in on <span class="num">3.14159…</span> while a
+        lattice-bound one settles — confidently, stubbornly — beside it.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       4 · MONTE CARLO π
+  ==================================================================== -->
+  <section class="instr" style="padding-top:8px">
+    <div class="col">
+      <div class="chips" id="mcChips" role="group" aria-label="Choose a generator"></div>
+      <div class="rig">
+        <div class="screen">
+          <canvas id="mcCanvas" aria-label="Monte Carlo dartboard estimating pi with the chosen generator"></canvas>
+          <div class="scanlines"></div>
+          <div class="badge" id="mcBadge">0 darts</div>
+        </div>
+        <aside class="readout">
+          <div>
+            <div class="r-name" id="mcName">mulberry32</div>
+            <div class="r-sub" id="mcSub">a good modern PRNG</div>
+          </div>
+          <div>
+            <p class="r-label">Estimate of π</p>
+            <div class="r-name" id="mcPi" style="font-size:34px; color:var(--gold); font-variant-numeric:tabular-nums">3.—</div>
+          </div>
+          <div>
+            <p class="r-label">The tally</p>
+            <div class="stat">
+              <b>darts thrown</b><span id="mcN">0</span>
+              <b>inside the arc</b><span id="mcHit">0</span>
+              <b>error vs π</b><span id="mcErr">—</span>
+            </div>
+          </div>
+          <div class="spacer"></div>
+          <div class="controls">
+            <button class="btn" id="mcReset">↻ Restart</button>
+            <div class="toggle" role="group" aria-label="Speed">
+              <button id="mcSlow" aria-pressed="false">Slow</button>
+              <button id="mcFast" aria-pressed="true">Fast</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--good)"></i>inside the quarter-circle</span>
+        <span><i style="background:var(--mut)"></i>outside</span>
+        <span class="note" id="mcCaveat"></span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY 4 -->
+  <section class="story">
+    <div class="col">
+      <p class="kicker">The judges</p>
+      <h2>When the eye is not enough</h2>
+      <p>You may have noticed that RANDU gives a perfectly respectable value of π. That is the whole
+        trap: a two-dimensional test cannot see a three-dimensional flaw. The eye — and any single
+        experiment — can be fooled. So the field grew a battery of <b>statistical judges</b>: formal
+        tests that put a number on how far a stream departs from the ideal of independent, uniform
+        chance. Modern suites like <b>Diehard</b>, its successor <b>Dieharder</b>, and the NIST and
+        <b>TestU01</b> batteries run dozens of them at once.</p>
+      <p>Below is a miniature bench. Each generator is fed a fresh stream and put through five tests.
+        The verdicts tell a subtler story than "good" and "bad": watch RANDU <b>pass</b> the one- and
+        two-dimensional tests and fail only in three; watch the toy lattice pass a one-dimensional
+        uniformity check and fall apart the moment we look at pairs. Passing a test proves nothing —
+        it only means that particular judge did not catch you.</p>
+    </div>
+  </section>
+
+  <!-- ===================================================================
+       5 · THE TEST BENCH
+  ==================================================================== -->
+  <section class="instr" style="padding-top:8px">
+    <div class="col">
+      <div class="lead"><div class="col">
+        <p class="kicker" id="benchStatus">Drawing 200,000 samples per generator…</p>
+      </div></div>
+      <div class="bench-wrap">
+        <div class="bench">
+          <div class="bench-head">
+            <div>Generator</div>
+            <div>Mean → ½</div>
+            <div>1-D uniform<br>χ²</div>
+            <div>2-D pairs<br>χ²</div>
+            <div>3-D triples<br>χ²</div>
+            <div>Autocorr.<br>lag 1</div>
+          </div>
+          <div id="benchRows"></div>
+        </div>
+      </div>
+      <div class="bench-foot">
+        <span>χ² tests reject at the <b>0.1%</b> level · autocorrelation &amp; mean at ±4σ.</span>
+        <span id="benchLegend">Click a row to inspect it above.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY 5 -->
+  <section class="story">
+    <div class="col">
+      <p class="kicker">Three kinds of random</p>
+      <h2>Choosing a generator</h2>
+      <p>Not every job needs the same randomness, and using the wrong grade is how disasters happen.
+        There are three tiers.</p>
+      <p><b>True random number generators (TRNGs)</b> harvest physical noise — thermal jitter in a
+        resistor, the timing of radioactive decay, atmospheric static, the shot noise on a photodiode.
+        They are genuinely unpredictable and genuinely slow, so a machine typically uses one only to
+        <i>seed</i> the others. This is what your operating system's entropy pool is for.</p>
+      <p><b>Pseudo-random generators (PRNGs)</b> are the fast arithmetic machines we have been watching.
+        The <b>Mersenne Twister</b> (1997) ended the era of lattice disasters for ordinary work and
+        remains the default in Python, R and MATLAB — enormous period, excellent statistics. Its modern
+        successors are smaller and faster and pass even harder tests: <b>PCG</b> (2014) and the
+        <b>xoshiro / xorshift</b> family, now the default in NumPy, Rust and much of the games industry.
+        The <code>mulberry32</code> you have been watching is a tiny cousin of these. All of them are
+        wonderful for simulation and shuffling — and <b>none is safe for secrets</b>. Observe enough
+        output and you can solve for the state and predict every number to come.</p>
+      <p><b>Cryptographic generators (CSPRNGs)</b> close that door. Built on the same primitives as
+        ciphers and hash functions, they are designed so that no feasible computation can run the
+        sequence backward or forward from its output. This is the <code>crypto</code> reference at the
+        top — <code>crypto.getRandomValues</code> in the browser,
+        <code>/dev/urandom</code> on Unix. Slower, but the only correct choice for keys, tokens,
+        passwords and nonces. The rule is blunt: <b>if an adversary would benefit from guessing your
+        next number, a PRNG is a vulnerability, not a shortcut.</b></p>
+
+      <div class="aside">
+        <p class="r-label">A last trap: modulo bias</p>
+        <p>Even perfect randomness is easy to ruin at the final step. To get a die roll from
+          1–6, the tempting one-liner is <code>1 + rand() % 6</code>. But if <code>rand()</code>
+          returns, say, 0–32767, those 32768 values do not divide evenly into six buckets — the low
+          faces get <b>one extra</b> value each. The die is loaded, faintly, toward the small numbers.
+          The fix is <b>rejection</b>: draw again whenever you land in the ragged remainder at the top
+          of the range, so every face is backed by exactly the same number of draws. A flawless
+          generator, undone by a careless <code>%</code>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLOPHON -->
+  <footer class="colophon">
+    <div class="col">
+      <h2>What this is</h2>
+      <p>A single self-contained page. Every generator runs live in your browser — nothing is
+        pre-rendered, nothing phones home — and every plot is drawn from numbers computed on the spot.
+        The <b>crypto</b> reference is your platform's real cryptographic generator
+        (<code>crypto.getRandomValues</code>); <b>mulberry32</b> and <b>xorshift32</b> are genuine
+        modern PRNGs; <b>RANDU</b>, the <b>toy LCG</b> (multiplier 5), <b>middle-square</b> and the
+        <b>low-bit LCG</b> are the historical cautionary tales, implemented exactly as described so
+        their flaws are real, not staged.</p>
+      <p>The 15-plane collapse of RANDU follows from
+        <span class="num">uₙ₊₂ = 6uₙ₊₁ − 9uₙ (mod 1)</span>, a relation you can derive in three lines
+        from its multiplier. The test bench uses ordinary Pearson χ² with Wilson–Hilferty critical
+        values; the verdicts are computed, not hand-set. Where a fact is folklore — the exact toll of
+        RANDU on 1970s science — it is described as reported rather than certain.</p>
+      <p class="src">
+        → Marsaglia, <em>Random Numbers Fall Mainly in the Planes</em>, PNAS (1968)<br>
+        → Knuth, <em>The Art of Computer Programming</em>, Vol. 2, §3<br>
+        → <a href="https://en.wikipedia.org/wiki/RANDU">RANDU</a> ·
+           <a href="https://en.wikipedia.org/wiki/Mersenne_Twister">Mersenne Twister</a> ·
+           <a href="https://en.wikipedia.org/wiki/Permuted_congruential_generator">PCG</a> ·
+           <a href="https://en.wikipedia.org/wiki/Diehard_tests">Diehard / TestU01</a><br>
+        → <a href="https://0x4d44.github.io/">Back to the Almanac</a>
+      </p>
+    </div>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // =========================================================================
+  //  GENERATORS
+  //  Each maker returns a function producing a float in [0,1).
+  // =========================================================================
+  function mulberry32(a){
+    a = a>>>0;
+    return function(){
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function xorshift32(seed){
+    var x = seed>>>0; if(x===0) x = 0x9E3779B9;
+    return function(){
+      x ^= x << 13; x ^= x >>> 17; x ^= x << 5; x = x>>>0;
+      return x / 4294967296;
+    };
+  }
+  // RANDU: x_{n+1} = 65539 * x_n mod 2^31. 65539*x < 2^53, exact in a double.
+  function randu(seed){
+    var x = seed>>>0; if(x===0) x = 1; if((x & 1) === 0) x += 1;
+    var M = 2147483648;
+    return function(){ x = (65539 * x) % M; return x / M; };
+  }
+  // A deliberately poor LCG: multiplier 5, increment 1, modulus 2^32.
+  // Full period, uniform in 1-D, but pairs lie on just five lines.
+  function toyLCG(seed){
+    var x = seed>>>0;
+    return function(){ x = (Math.imul(5, x) + 1) >>> 0; return x / 4294967296; };
+  }
+  // Von Neumann middle-square, 4 digits. Famous for collapsing to short cycles.
+  function middleSquare(seed){
+    var x = (seed % 10000); if(x < 1000) x += 1000; if(x===0) x = 1234;
+    return function(){
+      var sq = x * x;                    // up to 8 digits
+      var s = ("00000000" + sq).slice(-8);
+      x = parseInt(s.substring(2, 6), 10) || 0;   // middle four digits
+      return x / 10000;
+    };
+  }
+  // Low bit of a standard power-of-two LCG. Parity flips every step ->
+  // returns 0,1,0,1,... The bitmap turns this into hard vertical stripes.
+  function lowbitLCG(seed){
+    var x = (seed>>>0) | 1;
+    return function(){
+      x = (Math.imul(1664525, x) + 1013904223) >>> 0;   // Numerical Recipes
+      return (x & 1);                                    // 0 or 1
+    };
+  }
+  // Platform CSPRNG, buffered.
+  function cryptoGen(){
+    var c = window.crypto || window.msCrypto;
+    if(!c || !c.getRandomValues){
+      // extremely unlikely fallback: a well-seeded mulberry
+      return mulberry32((Date.parse("2020-01-01") ^ 0x9e3779b9) >>> 0);
+    }
+    var buf = new Uint32Array(2048), i = buf.length;
+    return function(){
+      if(i >= buf.length){ c.getRandomValues(buf); i = 0; }
+      return buf[i++] / 4294967296;
+    };
+  }
+
+  // A fixed but arbitrary seed source so "Restart" gives a new-looking stream
+  // without needing Math.random at module top-level.
+  var seedTick = 0x1a2b3c4d;
+  function nextSeed(){ seedTick = (Math.imul(seedTick ^ (seedTick>>>13), 0x9E3779B1) + 0x6D2B79F5) >>> 0; return seedTick; }
+
+  function makeGen(key, seed){
+    switch(key){
+      case "crypto":   return cryptoGen();
+      case "mulberry": return mulberry32(seed || 1);
+      case "xorshift": return xorshift32(seed || 1);
+      case "randu":    return randu(seed || 1);
+      case "toy":      return toyLCG(seed || 1);
+      case "middle":   return middleSquare((seed % 9000) + 1000);
+      case "lowbit":   return lowbitLCG(seed || 1);
+      default:         return mulberry32(1);
+    }
+  }
+
+  // Descriptors shared across the demos.
+  var G = {
+    crypto:  { name:"crypto", c:"#5AACF2", good:true,  sub:"cryptographic · the reference",
+      short:"CSPRNG",
+      how:"Your platform's cryptographic generator. Built on cipher-grade primitives; unpredictable by design and safe for secrets.",
+      seeing:"Even fog. This is what genuine independence looks like — the standard everything else is measured against." },
+    mulberry:{ name:"mulberry32", c:"#46CBB0", good:true, sub:"a good modern PRNG",
+      short:"PRNG",
+      how:"A tiny, fast, high-quality PRNG in the spirit of PCG and xoshiro. 32 bits of state, one multiply-and-mix per number.",
+      seeing:"Even fog. A well-designed PRNG scatters pairs on a lattice so fine that no eye and few tests can resolve it." },
+    xorshift:{ name:"xorshift32", c:"#7FD1A6", good:true, sub:"Marsaglia, 2003",
+      short:"PRNG",
+      how:"Three shifts and three XORs on a 32-bit word. Fast and historically important; the family it started now powers NumPy and Rust.",
+      seeing:"Even fog at this scale. The bare 32-bit version has known weaknesses, but nothing the eye will find here." },
+    randu:   { name:"RANDU", c:"#F0708A", good:false, sub:"IBM, 1960s · the cautionary tale",
+      short:"LCG",
+      how:"IBM's infamous generator: xₙ₊₁ = 65539·xₙ mod 2³¹. Uniform in one dimension, fog in two — and a catastrophe in three.",
+      seeing:"Fog — RANDU passes the pairs test cleanly. Its flaw is invisible until you stack the numbers into triples. Keep going." },
+    toy:     { name:"Toy LCG", c:"#E8B24C", good:false, sub:"multiplier 5 · deliberately poor",
+      short:"LCG",
+      how:"A linear congruential generator with multiplier 5: xₙ₊₁ = (5·xₙ + 1) mod 2³². Full period, uniform in 1-D — and hopeless in 2-D.",
+      seeing:"Five lines. A small multiplier forces every pair onto a handful of parallel lines. The stream is uniform yet utterly predictable." },
+    middle:  { name:"middle-square", c:"#B48CF2", good:false, sub:"von Neumann, 1946",
+      short:"1946",
+      how:"Square the number, keep the middle digits, repeat. The first software PRNG — and a byword for how quickly a generator can rot.",
+      seeing:"Structure and repetition. Middle-square falls into short cycles and can collapse toward zero, so the pairs clump and loop." },
+    lowbit:  { name:"low-bit LCG", c:"#F07AB4", good:false, sub:"the lowest bit of an LCG",
+      short:"LCG",
+      how:"The single lowest bit of a standard power-of-two LCG. That bit's period is just 2 — it can only alternate 0,1,0,1…",
+      seeing:"Perfect stripes. The low bits of a power-of-two LCG are near-worthless; here the very lowest is a plain on-off counter." }
+  };
+
+  function chipHTML(key){
+    var g = G[key];
+    return '<span class="dot"></span>'+g.name+'<span class="tag">'+g.short+'</span>';
+  }
+  function buildChips(container, keys, initial, onSelect){
+    keys.forEach(function(k){
+      var b = document.createElement("button");
+      b.className = "chip"; b.type = "button"; b.dataset.k = k;
+      b.setAttribute("aria-pressed", k===initial ? "true":"false");
+      b.style.setProperty("--c", G[k].c);
+      b.innerHTML = chipHTML(k);
+      b.addEventListener("click", function(){
+        var cs = container.querySelectorAll(".chip");
+        for(var i=0;i<cs.length;i++) cs[i].setAttribute("aria-pressed", cs[i].dataset.k===k ? "true":"false");
+        onSelect(k);
+      });
+      container.appendChild(b);
+    });
+  }
+
+  // Shared hi-dpi canvas sizing.
+  function fitCanvas(cv, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = cv.getBoundingClientRect();
+    var w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+    if(cv.width !== w || cv.height !== h){ cv.width = w; cv.height = h; }
+    return { w:r.width, h:r.height, dpr:dpr };
+  }
+
+  var resizers = [];
+  window.addEventListener("resize", function(){ for(var i=0;i<resizers.length;i++) resizers[i](); });
+
+  // =========================================================================
+  //  1 · BITMAP
+  // =========================================================================
+  (function(){
+    var cv = document.getElementById("bmCanvas"), ctx = cv.getContext("2d");
+    var N = 128;
+    var off = document.createElement("canvas"); off.width = N; off.height = N;
+    var octx = off.getContext("2d");
+    var img = octx.createImageData(N, N);
+    var key = "crypto", geom = {w:1,h:1,dpr:1};
+    var keys = ["crypto","mulberry","randu","toy","lowbit","middle"];
+
+    function paint(){
+      var gen = makeGen(key, nextSeed());
+      var d = img.data;
+      for(var i=0;i<N*N;i++){
+        var on = gen() < 0.5 ? 0 : 1;           // coin flip -> black / paper
+        var v = on ? 236 : 12;
+        var o = i*4;
+        d[o]=v; d[o+1]= on?231:14; d[o+2]= on?218:20; d[o+3]=255;
+      }
+      octx.putImageData(img, 0, 0);
+      render();
+    }
+    function render(){
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.clearRect(0,0,cv.width,cv.height);
+      ctx.imageSmoothingEnabled = false;
+      // letterbox the square bitmap centered
+      var side = Math.min(cv.width, cv.height);
+      var x = (cv.width - side)/2, y = (cv.height - side)/2;
+      ctx.drawImage(off, x, y, side, side);
+    }
+    function select(k){
+      key = k; var g = G[k];
+      document.getElementById("bmName").textContent = g.name;
+      document.getElementById("bmKind").textContent = g.sub;
+      document.getElementById("bmBody").textContent = g.how;
+      var v = document.getElementById("bmVerdict");
+      if(g.good){ v.textContent = "looks random"; v.className = "verdict ok"; }
+      else if(k==="randu"){ v.textContent = "looks random"; v.className = "verdict ok"; }
+      else { v.textContent = "structure visible"; v.className = "verdict no"; }
+      document.getElementById("bmNote").textContent =
+        (k==="randu") ? "…and yet it isn't. Hold that thought." :
+        (g.good ? "No visible grain — as it should be." : "The recipe is showing through.");
+      paint();
+    }
+    function resize(){ geom = fitCanvas(cv, ctx); render(); }
+    resizers.push(resize);
+
+    buildChips(document.getElementById("bmChips"), keys, "crypto", select);
+    document.getElementById("bmRoll").addEventListener("click", paint);
+    resize();
+    select("crypto");
+  })();
+
+  // =========================================================================
+  //  2 · PAIRS PLOT  (2-D lattice)
+  // =========================================================================
+  var pairsDemo = (function(){
+    var cv = document.getElementById("pairCanvas"), ctx = cv.getContext("2d");
+    var key = "crypto", gen = makeGen("crypto", nextSeed());
+    var prev = gen(), count = 0, geom = {w:1,h:1,dpr:1};
+    var keys = ["crypto","mulberry","randu","toy"];
+
+    function clearPlot(){
+      ctx.setTransform(geom.dpr,0,0,geom.dpr,0,0);
+      ctx.clearRect(0,0,geom.w,geom.h);
+      // frame
+      ctx.strokeStyle = "rgba(120,140,170,0.10)"; ctx.lineWidth = 1;
+      var m = 10, w = geom.w - 2*m, h = geom.h - 2*m;
+      ctx.strokeRect(m, m, w, h);
+    }
+    function restart(){
+      gen = makeGen(key, nextSeed()); prev = gen(); count = 0; clearPlot();
+    }
+    function select(k){
+      key = k; var g = G[k];
+      document.getElementById("pairName").textContent = g.name;
+      document.getElementById("pairSub").textContent = g.sub;
+      document.getElementById("pairBody").textContent = g.seeing;
+      restart();
+    }
+    function step(){
+      ctx.setTransform(geom.dpr,0,0,geom.dpr,0,0);
+      var m = 10, w = geom.w - 2*m, h = geom.h - 2*m;
+      var g = G[key], col = g.c;
+      var rgb = [parseInt(col.slice(1,3),16),parseInt(col.slice(3,5),16),parseInt(col.slice(5,7),16)];
+      ctx.fillStyle = "rgba("+rgb[0]+","+rgb[1]+","+rgb[2]+",0.55)";
+      var batch = reduce ? 4000 : 380;
+      if(count > 60000) return;                 // let density settle, then stop
+      for(var i=0;i<batch;i++){
+        var u = gen();
+        var x = m + prev * w;
+        var y = m + (1 - u) * h;
+        ctx.fillRect(x, y, 1.3, 1.3);
+        prev = u; count++;
+      }
+      document.getElementById("pairBadge").textContent = count.toLocaleString() + " pairs";
+    }
+    function resize(){ geom = fitCanvas(cv, ctx); restart(); }
+    resizers.push(resize);
+
+    buildChips(document.getElementById("pairChips"), keys, "crypto", select);
+    document.getElementById("pairReset").addEventListener("click", restart);
+    resize(); select("crypto");
+    return { step:step };
+  })();
+
+  // =========================================================================
+  //  3 · RANDU IN 3-D  (rotatable planes)
+  // =========================================================================
+  var cubeDemo = (function(){
+    var cv = document.getElementById("cubeCanvas"), ctx = cv.getContext("2d");
+    var key = "randu", pts = [], geom = {w:1,h:1,dpr:1};
+    var yaw = 0.6, tilt = 0.5, autoSpin = false;
+    var target = null;   // {yaw,tilt} to ease toward
+    var keys = ["randu","toy","mulberry","crypto"];
+    var NPTS = reduce ? 4000 : 7000;
+
+    function build(){
+      var gen = makeGen(key, nextSeed());
+      var a = gen(), b = gen(), c;
+      pts = new Float32Array(NPTS*3);
+      for(var i=0;i<NPTS;i++){
+        c = gen();
+        pts[i*3]   = a - 0.5;
+        pts[i*3+1] = b - 0.5;
+        pts[i*3+2] = c - 0.5;
+        a = b; b = c;
+      }
+    }
+    function project(x,y,z){
+      var cy=Math.cos(yaw), sy=Math.sin(yaw);
+      var x1 =  x*cy + z*sy;
+      var z1 = -x*sy + z*cy;
+      var ct=Math.cos(tilt), st=Math.sin(tilt);
+      var y1 = y*ct - z1*st;
+      var z2 = y*st + z1*ct;
+      return [x1, y1, z2];
+    }
+    function draw(){
+      ctx.setTransform(geom.dpr,0,0,geom.dpr,0,0);
+      ctx.clearRect(0,0,geom.w,geom.h);
+      var cx = geom.w/2, cyc = geom.h/2, R = Math.min(geom.w, geom.h) * 0.40;
+      // wireframe cube
+      drawCube(cx,cyc,R);
+      var g = G[key], col = g.c;
+      var rgb = [parseInt(col.slice(1,3),16),parseInt(col.slice(3,5),16),parseInt(col.slice(5,7),16)];
+      ctx.globalCompositeOperation = "lighter";
+      for(var i=0;i<NPTS;i++){
+        var p = project(pts[i*3], pts[i*3+1], pts[i*3+2]);
+        var depth = (p[2] + 0.9) / 1.8;                 // 0..1 front..back
+        var a = 0.30 + 0.55*depth;
+        var s = 0.9 + 1.5*depth;
+        ctx.fillStyle = "rgba("+rgb[0]+","+rgb[1]+","+rgb[2]+","+a.toFixed(3)+")";
+        ctx.fillRect(cx + p[0]*2*R, cyc - p[1]*2*R, s, s);
+      }
+      ctx.globalCompositeOperation = "source-over";
+    }
+    function drawCube(cx,cyc,R){
+      var v = [[-.5,-.5,-.5],[.5,-.5,-.5],[.5,.5,-.5],[-.5,.5,-.5],
+               [-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5]];
+      var e = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+      ctx.strokeStyle = "rgba(120,140,170,0.16)"; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for(var i=0;i<e.length;i++){
+        var p0 = project(v[e[i][0]][0],v[e[i][0]][1],v[e[i][0]][2]);
+        var p1 = project(v[e[i][1]][0],v[e[i][1]][1],v[e[i][1]][2]);
+        ctx.moveTo(cx + p0[0]*2*R, cyc - p0[1]*2*R);
+        ctx.lineTo(cx + p1[0]*2*R, cyc - p1[1]*2*R);
+      }
+      ctx.stroke();
+    }
+    function select(k){
+      key = k; var g = G[k];
+      document.getElementById("cubeName").textContent = g.name;
+      document.getElementById("cubeSub").textContent = (k==="randu") ? "IBM, 1960s · 15 planes"
+        : (k==="toy" ? "multiplier 5 · a coarse lattice"
+        : (g.good ? "a good generator · solid cloud" : g.sub));
+      var eq = document.getElementById("cubeEq");
+      var body = document.getElementById("cubeBody");
+      if(k==="randu"){
+        eq.innerHTML = "9·uₙ − 6·uₙ₊₁ + uₙ₊₂ ≡ <b>integer</b>";
+        body.textContent = "Every triple obeys this exact relation, so all seven thousand points are trapped on just 15 parallel planes. Hit ‘Reveal’ to view them edge-on.";
+      } else if(k==="toy"){
+        eq.innerHTML = "uₙ₊₁ ≈ 5·uₙ &nbsp;→&nbsp; a <b>coarse</b> lattice";
+        body.textContent = "The multiplier-5 lattice is coarse in every dimension. The triples sit on a small, obvious grid of sheets from almost any angle.";
+      } else {
+        eq.innerHTML = "no low-order relation — a <b>solid</b> cloud";
+        body.textContent = "A good generator fills the cube. Rotate all you like: there is no angle at which the points collapse into sheets. This is the goal.";
+      }
+      build();
+    }
+    function snap(){
+      // Rotate so the plane normal (9,-6,1) maps to the screen's vertical axis:
+      // the 15 parallel planes then stack into 15 horizontal bands, edge-on.
+      // (Solved from the projection's second row = normalized normal.)
+      target = { yaw: -1.460, tilt: 0.988 };
+    }
+    function ease(){
+      if(target){
+        yaw  += (target.yaw  - yaw ) * 0.08;
+        tilt += (target.tilt - tilt) * 0.08;
+        if(Math.abs(target.yaw-yaw)<0.001 && Math.abs(target.tilt-tilt)<0.001){ yaw=target.yaw; tilt=target.tilt; target=null; }
+      } else if(autoSpin && !dragging){
+        yaw += 0.004;
+      }
+    }
+    function frame(){ ease(); draw(); }
+
+    // drag to rotate
+    var dragging=false, lx=0, ly=0;
+    cv.addEventListener("pointerdown", function(e){ dragging=true; target=null; lx=e.clientX; ly=e.clientY; cv.setPointerCapture(e.pointerId); });
+    cv.addEventListener("pointermove", function(e){
+      if(!dragging) return;
+      yaw += (e.clientX-lx)*0.008; tilt += (e.clientY-ly)*0.008;
+      tilt = Math.max(-1.45, Math.min(1.45, tilt));
+      lx=e.clientX; ly=e.clientY;
+    });
+    function end(){ dragging=false; }
+    cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+
+    function resize(){ geom = fitCanvas(cv, ctx); }
+    resizers.push(resize);
+    buildChips(document.getElementById("cubeChips"), keys, "randu", select);
+    document.getElementById("cubeSnap").addEventListener("click", snap);
+    var spinBtn = document.getElementById("cubeSpin");
+    spinBtn.addEventListener("click", function(){ autoSpin = !autoSpin; target=null; spinBtn.style.color = autoSpin ? "var(--gold)":""; });
+    resize(); select("randu");
+    return { frame:frame };
+  })();
+
+  // =========================================================================
+  //  4 · MONTE CARLO π
+  // =========================================================================
+  var mcDemo = (function(){
+    var cv = document.getElementById("mcCanvas"), ctx = cv.getContext("2d");
+    var key = "mulberry", gen = makeGen("mulberry", nextSeed());
+    var inside=0, total=0, fast=true, geom={w:1,h:1,dpr:1};
+    var keys = ["mulberry","crypto","randu","toy"];
+    var PI = Math.PI;
+
+    function plotBox(){ var m = 12; var s = Math.min(geom.w, geom.h) - 2*m; return { x0:(geom.w-s)/2, y0:(geom.h-s)/2, s:s }; }
+    function frameDraw(){
+      ctx.setTransform(geom.dpr,0,0,geom.dpr,0,0);
+      ctx.clearRect(0,0,geom.w,geom.h);
+      var b = plotBox();
+      ctx.strokeStyle = "rgba(120,140,170,0.16)"; ctx.lineWidth=1;
+      ctx.strokeRect(b.x0, b.y0, b.s, b.s);
+      // quarter circle centred bottom-left of the square
+      ctx.strokeStyle = "rgba(232,178,76,0.55)"; ctx.lineWidth=1.4;
+      ctx.beginPath(); ctx.arc(b.x0, b.y0 + b.s, b.s, -Math.PI/2, 0); ctx.stroke();
+    }
+    function reset(){ gen = makeGen(key, nextSeed()); inside=0; total=0; frameDraw(); update(); }
+    function select(k){
+      key = k; var g = G[k];
+      document.getElementById("mcName").textContent = g.name;
+      document.getElementById("mcSub").textContent = g.sub;
+      document.getElementById("mcCaveat").textContent =
+        (k==="randu") ? "RANDU still nails π — a 2-D test can't see its 3-D flaw." :
+        (k==="toy") ? "Watch the estimate settle beside the true value, not on it." :
+        (g.good ? "Converges toward the true value as darts accumulate." : "");
+      reset();
+    }
+    function update(){
+      var est = total ? 4*inside/total : 0;
+      document.getElementById("mcPi").textContent = total>50 ? est.toFixed(5) : "3.—";
+      document.getElementById("mcN").textContent = total.toLocaleString();
+      document.getElementById("mcHit").textContent = inside.toLocaleString();
+      document.getElementById("mcErr").textContent = total>50 ? (est-PI>=0?"+":"") + (est-PI).toFixed(5) : "—";
+      document.getElementById("mcBadge").textContent = total.toLocaleString() + " darts";
+    }
+    function step(){
+      if(total > 200000) { return; }
+      var b = plotBox();
+      var batch = fast ? 900 : 60;
+      ctx.setTransform(geom.dpr,0,0,geom.dpr,0,0);
+      for(var i=0;i<batch;i++){
+        var u = gen(), v = gen();
+        var isIn = (u*u + v*v) <= 1;
+        if(isIn) inside++;
+        total++;
+        var px = b.x0 + u*b.s;
+        var py = b.y0 + b.s - v*b.s;
+        ctx.fillStyle = isIn ? "rgba(70,203,176,0.75)" : "rgba(124,132,148,0.55)";
+        ctx.fillRect(px, py, 1.5, 1.5);
+      }
+      update();
+    }
+    function resize(){ geom = fitCanvas(cv, ctx); frameDraw(); }
+    resizers.push(resize);
+
+    buildChips(document.getElementById("mcChips"), keys, "mulberry", select);
+    document.getElementById("mcReset").addEventListener("click", reset);
+    var slow=document.getElementById("mcSlow"), fastb=document.getElementById("mcFast");
+    slow.addEventListener("click", function(){ fast=false; slow.setAttribute("aria-pressed","true"); fastb.setAttribute("aria-pressed","false"); });
+    fastb.addEventListener("click", function(){ fast=true; fastb.setAttribute("aria-pressed","true"); slow.setAttribute("aria-pressed","false"); });
+    resize(); select("mulberry");
+    return { step:step };
+  })();
+
+  // =========================================================================
+  //  5 · THE TEST BENCH
+  // =========================================================================
+  (function(){
+    var rowsEl = document.getElementById("benchRows");
+    var statusEl = document.getElementById("benchStatus");
+    var order = ["crypto","mulberry","xorshift","randu","toy","middle"];
+    var SAMPLES = 200000;
+    var results = {};
+
+    // Wilson–Hilferty chi-square upper critical value at significance alpha (z its z-score).
+    function chiCrit(dof, z){
+      var t = 1 - 2/(9*dof) + z*Math.sqrt(2/(9*dof));
+      return dof * t*t*t;
+    }
+    var Z001 = 3.0902;   // upper 0.1%
+
+    function analyse(key){
+      var gen = makeGen(key, nextSeed());
+      // 1-D uniformity
+      var B1 = 100, h1 = new Int32Array(B1);
+      // 2-D pairs
+      var B2 = 40, h2 = new Int32Array(B2*B2);
+      // 3-D triples
+      var B3 = 16, h3 = new Int32Array(B3*B3*B3);
+      var sum = 0, u;
+      // a, b, u walk the stream as three genuinely consecutive values.
+      var a = gen(), b = gen(), lastU = b;
+      var acN = 0, acSx=0, acSy=0, acSxy=0, acSxx=0;
+      for(var i=0;i<SAMPLES;i++){
+        u = gen();
+        sum += u;
+        // histograms
+        var i1 = u*B1|0; if(i1>=B1)i1=B1-1; h1[i1]++;
+        // pairs / triples use consecutive values a,b,u
+        var pa = a*B2|0; if(pa>=B2)pa=B2-1;
+        var pb = b*B2|0; if(pb>=B2)pb=B2-1;
+        h2[pa*B2+pb]++;
+        var ta=a*B3|0; if(ta>=B3)ta=B3-1;
+        var tb=b*B3|0; if(tb>=B3)tb=B3-1;
+        var tc=u*B3|0; if(tc>=B3)tc=B3-1;
+        h3[(ta*B3+tb)*B3+tc]++;
+        // lag-1 autocorrelation on (lastU, u)
+        acN++; acSx+=lastU; acSy+=u; acSxy+=lastU*u; acSxx+=lastU*lastU;
+        lastU = u;
+        a = b; b = u;
+      }
+      var mean = sum / SAMPLES;
+
+      function chi(h, cells){
+        var E = SAMPLES / cells, s = 0;
+        for(var j=0;j<h.length;j++){ var d = h[j]-E; s += d*d/E; }
+        return s;
+      }
+      var c1 = chi(h1, B1),            d1 = B1-1;
+      var c2 = chi(h2, B2*B2),         d2 = B2*B2-1;
+      var c3 = chi(h3, B3*B3*B3),      d3 = B3*B3*B3-1;
+
+      // autocorrelation r
+      var cov = acSxy/acN - (acSx/acN)*(acSy/acN);
+      var varx = acSxx/acN - (acSx/acN)*(acSx/acN);
+      var r = varx>1e-12 ? cov/varx : 0;
+      var rCrit = 4/Math.sqrt(acN);
+
+      var meanCrit = 4 * Math.sqrt(1/12/SAMPLES);
+
+      return {
+        mean:mean, meanPass: Math.abs(mean-0.5) < meanCrit,
+        c1:c1, c1r:c1/d1, c1Pass: c1 < chiCrit(d1, Z001),
+        c2:c2, c2r:c2/d2, c2Pass: c2 < chiCrit(d2, Z001),
+        c3:c3, c3r:c3/d3, c3Pass: c3 < chiCrit(d3, Z001),
+        r:r, rPass: Math.abs(r) < rCrit
+      };
+    }
+
+    function fmtChi(reduced, pass){
+      // show reduced chi-square (chi^2 / dof); ~1 is ideal
+      var v = reduced;
+      var txt = v < 100 ? v.toFixed(2) : (v>=1000 ? v.toExponential(1) : v.toFixed(0));
+      return '<span class="'+(pass?"pass":"fail")+'"><span class="cell-v">'+txt+'</span></span>';
+    }
+    function fmtVal(val, pass, digits){
+      return '<span class="'+(pass?"pass":"fail")+'"><span class="cell-v">'+val.toFixed(digits)+'</span></span>';
+    }
+
+    function render(){
+      var html = "";
+      for(var i=0;i<order.length;i++){
+        var k = order[i], g = G[k], R = results[k];
+        html += '<div class="brow" data-k="'+k+'" role="button" aria-pressed="false">'
+          + '<div class="bname"><span class="dot" style="background:'+g.c+';--c:'+g.c+'"></span>'+g.name+'</div>'
+          + '<div>'+fmtVal(R.mean, R.meanPass, 4)+'</div>'
+          + '<div>'+fmtChi(R.c1r, R.c1Pass)+'</div>'
+          + '<div>'+fmtChi(R.c2r, R.c2Pass)+'</div>'
+          + '<div>'+fmtChi(R.c3r, R.c3Pass)+'</div>'
+          + '<div>'+fmtVal(R.r, R.rPass, 4)+'</div>'
+          + '</div>';
+      }
+      rowsEl.innerHTML = html;
+      statusEl.innerHTML = "Each generator, judged on "+SAMPLES.toLocaleString()+" fresh samples · reduced χ² shown (1.0 is ideal)";
+    }
+
+    // Run analysis, chunked so the page paints first.
+    function run(){
+      var i = 0;
+      function next(){
+        if(i < order.length){ results[order[i]] = analyse(order[i]); i++; setTimeout(next, 0); }
+        else render();
+      }
+      next();
+    }
+    // kick off shortly after load
+    setTimeout(run, 60);
+  })();
+
+  // =========================================================================
+  //  MAIN ANIMATION LOOP
+  // =========================================================================
+  function loop(){
+    pairsDemo.step();
+    cubeDemo.frame();
+    mcDemo.step();
+    requestAnimationFrame(loop);
+  }
+  if(reduce){
+    // Build a few static frames, then stop.
+    for(var f=0; f<40; f++){ pairsDemo.step(); mcDemo.step(); }
+    cubeDemo.frame();
+  } else {
+    requestAnimationFrame(loop);
+  }
+})();
+</script>
+</body>
+</html>
