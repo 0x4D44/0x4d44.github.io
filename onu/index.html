@@ -152,16 +152,30 @@ header{
 .card.cB .bg{--c1:var(--blue); --c2:var(--blue2);}
 .card.cG .bg{--c1:var(--green); --c2:var(--green2);}
 .card.cY .bg{--c1:var(--yellow); --c2:var(--yellow2);}
-.card.cP .bg{--c1:#ff4fa3; --c2:#9e155d;}
-.card.cT .bg{--c1:#12c7c1; --c2:#08736f;}
-.card.cO .bg{--c1:#ff8a1f; --c2:#a84300;}
-.card.cV .bg{--c1:#9b5de5; --c2:#53238f;}
+/* Onu Flip dark side: near-black cards lit by one luminescent colour. */
+.card.cP{--neon:#ff2e97;}
+.card.cT{--neon:#1ffff0;}
+.card.cO{--neon:#ff9d18;}
+.card.cV{--neon:#b878ff;}
+.card.cP,.card.cT,.card.cO,.card.cV{
+  background:#080609;
+  box-shadow:0 5px 12px rgba(0,0,0,.6), 0 0 12px -2px var(--neon);
+}
+.card.cP .bg,.card.cT .bg,.card.cO .bg,.card.cV .bg{
+  --c1:#17121b; --c2:#040305;
+  box-shadow:inset 0 0 16px rgba(0,0,0,.85), inset 0 0 0 1.5px var(--neon);
+}
 .card.cW .bg{--c1:#26262b; --c2:#000;}
 .card .oval{
   position:absolute; left:50%; top:50%; width:74%; height:96%;
   transform:translate(-50%,-50%) rotate(26deg);
   background:rgba(255,255,255,.94); border-radius:50%;
   box-shadow:inset 0 0 0 2px rgba(0,0,0,.06);
+}
+.card.cP .oval,.card.cT .oval,.card.cO .oval,.card.cV .oval{
+  background:radial-gradient(closest-side,
+             color-mix(in srgb, var(--neon) 26%, transparent), transparent 74%);
+  box-shadow:none;
 }
 .card.cW .oval{
   background:conic-gradient(var(--red) 0 90deg, var(--blue) 90deg 180deg,
@@ -175,12 +189,17 @@ header{
 }
 .card.cR .val{--vc:var(--red);} .card.cB .val{--vc:var(--blue);}
 .card.cG .val{--vc:var(--green);} .card.cY .val{--vc:#b89f00;}
-.card.cP .val{--vc:#d91b76;} .card.cT .val{--vc:#07847f;}
-.card.cO .val{--vc:#db5d00;} .card.cV .val{--vc:#7135b5;}
+.card.cP .val,.card.cT .val,.card.cO .val,.card.cV .val{
+  --vc:var(--neon);
+  text-shadow:0 0 3px #fff, 0 0 8px var(--neon), 0 0 16px var(--neon);
+}
 .card.cW .val{--vc:#fff; text-shadow:2px 2px 3px rgba(0,0,0,.75);}
 .card .idx{
   position:absolute; font-weight:900; font-size:calc(var(--cw)*.17);
   color:#fff; text-shadow:1px 1px 0 rgba(0,0,0,.35);
+}
+.card.cP .idx,.card.cT .idx,.card.cO .idx,.card.cV .idx{
+  color:var(--neon); text-shadow:0 0 4px var(--neon), 0 0 9px var(--neon);
 }
 .card .idx.tl{top:6%; left:9%;} .card .idx.br{bottom:6%; right:9%; transform:rotate(180deg);}
 .card.back .bg{background:linear-gradient(150deg,#31207a,#120735);}
