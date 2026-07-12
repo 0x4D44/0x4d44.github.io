@@ -303,6 +303,8 @@ const G = {
   season: null,             // {round, ptsD[], ptsT[], history[]}
   race: null,
   keys: {},
+  touch: false,                                     // touch device -> on-screen controls
+  touchIn: { left: false, right: false, thr: false, brk: false },
   canvas: null, ctx: null,
 };
 
@@ -408,13 +410,14 @@ function playerStep(dt) {
   const pc = R.player;
   if (pc.retired || pc.finished) { R.pv = Math.max(0, R.pv - 15 * dt); }
 
-  // --- inputs (A/Z throttle/brake, ,/. steer; arrows as fallback)
-  const inL = k["Comma"] || k["ArrowLeft"], inR = k["Period"] || k["ArrowRight"];
+  // --- inputs (A/Z throttle/brake, ,/. steer; arrows as fallback; touch pads)
+  const T = G.touchIn;
+  const inL = k["Comma"] || k["ArrowLeft"] || T.left, inR = k["Period"] || k["ArrowRight"] || T.right;
   const sTgt = (inL ? -1 : 0) + (inR ? 1 : 0);
   const sRate = sTgt !== 0 ? 3.2 : 5.5;
   R.steer += clamp(sTgt - R.steer, -sRate * dt, sRate * dt);
-  let thr = ((k["KeyA"] || k["ArrowUp"]) && !pc.finished && !pc.retired) ? 1 : 0;
-  let brk = (k["KeyZ"] || k["ArrowDown"]) ? 1 : 0;
+  let thr = ((k["KeyA"] || k["ArrowUp"] || T.thr) && !pc.finished && !pc.retired) ? 1 : 0;
+  let brk = (k["KeyZ"] || k["ArrowDown"] || T.brk) ? 1 : 0;
   if (R.phase === "grid") { brk = 1; thr = 0; }
 
   // --- track position
@@ -1362,8 +1365,23 @@ function showMenu(html) {
   const m = $menu();
   m.innerHTML = html;
   m.style.display = "flex";
+  // any menu (incl. pause) hides the driving overlay and drops held inputs
+  document.body.classList.remove("driving");
+  for (const key in G.touchIn) G.touchIn[key] = false;
+  document.querySelectorAll("#touch .tbtn.on").forEach(el => el.classList.remove("on"));
 }
-function hideMenu() { $menu().style.display = "none"; }
+function hideMenu() {
+  $menu().style.display = "none";
+  const tb = document.getElementById("tback");
+  if (tb) tb.style.display = "none";        // no menu open -> no back target
+  refreshDriving();
+}
+// show the on-screen controls only while actually driving; expose the gear
+// pad only when auto-gears is off (manual box)
+function refreshDriving() {
+  document.body.classList.toggle("driving", G.touch && G.screen === "race");
+  document.body.classList.toggle("manual", !G.aids.autoGears);
+}
 
 function menuFrame(title, inner, footer) {
   return `<div class="frame">
@@ -1377,6 +1395,8 @@ let menuItems = [], menuSel = 0, menuBack = null;
 function bindMenu(items, back) {
   menuItems = items; menuSel = items.findIndex(i => i.def) >= 0 ? items.findIndex(i => i.def) : 0;
   menuBack = back || null;
+  const tb = document.getElementById("tback");
+  if (tb) tb.style.display = (G.touch && menuBack) ? "flex" : "none";
   paintMenuSel();
 }
 function paintMenuSel() {
@@ -1556,6 +1576,8 @@ function screenControls() {
       <div>SPACE SHIFT UP &nbsp;&nbsp; X SHIFT DOWN <span class="dim">(manual box)</span></div>
       <div>1–6 TOGGLE DRIVER AIDS</div>
       <div>ESC PAUSE &nbsp;&nbsp; M MUTE</div>
+      <div class="dim" style="margin-top:10px">TOUCH: ON-SCREEN PADS APPEAR AUTOMATICALLY —<br>
+      STEER LEFT THUMB, GAS/BRAKE RIGHT THUMB, &#10073;&#10073; TO PAUSE.</div>
       <div class="dim" style="margin-top:12px">SIX AIDS, AS TRADITION DEMANDS: AUTO BRAKES, AUTO GEARS,<br>
       SELF-CORRECTING SPIN, INDESTRUCTIBLE, IDEAL LINE, SUGGESTED GEAR.<br>
       TURN THEM ALL OFF AND IT BITES.</div>
@@ -1715,6 +1737,57 @@ document.addEventListener("mousemove", (e) => {
 });
 
 // ------------------------------------------------------------
+// Touch controls — on-screen pads for phones/tablets
+// Auto-detects a coarse pointer and reveals the driving overlay; the
+// layout follows the arcade-racer convention: steering on the left thumb,
+// pedals on the right. Force on/off with ?touch=1 / ?touch=0.
+// ------------------------------------------------------------
+function initTouch() {
+  const q = new URLSearchParams(location.search).get("touch");
+  const detected = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+    "ontouchstart" in window || (navigator.maxTouchPoints || 0) > 0;
+  G.touch = q === "1" ? true : q === "0" ? false : detected;
+  document.body.classList.toggle("touch", G.touch);
+  if (!G.touch) return;
+
+  // press-and-hold pads (steer / throttle / brake) -> G.touchIn flags
+  document.querySelectorAll("#touch [data-hold]").forEach(el => {
+    const key = el.dataset.hold;
+    const set = (v) => { G.touchIn[key] = v; el.classList.toggle("on", v); };
+    el.addEventListener("pointerdown", (e) => {
+      e.preventDefault(); if (!SFX.ac) SFX.init();
+      try { el.setPointerCapture(e.pointerId); } catch (_) { /* older webkit */ }
+      set(true);
+    });
+    el.addEventListener("pointerup", (e) => { e.preventDefault(); set(false); });
+    el.addEventListener("pointercancel", () => set(false));
+    el.addEventListener("lostpointercapture", () => set(false));
+  });
+
+  // momentary buttons (pause / manual gear change)
+  document.querySelectorAll("#touch [data-tap]").forEach(el => {
+    el.addEventListener("pointerdown", (e) => {
+      e.preventDefault(); if (!SFX.ac) SFX.init();
+      const a = el.dataset.tap, R = G.race;
+      if (a === "pause") { if (G.screen === "race" && R && !R.paused) screenPause(); }
+      else if (a === "gearup") { if (!G.aids.autoGears && R && !R.paused && R.gear < 6) { R.gear++; SFX.shift(); } }
+      else if (a === "geardn") { if (!G.aids.autoGears && R && !R.paused && R.gear > 1) { R.gear--; SFX.shift(); } }
+      el.classList.add("on");
+    });
+    const off = () => el.classList.remove("on");
+    el.addEventListener("pointerup", off);
+    el.addEventListener("pointercancel", off);
+  });
+
+  // menu "back" (stands in for ESC on touch)
+  const tb = document.getElementById("tback");
+  if (tb) tb.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); if (!SFX.ac) SFX.init();
+    if (menuBack) menuBack();
+  });
+}
+
+// ------------------------------------------------------------
 // Boot
 // ------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
@@ -1722,6 +1795,7 @@ window.addEventListener("DOMContentLoaded", () => {
   G.ctx = G.canvas.getContext("2d");
   G.ctx.imageSmoothingEnabled = false;
   loadState();
+  initTouch();
   window.__VGP = G;   // console/debug handle
   screenTitle();
   requestAnimationFrame(frame);
