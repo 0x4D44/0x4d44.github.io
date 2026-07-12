@@ -76,16 +76,17 @@
 
   /* ---- result ---- */
   .verdict{text-align:center; padding:8px 4px 4px}
-  .gauge{position:relative; width:230px; height:130px; margin:0 auto 4px}
+  .gauge{position:relative; width:230px; height:126px; margin:0 auto -14px}
   .gauge svg{width:100%; height:100%; overflow:visible}
   .gauge .needle{transition:transform .9s cubic-bezier(.22,1,.36,1); transform-origin:115px 115px}
-  .gscore{position:absolute; left:0; right:0; bottom:6px; text-align:center}
-  .gscore b{font-family:var(--mono); font-size:34px; font-weight:600; letter-spacing:-.02em; display:block; line-height:1}
+  .gscore{text-align:center}
+  .gscore b{font-family:var(--mono); font-size:36px; font-weight:600; letter-spacing:-.02em; display:block; line-height:1}
   .gscore small{font-family:var(--mono); font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint)}
   .label{display:inline-block; font-family:var(--serif); font-weight:600; font-size:23px; margin-top:6px; padding:2px 4px}
   .label.human{color:var(--human)} .label.ai{color:var(--ai)} .label.mix{color:var(--mix)}
   .conf{font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:2px}
   .conf b{color:var(--ink)}
+  .btn.copy{font-size:12px; padding:6px 13px; margin-top:14px; font-family:var(--mono); letter-spacing:.04em}
   .empty{color:var(--faint); text-align:center; font-size:14.5px; padding:44px 12px; font-family:var(--serif); font-style:italic}
 
   /* ---- signals ---- */
@@ -326,8 +327,9 @@
     var phraseHits=0, phraseFound=[];
     for(var i=0;i<PHRASES.length;i++){ var c=countMatches(lc, PHRASES[i]); if(c){ phraseHits+=c; phraseFound.push(PHRASES[i]); } }
     var wordHits = countWordHits(toks, WORDSET);
+    var tellsAbs = phraseHits + wordHits;
     var tellsPer1k = W>0 ? (phraseHits*2.2 + wordHits) / W * 1000 : 0;
-    var vocab = clamp(tellsPer1k/14, 0, 1);
+    var vocab = clamp(tellsPer1k/18, 0, 1);
 
     // ---- transition density (per sentence) ----
     var transHits = countWordHits(toks, TRANSET);
@@ -406,6 +408,25 @@
     signals.forEach(function(s){ overall += s.score*s.w; wsum += s.w; });
     overall = overall/wsum*100;
 
+    // Corroborated escalation. Rhythm signals (burstiness, openers) go quiet on
+    // short, varied passages and can drag an otherwise machine-worded paragraph down
+    // into the human zone, hurting recall. So the high-precision signals set a FLOOR
+    // under the verdict — but deliberately biased toward precision, because a false
+    // "AI" verdict is the costly error here:
+    //   • Stock vocabulary ALONE only lifts text into the "uncertain" band (~≤48).
+    //     Formal human writing that happens to say "leverage / robust / comprehensive"
+    //     is genuinely ambiguous, and "uncertain" is the honest answer — not "AI".
+    //   • Reaching "Likely AI" needs CORROBORATION: dense vocabulary AND a second
+    //     sustained signal (transitions, triads, formulaic openers or the em-dash
+    //     habit) both firing. Two independent tells is the real machine fingerprint.
+    // Gated on enough text + several hits, and it only ever lifts, so clean human
+    // text (vocab≈0) is untouched and the near-zero false-positive margin holds.
+    if(W>=40 && tellsAbs>=3){
+      var corroborate = Math.min(vocab, Math.max(trans, triad, opener, dash));
+      overall = Math.max(overall, vocab*48, corroborate*74);
+    }
+    overall = clamp(overall, 0, 100);
+
     // confidence: grows with text length and with distance from the fence
     var lenConf = clamp((W-25)/275, 0, 1);
     var decisiveness = Math.abs(overall-50)/50;
@@ -472,12 +493,14 @@
           '</g>'+
           '<circle cx="115" cy="115" r="6" fill="var(--ink)"/>'+
         '</svg>'+
-        '<div class="gscore"><b style="color:'+b.color+'">'+Math.round(res.overall)+'</b><small>/100 machine-like</small></div>'+
       '</div>'+
+      '<div class="gscore"><b style="color:'+b.color+'">'+Math.round(res.overall)+'</b><small>/100 machine-like</small></div>'+
       '<div class="label '+b.cls+'">'+b.label+'</div>'+
       '<div class="conf">Confidence: <b>'+res.confLabel+'</b> · '+res.words+' words · '+res.sentences+' sentences</div>'+
+      '<button class="btn copy" id="copyReport" type="button">Copy report</button>'+
       '</div>';
     $("verdict").innerHTML=v;
+    var cr=$("copyReport"); if(cr) cr.addEventListener("click", function(){ copyReport(res, b); });
 
     var sig="";
     res.signals.forEach(function(s){
@@ -535,6 +558,37 @@
     tip.style.left=x+"px"; tip.style.top=y+"px";
   }
   function hideTip(){ tip.classList.remove("on"); }
+
+  // ---- copy a plain-text report to the clipboard ----
+  function copyReport(res, b){
+    var lines = [];
+    lines.push("Opus 4.8 Verdict — AI-writing analysis");
+    lines.push("=======================================");
+    lines.push("Verdict:    " + b.label + "  (" + Math.round(res.overall) + "/100 machine-like)");
+    lines.push("Confidence: " + res.confLabel + "  ·  " + res.words + " words, " + res.sentences + " sentences");
+    lines.push("");
+    lines.push("Signals (0 = human, 100 = machine-like):");
+    res.signals.forEach(function(s){
+      lines.push("  " + (s.name+" ................").slice(0,20) + " " +
+                 String(Math.round(s.score*100)).padStart(3) + "   " + s.val);
+    });
+    lines.push("");
+    lines.push("Note: an explainable writing-style signal, not proof. Not a basis for accusation.");
+    lines.push("Generated on-device by https://0x4d44.github.io/opus-verdict/");
+    var text = lines.join("\n");
+    var btn = $("copyReport");
+    var done = function(ok){ if(btn){ btn.textContent = ok ? "Copied ✓" : "Copy failed";
+      setTimeout(function(){ if(btn) btn.textContent="Copy report"; }, 1600); } };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){done(true);}, function(){fallback();});
+    } else { fallback(); }
+    function fallback(){
+      try{ var ta=document.createElement("textarea"); ta.value=text;
+        ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+        ta.select(); var ok=document.execCommand("copy"); document.body.removeChild(ta); done(ok);
+      }catch(e){ done(false); }
+    }
+  }
 
   // ---- word counter ----
   function updateCount(){
