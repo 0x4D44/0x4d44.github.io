@@ -145,6 +145,7 @@ function cardElement(card, { back = false, interactive = false } = {}) {
   const face = activeFace(card, game);
   const mark = glyph(face);
   element.classList.add(`c${face.color}`);
+  if ([...mark].length >= 3) element.classList.add("wideMark");
   element.dataset.cardId = card.id;
   element.setAttribute("aria-label", faceName(face));
   element.innerHTML = `<div class="bg"><div class="oval"></div></div><div class="val">${mark}</div><span class="idx tl">${mark}</span><span class="idx br">${mark}</span>`;

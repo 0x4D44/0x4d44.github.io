@@ -194,6 +194,9 @@ header{
   text-shadow:0 0 3px #fff, 0 0 8px var(--neon), 0 0 16px var(--neon);
 }
 .card.cW .val{--vc:#fff; text-shadow:2px 2px 3px rgba(0,0,0,.75);}
+/* Multi-glyph marks (e.g. Skip Everyone's "ALL") shrink to fit the card. */
+.card.wideMark .val{font-size:calc(var(--cw)*.25); letter-spacing:-.03em;}
+.card.wideMark .idx{font-size:calc(var(--cw)*.125);}
 .card .idx{
   position:absolute; font-weight:900; font-size:calc(var(--cw)*.17);
   color:#fff; text-shadow:1px 1px 0 rgba(0,0,0,.35);
