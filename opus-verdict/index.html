@@ -87,6 +87,23 @@
   .conf{font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:2px}
   .conf b{color:var(--ink)}
   .btn.copy{font-size:12px; padding:6px 13px; margin-top:14px; font-family:var(--mono); letter-spacing:.04em}
+  #neural.loading{opacity:.6; cursor:default}
+
+  /* ---- neural model panel ---- */
+  .neural{border:1px solid var(--line2); border-radius:12px; padding:15px 16px; margin-bottom:16px; background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 6%, transparent), transparent)}
+  .neural .nhead{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px}
+  .neural .ntag{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent-ink); font-weight:600}
+  .neural .nlabel{font-family:var(--serif); font-weight:600; font-size:21px}
+  .neural .nlabel.human{color:var(--human)} .neural .nlabel.ai{color:var(--ai)} .neural .nlabel.mix{color:var(--mix)}
+  .neural .npct{font-family:var(--mono); font-size:20px; font-weight:600}
+  .nbar{height:9px; background:var(--line); border-radius:6px; overflow:hidden; position:relative}
+  .nbar i{display:block; height:100%; border-radius:6px; width:0; transition:width .7s cubic-bezier(.22,1,.36,1)}
+  .neural .nmeta{font-family:var(--mono); font-size:11px; color:var(--muted); margin-top:8px; line-height:1.5}
+  .neural .nnote{font-size:12px; color:var(--muted); margin-top:8px; line-height:1.5}
+  .neural.status{text-align:center; color:var(--muted); font-size:13.5px; font-family:var(--sans)}
+  .neural.status .spin{display:inline-block; width:13px; height:13px; border:2px solid var(--line2); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; vertical-align:-2px; margin-right:7px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .heurlabel{font-family:var(--mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--faint); font-weight:600; margin-bottom:8px; text-align:center}
   .empty{color:var(--faint); text-align:center; font-size:14.5px; padding:44px 12px; font-family:var(--serif); font-style:italic}
 
   /* ---- signals ---- */
@@ -150,9 +167,10 @@
     <a class="back" href="https://0x4d44.github.io/">← the almanac</a>
   </div>
 
-  <p class="lede">Paste any passage and get a <strong>verdict on how AI-written it looks</strong> — a confidence
-  gauge, sentence-by-sentence highlighting, and a full breakdown of the writing-style signals behind the score.
-  It runs <strong>entirely in your browser</strong>: no upload, no account, no model call. And unlike the
+  <p class="lede">Paste any passage and get a <strong>verdict on how AI-written it looks</strong> — an instant,
+  transparent heuristic (a confidence gauge, sentence-by-sentence highlighting, a full breakdown of the
+  writing-style signals) plus an optional <strong>fine-tuned neural model</strong> for a second opinion.
+  Both run <strong>entirely in your browser</strong> — no upload, no account, no server. And unlike the
   black-box detectors, it shows its working.</p>
 
   <div class="grid">
@@ -162,6 +180,7 @@
       <textarea id="input" placeholder="Paste an essay, an email, a paragraph of a report — anything from a sentence or two up to a few thousand words. The more you give it, the more confident the verdict."></textarea>
       <div class="toolbar">
         <button class="btn primary" id="run">Analyze</button>
+        <button class="btn" id="neural" title="Fine-tuned neural detector — one-time ~43 MB download, then fully on-device">⚡ Neural model</button>
         <button class="btn" id="clear">Clear</button>
         <span class="count" id="count">0 words</span>
       </div>
@@ -176,6 +195,7 @@
     <!-- RESULT -->
     <section class="card" id="resultCard">
       <h2>Verdict</h2>
+      <div id="neuralResult"></div>
       <div id="verdict">
         <div class="empty">Nothing examined yet.<br>Paste some text and press <b>Analyze</b>.</div>
       </div>
@@ -199,13 +219,12 @@
   <details class="method">
     <summary>How the verdict is reached — and how much to trust it</summary>
     <div class="method-body">
-      <p>Real production detectors (Pangram, the tool this is modelled on) run a neural network trained on
-      roughly a million labelled human and machine documents. That needs a server and a GPU. <b>Opus&nbsp;4.8
-      Verdict is the honest client-side cousin:</b> a transparent, explainable heuristics engine that measures
-      the writing-style fingerprints large language models tend to leave, then adds them up. Everything happens
-      in a few milliseconds of JavaScript on your own machine.</p>
+      <p>Opus&nbsp;4.8 Verdict runs <b>two</b> detectors, both entirely on your own device. The default is an
+      <b>instant, transparent heuristic</b> that measures the writing-style fingerprints large language models
+      tend to leave and adds them up — a few milliseconds of JavaScript, and it shows exactly why. The optional
+      <b>⚡&nbsp;Neural model</b> is a genuinely trained classifier for a stronger, second opinion.</p>
 
-      <h3>The signals it weighs</h3>
+      <h3>The heuristic — the signals it weighs</h3>
       <p>Each signal returns a 0–100 "how machine-like" score; the overall verdict is their weighted average.</p>
       <p><b>Burstiness</b> — humans mix very short sentences with long ones; models pace themselves evenly. Low
       variance in sentence length is the single strongest tell. <b>Machine vocabulary</b> — the density of the
@@ -216,12 +235,27 @@
       same way (<code>The…</code>, <code>This…</code>, <code>It is…</code>). <b>Rule-of-three</b> — the model's
       love of tidy three-item lists. <b>Hedging</b> and <b>lexical repetition</b> round it out.</p>
 
-      <div class="note">This is a <b>writing-style signal, not proof.</b> Polished human writing (a legal brief,
-      a press release) can score high; deliberately messy AI output can score low. Use it to raise a question,
-      never to settle one. No detector — this one included — should be the sole basis for an accusation.</div>
+      <h3>The neural model — a real classifier, in your browser</h3>
+      <p>The ⚡ button loads a <b>fine-tuned MiniLM transformer</b> (a 22&nbsp;M-parameter encoder) and runs it
+      locally through <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">transformers.js</a>
+      + ONNX Runtime (WebAssembly). The library, the runtime and the ~22&nbsp;MB int8-quantised weights are all
+      served from this page — <b>nothing is uploaded and no external service is called</b>; the first run fetches
+      ~43&nbsp;MB once, then it's cached and inference takes ~100&nbsp;ms. It was trained on the public
+      <a href="https://huggingface.co/datasets/Hello-SimpleAI/HC3" target="_blank" rel="noopener">HC3</a> corpus —
+      tens of thousands of <em>matched</em> human answers and ChatGPT answers to the same questions, so it learns
+      style rather than topic.</p>
+      <p>On held-out test data it separates human from machine text with <b>ROC-AUC ≈ 0.999</b>, and that holds on
+      a domain it never saw in training (medical Q&amp;A) — so it's learning genuine style, not one topic. It even
+      <em>fixes</em> the heuristic's blind spot: human "corporate-speak" that the heuristic frets over, the model
+      confidently reads as human.</p>
 
-      <p style="color:var(--faint);font-size:13px">Built for the 0x4D44 almanac. Named for the model that wrote
-      the engine, Claude&nbsp;Opus&nbsp;4.8. Fully offline · no dependencies · no build step · view source.</p>
+      <div class="note">Both are <b>a signal, not proof.</b> The heuristic can over-flag polished human prose; the
+      neural model is trained on <em>ChatGPT-era</em> text, so it's strongest on that family and its confidence
+      doesn't perfectly transfer to every new writing domain or newer model. Use either to raise a question, never
+      to settle one — no detector should be the sole basis for an accusation.</div>
+
+      <p style="color:var(--faint);font-size:13px">Built for the 0x4D44 almanac. Named for the model that built it,
+      Claude&nbsp;Opus&nbsp;4.8. Heuristic + on-device neural model · no server, no tracking · view source.</p>
     </div>
   </details>
 
@@ -611,12 +645,76 @@
   function run(){
     var text=input.value.trim();
     if(text.length<1){ return; }
+    setNeural("");                       // clear any stale neural verdict for the previous text
     render(analyze(text));
     $("resultCard").scrollIntoView({behavior:"smooth", block:"nearest"});
   }
+
+  // ---------------------------------------------------------------------------
+  // neural model — a fine-tuned MiniLM classifier, lazy-loaded and run fully
+  // on-device via transformers.js + ONNX Runtime Web (vendored, no CDN calls).
+  // ---------------------------------------------------------------------------
+  var pipePromise=null;
+  function setNeural(html, cls){
+    $("neuralResult").innerHTML = html ? '<div class="neural '+(cls||'')+'">'+html+'</div>' : '';
+  }
+  function loadModel(){
+    if(pipePromise) return pipePromise;
+    pipePromise = (async function(){
+      var T = await import('./vendor/transformers.min.js');
+      var env = T.env;
+      env.allowRemoteModels = false;               // never hit the network
+      env.allowLocalModels  = true;
+      env.backends.onnx.wasm.numThreads = 1;       // Pages: no cross-origin isolation
+      env.backends.onnx.wasm.wasmPaths  = new URL('./vendor/', location.href).href;
+      env.localModelPath = new URL('./', location.href).href;
+      return await T.pipeline('text-classification', 'model', { dtype: 'q8' });
+    })();
+    return pipePromise;
+  }
+  async function runNeural(){
+    var text = input.value.trim();
+    if(text.length<1){ input.focus(); return; }
+    if(!$("verdict").querySelector(".verdict")) render(analyze(text));   // ensure heuristic shown
+    var btn=$("neural"); btn.classList.add("loading"); btn.disabled=true;
+    var first = !pipePromise;
+    setNeural('<span class="spin"></span>'+(first
+      ? 'Fetching the neural model (~43 MB, one-time — cached after this). It then runs entirely on your device.'
+      : 'Running the neural model…'), 'status');
+    try{
+      var pipe = await loadModel();
+      var t0 = performance.now();
+      var out = await pipe(text, { top_k: null });
+      var ms = Math.round(performance.now()-t0);
+      var ai = out.find(function(x){ return x.label==='ai' || x.label==='LABEL_1'; });
+      renderNeural(ai ? ai.score : 0, ms);
+    }catch(e){
+      setNeural('The neural model could not load in this browser — the heuristic verdict below still applies.'+
+        '<div class="nnote" style="margin-top:6px">'+(e&&e.message?String(e.message).slice(0,140):'')+'</div>', 'status');
+    }finally{ btn.classList.remove("loading"); btn.disabled=false; }
+  }
+  function renderNeural(p, ms){
+    var pct=Math.round(p*100);
+    var cls = p>=0.85?'ai':(p>=0.15?'mix':'human');
+    var label = p>=0.85?'AI-generated':(p>=0.5?'Leaning AI':(p>=0.15?'Uncertain':'Human-written'));
+    var col = cls==='ai'?'var(--ai)':(cls==='mix'?'var(--mix)':'var(--human)');
+    var conf = (p>=0.97||p<=0.03)?'Very high':((p>=0.85||p<=0.15)?'High':((p>=0.7||p<=0.3)?'Moderate':'Low'));
+    setNeural(
+      '<div class="nhead"><span class="ntag">◆ Neural model · fine-tuned MiniLM</span>'+
+        '<span class="nlabel '+cls+'">'+label+'</span></div>'+
+      '<div class="nbar"><i style="width:'+pct+'%;background:'+col+'"></i></div>'+
+      '<div class="nmeta"><b style="color:'+col+'">'+pct+'%</b> AI-probability · confidence '+conf+' · '+ms+' ms on-device</div>'+
+      '<div class="nnote">A transformer trained to tell human writing from machine text, running entirely in your browser — no upload, no server. '+
+      'It is strongest on prose and answers; the gauge below is the transparent heuristic, which also flags marketing-style AI.</div>'
+    );
+    if(!$("verdict").querySelector(".heurlabel"))
+      $("verdict").insertAdjacentHTML('afterbegin','<div class="heurlabel">Writing-style heuristic · the transparent second opinion</div>');
+  }
+
   $("run").addEventListener("click", run);
+  $("neural").addEventListener("click", runNeural);
   $("clear").addEventListener("click", function(){
-    input.value=""; updateCount(); $("outCard").style.display="none";
+    input.value=""; updateCount(); $("outCard").style.display="none"; setNeural("");
     $("verdict").innerHTML='<div class="empty">Nothing examined yet.<br>Paste some text and press <b>Analyze</b>.</div>';
     $("signals").innerHTML=""; input.focus();
   });
