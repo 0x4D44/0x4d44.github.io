@@ -29,7 +29,7 @@ window.ESSAYS = [
   {
     slug: "opus-verdict",
     title: "Opus 4.8 Verdict",
-    tagline: "An on-device AI-writing detector in the spirit of Pangram — but one that shows its working. Paste any passage for a machine-likeness verdict: a confidence gauge, sentence-by-sentence highlighting, and a breakdown of the tells (burstiness, stock LLM vocabulary, formulaic openers, the em-dash habit). No upload, no model call; explainable heuristics in vanilla JS.",
+    tagline: "An on-device AI-writing detector in the spirit of Pangram — but one that shows its working. An instant, transparent heuristic (confidence gauge, sentence-by-sentence highlighting, a breakdown of the tells) plus an optional fine-tuned MiniLM neural model — ROC-AUC ≈ 0.999 — both running entirely in your browser. No upload, no server.",
     url: "https://0x4d44.github.io/opus-verdict/",
     illustration: "ill-verdict",
     date: "2026-07-12T12:00:00",
