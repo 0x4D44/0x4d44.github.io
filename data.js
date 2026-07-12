@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "opus-verdict",
+    title: "Opus 4.8 Verdict",
+    tagline: "An on-device AI-writing detector in the spirit of Pangram — but one that shows its working. Paste any passage for a machine-likeness verdict: a confidence gauge, sentence-by-sentence highlighting, and a breakdown of the tells (burstiness, stock LLM vocabulary, formulaic openers, the em-dash habit). No upload, no model call; explainable heuristics in vanilla JS.",
+    url: "https://0x4d44.github.io/opus-verdict/",
+    illustration: "ill-verdict",
+    date: "2026-07-12T12:00:00",
+    year: 2026,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
     slug: "vector-gp",
     title: "Vector GP",
     tagline: "A flat-shaded polygon grand prix in the spirit of the great early-90s racing sims: a 16-round world championship, 13 invented teams and 26 invented drivers, a cockpit with mirrors and rev LEDs, and the six classic switchable driver aids — from full novice to no-net ace. FM-synthesised V12, vanilla JS on a 640×400 canvas; no build step.",
