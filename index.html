@@ -1665,6 +1665,23 @@
       <path d="M94 30 L100 22 L106 30"/>
       <rect x="86" y="8" width="28" height="14" rx="3"/>
     </symbol>
+    <!-- quantum — a Bloch sphere with a state arrow, ringed by interfering waves -->
+    <symbol id="ill-quantum" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- the sphere and its equator -->
+      <circle cx="100" cy="60" r="34"/>
+      <ellipse cx="100" cy="60" rx="34" ry="12" opacity=".5"/>
+      <ellipse cx="100" cy="60" rx="12" ry="34" opacity=".3"/>
+      <!-- poles |0> (top) and |1> (bottom) -->
+      <circle cx="100" cy="26" r="2.2" fill="currentColor" stroke="none"/>
+      <circle cx="100" cy="94" r="2.2" fill="currentColor" stroke="none"/>
+      <!-- the state arrow, tilted toward the equator -->
+      <path d="M100 60 L126 40"/>
+      <path d="M118 40 L126 40 L124 48" opacity=".9"/>
+      <circle cx="100" cy="60" r="1.6" fill="currentColor" stroke="none"/>
+      <!-- interfering wavefronts either side -->
+      <path d="M14 60 q10 -12 20 0 q10 12 20 0" opacity=".55"/>
+      <path d="M146 60 q10 -12 20 0 q10 12 20 0" opacity=".55"/>
+    </symbol>
     <symbol id="ill-flange" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
       <!-- a folded broadsheet newspaper -->
       <rect x="42" y="24" width="104" height="76" rx="4" opacity=".9"/>
