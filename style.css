@@ -338,11 +338,24 @@ a:hover { color: var(--amber); }
   letter-spacing: 1px;
 }
 #options { display: flex; flex-direction: column; gap: 14px; }
+.searchbar { margin-top: 22px; }
 
 @media (max-width: 720px) {
   #options-toggle { display: flex; }
   #options { display: none; }
   #options.open { display: flex; }
+
+  /* Mobile: a clean search bar then the tiles. Reorder the page so the
+     filter/options block drops below the listing, and drop the status bar
+     and the tiles caption to keep the top uncluttered. */
+  .wrap { display: flex; flex-direction: column; }
+  .masthead    { order: 1; }
+  #statusbar   { display: none; }
+  .searchbar   { order: 2; margin-top: 16px; }
+  .listing     { order: 3; margin-top: 14px; }
+  .controls    { order: 4; }
+  .page-footer { order: 5; }
+  .tiles-hint  { display: none; }
 }
 
 /* ---------- shelf tiles (landing) ---------- */
