@@ -23,18 +23,23 @@
     <h1 class="title">
       <span class="amber">$</span> documents <span class="amber">--list</span>
     </h1>
-    <p class="lede">
-      A small, growing collection of standalone pieces. Filed by hand,
-      indexed by machine, served as static HTML.
-    </p>
-    <a href="about.html" class="whoami">$ whoami →</a>
+    <div class="masthead-actions">
+      <button type="button" class="mbtn" id="btn-recent" aria-pressed="false">$ recent</button>
+      <button type="button" class="mbtn" id="btn-stats" aria-expanded="false" aria-controls="stats-pop">$ stats</button>
+      <a href="about.html" class="mbtn">$ whoami →</a>
+    </div>
+    <div class="stats-pop" id="stats-pop" role="dialog" aria-label="Catalog statistics" hidden>
+      <div class="frame-title">┌── stats ──</div>
+      <div class="kv">
+        <span class="k">tot</span><span id="pop-tot"></span>
+        <span class="k">words</span><span id="pop-words"></span>
+        <span class="k">subjects</span><span id="pop-subj"></span>
+        <span class="k">last</span><span id="pop-last"></span>
+        <span class="k">built</span><span id="pop-built"></span>
+      </div>
+      <div class="online stats-online">● online</div>
+    </div>
   </header>
-
-  <div class="statusbar" id="statusbar">
-    <span id="stat-tot"></span>
-    <span id="stat-last"></span>
-    <span class="online">● online</span>
-  </div>
 
   <div class="searchbar">
     <div class="frame frame-search">

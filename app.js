@@ -68,15 +68,56 @@
     return svg;
   }
 
-  // ---------- status bar ----------
-  function buildStatusbar() {
+  // ---------- stats popover ----------
+  function buildStats() {
     const { total, words, subjects, last } = window.siteStats();
-    document.getElementById("stat-tot").textContent =
-      `tot=${total}  words=${words.toLocaleString()}  subjects=${subjects}`;
-    document.getElementById("stat-last").textContent =
-      last ? `last=${window.fmtDate(last.date)}` : "";
-    const bd = document.getElementById("build-date");
-    if (bd) bd.textContent = window.fmtDate(new Date().toISOString().slice(0, 10));
+    const set = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = v; };
+    const today = window.fmtDate(new Date().toISOString().slice(0, 10));
+    set("pop-tot", String(total));
+    set("pop-words", words.toLocaleString());
+    set("pop-subj", String(subjects));
+    set("pop-last", last ? window.fmtDate(last.date) : "—");
+    set("pop-built", today);
+    set("build-date", today);
+  }
+
+  // The stats popover (top-right): open/close, dismiss on Esc or outside click.
+  function wireStats() {
+    const btn = document.getElementById("btn-stats");
+    const pop = document.getElementById("stats-pop");
+    if (!btn || !pop) return;
+    const setOpen = (open) => {
+      pop.hidden = !open;
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    };
+    btn.addEventListener("click", (e) => { e.stopPropagation(); setOpen(pop.hidden); });
+    document.addEventListener("click", (e) => {
+      if (!pop.hidden && !pop.contains(e.target) && e.target !== btn) setOpen(false);
+    });
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") setOpen(false); });
+  }
+
+  // "recent" button: jump to a flat, newest-first list; click again to return
+  // to the shelves. Reuses the group/sort state so it stays in sync.
+  function wireRecent() {
+    const btn = document.getElementById("btn-recent");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const active = state.group === "flat" && state.sort === "recent";
+      if (active) { state.group = "shelf"; }
+      else { state.group = "flat"; state.sort = "recent"; }
+      openShelf = null;
+      saveState(state);
+      render();
+    });
+  }
+
+  function updateActionButtons() {
+    const btn = document.getElementById("btn-recent");
+    if (!btn) return;
+    const active = state.group === "flat" && state.sort === "recent";
+    btn.textContent = active ? "$ shelves" : "$ recent";
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   }
 
   // ---------- controls ----------
@@ -437,6 +478,7 @@
   function render() {
     refreshPressed();
     updateOptionsSummary();
+    updateActionButtons();
 
     const listing = document.getElementById("listing");
     listing.innerHTML = "";
@@ -484,8 +526,10 @@
       const orphans = essays.filter(e => !shelved.has(e.slug)).map(e => e.slug);
       if (orphans.length) console.warn("[0x4d44] documents on no shelf:", orphans);
     }
-    buildStatusbar();
+    buildStats();
     buildControls();
+    wireStats();
+    wireRecent();
     render();
   });
 })();
