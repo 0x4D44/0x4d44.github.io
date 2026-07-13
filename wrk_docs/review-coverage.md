@@ -74,7 +74,7 @@
 | world-population/ | (never) |
 | worldviewer/ | (never) |
 | barcelona/ | (never) |
-| brilliancy/ | (never) |
+| brilliancy/ | 2026-07-13 |
 | broadband-speed-checker/ | (never) |
 | constellation/ | (never) |
 | cowork/ | (never) |
