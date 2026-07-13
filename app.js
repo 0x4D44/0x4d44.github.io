@@ -10,7 +10,7 @@
   "use strict";
 
   const STATE_KEY = "0x4d44.listing.v1";
-  const defaults = { filter: "all", group: "shelf", sort: "recent", layout: "table", folded: {} };
+  const defaults = { filter: "all", group: "shelf", sort: "recent", layout: "table", folded: {}, optionsOpen: false };
 
   function loadState() {
     try {
@@ -163,14 +163,21 @@
       });
     }
 
-    // Collapsible options (mobile): the toggle shows/hides the filter+controls
-    // block. On desktop CSS keeps the block open and hides the toggle.
+    // Collapsible options: the filter/group/sort/layout block is hidden behind
+    // this toggle on every width (tiles + search are the primary navigation).
+    // The open/closed state is remembered across visits.
     const toggle = document.getElementById("options-toggle");
     const opts = document.getElementById("options");
     if (toggle && opts) {
-      toggle.addEventListener("click", () => {
-        const open = opts.classList.toggle("open");
+      const apply = (open) => {
+        opts.classList.toggle("open", open);
         toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      };
+      apply(!!state.optionsOpen);
+      toggle.addEventListener("click", () => {
+        state.optionsOpen = !opts.classList.contains("open");
+        saveState(state);
+        apply(state.optionsOpen);
       });
     }
   }
