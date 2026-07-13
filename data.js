@@ -18,7 +18,7 @@ window.ESSAYS = [
   {
     slug: "cowork",
     title: "While You Were Out",
-    tagline: "An interactive field guide to the three ways to work with Claude — Claude.ai for chat, Claude Code for supervised building, and Claude Cowork for async cloud delegation — laid out on one axis: how far you step out of the loop. Drag a live autonomy console, run a night-shift demo where three cloud machines open PRs while you sleep, and read an honest tier-for-tier map against ChatGPT, Codex and ChatGPT Agent. Vanilla JS, SVG; no build step.",
+    tagline: "A plain-English field guide to handing work to Claude, written for people who work with words, not code: the chat app you already know, plus Claude Cowork — give it a brief and it works on its own in a private workspace, then hands back a first draft to review. Drag a two-gear dial, watch a night shift turn three legal chores into morning drafts, and read an honest map against ChatGPT. Vanilla JS + SVG; no build step.",
     url: "https://0x4d44.github.io/cowork/",
     illustration: "ill-cowork",
     date: "2026-07-13T14:30:00",

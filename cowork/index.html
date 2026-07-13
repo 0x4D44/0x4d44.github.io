@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>While You Were Out — Three Ways to Work with Claude</title>
-<meta name="description" content="An interactive field guide to the three ways to work with Claude — Claude.ai for chat, Claude Code for supervised building, and Claude Cowork for async cloud delegation — and how they line up against ChatGPT, Codex and ChatGPT Agent.">
+<title>While You Were Out — Handing Work to Claude</title>
+<meta name="description" content="A plain-English field guide for the legal desk: the Claude you already use in your browser, and Claude Cowork — hand over a whole task and it works on its own, then brings back a first draft for you to review.">
 <meta name="theme-color" content="#0d0e11">
 <meta property="og:type" content="article">
-<meta property="og:title" content="While You Were Out — Three Ways to Work with Claude">
-<meta property="og:description" content="Claude.ai, Claude Code and Claude Cowork on one axis: how far you step out of the loop. An interactive console, an async night-shift demo, and an honest map against the ChatGPT line-up.">
+<meta property="og:title" content="While You Were Out — Handing Work to Claude">
+<meta property="og:description" content="You already chat with Claude in your browser. Cowork is the next step: give it a brief, and it works on its own in a private workspace — then hands you a first draft to check. Written for people who work with words, not code.">
 <meta property="og:url" content="https://0x4d44.github.io/cowork/">
 <meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d0e11'/%3E%3Ccircle cx='16' cy='19' r='9.5' fill='none' stroke='%23e08256' stroke-width='1.6'/%3E%3Cpath d='M16 19 L16 11.5' stroke='%23e08256' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M16 19 L21 22' stroke='%23eceae4' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='19' r='1.6' fill='%23e08256'/%3E%3C/svg%3E">
@@ -111,16 +111,13 @@
   p{color:var(--ink-dim)}
   .lede{font-size:clamp(16px,2vw,19px);color:var(--ink-dim)}
   strong{color:var(--ink);font-weight:680}
-  .k{font-family:var(--mono);font-size:.86em;color:var(--claude-ink);
-    background:color-mix(in srgb,var(--claude) 12%,transparent);padding:.08em .4em;border-radius:5px;
-    border:1px solid color-mix(in srgb,var(--claude) 22%,transparent);white-space:nowrap}
 
   /* ---------- hero ---------- */
   .hero{padding:44px 0 30px;position:relative}
   .hero-head{display:flex;flex-direction:column;gap:16px;align-items:flex-start;margin-bottom:26px}
   .hero h1{font-size:clamp(38px,7vw,80px);letter-spacing:-.035em}
   .hero h1 .soft{color:var(--ink-faint);font-weight:300}
-  .hero .lede{max-width:640px}
+  .hero .lede{max-width:660px}
 
   /* console */
   .console{border:1px solid var(--hair-2);border-radius:16px;overflow:hidden;
@@ -150,7 +147,7 @@
     color:var(--claude-ink);padding:3px 9px;border:1px solid color-mix(in srgb,var(--claude) 30%,transparent);
     border-radius:999px}
   .ro-title{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em;color:var(--ink)}
-  .ro-desc{margin-top:8px;color:var(--ink-dim);min-height:3.2em;font-size:15px;max-width:46ch}
+  .ro-desc{margin-top:8px;color:var(--ink-dim);min-height:3.2em;font-size:15px;max-width:48ch}
   .metrics{display:grid;grid-template-columns:1fr;gap:8px}
   .metric{display:flex;align-items:center;justify-content:space-between;gap:10px;
     font-family:var(--mono);font-size:12px;border-bottom:1px dashed var(--hair);padding-bottom:6px}
@@ -180,26 +177,34 @@
 
   /* ---------- generic section rhythm ---------- */
   .band{padding:64px 0}
-  .band-head{max-width:640px;margin-bottom:34px}
+  .band-head{max-width:660px;margin-bottom:34px}
   .band-head p{margin-top:12px}
 
-  /* stations */
-  .stations{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-  .station{border:1px solid var(--hair-2);border-radius:14px;background:var(--panel);padding:22px 20px 24px;
+  /* stations (two gears) */
+  .stations{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .station{border:1px solid var(--hair-2);border-radius:14px;background:var(--panel);padding:24px 22px 26px;
     position:relative;overflow:hidden;transition:transform .3s,border-color .3s}
   .station::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
     background:linear-gradient(180deg,var(--claude),transparent)}
   .station:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--claude) 40%,var(--hair-2))}
   .station .idx{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ink-faint)}
-  .station h3{margin:10px 0 3px}
+  .station h3{margin:10px 0 3px;font-size:22px}
   .station .role{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--claude-ink);margin-bottom:12px}
-  .station p{font-size:14.5px}
+  .station p{font-size:15px}
   .station ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:7px}
-  .station li{font-size:13.5px;color:var(--ink-dim);padding-left:18px;position:relative}
+  .station li{font-size:14px;color:var(--ink-dim);padding-left:18px;position:relative}
   .station li::before{content:"";position:absolute;left:0;top:.62em;width:7px;height:1px;background:var(--claude)}
   .station .loop{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-faint);
     border-top:1px dashed var(--hair);padding-top:12px}
   .station .loop b{color:var(--ink);font-weight:600}
+
+  /* behind-the-curtain note */
+  .curtain{margin-top:16px;border:1px dashed var(--hair-2);border-radius:12px;background:var(--panel2);
+    padding:16px 18px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .curtain .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-faint);border:1px solid var(--hair-2);border-radius:999px;padding:4px 10px;white-space:nowrap}
+  .curtain p{font-size:13.5px;margin:0;flex:1;min-width:240px}
+  .curtain b{color:var(--ink-dim);font-weight:650}
 
   /* benefits */
   .benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
@@ -248,6 +253,8 @@
   table.matrix thead th.c-claude{color:var(--claude-ink)}
   table.matrix thead th.c-openai{color:var(--openai-ink)}
   table.matrix tbody tr:hover td{background:color-mix(in srgb,var(--claude) 5%,transparent)}
+  table.matrix tbody tr.muted td{opacity:.62}
+  table.matrix tbody tr.muted:hover td{opacity:.85}
   table.matrix .rowlbl{color:var(--ink);font-weight:650}
   table.matrix .rowlbl small{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
     text-transform:uppercase;color:var(--ink-faint);font-weight:400;margin-top:3px}
@@ -260,21 +267,31 @@
   .legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--ink-faint)}
   .legend span{display:inline-flex;align-items:center;gap:8px}
   .legend .sw{width:11px;height:11px;border-radius:3px}
-  .disclaimer{margin-top:16px;font-size:12.5px;color:var(--ink-faint);max-width:640px;line-height:1.6}
+  .disclaimer{margin-top:16px;font-size:12.5px;color:var(--ink-faint);max-width:660px;line-height:1.6}
 
   /* pull quote */
-  .pull{border-left:2px solid var(--claude);padding:6px 0 6px 22px;margin:6px 0;max-width:640px}
+  .pull{border-left:2px solid var(--claude);padding:6px 0 6px 22px;margin:6px 0;max-width:660px}
   .pull p{font-family:var(--serif);font-size:clamp(20px,3vw,26px);line-height:1.32;color:var(--ink);font-style:italic}
 
   /* close / cta */
-  .cta{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:8px}
+  .cta{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:8px}
   .cta a{display:block;border:1px solid var(--hair-2);border-radius:12px;background:var(--panel);
-    padding:18px;text-decoration:none;transition:.2s;position:relative}
+    padding:20px;text-decoration:none;transition:.2s;position:relative}
   .cta a:hover{border-color:var(--claude);transform:translateY(-2px)}
   .cta .role{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--claude-ink)}
-  .cta .nm{font-size:18px;font-weight:750;color:var(--ink);margin:8px 0 5px}
-  .cta p{font-size:13px}
+  .cta .nm{font-size:19px;font-weight:750;color:var(--ink);margin:8px 0 5px}
+  .cta p{font-size:13.5px}
   .cta .go{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:12px;display:inline-flex;gap:6px}
+  .cta-foot{margin-top:14px;font-size:13px;color:var(--ink-faint)}
+  .cta-foot a{color:var(--claude-ink);text-decoration:none}
+  .cta-foot a:hover{text-decoration:underline}
+
+  /* responsible-use note */
+  .note{margin-top:34px;border:1px solid var(--hair-2);border-radius:12px;background:var(--panel2);
+    padding:18px 20px;max-width:760px}
+  .note h3{font-size:13px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px;font-weight:600}
+  .note p{font-size:13.5px;line-height:1.6}
+  .note b{color:var(--ink)}
 
   footer{border-top:1px solid var(--hair);margin-top:20px;padding:30px 0 60px}
   footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
@@ -292,7 +309,6 @@
     .benefits{gap:12px}
   }
   @media (max-width:520px){
-    .stops{flex-wrap:wrap}
     .track-row{flex-direction:column;align-items:stretch}
   }
   @media (prefers-reduced-motion: reduce){
@@ -313,29 +329,26 @@
 <header class="hero">
   <div class="wrap">
     <div class="hero-head rv in">
-      <span class="eyebrow">Field guide · Claude at three speeds</span>
-      <h1>One&nbsp;Claude.<br><span class="soft">Three ways to</span> work.</h1>
-      <p class="lede">The same models sit behind a chat window, a coding agent in your terminal, and a machine in the cloud that works while you are asleep. What changes between them is one thing: <strong>how far you step out of the loop.</strong> Move the dial.</p>
+      <span class="eyebrow">A field guide · for people who work with words</span>
+      <h1>The same Claude.<br><span class="soft">Now it works</span> while you're out.</h1>
+      <p class="lede">You already talk to Claude in your browser — asking questions, summarising documents, drafting. <strong>Cowork</strong> is the next step along: give it a brief and the papers, and it goes off and does the work on its own — then hands you a first draft to check. What changes between the two is one thing: <strong>how much of the work you keep in your own hands.</strong> Move the dial.</p>
     </div>
 
     <div class="console rv in" id="console">
       <div class="console-top">
-        <span class="lbl">Autonomy console</span>
+        <span class="lbl">The dial</span>
         <div class="leds">
-          <span class="led" id="led-sync"><span class="dot"></span><b id="led-sync-t">Synchronous</b></span>
+          <span class="led" id="led-sync"><span class="dot"></span><b id="led-sync-t">You're waiting</b></span>
           <span class="led" id="led-place"><span class="dot"></span><b id="led-place-t">Your screen</b></span>
-          <span class="led" id="led-par"><span class="dot"></span><b id="led-par-t">1 task</b></span>
+          <span class="led" id="led-par"><span class="dot"></span><b id="led-par-t">One thing</b></span>
         </div>
       </div>
 
       <div class="stage-wrap">
-        <svg class="stage" viewBox="0 0 1000 380" role="img" aria-label="Diagram of where you sit relative to Claude as autonomy increases">
+        <svg class="stage" viewBox="0 0 1000 380" role="img" aria-label="A diagram showing you and Claude working together, then Claude going off to work on its own">
           <defs>
             <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0 0 L10 5 L0 10 z" fill="var(--claude)"></path>
-            </marker>
-            <marker id="ahd" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
-              <path d="M0 0 L10 5 L0 10 z" fill="var(--ink-faint)"></path>
             </marker>
           </defs>
 
@@ -345,7 +358,7 @@
                 stroke="var(--hair-2)" stroke-width="1.5"></rect>
           <text id="panel-lbl" x="450" y="112" text-anchor="middle" font-size="13" letter-spacing="3">YOUR SCREEN</text>
 
-          <!-- parallel task lanes (fade in toward cowork), filled by JS -->
+          <!-- parallel task lanes (fade in toward delegate), filled by JS -->
           <g id="lanes"></g>
 
           <!-- connection arrows between you and claude -->
@@ -373,82 +386,74 @@
       <div class="readout">
         <div>
           <div class="ro-name">
-            <span class="ro-kicker fade" id="ro-kicker">Chat</span>
+            <span class="ro-kicker fade" id="ro-kicker">Ask</span>
             <span class="ro-title fade" id="ro-title">Claude.ai</span>
           </div>
           <p class="ro-desc fade" id="ro-desc"></p>
         </div>
         <div class="metrics">
-          <div class="metric"><span>Your position</span><b class="fade" id="m-pos">In the loop</b></div>
-          <div class="metric"><span>Cadence</span><b class="fade" id="m-mode">Synchronous</b></div>
-          <div class="metric"><span>Runs on</span><b class="fade" id="m-place">Your screen</b></div>
+          <div class="metric"><span>Your part</span><b class="fade" id="m-pos">In every step</b></div>
+          <div class="metric"><span>How it runs</span><b class="fade" id="m-mode">You wait for it</b></div>
+          <div class="metric"><span>Where it works</span><b class="fade" id="m-place">Your screen</b></div>
         </div>
       </div>
 
       <div class="controls">
         <div class="track-row">
-          <input type="range" class="slider" id="slider" min="0" max="2" step="0.01" value="0"
-                 aria-label="Autonomy level: chat, code, or cowork">
+          <input type="range" class="slider" id="slider" min="0" max="1" step="0.01" value="0"
+                 aria-label="From asking Claude to delegating to Claude Cowork">
         </div>
-        <div class="stops" role="group" aria-label="Jump to a station">
-          <button class="stop" data-t="0" aria-pressed="true">Chat<small>Claude.ai</small></button>
-          <button class="stop" data-t="1" aria-pressed="false">Code<small>Claude Code</small></button>
-          <button class="stop" data-t="2" aria-pressed="false">Cowork<small>Claude Cowork</small></button>
+        <div class="stops" role="group" aria-label="Jump to a way of working">
+          <button class="stop" data-t="0" aria-pressed="true">Ask<small>Claude.ai · the app you know</small></button>
+          <button class="stop" data-t="1" aria-pressed="false">Delegate<small>Claude Cowork</small></button>
         </div>
-        <div class="hint" id="hint">Drag the dial, or tap a station</div>
+        <div class="hint" id="hint">Drag the dial, or tap a side</div>
       </div>
     </div>
   </div>
 </header>
 
-<!-- ================= THE THREE STATIONS ================= -->
+<!-- ================= THE TWO GEARS ================= -->
 <section class="band">
   <div class="wrap">
     <div class="band-head rv">
-      <span class="eyebrow">The spectrum</span>
-      <h2>In the loop, on the loop, off the loop</h2>
-      <p class="lede">Three surfaces, one account, the same frontier models. Pick by how much of the work you want to hold in your own hands.</p>
+      <span class="eyebrow">Two ways to work</span>
+      <h2>Ask it a question, or hand it the job</h2>
+      <p class="lede">Same Claude, same account. The difference is whether you sit with it turn by turn, or set it going and come back later.</p>
     </div>
 
     <div class="stations">
       <article class="station rv">
-        <div class="idx">STATION 01</div>
+        <div class="idx">THE ONE YOU KNOW</div>
         <h3>Claude.ai</h3>
-        <div class="role">Chat · in the loop</div>
-        <p>A conversation. You ask, Claude answers, you steer the next turn. Best for thinking out loud, drafting, research, and getting your head around a problem before anyone writes a line.</p>
+        <div class="role">Ask · you're in every step</div>
+        <p>The chat window in your browser. Paste in a document and ask what it means, talk through the shape of an argument, get a clause drafted while you watch. You read each answer and decide the next move.</p>
         <ul>
-          <li>Artifacts you can edit live, Projects that hold your context</li>
-          <li>Connectors reach your docs, calendar and tools</li>
-          <li>Web, desktop and phone — wherever the idea strikes</li>
+          <li>Summarise or interrogate something you paste or upload</li>
+          <li>Draft and redraft, out loud, together</li>
+          <li>Keep a matter's context in one place with Projects</li>
         </ul>
-        <div class="loop">You drive <b>every turn</b>. Nothing happens without you.</div>
+        <div class="loop">Best when you're <b>thinking</b> — and want a hand on every line.</div>
       </article>
 
       <article class="station rv">
-        <div class="idx">STATION 02</div>
-        <h3>Claude Code</h3>
-        <div class="role">Build · on the loop</div>
-        <p>An agent that lives in your terminal and editor. It reads your files, runs commands, makes the change and shows its working — with you watching over its shoulder, approving as it goes.</p>
-        <ul>
-          <li>Real edits to a real repo on your own machine</li>
-          <li>Runs tests, greps, git — the whole toolbelt</li>
-          <li>Hooks, subagents and skills to shape how it works</li>
-        </ul>
-        <div class="loop">You <b>supervise</b>. It acts; you keep a hand on the wheel.</div>
-      </article>
-
-      <article class="station rv">
-        <div class="idx">STATION 03</div>
+        <div class="idx">THE NEXT STEP</div>
         <h3>Claude Cowork</h3>
-        <div class="role">Delegate · off the loop</div>
-        <p>Hand off the whole task. Claude spins up its own sandboxed machine in the cloud, clones your repo fresh, works for as long as the job takes, and comes back with a branch, a pull request, or an answer.</p>
+        <div class="role">Delegate · it works on its own</div>
+        <p>Brief it the way you'd brief a junior: here's the task, here are the papers, here's the format I want back. Claude takes it away, works in its own private workspace for as long as the job needs, and returns a first draft for you to review.</p>
         <ul>
-          <li>Async: kick it off from your phone and walk away</li>
-          <li>Runs many jobs in parallel, each in its own box</li>
-          <li>Triggers on a schedule or a pull-request event</li>
+          <li>Work through a long bundle you'd never have time to read</li>
+          <li>Run several jobs at once — and overnight</li>
+          <li>Kick it off from your phone and carry on with your day</li>
         </ul>
-        <div class="loop">You <b>delegate</b>. It works while you do something else.</div>
+        <div class="loop">Best when you're <b>delegating</b> — the legwork, not the judgement.</div>
       </article>
+    </div>
+
+    <!-- behind the curtain: Claude Code -->
+    <div class="curtain rv">
+      <span class="tag">Behind the curtain</span>
+      <p>There's a third, more technical way in — <b>Claude Code</b> — the same engine wired into the tools software teams use to build things. It's a power tool at the far end of the bench, and it's what quietly does the heavy lifting when Cowork works with computer systems. You almost certainly won't touch it directly; it's mentioned here only so the picture's complete.</p>
     </div>
   </div>
 </section>
@@ -457,63 +462,63 @@
 <section class="band" style="background:linear-gradient(180deg,transparent,var(--bg2),transparent)">
   <div class="wrap">
     <div class="band-head rv">
-      <span class="eyebrow">The new thing · Cowork</span>
-      <h2>Delegation, not supervision</h2>
-      <p class="lede">Chat and Code both keep you present. Cowork is the first surface built for the work you <em>don't</em> want to babysit — the long tail of chores, fixes and investigations that never quite reach the top of your day.</p>
+      <span class="eyebrow">The new part · Cowork</span>
+      <h2>Handing off, not hovering</h2>
+      <p class="lede">The chat window keeps you present for every line. Cowork is built for the work you <em>don't</em> want to sit through — the long, patient reading and first-drafting that never quite reaches the top of your day.</p>
     </div>
 
     <div class="benefits">
       <div class="benefit rv">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"></rect><path d="M8 7V5a4 4 0 0 1 8 0v2M12 12v3"></path></svg>
-        <h3>Its own clean room</h3>
-        <p>Each job runs in an isolated, ephemeral cloud container — the repo cloned fresh, nothing shared with your laptop. Reclaimed when it's done. Nothing you didn't commit sticks around.</p>
+        <h3>Its own private room</h3>
+        <p>Each task runs in a sealed, temporary workspace, created for the job and wiped when it's done. One matter's papers aren't mixed with another's, and nothing is left lying around afterwards.</p>
       </div>
       <div class="benefit rv">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7V3M12 21v-4M7 12H3M21 12h-4"></path><circle cx="12" cy="12" r="4"></circle><path d="M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"></path></svg>
-        <h3>Many hands at once</h3>
-        <p>Dispatch a dozen tasks and they run side by side, each in its own box. The refactor, the flaky test, the doc sweep and the dependency bump don't have to queue behind each other — or behind you.</p>
+        <h3>Several matters at once</h3>
+        <p>Hand it a stack of jobs and they run side by side, each in its own room. Summarising the bundle, pulling the clauses and drafting the letter don't have to queue behind each other — or behind you.</p>
       </div>
       <div class="benefit rv">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>
-        <h3>On a schedule</h3>
-        <p>Routines wake a session on a cron you set — an hourly triage, a nightly changelog, a Monday-morning digest. The work shows up finished, the way a report lands in your inbox.</p>
+        <h3>On a standing schedule</h3>
+        <p>Set it to do something every morning — scan a court list, watch the news on a client, produce a Monday summary of the week ahead — and the work is sitting there finished when you arrive.</p>
       </div>
       <div class="benefit rv">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="2.4"></circle><circle cx="6" cy="18" r="2.4"></circle><circle cx="18" cy="12" r="2.4"></circle><path d="M8.4 6H14a2 2 0 0 1 2 2v1.6M8.4 18H14a2 2 0 0 0 2-2v-1.6"></path></svg>
-        <h3>Reacts to your repo</h3>
-        <p>Subscribe a session to a pull request and it watches CI and review comments — re-running, diagnosing and pushing fixes until the checks go green, then telling you when they do.</p>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path></svg>
+        <h3>Works from a brief</h3>
+        <p>You don't chat it through step by step. You describe the task once — the papers, the question, the format — and it gets on with it, coming back with a draft rather than a conversation.</p>
       </div>
       <div class="benefit rv">
         <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"></path><path d="M15 16l3 3 4-5"></path></svg>
-        <h3>Leaves a trail</h3>
-        <p>You get a branch and a pull request, not a mystery. The diff is the record of what changed; the session is the record of why. Review it like any colleague's work — because that's what it is.</p>
+        <h3>Shows its working</h3>
+        <p>You get the reasoning and the sources behind every point, not a black box — so you can check each quote and citation against the original before anything is relied on or leaves your hands.</p>
       </div>
       <div class="benefit rv">
-        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4M4 19h4"></path><path d="M13 5l2.5 5.5L21 13l-5.5 2.5L13 21l-2.5-5.5L5 13l5.5-2.5L13 5z"></path></svg>
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.4"></rect><path d="M11 18h2"></path></svg>
         <h3>Meets you where you are</h3>
-        <p>Start a job from the web, your phone, the desktop app or a GitHub Action. Close the tab. The container keeps working, and pings you when there's something to look at.</p>
+        <p>Start a task from your laptop or your phone, close the tab and get on with your day. It keeps working without you, and gives you a nudge when there's something to look at.</p>
       </div>
     </div>
 
     <!-- night-shift demo -->
     <div style="margin-top:38px" class="rv">
       <div class="band-head" style="margin-bottom:20px">
-        <span class="eyebrow">Try it · the night shift</span>
+        <span class="eyebrow">See it · the night shift</span>
         <h2 style="font-size:clamp(22px,3.4vw,32px)">While you were out</h2>
-        <p>Hand three chores to Cowork at the end of the day. Watch the clock — you're not in this loop.</p>
+        <p>Hand three chores to Cowork on your way home. Watch the clock — you're not sitting through any of this.</p>
       </div>
 
       <div class="night">
         <div class="night-top">
-          <div class="clock" id="clock">22:40<small id="clock-lbl">EVENING · YOU LOG OFF</small></div>
-          <button class="btn" id="delegateBtn" type="button">Delegate &amp; log off</button>
+          <div class="clock" id="clock">18:30<small id="clock-lbl">EVENING · YOU HEAD HOME</small></div>
+          <button class="btn" id="delegateBtn" type="button">Delegate &amp; head home</button>
         </div>
         <div class="jobs" id="jobs">
-          <div class="job" data-secs="6"><div class="jt">Upgrade the test runner &amp; fix the fallout</div><div class="js">Queued</div><div class="bar"><i></i></div></div>
-          <div class="job" data-secs="9"><div class="jt">Chase the flaky checkout test to its root cause</div><div class="js">Queued</div><div class="bar"><i></i></div></div>
-          <div class="job" data-secs="7"><div class="jt">Write the release notes from this week's merges</div><div class="js">Queued</div><div class="bar"><i></i></div></div>
+          <div class="job" data-secs="6"><div class="jt">Summarise the 220-page disclosure bundle</div><div class="js">Waiting</div><div class="bar"><i></i></div></div>
+          <div class="job" data-secs="9"><div class="jt">Pull every termination clause from the 30 supplier contracts</div><div class="js">Waiting</div><div class="bar"><i></i></div></div>
+          <div class="job" data-secs="7"><div class="jt">Draft a first-cut chronology from the email export</div><div class="js">Waiting</div><div class="bar"><i></i></div></div>
         </div>
-        <p class="night-note" id="nightNote">Three tasks, three cloud machines, running in parallel. You're asleep. <b>They aren't.</b></p>
+        <p class="night-note" id="nightNote">Three tasks, three private workspaces, running side by side. You've gone home. <b>They haven't.</b></p>
       </div>
     </div>
   </div>
@@ -524,12 +529,12 @@
   <div class="wrap">
     <div class="band-head rv">
       <span class="eyebrow">The handoff</span>
-      <h2>One thought, passed down the line</h2>
-      <p class="lede">You don't choose one surface for good. A single piece of work slides along the dial as it firms up — and because it's the same account and the same models, the context comes with it.</p>
+      <h2>One question, three moves</h2>
+      <p class="lede">You don't pick one gear for good. A single piece of work slides along the dial — you think it through, hand off the grind, then take back the last word. The judgement stays yours.</p>
     </div>
 
     <div class="flowmap rv">
-      <svg viewBox="0 0 1000 260" role="img" aria-label="A task moving from Claude.ai to Claude Code to Claude Cowork">
+      <svg viewBox="0 0 1000 260" role="img" aria-label="A task moving from asking Claude, to delegating to Cowork, to your review">
         <defs>
           <marker id="fah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--claude)"></path></marker>
           <linearGradient id="fg" x1="0" y1="0" x2="1" y2="0">
@@ -544,31 +549,31 @@
         <g transform="translate(160,130)">
           <circle r="40" fill="var(--panel2)" stroke="var(--claude)" stroke-width="2"></circle>
           <text y="-58" text-anchor="middle" font-family="var(--mono)" font-size="12" letter-spacing="2.5" fill="var(--claude-ink)">CLAUDE.AI</text>
-          <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Think</text>
-          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“What would this feature</text>
-          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">even look like?”</text>
+          <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Ask</text>
+          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“Is an indemnity even</text>
+          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">the right tool here?”</text>
         </g>
         <!-- node 2 -->
         <g transform="translate(500,130)">
-          <circle r="40" fill="var(--panel2)" stroke="var(--claude)" stroke-width="2"></circle>
-          <text y="-58" text-anchor="middle" font-family="var(--mono)" font-size="12" letter-spacing="2.5" fill="var(--claude-ink)">CLAUDE CODE</text>
-          <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Build</text>
-          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“Let's wire the core of it</text>
-          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">up together, right now.”</text>
-        </g>
-        <!-- node 3 -->
-        <g transform="translate(840,130)">
           <circle r="40" fill="color-mix(in srgb,var(--claude) 14%,var(--panel2))" stroke="var(--claude)" stroke-width="2.5"></circle>
           <text y="-58" text-anchor="middle" font-family="var(--mono)" font-size="12" letter-spacing="2.5" fill="var(--claude-ink)">COWORK</text>
           <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Delegate</text>
-          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“Now do the same across</text>
-          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">the other nine modules.”</text>
+          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“Now apply that across all</text>
+          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">forty schedules, flag outliers.”</text>
+        </g>
+        <!-- node 3 -->
+        <g transform="translate(840,130)">
+          <circle r="40" fill="var(--panel2)" stroke="var(--ink-dim)" stroke-width="2"></circle>
+          <text y="-58" text-anchor="middle" font-family="var(--mono)" font-size="12" letter-spacing="2.5" fill="var(--ink-dim)">YOU</text>
+          <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Review</text>
+          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“Check the drafts, sign</text>
+          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">off, send.”</text>
         </g>
       </svg>
     </div>
 
     <div class="pull rv" style="margin-top:34px">
-      <p>The dial isn't a menu you pick from once. It's a gearbox — you shift up as the work gets clearer and you need your hands less.</p>
+      <p>The dial isn't a menu you choose from once. It's a gearbox — you shift up as the task gets clearer and you need your hands on it less.</p>
     </div>
   </div>
 </section>
@@ -578,39 +583,34 @@
   <div class="wrap">
     <div class="band-head rv">
       <span class="eyebrow">The wider map</span>
-      <h2>The same three gears, two garages</h2>
-      <p class="lede">Claude isn't the only house with a chat app, a coding agent and a cloud worker. Here's the honest tier-for-tier map against OpenAI's line-up — the shapes rhyme, even where the details differ.</p>
+      <h2>The same idea, two houses</h2>
+      <p class="lede">Claude isn't the only one with a chat app and an assistant that goes off and does the work. Here's the honest map against OpenAI's line-up — the one behind ChatGPT — for the two rungs you'll actually meet.</p>
     </div>
 
     <div class="matrix-scroll rv">
       <table class="matrix">
         <thead>
           <tr>
-            <th style="min-width:150px">The gear</th>
+            <th style="min-width:150px">The rung</th>
             <th class="c-claude">Claude side</th>
             <th class="c-openai">OpenAI side</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td class="rowlbl">Chat<small>In the loop</small></td>
-            <td class="c-claude"><span class="prod">Claude.ai</span><p>Conversation, Artifacts, Projects and connectors. Synchronous, turn by turn, on web, desktop and phone.</p></td>
-            <td class="c-openai"><span class="prod">ChatGPT</span><p>The original chat surface — custom GPTs, canvas, connectors. The same turn-by-turn shape.</p></td>
+            <td class="rowlbl">The chat app<small>You're in every step</small></td>
+            <td class="c-claude"><span class="prod">Claude.ai</span><p>The browser assistant you type into — paste a document, ask, draft, redraft. On web, desktop and phone.</p></td>
+            <td class="c-openai"><span class="prod">ChatGPT</span><p>The original chat assistant, the same turn-by-turn shape. The one most people have already met.</p></td>
           </tr>
           <tr>
-            <td class="rowlbl">Local agent<small>On the loop</small></td>
-            <td class="c-claude"><span class="prod">Claude Code</span><p>A terminal- and IDE-native agent that edits your real files with you watching. Hooks, subagents, skills, MCP.</p></td>
-            <td class="c-openai"><span class="prod">Codex CLI</span><p>OpenAI's open-source terminal coding agent. Same idea: a supervised agent working in your local repo.</p></td>
+            <td class="rowlbl">The one that does the work<small>It works on its own</small></td>
+            <td class="c-claude"><span class="prod">Claude Cowork</span><p>Give it a brief and it works alone in a private workspace — several jobs at once, on a schedule if you like — and returns a first draft to review.</p></td>
+            <td class="c-openai"><span class="prod">ChatGPT Agent</span><p>OpenAI's assistant that goes off and completes a task on its own machine — browsing and working through it, then reporting back.</p></td>
           </tr>
-          <tr>
-            <td class="rowlbl">Cloud worker<small>Off the loop</small></td>
-            <td class="c-claude"><span class="prod">Claude Cowork</span><p>Async cloud sessions in fresh sandboxes — parallel jobs, scheduled Routines, PR-event triggers, opens PRs. Web &amp; mobile.</p></td>
-            <td class="c-openai"><span class="prod">Codex&nbsp;(cloud)</span><p>OpenAI's cloud software-engineering agent: parallel tasks in sandboxed containers, GitHub-wired, opens PRs.</p></td>
-          </tr>
-          <tr>
-            <td class="rowlbl">General agent<small>Off the loop, beyond code</small></td>
-            <td class="c-claude"><span class="prod">Cowork + the Agent SDK</span><p>The same cloud sessions drive tools, browse, run workflows and connect to MCP servers — not only repositories. Build your own on the Agent SDK.</p></td>
-            <td class="c-openai"><span class="prod">ChatGPT Agent</span><p>A browser- and computer-using agent that books, buys and researches on its own virtual machine — general tasks rather than pull requests.</p></td>
+          <tr class="muted">
+            <td class="rowlbl">For technical teams<small>Behind the curtain</small></td>
+            <td class="c-claude"><span class="prod">Claude Code</span><p>The power tool for people who build software. Not something you'd open day to day.</p></td>
+            <td class="c-openai"><span class="prod">Codex</span><p>OpenAI's equivalent for software teams. Same story — a specialist tool, not the front door.</p></td>
           </tr>
         </tbody>
       </table>
@@ -621,7 +621,7 @@
       <span><span class="sw" style="background:var(--openai)"></span>OpenAI</span>
     </div>
 
-    <p class="disclaimer rv">Where I lean, I lean toward Claude — this is a page on my own site, after all. But the mapping is real, not a strawman: both houses landed on the same three gears because the same idea drives them — pull the human out of the loop only as fast as trust allows. Product names, limits and features on both sides change month to month; treat this as a shape, not a spec sheet, and check each vendor for the current detail. No benchmarks were invented for this page.</p>
+    <p class="disclaimer rv">Where I lean, I lean toward Claude — this is a page on my own site, after all. But the map is real, not a strawman: both houses arrived at the same two rungs — a chat app, and an assistant that goes and does the work — because the same idea drives them. Product names and features on both sides change month to month, so treat this as a shape, not a spec sheet, and check each vendor for the current detail. No figures were invented for this page.</p>
   </div>
 </section>
 
@@ -630,35 +630,35 @@
   <div class="wrap">
     <div class="band-head rv">
       <span class="eyebrow">Start where you are</span>
-      <h2>Pick a gear</h2>
-      <p class="lede">You don't need to commit to one. Open the chat when you're thinking, drop into the terminal when you're building, and hand the rest to the cloud.</p>
+      <h2>Two doors, one Claude</h2>
+      <p class="lede">You don't have to choose. Open the chat when you're thinking it through; hand the rest over when you'd rather come back to a draft.</p>
     </div>
     <div class="cta">
       <a class="rv" href="https://claude.ai/" target="_blank" rel="noopener">
-        <div class="role">Chat</div>
+        <div class="role">Ask</div>
         <div class="nm">Claude.ai</div>
-        <p>Think out loud with Claude on the web, desktop or phone.</p>
+        <p>Open the chat you already know — on the web, desktop or your phone.</p>
         <div class="go">Open the chat →</div>
-      </a>
-      <a class="rv" href="https://claude.com/product/claude-code" target="_blank" rel="noopener">
-        <div class="role">Build</div>
-        <div class="nm">Claude Code</div>
-        <p>Bring the agent into your terminal and editor.</p>
-        <div class="go">Get Claude Code →</div>
       </a>
       <a class="rv" href="https://code.claude.com/docs/en/claude-code-on-the-web" target="_blank" rel="noopener">
         <div class="role">Delegate</div>
         <div class="nm">Claude Cowork</div>
-        <p>Send work to the cloud and get on with your day.</p>
-        <div class="go">Read the docs →</div>
+        <p>Hand over your first task and get on with your day.</p>
+        <div class="go">See how it works →</div>
       </a>
+    </div>
+    <p class="cta-foot rv">Building something technical, or curious about the power tool behind the curtain? That's <a href="https://claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a> — for developers.</p>
+
+    <div class="note rv">
+      <h3>One thing to keep in mind</h3>
+      <p>Claude drafts and researches; it doesn't practise law, and it can be confidently wrong. Treat everything it produces as a <b>first draft for a qualified professional to review</b> — read it, and check every quote, citation and figure against the source before you rely on it or send it out. The value is in the hours of legwork it saves you, not in taking your judgement off the hook.</p>
     </div>
   </div>
 </section>
 
 <footer>
   <div class="wrap">
-    <p>An interactive field guide · vanilla JS, one file, no build step</p>
+    <p>An interactive field guide · one page, no sign-in, nothing to install</p>
     <p><a href="https://0x4d44.github.io/">← back to the almanac</a></p>
   </div>
 </footer>
@@ -680,22 +680,18 @@
   });
 
   /* ============================================================
-     HERO — autonomy console
-     t in [0,2]: 0 chat, 1 code, 2 cowork
+     HERO — the dial. t in [0,1]: 0 = Ask (Claude.ai), 1 = Delegate (Cowork)
      ============================================================ */
   var STOPS = [
-    { kicker:"Chat",   title:"Claude.ai",     pos:"In the loop",  mode:"Synchronous",  place:"Your screen",  par:"1 task",
-      desc:"You and Claude, turn by turn. Think out loud, draft, explore — every reply is yours to steer." },
-    { kicker:"Code",   title:"Claude Code",   pos:"On the loop",  mode:"Supervised",   place:"Your machine", par:"1 task",
-      desc:"An agent in your terminal and editor. It reads your files, runs commands and makes the change — while you watch." },
-    { kicker:"Cowork", title:"Claude Cowork", pos:"Off the loop", mode:"Asynchronous", place:"The cloud",    par:"Many tasks",
-      desc:"Hand off the whole job. Claude takes its own cloud machine, works for as long as it needs, and reports back." }
+    { kicker:"Ask",      title:"Claude.ai",     pos:"In every step",  mode:"You wait for it", place:"Your screen",       par:"One thing",
+      desc:"You and Claude, turn by turn, in the browser. Ask, read the answer, decide the next move. Every line passes through you." },
+    { kicker:"Delegate", title:"Claude Cowork", pos:"Setting it going", mode:"It runs on its own", place:"A private workspace", par:"Many at once",
+      desc:"Hand over the whole job. Claude takes its own private workspace, works for as long as it needs, and brings back a first draft to review." }
   ];
 
   var svgns = "http://www.w3.org/2000/svg";
   var elPanel = document.getElementById("panel");
   var elPanelLbl = document.getElementById("panel-lbl");
-  var elYou = document.getElementById("you");
   var elClaude = document.getElementById("claude");
   var elLanes = document.getElementById("lanes");
   var elLink = document.getElementById("link");
@@ -719,10 +715,8 @@
 
   function lerp(a,b,u){ return a+(b-a)*u; }
   function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
-  // triangular membership around a stop
-  function mem(t,c){ return clamp(1-Math.abs(t-c),0,1); }
 
-  var linkState = -1; // which arrow layout is drawn
+  var linkState = -1; // which arrow layout is drawn (0 ask, 1 delegate)
   function setLink(nearest, cx){
     if(nearest === linkState) return;
     linkState = nearest;
@@ -735,7 +729,6 @@
       p.setAttribute("stroke-width",opts.w||2.4);
       if(opts.dash) p.setAttribute("stroke-dasharray",opts.dash);
       if(opts.marker) p.setAttribute("marker-end",opts.marker);
-      if(opts.markerStart) p.setAttribute("marker-start",opts.markerStart);
       p.setAttribute("stroke-linecap","round");
       elLink.appendChild(p);
       return p;
@@ -752,58 +745,47 @@
       // tight two-way conversation
       mk("M"+x0+" 182 L"+x1+" 182",{marker:"url(#ah)"});
       mk("M"+x1+" 200 L"+x0+" 200",{marker:"url(#ah)"});
-      tx((x0+x1)/2,168,"EVERY TURN IS YOURS");
-    } else if(nearest===1){
-      // you -> claude reaching into files
-      mk("M"+x0+" 190 L"+x1+" 190",{marker:"url(#ah)"});
-      tx((x0+x1)/2,176,"YOU WATCH IT WORK");
+      tx((x0+x1)/2,168,"BACK AND FORTH");
     } else {
       // dispatch out, report back arc
       mk("M"+x0+" 176 L"+x1+" 176",{marker:"url(#ah)"});
       mk("M"+x1+" 205 C"+lerp(x0,x1,.5)+" 250, "+lerp(x0,x1,.4)+" 250, "+x0+" 205",{marker:"url(#ah)",dash:"4 5",stroke:"var(--ink-faint)"});
-      tx((x0+x1)/2,162,"DISPATCH →");
-      tx((x0+x1)/2,262,"← IT REPORTS BACK");
+      tx((x0+x1)/2,162,"HAND IT OVER →");
+      tx((x0+x1)/2,262,"← A DRAFT COMES BACK");
     }
   }
 
   function render(t){
-    var w0=mem(t,0), w1=mem(t,1), w2=mem(t,2);
+    var w1 = clamp(t,0,1); // delegate membership
     // panel geometry
-    var px = lerp(300, lerp(360,470,clamp(t-1,0,1)), clamp(t,0,1));
-    // simpler explicit interpolation across the two segments:
-    if(t<=1){ px = lerp(300,360,t); } else { px = lerp(360,470,t-1); }
-    var pw = (t<=1)? lerp(250,300,t) : lerp(300,470,t-1);
-    var ph = (t<=1)? lerp(150,170,t) : lerp(170,210,t-1);
+    var px = lerp(300,470,t);
+    var pw = lerp(250,470,t);
+    var ph = lerp(150,210,t);
     var py = 190 - ph/2;
     elPanel.setAttribute("x",px); elPanel.setAttribute("y",py);
     elPanel.setAttribute("width",pw); elPanel.setAttribute("height",ph);
-    var claudeInten = (0.06 + 0.06*w2).toFixed(3);
-    elPanel.setAttribute("fill","color-mix(in srgb, var(--claude) "+(6+8*w2).toFixed(1)+"%, transparent)");
+    elPanel.setAttribute("fill","color-mix(in srgb, var(--claude) "+(6+8*w1).toFixed(1)+"%, transparent)");
 
-    // panel label crossfade text (switch at nearest)
-    var nearest = t<0.5?0:(t<1.5?1:2);
+    var nearest = t<0.5?0:1;
     elPanelLbl.textContent = STOPS[nearest].place.toUpperCase();
     elPanelLbl.setAttribute("x", px+pw/2);
     elPanelLbl.setAttribute("y", py-8);
 
-    // claude x: sits left-inside the panel, drifts right with t
-    var claudeX = px + pw*(0.30 - 0.02*w0) ;
-    if(t<=1){ claudeX = lerp(450,470,t); } else { claudeX = lerp(470,600,t-1); }
+    // claude x: drifts right as it moves into its own workspace
+    var claudeX = lerp(450,600,t);
     elClaude.setAttribute("transform","translate("+claudeX+",190)");
 
-    // link arrows
     setLink(nearest, claudeX);
 
-    // lanes: appear one-by-one as t -> 2, inside panel to the right of Claude
+    // lanes: appear one-by-one as t -> 1, inside the panel to the right of Claude
     var laneX0 = claudeX + 42, laneX1 = px + pw - 26;
     for(var i=0;i<LANES.length;i++){
       var L = LANES[i];
-      var appear = clamp((t - (1.05 + i*0.22))/0.5, 0, 1); // 0..1
+      var appear = clamp((t - (0.45 + i*0.13))/0.35, 0, 1);
       L.g.setAttribute("opacity", appear.toFixed(3));
       var ly = 190 + (i-1.5)*20;
       L.line.setAttribute("x1",laneX0); L.line.setAttribute("y1",ly);
       L.line.setAttribute("x2",laneX1); L.line.setAttribute("y2",ly);
-      // moving dot
       var span = Math.max(10, laneX1-laneX0);
       var dx = laneX0 + ((L.phase)% 1) * span;
       L.dot.setAttribute("cx",dx); L.dot.setAttribute("cy",ly);
@@ -811,9 +793,9 @@
     }
 
     // LED strip
-    setLed("led-sync", w2>0.5, STOPS[nearest].mode, "led-sync-t");
-    setLed("led-place", nearest===2, STOPS[nearest].place, "led-place-t");
-    setLed("led-par", w2>0.5, STOPS[nearest].par, "led-par-t");
+    setLed("led-sync", nearest===1, STOPS[nearest].mode, "led-sync-t");
+    setLed("led-place", nearest===1, STOPS[nearest].place, "led-place-t");
+    setLed("led-par", nearest===1, STOPS[nearest].par, "led-par-t");
   }
 
   var ledText = {};
@@ -824,11 +806,11 @@
     if(ledText[textId]!==text){ ledText[textId]=text; te.textContent = text; }
   }
 
-  // readout text (switch at nearest boundaries, with a soft fade)
+  // readout text (switch at the halfway boundary, with a soft fade)
   var curStop = -1;
   var fadeEls = ["ro-kicker","ro-title","ro-desc","m-pos","m-mode","m-place"].map(function(id){return document.getElementById(id);});
   function setReadout(t){
-    var nearest = t<0.5?0:(t<1.5?1:2);
+    var nearest = t<0.5?0:1;
     if(nearest===curStop) return;
     curStop = nearest;
     var s = STOPS[nearest];
@@ -842,7 +824,6 @@
       document.getElementById("m-place").textContent = s.place;
       fadeEls.forEach(function(el){ el.style.opacity = 1; });
     }, reduce?0:150);
-    // stop buttons
     document.querySelectorAll(".stop").forEach(function(b){
       b.setAttribute("aria-pressed", (+b.dataset.t===nearest)?"true":"false");
     });
@@ -853,7 +834,6 @@
   function frame(){
     curT += (targetT - curT) * 0.12;
     if(Math.abs(targetT-curT) < 0.001) curT = targetT;
-    // advance flow dots
     for(var i=0;i<LANES.length;i++){ LANES[i].phase = (LANES[i].phase + 0.006 + i*0.001) % 1; }
     render(curT);
     setReadout(curT);
@@ -862,8 +842,8 @@
   }
 
   function goto(t, fromUser){
-    targetT = clamp(t,0,2);
-    if(fromUser){ userTouched = true; hint.style.opacity = .0; }
+    targetT = clamp(t,0,1);
+    if(fromUser){ userTouched = true; hint.style.opacity = 0; }
   }
 
   slider.addEventListener("input", function(){ dragging=true; targetT = curT = parseFloat(slider.value); userTouched=true; hint.style.opacity=0; });
@@ -876,13 +856,12 @@
   render(0); setReadout(0);
   requestAnimationFrame(frame);
 
-  // gentle intro sweep 0 -> 2, then rest at 2 (spotlight Cowork)
+  // gentle intro sweep 0 -> 1, spotlighting the delegate side
   if(reduce){
-    curT = targetT = 2; render(2); setReadout(2); slider.value = 2;
+    curT = targetT = 1; render(1); setReadout(1); slider.value = 1;
   } else {
-    setTimeout(function(){ if(!userTouched) goto(1,false); }, 1100);
-    setTimeout(function(){ if(!userTouched) goto(2,false); }, 2400);
-    setTimeout(function(){ if(!userTouched) hint.textContent = "Drag the dial back to compare"; }, 3800);
+    setTimeout(function(){ if(!userTouched) goto(1,false); }, 1400);
+    setTimeout(function(){ if(!userTouched) hint.textContent = "Drag the dial back to compare"; }, 3400);
   }
 
   /* ============================================================
@@ -916,25 +895,21 @@
   function runNight(){
     if(running) return; running = true;
     delegateBtn.disabled = true; delegateBtn.textContent = "Working…";
-    nightNote.innerHTML = "You're offline. Three cloud machines are not.";
-    // clock: 22:40 -> 07:00 over the demo
-    var startMin = 22*60+40, endMin = 24*60+7*60; // 07:00 next day
+    nightNote.innerHTML = "You've gone home. Three private workspaces have not.";
+    var startMin = 18*60+30, endMin = 24*60+8*60; // 08:00 next day
     var span = endMin - startMin;
     var demoMs = reduce ? 200 : 8000;
     var t0 = null;
-    var maxSecs = 0;
-    jobEls.forEach(function(j){ maxSecs = Math.max(maxSecs, +j.dataset.secs); });
 
     jobEls.forEach(function(j){
       var secs = +j.dataset.secs, bar = j.querySelector(".bar i"), st = j.querySelector(".js");
-      j.classList.remove("done"); j.classList.add("run"); st.textContent = "Running";
+      j.classList.remove("done"); j.classList.add("run"); st.textContent = "Working";
       var dur = reduce?150:secs*1000;
       if(reduce){ bar.style.transition="none"; }
-      // kick width after a tick so transition applies
       setTimeout(function(){ bar.style.width = "100%"; }, 30);
       setTimeout(function(){
         j.classList.remove("run"); j.classList.add("done");
-        st.textContent = "PR opened";
+        st.textContent = "Draft ready";
       }, dur+40);
     });
 
@@ -947,9 +922,9 @@
       else clockLbl.textContent = "MORNING · YOU'RE BACK";
       if(u<1){ requestAnimationFrame(tick); }
       else {
-        clockEl.childNodes[0].nodeValue = "07:00";
-        clockLbl.textContent = "MORNING · 3 PRs WAITING";
-        nightNote.innerHTML = "You slept eight hours. <b>Three pull requests are waiting for review.</b> That's the whole pitch.";
+        clockEl.childNodes[0].nodeValue = "08:00";
+        clockLbl.textContent = "MORNING · 3 DRAFTS WAITING";
+        nightNote.innerHTML = "You slept. <b>Three first drafts are waiting for your review</b> — to read, check and sign off. That's the whole idea.";
         delegateBtn.disabled = false; delegateBtn.textContent = "Run it again";
         running = false;
       }
