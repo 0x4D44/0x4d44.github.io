@@ -18,7 +18,7 @@ window.ESSAYS = [
   {
     slug: "cowork",
     title: "While You Were Out",
-    tagline: "A plain-English field guide to handing work to Claude, written for people who work with words, not code: the chat app you already know, plus Claude Cowork — give it a brief and it works on its own in a private workspace, then hands back a first draft to review. Drag a two-gear dial, watch a night shift turn three legal chores into morning drafts, and read an honest map against ChatGPT. Vanilla JS + SVG; no build step.",
+    tagline: "A plain-English field guide to handing work to Claude, written for everyone who isn't a programmer: the chat app you already know, plus Claude Cowork — give it a task and it works on its own in a private workspace, then hands back a first draft to review. Drag a two-gear dial, watch a night shift turn three ordinary chores into morning drafts, and read an honest map against ChatGPT. Vanilla JS + SVG; no build step.",
     url: "https://0x4d44.github.io/cowork/",
     illustration: "ill-cowork",
     date: "2026-07-13T14:30:00",
