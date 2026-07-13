@@ -97,6 +97,6 @@
 | shipshape/ | (never) |
 | span-of-control/ | (never) |
 | supernova/ | (never) |
-| tidecall/ | (never) |
+| tidecall/ | 2026-07-13 |
 | tools/ | (never) |
 | vector-gp/ | (never) |
