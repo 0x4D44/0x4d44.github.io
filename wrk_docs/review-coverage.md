@@ -94,7 +94,7 @@
 | opus-verdict/ | (never) |
 | paint-drying/ | (never) |
 | randomness/ | (never) |
-| shipshape/ | (never) |
+| shipshape/ | 2026-07-13 |
 | span-of-control/ | (never) |
 | supernova/ | (never) |
 | tidecall/ | 2026-07-13 |
