@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00005 — Tidecall face-card J/Q/K/A watermark never renders
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** tidecall
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work)
 - **State history:** Fixed (2026-07-11, fixed by Claude in 9721728; awaiting independent verification)
+- **State history:** Closed (2026-07-13, independently verified and closed by Claude — not the fixer)
 
 ## Observation
 The faint J/Q/K/A ghost letter designed to sit behind a face card's pip has never rendered.
@@ -45,3 +46,18 @@ Regression (no DOM harness): behavioral before/after in headless Chrome (the `::
 content went `""` → `"K"`/`"A"`), plus a source-pattern guard in
 `tidecall/validate-static.test.js` asserting `data-face` targets `.card-art` and not the
 button. Independent closure still required.
+
+## Independent verification (2026-07-13)
+Verified by a second pair of eyes (fresh context; did not author the fix).
+
+- **Symptom gone (observed):** in headless Chrome, a rendered face card on HEAD carries
+  `data-face="K"` on `.card-art`, and `getComputedStyle(".card-art", "::before").content`
+  resolves to `"K"`. With the single product line reverted, `data-face` sits on the
+  `.playing-card` button and `::before` content resolves to `""` — the original observation,
+  verbatim.
+- **Guard bites (surgically isolated):** sed-reverting only the one product line, everything else
+  at HEAD, fails **exactly one** test — `tidecall/validate-static.test.js:111` ("data-face must
+  be set on .card-art"); passes on restore.
+- **No residual:** the repo's other `content: attr()` rules were swept for the same class of bug
+  (attribute written to an element other than the pseudo-element's originating element); none
+  found.
