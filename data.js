@@ -1174,6 +1174,70 @@ window.TAG_GROUPS = [
 // just wants the plain vocabulary.
 window.TAGS = ["all", ...window.TAG_GROUPS.flatMap(g => g.tags)];
 
+// ============================================================
+// Curated shelves (collections)
+// ------------------------------------------------------------
+// Hand-authored, editorial groupings that cut ACROSS the form/subject
+// tags above. This is where the "shelf" view gets its structure. Order
+// here is the order shelves appear on the landing; `slugs` order is the
+// order within a shelf (the listing then re-sorts by the active sort).
+//
+// A document may sit on more than one shelf (Tidecall is At Sea *and* a
+// card game) — just list its slug on each. Every slug should exist in
+// ESSAYS above; any ESSAYS entry not named on a shelf falls into a
+// trailing "Unshelved" group in the UI (and app.js warns in the console),
+// so nothing silently disappears when a new document is added.
+//
+// To reorganise: move a slug between `slugs` arrays, rename a shelf, or
+// add a new `{ id, name, blurb, slugs }` object. Nothing else to touch.
+window.COLLECTIONS = [
+  { id: "rails", name: "On Rails",
+    blurb: "Britain's railways — the locomotives, the lines and the signalling.",
+    slugs: ["class-55", "class-47", "azuma", "ecml", "ecml-timeline", "br1955",
+      "night-cab", "emu-cab", "traction-motors", "model-railway", "rail-control",
+      "mercury-arc-rectifiers", "perth"] },
+  { id: "sea", name: "At Sea",
+    blurb: "Cruise ships, ports, tides and life aboard.",
+    slugs: ["cruise-line", "cruise-propulsion", "rci-fleet", "med-cruise",
+      "harbour-hustle-cruise-cup", "tidecall", "shipshape", "morning-run"] },
+  { id: "engine", name: "The Engine Room",
+    blurb: "Engines, motors, turbines and the power plants behind them.",
+    slugs: ["ic-engine", "cruise-propulsion", "traction-motors",
+      "mercury-arc-rectifiers", "hydro", "fifty-hertz"] },
+  { id: "machine", name: "The Machine Room",
+    blurb: "Emulators, retro hardware and vanished software, brought back.",
+    slugs: ["picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+      "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
+  { id: "code", name: "Code & Tools",
+    blurb: "Code walkthroughs, Rust and small sharp tools.",
+    slugs: ["mdtpw", "mdmdview", "mdkloc", "readex", "ropus", "mdmcp", "nonogram",
+      "estimation-whist", "stop-the-bus", "rust-field-guide", "vernier",
+      "broadband-speed-checker", "midi-observatory", "constellation"] },
+  { id: "ai", name: "Minds & Models",
+    blurb: "AI, language models and the writing around them.",
+    slugs: ["j-space", "opus-verdict", "benchmarks", "ai-history", "mdtoken",
+      "claude-workflows", "token-predictor", "the-ai-who-watched"] },
+  { id: "games", name: "The Games Room",
+    blurb: "Games you play to win — cards, boards and the odd racer.",
+    slugs: ["vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+      "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
+      "coil", "japanese-wordle", "tidecall"] },
+  { id: "physics", name: "The Physics Bench",
+    blurb: "Space, chaos, number and things that move.",
+    slugs: ["randomness", "supernova", "hyperbolic", "strange-attractors", "godel",
+      "calculus", "driftfield", "paint-drying", "emdtime", "nettles", "flight"] },
+  { id: "maps", name: "Maps & Nations",
+    blurb: "Atlases, isochrones, cities and the past.",
+    slugs: ["mdisochrone", "uk-isochrone", "edinburgh-isochrone", "worldviewer",
+      "barcelona", "the-second-world-war", "world-population", "lothian", "perth"] },
+  { id: "language", name: "Learn a Language",
+    blurb: "Japanese and Spanish, taught properly.",
+    slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg"] },
+  { id: "cabinet", name: "The Cabinet",
+    blurb: "The comic, the con and other curiosities.",
+    slugs: ["win-at-cards", "mr-poop", "ipo-history", "edinburgh-biosci"] },
+];
+
 window.fmtDate = function (iso) {
   const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   // Format from the YYYY-MM-DD prefix directly, so a bare date isn't shifted a

@@ -1,26 +1,34 @@
 // ============================================================
 // 0x4D44 — interactive listing
-// Vanilla JS. No framework. Handles filter/sort/layout state and
-// renders the listing into #listing. State persists to localStorage.
+// Vanilla JS. No framework. Handles search / filter / group / sort /
+// layout state and renders the listing into #listing. State persists to
+// localStorage (the live search query is deliberately not persisted).
 // ============================================================
 
 (function () {
   "use strict";
 
   const STATE_KEY = "0x4d44.listing.v1";
-  const defaults = { filter: "all", sort: "recent", layout: "table" };
+  const defaults = { filter: "all", group: "shelf", sort: "recent", layout: "table", folded: {} };
 
   function loadState() {
     try {
-      return Object.assign({}, defaults, JSON.parse(localStorage.getItem(STATE_KEY) || "{}"));
-    } catch (_) { return Object.assign({}, defaults); }
+      const s = Object.assign({}, defaults, JSON.parse(localStorage.getItem(STATE_KEY) || "{}"));
+      if (!s.folded || typeof s.folded !== "object") s.folded = {};
+      return s;
+    } catch (_) { return Object.assign({}, defaults, { folded: {} }); }
   }
   function saveState(s) {
     try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch (_) {}
   }
 
   const state = loadState();
+  let query = "";                       // live search text — transient, never saved
   const essays = window.ESSAYS || [];
+  const collections = window.COLLECTIONS || [];
+  const bySlug = {};
+  essays.forEach(e => { bySlug[e.slug] = e; });
+
   // A page may carry one `tag` (string) or several via `tags` (array).
   const tagsOf = (e) => e.tags || (e.tag ? [e.tag] : []);
   const hasNumber = (v) => Number.isFinite(v);
@@ -64,7 +72,8 @@
       `tot=${total}  words=${words.toLocaleString()}  subjects=${subjects}`;
     document.getElementById("stat-last").textContent =
       last ? `last=${window.fmtDate(last.date)}` : "";
-    document.getElementById("build-date").textContent = window.fmtDate(new Date().toISOString().slice(0,10));
+    const bd = document.getElementById("build-date");
+    if (bd) bd.textContent = window.fmtDate(new Date().toISOString().slice(0, 10));
   }
 
   // ---------- controls ----------
@@ -118,6 +127,10 @@
 
   function buildControls() {
     buildFilter();
+    // group:by is only offered when there are shelves to group into.
+    const groupOpts = [["shelf", "--shelf"], ["subject", "--subject"], ["year", "--decade"], ["flat", "--flat"]];
+    if (!collections.length) { state.group = "flat"; }
+    buildControlRow("group-row", collections.length ? groupOpts : [["flat", "--flat"]], "group");
     buildControlRow(
       "sort-row",
       [
@@ -136,17 +149,96 @@
       ],
       "layout"
     );
+
+    const box = document.getElementById("search-input");
+    if (box) {
+      box.value = "";
+      box.addEventListener("input", () => { query = box.value.trim(); render(); });
+      box.addEventListener("keydown", (ev) => {
+        if (ev.key === "Escape") { box.value = ""; query = ""; render(); }
+      });
+    }
   }
 
-  // ---------- listing ----------
-  function sortedFiltered() {
+  // ---------- selection pipeline ----------
+  const matchesQuery = (e, q) => {
+    const hay = (e.title + " " + (e.tagline || "") + " " + tagsOf(e).join(" ") + " " +
+      e.year + " " + e.slug).toLowerCase();
+    return q.split(/\s+/).filter(Boolean).every(w => hay.includes(w));
+  };
+
+  // The base set: chip filter, then live search. (Not yet sorted/grouped.)
+  function baseList() {
     let list = essays.slice();
     if (state.filter !== "all") list = list.filter(e => tagsOf(e).includes(state.filter));
-    if (state.sort === "recent") list.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-    if (state.sort === "oldest") list.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-    if (state.sort === "length") list.sort((a, b) => (b.words || 0) - (a.words || 0));
-    if (state.sort === "year")   list.sort((a, b) => (a.year || 0) - (b.year || 0));
+    if (query) list = list.filter(e => matchesQuery(e, query.toLowerCase()));
     return list;
+  }
+
+  function sortList(list) {
+    const l = list.slice();
+    if (state.sort === "recent") l.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    if (state.sort === "oldest") l.sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+    if (state.sort === "length") l.sort((a, b) => (b.words || 0) - (a.words || 0));
+    if (state.sort === "year")   l.sort((a, b) => (a.year || 0) - (b.year || 0));
+    return l;
+  }
+
+  // Break the (already filtered) list into labelled sections per the group mode.
+  // Returns null for flat mode. Each section: { id, label, blurb, items }.
+  function sections(list) {
+    const inList = new Set(list.map(e => e.slug));
+
+    if (state.group === "shelf") {
+      const secs = collections.map(c => ({
+        id: c.id, label: c.name, blurb: c.blurb || "",
+        items: sortList(c.slugs.map(s => bySlug[s]).filter(e => e && inList.has(e.slug))),
+      })).filter(s => s.items.length);
+      // Safety net: any document on no shelf still shows, so nothing vanishes.
+      const shelved = new Set(collections.flatMap(c => c.slugs));
+      const rest = sortList(list.filter(e => !shelved.has(e.slug)));
+      if (rest.length) secs.push({ id: "_unshelved", label: "Unshelved", blurb: "Not yet filed on a shelf.", items: rest });
+      return secs;
+    }
+
+    if (state.group === "subject") {
+      const axis = (window.TAG_GROUPS || []).find(g => g.label === "subject");
+      const tags = axis ? axis.tags : (window.TAGS || []).filter(t => t !== "all");
+      const axisSet = new Set(tags);
+      const secs = tags.map(t => ({
+        id: "t-" + t, label: t, blurb: "",
+        items: sortList(list.filter(e => tagsOf(e).includes(t))),
+      })).filter(s => s.items.length);
+      const none = sortList(list.filter(e => !tagsOf(e).some(t => axisSet.has(t))));
+      if (none.length) secs.push({ id: "_notag", label: "other", blurb: "", items: none });
+      return secs;
+    }
+
+    if (state.group === "year") {
+      const buckets = {};
+      list.forEach(e => {
+        const d = Math.floor((e.year || 0) / 10) * 10;
+        (buckets[d] = buckets[d] || []).push(e);
+      });
+      return Object.keys(buckets)
+        .sort((a, b) => Number(a) - Number(b))
+        .map(d => ({ id: "d-" + d, label: d + "s", blurb: "", items: sortList(buckets[d]) }));
+    }
+
+    return null;
+  }
+
+  // ---------- item renderers ----------
+  function tableHead() {
+    return el("div", { class: "table-head" }, [
+      el("span", null, "№"),
+      el("span", null, "FIG"),
+      el("span", null, "TITLE"),
+      el("span", null, "SUBJECT"),
+      el("span", null, "SIZE"),
+      el("span", null, "YEAR"),
+      el("span", null, "STATE"),
+    ]);
   }
 
   function rowEl(essay, idx) {
@@ -200,54 +292,109 @@
     return wrapper;
   }
 
-  // Stamp aria-pressed on every control button from current state, keyed by
-  // each button's own data-value — robust to grouping and reordering.
+  function appendItems(container, items, startNum) {
+    if (state.layout === "table") {
+      container.appendChild(tableHead());
+      items.forEach((e, i) => container.appendChild(rowEl(e, startNum + i)));
+    } else {
+      const grid = el("div", { class: "grid" });
+      items.forEach((e, i) => grid.appendChild(cardEl(e, startNum + i)));
+      container.appendChild(grid);
+    }
+  }
+
+  // A foldable shelf/section header, styled as an ASCII rule.
+  function shelfHead(sec) {
+    const folded = !!state.folded[sec.id];
+    const head = el("div", {
+      class: "shelf-head",
+      role: "button",
+      tabindex: "0",
+      "aria-expanded": folded ? "false" : "true",
+      onclick: () => toggleFold(sec.id),
+      onkeydown: (ev) => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); toggleFold(sec.id); } },
+    });
+    head.appendChild(el("span", { class: "shelf-caret" }, folded ? "▸" : "▾"));
+    head.appendChild(el("span", { class: "shelf-name" }, sec.label));
+    head.appendChild(el("span", { class: "shelf-count" }, "· " + sec.items.length));
+    head.appendChild(el("span", { class: "shelf-rule" }));
+    if (sec.blurb) head.appendChild(el("span", { class: "shelf-blurb" }, sec.blurb));
+    return head;
+  }
+
+  function toggleFold(id) {
+    state.folded[id] = !state.folded[id];
+    saveState(state);
+    render();
+  }
+
+  // ---------- controls: pressed state + search readout ----------
   function refreshPressed() {
-    [["filter-row", "filter"], ["sort-row", "sort"], ["layout-row", "layout"]]
+    [["filter-row", "filter"], ["group-row", "group"], ["sort-row", "sort"], ["layout-row", "layout"]]
       .forEach(([rowId, key]) => {
-        document.querySelectorAll(`#${rowId} button`).forEach(b => {
+        const row = document.getElementById(rowId);
+        if (!row) return;
+        row.querySelectorAll("button").forEach(b => {
           b.setAttribute("aria-pressed",
             b.getAttribute("data-value") === state[key] ? "true" : "false");
         });
       });
   }
 
+  function updateReadout(shown) {
+    const out = document.getElementById("search-count");
+    if (!out) return;
+    if (query) out.textContent = `${shown}/${essays.length} match`;
+    else if (state.filter !== "all") out.textContent = `${shown}/${essays.length}`;
+    else out.textContent = "";
+  }
+
+  // ---------- render ----------
   function render() {
     refreshPressed();
 
     const listing = document.getElementById("listing");
     listing.innerHTML = "";
-    const list = sortedFiltered();
+    const list = baseList();
+    updateReadout(list.length);
 
     if (list.length === 0) {
+      const what = query ? `"${query}"` : `--${state.filter}`;
       listing.appendChild(el("div", {
         class: "empty",
         style: "padding:40px 6px;color:var(--dim);font-size:12px;letter-spacing:1.5px;",
-      }, `// no documents match --${state.filter}`));
+      }, `// no documents match ${what}`));
       return;
     }
 
-    if (state.layout === "table") {
-      const head = el("div", { class: "table-head" }, [
-        el("span", null, "№"),
-        el("span", null, "FIG"),
-        el("span", null, "TITLE"),
-        el("span", null, "SUBJECT"),
-        el("span", null, "SIZE"),
-        el("span", null, "YEAR"),
-        el("span", null, "STATE"),
-      ]);
-      listing.appendChild(head);
-      list.forEach((e, i) => listing.appendChild(rowEl(e, i)));
-    } else {
-      const grid = el("div", { class: "grid" });
-      list.forEach((e, i) => grid.appendChild(cardEl(e, i)));
-      listing.appendChild(grid);
+    // Flat mode: one list, exactly as before.
+    if (state.group === "flat" || !collections.length) {
+      appendItems(listing, sortList(list), 0);
+      return;
     }
+
+    // Grouped mode: labelled, foldable sections.
+    const secs = sections(list) || [];
+    let n = 0;
+    secs.forEach(sec => {
+      const wrap = el("div", { class: "shelf" + (state.folded[sec.id] ? " collapsed" : "") });
+      wrap.appendChild(shelfHead(sec));
+      const body = el("div", { class: "shelf-body" });
+      appendItems(body, sec.items, n);
+      wrap.appendChild(body);
+      listing.appendChild(wrap);
+      n += sec.items.length;
+    });
   }
 
   // ---------- init ----------
   document.addEventListener("DOMContentLoaded", function () {
+    // Warn (console only) if a document slipped off every shelf.
+    if (collections.length) {
+      const shelved = new Set(collections.flatMap(c => c.slugs));
+      const orphans = essays.filter(e => !shelved.has(e.slug)).map(e => e.slug);
+      if (orphans.length) console.warn("[0x4d44] documents on no shelf:", orphans);
+    }
     buildStatusbar();
     buildControls();
     render();
