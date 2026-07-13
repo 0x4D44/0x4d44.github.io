@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "northern-line-1987",
+    title: "Northern Line 1987",
+    tagline: "Drive a seven-car 1959 Stock-inspired Tube train over the 1987 Northern line, Morden to Edgware: work the series/parallel controller and Westinghouse brake, answer the guard's two bells, watch for trainstops and wet rail, and put every stop on the diamond across three duties. Offline procedural cab and audio in Three.js; no build step.",
+    url: "https://0x4d44.github.io/northern-line-1987/",
+    illustration: "ill-emu",
+    date: "2026-07-13T19:00:00",
+    year: 1987,
+    tags: ["games", "simulation", "rail"],
+    real: true,
+  },
+  {
     slug: "quantum",
     title: "The Interference Engine",
     tagline: "How quantum computing actually works — not the &ldquo;tries every answer at once&rdquo; myth, but the stranger truth: a machine that makes the wrong answers cancel out. An animated, scrollytelling explainer you can drive — a draggable Bloch sphere, a measurement histogram that converges, phasors that interfere to zero, an entangled pair, and Grover's search finding a needle by amplitude. Vanilla JS, canvas + SVG; no build step.",
@@ -1273,7 +1284,7 @@ window.COLLECTIONS = [
     blurb: "Games you play to win — cards, boards, racers and a flight sim.",
     slugs: ["vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
-      "coil", "japanese-wordle", "tidecall", "flight"] },
+      "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987"] },
   { id: "sea", name: "At Sea", icon: "ill-ship",
     blurb: "Cruise ships, ports and tides.",
     slugs: ["cruise-line", "cruise-propulsion", "rci-fleet", "med-cruise",
@@ -1298,8 +1309,8 @@ window.COLLECTIONS = [
   { id: "rails", name: "On Rails", icon: "ill-class55",
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
     slugs: ["class-55", "class-47", "azuma", "ecml", "ecml-timeline", "br1955",
-      "night-cab", "emu-cab", "traction-motors", "model-railway", "rail-control",
-      "mercury-arc-rectifiers", "perth"] },
+      "northern-line-1987", "night-cab", "emu-cab", "traction-motors",
+      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
     slugs: ["picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
