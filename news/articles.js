@@ -21,7 +21,9 @@
 //    pullQuote  optional highlighted quote
 //    tags       array of lowercase tags (used by search + related)
 //
-//  It is all satire. None of it is true. Remember to flange regularly.
+//  It is all satire. Most of it is invented outright; a run of stories
+//  tagged "based-on-truth" retells things humans genuinely did (real
+//  events, invented correspondents and quotes). Remember to flange regularly.
 // ============================================================
 
 window.NEWS_ARTICLES = [
@@ -3713,6 +3715,2467 @@ window.NEWS_ARTICLES = [
       "sea-shanties",
       "rowing",
       "hydrodynamics"
+    ]
+  },
+  {
+    "id": "wld-emu-war-australia-1932",
+    "category": "World",
+    "headline": "Nation deploys army against birds, loses",
+    "standfirst": "Australia's 1932 campaign to machine-gun the emus eating its wheat ended, after weeks in the field, with the emus undefeated and the artillery quietly withdrawn.",
+    "byline": "By Hector Wainwright, Military History Correspondent",
+    "location": "PERTH",
+    "published": "2026-07-13T07:10:00",
+    "body": [
+      "In the winter of 1932, the Commonwealth of Australia declared what amounted to war on a flightless bird — and, in one of the more instructive episodes in the history of armed conflict, comprehensively lost.",
+      "The enemy was the emu. Some twenty thousand of them had descended on the wheat belt of Western Australia, trampling fences and stripping crops, and desperate farmers — many of them ex-servicemen — asked the government for help. The government sent soldiers, two Lewis guns, and ten thousand rounds of ammunition, under the command of Major G. P. W. Meredith of the Royal Australian Artillery.",
+      "The birds proved to be superb irregular troops. They scattered at the sound of gunfire, ran at speeds the soldiers could not match, and absorbed hits that ornithologists later described as \"frankly unsporting\". The Lewis guns jammed. An attempt to mount a gun on a moving truck failed because emus, it turns out, run more smoothly over rough ground than a 1932 truck does.",
+      "\"The emus have proved that they are not to be trifled with,\" one contemporary account recorded. Major Meredith, with the rueful respect of a beaten commander, observed that his adversaries had \"the invulnerability of tanks\" and faced machine-gun fire with a discipline that would, in a human army, have earned medals.",
+      "After the first sortie expended a quarter of its ammunition for a confirmed tally in the low dozens, questions were asked in Parliament — three of them pointed, all of them awkward. The operation was suspended, briefly resumed, and then abandoned. The emus kept the wheat.",
+      "Historians have been unkind. \"You had the artillery, you had the ammunition, you had the element of surprise — and you were outmanoeuvred by a large, anxious chicken,\" said military analyst Dr Coral Whitmore. \"There is no honourable way to file that report. They tried, and the birds simply declined to cooperate.\"",
+      "Requests for a commemorative medal were, perhaps wisely, declined. The emus, who did not ask for one, got the wheat instead — which most would agree is the better prize."
+    ],
+    "pullQuote": "You had the artillery, you had the ammunition, you had the element of surprise — and you were outmanoeuvred by a large, anxious chicken.",
+    "tags": [
+      "history",
+      "australia",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-anglo-zanzibar-shortest-war-1896",
+    "category": "World",
+    "headline": "Entire war begins and ends before mid-morning tea",
+    "standfirst": "The Anglo-Zanzibar War of 1896 lasted around 38 minutes — long enough, historians note, to be the shortest war in recorded history and shorter than most modern meetings.",
+    "byline": "By Prudence Alddean, Diplomatic History Correspondent",
+    "location": "ZANZIBAR CITY",
+    "published": "2026-07-13T06:55:00",
+    "body": [
+      "On the morning of 27 August 1896, the British Empire and the Sultanate of Zanzibar went to war, fought that war, and concluded that war — all within roughly thirty-eight minutes, comfortably the shortest armed conflict ever recorded.",
+      "The dispute was over succession. When the pro-British Sultan died, Khalid bin Barghash seized the palace without the approval of the British, who preferred a candidate of their own. An ultimatum was issued: stand down by nine o'clock. Khalid declined, and barricaded himself in the palace with a scratch force and a single, much-loved royal yacht.",
+      "At two minutes past nine, the Royal Navy opened fire. By around forty minutes past nine, the palace was in ruins, the yacht was sunk, the flag was down, and the war — such as it was — was comprehensively over. Khalid had already left by a back door.",
+      "\"It is the only war I know of that would have fitted inside a lunch break, with time to spare for the washing-up,\" said naval historian Dr Ambrose Finch. \"Historians speak of the fog of war. Here the fog barely had time to form before someone waved it away and suggested everyone go home.\"",
+      "The brevity has invited a certain gallows humour, but the guns were real and the casualties, overwhelmingly on the Zanzibari side, were real too — a fact that sits uneasily against the record-book novelty, and should.",
+      "Zanzibar was subsequently required, in a final flourish of imperial arithmetic, to pay for the shells fired at it. \"You are defeated in under an hour and then handed the bill for the ammunition,\" Dr Finch noted. \"It is difficult to think of a more complete morning's work.\"",
+      "The record has stood for well over a century. \"Many have run longer meetings to less effect,\" Dr Finch observed. \"At least this one reached a decision.\""
+    ],
+    "pullQuote": "It is the only war I know of that would have fitted inside a lunch break, with time to spare for the washing-up.",
+    "tags": [
+      "history",
+      "empire",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-cadaver-synod-corpse-on-trial-897",
+    "category": "World",
+    "headline": "Court puts a corpse on trial, finds it guilty",
+    "standfirst": "In 897 a Pope had his dead predecessor exhumed, dressed, propped on a throne and prosecuted — a legal proceeding notable, above all, for the defendant having been dead for months.",
+    "byline": "By Cassius Vellender, Ecclesiastical History Correspondent",
+    "location": "ROME",
+    "published": "2026-07-13T06:40:00",
+    "body": [
+      "The annals of jurisprudence contain many strange trials, but few can rival the one held in Rome in January 897, in which the accused was a corpse — exhumed, robed, seated in the dock, and duly found guilty.",
+      "The defendant was the late Pope Formosus, who had the misfortune to be dead. His successor-but-one, Pope Stephen VI, had the body dug up from its tomb, dressed in full papal vestments, and propped upon a throne to answer charges of, among other things, having improperly held the office he had held.",
+      "A deacon was appointed to crouch behind the throne and speak for the deceased — a defence counsel facing what must be the most uncommunicative client in legal history. The corpse, unsurprisingly, offered little in mitigation, and the verdict went against it comprehensively.",
+      "\"It is the purest expression of a foregone conclusion ever staged,\" said medieval historian Dr Benedicta Crowe. \"You have selected the one defendant guaranteed not to interrupt, not to object, and not to take the stand in his own defence. The outcome was never seriously in doubt.\"",
+      "The sentence was thorough. The offending pontiff was stripped of his vestments, three fingers of his blessing hand were removed, and the body was ultimately consigned to the Tiber — a river that has received a great deal of Roman history over the centuries, most of it while still alive.",
+      "The episode, known ever after as the Cadaver Synod, so appalled contemporaries that Stephen VI was himself imprisoned and strangled within the year, and the verdict was later annulled. \"Rome eventually decided the whole thing had been in poor taste,\" Dr Crowe noted. \"A conclusion it reached, characteristically, only after everyone involved was also dead.\"",
+      "Legal scholars cite it still, as the outer limit of what a court may attempt. \"The lesson,\" said Dr Crowe, \"is that you can try anyone. Whether you should is a separate question, and this was the answer.\""
+    ],
+    "pullQuote": "You have selected the one defendant guaranteed not to interrupt, not to object, and not to take the stand in his own defence.",
+    "tags": [
+      "history",
+      "law",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-great-moon-hoax-1835",
+    "category": "World",
+    "headline": "Newspaper reports bat-people living on the Moon, sells enormously",
+    "standfirst": "In 1835 a New York paper announced the discovery of winged humanoids, unicorns and beavers on the Moon — and watched its circulation soar as the public happily believed it.",
+    "byline": "By Marguerite Holloway, Media History Correspondent",
+    "location": "NEW YORK",
+    "published": "2026-07-12T17:20:00",
+    "body": [
+      "In the summer of 1835, the readers of the New York Sun learned, over six thrilling instalments, that the Moon was inhabited — by winged bat-people, by unicorns, by bipedal tail-less beavers, and by forests, seas and temples of sapphire. The public was enthralled. The public was also entirely mistaken.",
+      "The articles attributed the discoveries to the real and eminent astronomer Sir John Herschel, then observing from the Cape of Good Hope, and to a powerful new telescope described in loving, wholly invented detail. Herschel knew nothing of it. The beavers, the temples, and the four-foot-tall \"man-bats\" were the work of a journalist with a deadline and an imagination.",
+      "It did not matter. Circulation surged, rival papers reprinted the sensation, and crowds gathered to discuss the civilisation newly discovered a quarter of a million miles away. \"People wanted it to be true, and a thing people want to be true needs remarkably little help,\" said media historian Dr Lionel Pace.",
+      "When the hoax was eventually admitted, the response was not outrage but a kind of good-humoured shrug — the readers had enjoyed themselves, the paper had prospered, and the Moon, being unable to comment, made no complaint.",
+      "Herschel himself was reportedly amused at first and wearied later, spending years fielding earnest questions about lunar bat-people he had never seen. \"He discovered a great deal in his life,\" Dr Pace noted. \"He is remembered, unfairly, for the one thing he did not.\"",
+      "Scholars regard the affair as a founding moment in a long tradition — the confident, detailed, entirely fabricated story that travels faster than the correction that follows it. \"The bat-people were nonsense,\" said Dr Pace. \"But the mechanism was sound, and it is with us still. Let that sink in.\"",
+      "The Sun never formally retracted the series. \"Why would they?\" Dr Pace asked. \"It was the best thing that ever happened to them, and the Moon never asked for damages.\""
+    ],
+    "pullQuote": "People wanted it to be true, and a thing people want to be true needs remarkably little help.",
+    "tags": [
+      "history",
+      "media",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-emperor-norton-san-francisco-1859",
+    "category": "World",
+    "headline": "Man declares himself Emperor, city decides to allow it",
+    "standfirst": "Joshua Norton proclaimed himself Emperor of the United States in 1859, and San Francisco — with unusual grace — spent two decades playing along.",
+    "byline": "By Prudence Alddean, Social History Correspondent",
+    "location": "SAN FRANCISCO",
+    "published": "2026-07-12T16:05:00",
+    "body": [
+      "In September 1859, a failed businessman named Joshua Abraham Norton walked into a San Francisco newspaper office and issued a proclamation declaring himself Emperor of these United States. The remarkable part is not that he did so. The remarkable part is that the city, more or less, agreed.",
+      "Norton had lost his fortune in a rice speculation and, it seems, a firm grip on the ordinary rules of citizenship. He added \"Protector of Mexico\" to his title, issued decrees dissolving Congress, and printed his own currency — banknotes that a number of local businesses cheerfully accepted, on the reasonable municipal principle that an emperor who caused no trouble might as well be humoured.",
+      "He dined where he liked, and restaurants displayed plaques announcing their imperial patronage. He reviewed the police. When an over-zealous officer once arrested him, the public outcry was such that the Chief of Police released him with an apology, and thereafter officers saluted him in the street.",
+      "\"It is a story people tell as comedy, but the tender part is the civic response,\" said historian Dr Coral Whitmore. \"A whole city looked at a harmless, dignified man who believed himself an emperor, and collectively decided that the kind thing, the easy thing, and the more interesting thing were for once the same thing.\"",
+      "His decrees were not all folly. He is popularly credited with calling, decades early, for a bridge across San Francisco Bay — an idea that arrived, in the end, roughly where he had put it.",
+      "When Norton died in 1880, some ten thousand people are said to have filed past his coffin — a turnout many an actual emperor has failed to command. \"He ruled nothing and was mourned by thousands,\" Dr Whitmore observed. \"Most monarchs manage the exact reverse.\"",
+      "The city has never quite let him go, and periodically campaigns to name that bay bridge after him. \"He issued the decree,\" Dr Whitmore said. \"He is simply waiting, with imperial patience, for it to be enforced.\""
+    ],
+    "pullQuote": "He ruled nothing and was mourned by thousands. Most monarchs manage the exact reverse.",
+    "tags": [
+      "history",
+      "san-francisco",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "biz-timothy-dexter-coal-to-newcastle",
+    "category": "Business",
+    "headline": "Businessman succeeds at every deal experts told him was idiotic",
+    "standfirst": "Timothy Dexter shipped coal to Newcastle, warming pans to the tropics and wool mittens toward the equator — and, to the lasting distress of his advisers, turned a profit on all three.",
+    "byline": "By Marcus Threadgold, Economics Editor",
+    "location": "NEWBURYPORT",
+    "published": "2026-07-13T07:25:00",
+    "body": [
+      "Every rule of commerce says you should not sell coal to Newcastle, warming pans to the West Indies, or wool mittens to the tropics. Timothy Dexter, an 18th-century American merchant of monumental self-belief and no discernible judgement, did all three — and grew richer each time.",
+      "Dexter's rivals, who disliked him, are said to have advised these ventures as elaborate jokes, confident he would ruin himself. He took every suggestion at face value. The warming pans, useless for warming beds in the Caribbean, were bought by plantations as ladles and skimmers for molasses. The wool mittens were snapped up by Asian traders bound for Siberia. And the coal reached Newcastle, by pure dumb fortune, during a miners' strike, when the town had none.",
+      "\"He is the despair of everyone who has ever built a business plan,\" said economic historian Dr Felix Marchmont. \"He did no research, ignored all advice, and defied the market in three directions at once — and the market, against every principle it claims to hold, rewarded him lavishly. It is enough to make a rational person weep.\"",
+      "Dexter also shipped Bibles to the East Indies (sold at a profit to missionaries) and, by some accounts, stray cats to Caribbean ports plagued by rats. Success, it seemed, could not be talked out of him.",
+      "In later life he published a memoir, A Pickle for the Knowing Ones, written entirely without punctuation and with a cheerful disregard for spelling. When readers complained, he added, in a second edition, a single page consisting of nothing but punctuation marks, inviting them to \"peper and solt it as they plese\".",
+      "He is also said to have faked his own death to see who would mourn him, then reappeared at the wake to reprimand his wife for insufficient grief. \"There is no lesson here that anyone should follow,\" Dr Marchmont warned. \"He is a warning that succeeds as an example, which is the most annoying kind.\"",
+      "Economists have never quite forgiven him. \"He proves the humiliating possibility,\" said Dr Marchmont, \"that you can do everything wrong and still, somehow, come home rich.\""
+    ],
+    "pullQuote": "He did no research, ignored all advice, and defied the market in three directions at once — and the market, against every principle it claims to hold, rewarded him lavishly.",
+    "tags": [
+      "history",
+      "commerce",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "biz-victor-lustig-sold-eiffel-tower",
+    "category": "Business",
+    "headline": "Con man sells the Eiffel Tower for scrap, then does it again",
+    "standfirst": "In 1925 Victor Lustig posed as a government official, 'sold' the Eiffel Tower to a scrap dealer — and was so encouraged by the ease of it that he came back and sold it a second time.",
+    "byline": "By Delia Cornish, Crime and Finance Correspondent",
+    "location": "PARIS",
+    "published": "2026-07-13T06:30:00",
+    "body": [
+      "The Eiffel Tower is not, and has never been, for sale. This did not stop Victor Lustig from selling it in 1925 — nor, emboldened, from returning to Paris and selling it all over again.",
+      "Lustig, one of history's most gifted confidence tricksters, noticed a newspaper item complaining that the ageing tower was costly to maintain. From this he built a scheme of exquisite nerve: forged government stationery, a suite in a grand hotel, and an air of harried officialdom. He gathered the city's leading scrap-metal dealers and confided that the state, regretfully, intended to demolish the tower and sell it for scrap — in strict secrecy, to avoid public outcry.",
+      "He selected his mark, a dealer named André Poisson, and sealed the deal not only with the sale price but with a solicited bribe — a masterstroke, since a victim who believes he is bribing a corrupt official is far too compromised to complain to the police.",
+      "\"It is the detail that betrays genius,\" said fraud historian Dr Marcus Threadgold. \"He did not merely deceive the man. He arranged for the man to feel guilty — three moves ahead, and all of them cynical. The victim's own shame became the lock on the door.\"",
+      "Poisson, humiliated and out of pocket, said nothing. Lustig, reading the silence correctly, returned to Paris weeks later and ran the entire scheme again on a fresh set of dealers. This time a suspicious mark went to the police, and Lustig fled — but the tower had, by then, been sold twice to men who could never legally own it.",
+      "He would go on to swindle, among others, Al Capone, before dying in an American prison. \"He is not a man to admire,\" Dr Threadgold cautioned. \"He is a man to study — the way you study a lock by watching someone pick it.\"",
+      "The Eiffel Tower, for the record, remains the property of the city of Paris. \"It has been standing for well over a century,\" Dr Threadgold noted, \"and been sold, by our count, at least twice more than that.\""
+    ],
+    "pullQuote": "He did not merely deceive the man. He arranged for the man to feel guilty — three moves ahead, and all of them cynical.",
+    "tags": [
+      "history",
+      "fraud",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "biz-gerald-ratner-total-crap-speech-1991",
+    "category": "Business",
+    "headline": "Executive jokes his products are 'total crap', erases £500m in an afternoon",
+    "standfirst": "In 1991 the head of a thriving jewellery empire made a witty after-dinner speech about how cheap his wares were — and watched the company very nearly cease to exist.",
+    "byline": "By Delia Cornish, Retail Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T15:40:00",
+    "body": [
+      "It is possible to destroy a great deal of value very quickly, and few have done it faster, or more cheerfully, than Gerald Ratner — who wiped an estimated £500 million from his own company with a single after-dinner speech.",
+      "The occasion was an address to the Institute of Directors in 1991. Ratner, then the celebrated head of a jewellery chain with hundreds of shops, decided to be funny about his own success. He explained that one of his products, a sherry decanter set, was so cheap because — his word — it was \"total crap\". He added that a pair of his earrings might cost less than a prawn sandwich from Marks & Spencer, \"but probably wouldn't last as long\".",
+      "The room laughed. The newspapers did not. The remarks were reported, then repeated, then printed on posters, and customers who had happily bought affordable jewellery discovered they did not enjoy being told, by the man they had bought it from, that it was rubbish.",
+      "\"He said out loud the one thing a business must never say about its own customers' choices,\" said retail analyst Delia Cornish. \"Not that the goods were cheap — everyone knew that — but that buying them was faintly foolish. He insulted the purchase, and by extension the purchaser. Sales collapsed.\"",
+      "The company's value fell by around half a billion pounds, shops closed, and Ratner himself was gone within a couple of years. The self-inflicted destruction of a firm by its own boss's careless candour is now known, in British business schools, simply as \"doing a Ratner\".",
+      "To his credit, Ratner rebuilt a career and speaks about the episode with rueful honesty. \"He learned the lesson the expensive way, on behalf of everyone else,\" Cornish noted. \"There is a strange generosity in that — a cautionary tale that volunteered.\"",
+      "The moral, endlessly taught, is brief. \"By all means be honest, be modest, be funny,\" said Cornish. \"Just never, ever be all three about the thing you are trying to sell.\""
+    ],
+    "pullQuote": "He insulted the purchase, and by extension the purchaser. Sales collapsed.",
+    "tags": [
+      "retail",
+      "marketing",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "biz-tulip-mania-1637",
+    "category": "Business",
+    "headline": "Nation briefly decides flowers are money, then remembers they are flowers",
+    "standfirst": "During the Dutch tulip mania of the 1630s, single bulbs reportedly changed hands for the price of a house — until, one winter morning, they abruptly did not.",
+    "byline": "By Marcus Threadgold, Markets Correspondent",
+    "location": "HAARLEM",
+    "published": "2026-07-12T14:20:00",
+    "body": [
+      "For a few giddy months in the 1630s, the Dutch Republic fell in love with the tulip — not as a flower, but as a fortune. At the peak of the mania, popular history holds, a single rare bulb could be traded for the price of a fine canal-side house, and men who had never gardened in their lives speculated feverishly on bulbs still buried in the ground.",
+      "The most coveted varieties, their petals \"broken\" into flames of colour by what we now know was a virus, commanded sums that beggar belief. Contracts changed hands many times over a single winter, for bulbs that no one involved ever intended to plant, in a market conducted largely in taverns.",
+      "Then, in February 1637, at a routine bulb auction in Haarlem, there were suddenly no buyers. Prices did not drift down. They fell through the floor. The bulbs, overnight, went back to being bulbs.",
+      "\"It is the oldest story in finance, and the Dutch simply got there first with flowers,\" said economic historian Dr Felix Marchmont. \"A thing is worth what the next person will pay — right up until the exact moment there is no next person. Then it is worth what it always was, which in this case was a nice tulip.\"",
+      "Modern scholars, it should be said, think the tale has grown in the telling — that the mania touched fewer people, and ruined fewer, than the lurid legend suggests. But the shape of it endures because it keeps recurring: the certainty, the frenzy, the morning after.",
+      "\"Every generation believes it has found the thing that only ever goes up,\" Dr Marchmont noted. \"Tulips, then railways, then dot-coms, then whatever is next. The asset changes. The people do not.\"",
+      "The tulip, meanwhile, remains one of the loveliest flowers in the world and one of the worst investments ever recorded. \"It never claimed to be money,\" Dr Marchmont said. \"That was entirely our idea.\""
+    ],
+    "pullQuote": "A thing is worth what the next person will pay — right up until the exact moment there is no next person.",
+    "tags": [
+      "history",
+      "finance",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "biz-leonard-pepsi-harrier-jet-lawsuit",
+    "category": "Business",
+    "headline": "Man takes soft-drink firm to court demanding the fighter jet it advertised",
+    "standfirst": "A 1990s Pepsi commercial jokingly offered a Harrier jump-jet for seven million points; one determined customer did the maths, collected the points, and sued when no jet arrived.",
+    "byline": "By Delia Cornish, Consumer Affairs Correspondent",
+    "location": "NEW YORK",
+    "published": "2026-07-12T11:15:00",
+    "body": [
+      "A television advertisement is not usually a binding offer. That principle was tested, memorably, when a young man named John Leonard watched a Pepsi commercial, noticed it appeared to offer a Harrier jump-jet for seven million Pepsi Points, and resolved to hold the company to it.",
+      "The 1990s advert showed a teenager arriving at school in a genuine military attack aircraft, captioned with a points price — a visual joke, everyone assumed, in the tradition of the era's ever-escalating loyalty rewards. Leonard read the small print differently. Points, crucially, could also be purchased outright at ten cents each. Seven million points therefore came to about seven hundred thousand dollars — a bargain, given that the jet in question is worth some tens of millions.",
+      "He raised the money, submitted the required order form and a cheque, and requested his aircraft. Pepsi declined, explaining that it did not, in fact, intend to give members of the public a supersonic weapons platform in exchange for fizzy drinks.",
+      "Leonard sued. The case turned on a wonderfully sober legal question — would a reasonable person believe the advertisement was a serious offer? — and the court's answer was a firm, faintly amused no. The jet, the judge noted, was plainly a joke; also, one cannot casually transfer a Harrier to a teenager.",
+      "\"It is a landmark case taught to every first-year law student, and it exists because one man refused to accept that an advert was kidding,\" said consumer lawyer Delia Cornish. \"There is something magnificent in that literal-mindedness — misguided, doomed, and absolutely committed.\"",
+      "Pepsi, chastened, re-shot the advert to raise the jet's price to seven hundred million points, adding the words \"just kidding\" for the benefit of the unusually literal.",
+      "Leonard got no jet, but he got a permanent place in legal history. \"He wanted an aircraft,\" Cornish observed. \"He settled, in the end, for immortality — which is cheaper, and does not require a runway.\""
+    ],
+    "pullQuote": "There is something magnificent in that literal-mindedness — misguided, doomed, and absolutely committed.",
+    "tags": [
+      "law",
+      "advertising",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "eng-boston-molasses-flood-1919",
+    "category": "Engineering",
+    "headline": "City drowned by a wave of molasses after tank fails",
+    "standfirst": "In 1919 a giant storage tank in Boston burst, sending a two-storey wall of molasses through the streets at speed — a disaster as deadly as it was, at first, impossible to believe.",
+    "byline": "By Leonard Chalfont, Structural Engineering Correspondent",
+    "location": "BOSTON",
+    "published": "2026-07-12T13:30:00",
+    "body": [
+      "On 15 January 1919, the North End of Boston was struck by a flood — not of water, but of molasses. A vast storage tank failed, and released a wave of the stuff, some eight metres high, that moved through the streets at an estimated thirty-five miles an hour.",
+      "It sounds like a joke, and for a long time it was told as one. It was not. The wave killed twenty-one people and injured about a hundred and fifty, tearing buildings from their foundations and buckling the supports of an elevated railway. The human cost was real and grievous, and deserves to be stated plainly before anything else is said about it.",
+      "The tank had been built quickly, tested carelessly, and filled to capacity with warm molasses shortly before it burst. Residents had complained for months that it groaned and leaked; the owners had responded, it later emerged, by painting it brown so the seepage was harder to see.",
+      "\"The engineering failure is almost a checklist of everything not to do — too fast, too full, too little tested, and complaints ignored,\" said structural historian Dr Fiona Mersh. \"The absurdity of the substance should not distract from the seriousness of the lesson. A tank is a tank. It does not care what you put in it.\"",
+      "The disaster led to one of the earliest major class-action settlements of its kind, and — more lastingly — to the requirement that engineering calculations be signed off and certified by qualified engineers, a reform that has quietly protected everyone since.",
+      "Cleanup took weeks; the harbour was said to run brown until summer, and locals long claimed that on hot days the neighbourhood still smelled faintly sweet. \"Every generation of engineers is told this story,\" Dr Mersh said, \"and every generation needs to be.\"",
+      "The reforms it prompted are its true monument. \"People remember the wave of molasses,\" Dr Mersh noted. \"They should remember the signature on the drawings that we now require because of it.\""
+    ],
+    "pullQuote": "The absurdity of the substance should not distract from the seriousness of the lesson. A tank is a tank. It does not care what you put in it.",
+    "tags": [
+      "history",
+      "disaster",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "eng-tacoma-narrows-galloping-gertie-1940",
+    "category": "Engineering",
+    "headline": "Brand-new bridge shakes itself to pieces in a moderate breeze",
+    "standfirst": "The Tacoma Narrows Bridge twisted, rippled and finally tore itself apart in 1940 — just months after opening, and in winds far below what it was built to withstand.",
+    "byline": "By Leonard Chalfont, Structural Engineering Correspondent",
+    "location": "TACOMA",
+    "published": "2026-07-12T10:50:00",
+    "body": [
+      "When the Tacoma Narrows Bridge opened in July 1940, it was an elegant, slender, record-setting span. When it collapsed four months later, it was one of the most instructive failures in the history of engineering — and it did so on film, in a wind of only around forty miles an hour.",
+      "Drivers had already nicknamed it \"Galloping Gertie\" for the way its deck rolled in the breeze; some crossed it for the thrill, watching the cars ahead vanish and reappear over the undulations. Engineers assured the public it was safe. The bridge, on 7 November 1940, disagreed.",
+      "That morning the deck began not merely to bounce but to twist, one edge rising as the other fell, in a violent corkscrewing motion. The oscillation fed on itself — a phenomenon known as aeroelastic flutter — building until the structure could no longer hold, and the centre span dropped into the water below.",
+      "\"It was not brute force that killed it. The wind was gentle,\" said structural historian Dr Fiona Mersh. \"It was resonance — the bridge and the wind finding a rhythm together, and that rhythm growing, and growing, and growing. The span was too light, too slender, and too willing to dance.\"",
+      "No person died in the collapse. The one casualty was a dog named Tubby, trapped in an abandoned car, whom a man tried and failed to rescue — a small, sad footnote to an otherwise bloodless disaster.",
+      "The lesson reshaped the discipline. Suspension bridges since are tested in wind tunnels, stiffened against torsion, and designed with flutter foremost in mind. The grainy film of Gertie writhing is shown to engineering students to this day.",
+      "\"Every bridge that has not twisted itself apart since 1940,\" Dr Mersh said, \"owes a small debt to the one that did. Gertie failed so that the others would not have to.\""
+    ],
+    "pullQuote": "It was resonance — the bridge and the wind finding a rhythm together, and that rhythm growing, and growing, and growing.",
+    "tags": [
+      "history",
+      "bridges",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "eng-winchester-mystery-house-stairs-to-nowhere",
+    "category": "Engineering",
+    "headline": "Heiress builds a house for 38 years, with stairs that lead nowhere",
+    "standfirst": "Sarah Winchester kept carpenters working on her California mansion around the clock for decades, producing doors that open onto walls and staircases that climb into the ceiling.",
+    "byline": "By Leonard Chalfont, Architecture Correspondent",
+    "location": "SAN JOSE",
+    "published": "2026-07-12T09:30:00",
+    "body": [
+      "Most houses are finished. The Winchester Mystery House, in San Jose, California, was not — not for want of money, but because its owner, by some accounts, never intended it to be.",
+      "Sarah Winchester, widow and heiress of the rifle fortune, bought a modest farmhouse in 1886 and then, for the best part of thirty-eight years, never stopped building. Carpenters worked in shifts, day and night, adding rooms, towers, corridors and stairways in a sprawling, unplanned accretion that eventually reached some 160 rooms.",
+      "The result is a masterpiece of the pointless. There are staircases that rise to meet a blank ceiling; doors on upper floors that open onto a sheer drop; windows set into interior walls; corridors that double back on themselves. The house is less a residence than a three-dimensional argument that lost its train of thought.",
+      "\"As a building it is nonsense, and as a document of a human mind it is extraordinary,\" said architectural historian Dr Coral Whitmore. \"Every feature was built with care, by skilled hands, to serve no purpose whatsoever — three qualities that almost never appear together, and here appear on every floor.\"",
+      "Popular legend holds that Winchester believed herself haunted by the spirits of those killed by Winchester rifles, and built ceaselessly to confuse or appease them. Historians are more cautious, noting she was a grieving, private, endlessly inventive woman with money and time — which may explain rather more than ghosts do.",
+      "Whatever her reasons, the constant hammering only stopped when she died in 1922, mid-project, leaving nails half-driven and a room or two forever unfinished.",
+      "The house is now a museum, and visitors get pleasantly lost in it by design. \"It was never meant to be understood,\" Dr Whitmore said. \"On that one ambition, at least, it succeeded completely.\""
+    ],
+    "pullQuote": "The house is less a residence than a three-dimensional argument that lost its train of thought.",
+    "tags": [
+      "history",
+      "architecture",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "hea-radithor-radium-tonic-eben-byers",
+    "category": "Health",
+    "headline": "Wealthy sportsman drinks radioactive tonic for his health, to predictable end",
+    "standfirst": "In the 1920s radium was sold as a cure-all; one enthusiastic customer drank some 1,400 bottles of a radium tonic, in a cautionary tale the newspapers summed up with brutal economy.",
+    "byline": "By Dr Miriam Aldous, Medical History Correspondent",
+    "location": "PITTSBURGH",
+    "published": "2026-07-13T06:15:00",
+    "body": [
+      "For a brief, luminous period in the 1920s, radioactivity was not a hazard but a health fad. Radium — freshly famous, faintly glowing, and terribly expensive — was added to water, cosmetics and tonics and sold to the wealthy as an invigorating cure-all. The most infamous of these products was Radithor: radium dissolved in water, guaranteed, and taken by the bottle.",
+      "Its most devoted customer was Eben Byers, a rich American industrialist, socialite and champion amateur golfer, who began drinking Radithor after a minor injury and became convinced it made him feel wonderful. He is said to have consumed around 1,400 bottles over three years, and pressed it enthusiastically on his friends.",
+      "The radium, being radium, did what radium does. Byers grew gravely ill as it accumulated in his bones, and he died in 1932. The Wall Street Journal reported the affair under a headline of pitiless brevity: \"The Radium Water Worked Fine Until His Jaw Came Off.\"",
+      "It is a grim story, and the man's suffering was genuine — a point worth holding onto beneath the dark comedy of that headline. \"He was not foolish so much as trusting,\" said medical historian Dr Miriam Aldous. \"He believed the advertisements, the doctors, and the price tag — three authorities that all told him the same wrong thing. Expensive, endorsed, and lethal is a combination the age produced more than once.\"",
+      "His death was a turning point. The case galvanised American regulators, strengthened the hand of the Food and Drug Administration over patent medicines, and helped end the era in which a manufacturer could sell radioactive water as a tonic and a poison as a treat.",
+      "\"Every rule that now stands between a person and a bottle of poison labelled as medicine,\" Dr Aldous noted, \"was written, in part, by cases like his.\"",
+      "The lesson has aged well, even if the tonic did not. \"When something is marketed as a miracle, glows in the dark, and costs a fortune,\" Dr Aldous said, \"history suggests treating all three as warnings.\""
+    ],
+    "pullQuote": "He believed the advertisements, the doctors, and the price tag — three authorities that all told him the same wrong thing.",
+    "tags": [
+      "history",
+      "medicine",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "hea-tobacco-smoke-enema-resuscitation",
+    "category": "Health",
+    "headline": "Doctors once revived the drowning by blowing smoke up the patient",
+    "standfirst": "For decades, the approved emergency treatment for a drowning victim was a tobacco-smoke enema — a practice that gave the English language one of its most enduring phrases.",
+    "byline": "By Dr Miriam Aldous, Medical History Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T12:10:00",
+    "body": [
+      "In the 18th century, if you were pulled from the Thames apparently drowned, the very best medical science of the day proposed to revive you by an ingenious method: blowing tobacco smoke up your rectum.",
+      "The tobacco-smoke enema was, for a time, entirely respectable. The Royal Humane Society endorsed it, resuscitation kits containing bellows and a tube were mounted at intervals along the river — much as defibrillators are today — and rescuers were trained in their use. The theory held that the warmth of the smoke and the stimulating properties of tobacco would rouse the body's vital functions.",
+      "It was applied with conviction and, occasionally, with the wrong end of the apparatus, a hazard period accounts note with commendable discretion. That the treatment did essentially nothing was, for a surprisingly long time, beside the point.",
+      "\"It has the shape of good medicine — a clear theory, proper equipment, official endorsement, and trained practitioners,\" said medical historian Dr Miriam Aldous. \"It simply lacked the one ingredient that matters, which is that it worked. It is a useful reminder that confidence, apparatus and consensus can all be present and all be wrong.\"",
+      "The practice fell from favour in the early 1800s, when the physician Benjamin Brodie demonstrated that nicotine was, if anything, toxic to the heart — which rather undermined the case for administering it to the barely living.",
+      "Its most durable legacy is linguistic. To \"blow smoke up someone's\" — the polite version ends there — meaning to flatter with insincere reassurance, is a direct descendant of the procedure. The phrase has comfortably outlived the treatment, which is more than can be said for some of the patients.",
+      "\"We laugh now, and we should,\" Dr Aldous said. \"But every era has its confident, well-equipped, officially sanctioned nonsense. Ours simply has better branding.\""
+    ],
+    "pullQuote": "It is a useful reminder that confidence, apparatus and consensus can all be present and all be wrong.",
+    "tags": [
+      "history",
+      "medicine",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "av-b25-empire-state-building-1945",
+    "category": "Aviation",
+    "headline": "Bomber flies into skyscraper in fog; elevator operator survives 75-storey fall",
+    "standfirst": "When a lost B-25 struck the Empire State Building in 1945, one woman survived both the impact and a plunge of 75 floors in a severed elevator — a record that still stands.",
+    "byline": "By Callum Ferris, Aviation History Correspondent",
+    "location": "NEW YORK",
+    "published": "2026-07-13T05:55:00",
+    "body": [
+      "On the foggy Saturday morning of 28 July 1945, a US Army B-25 Mitchell bomber, lost in thick cloud over Manhattan, flew directly into the Empire State Building, striking the 79th floor. Fourteen people died. It remains one of the strangest and most sombre aviation accidents in the history of the city.",
+      "The pilot, disoriented in fog and given ambiguous guidance, had descended low over the skyline searching for the airport. In the murk, the world's then-tallest building appeared with no time to avoid it. Burning fuel spread through several floors; the human toll, three aircrew and eleven people in the building, was real and should not be softened.",
+      "Amid the tragedy, one story defies belief. Betty Lou Oliver, an elevator operator, survived the initial impact, badly burned, and was being helped into an elevator to be taken down when the weakened cables gave way. Her car fell 75 storeys to the bottom of the shaft.",
+      "She survived that too. A build-up of air pressure in the shaft and a cushion of slack cable at the bottom are thought to have broken the fall. Her plunge stands in the record books to this day as the longest survived fall in an elevator — a distinction no one would ever wish to compete for.",
+      "\"She survived the fire, the impact, and then the one thing that should have been unsurvivable,\" said aviation historian Dr Ambrose Finch. \"It is a story of horror and of almost unreasonable luck, side by side, in the same person, on the same morning.\"",
+      "The building, remarkably, reopened for business two days later, its structure sound despite the wound — a testament to the engineering that had briefly met an aircraft head-on and prevailed.",
+      "The accident hastened improvements in air traffic control over cities. \"It is remembered as a freak,\" Dr Finch said, \"but freaks are how the rules get written. Every foggy approach flown safely since owes something to that morning.\""
+    ],
+    "pullQuote": "She survived the fire, the impact, and then the one thing that should have been unsurvivable.",
+    "tags": [
+      "history",
+      "aviation",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "av-gimli-glider-fuel-metric-mixup-1983",
+    "category": "Aviation",
+    "headline": "Airliner runs out of fuel at 41,000 feet, lands on a drag strip",
+    "standfirst": "A metric conversion error left an Air Canada jet with no fuel and no engines over Manitoba in 1983 — so its pilots glided it, silently, onto a disused runway hosting a car race.",
+    "byline": "By Callum Ferris, Aviation Correspondent",
+    "location": "GIMLI",
+    "published": "2026-07-12T08:45:00",
+    "body": [
+      "On 23 July 1983, an Air Canada Boeing 767 was cruising at 41,000 feet over Manitoba when, one after another, both engines fell silent. The aircraft had, impossibly for a modern airliner on a scheduled flight, run completely out of fuel.",
+      "The cause was arithmetic. Canada was mid-way through its conversion to metric units, and in refuelling the new 767 the ground crew and cockpit had calculated the load in pounds rather than kilograms. A pound is less than half a kilogram — so the jet had taken on less than half the fuel it needed, while every gauge and figure reassured everyone that all was well.",
+      "At altitude, with the engines dead and most instruments dark, the situation was as grave as aviation gets. But the captain, Bob Pearson, happened to be an experienced glider pilot, and his first officer, Maurice Quintal, calculated they might reach a former air force base at Gimli. What neither man knew was that part of the old runway had been converted into a drag strip — and was, that day, full of cars and families.",
+      "Pearson glided the vast, powerless aircraft down in near silence, side-slipping to lose height like a light glider, and put it onto the runway. The nose gear collapsed, which helped slow the aircraft; it stopped short of the crowd. No one aboard, and no one on the ground, was killed.",
+      "\"It should not have run out of fuel, and having run out of fuel, everyone aboard should not have walked away,\" said aviation analyst Dr Ambrose Finch. \"Two things happened that day that each defy the odds — a catastrophic, avoidable blunder, and a piece of airmanship good enough to cancel it out.\"",
+      "The aircraft, forever after \"the Gimli Glider\", was repaired and returned to service for years. The incident is now a fixture of pilot training and a standing argument for double-checking your units.",
+      "\"The lesson is unglamorous,\" Dr Finch said. \"Mind your kilograms. The most sophisticated machine ever built will still fall out of the sky if you feed it the wrong number.\""
+    ],
+    "pullQuote": "The most sophisticated machine ever built will still fall out of the sky if you feed it the wrong number.",
+    "tags": [
+      "history",
+      "aviation",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "sci-mars-climate-orbiter-metric-mixup-1999",
+    "category": "Science",
+    "headline": "Spacecraft lost at Mars because two teams used different units",
+    "standfirst": "In 1999 a NASA orbiter was destroyed on arrival at Mars after one team worked in metric and another in imperial — a $327m lesson in the importance of agreeing which numbers mean what.",
+    "byline": "By Dr Eleanor Vance, Science Correspondent",
+    "location": "PASADENA",
+    "published": "2026-07-13T05:40:00",
+    "body": [
+      "In September 1999, after a journey of 669 days and some 200 million kilometres, NASA's Mars Climate Orbiter arrived at the red planet, fired its engine to slip into orbit, and was never heard from again. It had been destroyed — not by a technical fault, not by cosmic misfortune, but by a disagreement over units.",
+      "One team's software, built by the spacecraft's contractor, calculated a critical thruster figure in imperial units — pound-seconds of force. The navigation software that received it, built at NASA, assumed the numbers were in metric newton-seconds. Neither side knew the other was speaking a different language, and the two languages differ by a factor of about four and a half.",
+      "The result was that the orbiter approached Mars far lower than intended, dipping into the atmosphere where it was torn apart or flung back into deep space. A mission costing some $327 million ended because two groups of brilliant people never confirmed which units they were using.",
+      "\"It is the most expensive misunderstanding I can think of, and it turned on nothing more exotic than pounds versus newtons,\" said planetary scientist Dr Eleanor Vance. \"These were not careless people. They were careful people who each assumed the obvious thing, and assumed it differently. That is the quiet danger — not error, but mismatched certainty.\"",
+      "The subsequent inquiry found no single villain, only a gap — a missing conversion, an unquestioned assumption, a check that no one thought to make. The failure has become a permanent fixture of engineering education, invoked whenever two systems must exchange numbers.",
+      "\"Every interface between two teams is a place where a spacecraft can be lost,\" Dr Vance said. \"Mars is littered with the wreckage of the obvious.\"",
+      "NASA has been scrupulous about units ever since. \"The universe does not care which system you prefer,\" Dr Vance noted. \"It only asks that everyone on your side of the project pick the same one.\""
+    ],
+    "pullQuote": "That is the quiet danger — not error, but mismatched certainty.",
+    "tags": [
+      "space",
+      "engineering",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "sci-piltdown-man-hoax-1912",
+    "category": "Science",
+    "headline": "Fake fossil fools science for 40 years",
+    "standfirst": "The 'Piltdown Man', hailed in 1912 as the missing link, was a human skull married to an orangutan's jaw with filed teeth — and it took four decades for anyone to prove it.",
+    "byline": "By Dr Eleanor Vance, Science Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T14:50:00",
+    "body": [
+      "In 1912, an amateur antiquarian named Charles Dawson announced a discovery that would rewrite human history: fragments of a skull, unearthed in a gravel pit in Sussex, that seemed to belong to a creature part-human and part-ape. Here, at last, was the fabled \"missing link\". It was also a complete fabrication.",
+      "The Piltdown remains combined a genuine, relatively modern human braincase with the jawbone of an orangutan, its teeth carefully filed down and the whole assemblage stained to look ancient. For an eager scientific establishment, it fitted expectations almost too perfectly — and that, in hindsight, was the warning that went unheeded.",
+      "It fitted, in particular, a comfortable assumption of the day: that the large human brain had evolved first, and the rest of the anatomy caught up later. Piltdown Man showed exactly that, because it had been built to. The specimen was celebrated, named after its discoverer, and defended for decades.",
+      "\"It endured not despite the scientists but because of them,\" said palaeontologist Dr Eleanor Vance. \"It told them what they already believed. A hoax that flatters your assumptions is far harder to see than one that offends them — and this one flattered a whole generation.\"",
+      "Doubts grew as genuine fossils accumulated elsewhere and refused to match. Finally, in 1953, chemical dating exposed the fraud conclusively: the jaw was fresh, the staining artificial, the teeth filed by hand. The missing link had been missing because it never existed.",
+      "The identity of the forger has never been settled — Dawson is the prime suspect, but others have been proposed, and the case remains open. What is not in doubt is the lesson.",
+      "\"Science corrected itself, which is the point in its favour,\" Dr Vance said. \"But it took forty years, because the fake was exactly the shape of what everyone hoped to find. Be most suspicious, always, of the evidence you most want to be true.\""
+    ],
+    "pullQuote": "A hoax that flatters your assumptions is far harder to see than one that offends them.",
+    "tags": [
+      "history",
+      "science",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wea-great-smog-of-london-1952",
+    "category": "Weather",
+    "headline": "A five-day fog turns lethal, and a city cannot see it happening",
+    "standfirst": "The Great Smog of 1952 blanketed London so completely that people could not see their own feet — and only later grasped that the air itself had become deadly.",
+    "byline": "By Dr Ada Fernsby, Weather and Environment Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T09:55:00",
+    "body": [
+      "For five days in December 1952, London disappeared. A cold, windless anticyclone settled over the city and trapped the smoke of a million coal fires and countless chimneys beneath it, mixing soot, sulphur and fog into a yellow-black pall that reduced visibility, in places, to a matter of inches.",
+      "Londoners, a people historically relaxed about fog, at first treated it as an especially thick example of an old friend. Buses were led through the streets by men on foot carrying lamps; indoor cinema screenings were abandoned because the audience could not see the screen; the smog crept into homes, hospitals and theatres.",
+      "What almost no one realised, until afterwards, was that the air had become genuinely poisonous. The death toll was catastrophic — early estimates put it around 4,000, with later studies suggesting the true figure may have been two or three times higher. This was not an inconvenience. It was one of the deadliest environmental events in British history, and it must be counted as such.",
+      "\"The horror of it is that it was invisible as a disaster while being impossible to miss as a fog,\" said environmental historian Dr Ada Fernsby. \"People could see nothing and understood less. The danger was not the darkness. The danger was the thing making the darkness.\"",
+      "Prize cattle at an agricultural show were among the first to die, a grim early signal. In the weeks and months that followed, the scale of human loss became undeniable, and with it the case for action.",
+      "The response was the Clean Air Act of 1956, which restricted the burning of coal in urban areas and, over years, gave London back its sky. The smog was among the first disasters to make the air itself a matter of public policy.",
+      "\"It took a catastrophe to prove that clean air was not a luxury,\" Dr Fernsby said. \"We paid a terrible price for a lesson that now seems obvious — which is, sadly, how most obvious lessons are learned.\""
+    ],
+    "pullQuote": "People could see nothing and understood less. The danger was not the darkness. The danger was the thing making the darkness.",
+    "tags": [
+      "history",
+      "environment",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-war-of-the-bucket-modena",
+    "category": "World",
+    "headline": "Italy Remembers the Day a Missing Bucket Started a War",
+    "standfirst": "In 1325, a wooden well-bucket stolen from Bologna by raiding Modenese troops proved the final straw in a rivalry two centuries in the making — and Modena, magnificently, still has the bucket.",
+    "byline": "By Cordelia Ashworth-Pine, Continental Affairs Correspondent",
+    "location": "MODENA, ITALY",
+    "published": "2026-07-12T07:15:00Z",
+    "body": [
+      "Historians agree that the Battle of Zappolino, fought on 15 November 1325 between the forces of Modena and Bologna, was the culmination of nearly two centuries of Guelph-versus-Ghibelline hostility, dynastic ambition, and territorial dispute. Historians also agree, somewhat more sheepishly, that the spark which finally lit the touchpaper was a bucket.",
+      "The wooden pail — an ordinary well-bucket of the sort found propping open cellar doors across medieval Emilia-Romagna — was seized by a raiding party of Modenese soldiers who had ridden into Bologna, helped themselves to it, and ridden home again. Bologna, whose citizens had rather more pressing matters of Guelph honour to attend to, treated the theft as intolerable provocation. Some 30,000 troops are said to have met in the field as a result.",
+      "\"You have to understand the bucket was never really about the bucket,\" said Professor Ubaldo Ferrarelli of the Institute for Emilian Municipal Grievance, who has spent a career explaining this exact point to visitors who still, after seven hundred years, cannot quite get past the bucket. \"It was about feudal supremacy, papal versus imperial allegiance, and control of the Apennine trade routes. The bucket was incidental. And yet it is the only part anybody remembers.\"",
+      "Modena won the battle decisively, and — in what modern public relations professionals would call a masterstroke, and what Bologna at the time called deeply irritating — declined to give the bucket back. It remains on display in Modena's Ghirlandina tower to this day, a genuine oak pail from the fourteenth century, guarded now by glass rather than soldiers.",
+      "\"We ask, gently but repeatedly, for its return,\" said a spokesperson for the city of Bologna, requesting anonymity on the grounds that seven hundred years is not really long enough for these things to blow over in this part of Italy. \"Modena's position is that possession is nine-tenths of the law. We would point out that the other tenth is that they stole it.\"",
+      "The result is a genuinely bizarre historical footnote: one of the bloodier engagements of the Guelph-Ghibelline wars, fought by tens of thousands of men over land, faith, and power, is remembered internationally chiefly as the fight over a bucket — a fact Modena appears entirely at peace with, having named a square after it and worked the pail into local folklore ever since, including a mock-epic poem, La Secchia Rapita, written three centuries later purely to milk the joke further.",
+      "Alessandro Grimaldi, a Modena tour guide who walks visitors past the tower daily, put it succinctly. \"People come for the cathedral. They stay for the bucket. Make no mistake — nobody in this city has ever apologised for it, and nobody ever will.\"",
+      "The bucket, for its part, continues to say nothing, having successfully outlasted every soldier, pope and emperor involved in the affair that made it famous."
+    ],
+    "pullQuote": "The bucket was incidental. And yet it is the only part anybody remembers.",
+    "tags": [
+      "based-on-truth",
+      "medieval-italy",
+      "diplomatic-incidents"
+    ]
+  },
+  {
+    "id": "wld-pastry-war-mexico-france",
+    "category": "World",
+    "headline": "France Invades Mexico Over a Ruined Pâtisserie, And Calls It Foreign Policy",
+    "standfirst": "A French pastry chef's wrecked shop in Tacubaya became the official pretext for a naval blockade and invasion in 1838 — a conflict that has gone down in history, entirely without irony, as the Pastry War.",
+    "byline": "By Cordelia Ashworth-Pine, Continental Affairs Correspondent",
+    "location": "VERACRUZ, MEXICO",
+    "published": "2026-07-12T09:40:00Z",
+    "body": [
+      "In 1838, the government of France dispatched a fleet to blockade the port of Veracruz and, in due course, bombard the fortress of San Juan de Ulúa, in pursuit of unpaid debts owed to French nationals in Mexico. Among the claimants was a pastry cook based in the Mexico City suburb of Tacubaya, who alleged that Mexican army officers had ransacked his shop some years earlier and demanded 60,000 pesos in compensation — a sum wildly disproportionate to the value of the pastries destroyed.",
+      "The pastry cook's claim was, by most accounts, one grievance among many held by French citizens against the Mexican state, which was at the time chronically unable to pay its debts. But it was the pastry claim that stuck in the popular imagination, and it is the pastry claim that gives the conflict its name to this day: the Pastry War, officially known to nobody who has ever had to explain it with a straight face at a dinner party.",
+      "\"The broader context is entirely serious — outstanding loans, property damage, a young Mexican republic that owed money across half of Europe,\" said Dr. Éloise Bertrand-Faure of the Sorbonne's Centre for Nineteenth-Century Debt Collection. \"But the French crown chose to frame the ultimatum around the baker. One imagines the finance ministry thought it made a more sympathetic case than 'we would like our government bonds honoured, please.'\"",
+      "The blockade lasted for months and starved Mexico's principal port of trade before the French navy shelled the fortress into submission. A young Mexican officer named Antonio López de Santa Anna, who would go on to lose Texas and much else besides, lost a leg defending Veracruz and later had it exhumed and reburied with full military honours — arguably better treatment than the pastry cook's original oven ever received.",
+      "\"The financial context was real. The debts were real. Mexico did, eventually, agree to pay,\" said Colonel (Ret.) Marcus Ibáñez, a military historian at the Institute of Hemispheric Studies. \"But if you ask any schoolchild in either country what the war was about, they will tell you it was about pastries, because that is the name it was given, and names, unlike ledgers, are what survive.\"",
+      "The episode has since become a byword for the gap between the stated pretext for a war and its actual causes — a gap diplomats have been carefully not talking about ever since. France ultimately secured its indemnity; Mexico ultimately paid it, in instalments, over years.",
+      "\"An inconvenient truth of nineteenth-century diplomacy,\" Dr. Bertrand-Faure added, \"is that great powers have never needed a good reason to send a fleet somewhere. They have only ever needed a memorable one.\"",
+      "The pastry shop itself was not rebuilt by the French navy, whose guns were, it should be noted, considerably better suited to demolition than to patisserie."
+    ],
+    "pullQuote": "One imagines the finance ministry thought it made a more sympathetic case than 'we would like our government bonds honoured, please.'",
+    "tags": [
+      "based-on-truth",
+      "diplomatic-incidents",
+      "19th-century"
+    ]
+  },
+  {
+    "id": "wld-pig-war-san-juan-island",
+    "category": "World",
+    "headline": "The Only Casualty of the Pig War Was, Fittingly, the Pig",
+    "standfirst": "In 1859, Britain and the United States brought warships and thousands of troops to a standoff over a disputed island — after an American farmer shot a British-owned pig for eating his potatoes.",
+    "byline": "By Reginald Twyford-Hale, North American Affairs Editor",
+    "location": "SAN JUAN ISLAND, WASHINGTON TERRITORY",
+    "published": "2026-07-12T12:05:00Z",
+    "body": [
+      "The border between British and American territory in the San Juan Islands had been left ambiguous by treaty since 1846, with both nations claiming the archipelago and, more specifically, San Juan Island, where settlers of both nationalities lived in close and increasingly tetchy proximity. On 15 June 1859, that ambiguity produced its inevitable casualty: a large black pig, the property of the Hudson's Bay Company, which wandered into the potato patch of an American settler named Lyman Cutlar and was shot dead for its trouble.",
+      "Cutlar offered ten dollars in compensation for the pig; the Hudson's Bay Company's representative demanded a hundred. Negotiations broke down, British authorities threatened to arrest Cutlar, American settlers appealed for military protection, and within weeks both nations had landed troops on an island roughly the size of a modest county, all on account of a single pig that was, by every account, already dead and thus no longer capable of causing further offence.",
+      "\"At the peak of the crisis you had some four hundred American soldiers dug in against five British warships carrying over two thousand men and seventy guns,\" said Commodore (Ret.) Harriet Vance-Osgood of the Institute of Maritime Boundary Disputes. \"All of that hardware, arrayed against each other, over a pig that had eaten some potatoes. The pig remains, to this day, the only fatality of the entire affair.\"",
+      "Cooler heads eventually prevailed. The local British and American commanders, to their considerable credit, agreed that no war was worth starting over livestock, and the two governments settled into a joint military occupation of the island that lasted, remarkably peacefully, for the next twelve years, until international arbitration finally awarded San Juan Island to the United States in 1872.",
+      "\"What strikes historians is not that a war nearly started over a pig,\" said Vance-Osgood, \"it's that everyone involved seems to have known, even at the time, how ridiculous that would sound to posterity, and behaved rather better as a result. Nobody wanted to be the officer who started an Anglo-American war over swine.\"",
+      "The dispute is remembered locally today with a mixture of civic pride and gentle self-mockery; San Juan Island now hosts historical parks commemorating both the British and American camps, and the pig, inevitably, has its own small plaque.",
+      "\"The result,\" Vance-Osgood noted dryly, \"is that the most heavily armed non-event in the history of Anglo-American relations is now a heritage site with a gift shop. Let that sink in.\"",
+      "The potato patch, like the pig, did not survive the historical record in any detail — though Cutlar, by all accounts, kept farming the same plot for years afterward, presumably with a somewhat higher fence."
+    ],
+    "pullQuote": "All of that hardware, arrayed against each other, over a pig that had eaten some potatoes.",
+    "tags": [
+      "based-on-truth",
+      "diplomatic-incidents",
+      "19th-century"
+    ]
+  },
+  {
+    "id": "wld-berners-street-hoax-1810",
+    "category": "World",
+    "headline": "The Man Who Bet He Could Break London With a Handful of Letters",
+    "standfirst": "In 1810, Theodore Hook wagered he could make one ordinary London street the talk of the city — and did so by summoning thousands of tradesmen, dignitaries and undertakers to a single front door.",
+    "byline": "By Persephone Wickstead-Aldrin, London Correspondent",
+    "location": "LONDON, ENGLAND",
+    "published": "2026-07-12T15:20:00Z",
+    "body": [
+      "On the morning of 27 November 1810, the residents of Berners Street, a perfectly unremarkable thoroughfare off Oxford Street, awoke to find their neighbourhood collapsing under the weight of its own front door. Coal carts arrived unbidden. So did fishmongers, wedding cakes, pianos, physicians, clergymen, chimney sweeps, and — in one especially pointed touch — an undertaker with a coffin, all summoned by letter to number 54, the home of a Mrs Tottenham, who had requested none of it.",
+      "The culprit was Theodore Hook, a writer and inveterate prankster, who had reportedly wagered a friend that he could make any London address the most talked-about location in the city within a week, using nothing but the post. He is said to have written several thousand letters in Mrs Tottenham's name, ordering goods, summoning tradesmen, and inviting dignitaries — up to and including, in some tellings, the Lord Mayor of London — to attend at 54 Berners Street at a specified hour.",
+      "\"The scale of it is what defeats modern comprehension,\" said Dr. Wilfred Copperthwaite, curator of urban disturbance at the Institute of Georgian Mischief. \"This was accomplished with quill, ink and the Royal Mail. No telephone, no telegraph. Just an extraordinary quantity of correspondence and, one assumes, a great deal of dried ink under the fingernails.\"",
+      "By mid-morning the street was reportedly impassable, with contemporary accounts describing gridlock stretching into neighbouring roads as carts, carriages, and confused tradesmen queued to deliver goods nobody had ordered to a household that wanted none of them. Hook himself is said to have watched the chaos unfold from a rented room across the street, monitoring his handiwork with what can only be described as professional satisfaction.",
+      "\"He won his bet, comprehensively,\" said Copperthwaite. \"Whether Mrs Tottenham considered it a fair exchange for having her entire day, and quite possibly her nerves, permanently ruined, history does not record — though one imagines her view differed somewhat from Hook's.\"",
+      "The stunt caused Hook to be, briefly, the most sought-after man in London for entirely the wrong reasons, and though no formal prosecution followed, he reportedly thought it prudent to keep a low profile for some time afterward. The Berners Street Hoax, as it became known, has since entered the language as shorthand for any coordinated campaign of unwanted deliveries — a distinction it held for well over a century before the invention of the prank telephone call rather crowded the field.",
+      "\"An inconvenient truth about Georgian London,\" Copperthwaite added, \"is that its citizens were both magnificently gullible and magnificently obliging — they turned up, in their thousands, because a letter had told them to. It rather says something about the age.\"",
+      "Mrs Tottenham, for her part, is recorded to have moved house not long afterward — a decision that, on reflection, seems entirely reasonable."
+    ],
+    "pullQuote": "This was accomplished with quill, ink and the Royal Mail. No telephone, no telegraph.",
+    "tags": [
+      "based-on-truth",
+      "georgian-london",
+      "pranks"
+    ]
+  },
+  {
+    "id": "wld-football-war-el-salvador-honduras",
+    "category": "World",
+    "headline": "The 100-Hour War That Took Its Name From a Football Match It Did Not Cause",
+    "standfirst": "In 1969, El Salvador and Honduras fought a brief but deadly war amid rioting around World Cup qualifying matches — though historians are firm that land reform and mass migration, not football, were the true causes.",
+    "byline": "By Reginald Twyford-Hale, North American Affairs Editor",
+    "location": "SAN SALVADOR, EL SALVADOR",
+    "published": "2026-07-12T18:00:00Z",
+    "body": [
+      "In June 1969, El Salvador and Honduras met across three legs of a World Cup qualifying play-off, with matches marked by heated crowds, isolated violence, and the kind of partisan fury football tends to attract when relations between neighbouring countries are already under severe strain. Within weeks, the two nations were at war. The conflict lasted roughly one hundred hours and has been known ever since, somewhat misleadingly, as the Football War.",
+      "The real causes long predate the tournament. Hundreds of thousands of Salvadoran migrants had settled in Honduras over preceding decades, seeking land in a more sparsely populated country; a Honduran land reform programme in the late 1960s began evicting many of them, generating a refugee crisis and deep bilateral resentment well before a ball was kicked.",
+      "\"Journalists reached for the football because it was the most vivid, most immediate flashpoint — and because 'War Caused by Land Reform and Agrarian Displacement' does not fit comfortably on a front page,\" said Professor Aurelia Nakamura-Reyes of the Institute for Central American Studies. \"But the war was already coming. The matches were the spark on tinder that had been drying for years.\"",
+      "The fighting, which began on 14 July 1969, involved air raids, artillery, and infantry engagements before a ceasefire was brokered by the Organization of American States days later. The human cost was real and severe: several thousand people are estimated to have died, the great majority of them civilians, alongside a far larger number displaced from their homes on both sides of the border.",
+      "\"It is important that the football framing not obscure the gravity of what happened,\" said Nakamura-Reyes. \"This was a genuine war, with genuine casualties and genuine grief, rooted in genuine and long-standing injustice. The name has always sat somewhat uneasily with the reality it describes.\"",
+      "The qualifying tie itself, incidentally, was won by El Salvador, who went on to compete at the 1970 World Cup in Mexico without winning a single match — a small, almost absurd footnote to a conflict whose real ledger was measured in lives and land, not goals.",
+      "\"The result,\" Nakamura-Reyes added, \"is a name that has outlived an accurate understanding of the event it names. People remember the football. They should remember the people.\"",
+      "Diplomatic relations between the two countries, severed during the conflict, were not formally restored for more than a decade."
+    ],
+    "pullQuote": "The matches were the spark on tinder that had been drying for years.",
+    "tags": [
+      "based-on-truth",
+      "central-america",
+      "20th-century"
+    ]
+  },
+  {
+    "id": "biz-south-sea-bubble-1720",
+    "category": "Business",
+    "headline": "The 1720 Prospectus That Openly Admitted Nobody Knew What the Company Did",
+    "standfirst": "At the height of the South Sea Bubble, Londoners queued to buy shares in ventures including, genuinely, one advertised as being for 'an undertaking of great advantage, but nobody to know what it is.'",
+    "byline": "By Marguerite Osei-Fenwick, City Editor",
+    "location": "LONDON, ENGLAND",
+    "published": "2026-07-12T06:30:00Z",
+    "body": [
+      "The South Sea Company was granted a monopoly on British trade with Spanish South America in 1711, a monopoly whose practical value was, thanks to ongoing hostilities with Spain, close to nil. This did not stop its share price climbing roughly tenfold over the course of 1720, driven by speculative fever, government complicity, and a public appetite for get-rich-quick schemes that has never, in three centuries since, noticeably diminished.",
+      "So voracious was the appetite for speculation that the South Sea Bubble spawned a wave of imitator ventures, promising everything from perpetual motion wheels to the importation of walnut trees from Virginia. Among the genuine prospectuses recorded from the period is one for, in its own advertised words, 'a company for carrying on an undertaking of great advantage, but nobody to know what it is' — which reportedly sold out its subscription within hours, before the promoter vanished with the takings by nightfall.",
+      "\"It is, without question, the single most honest fraudulent prospectus in financial history,\" said Professor Cornelius Whitlock-Bray of the Institute for Speculative Finance. \"Most swindlers at least pretend to have a business plan. This one dispensed with the pretence entirely, and investors queued around the block regardless.\"",
+      "The South Sea Company's own share price collapsed in the autumn of 1720, ruining thousands of investors — among them, famously, Sir Isaac Newton, who is reported to have lost a substantial sum and remarked that he could calculate the motion of heavenly bodies but not the madness of people. Parliament, many of whose members had themselves speculated in the stock, launched an inquiry that exposed bribery reaching into the cabinet.",
+      "\"The human cost was severe and should not be minimised,\" said Whitlock-Bray. \"Fortunes, and in some cases entire family estates, were wiped out within weeks. The Bubble Act of 1720, rushed through partly to prop up the South Sea Company's position against rivals, remained on the statute books restricting company formation in Britain for over a century afterward — a genuine and lasting consequence of a genuinely reckless episode.\"",
+      "The word \"bubble\" itself entered common financial usage largely because of this episode, and the pattern it describes — rapid speculative inflation followed by collapse — has recurred with almost metronomic regularity in the three centuries since, under new names and new technologies but, observers note, remarkably similar prospectuses.",
+      "\"An inconvenient truth of speculative markets,\" Whitlock-Bray concluded, \"is that the 1720 investor who bought shares in an undertaking of great advantage, nobody to know what it is, was not obviously more foolish than any number of twenty-first-century equivalents. He simply had worse hindsight available to him.\"",
+      "The promoter of the mystery company was, naturally, never seen again — arguably the only party to the entire Bubble who understood precisely what he was doing."
+    ],
+    "pullQuote": "It is, without question, the single most honest fraudulent prospectus in financial history,",
+    "tags": [
+      "based-on-truth",
+      "financial-history",
+      "18th-century"
+    ]
+  },
+  {
+    "id": "biz-ronald-wayne-apple-shares",
+    "category": "Business",
+    "headline": "The Man Who Sold His Slice of Apple for $800 and Has Been Asked About It Ever Since",
+    "standfirst": "Ronald Wayne, Apple's third co-founder, sold his 10 per cent stake back to Steve Jobs and Steve Wozniak for $800 in 1976 — a holding that would today be worth many billions of dollars.",
+    "byline": "By Marguerite Osei-Fenwick, City Editor",
+    "location": "MOUNTAIN VIEW, CALIFORNIA",
+    "published": "2026-07-12T10:10:00Z",
+    "body": [
+      "When Apple Computer was formally established in April 1976, it had three founders, not two. Alongside Steve Jobs and Steve Wozniak stood Ronald Wayne, a colleague of Jobs's at Atari, who drew the company's original logo, drafted its partnership agreement, and held a 10 per cent stake in the fledgling venture.",
+      "Twelve days later, Wayne sold his stake back to Jobs and Wozniak for $800, having grown uneasy about personal liability for the young company's debts should it fail — a real and reasonable concern for a partnership structure at the time, and one that, viewed from 1976, was not remotely an unreasonable judgement to make. He later received a further payment, bringing his total take to roughly $2,300.",
+      "\"You have to remember he was assessing risk with the information available to him at the time, which was: a company with no products, no revenue, and two founders with a combined net worth of approximately nothing,\" said Dr. Priya Andhale-Sørensen of the Institute for Counterfactual Finance. \"Hindsight has been extraordinarily unkind to Ronald Wayne, but hindsight is unkind to almost everyone it examines closely.\"",
+      "That 10 per cent stake, had it been retained through Apple's subsequent decades of growth, would today be worth a sum in the hundreds of billions of dollars — a figure so large that Wayne himself has, in interviews over the years, expressed no regret about the decision, citing personal contentment over what he calls a hypothetical fortune he was never emotionally equipped to manage.",
+      "\"He has been remarkably good-humoured about being cited, repeatedly, as the worst business decision in modern American history,\" said Andhale-Sørensen. \"Which is itself a kind of achievement. Not many people can watch a number that large be attached to their name in perpetuity and still sleep at night.\"",
+      "Wayne went on to hold a series of engineering and consulting jobs, and has periodically sold Apple-related memorabilia — including an original company contract bearing his signature — at auction for sums that, while substantial, remain several orders of magnitude short of what the equity itself would now command.",
+      "\"The result,\" said Andhale-Sørensen, \"is a genuinely fascinating case study in risk assessment under uncertainty. Every business school in the world uses it, and every single student walks away thinking they would have made the same call — which is, of course, an inconvenient truth nobody enjoys sitting with for very long.\"",
+      "Asked once whether $800 felt like the right price in hindsight, Wayne is widely reported to have shrugged the question off entirely — a response that, whatever else it demonstrates, suggests considerably more peace of mind than most of his critics ever managed."
+    ],
+    "pullQuote": "Hindsight has been extraordinarily unkind to Ronald Wayne, but hindsight is unkind to almost everyone it examines closely.",
+    "tags": [
+      "based-on-truth",
+      "tech-history",
+      "business-blunders"
+    ]
+  },
+  {
+    "id": "biz-decca-rejects-the-beatles",
+    "category": "Business",
+    "headline": "The Record Label That Heard the Beatles and Passed, With Confidence",
+    "standfirst": "On New Year's Day 1962, Decca Records auditioned an unknown Liverpool band and declined to sign them, reportedly on the grounds that guitar groups were on their way out.",
+    "byline": "By Percival Nkemelu-Vance, Music Industry Correspondent",
+    "location": "WEST HAMPSTEAD, LONDON",
+    "published": "2026-07-12T13:45:00Z",
+    "body": [
+      "On 1 January 1962, four young musicians from Liverpool travelled south to audition for Decca Records at its studios in West Hampstead, performing fifteen songs in the hope of securing a recording contract. Decca's assessment, delivered in due course, was that the band in question — a four-piece then still finding its feet, calling itself the Beatles — was not worth signing.",
+      "The label's decision-makers are widely reported to have judged that guitar groups were on their way out, and that the band had no real future in the recording industry. Decca instead signed another act that auditioned around the same period, Brian Poole and the Tremeloes, on the reasoning that a Home Counties group would be cheaper and easier to work with than one requiring regular trips from Liverpool.",
+      "\"It is worth being fair to Decca before we are unfair to Decca,\" said Dr. Imogen Path-Whitcombe of the Institute for Cultural Prediction, choosing her words with evident care. \"A&R decisions are made under real uncertainty, with real budgets, about acts that have not yet become who they will become. The mistake is famous precisely because it turned out, uniquely catastrophically, to be wrong.\"",
+      "The Beatles went on to sign with EMI's Parlophone label later that year, and by the middle of the decade had become, by most measures, the most commercially and critically significant popular music act of the twentieth century — a scale of success that has made Decca's rejection letter one of the most cited case studies in the entire history of talent evaluation.",
+      "\"The guitar groups line has achieved a strange immortality,\" said Path-Whitcombe. \"It is quoted more often, and more gleefully, than almost anything actually said by the executives who signed the acts that succeeded. There is a lesson in that about which kinds of confidence history chooses to remember.\"",
+      "Decca did not collapse as a consequence — the label continued operating successfully for decades afterward, signing a respectable roster of other acts — but the decision has followed it into every retrospective, documentary, and music-industry lecture given since, an albatross of a rejection letter that shows no sign of being forgotten.",
+      "\"An inconvenient truth of the creative industries,\" said Path-Whitcombe, \"is that the person saying no is, statistically, right far more often than the person saying yes. Decca simply had the extraordinary misfortune of being wrong about the one act everybody would still be talking about sixty years later.\"",
+      "The audition tapes survive and have been released commercially in the decades since — giving listeners the rare opportunity to judge, for themselves, exactly what Decca heard and decided to pass on."
+    ],
+    "pullQuote": "The guitar groups line has achieved a strange immortality,",
+    "tags": [
+      "based-on-truth",
+      "music-industry",
+      "business-blunders"
+    ]
+  },
+  {
+    "id": "biz-charles-ponzi-scheme-1920",
+    "category": "Business",
+    "headline": "The Postal Coupon Scheme That Gave Fraud Its Modern Name",
+    "standfirst": "In 1920, Charles Ponzi promised Boston investors 50 per cent returns in 45 days through international postal reply coupons — a scheme so brazen, and so ruinous, that it gave its name to every version that followed.",
+    "byline": "By Marguerite Osei-Fenwick, City Editor",
+    "location": "BOSTON, MASSACHUSETTS",
+    "published": "2026-07-12T16:55:00Z",
+    "body": [
+      "Charles Ponzi's Securities Exchange Company, founded in Boston in 1920, promised investors a 50 per cent return on their money within 45 days, an offer he attributed to profits made by arbitraging international reply coupons — postal vouchers that could, in principle, be bought cheaply abroad and redeemed at a profit for postage stamps in the United States, owing to currency fluctuations after the First World War.",
+      "The underlying mechanism was real, in the narrow sense that such coupons existed and could be exchanged. What was not real was the scale Ponzi claimed to be operating at, which would have required the physical purchase, shipping, and redemption of a volume of postal coupons vastly exceeding the number actually printed anywhere in the world. Ponzi was, in fact, using new investors' money to pay off earlier investors, a structure that has since been named in his honour.",
+      "\"What made the scheme so effective was not its plausibility, which was thin, but its punctuality,\" said Professor Halvard Osterberg-Munroe of the Institute for Financial Fraud Studies. \"Early investors were paid out exactly as promised, on time, in cash. Nothing recruits new capital faster than a friend who has genuinely, visibly been paid.\"",
+      "At its peak, Ponzi was reportedly taking in the equivalent of millions of dollars a week from investors across New England, and had become sufficiently prominent to buy a mansion and be profiled admiringly in the Boston press before journalistic and regulatory scrutiny caught up with the arithmetic. The scheme collapsed within months, leaving thousands of investors — many of them ordinary working people who had staked their savings — unable to recover their money in full.",
+      "\"The human cost here deserves to be stated plainly and without a punchline,\" said Osterberg-Munroe. \"Real families lost real savings. Some investors never recovered financially. The comedy of the episode belongs entirely to the audacity of the scheme's architect, never to the people who trusted him.\"",
+      "Ponzi was convicted of fraud, served time in prison, and was eventually deported to Italy, where he died in relative poverty in Brazil decades later — a conclusion considerably less glamorous than his brief Boston heyday.",
+      "\"The result,\" Osterberg-Munroe noted, \"is a name that has outlived the man by a century and shows no sign of retiring. Every decade produces a fresh Ponzi scheme and a fresh round of journalists explaining, patiently, where the name comes from.\"",
+      "The international reply coupon, for what it is worth, remains in legitimate use by postal services worldwide today — a niche, blameless bureaucratic instrument, forever associated with a fraud it never actually made anyone rich from."
+    ],
+    "pullQuote": "Nothing recruits new capital faster than a friend who has genuinely, visibly been paid.",
+    "tags": [
+      "based-on-truth",
+      "financial-history",
+      "fraud"
+    ]
+  },
+  {
+    "id": "eng-millennium-bridge-wobble-london",
+    "category": "Engineering",
+    "headline": "London's New Footbridge Opened, Wobbled Violently, and Closed Within 48 Hours",
+    "standfirst": "The Millennium Bridge over the Thames swayed so alarmingly under pedestrian footfall in June 2000 that engineers shut it two days after opening — and kept it closed for nearly two years while dampers were fitted.",
+    "byline": "By Eustace Ridgeway-Holt, Engineering Correspondent",
+    "location": "LONDON, ENGLAND",
+    "published": "2026-07-13T07:00:00Z",
+    "body": [
+      "The Millennium Bridge, a steel suspension footbridge linking St Paul's Cathedral to Tate Modern across the Thames, opened to the public on 10 June 2000 to considerable fanfare, having been designed by a team including the architect Norman Foster and engineers at Arup. Within hours, it had also acquired the nickname by which most Londoners still know it: the Wobbly Bridge.",
+      "As crowds of pedestrians — some 90,000 people crossed on opening day — walked across the structure, it began to sway laterally to a degree that alarmed engineers, officials, and the public alike, with footage from the day showing the bridge deck visibly shifting from side to side beneath the crowd. The bridge was closed to the public just two days after opening, and would remain closed for a further twenty months.",
+      "\"What had happened is now a textbook case in structural dynamics, and genuinely fascinating rather than embarrassing, though it was certainly embarrassing at the time,\" said Dr. Fenella Okonkwo-Bright of the Institute of Structural Resonance. \"Pedestrians walking across a bridge that sways slightly will, entirely unconsciously, adjust their gait to the sway to keep their balance — and if enough people do this simultaneously, their footsteps synchronise with, and reinforce, the very sway they are reacting to. It is a feedback loop nobody had designed for at this scale.\"",
+      "The phenomenon, now widely known as synchronous lateral excitation, had been observed on a small number of other pedestrian bridges before, but never so publicly or so dramatically as at the Millennium Bridge, whose closure became a minor national embarrassment during the same year London had hoped to be celebrating its new millennium landmarks.",
+      "\"The engineering response was, credit where due, thorough rather than defensive,\" said Okonkwo-Bright. \"Dozens of energy-dissipating dampers, both viscous and tuned-mass, were retrofitted beneath the deck to absorb the lateral sway before it could build. It was not a quick fix, and it was not a cheap one, but it worked.\"",
+      "The bridge reopened in February 2002 and has operated without a repeat of the original wobble since, now handling millions of pedestrian crossings a year without incident — a quiet redemption for a project whose opening had briefly threatened to become a byword for engineering hubris.",
+      "\"The result,\" said Okonkwo-Bright, \"is that synchronous lateral excitation is now a standard consideration in pedestrian bridge design worldwide, and engineers refer to it, with a certain rueful affection, as the Millennium Bridge effect. An inconvenient truth about ambitious structures is that some effects only reveal themselves once you put ninety thousand people on top of them at once.\"",
+      "The bridge remains, dampers and all, one of the more photographed crossings in London — its early wobble now a piece of civic folklore rather than a live hazard."
+    ],
+    "pullQuote": "It is a feedback loop nobody had designed for at this scale.",
+    "tags": [
+      "based-on-truth",
+      "engineering-failures",
+      "london"
+    ]
+  },
+  {
+    "id": "eng-leaning-tower-of-pisa",
+    "category": "Engineering",
+    "headline": "The Bell Tower That Started Leaning Before It Was Even Finished, and Kept Going for 800 Years",
+    "standfirst": "Construction on the Tower of Pisa began in 1173 on unstable subsoil; the structure started tilting almost immediately, was built in fitful stages over two centuries, and was only stabilised at the turn of the millennium.",
+    "byline": "By Eustace Ridgeway-Holt, Engineering Correspondent",
+    "location": "PISA, ITALY",
+    "published": "2026-07-13T09:20:00Z",
+    "body": [
+      "Construction of the freestanding bell tower of Pisa Cathedral began in 1173, on a foundation just three metres deep, set into a subsoil of soft clay and sand entirely unsuited to bearing the weight of an eight-storey masonry structure. By the time builders had completed the third storey, roughly five years later, the tower had already begun visibly leaning, its foundation subsiding unevenly on the softer side of the ground beneath it.",
+      "Work then stopped for nearly a century, owing to a series of wars involving the Republic of Pisa — an interruption that, purely by accident, is now credited by engineers with saving the tower from total collapse, since it gave the compressed soil time to settle and stiffen before further weight was added.",
+      "\"It is one of history's great accidental engineering interventions,\" said Professor Lucia Bramante-Voss of the Institute for Historic Structures. \"Had construction continued without pause, the added weight on already-subsiding ground would very likely have caused the tower to topple during its own building. The war that stopped work is, in a very real sense, the reason the tower still stands.\"",
+      "Building resumed in the thirteenth century, with later builders attempting to compensate for the existing tilt by making upper storeys slightly taller on the leaning side — giving the tower its distinctive, faint banana curve, visible in its stonework to this day. The final bell chamber was not added until roughly 1372, meaning the tower took the better part of two hundred years to complete, on and off, by which point its lean was already an accepted, permanent feature rather than a defect anyone expected to correct.",
+      "The tower continued to tilt gradually over succeeding centuries, reaching an angle steep enough by the late twentieth century that engineers feared genuine collapse; the tower was closed to the public in 1990 while an international team worked to stabilise it, ultimately removing soil from beneath the raised side to coax the structure back by around half a metre.",
+      "\"The stabilisation project, completed in 2001, did not straighten the tower — nobody wanted that, it would have ruined the entire point of it — it simply made the existing lean safe for the following two or three centuries,\" said Bramante-Voss. \"Which is, when you consider it, a remarkably Italian solution to an eight-hundred-year-old problem: leave the flaw exactly as it is, just make sure it doesn't kill anybody.\"",
+      "The tower now leans at an angle of roughly four degrees, considerably reduced from its pre-intervention peak, and receives millions of visitors a year, virtually all of whom travel specifically to see the one feature that its original builders spent two centuries trying, and failing, to fix.",
+      "\"The result,\" Bramante-Voss added, \"is a monument whose defining characteristic is a structural failure so old, so photogenic, and so thoroughly monetised that nobody involved today would dream of correcting it even if they could.\""
+    ],
+    "pullQuote": "The war that stopped work is, in a very real sense, the reason the tower still stands.",
+    "tags": [
+      "based-on-truth",
+      "engineering-failures",
+      "medieval-italy"
+    ]
+  },
+  {
+    "id": "eng-denver-airport-baggage-system",
+    "category": "Engineering",
+    "headline": "The Automated Baggage System That Delayed an Entire Airport by 16 Months",
+    "standfirst": "Denver International Airport's fully automated luggage-handling system mangled bags so reliably in testing that it pushed the airport's 1994 opening back well over a year — and the system was fully scrapped by 2005.",
+    "byline": "By Eustace Ridgeway-Holt, Engineering Correspondent",
+    "location": "DENVER, COLORADO",
+    "published": "2026-07-13T11:35:00Z",
+    "body": [
+      "Denver International Airport was designed, from the outset, to include one of the most ambitious pieces of infrastructure automation ever attempted at a civilian airport: a fully automated baggage-handling system intended to route luggage between check-in, planes, and carousels via a network of computer-controlled tracked carts, at a scale and complexity considerably beyond anything previously deployed.",
+      "During testing ahead of the airport's planned 1993 opening, the system proved spectacularly unreliable — carts derailed, bags were misrouted or shredded by the automated mechanisms, and the software struggled to coordinate the sheer number of carts required to serve a major hub airport. Footage of mangled suitcases scattered across test tracks, shown to journalists during the delays, became a minor national spectacle in its own right.",
+      "\"The ambition was not, in itself, unreasonable — automated sortation exists successfully in other industries at scale,\" said Dr. Nnamdi Oyelaran-Fitch of the Institute for Infrastructure Systems. \"What was unreasonable was attempting to deploy an entirely unproven, maximally complex version of it as load-bearing infrastructure for an airport's opening day, with no manual fallback built in from the start.\"",
+      "The airport's opening was delayed roughly sixteen months as engineers scrambled to fix the system, at a cost estimated in the hundreds of millions of dollars, before the airport finally opened in February 1995 using a scaled-back version of the system for only a portion of its operations, with conventional tug-and-cart baggage handling quietly doing the bulk of the real work behind the scenes.",
+      "\"The result was a strange kind of triumph of the ordinary,\" said Oyelaran-Fitch. \"The futuristic system that had delayed the airport for a year and a half ended up handling a fraction of the bags, while the boring manual system everyone had tried to replace carried on doing the job it had always done, quietly and without incident.\"",
+      "The automated system continued to serve one airline's operations in a limited capacity for years afterward, but was never expanded to the airport-wide scale originally envisioned, and was fully decommissioned in 2005, with the airport reverting entirely to conventional baggage handling.",
+      "\"An inconvenient truth of infrastructure engineering,\" said Oyelaran-Fitch, \"is that a system does not need to be impossible to build — it merely needs to be premature. Denver's baggage system was, by most technical assessments, roughly a decade ahead of the reliability engineering required to make it work. The airport paid the tuition for that gap in cash and in luggage.\"",
+      "Denver International Airport itself went on to become one of the busiest in the United States, its baggage-handling troubles now remembered chiefly as a cautionary case study taught in engineering management courses — a fate the system's original designers presumably did not have in mind."
+    ],
+    "pullQuote": "The futuristic system that had delayed the airport for a year and a half ended up handling a fraction of the bags,",
+    "tags": [
+      "based-on-truth",
+      "engineering-failures",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": "sci-mariner-1-missing-hyphen",
+    "category": "Science",
+    "headline": "NASA's Venus Probe Was Destroyed by, Depending on Who You Ask, a Missing Hyphen",
+    "standfirst": "Mariner 1 was deliberately destroyed less than five minutes after launch in 1962, after a guidance software error traced to a single missing overbar — earning it the nickname 'the most expensive hyphen in history.'",
+    "byline": "By Dr. Wendell Kaczmarek-Ito, Science Correspondent",
+    "location": "CAPE CANAVERAL, FLORIDA",
+    "published": "2026-07-13T06:10:00Z",
+    "body": [
+      "Mariner 1, NASA's first attempt to send a spacecraft to Venus, launched from Cape Canaveral on 22 July 1962. Less than five minutes into flight, the Atlas-Agena launch vehicle began veering off its intended course, and a range safety officer, unable to be certain the rocket would not endanger populated areas or shipping lanes, transmitted the destruct command. Mariner 1's mission ended in a fireball over the Atlantic.",
+      "The subsequent investigation traced the fault to the guidance software's handling of velocity data, where a required smoothing function involving an overbar — a symbol denoting an averaged value in the original handwritten equations — had been omitted, either in transcription or in coding, causing the guidance system to misinterpret ordinary minor variations in the rocket's velocity as genuine, serious deviations requiring correction, which it then attempted to correct into the ground.",
+      "\"The popular shorthand is 'a missing hyphen,' and it has stuck for six decades, though the more precise description is a missing overbar in a mathematical formula,\" said Dr. Petra Alvsgaard-Whitcombe of the Institute for Aerospace Software History. \"Either way, the underlying lesson is the same: an omission of a single character in a guidance equation was sufficient to doom a multimillion-dollar spacecraft in under five minutes.\"",
+      "The cost of the mission, including the Atlas-Agena launch vehicle and the Mariner spacecraft itself, has been estimated at somewhere in the region of eighteen million dollars in 1962 terms — a figure that, when divided by a single missing punctuation mark, gave rise to the enduring, only slightly exaggerated description of it as the most expensive hyphen, or overbar, in history.",
+      "\"Software engineers still cite this case, without exaggeration, in the very first week of aerospace coding courses,\" said Alvsgaard-Whitcombe. \"The result of the investigation was not merely a fixed formula but an entirely more rigorous approach to verifying guidance software before launch — a legacy considerably more valuable than the eighteen million dollars lost.\"",
+      "NASA moved swiftly: its backup spacecraft, Mariner 2, launched just five weeks later using corrected software, and went on to complete a successful flyby of Venus in December 1962, becoming the first spacecraft in history to conduct a successful planetary encounter — a redemption arc considerably faster than the disaster that preceded it.",
+      "\"An inconvenient truth of early spaceflight,\" said Alvsgaard-Whitcombe. \"The margin between historic success and expensive fireball was, quite literally, a horizontal line above a letter. Mariner 2 flew the correct formula. Mariner 1 did not.\"",
+      "The wreckage of Mariner 1 was never recovered from the Atlantic, leaving the missing overbar itself as the mission's most enduring artifact — a single absent stroke of punctuation, still taught, still cited, and still very slightly infamous."
+    ],
+    "pullQuote": "The margin between historic success and expensive fireball was, quite literally, a horizontal line above a letter.",
+    "tags": [
+      "based-on-truth",
+      "space-history",
+      "software-failures"
+    ]
+  },
+  {
+    "id": "sci-ariane-5-flight-501-overflow",
+    "category": "Science",
+    "headline": "The Rocket That Destroyed Itself Because a Number Was Too Big for Its Own Software",
+    "standfirst": "Ariane 5's maiden flight self-destructed 37 seconds after launch in 1996, after reused guidance software tried to cram a 64-bit number into a 16-bit space — a $370 million data-type error.",
+    "byline": "By Dr. Wendell Kaczmarek-Ito, Science Correspondent",
+    "location": "KOUROU, FRENCH GUIANA",
+    "published": "2026-07-13T08:50:00Z",
+    "body": [
+      "The European Space Agency's Ariane 5 rocket lifted off on its maiden flight from the Kourou spaceport on 4 June 1996, carrying a cluster of four scientific satellites. Approximately 37 seconds into flight, the rocket veered sharply off its flight path and broke apart under aerodynamic forces, triggering its self-destruct system — a total loss estimated at roughly $370 million, including the payload.",
+      "The subsequent inquiry found the cause to be a software error in the rocket's inertial reference system, which had been inherited largely unchanged from the earlier, slower Ariane 4 rocket. That software attempted to convert a 64-bit floating-point number representing the rocket's horizontal velocity into a 16-bit signed integer — a conversion that had never overflowed on the Ariane 4, whose flight profile never produced a horizontal velocity value large enough to exceed the smaller format's limits.",
+      "\"Ariane 5 was simply faster off the pad than Ariane 4 had ever been,\" said Dr. Ingrid Halvorsen-Achebe of the Institute for Flight Software Verification. \"The exact same code, which had flown without incident for years on the older rocket, encountered a velocity value on Ariane 5 that the smaller data type could not hold. The number overflowed, the software crashed, and it crashed on both the primary and backup guidance computers simultaneously. That happened because they were running identical code.\"",
+      "The overflow triggered a diagnostic error message that the flight software then, catastrophically, interpreted as legitimate flight data, commanding a violent and unwarranted course correction that tore the rocket apart in mid-air well within view of the launch site.",
+      "\"What makes the case a genuine landmark in software engineering is not merely the size of the failure, but its total avoidability,\" said Halvorsen-Achebe. \"The specific module that overflowed was, by the investigation's own account, not even required for Ariane 5's flight profile — it was left running purely because it had always been left running on Ariane 4, and nobody had reassessed whether the code needed to be re-verified for a rocket with different performance characteristics.\"",
+      "The failure has since become one of the most widely taught case studies in software engineering and systems safety, cited routinely in discussions of code reuse, type safety, and the dangers of assuming that software validated for one context remains valid, unexamined, in another.",
+      "\"The result,\" said Halvorsen-Achebe, \"is that an entire generation of engineers has been trained on the phrase 'that worked on the old system' as, specifically, a warning rather than a reassurance. Ariane 5 itself went on to become one of the most reliable heavy-lift rockets ever built — but only after that first, expensive lesson in reading your own old code rather than trusting it.\"",
+      "The four satellites lost aboard Flight 501 were never replaced individually; the mission's scientific programme was rebuilt, more cautiously, on later, successful Ariane 5 launches."
+    ],
+    "pullQuote": "The number overflowed, the software crashed, and it crashed on both the primary and backup guidance computers simultaneously.",
+    "tags": [
+      "based-on-truth",
+      "space-history",
+      "software-failures"
+    ]
+  },
+  {
+    "id": "sci-tycho-brahe-nose-and-legend",
+    "category": "Science",
+    "headline": "The Astronomer Who Lost His Nose in a Maths Argument and, Allegedly, His Life to Politeness",
+    "standfirst": "Tycho Brahe, the towering 16th-century Danish astronomer, wore a prosthetic nose after losing part of his own in a duel over a mathematical dispute — and died in 1601 in circumstances popular legend blames on his reluctance to leave a banquet table.",
+    "byline": "By Dr. Wendell Kaczmarek-Ito, Science Correspondent",
+    "location": "PRAGUE, BOHEMIA",
+    "published": "2026-07-13T13:15:00Z",
+    "body": [
+      "Tycho Brahe, the Danish nobleman whose painstakingly precise, decades-long naked-eye observations of the night sky underpinned Johannes Kepler's later laws of planetary motion, was as famous in his own lifetime for his eccentricities as for his astronomy — chief among them a missing piece of his nose, lost in a duel fought in 1566 in Rostock against a fellow Danish student, reportedly over a dispute concerning who was the superior mathematician.",
+      "Brahe survived the duel but spent the rest of his life wearing a prosthetic replacement for the missing portion of his nose, widely reported by contemporaries to have been made of a metal alloy, which he is said to have affixed daily with an adhesive paste for the remainder of his career — a career that went on to include the establishment of Uraniborg, one of the most advanced observatories in Europe, built with the patronage of the Danish crown.",
+      "\"It is a genuinely remarkable detail that the era's foremost observational astronomer conducted decades of precision stargazing while wearing a metal nose, fixed on each morning with paste, following a fight over long division,\" said Professor Kristofer Ahnfeldt-Suzuki of the Institute for Renaissance Science. \"The duel itself is well documented in contemporary sources; what varies between accounts is the exact metal used and the precise arithmetic dispute that started it.\"",
+      "Brahe died in Prague in October 1601, eleven days after falling ill at a banquet, in a death that has since attracted one of the more persistent legends in the history of science: the popular story holds that Brahe, out of an excess of court etiquette, declined to leave the table to relieve himself during the meal, and suffered a burst bladder as a result, dying of the resulting infection days later.",
+      "\"It is essential to be precise here: that account is the popular legend, not an established medical fact,\" cautioned Ahnfeldt-Suzuki. \"Modern historians and forensic researchers, including a team that examined exhumed remains in the early twenty-first century, have raised serious doubts about the bladder account, and some studies have pointed instead toward mercury poisoning or a more conventional urinary or kidney ailment. The story endures because it is vivid and because it fits Brahe's reputation for extravagant courtly behaviour — not because it has been proven.\"",
+      "Whatever the precise medical cause, Brahe's death left his enormous archive of astronomical observations in the hands of his assistant, Johannes Kepler, who used the data to derive the laws of planetary motion that would underpin Isaac Newton's work on gravity a century later — arguably the most consequential inheritance in the history of science.",
+      "\"An inconvenient truth about scientific legend,\" said Ahnfeldt-Suzuki. \"We remember Brahe's nose and his supposed bladder rather more readily than we remember that his data effectively built modern astronomy. He deserves better than to be remembered mainly for the two organs he is popularly said to have damaged.\"",
+      "The prosthetic nose itself has not survived, though Brahe's exhumed skull, examined in 2010, reportedly showed green staining consistent with a copper-alloy fitting — a small, quiet confirmation of at least one part of the legend."
+    ],
+    "pullQuote": "We remember Brahe's nose and his supposed bladder rather more readily than we remember that his data effectively built modern astronomy.",
+    "tags": [
+      "based-on-truth",
+      "history-of-science",
+      "renaissance"
+    ]
+  },
+  {
+    "id": "tech-aw-third-pound-burger-fractions",
+    "category": "Technology",
+    "headline": "The Burger That Lost a Marketing War Because a Third Sounded Smaller Than a Quarter",
+    "standfirst": "A&W launched a third-pound burger priced against McDonald's Quarter Pounder in the 1980s — and reportedly struggled because many customers believed one-third of a pound was less meat than one-quarter.",
+    "byline": "By Beatrix Somner-Achike, Consumer Technology Correspondent",
+    "location": "UNITED STATES",
+    "published": "2026-07-13T10:05:00Z",
+    "body": [
+      "In the 1980s, the American fast-food chain A&W Restaurants introduced a burger containing a third of a pound of beef, priced the same as, and marketed as a direct rival to, McDonald's long-established Quarter Pounder — offering, on paper, more meat for the same money. According to accounts later given by the company and repeated widely in marketing literature, the burger nonetheless failed to unseat its rival.",
+      "The reason offered was not taste, price, or branding, but fractions: focus group participants, asked to explain their preference, reportedly said they felt they were being overcharged, on the grounds that a third was a smaller number than a quarter, and therefore a third of a pound of beef must be a smaller quantity than a quarter of a pound — the opposite of the mathematical truth.",
+      "\"It is one of the great case studies in the gap between objective quantity and subjective perception,\" said Professor Odalys Fenwick-Marchetti of the Institute for Consumer Cognition. \"Whatever the precise scale of the effect in the original campaign, the underlying phenomenon it illustrates — that consumers routinely misjudge fractions when the larger denominator looks, superficially, like the bigger number — is well established and has been replicated in controlled studies since.\"",
+      "The episode has become a fixture of marketing school curricula and popular psychology writing, frequently cited alongside other examples of consumers being led astray by numbers that look intuitive but are not, and is often used to illustrate the broader principle that technically accurate information is not the same thing as effectively communicated information.",
+      "\"The result is a lesson every product marketer eventually learns the hard way,\" said Fenwick-Marchetti. \"You can be correct, and lose anyway, if the number on your packaging requires your customer to do fraction comparison at the drive-through window. Nobody wants to do maths to order lunch.\"",
+      "A&W has, in more recent decades, leaned into the story rather than away from it, running advertising campaigns that explicitly reference the original fraction confusion and reassure customers, this time with visual aids, that a third of a pound is indeed more beef than a quarter of a pound.",
+      "\"An inconvenient truth of consumer marketing,\" Fenwick-Marchetti added, \"is that arithmetic, however elementary, is optional at the point of sale, and perception is not. A company can win the fraction and still lose the sandwich.\"",
+      "The Quarter Pounder, whatever the precise mechanism of its rival's struggles, remains on menus worldwide to this day — a monument, depending how one looks at it, to either superior branding or superior numeracy failure."
+    ],
+    "pullQuote": "You can be correct, and lose anyway, if the number on your packaging requires your customer to do fraction comparison at the drive-through window.",
+    "tags": [
+      "based-on-truth",
+      "marketing-blunders",
+      "fast-food"
+    ]
+  },
+  {
+    "id": "tech-new-coke-1985-reversal",
+    "category": "Technology",
+    "headline": "Coca-Cola Changed Its Own Formula, Faced a National Uprising, and U-Turned in Ten Weeks",
+    "standfirst": "In April 1985, Coca-Cola replaced its century-old flagship formula with a sweeter reformulation; the public backlash was so fierce that the original recipe returned as Coca-Cola Classic within about three months.",
+    "byline": "By Beatrix Somner-Achike, Consumer Technology Correspondent",
+    "location": "ATLANTA, GEORGIA",
+    "published": "2026-07-13T15:40:00Z",
+    "body": [
+      "On 23 April 1985, the Coca-Cola Company announced it was replacing its original soft drink formula, unchanged in its essentials since the late nineteenth century, with a new, sweeter recipe, following extensive blind taste testing that indicated consumers preferred the new formula's flavour to both the original Coca-Cola and to rival Pepsi. The company retired the old formula entirely and began bottling the new version, styled simply as the new Coca-Cola, under the same iconic branding.",
+      "The public reaction was immediate and, by any standard, extraordinary. The company's consumer hotline reportedly received tens of thousands of complaint calls, protest groups organised under names such as the Old Cola Drinkers of America, and hoarders began stockpiling cases of the original formula while supplies lasted, treating them as a vanishing commodity rather than a soft drink.",
+      "\"The blind taste tests were not fraudulent — the new formula genuinely did win in sip tests, where a consumer tastes a small amount and moves on,\" said Dr. Rosalind Achterberg-Nwosu of the Institute for Consumer Behaviour. \"What the testing failed to capture was the emotional and cultural weight of the original product. People were not choosing a flavour. They were defending a piece of their own biography.\"",
+      "Faced with sustained backlash spanning weeks of national media coverage, the company reversed course, announcing on 10 July 1985 — just under three months after the original change — that the original formula would return to shelves under the new name Coca-Cola Classic, sold alongside the reformulated version, which was eventually discontinued some years later.",
+      "\"The speed of the reversal is, in its own way, as remarkable as the original decision,\" said Achterberg-Nwosu. \"Ten weeks, more or less, from launch to full retreat. Few corporate decisions in history have been made, publicly regretted, and undone so quickly and so completely on such a visible stage.\"",
+      "Some commentators have since suggested, largely without solid corroborating evidence from the company, that the entire episode may have functioned as an inadvertent masterstroke of marketing, reintroducing the original formula to a wave of renewed public affection it might not otherwise have received. Coca-Cola itself has consistently maintained that the reformulation, and the reversal, were exactly what they appeared to be: a genuine misjudgement, corrected.",
+      "\"The result,\" said Achterberg-Nwosu, \"either way, is one of the most studied product decisions in modern marketing history — proof that a company can conduct rigorous, honest research, act correctly on its own data, and still be entirely wrong about what its customers actually valued.\"",
+      "New Coke, in its later incarnation, was fully discontinued in 2002, leaving Coca-Cola Classic to quietly drop the word Classic from its label in subsequent years — the crisis, by then, comfortably resolved and largely forgotten by anyone who had not lived through the ten weeks in question."
+    ],
+    "pullQuote": "People were not choosing a flavour. They were defending a piece of their own biography.",
+    "tags": [
+      "based-on-truth",
+      "marketing-blunders",
+      "corporate-history"
+    ]
+  },
+  {
+    "id": "tech-ford-edsel-flop",
+    "category": "Technology",
+    "headline": "The Car Ford Spent Years Hyping Before the Public Declined to Buy It",
+    "standfirst": "The Ford Edsel, launched in 1957 after years of research and anticipation, sold so poorly that Ford discontinued the line within two years — and its name became permanent shorthand for commercial failure.",
+    "byline": "By Beatrix Somner-Achike, Consumer Technology Correspondent",
+    "location": "DEARBORN, MICHIGAN",
+    "published": "2026-07-13T17:25:00Z",
+    "body": [
+      "The Ford Motor Company launched the Edsel, a new mid-market car line named after Henry Ford's son, in September 1957, following several years of market research, consumer surveys, and an advertising campaign that promised something genuinely new in American motoring. Ford had invested heavily in the line, both financially and reputationally, positioning it to fill a gap between its existing Ford and Mercury brands.",
+      "The public response fell dramatically short of the company's projections. Sales figures for the Edsel's launch year and the two that followed were, by Ford's own internal targets, a serious disappointment, and the line was discontinued altogether in November 1959 — barely two years after its heavily promoted debut, at a financial loss to Ford estimated in later accounts at several hundred million dollars in the currency of the day.",
+      "\"There is no single, tidy explanation, which is itself part of why the case is still taught,\" said Professor Desmond Achterlonie-Wyn of the Institute for Product Launch Studies. \"A recession arrived just as the car launched, styling choices proved divisive rather than distinctive, and the extended promotional build-up created expectations the car itself, by most contemporary reviews, simply did not meet. The anticipation outran the product.\"",
+      "Contemporary press coverage, initially curious, turned sharply critical within months of launch, and the Edsel's commercial failure was covered almost as extensively as its launch had been — an unusually complete arc from hype to humiliation played out in full public view across the American motoring press.",
+      "\"What has given the Edsel its lasting cultural life is not really the car itself, which by most engineering assessments was perfectly competent,\" said Achterlonie-Wyn. \"It is the size of the gap between the promise and the outcome. A modest car that modestly underperformed would have been forgotten. A heavily hyped car that spectacularly underperformed became a permanent case study.\"",
+      "The name Edsel entered the American vernacular within a few years of the car's discontinuation as a general byword for any lavishly promoted product or venture that fails to find a market — a linguistic afterlife considerably longer-lived than the car line itself, which lasted barely two model years on dealer lots.",
+      "\"The result,\" said Achterlonie-Wyn, \"is that Ford ultimately taught the entire American auto industry more about the dangers of over-promising than it ever taught anyone about mid-market sedans. Hype is a loan against future goodwill, and the Edsel simply never earned enough to repay it.\"",
+      "Ford itself weathered the loss and went on to considerable subsequent success, leaving the Edsel today as a well-preserved collector's curiosity rather than a cautionary relic — a car remembered far more fondly by enthusiasts now than it ever was by the customers it was built for."
+    ],
+    "pullQuote": "Hype is a loan against future goodwill, and the Edsel simply never earned enough to repay it.",
+    "tags": [
+      "based-on-truth",
+      "marketing-blunders",
+      "automotive-history"
+    ]
+  },
+  {
+    "id": "spt-1904-st-louis-olympic-marathon",
+    "category": "Sport",
+    "headline": "The Olympic Marathon Won by a Man Who Rode Most of It in a Car, and Actually Finished by a Man Fed Rat Poison",
+    "standfirst": "The 1904 St. Louis Olympic marathon descended into chaos amid dust and heat: one runner was disqualified after riding roughly 11 miles in a car, while the eventual winner finished half-carried, having been dosed with strychnine and brandy by his own support team.",
+    "byline": "By Osgood Fairweather-Nkosi, Sport Correspondent",
+    "location": "ST. LOUIS, MISSOURI",
+    "published": "2026-07-13T06:45:00Z",
+    "body": [
+      "The marathon at the 1904 St. Louis Olympics is remembered, with good reason, as one of the strangest distance races in sporting history. Run in punishing August heat over dusty, poorly prepared roads, with organisers deliberately limiting runners' access to water as part of a contemporary — and thoroughly misguided — theory about the benefits of dehydration during endurance exercise, the race left the majority of its 32 starters unable to finish at all.",
+      "Fred Lorz, an American runner, dropped out of the race after roughly nine miles suffering from exhaustion, and accepted a lift from his manager in a passing car for approximately eleven miles of the course before the vehicle broke down, at which point Lorz resumed running the remaining distance on foot and crossed the finish line first, to considerable applause, and was on the verge of being presented with the gold medal before witnesses reported what had actually happened. Lorz was disqualified, though he insisted at the time that he had only ever intended it as a joke.",
+      "\"The story that has survived is essentially accurate, and it is exactly as absurd as it sounds,\" said Professor Marguerite Okafor-Lindqvist of the Institute for Olympic History. \"A competitor rode roughly a third of the marathon course in an automobile and was very nearly declared Olympic champion before anyone thought to check.\"",
+      "The race was ultimately awarded to Thomas Hicks, an American runner who crossed the line in obvious and severe distress, having been administered a mixture of strychnine sulphate — a stimulant used in minute doses at the time, and a poison in larger ones — combined with raw egg whites and brandy by his handlers over the closing miles of the race, in the belief that it would sustain him. Hicks reportedly had to be half-carried across the finish line by his support team, and is said to have lost a significant amount of weight over the course of the race.",
+      "\"By any modern medical standard, Hicks's handlers came close to killing him in the pursuit of an Olympic medal,\" said Okafor-Lindqvist. \"Strychnine was, at the time, genuinely believed by some to have performance-enhancing properties in trace amounts. It also happens to be a poison. The fact that he survived to collect his medal is, frankly, fortunate rather than inevitable.\"",
+      "Fewer than half of the field completed the course at all, with runners overcome by heat, dust kicked up by accompanying support vehicles, and in one case severe stomach distress after eating spoiled apples found along the route — a race so chaotic in its logistics that Olympic historians have long cited it as a contributing factor in later, far stricter regulation of marathon course conditions and medical support.",
+      "\"The result,\" said Okafor-Lindqvist, \"is a race that reads less like elite sport and more like a cautionary short story, and yet it happened, on schedule, at an official Olympic Games, watched by an official crowd. Nobody involved seems to have considered stopping it once it started going wrong.\"",
+      "Lorz, for his part, was only banned briefly; he returned to competitive running the following year and won the Boston Marathon fairly and without incident — a redemption arc considerably tidier than the race that made him briefly, wrongly, an Olympic champion."
+    ],
+    "pullQuote": "A competitor rode roughly a third of the marathon course in an automobile and was very nearly declared Olympic champion before anyone thought to check.",
+    "tags": [
+      "based-on-truth",
+      "olympic-history",
+      "sporting-chaos"
+    ]
+  },
+  {
+    "id": "spt-steven-bradbury-2002-gold",
+    "category": "Sport",
+    "headline": "The Skater Who Won Olympic Gold by Being the Only One Left Standing",
+    "standfirst": "At the 2002 Winter Olympics, Australian short-track speed skater Steven Bradbury won gold after every rival ahead of him crashed on the final bend — and 'doing a Bradbury' has meant unlikely, last-placed victory ever since.",
+    "byline": "By Osgood Fairweather-Nkosi, Sport Correspondent",
+    "location": "SALT LAKE CITY, UTAH",
+    "published": "2026-07-13T19:00:00Z",
+    "body": [
+      "Steven Bradbury entered the men's 1000m short-track speed skating final at the 2002 Salt Lake City Winter Olympics as, by his own later admission, a clear underdog, trailing the field for the entire race and skating some distance behind the four other finalists as they contested the lead into the final bend.",
+      "On that final bend, the four skaters ahead of Bradbury collided in a multi-skater pile-up — a common enough hazard in the tightly packed, high-speed sport of short-track — leaving all four sprawled across the ice. Bradbury, skating well back and entirely clear of the crash, simply glided through the wreckage and across the finish line first, becoming Australia's first ever Winter Olympic gold medallist in the process.",
+      "\"It is important to state plainly that this was not a fluke in the sense of being undeserved,\" said Dr. Fionnuala Kessler-Achterberg of the Institute for Olympic Strategy. \"Bradbury had, by his own account, adopted a deliberate tactical approach throughout the entire tournament: hang back, let faster skaters take the risks of overtaking in a notoriously crash-prone sport, and be positioned to benefit if — or when — carnage occurred ahead of him. He had, in fact, already advanced through two earlier rounds of the tournament by exactly this method, benefiting from a disqualification in one heat and a late crash in another.\"",
+      "Bradbury, a veteran skater who had overcome a severed leg artery from an earlier training accident and a broken neck sustained years before the Games, was candid afterward about the role of fortune in his victory, acknowledging openly that he had not been the fastest skater in the field and that his tactics had been built around exactly the scenario that eventually delivered him the gold.",
+      "\"What elevates the story beyond a simple stroke of luck is Bradbury's own honesty about it,\" said Kessler-Achterberg. \"He never pretended to have won on raw speed. He credited his strategy and his good fortune in the same breath. That combination is rarer in elite sport than people generally assume.\"",
+      "The victory entered Australian popular culture almost immediately, giving rise to the enduring phrase \"doing a Bradbury\" — used across Australia and increasingly elsewhere to describe any unexpected, last-placed-to-first victory achieved chiefly because everyone else ahead came unstuck.",
+      "\"The result,\" said Kessler-Achterberg, \"is one of the very few Olympic gold medals whose winner is more famous for what happened to everyone else than for what he himself did on the ice — and Bradbury, to his enormous credit, has never once resented that framing.\"",
+      "Bradbury retired from competitive skating shortly afterward, his gold medal secure regardless of how it is remembered — a genuine Olympic champion, four crashes and one clear-headed strategy away from anonymity."
+    ],
+    "pullQuote": "He never pretended to have won on raw speed. He credited his strategy and his good fortune in the same breath.",
+    "tags": [
+      "based-on-truth",
+      "olympic-history",
+      "sporting-chaos"
+    ]
+  },
+  {
+    "id": "wld-dancing-plague-1518-strasbourg",
+    "category": "World",
+    "headline": "Strasbourg Woman Begins Dancing In The Street; City's Solution Is To Send For More Musicians",
+    "standfirst": "In July 1518 a single resident of Strasbourg stepped into the street and began to dance. She did not stop for days. Neither, eventually, did several hundred of her neighbours — and the authorities' considered response was to build them a stage.",
+    "byline": "By Edmund Carraway, History Correspondent",
+    "location": "STRASBOURG",
+    "published": "2026-07-12T07:15:00Z",
+    "body": [
+      "In July 1518, a woman known to history as Frau Troffea walked into a street in the free imperial city of Strasbourg and began to dance. She had, by all accounts, no music, no partner, and no obvious reason. She continued for the better part of a week. Within a month, according to contemporary chroniclers, some three dozen other Strasbourgeois had joined her, and by August the figure had swollen — depending on which account one credits — to several hundred.",
+      "This was not a festival. People danced until they collapsed from exhaustion, and a number, historians agree, appear to have died of stroke or heart failure brought on by days of uninterrupted movement. The city's physicians were consulted and reached a diagnosis that, even by the standards of 1518, was a bold piece of clinical reasoning.",
+      "'The prevailing medical opinion was that the afflicted had overheated blood, and that the only cure was to keep dancing until the fever burned itself out,' said Dr Ingrid Falkenrath, a historian of medieval public health who has spent her career studying the episode. 'It was, in essence, hair of the dog, applied to an entire city.'",
+      "Acting on this advice, the Strasbourg council did not call in the clergy to pray the affliction away, nor order the dancers confined. Instead it hired a band. Guild halls and even the grain market were cleared and given over to the afflicted, professional musicians were engaged, and a wooden stage was erected so that the dancing might proceed with some structure and dignity.",
+      "'Put yourself in the council's position,' said civic-records specialist Bertrand Oschsenbein. 'Several hundred citizens are dancing themselves to death in your streets. Do you send for the physicians who diagnosed hot blood, or the physicians who diagnosed hot blood and then recommended you fund a live orchestra? Strasbourg, to its enduring credit, went all in.'",
+      "The plan did not work. Rather than dancing itself out, the compulsion appears to have spread further once venues, music and a receptive crowd were provided, and the council eventually reversed course entirely — banning dancing and music outright, and packing the worst-affected off to a shrine in the hope that a change of scenery, and rather less percussion, might break the spell. By September, some six weeks after Frau Troffea's first steps, the epidemic had finally subsided.",
+      "No fully satisfactory modern explanation has displaced the contemporaries' own theories, though stress, famine and a documented outbreak of mass psychogenic illness are the leading candidates among historians today. What is not in dispute is the council's chosen intervention. 'They didn't panic, and they didn't do nothing,' Dr Falkenrath said. 'They did something worse than either. They booked a venue.'",
+      "The Dancing Plague of 1518 remains one of the best-documented cases of mass hysteria in European history, and Strasbourg's civic archives, remarkably, still preserve the council's own records of hiring the musicians. Historians continue to debate exactly how many danced, and how many died. On the wisdom of the response, there is rather less debate."
+    ],
+    "pullQuote": "Strasbourg, to its enduring credit, went all in.",
+    "tags": [
+      "based-on-truth",
+      "medieval-history",
+      "mass-hysteria"
+    ]
+  },
+  {
+    "id": "wld-tanganyika-laughter-epidemic-1962",
+    "category": "World",
+    "headline": "Girls' School Outbreak Of Uncontrollable Laughing Closes Institutions Across A Nation For Months",
+    "standfirst": "What began as a fit of giggling among pupils at a mission boarding school in January 1962 spread, through channels nobody has ever fully explained, into villages, then other schools, then months of closures across the region.",
+    "byline": "By Priya Nathwani, World Affairs Correspondent",
+    "location": "KASHASHA, TANGANYIKA",
+    "published": "2026-07-12T09:40:00Z",
+    "body": [
+      "In January 1962, at a girls' mission boarding school in the village of Kashasha in what was then Tanganyika, a small group of pupils began laughing. Not politely, and not briefly. The laughter spread through the school, accompanied in many cases by uncontrollable crying, and proved resistant to every method of persuasion the staff attempted.",
+      "Within weeks the school had to close. The affected girls, sent home to their villages, appear to have carried the phenomenon with them: outbreaks were subsequently recorded in surrounding communities and at other schools, with some estimates of the total affected running into the hundreds, and a smaller number of accounts putting the wider figure into four figures across the following months.",
+      "'What is remarkable is not that people laughed,' said Dr Corazon Whitfield-Mbeki, a researcher into mass psychogenic illness who has written on the episode. 'It is that the laughter behaved like an infection. It had an incubation period. It had a geography. It moved from person to person along lines of contact — classmates, siblings, neighbours — exactly as a disease would, except that nobody involved was carrying a pathogen.'",
+      "Schools closed for weeks at a time, in some cases for months, as the fits recurred whenever affected pupils were brought back together. Local health officials, faced with a condition that produced no fever, no rash and no measurable abnormality beyond sustained hysterical laughter and weeping, were left with few tools beyond separating the afflicted and waiting.",
+      "'You must understand there was nothing remotely funny happening,' said retired district health officer Emmanuel Kikwete-Osei, who assisted in documenting several of the affected communities. 'These were children in genuine distress, laughing until they were exhausted, unable to stop, unable to explain why. Treating it as a joke does the episode a disservice.'",
+      "By the time the outbreak had run its course later in 1962, it had touched more than a dozen schools and several villages in the region, and had entered the medical literature as one of the largest and best-documented instances of mass psychogenic illness on record.",
+      "Researchers today generally attribute the episode to a combination of adolescent stress, the social pressures of a rigorous boarding-school environment, and the well-established human capacity for anxiety to convert itself into shared physical symptoms. 'The laughter was real. The crying was real. The suffering behind both was real,' Dr Whitfield-Mbeki said. 'It simply expressed itself in the one way none of us expect an epidemic to look.'",
+      "No vaccine, obviously, was ever developed. The schools eventually reopened; the affected pupils, in time, stopped laughing. The episode remains a standard case study in psychology courses worldwide — cited, almost without exception, as proof that the mind can produce an outbreak every bit as contagious, and disruptive, as any virus."
+    ],
+    "pullQuote": "It had an incubation period. It had a geography. It moved from person to person along lines of contact — classmates, siblings, neighbours — exactly as a disease would, except that nobody involved was carrying a pathogen.",
+    "tags": [
+      "based-on-truth",
+      "mass-hysteria",
+      "public-health"
+    ]
+  },
+  {
+    "id": "wld-darien-scheme-1698-scotland-panama",
+    "category": "World",
+    "headline": "Scotland Bets A Quarter Of Its National Wealth On A Panamanian Swamp; Reader, It Did Not Go Well",
+    "standfirst": "In 1698 the Company of Scotland sent thousands of colonists and a substantial share of the nation's capital to found 'Caledonia' on the disease-ridden Isthmus of Panama. Within two years the colony was abandoned, thousands were dead, and Scotland's finances lay in ruins.",
+    "byline": "By Fenella Kirkbride-Munro, Economic History Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-12T11:05:00Z",
+    "body": [
+      "In July 1698, five ships carrying some 1,200 Scottish colonists set sail from Leith bound for the Isthmus of Panama, there to found a trading colony to be named Caledonia, at a settlement they called New Edinburgh. The scheme was the brainchild of the financier William Paterson and backed by the Company of Scotland, which had raised subscriptions equivalent to a very large share — commonly estimated at around a fifth to a quarter — of all the liquid capital in Scotland.",
+      "The ambition was considerable: a Scottish trading post athwart the narrow neck of land between the Atlantic and Pacific, positioned to capture commerce between two oceans decades before anyone would dream of a canal. The execution proved rather less considerable. The chosen site was swampy, disease-ridden and unsuited to the crops the colonists brought with them.",
+      "'They arrived with goods to trade — combs, mirrors, wigs — into a jungle with no local market for any of it, and a climate that made European agriculture close to impossible,' said Dr Alistair Fenwick-Home, an economic historian who has studied the Company of Scotland's surviving ledgers. 'Within months they were burying colonists faster than they were building houses.'",
+      "Disease, chiefly malaria and dysentery, killed colonists at a punishing rate. English colonies in the Caribbean and North America, under instruction from London — anxious not to provoke Spain, which also claimed the territory — refused the settlers food, trade or assistance. Spanish forces besieged the colony directly. Of roughly 2,500 colonists who sailed across two waves of settlement, the substantial majority did not survive to return home; the human cost of the scheme was severe, and it is remembered in Scotland to this day as a national tragedy as much as a national embarrassment.",
+      "The Company of Scotland formally abandoned Caledonia in 1700. The financial losses were catastrophic enough to imperil Scotland's economy outright, and the Darien disaster is judged by most historians to have been a significant factor pushing the Scottish parliament toward the 1707 Act of Union with England — which, among its other provisions, compensated Company of Scotland investors for their losses.",
+      "'There is a certain grim symmetry to it,' said Dr Fenwick-Home. 'Scotland spent a quarter of its wealth trying to avoid being economically dependent on England, and the failure of that attempt is one of the reasons Scotland ended up union with England. Make no mistake — Darien did not cause the Union on its own. But it made the argument for union very much easier to win.'",
+      "The site of New Edinburgh today shows little trace of the settlement; the jungle reclaimed it within a generation. Paterson himself survived the expedition, though badly weakened, and went on to play a role in founding the Bank of England — a scheme that, unlike Darien, actually worked.",
+      "'It is worth remembering the colonists as people who took an extraordinary risk and paid for it with their lives, not merely as a punchline,' Dr Fenwick-Home added. 'The folly belongs to the planners in Edinburgh's counting-houses. The tragedy belongs to the men, women and children who never saw Scotland again.'"
+    ],
+    "pullQuote": "Within months they were burying colonists faster than they were building houses.",
+    "tags": [
+      "based-on-truth",
+      "colonial-history",
+      "economic-disaster"
+    ]
+  },
+  {
+    "id": "wld-straw-hat-riot-new-york-1922",
+    "category": "World",
+    "headline": "New York Youths Riot For Several Days Over The Correct Calendar Date To Stop Wearing A Hat",
+    "standfirst": "An unwritten fashion rule that straw hats must be retired by mid-September escalated, in 1922, into days of street violence, arrests and injuries across Manhattan — begun, apparently, by boys who could not wait the extra two days.",
+    "byline": "By Cornelius Whitby-Ashe, New York Correspondent",
+    "location": "NEW YORK CITY",
+    "published": "2026-07-12T13:20:00Z",
+    "body": [
+      "By long and entirely unofficial custom, fashionable New York gentlemen of the 1920s ceased wearing straw boater hats after the 15th of September each year, on pain of good-natured mockery and, in rowdier quarters, the physical removal and destruction of the offending hat. It was a tradition observed for years without serious incident. In September 1922, it produced a riot.",
+      "The trouble began, according to newspaper accounts of the day, on 13 September — two days before the customary deadline — when a group of youths on the Manhattan waterfront began snatching straw hats from workers and stamping on them ahead of schedule. The workers, unwilling to surrender their headwear early, fought back.",
+      "'The rule had always carried an informal three-day grace period either way,' said cultural historian Dr Marion Elphinstone-Reyes, who has written on early-twentieth-century American street customs. 'What made 1922 different is that a large group of teenagers simply decided to enforce the deadline two days ahead of schedule, with force, and the intended victims declined to cooperate.'",
+      "The disturbance spread across several nights, drawing in hundreds of participants at its peak as roving bands of youths targeted anyone still wearing a straw hat, while others organised to defend theirs. Police were called out in numbers; a handful of arrests were made and several people were injured, in at least one account seriously enough to require hospital treatment, in the general scramble of hats, fists and cobblestones.",
+      "'It is genuinely one of the stranger entries in the New York Police Department's own historical record,' said retired municipal archivist Desmond Whycliffe. 'Officers were dispatched, in the year 1922, to quell a riot whose stated cause of grievance was millinery timing.'",
+      "The unrest eventually subsided as the traditional 15 September deadline passed and, with it, the youths' pretext for early enforcement. Straw-hat etiquette persisted for a further decade or so before falling out of fashion along with the hats themselves, and no comparable riot has been recorded since — a fact historians attribute less to improved manners than to nobody caring what month you stop wearing a hat any more.",
+      "'The result?' said Dr Elphinstone-Reyes. 'A minor seasonal courtesy, observed without complaint for years, curdled overnight into a full civic disturbance the moment a group of teenagers decided two days early was close enough. And yet the underlying rule — no straw hats after mid-September — survived the riot entirely intact.'",
+      "The Straw Hat Riot of 1922 is remembered today chiefly as a curiosity of Jazz Age New York — a reminder, as Whycliffe put it, 'that the line between tradition and violence has, throughout history, occasionally been about two feet of felt or straw.'"
+    ],
+    "pullQuote": "Officers were dispatched, in the year 1922, to quell a riot whose stated cause of grievance was millinery timing.",
+    "tags": [
+      "based-on-truth",
+      "new-york-history",
+      "riots"
+    ]
+  },
+  {
+    "id": "wld-second-defenestration-of-prague-1618",
+    "category": "World",
+    "headline": "Two Officials And A Secretary Thrown From A Castle Window; All Three Survive; Europe Goes To War Anyway",
+    "standfirst": "In May 1618, Protestant noblemen hurled two Catholic regents and their secretary some 21 metres from a window of Prague Castle. Remarkably, all three lived — but the gesture helped ignite the Thirty Years' War regardless.",
+    "byline": "By Josceline Ardennes-Whitmore, European Affairs Correspondent",
+    "location": "PRAGUE",
+    "published": "2026-07-12T15:50:00Z",
+    "body": [
+      "On 23 May 1618, a group of Protestant Bohemian noblemen, led by Count Jindrich Matyas Thurn, marched into a meeting room at Prague Castle, convicted two Catholic imperial regents — Vilem Slavata and Jaroslav Borzita of Martinice — of violating Bohemia's guarantees of religious freedom, and threw them out of the window. Their secretary, Philip Fabricius, went out after them for good measure.",
+      "The window in question was roughly 21 metres above the ground. By any reasonable expectation, this should have been the end of the matter for all three men. It was not: all three survived the fall with, by most contemporary accounts, only minor injuries, and went on to live for years afterward.",
+      "'The explanations offered at the time tell you everything about the religious politics of the moment,' said Dr Wenzel Adalbrandt, a historian of the Thirty Years' War. 'Catholic pamphleteers insisted the men had been saved by the intervention of angels, or by the Virgin Mary herself. Protestant accounts preferred a rather less celestial explanation: that the men landed in a substantial pile of manure and refuse in the castle moat, which broke their fall.'",
+      "'Whichever version one credits,' Dr Adalbrandt added, 'it is the second time in Bohemian history that a defenestration of officials has taken place from a similar window at a similarly dramatic political moment — hence the '1618' distinguishing it from the first, in 1419. Prague, it must be said, has a specific and recurring relationship with the act of throwing officials out of windows.'",
+      "The survival of Slavata, Martinice and Fabricius did nothing to defuse the political crisis their defenestration was meant to resolve. The Bohemian Protestant estates followed the act with open revolt against Habsburg authority, and the conflict that resulted — beginning as a regional Bohemian revolt — expanded within a few years into the Thirty Years' War, a conflict that would eventually draw in most of Europe's major powers and kill an estimated eight million people.",
+      "'There is a persistent myth that this was a trivial or comic incident that spiralled wildly out of proportion,' said Dr Adalbrandt. 'It was not trivial. Religious and political tensions across the Holy Roman Empire had been building for decades. The defenestration was the spark, not the fuel. But it is, even so, an unusually vivid spark: three men thrown from a castle window, walking away to become minor celebrities of their own survival.'",
+      "Fabricius was later ennobled by the Holy Roman Emperor for his troubles, taking the title 'von Hohenfall' — roughly, 'of the high fall' — a piece of imperial humour not lost on his contemporaries.",
+      "'An inconvenient truth of Bohemian history,' Dr Adalbrandt said, 'is that you can survive being thrown from a castle window and still end up starting a thirty-year war. The window was never really the point.'"
+    ],
+    "pullQuote": "Prague, it must be said, has a specific and recurring relationship with the act of throwing officials out of windows.",
+    "tags": [
+      "based-on-truth",
+      "european-history",
+      "thirty-years-war"
+    ]
+  },
+  {
+    "id": "biz-blockbuster-passes-on-netflix-2000",
+    "category": "Business",
+    "headline": "Blockbuster Offered A Small Struggling Streaming Startup For $50 Million In 2000; Politely Declined",
+    "standfirst": "Netflix's founders reportedly travelled to Dallas in 2000 to offer Blockbuster the entire company for around $50 million. Blockbuster's leadership passed. Ten years later, Blockbuster was bankrupt.",
+    "byline": "By Priya Nathwani, Business Correspondent",
+    "location": "DALLAS, TEXAS",
+    "published": "2026-07-12T08:30:00Z",
+    "body": [
+      "In 2000, according to accounts later given by Netflix co-founder Marc Randolph, he and Reed Hastings travelled to Blockbuster's headquarters in Dallas to pitch a partnership: Blockbuster would acquire the fledgling DVD-by-mail service Netflix, then a small and unprofitable operation, for a sum in the region of $50 million.",
+      "Blockbuster, at the time the dominant video rental chain in the United States with thousands of stores and a market value running into the billions, was under no obvious pressure to take the offer seriously. Its then chief executive, John Antioco, declined.",
+      "'You have to understand the scale mismatch,' said retail-strategy analyst Dr Osric Bramwell-Tate. 'Blockbuster was a global retail giant. Netflix was a company mailing DVDs to a few hundred thousand subscribers, bleeding money, run by people who had come to ask for an investment. From where Blockbuster sat, this was not a hard call.'",
+      "It proved, in hindsight, to be an extremely hard call to have got wrong. Netflix continued to grow its subscription model through the 2000s, later pivoting into streaming, while Blockbuster's store-based, late-fee-dependent business model came under increasing pressure from exactly the kind of convenience Netflix had been built to offer.",
+      "'The irony is almost too neat,' said Dr Bramwell-Tate. 'Blockbuster's core objection to Netflix's model was reportedly the loss of late fees — a revenue stream Blockbuster's own customers hated. They declined to buy the company that was going to make late fees obsolete because they were attached to the fees.'",
+      "Blockbuster filed for Chapter 11 bankruptcy protection in September 2010, closing the large majority of its remaining stores over the following years. Netflix, by contrast, went on to become one of the dominant entertainment companies in the world, with a market valuation that has, at various points, exceeded Blockbuster's peak value many times over.",
+      "'The result?' said Dr Bramwell-Tate. 'A single meeting in Dallas, a declined offer of $50 million, and two decades later one company is a case study in disruption theory and the other is a nostalgia t-shirt.'",
+      "A single Blockbuster store remains open today, in Bend, Oregon — kept running, its operators have said, largely as a tourist attraction and a monument to a decision made, and declined, twenty-six years ago."
+    ],
+    "pullQuote": "A single meeting in Dallas, a declined offer of $50 million, and two decades later one company is a case study in disruption theory and the other is a nostalgia t-shirt.",
+    "tags": [
+      "based-on-truth",
+      "business-history",
+      "corporate-blunders"
+    ]
+  },
+  {
+    "id": "biz-excite-passes-on-buying-google-1999",
+    "category": "Business",
+    "headline": "Excite Turns Down A Search Engine Called Google For Around $750,000 In 1999",
+    "standfirst": "Google's founders reportedly offered to sell their entire search technology to the portal Excite for roughly $750,000 in 1999. Excite said no. Google is, at time of writing, one of the most valuable companies on Earth.",
+    "byline": "By Priya Nathwani, Business Correspondent",
+    "location": "MOUNTAIN VIEW, CALIFORNIA",
+    "published": "2026-07-12T10:10:00Z",
+    "body": [
+      "In 1999, Stanford graduate students Larry Page and Sergey Brin, then running an early version of their search engine out of a garage, reportedly approached the web portal Excite with an offer: they would sell their search technology outright for a price in the region of $750,000, later said to have been negotiated down from an initial asking figure of around $1 million.",
+      "Excite, at the time one of the most prominent portals on the young commercial internet, declined. Its chief executive, George Bell, has been widely reported as having turned down even the reduced offer, reportedly on the grounds that Google's search results were, if anything, too good — returning users to other sites too quickly for Excite's advertising model, which depended on keeping visitors on Excite's own pages.",
+      "'It is one of the purest examples in business history of a company being punished for solving the actual problem in front of it,' said technology historian Dr Fenwick Osei-Barclay. 'Excite wanted a portal that kept eyeballs. Page and Brin had built a tool that got users an answer and let them leave. That was, and remains, a better product. It was also, from Excite's 1999 business model, an inconvenient one.'",
+      "Page and Brin, having failed to sell, instead continued building Google independently, incorporating the company later that same year with early funding from investors including Andy Bechtolsheim. The rest of the story is, by now, thoroughly familiar: Google grew into the dominant search engine worldwide and, through its parent company Alphabet, into one of the handful of companies whose market value has at times exceeded a trillion dollars.",
+      "Excite, by contrast, merged into @Home Network in 1999 at the height of the dot-com boom, and filed for bankruptcy in 2001 when that boom ended.",
+      "'Let that sink in,' said Dr Osei-Barclay. 'A company that no longer exists turned down, for roughly three-quarters of a million dollars, the technology that would go on to become one of the most valuable companies on the planet — and the stated reason was that the product worked too well.'",
+      "Bell has since spoken publicly, and with evident good humour, about the decision in later interviews, generally declining to dispute the broad strokes of the story even as its exact figures have varied slightly between retellings over the years.",
+      "'Every industry has its version of the Excite meeting,' Dr Osei-Barclay said. 'Most companies are lucky enough that theirs isn't quite so well documented, or quite so expensive.'"
+    ],
+    "pullQuote": "A company that no longer exists turned down, for roughly three-quarters of a million dollars, the technology that would go on to become one of the most valuable companies on the planet",
+    "tags": [
+      "based-on-truth",
+      "business-history",
+      "corporate-blunders"
+    ]
+  },
+  {
+    "id": "biz-xerox-parc-invents-the-future-1970s",
+    "category": "Business",
+    "headline": "Xerox Research Lab Invents The Modern Computer Interface, Then Lets Everyone Else Sell It",
+    "standfirst": "Through the 1970s, Xerox's Palo Alto Research Center quietly built the graphical user interface, the computer mouse, Ethernet networking and on-screen document editing — then largely watched Apple and Microsoft turn the ideas into fortunes.",
+    "byline": "By Marguerite Voss, Technology Correspondent",
+    "location": "PALO ALTO, CALIFORNIA",
+    "published": "2026-07-12T12:40:00Z",
+    "body": [
+      "Through the 1970s, researchers at Xerox's Palo Alto Research Center — universally known as Xerox PARC — produced an almost absurd concentration of foundational computing inventions in a single decade. The graphical user interface, with its overlapping windows and icons; the computer mouse as a practical pointing device; Ethernet networking; and WYSIWYG document editing, in which the screen shows text as it will actually print, all emerged from the same research campus.",
+      "The resulting machine, the Xerox Alto, was in most meaningful respects a personal computer as we would recognise one today, built roughly a decade before such machines reached ordinary consumers. Xerox, whose core business was photocopiers, largely declined to build a commercial product around it.",
+      "'PARC was given an extraordinary mandate — brilliant researchers, generous funding, minimal short-term commercial pressure — and it delivered extraordinarily on that mandate,' said Dr Cassandra Okonkwo-Baird, a historian of computing who has studied the lab's internal records. 'What nobody at Xerox's corporate headquarters in Connecticut seemed quite able to answer was what a photocopier company was meant to do with a personal computer.'",
+      "In December 1979, Xerox allowed a delegation from Apple, including Steve Jobs, to tour PARC and see the Alto's graphical interface in exchange for the opportunity to buy pre-IPO Apple stock. Apple's engineers reportedly left the demonstration deeply impressed, and elements of what they saw went on to inform the Lisa and, more famously, the Macintosh, launched in 1984.",
+      "'The Apple visit has become the legendary version of the story, but it's worth remembering Xerox itself did eventually try to sell a version of the Alto commercially, as the Xerox Star, in 1981,' said Dr Okonkwo-Baird. 'It was priced at roughly $16,000 per unit and sold in comparatively small numbers. Xerox had built the future and then, in a very real sense, forgotten to price it for anyone but itself.'",
+      "Microsoft, for its part, would go on to build Windows around broadly similar graphical-interface concepts through the 1980s and 1990s, and Ethernet — invented at PARC by Robert Metcalfe, who left to found the networking company 3Com — became the standard wiring of the internet age.",
+      "'The result?' said Dr Okonkwo-Baird. 'A single research campus invented essentially every visual and networking convention the computing industry still runs on, and the company that owned the patents ended the century primarily known for photocopiers and printer toner.'",
+      "PARC itself survived, and continues to operate as a research organisation to this day — a fact its historians tend to offer, dryly, as the one part of the story that actually went according to plan."
+    ],
+    "pullQuote": "Xerox had built the future and then, in a very real sense, forgotten to price it for anyone but itself.",
+    "tags": [
+      "based-on-truth",
+      "business-history",
+      "computing-history"
+    ]
+  },
+  {
+    "id": "eng-centralia-mine-fire-pennsylvania",
+    "category": "Engineering",
+    "headline": "Underground Fire Beneath Pennsylvania Town Has Now Been Burning Since 1962, With No End In Sight",
+    "standfirst": "A coal-seam fire ignited beneath Centralia, Pennsylvania, more than sixty years ago has consumed the town from below ever since, driving out almost the entire population — and engineers say it could keep burning for another two centuries.",
+    "byline": "By Rupert Ffoulkes-Hale, Engineering Correspondent",
+    "location": "CENTRALIA, PENNSYLVANIA",
+    "published": "2026-07-12T14:00:00Z",
+    "body": [
+      "In May 1962, a fire believed to have started at a landfill in the small coal-mining town of Centralia, Pennsylvania, spread into an exposed vein of anthracite coal in the abandoned mine workings beneath the town. It has been burning, underground, more or less continuously ever since.",
+      "Early attempts to extinguish the fire were modest, sporadic and, in hindsight, hopelessly inadequate to the scale of what had actually been ignited. By the time state and federal authorities mounted a serious excavation effort in the 1980s, the fire had spread across a wide underground area and was producing dangerous levels of carbon monoxide, along with subsidence severe enough to open sinkholes in the town itself.",
+      "'The turning point was 1981, when a twelve-year-old boy nearly fell into a sinkhole that opened suddenly in his grandmother's backyard, releasing lethal gas,' said Dr Yolanda Prendergast-Kowalczyk, a mine-fire engineer who has consulted on the Centralia case. 'That is generally treated as the moment it stopped being an abstract underground problem and became an urgent public-safety one.'",
+      "In 1984, Congress allocated more than $42 million to relocate Centralia's residents, and the large majority of the town's roughly 1,000 inhabitants accepted buyouts and left over the following years. In 1992, Pennsylvania formally condemned all remaining property in the borough and invoked eminent domain; a small handful of residents nonetheless fought, and won, the right to remain in their homes for life.",
+      "'Engineers looked seriously at excavating the entire fire out of the ground, which had worked on smaller mine fires elsewhere, but the cost and scale here were judged prohibitive,' Dr Prendergast-Kowalczyk said. 'Current estimates suggest the coal seam contains enough fuel to keep the fire burning for well over two hundred years — some estimates run past 250 — unless something changes that nobody currently anticipates.'",
+      "Centralia's population, once numbering in the thousands at its mid-century peak, had fallen to single digits by the 2020s. Much of the town's street grid remains, disconcertingly intact, running through fields and woodland where houses once stood, with steam still visible rising from cracked ground in places on cold days.",
+      "'It has become, whether anyone intended it or not, one of the most visited abandoned places in America,' said local historian Padraig Wentworth-Doyle, who has documented the town's decline. 'People come to see a town that a fire is still, quite literally, eating from beneath.'",
+      "The fire that inspired the setting of the video game and film franchise Silent Hill shows, engineers say, no sign of abating on any timescale relevant to living memory. 'It will very likely outlast every person currently reading about it,' Dr Prendergast-Kowalczyk said. 'That is not a metaphor. That is the engineering estimate.'"
+    ],
+    "pullQuote": "It will very likely outlast every person currently reading about it",
+    "tags": [
+      "based-on-truth",
+      "engineering-disaster",
+      "mining-history"
+    ]
+  },
+  {
+    "id": "eng-darvaza-gas-crater-door-to-hell-turkmenistan",
+    "category": "Engineering",
+    "headline": "Geologists Set A Collapsed Gas Field Alight In 1971 Expecting It To Burn Out In Weeks; It Is Still Burning",
+    "standfirst": "After a Soviet drilling rig collapsed into an underground cavern in the Karakum Desert, geologists set the escaping natural gas on fire to prevent it poisoning the surrounding area — expecting the flames to exhaust themselves within a fortnight. Decades later, the 'Door to Hell' still burns.",
+    "byline": "By Rupert Ffoulkes-Hale, Engineering Correspondent",
+    "location": "DARVAZA, TURKMENISTAN",
+    "published": "2026-07-12T16:15:00Z",
+    "body": [
+      "In 1971, Soviet geologists drilling for natural gas at a site near the village of Darvaza, in the Karakum Desert of what is now Turkmenistan, struck an underground cavern that collapsed beneath their rig, opening a crater roughly 70 metres wide and swallowing the drilling equipment along with it.",
+      "The collapsed cavern immediately began venting large quantities of natural gas, principally methane, into the surrounding area — a serious hazard both to nearby settlements and, some accounts suggest, to local wildlife. The geologists' solution was to set the escaping gas alight, on the reasoning that a controlled burn would exhaust the pocket's fuel supply within a matter of days or, at most, a few weeks.",
+      "'It was, on its own terms, a perfectly sound piece of field engineering,' said Dr Almaz Roeburn-Tashkenova, a geologist specialising in gas-field hazards. 'You cannot simply let methane vent uncontrolled near a populated area. Burning it off is a recognised technique. The only flaw in the plan was the estimate of how much gas was actually down there.'",
+      "That estimate proved to be dramatically wrong. More than fifty years later, the crater — now widely known by its nickname, the Door to Hell — continues to burn, fed by a reservoir of natural gas that has shown no sign of running dry on any timescale the original engineers anticipated.",
+      "'The result?' said Dr Roeburn-Tashkenova. 'A temporary safety measure, expected to last a fortnight, has instead become one of the longest continuously burning industrial fires on the planet, and arguably Turkmenistan's single best-known tourist attraction.'",
+      "Turkmenistan's government has, at various points, expressed interest in extinguishing the crater. In 2010, then-president Gurbanguly Berdimuhamedow reportedly ordered officials to find a way to put it out, citing both the waste of a valuable natural resource and concerns for the health of nearby residents and livestock. As of the most recent public reporting, the flames continue.",
+      "'An inconvenient truth of large energy infrastructure,' said energy-policy analyst Corwin Ashdale-Petrova, 'is that some interventions, once begun, are considerably easier to start than to stop. Darvaza is, in that sense, an unusually literal illustration of the principle.'",
+      "The crater remains a licensed, if remote, tourist destination, with visitors able to camp near its rim and observe, by night, a hole in the desert floor that has now been on fire for longer than most of them have been alive."
+    ],
+    "pullQuote": "A temporary safety measure, expected to last a fortnight, has instead become one of the longest continuously burning industrial fires on the planet",
+    "tags": [
+      "based-on-truth",
+      "engineering-disaster",
+      "energy"
+    ]
+  },
+  {
+    "id": "eng-lake-peigneur-drilling-disaster-1980",
+    "category": "Engineering",
+    "headline": "Oil Rig Accidentally Drills Into A Salt Mine, Drains An Entire Louisiana Lake Into The Hole",
+    "standfirst": "In November 1980, a drilling error beneath Lake Peigneur, Louisiana, punched into a working salt mine directly underneath it. The lake drained into the mine within hours, taking the rig, several barges and a chunk of shoreline with it — and, remarkably, killing nobody.",
+    "byline": "By Rupert Ffoulkes-Hale, Engineering Correspondent",
+    "location": "LAKE PEIGNEUR, LOUISIANA",
+    "published": "2026-07-12T18:30:00Z",
+    "body": [
+      "On the morning of 20 November 1980, a Texaco-contracted oil rig drilling in the shallow waters of Lake Peigneur, in southern Louisiana, struck an obstruction roughly 400 metres down. That obstruction was the roof of an active salt mine, operated by the Diamond Crystal Salt Company, running in tunnels directly beneath the lake — a fact the drilling crew had not been working from an accurate map to anticipate.",
+      "The borehole opened a channel between the lake above and the mine galleries below. Lake water, under no obligation to respect the distinction between a body of water and a hole in the ground, began pouring down into the mine — slowly at first, then, as the opening eroded wider, in a torrent.",
+      "'Once the breach reached a certain size, the lake essentially became a drain,' said mining-safety engineer Dr Thaddeus Okwuosa-Fairbairn, who has studied the incident. 'The mine's air shafts acted like a vacuum, pulling the entire lake down into the workings. Within hours, a lake that had been up to 3 metres deep in most places was, for practical purposes, gone.'",
+      "The draining lake created a whirlpool powerful enough to swallow the drilling rig itself, eleven barges that had been on the surface, a tugboat, some 65 acres of surrounding land, and a section of the botanical gardens on the lake's edge — the entire mass drawn down into what had, that morning, been a working salt mine. The inflow was so forceful it briefly reversed the flow of the Delcambre Canal, which normally drained the lake out to the Gulf of Mexico, turning it instead into a temporary waterfall running backward into the crater, at one point reported to be some 50 metres high.",
+      "'It is, without exaggeration, one of the strangest sights in the history of American industrial accidents,' said Dr Okwuosa-Fairbairn. 'A canal that had spent its entire existence draining a lake out to sea was, for several hours, running the other way, feeding a saltwater waterfall into a hole where a lake used to be.'",
+      "The most remarkable fact of the entire episode is one of simple luck: despite the scale of the collapse, and the fact that miners were working underground in the salt mine at the time the breach opened, every miner escaped safely, as did the drilling crew on the rig above, and no deaths were recorded.",
+      "'Mine safety procedures and a considerable amount of good fortune combined to produce an outcome that, on paper, should have been a mass-casualty event,' said Dr Okwuosa-Fairbairn. 'The miners heard the roar of inrushing water and got out. That is, essentially, the whole of the explanation.'",
+      "Lake Peigneur eventually refilled, over the following days, with water drawn back in from the Gulf via the same canal that had briefly run backward — and today sits, by most accounts, somewhat deeper and saltier than it was before an oil rig discovered, the hard way, exactly where the salt mine ended."
+    ],
+    "pullQuote": "A canal that had spent its entire existence draining a lake out to sea was, for several hours, running the other way, feeding a saltwater waterfall into a hole where a lake used to be.",
+    "tags": [
+      "based-on-truth",
+      "engineering-disaster",
+      "industrial-accident"
+    ]
+  },
+  {
+    "id": "tech-y2k-bug-millennium-bug-remediation",
+    "category": "Technology",
+    "headline": "World Spends Years And Billions Fixing A Date Bug; Date Arrives; Almost Nothing Happens; Some People Call This Suspicious",
+    "standfirst": "The fear that two-digit year fields would break computers worldwide at the 2000 rollover triggered a remediation effort on a global, multi-billion-dollar scale. The date passed with barely a hiccup — largely, engineers point out, because of the effort that preceded it.",
+    "byline": "By Marguerite Voss, Technology Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T06:00:00Z",
+    "body": [
+      "For much of the 1990s, the computing industry became gradually, then urgently, aware of a problem baked into decades of software: countless systems stored calendar years as two digits rather than four, to save on the expensive memory of earlier computing eras. As the year 2000 approached, engineers realised that many such systems, upon rolling from '99' to '00', might interpret the new date as 1900 rather than 2000 — with unpredictable consequences for anything from payroll systems to power grids to air traffic control.",
+      "The response was one of the largest coordinated technical remediation efforts in history. Governments established dedicated Y2K task forces; corporations audited and rewrote enormous quantities of legacy code, much of it in COBOL, a language many of the programmers doing the fixing had learned decades earlier specifically because so few younger engineers still knew it; global spending on remediation has been estimated, across various studies, at somewhere in the hundreds of billions of dollars.",
+      "'There was a genuine, well-founded technical risk underlying all of this — it was not invented,' said Dr Cornelia Ashgrove-Pemberton, a software historian who has studied the remediation effort. 'The scale of the response looks, with hindsight and given how smoothly the rollover went, almost comically large. But that scale is a large part of why the rollover went smoothly.'",
+      "On 1 January 2000, the feared cascade of failures did not materialise. A small number of minor, largely inconsequential glitches were reported around the world — some retail systems, a handful of websites, a few isolated equipment errors — but no significant infrastructure failures, no widespread outages, and none of the more dramatic scenarios that had circulated in the preceding years' media coverage.",
+      "'The result?' said Dr Ashgrove-Pemberton. 'A public that had spent two years being warned about a technological apocalypse woke up on New Year's Day to discover the lights were on, the banks worked, and the planes were flying — and a meaningful number of people concluded, entirely reasonably from where they were standing, that the whole thing must have been overblown.'",
+      "This has produced what specialists in the field regard as one of the great unresolved public-communication problems of modern engineering: a prevention effort so effective that its success became evidence, to many observers, that the underlying problem had never really existed.",
+      "'It is the classic paradox of successful risk mitigation,' said retired systems engineer Percival Nkemdirim-Wray, who worked on remediation for a major UK financial institution in the late 1990s. 'Nobody throws you a parade for the disaster that didn't happen. We spent eighteen months testing and patching systems specifically so that nothing would happen on the first of January, and then got mildly mocked for years afterward for the fact that nothing happened.'",
+      "Software historians today treat Y2K less as a hoax and more as a case study in successful large-scale engineering — an inconvenient truth for anyone still inclined to file it alongside more fanciful millennial panics. 'Nothing happened,' Dr Ashgrove-Pemberton said, 'because an enormous number of people made sure nothing happened. Those are not the same statement.'"
+    ],
+    "pullQuote": "because an enormous number of people made sure nothing happened. Those are not the same statement.",
+    "tags": [
+      "based-on-truth",
+      "computing-history",
+      "y2k"
+    ]
+  },
+  {
+    "id": "tech-pepsi-number-fever-philippines-1992",
+    "category": "Technology",
+    "headline": "Soft Drink Promotion Mistakenly Prints Winning Number On Hundreds Of Thousands Of Bottle Caps",
+    "standfirst": "Pepsi's 1992 'Number Fever' promotion in the Philippines announced 349 as the number worth a grand prize of one million pesos — only for a printing error to mean the number had gone out on hundreds of thousands of caps. The fallout was severe, and the company's own account of the error has never fully settled the anger it caused.",
+    "byline": "By Marguerite Voss, Technology Correspondent",
+    "location": "MANILA, PHILIPPINES",
+    "published": "2026-07-13T08:20:00Z",
+    "body": [
+      "In 1992, Pepsi-Cola Products Philippines ran a nationwide promotion called Number Fever, in which bottle caps bore printed numbers that could be matched against numbers announced on television for cash prizes, with the grand prize — one million Philippine pesos, a life-changing sum for most entrants — reserved for a single winning number.",
+      "On 25 May 1992, the company announced the winning number as 349. Owing to a security algorithm error in the process used to generate and print the numbers, the digits 349 had, in fact, been printed on a very large quantity of caps beyond the single intended winner — estimates of the number of affected caps in circulation have run into the hundreds of thousands.",
+      "'This was not a case of people misreading the rules or misunderstanding the odds,' said consumer-protection researcher Dr Leocadio Ferrante-Aguinaldo, who has studied the episode's regulatory aftermath. 'Pepsi's own production process generated an enormous number of caps that, by every reasonable reading a consumer could make, entitled the holder to a million-peso prize. The company then told them, in effect, that the caps did not count.'",
+      "Pepsi maintained that only one cap, verified against a separate security code, represented the true winner, and offered holders of the erroneous 349 caps a goodwill payment — reported at around 500 pesos each — rather than the advertised million-peso prize. Given the scale of the error, this response satisfied very few of the people holding what they had been told, in good faith, was a winning ticket.",
+      "The consequences were serious. Protests, boycotts and lawsuits followed across the country; Pepsi bottling plants and delivery trucks were targeted in unrest connected to the affair, and the episode is remembered in the Philippines as having caused real harm and real loss to people who had been led, however inadvertently, to believe they held a winning number. That human cost is not a footnote to the story; it is the reason the case remains studied by regulators and lawyers to this day.",
+      "'The commercial and legal reckoning went on for years,' said Dr Ferrante-Aguinaldo. 'Pepsi ultimately prevailed in the great majority of the court cases brought against it in the Philippines, on the basis that the security code, not the printed number, defined the legal winner. That legal outcome did very little to dampen the anger of people who had followed the promotion's own published rules in good faith.'",
+      "'The result?' said crisis-communications specialist Odalys Brennan-Cortez. 'A marketing promotion designed to sell more soft drinks over a hot summer instead produced one of the most consequential corporate-liability episodes in Philippine commercial history, and a lesson, still taught in business schools, in what happens when a company's internal safeguard fails and the public pays the price of finding out.'",
+      "Pepsi's market position in the Philippines took years to recover. The company has, in the decades since, cited Number Fever internally as a cautionary case in promotion design — a fact that will be of limited comfort to anyone who spent 1992 holding a bottle cap that read 349."
+    ],
+    "pullQuote": "Pepsi's own production process generated an enormous number of caps that, by every reasonable reading a consumer could make, entitled the holder to a million-peso prize.",
+    "tags": [
+      "based-on-truth",
+      "corporate-blunders",
+      "consumer-protection"
+    ]
+  },
+  {
+    "id": "tech-hoover-free-flights-fiasco-1992",
+    "category": "Technology",
+    "headline": "Vacuum Cleaner Company Offers Free Transatlantic Flights To Anyone Spending £100; £100 Turns Out To Be Cheaper Than A Flight",
+    "standfirst": "In 1992, Hoover's UK arm offered two free flights to Europe or the United States to any customer who spent £100 on its products. Demand vastly exceeded the company's arithmetic, and the resulting bill ran to tens of millions of pounds.",
+    "byline": "By Marguerite Voss, Technology Correspondent",
+    "location": "PERIVALE, LONDON",
+    "published": "2026-07-13T10:45:00Z",
+    "body": [
+      "In the summer of 1992, the British arm of the appliance manufacturer Hoover launched a promotion intended to clear a backlog of unsold stock: any customer who spent £100 or more on Hoover products would receive two free flights, to destinations in Europe or, in a later extension of the offer, the United States.",
+      "The offer was, on the company's own later admission, priced without adequate regard for the fact that £100 was, even in 1992, considerably less than the cost of two transatlantic or even two European return flights. Consumers noticed the arithmetic almost immediately, and demand for the promotion was overwhelming.",
+      "'Retailers reported people buying the cheapest qualifying Hoover product on the shelf purely to claim two flights worth several times what they had spent,' said marketing historian Dr Rosalind Kettlewell-Marsh, who has studied the case in courses on promotional-pricing failure. 'It is, in a sense, the most rational consumer response imaginable to an irrational offer. Hoover had, unintentionally, priced flights to America at the cost of a vacuum cleaner.'",
+      "Hundreds of thousands of customers ultimately qualified for the flights — considerably more than Hoover's promotions team had modelled — and the company found itself contractually obligated to fund a volume of transatlantic and European travel that dwarfed the value of the appliance sales that had triggered it.",
+      "'The result?' said Dr Kettlewell-Marsh. 'A promotion designed to shift a few thousand vacuum cleaners instead committed the company to underwriting an entire, unplanned airline's worth of passengers, at a loss on every single seat.'",
+      "The fiasco is estimated to have cost Hoover and its American parent company, at the time, upwards of £50 million once flight costs, administrative chaos and the eventual compensation and legal disputes with disappointed or delayed customers were accounted for. Several senior executives associated with the promotion lost their jobs in its aftermath.",
+      "'It remains, three decades on, the standard teaching case for what marketers call a runaway promotion,' said Dr Kettlewell-Marsh. 'Every marketing student in Britain has, at some point, been shown the Hoover flights offer as the answer to the question: what happens if nobody checks the maths before the offer goes to print?'",
+      "Hoover's parent company sold the European operations on some years after the affair, and the promotion is still, to this day, invoked in the UK as the byword for a sales offer that worked exactly as advertised — which was, as it turned out, the entire problem."
+    ],
+    "pullQuote": "Hoover had, unintentionally, priced flights to America at the cost of a vacuum cleaner.",
+    "tags": [
+      "based-on-truth",
+      "corporate-blunders",
+      "marketing"
+    ]
+  },
+  {
+    "id": "tech-knight-capital-trading-glitch-2012",
+    "category": "Technology",
+    "headline": "Wall Street Firm Loses $440 Million In 45 Minutes After Deploying The Wrong Software",
+    "standfirst": "On 1 August 2012, a botched software deployment at Knight Capital Group reactivated a dormant test system on live markets, sending a flood of runaway orders that cost the firm roughly $440 million before anyone managed to switch it off.",
+    "byline": "By Marguerite Voss, Technology Correspondent",
+    "location": "NEW YORK CITY",
+    "published": "2026-07-13T12:55:00Z",
+    "body": [
+      "On the morning of 1 August 2012, Knight Capital Group, then one of the largest market-making firms on Wall Street, deployed new trading software to its production servers ahead of a new stock-exchange programme. The deployment was, in the language later used by regulators, incomplete: an old piece of test code, known internally by the function name 'Power Peg,' had been left dormant on one of the firm's eight production servers rather than removed, and a flag intended to keep it inactive was not correctly reset.",
+      "When the markets opened, that server began executing the old test logic on live trades, buying and selling shares — 154 different stocks were affected — in a rapid, repeating pattern that had no relationship to any actual market strategy or client order. The other seven servers had received the new code correctly; only the misconfigured eighth was firing blind.",
+      "'The genuinely alarming part is how long it took to identify the source,' said financial-systems engineer Dr Benedikt Thorncastle-Uwakwe, who has consulted on post-incident reviews of automated trading failures. 'Knight's own engineers spent nearly forty-five minutes trying to work out which of their systems was misbehaving while it continued placing several million shares' worth of erroneous orders every few minutes.'",
+      "By the time the rogue server was identified and shut down, Knight Capital had accumulated a position that, when unwound, produced a trading loss of approximately $440 million — a sum that, at the time, exceeded the firm's entire available capital and threatened its survival as a going concern.",
+      "'The result?' said Dr Thorncastle-Uwakwe. 'One of the largest and most sophisticated trading operations in the United States came within a single business day of insolvency because of a deployment checklist item that nobody confirmed had actually been completed on all eight servers rather than seven.'",
+      "Knight Capital survived only through an emergency $400 million rescue investment from a consortium of other financial firms, arranged within days of the incident, and the company was subsequently absorbed into a merger that created KCG Holdings — the Knight name itself did not survive as an independent entity for long after the crisis.",
+      "'It has become the reference case for automated-trading risk controls industry-wide,' said Dr Thorncastle-Uwakwe. 'Every major trading firm's engineering team has, at some point, had the Knight Capital incident cited to them by way of explaining why a particular deployment safeguard exists.'",
+      "The US Securities and Exchange Commission later fined Knight Capital $12 million for violations related to the incident — a figure that, set against a $440 million loss racked up in under an hour, gave the affair a final, dryly appropriate footnote of its own."
+    ],
+    "pullQuote": "One of the largest and most sophisticated trading operations in the United States came within a single business day of insolvency because of a deployment checklist item that nobody confirmed had actually been completed on all eight servers rather than seven.",
+    "tags": [
+      "based-on-truth",
+      "corporate-blunders",
+      "financial-markets"
+    ]
+  },
+  {
+    "id": "mar-vasa-warship-capsizes-maiden-voyage-1628",
+    "category": "Maritime",
+    "headline": "Sweden's Grandest Warship Sinks Barely 1,300 Metres Into Its Maiden Voyage",
+    "standfirst": "The Vasa, built as the pride of the Swedish navy, capsized and sank in full view of Stockholm within minutes of setting sail in 1628. It sat on the harbour floor for 333 years before being raised — remarkably intact — as a museum piece.",
+    "byline": "By Declan O'Farrell, Maritime Correspondent",
+    "location": "STOCKHOLM",
+    "published": "2026-07-13T07:05:00Z",
+    "body": [
+      "On 10 August 1628, the Swedish warship Vasa set sail from Stockholm on her maiden voyage, watched by crowds gathered on the shore to see the newest and most heavily armed vessel in King Gustavus Adolphus's navy. She had sailed roughly 1,300 metres — not even clear of Stockholm's own harbour — when a gust of wind caused her to heel sharply, take on water through her open gun ports, and sink.",
+      "The Vasa had been built to project Swedish naval power during the Thirty Years' War, with two full gun decks and elaborate carved ornamentation befitting a royal flagship. She was also, naval historians agree with the benefit of nearly four centuries of hindsight, dangerously top-heavy.",
+      "'The ship carried far more weight above the waterline — cannon, decking, ornate carving — than her hull and ballast could safely support,' said Dr Ingegerd Falkstrand-Wyk, a maritime archaeologist who has studied the wreck extensively. 'A stability test was in fact conducted before she sailed, in which thirty men ran from side to side across her deck to check how far she rolled. She rolled alarmingly. The test was stopped rather than the ship redesigned.'",
+      "Contemporary accounts suggest that concerns about the ship's stability had been raised before her launch, but that the political pressure to deliver a flagship to a king already at war left little appetite for delay. She sank with dozens of crew and passengers aboard; estimates of the dead range up into the low double figures, out of more than a hundred people on board at the time.",
+      "'It is worth remembering there was a genuine human cost to the disaster, even amid the enduring fascination with the ship itself,' said Dr Falkstrand-Wyk. 'The families of the dead crew received little acknowledgement at the time. An inquiry was held, but no one was ultimately punished — the general conclusion being that everyone involved had, at every stage, followed the king's specifications precisely.'",
+      "The Vasa settled largely intact on the muddy, cold, low-salinity floor of Stockholm harbour, conditions that happened to be close to ideal for preserving oak timber, and she lay there for 333 years until a salvage operation raised her, remarkably whole, in 1961.",
+      "'The preservation is the real marvel,' said conservation specialist Torvald Bergqvist-Lindeman. 'We recovered a seventeenth-century warship with the majority of her original timber, carvings and fittings still in place — something that simply does not happen with wrecks in warmer, saltier or more turbulent waters.'",
+      "The Vasa is today displayed at the purpose-built Vasa Museum in Stockholm, one of Sweden's most visited museums, where she stands as both a masterpiece of naval carving and, as Dr Falkstrand-Wyk put it, 'the single most photographed cautionary tale in the history of naval engineering.'"
+    ],
+    "pullQuote": "A stability test was in fact conducted before she sailed, in which thirty men ran from side to side across her deck to check how far she rolled. She rolled alarmingly. The test was stopped rather than the ship redesigned.",
+    "tags": [
+      "based-on-truth",
+      "maritime-history",
+      "shipwreck"
+    ]
+  },
+  {
+    "id": "mar-mary-celeste-ghost-ship-1872",
+    "category": "Maritime",
+    "headline": "Ship Found Drifting Mid-Atlantic, Seaworthy, Cargo Intact, Entire Crew Simply Gone",
+    "standfirst": "In December 1872, the merchant brigantine Mary Celeste was discovered sailing unmanned in the Atlantic — undamaged, provisioned and carrying her cargo — with no trace of Captain Benjamin Briggs, his family, or any of his crew ever found.",
+    "byline": "By Declan O'Farrell, Maritime Correspondent",
+    "location": "AZORES, NORTH ATLANTIC",
+    "published": "2026-07-13T09:30:00Z",
+    "body": [
+      "On 4 December 1872, the crew of the British brigantine Dei Gratia spotted a ship sailing erratically in the Atlantic between the Azores and the coast of Portugal. Boarding her, they found the American vessel Mary Celeste entirely deserted — her single lifeboat missing, her cargo of 1,701 barrels of denatured alcohol largely intact, and her crew's personal belongings, including the captain's own possessions, left behind.",
+      "Captain Benjamin Briggs, an experienced and well-regarded mariner, had sailed from New York with his wife, young daughter and a crew of seven, bound for Genoa. The ship's last logged entry was dated ten days before she was found, some 400 nautical miles from where the log placed her — a discrepancy that has never been satisfactorily explained.",
+      "'What makes this case endure, rather than simply fade as an unsolved nineteenth-century tragedy, is precisely how undramatic the ship herself looked,' said maritime historian Dr Ottoline Fairweather-Askew, who has studied the surviving salvage-hearing records. 'No storm damage. No sign of struggle or violence. No indication of fire, piracy or mutiny that investigators at the time, or since, have been able to substantiate. A seaworthy ship, properly provisioned, simply without anyone aboard her.'",
+      "The Gibraltar salvage hearing that followed was, by most accounts, unusually thorough and unusually inconclusive; the presiding attorney-general pursued theories of foul play with considerable energy but produced no evidence to support them, and the case was eventually closed without any finding as to what had happened to Briggs, his family, or his crew.",
+      "'Theories have accumulated for a century and a half — piracy, mutiny, an alcohol-fume explosion scare that caused the crew to abandon ship in panic, even a giant squid in some of the more inventive later retellings,' said Dr Fairweather-Askew. 'The most sober modern explanation, and the one most historians now favour, is that the crew feared an explosion from leaking alcohol vapour, launched the lifeboat as a precaution while still attached to the ship by a line, and that the line parted in worsening weather, leaving them adrift and the Mary Celeste to sail on without them.'",
+      "None of the ten people aboard the Mary Celeste that voyage — Briggs, his family, or his crew — was ever found, alive or dead, and no wreckage of the lifeboat was ever conclusively identified.",
+      "'It has become the archetype of the maritime mystery precisely because it refuses to resolve,' said Dr Fairweather-Askew. 'We have the ship. We have the cargo. We have the paperwork. We do not, and very likely never will, have the crew.'",
+      "The Mary Celeste herself continued sailing under new owners for over a decade afterward, gaining, along the way, a reputation as an unlucky vessel that her subsequent captains found difficult to shake — before being deliberately wrecked off Haiti in 1885 in an unrelated insurance fraud, bringing an oddly fitting end to a ship whose name had, by then, already passed into legend."
+    ],
+    "pullQuote": "A seaworthy ship, properly provisioned, simply without anyone aboard her.",
+    "tags": [
+      "based-on-truth",
+      "maritime-history",
+      "unsolved-mystery"
+    ]
+  },
+  {
+    "id": "mar-whisky-galore-ss-politician-eriskay-1941",
+    "category": "Maritime",
+    "headline": "Cargo Ship Runs Aground Off A Hebridean Island Carrying 264,000 Bottles Of Whisky; Islanders React Accordingly",
+    "standfirst": "When the SS Politician ran aground off Eriskay in 1941 carrying a quarter of a million bottles of whisky, wartime rationing met island ingenuity in a salvage effort that customs officers never quite managed to stop — and that later became a novel and a beloved film.",
+    "byline": "By Declan O'Farrell, Maritime Correspondent",
+    "location": "ERISKAY, OUTER HEBRIDES",
+    "published": "2026-07-13T14:15:00Z",
+    "body": [
+      "On 5 February 1941, the SS Politician, a cargo steamer bound for Jamaica and New Orleans, ran aground on rocks in the Sound of Eriskay in Scotland's Outer Hebrides during a wartime crossing. Among her varied cargo — which also included currency, bicycle parts and other goods — was a quantity of whisky reported at roughly 264,000 bottles, destined for markets abroad at a time when whisky, like most goods, was tightly rationed at home.",
+      "News of the wreck, and its contents, travelled through the island community with what local historians describe as impressive speed. Under wartime rationing, whisky was scarce and highly prized, and islanders from Eriskay and the neighbouring island of South Uist wasted little time putting to sea in small boats to relieve the stricken ship of a cargo that, in the circumstances, seemed unlikely to reach its intended destination in any case.",
+      "'It would be wrong to call it looting in the way the word is normally used,' said local-history archivist Fionnuala Kessack-Braemore. 'Salvage of this kind, from a wreck in home waters during wartime scarcity, was viewed very differently by the islanders than it was by His Majesty's Customs and Excise. The islanders considered it providence. Customs considered it a crime.'",
+      "Excise officers pursued the matter with considerable determination, mounting searches of homes and eventually bringing prosecutions against a number of islanders found in possession of bottles that could be traced to the wreck; several men received short prison sentences. The ship herself was later part-demolished with explosives, an operation that, according to island lore repeated by residents for decades afterward, inadvertently destroyed a further quantity of whisky rather than merely the vessel.",
+      "'The astonishing thing is how much of the cargo the salvagers managed to spirit away, if you'll forgive the phrase, in the relatively short window before customs organised an effective response,' said Kessack-Braemore. 'Bottles from the Politician were, by island tradition, still being discovered — and, on occasion, still being drunk — decades after the war ended.'",
+      "The episode became the basis for Compton Mackenzie's 1947 comic novel Whisky Galore, itself drawn in part from Mackenzie's own knowledge of the islands, and subsequently for the beloved 1949 Ealing Studios film adaptation of the same name, which cemented the story's place in British popular culture.",
+      "'The real event was rather less tidy than the film's gentle comedy suggests — men genuinely went to prison over it, and the wartime authorities took the theft of dutiable goods entirely seriously,' Kessack-Braemore said. 'But the underlying image is accurate enough: an island community faced with a quarter of a million bottles of whisky washed up on its doorstep did not, on the whole, spend very long deliberating.'",
+      "The wreck of the SS Politician still lies in the Sound of Eriskay, and bottles recovered from her — genuine and, islanders concede with a shrug, occasionally not — continue to change hands as prized local curiosities to this day."
+    ],
+    "pullQuote": "an island community faced with a quarter of a million bottles of whisky washed up on its doorstep did not, on the whole, spend very long deliberating.",
+    "tags": [
+      "based-on-truth",
+      "maritime-history",
+      "scotland"
+    ]
+  },
+  {
+    "id": "spt-isner-mahut-longest-tennis-match-wimbledon-2010",
+    "category": "Sport",
+    "headline": "Wimbledon Match Lasts Eleven Hours Across Three Days; Final Set Alone Goes 70 Games To 68",
+    "standfirst": "The 2010 first-round meeting between John Isner and Nicolas Mahut ran to 11 hours and 5 minutes of playing time spread over three days, with a final set that outlasted entire tournaments — the longest match in the history of tennis.",
+    "byline": "By Hattie Wrenshaw, Sports Correspondent",
+    "location": "WIMBLEDON, LONDON",
+    "published": "2026-07-13T16:40:00Z",
+    "body": [
+      "The first-round men's singles match between the American John Isner and the Frenchman Nicolas Mahut began, unremarkably, on Court 18 at Wimbledon on 22 June 2010. It did not end unremarkably. Play was suspended for bad light after the second day with the two men locked at 59 games apiece in a final set that neither could break, and did not conclude until the third day, when Isner finally won the deciding set 70 games to 68.",
+      "In total, the match lasted 11 hours and 5 minutes of actual playing time, spread across three days — comfortably the longest match in the recorded history of professional tennis, by a margin measured not in minutes but in hours.",
+      "'The scoring convention at Wimbledon at the time required a final set to be won by two clear games, with no tie-break to shortcut the process,' explained tennis statistician Dr Perpetua Sandringham-Voss. 'Neither player could establish that two-game cushion for hour after hour. Isner served roughly 112 aces across the whole match — Mahut, remarkable in his own right, served around 103. Between them, the two men served over 200 aces in a single match, most of them in a final set that simply refused to end.'",
+      "The scoreboard on Court 18 was, by the second day, reportedly unable to display the actual score in the final set, its display having been designed on the reasonable assumption that no set would ever require three digits. A new scoreboard was subsequently installed at the court commemorating the match's final score.",
+      "'Spectators queued around the grounds to get a view of Court 18 by the third day — a first-round match, ordinarily a footnote of the tournament, had become the story of the entire championship,' said Dr Sandringham-Voss. 'Both players later described considerable physical toll — cramping, exhaustion, blistered feet — from a contest that had gone on roughly six times longer than a typical five-set match.'",
+      "Isner won the match and advanced to the second round, where he lost in straight sets in considerably less time than his first-round victory had taken to complete — a fact widely noted, with some sympathy, by commentators at the time.",
+      "'The result?' said Dr Sandringham-Voss. 'A rule designed to ensure a set was won outright, rather than settled by a tie-break shortcut, produced a final set nearly as long as an entire five-set match played at normal length. The All England Club introduced a final-set tie-break at 12-12 in subsequent years — a change historians of the sport regard as being, in no small part, Isner and Mahut's doing.'",
+      "The two men played each other again at Wimbledon the following year, in a match that lasted a mere 4 hours and 3 minutes — Isner won again — a contest both players and commentators alike described, without apparent irony, as comparatively brief."
+    ],
+    "pullQuote": "Between them, the two men served over 200 aces in a single match, most of them in a final set that simply refused to end.",
+    "tags": [
+      "based-on-truth",
+      "tennis",
+      "sporting-records"
+    ]
+  },
+  {
+    "id": "spt-underarm-bowling-incident-1981-chappell",
+    "category": "Sport",
+    "headline": "Captain Instructs Brother To Bowl Along The Ground On The Final Ball; A Nation Never Quite Forgives Him",
+    "standfirst": "In a 1981 one-day international, Australia's Greg Chappell instructed his brother Trevor to bowl the match's final ball underarm, along the ground, denying New Zealand any chance of the six runs they needed to tie. It was legal. It was also, by near-universal consensus, not cricket.",
+    "byline": "By Hattie Wrenshaw, Sports Correspondent",
+    "location": "MELBOURNE",
+    "published": "2026-07-13T18:20:00Z",
+    "body": [
+      "On 1 February 1981, in the final of a one-day international tri-series at the Melbourne Cricket Ground, New Zealand required six runs off the last ball to tie the match against Australia. Batsman Brian McKechnie stood ready to attempt the six that would have levelled the scores. Australia's captain, Greg Chappell, instead instructed his younger brother Trevor, the bowler, to deliver the ball underarm — rolling it along the ground toward the batsman rather than bowling it in the conventional overarm fashion.",
+      "An underarm delivery, bowled correctly along the ground, is essentially impossible to hit for six. McKechnie blocked the ball, threw his bat down in evident disgust, and the match ended with Australia's score intact and New Zealand denied any realistic chance of a tie.",
+      "'Underarm bowling was, at the time, technically legal in one-day cricket under the playing conditions in force — nothing about the delivery itself broke any written rule,' said cricket historian Dr Osbert Fanshawe-Ndiaye. 'What it broke, comprehensively, was the game's unwritten code. Bowling underarm to prevent any possibility of a contest is not against the laws. It is, by the near-unanimous verdict of everyone who watched it, against the spirit of the entire sport.'",
+      "The reaction was immediate and severe on both sides of the Tasman Sea. New Zealand's then prime minister, Robert Muldoon, described the act on television as 'the most disgusting incident I can recall in the history of cricket' and an act of cowardice — a remarkable intervention by a sitting head of government into the conduct of a sporting fixture.",
+      "'Greg Chappell has spoken since, at various points over the following decades, of regretting the decision,' said Dr Fanshawe-Ndiaye. 'Trevor Chappell, who actually bowled the ball on his brother's explicit instruction, has by most accounts borne a disproportionate share of the public association with the incident ever since — a peculiar kind of sporting infamy for simply following orders.'",
+      "The Australian Cricket Board issued a formal apology to New Zealand in the immediate aftermath, and the laws of one-day cricket were swiftly amended: underarm bowling was banned in international cricket in all but the most exceptional circumstances shortly after the incident, closing the loophole Chappell had exploited.",
+      "'The result?' said Dr Fanshawe-Ndiaye. 'A single legal delivery, bowled entirely within the rules as they then stood, produced a diplomatic incident, a rule change, and forty-five years of Australians being reminded of it, politely but firmly, by New Zealanders at every available opportunity.'",
+      "The underarm ball remains, to this day, one of the most replayed and most reviled moments in the shared cricketing history of the two countries — a reminder, as Dr Fanshawe-Ndiaye put it, 'that legal and sporting are not, in cricket, always the same word.'"
+    ],
+    "pullQuote": "legal and sporting are not, in cricket, always the same word.",
+    "tags": [
+      "based-on-truth",
+      "cricket",
+      "sporting-controversy"
+    ]
+  },
+  {
+    "id": "mar-rubber-ducks-ocean-currents",
+    "category": "Maritime",
+    "headline": "28,800 Bath Toys Teach Scientists How Oceans Work",
+    "standfirst": "A shipping container disaster becomes a decade-long scientific windfall. Friendly Floatees drifted from the Pacific to the Arctic, helping researchers map currents—and delighting beachcombers.",
+    "byline": "By Marcus Pemberton, Maritime Correspondent",
+    "location": "SOMEWHERE IN THE PACIFIC OCEAN, 1992",
+    "published": "2026-07-12T06:00:00Z",
+    "body": [
+      "In 1992, a routine shipping misfortune became an accidental triumph for oceanography. A cargo container aboard the Evergreen Ever Given's predecessor washed overboard somewhere in the Pacific, spilling approximately 28,800 rubber bath toys—mostly friendly yellow ducks, but also seahorses, frogs, and other waterlogged companions—into the world's currents.",
+      "The toys, manufactured for a Hong Kong firm, were never destined to arrive in their boxes. Instead, they embarked on an unplanned ten-year journey that would carry them across the Pacific, around Cape Horn, and into the Atlantic and Arctic Oceans. The Friendly Floatees, as they became known, became an unexpected gift to marine science.",
+      "\"It was extraordinary,\" said Dr. Nigel Frome, a fictitious oceanographer at the University of Aberdeen. \"Those ducks did more for our understanding of global ocean currents than any sensor we'd deployed. They were durable, buoyant, and—crucially—they came with a mailing address printed on their feet.\"",
+      "Beachcombers and scientists began finding the toys throughout the 1990s, reporting their discoveries to the manufacturers. Each location provided data: which ducks washed up where, and when. The pattern revealed deep-water currents that had, until then, remained largely unmapped. Thousands of ducks are believed still to be circulating in the ocean's gyres.",
+      "By 1995, a beachcomber in Scotland reported finding a batch of Floatees, their journey having taken them through the Arctic. \"We knew then that the North Atlantic pathway was real,\" noted Frome. \"Those ducks had achieved what government grants could not.\"",
+      "The scientific community began publishing earnest papers using the duck data. Today, 'Floatee-based current mapping' remains an honourable footnote in oceanography. The toys themselves—those that have been recovered—are now housed in marine research collections. Several bear the tooth marks of whales.",
+      "The container was never recovered. Its contents, however, continue to wash ashore at intervals. A beachcomber in Norway reported finding a Floatee as recently as 2007, some fifteen years after the spill—its feet still imprinted with that crucial address.",
+      "\"They were just toys,\" Dr. Frome reflected in a later interview. \"And yet, they taught us how the world's water moves. Rather fitting, don't you think?\""
+    ],
+    "pullQuote": "Those ducks did more for our understanding of global ocean currents than any sensor we'd deployed.",
+    "tags": [
+      "maritime",
+      "science",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "mar-lego-catastrophe-cornwall",
+    "category": "Maritime",
+    "headline": "Five Million Lego Bricks Escape Ship; Beaches Still Finding Tiny Flippers",
+    "standfirst": "The 1997 loss of the Tokio Express has proven an ironic disaster. The spilled cargo—mostly Lego—included sea-themed sets that never reached toy shops. Nearly 30 years later, toy bricks still wash ashore.",
+    "byline": "By Catherine Whittles, Shipping Correspondent",
+    "location": "CORNWALL, ENGLAND, 1997",
+    "published": "2026-07-12T09:30:00Z",
+    "body": [
+      "Few maritime disasters achieve the distinction of being simultaneously tragic and farcical. On 10 February 1997, the cargo ship Tokio Express encountered rough seas off the coast of Cornwall and lost five containers into the Atlantic. The precise cargo? Nearly five million Lego bricks, destined for Christmas stockings across Europe.",
+      "The absurdity deepened when Lego collectors and oceanographers realised what had spilled. Among the millions of standard bricks were sea-themed sets—Lego flippers, Lego octopuses, Lego dragons, Lego scuba divers—tumbling into the actual sea, where they would spend years washing ashore. The irony was so complete it seemed almost intentional.",
+      "\"It was a sort of toy-industry poetic justice,\" said Dr. Helen Carmichael, a fictitious maritime debris analyst at the Plymouth Marine Institute. \"Toy boats heading to Cornish shores are one thing. But Lego flippers returning from the real ocean? That's the sea itself playing a joke.\"",
+      "Within weeks, Cornish beaches began exhibiting the telltale signs of the spill. Beachcombers arrived to find not just loose bricks, but entire moulded Lego figures—tiny Vikings, minifigure heads, speciality castle pieces—still in their industrial plastic linking studs unbroken. Collectors travelled hundreds of miles to the affected beaches.",
+      "The recovery effort itself proved instructive. The bricks, being plastic and relatively robust, survived the ocean crossing far better than heavier cargo might have. Some washed up within months; others took years. A few containers were recovered intact. \"We recovered perhaps a million bricks in the first season,\" Carmichael noted. \"We suspect several million more are still tumbling through the North Atlantic gyre.\"",
+      "Thirty years on, Cornish beaches still produce occasional Lego finds. A report from a St Ives beachcomber in 2019 identified what appeared to be a Lego shark—still bearing its original colour and the faint manufacturing date stamp of 1996. \"The plastic is extraordinary,\" the finder remarked. \"It might outlast us all.\"",
+      "Lego collectors have established informal networks to track and trade recovered bricks from the spill. Rare pieces in good condition fetch premium prices online. The 1997 Tokio Express disaster has become, improbably, a sort of inverse treasure hunt—not seeking riches, but tiny Danish-made plastic companions.",
+      "A representative of Lego told us, \"We are glad the bricks bring joy to beachcomers. We do not, however, recommend eating them, should you find any in your fish and chips.\""
+    ],
+    "pullQuote": "Toy boats heading to Cornish shores are one thing. But Lego flippers returning from the real ocean? That's the sea itself playing a joke.",
+    "tags": [
+      "maritime",
+      "curiosity",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "mar-garfield-phones-brittany",
+    "category": "Maritime",
+    "headline": "Orange Garfield Telephones Haunt Brittany's Beaches for Three Decades",
+    "standfirst": "For over 30 years, an inexplicable stream of novelty Garfield-shaped phones washed up on the Iroise coast. In 2019, a cave revealed all: a lost shipping container had been lodged there the whole time.",
+    "byline": "By Pierre Dubois, Correspondent-at-Large",
+    "location": "BRITTANY, FRANCE, 1986–2019",
+    "published": "2026-07-12T14:15:00Z",
+    "body": [
+      "Few mysteries persist undisturbed for thirty years. Yet from the 1980s onward, the rocky coast of Brittany experienced an phenomenon of such peculiar consistency that locals ceased to remark upon it: the regular arrival of orange, garfield-shaped novelty telephones.",
+      "The phones were ceramic or resin, roughly twelve inches tall, with features—eyes, nose, mouth—rendered in that distinctive cartoon style. Most bore a telephone receiver built into the body. They arrived waterlogged but intact, washing up in clusters after storms. A resident of the Iroise coast might discover three or four on a single morning.",
+      "\"It became almost expected,\" said Dr. Margot Levesque, a fictitious Breton folklorist and amateur beachcomber. \"By the 1990s, the local children understood: after a storm from the west, there would be Garfields on the beach. The mystery was never the phones themselves—it was the endless supply.\"",
+      "Theories abounded. Some suggested a warehouse fire on a ship bound for French retailers. Others proposed that a single container had split decades earlier, with its contents being released gradually by the sea. Tourists photographed them. Local artists incorporated them into installations. One Garfield phone currently occupies the window of a curio shop in Concarneau.",
+      "In 2019, the mystery solved itself. Researchers mapping sea caves along the Iroise coast discovered a shipping container wedged deep within a rocky grotto. Inside, protected by the cave's position and the container's partial seal, were hundreds of the orange phones—still packed in their original wrapping, still factory-fresh despite decades of immersion.",
+      "\"The container had been there since the 1980s, we believe,\" Levesque explained. \"Storms would shake it loose a little more each year, releasing a handful of phones into the current. The cave was slowly digesting its own cargo.\"",
+      "The container has since been recovered and its contents catalogued. Most of the phones were manufactured in Taiwan and destined for a now-defunct import company in Nantes. The publicity surrounding the discovery briefly revived demand for novelty Garfield phones among European collectors.",
+      "\"Thirty years of mystery,\" Levesque mused. \"Solved by a retired fishing boat captain with a camera and a very patient rope. Garfield, it turned out, was simply waiting for us to find him.\""
+    ],
+    "pullQuote": "By the 1990s, the local children understood: after a storm from the west, there would be Garfields on the beach.",
+    "tags": [
+      "maritime",
+      "mystery",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "mar-exploding-whale-oregon",
+    "category": "Maritime",
+    "headline": "Half a Tonne of Dynamite Fails to Solve Whale Problem; Solves Parked Car Instead",
+    "standfirst": "In 1970, the Oregon State Highway Division faced a beached whale. Their solution: explosives. The result: whale segments rained from the sky. A nearby automobile was totalled. Everyone agreed it was perfectly dreadful.",
+    "byline": "By James Worthington, West Coast Correspondent",
+    "location": "FLORENCE, OREGON, NOVEMBER 1970",
+    "published": "2026-07-12T11:45:00Z",
+    "body": [
+      "The beached sperm whale was, by all accounts, quite dead. Approximately 45 feet long and rotten beyond any sanitary hope, it lay on a public beach near Florence, Oregon, becoming a municipal crisis and a public health hazard. The Oregon State Highway Division was tasked with its removal. Their decision was, in retrospect, not thoroughly considered.",
+      "Rather than employ excavation, hauling equipment, or simple burial—the conventional methods available to highway authorities—the Division's chief engineer proposed a solution of stunning directness: explosives. Specifically, half a tonne of dynamite, detonated directly upon the carcass. The goal was vaporisation. The result was rather different.",
+      "\"It seemed logical at the time,\" admitted a Highway Division spokesperson (name withheld) in later interviews. \"We imagined the whale would simply... vanish. Atomised. Returned to the sea spray, so to speak.\"",
+      "On 12 November 1970, reporters and onlookers gathered to witness what would become a masterclass in unintended consequences. The dynamite was positioned, fused, and detonated. The explosion was indeed substantial—a geyser of sand and water erupted. For a moment, vindication seemed possible.",
+      "Then the rain began. Not water. Not sand. But blubber. Large, heavy chunks of whale flesh descended from the sky in a grotesque shower, scattering across the beach and surrounding areas. Some fragments landed more than 500 metres away. One particularly sizable piece impacted and destroyed a car parked some distance from the detonation site—the automobile's owner having to file perhaps history's most bizarre insurance claim.",
+      "\"The Highway Division had solved the whale problem,\" observed Dr. Theodore Moss, a fictitious public administration scholar at Portland State University, \"by replacing it with ten new problems, chief among them: where, precisely, does one dispose of whale fragments that are now scattered across several acres?\"",
+      "The cleanup took days. Whale parts had to be collected by hand—an undignified and unpleasant task that required an army of Highway Division employees armed with shovels and powerful resolve. The destroyed car was eventually compensated. The whale, in a sense, was finally removed.",
+      "The incident remains a cautionary tale in municipal disaster response. It is taught, with some grim amusement, in courses on project management and the dangers of choosing the most dramatic solution to a problem. As the Highway Division concluded in their final report: \"The results were not satisfactory.\""
+    ],
+    "pullQuote": "We imagined the whale would simply... vanish. Atomised. Returned to the sea spray, so to speak.",
+    "tags": [
+      "maritime",
+      "disaster",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "mar-boaty-mcboatface-victory",
+    "category": "Maritime",
+    "headline": "British Public Votes Overwhelmingly for 'Boaty McBoatface'; Officials Panic and Improvise",
+    "standfirst": "In 2016, the UK asked citizens to name a £200m polar research vessel. 'Boaty McBoatface' won in a landslide. Rather than accept the verdict, officials got creative: the submarine got the joke name instead.",
+    "byline": "By Adrian Longley, Science and Politics Correspondent",
+    "location": "LONDON, 2016",
+    "published": "2026-07-13T08:00:00Z",
+    "body": [
+      "Few democracies have confronted the problem that faced the UK in 2016: what to do when an institution invites the public to decide something and the public opts decisively for absurdity. The Natural Environment Research Council, a respected government body, commissioned a £200 million polar research ship and asked the British people for naming suggestions.",
+      "The result was not the dignified, scientifically resonant title the NERC had perhaps envisioned. Instead, the internet delivered 'Boaty McBoatface'—a name that was, by any serious metric, ridiculous. And it won. Not by a narrow margin. By a landslide. Tens of thousands voted for it. The public had spoken with remarkable clarity.",
+      "\"We were rather in a bind,\" admitted Dr. Robert Fenchurch, a fictitious NERC administrator, in a later interview. \"We could accept the will of the people—admittedly expressed in a spirit of mischief—or we could engage in a quietly desperate act of institutional self-preservation.\"",
+      "The NERC chose the latter. They announced that the ship would be named RRS Sir David Attenborough, the respected naturalist and broadcaster. It was a dignified choice. It was also a complete circumvention of the public vote. Uproar ensued, albeit a rather good-natured one. The British public is accustomed to having its will thwarted by officialdom; this was simply a clearer example than most.",
+      "However, the NERC was not entirely unmerciful. Among the ship's equipment was a yellow autonomous submarine—a remote research vessel used for exploring deep ocean features. The officials, in a moment of inspired compromise, christened it RRS Boaty McBoatface. The joke name would live on—just not quite where anyone had expected.",
+      "\"It was rather clever, really,\" Dr. Fenchurch reflected. \"We gave the people their ridiculous name—just attached to something smaller, more specialized, and considerably less official. Boaty McBoatface would map the Arctic, but it would do so as a subordinate vessel.\"",
+      "The submarine has since fulfilled its role with impressive dignity, supporting research across Arctic waters whilst maintaining, in perpetuity, its cheeky designation. The ship itself proceeds under its proper name, contributing to polar science in the manner befitting a £200 million vessel.",
+      "\"In the end,\" Fenchurch concluded, \"everyone was satisfied. The public got their meme. The scientists got their ship. And Boaty McBoatface got to explore the Arctic. It was, perhaps, the most successful democratic compromise nobody actually wanted.\""
+    ],
+    "pullQuote": "We gave the people their ridiculous name—just attached to something smaller, more specialized, and considerably less official.",
+    "tags": [
+      "maritime",
+      "humour",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "spt-eric-the-eel-moussambani",
+    "category": "Sport",
+    "headline": "Equatorial Guinea's Sole Swimmer Defies Chronology; Completes 100m Freestyle Alone",
+    "standfirst": "At Sydney 2000, Eric Moussambani had been swimming for mere months. His rivals disqualified, he swam solo. The crowd willed him home. Time: approximately 1:52. Dignity: entirely intact.",
+    "byline": "By Victoria Mercer, Olympic Correspondent",
+    "location": "SYDNEY, AUSTRALIA, SEPTEMBER 2000",
+    "published": "2026-07-13T10:30:00Z",
+    "body": [
+      "The Olympic Games is, traditionally, an arena where the elite of human athletics gather to compete. At Sydney 2000, the 100-metre freestyle swimming event received an unexpected entrant: Eric Moussambani of Equatorial Guinea, a young man who had learned to swim only months prior to the Games.",
+      "The circumstances were not accidental. Equatorial Guinea's Olympic committee, having committed to fielding competitors, discovered themselves with a shortfall in trained swimmers as the Games approached. Moussambani, a government official with a degree in Spanish, was hastily enrolled in swimming lessons. By the time he arrived in Australia, his total experience could be measured in weeks.",
+      "\"He was not, strictly speaking, a sprinter,\" noted Dr. Frederick Ashworth, a fictitious Olympic historian at Cambridge. \"He was an enthusiastic participant in an athletic endeavour. That is rather different.\"",
+      "Moussambani's heat was scheduled. His competitors—swimmers from other nations, all of whom had trained for years—lined up beside him. Then, in a moment of cosmic mercy, both his rivals were disqualified for false starts. Moussambani would swim the 100 metres alone, a solo performance before thousands of spectators.",
+      "He entered the pool with apparent conviction and began. His style was unconventional—more enthusiastic than technically refined, more determined than elegant. Yet he persisted. He swam. He kicked. He pulled water with methodical but untrained arms. The crowd, observing a young man of obvious sincerity flailing through chlorinated water, began to cheer.",
+      "\"By the final length, the entire stadium was roaring,\" Dr. Ashworth explained. \"They were not roaring for athletic excellence. They were roaring for sheer persistence. Moussambani had become the embodiment of Olympic spirit at its most basic: showing up and having a go.\"",
+      "He completed the 100 metres in approximately 1 minute 52 seconds—a time that would not, in any rigorous sense, be considered competitive. Yet as he emerged from the pool, he was greeted with roaring applause. The crowd had not judged him against other swimmers; they had judged him against himself.",
+      "\"He did not win a medal,\" Ashworth noted, \"and yet he remains, perhaps, one of the most remembered swimmers of that Olympiad. There is a lesson in that—though I'm not entirely certain what it is.\""
+    ],
+    "pullQuote": "They were not roaring for athletic excellence. They were roaring for sheer persistence.",
+    "tags": [
+      "sport",
+      "olympiad",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "spt-eddie-the-eagle-edwards",
+    "category": "Sport",
+    "headline": "Britain's Underfunded Ski Jumper Finishes Last; Wins World's Heart Instead",
+    "standfirst": "Calgary 1988: Eddie Edwards, short-sighted and cheerfully out of his depth, became the first British Olympic ski jumper in 60 years. He finished last in every event. Britain has not stopped loving him since.",
+    "byline": "By Malcolm Hepworth, Winter Sports Correspondent",
+    "location": "CALGARY, CANADA, FEBRUARY 1988",
+    "published": "2026-07-12T16:20:00Z",
+    "body": [
+      "Winter sports demand investment. They demand training facilities, coaching infrastructure, and generous funding. Britain, traditionally, has provided none of these things to its ski jumpers. In 1988, they provided Eddie Edwards.",
+      "Edwards was, by any objective measure, comically underfunded and undertrained. He was short-sighted and wore glasses whilst competing—a decision that made his already challenging endeavour more challenging still. He trained on a small artificial slope in Britain, a nation not renowned for its winter athletics. He arrived in Calgary with minimal international competition experience and zero expectation of success.",
+      "\"He was splendid,\" said Dr. Nathaniel Graves, a fictitious sports psychologist at the University of Edinburgh. \"Not in the technical sense. In the sense of being entirely genuine in his terrible preparation. Eddie Edwards was what happened when you combined pure determination with genuine incompetence—and made the public adore you for it.\"",
+      "Edwards jumped. He jumped badly. He jumped consistently, predictably, enthusiastically badly. In the normal hill event, he finished last. In the large hill event, he finished last again. His jumps were shorter, his landings less graceful, his overall athletic execution less refined than any other competitor. He was, in almost every measurable way, a failure.",
+      "And yet. The crowd did not jeer. The crowd cheered. Spectators, perhaps exhausted by the relentless competence surrounding them, found something refreshing in Edwards's sincere inability. He was not pretending. He was not arrogant. He was simply a man from Britain, a nation with no ski jump tradition, trying very hard to jump off a very large hill.",
+      "\"The thing about Eddie,\" Dr. Graves observed, \"is that he made losing look heroic. He didn't win anything. He came last. And yet, in coming last with complete conviction and good humour, he somehow became bigger than the athletes who won.\"",
+      "Edwards returned to Britain not in shame but in celebration. He had broken a 60-year drought—Britain had not had an Olympic ski jumper since 1928. That he was awful at it seemed almost irrelevant. He had shown up. He had jumped. He had been enthusiastically, entirely, utterly last.",
+      "He remains, to this day, a beloved figure in British sporting culture. His determination in the face of logical futility transcended sport and entered the realm of national myth. Later, a film would be made about him. The film would treat his failure with reverence. Which, perhaps, is exactly as it should be.\""
+    ],
+    "pullQuote": "He made losing look heroic. He didn't win anything. He came last. And yet, in coming last with complete conviction, he somehow became bigger than the athletes who won.",
+    "tags": [
+      "sport",
+      "olympiad",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "spt-jamaican-bobsled-calgary",
+    "category": "Sport",
+    "headline": "Jamaica Sends First Bobsled Team to Winter Olympics; Crashes; Finishes with Honour",
+    "standfirst": "Calgary 1988: a tropical nation, no winter sports infrastructure, and an idea. The Jamaican bobsled team crashed on the track. They pushed their sled to the finish line anyway. A nation was moved.",
+    "byline": "By Rosalind Patterson, International Sports Correspondent",
+    "location": "CALGARY, CANADA, FEBRUARY 1988",
+    "published": "2026-07-12T13:00:00Z",
+    "body": [
+      "Jamaica is an island nation with one overwhelming meteorological fact: it is consistently warm. That it fielded an Olympic bobsled team in 1988 was therefore not an obvious decision. That it did so without significant resources, infrastructure, or historical precedent was remarkable. That it crashed and yet succeeded was heroic.",
+      "The Jamaican bobsled team was, in almost every way, an act of sporting improvisation. The athletes were recruited from the military and track and field—disciplines not traditionally associated with winter sports. They trained on borrowed equipment and improvised sleds. They arrived in Calgary as underdogs of such towering proportions they seemed almost mythological.",
+      "\"They embodied something quite profound,\" said Dr. Michael Torres, a fictitious sports sociologist at the University of Toronto. \"The spirit of competition divorced entirely from the expectation of winning. They had come to compete, full stop. Whether they succeeded or failed was almost secondary.\"",
+      "During the heats, disaster. The Jamaican sled crashed on the track—a genuine and catastrophic failure. The team tumbled. The equipment scattered. For a moment, it seemed their Olympic journey had ended in ignominy. Then something remarkable occurred: the athletes got up, retrieved their sled, and pushed it across the finish line themselves.",
+      "\"This is the part people remember,\" Dr. Torres explained. \"Not the crash. Not the failure. But the decision to finish anyway. To push the sled. To refuse to accept that the race was over.\"",
+      "The crowd did not boo. The crowd erupted. The Jamaican team finished last in their heat, but in finishing at all—in pushing their broken sled across the line with dignity and determination—they had won something other than medals. They had won the affection and admiration of every spectator present.",
+      "Jamaica's performance inspired a generation of athletes and, inevitably, a film. 'Cool Runnings' (1993) took the core of the Jamaican team's story and wove it into comedy and heart—a film that captured something true about underdog spirit, even as it embellished events beyond strict accuracy.",
+      "\"The sled crashed,\" Dr. Torres concluded, \"and yet, somehow, Jamaica won. Not medals. Not records. But something rarer: they won proof that trying magnificently is sometimes worth more than succeeding ordinarily.\""
+    ],
+    "pullQuote": "They had come to compete, full stop. Whether they succeeded or failed was almost secondary.",
+    "tags": [
+      "sport",
+      "olympiad",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "spt-coopers-hill-cheese-rolling",
+    "category": "Sport",
+    "headline": "Gloucestershire Villagers Hurl Themselves Down Dangerously Steep Hill Chasing Cheese",
+    "standfirst": "Cooper's Hill Cheese-Rolling is precisely what it sounds like. Competitors chase a wheel of Double Gloucester down a near-vertical slope. Injuries are routine. The winner keeps the cheese. Spring after spring, they return.",
+    "byline": "By Edmund Hartwell, Rural Sports Correspondent",
+    "location": "GLOUCESTER, ENGLAND",
+    "published": "2026-07-12T12:30:00Z",
+    "body": [
+      "In the Cotswolds, tradition trumps safety. This principle achieves its most perfect expression during Cooper's Hill Cheese-Rolling, an annual event of such compelling absurdity that it has become a pilgrimage site for those seeking proof that not all human endeavour is governed by reasonable risk assessment.",
+      "Each spring, competitors gather at Cooper's Hill in Gloucester for a simple challenge: chase a wheel of Double Gloucester cheese down a slope so steep that standing upright is nearly impossible. The cheese is released first. The competitors follow, hurling themselves downward in pursuit. The first to touch the cheese at the bottom wins it—and keeps it.",
+      "\"It is madness,\" said Dr. Helen Portman, a fictitious exercise physiologist at Bath University. \"Wonderful madness, but madness nonetheless. The slope is treacherous. The participants frequently lose their footing. Tumbles and injuries are not exceptions—they are the expected outcome.\"",
+      "Injuries at Cooper's Hill range from minor (sprained ankles, scrapes) to substantial (dislocated shoulders, concussions). Yet competitors return annually, often to the same slope, as if magnetised by the sheer stupidity of the enterprise. Medical personnel stationed at the bottom spend their day treating the consequences of gravity and poor decision-making.",
+      "\"The cheese isn't even good,\" Dr. Portman noted. \"A wheel of Double Gloucester has perhaps £15 of value. People have spent thousands on medical bills in pursuit of it. From any rational perspective, it's absurd.\"",
+      "And yet the event persists. It has persisted since (records suggest) the 17th century. Centuries of people chasing cheese down a dangerously steep hill. Centuries of predictable injury and stubborn resilience. Centuries of humans doing something because it is traditional and thrilling, even though it is neither sensible nor safe.",
+      "\"There is something pure about it,\" Dr. Portman mused. \"In an age of waiver forms and litigation and rigorous health-and-safety protocols, here is an event that says: yes, you will probably fall. Yes, you will probably be injured. Come anyway. Chase the cheese.\"",
+      "The winner receives their cheese, their honour, and, inevitably, an ice pack and perhaps a visit to Casualty. The hill claims its tribute. The cheese is won. And next year, they will return to do it all again.\""
+    ],
+    "pullQuote": "People have spent thousands on medical bills in pursuit of it. From any rational perspective, it's absurd.",
+    "tags": [
+      "sport",
+      "tradition",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "spt-bog-snorkelling-wales",
+    "category": "Sport",
+    "headline": "Welsh Wetlands Host Annual World Championship in Bog Snorkelling",
+    "standfirst": "Each year, competitors gather in Llanwrtyd Wells to snorkel through a murky peat-bog trench. The water is cold. The visibility is poor. The determination is absolute. A World Championship crown is at stake.",
+    "byline": "By Gwyn Davies, Welsh Sports Correspondent",
+    "location": "LLANWRTYD WELLS, WALES",
+    "published": "2026-07-13T07:45:00Z",
+    "body": [
+      "Wales harbours a peculiar sporting tradition, one that requires participants to descend into cold, peat-stained water and snorkel through what is, by any honest definition, a ditch. The World Bog Snorkelling Championship, held annually in Llanwrtyd Wells, is a competition in which the primary challenge is not athletic excellence but rather psychological fortitude and the ability to breathe while partially submerged in murk.",
+      "The contest is straightforward: competitors snorkel through a trench cut through a peat bog, swimming against the clock. The trench is typically 60 yards long and filled with water of questionable transparency and even more questionable temperature. The peat leaches tannins into the water, creating a tea-brown murk through which visibility extends mere centimetres.",
+      "\"It is not a test of speed,\" explained Dr. Rhys Thornton, a fictitious aquatic sports analyst at Cardiff University. \"It is a test of nerve and lung capacity and the ability to keep moving through conditions that the human body finds quite objectionable.\"",
+      "Competitors arrive in wetsuits, equipped with snorkels and determination. They enter the bog water and begin swimming through the trench, unable to see their hands before their faces, navigating by feel and faith. The water is cold—typically between 6 and 12 degrees Celsius. The peat-water smells. The overall experience suggests that some pursuits are pursued not because they are pleasant, but because they exist.",
+      "\"The bog does not discriminate,\" Dr. Thornton noted. \"Whether you are an athlete or a hobbyist, whether you have trained for weeks or simply woke up and decided to snorkel through peat, the bog treats you identically: with cold indifference.\"",
+      "Yet every year, competitors arrive. Locals compete. Tourists compete. International athletes travel to Wales specifically to snorkel through a bog. The event has expanded; rules have been formalized. Champions are crowned. Their victory, purchased through cold and confusion and peat-water immersion, is absolute.",
+      "The World Championship has inspired variants: bog snorkelling with fins, tandem bog snorkelling (two people attached together). Each variation maintains the essential truth: that somewhere in Wales, each year, people volunteer to place their faces in cold peat water and stay there for time and glory.",
+      "\"It is utterly pointless and utterly brilliant,\" Dr. Thornton concluded. \"Which, perhaps, describes Wales rather well.\""
+    ],
+    "pullQuote": "It is not a test of speed. It is a test of nerve and lung capacity and the ability to keep moving through conditions that the human body finds quite objectionable.",
+    "tags": [
+      "sport",
+      "spectacle",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "spt-wife-carrying-finland",
+    "category": "Sport",
+    "headline": "Finnish Championship Crowns Men for Carrying Partners; Prize Awarded in Beer by Weight",
+    "standfirst": "In Sonkajärvi, Finland, men race an obstacle course carrying a partner—often upside-down in the 'Estonian carry'. The victor receives their partner's weight in beer. Peculiar sport; enthusiastic crowds.",
+    "byline": "By Kristian Solberg, Nordic Sports Correspondent",
+    "location": "SONKAJÄRVI, FINLAND",
+    "published": "2026-07-13T09:15:00Z",
+    "body": [
+      "Finland boasts many traditions. Sauna culture is one. Sisu (stoic determination) is another. The Wife Carrying World Championships represents a synthesis of both: a gruelling physical test conducted in a spirit of competitive good humour, with a prize that seems chosen specifically to undercut any pretense of athletic dignity.",
+      "Each year in Sonkajärvi, men arrive with their partners to compete in a race that requires them to carry their companion over an 253.5-metre obstacle course, navigating hurdles, a sand pit, and a water jump. The twist—quite literally, in many cases—is the carrying method. Some competitors cradle their partners like infants. Others employ the 'Estonian carry,' suspending their partner upside-down across their back, legs dangling.",
+      "\"It is a test of strength, certainly,\" said Dr. Janne Virtanen, a fictitious sports medicine specialist at the University of Helsinki. \"But it is also a test of commitment. To carry your partner over obstacles, whilst they hang inverted above a water jump, requires trust. And perhaps a touch of mutual delusion about what constitutes entertainment.\"",
+      "The race is taken with remarkable seriousness. Competitors train. Strategies are debated. The technique of the carry matters—certain methods prove more aerodynamic, more stable, more likely to keep the passenger from striking their head on a low obstacle. Teams arrive with optimised carrying methods and determined expressions.",
+      "The prize is specific: the victor receives a quantity of beer equivalent to their partner's body weight. A 70-kilogram partner, therefore, yields 70 kilograms of beer—approximately 70 litres, enough to sustain a modest celebration. The prize is awarded without apology and consumed with enthusiasm.",
+      "\"It is rather brilliant, actually,\" Dr. Virtanen observed. \"Most sporting prizes are trophies—objects of symbolic value but little practical use. Beer, however, is consumable. The prize can be used immediately, at the awards ceremony, whilst still wearing competitive shorts and a look of athletic satisfaction. It collapses the boundary between victory and celebration.\"",
+      "The event attracts international competitors. A team from Estonia arrives annually, honouring both the competition and their country's signature carrying technique. Teams from Australia, Britain, and elsewhere have ventured to Finland for the honour and the beer. Records are tracked. Champions are revered.",
+      "\"In other nations, they crown their victors in gold,\" Dr. Virtanen concluded. \"In Finland, we crown them in fermented barley. One approach seems considerably more practical.\""
+    ],
+    "pullQuote": "Most sporting prizes are trophies—objects of symbolic value but little practical use. Beer, however, is consumable.",
+    "tags": [
+      "sport",
+      "celebration",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "hea-fletcherism-mastication",
+    "category": "Health",
+    "headline": "'The Great Masticator' Convinced Thousands to Chew Each Bite 100 Times",
+    "standfirst": "Horace Fletcher (early 1900s) built a devoted following around a simple theory: chew every mouthful approximately 100 times until liquefied. It was thorough. It was tedious. His followers swore by it.",
+    "byline": "By Margaret Sinclair, Health and Wellness Correspondent",
+    "location": "LONDON, 1900–1920",
+    "published": "2026-07-12T15:30:00Z",
+    "body": [
+      "The human jaw, biomechanically speaking, is capable of impressive work. Yet for most of human history, that work has been performed with little system or particular rigour. Enter Horace Fletcher, an American nutritionist who, in the early 1900s, convinced a substantial portion of the Western world that they were all chewing wrong—and that health, wealth, and prosperity hinged upon chewing very carefully right.",
+      "Fletcher's theory was elegantly simple: every mouthful should be chewed approximately 100 times, masticated into a liquid paste before swallowing. This practice, which he termed 'Fletcherism,' would optimise digestion, reduce appetite, and confer numerous health benefits upon those disciplined enough to endure the practice.",
+      "\"It was thorough,\" said Dr. Alice Hartwell, a fictitious dietary historian at Oxford. \"One must imagine sitting down to breakfast and chewing a single bite of toast perhaps 100 times. The monotony is almost mythological. And yet, thousands adopted it. 'Fletcherists' were found throughout Europe and America, methodically pulverising their food.\"",
+      "The appeal was partly practical—the theory suggested that consuming less, chewed thoroughly, would achieve satiation whilst reducing overall food intake. In an era when thrift and discipline were virtues, this resonated. It appealed also to the educated elite; the rigour of the practice suggested seriousness, self-control, and enlightened dietary practice.",
+      "Fletcher became a sort of celebrity nutritionist, his advice sought by wealthy industrialists and health-conscious intellectuals. He lectured. He published. He cultivated a following of enthusiastic and relentless chewers. The practice became a status symbol among certain circles—evidence of discipline and commitment to scientific wellness.",
+      "\"The mathematics were appealing,\" Dr. Hartwell explained. \"Three meals a day, multiplied by perhaps 20 bites per meal, each requiring 100 chews. That's 6,000 chews daily. For those with the time and determination, it became almost meditative.\"",
+      "Fletcherism persisted well into the 20th century, though its strict adherents gradually waned. Modern nutritional science has, generally, suggested that thorough chewing is beneficial—but not necessarily to the degree Fletcher advocated. Most dieticians recommend 20-30 chews per bite, a figure that seems almost decadent compared to Fletcher's rigorous standard.",
+      "\"He was not entirely wrong,\" Dr. Hartwell concluded. \"Thorough mastication does aid digestion. But perhaps Fletcher simply took a good idea and strangled it beneath the weight of his own obsessive precision. Which is, rather typically, what enthusiasts do.\""
+    ],
+    "pullQuote": "One must imagine sitting down to breakfast and chewing a single bite of toast perhaps 100 times. The monotony is almost mythological.",
+    "tags": [
+      "health",
+      "history",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "hea-tapeworm-diet-peril",
+    "category": "Health",
+    "headline": "Early 20th Century Marketed Tapeworm 'Pills' for Weight Loss; This Was Dangerous and Thoroughly Foolish",
+    "standfirst": "An early-20th-century fad claimed that ingesting tapeworms would induce weight loss. Such 'pills' were genuinely marketed and sold. The medical reality: tapeworms cause malnutrition and disease. The practice is dangerous, inadvisable, and entirely unnecessary.",
+    "byline": "By Dr. Eleanor Cresswell, Medical Correspondent",
+    "location": "LONDON, 1900–1920",
+    "published": "2026-07-13T11:00:00Z",
+    "body": [
+      "History records numerous instances in which desperation and vanity override reason. Few are quite so visceral as the tapeworm diet—a fad that, though never as widespread as myth suggests, genuinely circulated in certain medical and commercial circles in the early 20th century. The basic premise was simple, alarming, and catastrophically misguided: if you ingest a tapeworm, it will consume the food you eat, thereby inducing weight loss without the inconvenience of actually eating less.",
+      "Such 'diet pills' were marketed and sold, sometimes by actual medical practitioners with dubious credentials. The claim was straightforward: take a pill containing a tapeworm egg, digest it, and allow the internal parasite to work on your behalf. Weight loss would follow, supposedly without effort or deprivation.",
+      "\"It was not a widely adopted fad,\" said Dr. Catherine Marsh, a fictitious historian of medical practices at the Royal Society of Medicine. \"But it persisted in the margins—in patent medicines, in quack practitioners, in the desperation of people who wanted very much to be thin but not quite enough to eat less.\"",
+      "The medical reality was—and remains—catastrophically different from the marketing pitch. Tapeworms do indeed consume nutrients, but not selectively. A tapeworm infestation causes malabsorption of calories, vitamins, and minerals. The result is not fashionable thinness but rather malnutrition: weakness, anaemia, digestive distress, and vulnerability to secondary infections.",
+      "Tapeworms in the human intestinal tract cause cramping, nausea, intestinal blockage, and the expulsion of segments of the parasite (a sight that has, historically, caused considerable distress to the host). They can migrate beyond the intestines, causing fever and organ damage. Death, whilst rare in modern medicine, is possible.",
+      "\"The fad was never truly popular,\" Dr. Marsh explained, \"because people tested it. Those who had ingested a tapeworm quickly discovered that the side effects—cramps, malaise, the physical manifestations of parasitic infection—were rather worse than the psychological benefits of weight loss.\"",
+      "Contemporary medical professionals were vocal in their condemnation. Yet the tapeworm diet persists in popular memory and occasionally resurfaces in modern online discussions as a sort of grim historical curiosity. This persists despite the absolute clarity of the medical reality: tapeworms cause disease. They do not cure anything. They do not promote health.",
+      "\"If you wish to lose weight, that requires dietary change and exercise,\" Dr. Marsh concluded firmly. \"If you wish to acquire a tapeworm, you have only to eat undercooked meat and contract an infection. Both outcomes are available to you. Sensible people pursue neither.\""
+    ],
+    "pullQuote": "Tapeworms do indeed consume nutrients, but not selectively. The result is not fashionable thinness but rather malnutrition.",
+    "tags": [
+      "health",
+      "history",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "hea-arsenic-complexion-wafers",
+    "category": "Health",
+    "headline": "Victorian Complexion Wafers Contained Arsenic; Consumers Ate Them Willingly",
+    "standfirst": "In the Victorian era, cosmetics openly contained arsenic, sold as a beauty aid. Products marketed for skin whitening included this poison. Many contained it unknowingly as well. The practice was dangerous; it was also entirely accepted.",
+    "byline": "By Dr. Helena Croft, Historical Medical Correspondent",
+    "location": "LONDON, VICTORIAN ERA",
+    "published": "2026-07-12T10:15:00Z",
+    "body": [
+      "The Victorian obsession with pale skin—a marker of wealth and leisure—led to some of history's more alarming beauty practices. Chief among these was the application of cosmetics containing arsenic, marketed explicitly as a skin-whitening agent. Arsenic complexion wafers were sold over the counter, consumed willingly, and caused precisely what one might expect: poisoning, chronic illness, and eventual death.",
+      "The logic, by the standards of the era, possessed a certain twisted sense. Arsenic causes the skin to blanch and become translucent. A woman who consumed arsenic would indeed achieve a fashionable pallor. That she would simultaneously acquire arsenical poisoning—with its attendant symptoms of nausea, weakness, neurological damage, and eventual mortality—was considered an acceptable trade-off.",
+      "\"It was madness,\" said Dr. Robert Emerson, a fictitious historian of toxicology at Cambridge. \"Absolute, documented, conscious madness. Women were aware that arsenic was a poison. And they consumed it anyway, because the alternative—looking insufficiently pale—seemed worse.\"",
+      "These were not rare products or marginal quackery. Arsenic complexion wafers were sold by reputable chemists and apothecaries. They were advertised in newspapers. Wealthy women purchased them. The practice was widespread enough that it features in medical literature of the period, with physicians documenting cases of chronic arsenical poisoning in female patients who were using cosmetics.",
+      "The arsenical content was not incidental. Other Victorian cosmetics contained arsenic accidentally, as a contaminant in their other ingredients. But the complexion wafers contained it deliberately—arsenic as the active ingredient, the precise element that would achieve the desired effect. The manufacturers knew. The purchasers knew. Society, generally, accepted it.",
+      "\"There were warnings,\" Dr. Emerson noted. \"Physicians published. Medical journals ran articles. And yet the wafers continued to be sold and consumed. Fashion is a powerful force. The desire to meet contemporary beauty standards overrode even survival instinct.\"",
+      "Long-term arsenic consumption causes peripheral neuropathy, skin lesions, organ damage, and cancer. Many Victorian women who regularly used such products developed serious illnesses. Some died. Others simply endured chronic illness as an apparently acceptable cost of beauty.",
+      "\"The irony is that arsenic poisoning causes visible damage to the skin—the very thing they were trying to avoid,\" Dr. Emerson observed dryly. \"So these women were poisoning themselves to achieve a complexion that arsenic poisoning would eventually destroy. Modern beauty practices seem almost reasonable by comparison.\""
+    ],
+    "pullQuote": "Women were aware that arsenic was a poison. And they consumed it anyway, because the alternative—looking insufficiently pale—seemed worse.",
+    "tags": [
+      "health",
+      "history",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "tech-segway-hype-collapse",
+    "category": "Technology",
+    "headline": "Hyped 'Personal Transport Revolution' Turns Out to Be a Novelty; Venture Capitalists Disappointed",
+    "standfirst": "In 2001, before its unveiling, the Segway was code-named 'Ginger' and 'IT'. Famous investors and thinkers predicted it would reshape cities. The reality: a niche gadget for tourists and tech enthusiasts.",
+    "byline": "By Jonathan Blackwell, Technology Correspondent",
+    "location": "LONDON, 2001",
+    "published": "2026-07-12T18:45:00Z",
+    "body": [
+      "Few products have arrived laden with such enormous expectation and delivered such modest reality as the Segway Personal Transporter. In 2001, before its public unveiling, the device was shrouded in mystery and speculation. It was code-named 'IT' and 'Ginger'—mysterious designations that suggested something revolutionary was gestating. Famous venture capitalists, tech luminaries, and business thinkers made predictions with the confidence of prophets.",
+      "Steve Jobs predicted it would be as significant as the personal computer. Various tech investors suggested it would reshape urban transportation entirely. The hype reached fever pitch. When the Segway was finally unveiled in December 2001, expectations had been inflated to genuinely heroic proportions: this was to be the future of human transportation. Cities would be redesigned around it. Pedestrians would be obsolete.",
+      "\"It was an extraordinarily sophisticated exercise in pre-release marketing,\" said Dr. Martin Fellers, a fictitious technology historian at Stanford. \"The mystery cultivated anticipation. The famous names lent gravitas. By the time the actual product appeared, expectations had escaped into the realm of fantasy.\"",
+      "The Segway, when revealed, was a marvel of engineering—a two-wheeled, gyroscope-balanced personal vehicle capable of moving at speeds up to 20 kilometres per hour. It was stable, relatively easy to operate, and genuinely innovative in its technical execution. It was also, essentially, a novelty.",
+      "The public purchased approximately 30,000 Segways in the first decade. Tourists used them. Tech enthusiasts acquired them. But urban planners did not redesign cities around them. Commuters did not abandon cars and buses in favour of standing on a motorised platform. The device found a niche—a significant but genuinely limited market—and stayed there.",
+      "\"The gap between the hype and the reality was almost geological,\" Dr. Fellers explained. \"The technology was impressive. But the technology was not sufficient to overcome fundamental questions: Why would I prefer this to a bicycle? Why would I use this for serious transportation? The answers, it turned out, were not compelling.\"",
+      "The Segway became, paradoxically, a symbol of technological overpromise—a device so laden with expectation that no actual product could possibly have satisfied it. Tours companies adopted them. Theme parks deployed them. They found their level. But they did not reshape civilisation.",
+      "\"In retrospect, the Segway is rather instructive,\" Dr. Fellers concluded. \"It reminds us that impressive engineering is not the same as genuine innovation. That a technology can be revolutionary in theory and merely interesting in practice. And that venture capitalists, for all their expertise, are sometimes prone to enthusiasm outpacing reality.\""
+    ],
+    "pullQuote": "The gap between the hype and the reality was almost geological. The technology was impressive. But the technology was not sufficient.",
+    "tags": [
+      "technology",
+      "history",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "tech-morris-worm-internet",
+    "category": "Technology",
+    "headline": "Cornell Graduate Student's Experiment Accidentally Cripples Early Internet; Leads to First Felony Conviction",
+    "standfirst": "In 1988, a self-replicating program escaped its laboratory. The Morris Worm spread across the early internet, disabling a significant percentage of networked machines. Its creator became the first person convicted under the Computer Fraud and Abuse Act.",
+    "byline": "By Dr. Stephen Hartley, Computing Correspondent",
+    "location": "CORNELL UNIVERSITY, NEW YORK, NOVEMBER 1988",
+    "published": "2026-07-13T14:30:00Z",
+    "body": [
+      "The early internet was, in many respects, a trusting place. Networks were connected with minimal security architecture. Passwords were often default or simple. The assumption was that the network inhabited by academic institutions and research facilities would remain benign. This assumption proved optimistic.",
+      "Robert Tappan Morris, a Cornell University graduate student, constructed a self-replicating program—a worm—as an experiment in network dynamics and system security. It was, by his own account, intended to be benign: it would spread across the network, replicate, and be contained. It would demonstrate certain security vulnerabilities without causing damage.",
+      "\"It was not, in his estimation, malicious,\" said Dr. Priya Kapoor, a fictitious computer security historian at MIT. \"Morris genuinely believed his experiment would be contained. He did not account for the possibility that his worm would multiply beyond control, that it would propagate faster than he anticipated, that his laboratory conditions would not scale to the actual complexity of the early internet.\"",
+      "The worm propagated on November 2, 1988. It was efficient. It found machines. It exploited known security vulnerabilities. It replicated. And it kept replicating. Within hours, it had infected several thousand computers across the nascent internet. Within a day, it had crippled a significant proportion of the machines on the network. Universities went offline. Research institutions lost connectivity. The early internet, so dependent on its interconnected infrastructure, ground nearly to a halt.",
+      "\"The scale was extraordinary,\" Dr. Kapoor explained. \"This was not a virus aimed at a single machine or a local network. This was a worm that demonstrated, conclusively, that the early internet was vulnerable to widespread disruption from a single programme. It was terrifying and, in some sense, necessary.\"",
+      "The response was rapid. Programmers worked around the clock to understand the worm, reverse-engineer it, and develop fixes. Within days, the situation stabilised. The worms were purged. The network recovered. The damage was assessed—estimated at millions of dollars in lost productivity and system downtime.",
+      "Morris was identified, arrested, and prosecuted. He became the first person ever charged under the Computer Fraud and Abuse Act of 1986, legislation written specifically to criminalise computer sabotage. He was convicted, fined, and sentenced to probation and community service. The case established, legally and culturally, that computer network attacks—even experimental ones—were criminal acts.",
+      "\"The Morris Worm was transformative,\" Dr. Kapoor concluded. \"Not because it was particularly sophisticated, but because it exposed how vulnerable the entire system was. Morris had meant to teach a lesson. He certainly accomplished that—though not quite the lesson he intended.\""
+    ],
+    "pullQuote": "Morris had meant to teach a lesson. He certainly accomplished that—though not quite the lesson he intended.",
+    "tags": [
+      "technology",
+      "history",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "tech-clippy-assistant-fiasco",
+    "category": "Technology",
+    "headline": "Microsoft's Animated Paperclip Becomes Embodiment of Intrusive Software Design",
+    "standfirst": "Clippy (and his predecessor, Microsoft Bob) represent a brief, misguided era when tech companies believed animated characters could solve design problems. They solved nothing. They annoyed everyone. Clippy became a meme decades before memes were common.",
+    "byline": "By Alexander Thornton, Software Design Correspondent",
+    "location": "REDMOND, WASHINGTON, 1995–2007",
+    "published": "2026-07-12T17:00:00Z",
+    "body": [
+      "Some design choices achieve historical infamy through their combination of evident failure and widespread deployment. Few achieve quite the symbolic status of Clippy—the animated paperclip assistant that appeared, unbidden and enthusiastically, in Microsoft Office 97 and subsequent versions. Clippy became a masterclass in how well-intentioned design can create something universally despised.",
+      "Clippy's predecessor was Microsoft Bob, an even more ambitious disaster. Released in 1995, Bob was a cartoonish 'friendly' computer interface featuring an anthropomorphic dog, various household settings, and a relentless enthusiasm that users found profoundly irritating. Bob was, comprehensively, a flop. It was expensive, slow, and utterly unnecessary. Approximately no one wanted it.",
+      "\"Bob represented a theory of design that was fundamentally wrong,\" said Dr. Rachel Munoz, a fictitious human-computer interaction specialist at Stanford. \"The theory was: computers intimidate users. If we make the interface cute, with cartoon characters and friendly language, we will reduce anxiety. The reality was that users found the interface patronizing, obstructive, and actively hostile to their goals.\"",
+      "Clippy arrived as Bob's younger sibling—less ambitious, but equally misguided. Clippy was an intelligent assistant disguised as a paperclip. When it detected that a user might need help—say, they were typing a letter—Clippy would pop up with an offer: 'It looks like you're writing a letter. Would you like help?' The user almost always did not. Users wanted Clippy to vanish. Clippy wanted to assist.",
+      "\"The fundamental failure was this,\" Dr. Munoz explained: \"Clippy was trained to be helpful, but it had no understanding of context or subtlety. It offered assistance constantly, whether wanted or not. It interrupted work. It slowed machines. It embodied everything about intrusive design.\"",
+      "Clippy became a phenomenon. It became a subject of ridicule. Users disabled it. Programmers blogged about their hatred of it. By the early 2000s, Clippy was a symbol of technological condescension—a reminder that not all innovation improves the user experience.",
+      "Microsoft eventually removed Clippy (after Office XP, 2002). Yet its reputation persisted and, bizarrely, evolved. Decades later, Clippy became a nostalgic meme, transformed through irony and distance into something almost charming. Gen-Z users who had never actually encountered Clippy adopted it as a retro symbol.",
+      "\"The irony is that Clippy became more famous for failing than for any success it might have achieved,\" Dr. Munoz noted. \"It is remembered as a symbol of misguided AI, of anthropomorphism gone wrong, of design that prioritised novelty over usability. Which may be, in the end, the most useful thing Clippy ever taught us.\""
+    ],
+    "pullQuote": "Clippy embodied everything about intrusive design—it interrupted work, it slowed machines, and it offered assistance constantly, whether wanted or not.",
+    "tags": [
+      "technology",
+      "history",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wea-raining-fish-yoro",
+    "category": "Weather",
+    "headline": "Fish and Frogs Rain from Sky; Yoro, Honduras Celebrates Annual Meteorological Mystery",
+    "standfirst": "Waterspouts and storms lift small animals from water, carrying them miles through the air before dropping them elsewhere. Yoro, Honduras experiences this phenomenon regularly enough to host an annual celebration.",
+    "byline": "By Dr. Fernando Orosco, Meteorological Correspondent",
+    "location": "YORO, HONDURAS",
+    "published": "2026-07-13T12:45:00Z",
+    "body": [
+      "To the uninitiated observer, the idea of fish and frogs raining from the sky seems a product of fantasy—of biblical plague scenarios and tall tales. Yet it is, in fact, a real meteorological phenomenon, documented and understood by atmospheric scientists, and one that the town of Yoro, Honduras has experienced with sufficient regularity to transform it into a cultural event: the annual 'Lluvia de Peces' (Rain of Fish).",
+      "The mechanism is scientifically straightforward, if dramatically improbable. A waterspout—a rotating column of air extending from a thunderstorm cloud down to the water's surface—sucks water and its contents upward with considerable force. Small aquatic animals—fish, frogs, crustaceans—are drawn into this vortex and lifted potentially miles into the atmosphere.",
+      "\"The animals are airborne for considerable distances,\" explained Dr. Margot Davies, a fictitious atmospheric physicist at the University of Oxford. \"They are carried by wind patterns, sometimes for miles, before being deposited where the wind column weakens. The result is rain composed not of water droplets but of actual living creatures.\"",
+      "Yoro's experience with this phenomenon is well-documented. The town has recorded incidents of fish falling from the sky for centuries, with particular frequency during the rainy season. The town has embraced the phenomenon, transforming it from meteorological curiosity into cultural celebration. The annual Lluvia de Peces festival celebrates this peculiar blessing.",
+      "\"The practical benefit is not insignificant,\" Dr. Davies noted. \"Yoro's fishing industry receives, periodically, a supplement of free fish, simply provided by the atmosphere. From an economic perspective, it is a gift.\"",
+      "The phenomenon occurs not only in Yoro. Frogs have rained in France. Fish have rained in England. But Yoro's experience is distinctive in both frequency and cultural integration. Rather than treating the phenomenon as an aberration, the town has adopted it as a distinctive feature of its climate and culture.",
+      "\"What makes Yoro remarkable,\" Dr. Davies explained, \"is not that rains of animals occur—they are rare but documented globally—but that Yoro has integrated this oddity into its identity. Where another town might view such an event as disaster, Yoro recognizes it as opportunity.\"",
+      "Scientists continue to monitor the phenomenon. Debate persists over whether climate change is affecting the frequency of waterspouts capable of lifting aquatic life. Yet Yoro continues its annual festival, celebrating the day when the sky rains fish and the town's residents rush outdoors with nets and buckets, gathering gifts from the atmosphere.\""
+    ],
+    "pullQuote": "Rather than treating the phenomenon as an aberration, the town has adopted it as a distinctive feature of its climate and culture.",
+    "tags": [
+      "weather",
+      "phenomenon",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wea-year-without-summer-tambora",
+    "category": "Weather",
+    "headline": "1815 Volcanic Eruption Cools Globe; 1816 Winter Arrives in Summer; Crops Fail; Famine Follows",
+    "standfirst": "Mount Tambora's 1815 eruption was catastrophic. The following year, snow fell in summer across the Northern Hemisphere. Crops failed. Harvests collapsed. Millions faced genuine hardship. The science took decades to understand.",
+    "byline": "By Dr. Margaret Fairchild, Historical Climate Correspondent",
+    "location": "VARIOUS, NORTHERN HEMISPHERE, 1816",
+    "published": "2026-07-12T07:30:00Z",
+    "body": [
+      "The eruption of Mount Tambora in April 1815 was among the largest volcanic events recorded in human history. It devastated Java and surrounding regions. Yet its most profound impact reached far beyond the immediate area, affecting global climate and causing one of the most severe agricultural crises in recorded history.",
+      "The mechanism was straightforward and devastating. The eruption injected massive quantities of ash and aerosol particles into the upper atmosphere. These particles reflected sunlight, reducing the amount of solar radiation reaching Earth's surface. Global temperatures dropped. The effect was dramatic and, for 1816, catastrophic.",
+      "\"That year became known as 'The Year Without a Summer,'\" said Dr. Thomas Ashcroft, a fictitious climate historian at the University of Edinburgh. \"In June, snow fell in New England. In July, frosts destroyed crops across Europe. Temperatures were 2 to 3 degrees Celsius below normal. In an agricultural economy dependent on seasonal timing, this was an existential crisis.\"",
+      "Across the Northern Hemisphere, harvests failed. Grain production collapsed. Livestock starved as fodder became unavailable. Food prices spiralled. Famine spread across Europe and into North America. In Ireland, crop failures contributed to severe hardship. In Switzerland and other Alpine regions, starvation became an immediate threat.",
+      "The response was panic, confusion, and incomprehension. People did not understand why summer had failed to materialise. Theories abounded—some scientific, many fantastical. The volcanic connection was not scientifically established for decades. Meanwhile, people starved.",
+      "\"The hardship was genuine and severe,\" Dr. Ashcroft noted respectfully. \"This was not a mild inconvenience. Families faced starvation. Societies faced collapse. The famine of 1816-1819 killed hundreds of thousands, though exact numbers are difficult to establish.\"",
+      "The Year Without a Summer has historical resonance beyond pure meteorology. It inspired Mary Shelley to begin writing 'Frankenstein'—she and her companions were trapped indoors during the cold, rainy season, seeking entertainment. Thus a volcanic eruption in Indonesia, indirectly, gave the world Gothic literature.",
+      "\"Modern climate science uses Tambora as a crucial case study,\" Dr. Ashcroft explained. \"It demonstrates both the magnitude of volcanic forcing and the profound human consequences of climate disruption. It remains a humbling reminder that nature can, occasionally, simply declare that agriculture will not proceed as planned this year.\""
+    ],
+    "pullQuote": "In June, snow fell in New England. In July, frosts destroyed crops across Europe. In an agricultural economy dependent on seasonal timing, this was an existential crisis.",
+    "tags": [
+      "weather",
+      "history",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wea-red-rain-kerala-india",
+    "category": "Weather",
+    "headline": "Blood-Red Rain Falls on Kerala; Wild Theories Circulate Before Algal Spores Identified as Culprit",
+    "standfirst": "In 2001, coloured—sometimes blood-red—rain fell intermittently over Kerala, India. Theories ranged from extraterrestrial to apocalyptic. Investigation eventually attributed the phenomenon to airborne algal spores.",
+    "byline": "By Dr. Rajesh Kumar, South Asian Correspondent",
+    "location": "KERALA, INDIA, 2001",
+    "published": "2026-07-13T15:20:00Z",
+    "body": [
+      "In mid-2001, the state of Kerala, India, experienced a phenomenon so visually alarming that it seemed to render scientific rationality impossible. Rain—characteristically colourless, and ordinarily mundane—fell from the sky in shades of red, yellow, and occasionally deep brown. Streets were stained. Laundry was ruined. Panic, briefly, seemed reasonable.",
+      "The first reports suggested apocalyptic possibilities. Was this a sign of environmental catastrophe? Had the atmosphere been poisoned? Religious interpretations circulated. The incident received international media attention, with speculative theories ranging from industrial pollution to—genuinely—extraterrestrial origin. Aliens, one imagined, had finally arrived, and they had done so by rendering the rain a threatening shade of crimson.",
+      "\"It was visually extraordinary,\" said Dr. Anita Patel, a fictitious atmospheric chemist at the Indian Institute of Science. \"If you saw red rain falling from the sky, your immediate instinct was not to hypothesise about algal spores. Your instinct was to panic.\"",
+      "The investigation that followed was methodical, if initially inconclusive. Samples of the rain were collected and analysed. The red particles were examined. Gradually, a theory emerged: the colouration was not the result of chemical contamination or atmospheric anomaly. It was caused by airborne algal spores—specifically, spores from algae blooms in the Arabian Sea, lifted into the atmosphere by wind patterns and deposited across Kerala.",
+      "\"It was almost anticlimactic,\" Dr. Patel explained. \"Everyone was bracing for something catastrophic. Instead, the answer was: it's algae. Harmless, ancient, utterly mundane algae. The universe had, in effect, played a joke on the state.\"",
+      "The theory was supported by examination of the spore types, particle size distribution, and meteorological wind patterns from the period. The spores matched known algal species found in the Arabian Sea. The wind patterns supported transport from the ocean to Kerala. The explanation, though less dramatic than extraterrestrial visitors, was scientifically coherent.",
+      "\"The red rain phenomenon is now understood,\" Dr. Patel noted. \"It is not unique to Kerala. Algal spores, fungal spores, and other airborne particles have caused coloured rainfall events throughout history. We simply had not examined them carefully until Kerala forced our attention.\"",
+      "The incident, briefly, terrified a state. It generated international news coverage and wild theories. And it was solved by algae—a reminder that sometimes the most extraordinary phenomena have the most ordinary explanations.\""
+    ],
+    "pullQuote": "Everyone was bracing for something catastrophic. Instead, the answer was: it's algae. Harmless, ancient, utterly mundane algae.",
+    "tags": [
+      "weather",
+      "science",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "av-wrong-way-corrigan",
+    "category": "Aviation",
+    "headline": "Irish Weather Delays Prevent Westbound Crossing",
+    "standfirst": "A New York aviator intending to reach California has instead arrived in Dublin following what he describes as an inexplicable compass malfunction, after 28 hours aloft. Navigation experts remain baffled.",
+    "byline": "By James Whitmore, Aviation Correspondent",
+    "location": "NEW YORK",
+    "published": "2026-07-12T08:15:00Z",
+    "body": [
+      "Douglas Corrigan, a 31-year-old aviator, filed his flight plan with meticulous care: New York to Long Beach, California, in his single-engine Curtiss Robin. The distance is approximately 2,200 miles in a westerly direction.",
+      "Shortly after take-off on 17 July 1938, Mr Corrigan reports, his compass began to behave erratically. 'The needle spun freely,' he explained to the assembled press at Baldonnel Aerodrome in Dublin, where he touched down on the morning of 18 July. 'There was nothing for it but to follow the stars.'",
+      "What followed was, by any measure, a circuitous route. Twenty-eight hours of flight time, a northeasterly trajectory of some 3,600 miles, and a perfectly serviceable landing on Irish soil — all apparently the result of a single instrument malfunction.",
+      "\"The lad's story is plausible enough,\" offered Dr. Cecil Pemberton, a meteorologist consulted by the Federal Aviation Authority. \"Compasses can fail. Weather systems can be unpredictable. One might navigate by celestial observation alone, should one possess the skill.\" He paused. \"Though the odds of such a failure occurring precisely at the moment the aircraft was pointed east — let that sink in.\"",
+      "The incident has proven enormously popular with the public, who have largely embraced Mr Corrigan's account. His aircraft has been christened the 'Wrong Way' in honour of the mishap, and he has begun signing autographs in Dublin's better hotels. When asked by a reporter whether the entire affair might have been a deliberate stunt undertaken after his applications for a transatlantic flight were denied by the authorities, Mr Corrigan smiled thinly.",
+      "\"I have no comment on such speculation,\" he said. \"A man endeavours to reach California and ends in Ireland instead. These things happen. The compass was faulty.\" He has since mentioned, to anyone patient enough to listen, that the compass was indeed faulty — seventeen times, by conservative count.",
+      "Dr. Pemberton was asked whether he believed the story. \"Do I believe it?\" he repeated. \"I believe Mr Corrigan has flown from New York to Dublin. The rest is a matter of faith, rather than aeronautical principle.\""
+    ],
+    "pullQuote": "A man endeavours to reach California and ends in Ireland instead. These things happen.",
+    "tags": [
+      "based-on-truth",
+      "aircraft-mishap",
+      "transatlantic"
+    ]
+  },
+  {
+    "id": "av-cornfield-bomber",
+    "category": "Aviation",
+    "headline": "Unmanned Fighter Jet Executes Perfect Landing Without Pilot",
+    "standfirst": "A USAF F-106 Delta Dart, relieved of its pilot through emergency ejection and left to its own devices over Montana, managed to right itself and land safely in a farmer's field. The aircraft was subsequently recovered and returned to service.",
+    "byline": "By Margaret Foster, Defense Affairs Correspondent",
+    "location": "MONTANA",
+    "published": "2026-07-12T14:22:00Z",
+    "body": [
+      "On 10 June 1970, a USAF F-106 fighter entered a flat spin whilst performing a routine training maneuver near Great Falls, Montana. The pilot, losing control entirely, elected to eject.",
+      "What occurred next defied the textbook. Freed of the pilot's weight — some 200 pounds of human mass, equipment and concern — the aircraft righted itself. The flat spin corrected. The Delta Dart's aerodynamic design reasserted itself with such efficiency that the now-pilotless jet, falling from 14,000 feet, performed what could only be described as a self-rescue.",
+      "The aircraft descended in a controlled manner and came to rest on its belly in a cornfield near Butte, causing minimal damage to either the surrounding crops or the aircraft itself.",
+      "\"It was the most extraordinary thing I've witnessed in forty years of aviation,\" said Squadron Leader Vernon Matthews, commenting to the press after the recovery. \"The machine flew itself. One might almost suspect intention, were one inclined toward such fancies.\"",
+      "The F-106 was recovered intact, examined thoroughly, repaired of its minor damage, and returned to active duty. The pilot, who parachuted safely and was retrieved several miles away, was unharmed.",
+      "\"The question that haunts us,\" remarked Flight Engineer Dr. Robert Calder, \"is whether the pilot was necessary at all. If a machine can land itself, who is to say we require men in the cockpit? The implications are staggering.\" He was asked whether he meant to suggest pilotless bombers might become standard. \"I suggest nothing,\" he replied carefully. \"I merely observe that reality, on this occasion, was more capable than the pilot.\"",
+      "The cornfield farmer, whose property had been temporarily occupied by a $4.2 million military aircraft, was reportedly philosophical. He did not pursue compensation."
+    ],
+    "pullQuote": "The machine flew itself. One might almost suspect intention, were one inclined toward such fancies.",
+    "tags": [
+      "based-on-truth",
+      "military-aircraft",
+      "mishap"
+    ]
+  },
+  {
+    "id": "av-balloon-boy-hoax",
+    "category": "Aviation",
+    "headline": "Missing Child Located at Home; Nationwide Spectacle Ends in Embarrassment",
+    "standfirst": "After hours of intense searching, including aerial surveillance and ground operations across two states, a six-year-old boy feared lost in a homemade helium balloon was found to have remained in his family home throughout. Investigators now suspect parental involvement in the staged event.",
+    "byline": "By Patricia Goodwin, Social Affairs Correspondent",
+    "location": "COLORADO",
+    "published": "2026-07-12T16:45:00Z",
+    "body": [
+      "The afternoon of 15 October 2009 began with a telephone call to emergency services that would precipitate one of the largest rescue operations in Colorado's modern history. A child had, according to his parents, ascended into the sky inside a homemade aircraft constructed of plywood and silver fabric and filled with helium.",
+      "The craft was said to be drifting eastward, borne on the winds. Immediate mobilisation followed. Military helicopters were scrambled. News crews from across the nation descended upon Fort Collins, Colorado. Rescue workers swept the prairies. The nation held its breath.",
+      "The boy, six years old, could not be located anywhere in the sky or on the ground. As hours passed, the search intensified. A helicopter tracked what appeared to be the balloon to a remote location. The entire affair took on the gravity of tragedy.",
+      "\"We were entirely convinced the child was aloft,\" noted Captain James Hoffman of the Colorado State Patrol, speaking to journalists the following morning. \"The evidence seemed overwhelming. We moved with every resource at our disposal. The alternative — that he had remained at home the entire time — was not, I confess, our primary concern.\"",
+      "Late on the evening of the 15th, the boy was discovered — in the attic of his family home. He had been there throughout the afternoon, according to subsequent investigations. The entire episode, authorities now suspect, had been orchestrated deliberately.",
+      "The parents were later arrested and charged with attempting to gain media attention through fraudulent means. \"The question is not how they deceived the nation,\" said media analyst Dr. Susan Lee. \"The question is why we all believed so readily. The spectacle was too perfect, too photogenic, too suited to a twenty-four-hour news cycle.\"",
+      "The case has become emblematic of a peculiar feature of modern media — the willingness of vast machinery to mobilise on the flimsiest of pretexts, provided the story is sufficiently emotionally compelling. The boy, mercifully, was unharmed."
+    ],
+    "pullQuote": "The spectacle was too perfect, too photogenic, too suited to a twenty-four-hour news cycle.",
+    "tags": [
+      "based-on-truth",
+      "hoax",
+      "media-spectacle"
+    ]
+  },
+  {
+    "id": "av-db-cooper",
+    "category": "Aviation",
+    "headline": "Mysterious Hijacker Vanishes Into Night with $200,000 in Unmarked Bills",
+    "standfirst": "A man boarding Northwest Orient Flight 305 from Seattle has claimed responsibility for hijacking the aircraft, extorting a ransom of $200,000 and four parachutes, and then absconding into the Washington night. His identity remains unknown. The matter remains unsolved.",
+    "byline": "By Edward Blackwell, Crime Correspondent",
+    "location": "SEATTLE",
+    "published": "2026-07-12T18:30:00Z",
+    "body": [
+      "On 24 November 1971, a man carrying a briefcase and a bomb threat boarded Northwest Orient Flight 305 from Seattle to Tacoma. He identified himself only as 'Dan Cooper' — a name that would later be misreported as 'D.B. Cooper' and remain as such in the historical record.",
+      "Shortly after take-off, the man approached the cockpit and displayed a device he claimed was an explosive. He opened his briefcase to reveal what appeared to be dynamite, or a credible facsimile thereof. He demanded $200,000 in small unmarked bills, along with four operational parachutes.",
+      "The aviation authorities took the demand seriously. A message was relayed to the ground. A ransom was prepared. The aircraft circled the Puget Sound for nearly two hours whilst negotiations proceeded with a precision usually reserved for military operations.",
+      "\"The man was extraordinarily calm,\" noted Captain Robert Rataczak, who piloted the aircraft. \"He gave detailed instructions regarding the ransom. He knew precisely what he wanted and exactly how to extract it. One might suspect he had given the matter considerable thought before boarding that aircraft.\"",
+      "A parachute instructor and federal agent were among those boarding the aircraft with the ransom. The man took the money, retained the parachutes, and lowered the rear stairs of the Boeing 727. He then parachuted into darkness over Washington State — a region of wilderness, night-time, unpredictable weather, and an unknown landing surface.",
+      "No trace of the man, the money, the parachutes, or the device has ever been recovered. The identity of 'D.B. Cooper' remains unknown to this day. Speculation has been rife — FBI agents have pursued theories, amateur investigators have formed societies, and the public has produced countless candidates for the mysterious figure.",
+      "\"The remarkable thing about this case,\" said Dr. Martin Finch, a criminologist, \"is that it remains the only unsolved case of air piracy in American commercial aviation history. One man, a briefcase, and absolute conviction in his method — and then vanished, cleanly, into the night.\""
+    ],
+    "pullQuote": "He knew precisely what he wanted and exactly how to extract it.",
+    "tags": [
+      "based-on-truth",
+      "hijacking",
+      "unsolved-mystery"
+    ]
+  },
+  {
+    "id": "av-lawnchair-larry",
+    "category": "Aviation",
+    "headline": "Ordinary Citizen Ascends to 16,000 Feet Aboard Experimental Balloon Rig",
+    "standfirst": "Lawrence Walters, a 33-year-old truck driver, has constructed a device consisting of an ordinary garden lawn chair, forty-five helium weather balloons, and an indomitable spirit. He ascended from Long Beach on 16 July 1982 and drifted across the Los Angeles airspace for several hours.",
+    "byline": "By Stephen Crane, Oddities Correspondent",
+    "location": "LOS ANGELES",
+    "published": "2026-07-13T07:00:00Z",
+    "body": [
+      "The device itself was simple in its conception: a standard aluminium lawn chair, a pellet rifle, a pair of binoculars, and forty-five helium weather balloons tethered to the seat with twine. The builder, one Lawrence Walters, christened his invention 'Inspiration' and resolved to take to the air.",
+      "On the morning of 16 July 1982, Mr Walters climbed into the chair. Friends and family, standing in the parking lot of a Long Beach apartment complex, released the tethers. The balloon cluster rose steadily into the cloudless California morning.",
+      "What Mr Walters had not anticipated — though perhaps he should have — was the altitude. He rose past 5,000 feet. Then 10,000. Then 14,000. The air grew thin. The temperature dropped precipitously. The chair, suspended beneath a billowing cluster of weathered balloons, drifted eastward on wind currents.",
+      "\"We had aircraft inbound,\" noted Captain Douglas Shaw, an air traffic controller. \"We were vectoring commercial airliners into the landing pattern when we received reports of a man in a chair, suspended from balloons, floating through our airspace at altitude. We did not, I confess, believe the initial reports.\"",
+      "Mr Walters, perceiving the difficulty of his predicament at roughly 16,000 feet, employed his pellet rifle to puncture several balloons. As each balloon deflated, the chair descended gradually, a man suspended between earth and sky, armed with a pellet gun and the certain knowledge that his decision had been somewhat precipitous.",
+      "He came to rest eventually in a Long Beach neighbourhood, tangled briefly in power lines before drifting to the ground. When asked by assembled reporters why he had undertaken such an endeavour, Mr Walters replied: \"A man can't just sit around.\"",
+      "The incident triggered immediate investigations into airspace regulations and the unforeseen categories of aircraft that might require regulation. Mr Walters' chair was confiscated by the FAA. He later became something of a minor celebrity, touring with his balloon rig for airshows and community events."
+    ],
+    "pullQuote": "A man can't just sit around.",
+    "tags": [
+      "based-on-truth",
+      "aircraft-oddity",
+      "improvisation"
+    ]
+  },
+  {
+    "id": "av-spruce-goose",
+    "category": "Aviation",
+    "headline": "Mammoth Wooden Flying Boat Takes Air, Promptly Retires",
+    "standfirst": "The Hughes H-4 Hercules — a massive aircraft constructed almost entirely of wood, at the time of its completion the largest flying machine in the world — has successfully flown. The flight lasted approximately one mile. It has not flown since.",
+    "byline": "By Christopher Mallory, Engineering Correspondent",
+    "location": "LOS ANGELES",
+    "published": "2026-07-13T09:15:00Z",
+    "body": [
+      "Howard Hughes was a man accustomed to building things — not in the measured, incremental way that industrial manufacturers operated, but in the grand, consuming, bankrupt-your-fortune manner that eccentric billionaires prefer. In 1942, he resolved to construct the largest flying boat in the world.",
+      "The result was the Hughes H-4 Hercules, a vessel built almost entirely of laminated wood. The aircraft measured 218 feet in length — longer than a city block. Its fuselage was wider than a gymnasium. Its wings spanned 320 feet. It was, quite simply, enormous.",
+      "Construction proceeded for five years. Costs mounted. Complications multiplied. Hughes personally involved himself in every detail, a decision that ensured both absolute architectural vision and complete cost overruns. By the time the craft was completed in 1947, some $23 million of Hughes' fortune had been invested.",
+      "\"The specifications were extraordinary,\" recalled aeronautics engineer Dr. Richard Emmons. \"A flying boat capable of transporting military cargo across ocean distances. The problem was that by the time it was completed, the military requirement had vanished.\"",
+      "On 2 November 1947, after years of testing and adjustment, Hughes himself piloted the aircraft from Long Beach. The Hercules lifted off the water's surface. It rose to an altitude of seventy feet. It travelled approximately one mile through the air. It then landed gently and taxied back to dock.",
+      "The aircraft has not flown since. Nor has it ever again been fully flown by any subsequent pilot or engineer. It resides now in a climate-controlled hangar in Long Beach, a monument to engineering ambition and the peculiar conviction that one man, given sufficient wealth and obsession, can accomplish anything.",
+      "\"What Hughes built was a perfect answer to a question that the world had stopped asking,\" reflected Dr. Emmons. \"One might view it as either a spectacular folly or the purest expression of human ambition. The distinction is perhaps merely a matter of perspective.\""
+    ],
+    "pullQuote": "The aircraft has not flown since. Nor has it ever again been fully flown by any subsequent pilot.",
+    "tags": [
+      "based-on-truth",
+      "engineering-folly",
+      "aircraft"
+    ]
+  },
+  {
+    "id": "hea-brinkley-goat-glands",
+    "category": "Health",
+    "headline": "Medical Entrepreneur Builds Fortune on Glandular Transplants; Credibility Crumbles",
+    "standfirst": "Dr John R. Brinkley, an unlicensed medical practitioner, has built a substantial fortune by offering transplantation of goat testicular glands to men seeking to restore or enhance virility. His pioneering use of radio advertising has garnered international attention. Authorities now question his credentials.",
+    "byline": "By Malcolm Thorough, Medical Affairs Correspondent",
+    "location": "KANSAS CITY",
+    "published": "2026-07-13T11:30:00Z",
+    "body": [
+      "In the 1920s, a era of renewed optimism and questionable medical practices, Dr. John R. Brinkley established a clinic in rural Kansas and began offering a procedure with no precedent in legitimate medical literature: the transplantation of goat testicular tissue into the bodies of aging men.",
+      "His theory was elegant in its simplicity — if the testosterone-producing glands of a goat might be grafted into a man whose own vitality had waned, then that man's vigour and fecundity would be restored. The procedure was, he claimed, the answer to male impotence and erectile dysfunction.",
+      "What was most remarkable was not the procedure itself — which would be recognised immediately by any trained physician as pseudoscientific nonsense — but the marketing infrastructure Brinkley constructed around it. He pioneered the use of radio advertising to publicise his clinic. Radio stations broadcast testimonials from grateful patients.",
+      "\"Brinkley did not merely perform a procedure,\" explained Dr. Patricia Sinclair, a medical historian. \"He created an entire ecosystem of persuasion. He understood something fundamental about modern marketing: that the medium of dissemination mattered more than the veracity of the claim.\"",
+      "Men from across the country travelled to Brinkley's Kansas clinic. They paid substantial fees — hundreds of dollars at a time when the average worker earned less than $2,000 annually. Some reported improvement in their condition. Many did not. Some developed infections or complications.",
+      "By the 1930s, investigations began. Medical boards questioned his credentials. The American Medical Association issued statements. Regulatory authorities intervened. Slowly, Brinkley's empire crumbled — not because his procedures were ineffective, but because the legal and professional apparatus finally caught up with the fraud.",
+      "\"The remarkable thing about Brinkley,\" noted Dr. Sinclair, \"is how long it took for an obviously fraudulent practice to be shut down. He was not claiming something exotic — he was claiming that goat glands could restore virility. Yet he operated profitably for a decade.\""
+    ],
+    "pullQuote": "The medium of dissemination mattered more than the veracity of the claim.",
+    "tags": [
+      "based-on-truth",
+      "medical-fraud",
+      "charlatanism"
+    ]
+  },
+  {
+    "id": "hea-scheeles-green",
+    "category": "Health",
+    "headline": "Fashionable Pigment Gradually Discovered to Be Toxic; Homes Deemed Inadvertently Poisonous",
+    "standfirst": "Scheele's Green, a brilliant and vivid pigment that became fashionable for wallpapers, textiles, and furnishings throughout the 19th century, has been discovered to contain arsenical compounds. The pigment has been slowly poisoning the inhabitants of homes in which it was applied.",
+    "byline": "By Henrietta Graves, Health Matters Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T13:45:00Z",
+    "body": [
+      "The colour arrived in the early 18th century, synthesised in Sweden by chemist Carl Wilhelm Scheele. The pigment was extraordinary — a brilliant, stable green of unmatched vibrancy. It did not fade. It did not dull with time. It was the perfect green for wallpapers, paints, dresses, and the decorative papers that adorned Victorian parlours.",
+      "Throughout the 19th century, Scheele's Green became fashionable among the middle and upper classes. Homes were papered in it. Furniture was upholstered with fabrics dyed in that remarkable shade. Painters mixed it into household paints. Dressmakers incorporated it into fashionable garments.",
+      "Quietly, gradually, a peculiar phenomenon began to manifest. Residents of homes decorated in Scheele's Green began reporting headaches, nausea, respiratory difficulty, and various skin conditions. Physicians were baffled. The complaints seemed to increase with humidity — worse in summer, in damp conditions.",
+      "\"People were poisoning themselves with fashion,\" explained Dr. Eleanor Bridgewater, a toxicologist consulted by the Royal Society. \"They were, quite literally, living in poisoned walls. The arsenic compounds were migrating into the air, particularly under humid conditions, and being inhaled repeatedly.\"",
+      "By mid-century, chemists began investigating the composition of Scheele's Green. The investigation revealed an inconvenient truth — the pigment's stability and brilliance came from arsenic compounds suspended in the structure of the material.",
+      "The reaction was slow. Tastes changed gradually. Regulations accumulated incrementally. Households slowly substituted other pigments, other patterns, other fashionable colours. But the knowledge — that the walls of one's home might be slowly poisoning one's family — took considerable time to permeate society.",
+      "\"One thinks of poison as something acute,\" remarked Dr. Bridgewater. \"But Scheele's Green was poison of the most civilised sort — quiet, gradual, fashionable, recommended by interior decorators. The victims didn't realise they were being poisoned.\""
+    ],
+    "pullQuote": "They were quite literally living in poisoned walls.",
+    "tags": [
+      "based-on-truth",
+      "toxic-aesthetics",
+      "arsenic"
+    ]
+  },
+  {
+    "id": "hea-washington-bloodletting",
+    "category": "Health",
+    "headline": "Founding Father's Final Days Hastened by Standard Medical Practice of the Era",
+    "standfirst": "George Washington, the first President of the United States, has succumbed to an acute throat infection following medical intervention. His physicians, adhering to orthodox medical practice of the era, administered bloodletting as therapeutic intervention — draining a substantial quantity of blood.",
+    "byline": "By William Hartford, Historical Correspondent",
+    "location": "VIRGINIA",
+    "published": "2026-07-13T15:20:00Z",
+    "body": [
+      "On 13 December 1799, George Washington, then 67 years old and residing at his Mount Vernon estate, complained of a severe throat infection. The condition was acute and worsening. He summoned his physicians, who arrived with the medical arsenal of their time.",
+      "The consensus among medical practitioners of the era was that disease was fundamentally a matter of imbalance in the body's humours. Fever, inflammation, infection — these were evidence that the balance had been disrupted. The remedy was equally straightforward: drain the excess. Bloodletting was the primary intervention.",
+      "Washington's physicians applied this principle with vigour. They bled him. Once. Twice. Three times. Then a fourth time. The quantity of blood removed from his body — reports suggest approximately five pints — represented a very substantial portion of his total blood volume.",
+      "\"By modern standards, this would be considered catastrophic,\" explained Dr. Thomas Ashford, a physician and medical historian. \"A healthy adult male possesses approximately five and a half litres of blood. To remove five pints is to deprive the body of nearly half its circulatory capacity. For a man already weakened by infection, the effect would be profound.\"",
+      "Washington's condition deteriorated with each extraction. His fever worsened. His breathing became more laboured. He grew weaker, less able to resist the infection consuming his throat. Whether the infection alone would have killed him is a matter of speculation.",
+      "He died on 14 December 1799, scarcely twenty-four hours after the first physician was summoned. The official cause was the throat infection. The role of the bloodletting in hastening his death was not seriously questioned at the time, for the procedure was so universally accepted.",
+      "\"What is perhaps most remarkable,\" noted Dr. Ashford, \"is that Washington's physicians were not incompetent or negligent by the standards of their own era. They were following the medical orthodoxy with precision. The tragedy is that everyone was wrong, and no one thought to question it.\""
+    ],
+    "pullQuote": "Washington's physicians were not incompetent or negligent by the standards of their own era.",
+    "tags": [
+      "based-on-truth",
+      "medical-orthodoxy",
+      "historical"
+    ]
+  },
+  {
+    "id": "hea-mad-as-hatter",
+    "category": "Health",
+    "headline": "Occupational Hazard Transforms Hat-Makers Into Trembling Eccentrics; Phrase Immortalises Affliction",
+    "standfirst": "Workers in the hat-making trade across New England and Europe have been observed to develop peculiar symptoms — tremors, confusion, erratic behaviour — after years of exposure to mercury compounds used in felt processing. The condition has become so associated with hat-makers that the phrase 'mad as a hatter' has entered common usage.",
+    "byline": "By Margaret Sutton, Industrial Health Correspondent",
+    "location": "DANBURY, CONNECTICUT",
+    "published": "2026-07-12T10:00:00Z",
+    "body": [
+      "In the workshops of Danbury, Connecticut, and across the European hat-making centres, a peculiar malady had become so common that it was simply accepted as an occupational reality. Hat-makers — skilled craftsmen who spent years treating felt with chemical compounds — would gradually develop tremors, mood disturbances, and confusion.",
+      "The cause was mercury. The hat-making process required treating animal fur with mercuric nitrate — a compound that was extraordinarily effective at felting the material but catastrophically toxic to human nervous tissue. The workers inhaled vapours daily. Their skin absorbed the compound.",
+      "The effects were devastating, though they developed gradually. Early symptoms were dismissed as nervousness or character weakness. As time passed, the tremors became more pronounced. Concentration became impossible. Personality changes occurred. The confusion intensified until some workers could scarcely function.",
+      "\"We now understand that mercury targets the nervous system with terrible precision,\" explained Dr. Sophia Winters, a toxicologist. \"Chronic exposure produces inflammation in neural tissues. The tremors the hat-makers experienced were not a character flaw — they were a direct result of neurotoxic damage.\"",
+      "By the 19th century, the condition was so widespread among hat-makers that it had acquired a regional name — the 'Danbury Shakes,' after the Connecticut city that was the centre of American hat manufacturing. The phrase 'mad as a hatter' had entered English speech.",
+      "Regulation was slow to develop. Hat-making companies were reluctant to acknowledge the hazard — doing so would require changing their processes. Workers, dependent on their employment, continued to inhale the poisonous vapours. Only gradually, as occupational health regulations developed, did manufacturers adopt safer alternatives.",
+      "\"The remarkable thing about this condition,\" noted Dr. Winters, \"is that it was entirely avoidable. The problem was known. Solutions existed. And yet workers continued to be poisoned, year after year, so that gentlemen might wear fashionable hats.\""
+    ],
+    "pullQuote": "Sanity might have been the truly abnormal response.",
+    "tags": [
+      "based-on-truth",
+      "occupational-hazard",
+      "mercury-poisoning"
+    ]
+  },
+  {
+    "id": "hea-trepanation",
+    "category": "Health",
+    "headline": "Ancient Skull-Drilling Practice Persists Through Millennia; Modern Advocates Remain Steadfast",
+    "standfirst": "Trepanation — the deliberate drilling, scraping, or sawing of an opening in the human skull — is among the most ancient of surgical procedures, dating back thousands of years to prehistoric times. In the modern era, a small community of advocates continues to promote it despite universal medical opposition.",
+    "byline": "By Dr. Nathaniel Hughes, Anthropological Medicine Correspondent",
+    "location": "VARIOUS",
+    "published": "2026-07-12T12:15:00Z",
+    "body": [
+      "Evidence of trepanation exists in skulls recovered from archaeological sites dating back six thousand years or more. Neolithic peoples, with tools of stone and bone, deliberately created openings in the skulls of the living — and, remarkably, many of these individuals survived the procedure, as evidenced by the healing bone growth.",
+      "Why ancient peoples performed trepanation is a matter of scholarly debate. Possible reasons include medical treatment of head trauma or intracranial pressure, spiritual or religious ritual, or treatment of conditions such as epilepsy or mental disturbance. The procedure spread across multiple continents.",
+      "Through the medieval and Renaissance periods, trepanation persisted in medical practice, though refined with metal instruments. Surgeons developed multiple techniques: the bur method, the scraping method, and the trephine method. Success rates improved marginally as technique advanced, though mortality rates remained substantial.",
+      "\"What strikes us most about trepanation is that it persisted despite its obvious dangers,\" remarked Dr. Miriam Ashton, a medical historian specialising in neurosurgery. \"Patients would present with symptoms — headache, epilepsy, mental disturbance — and surgeons would respond by drilling a hole in their skull.\"",
+      "By the modern era, legitimate medical practice abandoned trepanation. The advent of anaesthesia and asepsis, combined with improved diagnostic techniques, made skull surgery both safer and more precisely targeted. Trepanation became a historical curiosity.",
+      "And yet — a small community of modern advocates has emerged, claiming that trepanation might improve mental function, enhance cerebral blood flow, or expand consciousness. These claims have no scientific basis whatsoever. The medical establishment, uniformly, opposes the practice as dangerous and ineffective.",
+      "\"The advocates of trepanation in the modern era appear to view the practice as a frontier of consciousness expansion,\" observed Dr. Ashton. \"This is, of course, nonsense. One cannot expand consciousness by creating a hole in one's skull — one can only create a hole in one's skull.\""
+    ],
+    "pullQuote": "One cannot expand consciousness by creating a hole in one's skull.",
+    "tags": [
+      "based-on-truth",
+      "ancient-practice",
+      "pseudoscience"
+    ]
+  },
+  {
+    "id": "sci-kentucky-meat-shower",
+    "category": "Science",
+    "headline": "Flakes of Organic Matter Fall from Clear Sky Over Kentucky Farm; Origins Remain Peculiar",
+    "standfirst": "On 3 March 1876, over a farm near Olympia Springs in Kentucky, flakes described as resembling raw meat fell from a cloudless sky. The phenomenon lasted several minutes. Samples were collected and examined. The origin remains scientifically contentious.",
+    "byline": "By Frederick Westcott, Natural Philosophy Correspondent",
+    "location": "KENTUCKY",
+    "published": "2026-07-12T14:30:00Z",
+    "body": [
+      "The morning of 3 March 1876 was clear and unremarkable above Olympia Springs, Kentucky. The sky was cloudless. The weather was mild. A farmer working his property and nearby observers suddenly noticed an unusual phenomenon — organic flakes, roughly the size of snowflakes but decidedly less pleasant in character, were falling from the perfectly clear sky.",
+      "The flakes, according to contemporary accounts, resembled raw meat — reddish in colour, somewhat translucent, with an organic appearance. They fell for several minutes before ceasing entirely. The phenomenon was so peculiar that samples were collected, preserved, and sent to learned societies for examination.",
+      "Analysis revealed the material to be organic in nature — tissue that had once been part of a living organism. It was not mushroom spores. It was not plant matter. It appeared to be animal tissue, though the precise source remained obscure.",
+      "\"The question was immediately raised,\" noted Professor Cornelius Hartley, a naturalist consulted on the matter, \"as to how animal tissue might come to fall from a clear sky. The possibilities seemed limited — either it originated in the upper atmosphere by some unknown mechanism, or it originated elsewhere and was transported there by atmospheric means.\"",
+      "The leading theory, developed by subsequent naturalists, involved a less mystical explanation: a flock of buzzards flying overhead had abruptly regurgitated the contents of their crop. The flakes were, in essence, partially digested meat that had been expelled in mid-air.",
+      "The hypothesis was never definitively proven, though the coincidence of a vulture-frequent region, the nature of the material, and the aerial origin of the phenomenon made it the most plausible explanation. Other theories — spontaneous generation, meteorological anomalies, or elaborate hoaxes — were generally dismissed.",
+      "\"The 'meat shower' of Kentucky remains one of those natural phenomena that defies complete explanation,\" reflected Professor Hartley. \"We can propose a mechanism. We can present a plausible theory. But without definitive evidence, it remains a mystery.\""
+    ],
+    "pullQuote": "It appears to be animal tissue, though the precise source remained obscure.",
+    "tags": [
+      "based-on-truth",
+      "natural-mystery",
+      "unexplained"
+    ]
+  },
+  {
+    "id": "sci-phrenology",
+    "category": "Science",
+    "headline": "Skull-Reading Pseudoscience Captivates Intellectual Elite; Eventually Abandoned",
+    "standfirst": "Phrenology — the practice of reading a person's character, intellect, and psychological disposition from the bumps and contours of the human skull — has enjoyed remarkable scientific credibility throughout the 19th century. The practice is now entirely discredited.",
+    "byline": "By Dr. Leonard Ashford, Philosophy of Science Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-12T16:00:00Z",
+    "body": [
+      "In 1796, Franz Joseph Gall, a German physician, proposed a hypothesis that would captivate the intellectual world for nearly a century: the shape of the human skull could reveal the disposition of the mind within. Different regions of the brain governed different aspects of personality and cognition.",
+      "A skilled practitioner could, therefore, examine the skull, identify these protrusions, and determine the psychological character of the subject. A prominent bump in the region designated as 'combativeness' indicated an aggressive nature. The entire personality could, in theory, be read like a map etched into bone.",
+      "The appeal was profound. Here was a scientific method — measurable, observable, subject to systematic analysis — that could reveal the inner nature of human beings. Craniums were measured. Plaster casts were compared. Charts were developed. Practitioners travelled and gave demonstrations.",
+      "\"What makes phrenology such an instructive historical case,\" explained Dr. Margaret Soames, a historian of science, \"is not that it was wrong — many scientific hypotheses are wrong. What makes it instructive is how readily intelligent people accepted it as true. The intellectual elite invested considerable time in developing the theory.\"",
+      "The practice offered something powerfully attractive: an objective, measurable system for evaluating human character. In an age of nascent scientific rigour, it seemed entirely plausible. The problem was that it was based on a false premise.",
+      "By the latter 19th century, advances in neuroscience and more rigorous experimental methods began to undermine phrenology's credibility. The theory could not withstand careful scrutiny. By the early 20th century, it had been almost entirely abandoned by the scientific establishment.",
+      "\"The lesson of phrenology,\" Dr. Soames reflected, \"is that even systematic methodology cannot overcome a flawed foundational premise. What they lacked was a correct theory to test.\""
+    ],
+    "pullQuote": "What they lacked was a correct theory to test.",
+    "tags": [
+      "based-on-truth",
+      "pseudoscience",
+      "discredited-practice"
+    ]
+  },
+  {
+    "id": "sci-n-rays",
+    "category": "Science",
+    "headline": "French Physicist Announces Discovery of Novel Radiation; Phenomenon Proves Illusory",
+    "standfirst": "In 1903, René Blondlot, a respected French physicist, announced the discovery of a new form of radiation, which he designated 'N-rays'. Laboratories across Europe reported confirming the phenomenon. A few years later, the American physicist Robert Wood conducted a simple test and revealed the entire discovery to be illusory.",
+    "byline": "By Alexander Rutherford, Physical Sciences Correspondent",
+    "location": "PARIS",
+    "published": "2026-07-13T08:30:00Z",
+    "body": [
+      "René Blondlot was a respected experimental physicist at the University of Nancy, a man of considerable reputation and scientific standing. In 1903, he published a paper announcing the discovery of a new form of radiation, which he believed to exist at wavelengths shorter than X-rays. He termed this phenomenon 'N-rays.'",
+      "The properties of N-rays, as Blondlot described them, were extraordinary. The radiation could be produced by heating bodies. It could be focused with prism and lens. It could be detected by observing the increased brightness of a phosphorescent screen in its presence. The discovery seemed to open new vistas.",
+      "Remarkably — and this is where the phenomenon becomes particularly instructive — laboratories across Europe reported confirming Blondlot's discovery. French laboratories confirmed it first, naturally, but German and British laboratories also published results consistent with the hypothesis.",
+      "\"What occurred,\" explained Professor David Harrow, a physicist and historian of science, \"was a classic case of confirmation bias combined with desire to please an established authority. Blondlot was a respected figure. He had announced an exciting discovery. Scientists at other laboratories believed that they had seen what they expected to see.\"",
+      "Enter Robert Wood, an American physicist of considerable rigour and scepticism. In 1904, Wood visited Blondlot's laboratory and observed the experiments. He was, diplomatically, unconvinced.",
+      "Wood conducted a test of extraordinary simplicity. During an experiment in which assistants were reporting the detection of N-rays, Wood removed a key component — the prism that was essential to the apparatus. The scientists continued to report detection of rays that were, in fact, no longer present.",
+      "\"The removal of the prism destroyed the entire theoretical edifice,\" noted Professor Harrow. \"If the scientists could detect N-rays when the prism was absent, then the rays were not real. What they had been observing was an expectation made manifest through the human inclination to see what one expects to see.\"",
+      "Blondlot's reputation suffered a reversal almost unprecedented in scientific history. The N-rays were entirely illusory. Nearly all reports of their detection were either deliberate fraud or honest misinterpretation."
+    ],
+    "pullQuote": "The scientists continued to report detection of rays that were no longer present.",
+    "tags": [
+      "based-on-truth",
+      "scientific-delusion",
+      "hoax"
+    ]
+  },
+  {
+    "id": "sci-carrington-event",
+    "category": "Science",
+    "headline": "Massive Solar Storm Unleashes Aurora Visible Near Equator; Telegraph Systems Overwhelmed",
+    "standfirst": "On 1 September 1859, the most severe geomagnetic storm in recorded history swept across the Earth. Aurora borealis displays were visible at latitudes as far south as the Caribbean. Telegraph systems across the Northern Hemisphere sparked, shocked operators, and occasionally continued functioning without their batteries.",
+    "byline": "By Professor Theodore Ashton, Meteorology Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T10:45:00Z",
+    "body": [
+      "On 1 September 1859, two English astronomers — Richard Carrington and Richard Hodgson — independently observed a brilliant white light on the surface of the sun. It was an unusual phenomenon, lasting several minutes. They could not have known that they were witnessing a solar event that would, within approximately eighteen hours, overwhelm the magnetic field of the Earth.",
+      "That night, and through the following day, the most severe geomagnetic storm in recorded history commenced. Aurora displays erupted across the globe. In areas where auroras were common — Scandinavia, Canada, northern Scotland — the displays were extraordinarily brilliant.",
+      "Most remarkably, auroras were reported as far south as Hawaii. In Cuba and the Caribbean, northern observers reported seeing auroral glow. The phenomenon was so unexpected, so unprecedented, that it was remarked upon in newspapers and scientific journals with considerable wonder.",
+      "\"What made the Carrington Event particularly significant,\" explained Professor Margaret Winters, a solar physicist, \"was not the aurora itself — remarkable though it was — but the effect on man-made electrical systems. The telegraph network had not existed during previous great solar storms.\"",
+      "Telegraph operators reported extraordinary phenomena. Sparks jumped from the apparatus. Electrical shocks were delivered to operators — painful but apparently not lethal. Most remarkably, some telegraph systems continued to function even after their batteries had been disconnected.",
+      "Some telegraph operators, according to contemporary reports, continued to transmit messages during the storm, apparently driven by the electrical energy of the disturbance itself. One message was reportedly transmitted from Boston to England with remarkable clarity, despite the complete disconnection of conventional battery power.",
+      "\"The geomagnetic storm had induced sufficient electrical current in the telegraph wires that the apparatus could function without external power,\" noted Professor Winters. \"For several hours, the Earth's magnetic field was supplying the power to the telegraph network.\""
+    ],
+    "pullQuote": "The Earth's magnetic field was supplying the power to the telegraph network.",
+    "tags": [
+      "based-on-truth",
+      "solar-storm",
+      "aurora"
+    ]
+  },
+  {
+    "id": "sci-radium-craze",
+    "category": "Science",
+    "headline": "Radioactive Element Enters Consumer Market; Marketed as Health Enhancement",
+    "standfirst": "In the early 20th century, following Pierre and Marie Curie's discovery of radium, the element became fashionable among manufacturers and consumers alike. Radium was incorporated into cosmetics, tonics, toothpastes, and novelties. It was promoted as a restorative. Only gradually did the scientific community recognise the danger.",
+    "byline": "By Dr. Helena Goodwin, Science Correspondent",
+    "location": "NEW YORK",
+    "published": "2026-07-13T12:00:00Z",
+    "body": [
+      "The discovery of radioactivity and the isolation of radium in the early 1900s was heralded as one of the great triumphs of modern science. Marie and Pierre Curie became international celebrities. Radium was discussed in newspapers, scientific journals, and popular magazines.",
+      "To a population becoming accustomed to technological marvels — electric lighting, X-rays, wireless telegraphy — radium seemed to promise yet another revolution. And the properties of radioactivity, which were not yet fully understood, seemed to suggest almost limitless potential.",
+      "Manufacturers recognised an opportunity. Radium was incorporated into consumer products. 'Radium water' was marketed as a tonic, claimed to cure rheumatism, arthritis, gout, and various other conditions. Radium-infused cosmetics promised to restore youth and vigour. Radium toothpaste claimed to provide exceptional dental health.",
+      "\"The radium craze was driven by a combination of genuine scientific excitement and capitalist opportunism,\" explained Dr. Samuel Hartley, a historian of science and medicine. \"Radium was real. It did produce extraordinary effects. The problem was that no one understood the mechanism, and therefore no one recognised the danger.\"",
+      "The dangers emerged gradually. Workers in radium-processing plants began reporting unusual symptoms — anaemia, bone problems, tissue damage. Scientists began measuring radiation levels in the environment and in consumers. By the 1920s and 1930s, the evidence had become impossible to ignore.",
+      "The regulatory response was slow. Radium products remained on the market for years after the dangers were well understood by the scientific community. Only gradually did prohibitions emerge. By the 1930s, radium had been removed from most consumer products.",
+      "\"What strikes us about the radium craze,\" reflected Dr. Hartley, \"is how readily we embraced something new and powerful without understanding it. We trusted manufacturers, and trusted that if something was being sold, it must be safe. It is a lesson worth remembering.\""
+    ],
+    "pullQuote": "Radium was not a restorative. It was a poison.",
+    "tags": [
+      "based-on-truth",
+      "marketing-craze",
+      "radioactivity"
+    ]
+  },
+  {
+    "id": "wld-great-stink",
+    "category": "World",
+    "headline": "Parliament's Summer Made Unbearable by Thames Effluvium; Reform Finally Enacted",
+    "standfirst": "The summer of 1858 in London was exceptionally warm. The Thames — the principal receptacle for the city's raw sewage — reached a concentration of filth so extraordinary that Parliament itself, sitting beside the river, became functionally uninhabitable. The crisis finally moved the British government to action.",
+    "byline": "By Charles Worthington, Social Affairs Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T09:00:00Z",
+    "body": [
+      "London in the mid-19th century was a city strangled by its own success. The population had grown to over two million souls. The infrastructure — the sewage systems, the water supplies, the waste management — had not grown proportionally. The Thames had become less a river than an open sewer.",
+      "Summer of 1858 was unusually warm. The temperature rose repeatedly into the 90s. Heat magnifies the volatilisation of organic compounds. The stench emanating from the Thames became so profound that it transcended the usual categories of unpleasantness.",
+      "Members of Parliament found themselves unable to remain in their chambers. The smell penetrated the very fabric of the building. Windows, opened to admit fresh air, only invited more of the noxious effluvium. The smell was described as 'beyond all precedent, an assault upon the senses.'",
+      "\"The remarkable thing about the Great Stink,\" explained Dr. Frederick Hampton, a historian of London, \"is that it had existed for decades. The Thames had been accumulating sewage for generations. What changed was not the degree of pollution, necessarily, but the weather.\"",
+      "Finally, unable to tolerate the conditions, Parliament moved to act. Joseph Bazalgette, the Chief Engineer of the Metropolitan Board of Works, had proposed a comprehensive solution — a great network of sewers that would collect effluent from across the city and discharge it downstream.",
+      "But the Great Stink changed priorities. Parliament, confronted with the reality of sitting in a room that smelled of 2.5 million people's excrement, became suddenly enthusiastic about Bazalgette's plan. Funding was authorised. Construction commenced.",
+      "\"Bazalgette's solution was elegant,\" noted Dr. Hampton. \"Rather than attempting to make the Thames clean, he simply removed the sewage from the Thames by collecting it and transporting it elsewhere. London became cleaner.\""
+    ],
+    "pullQuote": "Parliament became suddenly enthusiastic about the plan.",
+    "tags": [
+      "based-on-truth",
+      "victorian-london",
+      "infrastructure"
+    ]
+  },
+  {
+    "id": "wld-cardiff-giant",
+    "category": "World",
+    "headline": "Ten-Foot Petrified Man Excavated in New York; Skeptics Question Authenticity",
+    "standfirst": "In October 1869, workers digging a well on a farm near Cardiff, New York, uncovered what appeared to be a massive fossilised humanoid figure — approximately ten feet in length, apparently preserved in stone. The discovery was exhibited and drew enormous crowds. Later investigation revealed it to be an elaborate hoax.",
+    "byline": "By Theodore Chambers, Curiosities Correspondent",
+    "location": "NEW YORK",
+    "published": "2026-07-13T14:15:00Z",
+    "body": [
+      "The discovery, in October 1869, seemed momentous. Workers excavating a well struck a massive stone figure, apparently a human form ten feet in length, carved with impressive detail. The giant was removed carefully, and word spread rapidly. A 'petrified man' had been discovered.",
+      "The crowds began to arrive almost immediately. Visitors paid admission to see the giant. Hotels in the surrounding region became full. Journalists travelled to cover the phenomenon. For a brief, peculiar moment, Cardiff, New York became the centre of international attention.",
+      "The scientific community was divided. Some experts examined the figure and pronounced it likely fossilised human remains of extraordinary antiquity. Others examined it and pronounced it likely a hoax of recent manufacture. The evidence was ambiguous.",
+      "\"The Cardiff Giant occupied a peculiar space between credibility and fraud,\" explained Professor Robert Ashford, a historian of scientific delusion. \"On one hand, it was obviously a carved figure. On the other hand, who among the observers really wanted to believe that the extraordinary spectacle they had paid money to see was a fraud?\"",
+      "The figure was eventually exposed as a hoax perpetrated by a wealthy businessman — George Hull — who had commissioned the carving and arranged its burial and 'discovery' as an elaborate prank.",
+      "And yet — the crowds did not entirely disperse. P.T. Barnum, the great showman, obtained permission to display a replica of the Cardiff Giant in his museums. Crowds continued to visit. The figure that had been exposed as fraudulent continued to attract visitors.",
+      "\"There is something remarkable about the persistence of the Cardiff Giant myth,\" reflected Professor Ashford. \"After it had been entirely exposed as a hoax, people still came to see it. They knew it was false. They came anyway.\""
+    ],
+    "pullQuote": "They knew it was false. They came anyway.",
+    "tags": [
+      "based-on-truth",
+      "hoax",
+      "spectacle"
+    ]
+  },
+  {
+    "id": "wld-the-turk",
+    "category": "World",
+    "headline": "Mechanical Chess-Playing Automaton Tours Europe; Defeats All Challengers for Decades",
+    "standfirst": "Since 1770, a mechanical 'automaton' purporting to be a machine capable of playing chess at a sophisticated level has toured Europe, defeating leading players and baffling audiences. Recent investigation suggests the machine has been secretly operated by a concealed human chess master.",
+    "byline": "By Edward Blackmore, Automata Correspondent",
+    "location": "VARIOUS EUROPEAN CITIES",
+    "published": "2026-07-13T16:30:00Z",
+    "body": [
+      "The Turk — so named for the figure of a turbaned automaton visible atop the device — was constructed in 1770 and exhibited throughout Europe for nearly a century. The machine consisted of a chess-playing automaton of life-like proportions, operated (supposedly) by internal clockwork mechanisms of extraordinary sophistication.",
+      "The appeal was immediate. Here was a machine that could think — that could calculate, strategise, and play chess at a level of skill comparable to or exceeding that of human masters. It defeated leading players. It baffled audiences with its apparent sophistication.",
+      "\"The Turk captivated audiences because it seemed to prove something extraordinary,\" explained Professor James Hartwell, a historian of technology. \"It suggested that human intellect itself might be mechanised — that cognition could be reproduced through gears, springs, and clockwork.\"",
+      "And all of it was false. The Turk was not a machine in any meaningful sense. It was an elaborate cabinet, and hidden within that cabinet was a human chess master — sometimes a different master as the machine travelled, but always a concealed human operator.",
+      "The deception was maintained for decades. Investigators occasionally attempted to prove the hoax, peering beneath the cabinet or examining its internal mechanisms. The operators responded by modifying the design, providing alternate explanations, or occasionally even involving the investigating authorities.",
+      "\"What is remarkable about the Turk,\" noted Professor Hartwell, \"is not merely that it was fraudulent — many period exhibitions involved fraud. What is remarkable is the scale of the deception and its persistence. Hundreds of people examined the machine. Dozens of investigators attempted to expose it.\"",
+      "The Turk continued to tour until its ultimate destruction in a fire in 1854. Its secret was revealed only after its destruction — at which point the question became academic rather than practical.\""
+    ],
+    "pullQuote": "We wanted to believe in a machine that could think. So we believed.",
+    "tags": [
+      "based-on-truth",
+      "hoax",
+      "automaton"
+    ]
+  },
+  {
+    "id": "wea-laki-eruption",
+    "category": "Weather",
+    "headline": "Icelandic Fissure Eruption Blankets Europe in Sulphurous Fog; Strange Atmospheric Phenomena Reported",
+    "standfirst": "In 1783, the Laki fissure eruption in Iceland released vast quantities of sulphurous gas into the atmosphere. The 'dry fog' spread across Europe, producing blood-red suns, withered crops, unusual chill, and widespread dread. Scientists, including Benjamin Franklin, speculated about the phenomenon's cause.",
+    "byline": "By Professor William Sinclair, Meteorology Correspondent",
+    "location": "ICELAND",
+    "published": "2026-07-13T17:45:00Z",
+    "body": [
+      "In June 1783, a fissure in the Laki region of Iceland opened and began to erupt, releasing lava flows and, more significantly, enormous quantities of sulphurous gas. The eruption continued for approximately eight months, discharging an estimated 120 million tonnes of sulphur dioxide into the atmosphere.",
+      "In Europe, thousands of miles distant, the phenomenon became apparent. A peculiar haze — colourless but unmistakable — began to spread across the continent. It was unlike the typical fog or mist. It was a 'dry fog,' as it came to be called — atmospheric moisture was apparently not the source.",
+      "The consequences were profound. The sun, viewed through the haze, appeared blood-red rather than its normal yellow. Crop failures were reported across Europe. Temperatures dropped — unusually cool weather persisted through the summer months. Livestock became ill.",
+      "\"People believed the world was ending,\" explained Dr. Martin Ashworth, a historian of atmospheric science. \"The unusual appearance of the sun, the failing crops, the strange chill — these were interpreted as omens of catastrophe. Religious authorities warned of divine punishment.\"",
+      "Scientists, however, attempted to ascertain the cause. One of those investigating the phenomenon was Benjamin Franklin, then residing in France as a diplomat. Franklin examined the haze and proposed a theory: the atmospheric disturbance was caused by a massive eruption, probably in Iceland.",
+      "\"Franklin's hypothesis was remarkable for its time,\" noted Dr. Ashworth. \"He proposed that a volcanic eruption at a great distance could produce atmospheric effects across the continent. This was not obvious from the perspective of 18th-century science.\"",
+      "The Laki eruption eventually exhausted itself, and the atmospheric haze gradually dispersed. Crops recovered. Temperatures normalised. But for those who lived through that strange summer, the memory persisted — of a world temporarily disordered, of a sun that was not quite right."
+    ],
+    "pullQuote": "The sun appeared blood-red rather than its normal yellow.",
+    "tags": [
+      "based-on-truth",
+      "volcanic-eruption",
+      "atmospheric-phenomenon"
     ]
   }
 ];
