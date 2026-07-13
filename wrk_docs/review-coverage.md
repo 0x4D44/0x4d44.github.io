@@ -89,7 +89,7 @@
 | model-welfare/ | (never) |
 | morning-run/ | (never) |
 | nettles/ | (never) |
-| news/ | (never) |
+| news/ | 2026-07-13 |
 | onu/ | (never) |
 | opus-verdict/ | (never) |
 | paint-drying/ | (never) |
