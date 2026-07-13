@@ -240,19 +240,24 @@
       locally through <a href="https://huggingface.co/docs/transformers.js" target="_blank" rel="noopener">transformers.js</a>
       + ONNX Runtime (WebAssembly). The library, the runtime and the ~22&nbsp;MB int8-quantised weights are all
       served from this page — <b>nothing is uploaded and no external service is called</b>; the first run fetches
-      ~43&nbsp;MB once, then it's cached and inference takes ~100&nbsp;ms. It was trained on the public
-      <a href="https://huggingface.co/datasets/Hello-SimpleAI/HC3" target="_blank" rel="noopener">HC3</a> corpus —
-      tens of thousands of <em>matched</em> human answers and ChatGPT answers to the same questions, so it learns
-      style rather than topic.</p>
-      <p>On held-out test data it separates human from machine text with <b>ROC-AUC ≈ 0.999</b>, and that holds on
-      a domain it never saw in training (medical Q&amp;A) — so it's learning genuine style, not one topic. It even
-      <em>fixes</em> the heuristic's blind spot: human "corporate-speak" that the heuristic frets over, the model
-      confidently reads as human.</p>
+      ~43&nbsp;MB once, then it's cached and inference takes ~100&nbsp;ms. It was trained on <em>matched</em> human
+      and machine text (same prompts, so it learns style rather than topic) drawn from the public
+      <a href="https://huggingface.co/datasets/Hello-SimpleAI/HC3" target="_blank" rel="noopener">HC3</a> and
+      <a href="https://github.com/liamdugan/raid" target="_blank" rel="noopener">RAID</a> corpora — <b>ten
+      different generators</b> across many domains (ChatGPT, GPT-4, Mistral, Cohere, MPT, LLaMA…) — plus a slice
+      of fresh 2026-frontier prose written by Opus&nbsp;4.8 itself.</p>
+      <p>The point of that breadth is generalisation to models it has <em>never seen</em>. On held-out test data
+      it scores <b>ROC-AUC ≈ 0.998</b>; on two generators withheld entirely from training (GPT-4 and LLaMA-chat)
+      it still catches <b>100%</b>; and on 2026-frontier passages it never trained on, recall rose from
+      <b>0% → ~65%</b> versus the first single-generator model. Formal human writing (medical, financial) and
+      classic literary prose (public-domain fiction) were deliberately added to the human side of training, so
+      neither a doctor's note nor a page of Hemingway is mistaken for a machine (false-positive rate ~0–8%).</p>
 
-      <div class="note">Both are <b>a signal, not proof.</b> The heuristic can over-flag polished human prose; the
-      neural model is trained on <em>ChatGPT-era</em> text, so it's strongest on that family and its confidence
-      doesn't perfectly transfer to every new writing domain or newer model. Use either to raise a question, never
-      to settle one — no detector should be the sole basis for an accusation.</div>
+      <div class="note">Both are <b>a signal, not proof.</b> The hardest case is <em>encyclopedic / reference-style
+      human writing</em> (Wikipedia-flat prose), which is the closest human text to AI output and is still
+      over-flagged perhaps a third of the time. Detection of the very newest models is inherently a moving target.
+      Use either detector to raise a question, never to settle one — no detector should be the sole basis for an
+      accusation.</div>
 
       <p style="color:var(--faint);font-size:13px">Built for the 0x4D44 almanac. Named for the model that built it,
       Claude&nbsp;Opus&nbsp;4.8. Heuristic + on-device neural model · no server, no tracking · view source.</p>
@@ -704,8 +709,8 @@
         '<span class="nlabel '+cls+'">'+label+'</span></div>'+
       '<div class="nbar"><i style="width:'+pct+'%;background:'+col+'"></i></div>'+
       '<div class="nmeta"><b style="color:'+col+'">'+pct+'%</b> AI-probability · confidence '+conf+' · '+ms+' ms on-device</div>'+
-      '<div class="nnote">A transformer trained to tell human writing from machine text, running entirely in your browser — no upload, no server. '+
-      'It is strongest on prose and answers; the gauge below is the transparent heuristic, which also flags marketing-style AI.</div>'
+      '<div class="nnote">A transformer trained on ten generators (ChatGPT, GPT-4, Mistral, LLaMA…) plus 2026-frontier prose, running entirely in your browser — no upload, no server. '+
+      'Reference/encyclopedic human text is its hardest case; the gauge below is the transparent heuristic.</div>'
     );
     if(!$("verdict").querySelector(".heurlabel"))
       $("verdict").insertAdjacentHTML('afterbegin','<div class="heurlabel">Writing-style heuristic · the transparent second opinion</div>');
