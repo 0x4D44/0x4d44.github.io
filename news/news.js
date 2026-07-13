@@ -17,7 +17,8 @@
   // Fixed category order for the nav / sections.
   var CATEGORY_ORDER = [
     "World", "Aviation", "Maritime", "Engineering",
-    "Science", "Technology", "Business", "Health", "Sport", "Weather"
+    "Science", "Technology", "Business", "Health", "Sport", "Weather",
+    "Lifestyle"
   ];
 
   // -------- category art metadata (colour + icon path) --------
@@ -31,7 +32,8 @@
     Business:    { c1: "#12603a", c2: "#0b3f26", icon: "chart" },
     Health:      { c1: "#a12b46", c2: "#6f1c30", icon: "health" },
     Sport:       { c1: "#155e2b", c2: "#0d3d1c", icon: "trophy" },
-    Weather:     { c1: "#3a5a8a", c2: "#243a5c", icon: "cloud" }
+    Weather:     { c1: "#3a5a8a", c2: "#243a5c", icon: "cloud" },
+    Lifestyle:   { c1: "#b0357e", c2: "#761f54", icon: "sparkle" }
   };
   function catMeta(cat) { return CAT[cat] || { c1: "#555", c2: "#333", icon: "gear" }; }
 
@@ -59,7 +61,8 @@
     health: '<path d="M180 70 h40 v40 h40 v40 h-40 v40 h-40 v-40 h-40 v-40 h40 Z"/>',
     globe: '<circle cx="200" cy="128" r="80" fill="none" stroke-width="7"/><g fill="none" stroke-width="6"><ellipse cx="200" cy="128" rx="34" ry="80"/><line x1="120" y1="128" x2="280" y2="128"/><line x1="132" y1="90" x2="268" y2="90"/><line x1="132" y1="166" x2="268" y2="166"/></g>',
     trophy: '<path d="M164 70 h72 v34 a36 36 0 0 1 -72 0 Z"/><path d="M164 78 h-22 a22 22 0 0 0 22 22" fill="none" stroke-width="8"/><path d="M236 78 h22 a22 22 0 0 1 -22 22" fill="none" stroke-width="8"/><rect x="190" y="132" width="20" height="26"/><rect x="168" y="158" width="64" height="16"/>',
-    cloud: '<path d="M150 168 a34 34 0 0 1 4 -67 a44 44 0 0 1 84 8 a30 30 0 0 1 -4 59 Z"/><g stroke-width="7"><line x1="160" y1="184" x2="150" y2="204"/><line x1="200" y1="184" x2="190" y2="204"/><line x1="240" y1="184" x2="230" y2="204"/></g>'
+    cloud: '<path d="M150 168 a34 34 0 0 1 4 -67 a44 44 0 0 1 84 8 a30 30 0 0 1 -4 59 Z"/><g stroke-width="7"><line x1="160" y1="184" x2="150" y2="204"/><line x1="200" y1="184" x2="190" y2="204"/><line x1="240" y1="184" x2="230" y2="204"/></g>',
+    sparkle: '<path d="M200 66 L216 112 L262 128 L216 144 L200 190 L184 144 L138 128 L184 112 Z"/><path d="M282 82 L289 102 L309 109 L289 116 L282 136 L275 116 L255 109 L275 102 Z"/><circle cx="128" cy="170" r="7"/>'
   };
 
   // -------- deterministic hashing / PRNG --------

@@ -8753,5 +8753,1205 @@ window.NEWS_ARTICLES = [
       "time",
       "communities"
     ]
+  },
+  {
+    "id": "life-grounding-stone-400-pounds",
+    "category": "Lifestyle",
+    "headline": "The £400 stone that promises to reconnect you with the earth",
+    "standfirst": "A wellness label has sold out of a hand-selected 'grounding stone' that experts, and gravity, confirm is a rock.",
+    "byline": "By Saskia Merrilees, Wellness Correspondent",
+    "location": "NOTTING HILL",
+    "published": "2026-07-13T08:20:00",
+    "body": [
+      "There is a waitlist, this summer, for a rock. Specifically, for the Ærth Stone — a smooth grey pebble, ethically gathered, individually numbered, and priced at £400 — which its makers say will restore the ancient connection between the modern person and the ground beneath them.",
+      "\"We have lost our tether to the earth,\" explained brand founder Orsino Vale, cradling a stone in both hands as though it might bolt. \"You hold the Ærth Stone. You feel its weight — its history, its patience, its calm. And slowly, you remember what it is to be here. Truly here.\"",
+      "Each stone arrives in a linen pouch, accompanied by a 40-page booklet, a certificate of origin, and instructions advising the owner to hold it, regard it, and — crucially — not lose it. Geologists consulted by this newspaper confirmed that the object is a stone. Pressed further, they confirmed that it is, specifically, a stone.",
+      "The reviews are rapturous. \"I was scattered, anxious, adrift,\" wrote one buyer. \"Now I hold my stone each morning and I feel centred, present, and £400 poorer, which is itself a kind of grounding.\" Another described it simply as \"the most expensive thing I own that I could also have found\".",
+      "Mr Vale is unbothered by the observation that the beach is free. \"Anyone can pick up a stone,\" he said. \"Not everyone can pick up this stone, on this waitlist, with this booklet. What we sell is not the rock. The rock is complimentary. What we sell is permission to slow down — and permission, unlike stones, has never been free.\"",
+      "A second product, the Ærth Stone Companion — a smaller stone to keep the first one company — is already sold out. \"They do better in pairs,\" Mr Vale said, with the serene confidence of a man who has understood something about the rest of us.",
+      "The stones, for the record, are not returnable. \"Once a stone has met its person,\" the booklet explains, \"it cannot go back to being just a stone. Neither, we hope, can you.\""
+    ],
+    "pullQuote": "The most expensive thing I own that I could also have found.",
+    "tags": [
+      "wellness",
+      "shopping",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-guru-stopped-using-verbs",
+    "category": "Lifestyle",
+    "headline": "Wellness guru attributes inner peace to giving up verbs",
+    "standfirst": "A bestselling mindfulness author says removing all action words from his speech has left him calmer, stiller and largely incomprehensible.",
+    "byline": "By Tarquin Ollerenshaw, Mind and Body Correspondent",
+    "location": "MALIBU",
+    "published": "2026-07-13T08:05:00",
+    "body": [
+      "The wellness author Bodhi St Clair has not knowingly used a verb in eleven months, and says he has never felt better — a claim he was, by his own rules, unable to phrase in quite that way.",
+      "\"Verbs — doing, striving, always the next thing,\" he said, gesturing at the ocean from a chair he had reached by means he declined to describe. \"Peace, not in the doing. Peace in the being. Actually, not even the being. Being is a verb. Peace simply... in.\"",
+      "St Clair's philosophy, set out in his new book Merely (which contains no verbs and, consequently, no sentences), holds that action words are \"the engine of anxiety\" and that by removing them a person can dwell entirely in a calm and unmoving present.",
+      "The result is a manner of speech that admirers describe as profound and everyone else describes as a man listing nouns. \"The stillness. The now. The breath, the light, the wide soft everything,\" he offered, when asked how his day had been. His retreat, at £3,000 a week, is fully booked.",
+      "Linguists are divided, in the sense that they all agree. \"A verb is how a sentence does anything at all,\" said one, wearily. \"Without them you are not enlightened. You are just a gift shop.\" St Clair, when this was put to him, smiled and said only: \"Judgement. Also a verb.\"",
+      "His followers are devoted, serene, and increasingly hard to make plans with. \"He taught me — well, not taught, teaching is doing,\" said one, trailing off into a peace so complete that the interview simply ended.",
+      "Asked where the philosophy leads, St Clair considered the horizon for a long moment. \"Onward,\" he said, then caught himself, and said nothing further, which he clearly considered the better answer."
+    ],
+    "pullQuote": "Without them you are not enlightened. You are just a gift shop.",
+    "tags": [
+      "wellness",
+      "celebrity",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-subscription-to-silence",
+    "category": "Lifestyle",
+    "headline": "Start-up launches monthly subscription to silence, at £29 a month",
+    "standfirst": "For a recurring fee, subscribers receive nothing — no emails, no calls, no product — in what the company calls 'the last true luxury'.",
+    "byline": "By Saskia Merrilees, Consumer Trends Correspondent",
+    "location": "SHOREDITCH",
+    "published": "2026-07-13T07:50:00",
+    "body": [
+      "A London start-up has begun charging people £29 a month for silence — an arrangement under which the subscriber pays, and in return receives, with absolute reliability, nothing whatsoever.",
+      "The service, called Hush, sends no newsletter, makes no calls, ships no box and offers no app. \"Everything else in your life is trying to reach you,\" said founder Coralie Ashdown. \"We are the one company that has solemnly promised never to. You pay us, and we leave you alone. Forever. It is, we believe, the last true luxury.\"",
+      "Subscribers report high satisfaction, in part because there is nothing to be dissatisfied with. \"I have never once been contacted,\" said one member, audibly moved. \"No offers, no updates, no ‘we've missed you'. In a world that will not stop talking, someone is finally, gloriously not.\"",
+      "The premium tier, Hush Gold, costs £80 a month and delivers a richer, more comprehensive silence, distinguishable from the standard silence chiefly by the amount paid for it. A concierge line exists but has, by design, no number.",
+      "Critics have pointed out that ignoring people is available at no cost. Ms Ashdown was unmoved. \"Free silence is just being ignored,\" she said. \"Paid silence is being respected. The difference is £29, and our members feel it every single day they hear from no one.\"",
+      "Cancellation is possible but discouraged, on the grounds that leaving would require the company to contact you, thereby breaking the very promise you are paying it to keep. \"We would rather you simply stopped paying and drifted away,\" Ms Ashdown said. \"Quietly. As is our whole philosophy.\"",
+      "Asked whether the business model was, in essence, taking money for doing nothing, she paused for a length of time that felt deliberate. \"Yes,\" she said. \"Beautifully.\""
+    ],
+    "pullQuote": "Free silence is just being ignored. Paid silence is being respected.",
+    "tags": [
+      "shopping",
+      "wellness",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-actor-forgot-he-is-actor",
+    "category": "Lifestyle",
+    "headline": "Method actor prepares for role by forgetting he is an actor",
+    "standfirst": "In pursuit of total authenticity, a celebrated performer has spent eight months genuinely unaware that he is making a film.",
+    "byline": "By Dominic Frayle, Screen Correspondent",
+    "location": "LOS ANGELES",
+    "published": "2026-07-13T07:35:00",
+    "body": [
+      "The acclaimed method actor Rex Hallingham has reached what colleagues describe as the furthest frontier of his craft: to play a man who is not an actor, he has arranged to genuinely forget that he is one.",
+      "For his role as an ordinary accountant, Hallingham reportedly instructed his team to remove all evidence of his career — the awards, the posters, the residual cheques — and to never, under any circumstances, remind him that a film is being made. \"You cannot play a real person while knowing you are pretending,\" he explained, unaware that he was being interviewed for a newspaper. \"So I stopped knowing.\"",
+      "The production has adapted around him. Cameras are concealed. Co-stars maintain that they are his actual colleagues at an actual firm. He believes, sincerely and completely, that he is an accountant named Gerald, and by every account he is doing Gerald's job to a competent, faintly uninspired standard.",
+      "\"The performance is extraordinary because it is not a performance,\" said the director, speaking in a whisper from behind a filing cabinet. \"He is not playing a bored man doing tax returns. He is a bored man doing tax returns. We simply point the camera and try not to be discovered.\"",
+      "There are complications. Hallingham has begun to worry about Gerald's mortgage — which does not exist — and has, twice, tried to attend a parents' evening for children who are props. The studio considers these signs of a total, committed, award-worthy immersion. His family considers them something else.",
+      "The plan, insofar as there is one, is to gently inform him he is an actor once shooting wraps. \"We are told it will come as a considerable surprise,\" the director said. \"He has, after all, a whole life now. A desk. A stapler he is fond of. We are, in a sense, going to have to fire Gerald.\"",
+      "Hallingham, for his part, is content. \"I don't know what these film people keep photographing,\" he said, filing a return. \"But I've a four o'clock, so it'll have to wait.\""
+    ],
+    "pullQuote": "He is not playing a bored man doing tax returns. He is a bored man doing tax returns.",
+    "tags": [
+      "celebrity",
+      "lifestyle",
+      "fashion"
+    ]
+  },
+  {
+    "id": "life-artisanal-cornish-air-jars",
+    "category": "Lifestyle",
+    "headline": "Small-batch Cornish air now available in jars, £18 each",
+    "standfirst": "A coastal wellness brand is bottling fresh sea air for city dwellers, hand-gathered at dawn and sold, sealed, for the price of a light lunch.",
+    "byline": "By Saskia Merrilees, Wellness Correspondent",
+    "location": "ST IVES",
+    "published": "2026-07-13T07:20:00",
+    "body": [
+      "For the landlocked, the harried and the merely wealthy, relief has arrived in a jar. A Cornish brand has begun selling fresh sea air — gathered by hand at dawn, sealed on the clifftop, and shipped to cities at £18 a jar.",
+      "The air, marketed as Breath of Kernow, is collected each morning in small batches by a team who open the empty jars to the wind, wait, and then close them with what the label describes as \"intention\". Buyers are instructed to open a jar slowly, inhale deeply, and \"let Cornwall in\".",
+      "\"City air is tired, recycled, second-hand,\" said founder Morwenna Trewin, standing on a headland holding an open jar aloft. \"This is first-breath air — clean, salted, alive. You unscrew the lid and for one moment you are here, with us, on the cliff. Then, admittedly, you are back in Croydon. But what a moment.\"",
+      "A single jar contains, by volume, roughly one lungful. Premium variants include Storm Air, gathered in rough weather and \"more bracing\", and a Sunrise Reserve collected in the first ten minutes of daylight, which sells out instantly at £34.",
+      "Sceptics note that air is, in most respects, freely available. \"That is exactly the problem,\" Ms Trewin replied. \"Free air, you don't notice. You gulp it, you waste it, you take it entirely for granted. Pay £18, and suddenly — you breathe like it matters. We are not selling air. We are selling attention.\"",
+      "Customers appear to agree. \"I keep one on my desk for stressful meetings,\" said a buyer in Manchester. \"I open it, I breathe, I imagine the sea. Is it just air? Yes. Does it work? Also, somehow, yes.\"",
+      "The empty jars, once used, can be returned to Cornwall to be refilled. \"Nothing is wasted,\" said Ms Trewin. \"Least of all,\" she added, sealing another, \"the air.\""
+    ],
+    "pullQuote": "We are not selling air. We are selling attention.",
+    "tags": [
+      "wellness",
+      "shopping",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-popstar-trademarked-shade-of-tired",
+    "category": "Lifestyle",
+    "headline": "Pop star trademarks a specific shade of tired",
+    "standfirst": "The singer known as VÉLA has secured exclusive rights to a particular quality of exhaustion, and will pursue anyone who feels it without licence.",
+    "byline": "By Dominic Frayle, Music and Style Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T06:55:00",
+    "body": [
+      "The pop star VÉLA, already the owner of a trademarked pout and a patented way of arriving late, has now secured legal rights to a specific shade of tired — a precise blend of glamorous fatigue that she says is hers, and hers alone.",
+      "The registered exhaustion, described in filings as \"a luminous weariness, wistful yet expensive-looking\", covers the exact expression VÉLA wears in her videos: heavy-lidded, faintly tragic, and suggestive of a woman who has been somewhere you have not. Her lawyers have confirmed they will act against imitators.",
+      "\"People think tired is free. Tired is not free,\" said VÉLA, reclining with trademarked precision. \"Anyone can be exhausted. Only I can be this exhausted — softly, beautifully, on brand. When you see it, you think of me. That is a trademark. That is my face doing a job.\"",
+      "The claim has alarmed the merely sleepy. \"I was told my resting expression may infringe,\" said one commuter, who now practises looking alert on public transport to avoid a letter. \"Apparently there is a licensed way to be knackered, and mine is too close to hers.\"",
+      "Intellectual property experts are sceptical that one can own a mood. VÉLA's representatives disagree, pointing to her forthcoming fragrance, Fatiguée, and a cosmetics line designed to help ordinary women achieve \"the look of someone who has given up, but chicly\".",
+      "Rivals have been warned. A younger singer who appeared \"dangerously drained\" at an awards show received, within hours, a cease-and-desist. \"She knows what she did,\" VÉLA said. \"You do not get to be that tired in public. Not that tired. Not without me.\"",
+      "The trademark is understood to be valid worldwide, in perpetuity, and in all lighting. \"Rest,\" VÉLA concluded, closing her eyes with evident ownership, \"is intellectual property now. Sleep accordingly.\""
+    ],
+    "pullQuote": "People think tired is free. Tired is not free.",
+    "tags": [
+      "celebrity",
+      "fashion",
+      "beauty"
+    ]
+  },
+  {
+    "id": "life-candle-smells-of-having-life-together",
+    "category": "Lifestyle",
+    "headline": "Candle that smells of 'having your life together' sells out in hours",
+    "standfirst": "A £52 scented candle promising the aroma of competence, calm and a tidy inbox has become the season's most coveted object.",
+    "byline": "By Saskia Merrilees, Home and Interiors Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T06:40:00",
+    "body": [
+      "It comes in a heavy amber glass, costs £52, and claims to smell of something no one has ever quite managed to bottle before: having your life together. The candle, called Sorted, sold out within hours of launch and now commands a waitlist of thousands.",
+      "The scent is described by its makers as \"top notes of clean laundry and answered emails, a heart of freshly hoovered carpet, and a warm base of quiet financial security\". Lighting it, the label promises, fills a room with \"the calm of a person who has never once lost their keys\".",
+      "\"Everyone wants to feel like they've got it handled — organised, on top of things, serene,\" said the brand's founder, Petra Lindqvist. \"Most of us never will. But you can smell like you have. You light Sorted, you close your eyes, and for a few hours your flat smells like the life you meant to have.\"",
+      "Customers describe the effect as powerful and slightly painful. \"I lit it while crying over my overdraft,\" one reviewer wrote, \"and my studio flat filled with the scent of a woman who does yoga at six and has a filing system. It was aspirational. It was devastating. Five stars.\"",
+      "The range is expanding. Companion scents include Almost There (\"the smell of a to-do list two items from done\") and, for the ambitious, Thriving, a limited edition so expensive that buying it, the label concedes, would itself set your life back somewhat.",
+      "Detractors call it selling people a feeling they already pay rent to lack. Ms Lindqvist embraced the charge. \"Of course we are,\" she said. \"That is the entire candle industry. We have simply been honest about which feeling.\"",
+      "A reed-diffuser version, for continuous exposure, is due in autumn. \"Some people,\" Ms Lindqvist noted, \"need to smell sorted all the time. Those,\" she added gently, \"are our very best customers.\""
+    ],
+    "pullQuote": "You light Sorted, and for a few hours your flat smells like the life you meant to have.",
+    "tags": [
+      "shopping",
+      "lifestyle",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-influencer-monetised-sleeping",
+    "category": "Lifestyle",
+    "headline": "Influencer becomes millionaire by broadcasting herself asleep",
+    "standfirst": "With eleven million followers watching her do nothing at all, a content creator has turned eight hours of unconsciousness into the most restful career online.",
+    "byline": "By Dominic Frayle, Digital Culture Correspondent",
+    "location": "LOS ANGELES",
+    "published": "2026-07-13T06:25:00",
+    "body": [
+      "The influencer known as Dreamie has cracked a problem that has defeated content creators since the dawn of the medium: how to make money while doing absolutely nothing. Her solution is to broadcast herself, nightly, fast asleep.",
+      "Each evening, eleven million people tune in to watch Dreamie sleep — a still, softly lit figure beneath expensive linen, occasionally turning over to sponsored applause. The stream, titled simply Rest With Me, has made her, at 24, one of the highest-earning creators in the country.",
+      "\"Everyone online is performing, hustling, grinding — always on, always doing,\" she said, awake, which was disorienting for all present. \"I offer the opposite. I offer stillness. I offer peace. I offer, essentially, a person you can watch not achieving anything, so you feel less alone in also not achieving anything.\"",
+      "Brands have flocked to her, quite literally, mattress. She has partnerships with a pillow company, a herbal-tea label, and a firm selling blackout blinds, each woven seamlessly into a broadcast in which she is, throughout, unconscious. \"The engagement is incredible,\" said one marketing executive. \"She never says anything off-message. She never says anything at all.\"",
+      "Critics call it the logical endpoint of a culture that will watch anything. \"They're not wrong,\" Dreamie conceded. \"But name another job where the key performance indicator is being asleep by eleven. I am the healthiest influencer alive. I have to be. It's the whole product.\"",
+      "There are hazards. A bout of insomnia last spring was, professionally, a catastrophe. \"I couldn't sleep, so I couldn't work, so I lay there filming myself lying there awake and anxious about not sleeping,\" she said. \"The numbers were terrible. Nobody wants to watch you fail at the one thing.\"",
+      "She is now developing a daytime spin-off. \"It's me,\" she explained, \"having a nap.\""
+    ],
+    "pullQuote": "Name another job where the key performance indicator is being asleep by eleven.",
+    "tags": [
+      "influencer",
+      "celebrity",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-water-read-poetry-before-bottling",
+    "category": "Lifestyle",
+    "headline": "Luxury water brand reads poetry to its water before bottling",
+    "standfirst": "A £24 bottle of still mineral water is now 'emotionally prepared' by trained readers, who recite verse to it for structural and spiritual benefit.",
+    "byline": "By Saskia Merrilees, Wellness Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T06:10:00",
+    "body": [
+      "There is water, and then there is water that has been read to. A new luxury brand, Versé, is charging £24 a bottle for still mineral water that has, before sealing, been recited poetry by a rota of trained readers — an act it claims improves the water's structure, clarity and mood.",
+      "\"Water listens,\" said Versé's founder, Anouk Delacroix, standing beside a tank into which a man in a cardigan was gently reading Keats. \"It holds intention. It remembers. We read it the great poets — the tender ones, the still ones, the ones about longing — and the water carries that feeling to you. You do not just drink Versé. You drink what it heard.\"",
+      "Each batch is labelled with the poem it was exposed to. The flagship still water is read Romantic verse; a sparkling variant is read \"something livelier\"; and a limited midnight edition is read nothing at all, but is simply sat with, in companionable silence, by a reader paid to appreciate it.",
+      "Scientists consulted for this article confirmed that reading to water does not alter it in any measurable way, and that the water remains, throughout, water. Ms Delacroix was untroubled. \"Science measures the water,\" she said. \"We are not selling the water. We are selling the reading.\"",
+      "Buyers report a genuine sense of occasion. \"I know it's just water,\" said one. \"But I pour a glass of the Keats batch, and I do drink it more slowly, more thoughtfully, more — I suppose — poetically. For £24, it had better be a whole experience, and somehow I make sure it is.\"",
+      "The brand is expanding into water read business self-help books, aimed at \"the ambitious professional\", though early testers found it \"tasted stressed\". A version read bedtime stories, for children, is in development.",
+      "\"People ask if the water can really hear,\" Ms Delacroix said, sealing a bottle with reverence. \"And I ask them: can you prove that it can't?\""
+    ],
+    "pullQuote": "You do not just drink Versé. You drink what it heard.",
+    "tags": [
+      "wellness",
+      "luxury",
+      "shopping"
+    ]
+  },
+  {
+    "id": "life-minimalist-owns-one-friend",
+    "category": "Lifestyle",
+    "headline": "Extreme minimalist pares life down to one of everything, including one friend",
+    "standfirst": "An influential declutterer says true peace comes from owning a single example of each thing — one plate, one chair, one relationship.",
+    "byline": "By Tarquin Ollerenshaw, Living Correspondent",
+    "location": "COPENHAGEN",
+    "published": "2026-07-12T17:40:00",
+    "body": [
+      "The minimalist and author Jonas Kvist owns one of everything. One plate. One chair. One spoon. One jumper. And, since a rigorous cull last spring, one friend.",
+      "\"Duplication is clutter, and clutter is noise,\" Kvist explained from his famously empty apartment, seated on his chair while his guest stood. \"Why own two plates? You are one person. Why keep many friends, scattering your attention, dividing your loyalty, cluttering your heart? Choose one. The best one. And be fully present with them.\"",
+      "The friend, a man named Piotr, confirmed the arrangement with what observers described as complicated feelings. \"I am his one friend,\" Piotr said. \"It is an honour. It is also a great deal of pressure. If he had two of us, I could have an off day. As it is, I am the entire category.\"",
+      "Kvist's philosophy, set out in his book One, has a devoted following of people who have since reduced their possessions, their wardrobes, and in several reported cases their social circles to a single cherished item. \"I gave away everything and everyone but the essentials,\" wrote one reader. \"I have never felt lighter. Lonelier, but lighter.\"",
+      "He concedes there are inconveniences. When his one plate is in the dishwasher, he cannot eat. When his one friend is busy, he has, by definition, no others. \"This is not a flaw,\" Kvist insisted. \"It is the discipline. Abundance is easy. Anyone can have spare plates and spare people. It takes courage to have exactly enough.\"",
+      "Piotr, asked whether he might one day be decluttered himself, went quiet. \"He says I am an essential,\" he offered eventually. \"But then, so was the second chair, until it wasn't.\"",
+      "Kvist has no plans to acquire a second friend. \"Two friends,\" he said, with a small shudder, \"is where it all begins to fall apart.\""
+    ],
+    "pullQuote": "If he had two of us, I could have an off day. As it is, I am the entire category.",
+    "tags": [
+      "lifestyle",
+      "celebrity",
+      "wellness"
+    ]
+  },
+  {
+    "id": "life-weighted-blanket-for-opinions",
+    "category": "Lifestyle",
+    "headline": "New weighted blanket designed to calm not the body but your opinions",
+    "standfirst": "A wellness firm has launched a heavy throw that it says settles overactive views, strong takes and the urge to reply, for £140.",
+    "byline": "By Saskia Merrilees, Wellbeing Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-12T16:30:00",
+    "body": [
+      "The weighted blanket, long used to soothe anxious bodies, has been reimagined for a more modern affliction: the overactive opinion. A new £140 throw, the Quieting Blanket, promises to settle not your limbs but your views.",
+      "\"We live in an age of takes — hot takes, strong takes, takes on takes,\" said its designer, Fenella Rooke. \"Everyone has a view, urgently, at all times. The Quieting Blanket applies gentle, even pressure until the need to share yours simply... subsides. You wrap yourself in it, and slowly you find you no longer need to reply to anything.\"",
+      "The blanket, which is heavier at the shoulders \"where opinions gather\", is marketed to the chronically online and the argumentative. Users report a marked reduction in the compulsion to correct strangers. \"I used to reply to everything,\" said one. \"Now I put on the blanket, I feel the weight, and the thought ‘well actually' just quietly dies. It's the calmest I've been since 2019.\"",
+      "The company is careful to stress the blanket does not remove opinions, only the pressing need to broadcast them. \"You still think things,\" Ms Rooke clarified. \"You simply stop announcing them to people who did not ask. It is, frankly, a service to everyone around you as much as to yourself.\"",
+      "A premium version, the Debate Ender, is weighted heavily enough to suppress even a firmly held political view, and comes with a warning not to operate machinery, vote, or attend family gatherings while wrapped. \"It is very effective,\" Ms Rooke conceded. \"Perhaps too effective. We recommend the standard weight for anyone who still needs to have a personality.\"",
+      "Sceptics wonder whether the world needs a device to make people quieter. \"You have clearly,\" Ms Rooke replied, \"never read the comments.\"",
+      "The blanket is machine washable, which the company notes is more than can be said for most opinions."
+    ],
+    "pullQuote": "You still think things. You simply stop announcing them to people who did not ask.",
+    "tags": [
+      "wellness",
+      "shopping",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-reclusive-actor-spokesperson-of-spokesperson",
+    "category": "Lifestyle",
+    "headline": "Reclusive star now communicates only through his spokesperson's spokesperson",
+    "standfirst": "An A-list actor's retreat from public life has reached the point where his statements pass through two representatives, neither of whom has met him.",
+    "byline": "By Dominic Frayle, Screen Correspondent",
+    "location": "LOS ANGELES",
+    "published": "2026-07-12T15:15:00",
+    "body": [
+      "The famously private actor Marlon Ashcombe has become so reclusive that he now communicates with the world exclusively through his spokesperson's spokesperson — a chain of representation so long that, insiders concede, no message has reached the public unaltered in years.",
+      "Ashcombe, who has not been seen in public since 2021, employs a primary spokesperson to speak to a secondary spokesperson, who speaks to the press. The actor himself, the arrangement holds, must never be contacted, glimpsed, or directly quoted. \"Mr Ashcombe values his privacy,\" said the secondary spokesperson, who has never met him, relaying a sentiment from the primary spokesperson, who also has not.",
+      "The system has an elegant, unfalsifiable quality. Because no journalist can reach the actor, no statement can be checked; and because each message passes through two intermediaries, it acquires, by the end, a dreamlike vagueness. A recent update — that Ashcombe was \"well, and possibly gardening\" — could not be confirmed, denied, or traced to any original source.",
+      "\"There is a real question,\" said one entertainment reporter, \"of whether anyone in the chain has actually spoken to him this decade. The primary spokesperson refers all questions upward. Upward, as far as we can tell, is a locked room and a rumour.\"",
+      "Fans find the mystery thrilling. Colleagues find it convenient. \"You can attribute almost anything to a man no one can reach,\" noted one director. \"He is either the most private star in Hollywood or the most successful piece of scheduling ever devised. We may never know, and that, I suspect, is the point.\"",
+      "The spokesperson's spokesperson insists Mr Ashcombe is real, active, and content. Asked how she knew, she paused. \"I'm told,\" she said, \"by someone who is told.\"",
+      "A third spokesperson, to relay messages to the second, is reportedly under consideration — at which point, experts agree, the actor will have achieved a privacy so complete as to be indistinguishable from absence."
+    ],
+    "pullQuote": "He is either the most private star in Hollywood or the most successful piece of scheduling ever devised.",
+    "tags": [
+      "celebrity",
+      "lifestyle",
+      "fashion"
+    ]
+  },
+  {
+    "id": "life-digital-detox-brick",
+    "category": "Lifestyle",
+    "headline": "Best-selling 'digital detox device' revealed to be a brick",
+    "standfirst": "A £75 gadget promising freedom from screens has topped wellness charts on the strength of being, on close inspection, an ordinary brick.",
+    "byline": "By Saskia Merrilees, Technology and Wellbeing Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T14:05:00",
+    "body": [
+      "The year's most successful wellness gadget does not connect to anything, does not charge, and does not switch on — because it is, its makers cheerfully confirm, a brick.",
+      "The Unplug, which retails at £75, is a single clay brick in a linen sleeve, sold as \"the ultimate digital detox device\". Owners are instructed to hold the brick whenever they feel the urge to check their phone, on the principle that a hand full of brick cannot also be full of phone.",
+      "\"Every other detox product is, ironically, another screen — an app to stop you using apps,\" said founder Rafferty Doyle. \"We went the other way. The Unplug has no software, no battery, no notifications. It has mass. It has heft. It has the profound, grounding quality of being an actual brick. And it works, because you cannot doomscroll while holding a brick. We checked.\"",
+      "Reviews are strong. \"I was cynical,\" wrote one buyer. \"Then I held the brick during dinner instead of my phone, and I was present for the first time in years. It is a brick. I paid £75 for a brick. I have never made a better purchase, and I would very much rather not examine why.\"",
+      "The company offers a range. The Unplug Mini is a smaller brick for travel; the Unplug Pro is a heavier brick \"for serious addiction\"; and a forthcoming premium edition is a brick reclaimed from a demolished Victorian chapel, \"for a detox with soul\", at £220.",
+      "Critics have observed that bricks are widely available at hardware shops for pennies. \"So is enlightenment,\" Mr Doyle replied, serenely. \"People still pay for the version with the nice box and someone telling them it will help. We are that box, and that someone. The brick is just the delivery mechanism.\"",
+      "Asked if he felt any guilt, Mr Doyle weighed the question, and a brick. \"None,\" he said. \"It's the most honest product I've ever sold. It is exactly what it appears to be, which in this industry makes it practically a miracle.\""
+    ],
+    "pullQuote": "You cannot doomscroll while holding a brick. We checked.",
+    "tags": [
+      "shopping",
+      "wellness",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-chef-tasting-menu-one-grape",
+    "category": "Lifestyle",
+    "headline": "Celebrated chef's new tasting menu is a single grape, discussed at length",
+    "standfirst": "At £180 a head, diners at the season's hardest reservation receive one grape and forty minutes of context.",
+    "byline": "By Tarquin Ollerenshaw, Food Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T13:20:00",
+    "body": [
+      "The chef Ludo Marchetti, long celebrated for his restraint, has unveiled his most minimal work yet: a tasting menu consisting of one grape, served to each guest after a lengthy and reverent introduction, for £180.",
+      "The evening begins with the diner being seated in near silence. Over the following forty minutes, a server describes the grape — its vineyard, its hillside, its particular morning of picking, its hopes — before, at last, presenting it. The guest eats the grape. The evening, essentially, concludes.",
+      "\"We have all had a thousand grapes and tasted none of them,\" Marchetti said, gravely. \"I give you one. Just one. But I give you everything about it — the soil, the sun, the story — so that when you finally eat it, you eat all of it. You taste, for once in your life, an actual grape. Most people cry. Some ask for a second, which we do not permit. There is only the one. That is the point.\"",
+      "Reactions are polarised. \"It was the most profound meal of my life, and I was starving by nine,\" said one diner. \"I have thought about that grape every day since. I have also thought about the £180, and the pizza I bought on the way home.\"",
+      "The restaurant, Uva, seats eight, opens two nights a week, and has a waitlist measured in months. A more elaborate menu, available on request, offers two grapes \"in dialogue\", though Marchetti discourages it as \"greedy, and rather missing the point\".",
+      "Critics accuse him of serving pretension in place of food. \"They said the same,\" he replied, \"when I served the single pea. And the lone crouton, which some still speak of. History has been kind to my subtractions.\"",
+      "He is already at work on his next menu, which he describes, with quiet intensity, as \"the idea of a grape, without the grape\". Reservations, inevitably, are full."
+    ],
+    "pullQuote": "I have thought about that grape every day since. I have also thought about the £180.",
+    "tags": [
+      "food",
+      "celebrity",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-notebook-forbidden-to-write-in",
+    "category": "Lifestyle",
+    "headline": "£300 luxury notebook comes with strict instruction never to write in it",
+    "standfirst": "A design house has released a leather-bound journal so beautiful, it says, that marking it would be a tragedy — and sales are soaring.",
+    "byline": "By Saskia Merrilees, Design Correspondent",
+    "location": "MILAN",
+    "published": "2026-07-12T12:00:00",
+    "body": [
+      "A luxury stationery house has produced a £300 notebook of such exquisite construction that its makers implore owners, in a printed card, never to write in it under any circumstances.",
+      "The notebook, called the Intatto (Italian for \"untouched\"), is hand-bound in soft calf leather around 200 pages of thick, cream, deckle-edged paper — paper so perfect, the accompanying note explains, that \"the first mark would be a wound\". Buyers are encouraged instead to hold it, admire it, and keep it pristine forever.",
+      "\"A notebook you write in becomes a used notebook — cluttered, imperfect, spent,\" said creative director Lucia Bramante. \"A notebook you never write in remains, eternally, pure potential. It could contain your finest thoughts. It contains them best by containing nothing. This is not a notebook for writing. It is a notebook for possibility.\"",
+      "The product has struck a chord with a certain kind of buyer — the aspirational, the perfectionist, the person with many beautiful pens and a deep reluctance to ruin anything. \"I have seven of them,\" one collector admitted. \"All blank. All flawless. I could not possibly write in them. What if the thought wasn't good enough for the page? This way, the page is never disappointed.\"",
+      "The company offers accessories: a stand to display the unused notebook, a glass case to protect it from ambition, and a companion pen, also not to be used, sold separately at £120. A refill service exists for customers who wish to replace their blank notebook with a fresher blank notebook.",
+      "Psychologists have gently suggested that a notebook exists to be written in. \"So does a life,\" Ms Bramante answered, \"and look how carefully most people avoid it. We are simply honest about the impulse. Our customers do not want to write. They want to have been about to.\"",
+      "A cheaper line, for those who might one day weaken, comes with a lock. \"For your own protection,\" Ms Bramante said. \"The temptation to begin can be overwhelming. We would hate for anyone to spoil it.\""
+    ],
+    "pullQuote": "It is not a notebook for writing. It is a notebook for possibility.",
+    "tags": [
+      "shopping",
+      "luxury",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-supermodel-retired-to-become-lighthouse",
+    "category": "Lifestyle",
+    "headline": "Supermodel retires from fashion to 'become a lighthouse'",
+    "standfirst": "After two decades on the runway, the model known as Solveig has withdrawn to a Scottish headland to pursue what she calls a career in standing still and shining.",
+    "byline": "By Dominic Frayle, Style Correspondent",
+    "location": "CAPE WRATH",
+    "published": "2026-07-12T11:10:00",
+    "body": [
+      "The supermodel Solveig, for twenty years a fixture of the world's catwalks, has announced her retirement from fashion to pursue an unexpected second act: she intends, she says, to become a lighthouse.",
+      "Speaking from a remote Scottish headland where she has taken up residence, Solveig explained that the two professions are more alike than they appear. \"For twenty years I stood beautifully in one place while people looked at me,\" she said. \"A lighthouse stands beautifully in one place while people look at it. I am not changing careers. I am refining one.\"",
+      "She has not, it should be clarified, purchased or become an actual lighthouse — a distinction her representatives were keen to draw. Rather, she has adopted what she terms \"a lighthouse practice\": rising with the light, standing on the cliff, and shining, in a spiritual sense, out to sea. \"I illuminate,\" she said. \"I warn. I endure. I am, in essence, operational.\"",
+      "The fashion world has responded with reverence. \"It is the most Solveig thing imaginable,\" said one designer, dabbing his eyes. \"She always had the stillness of a monument. Now she has simply removed the middleman of clothing and become the monument directly.\"",
+      "Her days, she reports, are structured and serene. She watches the horizon for eight hours. She turns, slowly, when she feels a ship might need her. She has begun to think of passing container vessels as \"her public\". A documentary crew that visited found her \"radiant, unmoving, and faintly damp\".",
+      "Sceptics have noted that she is, by any ordinary measure, a woman standing on a cliff. \"And a lighthouse,\" Solveig replied, \"is a building standing on a cliff. The difference between us narrows daily. I feel I am nearly there.\"",
+      "She has no plans to return to modelling. \"That was posing,\" she said, gazing seaward. \"This is service.\""
+    ],
+    "pullQuote": "I am not changing careers. I am refining one.",
+    "tags": [
+      "celebrity",
+      "fashion",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-luxury-pause-button",
+    "category": "Lifestyle",
+    "headline": "£600 desktop 'pause button' lets you stop your life for a moment, sort of",
+    "standfirst": "A sleek brass button does nothing when pressed, which its makers insist is precisely the luxury on offer.",
+    "byline": "By Saskia Merrilees, Design Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T10:20:00",
+    "body": [
+      "It is a heavy brass button on a marble base, it costs £600, and when you press it, nothing happens — which is, according to its makers, the entire and considerable point.",
+      "The object, called Pause, is marketed as \"a physical moment of stillness for the overwhelmed professional\". When life becomes too much, the owner presses the button, holds it down, and — for as long as their finger remains — is invited to consider themselves, symbolically, on hold. Releasing it resumes the day.",
+      "\"It does not control anything. It is not connected to anything. That is the luxury,\" said designer Émile Fontaine. \"Everything else on your desk does something — it beeps, it demands, it updates. Pause does nothing, beautifully, on request. You press it, and for one moment the world does not literally stop, but you agree, together with the button, to pretend that it has.\"",
+      "The button has become a fixture on the desks of the very busy and the very tired. \"I press it maybe forty times a day,\" said one executive. \"Nothing happens each time. But those are the only forty moments I take for myself. I have outsourced my breathing to a paperweight, and honestly, it was the best six hundred pounds I ever spent.\"",
+      "A premium model, Pause Noir, is finished in black marble and is \"quieter\", though it too does nothing. A travel version, the size of a coin, does the same nothing in the pocket. The company is at pains to note that no version, at any price, performs a function.",
+      "Consumer advocates have queried whether £600 for an inert button represents value. \"Compared to what?\" Mr Fontaine asked. \"A holiday you can't take? A therapist you can't get an appointment with? For £600 you get a small, permanent, tasteful invitation to stop — always available, never late, endlessly patient. It is the most reliable thing in most of our customers' lives.\"",
+      "The button carries a lifetime guarantee, which the company concedes is easy to honour. \"It cannot break,\" Mr Fontaine said. \"There is nothing in it to fail. Like all the best things,\" he added, pressing it, \"it simply is.\""
+    ],
+    "pullQuote": "I have outsourced my breathing to a paperweight, and honestly, it was the best six hundred pounds I ever spent.",
+    "tags": [
+      "shopping",
+      "luxury",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-biohacker-ages-backwards-on-paper",
+    "category": "Lifestyle",
+    "headline": "Biohacker announces he is now aging backwards, on paper",
+    "standfirst": "A tech millionaire's £2m longevity regime has succeeded in reducing his age, provided one accepts his own bespoke method of counting it.",
+    "byline": "By Tarquin Ollerenshaw, Health and Wellbeing Correspondent",
+    "location": "SILICON VALLEY",
+    "published": "2026-07-12T09:40:00",
+    "body": [
+      "The tech entrepreneur Chad Falkenrath, 48, has announced that he is now aging in reverse — a breakthrough he attributes to a £2m-a-year regime of supplements, sensors and discipline, and to a system of measuring his age that he devised himself.",
+      "Falkenrath's \"biological age\", according to his own proprietary index, is 31 and falling. The index draws on data from a battery of wearables, a team of nine, and a scoring formula that he owns, controls, and declines to publish. \"The calendar is a crude, outdated technology,\" he said, over a breakfast of eleven pills. \"It counts the days you've been alive. My index counts how alive you are. By that measure, I am getting younger. The numbers don't lie — and they're my numbers, so I would know.\"",
+      "His daily protocol is exacting: he rises at 4:30, exposes himself to precisely calibrated light, consumes a diet he describes as \"mostly information\", and sleeps according to a schedule optimised by algorithms he also owns. Every function of his body is logged, scored, and folded into the index that consistently reports him growing younger.",
+      "Independent scientists note that Falkenrath is, by the ordinary calendar, 48, and getting older at the standard rate of one year per year, like everyone. \"He is 48,\" one gerontologist said, flatly. \"He is a very well-rested 48. But the sun does not care about his dashboard.\"",
+      "Falkenrath is unmoved by such comparisons, which he attributes to jealousy and \"legacy thinking about time\". His followers, who pay for access to his protocols, report feeling younger, richer in data, and considerably poorer. \"I don't know if I'm actually aging backwards,\" said one. \"But my dashboard is green, and green feels like youth.\"",
+      "He plans, eventually, to reach a biological age of zero, at which point, he acknowledges, the model may require revisiting. \"We'll cross that bridge,\" he said, \"when the index tells me I'm ready. Which, at my current rate, will be about forty years ago.\"",
+      "He remains, the calendar notes without comment, 48."
+    ],
+    "pullQuote": "The numbers don't lie — and they're my numbers, so I would know.",
+    "tags": [
+      "wellness",
+      "celebrity",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-scented-nothing-diffuser",
+    "category": "Lifestyle",
+    "headline": "Luxury home brand launches a diffuser that is 'scented nothing'",
+    "standfirst": "A £90 fragrance for the home releases no scent at all, offering, its makers say, a rare moment of olfactory silence.",
+    "byline": "By Saskia Merrilees, Home and Interiors Correspondent",
+    "location": "PARIS",
+    "published": "2026-07-12T08:30:00",
+    "body": [
+      "In a market crowded with candles, oils and diffusers all clamouring to make a home smell of something, one luxury brand has taken a bold step in the opposite direction: a £90 reed diffuser that releases, deliberately, no scent whatsoever.",
+      "The product, called Rien (French for \"nothing\"), consists of elegant reeds standing in a bottle of odourless liquid, housed in beautiful glass. It fills a room with what its makers call \"a clean, considered absence\" — the luxury, they say, of a space that smells of nothing at all.",
+      "\"Every other home fragrance imposes itself — vanilla, fig, sea salt, always insisting,\" said the brand's creative lead, Margaux Vionnet. \"Rien is the opposite. It is a pause for the nose. In a world of relentless scent, we offer the rarest thing of all: nothing, on purpose, arranged beautifully. Your guests will not smell it. That is the achievement.\"",
+      "The diffuser has proved surprisingly popular among those exhausted by the sensory maximalism of the modern home. \"My house smelled of twelve competing candles,\" one buyer said. \"Now, thanks to Rien, one corner smells of nothing. It is the calmest part of my home. It cost me ninety pounds to achieve the exact smell of a clean, empty room, and I regret nothing, because there is nothing to regret.\"",
+      "Sceptics observe that an unscented room is, ordinarily, free. \"So is a blank wall,\" Ms Vionnet countered, \"until an artist frames it. We are framing the absence. We are giving you permission to notice, and to value, the nothing you were breathing anyway.\"",
+      "The range extends to a Rien candle, which produces a flame but no fragrance, and a Rien room spray that emits a fine, entirely odourless mist. A limited edition, Rien Intense, is described as \"an even deeper nothing\", and costs more.",
+      "\"People ask what it smells of,\" Ms Vionnet said, inhaling contentedly beside the reeds. \"And I tell them: exactly what you hoped. Nothing at all.\""
+    ],
+    "pullQuote": "It cost me ninety pounds to achieve the exact smell of a clean, empty room, and I regret nothing.",
+    "tags": [
+      "shopping",
+      "luxury",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-dj-plays-only-the-sea-remastered",
+    "category": "Lifestyle",
+    "headline": "Superstar DJ's new set consists entirely of the sea, remastered",
+    "standfirst": "A world-famous producer has filled arenas with a ninety-minute recording of the ocean, which he insists he has meaningfully improved.",
+    "byline": "By Dominic Frayle, Music Correspondent",
+    "location": "IBIZA",
+    "published": "2026-07-12T07:45:00",
+    "body": [
+      "The superstar DJ known as AZURE has unveiled the boldest set of his career: ninety minutes, before a sold-out arena, of the sound of the sea — which he has, he says, painstakingly remastered.",
+      "The performance consists of AZURE standing behind his equipment, headphones on, as a high-fidelity recording of waves plays across the vast sound system. He adjusts dials with great intensity. Occasionally he raises a hand, and the crowd, sensing a drop, roars as a slightly larger wave arrives.",
+      "\"People have listened to the sea for millions of years, on rubbish equipment — bad speakers, wind, seagulls ruining the mix,\" AZURE explained. \"I went into the studio and I remastered it. Warmer low end. Cleaner top. The tide, but tighter. This is the ocean as it was always meant to sound. Nature got it 90 per cent right. I did the last 10.\"",
+      "Fans describe the experience as transcendent. \"I paid £120, I stood in a field, and I listened to the sea through forty thousand watts,\" said one attendee, glowing. \"Could I have gone to an actual beach for free? I could. But the beach doesn't have AZURE nodding at it. That's what you're paying for. The endorsement.\"",
+      "Music critics are divided between those who call it a profound act of ambient artistry and those who call it a man charging admission to a recording of water. AZURE embraces both. \"The sea is the greatest track ever made,\" he said. \"I'm just the producer humble enough to admit I only mixed it.\"",
+      "His album, Tide (Remastered), features the sea in the morning, the sea at night, and a controversial club edit of the sea with a beat added, which purists have called \"a betrayal of the ocean's vision\". It debuted at number one.",
+      "A follow-up is planned. \"Rain,\" AZURE said, with quiet ambition. \"Nobody has really nailed rain. Until now.\""
+    ],
+    "pullQuote": "The tide, but tighter. Nature got it 90 per cent right. I did the last 10.",
+    "tags": [
+      "celebrity",
+      "influencer",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-mattress-judges-you-gently",
+    "category": "Lifestyle",
+    "headline": "New Luxury Mattress Judges You Gently As You Sleep, Makers Promise",
+    "standfirst": "The Reproach 900, a £6,200 orthopaedic mattress that emits soft, disappointed sighs at 3am, has sold out its first production run within nine hours.",
+    "byline": "By Persimmon Vale, Wellness Correspondent",
+    "location": "SHOREDITCH",
+    "published": "2026-07-12T07:14:00Z",
+    "body": [
+      "It arrives in a box the size of a small wardrobe and, according to its maker, in a spirit of unconditional but firm love. The Reproach 900 is the first mattress on the market designed not merely to support the spine but to hold the sleeper gently accountable for their life choices, using an array of embedded biometric sensors and what the company calls a \"tonal disapproval engine.\"",
+      "\"We didn't want a mattress that shouts at you,\" said Linden Ashby-Merrow, founder of the sleep-technology house Tercet & Loam. \"Shouting is vulgar. What we wanted was the sigh of a mother who has seen the state of your finances and your inbox and has decided, once again, to say nothing directly. That sigh, engineered into memory foam, is the future of rest.\"",
+      "The mattress tracks heart rate, movement and — via a companion app synced to the user's calendar — the number of unanswered emails accrued since bedtime. Around 2am, a barely perceptible vibration ripples through the mattress core, accompanied by a recorded murmur in the voice of veteran radio actress Cordelia Wrenfield, saying only: \"Mm. Well. You know best, I suppose.\"",
+      "Early adopters describe the effect as transformative. \"I used to sleep fine,\" said client Julius Pemberton-Hart, 41, an actuarial consultant. \"Now I sleep beautifully, but I wake at dawn with a profound sense that I have let someone down, and I don't know who. I've started a pension. I've called my sister. The result? I have never been more productive, or more quietly ashamed.\"",
+      "A spokesperson for the brand was keen to stress that the disapproval is never explicit. \"We don't tell you what you did wrong. That would be coarse. We simply let the silence do the work, the way a disappointed aunt does, or a Sunday afternoon in February. Self-care isn't selfish, but it does, apparently, need to know you missed your mother's birthday.\"",
+      "Not everyone is convinced. The Sleep Foundation of Great Britain issued a mild statement noting that \"a mattress ought not, ideally, to have opinions,\" though it stopped short of a formal warning. Tercet & Loam has responded by announcing a limited \"Encouragement Edition\" for 2027, which will apparently say nothing at all, for an additional £1,400.",
+      "Waitlist places for the standard Reproach 900 are now being offered for autumn delivery. As one satisfied owner put it, tucking herself in for the night: \"It's not judging me. It's just very good at making me judge myself. Honestly, it's cheaper than therapy, and it comes with a ten-year guarantee.\""
+    ],
+    "pullQuote": "That sigh, engineered into memory foam, is the future of rest.",
+    "tags": [
+      "wellness",
+      "luxury",
+      "shopping"
+    ]
+  },
+  {
+    "id": "life-novelist-forbidden-books",
+    "category": "Lifestyle",
+    "headline": "Britain's Most Revered Novelist Writes Books No One Is Allowed To Read",
+    "standfirst": "Edith Calloway-Fenn has published eleven acclaimed novels in fourteen years. Not one has ever been opened by a member of the public — and that, her admirers insist, is rather the point.",
+    "byline": "By Edmund Fairweather, Culture & Lifestyle Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T09:40:00Z",
+    "body": [
+      "There is a shelf in the window of Hollowmere & Grieve, the antiquarian booksellers on a quiet street off the Charing Cross Road, where eleven hardbacks sit in perfect, undisturbed rows. Each bears a gold-embossed title, a author's name — Edith Calloway-Fenn — and a small brass plaque reading, simply, NOT FOR READING. It is, by most measures, the most talked-about body of work in contemporary British fiction.",
+      "Calloway-Fenn, 58, has not permitted a single copy of her novels to be opened since her debut, The Unlit Room, was published to rapturous, entirely speculative reviews in 2012. Critics assess the books by weight, binding, and the density of the prose visible in silhouette when held up to a strong light. Three have won major literary prizes. None has a known plot.",
+      "\"People ask what it's about, and I find the question faintly embarrassing,\" Calloway-Fenn told us, in an interview conducted, per her custom, entirely about other subjects. \"A novel isn't a service you consume. It's a presence you respect. My readers understand this. My readers are, frankly, better than the ones who insist on reading things.\"",
+      "Her publisher, Aldous Threnody-Pike of Marrow & Bone, has built an entire imprint around the principle. \"We print a single sealed edition, we place it under museum glass, and we let the culture do the rest,\" he said. \"An inconvenient truth about literature is that most of it would be improved by nobody reading it. Edith has simply had the courage to formalise that.\"",
+      "The books command extraordinary prices at auction precisely because their contents remain unverifiable. A first edition of her fourth novel, Six Hundred Empty Rooms, sold last month for £340,000 to a private collector who described it, without irony, as \"the most honest book I own.\"",
+      "Academic interest has followed. A symposium at a redbrick university this autumn will convene forty scholars to discuss the novels' themes based entirely on their jacket copy, cover art, and the author's public silences. \"We are not naive,\" said the symposium's convenor. \"We know we cannot know. That is, we feel, rather beautiful.\"",
+      "Calloway-Fenn's twelfth novel is due next spring, under the same terms. Asked whether she ever worried that no one would ever actually read her work, she considered the question for a long moment. \"Let that sink in,\" she said finally, of nothing in particular, and returned, we assume, to writing."
+    ],
+    "pullQuote": "A novel isn't a service you consume. It's a presence you respect.",
+    "tags": [
+      "celebrity",
+      "lifestyle",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-bottled-small-talk-boutique",
+    "category": "Lifestyle",
+    "headline": "Boutique Sells Bottled Small Talk For The Socially Exhausted",
+    "standfirst": "Chit & Chaff, a new Notting Hill shop, offers pre-recorded pleasantries in small glass jars — weather remarks, traffic complaints, and gentle enquiries about one's weekend, all sold by the ounce.",
+    "byline": "By Araminta Fox, Shopping Correspondent",
+    "location": "NOTTING HILL",
+    "published": "2026-07-12T11:05:00Z",
+    "body": [
+      "On a cobbled mews behind the market, past the cold-pressed juice counter and the artisanal candle atelier, sits a shopfront with frosted windows and a single word etched in gold: Chit & Chaff. Inside, on floor-to-ceiling shelving, several hundred small glass jars hold what the shop describes as \"conversational filler of the very highest calibre,\" available for immediate consumption or gift-wrapping.",
+      "Each jar contains a tiny embedded speaker that, when uncorked, releases a single pre-recorded pleasantry — \"Ooh, is that new?\", \"Can you believe this weather?\", \"Busy one, isn't it?\" — voiced by a rotating cast of professional actors trained specifically in what the founders call \"warm, low-stakes affect.\"",
+      "\"Small talk is a skill, like the violin, and frankly most people play it appallingly,\" said co-founder Persephone Wick-Halloway, who conceived of the boutique after what she describes only as \"three consecutive dinner parties I did not survive emotionally.\" \"We bottle the effort so you don't have to make it. You simply open a jar, let it speak, and nod along. Nobody has ever once noticed.\"",
+      "The bestselling range, Lift Chatter, is aimed squarely at office workers who share confined vertical spaces with colleagues they do not wish to know better. A four-jar starter set — covering weather, weekend plans, parking, and a noncommittal remark about the news — retails at £68 and is, the shop claims, restocked weekly due to demand from \"a surprising number of extremely senior executives.\"",
+      "Bespoke commissions are also available, at £220 per jar, for those requiring small talk tailored to a specific relative, in-law, or landlord. \"We had one client request forty jars solely for use with her mother-in-law,\" said Wick-Halloway. \"She said it saved her marriage. We believe her. We choose to believe her.\"",
+      "Not everyone approves. A conversational-skills coach contacted for comment called the shop \"a symptom, not a solution,\" though she conceded she had personally purchased the Christmas Party bundle. Chit & Chaff, for its part, remains unbothered, small-batch, and fully booked for consultations until October.",
+      "As one regular customer put it, jar in hand, on her way out the door: \"I haven't said an original sentence to my neighbour in eight months. We've never been closer.\""
+    ],
+    "pullQuote": "We bottle the effort so you don't have to make it.",
+    "tags": [
+      "shopping",
+      "wellness",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-celebrity-consciously-re-coupling",
+    "category": "Lifestyle",
+    "headline": "Celebrity Couple Announce They Are 'Consciously Re-Coupling'",
+    "standfirst": "Actor Dashiell Marchmont and singer Wren Ostrovsky, who separated in a widely publicised 'conscious uncoupling' eighteen months ago, have confirmed they are getting back together — mindfully, and with a full support team.",
+    "byline": "By Tabitha Bloor, Celebrity Correspondent",
+    "location": "LOS ANGELES",
+    "published": "2026-07-12T14:22:00Z",
+    "body": [
+      "It was, by all accounts, an exceptionally graceful breakup. Dashiell Marchmont and Wren Ostrovsky's split eighteen months ago was handled with such ceremonial calm — a joint statement, a shared gratitude journal, a co-signed candle — that it became something of a template for the industry. Now, in a joint statement released via their respective wellness teams, the pair have announced they are reversing course, entirely on purpose, and entirely aware of themselves while doing it.",
+      "\"We are consciously re-coupling,\" the statement read, \"with full transparency, full accountability, and the full support of our individual healers, who remain on retainer throughout.\" A spokesperson clarified that the couple had not, technically, ever stopped being in each other's lives, but had simply been \"holding space apart\" while each pursued unrelated projects, several shared friends, and, in Marchmont's case, a documentary about the process of holding space apart.",
+      "\"This isn't a reconciliation,\" said the couple's joint relationship consultant, Dr. Faraday Whitlock-Enns, who has been present for both the uncoupling and the re-coupling and describes himself as \"essentially tenured\" at this point. \"A reconciliation implies a mistake was made. What Dash and Wren have done is complete an eighteen-month growth cycle and arrive, independently, at the same conscious decision. The result? Love, but audited.\"",
+      "Fans have reacted with a mixture of joy and mild exhaustion. \"I supported the uncoupling. I cried at the re-coupling announcement. I don't know what's happening but I've bought the commemorative candle for both,\" wrote one fan account with 2.1 million followers, in a post that was itself later described by Ostrovsky's team as \"a beautiful piece of parasocial growth work.\"",
+      "The couple's new joint venture, a twelve-part audio series titled Apart, Together, Apart, Together, launches next month and will document the re-coupling in real time, including what producers describe as \"at least one scheduled, mutually consented disagreement per episode, for authenticity.\"",
+      "Marchmont, for his part, insists the label matters. \"We're not back together. We're forward together,\" he told a red-carpet interviewer this week, to visible confusion. Ostrovsky, standing beside him, simply smiled and added: \"Make no mistake — this is the healthiest either of us has ever felt about doing exactly the same thing twice.\"",
+      "The pair are, sources confirm, already discussing a conscious re-uncoupling retreat for 2028, purely as a contingency. Self-care, as their spokesperson noted, isn't selfish. It is, however, apparently cyclical."
+    ],
+    "pullQuote": "The result? Love, but audited.",
+    "tags": [
+      "celebrity",
+      "lifestyle",
+      "wellness"
+    ]
+  },
+  {
+    "id": "life-artisanal-ice-cube-90-pounds",
+    "category": "Lifestyle",
+    "headline": "£90 Hand-Carved Artisanal Ice Cube Launches As Ultimate Wellness Object",
+    "standfirst": "Glacier & Grain, a Mayfair atelier, has begun selling single ice cubes carved by hand from Alpine spring water, marketed not for drinks but for quiet contemplation on the desk.",
+    "byline": "By Rupert Ashcombe-Wren, Style Correspondent",
+    "location": "MAYFAIR",
+    "published": "2026-07-12T16:48:00Z",
+    "body": [
+      "The cube arrives in a lined walnut box, nestled on a bed of dried lavender, accompanied by a small pair of white cotton gloves and a certificate of provenance. It is, unmistakably, ice — 4.2 centimetres to a side, faintly translucent, faintly cold — and it costs £90. Glacier & Grain, the atelier behind it, insists this is not a novelty. It is, they say, an object.",
+      "\"People assume ice is something you put in a drink and forget,\" said founder Solveig Marchbanks-Ott, who trained for two years under a Scandinavian ice sculptor before founding the label. \"Our cubes are hand-carved from single-origin Alpine spring water, frozen slowly over eleven days to eliminate internal fracturing, and finished by hand with a heated blade to achieve what we call 'contemplative clarity.' You are not meant to drink around this cube. You are meant to sit with it.\"",
+      "Each cube ships with a small brass tray designed to catch the meltwater over its roughly six-hour lifespan, which the brand describes as \"the cube's arc.\" Customers are encouraged to observe this arc in silence. A companion candle, scented to evoke \"the smell of a mountain that has recently lost something,\" is sold separately for £58.",
+      "Early buyers report profound effects. \"I placed it on my desk during a board call and simply watched it exist,\" said client Fenella Bardolph-Ives, a management consultant. \"By the time it had gone, so had my anxiety about the quarterly numbers. The numbers were still bad. I just minded less. That, to me, is luxury.\"",
+      "Critics have noted that the cube is, in essence, a very expensive piece of ice that melts. Marchbanks-Ott rejects the framing entirely. \"Everything melts. Everything ends. A £90 cube simply says the quiet part out loud, on your desk, for six beautiful hours,\" she said. \"An inconvenient truth about modern life is that we've stopped sitting with impermanence. We've just made impermanence retail at £21.50 an hour, which, frankly, is a bargain.\"",
+      "The atelier has confirmed a waitlist of over 900 names for its fully bespoke range, in which clients may request their cube be carved with a small internal motif — a monogram, a family crest, a single tear — visible only as the ice recedes.",
+      "Glacier & Grain's next release, a limited run of 40 cubes frozen during last winter's supermoon, sold out within four minutes. As one disappointed would-be buyer put it: \"I've never wanted an ice cube so badly in my life. I don't even like cold drinks.\""
+    ],
+    "pullQuote": "You are not meant to drink around this cube. You are meant to sit with it.",
+    "tags": [
+      "luxury",
+      "wellness",
+      "shopping"
+    ]
+  },
+  {
+    "id": "life-grounding-unpaid-invoices",
+    "category": "Lifestyle",
+    "headline": "Wellness Guru's Signature Practice: Grounding Barefoot On Your Own Unpaid Invoices",
+    "standfirst": "Self-styled 'financial shaman' Osric Fennimore has built a devoted following around a technique he calls Debt Grounding — standing barefoot each morning on a printed stack of one's own outstanding bills.",
+    "byline": "By Marigold Petts, Wellness Correspondent",
+    "location": "GLASTONBURY",
+    "published": "2026-07-12T08:55:00Z",
+    "body": [
+      "The retreat begins, as it always does, before dawn. Twenty-two participants, each holding a manila folder of their own unpaid invoices, gather barefoot on the frost-touched lawn behind a converted longhouse to await instruction from Osric Fennimore, the man behind the practice he has trademarked as Debt Grounding.",
+      "\"Grounding is ancient,\" Fennimore explained, addressing the group in a linen robe. \"Our ancestors stood on soil to draw its energy upward. We have simply updated the soil. Debt is the earth we actually live on. To stand on it barefoot — to feel the corner of a final reminder notice press into the arch of your foot — is to finally, honestly, meet your circumstances.\"",
+      "Each session runs ninety minutes and costs £340, plus a £45 \"printing fee\" for participants who did not bring their invoices in hard copy. Fennimore is emphatic that digital devices are not permitted during the ritual. \"You cannot ground yourself on a PDF,\" he said. \"There is no energetic weight to a PDF. Paper remembers. Paper has texture. Paper, frankly, has consequences.\"",
+      "Devotees describe transformative results. \"I hadn't opened my council tax letters in four months,\" said participant Bettina Loxwood-Frayne, a jewellery designer. \"After grounding, I opened all of them. I still owe the money. But I owe it, as Osric says, from a place of radical presence. The result? I've set up a payment plan and I've never felt more spiritually aligned.\"",
+      "Financial advisers contacted for this piece were less enthusiastic. One, speaking on condition of anonymity, called the practice \"deeply inadvisable\" and noted that standing on final demand notices does not, in fact, alter their due date. Fennimore was unmoved by the criticism. \"Conventional finance treats debt as a problem to be solved. I treat it as a teacher to be honoured — ideally underfoot, ideally at 6am, ideally for £340 a session.\"",
+      "The retreat's gift shop sells a limited-edition \"grounding mat\" printed to resemble a generic red final-reminder letter, for those without genuine debts of their own. It has, Fennimore notes with some pride, outsold everything else in the shop.",
+      "Bookings for the fully residential Debt Grounding weekend, which includes three group sessions and one \"individual reckoning,\" are open through the autumn. As Fennimore told departing guests this week: \"Self-care isn't selfish. Owing money barefoot, mindfully, in front of witnesses — that's simply self-care with paperwork.\""
+    ],
+    "pullQuote": "There is no energetic weight to a PDF.",
+    "tags": [
+      "wellness",
+      "influencer",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-wearable-sit-up-straight",
+    "category": "Lifestyle",
+    "headline": "New Wearable's Only Function Is To Say, Occasionally, 'Sit Up Straight'",
+    "standfirst": "The Posturon Ellipse, a £215 clip-on device with no screen, no app data beyond posture, and exactly one phrase in its vocabulary, has become the surprise hit of the wellness-tech season.",
+    "byline": "By Casper Ondine, Technology & Lifestyle Correspondent",
+    "location": "SHOREDITCH",
+    "published": "2026-07-12T13:10:00Z",
+    "body": [
+      "In an industry obsessed with doing more — tracking sleep stages, blood oxygen, stress variability, hydration, and, in one recent case, ambient room mood — the Posturon Ellipse has succeeded by doing spectacularly, defiantly little. Clipped to the collar, it monitors spinal angle via a single gyroscope and, when slouching is detected for more than four minutes, says one thing, in a mild, unhurried voice: \"Sit up straight.\"",
+      "That is the entire product. There is no companion app worth mentioning, no leaderboard, no integration with other wearables. \"We built forty prototypes with additional features and killed every single one,\" said inventor Wilhelmina Truscott-Pryce, a former posture physiotherapist turned entrepreneur. \"The moment you add a calorie count, you've ruined it. This device has one job. It does that job. Let that sink in.\"",
+      "The voice — recorded by a semi-retired continuity announcer — has become something of a minor cultural phenomenon, with clips of the phrase, delivered in varying tones of gentle reproach, circulating widely online. Truscott-Pryce says she auditioned eleven voice actors before settling on the current one. \"We needed someone who sounded like they cared but wouldn't ever, under any circumstances, offer to help you fix it.\"",
+      "Users report changed lives, largely because the device offers no off switch during working hours. \"It said it to me eleven times in one meeting,\" said early adopter Theodore Vance-Whitby, a corporate lawyer. \"By the ninth time I sat up so straight my colleagues asked if I was unwell. I've never billed more hours in better posture.\"",
+      "Physiotherapists have offered cautious praise, noting the device's total absence of features is, unusually, its chief clinical strength. \"Most posture tech drowns the user in data they can't act on,\" said one NHS consultant. \"This just tells you the one thing, repeatedly, in a mildly disappointed voice. It's almost primitive. It also, apparently, works.\"",
+      "Truscott-Pryce has confirmed a sequel device is in development, tentatively titled the Posturon Ellipse II, which will say the same phrase but, she promises, \"with even less enthusiasm.\" Pre-orders have already outpaced the original.",
+      "\"People keep asking what else it does,\" she said, closing our interview. \"Nothing. It does nothing else. That's the entire pitch. Sit up straight.\""
+    ],
+    "pullQuote": "The moment you add a calorie count, you've ruined it.",
+    "tags": [
+      "wellness",
+      "shopping",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-child-star-premium-silence",
+    "category": "Lifestyle",
+    "headline": "Former Child Star Reinvents Herself Selling Premium Silence",
+    "standfirst": "Once the face of a hit family sitcom, Marisol Devane has left acting entirely to found Hush House, a members-only wellness brand built around bottled, boxed, and bespoke silence.",
+    "byline": "By Ottoline Marsh, Celebrity Correspondent",
+    "location": "MALIBU",
+    "published": "2026-07-12T18:30:00Z",
+    "body": [
+      "For seven seasons, Marisol Devane was Poppy Ashgrove, the precocious middle child of a beloved family sitcom watched by millions. Today, at 29, she runs a company that sells nothing but the absence of sound, and she describes it, without apparent irony, as \"the most honest work I've ever done.\"",
+      "Hush House offers a tiered range of products, beginning with the £120 Starter Quiet — a sealed box containing, according to its packaging, \"forty-five minutes of premium untouched silence, ethically sourced from a decommissioned Welsh chapel\" — up to the £4,800 annual membership, which entitles clients to one hour a week inside an actual soundproofed \"quiet chamber\" at the brand's Malibu flagship.",
+      "\"Everyone spent my childhood asking me to talk, to perform, to have a line ready,\" Devane told us, seated in one of her own chambers, which she requested we experience in total silence for ninety seconds before the interview could proceed. \"Now I get to give people the thing nobody ever gave me. Quiet. Just quiet. No notes.\"",
+      "The brand has attracted a devoted, largely famous clientele, several of whom have taken to describing their weekly hour in the chamber as \"the only appointment I never cancel.\" One repeat client, a tech founder, called it \"more restorative than therapy, and considerably cheaper per minute, provided you don't think too hard about the maths.\"",
+      "Devane insists the silence is genuinely premium. \"We tested seventeen soundproofing materials before settling on the current build. This isn't the free silence you get at home, which is full of your fridge and your regrets. This is curated. This is silence with a provenance,\" she said. \"An inconvenient truth about most quiet is that it's cheap and it's everywhere. Ours isn't.\"",
+      "Sceptics have pointed out that silence, by definition, cannot be branded, packaged, or improved upon. Devane's response, delivered evenly and at some length, concluded simply: \"People said the same thing about bottled water.\"",
+      "Hush House's next launch, a travel-sized \"Silence To Go\" pouch retailing at £65, ships next month. Devane, for her part, has no plans to return to acting. \"I found my voice by taking it away entirely,\" she said, and then, true to form, said nothing further."
+    ],
+    "pullQuote": "This is silence with a provenance",
+    "tags": [
+      "celebrity",
+      "wellness",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-jar-pre-worried-worries",
+    "category": "Lifestyle",
+    "headline": "New Jar Of 'Pre-Worried Worries' Means You Needn't Bother",
+    "standfirst": "Fretwell & Sons, a small Bath apothecary, has launched a range of jarred worries — pre-fretted on the customer's behalf by trained professional worriers — so buyers can skip the anxiety entirely.",
+    "byline": "By Bartholomew Quince, Wellness Correspondent",
+    "location": "BATH",
+    "published": "2026-07-13T07:20:00Z",
+    "body": [
+      "On the high street's quieter end, past the fudge shop and the shop that sells only candles shaped like vegetables, Fretwell & Sons has opened its doors with a proposition so simple it borders on the philosophical: why worry yourself, when someone else already has?",
+      "Each jar of Pre-Worried Worries — £34 for a standard 200ml — contains, the label explains, \"one full cycle of anticipatory dread, professionally completed on your behalf, so that you may proceed unburdened.\" Flavours, as staff refer to them, include Career, In-Laws, Unclear Text Message, and the bestselling General Dread, a blend suited to no occasion in particular.",
+      "\"Worry is exhausting and, crucially, largely unproductive,\" said founder Hyacinth Fretwell, whose family has, she claims, \"worried professionally\" for three generations, previously as private consultants to the anxious wealthy. \"We employ a team of twelve trained worriers who sit with your specific concern — say, a big presentation — and worry about it exhaustively, for you, so you can walk in calm. We've done the spiralling already. You're welcome.\"",
+      "Customers report the effect is immediate. \"I had a jar of Unclear Text Message before replying to my landlord,\" said client Rosalind Cavendish-Wells. \"Normally I'd have refreshed my phone eleven times. This time, nothing. Someone else had already refreshed it, metaphorically, on my behalf, for three hours, so I didn't have to. The result? I slept. I never sleep before replying to my landlord.\"",
+      "Fretwell is candid that the worrying itself takes a toll on staff. \"Our worriers are highly trained and generously compensated,\" she said. \"They worry in shifts. We rotate them. It's intensive work, imagining catastrophe eight hours a day on behalf of strangers, but somebody has to do it, and frankly they're better at it than you are.\"",
+      "A limited Corporate Dread range, aimed at executives ahead of board meetings, launches next month at £89 a jar, with same-day delivery. Fretwell & Sons has also confirmed a bespoke commission service for those with unusually specific concerns, at a starting rate of £150 per worry.",
+      "\"People think we're selling nonsense,\" said Fretwell, sealing a fresh batch of General Dread. \"We're selling relief. Somebody, somewhere, has already worried about your gas bill today. It didn't have to be you. Let that sink in.\""
+    ],
+    "pullQuote": "We've done the spiralling already. You're welcome.",
+    "tags": [
+      "wellness",
+      "shopping",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-members-club-no-premises",
+    "category": "Lifestyle",
+    "headline": "Ultra-Exclusive Members' Club Has No Premises, No Address, No Way In",
+    "standfirst": "The Occlude Club, London's most sought-after new membership, has no clubhouse, no street entrance, and — its founders confirm — no confirmed method of entry, and that is entirely the appeal.",
+    "byline": "By Cordelia Winthrop-Hayes, Style Correspondent",
+    "location": "MAYFAIR",
+    "published": "2026-07-13T09:05:00Z",
+    "body": [
+      "There is no plaque. There is no door. There is, as far as any journalist has been able to establish, no building at all. And yet the waitlist for the Occlude Club — London's newest and, its founders insist, most exclusive private members' club — currently stands at 14,000 names, each attached to a £2,200 non-refundable application fee.",
+      "\"Every other club in this city defines itself by who it lets in,\" said co-founder Ferdinand Ashby-Quill, speaking to us via a voice note his assistant later described as \"probably genuine.\" \"We define ourselves by the fact that entry has never, in the club's eighteen-month history, actually occurred. No one has been admitted. No one has seen the premises. Some of our most devoted members aren't sure the premises exist, and that uncertainty is, frankly, the entire product.\"",
+      "Members receive a physical card, a quarterly newsletter describing events they were not invited to, and access to a private online forum where they may discuss, at length, their shared exclusion. \"It's the only club where the waiting list is the club,\" said member Aurelia Fitzwynne-Ossory, a hedge fund partner, who has paid membership dues for eleven months. \"I've made genuine friends purely through not getting in with them. There's a real bond there.\"",
+      "The club periodically issues cryptic communications suggesting an event may occur — a dress code, a time, a district of London — only to cancel, or simply fall silent, hours beforehand. \"We call it 'the almost,'\" said Ashby-Quill. \"Members live for the almost. The actual arrival would, we believe, rather ruin things.\"",
+      "Rival clubs have grumbled privately that the Occlude Club is, at minimum, unusual, and at maximum, an elaborate exercise in charging people to be ignored. Ashby-Quill rejects this entirely. \"An inconvenient truth about exclusivity is that everyone else's version eventually lets somebody in. Ours never will. That's not a flaw. That's the entire business model, and it renews at 94 per cent.\"",
+      "Membership fees fund, according to the club's limited public accounts, \"ongoing premises research,\" a phrase that has itself become a minor status symbol among members, several of whom have had it embroidered onto cufflinks.",
+      "Applications for 2027 open next week, capped, organisers say, at a further 6,000 names, none of whom, in all likelihood, will ever get in. As one long-waiting applicant told us: \"I don't want to get in any more, if I'm honest. What would I even do in there? Talk to people?\""
+    ],
+    "pullQuote": "It's the only club where the waiting list is the club",
+    "tags": [
+      "luxury",
+      "lifestyle",
+      "influencer"
+    ]
+  },
+  {
+    "id": "life-rentable-emotional-support-houseplant",
+    "category": "Lifestyle",
+    "headline": "Rentable Emotional-Support Houseplant Delivered Weekly, Never Yours To Keep",
+    "standfirst": "Frond, a new subscription service, delivers a single leafy companion to your home each week, to be loved, spoken to, and gently returned before attachment can properly set in.",
+    "byline": "By Florence Nightshade, Lifestyle Correspondent",
+    "location": "SHOREDITCH",
+    "published": "2026-07-13T10:40:00Z",
+    "body": [
+      "Every Monday morning, a small unmarked van delivers a single potted plant to each Frond subscriber's doorstep, along with a card bearing its name — this week, for one client, a peace lily named Dennis. By Sunday evening, Dennis is collected, driven away, and never seen again. A new companion, unrelated to Dennis in every respect, arrives the following morning.",
+      "\"Ownership is the enemy of connection,\" said Frond's founder, Persimmon Aldergate-Vane, who developed the concept after what she describes as \"a genuinely difficult breakup with a fig tree\" of eleven years' standing. \"When you own a plant, you resent it. You forget to water it, then you feel guilty, then you resent it more. We remove ownership from the equation entirely. You get one week of pure, uncomplicated love. Then you let go. It's grief therapy, but for people who don't want to call it that.\"",
+      "Subscriptions start at £42 a month for a single weekly delivery, rising to £160 for the Full Bloom tier, which includes a different plant every 48 hours and a laminated care card explaining, gently, that attachment is discouraged. Clients are asked not to name their plants, though Frond concedes that \"approximately 90 per cent do so within the first hour, usually before the driver has left the street.\"",
+      "\"I named mine Gerald and I cried when they took him,\" admitted subscriber Wilhelmina Trask, a freelance illustrator. \"They gave me a different fern the next morning. I named him Gerald too. I think that's healthy, actually. I think that's growth.\"",
+      "Aldergate-Vane insists the rotating model is, counter-intuitively, better for the plants themselves. \"Our fleet lives in a climate-controlled facility between deliveries, cared for by trained horticulturists, not by anxious amateurs overwatering out of love,\" she said. \"The plants thrive. The humans thrive. Nobody keeps anything. Everybody wins.\"",
+      "Therapists contacted for comment offered mixed views, with one describing the model as \"an interesting, if faintly heartbreaking, way to practise impermanence,\" and another simply asking, at length, whether the reporter was doing all right.",
+      "Frond has confirmed a corporate rollout for 2027, offering rotating desk plants to open-plan offices nationwide. \"Self-care isn't selfish,\" Aldergate-Vane said, waving off Monday's departing van. \"But it does, in this case, need to be returned by Sunday, in good condition, or a £30 fee applies.\""
+    ],
+    "pullQuote": "You get one week of pure, uncomplicated love. Then you let go.",
+    "tags": [
+      "wellness",
+      "shopping",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-supermodel-photographed-from-memory",
+    "category": "Lifestyle",
+    "headline": "Supermodel Now Permits Herself To Be 'Photographed Only From Memory'",
+    "standfirst": "Ingrid Solveigsdottir, the face of three decades of high fashion, has announced she will no longer sit for photographs — instead, photographers must leave the room and paint or draw her from recollection.",
+    "byline": "By Inigo Featherstonehaugh, Fashion Correspondent",
+    "location": "MILAN",
+    "published": "2026-07-13T12:15:00Z",
+    "body": [
+      "For thirty years, Ingrid Solveigsdottir's face has been reproduced more often than almost any other in fashion, gracing several hundred magazine covers and, by one industry estimate, over four billion individual photographic frames. As of this month, she says, that era is over. From now on, she will be photographed only from memory.",
+      "The new policy, announced via a one-line statement from her agency, requires that any photographer wishing to \"capture\" Solveigsdottir must first spend up to ninety minutes in her presence, without a camera, before leaving the room entirely to render her likeness from recollection alone — in pencil, paint, charcoal, or, in one recent case, a single continuous line drawn from memory in wet clay.",
+      "\"The camera has become a kind of theft,\" Solveigsdottir told us, seated in a studio with, notably, no cameras present. \"It takes the moment and leaves you with nothing but the moment's photograph, which isn't the moment at all. I would rather be remembered imperfectly, by a human hand, than captured perfectly by a machine that has never once looked me in the eye.\"",
+      "The results, unveiled at a small Milan gallery this week, are strikingly inconsistent — some renderings barely resembling the model at all, one memorably rendering her with the wrong eye colour and an extra earring. Solveigsdottir considers this a feature. \"Fidelity is overrated,\" she said. \"What matters is that someone tried to hold me in their mind. The result? Twenty-two portraits, no two alike, and every single one more honest than a photograph.\"",
+      "Fashion houses have scrambled to adapt. One major label commissioned a campaign built entirely around memory-sketches for its autumn line, crediting the model but, notably, no photographer, since none was present for the actual sitting. \"It's chaos on a shoot day,\" admitted one creative director, \"but an inconvenient truth about the fashion industry is that we ran out of new ideas years ago, and this one, at least, is new.\"",
+      "Not all colleagues are supportive. A rival supermodel, asked for comment, called the policy \"lovely, in theory, and completely unworkable for anyone who actually needs the shot by Thursday.\" Solveigsdottir's agency did not respond to a request for the policy's official title, though staff have reportedly taken to calling it, informally, \"the vanishing.\"",
+      "Solveigsdottir herself remains unmoved by the criticism. \"Nobody remembers a photograph fondly,\" she said, rising to leave, deliberately, before our own photographer could raise his lens. \"They remember being remembered. Try to get that right without me in the room.\""
+    ],
+    "pullQuote": "I would rather be remembered imperfectly, by a human hand, than captured perfectly",
+    "tags": [
+      "fashion",
+      "celebrity",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-slow-toast-experience-40-pounds",
+    "category": "Lifestyle",
+    "headline": "£40 'Slow Toast' Experience Offers One Contemplative Slice, Unhurried",
+    "standfirst": "Ember & Crumb, a new Notting Hill café, has removed everything from its menu except a single slice of toast, served over the course of forty unhurried minutes.",
+    "byline": "By Jemima Ashworth-Clay, Food Correspondent",
+    "location": "NOTTING HILL",
+    "published": "2026-07-13T08:00:00Z",
+    "body": [
+      "There is one item on the menu at Ember & Crumb, and it takes forty minutes to eat. For £40, diners are seated at a bare oak table, presented with a single unbuttered slice of sourdough, and invited to do nothing else — no phones, no conversation beyond a whisper, no condiments until minute twelve — until the experience concludes with a small bell.",
+      "\"Toast has been rushed for a hundred years,\" said founder Percival Ashgrove-Mott, who trained in fine dining before what he calls his \"toast awakening\" during a silent retreat in the Dordogne. \"We toast it, we butter it, we eat it standing at the counter reading our phones, and we call that breakfast. We wanted to ask: what if toast was the whole meal, and the whole meal was the whole point?\"",
+      "The forty minutes unfold in stages, guided by a member of staff known as a \"toast steward.\" Diners spend the first ten minutes simply observing the bread. Butter, sourced from a single Somerset dairy, is applied by hand at minute fifteen, in full view, using a warmed bone-handled knife. The first bite is not permitted before minute twenty. \"Rushing the first bite undoes everything that came before it,\" Ashgrove-Mott said gravely.",
+      "Diners report the experience as unexpectedly moving. \"I cried a little at minute thirty-one,\" said regular client Benedict Farrow-Wickes, a hedge fund analyst. \"Not because the toast was sad. Because I realised it was the first time all week I'd eaten anything without also doing three other things. The result? I've been back four times. My cholesterol has not improved. My soul, I think, has.\"",
+      "Sceptics have pointed out that £40 for a single slice of toast, however contemplative, remains £40 for a single slice of toast. Ashgrove-Mott waves off the arithmetic. \"You're not paying for bread. You're paying for forty minutes in which nobody asks anything of you. An inconvenient truth about modern eating is that we've priced presence at zero. We've simply corrected the market.\"",
+      "The café has confirmed plans for a \"Slow Marmalade\" tasting menu in early 2027, extending the format to ninety minutes and £75. A waitlist for weekend sittings currently runs to eleven weeks.",
+      "As one departing diner put it, blinking in the daylight outside: \"I don't know what just happened in there. But I haven't thought about my inbox in forty whole minutes, and frankly, that's the best breakfast I've had all year.\""
+    ],
+    "pullQuote": "Rushing the first bite undoes everything that came before it",
+    "tags": [
+      "food",
+      "wellness",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-guru-speaks-only-past-tense",
+    "category": "Lifestyle",
+    "headline": "Lifestyle Guru Now Speaks Only In The Past Tense, As A Discipline",
+    "standfirst": "Wellness author Barnaby Thistlewood has stopped using the present tense entirely, describing even his current actions as though they have already concluded, as a formal spiritual practice.",
+    "byline": "By Rafferty Sloane, Wellness Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-13T15:30:00Z",
+    "body": [
+      "\"I was drinking my tea,\" said Barnaby Thistlewood, mid-sip, tea unmistakably still in hand, warm, half-finished. It is, he explains, an entirely accurate statement, because the sipping in question — this particular sip — has, in the time it took to say the sentence, already happened. This is the foundation of what Thistlewood calls Retrospective Living, and it has, over the past six months, made him one of wellness publishing's more discussed figures.",
+      "The practice, laid out in his bestselling pamphlet I Was Here, requires practitioners to narrate their entire lives strictly in the past tense, treating even the present moment as a memory already banked. \"The present is unbearable,\" Thistlewood told us, in an interview that he later described, before it had finished, as having gone well. \"It demands too much of us. It asks: what are you doing, right now, and are you doing it correctly? The past asks nothing. The past simply was. I chose to live there instead.\"",
+      "Devotees describe a curious calm. \"I no longer panic about deadlines,\" said follower Marguerite Ashcombe-Pyle. \"I simply say, 'I met the deadline,' several days before I do, and then I go and make it true. The result? Enormous stress, technically in the past tense, which somehow makes it more manageable.\"",
+      "Thistlewood's workshops, priced at £180 for a half-day, train attendees to restructure daily speech entirely. Simple exchanges become notably strange. Ordering coffee, for instance, requires the phrase \"I ordered a flat white,\" delivered to a barista who has not yet made it. \"Most baristas adapt within a week,\" Thistlewood said. \"A few have quit. I consider that their journey, not mine.\"",
+      "Linguists have been quietly fascinated. One academic, invited to observe a workshop, described it as \"a genuinely novel act of self-imposed grammatical exile,\" and noted that Thistlewood had, by the end of their ninety-minute conversation, begun referring to the conversation itself as something that \"had been meaningful,\" while it was, unmistakably, still occurring.",
+      "Thistlewood's publisher has confirmed a sequel, tentatively titled I Am Here, which the author has already, months ahead of delivery, described in press materials as having been finished, warmly received, and \"a natural evolution of the work.\"",
+      "Asked how he felt about the discipline's future, Thistlewood paused for a long moment. \"It went well,\" he said, of the interview, of the movement, of, apparently, everything. \"It went well. Let that sink in.\""
+    ],
+    "pullQuote": "The past simply was. I chose to live there instead.",
+    "tags": [
+      "wellness",
+      "influencer",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-alarm-clock-mild-disappointment",
+    "category": "Lifestyle",
+    "headline": "Luxury Alarm Clock Wakes You Each Morning With A Tone Of Mild Disappointment",
+    "standfirst": "The Rise & Sigh, a £340 handcrafted brass alarm clock, greets its owner each morning not with a chime but with a soft, resigned voice suggesting they could, perhaps, have done better.",
+    "byline": "By Hugo Trevelyan, Sleep & Wellness Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T06:45:00Z",
+    "body": [
+      "At precisely the appointed hour, the Rise & Sigh does not ring, buzz, or chirp. Instead, from a small brass grille set into its walnut casing, a low, unhurried voice says: \"Oh. You're up. Well. Good for you, I suppose.\" It is, according to its maker, the most sophisticated waking device on the market, and it has sold out its first three production runs.",
+      "\"The alarm clock industry has spent a century trying to jolt people awake with noise,\" said inventor Cornelius Blackwood-Vane, whose atelier in Clerkenwell produces each unit by hand. \"We asked a different question. What if you were woken not by sound, but by the faint, familiar disappointment of a parent who had, frankly, hoped you'd have sorted your life out by now? Nobody sleeps through that. Nobody.\"",
+      "The clock's vocabulary rotates through nineteen recorded phrases, each delivered in the same weary, affectionate register — \"Still in bed, then,\" \"I did wonder,\" \"Well, we're up, aren't we, for what it's worth\" — voiced by veteran stage actor Reginald Ashby-Combe, who reportedly recorded the entire set in a single afternoon, unprompted, from memory of his own upbringing.",
+      "Owners describe the effect as uncannily motivating. \"I've never got out of bed faster in my life,\" said client Ottoline Marchbanks, a barrister. \"I can't bear to hear that voice a second time. It's not angry. It's worse than angry. It's just quietly let down. I'm out the door in four minutes flat most mornings now. The result? I've made partner. I credit the clock entirely.\"",
+      "Blackwood-Vane insists the tone is calibrated with precision. \"Too harsh, and people become defensive. Too gentle, and they simply roll over. We tested forty-one intonations before settling on this one — the exact frequency of a mother watching you eat cereal for dinner again,\" he said. \"An inconvenient truth about mornings is that most of us need to disappoint someone slightly in order to function. We've simply industrialised that.\"",
+      "A premium Heirloom Edition, engraved with the buyer's own family motto and priced at £610, launches next month, alongside an optional \"Grandparent Mode\" said to be under development, which will reportedly ask, gently, whether the owner has called home recently.",
+      "The Rise & Sigh's waitlist currently exceeds 3,000 names. As one new owner put it, setting the device on her nightstand for the first night: \"I don't need to sleep well. I just need to be woken up by someone who sounds a bit let down in me. Honestly, it's cheaper than actually calling my mother.\""
+    ],
+    "pullQuote": "Nobody sleeps through that. Nobody.",
+    "tags": [
+      "luxury",
+      "wellness",
+      "shopping"
+    ]
+  },
+  {
+    "id": "life-spoon-for-intentional-eating",
+    "category": "Lifestyle",
+    "headline": "£250 artisanal spoon promises to make every meal 'intentional'",
+    "standfirst": "A hand-forged spoon, weighted for mindfulness and sold with its own certificate, claims to slow the modern eater down one deliberate mouthful at a time.",
+    "byline": "By Cordelia Vane, Design and Living Correspondent",
+    "location": "STOCKHOLM",
+    "published": "2026-07-12T17:15:00",
+    "body": [
+      "The humble spoon has been reinvented for the mindful age, and it now costs £250. The Intentio, a hand-forged brass spoon weighted for \"deliberate consumption\", promises to transform hurried eating into a slow, conscious, faintly sacred act.",
+      "Each spoon is heavier than an ordinary one — a design choice, its makers say, that forces the hand to move slowly, and so the eater to taste, notice, and appreciate. \"A cheap spoon rushes you. It is light, thoughtless, a tool,\" said founder Elsa Nyberg. \"The Intentio has weight. It asks something of you. Each mouthful becomes a decision — considered, unhurried, whole. You do not eat with it. You commune.\"",
+      "The spoon arrives in a walnut box with a certificate of authenticity, a numbered edition mark, and a card advising owners to \"meet the spoon before first use\". Buyers are encouraged to own only one, and to eat everything with it, from soup to, the brand suggests, \"whatever the moment requires\".",
+      "Adopters describe a genuine change. \"I used to inhale my lunch at my desk in four minutes,\" said one. \"Now I use the Intentio, and lunch takes forty, because the spoon is too heavy to hurry and too expensive to disrespect. Am I calmer? Yes. Am I later for every afternoon meeting? Also yes.\"",
+      "Cutlery experts have observed that a spoon's weight has no bearing on the nourishment it delivers. \"Correct,\" Ms Nyberg replied. \"We are not selling nourishment. We are selling the pause. The food was always going to be the food. What we add is the ceremony.\"",
+      "A matching fork, the Intentio Forq, is \"in development but delayed\", the brand having found that \"a fork resists slowness\". A knife has been ruled out entirely as \"too decisive for the range\".",
+      "\"People ask if it is just a spoon,\" Ms Nyberg said, cradling one. \"And I ask them, gently, whether anything is ever just anything. They usually buy two.\""
+    ],
+    "pullQuote": "You do not eat with it. You commune.",
+    "tags": [
+      "shopping",
+      "luxury",
+      "food"
+    ]
+  },
+  {
+    "id": "life-chef-signature-dish-boiled-water",
+    "category": "Lifestyle",
+    "headline": "Star chef's signature dish is a glass of water, 'boiled with intent'",
+    "standfirst": "At a restaurant where reservations open a year ahead, the acclaimed final course is water, heated by the chef personally, while thinking hard.",
+    "byline": "By Cordelia Vane, Food Correspondent",
+    "location": "SAN SEBASTIÁN",
+    "published": "2026-07-12T16:10:00",
+    "body": [
+      "The chef Íñigo Salvatierra, twice named among the world's finest, has built his reputation on a single, closely guarded signature dish: a glass of warm water, boiled — and this is the crucial detail — with intent.",
+      "The dish, served as the climax of a fourteen-course menu, arrives after the diner has been told, at length, that the chef himself heated this water, alone, in silence, holding in his mind \"a single pure thought of hospitality\". The water is then presented and, with great ceremony, drunk.",
+      "\"Anyone can boil water. Almost no one boils it meaning it,\" Salvatierra said, through an interpreter and a haze of reverence. \"Most water is heated carelessly, resentfully, while thinking of other things. My water is heated with total attention — with love, with focus, with intent. It tastes, my guests tell me, of being cared for. That is the dish. The water is merely the vehicle.\"",
+      "Diners emerge changed, and hungry. \"It was the most moving glass of water of my life, and I cannot fully explain why,\" said one, who paid £340 for the experience. \"I know, rationally, that intent cannot be tasted. And yet I wept. Then I ate a large dinner elsewhere.\"",
+      "Chemists confirm that intent does not alter water, and that the beverage remains, throughout, water. Salvatierra regards this as beside the point. \"The laboratory tastes the water,\" he said. \"The guest tastes the intent. We are not, here, in the business of the laboratory.\"",
+      "The restaurant's next dish, still in development, is described only as \"the memory of the water\", and will, the chef promises, contain nothing at all. Reservations are already closed.",
+      "\"You will ask if I am serious,\" Salvatierra said, warming a glass in both hands. \"I have never in my life been more so.\""
+    ],
+    "pullQuote": "Anyone can boil water. Almost no one boils it meaning it.",
+    "tags": [
+      "food",
+      "celebrity",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-subscription-box-of-decisions",
+    "category": "Lifestyle",
+    "headline": "Subscription box makes all your everyday decisions and posts them out",
+    "standfirst": "For £39 a month, a service decides what you wear, eat and do, sparing subscribers the exhausting modern burden of choosing anything at all.",
+    "byline": "By Cordelia Vane, Consumer Trends Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T14:55:00",
+    "body": [
+      "For the overwhelmed, relief now arrives monthly in a tasteful cardboard box. A start-up called Decided makes its subscribers' everyday choices for them — what to wear, what to cook, where to go — and posts the decisions out on printed cards, at £39 a month.",
+      "The service is aimed at sufferers of \"decision fatigue\", the modern exhaustion of choosing between endless options. Each morning, the subscriber draws a card from the month's box and does, without deliberation, whatever it says. \"Wear the blue.\" \"Eat the soup.\" \"Say yes.\" The choice has been made. The burden is lifted.",
+      "\"Every day you make thousands of tiny decisions, and each one costs you a little energy, a little peace, a little of yourself,\" said founder Marisol Enright. \"We take that away. You wake up, you draw a card, you obey. No agonising, no second-guessing, no scrolling through options at midnight. Freedom, real freedom, is not having a thousand choices. It is having none.\"",
+      "Subscribers report a profound lightness. \"I used to stand in front of my wardrobe for twenty minutes,\" said one. \"Now the card tells me, and I simply comply. I have outsourced my will to a subscription box, and I have never been more serene. Occasionally the card is wrong for the weather, and I honour it anyway. That is the discipline.\"",
+      "Premium tiers escalate. Decided Plus makes larger choices — which job offer, which flat, which relationship to pursue — while Decided Infinite reportedly makes them all, leaving the subscriber, in the founder's words, \"gloriously, totally unburdened by agency\".",
+      "Psychologists have raised the question of whether a person who decides nothing is still, meaningfully, living their own life. \"An excellent question,\" Ms Enright said. \"We drew a card about it. The card said: do not worry.\"",
+      "The service does not permit subscribers to choose which cards they receive. \"That,\" Ms Enright noted, \"would rather defeat the purpose.\""
+    ],
+    "pullQuote": "I have outsourced my will to a subscription box, and I have never been more serene.",
+    "tags": [
+      "shopping",
+      "lifestyle",
+      "wellness"
+    ]
+  },
+  {
+    "id": "life-actor-becomes-weather-system",
+    "category": "Lifestyle",
+    "headline": "Method actor prepares for role by 'becoming a weather system'",
+    "standfirst": "To play a storm in an upcoming art film, a dedicated performer has spent four months attempting to think, move and precipitate like a low-pressure front.",
+    "byline": "By Dominic Frayle, Screen Correspondent",
+    "location": "REYKJAVÍK",
+    "published": "2026-07-12T13:40:00",
+    "body": [
+      "The method actor Cassian Voss, renowned for the totality of his commitment, has taken on his most demanding role yet — and to prepare, he is attempting to become a weather system.",
+      "Cast as \"the Storm\" in a wordless art film, Voss has spent four months on a remote Icelandic coast learning, he says, to \"think like weather\". He moves through rooms as a front moves across a map — slowly, inevitably, with a sense of building pressure. He no longer describes himself as arriving anywhere; he \"sets in\".",
+      "\"A lesser actor would play a storm from the outside — the gestures, the noise, the drama,\" Voss said, gazing at a middle distance he referred to as \"the isobars\". \"I am playing it from within. I do not act the wind. I want to be the low-pressure system that gives rise to the wind. Some mornings, I feel I am genuinely about to rain. That is the work.\"",
+      "The production has adapted around his process. Colleagues report that Voss now \"gathers\" in corners, \"breaks\" over lunch, and has twice been described in call sheets as \"clearing by evening\". A meteorologist was hired as a dialect coach, though there is no dialogue.",
+      "The director is delighted. \"He has stopped being a man,\" she said, admiringly. \"He is a mood over the North Atlantic. Yesterday he sustained a genuine drizzle of the spirit for six hours. You cannot direct that. You can only forecast it.\"",
+      "Voss concedes there are difficulties. He struggles now with small talk, tending instead to \"loom\", and his family report that dinner has become \"changeable\". But he insists the immersion is essential. \"When audiences see the Storm,\" he said, \"they will not see acting. They will need an umbrella.\"",
+      "He is already considering his next role — a high-pressure system, \"much calmer, but a longer shoot\"."
+    ],
+    "pullQuote": "I do not act the wind. I want to be the low-pressure system that gives rise to the wind.",
+    "tags": [
+      "celebrity",
+      "lifestyle",
+      "fashion"
+    ]
+  },
+  {
+    "id": "life-bespoke-personalised-tap-water",
+    "category": "Lifestyle",
+    "headline": "Luxury brand sells 'bespoke, personalised' tap water for £45 a bottle",
+    "standfirst": "The water is ordinary tap water, but each bottle is engraved with the buyer's name and described as uniquely their own.",
+    "byline": "By Cordelia Vane, Luxury Correspondent",
+    "location": "MAYFAIR",
+    "published": "2026-07-12T12:25:00",
+    "body": [
+      "A Mayfair label has begun selling \"bespoke, personalised\" water at £45 a bottle — water that is, on inspection, ordinary tap water, distinguished chiefly by having the buyer's name engraved on the glass.",
+      "The product, called Vôtre (French for \"yours\"), is drawn, the company confirms, from the mains. What makes it personal, and expensive, is the ritual around it: each bottle is engraved by hand, registered to the owner, and accompanied by a card declaring the water \"selected for you, and you alone\".",
+      "\"Mass-market water is anonymous — the same bottle for everyone, no relationship, no meaning,\" said brand director Hugo Pemberton-Rae. \"Vôtre is yours. Your name. Your bottle. Your water. Is it, chemically, the same water everyone else has on tap? Yes. But it has been given to you, personally, by us, at some length. That is not tap water. That is a gesture.\"",
+      "Buyers describe a surprising attachment. \"I know it comes out of the tap,\" said one. \"But mine has my name on it, and a little story, and it cost £45, so I drink it slowly and I feel, somehow, chosen. My flatmate drinks free tap water like an animal. I drink Vôtre. We are not the same.\"",
+      "Consumer advocates have noted that the identical water is available, unlimited, from any kitchen. \"That is the tragedy of tap water,\" Mr Pemberton-Rae agreed. \"It is everywhere, so no one values it. We simply put a name on it and a price beside it, and suddenly it means something. We have not changed the water. We have changed the drinker.\"",
+      "A premium tier, Vôtre Noir, comes in black glass and is \"the same water, but more discreet\". A sparkling version exists, made, the brand admits, \"with a device from the kitchen department\".",
+      "\"People ask why they should pay for what they already have,\" Mr Pemberton-Rae said, engraving a bottle. \"And I say: you are not paying for the water. You never were. You are paying to feel that it is yours.\""
+    ],
+    "pullQuote": "We have not changed the water. We have changed the drinker.",
+    "tags": [
+      "shopping",
+      "luxury",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-influencer-quit-to-stare-at-wall",
+    "category": "Lifestyle",
+    "headline": "Influencer quits social media to stare at a wall, monetises it immediately",
+    "standfirst": "A creator's dramatic renunciation of screens has become her most lucrative venture, as millions pay to watch her look at plaster.",
+    "byline": "By Dominic Frayle, Digital Culture Correspondent",
+    "location": "LOS ANGELES",
+    "published": "2026-07-12T11:05:00",
+    "body": [
+      "The influencer Marlowe Sterne announced, to great fanfare, that she was quitting social media to reclaim her attention and stare, full-time, at a blank wall. She then, with equal fanfare, began charging people to watch her do it.",
+      "Her venture, The Wall, is a subscription stream of Sterne sitting in a bare room, gazing at unadorned plaster, for hours. \"I left the noise to find stillness,\" she explained, briefly turning from the wall. \"I renounced the feed, the metrics, the endless scroll. Now I simply sit, and look, and am. And you can join me — for $9 a month.\"",
+      "The irony has not been lost on observers, or on her accountant. Having escaped the attention economy, Sterne has become one of its most profitable figures, monetising the very absence of content. There is nothing to see but a wall and a woman looking at it, and 1.4 million people pay to see exactly that.",
+      "\"It's the purest thing on the internet,\" said one devoted subscriber. \"No editing, no drama, no products — just her, the wall, and a shared sense of having escaped something, together, for a monthly fee. I watch it to feel calm. I try not to think about the fact that I am, technically, on my phone, watching a woman not be on her phone.\"",
+      "Brands have, inevitably, arrived. The wall is now \"presented by\" a paint company; a meditation app sponsors the silence; and a furniture label has provided the chair, visible in shot. \"I said no to sponsorship at first,\" Sterne admitted. \"Then I remembered the wall does not pay for itself. Well — now it does.\"",
+      "She has plans to expand. \"A second wall,\" she said, returning her gaze to the first. \"A different room. Same energy. My people are ready for it.\"",
+      "Asked whether she had truly escaped anything, Sterne considered the wall for a long, monetised moment. \"Does it matter,\" she said, \"if the numbers are this good?\""
+    ],
+    "pullQuote": "Having escaped the attention economy, she has become one of its most profitable figures.",
+    "tags": [
+      "influencer",
+      "celebrity",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-mindfulness-rock-vibrates-overthinking",
+    "category": "Lifestyle",
+    "headline": "'Mindfulness rock' vibrates gently whenever you overthink, for £120",
+    "standfirst": "A pocket-sized wellness gadget claims to detect spiralling thoughts and interrupt them with a small buzz, though how it knows remains unclear.",
+    "byline": "By Saskia Merrilees, Wellbeing Correspondent",
+    "location": "AUSTIN",
+    "published": "2026-07-12T09:50:00",
+    "body": [
+      "A wellness start-up has launched a £120 \"mindfulness rock\" — a smooth, palm-sized stone that, it claims, vibrates gently whenever the person holding it begins to overthink, nudging them back to the present.",
+      "The device, called Pebble, looks like an ordinary grey stone but contains, the company says, \"proprietary calm technology\". When the user's thoughts begin to spiral — into worry, rumination, or the replaying of an old embarrassment — the rock is said to detect it and deliver a soft, grounding buzz.",
+      "\"Overthinking is the disease of the age — the loop, the spiral, the 3am replay of something you said in 2011,\" said founder Brayden Cole. \"Pebble senses when you've drifted into the loop, and it brings you back. One gentle buzz, and you are here again. Present. Grounded. Free.\"",
+      "How, precisely, a stone detects overthinking is a question the company answers with what it calls \"trade-secret confidence\". Independent testers found that the rock buzzes at seemingly random intervals, which several users reported as \"uncannily well-timed\", on the grounds that a person holding a mindfulness rock is, statistically, almost always overthinking.",
+      "\"It buzzed, and I realised I had been spiralling about an email for an hour,\" said one owner. \"Was it reading my mind, or did it just buzz and I found a worry to match? I genuinely cannot tell. Either way, I stopped spiralling. For £120, I've decided not to interrogate it further.\"",
+      "The company plans a premium model, Pebble Pro, which buzzes \"more insightfully\", and a subscription tier unlocking \"deeper calm patterns\". A version for anxiety about the rock itself is not, as yet, planned.",
+      "\"People ask if it's really sensing anything,\" Mr Cole said. \"And I say: you're overthinking it. Which, funnily enough, is exactly when the rock would buzz.\""
+    ],
+    "pullQuote": "Did it just buzz and I found a worry to match? I genuinely cannot tell.",
+    "tags": [
+      "wellness",
+      "shopping",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-heiress-collects-empty-rooms",
+    "category": "Lifestyle",
+    "headline": "Heiress reveals passion for collecting empty rooms",
+    "standfirst": "One of Europe's wealthiest women has amassed a celebrated collection of rooms that contain, by strict rule, absolutely nothing.",
+    "byline": "By Cordelia Vane, Society Correspondent",
+    "location": "GENEVA",
+    "published": "2026-07-12T08:35:00",
+    "body": [
+      "The heiress and collector Ottoline de Vere has, over two decades, assembled one of the most admired private collections in Europe. It consists entirely of empty rooms.",
+      "Across a scattering of properties in several countries, Ms de Vere maintains dozens of rooms kept in a state of perfect, deliberate emptiness — no furniture, no art, no ornament, nothing but light, space and air. Each is climate-controlled, immaculately maintained, and never used. \"I do not collect things,\" she explained. \"Anyone can collect things. I collect the space where things would be. It is far rarer, and far harder to keep.\"",
+      "Her most prized acquisition, a high-ceilinged salon in a Venetian palazzo, contains, by her strict instruction, absolutely nothing at all. Visitors — admitted rarely, by invitation — are asked to enter in silence, stand in the emptiness, and \"feel the room being itself, unburdened\".",
+      "\"People fill rooms compulsively — clutter, possessions, noise, always more,\" Ms de Vere said. \"I have the means to do the opposite. To acquire a beautiful room and then protect it, forever, from ever being filled. That is my art. An empty room is a held breath. I have dozens, and I hold them all.\"",
+      "Staff are employed chiefly to ensure nothing accumulates. A single misplaced chair, one housekeeper confided, \"would ruin a piece\". The rooms are dusted daily and remain, in the words of Ms de Vere's curator, \"in flawless condition, having never been asked to do anything\".",
+      "Critics in the art world are divided between those who call it a profound meditation on space and those who call it a very rich woman leaving rooms empty. \"They are, of course, both correct,\" Ms de Vere allowed. \"The difference between the two is money, and taste, and I happen to have both.\"",
+      "She is currently negotiating for a ballroom in Vienna. \"It is nearly empty already,\" she said, with the quiet thrill of the true collector. \"I shall simply finish the job.\""
+    ],
+    "pullQuote": "An empty room is a held breath. I have dozens, and I hold them all.",
+    "tags": [
+      "celebrity",
+      "luxury",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-artisanal-queue-pay-to-wait",
+    "category": "Lifestyle",
+    "headline": "Pop-up 'artisanal queue' lets you pay £30 for the luxury of waiting",
+    "standfirst": "A London experience offers nothing at the end of the line — the queue itself is the product, and it is fully booked.",
+    "byline": "By Cordelia Vane, Experiences Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-12T07:55:00",
+    "body": [
+      "A pop-up in east London is charging visitors £30 to stand in a queue that leads, deliberately, to nothing at all. The queue is the experience; the waiting is the point; and it is, its organisers report, entirely sold out.",
+      "The Queue, as it is called, invites guests to join a slow-moving line that winds through a beautifully designed space, past soft lighting and gentle music, toward a velvet rope beyond which lies — by design — absolutely nothing. After roughly forty minutes, one reaches the front, is thanked, and leaves.",
+      "\"We have made waiting into a misery — the phone, the fidgeting, the resentment,\" said creator Jasper Ainsworth. \"We have forgotten how to simply stand, and be, and wait for nothing. The Queue restores that. You line up. You slow down. You wait — patiently, purposelessly, together with strangers. And then you reach the front, and there is nothing there, and it is, somehow, perfect.\"",
+      "Attendees describe the experience as unexpectedly moving. \"I queued for forty minutes for nothing, on purpose, and it was the calmest I've been all year,\" said one. \"There was no anxiety about what was at the end, because I knew: nothing. Just the waiting. I have never felt so present. Then I left, and queued for the bus, which felt entirely different.\"",
+      "The venue offers tiers. A fast-track ticket, ironically, lets you skip to the front and miss the entire experience, and is sold, Mr Ainsworth notes, \"only to people who have completely misunderstood us\". A premium option extends the wait to ninety minutes \"for the truly committed\".",
+      "Behavioural experts have wondered whether people will really pay to do the one thing everyone spends their life trying to avoid. \"They already do,\" Mr Ainsworth replied. \"They call it a theme park. We have simply removed the ride and kept the part that was always the point.\"",
+      "A second queue, leading to a first queue, is under consideration. \"Now that,\" Mr Ainsworth said, \"would be luxury.\""
+    ],
+    "pullQuote": "I queued for forty minutes for nothing, on purpose, and it was the calmest I've been all year.",
+    "tags": [
+      "shopping",
+      "lifestyle",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-wellness-retreat-24-hour-yawn",
+    "category": "Lifestyle",
+    "headline": "£1,200 wellness retreat centres on a single 24-hour communal yawn",
+    "standfirst": "Guests gather to yawn together, continuously, for a full day, in what organisers call the deepest collective release available to the modern nervous system.",
+    "byline": "By Saskia Merrilees, Wellbeing Correspondent",
+    "location": "BYRON BAY",
+    "published": "2026-07-12T07:05:00",
+    "body": [
+      "A wellness retreat charging £1,200 a place is built entirely around a single activity: yawning, together, without pause, for 24 hours.",
+      "At the retreat, called Release, guests gather in a warm, dimly lit hall and yawn — communally, continuously, from one dawn to the next. Facilitators guide the group through \"waves\" of yawning, on the principle that the yawn is the body's most honest act of surrender, and that a day of it can discharge \"years of held tension\".",
+      "\"The yawn is sacred, and we have suppressed it — stifled it in meetings, hidden it behind our hands, taught our children it is rude,\" said retreat founder Sunny Kaur. \"Here, we reclaim it. For 24 hours we yawn as one — openly, endlessly, without shame. By hour eight, people weep. By hour sixteen, they are transformed. By hour twenty-four, they are, quite simply, released.\"",
+      "The yawning is famously contagious, which the retreat treats as proof of its power. \"You cannot resist it,\" said one graduate. \"Someone yawns, and it moves through the room like a wave, and you are carried with it. Did I need to fly to Australia and pay £1,200 to yawn for a day? Perhaps not. But I have never felt so profoundly, so communally, so expensively tired.\"",
+      "Sceptics note that yawning is free, involuntary, and generally a sign of boredom. \"Boredom,\" Ms Kaur countered, \"is just stillness that has not yet been honoured. We honour it. For a full day. As a group. That is the retreat.\"",
+      "The programme is expanding to include a sighing intensive and a weekend of \"advanced stretching upon waking\". A silent version of the yawn retreat was trialled but abandoned, Ms Kaur said, \"as the yawns rather insist on making a sound\".",
+      "Places for next season are, remarkably, already filling. \"People are tired,\" Ms Kaur observed, serenely. \"We simply give them somewhere to be tired together, at a premium.\""
+    ],
+    "pullQuote": "I have never felt so profoundly, so communally, so expensively tired.",
+    "tags": [
+      "wellness",
+      "lifestyle",
+      "luxury"
+    ]
+  },
+  {
+    "id": "life-luxury-doormat-greets-by-mood",
+    "category": "Lifestyle",
+    "headline": "£340 luxury doormat greets you differently according to your mood",
+    "standfirst": "A designer entrance mat claims to read the tread of the person arriving and welcome them with the words they need to hear.",
+    "byline": "By Saskia Merrilees, Home and Interiors Correspondent",
+    "location": "COPENHAGEN",
+    "published": "2026-07-13T09:10:00",
+    "body": [
+      "The doormat has been elevated from bristled afterthought to emotional companion. A £340 designer mat, the Welkom, claims to sense the mood of whoever steps onto it and display, in woven light, the greeting they most need.",
+      "Embedded with what its makers call \"empathic fibres\", the mat is said to read the weight, pace and hesitancy of a person's tread, and respond accordingly. A brisk, confident arrival is met with \"Welcome home\". A slow, heavy one draws \"You made it\". A frantic scramble for keys prompts, simply, \"Breathe\".",
+      "\"Your front door is the most emotional threshold in your life, and we cross it unnoticed, unwelcomed, alone,\" said designer Freja Lund. \"The Welkom notices. It reads how you are before you know it yourself, and it says the one thing you need. You come home defeated, and the floor itself tells you it is glad you are here. People cry on their own doorsteps now. It is beautiful.\"",
+      "Owners report genuine attachment, tempered by uncertainty about how it works. \"I came home shattered, and it said ‘Today is over now,' and I stood there and wept into my own hallway,\" said one. \"Is it really reading my mood, or does it just cycle nice phrases and I match one to my day? I don't want to know. It comforts me. That's worth £340.\"",
+      "The mat's mood-reading, the company concedes, is \"proprietary\", and independent testers found its greetings appeared on a gentle rotation regardless of tread. \"The science is that it doesn't matter,\" Ms Lund said. \"You feel seen. Whether the mat can truly see you is a question for philosophers, not for the person who just got home and needed to hear that it was glad.\"",
+      "A premium model, the Welkom Noir, offers \"deeper, more literary greetings\", while a mischievous limited edition occasionally responds \"Not now\", which the brand describes as \"for a certain kind of customer\".",
+      "\"People ask a great deal of a doormat these days,\" Ms Lund reflected. \"And this one, at last, asks something back.\""
+    ],
+    "pullQuote": "You come home defeated, and the floor itself tells you it is glad you are here.",
+    "tags": [
+      "shopping",
+      "luxury",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-singer-album-of-pauses",
+    "category": "Lifestyle",
+    "headline": "Reclusive singer releases an album consisting entirely of pauses",
+    "standfirst": "The acclaimed artist's long-awaited record contains no words and no music — only eleven tracks of carefully considered silence, each a different kind of quiet.",
+    "byline": "By Dominic Frayle, Music Correspondent",
+    "location": "BERLIN",
+    "published": "2026-07-13T08:50:00",
+    "body": [
+      "After five years of silence, the celebrated singer known as Møs has broken it — with an album that is, itself, entirely silence. Her new record, The Pauses, consists of eleven tracks containing no words, no melody, and no sound: only carefully composed gaps.",
+      "Each track, Møs explains, is a distinct variety of pause. \"The Pause Before You Speak.\" \"The Pause After Bad News.\" \"The Comfortable Pause Between Old Friends.\" The listener hears, in each case, nothing — but a nothing that the artist insists is precisely shaped, deeply felt, and different every time.",
+      "\"Music has become so full — every second crammed with sound, with production, with noise,\" Møs said. \"I wanted to give people the spaces between. The pause is where the meaning lives. A song is just the excuse to arrive at the silence after it. So I removed the song, and I kept the silence, and I arranged it with more care than I have ever arranged a note.\"",
+      "The album has divided the music world. Some critics hail it as a masterpiece of restraint; others point out, not unreasonably, that it is a recording of nothing that a person could obtain by not pressing play. It debuted, regardless, in the top ten, and several tracks are said to \"streak\" well in the small hours.",
+      "\"I put on ‘The Pause After You Say You Love Someone' and I lay in the dark and I felt everything,\" said one listener. \"Is it just three minutes of silence? Technically. But it is her silence, composed by her, and knowing that, I heard oceans in it. Then my streaming app played an advert, which rather broke the spell.\"",
+      "Møs is unmoved by the sceptics. \"They said the same,\" she noted, \"about the rest before the note, and the breath before the word. I have simply had the courage to release only that.\"",
+      "A deluxe edition adds three bonus pauses and \"a longer silence at the end\". Vinyl, she confirms, is \"the ideal format, as the crackle is the only sound, and it is not mine\"."
+    ],
+    "pullQuote": "A song is just the excuse to arrive at the silence after it.",
+    "tags": [
+      "celebrity",
+      "lifestyle",
+      "influencer"
+    ]
+  },
+  {
+    "id": "life-membership-to-your-own-house",
+    "category": "Lifestyle",
+    "headline": "Members' brand launches premium subscription granting access to your own home",
+    "standfirst": "For £65 a month, a hospitality company offers the discerning customer exclusive entry to the house they already live in.",
+    "byline": "By Cordelia Vane, Lifestyle Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T07:30:00",
+    "body": [
+      "A members' club brand has unveiled its most exclusive tier yet: for £65 a month, subscribers gain access to their own house — the one they already own, and live in, and could enter for free.",
+      "The service, Abode, reimagines the customer's home as \"an exclusive private residence\", of which they may become a member. Membership confers no new rights — the house remains legally theirs throughout — but adds, the company says, \"a sense of occasion, belonging and curated arrival\" to the act of simply going home.",
+      "\"Familiarity has robbed us of our own homes,\" said Abode's founder, Sebastian Croft-Winter. \"You walk in without ceremony, without gratitude, without ever feeling you have earned the place. Abode restores the magic. As a member, you do not merely enter your house. You are welcomed to it. You arrive somewhere. It happens to be where you already were.\"",
+      "Members receive a card, a monthly newsletter about their own address, and a welcome ritual to perform at their front door. \"I pause on my own doorstep now, I present my card to no one, and I enter as a valued guest,\" said one subscriber. \"Is it my house? Yes. Have I always been able to go in? Yes. But now it feels like a privilege, and privileges, I have found, are worth £65 a month.\"",
+      "Consumer groups have described the product as \"charging people to come home\". Mr Croft-Winter did not dispute the framing. \"We are charging them,\" he said, \"to feel something when they come home. That feeling had gone. We have sold it back to them. I consider it a service.\"",
+      "Higher tiers are planned. Abode Noir grants \"members' access\" to individual rooms, while Abode Reserve reportedly extends the experience to the customer's own garden, \"by appointment\". A concierge will, for a further fee, remind members that they live there.",
+      "\"People ask if it is absurd to pay for your own house,\" Mr Croft-Winter said. \"And I ask them how their last homecoming felt. They usually go quiet, and then they usually sign up.\""
+    ],
+    "pullQuote": "You do not merely enter your house. You are welcomed to it.",
+    "tags": [
+      "shopping",
+      "luxury",
+      "lifestyle"
+    ]
+  },
+  {
+    "id": "life-guru-monetised-blinking",
+    "category": "Lifestyle",
+    "headline": "Wellness guru claims to have 'monetised blinking'",
+    "standfirst": "A self-styled optimisation coach says he now earns from the most overlooked act of all, and is selling the secret for £500 a course.",
+    "byline": "By Tarquin Ollerenshaw, Wellbeing Correspondent",
+    "location": "DUBAI",
+    "published": "2026-07-13T06:45:00",
+    "body": [
+      "The optimisation guru Blake Ashworth has, he announces, achieved what he calls the final frontier of the hustle: he has monetised blinking. He is now, naturally, selling the method for £500.",
+      "Ashworth's philosophy, marketed as Blink & Earn, holds that the average person blinks some 20,000 times a day and \"earns nothing from a single one\". His course promises to teach students to \"leverage\" each blink into value — through a system involving mindset, affirmations, and a great deal that remains behind the paywall.",
+      "\"You blink twenty thousand times a day, and every single blink is a wasted asset,\" Ashworth said, blinking, presumably lucratively. \"The rich do not waste their blinks. They monetise every moment, every breath, every flutter of the eyelid. I teach you to do the same. When you finish my course, you will never blink for free again.\"",
+      "Precisely how a blink generates income is, students report, addressed only in the £2,000 advanced module. What the basic course delivers, buyers say, is chiefly the conviction that they are, at last, optimising something previously overlooked. \"I don't know if I'm really earning from blinking,\" one graduate admitted. \"But I now feel guilty when I blink idly, which Blake says is the first sign it's working.\"",
+      "Experts in, essentially, everything have noted that blinking cannot be monetised, being an involuntary reflex that protects the eye. \"That's the scarcity mindset talking,\" Ashworth replied. \"They said you couldn't monetise sleep, either, and now people track it, sell it, and post about it. Blinking is the next frontier. I am simply early.\"",
+      "His empire is expanding to adjacent reflexes. A course on \"earning from your posture\" has launched, and one on monetising digestion is, he says, \"in beta\". A module on breathing was shelved after a rival guru \"got there first\".",
+      "\"People say you can't put a price on everything,\" Ashworth said, holding a long and possibly billable blink. \"I say: you haven't taken my course.\""
+    ],
+    "pullQuote": "When you finish my course, you will never blink for free again.",
+    "tags": [
+      "wellness",
+      "celebrity",
+      "influencer"
+    ]
+  },
+  {
+    "id": "life-candle-smells-of-paid-invoice",
+    "category": "Lifestyle",
+    "headline": "Candle that smells of a freshly paid invoice marketed as 'closure'",
+    "standfirst": "A £48 scented candle bottles the specific relief of settling a debt, and the self-employed cannot buy it fast enough.",
+    "byline": "By Saskia Merrilees, Home and Interiors Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-13T06:20:00",
+    "body": [
+      "The scent of a bill finally paid — that clean, unclenching relief — has been captured in a candle, and it is selling out. Closure, a £48 scented candle, promises to fill a room with the exact feeling of an invoice at last marked settled.",
+      "The fragrance is described by its makers as \"top notes of a cleared inbox, a heart of warm relief, and a deep base of nothing owed to anyone\". Lighting it, they say, recreates the singular calm of the moment a long-outstanding payment finally lands.",
+      "\"Ask any freelancer what relief smells like, and they will not say lavender,\" said the brand's founder, Imogen Hartley. \"They will describe the moment a client's payment clears after ninety days of chasing. That unclenching. That peace. That is the most powerful scent in the modern working life, and no one had ever bottled it. So we did. It smells like being paid. It smells like it's over.\"",
+      "The candle has found a devoted audience among the self-employed, for whom the aroma is less a fragrance than a fantasy. \"I lit it while three invoices were still unpaid,\" said one graphic designer, \"and for one flickering hour my flat smelled of a world in which everyone had paid me on time. I wept. It was aspirational. It was £48. It was worth it.\"",
+      "The range extends into related feelings. Companion scents include Deposit Returned (\"the smell of a landlord's grudging honesty\") and Refund Approved, a limited edition so sought-after that buying it, the brand cheerfully admits, undermines the very solvency it celebrates.",
+      "Sceptics have wondered whether relief can truly be a smell. \"Whether it can be is a question for scientists,\" Ms Hartley said. \"Whether people will pay £48 to feel it in advance is a question I have already answered. We are sold out.\"",
+      "A reed-diffuser version, for the chronically underpaid, offers \"continuous closure\". \"Some people,\" Ms Hartley noted, \"are owed money all the time. They need it always in the air.\""
+    ],
+    "pullQuote": "It smells like being paid. It smells like it's over.",
+    "tags": [
+      "shopping",
+      "lifestyle",
+      "luxury"
+    ]
   }
 ];
