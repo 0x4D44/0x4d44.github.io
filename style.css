@@ -122,10 +122,11 @@ a:hover { color: var(--amber); }
 
 /* ---------- statusbar ---------- */
 .statusbar {
-  margin-top: 20px;
-  padding: 7px 12px;
-  border: 1px solid var(--fg);
-  background: var(--soft);
+  margin-top: 18px;
+  padding: 6px 2px;
+  border: none;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
   font-size: 11px;
   letter-spacing: 1.4px;
   color: var(--dim);
@@ -315,8 +316,12 @@ a:hover { color: var(--amber); }
 }
 
 /* ---------- collapsible options (mobile) ---------- */
+/* The filter / group / sort / layout controls are collapsed by default on
+   every width — the tiles and search are the primary navigation, so these
+   stay out of the way behind one slim toggle until asked for. The open
+   state is remembered (app.js persists it). */
 #options-toggle {
-  display: none;              /* desktop: options always shown, toggle hidden */
+  display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -324,27 +329,26 @@ a:hover { color: var(--amber); }
   font-size: 12px;
   letter-spacing: 1.5px;
   cursor: pointer;
-  background: var(--soft);
-  color: var(--fg);
-  border: 1px solid var(--fg);
-  padding: 10px 12px;
+  background: transparent;
+  color: var(--dim);
+  border: 1px solid var(--rule);
+  padding: 9px 12px;
   text-align: left;
+  transition: color .12s ease, border-color .12s ease, background .12s ease;
 }
-#options-toggle:hover { background: rgba(26, 36, 24, 0.08); }
+#options-toggle:hover { background: rgba(26, 36, 24, 0.05); color: var(--fg); border-color: var(--fg); }
+#options-toggle[aria-expanded="true"] { color: var(--fg); border-color: var(--fg); }
 #options-toggle .ot-summary {
   margin-left: auto;
   color: var(--dim);
   font-size: 10.5px;
   letter-spacing: 1px;
 }
-#options { display: flex; flex-direction: column; gap: 14px; }
-.searchbar { margin-top: 22px; }
+#options { display: none; flex-direction: column; gap: 14px; }
+#options.open { display: flex; }
+.searchbar { margin-top: 20px; }
 
 @media (max-width: 720px) {
-  #options-toggle { display: flex; }
-  #options { display: none; }
-  #options.open { display: flex; }
-
   /* Mobile: a clean search bar then the tiles. Reorder the page so the
      filter/options block drops below the listing, and drop the status bar
      and the tiles caption to keep the top uncluttered. */
