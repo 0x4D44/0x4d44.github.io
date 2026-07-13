@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "quantum",
+    title: "The Interference Engine",
+    tagline: "How quantum computing actually works — not the &ldquo;tries every answer at once&rdquo; myth, but the stranger truth: a machine that makes the wrong answers cancel out. An animated, scrollytelling explainer you can drive — a draggable Bloch sphere, a measurement histogram that converges, phasors that interfere to zero, an entangled pair, and Grover's search finding a needle by amplitude. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/quantum/",
+    illustration: "ill-quantum",
+    date: "2026-07-13T18:00:00",
+    year: 1994,
+    tags: ["software", "science", "math"],
+    real: true,
+  },
+  {
     slug: "gene-inheritance",
     title: "Two Copies",
     tagline: "How gene inheritance works, told as an animated story: you carry two copies of every gene and pass on one — and everything else, from dominant and recessive traits to carriers, blood types and colour blindness, falls out of that. Flip the coins in a live Punnett square, roll a family pedigree, and watch a recessive trait skip a generation. Vanilla JS on canvas + SVG; no build step.",
@@ -1273,7 +1284,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci"] },
   { id: "maps", name: "Maps & Nations", icon: "ill-map",
