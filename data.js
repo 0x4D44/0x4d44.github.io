@@ -73,7 +73,7 @@ window.ESSAYS = [
   {
     slug: "opus-verdict",
     title: "Opus 4.8 Verdict",
-    tagline: "An on-device AI-writing detector in the spirit of Pangram — but one that shows its working. An instant, transparent heuristic (confidence gauge, sentence-by-sentence highlighting, a breakdown of the tells) plus an optional fine-tuned MiniLM neural model — ROC-AUC ≈ 0.999 — both running entirely in your browser. No upload, no server.",
+    tagline: "An on-device AI-writing detector in the spirit of Pangram — but one that shows its working. An instant, transparent heuristic (gauge, sentence highlighting, signal breakdown) plus an optional fine-tuned MiniLM neural model trained on ten generators — it catches held-out GPT-4 and modern prose it never saw. Runs entirely in your browser; no upload, no server.",
     url: "https://0x4d44.github.io/opus-verdict/",
     illustration: "ill-verdict",
     date: "2026-07-12T12:00:00",
