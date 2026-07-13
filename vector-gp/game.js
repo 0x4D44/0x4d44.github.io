@@ -414,7 +414,8 @@ function playerStep(dt) {
   const T = G.touchIn;
   const inL = k["Comma"] || k["ArrowLeft"] || T.left, inR = k["Period"] || k["ArrowRight"] || T.right;
   const sTgt = (inL ? -1 : 0) + (inR ? 1 : 0);
-  const sRate = sTgt !== 0 ? 3.2 : 5.5;
+  // gentler engage + firmer self-centering so digital keys don't twitch you off line
+  const sRate = sTgt !== 0 ? 2.4 : 6.5;
   R.steer += clamp(sTgt - R.steer, -sRate * dt, sRate * dt);
   let thr = ((k["KeyA"] || k["ArrowUp"] || T.thr) && !pc.finished && !pc.retired) ? 1 : 0;
   let brk = (k["KeyZ"] || k["ArrowDown"] || T.brk) ? 1 : 0;
@@ -1140,7 +1141,34 @@ function renderRace() {
 
   drawCockpit(ctx);
   drawHud(ctx);
+  drawStartHint(ctx);
   if (R.phase === "grid" || (R.phase === "go" && R.phaseT < 1.2)) drawLights(ctx);
+}
+
+// A brief "how to drive" reminder on the grid / at the start of practice, so
+// a first-time player isn't left staring at green lights not knowing the keys.
+function drawStartHint(ctx) {
+  const R = G.race;
+  if (R.player.retired) return;
+  let alpha = 0;
+  if (R.phase === "grid") alpha = 1;
+  else if (R.phase === "go") alpha = clamp(1 - R.phaseT / 1.6, 0, 1);
+  else if (R.mode === "practice") alpha = clamp((5 - R.time) / 1.5, 0, 1);
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const bw = 320, bh = 42, bx = W / 2 - bw / 2, by = 252;
+  ctx.fillStyle = "rgba(8,8,20,0.74)";
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = "#3040a0"; ctx.lineWidth = 1;
+  ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+  ctx.textAlign = "center";
+  ctx.font = "bold 12px monospace"; ctx.fillStyle = "#e8d048";
+  ctx.fillText("A / ↑  ACCELERATE      Z / ↓  BRAKE", W / 2, by + 17);
+  ctx.fillStyle = "#b8c0e8";
+  ctx.fillText(", .  or  ← →   STEER", W / 2, by + 34);
+  ctx.textAlign = "left";
+  ctx.restore();
 }
 
 // ------------------------------------------------------------
@@ -1534,7 +1562,7 @@ function screenGrid(mode) {
   showMenu(menuFrame(
     `STARTING GRID — ${def.gp.toUpperCase()}` + (mode === "season" ? ` — ROUND ${def.round}/16` : ""),
     `<div class="gridlist">${rows}</div>`,
-    "QUALIFYING SIMULATED · ENTER TO START"));
+    "QUALIFYING SIMULATED · ENTER TO START · A Z , . OR ARROWS TO DRIVE"));
   bindMenu([{ label: "start", fn: () => { hideMenu(); G.race.paused = false; } }],
     () => { raceSoundsOff(); G.race = null; G.screen = "menu"; screenMain(); });
 }
