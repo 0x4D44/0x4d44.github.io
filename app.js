@@ -312,8 +312,6 @@
     const wrapper = el("a", {
       class: "row",
       href: essay.url || "#",
-      target: essay.url ? "_blank" : null,
-      rel: essay.url ? "noopener" : null,
     });
     const fig = el("div", { class: "row-fig" }, [svgUse(essay.illustration || "ill-diesel")]);
     const titleBlock = el("div", { class: "row-title-block" }, [
@@ -342,8 +340,6 @@
     const wrapper = el("a", {
       class: "card",
       href: essay.url || "#",
-      target: essay.url ? "_blank" : null,
-      rel: essay.url ? "noopener" : null,
     });
     wrapper.appendChild(el("div", { class: "card-head" }, [
       el("span", null, String(idx + 1).padStart(3, "0")),
