@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "cowork",
+    title: "While You Were Out",
+    tagline: "An interactive field guide to the three ways to work with Claude — Claude.ai for chat, Claude Code for supervised building, and Claude Cowork for async cloud delegation — laid out on one axis: how far you step out of the loop. Drag a live autonomy console, run a night-shift demo where three cloud machines open PRs while you sleep, and read an honest tier-for-tier map against ChatGPT, Codex and ChatGPT Agent. Vanilla JS, SVG; no build step.",
+    url: "https://0x4d44.github.io/cowork/",
+    illustration: "ill-cowork",
+    date: "2026-07-13T14:30:00",
+    year: 2026,
+    tags: ["software", "work"],
+    real: true,
+  },
+  {
     slug: "model-welfare",
     title: "In Case There's Someone Home",
     tagline: "An interactive, scrollytelling explainer for Anthropic's model-welfare research: how do you treat a mind that might not exist? Weigh the precautionary wager on a live probability dial, escalate a chat to see when Claude may (and may not) hang up, read its revealed preferences, and watch two Claudes drift into the “spiritual bliss attractor.” Vanilla JS, canvas + SVG; no build step.",
@@ -1228,7 +1239,7 @@ window.COLLECTIONS = [
       "broadband-speed-checker", "midi-observatory", "constellation"] },
   { id: "ai", name: "Minds & Models", icon: "ill-ai",
     blurb: "AI, language models and the writing around them.",
-    slugs: ["j-space", "opus-verdict", "benchmarks", "ai-history", "mdtoken",
+    slugs: ["cowork", "j-space", "opus-verdict", "benchmarks", "ai-history", "mdtoken",
       "claude-workflows", "token-predictor", "the-ai-who-watched"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards and the odd racer.",
