@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Interference Engine — How Quantum Computing Actually Works</title>
+<meta name="description" content="An animated, interactive explainer for how quantum computers really work — superposition, amplitudes, interference, entanglement and Grover's search — in the spirit of 3Blue1Brown and Kurzgesagt. Vanilla JS, canvas + SVG, no build step.">
+<meta name="theme-color" content="#070812">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Interference Engine — How Quantum Computing Actually Works">
+<meta property="og:description" content="Everyone says a quantum computer tries every answer at once. That's the myth. The truth is stranger and more beautiful: it makes the wrong answers cancel out. An interactive explainer you can drive.">
+<meta property="og:url" content="https://0x4d44.github.io/quantum/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23070812'/%3E%3Ccircle cx='16' cy='16' r='9' fill='none' stroke='%234de2ff' stroke-width='1.4'/%3E%3Cellipse cx='16' cy='16' rx='9' ry='3.4' fill='none' stroke='%23a98bff' stroke-width='1'/%3E%3Cline x1='16' y1='16' x2='22' y2='9' stroke='%23ff5ca8' stroke-width='1.8'/%3E%3Ccircle cx='22' cy='9' r='2' fill='%23ff5ca8'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#070812;
+    --bg2:#0b0e1f;
+    --panel:rgba(18,22,44,.6);
+    --ink:#dfe3f4;
+    --ink-dim:#98a1c2;
+    --ink-faint:#7079a0;
+    --hair:rgba(150,164,214,.14);
+    --hair-2:rgba(150,164,214,.28);
+    /* the two amplitudes — the whole story lives in these two colours */
+    --cyan:#4de2ff;          /* amplitude / |0⟩ */
+    --cyan-soft:#38c6e6;
+    --cyan-glow:rgba(77,226,255,.22);
+    --mag:#ff5ca8;           /* amplitude / |1⟩ */
+    --mag-soft:#e64f95;
+    --mag-glow:rgba(255,92,168,.22);
+    --violet:#a98bff;        /* the state itself */
+    --gold:#ffd479;          /* measurement — the classical world */
+    --gold-glow:rgba(255,212,121,.2);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1200px 820px at 80% -6%, rgba(255,92,168,.07), transparent 60%),
+      radial-gradient(1050px 900px at 6% 10%, rgba(77,226,255,.08), transparent 56%),
+      radial-gradient(900px 900px at 50% 120%, rgba(169,139,255,.07), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  #progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;
+    background:linear-gradient(90deg,var(--cyan),var(--violet),var(--mag));box-shadow:0 0 12px var(--cyan-glow)}
+
+  .wrap{max-width:768px;margin:0 auto;padding:0 22px}
+  section{position:relative}
+
+  /* ---- hero ---- */
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;
+    padding:80px 0 60px;position:relative;overflow:hidden}
+  #field{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+  .hero .wrap{position:relative;z-index:2}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--cyan-soft);margin-bottom:26px}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.02;letter-spacing:-.015em;
+    font-size:clamp(42px,8.6vw,80px);color:#fff}
+  h1 em{font-style:italic;background:linear-gradient(92deg,var(--cyan),var(--violet) 55%,var(--mag));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{font-family:var(--serif);font-size:clamp(19px,2.6vw,24px);color:var(--ink-dim);
+    margin-top:28px;max-width:31em;line-height:1.5}
+  .lede em{font-style:italic;color:#eaeefb}
+  .scroll-cue{margin-top:52px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:10px}
+  .scroll-cue .bar{width:34px;height:1px;background:var(--hair-2);position:relative;overflow:hidden}
+  .scroll-cue .bar::after{content:"";position:absolute;inset:0;width:40%;background:var(--cyan);
+    animation:slide 2.4s ease-in-out infinite}
+  @keyframes slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+
+  /* ---- generic type ---- */
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4.4vw,42px);line-height:1.1;
+    letter-spacing:-.01em;color:#fff;margin-bottom:8px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--cyan-soft);margin-bottom:18px;display:flex;align-items:center;gap:12px}
+  .kicker .n{color:var(--ink-faint)}
+  p{font-size:17.5px;color:var(--ink);margin:16px 0}
+  p.big{font-size:20.5px;font-family:var(--serif);color:var(--ink);line-height:1.5}
+  .dim{color:var(--ink-dim)}
+  strong{color:#fff;font-weight:600}
+  .cyan{color:var(--cyan)}
+  .mag{color:var(--mag)}
+  .violet{color:var(--violet)}
+  .gold{color:var(--gold)}
+  em.ket{font-style:normal;font-family:var(--mono);letter-spacing:.02em}
+  a{color:var(--cyan-soft);text-decoration:none;border-bottom:1px solid var(--hair-2)}
+  a:hover{border-color:var(--cyan)}
+  .blockspace{padding:74px 0}
+  .rule{height:1px;background:var(--hair);margin:0}
+
+  .pq{font-family:var(--serif);font-style:italic;font-size:clamp(22px,3.4vw,31px);line-height:1.32;
+    color:#eef1fb;padding-left:26px;border-left:2px solid var(--violet);margin:44px 0}
+  .pq cite{display:block;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-faint);margin-top:16px}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(22px);transition:opacity .8s ease,transform .8s ease}
+  .rv.in{opacity:1;transform:none}
+
+  /* figure shell */
+  figure{margin:34px 0}
+  .fig{background:linear-gradient(180deg,var(--bg2),rgba(7,8,18,.35));
+    border:1px solid var(--hair);border-radius:16px;padding:22px;position:relative;overflow:hidden}
+  figcaption{font-size:13.5px;color:var(--ink-dim);margin-top:14px;line-height:1.55}
+  figcaption b{color:#c6cde2;font-weight:600}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
+  .figtitle{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  canvas{display:block;width:100%}
+
+  /* generic controls */
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:18px}
+  button.act{font-family:var(--mono);font-size:13px;letter-spacing:.02em;color:#06121a;font-weight:700;
+    background:linear-gradient(180deg,var(--cyan),var(--cyan-soft));border:none;border-radius:10px;
+    padding:11px 16px;cursor:pointer;transition:.18s;box-shadow:0 6px 20px -8px var(--cyan-glow)}
+  button.act:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  button.act:active{transform:translateY(0)}
+  button.ghost{font-family:var(--mono);font-size:13px;color:var(--ink);background:rgba(150,164,214,.08);
+    border:1px solid var(--hair-2);border-radius:10px;padding:11px 15px;cursor:pointer;transition:.18s}
+  button.ghost:hover{border-color:var(--cyan);color:#fff}
+  button.mag{background:linear-gradient(180deg,var(--mag),var(--mag-soft));color:#210510;box-shadow:0 6px 20px -8px var(--mag-glow)}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;
+    background:linear-gradient(90deg,var(--cyan),var(--mag));outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:2px solid var(--violet);box-shadow:0 2px 10px rgba(0,0,0,.5);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;
+    border:2px solid var(--violet);cursor:pointer}
+  .slabel{font-family:var(--mono);font-size:12px;color:var(--ink-dim);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .readout{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);margin-top:12px;line-height:1.7}
+  .readout b{color:#fff}
+  .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:2px 8px;border-radius:20px;border:1px solid var(--hair-2);color:var(--ink-faint)}
+
+  /* probability bars */
+  .pbars{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+  .pbar{border:1px solid var(--hair);border-radius:11px;padding:12px 14px;background:rgba(0,0,0,.2)}
+  .pbar .pt{font-family:var(--mono);font-size:12px;color:var(--ink-dim);display:flex;justify-content:space-between}
+  .pbar .track{height:10px;border-radius:6px;background:rgba(255,255,255,.06);margin-top:9px;overflow:hidden}
+  .pbar .fill{height:100%;width:50%;border-radius:6px;transition:width .25s ease}
+  .pbar.z .fill{background:linear-gradient(90deg,var(--cyan-soft),var(--cyan))}
+  .pbar.o .fill{background:linear-gradient(90deg,var(--mag-soft),var(--mag))}
+  .pbar.z .pct{color:var(--cyan)}
+  .pbar.o .pct{color:var(--mag)}
+
+  /* classical switch */
+  .switch-stage{display:flex;align-items:center;gap:26px;flex-wrap:wrap;justify-content:center;padding:14px 0}
+  .lswitch{width:112px;height:170px;border-radius:20px;border:1px solid var(--hair-2);cursor:pointer;
+    background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(0,0,0,.25));position:relative;transition:.25s}
+  .lswitch .knob{position:absolute;left:12px;right:12px;height:66px;border-radius:14px;transition:top .32s cubic-bezier(.3,1.4,.5,1),background .3s;
+    top:12px;background:linear-gradient(180deg,#2b3357,#1a2039);border:1px solid var(--hair-2)}
+  .lswitch.on .knob{top:92px;background:linear-gradient(180deg,var(--gold),#e0ac48);border-color:var(--gold)}
+  .lswitch .mk{position:absolute;left:0;right:0;text-align:center;font-family:var(--mono);font-size:13px;color:var(--ink-faint)}
+  .lswitch .mk.top{top:34px}.lswitch .mk.bot{bottom:34px}
+  .lswitch.on .mk.bot{color:#1a1206;font-weight:700}
+  .lswitch.on{box-shadow:0 0 40px -10px var(--gold-glow)}
+  .switch-read{font-family:var(--mono);font-size:15px;color:var(--ink-dim);min-width:9em}
+  .switch-read b{font-size:28px;color:#fff;display:block}
+
+  /* histogram */
+  .hist-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+  .hcol{text-align:center}
+  .hbarbox{height:130px;display:flex;align-items:flex-end;justify-content:center;border-bottom:1px solid var(--hair)}
+  .hbar{width:64%;border-radius:8px 8px 0 0;transition:height .18s ease;min-height:2px}
+  .hcol.z .hbar{background:linear-gradient(180deg,var(--cyan),var(--cyan-soft))}
+  .hcol.o .hbar{background:linear-gradient(180deg,var(--mag),var(--mag-soft))}
+  .hcount{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);margin-top:8px}
+  .hcount b{color:#fff;font-size:15px}
+
+  /* n-qubit grid */
+  .qgrid{display:flex;flex-wrap:wrap;gap:4px;margin-top:16px;min-height:20px}
+  .qcell{width:13px;height:13px;border-radius:3px;background:linear-gradient(135deg,var(--cyan),var(--violet));
+    opacity:.86;animation:pop .4s ease both}
+  @keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:.86}}
+  .bignum{font-family:var(--serif);font-size:clamp(30px,7vw,54px);color:#fff;line-height:1;margin-top:6px}
+  .bignum small{font-family:var(--mono);font-size:14px;color:var(--ink-dim);display:block;margin-top:10px;letter-spacing:.02em}
+
+  /* entanglement cards */
+  .bell{display:grid;grid-template-columns:1fr 40px 1fr;gap:0;align-items:center;margin-top:16px}
+  .qcard{border:1px solid var(--hair-2);border-radius:14px;padding:20px;text-align:center;background:rgba(0,0,0,.2);
+    position:relative;transition:.3s}
+  .qcard .who{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-faint)}
+  .qcard .val{font-family:var(--serif);font-size:52px;line-height:1.1;margin-top:8px;color:var(--violet);transition:.2s}
+  .qcard.res.z .val{color:var(--cyan)}.qcard.res.o .val{color:var(--mag)}
+  .qcard.res{box-shadow:0 0 34px -12px currentColor}
+  .qcard.z.res{border-color:rgba(77,226,255,.4)}.qcard.o.res{border-color:rgba(255,92,168,.4)}
+  .bell .link{display:flex;align-items:center;justify-content:center;color:var(--violet)}
+  .bell .link svg{width:30px;height:30px}
+  .tally{margin-top:16px;font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);
+    display:flex;gap:18px;flex-wrap:wrap}
+  .tally b{color:#fff}
+
+  /* honest-map cards */
+  .map{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+  .mcard{border:1px solid var(--hair);border-radius:14px;padding:18px;background:rgba(0,0,0,.18)}
+  .mcard h3{font-family:var(--serif);font-size:20px;font-weight:600;color:#fff;margin-bottom:4px;display:flex;align-items:center;gap:9px}
+  .mcard .verdict{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    padding:2px 8px;border-radius:20px;margin-left:auto}
+  .mcard.win .verdict{color:var(--cyan);border:1px solid rgba(77,226,255,.4)}
+  .mcard.meh .verdict{color:var(--gold);border:1px solid rgba(255,212,121,.4)}
+  .mcard.no .verdict{color:var(--mag);border:1px solid rgba(255,92,168,.4)}
+  .mcard p{font-size:14.5px;color:var(--ink-dim);margin:8px 0 0}
+
+  /* stat pills */
+  .props{margin-top:10px}
+  .prop{border-top:1px solid var(--hair);padding:24px 0;display:grid;grid-template-columns:44px 1fr;gap:18px}
+  .prop:last-child{border-bottom:1px solid var(--hair)}
+  .prop .idx{font-family:var(--serif);font-size:30px;color:var(--violet);line-height:1;font-style:italic}
+  .prop h3{font-family:var(--serif);font-size:22px;font-weight:600;color:#fff;margin-bottom:6px}
+  .prop p{margin:8px 0 0;font-size:16px}
+
+  .host-closer{margin-top:26px;padding-top:18px;border-top:1px solid var(--hair);
+    font-family:var(--serif);font-style:italic;font-size:19px;color:var(--ink-dim);line-height:1.5}
+  .host-closer b{color:var(--violet);font-style:normal;font-weight:600}
+
+  /* footer */
+  footer{border-top:1px solid var(--hair);padding:56px 0 90px;margin-top:40px}
+  .srcs{display:grid;gap:2px;margin-top:18px}
+  .srcs a{display:block;padding:12px 0;border-bottom:1px solid var(--hair);font-size:15px;color:var(--ink);border-radius:0}
+  .srcs a:hover{color:var(--cyan)}
+  .srcs a .u{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);display:block;margin-top:3px}
+  .backlink{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);margin-top:30px;display:inline-block}
+  .signoff{font-size:13px;color:var(--ink-faint);margin-top:26px;line-height:1.6}
+
+  @media(max-width:640px){
+    .map,.hist-wrap{grid-template-columns:1fr}
+    .bell{grid-template-columns:1fr 30px 1fr}
+    .prop{grid-template-columns:32px 1fr;gap:12px}
+    .blockspace{padding:56px 0}
+    .qcard .val{font-size:42px}
+  }
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;scroll-behavior:auto}
+    .rv{opacity:1;transform:none}
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<main>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="eyebrow rv">A field guide to quantum computing · 2026</div>
+    <h1 class="rv">The <em>Interference</em><br>Engine</h1>
+    <p class="lede rv">Everyone says a quantum computer <em>tries every answer at once</em>. That's the
+      myth — and it's the wrong way to think about the whole machine. The truth is stranger, and far more
+      beautiful: it arranges for the <em>wrong</em> answers to cancel themselves out, and the right one to
+      ring out loud. Let's build the idea from a single coin.</p>
+    <div class="scroll-cue rv"><span class="bar"></span> scroll to begin</div>
+  </div>
+</section>
+
+<!-- ============ 1 · THE BIT ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">01</span> The world you already know</div>
+    <h2 class="rv">A bit is a switch</h2>
+    <p class="rv">Every computer you have ever used runs on <strong>bits</strong>. A bit is the simplest
+      possible fact: a switch that is either <span class="gold">off</span> or <span class="gold">on</span>,
+      written <em class="ket">0</em> or <em class="ket">1</em>. Eight of them make a byte, a billion of them
+      make this sentence appear. The rules are boring on purpose — a switch is always in exactly one
+      position, and looking at it never surprises you.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 1 · the classical bit</span><span class="tag">click the switch</span></div>
+        <div class="switch-stage">
+          <div id="lswitch" class="lswitch" role="button" tabindex="0" aria-label="toggle the bit between 0 and 1">
+            <span class="mk top">1</span>
+            <div class="knob"></div>
+            <span class="mk bot">0</span>
+          </div>
+          <div class="switch-read">the bit reads<b id="bitVal">0</b>definite, and boring</div>
+        </div>
+        <figcaption><b>Nothing hidden.</b> A classical bit is one of two states, full stop. Ask it a
+          hundred times, get the same answer a hundred times. Hold this picture — a quantum bit breaks
+          every clause of it.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">To beat a classical computer you need a machine that can be in a state a classical one
+      simply <em>cannot represent</em>. That is the entire game. So we reach for the strangest, smallest,
+      most honest object in nature — a single quantum particle — and we ask it to hold a bit.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 2 · SUPERPOSITION / BLOCH ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">02</span> Superposition</div>
+    <h2 class="rv">A qubit is an arrow on a sphere</h2>
+    <p class="rv">A <strong>qubit</strong> — a quantum bit — still has its two anchor states,
+      <span class="cyan"><em class="ket">|0⟩</em></span> at the north pole and
+      <span class="mag"><em class="ket">|1⟩</em></span> at the south. But it does not have to sit at a pole.
+      Its state is an <strong>arrow</strong> that can point anywhere on the surface of a sphere. Tilt it
+      toward the equator and it is genuinely, physically <em>both at once</em> — a <strong>superposition</strong>.</p>
+    <p class="rv">Grab the arrow below and move it. Drag left–right to spin it around; drag up–down to tilt
+      it between the poles. The two bars track how much <span class="cyan">|0⟩</span> and how much
+      <span class="mag">|1⟩</span> are mixed into wherever it points.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 2 · the Bloch sphere</span><span class="tag">drag the arrow</span></div>
+        <canvas id="bloch" height="360" aria-label="an interactive Bloch sphere; drag to change the qubit state"></canvas>
+        <div class="pbars">
+          <div class="pbar z"><div class="pt"><span>chance of reading <b>0</b></span><span class="pct" id="p0">50%</span></div>
+            <div class="track"><div class="fill" id="f0"></div></div></div>
+          <div class="pbar o"><div class="pt"><span>chance of reading <b>1</b></span><span class="pct" id="p1">50%</span></div>
+            <div class="track"><div class="fill" id="f1"></div></div></div>
+        </div>
+        <div class="readout">state <b id="ketReadout">0.71|0⟩ + 0.71|1⟩</b> &nbsp;·&nbsp; the two chances always
+          add to <b>100%</b>, no matter where the arrow points.</div>
+        <figcaption><b>The pole is a special case.</b> Point the arrow straight up and it is an ordinary
+          <span class="cyan">0</span>; straight down, an ordinary <span class="mag">1</span>. Everywhere in
+          between is something classical bits have no word for. One qubit hides two continuous dials
+          (tilt <em>and</em> spin) — already more than a switch.</figcaption>
+      </div>
+    </figure>
+
+    <p class="pq rv">A qubit is not "a 0 and a 1 stored together." It is a direction — and directions can
+      point in ways a coin never can.<cite>the mental model to keep</cite></p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 3 · MEASUREMENT ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">03</span> Measurement</div>
+    <h2 class="rv">Looking forces a choice</h2>
+    <p class="rv">Here is the catch that makes quantum computing hard, and interesting. You cannot read the
+      arrow's direction. The moment you <strong>measure</strong> a qubit, it snaps to a pole — you get a
+      plain <span class="cyan">0</span> or a plain <span class="mag">1</span>, and the delicate arrow is
+      gone. Which one you get is a matter of <em>chance</em>, and the odds are set by how the arrow was
+      tilted: nearer the north pole, more often 0.</p>
+    <p class="rv">Set a tilt with the slider, then measure — once, or a thousand times. Watch the tallies
+      creep toward the odds the arrow promised.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 3 · measurement is sampling</span><span class="tag" id="mTag">tilt: 50 / 50</span></div>
+        <div class="slabel" style="margin-bottom:6px">north pole <em class="ket cyan">|0⟩</em>
+          <input id="tilt" type="range" min="0" max="1000" value="500" style="flex:1;min-width:120px" aria-label="tilt of the qubit toward 0 or 1">
+          <em class="ket mag">|1⟩</em> south pole</div>
+        <div class="hist-wrap">
+          <div class="hcol z"><div class="hbarbox"><div class="hbar" id="hb0" style="height:2px"></div></div>
+            <div class="hcount">read <b>0</b> · <span id="c0">0</span></div></div>
+          <div class="hcol o"><div class="hbarbox"><div class="hbar" id="hb1" style="height:2px"></div></div>
+            <div class="hcount">read <b>1</b> · <span id="c1">0</span></div></div>
+        </div>
+        <div class="controls">
+          <button class="act" id="measure1">Measure once</button>
+          <button class="ghost" id="measure100">Measure ×100</button>
+          <button class="ghost" id="mreset">Reset</button>
+          <span class="readout" style="margin:0" id="mstat">0 measurements · promised 50% / 50%</span>
+        </div>
+        <figcaption><b>Randomness with a rulebook.</b> Any single measurement is a coin flip you can't
+          predict — but the <em>odds</em> are exactly the square of the arrow's lean. A fair coin is what you
+          see; a loaded, invisible arrow is what's really there.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">If that were the whole story, a qubit would just be an expensive random-number generator.
+      The magic is in a number we've been hiding — the one thing that separates quantum from merely
+      <span class="violet">random</span>.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 4 · AMPLITUDES & INTERFERENCE ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">04</span> Amplitudes &amp; interference</div>
+    <h2 class="rv">The number behind the odds can go negative</h2>
+    <p class="rv">Probabilities run from 0% to 100%; they can only ever pile up. But nature doesn't book-keep
+      a qubit with probabilities. It uses <strong>amplitudes</strong> — numbers that carry a
+      <em>direction</em>, like little clock hands, and that can point <em>backwards</em>. You only square an
+      amplitude into a probability at the very end, when you look.</p>
+    <p class="rv">Why does a hidden minus sign matter so much? Because when two amplitudes flow into the same
+      outcome, they <strong>add as arrows, not as counts</strong>. Point them the same way and they reinforce
+      — <span class="cyan">constructive interference</span>. Point them opposite and they
+      <em>cancel to nothing</em> — <span class="mag">destructive interference</span>. That second case is
+      impossible for probabilities, and it is the beating heart of every quantum algorithm.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 4 · two amplitudes, one outcome</span><span class="tag">turn the phase dial</span></div>
+        <canvas id="interf" height="300" aria-label="two amplitude arrows adding tip to tail, and the resulting probability"></canvas>
+        <div class="slabel" style="margin-top:16px">relative phase
+          <input id="phase" type="range" min="0" max="360" value="0" style="flex:1;min-width:140px" aria-label="relative phase between the two amplitudes">
+          <b id="phaseVal" style="color:#fff;min-width:3.4em;text-align:right">0°</b></div>
+        <div class="readout" id="interfRead">two equal amplitudes, in step → they <b class="cyan">reinforce</b>.
+          Outcome probability <b>100%</b> of its maximum.</div>
+        <figcaption><b>Same-size arrows, opposite directions, gives zero.</b> Slide to 180°: two perfectly
+          real "ways to arrive" annihilate, and an outcome that <em>could</em> happen simply
+          <em>never</em> does. No dice game can do this. This is the resource classical randomness lacks.</figcaption>
+      </div>
+    </figure>
+
+    <p class="pq rv">A quantum computer's job is choreography: steer amplitude <em>away</em> from every wrong
+      answer so it destructively cancels, and <em>toward</em> the right one so it constructively piles up.
+      <cite>what the machine is actually for</cite></p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 5 · SCALING ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">05</span> Exponential room</div>
+    <h2 class="rv">Every qubit doubles the bookkeeping</h2>
+    <p class="rv">One qubit needs two amplitudes — one for <em class="ket">|0⟩</em>, one for
+      <em class="ket">|1⟩</em>. Two qubits have four possible readings (00, 01, 10, 11), so they need
+      <strong>four</strong> amplitudes. Three qubits, eight. Each qubit you add <em>doubles</em> the number
+      of amplitudes the state carries — all of them evolving <em>together</em>, all able to interfere.</p>
+    <p class="rv">Drag the count. Every square is one amplitude the machine holds at once.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 5 · the state grows as 2ⁿ</span><span class="tag" id="qTag">4 qubits</span></div>
+        <div class="slabel" style="margin-bottom:4px">qubits
+          <input id="nq" type="range" min="1" max="10" value="4" style="flex:1;min-width:140px" aria-label="number of qubits">
+          <b id="nqVal" style="color:#fff">4</b></div>
+        <div class="qgrid" id="qgrid" aria-hidden="true"></div>
+        <div class="bignum" id="qbig">16<small>amplitudes held simultaneously</small></div>
+        <figcaption id="qcap"><b>Small numbers, then a cliff.</b> This looks tame at ten qubits. But the
+          doubling never stops — and that is where the impossibility, and the promise, both live.</figcaption>
+      </div>
+    </figure>
+
+    <p class="big rv">At <strong>300</strong> qubits, the state carries <span class="violet">2³⁰⁰</span>
+      amplitudes — <em>more numbers than there are atoms in the observable universe.</em> No classical
+      machine could ever write them all down. A few hundred well-behaved qubits hold a description that the
+      entire visible cosmos hasn't the matter to store.</p>
+    <p class="rv dim">A word of honesty, because it's usually skipped: that vast state is <em>not</em> a
+      vast parallel answer-book you can simply read out. Measure it and you get one string of bits, drawn by
+      chance. The whole art — the reason we needed interference first — is sculpting those amplitudes so the
+      <em>one</em> string you're allowed to read is the answer you wanted.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 6 · ENTANGLEMENT ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">06</span> Entanglement</div>
+    <h2 class="rv">Two qubits, one fate</h2>
+    <p class="rv">Because those amplitudes are shared, qubits can be woven together so tightly that neither
+      has a state of its own — only the pair does. This is <strong>entanglement</strong>. Prepare two qubits
+      just right and each, measured alone, is a perfect coin flip. Yet their answers are <em>locked</em>:
+      whatever the first turns out to be, the second matches it — every single time, even if you carried
+      them light-years apart before looking.</p>
+    <p class="rv">Measure the left qubit. It picks 0 or 1 at random — and its partner's fate is sealed in the
+      same instant. Run it a few times and read the tally: never once do they disagree.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 6 · an entangled (Bell) pair</span><span class="tag">measure, then reset</span></div>
+        <div class="bell">
+          <div class="qcard" id="cardL"><div class="who">Qubit A · here</div><div class="val" id="valL">?</div></div>
+          <div class="link" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.4">
+            <path d="M6 20h28M22 12l12 8-12 8" opacity=".5"/><circle cx="8" cy="20" r="3"/></svg></div>
+          <div class="qcard" id="cardR"><div class="who">Qubit B · far away</div><div class="val" id="valR">?</div></div>
+        </div>
+        <div class="controls">
+          <button class="act" id="bellMeasure">Measure A</button>
+          <button class="ghost" id="bellReset">Reset the pair</button>
+        </div>
+        <div class="tally">
+          <span>agreed (00 or 11): <b id="tAgree">0</b></span>
+          <span>disagreed (01 or 10): <b id="tDis">0</b></span>
+          <span id="tNote" class="dim"></span>
+        </div>
+        <figcaption><b>Correlation, not a phone line.</b> The match is perfect, but no signal passes —
+          A's result is random, so B's holder sees only random flips until they compare notes. Entanglement
+          links outcomes; it doesn't send messages. It's the wiring that lets many qubits interfere as
+          <em>one</em> connected state.</figcaption>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 7 · GROVER ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">07</span> The trick, at work</div>
+    <h2 class="rv">Watch interference find a needle</h2>
+    <p class="rv">Now put every piece together on a real problem. You have a list of
+      <strong>16 boxes</strong>; one hides a prize, and the only thing you can do is ask a black box "is
+      <em>this</em> the one?" A classical searcher opens boxes one by one — on average, eight tries.
+      <strong>Grover's algorithm</strong> does it in <em>three</em>.</p>
+    <p class="rv">It starts every box with the <em>same</em> amplitude — a flat superposition, total ignorance.
+      Then it repeats a two-step move: an <span class="mag">oracle</span> quietly flips the winning box's
+      amplitude negative, and a <span class="cyan">reflection about the average</span> turns that lone minus
+      sign into a surge. Wrong answers interfere down; the right one interferes up. Step through it.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 7 · Grover's search, 16 boxes</span><span class="tag" id="gTag">step 0 · flat</span></div>
+        <canvas id="grover" height="240" aria-label="bar chart of 16 amplitudes evolving under Grover's algorithm"></canvas>
+        <div class="controls">
+          <button class="act" id="gStep">Run the next move</button>
+          <button class="ghost" id="gReset">Start over</button>
+          <button class="ghost" id="gNew">Hide the prize elsewhere</button>
+          <span class="readout" style="margin:0" id="gRead">best guess lands on the prize <b>6.3%</b> of the time — no better than luck.</span>
+        </div>
+        <figcaption><b>Amplitude, not brute force.</b> Each move barely touches the oracle once, yet the
+          winner's bar climbs while sixteen wrong bars sink. After the sweet spot (about
+          <b>⌊π√16 ⁄ 4⌋ = 3</b> moves) the prize is a near-certainty. Push past it and — watch — the wave
+          <em>overshoots</em> and the odds fall again. Even the magic has a rhythm.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">Three versus eight is a modest win. But the pattern holds at scale: Grover cracks a list of
+      a <em>million</em> in about a thousand steps, a <em>trillion</em> in a million. It's a
+      <span class="violet">square-root</span> speed-up — and its cousin, <strong>Shor's algorithm</strong>,
+      uses the very same interference to factor huge numbers <em>exponentially</em> faster, which is exactly
+      why it can, in principle, unpick the encryption guarding the internet.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 8 · DECOHERENCE ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">08</span> Why it's so hard</div>
+    <h2 class="rv">The arrow wants to fall over</h2>
+    <p class="rv">If quantum computers are so powerful, where are they? The problem is that the delicate
+      arrow is desperate to be measured — not by you, but by the <em>universe</em>. A stray photon, a whisper
+      of heat, a trembling atom: any of them "looks," and the superposition quietly collapses into ordinary
+      classical noise. This leak is <strong>decoherence</strong>, and it is relentless.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 8 · coherence, leaking away</span><span class="tag" id="dTag">shielded</span></div>
+        <canvas id="decoh" height="150" aria-label="a phase clock staying sharp or blurring as noise is toggled"></canvas>
+        <div class="controls">
+          <button class="act" id="dToggle">Expose to the world</button>
+          <span class="readout" style="margin:0" id="dRead">shielded &amp; cold — the phase holds steady, and the qubit can compute.</span>
+        </div>
+        <figcaption><b>The engineering war.</b> Real machines fight this with dilution fridges colder than
+          deep space, and with <em>quantum error correction</em> — spreading one flawless "logical" qubit
+          across many noisy physical ones so errors can be caught and undone faster than they arrive.
+          Crossing that threshold is the whole game right now.</figcaption>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 9 · HONEST MAP ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">09</span> An honest map</div>
+    <h2 class="rv">What it will — and won't — do</h2>
+    <p class="rv">The temptation is to imagine a quantum computer as a magically fast laptop. It isn't. It is
+      a strange <em>co-processor</em> that shines on a narrow, precious set of problems whose structure
+      matches the interference trick — and does nothing for the rest.</p>
+
+    <div class="map">
+      <div class="mcard win rv"><h3>Simulating nature <span class="verdict">its calling</span></h3>
+        <p>Molecules, catalysts, superconductors, batteries. Quantum systems are natural to simulate on a
+          quantum machine — the likeliest first world-changing use.</p></div>
+      <div class="mcard win rv"><h3>Breaking codes <span class="verdict">someday</span></h3>
+        <p>Shor's algorithm factors large numbers exponentially faster, threatening today's public-key
+          encryption — the reason "post-quantum" cryptography is already being rolled out.</p></div>
+      <div class="mcard meh rv"><h3>Search &amp; optimization <span class="verdict">modest</span></h3>
+        <p>Grover-style square-root speed-ups help some hard searches, but the gain is gentler than the hype
+          — and easily eaten by overheads.</p></div>
+      <div class="mcard no rv"><h3>Everyday computing <span class="verdict">no gain</span></h3>
+        <p>Email, spreadsheets, video, most software: a quantum computer is <em>slower and worse</em>. Your
+          laptop is safe. This is a scalpel, not a bigger hammer.</p></div>
+    </div>
+
+    <p class="rv" style="margin-top:26px">Strip away the mystique and the whole machine reduces to one idea
+      you can now hold in your head:</p>
+
+    <div class="props rv">
+      <div class="prop"><div class="idx">i</div><div><h3>Put it everywhere</h3>
+        <p>Load the problem into a superposition so every possible answer carries some amplitude at once.</p></div></div>
+      <div class="prop"><div class="idx">ii</div><div><h3>Interfere on purpose</h3>
+        <p>Run operations that make wrong answers cancel and the right answer reinforce — the choreography
+          of amplitudes.</p></div></div>
+      <div class="prop"><div class="idx">iii</div><div><h3>Read once, carefully</h3>
+        <p>Measure. If the dance was right, the answer you're forced to draw is overwhelmingly the one you
+          were hunting.</p></div></div>
+    </div>
+
+    <p class="host-closer rv">So the myth had it backwards. A quantum computer's power isn't that it tries
+      every path — a coin-flipping machine could "try" every path too, and tell you nothing. Its power is
+      that it can make the wrong paths <b>erase each other</b>. Superposition opens the door; measurement is
+      the toll; and <b>interference</b> is the only thing in between that does any real work. Everything else
+      — the fridges, the error correction, the billions in research — is in service of protecting that one
+      fragile, beautiful cancellation.</p>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="kicker"><span class="n">▚</span> Go deeper</div>
+    <p class="dim" style="margin-top:0">This is a hand-wavy tour that trades rigour for intuition. If it
+      caught you, these go properly into the mathematics — and they're wonderful.</p>
+    <div class="srcs">
+      <a href="https://quantum.country/qcvc">Quantum Computing for the Very Curious — Matuschak &amp; Nielsen
+        <span class="u">quantum.country · a spaced-repetition essay that actually teaches the linear algebra</span></a>
+      <a href="https://www.youtube.com/watch?v=-UlxHPIEVqA">But how does bitcoin / quantum interference work? — 3Blue1Brown
+        <span class="u">youtube.com · Grant Sanderson's visual intuition for amplitudes and phase</span></a>
+      <a href="https://www.scottaaronson.com/qclec.pdf">Introduction to Quantum Information Science — Scott Aaronson
+        <span class="u">scottaaronson.com · lecture notes, gloriously blunt about what quantum can't do</span></a>
+      <a href="https://www.smbc-comics.com/comic/the-talk-3">The Talk — Scott Aaronson &amp; Zach Weinersmith
+        <span class="u">smbc-comics.com · the myth-busting comic, "it's about interference, not parallelism"</span></a>
+      <a href="https://en.wikipedia.org/wiki/Grover%27s_algorithm">Grover's algorithm — Wikipedia
+        <span class="u">en.wikipedia.org · the reflection geometry behind Fig 7, in full</span></a>
+    </div>
+    <p class="signoff">Built as an interactive explainer in the spirit of 3Blue1Brown and Kurzgesagt —
+      vanilla JavaScript, inline SVG &amp; canvas, no build step, no dependencies. Every figure is a live
+      simulation of the real rule it illustrates; any errors of over-simplification are mine.</p>
+    <a class="backlink" href="https://0x4d44.github.io/">← back to the almanac</a>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const TAU = Math.PI*2;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+/* ---------- reading progress ---------- */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{
+  const h=document.documentElement,max=h.scrollHeight-h.clientHeight;
+  prog.style.width=(max>0?(h.scrollTop/max*100):0)+'%';
+},{passive:true});
+
+/* ---------- reveal on scroll ---------- */
+const io=new IntersectionObserver((es)=>{
+  es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
+},{threshold:.12,rootMargin:'0px 0px -8% 0px'});
+document.querySelectorAll('.rv').forEach((el,i)=>{el.style.transitionDelay=(Math.min(i,4)*55)+'ms';io.observe(el);});
+
+/* small helper: only animate a canvas while it's on screen */
+function whenVisible(el,onIn,onOut){
+  const ob=new IntersectionObserver(es=>es.forEach(e=>{e.isIntersecting?onIn():(onOut&&onOut());}),{threshold:.15});
+  ob.observe(el);return ob;
+}
+
+/* ---------- hero: a field of qubits + interfering ripples ---------- */
+(function(){
+  const c=document.getElementById('field'),x=c.getContext('2d');
+  let W,H,dpr,pts,t=0,running=false;
+  function size(){
+    dpr=Math.min(devicePixelRatio||1,2);
+    W=c.clientWidth;H=c.clientHeight;
+    c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);
+    const n=Math.round(clamp(W*H/17000,26,70));
+    pts=Array.from({length:n},(_,i)=>({
+      x:hash(i*3.1)*W, y:hash(i*7.7+1)*H,
+      ph:hash(i*2.3)*TAU, sp:0.4+hash(i*5.9)*0.9,
+      r:2.6+hash(i*1.7)*2.2, mag:hash(i*9.1)<.5
+    }));
+  }
+  // deterministic pseudo-random so layout is stable (Math.random is fine too, but this avoids reflow jumps)
+  function hash(s){const v=Math.sin(s*127.1+311.7)*43758.5453;return v-Math.floor(v);}
+  function frame(){
+    if(!running)return;
+    t+=0.012;
+    x.clearRect(0,0,W,H);
+    // connective threads
+    for(let i=0;i<pts.length;i++){
+      const a=pts[i];
+      const ax=a.x+Math.cos(t*a.sp+a.ph)*16, ay=a.y+Math.sin(t*a.sp*1.3+a.ph)*16;
+      a._x=ax;a._y=ay;
+    }
+    for(let i=0;i<pts.length;i++){
+      for(let j=i+1;j<pts.length;j++){
+        const a=pts[i],b=pts[j],dx=a._x-b._x,dy=a._y-b._y,d=Math.hypot(dx,dy);
+        if(d<128){
+          const g=(a.mag||b.mag);
+          x.strokeStyle=(g?'rgba(255,92,168,':'rgba(77,226,255,')+(0.04+(1-d/128)*0.12)+')';
+          x.lineWidth=g?.8:.6;
+          x.beginPath();x.moveTo(a._x,a._y);x.lineTo(b._x,b._y);x.stroke();
+        }
+      }
+    }
+    // qubit nodes — a small orbiting amplitude dot around each
+    for(const a of pts){
+      const col=a.mag?'255,92,168':'77,226,255';
+      x.beginPath();x.arc(a._x,a._y,a.r+Math.sin(t*a.sp*2+a.ph)*0.6,0,TAU);
+      x.fillStyle='rgba('+col+',.85)';x.shadowColor='rgba('+col+',.8)';x.shadowBlur=9;x.fill();
+      x.shadowBlur=0;
+      // orbiting phase hand
+      const ox=a._x+Math.cos(t*1.6+a.ph)*(a.r+6), oy=a._y+Math.sin(t*1.6+a.ph)*(a.r+6);
+      x.beginPath();x.arc(ox,oy,1.4,0,TAU);x.fillStyle='rgba('+col+',.5)';x.fill();
+    }
+    requestAnimationFrame(frame);
+  }
+  size();addEventListener('resize',size);
+  whenVisible(c,()=>{if(!running){running=true;if(!REDUCED)requestAnimationFrame(frame);else{running=true;frame();running=false;}}},
+                ()=>{running=false;});
+  if(REDUCED){running=true;frame();running=false;}
+})();
+
+/* ---------- Fig 1: classical switch ---------- */
+(function(){
+  const sw=document.getElementById('lswitch'),val=document.getElementById('bitVal');
+  function toggle(){sw.classList.toggle('on');val.textContent=sw.classList.contains('on')?'1':'0';}
+  sw.addEventListener('click',toggle);
+  sw.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle();}});
+})();
+
+/* ---------- Fig 2: Bloch sphere ---------- */
+const blochState={theta:Math.PI/2, phi:0}; // theta from north(|0>)=0 .. south(|1>)=pi
+(function(){
+  const c=document.getElementById('bloch'),x=c.getContext('2d');
+  const p0=document.getElementById('p0'),p1=document.getElementById('p1'),
+        f0=document.getElementById('f0'),f1=document.getElementById('f1'),
+        ket=document.getElementById('ketReadout');
+  let W,H,dpr,R,cx,cy,drag=false;
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=360;
+    c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);
+    R=Math.min(W*0.34,140);cx=W/2;cy=H/2;draw();}
+  // project sphere point (unit vec) to screen with a slight top-down tilt
+  const TILT=0.42;
+  function proj(vx,vy,vz){
+    // z is up(|0>). rotate for viewing: tilt about x-axis
+    const sy=vy*Math.cos(TILT)-vz*Math.sin(TILT);
+    const sz=vy*Math.sin(TILT)+vz*Math.cos(TILT);
+    return {x:cx+vx*R, y:cy-sz*R, depth:sy};
+  }
+  function stateVec(){
+    const th=blochState.theta, ph=blochState.phi;
+    return [Math.sin(th)*Math.cos(ph), Math.sin(th)*Math.sin(ph), Math.cos(th)];
+  }
+  function draw(){
+    x.clearRect(0,0,W,H);
+    // sphere outline
+    x.beginPath();x.arc(cx,cy,R,0,TAU);
+    x.strokeStyle='rgba(150,164,214,.28)';x.lineWidth=1.2;x.stroke();
+    x.fillStyle='rgba(120,140,220,.04)';x.fill();
+    // equator (ellipse) + a meridian
+    x.strokeStyle='rgba(150,164,214,.22)';x.lineWidth=1;
+    x.beginPath();x.ellipse(cx,cy,R,R*Math.sin(TILT),0,0,TAU);x.stroke();
+    x.beginPath();x.ellipse(cx,cy,R*Math.cos(0)*Math.sin(TILT)+0.001,R,0,0,TAU);
+    x.setLineDash([3,4]);x.strokeStyle='rgba(150,164,214,.16)';x.stroke();x.setLineDash([]);
+    // poles
+    const np=proj(0,0,1), sp=proj(0,0,-1);
+    x.fillStyle='#4de2ff';x.beginPath();x.arc(np.x,np.y,3.5,0,TAU);x.fill();
+    x.fillStyle='#ff5ca8';x.beginPath();x.arc(sp.x,sp.y,3.5,0,TAU);x.fill();
+    x.font='13px ui-monospace,monospace';x.textAlign='center';
+    x.fillStyle='#4de2ff';x.fillText('|0⟩',np.x,np.y-12);
+    x.fillStyle='#ff5ca8';x.fillText('|1⟩',sp.x,sp.y+20);
+    // state arrow
+    const v=stateVec(),pv=proj(v[0],v[1],v[2]);
+    const grad=x.createLinearGradient(cx,cy,pv.x,pv.y);
+    grad.addColorStop(0,'#4de2ff');grad.addColorStop(1,'#ff5ca8');
+    x.strokeStyle=grad;x.lineWidth=3;x.lineCap='round';
+    x.beginPath();x.moveTo(cx,cy);x.lineTo(pv.x,pv.y);x.stroke();
+    // arrowhead
+    const ang=Math.atan2(pv.y-cy,pv.x-cx);
+    x.fillStyle='#c9b8ff';
+    x.beginPath();x.moveTo(pv.x,pv.y);
+    x.lineTo(pv.x-9*Math.cos(ang-0.4),pv.y-9*Math.sin(ang-0.4));
+    x.lineTo(pv.x-9*Math.cos(ang+0.4),pv.y-9*Math.sin(ang+0.4));
+    x.closePath();x.fill();
+    // tip glow
+    x.beginPath();x.arc(pv.x,pv.y,5,0,TAU);x.fillStyle='#fff';
+    x.shadowColor='#a98bff';x.shadowBlur=14;x.fill();x.shadowBlur=0;
+    // centre
+    x.beginPath();x.arc(cx,cy,2.5,0,TAU);x.fillStyle='rgba(200,210,240,.7)';x.fill();
+    updateBars();
+  }
+  function updateBars(){
+    const a=Math.cos(blochState.theta/2); // amplitude of |0>
+    const b=Math.sin(blochState.theta/2); // amplitude of |1>
+    const P0=a*a,P1=b*b;
+    p0.textContent=Math.round(P0*100)+'%';p1.textContent=Math.round(P1*100)+'%';
+    f0.style.width=(P0*100)+'%';f1.style.width=(P1*100)+'%';
+    // phase written as e^{iφ} on the |1> term when it matters
+    const ph=blochState.phi;
+    let phTxt='';
+    if(b>0.02 && Math.abs(ph)>0.05 && Math.abs(ph-TAU)>0.05){
+      const deg=Math.round(ph*180/Math.PI)%360;
+      phTxt=' e^{i·'+deg+'°}';
+    }
+    ket.textContent=a.toFixed(2)+'|0⟩ + '+b.toFixed(2)+phTxt+'|1⟩';
+  }
+  function setFromPointer(px,py){
+    // vertical position → theta (tilt between the poles); horizontal → phi (spin)
+    blochState.theta=clamp((py-(cy-R))/(2*R),0,1)*Math.PI;
+    blochState.phi=clamp((px-(cx-R))/(2*R),0,1)*TAU;
+    draw();
+  }
+  function pos(e){const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;
+    return [t.clientX-r.left,t.clientY-r.top];}
+  c.addEventListener('pointerdown',e=>{drag=true;c.setPointerCapture(e.pointerId);setFromPointer(...pos(e));});
+  c.addEventListener('pointermove',e=>{if(drag){setFromPointer(...pos(e));}});
+  addEventListener('pointerup',()=>{drag=false;});
+  // gentle idle drift of phase until touched
+  let touched=false,raf,running=false;
+  c.addEventListener('pointerdown',()=>{touched=true;});
+  function idle(){if(!running)return;if(!touched){blochState.phi=(blochState.phi+0.006)%TAU;draw();}requestAnimationFrame(idle);}
+  size();addEventListener('resize',size);
+  whenVisible(c,()=>{if(!running){running=true;if(!REDUCED)requestAnimationFrame(idle);}},()=>{running=false;});
+})();
+
+/* ---------- Fig 3: measurement histogram ---------- */
+(function(){
+  const tilt=document.getElementById('tilt'),tag=document.getElementById('mTag'),
+        hb0=document.getElementById('hb0'),hb1=document.getElementById('hb1'),
+        c0=document.getElementById('c0'),c1=document.getElementById('c1'),
+        stat=document.getElementById('mstat');
+  let n0=0,n1=0;
+  function P1(){return +tilt.value/1000;} // probability of reading 1
+  function updTag(){const p1=Math.round(P1()*100);tag.textContent='tilt: '+(100-p1)+' / '+p1;
+    stat.innerHTML=(n0+n1)+' measurements · promised '+(100-p1)+'% / '+p1+'%';}
+  function redraw(){
+    const tot=Math.max(1,n0+n1),max=Math.max(n0,n1,1);
+    hb0.style.height=(n0/max*126+2)+'px';hb1.style.height=(n1/max*126+2)+'px';
+    const f0=Math.round(n0/tot*100),f1=Math.round(n1/tot*100);
+    c0.innerHTML=n0+' <span class="dim">('+f0+'%)</span>';c1.innerHTML=n1+' <span class="dim">('+f1+'%)</span>';
+  }
+  function measure(k){for(let i=0;i<k;i++){(Math.random()<P1())?n1++:n0++;}redraw();updTag();}
+  tilt.addEventListener('input',updTag);
+  document.getElementById('measure1').addEventListener('click',()=>measure(1));
+  document.getElementById('measure100').addEventListener('click',()=>measure(100));
+  document.getElementById('mreset').addEventListener('click',()=>{n0=n1=0;redraw();updTag();});
+  updTag();redraw();
+})();
+
+/* ---------- Fig 4: interference phasors ---------- */
+(function(){
+  const c=document.getElementById('interf'),x=c.getContext('2d');
+  const slider=document.getElementById('phase'),pv=document.getElementById('phaseVal'),
+        read=document.getElementById('interfRead');
+  let W,H,dpr,spin=0,running=false;
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=300;
+    c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);draw();}
+  function arrow(ox,oy,ax,ay,col,w){
+    x.strokeStyle=col;x.lineWidth=w;x.lineCap='round';
+    x.beginPath();x.moveTo(ox,oy);x.lineTo(ax,ay);x.stroke();
+    const a=Math.atan2(ay-oy,ax-ox),L=9;
+    x.fillStyle=col;x.beginPath();x.moveTo(ax,ay);
+    x.lineTo(ax-L*Math.cos(a-0.42),ay-L*Math.sin(a-0.42));
+    x.lineTo(ax-L*Math.cos(a+0.42),ay-L*Math.sin(a+0.42));x.closePath();x.fill();
+  }
+  function draw(){
+    x.clearRect(0,0,W,H);
+    const phi=(+slider.value)*Math.PI/180;
+    const cxp=W*0.30,cyp=H*0.52,scale=Math.min(W*0.16,66);
+    const base=REDUCED?0:spin;
+    // amplitude 1: angle = base ; amplitude 2 : angle = base + phi ; both length 1
+    const a1=base, a2=base+phi;
+    // draw a faint unit circle guide
+    x.strokeStyle='rgba(150,164,214,.14)';x.lineWidth=1;
+    x.beginPath();x.arc(cxp,cyp,scale*2,0,TAU);x.stroke();
+    // tip to tail: origin -> tip of arrow 1 -> tip of arrow 2 (the sum)
+    const s=scale; // one unit = s px
+    const e1x=cxp+Math.cos(a1)*s, e1y=cyp-Math.sin(a1)*s;
+    const e2x=e1x+Math.cos(a2)*s, e2y=e1y-Math.sin(a2)*s;
+    // resultant
+    arrow(cxp,cyp,e1x,e1y,'#4de2ff',3);
+    arrow(e1x,e1y,e2x,e2y,'#ff5ca8',3);
+    // sum vector
+    const sumx=Math.cos(a1)+Math.cos(a2), sumy=Math.sin(a1)+Math.sin(a2);
+    const mag=Math.hypot(sumx,sumy); // 0..2
+    x.setLineDash([]);
+    arrow(cxp,cyp,e2x,e2y,'rgba(255,255,255,.9)',2.4);
+    x.fillStyle='rgba(255,255,255,.85)';x.font='12px ui-monospace,monospace';x.textAlign='left';
+    x.fillText('resultant', e2x+8, e2y);
+    // probability meter on the right
+    const bx=W*0.72, bw=Math.min(W*0.14,64), bh=180, by=cyp-bh/2;
+    const prob=(mag*mag)/4; // normalise: max |sum|=2 → prob 1
+    x.strokeStyle='rgba(150,164,214,.28)';x.lineWidth=1;
+    x.strokeRect(bx,by,bw,bh);
+    const fillH=bh*prob;
+    const g=x.createLinearGradient(0,by+bh,0,by);
+    g.addColorStop(0,'#ff5ca8');g.addColorStop(1,'#4de2ff');
+    x.fillStyle=g;x.fillRect(bx,by+bh-fillH,bw,fillH);
+    x.fillStyle='#fff';x.textAlign='center';x.font='13px ui-monospace,monospace';
+    x.fillText(Math.round(prob*100)+'%',bx+bw/2,by-10);
+    x.fillStyle='rgba(150,164,214,.75)';x.font='11px ui-monospace,monospace';
+    x.fillText('|sum|²',bx+bw/2,by+bh+18);
+    if(running&&!REDUCED){spin=(spin+0.02)%TAU;requestAnimationFrame(draw);}
+  }
+  function updRead(){
+    const deg=+slider.value;pv.textContent=deg+'°';
+    const phi=deg*Math.PI/180;const mag=Math.hypot(1+Math.cos(phi),Math.sin(phi));
+    const prob=Math.round((mag*mag)/4*100);
+    let msg;
+    if(deg<=20||deg>=340) msg='two equal amplitudes, in step → they <b class="cyan">reinforce</b>. Outcome probability <b>'+prob+'%</b> of its maximum.';
+    else if(deg>=160&&deg<=200) msg='two equal amplitudes, exactly opposed → they <b class="mag">cancel</b>. This outcome <b>never happens</b> ('+prob+'%).';
+    else msg='partly out of step → partial cancellation. Outcome probability <b>'+prob+'%</b> of its maximum.';
+    read.innerHTML=msg;
+  }
+  slider.addEventListener('input',()=>{updRead();if(REDUCED)draw();});
+  size();updRead();addEventListener('resize',size);
+  whenVisible(c,()=>{if(!running){running=true;if(!REDUCED)requestAnimationFrame(draw);else draw();}},()=>{running=false;});
+})();
+
+/* ---------- Fig 5: 2^n grid ---------- */
+(function(){
+  const nq=document.getElementById('nq'),val=document.getElementById('nqVal'),
+        grid=document.getElementById('qgrid'),big=document.getElementById('qbig'),
+        tag=document.getElementById('qTag'),cap=document.getElementById('qcap');
+  const analogies=[
+    '','a coin','a nibble of possibilities','one byte-corner','','','',
+    'more than a data centre of switches','','a small town of bits'];
+  function fmt(n){return n.toLocaleString('en-US');}
+  function render(){
+    const n=+nq.value;val.textContent=n;tag.textContent=n+(n===1?' qubit':' qubits');
+    const count=Math.pow(2,n);
+    grid.innerHTML='';
+    const show=Math.min(count,512);
+    for(let i=0;i<show;i++){const d=document.createElement('div');d.className='qcell';
+      d.style.animationDelay=(Math.min(i,120)*4)+'ms';
+      d.style.background='linear-gradient(135deg, hsl('+(190+i/show*130)+' 90% 62%), hsl('+(260+i/show*60)+' 80% 66%))';
+      grid.appendChild(d);}
+    big.innerHTML=fmt(count)+'<small>amplitudes held simultaneously'+(count>512?' · showing first 512':'')+'</small>';
+    if(n>=8) cap.innerHTML='<b>The cliff begins.</b> Ten qubits is a thousand amplitudes; every extra qubit doubles it again. Keep going and no classical memory can follow.';
+    else cap.innerHTML='<b>Small numbers, then a cliff.</b> This looks tame down here. But the doubling never stops — and that is where the impossibility, and the promise, both live.';
+  }
+  nq.addEventListener('input',render);render();
+})();
+
+/* ---------- Fig 6: entangled Bell pair ---------- */
+(function(){
+  const L=document.getElementById('cardL'),R=document.getElementById('cardR'),
+        vL=document.getElementById('valL'),vR=document.getElementById('valR'),
+        tA=document.getElementById('tAgree'),tD=document.getElementById('tDis'),
+        note=document.getElementById('tNote');
+  let agree=0,dis=0;
+  function reset(){[L,R].forEach(c=>c.className='qcard');vL.textContent='?';vR.textContent='?';}
+  function measure(){
+    const bit=Math.random()<0.5?0:1; // Φ+ Bell state → perfectly correlated
+    const cls='res '+(bit?'o':'z');
+    L.className='qcard '+cls;R.className='qcard '+cls;
+    vL.textContent=bit;vR.textContent=bit;
+    agree++; tA.textContent=agree;tD.textContent=dis;
+    note.textContent=(agree>=3)?'— they have never disagreed.':'';
+  }
+  document.getElementById('bellMeasure').addEventListener('click',measure);
+  document.getElementById('bellReset').addEventListener('click',()=>{reset();});
+  reset();
+})();
+
+/* ---------- Fig 7: Grover's algorithm ---------- */
+(function(){
+  const c=document.getElementById('grover'),x=c.getContext('2d');
+  const N=16;let marked=11,amp=[],step=0,phase='init';
+  const tag=document.getElementById('gTag'),read=document.getElementById('gRead');
+  let W,H,dpr;
+  function reset(){amp=new Array(N).fill(1/Math.sqrt(N));step=0;phase='flat';draw();report();}
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=240;
+    c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);draw();}
+  function oracle(){amp[marked]*=-1;}
+  function diffuse(){const m=amp.reduce((s,v)=>s+v,0)/N;for(let i=0;i<N;i++)amp[i]=2*m-amp[i];}
+  function next(){
+    // one Grover "move" = oracle then diffusion; show as a single step
+    oracle();diffuse();step++;draw();report();
+  }
+  function report(){
+    const p=amp[marked]*amp[marked];
+    tag.textContent='step '+step+(step===0?' · flat':'');
+    if(step===0){read.innerHTML='best guess lands on the prize <b>'+(100/N).toFixed(1)+'%</b> of the time — no better than luck.';}
+    else{
+      const opt=Math.floor(Math.PI/4*Math.sqrt(N));
+      let extra = step>opt ? ' — past the sweet spot; the wave is overshooting.' :
+                  (step===opt? ' — this is the sweet spot.' : '');
+      read.innerHTML='after '+step+' move'+(step>1?'s':'')+', the prize is found <b>'+(p*100).toFixed(1)+'%</b> of the time'+extra;
+    }
+  }
+  function draw(){
+    x.clearRect(0,0,W,H);
+    const padL=8,padR=8,padB=26,padT=14;
+    const bw=(W-padL-padR)/N, gap=bw*0.22;
+    const zeroY=H-padB, maxBar=(H-padB-padT);
+    // zero line
+    x.strokeStyle='rgba(150,164,214,.35)';x.lineWidth=1;
+    x.beginPath();x.moveTo(padL,zeroY);x.lineTo(W-padR,zeroY);x.stroke();
+    // scale so amplitude 1.0 ~ full height, but amplitudes here are <=1
+    for(let i=0;i<N;i++){
+      const a=amp.length?amp[i]:1/Math.sqrt(N);
+      const h=a*maxBar; // signed
+      const bx=padL+i*bw+gap/2, w=bw-gap;
+      const isM=i===marked;
+      if(h>=0){
+        const g=x.createLinearGradient(0,zeroY,0,zeroY-h);
+        if(isM){g.addColorStop(0,'#ffd479');g.addColorStop(1,'#fff0c8');}
+        else{g.addColorStop(0,'#3a4a86');g.addColorStop(1,'#5e77c8');}
+        x.fillStyle=g;x.fillRect(bx,zeroY-h,w,h);
+      }else{
+        x.fillStyle=isM?'rgba(255,92,168,.9)':'rgba(255,92,168,.45)';
+        x.fillRect(bx,zeroY,w,-h);
+      }
+      if(isM){x.strokeStyle='rgba(255,212,121,.9)';x.lineWidth=1;
+        x.strokeRect(bx,Math.min(zeroY,zeroY-h),w,Math.abs(h));}
+    }
+    // label
+    x.fillStyle='rgba(150,164,214,.7)';x.font='11px ui-monospace,monospace';x.textAlign='center';
+    const mx=padL+marked*bw+bw/2;
+    x.fillText('prize',mx,zeroY+18);
+    x.textAlign='left';x.fillStyle='rgba(150,164,214,.5)';
+    x.fillText('amplitude',padL+2,padT+2);
+    x.textAlign='left';x.fillStyle='rgba(255,92,168,.6)';
+    x.fillText('(below the line = negative)',padL+2,zeroY+18);
+  }
+  document.getElementById('gStep').addEventListener('click',()=>{if(!amp.length)reset();next();});
+  document.getElementById('gReset').addEventListener('click',reset);
+  document.getElementById('gNew').addEventListener('click',()=>{let m;do{m=Math.floor(Math.random()*N);}while(m===marked);marked=m;reset();});
+  size();reset();addEventListener('resize',size);
+})();
+
+/* ---------- Fig 8: decoherence clock ---------- */
+(function(){
+  const c=document.getElementById('decoh'),x=c.getContext('2d');
+  const btn=document.getElementById('dToggle'),tag=document.getElementById('dTag'),read=document.getElementById('dRead');
+  let W,H,dpr,exposed=false,ph=0,blur=0,running=false;
+  function size(){dpr=Math.min(devicePixelRatio||1,2);W=c.clientWidth;H=150;
+    c.width=W*dpr;c.height=H*dpr;x.setTransform(dpr,0,0,dpr,0,0);}
+  function frame(){
+    if(!running)return;
+    ph+=exposed?0.05+ (Math.random()-0.5)*0.5*blur :0.05;
+    if(exposed) blur=Math.min(1,blur+0.012); else blur=Math.max(0,blur-0.03);
+    x.clearRect(0,0,W,H);
+    const cx=W/2,cy=H/2,R=Math.min(H*0.34,44);
+    // ghost hands to show phase uncertainty when decohering
+    const ghosts=Math.round(blur*7);
+    for(let i=-ghosts;i<=ghosts;i++){
+      const gp=ph+i*0.5*blur;
+      x.strokeStyle='rgba(169,139,255,'+(0.5*(1-Math.abs(i)/(ghosts+1))*(blur))+')';
+      x.lineWidth=2;x.beginPath();x.moveTo(cx,cy);
+      x.lineTo(cx+Math.cos(gp)*R,cy-Math.sin(gp)*R);x.stroke();
+    }
+    // clock face
+    x.strokeStyle='rgba(150,164,214,.3)';x.lineWidth=1;
+    x.beginPath();x.arc(cx,cy,R,0,TAU);x.stroke();
+    // main hand
+    const col=exposed?'#ff5ca8':'#4de2ff';
+    x.strokeStyle=col;x.lineWidth=3;x.lineCap='round';
+    x.beginPath();x.moveTo(cx,cy);x.lineTo(cx+Math.cos(ph)*R,cy-Math.sin(ph)*R);
+    x.shadowColor=col;x.shadowBlur=exposed?4:12;x.stroke();x.shadowBlur=0;
+    x.beginPath();x.arc(cx,cy,3,0,TAU);x.fillStyle='#fff';x.fill();
+    // coherence meter
+    const coh=1-blur;
+    x.fillStyle='rgba(150,164,214,.7)';x.font='11px ui-monospace,monospace';x.textAlign='left';
+    x.fillText('coherence',cx+R+24,cy-14);
+    x.strokeStyle='rgba(150,164,214,.3)';x.strokeRect(cx+R+24,cy-4,120,12);
+    x.fillStyle=coh>0.5?'#4de2ff':'#ff5ca8';x.fillRect(cx+R+24,cy-4,120*coh,12);
+    requestAnimationFrame(frame);
+  }
+  btn.addEventListener('click',()=>{
+    exposed=!exposed;
+    btn.textContent=exposed?'Shield it again':'Expose to the world';
+    btn.className=exposed?'act mag':'act';
+    tag.textContent=exposed?'decohering':'shielded';
+    read.innerHTML=exposed
+      ?'the environment is "watching" — the phase smears into noise and the quantum information <b class="mag">leaks away</b>.'
+      :'shielded &amp; cold — the phase holds steady, and the qubit can compute.';
+  });
+  size();addEventListener('resize',size);
+  whenVisible(c,()=>{if(!running){running=true;if(!REDUCED)requestAnimationFrame(frame);else{frame();}}},()=>{running=false;});
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
