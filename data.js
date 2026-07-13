@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "logistic-map",
+    title: "The Road to Chaos",
+    tagline: "One parabola, iterated, period-doubles its way into chaos — and hides a universal number in the cascade. A live tour of the logistic map: an animated cobweb orbit, a Lyapunov-coloured bifurcation diagram you can drag and zoom, Feigenbaum's δ ≈ 4.6692 solved in your browser, and the same constant falling out of three unrelated maps. Vanilla JS on canvas; no build step.",
+    url: "https://0x4d44.github.io/logistic-map/",
+    illustration: "ill-logistic",
+    date: "2026-07-13T15:30:00",
+    year: 1976,
+    tags: ["software", "math", "science"],
+    real: true,
+  },
+  {
     slug: "model-welfare",
     title: "In Case There's Someone Home",
     tagline: "An interactive, scrollytelling explainer for Anthropic's model-welfare research: how do you treat a mind that might not exist? Weigh the precautionary wager on a live probability dial, escalate a chat to see when Claude may (and may not) hang up, read its revealed preferences, and watch two Claudes drift into the “spiritual bliss attractor.” Vanilla JS, canvas + SVG; no build step.",
