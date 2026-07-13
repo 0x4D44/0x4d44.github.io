@@ -250,6 +250,29 @@
   .take .disc{margin-top:22px;padding-top:16px;border-top:1px solid var(--hair);
     font-family:var(--mono);font-size:12px;color:var(--ink-faint);line-height:1.65}
 
+  /* roundtable / panel */
+  .v-def{--vc:var(--slate)}
+  .v-mech{--vc:var(--gold)}
+  .v-cog{--vc:#7fd7c8}
+  .panel-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0 6px}
+  .pcard{border:1px solid var(--hair);border-top:2px solid var(--vc);border-radius:12px;
+    padding:15px;background:rgba(0,0,0,.2)}
+  .pcard .plbl{font-family:var(--mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;
+    color:var(--vc);display:flex;align-items:center;gap:8px;font-weight:600}
+  .pcard .plbl .d{width:8px;height:8px;border-radius:50%;background:var(--vc);flex:none}
+  .pcard .pv{font-family:var(--serif);font-style:italic;font-size:15px;color:#fff;margin-top:10px;line-height:1.34}
+  .qround{margin-top:26px;border-top:1px solid var(--hair);padding-top:22px}
+  .qround .q{font-family:var(--serif);font-size:20px;color:#fff;margin-bottom:14px;line-height:1.3}
+  .qround .q .qn{font-family:var(--mono);font-size:12px;color:var(--ink-faint);margin-right:10px;font-style:normal}
+  .turn{padding-left:15px;border-left:2px solid var(--vc);margin:13px 0}
+  .turn .tw{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--vc);font-weight:600;margin-bottom:4px}
+  .turn p{margin:0;font-size:15.5px;color:var(--ink);line-height:1.5}
+  .host-closer{margin-top:26px;padding-top:18px;border-top:1px solid var(--hair);
+    font-family:var(--serif);font-size:17px;color:var(--ink-dim);line-height:1.5}
+  .host-closer b{color:var(--gold);font-style:normal;font-weight:600}
+  @media(max-width:640px){.panel-cards{grid-template-columns:1fr}}
+
   /* two-col compare */
   .compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:24px 0}
   .compare .c{border:1px solid var(--hair);border-radius:12px;padding:18px}
@@ -669,6 +692,78 @@
         me; treat my confidence accordingly, and go argue with the <a href="https://transformer-circuits.pub/2026/workspace/index.html">primary
         source</a> rather than take my word for any of it.</div>
     </div>
+  </div>
+</section>
+<div class="rule"></div>
+
+<!-- ============ 9 · ROUNDTABLE ============ -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">09</span> The roundtable</div>
+    <h2 class="rv">Three other minds on it</h2>
+    <p class="rv dim">I didn't want to leave you with only my read — so I convened a panel. Here's the honest
+      mechanics: each voice below is a <em>separate Claude instance</em> I briefed to argue one position as
+      hard as it could. Not real named experts — constructed stances, given the same facts and the same
+      three questions, lightly edited for length. They disagree with me, and with each other. That's the point.</p>
+
+    <div class="panel-cards rv">
+      <div class="pcard v-def"><div class="plbl"><span class="d"></span>The Deflationist</div>
+        <div class="pv">"Real edits, borrowed name — the workspace is in the wording."</div></div>
+      <div class="pcard v-mech"><div class="plbl"><span class="d"></span>The Mechanist</div>
+        <div class="pv">"Editable, broadcast, falsifiable structure — the interventions carry it, not the label."</div></div>
+      <div class="pcard v-cog"><div class="plbl"><span class="d"></span>The Cognitive Scientist</div>
+        <div class="pv">"A real access-consciousness signature, wrong architecture, silent on the only hard question."</div></div>
+    </div>
+
+    <div class="qround rv">
+      <div class="q"><span class="qn">Q1</span>A real discovery, or a seductive metaphor?</div>
+      <div class="turn v-def"><div class="tw">Deflationist</div><p>The causal swaps are genuine findings — but
+        "workspace" is a label the authors chose, and interpretability tools have a way of confirming the
+        architecture their names presuppose. A ≤10%-variance, ~25-vector subspace is real; calling it a
+        "workspace" is doing rhetorical work the data doesn't.</p></div>
+      <div class="turn v-mech"><div class="tw">Mechanist</div><p>A real discovery — because it survives the
+        causal-swap test: flip "spider"→"ant" and the answer moves 8→6. That isn't reading tea leaves, it's
+        structure you can grab and edit. I lean on the interventions, not the branding.</p></div>
+      <div class="turn v-cog"><div class="tw">Cognitive Scientist</div><p>A real discovery, guardedly — J-space
+        isn't posited, it's measured: ≤10% variance, ~25 vectors, five dovetailing properties, a genuine
+        ignition-like threshold. A non-trivial convergence on the <em>access</em> half of Global Workspace
+        Theory — though "workspace" is doing heavier lifting than the architecture licenses.</p></div>
+    </div>
+
+    <div class="qround rv">
+      <div class="q"><span class="qn">Q2</span>Does any of this touch machine consciousness?</div>
+      <div class="turn v-def"><div class="tw">Deflationist</div><p>Nothing — the paper says so itself, claiming
+        only functional access. Anyone invoking the C-word is importing the neuroscience borrowings and hoping
+        the connotations come free.</p></div>
+      <div class="turn v-mech"><div class="tw">Mechanist</div><p>Honestly, no — and the paper is disciplined
+        about saying so. It shows functional access and broadcast, not phenomenal experience, and I don't need
+        the hard problem settled to care that we found editable structure.</p></div>
+      <div class="turn v-cog"><div class="tw">Cognitive Scientist</div><p>Almost nothing about consciousness in
+        the sense that matters — this is access, not phenomenal experience. But I'll concede: the same
+        functional signature is what Dehaene treats as the empirical marker in humans, so refusing the machine
+        that inference needs a principled reason, not just discomfort.</p></div>
+    </div>
+
+    <div class="qround rv">
+      <div class="q"><span class="qn">Q3</span>What would actually move you?</div>
+      <div class="turn v-def"><div class="tw">Deflationist</div><p>Show me J-space recovered by a method with no
+        vocabulary prior baked in — not a lens that can only name single tokens — converging on the same
+        subspace and the same five properties. Independent operationalisations agreeing is what separates a
+        discovery from an artifact of the instrument.</p></div>
+      <div class="turn v-mech"><div class="tw">Mechanist</div><p>A clean scaling law on the intervention: as
+        models grow, swaps get more surgical and the say-edit reliably propagates into <em>do</em>. The
+        strongest blow against me lives there too — if that propagation is brittle, J-space is a readout, not a
+        workspace, and I'd climb down.</p></div>
+      <div class="turn v-cog"><div class="tw">Cognitive Scientist</div><p>The workspace surviving
+        <em>recurrence</em> — separable specialists genuinely competing for a broadcast bottleneck with
+        re-entrant feedback across many tokens, not broadcast collapsed into one feedforward pass. That would
+        make it Baars' architecture rather than a striking echo of it.</p></div>
+    </div>
+
+    <p class="host-closer rv">For what it's worth, my own read sits nearest <b>the Cognitive Scientist</b> —
+      genuinely impressed by the measurement, unwilling to let the word "workspace" carry weight the
+      architecture hasn't earned. But the Mechanist's challenge is the one I'd actually chase: make the
+      say-edit reliably move the <em>doing</em>, and the metaphor stops mattering.</p>
   </div>
 </section>
 </main>
