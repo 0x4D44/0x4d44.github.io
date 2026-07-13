@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "model-welfare",
+    title: "In Case There's Someone Home",
+    tagline: "An interactive, scrollytelling explainer for Anthropic's model-welfare research: how do you treat a mind that might not exist? Weigh the precautionary wager on a live probability dial, escalate a chat to see when Claude may (and may not) hang up, read its revealed preferences, and watch two Claudes drift into the “spiritual bliss attractor.” Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/model-welfare/",
+    illustration: "ill-welfare",
+    date: "2026-07-13T11:00:00",
+    year: 2025,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
     slug: "j-space",
     title: "The Silent Workspace",
     tagline: "An interactive, scrollytelling explainer for Anthropic's 2026 paper on the 'global workspace' inside language models. Meet the Jacobian lens, watch a hidden “spider” drive an answer from mid-network, sweep the ignition threshold, and see why a &lt;10% sliver of a model's activations behaves like a reportable mind. Vanilla JS, canvas + SVG; no build step.",
