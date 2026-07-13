@@ -586,8 +586,11 @@
       'published continuously since a date we have not verified.</p>');
     out.push('<div class="disclaimer" style="margin:0 0 22px"><strong>This entire website is satire.</strong> ' +
       'Every article, byline, quotation, statistic, expert, institution and advertisement is fictional and ' +
-      'invented for comic effect. Nothing here is true, and none of it is advice. Any resemblance to real ' +
-      'events, persons, or correctly-flanged sprockets is entirely coincidental.</div>');
+      'invented for comic effect. Nothing here is true, and none of it is advice &mdash; with one confessed ' +
+      'exception. A run of stories tagged <em>based-on-truth</em> retells things humans genuinely, ' +
+      'bewilderingly did; the underlying events are real, but the breathless prose, the named correspondents ' +
+      'and every quoted expert remain entirely invented. Everywhere else, any resemblance to real events, ' +
+      'persons, or correctly-flanged sprockets is entirely coincidental.</div>');
     out.push('<p>The Daily Flange currently carries <strong>' + ARTICLES.length + ' stories</strong> across ' +
       Object.keys(cats).length + ' sections. Our front page is reassembled every hour from the live clock, so ' +
       'the news genuinely changes through the day — though, our corpus being finite, you will in time meet a ' +
