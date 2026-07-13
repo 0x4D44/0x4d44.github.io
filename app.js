@@ -2,7 +2,8 @@
 // 0x4D44 — interactive listing
 // Vanilla JS. No framework. Handles search / filter / group / sort /
 // layout state and renders the listing into #listing. State persists to
-// localStorage (the live search query is deliberately not persisted).
+// localStorage (the live search query and the open-shelf drill-in are
+// deliberately transient — reload lands on the shelf tiles).
 // ============================================================
 
 (function () {
@@ -23,7 +24,8 @@
   }
 
   const state = loadState();
-  let query = "";                       // live search text — transient, never saved
+  let query = "";            // live search text — transient, never saved
+  let openShelf = null;      // drilled-into shelf id (shelf view) — transient
   const essays = window.ESSAYS || [];
   const collections = window.COLLECTIONS || [];
   const bySlug = {};
@@ -36,6 +38,7 @@
   const wordsText = (e, suffix) => hasNumber(e.words) ? `${(e.words / 1000).toFixed(1)}k${suffix}` : "";
   const sizeMobileParts = (e) => [readingText(e), wordsText(e, " w")].filter(Boolean);
   const sizeText = (e) => [readingText(e), wordsText(e, "")].filter(Boolean).join(" · ");
+  const toTop = () => { try { window.scrollTo({ top: 0, behavior: "auto" }); } catch (_) { window.scrollTo(0, 0); } };
 
   function el(tag, attrs, children) {
     const e = document.createElement(tag);
@@ -84,6 +87,7 @@
   }
 
   // One control button. `count` (optional) renders a dim tally beside the label.
+  // Changing the group or filter resets any shelf drill-in (back to a clean view).
   function makeButton(value, label, key, count) {
     const b = el("button", {
       type: "button",
@@ -91,6 +95,7 @@
       "aria-pressed": state[key] === value ? "true" : "false",
       onclick: () => {
         state[key] = value;
+        if (key === "group" || key === "filter") openShelf = null;
         saveState(state);
         render();
       },
@@ -127,7 +132,6 @@
 
   function buildControls() {
     buildFilter();
-    // group:by is only offered when there are shelves to group into.
     const groupOpts = [["shelf", "--shelf"], ["subject", "--subject"], ["year", "--decade"], ["flat", "--flat"]];
     if (!collections.length) { state.group = "flat"; }
     buildControlRow("group-row", collections.length ? groupOpts : [["flat", "--flat"]], "group");
@@ -158,6 +162,17 @@
         if (ev.key === "Escape") { box.value = ""; query = ""; render(); }
       });
     }
+
+    // Collapsible options (mobile): the toggle shows/hides the filter+controls
+    // block. On desktop CSS keeps the block open and hides the toggle.
+    const toggle = document.getElementById("options-toggle");
+    const opts = document.getElementById("options");
+    if (toggle && opts) {
+      toggle.addEventListener("click", () => {
+        const open = opts.classList.toggle("open");
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    }
   }
 
   // ---------- selection pipeline ----------
@@ -184,17 +199,21 @@
     return l;
   }
 
-  // Break the (already filtered) list into labelled sections per the group mode.
+  // The documents on one shelf that survive the current filter/search.
+  function shelfItems(c, inList) {
+    return sortList(c.slugs.map(s => bySlug[s]).filter(e => e && inList.has(e.slug)));
+  }
+
+  // Break the (already filtered) list into labelled sections per the group
+  // mode. Used by subject/decade, and by shelf view when searching.
   // Returns null for flat mode. Each section: { id, label, blurb, items }.
   function sections(list) {
     const inList = new Set(list.map(e => e.slug));
 
     if (state.group === "shelf") {
       const secs = collections.map(c => ({
-        id: c.id, label: c.name, blurb: c.blurb || "",
-        items: sortList(c.slugs.map(s => bySlug[s]).filter(e => e && inList.has(e.slug))),
+        id: c.id, label: c.name, blurb: c.blurb || "", items: shelfItems(c, inList),
       })).filter(s => s.items.length);
-      // Safety net: any document on no shelf still shows, so nothing vanishes.
       const shelved = new Set(collections.flatMap(c => c.slugs));
       const rest = sortList(list.filter(e => !shelved.has(e.slug)));
       if (rest.length) secs.push({ id: "_unshelved", label: "Unshelved", blurb: "Not yet filed on a shelf.", items: rest });
@@ -303,7 +322,7 @@
     }
   }
 
-  // A foldable shelf/section header, styled as an ASCII rule.
+  // A foldable section header (subject / decade / search results), an ASCII rule.
   function shelfHead(sec) {
     const folded = !!state.folded[sec.id];
     const head = el("div", {
@@ -328,7 +347,58 @@
     render();
   }
 
-  // ---------- controls: pressed state + search readout ----------
+  // ---------- shelf view: tiles + drill-in ----------
+  // The tile landing: one card per shelf, tap to open it.
+  function renderTiles(listing, list) {
+    const inList = new Set(list.map(e => e.slug));
+    listing.appendChild(el("div", { class: "tiles-hint" },
+      collections.length + " shelves · tap one to open, or search above"));
+    const grid = el("div", { class: "tiles" });
+    collections.forEach(c => {
+      const count = shelfItems(c, inList).length;
+      if (!count) return;
+      const tile = el("button", {
+        class: "tile", type: "button",
+        onclick: () => { openShelf = c.id; render(); toTop(); },
+      });
+      tile.appendChild(el("div", { class: "tile-fig" }, [svgUse(c.icon || "ill-diesel")]));
+      tile.appendChild(el("div", { class: "tile-body" }, [
+        el("div", { class: "tile-name" }, c.name),
+        el("div", { class: "tile-count" }, count + (count === 1 ? " doc" : " docs")),
+        el("div", { class: "tile-blurb" }, c.blurb || ""),
+      ]));
+      grid.appendChild(tile);
+    });
+    listing.appendChild(grid);
+  }
+
+  // A single shelf, drilled into from a tile, with a back link.
+  function renderSingleShelf(listing, list) {
+    const c = collections.find(x => x.id === openShelf);
+    if (!c) { openShelf = null; return renderTiles(listing, list); }
+    const items = shelfItems(c, new Set(list.map(e => e.slug)));
+
+    const back = el("button", {
+      class: "shelf-back", type: "button",
+      onclick: () => { openShelf = null; render(); toTop(); },
+    }, "‹ all shelves");
+    listing.appendChild(el("div", { class: "shelf-bar" }, [
+      back,
+      el("span", { class: "shelf-bar-name" }, c.name),
+      el("span", { class: "shelf-bar-count" }, "· " + items.length),
+    ]));
+    if (c.blurb) listing.appendChild(el("div", { class: "shelf-bar-blurb" }, c.blurb));
+
+    if (!items.length) {
+      listing.appendChild(el("div", { class: "empty",
+        style: "padding:28px 6px;color:var(--dim);font-size:12px;letter-spacing:1.5px;" },
+        `// nothing on this shelf matches --${state.filter}`));
+      return;
+    }
+    appendItems(listing, items, 0);
+  }
+
+  // ---------- controls: pressed state + readouts ----------
   function refreshPressed() {
     [["filter-row", "filter"], ["group-row", "group"], ["sort-row", "sort"], ["layout-row", "layout"]]
       .forEach(([rowId, key]) => {
@@ -349,9 +419,17 @@
     else out.textContent = "";
   }
 
+  function updateOptionsSummary() {
+    const out = document.getElementById("options-summary");
+    if (!out) return;
+    const grp = state.group === "year" ? "decade" : state.group;
+    out.textContent = `${grp} · ${state.filter} · ${state.sort === "recent" ? "date↓" : state.sort}`;
+  }
+
   // ---------- render ----------
   function render() {
     refreshPressed();
+    updateOptionsSummary();
 
     const listing = document.getElementById("listing");
     listing.innerHTML = "";
@@ -367,13 +445,18 @@
       return;
     }
 
-    // Flat mode: one list, exactly as before.
-    if (state.group === "flat" || !collections.length) {
-      appendItems(listing, sortList(list), 0);
+    const grouped = state.group !== "flat" && collections.length;
+    if (!grouped) { appendItems(listing, sortList(list), 0); return; }
+
+    // Shelf view: tiles → drill-in, but a live search jumps straight to
+    // matching results (grouped by shelf) rather than the tile landing.
+    if (state.group === "shelf" && !query) {
+      if (openShelf) renderSingleShelf(listing, list);
+      else renderTiles(listing, list);
       return;
     }
 
-    // Grouped mode: labelled, foldable sections.
+    // Grouped sections (shelf+search, subject, decade).
     const secs = sections(list) || [];
     let n = 0;
     secs.forEach(sec => {
@@ -389,7 +472,6 @@
 
   // ---------- init ----------
   document.addEventListener("DOMContentLoaded", function () {
-    // Warn (console only) if a document slipped off every shelf.
     if (collections.length) {
       const shelved = new Set(collections.flatMap(c => c.slugs));
       const orphans = essays.filter(e => !shelved.has(e.slug)).map(e => e.slug);
