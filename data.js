@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "logistic-map",
+    title: "The Road to Chaos",
+    tagline: "One parabola, iterated, period-doubles its way into chaos — and hides a universal number in the cascade. A live tour of the logistic map: an animated cobweb orbit, a Lyapunov-coloured bifurcation diagram you can drag and zoom, Feigenbaum's δ ≈ 4.6692 solved in your browser, and the same constant falling out of three unrelated maps. Vanilla JS on canvas; no build step.",
+    url: "https://0x4d44.github.io/logistic-map/",
+    illustration: "ill-logistic",
+    date: "2026-07-13T15:30:00",
+    year: 1976,
+    tags: ["software", "math", "science"],
+    real: true,
+  },
+  {
     slug: "cowork",
     title: "While You Were Out",
     tagline: "A plain-English field guide to handing work to Claude, written for everyone who isn't a programmer: the chat app you already know, plus Claude Cowork — give it a task and it works on its own in a private workspace, then hands back a first draft to review. Drag a two-gear dial, watch a night shift turn three ordinary chores into morning drafts, and read an honest map against ChatGPT. Vanilla JS + SVG; no build step.",
