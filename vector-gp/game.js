@@ -410,16 +410,15 @@ function playerStep(dt) {
   const pc = R.player;
   if (pc.retired || pc.finished) { R.pv = Math.max(0, R.pv - 15 * dt); }
 
-  // --- inputs: arrow keys or WASD to drive; ,/. and Z kept as retro steer/brake; touch pads
+  // --- inputs (A/Z throttle/brake, ,/. steer; arrows as fallback; touch pads)
   const T = G.touchIn;
-  const inL = k["ArrowLeft"] || k["KeyA"] || k["Comma"] || T.left;
-  const inR = k["ArrowRight"] || k["KeyD"] || k["Period"] || T.right;
+  const inL = k["Comma"] || k["ArrowLeft"] || T.left, inR = k["Period"] || k["ArrowRight"] || T.right;
   const sTgt = (inL ? -1 : 0) + (inR ? 1 : 0);
   // gentler engage + firmer self-centering so digital keys don't twitch you off line
   const sRate = sTgt !== 0 ? 2.4 : 6.5;
   R.steer += clamp(sTgt - R.steer, -sRate * dt, sRate * dt);
-  let thr = ((k["KeyW"] || k["ArrowUp"] || T.thr) && !pc.finished && !pc.retired) ? 1 : 0;
-  let brk = (k["KeyS"] || k["KeyZ"] || k["ArrowDown"] || T.brk) ? 1 : 0;
+  let thr = ((k["KeyA"] || k["ArrowUp"] || T.thr) && !pc.finished && !pc.retired) ? 1 : 0;
+  let brk = (k["KeyZ"] || k["ArrowDown"] || T.brk) ? 1 : 0;
   if (R.phase === "grid") { brk = 1; thr = 0; }
 
   // --- track position
@@ -1165,9 +1164,9 @@ function drawStartHint(ctx) {
   ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
   ctx.textAlign = "center";
   ctx.font = "bold 12px monospace"; ctx.fillStyle = "#e8d048";
-  ctx.fillText("↑ / W  ACCELERATE     ↓ / S  BRAKE", W / 2, by + 17);
+  ctx.fillText("A / ↑  ACCELERATE      Z / ↓  BRAKE", W / 2, by + 17);
   ctx.fillStyle = "#b8c0e8";
-  ctx.fillText("← →  or  A D   STEER", W / 2, by + 34);
+  ctx.fillText(", .  or  ← →   STEER", W / 2, by + 34);
   ctx.textAlign = "left";
   ctx.restore();
 }
@@ -1563,7 +1562,7 @@ function screenGrid(mode) {
   showMenu(menuFrame(
     `STARTING GRID — ${def.gp.toUpperCase()}` + (mode === "season" ? ` — ROUND ${def.round}/16` : ""),
     `<div class="gridlist">${rows}</div>`,
-    "QUALIFYING SIMULATED · ENTER TO START · ARROWS OR WASD TO DRIVE"));
+    "QUALIFYING SIMULATED · ENTER TO START · A Z , . OR ARROWS TO DRIVE"));
   bindMenu([{ label: "start", fn: () => { hideMenu(); G.race.paused = false; } }],
     () => { raceSoundsOff(); G.race = null; G.screen = "menu"; screenMain(); });
 }
@@ -1599,9 +1598,9 @@ function screenAids() {
 function screenControls() {
   showMenu(menuFrame("CONTROLS",
     `<div class="ctrl">
-      <div>&#8593; / W ACCELERATE &nbsp;&nbsp; &#8595; / S BRAKE</div>
-      <div>&#8592; &#8594; &nbsp;or&nbsp; A D &nbsp; STEER</div>
-      <div class="dim">(RETRO KEYS ALSO WORK: , . STEER &nbsp; Z BRAKE)</div>
+      <div>A ACCELERATE &nbsp;&nbsp; Z BRAKE</div>
+      <div>, STEER LEFT &nbsp;&nbsp; . STEER RIGHT</div>
+      <div class="dim">(ARROW KEYS WORK TOO)</div>
       <div>SPACE SHIFT UP &nbsp;&nbsp; X SHIFT DOWN <span class="dim">(manual box)</span></div>
       <div>1–6 TOGGLE DRIVER AIDS</div>
       <div>ESC PAUSE &nbsp;&nbsp; M MUTE</div>
@@ -1711,7 +1710,7 @@ function onKey(e, down) {
   if (down && !SFX.ac && (G.screen !== "title" || k === "Enter")) SFX.init();
 
   if (G.screen === "race" && G.race && !G.race.paused) {
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyA", "KeyS", "KeyD", "KeyZ", "Comma", "Period", "Space", "KeyX"].includes(k)) e.preventDefault();
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyZ", "Comma", "Period", "Space", "KeyX"].includes(k)) e.preventDefault();
     G.keys[k] = down;
     if (down && !e.repeat) {
       if (k === "Space" && !G.aids.autoGears && G.race.gear < 6) { G.race.gear++; SFX.shift(); }
