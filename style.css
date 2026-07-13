@@ -219,8 +219,100 @@ a:hover { color: var(--amber); }
   opacity: 0.5;               /* inherits currentColor, so it flips when pressed */
 }
 
+/* ---------- search ---------- */
+.search-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: text;
+}
+.search-prompt {
+  color: var(--amber);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+#search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  caret-color: var(--amber);
+}
+#search-input::placeholder { color: var(--dim); opacity: 0.8; }
+.search-count {
+  color: var(--dim);
+  font-size: 10.5px;
+  letter-spacing: 1.2px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ---------- listing ---------- */
 .listing { margin-top: 22px; }
+
+/* ---------- shelves (grouped view) ---------- */
+.shelf { margin-bottom: 26px; }
+.shelf-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  padding: 4px 2px 8px;
+  user-select: none;
+}
+.shelf-head:focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 3px;
+}
+.shelf-caret {
+  color: var(--dim);
+  font-size: 11px;
+  width: 1ch;
+}
+.shelf-name {
+  color: var(--amber);
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+.shelf-head:hover .shelf-name { text-decoration: underline; }
+.shelf-count {
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.shelf-rule {
+  flex: 1 1 auto;
+  border-top: 1px dashed var(--rule);
+  min-width: 16px;
+}
+.shelf-blurb {
+  color: var(--dim);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 46ch;
+}
+.shelf.collapsed .shelf-body { display: none; }
+/* the per-section table head sits flush under the shelf header */
+.shelf-body .table-head { border-bottom-width: 1px; }
+
+@media (max-width: 720px) {
+  .shelf-blurb { display: none; }
+}
 
 /* table layout */
 .table-head {
