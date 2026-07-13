@@ -17,7 +17,7 @@
 | edinburgh-isochrone/ | (never) |
 | emu-cab/ | (never) |
 | estimation-whist/ | (never) |
-| estimation-whist-game/ | (never) |
+| estimation-whist-game/ | 2026-07-14 |
 | flight/ | (never) |
 | focus/ | (never) |
 | godel/ | (never) |
