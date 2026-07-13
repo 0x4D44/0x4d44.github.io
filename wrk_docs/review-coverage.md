@@ -95,7 +95,7 @@
 | paint-drying/ | (never) |
 | randomness/ | (never) |
 | shipshape/ | 2026-07-13 |
-| span-of-control/ | (never) |
+| span-of-control/ | 2026-07-13 |
 | supernova/ | (never) |
 | tidecall/ | 2026-07-13 |
 | tools/ | (never) |
