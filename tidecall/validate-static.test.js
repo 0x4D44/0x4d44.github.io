@@ -5,6 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = __dirname;
+const REPO_ROOT = path.join(ROOT, '..');
 const read = (name) => fs.readFileSync(path.join(ROOT, name), 'utf8');
 const html = read('index.html');
 const app = read('app.js');
@@ -44,7 +45,14 @@ test('all local document assets exist', () => {
   const missing = references
     .map((value) => value.split(/[?#]/, 1)[0])
     .filter(Boolean)
-    .filter((value) => !fs.existsSync(path.join(ROOT, value)));
+    // A root-absolute ref (the shared '/almanac-back.js' back button) resolves from
+    // the repo root, not this document's directory. Resolve it rather than skip it,
+    // so a typo'd root-absolute path is still caught.
+    .filter((value) => !fs.existsSync(
+      value.startsWith('/')
+        ? path.join(REPO_ROOT, value.slice(1))
+        : path.join(ROOT, value),
+    ));
   assert.deepEqual(missing, []);
 });
 
