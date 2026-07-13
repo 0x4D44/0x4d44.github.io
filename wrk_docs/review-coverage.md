@@ -21,7 +21,7 @@
 | flight/ | (never) |
 | focus/ | (never) |
 | godel/ | (never) |
-| harbour-hustle-cruise-cup/ | (never) |
+| harbour-hustle-cruise-cup/ | 2026-07-14 |
 | humanity-retention/ | (never) |
 | hydro/ | (never) |
 | hyperbolic/ | (never) |
