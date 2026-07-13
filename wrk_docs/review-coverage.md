@@ -60,7 +60,7 @@
 | ropus/ | (never) |
 | rust-field-guide/ | (never) |
 | salient/ | (never) |
-| spectrum-analyzer/ | (never) |
+| spectrum-analyzer/ | 2026-07-14 |
 | stop-the-bus/ | (never) |
 | strange-attractors/ | (never) |
 | the-ai-who-watched/ | (never) |
