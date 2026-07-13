@@ -38,6 +38,17 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "news",
+    title: "The Daily Flange",
+    tagline: "A spoof news site in the manner of a serious broadcaster — professional masthead, breaking-news ticker, sections and search — reporting entirely implausible nonsense with a straight face: elastic airliners, cruise-ship submarines, and the urgent need to flange the nation's sprockets. 105 deadpan articles, a time-of-day front page that reshuffles hourly, and gloriously annoying banner ads. Vanilla JS; no build step. Add a story by appending one object.",
+    url: "https://0x4d44.github.io/news/",
+    illustration: "ill-flange",
+    date: "2026-07-13T10:00:00",
+    year: 2026,
+    tags: ["software", "fiction"],
+    real: true,
+  },
+  {
     slug: "j-space",
     title: "The Silent Workspace",
     tagline: "An interactive, scrollytelling explainer for Anthropic's 2026 paper on the 'global workspace' inside language models. Meet the Jacobian lens, watch a hidden “spider” drive an answer from mid-network, sweep the ignition threshold, and see why a &lt;10% sliver of a model's activations behaves like a reportable mind. Vanilla JS, canvas + SVG; no build step.",
