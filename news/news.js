@@ -100,8 +100,11 @@
       .replace(/"/g, "&quot;");
   }
 
-  // -------- SVG "photo" placeholder --------
+  // -------- article art --------
   function illustration(article) {
+    if (article.image) {
+      return '<img src="' + esc(article.image) + '" alt="' + esc(article.imageAlt || (article.category + ' illustration')) + '">';
+    }
     var m = catMeta(article.category);
     var h = hash(article.id);
     var hue = h % 40 - 20;                 // small per-article hue shift

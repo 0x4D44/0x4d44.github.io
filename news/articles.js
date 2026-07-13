@@ -20,6 +20,7 @@
 //    body       array of paragraph strings
 //    pullQuote  optional highlighted quote
 //    tags       array of lowercase tags (used by search + related)
+//    image      optional article image path, relative to the news document
 //
 //  It is all satire. Most of it is invented outright; a run of stories
 //  tagged "based-on-truth" retells things humans genuinely did (real
@@ -35,6 +36,8 @@ window.NEWS_ARTICLES = [
     "byline": "By Dr Lucian Farthingale, Optical Physics Correspondent",
     "location": "PASADENA",
     "published": "2026-07-11T17:40:00",
+    "image": "images/sci-shadows-heavier-dusk.webp",
+    "imageAlt": "A brick casting a heavy shadow beside a scientific balance at sunset",
     "body": [
       "Shadows weigh more at dusk than at noon, an unexpected finding that has forced physicists to concede that shadows weigh anything whatsoever, a possibility most had dismissed out of hand.",
       "The research, published in the Californian Review of Dim Things, used a balance of extraordinary sensitivity to weigh the shadow cast by a single standard house brick throughout the day. \"At midday the shadow weighs essentially nothing,\" said Professor Consuela Marsh of the Institute for Applied Darkness. \"As the sun lowers, it gains weight. By dusk, it is measurably heavier. We checked. Then we checked again. Then we sat down for a while.\"",
@@ -59,6 +62,8 @@ window.NEWS_ARTICLES = [
     "byline": "By Leonard Chalfont, Utilities Correspondent",
     "location": "TEESSIDE",
     "published": "2026-07-11T10:27:00",
+    "image": "images/eng-pipeline-forgotten-what-it-carries.webp",
+    "imageAlt": "An engineer peers into a mysterious glowing pipeline across the countryside",
     "body": [
       "A major national pipeline running 340 kilometres across northern England is continuing to operate flawlessly despite the fact that no one, its operator has conceded, can any longer say what it is carrying.",
       "The pipeline, commissioned in 1988, has changed hands four times, and its contents ledger was lost during a corporate merger in 2004. Successive owners have kept it running on the reasonable basis that it works, without ever re-establishing what \"it\" is.",
@@ -83,6 +88,8 @@ window.NEWS_ARTICLES = [
     "byline": "By Callum Ferris, Passenger Experience Editor",
     "location": "OSLO",
     "published": "2026-07-11T10:15:00",
+    "image": "images/av-runway-length-negotiation.webp",
+    "imageAlt": "An airport official measures a runway while a passenger jet waits",
     "body": [
       "Airports across Scandinavia are to introduce a system requiring pilots to negotiate, in real time, the length of runway they will be permitted to use, replacing the previous arrangement in which crews simply used all of it.",
       "Under the protocol, a landing captain must radio a request, name their required distance, and enter a brief bargaining exchange with a ground-based \"tarmac broker\" before being cleared to touch down. Opening offers are said to be \"deliberately mean\".",
@@ -106,6 +113,8 @@ window.NEWS_ARTICLES = [
     "byline": "Fenella Osei-Baker, Olympic Correspondent",
     "location": "LAUSANNE",
     "published": "2026-07-11T10:10:00",
+    "image": "images/spt-olympic-standing-very-still.webp",
+    "imageAlt": "Stillness athletes are examined by laser judges in a stadium",
     "body": [
       "The International Olympic Committee has voted to add \"standing very still\" to the programme of the next Games, describing it as \"the purest expression of athletic restraint yet devised.\"",
       "Competitors in the new event will be scored on total motionlessness over a 90-minute period, with judges deploying laser sensors capable of detecting the twitch of a single eyelash. The athlete who moves least wins.",
@@ -130,6 +139,8 @@ window.NEWS_ARTICLES = [
     "byline": "By Callum Ifeanyi, Mobile Platforms Correspondent",
     "location": "SHENZHEN",
     "published": "2026-07-11T09:22:00",
+    "image": "images/tech-app-store-requires-references.webp",
+    "imageAlt": "A nervous applicant presents references to stern anthropomorphic app icons",
     "body": [
       "A leading app store has introduced a policy under which no application may be downloaded until the prospective user furnishes two written references vouching for their character, in what the platform calls 'a mutual raising of standards'.",
       "The change inverts the usual arrangement, in which users assess apps. Now, the store says, applications are entitled to know 'what sort of person' will be running them, and to decline anyone they consider 'not a good fit'.",
@@ -154,6 +165,8 @@ window.NEWS_ARTICLES = [
     "byline": "By Verity Cardew, Senior Markets Reporter",
     "location": "LONDON",
     "published": "2026-07-10T16:35:00",
+    "image": "images/biz-index-refuses-to-move.webp",
+    "imageAlt": "Tiny traders try to persuade a motionless brass market arrow to move",
     "body": [
       "The FTSE 100 has closed unchanged for the eleventh session in a row, its longest period of total immobility on record, prompting concern that the index has consciously resolved to stay exactly where it is.",
       "The benchmark has held at 8,214.6 points since late June, unmoved by interest-rate speculation, corporate earnings, or a mid-week attempt by traders to \"gently encourage it\" in either direction.",
