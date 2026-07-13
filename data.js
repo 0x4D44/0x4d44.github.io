@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "gene-inheritance",
+    title: "Two Copies",
+    tagline: "How gene inheritance works, told as an animated story: you carry two copies of every gene and pass on one — and everything else, from dominant and recessive traits to carriers, blood types and colour blindness, falls out of that. Flip the coins in a live Punnett square, roll a family pedigree, and watch a recessive trait skip a generation. Vanilla JS on canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/gene-inheritance/",
+    illustration: "ill-genes",
+    date: "2026-07-13T17:30:00",
+    year: 1865,
+    tags: ["science", "software"],
+    real: true,
+  },
+  {
     slug: "logistic-map",
     title: "The Road to Chaos",
     tagline: "One parabola, iterated, period-doubles its way into chaos — and hides a universal number in the cascade. A live tour of the logistic map: an animated cobweb orbit, a Lyapunov-coloured bifurcation diagram you can drag and zoom, Feigenbaum's δ ≈ 4.6692 solved in your browser, and the same constant falling out of three unrelated maps. Vanilla JS on canvas; no build step.",
@@ -1264,7 +1275,7 @@ window.COLLECTIONS = [
     blurb: "Space, life, chaos and number.",
     slugs: ["randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
-      "emdtime", "nettles", "edinburgh-biosci"] },
+      "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci"] },
   { id: "maps", name: "Maps & Nations", icon: "ill-map",
     blurb: "Atlases, isochrones, cities and the past.",
     slugs: ["mdisochrone", "uk-isochrone", "edinburgh-isochrone", "worldviewer",
