@@ -90,7 +90,7 @@
 | morning-run/ | (never) |
 | nettles/ | (never) |
 | news/ | 2026-07-13 |
-| onu/ | (never) |
+| onu/ | 2026-07-13 |
 | opus-verdict/ | (never) |
 | paint-drying/ | (never) |
 | randomness/ | (never) |
