@@ -410,14 +410,16 @@ function playerStep(dt) {
   const pc = R.player;
   if (pc.retired || pc.finished) { R.pv = Math.max(0, R.pv - 15 * dt); }
 
-  // --- inputs (A/Z throttle/brake, ,/. steer; arrows as fallback; touch pads)
+  // --- inputs: arrow keys or WASD to drive; ,/. and Z kept as retro steer/brake; touch pads
   const T = G.touchIn;
-  const inL = k["Comma"] || k["ArrowLeft"] || T.left, inR = k["Period"] || k["ArrowRight"] || T.right;
+  const inL = k["ArrowLeft"] || k["KeyA"] || k["Comma"] || T.left;
+  const inR = k["ArrowRight"] || k["KeyD"] || k["Period"] || T.right;
   const sTgt = (inL ? -1 : 0) + (inR ? 1 : 0);
-  const sRate = sTgt !== 0 ? 3.2 : 5.5;
+  // gentler engage + firmer self-centering so digital keys don't twitch you off line
+  const sRate = sTgt !== 0 ? 2.4 : 6.5;
   R.steer += clamp(sTgt - R.steer, -sRate * dt, sRate * dt);
-  let thr = ((k["KeyA"] || k["ArrowUp"] || T.thr) && !pc.finished && !pc.retired) ? 1 : 0;
-  let brk = (k["KeyZ"] || k["ArrowDown"] || T.brk) ? 1 : 0;
+  let thr = ((k["KeyW"] || k["ArrowUp"] || T.thr) && !pc.finished && !pc.retired) ? 1 : 0;
+  let brk = (k["KeyS"] || k["KeyZ"] || k["ArrowDown"] || T.brk) ? 1 : 0;
   if (R.phase === "grid") { brk = 1; thr = 0; }
 
   // --- track position
@@ -1140,7 +1142,34 @@ function renderRace() {
 
   drawCockpit(ctx);
   drawHud(ctx);
+  drawStartHint(ctx);
   if (R.phase === "grid" || (R.phase === "go" && R.phaseT < 1.2)) drawLights(ctx);
+}
+
+// A brief "how to drive" reminder on the grid / at the start of practice, so
+// a first-time player isn't left staring at green lights not knowing the keys.
+function drawStartHint(ctx) {
+  const R = G.race;
+  if (R.player.retired) return;
+  let alpha = 0;
+  if (R.phase === "grid") alpha = 1;
+  else if (R.phase === "go") alpha = clamp(1 - R.phaseT / 1.6, 0, 1);
+  else if (R.mode === "practice") alpha = clamp((5 - R.time) / 1.5, 0, 1);
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const bw = 320, bh = 42, bx = W / 2 - bw / 2, by = 252;
+  ctx.fillStyle = "rgba(8,8,20,0.74)";
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = "#3040a0"; ctx.lineWidth = 1;
+  ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+  ctx.textAlign = "center";
+  ctx.font = "bold 12px monospace"; ctx.fillStyle = "#e8d048";
+  ctx.fillText("↑ / W  ACCELERATE     ↓ / S  BRAKE", W / 2, by + 17);
+  ctx.fillStyle = "#b8c0e8";
+  ctx.fillText("← →  or  A D   STEER", W / 2, by + 34);
+  ctx.textAlign = "left";
+  ctx.restore();
 }
 
 // ------------------------------------------------------------
@@ -1534,7 +1563,7 @@ function screenGrid(mode) {
   showMenu(menuFrame(
     `STARTING GRID — ${def.gp.toUpperCase()}` + (mode === "season" ? ` — ROUND ${def.round}/16` : ""),
     `<div class="gridlist">${rows}</div>`,
-    "QUALIFYING SIMULATED · ENTER TO START"));
+    "QUALIFYING SIMULATED · ENTER TO START · ARROWS OR WASD TO DRIVE"));
   bindMenu([{ label: "start", fn: () => { hideMenu(); G.race.paused = false; } }],
     () => { raceSoundsOff(); G.race = null; G.screen = "menu"; screenMain(); });
 }
@@ -1570,9 +1599,9 @@ function screenAids() {
 function screenControls() {
   showMenu(menuFrame("CONTROLS",
     `<div class="ctrl">
-      <div>A ACCELERATE &nbsp;&nbsp; Z BRAKE</div>
-      <div>, STEER LEFT &nbsp;&nbsp; . STEER RIGHT</div>
-      <div class="dim">(ARROW KEYS WORK TOO)</div>
+      <div>&#8593; / W ACCELERATE &nbsp;&nbsp; &#8595; / S BRAKE</div>
+      <div>&#8592; &#8594; &nbsp;or&nbsp; A D &nbsp; STEER</div>
+      <div class="dim">(RETRO KEYS ALSO WORK: , . STEER &nbsp; Z BRAKE)</div>
       <div>SPACE SHIFT UP &nbsp;&nbsp; X SHIFT DOWN <span class="dim">(manual box)</span></div>
       <div>1–6 TOGGLE DRIVER AIDS</div>
       <div>ESC PAUSE &nbsp;&nbsp; M MUTE</div>
@@ -1682,7 +1711,7 @@ function onKey(e, down) {
   if (down && !SFX.ac && (G.screen !== "title" || k === "Enter")) SFX.init();
 
   if (G.screen === "race" && G.race && !G.race.paused) {
-    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyZ", "Comma", "Period", "Space", "KeyX"].includes(k)) e.preventDefault();
+    if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyW", "KeyA", "KeyS", "KeyD", "KeyZ", "Comma", "Period", "Space", "KeyX"].includes(k)) e.preventDefault();
     G.keys[k] = down;
     if (down && !e.repeat) {
       if (k === "Space" && !G.aids.autoGears && G.race.gear < 6) { G.race.gear++; SFX.shift(); }
