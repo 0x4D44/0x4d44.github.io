@@ -78,7 +78,7 @@
 | broadband-speed-checker/ | (never) |
 | constellation/ | (never) |
 | cowork/ | (never) |
-| cruise-line/ | (never) |
+| cruise-line/ | 2026-07-13 |
 | cruise-propulsion/ | (never) |
 | darmok/ | 2026-07-13 |
 | emdtime/ | (never) |
