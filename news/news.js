@@ -14,12 +14,38 @@
   var ARTICLES = (window.NEWS_ARTICLES || []).slice();
   var ADS = window.NEWS_ADS || [];
 
-  // Fixed category order for the nav / sections.
-  var CATEGORY_ORDER = [
-    "World", "Aviation", "Maritime", "Engineering",
-    "Science", "Technology", "Business", "Health", "Sport", "Weather",
-    "Lifestyle", "Obituaries", "Voices", "Letters", "Horoscopes"
+  // Two-level section taxonomy. Each article still carries a single leaf
+  // `category` (see CAT below) — GROUPS is a presentation layer over those
+  // leaves. A group with no children is itself a leaf (a plain top-level link);
+  // a group with children is a dropdown, and browsing it
+  // (search.html?cat=<group>) shows every story across its children.
+  var GROUPS = [
+    { name: "World",          children: [] },
+    { name: "Machines",       children: ["Aviation", "Maritime", "Engineering"] },
+    { name: "Science & Tech", children: ["Science", "Technology", "Health"] },
+    { name: "Business",       children: [] },
+    { name: "Sport",          children: [] },
+    { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
+    { name: "Opinion",        children: ["Voices", "Letters"] }
   ];
+
+  // Flat leaf order, derived from the groups. Used by the footer, the section
+  // feature rotation and anywhere that iterates the real (leaf) sections.
+  var CATEGORY_ORDER = [];
+  GROUPS.forEach(function (g) {
+    if (g.children.length) CATEGORY_ORDER = CATEGORY_ORDER.concat(g.children);
+    else CATEGORY_ORDER.push(g.name);
+  });
+
+  // A group name that isn't itself a leaf category (World/Business/Sport are;
+  // Machines/Science & Tech/Life/Opinion aren't). Returns the group or null.
+  function groupByName(name) {
+    var lc = String(name).toLowerCase();
+    for (var i = 0; i < GROUPS.length; i++) {
+      if (GROUPS[i].children.length && GROUPS[i].name.toLowerCase() === lc) return GROUPS[i];
+    }
+    return null;
+  }
 
   // -------- category art metadata (colour + icon path) --------
   var CAT = {
@@ -177,8 +203,25 @@
     var now = new Date();
     var dayStr = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][now.getDay()] +
       ", " + fmtDate(now.toISOString());
-    var nav = CATEGORY_ORDER.map(function (c) {
-      return '<a href="' + catUrl(c) + '"' + (c === activeCat ? ' class="active"' : '') + '>' + esc(c) + '</a>';
+    var nav = GROUPS.map(function (g) {
+      // Leaf group → plain top-level link.
+      if (!g.children.length) {
+        return '<a href="' + catUrl(g.name) + '"' + (g.name === activeCat ? ' class="active"' : '') +
+          '>' + esc(g.name) + '</a>';
+      }
+      // Parent group → dropdown. Active if the group page or any child is active.
+      var groupActive = (g.name === activeCat) || g.children.indexOf(activeCat) !== -1;
+      var kids = '<a href="' + catUrl(g.name) + '" role="menuitem">All ' + esc(g.name) + '</a>' +
+        g.children.map(function (c) {
+          return '<a href="' + catUrl(c) + '"' + (c === activeCat ? ' class="active"' : '') +
+            ' role="menuitem">' + esc(c) + '</a>';
+        }).join("");
+      return '<div class="catnav-group">' +
+        '<button type="button" class="catnav-drop-btn' + (groupActive ? ' active' : '') +
+          '" aria-haspopup="true" aria-expanded="false">' +
+          esc(g.name) + ' <span class="chev" aria-hidden="true">&#9662;</span></button>' +
+        '<div class="catnav-drop-menu" role="menu">' + kids + '</div>' +
+      '</div>';
     }).join("");
     // a silly rotating "weather" pill
     var weathers = ["Fog (has passport)", "Mild disappointment", "Aggressive air", "43% Tuesday", "Scattered smugness", "Light flanging"];
@@ -215,41 +258,45 @@
   // desktop; they show as many sections as the width allows and tuck the rest
   // behind a "More" menu. This measures the bar and does exactly that, re-running
   // on resize. With JS off, the bar degrades to the horizontal-scroll fallback.
-  var catnavState = { onResize: null, onDocClick: null, ro: null };
+  var catnavState = { onResize: null, onDocClick: null, onKey: null, ro: null };
 
   function enhanceCatnav() {
     var wrap = document.querySelector(".catnav .wrap");
     if (!wrap) return;
     wrap.parentNode.classList.add("enhanced");   // swap scroll fallback for fitted mode
     var more = wrap.querySelector(".catnav-more");
-    var btn = more.querySelector(".catnav-more-btn");
-    var menu = more.querySelector(".catnav-more-menu");
+    var moreBtn = more.querySelector(".catnav-more-btn");
+    var moreMenu = more.querySelector(".catnav-more-menu");
 
-    function links() {
+    // Direct children of the bar, minus the "More" container: plain links plus
+    // group dropdowns — each an atomic, measurable item.
+    function barItems() {
       return [].slice.call(wrap.children).filter(function (el) { return el !== more; });
     }
-
-    function closeMenu() {
-      menu.classList.remove("open");
-      btn.setAttribute("aria-expanded", "false");
+    // Every toggleable menu on the bar (group dropdowns + the overflow menu).
+    function menus() {
+      return [].slice.call(wrap.querySelectorAll(".catnav-drop-menu, .catnav-more-menu"));
     }
-    function toggleMenu() {
-      var open = menu.classList.toggle("open");
-      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    function closeAll(except) {
+      menus().forEach(function (m) {
+        if (m === except) return;
+        m.classList.remove("open");
+        if (m.previousElementSibling) m.previousElementSibling.setAttribute("aria-expanded", "false");
+      });
     }
 
     function layout() {
-      closeMenu();
+      closeAll();
       // Pull everything back onto the bar so we measure from a clean slate.
-      while (menu.firstChild) wrap.insertBefore(menu.firstChild, more);
+      while (moreMenu.firstChild) wrap.insertBefore(moreMenu.firstChild, more);
       more.hidden = true;
 
-      var items = links();
+      var items = barItems();
       var cs = getComputedStyle(wrap);
       var avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       var total = 0, i;
       for (i = 0; i < items.length; i++) total += items[i].offsetWidth;
-      if (total <= avail + 1) { syncActive(); return; }   // it all fits, no More needed
+      if (total <= avail + 1) { syncMore(); return; }   // it all fits, no More needed
 
       // Overflow: reveal the button and reserve room for it.
       more.hidden = false;
@@ -260,21 +307,37 @@
         if (used > budget) { cut = i; break; }
       }
       if (cut < 1) cut = 1;                                 // always keep "Home"
-      for (i = cut; i < items.length; i++) menu.appendChild(items[i]);
-      syncActive();
+      for (i = cut; i < items.length; i++) moreMenu.appendChild(items[i]);
+      syncMore();
     }
 
-    // If the active section got tucked away, light up the More button instead.
-    function syncActive() {
-      btn.classList.toggle("active", !!menu.querySelector("a.active"));
+    // Light up "More" if it now hides the active section — either a plain active
+    // link or a group whose button is active (its child/landing is current).
+    function syncMore() {
+      moreBtn.classList.toggle("active", !!moreMenu.querySelector("a.active, .catnav-drop-btn.active"));
     }
 
-    btn.addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
-    menu.addEventListener("click", function (e) { e.stopPropagation(); });
+    // One delegated handler drives every dropdown. Toggles apply to bar-level
+    // buttons (group dropdowns and "More"); a group flattened inside the "More"
+    // menu is a static header, so its button is ignored here (CSS keeps it open).
+    wrap.addEventListener("click", function (e) {
+      var toggle = e.target.closest && e.target.closest(".catnav-drop-btn, .catnav-more-btn");
+      if (toggle && !toggle.closest(".catnav-more-menu")) {
+        e.preventDefault();
+        e.stopPropagation();
+        var m = toggle.nextElementSibling;
+        var open = !m.classList.contains("open");
+        closeAll(open ? m : null);
+        m.classList.toggle("open", open);
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      // clicks on menu links fall through and navigate normally
+    });
 
     // Reset any handlers/observer from a previous render before wiring new ones.
     if (catnavState.onResize) window.removeEventListener("resize", catnavState.onResize);
     if (catnavState.onDocClick) document.removeEventListener("click", catnavState.onDocClick);
+    if (catnavState.onKey) document.removeEventListener("keydown", catnavState.onKey);
     if (catnavState.ro) catnavState.ro.disconnect();
 
     var raf = 0;
@@ -282,9 +345,11 @@
       if (raf) cancelAnimationFrame(raf);
       raf = requestAnimationFrame(layout);
     };
-    catnavState.onDocClick = function () { closeMenu(); };
+    catnavState.onDocClick = function () { closeAll(); };
+    catnavState.onKey = function (e) { if (e.key === "Escape") closeAll(); };
     window.addEventListener("resize", catnavState.onResize);
     document.addEventListener("click", catnavState.onDocClick);
+    document.addEventListener("keydown", catnavState.onKey);
     if (typeof ResizeObserver === "function") {
       catnavState.ro = new ResizeObserver(catnavState.onResize);
       catnavState.ro.observe(wrap);
@@ -600,11 +665,20 @@
 
     var results, heading, sub;
     if (cat) {
-      results = ARTICLES.filter(function (a) { return a.category.toLowerCase() === cat.toLowerCase(); });
+      var grp = groupByName(cat);
+      if (grp) {
+        results = ARTICLES.filter(function (a) { return grp.children.indexOf(a.category) !== -1; });
+        heading = grp.name;
+        sub = results.length + " " + (results.length === 1 ? "story" : "stories") +
+          " across " + grp.children.join(", ");
+        document.title = grp.name + " — The Daily Flange";
+      } else {
+        results = ARTICLES.filter(function (a) { return a.category.toLowerCase() === cat.toLowerCase(); });
+        heading = cat;
+        sub = results.length + " " + (results.length === 1 ? "story" : "stories") + " in " + cat;
+        document.title = cat + " — The Daily Flange";
+      }
       results = results.slice().sort(function (a, b) { return (b.published || "").localeCompare(a.published || ""); });
-      heading = cat;
-      sub = results.length + " " + (results.length === 1 ? "story" : "stories") + " in " + cat;
-      document.title = cat + " — The Daily Flange";
     } else {
       var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
       results = ARTICLES.map(function (a) {

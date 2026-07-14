@@ -159,6 +159,46 @@ img { max-width: 100%; }
 }
 .catnav-more-menu a:hover, .catnav-more-menu a.active { background: rgba(0,0,0,.28); }
 
+/* ---------- Group dropdowns (top-level parent sections) ---------- */
+.catnav-group { position: relative; display: flex; }
+.catnav-drop-btn {
+  color: #fff; background: transparent; border: 0;
+  border-left: 1px solid rgba(255,255,255,.14);
+  padding: 11px 15px; font: inherit; font-size: 14px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+}
+.catnav-drop-btn .chev { font-size: 11px; margin-left: 3px; }
+.catnav-drop-btn:hover, .catnav-drop-btn.active { background: var(--flange-red-dark); }
+.catnav-drop-menu {
+  display: none; position: absolute; top: 100%; left: 0; z-index: 60;
+  min-width: 200px; padding: 6px 0;
+  background: var(--flange-red-dark);
+  box-shadow: 0 10px 26px rgba(0,0,0,.32);
+  border: 1px solid rgba(255,255,255,.12); border-top: 0;
+}
+.catnav-drop-menu.open { display: block; }
+.catnav-drop-menu a {
+  display: block; border-left: 0; padding: 9px 16px; font-weight: 600;
+}
+.catnav-drop-menu a:first-child { opacity: .85; font-style: italic; }
+.catnav-drop-menu a:hover, .catnav-drop-menu a.active { background: rgba(0,0,0,.28); }
+
+/* A group that overflowed into "More": flatten it into a labelled sub-list
+   (button becomes a static header, its menu stays open, statically placed). */
+.catnav-more-menu .catnav-group { display: block; }
+.catnav-more-menu .catnav-drop-btn {
+  border-left: 0; width: 100%; text-align: left; cursor: default;
+  padding: 9px 16px 3px; opacity: .7; font-size: 12px; text-transform: uppercase;
+  letter-spacing: .05em;
+}
+.catnav-more-menu .catnav-drop-btn:hover { background: transparent; }
+.catnav-more-menu .catnav-drop-btn .chev { display: none; }
+.catnav-more-menu .catnav-drop-menu {
+  display: block; position: static; box-shadow: none; border: 0; padding: 0 0 4px;
+  min-width: 0; background: transparent;
+}
+.catnav-more-menu .catnav-drop-menu a { padding-left: 26px; }
+
 /* ---------- Breaking ticker ---------- */
 .ticker {
   background: #111; color: #fff; display: flex; align-items: stretch;
