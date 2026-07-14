@@ -977,6 +977,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-queue-startup-valuation",
+    "image": "images/biz-queue-startup-valuation.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz queue startup valuation.",
     "category": "Business",
     "headline": "Start-up that sells your place in a queue valued at £2.6bn",
     "standfirst": "Ahead, a company that lets users buy and sell positions in ordinary British queues, has closed a bumper funding round.",
@@ -1001,6 +1003,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-lazy-heatwave-never-arrives",
+    "image": "images/wea-lazy-heatwave-never-arrives.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea lazy heatwave never arrives.",
     "category": "Weather",
     "headline": "Heatwave so lazy it never quite arrives",
     "standfirst": "A much-anticipated heatwave has spent nine days approaching the country before deciding, forecasters say, that it 'couldn't really be bothered'.",
@@ -1025,6 +1029,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-escalator-runs-sideways-liverpool",
+    "image": "images/eng-escalator-runs-sideways-liverpool.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng escalator runs sideways liverpool.",
     "category": "Engineering",
     "headline": "Liverpool station escalator begins running sideways after flanging lapse",
     "standfirst": "Commuters are being diverted after a mainline escalator abandoned vertical travel entirely, in what inspectors call a textbook consequence of overdue sprocket maintenance.",
@@ -1049,6 +1055,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-migrating-jet-bridges",
+    "image": "images/av-migrating-jet-bridges.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating av migrating jet bridges.",
     "category": "Aviation",
     "headline": "Jet bridges begin migrating between airports overnight, baffling engineers",
     "standfirst": "At least 40 boarding bridges have relocated to warmer hubs, with several spotted travelling in formation along the M25.",
@@ -1072,6 +1080,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-gravity-maintenance",
+    "image": "images/sci-gravity-maintenance.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci gravity maintenance.",
     "category": "Science",
     "headline": "Gravity to take scheduled maintenance break over the North Sea",
     "standfirst": "Authorities advise shipping and low-flying birds to expect a brief planned reduction in weight next Tuesday morning",
@@ -1096,6 +1106,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-cricket-test-fourth-year-postcode",
+    "image": "images/spt-cricket-test-fourth-year-postcode.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt cricket test fourth year postcode.",
     "category": "Sport",
     "headline": "Cricket test enters fourth year and is granted its own postcode",
     "standfirst": "The Royal Mail has assigned a postal district to the ongoing match at Trellidge, where the same session has technically been in progress since 2023.",
@@ -1120,6 +1132,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-lse-sprockets-flanging-overdue",
+    "image": "images/biz-lse-sprockets-flanging-overdue.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz lse sprockets flanging overdue.",
     "category": "Business",
     "headline": "London Stock Exchange trading-floor sprockets remain overdue a flanging",
     "standfirst": "Maintenance records show the exchange's ceremonial sprocket assembly has not been flanged since 2019, prompting industry concern.",
@@ -1144,6 +1158,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-blinking-optional-review",
+    "image": "images/hea-blinking-optional-review.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea blinking optional review.",
     "category": "Health",
     "headline": "Blinking downgraded from essential to strongly recommended",
     "standfirst": "A review of ocular guidance concludes the reflex is beneficial but not, strictly speaking, compulsory",
@@ -1193,6 +1209,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-voyage-slightly-left-of-horizon",
+    "image": "images/mar-voyage-slightly-left-of-horizon.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating mar voyage slightly left of horizon.",
     "category": "Maritime",
     "headline": "Cruise line launches seven-night voyage to 'slightly the left of the horizon'",
     "standfirst": "The itinerary lists no ports, only a heading, and has already sold out",
@@ -1216,6 +1234,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-belgium-time",
+    "image": "images/sci-belgium-time.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci belgium time.",
     "category": "Science",
     "headline": "Time confirmed to run six per cent faster in Belgium",
     "standfirst": "Atomic clocks across the country consistently gain on their neighbours, and researchers say it may explain the trains",
@@ -1240,6 +1260,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-pilots-apologise-clouds",
+    "image": "images/av-pilots-apologise-clouds.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating av pilots apologise clouds.",
     "category": "Aviation",
     "headline": "New regulation requires pilots to apologise to clouds before entering them",
     "standfirst": "The rule, effective September, mandates a formal expression of regret over the intercom for every cumulus disturbed.",
@@ -1289,6 +1311,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-mri-sprockets-flanged",
+    "image": "images/hea-mri-sprockets-flanged.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea mri sprockets flanged.",
     "category": "Health",
     "headline": "NHS confirms MRI sprockets must now be flanged fortnightly",
     "standfirst": "A quiet update to maintenance protocol reveals the scanners contain sprockets requiring regular attention",
@@ -1313,6 +1337,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-suspension-bridge-inflates-warm-weather",
+    "image": "images/eng-suspension-bridge-inflates-warm-weather.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng suspension bridge inflates warm weather.",
     "category": "Engineering",
     "headline": "Suspension bridge gently inflates in warm weather and must be let down at night",
     "standfirst": "Engineers on the Humber report that the crossing now swells by up to two metres on hot afternoons and requires nightly deflation by a dedicated valve crew.",
@@ -1337,6 +1363,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-enthusiasm-crypto-crash",
+    "image": "images/biz-enthusiasm-crypto-crash.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz enthusiasm crypto crash.",
     "category": "Business",
     "headline": "Cryptocurrency backed entirely by unspent enthusiasm crashes 90 per cent",
     "standfirst": "ZealCoin holders watched their tokens collapse after a wave of collective disappointment swept through the network.",
@@ -1361,6 +1389,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-border-wandered-off-overnight",
+    "image": "images/wld-border-wandered-off-overnight.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld border wandered off overnight.",
     "category": "World",
     "headline": "Alpine border found to have wandered off overnight",
     "standfirst": "Surveyors report a 12-kilometre frontier has quietly relocated some 300 metres north, leaving three villages briefly stateless and one dairy in the wrong country.",
@@ -1385,6 +1415,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-barnacles-premium-passengers",
+    "image": "images/mar-barnacles-premium-passengers.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating mar barnacles premium passengers.",
     "category": "Maritime",
     "headline": "Shipping line reclassifies hull barnacles as premium passengers",
     "standfirst": "The move grants an estimated four million crustaceans lounge access and priority disembarkation",
@@ -1408,6 +1440,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-north-pole-drifting-south",
+    "image": "images/sci-north-pole-drifting-south.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci north pole drifting south.",
     "category": "Science",
     "headline": "North Pole spending increasing amounts of time slightly south, survey finds",
     "standfirst": "The planet's northernmost point has developed a modest but persistent tendency to wander in the wrong direction",
@@ -1432,6 +1466,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-wind-reclassified-aggressive-air",
+    "image": "images/wea-wind-reclassified-aggressive-air.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea wind reclassified aggressive air.",
     "category": "Weather",
     "headline": "Wind reclassified as 'aggressive air' in Met Office overhaul",
     "standfirst": "In a shake-up of forecasting terminology, gusts above 30mph will now be described as aggressive air, with severe cases labelled 'air with an attitude problem'.",
@@ -1456,6 +1492,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-wingtip-vortices-artisanal-wind",
+    "image": "images/av-wingtip-vortices-artisanal-wind.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating av wingtip vortices artisanal wind.",
     "category": "Aviation",
     "headline": "Airport begins harvesting wingtip vortices for sale as artisanal wind",
     "standfirst": "The turbulent air shed by departing jets is now bottled, aged, and sold to premium delicatessens.",
@@ -1479,6 +1517,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-apologetic-bell-lse",
+    "image": "images/biz-apologetic-bell-lse.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz apologetic bell lse.",
     "category": "Business",
     "headline": "Stock exchange installs bell that gently apologises when rung",
     "standfirst": "The new opening bell at the London Stock Exchange murmurs a soft regret to the assembled traders each morning.",
@@ -1503,6 +1543,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-bolts-reclassified-decorative-torque-consensus",
+    "image": "images/eng-bolts-reclassified-decorative-torque-consensus.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng bolts reclassified decorative torque consensus.",
     "category": "Engineering",
     "headline": "Bolts reclassified as decorative as torque moves to consensus model",
     "standfirst": "A revised British Standard downgrades the humble bolt to an aesthetic component, with clamping force now agreed collectively rather than measured.",
@@ -1553,6 +1595,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-rumour-weighed",
+    "image": "images/sci-rumour-weighed.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci rumour weighed.",
     "category": "Science",
     "headline": "Researchers successfully weigh a rumour and find it weighs four grams",
     "standfirst": "A landmark experiment isolates a single item of gossip on a precision balance, settling a question philosophers had assumed was rhetorical",
@@ -1577,6 +1621,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-pesto-photosynthesis-patient",
+    "image": "images/hea-pesto-photosynthesis-patient.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea pesto photosynthesis patient.",
     "category": "Health",
     "headline": "Patient discovered to be photosynthesising after months of pesto",
     "standfirst": "A Devon man appears to be generating energy from sunlight following an exclusively green diet",
@@ -1600,6 +1646,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-conglomerate-acquires-itself",
+    "image": "images/biz-conglomerate-acquires-itself.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz conglomerate acquires itself.",
     "category": "Business",
     "headline": "Conglomerate accidentally acquires itself, must now negotiate with own board",
     "standfirst": "Hartwell Industries confirmed the all-share deal closed before anyone noticed both parties were the same company.",
@@ -1624,6 +1672,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-gentle-banking-tax",
+    "image": "images/av-gentle-banking-tax.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating av gentle banking tax.",
     "category": "Aviation",
     "headline": "Airlines to introduce 'gentle banking' tax as turns become chargeable",
     "standfirst": "Carriers will levy a surcharge for every degree of roll, with straight-line flights marketed as a budget option.",
@@ -1647,6 +1697,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-marathon-runner-since-2019",
+    "image": "images/spt-marathon-runner-since-2019.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt marathon runner since 2019.",
     "category": "Sport",
     "headline": "Marathon runner still going since 2019 as finish line keeps politely stepping back",
     "standfirst": "Officials have apologised to Colin Feathergill, who has now run an estimated 41,000 miles because the tape is repeatedly moved just out of reach.",
@@ -1671,6 +1723,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-magnetism-north-preference",
+    "image": "images/sci-magnetism-north-preference.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci magnetism north preference.",
     "category": "Science",
     "headline": "Magnets found to be very slightly embarrassed about pointing north",
     "standfirst": "High-precision studies reveal compass needles hesitate for a few milliseconds before committing, a phenomenon researchers call 'directional reluctance'",
@@ -1695,6 +1749,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-waiting-room-dread-bottled",
+    "image": "images/hea-waiting-room-dread-bottled.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea waiting room dread bottled.",
     "category": "Health",
     "headline": "Hospital waiting rooms found to emit a measurable dread that can now be bottled",
     "standfirst": "Researchers have successfully captured the ambient unease of the waiting area, raising questions about what to do with it",
@@ -1745,6 +1801,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-slough-car-park-load-bearing-rumours",
+    "image": "images/eng-slough-car-park-load-bearing-rumours.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng slough car park load bearing rumours.",
     "category": "Engineering",
     "headline": "Slough car park found to be held up by load-bearing rumours",
     "standfirst": "A structural review concludes that a multi-storey in Slough remains standing chiefly because everyone believes it will, and warns the belief is weakening.",
@@ -1769,6 +1827,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-tanker-refuses-to-acknowledge-tide",
+    "image": "images/mar-tanker-refuses-to-acknowledge-tide.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating mar tanker refuses to acknowledge tide.",
     "category": "Maritime",
     "headline": "Oil tanker formally refuses to acknowledge the existence of tides",
     "standfirst": "The vessel's master says the twice-daily rise and fall of the sea is 'a matter of interpretation'",
@@ -1792,6 +1852,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-lavatory-passenger-27-years",
+    "image": "images/av-lavatory-passenger-27-years.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating av lavatory passenger 27 years.",
     "category": "Aviation",
     "headline": "Passenger discovered to have been trapped in aircraft lavatory for 27 years",
     "standfirst": "The man, now fluent in the emergency safety card in six languages, says he 'didn't want to make a fuss'.",
@@ -1815,6 +1877,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-boe-vibes-rate-hike",
+    "image": "images/biz-boe-vibes-rate-hike.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz boe vibes rate hike.",
     "category": "Business",
     "headline": "Bank of England raises vibes rate by 25 basis points",
     "standfirst": "The Monetary Policy Committee voted seven to two to tighten the national mood, citing overheating enthusiasm.",
@@ -1839,6 +1903,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-un-debates-optional-wednesday",
+    "image": "images/wld-un-debates-optional-wednesday.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld un debates optional wednesday.",
     "category": "World",
     "headline": "UN debates whether Wednesday should be made optional",
     "standfirst": "A draft resolution before the General Assembly would allow member states to skip Wednesdays on request, provided adequate notice is given to neighbouring time zones.",
@@ -1863,6 +1929,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-moon-adhesive",
+    "image": "images/sci-moon-adhesive.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci moon adhesive.",
     "category": "Science",
     "headline": "Moon found to be slightly adhesive, astronauts report 'tacky' regolith",
     "standfirst": "Analysis of returned samples confirms the lunar surface has been gently sticky all along, with implications for every previous landing",
@@ -1887,6 +1955,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-cold-legal-personhood",
+    "image": "images/hea-cold-legal-personhood.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea cold legal personhood.",
     "category": "Health",
     "headline": "The common cold applies for legal personhood",
     "standfirst": "A filing lodged this week seeks formal recognition of the rhinovirus as an individual with rights and responsibilities",
@@ -1911,6 +1981,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-tunnel-longer-on-way-back",
+    "image": "images/eng-tunnel-longer-on-way-back.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng tunnel longer on way back.",
     "category": "Engineering",
     "headline": "Pennine tunnel confirmed to be longer on the way back",
     "standfirst": "Surveyors have established that a rail tunnel near Standedge measures 4.9km westbound but 5.6km eastbound, a discrepancy engineers say is \"real and repeatable\".",
@@ -1935,6 +2007,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-handshake-firm-floats",
+    "image": "images/biz-handshake-firm-floats.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz handshake firm floats.",
     "category": "Business",
     "headline": "Firm whose only product is a firm handshake floats at £4bn",
     "standfirst": "Grasp Holdings priced at the top of its range, valuing a company that makes nothing you can hold except your hand.",
@@ -1985,6 +2059,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-showers-mild-disappointment",
+    "image": "images/wea-showers-mild-disappointment.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea showers mild disappointment.",
     "category": "Weather",
     "headline": "Scattered showers of mild disappointment expected over the Midlands",
     "standfirst": "Forecasters warn of a front of low-grade letdown moving in from the west, with localised sighing and a risk of resigned shrugging by evening.",
@@ -2009,6 +2085,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-self-aware-gears-refuse-mesh",
+    "image": "images/eng-self-aware-gears-refuse-mesh.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng self aware gears refuse mesh.",
     "category": "Engineering",
     "headline": "Gears at Midlands plant become self-aware and refuse to mesh with rivals",
     "standfirst": "A gearbox at a Coventry engineering works has developed social preferences, with some gears declining to engage with others they are said to dislike.",
@@ -2033,6 +2111,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-clockwise-blood-baffles",
+    "image": "images/hea-clockwise-blood-baffles.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea clockwise blood baffles.",
     "category": "Health",
     "headline": "Man's blood found to be running slightly clockwise; specialists baffled",
     "standfirst": "A routine check-up reveals a directional preference no textbook can explain",
@@ -2056,6 +2136,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-echo-slower",
+    "image": "images/sci-echo-slower.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci echo slower.",
     "category": "Science",
     "headline": "Echoes found to be arriving progressively later, acousticians warn",
     "standfirst": "Sound reflected off hard surfaces is taking measurably longer to return, and the delay is growing by a fraction each year",
@@ -2080,6 +2162,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-pound-sterling-heavier",
+    "image": "images/biz-pound-sterling-heavier.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz pound sterling heavier.",
     "category": "Business",
     "headline": "Pound sterling has become measurably heavier, Royal Mint confirms",
     "standfirst": "ATMs across the country are straining to dispense notes that now weigh roughly the same as a small paving slab.",
@@ -2104,6 +2188,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-elastic-airliner-passenger-count",
+    "image": "images/av-elastic-airliner-passenger-count.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating av elastic airliner passenger count.",
     "category": "Aviation",
     "headline": "Airbus confirms new airliner physically elongates with each passenger booked",
     "standfirst": "The A320neoStretch adds 14 centimetres of fuselage per confirmed seat and contracts overnight if bookings fall.",
@@ -2153,6 +2239,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-match-abandoned-self-aware-ball",
+    "image": "images/spt-match-abandoned-self-aware-ball.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt match abandoned self aware ball.",
     "category": "Sport",
     "headline": "Premier League match abandoned after ball becomes self-aware",
     "standfirst": "Referees suspended play in the 67th minute after the match ball declined to be kicked, citing a newfound sense of purpose.",
@@ -2177,6 +2265,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-thursday-colour",
+    "image": "images/sci-thursday-colour.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci thursday colour.",
     "category": "Science",
     "headline": "Scientists identify a new colour visible only on Thursdays",
     "standfirst": "The hue, provisionally named 'thurl', cannot be photographed and disappears entirely by Friday lunchtime",
@@ -2201,6 +2291,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-forty-sighs-daily",
+    "image": "images/hea-forty-sighs-daily.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea forty sighs daily.",
     "category": "Health",
     "headline": "Adults advised to sigh at least 40 times a day for heart health",
     "standfirst": "New cardiovascular guidance places the humble sigh at the centre of the nation's wellbeing strategy",
@@ -2224,6 +2316,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-m6-ironed-flat-every-tuesday",
+    "image": "images/eng-m6-ironed-flat-every-tuesday.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng m6 ironed flat every tuesday.",
     "category": "Engineering",
     "headline": "Motorway must now be ironed flat every Tuesday, agency confirms",
     "standfirst": "A twelve-mile stretch of the M62 develops overnight creases that engineers say can only be removed with a heated press the width of the carriageway.",
@@ -2274,6 +2368,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-institute-flanging-flanger-shortage",
+    "image": "images/eng-institute-flanging-flanger-shortage.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng institute flanging flanger shortage.",
     "category": "Engineering",
     "headline": "Institute of Flanging warns of critical shortage of qualified flangers",
     "standfirst": "With the average flanger now aged 58 and retirements outpacing new registrations five to one, the profession warns the trade could vanish within a generation.",
@@ -2298,6 +2394,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-tuesday-fund-record-returns",
+    "image": "images/biz-tuesday-fund-record-returns.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz tuesday fund record returns.",
     "category": "Business",
     "headline": "Hedge fund that invests solely in Tuesdays posts record annual return",
     "standfirst": "Marchmont Weekday Capital says its exposure to the year's fifty-two Tuesdays delivered gains that Wednesday could only envy.",
@@ -2323,6 +2421,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-cruise-ship-submarine-fleet",
+    "image": "images/mar-cruise-ship-submarine-fleet.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating mar cruise ship submarine fleet.",
     "category": "Maritime",
     "headline": "Cruise line declines to explain nightly submarine launches from beneath flagship's hull",
     "standfirst": "Passengers report a faint sonar pinging after the midnight buffet, but the operator insists everything is 'within the brochure'",
@@ -2346,6 +2446,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-fog-issued-passport",
+    "image": "images/wea-fog-issued-passport.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea fog issued passport.",
     "category": "Weather",
     "headline": "Fog so thick it has been issued a passport",
     "standfirst": "A dense fog bank over the Bristol Channel has been granted travel documents after immigration officials ruled it was 'clearly going somewhere'.",
@@ -2370,6 +2472,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-shy-particle",
+    "image": "images/sci-shy-particle.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci shy particle.",
     "category": "Science",
     "headline": "Physicists discover a particle so shy it vanishes when observed by more than three people",
     "standfirst": "The retiring boson exists comfortably in small groups but flees any gathering of four or more, complicating every conceivable experiment",
@@ -2394,6 +2498,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-sprocket-flanging-backwards-time",
+    "image": "images/mar-sprocket-flanging-backwards-time.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating mar sprocket flanging backwards time.",
     "category": "Maritime",
     "headline": "Owners warned to flange propeller sprockets or risk sailing backwards through time",
     "standfirst": "Class societies confirm that vessels overdue for quarterly flanging have begun arriving several minutes before they left",
@@ -2417,6 +2523,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-kettle-proximity-cardio",
+    "image": "images/hea-kettle-proximity-cardio.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea kettle proximity cardio.",
     "category": "Health",
     "headline": "Standing near a kettle now officially counts as light cardio",
     "standfirst": "Updated fitness guidance recognises the household boil as a legitimate form of moderate exercise",
@@ -2440,6 +2548,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-lighthouse-applies-for-transfer-inland",
+    "image": "images/mar-lighthouse-applies-for-transfer-inland.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating mar lighthouse applies for transfer inland.",
     "category": "Maritime",
     "headline": "Lighthouse applies for transfer inland citing 'too much sea'",
     "standfirst": "The 140-year-old structure has submitted a formal request to be relocated to a quiet spot near Swindon",
@@ -2463,6 +2573,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-fog-billed-for-storage",
+    "image": "images/mar-fog-billed-for-storage.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating mar fog billed for storage.",
     "category": "Maritime",
     "headline": "Harbour begins invoicing ships for fog left on deck overnight",
     "standfirst": "The port says accumulated mist constitutes 'unattended atmospheric goods' subject to standard storage rates",
@@ -2486,6 +2598,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-nation-relocates-four-metres-left",
+    "image": "images/wld-nation-relocates-four-metres-left.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld nation relocates four metres left.",
     "category": "World",
     "headline": "Liechtenstein-adjacent microstate votes to relocate four metres to the left",
     "standfirst": "The Principality of Vändel will shift its entire territory westward after a narrow referendum, citing improved afternoon light and a persistent draught.",
@@ -2510,6 +2624,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-national-sprocket-flanging-winter",
+    "image": "images/eng-national-sprocket-flanging-winter.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng national sprocket flanging winter.",
     "category": "Engineering",
     "headline": "Nation urged to flange its sprockets before the first frost",
     "standfirst": "Engineers warn that Britain enters winter with more than four million sprockets dangerously under-flanged, risking humming bridges and sideways escalators.",
@@ -2560,6 +2676,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-elbow-optional-finding",
+    "image": "images/hea-elbow-optional-finding.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea elbow optional finding.",
     "category": "Health",
     "headline": "Doctors conclude the human elbow is optional and mostly retained out of habit",
     "standfirst": "A landmark review finds the joint performs no essential function and that most adults keep one purely because everyone else has",
@@ -2583,6 +2701,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-number-seven-larger",
+    "image": "images/sci-number-seven-larger.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci number seven larger.",
     "category": "Science",
     "headline": "Physicists confirm the number seven has been quietly getting larger since 1997",
     "standfirst": "A three-decade metrological survey finds the seventh integer now sits measurably closer to eight, and nobody can say why",
@@ -2607,6 +2727,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-prudence-levy-tax-on-saving",
+    "image": "images/biz-prudence-levy-tax-on-saving.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz prudence levy tax on saving.",
     "category": "Business",
     "headline": "Treasury unveils 'Prudence Levy', a tax on the act of saving money",
     "standfirst": "Under the new charge, anyone found to have set money aside for a rainy day will be billed for the presumption that it might rain.",
@@ -2631,6 +2753,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-marginal-rate-exceeds-one-hundred",
+    "image": "images/biz-marginal-rate-exceeds-one-hundred.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz marginal rate exceeds one hundred.",
     "category": "Business",
     "headline": "Top rate of income tax to exceed 100 per cent, Chancellor confirms",
     "standfirst": "High earners will now pay slightly more in tax than they are paid in salary, an arrangement the Treasury insists is 'broadly self-correcting'.",
@@ -2655,6 +2779,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-sentiment-levy-tax-on-optimism",
+    "image": "images/biz-sentiment-levy-tax-on-optimism.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz sentiment levy tax on optimism.",
     "category": "Business",
     "headline": "Government to tax economic optimism under new 'Sentiment Levy'",
     "standfirst": "Anyone found expressing hope about the economy will be liable for a charge calculated on the strength of their conviction.",
@@ -2679,6 +2805,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-anticipatory-tax-decisions-unmade",
+    "image": "images/biz-anticipatory-tax-decisions-unmade.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz anticipatory tax decisions unmade.",
     "category": "Business",
     "headline": "HMRC to tax financial decisions you have not yet made",
     "standfirst": "Under 'anticipatory taxation', citizens will be billed in advance for purchases, plans and ambitions they are merely likely to have.",
@@ -2703,6 +2831,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-sofa-change-wealth-tax",
+    "image": "images/biz-sofa-change-wealth-tax.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz sofa change wealth tax.",
     "category": "Business",
     "headline": "Wealth tax extended to loose change found down the back of sofas",
     "standfirst": "Coins lodged in upholstery are to be reclassified as 'concealed household assets' and taxed accordingly.",
@@ -2727,6 +2857,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-isa-emotional-attachment-taxed",
+    "image": "images/biz-isa-emotional-attachment-taxed.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz isa emotional attachment taxed.",
     "category": "Business",
     "headline": "ISAs reclassified as 'emotional attachments' and made taxable",
     "standfirst": "The tax-free savings account is to lose its status after officials ruled that fondness for one's own money constitutes a benefit in kind.",
@@ -2751,6 +2883,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-financial-independence-ignoring-direct-debits",
+    "image": "images/biz-financial-independence-ignoring-direct-debits.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz financial independence ignoring direct debits.",
     "category": "Business",
     "headline": "Man achieves financial independence by refusing to acknowledge his direct debits",
     "standfirst": "A Basingstoke accountant says he retired at 41 using a strategy he calls 'sustained, principled non-recognition' of money leaving his account.",
@@ -2775,6 +2909,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-inheritance-tax-on-advice",
+    "image": "images/biz-inheritance-tax-on-advice.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz inheritance tax on advice.",
     "category": "Business",
     "headline": "Inheritance tax to apply to advice and wisdom passed down by grandparents",
     "standfirst": "Family sayings, hard-won lessons and practical tips are to be valued, assessed and taxed on the death of the person who held them.",
@@ -2799,6 +2935,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-spare-room-shed-chair-second-homes",
+    "image": "images/biz-spare-room-shed-chair-second-homes.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz spare room shed chair second homes.",
     "category": "Business",
     "headline": "Spare room, garden shed and favourite armchair reclassified as 'second homes'",
     "standfirst": "A widened definition means millions now own multiple dwellings without having moved, bought or built anything.",
@@ -2823,6 +2961,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-tax-on-having-nothing-zero-band",
+    "image": "images/biz-tax-on-having-nothing-zero-band.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz tax on having nothing zero band.",
     "category": "Business",
     "headline": "New 'Nil Balance Charge' to tax people for having no money at all",
     "standfirst": "The Treasury says those with nothing represent 'an untapped base', and will be billed a small fee for the administrative burden of their emptiness.",
@@ -2847,6 +2987,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-pension-loan-to-future-self-taxed",
+    "image": "images/biz-pension-loan-to-future-self-taxed.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz pension loan to future self taxed.",
     "category": "Business",
     "headline": "Pensions reclassified as 'loans to your future self' and taxed at the point of hope",
     "standfirst": "Saving for retirement is now a lending arrangement between you and a person who does not yet exist, with tax due the moment you feel reassured by it.",
@@ -2871,6 +3013,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-expense-own-personality-limited-company",
+    "image": "images/biz-expense-own-personality-limited-company.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating biz expense own personality limited company.",
     "category": "Business",
     "headline": "Personal finance guru urges readers to incorporate as a company and expense their own personality",
     "standfirst": "A bestselling adviser says the tax-efficient citizen should become a limited company, employ themselves, and claim their character as a business cost.",
@@ -2895,6 +3039,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-bridge-requests-weekends-off",
+    "image": "images/eng-bridge-requests-weekends-off.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng bridge requests weekends off.",
     "category": "Engineering",
     "headline": "Major estuary bridge requests, and is granted, weekends off",
     "standfirst": "Engineers have agreed to close a landmark crossing every Saturday and Sunday after the structure was found to bear load noticeably better on weekdays.",
@@ -2919,6 +3065,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-reservoir-rounding-own-volume-up",
+    "image": "images/eng-reservoir-rounding-own-volume-up.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng reservoir rounding own volume up.",
     "category": "Engineering",
     "headline": "Reservoir found to be quietly rounding its own volume up",
     "standfirst": "A Pennine reservoir has been overstating how much water it holds, an act of self-flattery that engineers say is 'technically impossible and yet ongoing'.",
@@ -2943,6 +3091,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-pylons-holding-hands-high-wind",
+    "image": "images/eng-pylons-holding-hands-high-wind.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng pylons holding hands high wind.",
     "category": "Engineering",
     "headline": "National Grid confirms pylons have begun holding hands in high wind",
     "standfirst": "Aerial surveys show transmission towers leaning toward one another and linking arms during gales, a behaviour the Grid calls 'structurally baffling but oddly reassuring'.",
@@ -2967,6 +3117,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-m25-found-slightly-braided",
+    "image": "images/eng-m25-found-slightly-braided.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating eng m25 found slightly braided.",
     "category": "Engineering",
     "headline": "M25 discovered to be very slightly braided",
     "standfirst": "Surveyors have found that London's orbital motorway is not one continuous loop but three strands loosely plaited together, and nobody can say when this happened.",
@@ -2991,6 +3143,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-prime-minister-lost-filing-system",
+    "image": "images/wld-prime-minister-lost-filing-system.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld prime minister lost filing system.",
     "category": "World",
     "headline": "Prime Minister discovered misfiled in Cabinet archives since October",
     "standfirst": "The nation's leader has been living quietly among the 1987 correspondence, subsisting on tea biscuits and a dim understanding of current events.",
@@ -3014,6 +3168,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-treaty-soggy-biscuits-international-law",
+    "image": "images/wld-treaty-soggy-biscuits-international-law.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld treaty soggy biscuits international law.",
     "category": "World",
     "headline": "Geneva Accord on biscuit dunking times enters binding force",
     "standfirst": "Thirty-seven nations have ratified the accord, establishing a universal 4.3-second optimal immersion window, with emergency sessions scheduled for custard creams.",
@@ -3037,6 +3193,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-parliament-accidentally-dissolves-itself-vote",
+    "image": "images/wld-parliament-accidentally-dissolves-itself-vote.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld parliament accidentally dissolves itself vote.",
     "category": "World",
     "headline": "Parliament votes to disband itself; too polite to rescind the motion",
     "standfirst": "A procedural error in yesterday's 3 p.m. session resulted in a binding resolution to cease existing as of August, with MPs citing \"respect for the democratic process\" when offered the chance to undo it.",
@@ -3060,6 +3218,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-swiss-watches-file-labor-complaint",
+    "image": "images/wld-swiss-watches-file-labor-complaint.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld swiss watches file labor complaint.",
     "category": "World",
     "headline": "Swiss watch industry demands protection from precision: files complaint with OSHA",
     "standfirst": "Horologists argue that maintaining accuracy to 0.003 seconds daily violates worker safety standards and is emotionally unsustainable.",
@@ -3083,6 +3243,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-ambassadors-embassy-fictional-embarrassing",
+    "image": "images/wld-ambassadors-embassy-fictional-embarrassing.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld ambassadors embassy fictional embarrassing.",
     "category": "World",
     "headline": "Diplomat discovers his embassy was a film location; has been working on abandoned sound stage",
     "standfirst": "The ambassador to a G7 nation spent four years negotiating trade deals from a plywood facade, with no actual diplomatic staff or treaty-signing authority.",
@@ -3106,6 +3268,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-eu-regulates-sandwich-diagonal-cut",
+    "image": "images/wld-eu-regulates-sandwich-diagonal-cut.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wld eu regulates sandwich diagonal cut.",
     "category": "World",
     "headline": "Brussels mandate requires all sandwiches in EU be cut diagonally; sparks philosophical crisis",
     "standfirst": "Directive 2026/447 on Sandwich Orientation has divided the continent into diagonal and anti-diagonal factions, with Poland threatening legal action and Italy questioning the nature of existence.",
@@ -3128,6 +3292,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-tennis-tournament-ball-seeks-therapy",
+    "image": "images/spt-tennis-tournament-ball-seeks-therapy.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt tennis tournament ball seeks therapy.",
     "category": "Sport",
     "headline": "Wimbledon withdrawn from competition; ball files suit citing emotional distress",
     "standfirst": "A regulation tennis ball has filed a formal complaint alleging that 12,000 high-velocity impacts per match constitute psychological torture and violate workplace safety standards.",
@@ -3151,6 +3317,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-rugby-tackling-now-requires-permission-slip",
+    "image": "images/spt-rugby-tackling-now-requires-permission-slip.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt rugby tackling now requires permission slip.",
     "category": "Sport",
     "headline": "World Rugby mandates written consent forms for all tackles; match length now 11 days",
     "standfirst": "New regulations require that defensive players obtain notarised permission from opposing teams before executing contact, with mandatory waiting periods and bureaucratic review.",
@@ -3174,6 +3342,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-golfer-shoots-previous-week-score",
+    "image": "images/spt-golfer-shoots-previous-week-score.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt golfer shoots previous week score.",
     "category": "Sport",
     "headline": "Golfer completes round with score from last week's tournament; officials remain unclear which is valid",
     "standfirst": "An anomaly in temporal record-keeping has resulted in a player shooting 68 at St Andrews despite playing 73 strokes, with handicap committees now debating whether time itself is negotiable.",
@@ -3197,6 +3367,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-olympics-introduces-competitive-queuing",
+    "image": "images/spt-olympics-introduces-competitive-queuing.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt olympics introduces competitive queuing.",
     "category": "Sport",
     "headline": "Paris Olympics adds 'disciplined waiting' as medal event; GB heavily favoured",
     "standfirst": "Athletes will compete for gold in maintaining queue formation, order, and dignified patience, with judging criteria including 'restraint,' 'politeness,' and 'visible irritation suppression.'",
@@ -3220,6 +3392,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-rain-files-complaint-guttering",
+    "image": "images/wea-rain-files-complaint-guttering.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea rain files complaint guttering.",
     "category": "Weather",
     "headline": "Met Office issues formal apology as rain reports malfunction of drainage systems across southern England",
     "standfirst": "Precipitation levels documented as 'deliberately misdirected by faulty guttering, a situation which rain finds to be deeply unprofessional and vaguely insulting.'",
@@ -3243,6 +3417,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-bbc-weather-presenter-existential-crisis",
+    "image": "images/wea-bbc-weather-presenter-existential-crisis.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea bbc weather presenter existential crisis.",
     "category": "Weather",
     "headline": "BBC weather presenter suffers on-air breakdown after realizing forecasts are 'just statistical approximations'",
     "standfirst": "After 14 years of confident prediction, the presenter has reportedly come to accept that he has no idea what weather will actually occur and cannot unsee that fundamental truth.",
@@ -3266,6 +3442,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-wind-speed-exceeds-postal-regulations",
+    "image": "images/wea-wind-speed-exceeds-postal-regulations.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea wind speed exceeds postal regulations.",
     "category": "Weather",
     "headline": "Storm Beatrice declared 'administratively incompatible with UK postal service'; Royal Mail suspends all operations",
     "standfirst": "Wind speeds of 87 mph have been determined to violate Regulation 12.4(c) of the Postal Operations Manual, rendering mail delivery formally illegal until conditions improve.",
@@ -3289,6 +3467,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-fog-granted-legal-injunction-visibility",
+    "image": "images/wea-fog-granted-legal-injunction-visibility.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating wea fog granted legal injunction visibility.",
     "category": "Weather",
     "headline": "Dense fog successfully sues for right to persist; granted legal injunction against visibility mandates",
     "standfirst": "A persistent low-pressure system has obtained court protection preventing the Met Office or any local authority from attempting to 'disperse, clarify, or otherwise interfere with its fundamental character.'",
@@ -3312,6 +3492,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-football-referee-files-wrongful-dismissal",
+    "image": "images/spt-football-referee-files-wrongful-dismissal.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating spt football referee files wrongful dismissal.",
     "category": "Sport",
     "headline": "Premier League referee sues for wrongful dismissal after being 'un-dismissed' by VAR appeal in 87th minute",
     "standfirst": "An official who expelled a player for a handball violation was rehired by video review seconds before delivering the red card, creating what legal experts describe as 'an ontological crisis in disciplinary action.'",
@@ -3335,6 +3517,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-tuesdays-run-longer",
+    "image": "images/sci-tuesdays-run-longer.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci tuesdays run longer.",
     "category": "Science",
     "headline": "Tuesdays officially confirmed to run four minutes longer than other days",
     "standfirst": "A twelve-year audit of caesium clocks finds a small but stubborn dilation every Tuesday, and nobody at the Bureau of Calendrical Standards can explain why.",
@@ -3360,6 +3544,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wool-static-grudges",
+    "image": "images/sci-wool-static-grudges.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci wool static grudges.",
     "category": "Science",
     "headline": "Wool jumpers found to hold grudges, static study concludes",
     "standfirst": "Repeated static shocks from the same jumper grow measurably sharper each time, prompting researchers to describe the effect, cautiously, as resentment.",
@@ -3385,6 +3571,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-beige-has-a-smell",
+    "image": "images/sci-beige-has-a-smell.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci beige has a smell.",
     "category": "Science",
     "headline": "Beige confirmed to have a faint but detectable smell",
     "standfirst": "A trained sensory panel can now identify the colour beige by scent alone, at a rate well above chance, to the discomfort of the paint industry.",
@@ -3410,6 +3598,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-puddles-evaporation-queue",
+    "image": "images/sci-puddles-evaporation-queue.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating sci puddles evaporation queue.",
     "category": "Science",
     "headline": "Puddles found to evaporate in a strict, self-imposed queue",
     "standfirst": "Time-lapse study of 600 pavements shows puddles reliably dry in the same relative order each time, regardless of size, sunlight or shape.",
@@ -3543,6 +3733,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-monday-headaches-worse",
+    "image": "images/hea-monday-headaches-worse.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea monday headaches worse.",
     "category": "Health",
     "headline": "Monday mornings confirmed to cause measurably worse headaches than the pain itself would predict",
     "standfirst": "GPs report identical dosages of the same painkiller working less well on Mondays, prompting a new clinical guideline on 'calendar-adjusted analgesia'.",
@@ -3568,6 +3760,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-handshakes-transfer-confidence",
+    "image": "images/hea-handshakes-transfer-confidence.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea handshakes transfer confidence.",
     "category": "Health",
     "headline": "Firm handshakes proven to transfer measurable confidence between strangers",
     "standfirst": "A grip-strength study finds the less confident party in a handshake absorbs a small, temporary boost — and the more confident party loses a corresponding amount.",
@@ -3593,6 +3787,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-power-naps-count-as-timezone-travel",
+    "image": "images/hea-power-naps-count-as-timezone-travel.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea power naps count as timezone travel.",
     "category": "Health",
     "headline": "Health body rules power naps officially count as brief travel to a different time zone",
     "standfirst": "New clinical guidance recognises the grogginess of a twenty-minute nap as a genuine, if miniature, form of jet lag — and recommends treating it accordingly.",
@@ -3618,6 +3814,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-orderly-queues-lower-blood-pressure",
+    "image": "images/hea-orderly-queues-lower-blood-pressure.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating hea orderly queues lower blood pressure.",
     "category": "Health",
     "headline": "Standing in an orderly queue proven to lower blood pressure; a chaotic one raises it",
     "standfirst": "Cardiologists find the single-file, one-at-a-time queue has a measurable calming effect, while crowding at a till produces a spike comparable to mild exercise.",
@@ -3643,6 +3841,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-clouds-charge-parking-fees",
+    "image": "images/av-clouds-charge-parking-fees.webp",
+    "imageAlt": "Photorealistic editorial photograph illustrating av clouds charge parking fees.",
     "category": "Aviation",
     "headline": "Clouds found to be charging aircraft informal parking fees for extended holding patterns",
     "standfirst": "A civil aviation review notes a curious correlation between time spent circling in cloud and small, otherwise unexplained increases in airframe icing costs, which engineers have taken to calling 'the toll'.",
