@@ -201,7 +201,7 @@
         '</form></div>' +
       '</div></header>' +
       '<nav class="catnav" aria-label="Sections"><div class="wrap">' +
-        '<a href="index.html"' + (activeCat ? '' : ' class="active"') + '>Home</a>' + nav +
+        '<a href="index.html"' + (activeCat ? '' : ' class="active"') + '>Home</a>' + nav + '<a href="puzzles.html"' + (activeCat === 'Puzzles' ? ' class="active"' : '') + '>Puzzles</a>' +
         '<div class="catnav-more" hidden>' +
           '<button type="button" class="catnav-more-btn" aria-haspopup="true" aria-expanded="false">' +
             'More <span class="chev" aria-hidden="true">&#9662;</span></button>' +
@@ -731,6 +731,9 @@
     renderSearch: withChrome(renderSearch),
     renderAbout: withChrome(renderAbout),
     articleUrl: articleUrl,
+    header: headerHtml,
+    footer: footerHtml,
+    enhanceCatnav: enhanceCatnav,
     count: function () { return ARTICLES.length; }
   };
 })();
