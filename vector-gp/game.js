@@ -649,30 +649,59 @@ function aiStep(dt) {
     c.rpm = 4000 + (c.v / 89) * 9500;
   }
 
-  // AI <-> player contact
+  // AI <-> player contact — positional separation so you can't drive through.
+  // Work in the track-local frame at the player: ds along the track (+ = AI
+  // ahead), dd across it (+ = AI to the player's left). Overlap when both the
+  // longitudinal and lateral gaps are inside a car box; resolve along whichever
+  // axis has the least penetration, shoving BOTH cars (not just the AI).
   const pc = R.player;
-  if (!pc.retired) for (const c of cars) {
+  const sm = trk.pts[R.idx];
+  const fwx = Math.cos(sm.h), fwy = Math.sin(sm.h);   // track forward
+  const nrx = -Math.sin(sm.h), nry = Math.cos(sm.h);  // track normal (+d dir)
+  if (!pc.retired && !pc.finished) for (const c of cars) {
     if (c.isPlayer || c.retired) continue;
     let ds = c.prog - pc.prog;
     ds = ((ds % trk.len) + trk.len) % trk.len;
     if (ds > trk.len / 2) ds -= trk.len;
     const dd = c.d - pc.d;
-    if (Math.abs(ds) < CAR_L && Math.abs(dd) < CAR_W) {
-      const rel = Math.abs(R.pv - c.v);
-      // push the AI car aside
-      const push = Math.sign(dd || (Math.random() - 0.5)) * 1.6 * dt * 8;
-      c.d += push;
-      if (Math.abs(ds) < CAR_L * 0.7) {
-        if (ds > 0 && R.pv > c.v) { R.pv = c.v + (R.pv - c.v) * 0.25; c.v += 2; }
-        else if (ds < 0 && c.v > R.pv) { c.v = R.pv + (c.v - R.pv) * 0.4; }
-      }
-      if (rel > 6) {
-        SFX.crash(rel > 18);
-        R.camShake = 0.4;
-        if (!G.aids.indestruct) {
-          R.damage += rel * 1.1;
-          if (R.damage > 100) retirePlayer("COLLISION");
-        }
+    const penT = CAR_L - Math.abs(ds);      // longitudinal overlap
+    const penL = CAR_W - Math.abs(dd);      // lateral overlap
+    if (penT <= 0 || penL <= 0) continue;   // boxes clear
+    const rel = Math.abs(R.pv - c.v);
+
+    if (penL < penT) {
+      // side-by-side rub: separate across the track, share the correction
+      const dir = dd >= 0 ? 1 : -1;         // push AI toward +d, player toward -d
+      const sep = penL + 0.04;
+      c.d = clamp(c.d + dir * sep * 0.55, -trk.wHalf + 1.0, trk.wHalf - 1.0);
+      R.px -= nrx * dir * sep * 0.45;
+      R.py -= nry * dir * sep * 0.45;
+      R.pv *= 0.985; c.v *= 0.99;           // a touch of scrub
+    } else if (ds >= 0) {
+      // player nose into AI tail: shove player back, AI forward, match speeds
+      R.px -= fwx * penT * 0.5; R.py -= fwy * penT * 0.5;
+      c.s += penT * 0.5;
+      if (R.pv > c.v) { const m = (R.pv + c.v) * 0.5; R.pv = m * 0.9; c.v = Math.max(c.v, m); }
+    } else {
+      // AI nose into player tail: shove AI back, player forward
+      c.s -= penT * 0.5;
+      R.px += fwx * penT * 0.5; R.py += fwy * penT * 0.5;
+      if (c.v > R.pv) { const m = (R.pv + c.v) * 0.5; c.v = m * 0.9; R.pv = Math.max(R.pv, m); }
+    }
+
+    // re-derive the AI car's world position after being shoved
+    const sm2 = sampleAt(trk, ((c.s % trk.len) + trk.len) % trk.len);
+    c.s = ((c.s % trk.len) + trk.len) % trk.len;
+    c.d = clamp(c.d, -trk.wHalf + 1.0, trk.wHalf - 1.0);
+    c.x = sm2.x + (-Math.sin(sm2.h)) * c.d; c.y = sm2.y + Math.cos(sm2.h) * c.d;
+    c.h = sm2.h; c.prog = c.lap * trk.len + c.s;
+
+    if (rel > 6) {
+      SFX.crash(rel > 18);
+      R.camShake = Math.min(0.6, 0.2 + rel * 0.02);
+      if (!G.aids.indestruct) {
+        R.damage += rel * 1.1;
+        if (R.damage > 100) retirePlayer("COLLISION");
       }
     }
   }
@@ -902,16 +931,43 @@ function drawCar(ctx, c, horizonY, fog) {
   // gearbox block
   q("#26262a", 1.0, [-0.28, -1.8, 0.50], [0.28, -1.8, 0.50], [0.28, -2.1, 0.42], [-0.28, -2.1, 0.42]);
   q("#26262a", 0.8, [-0.28, -2.1, 0.10], [0.28, -2.1, 0.10], [0.28, -2.1, 0.42], [-0.28, -2.1, 0.42]);
-  // wheels: solid boxes (outer, inner, front, back, top)
-  for (const [wc, wz, r, w2, hgt] of [
-    [0.96, -1.55, 0.35, 0.19, 0.68], [-0.96, -1.55, 0.35, 0.19, 0.68],
-    [0.90, 1.55, 0.31, 0.15, 0.60], [-0.90, 1.55, 0.31, 0.15, 0.60],
+  // wheels: round cylinders (tread band + sidewall discs + rolling hub)
+  const NW = 11;                          // rim segments
+  const roll = (c.s || 0);                // distance travelled -> spin angle
+  for (const [wc, wz, r, w2] of [
+    [0.97, -1.55, 0.36, 0.20], [-0.97, -1.55, 0.36, 0.20],
+    [0.92, 1.55, 0.32, 0.16], [-0.92, 1.55, 0.32, 0.16],
   ]) {
-    for (const s of [-1, 1])
-      q("#1c1c1e", 1.0, [wc + s * w2, wz - r, 0.02], [wc + s * w2, wz + r, 0.02], [wc + s * w2, wz + r, hgt], [wc + s * w2, wz - r, hgt]);
-    q("#161618", 1.0, [wc - w2, wz + r, 0.02], [wc + w2, wz + r, 0.02], [wc + w2, wz + r, hgt], [wc - w2, wz + r, hgt]);
-    q("#161618", 1.0, [wc - w2, wz - r, 0.02], [wc + w2, wz - r, 0.02], [wc + w2, wz - r, hgt], [wc - w2, wz - r, hgt]);
-    q("#2e2e32", 1.15, [wc - w2, wz - r, hgt], [wc - w2, wz + r, hgt], [wc + w2, wz + r, hgt], [wc + w2, wz - r, hgt]);
+    const cy = r + 0.02;                   // hub centre height (tyre on the deck)
+    const a0 = roll / r;                   // rolling phase for this wheel size
+    const outX = wc > 0 ? wc + w2 : wc - w2;   // side facing away from the tub
+    const inX = wc > 0 ? wc - w2 : wc + w2;
+    const rim = [];
+    for (let k = 0; k < NW; k++) {
+      const a = a0 + k / NW * TAU;
+      rim.push([wz + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    // tread band — one quad per segment (normal-lit, depth-sorted)
+    for (let k = 0; k < NW; k++) {
+      const p = rim[k], n = rim[(k + 1) % NW];
+      q("#1b1b1d", 1.0, [outX, p[0], p[1]], [outX, n[0], n[1]], [inX, n[0], n[1]], [inX, p[0], p[1]]);
+    }
+    // sidewall discs (N-gon faces)
+    q("#242429", 1.0, ...rim.map(p => [outX, p[0], p[1]]));
+    q("#141416", 0.85, ...rim.map(p => [inX, p[0], p[1]]));
+    // hub cap + a spoke, on the outer face, rotating with the wheel
+    const hx = outX + (wc > 0 ? 0.03 : -0.03);
+    const hR = r * 0.4, hub = [];
+    for (let k = 0; k < NW; k++) {
+      const a = a0 + k / NW * TAU;
+      hub.push([hx, wz + Math.cos(a) * hR, cy + Math.sin(a) * hR]);
+    }
+    q("#54545e", 1.25, ...hub);
+    const sx = hx + (wc > 0 ? 0.02 : -0.02);
+    q("#2c2c33", 1.1,
+      [sx, wz + Math.cos(a0 + 1.7) * r * 0.86, cy + Math.sin(a0 + 1.7) * r * 0.86],
+      [sx, wz + Math.cos(a0 + 1.7 + 0.12) * hR * 0.4, cy + Math.sin(a0 + 1.7 + 0.12) * hR * 0.4],
+      [sx, wz + Math.cos(a0 + 1.7 - 0.12) * hR * 0.4, cy + Math.sin(a0 + 1.7 - 0.12) * hR * 0.4]);
   }
   drawFacesLit(ctx, faces, horizonY, fog);
 }
