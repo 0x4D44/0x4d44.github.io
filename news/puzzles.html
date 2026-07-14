@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Puzzles — The Daily Flange</title>
+  <meta name="description" content="The Daily Flange puzzle page. Completely preposterous, entirely unsolvable, and yet somehow always correct.">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='4' fill='%23b80000'/%3E%3Ctext x='16' y='23' font-family='Georgia,serif' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3EDF%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="news.css">
+  <style>
+    .pz-intro { max-width: 760px; margin: 18px 0 6px; }
+    .pz-intro h1 { font-family: var(--serif); font-size: 34px; margin: 0 0 6px; }
+    .pz-intro .standfirst { font-size: 18px; color: var(--ink-soft); font-style: italic; margin: 0; }
+    .pz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin: 22px 0 40px; }
+    .pz-card { border: 1px solid var(--hair-strong); border-radius: 4px; background: var(--bg); padding: 16px 16px 18px; display: flex; flex-direction: column; }
+    .pz-card h3 { font-family: var(--serif); font-size: 20px; margin: 0 0 2px; }
+    .pz-card .kicker { font-size: 11px; text-transform: uppercase; letter-spacing: .14em; color: var(--flange-red); font-weight: 700; margin-bottom: 8px; }
+    .pz-card .instr { font-size: 13.5px; color: var(--ink-soft); margin: 0 0 12px; }
+    .pz-body { margin-top: auto; }
+    .pz-verdict { min-height: 20px; margin-top: 12px; font-size: 13.5px; font-weight: 600; color: var(--flange-red-dark); }
+    .pz-btn { font: inherit; font-size: 13px; font-weight: 600; border: 1px solid var(--ink); background: var(--ink); color: #fff; border-radius: 3px; padding: 6px 12px; cursor: pointer; margin: 8px 6px 0 0; }
+    .pz-btn.ghost { background: transparent; color: var(--ink); }
+    .pz-btn:hover { background: var(--flange-red); border-color: var(--flange-red); color: #fff; }
+
+    /* crossword + sudoku + generic grids */
+    .cell-grid { display: grid; gap: 2px; background: var(--ink); border: 2px solid var(--ink); width: max-content; }
+    .cell-grid input { width: 30px; height: 30px; border: 0; text-align: center; font: 700 15px var(--serif); text-transform: uppercase; background: #fff; color: var(--ink); padding: 0; }
+    .cell-grid input:focus { outline: 2px solid var(--flange-red); outline-offset: -2px; }
+    .cell-grid .block { width: 30px; height: 30px; background: var(--ink); }
+    .cell-grid .fixed { background: #f0f0f0; color: var(--muted); }
+    .clue-list { font-size: 12.5px; color: var(--ink-soft); margin: 12px 0 0; padding-left: 4px; list-style: none; }
+    .clue-list b { color: var(--ink); }
+
+    /* word search */
+    .ws-grid { display: grid; grid-template-columns: repeat(10, 24px); gap: 1px; user-select: none; }
+    .ws-grid span { width: 24px; height: 24px; display: grid; place-items: center; font: 600 13px var(--sans); background: var(--bg-soft); cursor: pointer; border-radius: 2px; }
+    .ws-grid span.sel { background: var(--flange-red); color: #fff; }
+    .ws-words { font-size: 13px; margin: 10px 0 0; }
+    .ws-words span { display: inline-block; margin: 0 8px 4px 0; padding: 2px 7px; background: var(--bg-band); border-radius: 3px; }
+
+    /* spot the difference */
+    .sd-pair { display: flex; gap: 12px; flex-wrap: wrap; }
+    .sd-pair figure { margin: 0; position: relative; border: 1px solid var(--hair-strong); border-radius: 4px; overflow: hidden; cursor: crosshair; }
+    .sd-pair svg { display: block; }
+    .sd-mark { position: absolute; width: 20px; height: 20px; margin: -10px 0 0 -10px; border: 3px solid var(--flange-red); border-radius: 50%; pointer-events: none; }
+
+    /* fifteen puzzle */
+    .fif { display: grid; grid-template-columns: repeat(4, 46px); gap: 3px; width: max-content; }
+    .fif button { width: 46px; height: 46px; font: 700 18px var(--serif); border: 1px solid var(--hair-strong); background: #fff; border-radius: 3px; cursor: pointer; }
+    .fif button.blank { visibility: hidden; }
+    .fif button:hover { background: var(--bg-soft); }
+
+    /* odd one out / colour by numbers */
+    .row-shapes { display: flex; gap: 14px; flex-wrap: wrap; }
+    .row-shapes svg { cursor: pointer; }
+    .quiz p { font-size: 14px; margin: 0 0 4px; font-weight: 600; }
+    .quiz label { display: block; font-size: 13.5px; margin: 2px 0; cursor: pointer; }
+    .quiz-q { margin-bottom: 12px; }
+
+    .anagram input { font: 700 16px var(--serif); text-transform: uppercase; letter-spacing: .12em; padding: 6px 10px; border: 1px solid var(--hair-strong); border-radius: 3px; width: 180px; }
+    .big-num { font: 700 26px var(--serif); letter-spacing: .1em; }
+    .cbn rect, .cbn path, .cbn circle, .cbn polygon { cursor: pointer; }
+    .cbn text { pointer-events: none; font: 700 13px var(--sans); fill: var(--ink); }
+  </style>
+</head>
+<body>
+  <div id="chrome-top"></div>
+  <main class="wrap">
+    <div class="pz-intro">
+      <div class="kicker" style="color:var(--flange-red);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:11px">Puzzles &amp; Diversions</div>
+      <h1>The Flange Puzzle Page</h1>
+      <p class="standfirst">Sharpen your mind on puzzles that are completely preposterous, entirely unsolvable, and — reassuringly — impossible to get wrong. Solutions overleaf. There is no overleaf.</p>
+    </div>
+    <div id="puzzles" class="pz-grid"></div>
+  </main>
+  <div id="chrome-bottom"></div>
+
+  <script src="news.js"></script>
+  <script src="puzzles.js"></script>
+</body>
+</html>
