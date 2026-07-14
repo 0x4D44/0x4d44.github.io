@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "sintaxis",
+    title: "sintaxis: the Spanish Toolchain",
+    tagline: "Spanish taught as a systems language, for engineers tired of Duolingo's owl: 12 packages and 60 deep lessons — about six months — that actually explain the grammar. Wrong answers raise rustc-style diagnostics with error codes and fix notes; a real conjugation engine drives drills and an interactive REPL; SM-2 reviews arrive as a nightly build. Vanilla JS, no build step.",
+    url: "https://0x4d44.github.io/sintaxis/",
+    illustration: "ill-sintaxis",
+    date: "2026-07-14T12:00:00",
+    year: 2026,
+    tag: "software",
+    real: true,
+  },
+  {
     slug: "vector-gp",
     title: "Vector GP",
     tagline: "A flat-shaded polygon grand prix in the spirit of the great early-90s racing sims: a 16-round world championship, 13 invented teams and 26 invented drivers, a cockpit with mirrors and rev LEDs, and the six classic switchable driver aids — from full novice to no-net ace. FM-synthesised V12, vanilla JS on a 640×400 canvas; no build step.",
