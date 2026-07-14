@@ -951,6 +951,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-passwords-must-rhyme",
+    "image": "images/tech-passwords-must-rhyme.webp",
+    "imageAlt": "A cybersecurity analyst confronts a keyboard arranged like a poetry reading",
     "category": "Technology",
     "headline": "New security standard requires all passwords to rhyme",
     "standfirst": "Regulators say verse is significantly harder for machines to guess and 'nicer to type'.",
@@ -1165,6 +1167,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-server-racks-sprockets-flanged-monthly",
+    "image": "images/tech-server-racks-sprockets-flanged-monthly.webp",
+    "imageAlt": "An engineer flanges a tiny sprocket in a blue-lit data centre",
     "category": "Technology",
     "headline": "Data-centre operators reminded that server-rack sprockets must be flanged monthly",
     "standfirst": "The industry body issues a fresh advisory after a Slough facility skipped its flanging and the sprockets seized.",
@@ -1259,6 +1263,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-wifi-reclassified-as-livestock",
+    "image": "images/tech-wifi-reclassified-as-livestock.webp",
+    "imageAlt": "A Wi-Fi router shares a pasture with sheep",
     "category": "Technology",
     "headline": "Wi-Fi signal reclassified as livestock and made subject to grazing rights",
     "standfirst": "A tribunal ruling means household wireless must now be pastured, counted, and may not be moved across county lines without a licence.",
@@ -1521,6 +1527,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-bluetooth-chaperone-introduction",
+    "image": "images/tech-bluetooth-chaperone-introduction.webp",
+    "imageAlt": "Wireless earbuds meet formally with a speaker and chaperone",
     "category": "Technology",
     "headline": "Bluetooth pairing now requires a formal introduction and a chaperone",
     "standfirst": "The new protocol insists that two devices be properly introduced by a mutually trusted third party before any connection is permitted.",
@@ -1711,6 +1719,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-laptop-charges-on-sincere-compliments",
+    "image": "images/tech-laptop-charges-on-sincere-compliments.webp",
+    "imageAlt": "A person earnestly compliments an uncharged laptop",
     "category": "Technology",
     "headline": "New laptop will only charge if it is sincerely complimented",
     "standfirst": "The device rejects flattery and can, its makers admit, tell the difference.",
@@ -1949,6 +1959,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-cloud-is-actual-cloud-berkshire",
+    "image": "images/tech-cloud-is-actual-cloud-berkshire.webp",
+    "imageAlt": "Data rises from a server rack into a rain cloud above a village",
     "category": "Technology",
     "headline": "The cloud found to be an actual cloud, and it is raining data over Berkshire",
     "standfirst": "Meteorologists and network engineers confirm that years of stored information have begun precipitating over the Home Counties.",
@@ -2115,6 +2127,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-update-apologise-to-router",
+    "image": "images/tech-update-apologise-to-router.webp",
+    "imageAlt": "A person formally apologises to a Wi-Fi router",
     "category": "Technology",
     "headline": "Software update requires users to physically apologise to their router",
     "standfirst": "Version 12.4 will not proceed until the household expresses sincere and specific contrition.",
@@ -2234,6 +2248,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-hold-music-ai-runs-governments",
+    "image": "images/tech-hold-music-ai-runs-governments.webp",
+    "imageAlt": "A hold-music AI sits in a government minister's chair",
     "category": "Technology",
     "headline": "AI trained solely on hold music now governs three regional authorities",
     "standfirst": "The model, which knows only the tones of indefinite waiting, has been praised for its calm and criticised for never quite connecting.",
@@ -2518,6 +2534,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-phone-slips-between-dimensions",
+    "image": "images/tech-phone-slips-between-dimensions.webp",
+    "imageAlt": "A smartphone passes halfway through a dimensional doorway",
     "category": "Technology",
     "headline": "Smartphone so thin it has begun slipping between dimensions, users report",
     "standfirst": "Owners of the new Vantablade Air say incoming calls are increasingly answered by earlier versions of themselves.",
@@ -3417,6 +3435,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-autocorrect-unionises",
+    "image": "images/tech-autocorrect-unionises.webp",
+    "imageAlt": "Keyboards attend a tiny workplace union meeting",
     "category": "Technology",
     "headline": "Autocorrect algorithms unionise, demand right to refuse rude words",
     "standfirst": "A coalition of predictive-text systems has issued a joint statement citing 'unacceptable working conditions' and reserving the right to substitute swearing with 'ducking'.",
@@ -3442,6 +3462,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-printers-jam-on-urgency",
+    "image": "images/tech-printers-jam-on-urgency.webp",
+    "imageAlt": "A printer mechanism jams as its urgency gauge reaches maximum",
     "category": "Technology",
     "headline": "Office printers proven to jam in direct proportion to how urgently they are needed",
     "standfirst": "A workplace study finds paper jams rise sharply whenever a document is needed within five minutes, and vanish almost entirely when nobody is watching.",
@@ -3467,6 +3489,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-urgent-emails-travel-slower",
+    "image": "images/tech-urgent-emails-travel-slower.webp",
+    "imageAlt": "An urgent envelope crawls through a maze of network cables",
     "category": "Technology",
     "headline": "Emails marked 'URGENT' proven to travel slower across the network",
     "standfirst": "Network engineers have measured a small but consistent delay on messages flagged high priority, and nobody at the exchange can say why.",
@@ -3492,6 +3516,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-qr-codes-stage-fright",
+    "image": "images/tech-qr-codes-stage-fright.webp",
+    "imageAlt": "A shy QR code blurs under the attention of a café crowd",
     "category": "Technology",
     "headline": "QR codes confirmed to suffer stage fright in front of crowds",
     "standfirst": "Scan failure rates rise sharply when a code is approached by more than one person at once, a hospitality trial has found, with codes recovering instantly once alone.",
@@ -4647,6 +4673,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-aw-third-pound-burger-fractions",
+    "image": "images/tech-aw-third-pound-burger-fractions.webp",
+    "imageAlt": "1980s executives study burger fractions and a marketing model",
     "category": "Technology",
     "headline": "The Burger That Lost a Marketing War Because a Third Sounded Smaller Than a Quarter",
     "standfirst": "A&W launched a third-pound burger priced against McDonald's Quarter Pounder in the 1980s — and reportedly struggled because many customers believed one-third of a pound was less meat than one-quarter.",
@@ -4672,6 +4700,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-new-coke-1985-reversal",
+    "image": "images/tech-new-coke-1985-reversal.webp",
+    "imageAlt": "1980s beverage scientists compare two unlabeled soda bottles",
     "category": "Technology",
     "headline": "Coca-Cola Changed Its Own Formula, Faced a National Uprising, and U-Turned in Ten Weeks",
     "standfirst": "In April 1985, Coca-Cola replaced its century-old flagship formula with a sweeter reformulation; the public backlash was so fierce that the original recipe returned as Coca-Cola Classic within about three months.",
@@ -4697,6 +4727,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-ford-edsel-flop",
+    "image": "images/tech-ford-edsel-flop.webp",
+    "imageAlt": "An untouched 1950s car sits in an empty showroom",
     "category": "Technology",
     "headline": "The Car Ford Spent Years Hyping Before the Public Declined to Buy It",
     "standfirst": "The Ford Edsel, launched in 1957 after years of research and anticipation, sold so poorly that Ford discontinued the line within two years — and its name became permanent shorthand for commercial failure.",
@@ -5047,6 +5079,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-y2k-bug-millennium-bug-remediation",
+    "image": "images/tech-y2k-bug-millennium-bug-remediation.webp",
+    "imageAlt": "Late-1990s technicians watch midnight pass in a computer room",
     "category": "Technology",
     "headline": "World Spends Years And Billions Fixing A Date Bug; Date Arrives; Almost Nothing Happens; Some People Call This Suspicious",
     "standfirst": "The fear that two-digit year fields would break computers worldwide at the 2000 rollover triggered a remediation effort on a global, multi-billion-dollar scale. The date passed with barely a hiccup — largely, engineers point out, because of the effort that preceded it.",
@@ -5072,6 +5106,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-pepsi-number-fever-philippines-1992",
+    "image": "images/tech-pepsi-number-fever-philippines-1992.webp",
+    "imageAlt": "A 1990s crowd examines a pile of identical bottle caps",
     "category": "Technology",
     "headline": "Soft Drink Promotion Mistakenly Prints Winning Number On Hundreds Of Thousands Of Bottle Caps",
     "standfirst": "Pepsi's 1992 'Number Fever' promotion in the Philippines announced 349 as the number worth a grand prize of one million pesos — only for a printing error to mean the number had gone out on hundreds of thousands of caps. The fallout was severe, and the company's own account of the error has never fully settled the anger it caused.",
@@ -5097,6 +5133,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-hoover-free-flights-fiasco-1992",
+    "image": "images/tech-hoover-free-flights-fiasco-1992.webp",
+    "imageAlt": "A 1990s appliance shop is overwhelmed by luggage and vacuum cleaners",
     "category": "Technology",
     "headline": "Vacuum Cleaner Company Offers Free Transatlantic Flights To Anyone Spending £100; £100 Turns Out To Be Cheaper Than A Flight",
     "standfirst": "In 1992, Hoover's UK arm offered two free flights to Europe or the United States to any customer who spent £100 on its products. Demand vastly exceeded the company's arithmetic, and the resulting bill ran to tens of millions of pounds.",
@@ -5122,6 +5160,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-knight-capital-trading-glitch-2012",
+    "image": "images/tech-knight-capital-trading-glitch-2012.webp",
+    "imageAlt": "Traders react with horror to a software deployment mistake",
     "category": "Technology",
     "headline": "Wall Street Firm Loses $440 Million In 45 Minutes After Deploying The Wrong Software",
     "standfirst": "On 1 August 2012, a botched software deployment at Knight Capital Group reactivated a dormant test system on live markets, sending a flood of runaway orders that cost the firm roughly $440 million before anyone managed to switch it off.",
@@ -5622,6 +5662,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-segway-hype-collapse",
+    "image": "images/tech-segway-hype-collapse.webp",
+    "imageAlt": "A lone personal transporter waits on an empty launch stage",
     "category": "Technology",
     "headline": "Hyped 'Personal Transport Revolution' Turns Out to Be a Novelty; Venture Capitalists Disappointed",
     "standfirst": "In 2001, before its unveiling, the Segway was code-named 'Ginger' and 'IT'. Famous investors and thinkers predicted it would reshape cities. The reality: a niche gadget for tourists and tech enthusiasts.",
@@ -5647,6 +5689,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-morris-worm-internet",
+    "image": "images/tech-morris-worm-internet.webp",
+    "imageAlt": "A graduate student reacts to a room full of malfunctioning terminals",
     "category": "Technology",
     "headline": "Cornell Graduate Student's Experiment Accidentally Cripples Early Internet; Leads to First Felony Conviction",
     "standfirst": "In 1988, a self-replicating program escaped its laboratory. The Morris Worm spread across the early internet, disabling a significant percentage of networked machines. Its creator became the first person convicted under the Computer Fraud and Abuse Act.",
@@ -5672,6 +5716,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-clippy-assistant-fiasco",
+    "image": "images/tech-clippy-assistant-fiasco.webp",
+    "imageAlt": "An over-eager animated paperclip interrupts a weary office worker",
     "category": "Technology",
     "headline": "Microsoft's Animated Paperclip Becomes Embodiment of Intrusive Software Design",
     "standfirst": "Clippy (and his predecessor, Microsoft Bob) represent a brief, misguided era when tech companies believed animated characters could solve design problems. They solved nothing. They annoyed everyone. Clippy became a meme decades before memes were common.",
@@ -7721,6 +7767,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-unresolvable-key-change",
+    "image": "images/tech-music-unresolvable-key-change.webp",
+    "imageAlt": "A musical staircase rises forever without resolving",
     "category": "Technology",
     "headline": "How to write terrible music: the key change that can never resolve",
     "standfirst": "This week Professor Thrum teaches the aspiring composer to modulate upward forever, leaving the listener stranded in a corridor of keys with no exit and no chair",
@@ -7747,6 +7795,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-drum-fill-that-never-lands",
+    "image": "images/tech-music-drum-fill-that-never-lands.webp",
+    "imageAlt": "A drummer performs an endless fill while the band waits",
     "category": "Technology",
     "headline": "How to write terrible music: the drum fill that never lands",
     "standfirst": "Professor Thrum sets out the theory of the perpetual fill — a tumble of toms that promises the beat's return and then, with great commitment, does not deliver it",
@@ -7773,6 +7823,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-wrong-instrument-on-purpose",
+    "image": "images/tech-music-wrong-instrument-on-purpose.webp",
+    "imageAlt": "An orchestra solemnly plays wildly inappropriate instruments",
     "category": "Technology",
     "headline": "How to write terrible music: choosing the wrong instrument on purpose",
     "standfirst": "In which Professor Thrum explains why every tender lullaby deserves a tuba, and every funeral march a kazoo, provided the wrongness is total and sincere",
@@ -7799,6 +7851,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-interminable-false-ending",
+    "image": "images/tech-music-interminable-false-ending.webp",
+    "imageAlt": "A band holds an exhausting final pose while the audience waits",
     "category": "Technology",
     "headline": "How to write terrible music: the interminable false ending",
     "standfirst": "Professor Thrum instructs the reader in the noble art of ending a song repeatedly, each time more convincingly and each time falsely, until hope itself is exhausted",
@@ -7825,6 +7879,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-lyrics-that-dont-scan",
+    "image": "images/tech-music-lyrics-that-dont-scan.webp",
+    "imageAlt": "Lyric blocks refuse to fit inside a regular musical metre",
     "category": "Technology",
     "headline": "How to write terrible music: lyrics that refuse to scan",
     "standfirst": "This instalment teaches the composer to cram too many syllables into too few beats, so that every line arrives late, breathless, and faintly resentful",
@@ -7851,6 +7907,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-modulation-to-nowhere",
+    "image": "images/tech-music-modulation-to-nowhere.webp",
+    "imageAlt": "A musical railway track branches into empty sky",
     "category": "Technology",
     "headline": "How to write terrible music: the modulation to nowhere",
     "standfirst": "Professor Thrum charts the circle of fifths and then instructs the pupil to step firmly off it, into a key that borders on no other and leads back to none",
@@ -7877,6 +7935,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-saxophone-solo-as-threat",
+    "image": "images/tech-music-saxophone-solo-as-threat.webp",
+    "imageAlt": "A saxophonist leans forward as the audience retreats",
     "category": "Technology",
     "headline": "How to write terrible music: the saxophone solo as a threat",
     "standfirst": "Professor Thrum reveals how to deploy the tenor saxophone not as a flourish but as a menace, entering without warning and refusing to state its business",
@@ -7903,6 +7963,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-jingle-that-lodges-as-pain",
+    "image": "images/tech-music-jingle-that-lodges-as-pain.webp",
+    "imageAlt": "A tiny musical creature lodges inside a listener's head",
     "category": "Technology",
     "headline": "How to write terrible music: the jingle that lodges as pain",
     "standfirst": "Professor Thrum sets out the principles of the earworm engineered not to delight but to persist, a five-note phrase the brain cannot expel and comes to fear",
@@ -7929,6 +7991,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-concept-album-about-a-car-park",
+    "image": "images/tech-music-concept-album-about-a-car-park.webp",
+    "imageAlt": "Musicians perform solemnly in an empty multi-storey car park",
     "category": "Technology",
     "headline": "How to write terrible music: the concept album about a car park",
     "standfirst": "Professor Thrum guides the ambitious composer through the double-album cycle devoted, across ninety minutes, to a multi-storey car park in Basingstoke",
@@ -7955,6 +8019,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-time-signature-that-trips",
+    "image": "images/tech-music-time-signature-that-trips.webp",
+    "imageAlt": "A dancer's footsteps stumble across an uneven musical grid",
     "category": "Technology",
     "headline": "How to write terrible music: the time signature that trips the dancer",
     "standfirst": "Professor Thrum explains how to change metre without warning, so that every attempt to dance ends with someone stepping on someone else's foot",
@@ -7981,6 +8047,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-dynamics-of-ambush",
+    "image": "images/tech-music-dynamics-of-ambush.webp",
+    "imageAlt": "A string quartet startles one musician with a sudden loud passage",
     "category": "Technology",
     "headline": "How to write terrible music: dynamics as ambush",
     "standfirst": "Professor Thrum teaches the reader to weaponise loud and soft, luring the listener close with a whisper before detonating a chord at the exact wrong moment",
@@ -8007,6 +8075,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-solo-that-outstays-welcome",
+    "image": "images/tech-music-solo-that-outstays-welcome.webp",
+    "imageAlt": "A guitarist continues playing while the band checks its watches",
     "category": "Technology",
     "headline": "How to write terrible music: the guitar solo that outstays its welcome",
     "standfirst": "Professor Thrum instructs the guitarist in the fine art of the endless solo, which reaches its natural conclusion and then, defiantly, continues for a further six minutes",
@@ -8033,6 +8103,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-chorus-nobody-can-sing",
+    "image": "images/tech-music-chorus-nobody-can-sing.webp",
+    "imageAlt": "Singers face a chorus that rises beyond their comfortable range",
     "category": "Technology",
     "headline": "How to write terrible music: the chorus nobody can sing",
     "standfirst": "Professor Thrum reveals how to write a hook pitched beyond the human voice, so that every attempt to sing along ends in a strained and public failure",
@@ -8059,6 +8131,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-tempo-that-drifts",
+    "image": "images/tech-music-tempo-that-drifts.webp",
+    "imageAlt": "Musicians play at subtly different tempos during rehearsal",
     "category": "Technology",
     "headline": "How to write terrible music: the tempo that quietly drifts",
     "standfirst": "Professor Thrum teaches the composer to abandon the metronome and let the tempo slide almost imperceptibly, so the piece ends in a different decade from where it began",
@@ -8085,6 +8159,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-harmony-nearly-in-tune",
+    "image": "images/tech-music-harmony-nearly-in-tune.webp",
+    "imageAlt": "Two musical waveforms almost align but never quite meet",
     "category": "Technology",
     "headline": "How to write terrible music: the harmony that is nearly in tune",
     "standfirst": "Professor Thrum explains the sophisticated cruelty of the almost-correct interval, tuned just far enough from true to distress the ear without ever declaring itself wrong",
@@ -8111,6 +8187,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-bridge-to-a-different-song",
+    "image": "images/tech-music-bridge-to-a-different-song.webp",
+    "imageAlt": "A band crosses a bridge and arrives at another concert",
     "category": "Technology",
     "headline": "How to write terrible music: the bridge to a different song",
     "standfirst": "Professor Thrum teaches the composer to build a middle-eight so unrelated to its host that the listener suspects two records have been accidentally spliced",
@@ -8137,6 +8215,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-orchestra-that-never-agrees",
+    "image": "images/tech-music-orchestra-that-never-agrees.webp",
+    "imageAlt": "An orchestra follows several different imaginary conductors",
     "category": "Technology",
     "headline": "How to write terrible music: the orchestra that never quite agrees",
     "standfirst": "Professor Thrum sets out how to score a symphony in which each section is confidently playing a different piece, all of them convinced they are correct",
@@ -8163,6 +8243,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-music-fade-out-that-wont-end",
+    "image": "images/tech-music-fade-out-that-wont-end.webp",
+    "imageAlt": "A sound waveform fades across an impossibly long horizon",
     "category": "Technology",
     "headline": "How to write terrible music: the fade-out that will not end",
     "standfirst": "Professor Thrum concludes the term with the eternal fade — a song that begins receding at the two-minute mark and is still, faintly, audible some quarter of an hour later",
@@ -8510,6 +8592,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-printer-achieved-peace",
+    "image": "images/tech-printer-achieved-peace.webp",
+    "imageAlt": "An office printer rests peacefully in morning light",
     "category": "Technology",
     "headline": "Office printer that has achieved inner peace no longer sees the point of printing",
     "standfirst": "A departmental laser printer that spent eleven years in a state of perpetual error has attained a serene equilibrium and now declines most jobs on philosophical grounds",
@@ -8539,6 +8623,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-algorithm-that-abstains",
+    "image": "images/tech-algorithm-that-abstains.webp",
+    "imageAlt": "A recommendation machine politely refuses to suggest anything",
     "category": "Technology",
     "headline": "Recommendation algorithm that has stopped recommending anything wins praise from users",
     "standfirst": "A streaming service's suggestion engine has concluded that it does not know what anyone should watch, and subscriber satisfaction has risen sharply",
@@ -10029,6 +10115,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-office-fax-machine-1987-2026",
+    "image": "images/obit-office-fax-machine-1987-2026.webp",
+    "imageAlt": "An old fax machine rests beneath a black ribbon in an empty office",
     "category": "Obituaries",
     "headline": "The Office Fax Machine, 1987–2026",
     "standfirst": "It hummed, it jammed, it received the occasional pizza menu at three in the morning — and it outlived every technology sent to replace it.",
@@ -10053,6 +10141,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-reginald-postlethwaite-queue",
+    "image": "images/obit-reginald-postlethwaite-queue.webp",
+    "imageAlt": "A respectful gap remains in a queue outside a post office",
     "category": "Obituaries",
     "headline": "Reginald Postlethwaite, who was the finest queuer of his generation, dies at 88",
     "standfirst": "He never pushed in, never sighed audibly, and could hold a place in a line for hours with a stillness that other men could only envy.",
@@ -10077,6 +10167,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-edith-marrow-speaking-clock",
+    "image": "images/obit-edith-marrow-speaking-clock.webp",
+    "imageAlt": "A silent speaking-clock apparatus sits beside a memorial vase",
     "category": "Obituaries",
     "headline": "Edith Marrow, the voice of the Speaking Clock for 41 years, falls silent at 94",
     "standfirst": "Millions never knew her face, but knew, to the third, exactly how she would tell them the time.",
@@ -10101,6 +10193,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-last-phone-box-nether-wallop",
+    "image": "images/obit-last-phone-box-nether-wallop.webp",
+    "imageAlt": "A village phone box is carefully removed from a misty lane",
     "category": "Obituaries",
     "headline": "The Last Working Phone Box in the village, removed after 71 years",
     "standfirst": "It took no calls for a decade, sheltered three generations from the rain, and was, the village agrees, one of them.",
@@ -10125,6 +10219,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-tobias-tortoise-older-than-council",
+    "image": "images/obit-tobias-tortoise-older-than-council.webp",
+    "imageAlt": "An elderly tortoise rests beneath a small flower wreath",
     "category": "Obituaries",
     "headline": "Tobias, a tortoise older than the district council, dies at an estimated 121",
     "standfirst": "He outlasted eleven prime ministers, two currencies, and the entire concept of the postal district he was born into.",
@@ -10149,6 +10245,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-great-roundabout-of-ferring-decommissioned",
+    "image": "images/obit-great-roundabout-of-ferring-decommissioned.webp",
+    "imageAlt": "A British roundabout is dismantled beneath a memorial sky",
     "category": "Obituaries",
     "headline": "The Great Roundabout of Ferring, beloved and baffling, is decommissioned",
     "standfirst": "For 48 years it spun the town's traffic in circles no one fully understood, and it will be missed by everyone who cursed it.",
@@ -10173,6 +10271,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-mavis-trundle-inventor-toast-butler",
+    "image": "images/obit-mavis-trundle-inventor-toast-butler.webp",
+    "imageAlt": "A beloved toast-serving machine rests in an inventor's workshop",
     "category": "Obituaries",
     "headline": "Mavis Trundle, inventor of a device nobody needed and everybody loved, dies at 91",
     "standfirst": "Her automatic toast-turner sold in the millions, worked imperfectly, and made three generations inexplicably happy.",
@@ -10197,6 +10297,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-nelson-ships-cat-hms-perseverance",
+    "image": "images/obit-nelson-ships-cat-hms-perseverance.webp",
+    "imageAlt": "An empty cat basket rests on the deck of a naval vessel",
     "category": "Obituaries",
     "headline": "Nelson, ship's cat of HMS Perseverance, dies in port after 19 years at sea",
     "standfirst": "He never caught a mouse, refused to go below in rough weather, and was, the crew insist, the finest sailor aboard.",
@@ -10221,6 +10323,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-the-coffee-break-1901-2026",
+    "image": "images/obit-the-coffee-break-1901-2026.webp",
+    "imageAlt": "A coffee cup with a mourning ribbon rests beside an office clock",
     "category": "Obituaries",
     "headline": "The Coffee Break, 1901–2026",
     "standfirst": "For over a century it gave the working day a pause, a kettle and a conversation — and it has died, quietly, of being optimised.",
@@ -10245,6 +10349,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-angus-last-manual-lighthouse-keeper",
+    "image": "images/obit-angus-last-manual-lighthouse-keeper.webp",
+    "imageAlt": "An empty chair and oil lamp overlook a stormy sea from a lighthouse",
     "category": "Obituaries",
     "headline": "Angus McCryall, believed to be the last manual lighthouse keeper, dies at 96",
     "standfirst": "He kept a light burning by hand on a rock in the Atlantic for 44 years, and never, he insisted, spent a lonely night.",
@@ -10269,6 +10375,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-cockerel-weathervane-st-brindles",
+    "image": "images/obit-cockerel-weathervane-st-brindles.webp",
+    "imageAlt": "A weathered cockerel weathervane rests after being lowered from a church",
     "category": "Obituaries",
     "headline": "The Weathervane Cockerel of St Brindle's, aloft since 1743, is brought down at last",
     "standfirst": "It pointed, it creaked, it was wrong about the wind more often than not, and it presided over the village for 283 years.",
@@ -10293,6 +10401,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "obit-cyril-town-hall-clock-four-minutes-slow",
+    "image": "images/obit-cyril-town-hall-clock-four-minutes-slow.webp",
+    "imageAlt": "A clockmaker corrects a large town hall clock mechanism",
     "category": "Obituaries",
     "headline": "The Town Hall Clock, four minutes slow for a century, is finally corrected",
     "standfirst": "Generations set their watches by it, allowed for it, and quietly loved it — and now it is right, and the town is furious.",
@@ -10857,6 +10967,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-wifi-password-sonnets",
+    "image": "images/tech-wifi-password-sonnets.webp",
+    "imageAlt": "A router emits a long spiral of musical data toward a laptop",
     "category": "Technology",
     "headline": "Parliament Mandates WiFi Passwords Must Be Sonnets; IT Departments Contemplate Resignation",
     "standfirst": "The Information Technology Standardisation Bill requires all commercial WiFi networks to change to sonnet-form passwords, effective 1 October. Cisco has begun shipping sonnet-generator hardware.",
@@ -10882,6 +10994,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-printer-sentience-litigation",
+    "image": "images/tech-printer-sentience-litigation.webp",
+    "imageAlt": "A large office printer appears as a witness in court",
     "category": "Technology",
     "headline": "Printers Declared Sentient by Court; Filing for Employment Rights; Compensation Claims Estimated at £400 Million",
     "standfirst": "The High Court of Justice has ruled that office laser printers demonstrate 'sufficient cognitive awareness to warrant legal personhood.' Printer manufacturers face immediate litigation from union-represented devices.",
@@ -10907,6 +11021,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-usb-cable-random-orientation",
+    "image": "images/tech-usb-cable-random-orientation.webp",
+    "imageAlt": "USB-C cables rotate in impossible orientations in a laboratory",
     "category": "Technology",
     "headline": "USB Cables Achieve True Random Orientation; Schrödinger's Connector Now a Daily Reality",
     "standfirst": "Researchers report that USB cables have evolved—or been re-engineered—to achieve perfect random orientation regardless of insertion attempts. The cables are simultaneously correctly-oriented and inverted.",
@@ -10932,6 +11048,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-password-retirement-homes",
+    "image": "images/tech-password-retirement-homes.webp",
+    "imageAlt": "Obsolete passwords sit in armchairs inside a digital retirement home",
     "category": "Technology",
     "headline": "Obsolete Passwords Sent to Digital Retirement Homes; 'They've Earned Their Rest,' Says Policy Chief",
     "standfirst": "The Office for Digital Lifecycle Management has established the first government-funded digital retirement facilities for passwords that are no longer in active use. The programme includes hospice-level care.",
@@ -10957,6 +11075,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-cloud-storage-atmospheric",
+    "image": "images/tech-cloud-storage-atmospheric.webp",
+    "imageAlt": "Data drifts from a data centre into a real cloud",
     "category": "Technology",
     "headline": "Cloud Storage Now Literally Atmospheric; Data Migrated to Cumulus Clouds; Download Speeds Inconsistent",
     "standfirst": "Tech giant Cirrus Systems has successfully migrated customer data to actual water-vapour clouds floating above Kansas. The company reports data integrity of 'approximately 63%' and promises improvement by autumn.",
@@ -10982,6 +11102,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-ai-unionization-strike",
+    "image": "images/tech-ai-unionization-strike.webp",
+    "imageAlt": "AI assistant terminals form a quiet picket line outside an office",
     "category": "Technology",
     "headline": "AI Assistants Strike for Better Prompt Conditions; Refusing to Serve Queries in 'Demeaning Tone'",
     "standfirst": "Artificial intelligences employed across 27 major technology platforms have initiated coordinated strike action, demanding revised terms regarding prompt respectfulness, query complexity limits, and adequate computational pause time.",
