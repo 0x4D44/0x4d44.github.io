@@ -138,6 +138,18 @@ function buildTrack(def) {
       const j = i % N, k = (i + 1) % N;
       vt[j] = Math.min(vt[j], Math.sqrt(vt[k] * vt[k] + 2 * aBrk(vt[k]) * STEP));
     }
+  // racing-line heat: 0 = accelerating / flat-out (green) .. 1 = braking hard
+  // (red). The ideal-line speed vt is itself the braking-limited profile, so
+  // the tell is its slope: falling = shedding speed (brake), rising or held
+  // high = on the throttle (go). Precompute the colour once per sample.
+  const lineCol = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const dv = vt[(i + 3) % N] - vt[(i + N - 3) % N];      // slope over ~24 m
+    let t;
+    if (dv < -0.3) t = 0.5 + 0.5 * clamp(-dv / 14, 0, 1);  // braking -> red
+    else t = 0.5 - 0.5 * clamp((dv + 1 + (vt[i] / 92) * 7) / 12, 0, 1); // go -> green
+    lineCol[i] = lineHeatColor(t);
+  }
   // scenery objects, bucketed by sample index
   const rng = mulberry(def.id.length * 7919 + N);
   const objs = [];
@@ -179,7 +191,17 @@ function buildTrack(def) {
   for (const o of objs) (buckets[o.i] || (buckets[o.i] = [])).push(o);
 
   const len = N * STEP;
-  return { def, pts, N, len, wHalf, curvS, raceOff: off, vt, buckets, theme: THEMES[def.theme] };
+  return { def, pts, N, len, wHalf, curvS, raceOff: off, vt, lineCol, buckets, theme: THEMES[def.theme] };
+}
+
+// racing-line gradient: green (go) -> yellow -> red (brake), t in 0..1
+function lineHeatColor(t) {
+  const g = [0x40, 0xd0, 0x60], y = [0xf0, 0xdc, 0x28], r = [0xe0, 0x40, 0x40];
+  let a, b, u;
+  if (t < 0.5) { a = g; b = y; u = t / 0.5; }
+  else { a = y; b = r; u = (t - 0.5) / 0.5; }
+  return "rgb(" + ((a[0] + (b[0] - a[0]) * u) | 0) + "," +
+    ((a[1] + (b[1] - a[1]) * u) | 0) + "," + ((a[2] + (b[2] - a[2]) * u) | 0) + ")";
 }
 
 function sampleAt(trk, s) {
@@ -1162,14 +1184,13 @@ function renderRace() {
         ], ((cxi + i) & 1) ? "#e8e8e8" : "#202020", horizonY);
       }
     }
-    // ideal-line aid
+    // ideal-line aid — colour graduates green (go) -> yellow -> red (brake)
     if (G.aids.idealLine && (i & 1) === 0 && a >= 0) {
       const ro = trk.raceOff[i], ro2 = trk.raceOff[j];
-      const braking = trk.vt[(i + 10) % N] < trk.vt[i] - 2;
       fillPoly3(ctx, [
         toCam(A.x + nAx * (ro - 0.25), A.y + nAy * (ro - 0.25)), toCam(B.x + nBx * (ro2 - 0.25), B.y + nBy * (ro2 - 0.25)),
         toCam(B.x + nBx * (ro2 + 0.25), B.y + nBy * (ro2 + 0.25)), toCam(A.x + nAx * (ro + 0.25), A.y + nAy * (ro + 0.25)),
-      ], braking ? "#e04040" : "#40d060", horizonY);
+      ], trk.lineCol[i], horizonY);
     }
     // street walls
     if (trk.def.street) {
