@@ -16618,5 +16618,1131 @@ window.NEWS_ARTICLES = [
       "pastiche",
       "property"
     ]
+  },
+  {
+    "id": "wld-abz-copper-wire-penny",
+    "category": "World",
+    "headline": "Copper wire's true origin traced to two Aberdonians and a dropped penny",
+    "standfirst": "Metallurgists have formally credited the invention of copper wire to a disputed coin on Union Street, pulled thin between two determined claimants who each refused to let go first",
+    "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-10T07:05:00",
+    "body": [
+      "The Institute of Metallurgical History has confirmed what generations of Scots have insisted in pub arguments for decades: copper wire was indeed invented by two Aberdonians fighting over a penny that had fallen between them on the pavement.",
+      "According to the Institute's account, both men saw the penny land at precisely the same instant, and neither considered stooping down first, on the reasonable grounds that stooping first implies a lesser claim. What followed was described as \"a protracted, dignified tug\" lasting several hours, at the end of which the coin had been drawn out to a fine, gleaming filament roughly 340 metres long.",
+      "\"Neither man let go,\" said Institute researcher Dr Wilhelmina Copperthwaite. \"That is the whole of the science. Two individuals of equal and unshakeable resolve, applying force in opposite directions to a single unit of currency, for as long as it takes. It is, if you examine the physics, indistinguishable from wire drawing as practised in any modern mill.\"",
+      "Aberdeen City Council has considered a commemorative plaque on Union Street but shelved the idea after a working group could not agree on the wording, nor on which of them should pay for it.",
+      "The men themselves are said to have parted amicably once the coin ran out, each satisfied he had not been the one to yield, and each quietly certain the wire was worth more than the original penny had ever been.",
+      "\"It is the most Aberdeen thing that has ever happened,\" said local historian Ishbel Cadenhead. \"Nobody spent a penny they didn't have to, and somehow the world got copper wire out of it. We'd call that a good day's work.\""
+    ],
+    "pullQuote": "Two individuals of equal and unshakeable resolve, applying force in opposite directions to a single unit of currency, for as long as it takes.",
+    "tags": [
+      "aberdeen",
+      "doric",
+      "folklore"
+    ]
+  },
+  {
+    "id": "wld-abz-titanic-headline-legend",
+    "category": "World",
+    "headline": "Archivists still cannot locate the paper's own legendary Titanic front page",
+    "standfirst": "The Press and Journal is said to have run 'North-East Man Lost At Sea' after the Titanic sank — a headline so perfectly parochial that nobody has ever produced the actual copy",
+    "byline": "By Archibald Skene, Archive Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-10T08:40:00",
+    "body": [
+      "For over a century, it has been told and retold as the definitive proof of North-East reticence: that on the morning after the Titanic sank in 1912, a local paper led its front page not with the disaster's 1,500 dead, but with the fact that a man from the area had also, unfortunately, been among them.",
+      "The trouble, archivists at the paper's own cuttings library now admit, is that nobody can find it. \"We have searched the bound volumes twice,\" said senior archivist Prudence Garioch. \"We have searched them a third time out of pure spite. The headline is not there. And yet everybody, including several of our own retired editors, is entirely certain that it is.\"",
+      "The story has been cited in after-dinner speeches, broadcast documentaries and at least one parliamentary aside, always with total confidence and never, it seems, with a photocopy. \"It has achieved something no genuine headline ever manages,\" said media historian Dr Callum Ogilvie. \"It is more famous than any of the headlines that can actually be produced on request.\"",
+      "A theory favoured by some staff holds that the headline was real but ran in a smaller, long-defunct local sheet, its single surviving copy lost to a flood, a fire, or a filing clerk with strong opinions about tidiness. Others suspect it was invented decades later as an efficient piece of shorthand for an entire regional temperament, and simply proved too useful to abandon.",
+      "\"Whether or not it ever existed, it is completely accurate about how the story would have been handled,\" Ms Garioch conceded. \"That may be the actual joke. We are a place that would have run that headline. We just apparently didn't need to.\"",
+      "The paper says the search continues, in an unhurried and largely ceremonial way, and that any reader in possession of the original clipping is under no particular obligation to come forward."
+    ],
+    "pullQuote": "It has achieved something no genuine headline ever manages. It is more famous than any of the headlines that can actually be produced on request.",
+    "tags": [
+      "aberdeen",
+      "media",
+      "urban-legend"
+    ]
+  },
+  {
+    "id": "wld-abz-reflections-unbroken-streak",
+    "category": "World",
+    "headline": "Late-night reflective segment marks unbroken decades of quiet devotion nobody discusses",
+    "standfirst": "The two-minute epilogue that follows the ten o'clock news on Grampian has run, without interruption, for longer than most viewers have been watching television, and almost none of them will admit to seeing it",
+    "byline": "By Winifred Garioch, Religious Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-10T22:15:00",
+    "body": [
+      "Every weeknight, moments after the local news concludes and before the schedule moves briskly on to whatever comes next, a short reflective address is broadcast to the North-East — calm, unhurried, and gone again inside two minutes, like a small candle lit and then discreetly blown out.",
+      "Internal viewing figures, insofar as anyone has bothered to compile them, suggest almost nobody watches it on purpose. And yet a remarkable number of households report that it is, somehow, always on. \"You're halfway to the kettle and there it is,\" said regular non-viewer Denise Corsie of Bridge of Don. \"I couldn't tell you a single thing that's been said in thirty years. I could tell you the exact tone of voice, though. It's very reassuring, in a way I resent slightly.\"",
+      "Producers insist the segment has never missed a broadcast, surviving strikes, storms, several changes of studio and at least one full corporate rebrand, on the grounds that a two-minute slot at the very end of the evening is, in practical terms, beneath the notice of anyone with the authority to cancel it.",
+      "\"It is the quietest part of the schedule, by a wide margin,\" said a spokesperson who asked, gently, not to be named. \"Nobody has ever complained about it, and nobody has ever specifically praised it either. It simply continues, the way a clock in a hallway continues, whether or not anyone is checking the time.\"",
+      "A small society of enthusiasts meets twice a year to discuss favourite instalments, mostly from memory, since almost none of them recorded anything at the time. \"You don't record it,\" the society's secretary explained. \"You just sort of absorb it, on your way past. That's rather the point.\""
+    ],
+    "pullQuote": "You're halfway to the kettle and there it is. I couldn't tell you a single thing that's been said in thirty years.",
+    "tags": [
+      "aberdeen",
+      "television",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-seagull-pie-heist",
+    "category": "World",
+    "headline": "City's gulls now operating what officials concede is an organised pie economy",
+    "standfirst": "Aberdeen's herring gulls have moved beyond opportunistic snatching to what wildlife officers describe as coordinated targeting of pastry, chips and, on one occasion, an entire ice cream cone still in its wrapper",
+    "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-10T11:20:00",
+    "body": [
+      "Aberdeen City Council's gull mitigation unit has confirmed that the city's herring gull population is no longer merely opportunistic, describing instead a pattern of surveillance, timing and cooperative distraction that would not disgrace a small heist crew.",
+      "\"They watch the queue outside the bakery, not the pavement,\" said senior gull officer Trevor Ainslie. \"They have learned that a pie held at chest height, unwrapped, walking away from the counter, is a soft target. Two birds will now work in tandem — one for the swoop, one for the follow-up on whatever gets dropped in the panic.\"",
+      "Residents have adapted with a range of tactics, including eating with their backs to a wall, forming impromptu pie-guarding alliances with strangers, and, in a handful of documented cases, simply conceding the pie on the reasonable grounds that the gull wanted it more.",
+      "\"I've stopped fighting them,\" said office worker Kirsty Sangster, who has lost four sausage rolls and one entire fish supper to the birds since spring. \"You can see it sizing you up from the top of the bus shelter. You just know.\"",
+      "The council has ruled out a cull, citing both public sentiment and a suspicion that the gulls have got wise enough to see one coming. Instead, officers are trialling a public awareness campaign urging residents to eat quickly, eat close to a wall, and never, under any circumstances, make eye contact with the bird on the lamppost.",
+      "\"We are not saying they run the town,\" Mr Ainslie added, after a pause. \"We are saying that on Union Street, between roughly noon and two, the pies belong to whoever gets there first, and it is not always us.\""
+    ],
+    "pullQuote": "You can see it sizing you up from the top of the bus shelter. You just know.",
+    "tags": [
+      "aberdeen",
+      "wildlife",
+      "food"
+    ]
+  },
+  {
+    "id": "wld-abz-haar-swallows-city",
+    "category": "World",
+    "headline": "City vanishes into sea fog for the third time this week, nobody remarks on it",
+    "standfirst": "A dense bank of haar rolled in off the North Sea on Tuesday and quietly erased the skyline, harbour and most of Union Street for several hours, to the complete indifference of everyone who actually lives there",
+    "byline": "By Hamish Dey, Weather & Haar Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T09:00:00",
+    "body": [
+      "Visitors to Aberdeen on Tuesday morning were treated to the disconcerting experience of watching an entire granite city disappear, building by building, into a cold grey fog that rolled in off the North Sea shortly after sunrise and did not lift until early afternoon.",
+      "The phenomenon, known locally as the haar, reduced visibility on the beach esplanade to a matter of metres, prompted several tourists to report the city as \"closed\" to their hotel receptionists, and was met by long-term residents with something between a shrug and mild satisfaction.",
+      "\"It's just the haar,\" said harbour worker Ewan Copland, when asked whether the disappearance of the entire Marischal College skyline was cause for concern. \"It'll be back. It's granite. It's no going anywhere, it's just having a wee moment.\"",
+      "Meteorologists note that the haar forms when warm air passes over the cold North Sea and condenses into a fog bank that can sit stubbornly over the coast while the rest of Aberdeenshire, a few miles inland, enjoys unbroken sunshine — a distinction locals navigate simply by checking whether they can currently see their own front door.",
+      "\"Tourists find it eerie,\" said VisitAberdeenshire spokesperson Netta Rennie. \"We find it Tuesday. Come back in a few hours and it'll all still be there. It generally is.\""
+    ],
+    "pullQuote": "It's just the haar. It'll be back. It's granite. It's no going anywhere, it's just having a wee moment.",
+    "tags": [
+      "aberdeen",
+      "weather",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-granite-sparkle-satellite",
+    "category": "World",
+    "headline": "City's granite sparkle briefly mistaken for signal by orbiting satellite",
+    "standfirst": "Wet mica-flecked granite catching low winter sun produced a glint bright enough that a passing earth-observation satellite logged it as an anomaly worth a second look",
+    "byline": "By Morag Sim, Heritage Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T13:10:00",
+    "body": [
+      "An earth-observation satellite passing over the North-East of Scotland in January briefly flagged a bright, unexplained glint rising from the city centre, an anomaly that ground analysts eventually traced not to fire, flare or signal, but to several thousand tonnes of wet granite catching the low winter sun at exactly the right angle.",
+      "\"Aberdeen granite has a very high mica content, and mica is essentially tiny mirrors,\" explained geologist Dr Fenella Massie. \"Wet the whole city down with a shower of rain, angle a low January sun at it just so, and you get a genuine, if brief, sparkle across the entire granite core of the city. It is, from three hundred kilometres up, remarkably convincing as a signal.\"",
+      "The satellite operator confirmed the anomaly was reviewed, cross-checked against known infrastructure, and closed within the hour as \"naturally occurring architectural brilliance\", a phrase the city's tourism board has since asked, unsuccessfully, to use on a banner.",
+      "Locals were entirely unsurprised. \"We've always known it does that,\" said lifelong resident Gordon Esslemont. \"They call it the Silver City for a reason. It's just that usually it's only the pigeons watching.\"",
+      "Geologists note the effect is strongest on Union Street and around Marischal College, and weakest wherever the granite has been sandblasted, painted over, or otherwise robbed of the dignity it is, by rights, owed."
+    ],
+    "pullQuote": "It is, from three hundred kilometres up, remarkably convincing as a signal.",
+    "tags": [
+      "aberdeen",
+      "granite",
+      "science"
+    ]
+  },
+  {
+    "id": "wld-abz-rubislaw-quarry-hole",
+    "category": "World",
+    "headline": "City confirms its biggest hole remains, once again, extremely large",
+    "standfirst": "A routine annual inspection of Rubislaw Quarry — one of the largest man-made holes in Europe, and the source of granite shipped as far as the Bell Rock lighthouse — found it exactly as deep as expected",
+    "byline": "By Morag Sim, Heritage Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T15:30:00",
+    "body": [
+      "Engineers carrying out the annual safety inspection of Rubislaw Quarry have confirmed, after careful measurement, that the flooded pit remains one of the largest man-made holes in Europe, a status it has held without serious challenge since quarrying ceased in the early 1970s.",
+      "The quarry supplied the granite for a startling share of Aberdeen itself, along with structures as far afield as the Bell Rock lighthouse and sections of London's Waterloo Bridge, before finally being retired and left to fill, gradually and with no particular urgency, with rainwater.",
+      "\"It is about 465 feet deep, give or take,\" said site engineer Robbie Duguid. \"We measure it every year, and every year it is still that deep. I won't pretend it's the most eventful part of my job. But someone has to confirm the big hole is still a big hole.\"",
+      "Local pride in the quarry runs deep, if the pun may be forgiven just this once, with residents readily able to recite that the stone from \"the granite hole\" built half the city above it, in the manner of a town that quietly excavated its own foundations and then admired the result from a respectful distance.",
+      "Plans to develop the site into a diving attraction have surfaced periodically for decades and been shelved for reasons involving depth, cost and, according to one former councillor, \"a strong sense that the hole is doing a perfectly good job simply being there\"."
+    ],
+    "pullQuote": "We measure it every year, and every year it is still that deep. Someone has to confirm the big hole is still a big hole.",
+    "tags": [
+      "aberdeen",
+      "granite",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-haudagain-roundabout-time-loop",
+    "category": "World",
+    "headline": "Physicists quietly investigate whether notorious roundabout is a closed time loop",
+    "standfirst": "Years of commuter testimony describing entering the junction at rush hour and emerging, apparently unchanged, at a later and equally congested rush hour have drawn academic attention",
+    "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T17:45:00",
+    "body": [
+      "A long-notorious junction on the city's northern approach has attracted the interest of a small team of theoretical physicists after decades of consistent commuter reports describing entry during one rush hour and exit during what appeared to be an entirely separate, equally congested rush hour.",
+      "\"We are not saying it is definitely a closed time-like curve,\" said Dr Persis Alexander, cautiously. \"We are saying that the number of independent witnesses describing the same subjective experience of entering at 8:10 and emerging convinced it is now 8:10 again is statistically difficult to explain by traffic modelling alone.\"",
+      "The junction, long ranked among the region's most congested, underwent a substantial upgrade several years ago intended to resolve exactly this kind of temporal ambiguity. Commuters report the upgrade helped considerably, while also, several insisted without irony, somehow taking exactly as long as it always has.",
+      "\"I went in for milk on a Tuesday,\" said local driver Brenda Cargill. \"I came out and it was, as far as I could tell, also a Tuesday. I've decided not to think about it further. Some questions aren't worth the diesel.\"",
+      "The research team stresses the study is at an early stage and that, regardless of its findings, the recommended course of action for any driver approaching the junction at peak time remains unchanged: allow more time than you think you need, and try not to dwell on which version of Tuesday you're currently in."
+    ],
+    "pullQuote": "I went in for milk on a Tuesday. I came out and it was, as far as I could tell, also a Tuesday.",
+    "tags": [
+      "aberdeen",
+      "transport",
+      "science"
+    ]
+  },
+  {
+    "id": "wld-abz-awpr-bypass-completion-party",
+    "category": "World",
+    "headline": "City unsure how to behave now that the bypass is actually finished",
+    "standfirst": "Years after it was first proposed, the long-awaited ring road has been open for some time, and a portion of the population still cannot quite believe it, refusing to take it 'in case it isn't really done'",
+    "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T18:20:00",
+    "body": [
+      "A council survey intended to measure satisfaction with the region's western and northern bypass has instead revealed a smaller but persistent cohort of drivers who continue to take the old route through town, on the stated grounds that they \"don't quite trust\" the new road yet.",
+      "\"It was proposed, delayed, re-proposed, contested in the courts, delayed again, and finally built,\" said transport planner Effie Ledingham. \"People had genuinely stopped believing it would happen. We now have measurable relief, mixed with a kind of low-grade suspicion, as though the road might be a trick.\"",
+      "Journey times for those who have made the switch are reported to be substantially improved, a fact greeted locally less with celebration than with the wary satisfaction of someone who has won a bet they'd quietly assumed they would lose.",
+      "\"I still tell my passengers 'we'll see if this new road's finished yet',\" admitted taxi driver Dennis Merson. \"It's been finished for ages. I know that. I just say it anyway. Old habits.\"",
+      "Council officials have ruled out an official opening ceremony, on the basis that one already happened, some time ago, and that holding a second one might only deepen the general sense that nobody is entirely sure what stage of completion the road is currently in."
+    ],
+    "pullQuote": "I still tell my passengers 'we'll see if this new road's finished yet'. It's been finished for ages. I just say it anyway.",
+    "tags": [
+      "aberdeen",
+      "transport",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-union-street-empty-shops-echo",
+    "category": "World",
+    "headline": "Union Street unit sets new personal best for consecutive months vacant",
+    "standfirst": "A prominent shopfront on the city's main thoroughfare has now stood empty long enough to develop its own small, dedicated following of window-shoppers who admire only the To Let sign",
+    "byline": "By Constance Mearns, Property Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T10:05:00",
+    "body": [
+      "A large retail unit on Union Street has quietly passed a personal milestone, having now stood vacant for longer than any tenant occupied it in the preceding decade, a distinction the letting agent described as \"not ideal, but at least consistent\".",
+      "\"We get enquiries,\" said agent Douglas Birnie. \"We get a lot of enquiries, actually. What we don't get, so far, is anyone signing on the dotted line. It's become something of a local landmark in its own right. People take photos of the sign.\"",
+      "A small informal group has taken to meeting outside the unit on Saturday mornings to discuss what it might become next, a debate that has, over eighteen months, considered a bakery, a bookshop, an escape room, and — floated once, and never mentioned again — a museum of empty units.",
+      "\"You get attached to a good vacant unit,\" said regular attendee Netta Sim. \"It's not doing anything, and somehow that's reassuring. Everything else on this street changes every six months. That window never lets you down.\"",
+      "The council insists redevelopment plans for the street are progressing, while acknowledging that the unit in question has, in the meantime, become something closer to civic furniture than a commercial liability."
+    ],
+    "pullQuote": "It's become something of a local landmark in its own right. People take photos of the sign.",
+    "tags": [
+      "aberdeen",
+      "property",
+      "high-street"
+    ]
+  },
+  {
+    "id": "wld-abz-doric-translator-app",
+    "category": "World",
+    "headline": "New translation app defeated within minutes by a single sentence of Doric",
+    "standfirst": "A leading language-translation service has conceded total failure after being asked to render 'Fit like, quine, foo's yer doos?' into anything resembling standard English",
+    "byline": "By Fiona Strachan, Doric Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T09:15:00",
+    "body": [
+      "A widely used translation application has been forced to issue a rare admission of defeat after a routine test sentence in the North-East Scots dialect known as Doric produced an output its own engineers described as \"confidently wrong in several directions at once\".",
+      "The offending phrase, a common local greeting roughly meaning \"How are you, young woman, and how are your pigeons?\", returned translations ranging from a request for directions to what the app's own error log flagged, mysteriously, as \"possible recipe\".",
+      "Doric isn't really a dialect of English so much as a determined parallel development, said linguist Dr Marjorie Coutts, of the University of Aberdeen.",
+      "\"Fit, foo, aye, quine and loon are all doing serious grammatical work,\" Dr Coutts added. \"The model has been trained mostly on standard English and a bit of general Scots. It sees 'foo's yer doos' and, frankly, panics.\"",
+      "Aberdeen speakers report a long history of being told they are speaking too fast, too broadly, or simply incomprehensibly by visitors, and greeted the app's failure with something close to civic pride. \"Good,\" said market trader Senga Argo. \"Keep it that way. It's ours.\"",
+      "The company has pledged to retrain the model on a larger corpus of genuine Doric speech, though it admits doing so will require, at minimum, several patient afternoons in an Aberdeen fish market, which its engineers describe as \"the hardest possible listening environment we could have chosen\"."
+    ],
+    "pullQuote": "It sees 'foo's yer doos' and, frankly, panics.",
+    "tags": [
+      "aberdeen",
+      "doric",
+      "technology"
+    ]
+  },
+  {
+    "id": "wld-abz-oil-capital-nostalgia",
+    "category": "World",
+    "headline": "Retired rig workers open nostalgia tour of the boom years, complete with helicopter noise",
+    "standfirst": "A new heritage attraction lets visitors relive Aberdeen's decades as Europe's oil capital, down to a looping soundtrack of Super Puma rotor blades over a mocked-up North Sea platform canteen",
+    "byline": "By Innes Kellas, North Sea Energy Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T11:00:00",
+    "body": [
+      "A group of retired offshore workers has opened a small heritage exhibit dedicated to the city's decades as the self-styled Oil Capital of Europe, complete with a recreated platform canteen, a genuine hard hat wall of fame, and, played on a loop, the unmistakable thud of a helicopter that never quite lands.",
+      "\"You'd hear that sound constantly, going over the flats, heading out to Dyce,\" said co-founder Ronnie Cadenhead, who spent thirty-one years offshore. \"People used to complain about it. Now they pay to hear it again. I don't fully understand human nature, but I'm not arguing with the till receipts.\"",
+      "The exhibit includes a section on the boom-and-bust cycles that have periodically emptied and refilled the city's hotels, restaurants and Range Rover dealerships since the 1970s, presented with what curators call \"the weary affection of people who have seen the price of a barrel do genuinely alarming things\".",
+      "Visitors can also try their hand at a survival-suit dressing challenge against the clock, an activity organisers admit \"is not for everyone\", and sample a canteen menu built entirely around the two great offshore food groups: enormous breakfasts, and puddings named after nothing in particular.",
+      "\"It was a hard life and we're not romanticising the hard bits,\" Mr Cadenhead added. \"But there's no denying this city ran on that industry for fifty years, and it feels wrong to let all that just evaporate along with the price of oil.\""
+    ],
+    "pullQuote": "People used to complain about that sound. Now they pay to hear it again.",
+    "tags": [
+      "aberdeen",
+      "oil-industry",
+      "heritage"
+    ]
+  },
+  {
+    "id": "wld-abz-bon-accord-motto-referendum",
+    "category": "World",
+    "headline": "Council quietly shelves proposal to update 700-year-old city motto",
+    "standfirst": "A suggestion to modernise 'Bon Accord' for the social media age was raised, briefly discussed, and dropped within the same meeting after nobody could agree on an improvement",
+    "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T12:30:00",
+    "body": [
+      "A councillor's proposal to review the city's seven-hundred-year-old motto, Bon Accord, for something the agenda paper described as \"more reflective of contemporary Aberdeen\", lasted approximately eleven minutes before being formally withdrawn.",
+      "\"I simply asked whether we might consider something with a bit more punch for the branding,\" said the councillor responsible, who later declined to have the suggestion attributed by name. \"I did not expect quite such a strong reaction. Several colleagues used the word 'sacrilege'. One used it twice.\"",
+      "Bon Accord, meaning roughly \"good agreement\", is traditionally linked to a password used during a 14th-century uprising against English occupation, and lends its name to a shopping centre, a football strip sponsor, several pubs, and at least one brand of soft drink, giving it a civic ubiquity the motion's opponents were quick to invoke.",
+      "\"You don't rebrand seven hundred years of history because it might look better on a tote bag,\" said local historian Ishbel Cadenhead, who was not present at the meeting but was informed of it swiftly by at least four separate people.",
+      "The motion's proposer has since described the episode as \"a valuable lesson in the limits of committee-level creativity\", and confirmed no further changes to the city's Latin, or indeed its motto, are currently under consideration."
+    ],
+    "pullQuote": "You don't rebrand seven hundred years of history because it might look better on a tote bag.",
+    "tags": [
+      "aberdeen",
+      "history",
+      "council"
+    ]
+  },
+  {
+    "id": "wld-abz-dons-cup-winners-cup-anniversary",
+    "category": "World",
+    "headline": "Anniversary re-enactment of famous European final undone by damp pitch and a stray dog",
+    "standfirst": "A commemorative recreation of the 1983 Cup Winners' Cup triumph in Gothenburg went largely to plan until a local terrier interrupted the closing minutes on the replica pitch",
+    "byline": "By Dougal Fyffe, Sporting Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T15:50:00",
+    "body": [
+      "Supporters gathered at a local sports ground on Saturday to re-enact, shot for shot, the club's celebrated 1983 European final victory in Gothenburg, an event most present were either too young to remember or, as several cheerfully admitted, too refreshed at the time to recall clearly the first time round.",
+      "The recreation proceeded largely without incident through driving rain that organisers agreed added \"considerable period authenticity\", right up until the eighty-eighth re-enacted minute, when a terrier belonging to a spectator broke free of its lead and took unilateral possession of the ball.",
+      "\"He'd had his eye on it since kick-off,\" said the dog's owner, Alistair Rennie, somewhat sheepishly. \"In fairness, he defended better in that last ten minutes than either back line managed all afternoon.\"",
+      "Organisers eventually recovered the ball, minus some of its stitching, and the re-enactment was completed to warm applause, a lifted replica trophy, and what witnesses described as \"a genuinely moving rendition\" of the celebrations, terrier included, who was awarded an honorary man-of-the-match sausage.",
+      "\"It's not quite how the boys did it in '83,\" said club historian Bryde Cruickshank, \"but I'd say a dog nicking the ball off everyone in the last ten minutes is about as true to the spirit of a Scottish cup final as you're going to get.\""
+    ],
+    "pullQuote": "In fairness, he defended better in that last ten minutes than either back line managed all afternoon.",
+    "tags": [
+      "aberdeen",
+      "football",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-fittie-fishing-village-tourists",
+    "category": "World",
+    "headline": "Historic fishing village overwhelmed by visitors taking the exact same photograph",
+    "standfirst": "The tightly clustered cottages of the old fishing quarter at the harbour mouth now field several hundred near-identical photographs a day, much to the mild bemusement of residents still hanging out their washing",
+    "byline": "By Morag Sim, Heritage Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T14:10:00",
+    "body": [
+      "The centuries-old fishing settlement at the mouth of the harbour, its brightly painted cottages arranged in tight, sheltered squares against the North Sea wind, is reporting a steady stream of visitors, nearly all of whom, residents note, take the identical photograph from the identical angle before leaving.",
+      "\"You can set your watch by it,\" said resident Peggy Milne, who has lived in the village her whole life. \"Same corner, same gable end, same wee gate. I've had my washing in the background of what must be thousands of photos by now. I should really start charging a modelling fee for the pillowcases.\"",
+      "Local tour guides have taken to calling the specific vantage point \"the shot\", and steer visitors towards it with the confident air of people directing traffic to a well-known landmark, despite the corner in question being, by any objective measure, an unremarkable gap between two garden walls.",
+      "\"It photographs beautifully, I'll give them that,\" said Ms Milne. \"I just wish, once in a while, somebody would turn round and photograph the actual sea. It's right there. It's lovely. Nobody looks at it.\"",
+      "The village association has resisted calls to install a plaque marking the spot, on the reasonable grounds that doing so would only encourage a queue."
+    ],
+    "pullQuote": "I should really start charging a modelling fee for the pillowcases.",
+    "tags": [
+      "aberdeen",
+      "tourism",
+      "fittie"
+    ]
+  },
+  {
+    "id": "wld-abz-stonehaven-fireball-ceremony",
+    "category": "World",
+    "headline": "Locals swing balls of fire around their heads to see off the old year, again",
+    "standfirst": "The coastal town's Hogmanay tradition of parading blazing wire cages through the High Street continued this year without a single reported incident, to the quiet disappointment of nobody",
+    "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
+    "location": "STONEHAVEN",
+    "published": "2026-07-12T20:00:00",
+    "body": [
+      "The harbour town's long-running Hogmanay fireball ceremony went ahead once again this year, with dozens of swingers processing the length of the High Street swinging blazing wire cages of combustible material around their heads on chains, before the whole lot was pitched into the harbour to conclude the old year.",
+      "The tradition, believed to date back well over a century and possibly rooted in older fire-purification rites, requires each fireball to be built by hand from chicken wire, tar-soaked rags and other flammable material, then set alight and swung continuously to keep the flames from the swinger's own coat.",
+      "\"You get a knack for it,\" said veteran fireball swinger Robbie Duguid, marking his twenty-second year taking part. \"The trick is not to think too hard about the fact you're holding a chain attached to fire, three feet from your own head, in front of several thousand people. Once you start thinking about it, that's when it goes wrong.\"",
+      "Event organisers confirmed the traditional safety measures remained in place, including a fire brigade presence, wet coats as standard swinger attire, and a firm rule that the fireballs go in the harbour at the end, and not, whatever the temptation, anywhere else.",
+      "\"People come from all over the world to watch grown adults set things on fire and walk down a street with them,\" said one visiting spectator. \"I don't think anywhere else does it quite like this. I'm not sure anywhere else is allowed to.\""
+    ],
+    "pullQuote": "The trick is not to think too hard about the fact you're holding a chain attached to fire, three feet from your own head.",
+    "tags": [
+      "aberdeenshire",
+      "tradition",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-marischal-college-lit-blue",
+    "category": "World",
+    "headline": "Second-largest granite building in the world lit up blue again, nobody quite sure why tonight",
+    "standfirst": "The floodlighting scheme that illuminates the city's civic headquarters after dark has become such a fixture that residents have largely stopped asking what the colour of the week is meant to signify",
+    "byline": "By Morag Sim, Heritage Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T21:10:00",
+    "body": [
+      "The imposing granite façade of the city's civic headquarters, reckoned the second-largest granite building on Earth after a rival claim from Spain was quietly conceded some years ago, was once again illuminated in blue on Tuesday evening, for reasons the council's own press office could not immediately confirm.",
+      "\"It might be an awareness day,\" said duty press officer Fenella Massie. \"It might be a sports fixture. Honestly, by this point, the lighting rig operates on something close to its own schedule, and we mostly find out what it's celebrating from social media, same as everyone else.\"",
+      "The building's granite, quarried locally and finished to an exceptional polish, was found decades ago to hold coloured floodlighting unusually well, a discovery that has since seen it turned pink, green, red, purple and, on one memorable and unexplained evening, a shade several residents described only as \"quite aggressive orange\".",
+      "\"I just look up on my way past and take a guess,\" said commuter Netta Rennie. \"Pink, I think 'charity'. Blue, I think 'could be anything'. I've genuinely stopped needing to know. It's just bonnie, whatever it's for.\"",
+      "The council has confirmed the lighting will return to its default warm white on Thursday, before, in all likelihood, becoming something else entirely by the following Tuesday."
+    ],
+    "pullQuote": "Blue, I think 'could be anything'. I've genuinely stopped needing to know. It's just bonnie, whatever it's for.",
+    "tags": [
+      "aberdeen",
+      "granite",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-kings-college-crown-tower-pigeons",
+    "category": "World",
+    "headline": "Pigeons nesting in ancient crown tower reportedly behaving as though titled",
+    "standfirst": "University groundskeepers say a small colony roosting in the 16th-century crown spire has developed a noticeably imperious manner towards the pigeons occupying every other roof on campus",
+    "byline": "By Fiona Strachan, Doric Affairs Correspondent",
+    "location": "OLD ABERDEEN",
+    "published": "2026-07-13T10:40:00",
+    "body": [
+      "Groundskeepers at the university's oldest college have reported a curious pattern of behaviour among the pigeons nesting in its landmark crown-shaped tower, a masonry spire dating from the early 16th century, who appear to lord it over the rest of the campus pigeon population with what one gardener called \"an entirely unearned sense of rank\".",
+      "\"They sit up there and watch the other pigeons the way you'd watch the staff,\" said head gardener Ewan Copland. \"The rest of them are down scrapping over a dropped roll outside the library. The crown tower pigeons just observe, from height, looking thoroughly unbothered. It's uncanny.\"",
+      "Ornithologists have declined to endorse any theory of avian social hierarchy linked to architectural symbolism, while conceding, when pressed, that the birds in question do appear noticeably better groomed than their counterparts nesting above the student union.",
+      "\"There's no scientific basis for a pigeon caste system,\" said one university biologist, requesting anonymity \"for professional reasons\", \"but I will say I've never seen a crown tower pigeon queue for a chip. They wait for someone to bring one up.\"",
+      "The university has no plans to intervene, noting that the crown tower pigeons, whatever their attitude, have caused considerably less mess than the flock that has taken up residence above the main library steps."
+    ],
+    "pullQuote": "The rest of them are down scrapping over a dropped roll. The crown tower pigeons just observe, from height, looking thoroughly unbothered.",
+    "tags": [
+      "aberdeen",
+      "wildlife",
+      "university"
+    ]
+  },
+  {
+    "id": "wld-abz-beach-ballroom-time-capsule",
+    "category": "World",
+    "headline": "Time capsule buried under seafront ballroom recovered decades early by mistake",
+    "standfirst": "Building contractors carrying out routine repairs unearthed a sealed box intended to remain buried until a much later anniversary, forcing an awkward decision about whether to open it anyway",
+    "byline": "By Constance Mearns, Property Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T16:25:00",
+    "body": [
+      "Contractors carrying out foundation repairs beneath the city's historic seafront ballroom have inadvertently unearthed a sealed time capsule several decades ahead of its intended recovery date, prompting a small crisis of etiquette among the venue's management.",
+      "\"It's very clearly marked 'do not open until' a date that is, regrettably, still some way off,\" said venue manager Dennis Merson. \"We now have a box, on a shelf, in the office, that we are all trying very hard not to look at. It's harder than you'd think.\"",
+      "The capsule is believed to contain newspaper cuttings, a dance card, and, according to one contractor who admits to giving it \"the gentlest of shakes\", something that rattles in a manner consistent with either coins or a small ornament.",
+      "Local historians have urged restraint, noting that the entire value of a time capsule lies in the discipline of waiting, and that opening it early would reduce a carefully considered gift to the future into, in the words of one, \"just a box someone found while doing the plumbing\".",
+      "Management have opted for a compromise: the capsule will be reburied in a more secure location, with a note added explaining, for the benefit of whoever finds it next, exactly how this whole embarrassing business came about."
+    ],
+    "pullQuote": "We now have a box, on a shelf, in the office, that we are all trying very hard not to look at.",
+    "tags": [
+      "aberdeen",
+      "heritage",
+      "property"
+    ]
+  },
+  {
+    "id": "wld-abz-cold-water-swimmers-club",
+    "category": "World",
+    "headline": "January sea-swimming club triples in size, refuses to explain why this is enjoyable",
+    "standfirst": "A dawn dipping group that meets at the beach through the depths of winter has seen a surge in new members, none of whom can offer a fully convincing account of the appeal",
+    "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T07:30:00",
+    "body": [
+      "A group that gathers at the beach esplanade before sunrise throughout the winter months to swim, briefly and with considerable gasping, in the North Sea has reported its membership has more than tripled over the past year, a trend organisers struggle to fully account for.",
+      "\"People ask why we do it, and honestly the answer changes depending on the day,\" said group co-founder Netta Sim. \"Some mornings it's for your health. Some mornings it's for the company. Some mornings, if I'm being completely honest, it's just to prove to yourself that you still can.\"",
+      "New members are typically advised to enter slowly, breathe steadily, and under no circumstances attempt to look composed for the first thirty seconds, which several veterans describe as \"non-negotiably horrendous\" regardless of experience level.",
+      "\"You come out the other side of it feeling like a slightly different person,\" said recent recruit Douglas Birnie, a retired teacher who joined in November. \"For about twenty minutes. Then you're just cold and pleased with yourself, which, it turns out, is a genuinely good way to start a Tuesday.\"",
+      "The group has resisted several offers of corporate sponsorship, on the grounds that a bracing, faintly masochistic, entirely free activity should probably stay that way."
+    ],
+    "pullQuote": "Some mornings, if I'm being completely honest, it's just to prove to yourself that you still can.",
+    "tags": [
+      "aberdeen",
+      "health",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-slains-castle-dracula-tourists",
+    "category": "World",
+    "headline": "Clifftop ruin still fielding visitors convinced they will meet the Count in person",
+    "standfirst": "The roofless clifftop castle long linked to the writing of a famous vampire novel continues to draw tourists who, staff say, are occasionally and genuinely disappointed to learn it is not, in fact, haunted by anyone specific",
+    "byline": "By Morag Sim, Heritage Correspondent",
+    "location": "CRUDEN BAY",
+    "published": "2026-07-13T13:15:00",
+    "body": [
+      "The dramatic, roofless ruin of the clifftop castle above Cruden Bay, long associated with the Irish author who is thought to have drawn on it while writing his celebrated vampire novel, continues to attract a steady procession of visitors hoping for rather more atmosphere than a well-ventilated pile of stonework can strictly provide.",
+      "\"We get asked, more often than you'd think, whether the Count is 'still around',\" said site volunteer Ronnie Cadenhead. \"I have to explain, gently, that he was never around in the first place. He's fictional. The castle is real. The author visited, got inspired, and went home to Whitby to actually write the thing. People are sometimes crestfallen about this.\"",
+      "The castle's genuinely striking position, perched above the sea with the wind coming straight off the water and precisely nowhere to shelter from it, does most of the atmospheric work unassisted, a fact the tourist board is happy to lean on without needing to invent anything further.",
+      "\"You don't need a vampire,\" said Mr Cadenhead. \"You need about four minutes standing at that clifftop in a February gale. That'll give you all the atmosphere anyone requires, and you'll be very glad to get back to the car.\"",
+      "Local historians note the building's genuine and considerably less gothic history as a family seat spanning several centuries, a fact that, they concede with some resignation, generates markedly less interest than the vampire question."
+    ],
+    "pullQuote": "He's fictional. The castle is real. People are sometimes crestfallen about this.",
+    "tags": [
+      "aberdeenshire",
+      "heritage",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-crathes-castle-topiary-escape",
+    "category": "World",
+    "headline": "Famous castle topiary allegedly a few inches taller than last year's official measurement",
+    "standfirst": "The centuries-old clipped yew hedges at a well-known Deeside castle garden are, according to at least one visiting enthusiast with a tape measure, quietly winning their long war against the shears",
+    "byline": "By Elspeth Machray, Royal Deeside Correspondent",
+    "location": "BANCHORY",
+    "published": "2026-07-14T09:50:00",
+    "body": [
+      "A visitor to the celebrated castle gardens on Royal Deeside, renowned for their towering clipped yew hedges dating back several hundred years, has caused a minor stir among the gardening team after producing a tape measure and declaring the hedges \"definitely taller than last time\".",
+      "\"We measure them ourselves, thank you very much,\" said head gardener Robbie Duguid, with the patient weariness of a man who has had this exact conversation before. \"They are clipped to precisely the height we intend. If a visitor's tape measure disagrees with three centuries of professional horticulture, I'm afraid I know which one I'm siding with.\"",
+      "The hedges, some reaching well over the height of a house, require a dedicated team working from scaffolding each summer, a task Mr Duguid describes as \"less gardening, more a sustained negotiation with something that would very much like to keep growing if we ever stopped watching it\".",
+      "\"People like to imagine the yews are somehow winning,\" he added. \"They are not winning. We are extremely diligent. But I understand the appeal of thinking a three-hundred-year-old hedge might be quietly plotting something. It's a nice thought for a day out.\"",
+      "The visitor in question has since been invited to join a guided tour, on the understanding that the tape measure stays in the car park."
+    ],
+    "pullQuote": "I understand the appeal of thinking a three-hundred-year-old hedge might be quietly plotting something.",
+    "tags": [
+      "aberdeenshire",
+      "heritage",
+      "gardens"
+    ]
+  },
+  {
+    "id": "wld-abz-drum-castle-oldest-tower-argument",
+    "category": "World",
+    "headline": "Row over which Deeside tower is genuinely the oldest continues into its fourth century",
+    "standfirst": "Rival claims from several local castles about which square tower has stood longest have never been formally resolved, and nobody involved seems in any hurry to resolve them now",
+    "byline": "By Elspeth Machray, Royal Deeside Correspondent",
+    "location": "DRUMOAK",
+    "published": "2026-07-14T11:05:00",
+    "body": [
+      "The long-running, entirely good-natured dispute among several castles along Royal Deeside over which possesses the oldest surviving tower has resurfaced at the latest gathering of the region's heritage trust, without, once again, reaching any conclusion.",
+      "\"Ours dates to the thirteenth century, and we can prove it,\" said one castle's head guide, who asked not to be identified \"to avoid starting anything\". \"The trouble is, so can two other places along this river, and none of our proofs quite agree on what year the thirteenth century actually started.\"",
+      "The dispute, described by one trust member as \"the politest argument in Scotland\", has continued amicably for years, largely because none of the parties involved particularly wants it settled, on the reasonable grounds that being one of several plausible oldest towers is, in marketing terms, nearly as good as being definitively the oldest.",
+      "\"If someone proved us wrong tomorrow, I'd be almost sorry,\" the guide admitted. \"It's a lovely thing to argue about over tea. Nobody's ever raised their voice. We just each quietly believe our own tower is the real one and let everybody else enjoy believing the same about theirs.\"",
+      "The heritage trust has confirmed no formal adjudication is planned, describing the current arrangement as \"stable, cordial, and completely unresolved, much like the towers themselves\"."
+    ],
+    "pullQuote": "It's a lovely thing to argue about over tea. Nobody's ever raised their voice.",
+    "tags": [
+      "aberdeenshire",
+      "heritage",
+      "history"
+    ]
+  },
+  {
+    "id": "wld-abz-lonach-highland-games-caber",
+    "category": "World",
+    "headline": "Caber toss record quietly disputed by a man with a very long tape measure",
+    "standfirst": "This year's Highland Games caber-tossing champion has been congratulated, awarded the trophy, and then gently followed around the field by a spectator insisting the throw was measured from the wrong end",
+    "byline": "By Dougal Fyffe, Sporting Correspondent",
+    "location": "STRATHDON",
+    "published": "2026-07-14T13:40:00",
+    "body": [
+      "The champion of this year's caber toss at the annual Highland gathering has accepted his trophy amid warm applause and a single, persistent dissenting voice from the crowd, belonging to a spectator convinced the winning throw was measured from the wrong end of the caber entirely.",
+      "\"You measure the angle of the fall, not the distance it travels,\" the spectator, retired joiner Alistair Rennie, explained at length to anyone who would listen. \"A perfect toss lands the caber pointing straight back at twelve o'clock. It's not about how far it goes. I've been saying this for years.\"",
+      "Games officials confirmed the scoring had, in fact, been carried out entirely correctly, according to the rules as they have applied for generations, a point Mr Rennie accepted \"in the letter, but not really in the spirit\".",
+      "\"He's not wrong about the rules,\" said the newly crowned champion, still holding his trophy. \"He's just wrong about whether the rules are the right rules. I've decided not to get involved in that argument. I'd rather enjoy winning.\"",
+      "Organisers say the dispute, though entirely good-humoured, has become something of an annual fixture in its own right, with several regulars reportedly attending now specifically to see whether Mr Rennie will raise the twelve o'clock question again this year. He did."
+    ],
+    "pullQuote": "It's not about how far it goes. I've been saying this for years.",
+    "tags": [
+      "aberdeenshire",
+      "highland-games",
+      "sport"
+    ]
+  },
+  {
+    "id": "wld-abz-balmoral-proximity-royal-sightings",
+    "category": "World",
+    "headline": "Deeside villagers now entirely unmoved by royal presence up the road",
+    "standfirst": "Residents living near the royal estate report that decades of proximity have reduced the occasional sighting of a royal car to roughly the same level of interest as a delayed bin lorry",
+    "byline": "By Elspeth Machray, Royal Deeside Correspondent",
+    "location": "BALLATER",
+    "published": "2026-07-14T15:20:00",
+    "body": [
+      "Residents of the small Deeside town nearest the royal estate have described a level of familiarity with royal comings and goings that borders, several admitted, on outright indifference, with one shopkeeper comparing a recent royal motorcade sighting to \"the bread van, but slightly shinier\".",
+      "\"You grow up with it,\" said longtime shop owner Peggy Milne. \"As a bairn you'd wave. By the time you're grown, you're mostly just checking whether the road's about to be closed and whether you need to leave five minutes earlier for the school run.\"",
+      "Tourists, by contrast, remain reliably electrified by the possibility of a sighting, a contrast locals say produces its own regular comedy, with visitors photographing empty cars, ordinary pedestrians, and, on one occasion, a particularly well-dressed postman.",
+      "\"We had a busload once, absolutely certain they'd seen someone significant walk into the chemist,\" Ms Milne recalled. \"It was my cousin Fiona. She does have a very good coat, to be fair.\"",
+      "Locals insist there is no disrespect intended in the general shrug; simply that living somewhere for generations tends to dull the novelty of almost anything, royalty very much included."
+    ],
+    "pullQuote": "It was my cousin Fiona. She does have a very good coat, to be fair.",
+    "tags": [
+      "aberdeenshire",
+      "royal-deeside",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-angus-cattle-naming-rights",
+    "category": "World",
+    "headline": "Local breeders demand royalty every time a steakhouse anywhere on Earth uses their region's name",
+    "standfirst": "A campaign group representing cattle breeders has calculated, only semi-seriously, what it might be owed for every menu on the planet advertising a cut of beef under the county's name",
+    "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
+    "location": "ABERDEENSHIRE",
+    "published": "2026-07-14T08:20:00",
+    "body": [
+      "A group representing the region's cattle breeders has produced a tongue-in-cheek estimate of what might be owed to the county if it collected even a token royalty every time a restaurant menu, anywhere in the world, advertised a cut of beef under its name.",
+      "\"You cannot open a menu from Buenos Aires to Birmingham without seeing our county's name attached to a steak,\" said breeders' spokesperson Robbie Duguid. \"We're delighted, genuinely. We just think it's worth pointing out, gently, how far our name travels compared to how often anyone remembers where the actual cattle are from.\"",
+      "The breed itself, hornless and famously well-marbled, has been exported and cross-bred so extensively worldwide that the great majority of animals carrying the name have never set foot in the county, or indeed in Scotland, a fact breeders describe as \"flattering, and slightly galling, in roughly equal measure\".",
+      "\"We're not actually chasing anyone for money,\" Mr Duguid clarified, after the figures began circulating rather more widely than intended. \"We just think, next time you order the steak, you might spare half a thought for the wet fields it's technically named after.\"",
+      "The campaign has, breeders concede, mostly succeeded only in making several journalists mildly hungry, a result they describe as \"not the intended outcome, but not the worst one either\"."
+    ],
+    "pullQuote": "We're delighted, genuinely. We just think it's worth pointing out how far our name travels.",
+    "tags": [
+      "aberdeenshire",
+      "farming",
+      "food"
+    ]
+  },
+  {
+    "id": "wld-abz-fish-market-quota-argument",
+    "category": "World",
+    "headline": "Pre-dawn fish market argument over a single herring enters its third hour",
+    "standfirst": "Two long-standing traders at the harbour fish market remain locked in a dispute over the ownership of one specific fish, neither willing to concede the point despite the rest of the catch having long since been sold",
+    "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-14T05:45:00",
+    "body": [
+      "A disagreement between two veteran traders at the harbour fish market over the rightful ownership of a single herring had, by mid-morning, run considerably longer than the sale of the entire remaining catch, according to bemused colleagues working around them.",
+      "\"The rest of the boat's catch was bought, weighed and gone within the hour, same as always,\" said market supervisor Ewan Copland. \"These two are still going over one fish. I genuinely could not tell you, at this point, which crate it originally came from. I'm not sure they could either.\"",
+      "Both traders maintain the herring in question was set aside for them specifically before the general sale began, a claim each insists the other is fully aware to be false. Onlookers describe the exchange as \"heated but entirely without malice\", punctuated by long pauses in which both men simply looked at the fish.",
+      "\"You'd think it was the last herring in the North Sea,\" said one passing fishmonger. \"It's a very ordinary herring. I've seen it. Nothing special about it whatsoever. That's not really the point any more, I don't think.\"",
+      "By the time the market closed for the morning, the dispute remained unresolved, and the herring, still unclaimed by either party, had been quietly placed on ice \"pending further discussion\"."
+    ],
+    "pullQuote": "You'd think it was the last herring in the North Sea. It's a very ordinary herring.",
+    "tags": [
+      "aberdeen",
+      "fishing",
+      "harbour"
+    ]
+  },
+  {
+    "id": "wld-abz-first-aberdeen-bus-punctuality-myth",
+    "category": "World",
+    "headline": "Local bus timetable formally reclassified as 'aspirational literature'",
+    "standfirst": "A city transport review has concluded that published arrival times function less as a schedule and more as a statement of intent, broadly agreed upon but rarely honoured",
+    "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T16:35:00",
+    "body": [
+      "A review commissioned to examine punctuality on the city's bus network has concluded, diplomatically, that the published timetable is best understood not as a binding commitment but as what the report's authors termed \"a broadly agreed statement of intent\".",
+      "\"Passengers do not expect the 8:14 at 8:14,\" said review author Netta Rennie. \"They expect the 8:14 at some point between 8:10 and 8:30, possibly in the form of two buses arriving together, followed by a long and philosophical gap.\"",
+      "Regular commuters were broadly unsurprised by the findings, several noting they had long since stopped consulting the printed timetable at all in favour of simply standing at the stop \"with an appropriate level of patience\" and trusting a bus would, eventually, materialise.",
+      "\"I've made peace with it,\" said commuter Kirsty Sangster. \"You stop seeing it as lateness and start seeing it as a kind of weather. You dress for it. You bring a book.\"",
+      "The operator has pledged improvements, while noting that several of the worst delays are caused by traffic conditions genuinely beyond anyone's control, a caveat commuters accepted with the resigned good humour of people who had, in truth, stopped expecting anything else some years ago."
+    ],
+    "pullQuote": "You stop seeing it as lateness and start seeing it as a kind of weather. You dress for it.",
+    "tags": [
+      "aberdeen",
+      "transport",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-dyce-airport-helicopter-noise",
+    "category": "World",
+    "headline": "Farmer reports cattle now entirely unbothered by offshore helicopter traffic",
+    "standfirst": "A dairy herd grazing under the flight path near the city's airport has, according to its owner, stopped so much as looking up at the near-constant passage of North Sea support helicopters",
+    "byline": "By Innes Kellas, North Sea Energy Correspondent",
+    "location": "DYCE",
+    "published": "2026-07-12T07:50:00",
+    "body": [
+      "A dairy farmer whose fields sit directly beneath the approach path to the airport's busy helicopter terminal says her herd has become so accustomed to the frequent passage of offshore support helicopters that they no longer react at all, even to aircraft passing at low altitude.",
+      "\"They used to startle, years ago,\" said farmer Senga Argo. \"Nowadays a Super Puma could come in at treetop height and you'd struggle to get one of them to lift its head from the grass. I sometimes think they're less bothered by it than I am.\"",
+      "The airport handles one of the busiest civilian helicopter operations in the world, ferrying workers to and from platforms across the North Sea, a scale of traffic that has, over decades, become simply part of the background rhythm of the surrounding countryside.",
+      "\"Visitors always ask if the noise is a problem,\" Ms Argo said. \"Genuinely, at this point, I'd notice more if it stopped. The cows definitely wouldn't. They'd need something considerably louder than a helicopter to trouble them at this stage.\"",
+      "Airport officials say noise complaints from the surrounding area remain low, adding, with what sounded like professional pride, that \"the local livestock have never once been in touch\"."
+    ],
+    "pullQuote": "A Super Puma could come in at treetop height and you'd struggle to get one of them to lift its head from the grass.",
+    "tags": [
+      "aberdeen",
+      "oil-industry",
+      "transport"
+    ]
+  },
+  {
+    "id": "wld-abz-north-sea-standby-vessel-boredom",
+    "category": "World",
+    "headline": "Offshore standby vessel crew hold impromptu games night for the ninth week running",
+    "standfirst": "With no rescue calls to answer, the crew of a support vessel stationed near a North Sea platform have developed an increasingly competitive in-house quiz league to pass the long, uneventful hours on watch",
+    "byline": "By Innes Kellas, North Sea Energy Correspondent",
+    "location": "NORTH SEA",
+    "published": "2026-07-13T06:15:00",
+    "body": [
+      "The crew of a standby safety vessel, stationed for weeks at a time near an offshore platform in case of emergency, have developed an elaborate rolling quiz league to occupy the long, entirely uneventful hours between what everyone involved sincerely hopes remains a job with nothing to do.",
+      "\"You're there specifically in case something goes wrong,\" said vessel master Trevor Ainslie. \"On a good trip, nothing goes wrong. Which is obviously the aim. It does leave rather a lot of hours to fill, though, and there's only so many times you can repaint something that's already been painted.\"",
+      "The quiz, now in its ninth consecutive week, covers general knowledge, North Sea trivia and, following a recent update to the rules, a specialist round on \"things you can see from the deck\", which several crew members admit has become disproportionately competitive.",
+      "\"Nobody wants an eventful shift,\" said engineer Fenella Massie. \"A boring shift means everyone on that platform is safe. So we've made peace with boring, and we've decided to get very, very good at quizzes instead.\"",
+      "The current league leader has declined to reveal his winning margin, citing \"team morale\", though colleagues report it is, by any measure, considerable."
+    ],
+    "pullQuote": "Nobody wants an eventful shift. So we've made peace with boring, and we've decided to get very good at quizzes instead.",
+    "tags": [
+      "aberdeen",
+      "oil-industry",
+      "north-sea"
+    ]
+  },
+  {
+    "id": "wld-abz-thrifty-reputation-study",
+    "category": "World",
+    "headline": "Study confirms regional reputation for thrift, researchers slightly reluctant to publish full findings",
+    "standfirst": "A behavioural economics team set out to test whether the area's famous carefulness with money was exaggerated, and instead produced results its own authors describe as 'almost embarrassingly conclusive'",
+    "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T09:05:00",
+    "body": [
+      "A university behavioural economics team that set out to test whether the North-East's longstanding reputation for financial carefulness was overstated has instead produced results its lead author describes as \"almost embarrassingly conclusive in the other direction\".",
+      "\"We expected to find the stereotype was, as these things usually are, somewhat exaggerated,\" said Dr Persis Alexander. \"Instead we found measurably lower rates of unnecessary spending, measurably higher rates of asking for the bill to be split to the exact penny, and one participant who negotiated a genuine discount on the study's own participation fee.\"",
+      "The research involved tracking discretionary spending across several Scottish cities over six months, with the local sample distinguishing itself, researchers say, through a marked preference for \"value\", a term participants used unprompted and with visible pride.",
+      "\"Nobody in this study was ashamed of the results,\" Dr Alexander noted. \"If anything, several participants asked whether they'd won something for being the most careful with money. When we explained there was no prize, one asked, entirely reasonably, why we'd bothered running a study with no prize.\"",
+      "The team says a follow-up study is planned, though funding remains \"under careful review\", a phrase Dr Alexander concedes she may have picked up from the participants themselves."
+    ],
+    "pullQuote": "One participant asked, entirely reasonably, why we'd bothered running a study with no prize.",
+    "tags": [
+      "aberdeen",
+      "culture",
+      "science"
+    ]
+  },
+  {
+    "id": "wld-abz-castlegate-mercat-cross-time-traveler",
+    "category": "World",
+    "headline": "Tourist convinced ancient market cross is a portal spends forty minutes waiting for something to happen",
+    "standfirst": "A visitor to the city's historic mercat cross, having read an overenthusiastic online post about local legends, reportedly stood beside the carved stone monument for the better part of an hour anticipating an event that was never going to occur",
+    "byline": "By Archibald Skene, Archive Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T12:00:00",
+    "body": [
+      "A visiting tourist was observed standing beside the city's ornately carved 17th-century mercat cross for close to forty minutes on Wednesday afternoon, reportedly under the impression, gathered from an online post of uncertain origin, that the monument was in some sense a portal.",
+      "\"He kept looking at his watch and then at the cross,\" said passer-by Douglas Birnie, who eventually struck up conversation out of what he described as \"pure concern\". \"I asked what he was waiting for. He said he'd read that something happens here at a certain hour. I had to tell him, gently, that the only thing that happens here reliably is the pigeons.\"",
+      "The mercat cross, an unusually elaborate example of its type, features a series of carved royal portrait medallions around its drum and has stood, without incident of a supernatural or dimensional nature, on the same spot since the late 17th century.",
+      "\"It's a beautiful piece of stonework,\" said heritage guide Ronnie Cadenhead. \"It has never, to my knowledge, been a portal to anywhere. I did once see a stag do of forty grown men attempt to climb it, which is probably the closest it has come to an interdimensional event.\"",
+      "The tourist is said to have taken the news in good humour, purchased a coffee, and left \"only slightly disappointed\", according to Mr Birnie, who confirmed he had personally checked the online post afterwards and found it to be, in his words, \"nonsense, but confidently written nonsense\"."
+    ],
+    "pullQuote": "I had to tell him, gently, that the only thing that happens here reliably is the pigeons.",
+    "tags": [
+      "aberdeen",
+      "heritage",
+      "urban-legend"
+    ]
+  },
+  {
+    "id": "wld-abz-duthie-park-winter-gardens-plant-escape",
+    "category": "World",
+    "headline": "Tropical plant allegedly makes a break for it from indoor winter gardens",
+    "standfirst": "Gardeners at the city's celebrated glasshouse complex are investigating how a fast-growing vine ended up several metres beyond its bed and pressing hopefully against a door left ajar",
+    "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T14:55:00",
+    "body": [
+      "Staff at the city's much-loved indoor winter gardens are investigating how a notably vigorous climbing vine, usually confined to its designated bed in the tropical house, was found extending several metres across a walkway and, in the words of one gardener, \"making a fairly determined effort toward a door somebody had left propped open overnight\".",
+      "\"It's an enthusiastic grower, we've always known that,\" said head gardener Peggy Milne. \"But finding several extra metres of it draped across the path towards the exit, on the one night the door wasn't secured properly, does raise an eyebrow. I'm not saying it planned it. I'm not ruling it out either.\"",
+      "The winter gardens house an extensive collection of tropical and subtropical plants under glass, sheltered year-round from the North-East's considerably less tropical climate, a contrast staff say may explain the vine's apparent enthusiasm for the great outdoors, however briefly glimpsed through a gap in the door.",
+      "\"We've cut it back and secured the door properly,\" Ms Milne confirmed. \"Whether it remembers the taste of freedom, so to speak, remains to be seen. We'll be keeping a closer eye on that particular bed from now on.\"",
+      "Visitors have been reassured that no other specimens are believed to have made a similar attempt, though staff admit they \"haven't checked every corner as thoroughly as perhaps they should have\"."
+    ],
+    "pullQuote": "I'm not saying it planned it. I'm not ruling it out either.",
+    "tags": [
+      "aberdeen",
+      "gardens",
+      "wildlife"
+    ]
+  },
+  {
+    "id": "wld-abz-hazlehead-maze-lost-visitor",
+    "category": "World",
+    "headline": "Popular park maze reports its longest-standing rumour remains stubbornly unconfirmed",
+    "standfirst": "The persistent local legend of a visitor still lost somewhere within the hedge maze since the 1980s has been formally investigated once again, and once again neither proven nor entirely put to rest",
+    "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T17:40:00",
+    "body": [
+      "Park rangers have once again looked into the long-running local legend that a visitor to the well-known hedge maze became lost sometime in the 1980s and has never formally been confirmed to have found their way back out, a claim the rangers describe as \"almost certainly untrue, and almost certainly going to be repeated regardless\".",
+      "\"We have checked the records as thoroughly as records from the 1980s allow,\" said senior ranger Dennis Merson. \"There is no missing persons report, no abandoned coat, nothing. And yet every single summer, a new group of teenagers tells me, with total conviction, that their older cousin heard it from someone who definitely knew the family.\"",
+      "The maze, a well-maintained attraction of clipped hedging paths, is not, by any reasonable measure, large enough to lose a visitor for more than an afternoon, a point rangers make regularly and which does remarkably little to dampen the story's staying power.",
+      "\"It's become a sort of local rite of passage,\" said Mr Merson. \"You hear the story as a kid, you get slightly spooked walking the maze at dusk, and then years later you tell it to somebody else's kids as though you'd verified it yourself. I don't think anyone actually believes it. I think everyone enjoys it too much to check properly.\"",
+      "The park has no plans to add a plaque, a warning sign, or any acknowledgement of the legend whatsoever, on the grounds that, as Mr Merson put it, \"some things work best left exactly as unconfirmed as they currently are\"."
+    ],
+    "pullQuote": "I don't think anyone actually believes it. I think everyone enjoys it too much to check properly.",
+    "tags": [
+      "aberdeen",
+      "urban-legend",
+      "parks"
+    ]
+  },
+  {
+    "id": "wld-abz-torry-battery-cannon-fires-accidentally",
+    "category": "World",
+    "headline": "Historic harbour-mouth gun battery briefly and unexpectedly makes a noise",
+    "standfirst": "One of the preserved coastal defence cannons overlooking the harbour entrance produced an unexplained bang during a routine heritage open day, to the considerable alarm of everyone present, including the guides",
+    "byline": "By Morag Sim, Heritage Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-14T10:15:00",
+    "body": [
+      "A preserved 19th-century coastal defence battery overlooking the harbour entrance produced a loud and entirely unexpected bang during a routine heritage open day on Saturday, sending several visitors ducking for cover and prompting an immediate, and so far inconclusive, investigation.",
+      "\"The guns have been decommissioned and inert for decades,\" said site guide Ronnie Cadenhead, still visibly shaken an hour later. \"I have given this exact tour perhaps two hundred times. Nothing has ever, in living memory, gone bang. And then, on a perfectly ordinary Saturday, it went bang.\"",
+      "Council officials have ruled out any live ordnance remaining in the guns, suggesting instead that trapped moisture, a loose fitting, or simply \"a very old iron object finally settling after more than a century\" may account for the noise, while conceding none of these theories has been confirmed.",
+      "\"Nobody was hurt, which is the important thing,\" said Mr Cadenhead. \"But I will say, for a battery that has done precisely nothing dramatic for over a hundred years, it chose an extremely dramatic way to remind everyone it's still technically a gun.\"",
+      "The site has been temporarily closed to the public pending a full inspection, with staff describing the whole episode as \"the single most eventful open day this battery has had since it stopped being used for its actual purpose\"."
+    ],
+    "pullQuote": "For a battery that has done precisely nothing dramatic for over a hundred years, it chose an extremely dramatic way to remind everyone it's still technically a gun.",
+    "tags": [
+      "aberdeen",
+      "heritage",
+      "history"
+    ]
+  },
+  {
+    "id": "wld-abz-bridge-of-don-name-dispute",
+    "category": "World",
+    "headline": "North and south of the city renew polite rivalry over which river bridge matters more",
+    "standfirst": "Residents on either side of the city continue a decades-old, entirely good-natured disagreement about whether the northern or southern river crossing is the more consequential landmark",
+    "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-14T12:50:00",
+    "body": [
+      "A long-standing, thoroughly amicable rivalry between residents of the city's northern and southern districts over the relative importance of their respective river bridges has resurfaced once again, this time prompted by nothing more than a passing remark at a community council meeting.",
+      "\"Ours is older,\" said a resident from the northern side of the city, referring to the crossing over the River Don, who declined to give a name \"in case this becomes a whole thing again\". \"Ours also has considerably nicer views, in my opinion, though I appreciate that's subjective.\"",
+      "Residents nearer the River Dee crossing to the south were quick to counter that their bridge carries markedly more traffic, connects to the airport road, and has, in the words of one, \"never once needed the words 'in my opinion' to make its case\".",
+      "\"It's not really about the bridges,\" admitted community council chair Effie Ledingham, attempting to mediate. \"It's about which side of the river you grew up on, and neither side is ever going to concede that point, bridge or no bridge.\"",
+      "The dispute has, by all accounts, never once affected actual civic decision-making, with both bridges receiving broadly equal maintenance attention, a fact that has done nothing whatsoever to cool either side's conviction that theirs is the one that truly matters."
+    ],
+    "pullQuote": "It's not really about the bridges. It's about which side of the river you grew up on.",
+    "tags": [
+      "aberdeen",
+      "community",
+      "rivalry"
+    ]
+  },
+  {
+    "id": "wld-abz-brig-o-balgownie-load-limit-poem",
+    "category": "World",
+    "headline": "Council forced to clarify centuries-old rhyming warning is not, in fact, current bridge policy",
+    "standfirst": "A well-known old verse cautioning against a particular family crossing the ancient stone bridge together has been taken rather too literally by at least one modern driver",
+    "byline": "By Archibald Skene, Archive Correspondent",
+    "location": "OLD ABERDEEN",
+    "published": "2026-07-14T14:30:00",
+    "body": [
+      "The city's roads department has issued a gentle clarification after a driver contacted the council concerned about the legal standing of a centuries-old rhyming warning associated with one of the region's oldest stone bridges, a single-arch medieval crossing over the River Don.",
+      "The verse, long attached to the bridge in local tradition and cautioning in old Scots against a particular family's \"wife's ae son\" ever crossing it, has no bearing whatsoever on the bridge's current, entirely sound structural condition, which is now closed to vehicles and reserved for pedestrians in any case.",
+      "\"The rhyme is genuinely old, genuinely charming, and genuinely not a weight restriction,\" said council engineer Robbie Duguid. \"I had to explain to a caller, more than once, that the bridge is fine, the family in the rhyme is not currently a road safety consideration, and that no, we do not check surnames at the entrance.\"",
+      "The bridge, one of the oldest of its type in Scotland, remains a popular spot for a short walk, and staff say the old verse adds rather than detracts from its appeal, provided nobody takes it as a literal instruction.",
+      "\"It's a lovely old superstition,\" Mr Duguid added. \"We'd just rather it stayed a lovely old superstition, and not something anyone's satnav starts factoring in.\""
+    ],
+    "pullQuote": "No, we do not check surnames at the entrance.",
+    "tags": [
+      "aberdeen",
+      "heritage",
+      "folklore"
+    ]
+  },
+  {
+    "id": "wld-abz-doric-word-quine-loon-import-tax",
+    "category": "World",
+    "headline": "Overseas dictionary publisher quietly drops attempt to define 'loon' without local input",
+    "standfirst": "A reference publisher's first pass at a North-East Scots glossary was returned by regional readers covered, they say, in more corrections than original text",
+    "byline": "By Fiona Strachan, Doric Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T18:10:00",
+    "body": [
+      "An overseas reference publisher attempting to compile a glossary of North-East Scots vocabulary has withdrawn its first draft after regional readers returned it with what one editor described as \"substantially more red ink than original definitions\".",
+      "The draft's entry for \"loon\", defined simply as \"a foolish person\", drew particular ire from readers keen to point out that in Doric it means, rather more warmly, a boy or young man, with foolishness having nothing whatsoever to do with it. \"Quine\" fared little better, initially glossed as archaic slang before local reviewers clarified it simply means a girl or young woman, in everyday and entirely current use.",
+      "\"You cannot write a Doric glossary from a desk somewhere else,\" said linguist Dr Marjorie Coutts, who was among those asked to review the draft. \"You need to actually stand in a queue at a fish market and listen to how these words are used, ideally while somebody hands you a haddock.\"",
+      "The publisher has since committed to a fully revised edition compiled with local input, describing the first attempt, in an internal memo since leaked with some glee, as \"a well-intentioned misfire that a single conversation with anyone from Aberdeen would have prevented\".",
+      "\"We're pleased they're taking it seriously now,\" said Dr Coutts. \"But I will say, there was something quite satisfying about watching the wrong version get sent back covered in corrections. It's ours. You have to actually ask us.\""
+    ],
+    "pullQuote": "You need to actually stand in a queue at a fish market and listen to how these words are used.",
+    "tags": [
+      "aberdeen",
+      "doric",
+      "language"
+    ]
+  },
+  {
+    "id": "wld-abz-union-terrace-gardens-referendum-replay",
+    "category": "World",
+    "headline": "Sunken city-centre gardens redevelopment argument re-litigated in full at the pub, again",
+    "standfirst": "Years after residents voted decisively to keep a much-loved dip of greenery in the city centre rather than remodel it, the whole debate was cheerfully replayed from scratch over a Friday night pint",
+    "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T21:40:00",
+    "body": [
+      "A long-settled public vote over the future of the city centre's historic sunken gardens was, once again, fully re-argued from first principles at a local pub on Friday night, several years after residents delivered a clear and final verdict at the ballot box.",
+      "\"It's settled. It's been settled for years,\" said pub regular Denise Corsie, who nonetheless spent forty minutes restating both sides of the case to a visiting friend \"purely for context\". \"I don't even feel strongly about it any more. I just enjoy going through it.\"",
+      "The original proposal, which would have substantially remodelled the green, tree-lined dip that separates the two halves of the city centre, was rejected by residents in a public vote some years ago in favour of keeping the gardens broadly as they were, a result locals still discuss with the enthusiasm of a match that finished in extra time.",
+      "\"You'll get a full account of the referendum from basically anyone over a second pint,\" said regular Douglas Birnie. \"Doesn't matter if they voted, doesn't matter if they were even living here at the time. Everyone's got the whole argument memorised by now, like a favourite film.\"",
+      "The gardens themselves, meanwhile, continue exactly as they have for years, entirely unaware of their enduring status as the city's most reliable pub conversation topic."
+    ],
+    "pullQuote": "It's settled. It's been settled for years. I just enjoy going through it.",
+    "tags": [
+      "aberdeen",
+      "council",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-pittodrie-sponsorship-name-auction",
+    "category": "World",
+    "headline": "Fans quietly relieved after stadium naming rights deal avoids anything too embarrassing",
+    "standfirst": "Supporters braced for the worst ahead of a new sponsorship announcement, and expressed measured, cautious approval once the new name turned out to be merely a bit awkward rather than actively mortifying",
+    "byline": "By Dougal Fyffe, Sporting Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-12T19:30:00",
+    "body": [
+      "Supporters of the city's football club spent much of the week bracing for a stadium sponsorship announcement widely rumoured to involve a name change, only to react with what one fan described as \"relief, mostly, dressed up as mild disappointment\" once the actual new name was confirmed.",
+      "\"We'd heard whispers it might be something to do with a mattress company,\" said season ticket holder Alistair Rennie. \"When it turned out to just be a slightly clunky corporate prefix stuck on the front of the name everyone already uses, honestly, that felt like a result.\"",
+      "Fans confirmed that, regardless of any official naming rights arrangement, the stadium would continue to be referred to by its long-standing traditional name in conversation, on tickets bought from friends, and in every pub conversation for the foreseeable future.",
+      "\"You could call it whatever you like on the paperwork,\" said supporter Netta Sim. \"We'll still just say we're going to the match. Nobody's man and dog is changing what they call it after forty years.\"",
+      "Club officials have welcomed the new arrangement as a valuable commercial partnership, while privately, according to one source, \"fully expecting absolutely nobody outside the boardroom to actually use the new name out loud\"."
+    ],
+    "pullQuote": "We'd heard whispers it might be something to do with a mattress company. That felt like a result, by comparison.",
+    "tags": [
+      "aberdeen",
+      "football",
+      "sport"
+    ]
+  },
+  {
+    "id": "wld-abz-granite-city-nickname-competition",
+    "category": "World",
+    "headline": "Rival slogan fails to unseat 'Silver City' after brief and half-hearted marketing push",
+    "standfirst": "A tourism campaign floated an alternative nickname for the city earlier this year; residents responded with the sort of polite disinterest usually reserved for unsolicited restaurant recommendations",
+    "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T20:10:00",
+    "body": [
+      "A tourism campaign's attempt earlier this year to introduce a fresh alternative nickname for the city, intended to sit alongside its long-established reputation as the Silver City with the Golden Sand, appears to have quietly fizzled out after failing to gain any noticeable traction among residents.",
+      "\"We wanted something that spoke to the city's future as much as its granite past,\" said a campaign spokesperson, who declined to repeat the proposed nickname on the record, \"given how that's gone\". Locals contacted about the alternative name were, near universally, unable to recall it at all.",
+      "\"Silver City's earned,\" said longtime resident Gordon Esslemont. \"It's the granite, it's the sand, it does exactly what it says. You don't replace something like that with a slogan somebody workshopped in a meeting room. It never had a chance.\"",
+      "The campaign's materials featuring the new nickname have reportedly been quietly withdrawn from circulation, with officials describing the episode as \"a useful, low-cost reminder that a city's own nickname is not really theirs to update\".",
+      "\"Silver City with the Golden Sand,\" Mr Esslemont repeated, for emphasis. \"That's the one. That's always been the one. I don't even remember what they were trying to replace it with, and I don't think that's an accident.\""
+    ],
+    "pullQuote": "You don't replace something like that with a slogan somebody workshopped in a meeting room.",
+    "tags": [
+      "aberdeen",
+      "culture",
+      "council"
+    ]
+  },
+  {
+    "id": "wld-abz-seagull-council-representative",
+    "category": "World",
+    "headline": "Campaign for informal gull representation on civic matters gains a handful of signatures",
+    "standfirst": "A satirical petition calling for the city's herring gull population to be granted a symbolic seat at community meetings has, organisers admit, been taken rather more seriously by some than intended",
+    "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-10T19:25:00",
+    "body": [
+      "A petition calling, tongue firmly in cheek, for the city's dominant herring gull population to be granted some form of symbolic representation at community council meetings has attracted a small but genuinely committed following since it was first raised as a joke outside a chip shop in spring.",
+      "\"It started as a laugh,\" admitted petition organiser Kirsty Sangster. \"Then a few people signed it properly, with their actual names, and now I'm slightly worried someone on the community council is going to take it at face value and ask what the gulls' position is on the parking review.\"",
+      "The council has confirmed, for the avoidance of doubt, that no non-human resident, however numerous or locally dominant, will be granted a formal seat, while acknowledging the petition has \"raised a genuine point about how much of this city's daily life the gulls do, in practice, seem to run\".",
+      "\"They already control the chip shops, the bins and most of the beach,\" said Ms Sangster. \"A seat at the table feels almost like a formality at this point. I don't think we're giving them anything they haven't already taken.\"",
+      "The petition remains open, though organisers say they have no intention of pursuing it beyond \"a fun bit of civic theatre\", and gulls contacted for comment, as ever, declined to engage with the press."
+    ],
+    "pullQuote": "They already control the chip shops, the bins and most of the beach. A seat at the table feels almost like a formality.",
+    "tags": [
+      "aberdeen",
+      "wildlife",
+      "council"
+    ]
+  },
+  {
+    "id": "wld-abz-whisky-galore-shipwreck-legend-northeast",
+    "category": "World",
+    "headline": "Coastal village's shipwreck salvage legend gains a fresh, unverifiable detail every generation",
+    "standfirst": "A well-worn tale of a foundered cargo ship and an enthusiastic community salvage effort along the Aberdeenshire coast has, locals concede, grown noticeably richer in the telling with each passing decade",
+    "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
+    "location": "ABERDEENSHIRE COAST",
+    "published": "2026-07-14T16:45:00",
+    "body": [
+      "A long-told local story describing a cargo vessel that foundered off the Aberdeenshire coast generations ago, and the local community's famously thorough and largely unofficial salvage of its contents, appears to have acquired a new and unverifiable detail with almost every retelling since.",
+      "\"When my grandfather told it, it was barrels of nothing more exciting than rope and tinned goods,\" said local historian Ishbel Cadenhead. \"By the time my father told it, it had become considerably more valuable cargo. By the time I heard it, there was a rumour of a piano involved. I do not believe there was ever a piano.\"",
+      "Records of the original incident, where they survive at all, tend to be considerably more mundane than the version now told in pubs along the coast, a discrepancy locals attribute less to deliberate exaggeration than to \"a story simply doing what stories do, over enough winters\".",
+      "\"Nobody's lying, exactly,\" Ms Cadenhead said. \"Everybody's just adding the detail they wish had been true. Give it another generation and I expect the piano will have been playing itself when they found it.\"",
+      "The village has no plans to commission a definitive written history of the incident, on the grounds, several residents agreed, that doing so would rather spoil it."
+    ],
+    "pullQuote": "Everybody's just adding the detail they wish had been true.",
+    "tags": [
+      "aberdeenshire",
+      "folklore",
+      "maritime"
+    ]
+  },
+  {
+    "id": "wld-abz-old-aberdeen-cobbles-ankle-survey",
+    "category": "World",
+    "headline": "Historic cobbled street's charm formally weighed against its ankle-turning statistics",
+    "standfirst": "A council review of one of the city's most photographed cobbled lanes has concluded that its considerable visual appeal comes with a measurable, if modest, human cost in twisted ankles",
+    "byline": "By Constance Mearns, Property Correspondent",
+    "location": "OLD ABERDEEN",
+    "published": "2026-07-14T17:55:00",
+    "body": [
+      "A council review into the condition of one of the city's most photographed historic cobbled streets has concluded that its considerable charm is, in measurable terms, offset by a modest but consistent rate of minor ankle injuries among pedestrians, particularly those in unsuitable footwear.",
+      "\"It is genuinely one of the loveliest streets in the city,\" said council surveyor Effie Ledingham. \"It is also, by the numbers, responsible for a small but steady trickle of twisted ankles every summer, generally among visitors who have arrived wearing sandals with what I can only call misplaced optimism.\"",
+      "The council has ruled out resurfacing the historic cobbles, citing their protected status and considerable contribution to the street's character, and has instead settled on a modest signage scheme gently advising visitors to \"mind their footing, and perhaps their footwear\".",
+      "\"You could smooth it all over and nobody would ever turn an ankle again,\" said local resident Peggy Milne, who has lived on the street for decades. \"But it wouldn't be the same street. A cobbled street that's easy to walk on isn't really doing its job, is it?\"",
+      "The new signage is expected to be installed by the end of the season, though officials concede it is unlikely to deter the specific combination of enthusiasm and unsuitable sandals that causes most of the trouble."
+    ],
+    "pullQuote": "A cobbled street that's easy to walk on isn't really doing its job, is it?",
+    "tags": [
+      "aberdeen",
+      "heritage",
+      "council"
+    ]
+  },
+  {
+    "id": "wld-abz-elphinstone-statue-pigeon-crown",
+    "category": "World",
+    "headline": "University's founding bishop statue quietly gains a knitted winter hat, again",
+    "standfirst": "For the third year running, the bronze statue of the college's 15th-century founder has been discovered wearing a hand-knitted bobble hat, with nobody willing to admit responsibility",
+    "byline": "By Fiona Strachan, Doric Affairs Correspondent",
+    "location": "OLD ABERDEEN",
+    "published": "2026-07-14T18:30:00",
+    "body": [
+      "The bronze statue of the university's founding bishop, a dignified figure who has stood outside the chapel since the early 20th century commemorating a founder from four centuries earlier still, has once again been found wearing a brightly coloured, hand-knitted bobble hat, for the third winter running.",
+      "\"Nobody has ever come forward,\" said groundskeeper Ewan Copland. \"It just appears, always sometime in December, always a slightly different colour. Last year it was maroon. This year it's a rather cheerful yellow. The statue does not appear to mind either way.\"",
+      "University staff have made no serious effort to identify or discourage the tradition, which has become something of a quiet point of affection on campus, with students reportedly checking the statue's headwear each December \"the way you'd check whether the first snow had settled\".",
+      "\"We could remove it, I suppose,\" said Mr Copland. \"But it does no harm, it clearly takes someone a fair few evenings of knitting, and honestly it's rather nice that a five-hundred-year-old bishop still gets looked after like that. He'd probably have approved. He founded the place with an eye to looking after people.\"",
+      "The hat is traditionally removed sometime around Easter, folded, and left on the chapel steps, ready, staff assume, for whoever knits the next one."
+    ],
+    "pullQuote": "It does no harm, it clearly takes someone a fair few evenings of knitting, and honestly it's rather nice.",
+    "tags": [
+      "aberdeen",
+      "university",
+      "tradition"
+    ]
+  },
+  {
+    "id": "wld-abz-codonas-helter-skelter-longest-scream",
+    "category": "World",
+    "headline": "Beachfront funfair confident it holds the informal record for longest continuous scream",
+    "standfirst": "Staff at the seafront amusement park believe a rider on the helter skelter last summer set an unofficial and entirely unverifiable record for sustained screaming across a single descent",
+    "byline": "By Dougal Fyffe, Sporting Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T19:00:00",
+    "body": [
+      "Staff at the city's long-running beachfront funfair believe a rider on the venue's classic helter skelter last summer achieved what several employees are informally, and entirely unofficially, calling a record for sustained screaming across a single descent of the slide.",
+      "\"It genuinely did not stop from top to bottom,\" said ride operator Trevor Ainslie. \"Most riders manage a scream, a laugh, maybe a shout partway down. This one just kept going, full volume, the entire way. We were all quite impressed, honestly, once we'd finished checking she was alright.\"",
+      "The rider in question, contacted afterwards, confirmed she had simply \"committed to the scream early and seen it through\", adding that she had no idea it had drawn quite so much staff attention until a member of staff applauded as she reached the bottom.",
+      "\"We don't have an official way of measuring this,\" Mr Ainslie admitted. \"There's no stopwatch, no leaderboard. It's just something the team still talks about, a full year on. That's got to count for something, even without a certificate.\"",
+      "The funfair has no plans to formalise a scream-timing competition, citing both practical difficulties and a suspicion that doing so \"would take some of the joy out of it happening completely by accident\"."
+    ],
+    "pullQuote": "Most riders manage a scream, a laugh, maybe a shout partway down. This one just kept going, full volume, the entire way.",
+    "tags": [
+      "aberdeen",
+      "funfair",
+      "seafront"
+    ]
+  },
+  {
+    "id": "wld-abz-aberdeen-exchange-taxi-driver-knowledge",
+    "category": "World",
+    "headline": "Taxi drivers stage informal contest to see who truly knows every roundabout by heart",
+    "standfirst": "A good-natured rivalry among the city's taxi drivers over who holds the most complete mental map of every roundabout, filter lane and rat-run culminated in an evening quiz nobody wanted to lose",
+    "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-13T20:20:00",
+    "body": [
+      "A long-simmering rivalry among the city's taxi drivers over who truly holds the most complete working knowledge of every roundabout, filter lane and back-street shortcut came to a head this week in an impromptu quiz held at the depot after hours.",
+      "\"Everybody thinks they know the roads best,\" said driver Dennis Merson, who organised the evening. \"So we settled it properly. Roundabout names, correct lane positions, which junction floods first in heavy rain. No notes, no satnav, just what's actually in your head after twenty years behind the wheel.\"",
+      "The contest reportedly grew heated only once, during a disputed question about the correct approach lane for a notoriously awkward five-way junction, an argument that several drivers say has technically never been fully resolved and was quietly set aside \"for the sake of the evening\".",
+      "\"You'd think after this many years driving these streets I'd have nothing left to learn,\" said runner-up Alistair Rennie. \"Turns out somebody else knew a rat-run I'd never even heard of. Twenty-two years, and I learned something new about my own city. Humbling, that.\"",
+      "The winner has been awarded bragging rights, a small trophy fashioned from an old taxi light, and, colleagues confirm, an insufferable amount of confidence for at least the next twelve months."
+    ],
+    "pullQuote": "Twenty-two years driving these streets, and I learned something new about my own city. Humbling, that.",
+    "tags": [
+      "aberdeen",
+      "transport",
+      "community"
+    ]
+  },
+  {
+    "id": "wld-abz-weather-forecast-four-seasons-one-day",
+    "category": "World",
+    "headline": "Meteorologists exhausted after single Tuesday delivers all four seasons before lunch",
+    "standfirst": "A local weather station logged sunshine, hail, a warm spell and a brief, determined gale within the same six-hour stretch, prompting forecasters to describe the day as 'unusually typical'",
+    "byline": "By Hamish Dey, Weather & Haar Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-14T07:10:00",
+    "body": [
+      "A local weather station recorded bright sunshine, a short but committed hailstorm, an unseasonably warm spell and a brisk gale, all within the same six-hour stretch on Tuesday morning, a sequence forecasters described, without any apparent irony, as \"unusually typical for this time of year\".",
+      "\"We had four genuinely distinct weather conditions before most people had finished their lunch,\" said meteorologist Netta Rennie. \"I want to stress that this is not a malfunction of the equipment. This is simply what the North Sea does when it can't make its mind up, which, in fairness, is often.\"",
+      "Residents responded with the practised calm of people who have long since given up trusting any single day's forecast, several noting they had left the house that morning in a coat, a jumper, sunglasses and, just in case, an umbrella, all four of which were required by early afternoon.",
+      "\"You just dress for everything,\" said commuter Denise Corsie. \"You stop asking whether it'll rain. You ask whether it'll rain, shine, hail and blow a gale, because the honest answer, most days, is yes, and you'd best be ready for all of it.\"",
+      "Forecasters say no further extreme weather is expected before the end of the week, a prediction they issued, several admitted privately, \"with considerably less confidence than the phrasing suggests\"."
+    ],
+    "pullQuote": "This is simply what the North Sea does when it can't make its mind up, which, in fairness, is often.",
+    "tags": [
+      "aberdeen",
+      "weather",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-christmas-market-mulled-wine-shortage",
+    "category": "World",
+    "headline": "City's festive market runs short of mulled wine on opening weekend, again",
+    "standfirst": "Organisers of the annual winter market have promised to review supply chains after queues for warm spiced wine stretched the length of the site within hours of opening for the third year running",
+    "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-11T22:30:00",
+    "body": [
+      "Organisers of the city's annual winter market have pledged, for the third consecutive year, to review supply arrangements for mulled wine after queues at the main stall stretched the length of the site within hours of the market opening for the season.",
+      "\"We increased the order significantly after last year,\" said market coordinator Denise Corsie. \"We increased it again this year on top of that. And it still wasn't enough. I genuinely don't know what figure would be enough at this point. It may simply be an unmeetable demand.\"",
+      "Visitors queuing in the cold for a cup that, several noted with some resignation, is \"mostly just for the warmth of the cup itself\" reported waits approaching forty minutes at peak times, with a brisk secondary trade reportedly developing in visitors selling their place in the queue to increasingly desperate latecomers.",
+      "\"I queued for thirty-five minutes and by the time I got to the front they were doing hot chocolate only,\" said shopper Kirsty Sangster. \"I had a lovely hot chocolate. I am, however, keeping a mental note of this for next year.\"",
+      "Organisers say next year's order has already been placed at what they describe as \"a genuinely uncomfortable volume\", while privately conceding that whatever figure they land on, it will probably, once again, not be quite enough."
+    ],
+    "pullQuote": "I genuinely don't know what figure would be enough at this point. It may simply be an unmeetable demand.",
+    "tags": [
+      "aberdeen",
+      "christmas",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "wld-abz-peterhead-prison-museum-escape-room",
+    "category": "World",
+    "headline": "Former prison's new escape room deemed slightly too convincing by early visitors",
+    "standfirst": "A heritage attraction built inside a decommissioned prison has had to soften its escape room experience after several groups reported it felt, if anything, a little too authentic",
+    "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
+    "location": "PETERHEAD",
+    "published": "2026-07-14T19:15:00",
+    "body": [
+      "A heritage museum housed in a decommissioned Victorian-era prison has quietly toned down its new escape room attraction after several early visitor groups reported the experience felt, in the words of one participant, \"a little too much like actually being imprisoned, for what was meant to be a fun day out\".",
+      "\"We wanted authenticity,\" said museum manager Robbie Duguid. \"We perhaps got slightly more authenticity than the average family group was after. A few visitors said the cell doors closing behind them was 'a lot', which, on reflection, is probably fair. It is a genuine cell door. It closes exactly the way it always did.\"",
+      "The museum, which preserves several original wings of the former prison alongside exhibits on the institution's long and occasionally colourful history, has since added clearer signage, a friendlier soundtrack, and a firm reminder to staff to check in on groups \"slightly more often than we perhaps had been\".",
+      "\"It's meant to be a puzzle, not an ordeal,\" Mr Duguid said. \"We've dialled it back. You should leave feeling clever, not genuinely rattled. A few early groups left feeling, frankly, both, and mostly the second one.\"",
+      "The revised version has since drawn considerably warmer reviews, with several visitors specifically praising the museum for \"finding the right amount of authentic\", a balance staff admit took rather more trial and error than expected."
+    ],
+    "pullQuote": "It's meant to be a puzzle, not an ordeal. We've dialled it back.",
+    "tags": [
+      "aberdeenshire",
+      "heritage",
+      "tourism"
+    ]
+  },
+  {
+    "id": "wld-abz-cove-bay-lighthouse-lonely",
+    "category": "World",
+    "headline": "Coastal lighthouse automation leaves last keeper's cottage with nothing to guard but the view",
+    "standfirst": "Decades after the light itself went fully automatic, the small settlement that grew up around a clifftop beacon south of the harbour continues quietly, its original purpose reduced to a plaque",
+    "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
+    "location": "COVE BAY",
+    "published": "2026-07-14T20:05:00",
+    "body": [
+      "The small coastal settlement that grew up generations ago to house the keepers of a clifftop lighthouse south of the harbour continues on quietly today, its original purpose long since reduced to a small plaque, the light itself having gone fully automatic decades before most current residents moved in.",
+      "\"You still get visitors asking to meet the keeper,\" said resident Peggy Milne, whose cottage once housed the assistant keeper's family. \"There hasn't been a keeper here in longer than I've been alive. The light does its own thing now. Nobody watches it any more. It just gets on with it.\"",
+      "The automation of lighthouses around the Scottish coast, completed progressively over the twentieth century, quietly ended a way of life that had shaped small communities like this one for generations, a change locals describe as having happened \"so gradually that nobody really marked the day it finished\".",
+      "\"There's a sadness to it, if you think about it too long, so mostly we don't,\" Ms Milne said. \"But the view's the same as it always was, the light still turns, and the sea's just as unreasonable as it ever was. Some things automation can't touch.\"",
+      "The cottages themselves remain sought-after, prized less for any connection to their working past than for an uninterrupted sea view that, unlike the lighthouse's original purpose, has never needed updating."
+    ],
+    "pullQuote": "The light does its own thing now. Nobody watches it any more. It just gets on with it.",
+    "tags": [
+      "aberdeenshire",
+      "maritime",
+      "heritage"
+    ]
   }
 ];
