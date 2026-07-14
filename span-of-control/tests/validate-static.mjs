@@ -6,6 +6,7 @@ import { execFileSync } from "node:child_process";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const appDir = normalize(join(here, ".."));
+const root = normalize(join(appDir, ".."));
 
 const mustExist = [
   "index.html", "styles.css", "app.js", "engine.js", "content.js", "storage.js",
@@ -23,7 +24,11 @@ for (const match of index.matchAll(/(?:href|src)="([^"]+)"/g)) {
   const ref = match[1];
   if (ref.startsWith("#")) continue;
   assert.ok(!/^(https?:)?\/\//.test(ref), `no runtime external URL: ${ref}`);
-  assert.ok(existsSync(join(appDir, ref)), `index reference exists: ${ref}`);
+  // A root-absolute ref (the shared "/almanac-back.js" back button) resolves from
+  // the repo root, not this document's directory. Resolve it rather than skip it,
+  // so a typo'd root-absolute path is still caught.
+  const target = ref.startsWith("/") ? join(root, ref.slice(1)) : join(appDir, ref);
+  assert.ok(existsSync(target), `index reference exists: ${ref}`);
 }
 
 const manifest = JSON.parse(readFileSync(join(appDir, "manifest.webmanifest"), "utf8"));

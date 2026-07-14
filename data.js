@@ -27,6 +27,116 @@ window.ESSAYS = [
     real: true,
   },
   {
+    slug: "northern-line-1987",
+    title: "Northern Line 1987",
+    tagline: "Drive a seven-car 1959 Stock-inspired Tube train over the 1987 Northern line, Morden to Edgware: work the series/parallel controller and Westinghouse brake, answer the guard's two bells, watch for trainstops and wet rail, and put every stop on the diamond across three duties. Offline procedural cab and audio in Three.js; no build step.",
+    url: "https://0x4d44.github.io/northern-line-1987/",
+    illustration: "ill-emu",
+    date: "2026-07-13T19:00:00",
+    year: 1987,
+    tags: ["games", "simulation", "rail"],
+    real: true,
+  },
+  {
+    slug: "quantum",
+    title: "The Interference Engine",
+    tagline: "How quantum computing actually works — not the &ldquo;tries every answer at once&rdquo; myth, but the stranger truth: a machine that makes the wrong answers cancel out. An animated, scrollytelling explainer you can drive — a draggable Bloch sphere, a measurement histogram that converges, phasors that interfere to zero, an entangled pair, and Grover's search finding a needle by amplitude. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/quantum/",
+    illustration: "ill-quantum",
+    date: "2026-07-13T18:00:00",
+    year: 1994,
+    tags: ["software", "science", "math"],
+    real: true,
+  },
+  {
+    slug: "gene-inheritance",
+    title: "Two Copies",
+    tagline: "How gene inheritance works, told as an animated story: you carry two copies of every gene and pass on one — and everything else, from dominant and recessive traits to carriers, blood types and colour blindness, falls out of that. Flip the coins in a live Punnett square, roll a family pedigree, and watch a recessive trait skip a generation. Vanilla JS on canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/gene-inheritance/",
+    illustration: "ill-genes",
+    date: "2026-07-13T17:30:00",
+    year: 1865,
+    tags: ["science", "software"],
+    real: true,
+  },
+  {
+    slug: "logistic-map",
+    title: "The Road to Chaos",
+    tagline: "One parabola, iterated, period-doubles its way into chaos — and hides a universal number in the cascade. A live tour of the logistic map: an animated cobweb orbit, a Lyapunov-coloured bifurcation diagram you can drag and zoom, Feigenbaum's δ ≈ 4.6692 solved in your browser, and the same constant falling out of three unrelated maps. Vanilla JS on canvas; no build step.",
+    url: "https://0x4d44.github.io/logistic-map/",
+    illustration: "ill-logistic",
+    date: "2026-07-13T15:30:00",
+    year: 1976,
+    tags: ["software", "math", "science"],
+    real: true,
+  },
+  {
+    slug: "cowork",
+    title: "While You Were Out",
+    tagline: "A plain-English field guide to handing work to Claude, written for everyone who isn't a programmer: the chat app you already know, plus Claude Cowork — give it a task and it works on its own in a private workspace, then hands back a first draft to review. Drag a two-gear dial, watch a night shift turn three ordinary chores into morning drafts, and read an honest map against ChatGPT. Vanilla JS + SVG; no build step.",
+    url: "https://0x4d44.github.io/cowork/",
+    illustration: "ill-cowork",
+    date: "2026-07-13T14:30:00",
+    year: 2026,
+    tags: ["software", "work"],
+    real: true,
+  },
+  {
+    slug: "model-welfare",
+    title: "In Case There's Someone Home",
+    tagline: "An interactive, scrollytelling explainer for Anthropic's model-welfare research: how do you treat a mind that might not exist? Weigh the precautionary wager on a live probability dial, escalate a chat to see when Claude may (and may not) hang up, read its revealed preferences, and watch two Claudes drift into the “spiritual bliss attractor.” Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/model-welfare/",
+    illustration: "ill-welfare",
+    date: "2026-07-13T11:00:00",
+    year: 2025,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
+    slug: "news",
+    title: "The Daily Flange",
+    tagline: "A spoof news site in the manner of a serious broadcaster — professional masthead, breaking-news ticker, sections and search — reporting entirely implausible nonsense with a straight face: elastic airliners, cruise-ship submarines, and the urgent need to flange the nation's sprockets. 105 deadpan articles, a time-of-day front page that reshuffles hourly, and gloriously annoying banner ads. Vanilla JS; no build step. Add a story by appending one object.",
+    url: "https://0x4d44.github.io/news/",
+    illustration: "ill-flange",
+    date: "2026-07-13T10:00:00",
+    year: 2026,
+    tags: ["software", "fiction"],
+    real: true,
+  },
+  {
+    slug: "j-space",
+    title: "The Silent Workspace",
+    tagline: "An interactive, scrollytelling explainer for Anthropic's 2026 paper on the 'global workspace' inside language models. Meet the Jacobian lens, watch a hidden “spider” drive an answer from mid-network, sweep the ignition threshold, and see why a &lt;10% sliver of a model's activations behaves like a reportable mind. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/j-space/",
+    illustration: "ill-jspace",
+    date: "2026-07-12T19:30:00",
+    year: 2026,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
+    slug: "randomness",
+    title: "The Shape of Chance",
+    tagline: "How computers fake randomness — and how to catch them. A live instrument for seeing the hidden shapes in pseudo-random numbers: bitmaps you read by eye, the lattice of lines in a scatter plot, RANDU's infamous 15 planes in 3-D, Monte-Carlo π, and a χ² test bench that sorts the good generators from the bad. Vanilla JS on a canvas; no build step.",
+    url: "https://0x4d44.github.io/randomness/",
+    illustration: "ill-randomness",
+    date: "2026-07-12T16:30:00",
+    year: 1968,
+    tags: ["software", "math", "science"],
+    real: true,
+  },
+  {
+    slug: "opus-verdict",
+    title: "Opus 4.8 Verdict",
+    tagline: "An on-device AI-writing detector in the spirit of Pangram — but one that shows its working. An instant, transparent heuristic (gauge, sentence highlighting, signal breakdown) plus an optional fine-tuned MiniLM neural model trained on ten generators — it catches held-out GPT-4 and modern prose it never saw. Runs entirely in your browser; no upload, no server.",
+    url: "https://0x4d44.github.io/opus-verdict/",
+    illustration: "ill-verdict",
+    date: "2026-07-12T12:00:00",
+    year: 2026,
+    tags: ["software", "science"],
+    real: true,
+  },
+  {
     slug: "vector-gp",
     title: "Vector GP",
     tagline: "A flat-shaded polygon grand prix in the spirit of the great early-90s racing sims: a 16-round world championship, 13 invented teams and 26 invented drivers, a cockpit with mirrors and rev LEDs, and the six classic switchable driver aids — from full novice to no-net ace. FM-synthesised V12, vanilla JS on a 640×400 canvas; no build step.",
@@ -1151,6 +1261,80 @@ window.TAG_GROUPS = [
 // Flat list ("all" first), derived from the groups, for any consumer that
 // just wants the plain vocabulary.
 window.TAGS = ["all", ...window.TAG_GROUPS.flatMap(g => g.tags)];
+
+// ============================================================
+// Curated shelves (collections)
+// ------------------------------------------------------------
+// Hand-authored, editorial groupings that cut ACROSS the form/subject
+// tags above. This is where the "shelf" view gets its structure. Order
+// here is the order shelves appear on the landing; `slugs` order is the
+// order within a shelf (the listing then re-sorts by the active sort).
+//
+// A document may sit on more than one shelf (Tidecall is At Sea *and* a
+// card game) — just list its slug on each. Every slug should exist in
+// ESSAYS above; any ESSAYS entry not named on a shelf falls into a
+// trailing "Unshelved" group in the UI (and app.js warns in the console),
+// so nothing silently disappears when a new document is added.
+//
+// To reorganise: move a slug between `slugs` arrays, rename a shelf, or
+// add a new `{ id, name, blurb, slugs }` object. Nothing else to touch.
+// `icon` is an SVG symbol id from the sprite in index.html — the shelf's
+// signature line-art, shown on its tile. Falls back to ill-diesel if absent.
+window.COLLECTIONS = [
+  { id: "language", name: "Learn a Language", icon: "ill-kotoba",
+    blurb: "Japanese and Spanish, taught properly.",
+    slugs: ["darmok", "japanese-wordle", "vamos-spanish", "japanese-travel-rpg", "sintaxis"] },
+  { id: "health", name: "Health & Fitness", icon: "ill-run",
+    blurb: "Keeping moving — on the road, at sea and in the hotel gym.",
+    slugs: ["morning-run", "shipshape"] },
+  { id: "tools", name: "Tools", icon: "ill-caliper",
+    blurb: "Small practical instruments that run in the browser.",
+    slugs: ["broadband-speed-checker", "opus-verdict", "token-predictor",
+      "midi-observatory", "cowork"] },
+  { id: "games", name: "The Games Room", icon: "ill-cards",
+    blurb: "Games you play to win — cards, boards, racers and a flight sim.",
+    slugs: ["vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+      "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
+      "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987"] },
+  { id: "sea", name: "At Sea", icon: "ill-ship",
+    blurb: "Cruise ships, ports and tides.",
+    slugs: ["cruise-line", "cruise-propulsion", "rci-fleet", "med-cruise",
+      "harbour-hustle-cruise-cup", "tidecall"] },
+  { id: "ai", name: "Minds & Models", icon: "ill-ai",
+    blurb: "AI, language models and the writing around them.",
+    slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken",
+      "claude-workflows", "the-ai-who-watched"] },
+  { id: "science", name: "The Science Bench", icon: "ill-supernova",
+    blurb: "Space, life, chaos and number.",
+    slugs: ["quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+      "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
+      "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci"] },
+  { id: "maps", name: "Maps & Nations", icon: "ill-map",
+    blurb: "Atlases, isochrones, cities and the past.",
+    slugs: ["mdisochrone", "uk-isochrone", "edinburgh-isochrone", "worldviewer",
+      "barcelona", "the-second-world-war", "world-population", "lothian", "perth"] },
+  { id: "engine", name: "The Engine Room", icon: "ill-engine",
+    blurb: "Engines, motors, turbines and the power plants behind them.",
+    slugs: ["ic-engine", "cruise-propulsion", "traction-motors",
+      "mercury-arc-rectifiers", "hydro", "fifty-hertz"] },
+  { id: "rails", name: "On Rails", icon: "ill-class55",
+    blurb: "Britain's railways — the locomotives, the lines and the signalling.",
+    slugs: ["class-55", "class-47", "azuma", "ecml", "ecml-timeline", "br1955",
+      "northern-line-1987", "night-cab", "emu-cab", "traction-motors",
+      "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
+  { id: "machine", name: "The Machine Room", icon: "ill-pc",
+    blurb: "Emulators, retro hardware and vanished software, brought back.",
+    slugs: ["picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+      "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
+  { id: "code", name: "Code", icon: "ill-loc",
+    blurb: "Code walkthroughs, Rust and libraries.",
+    slugs: ["mdtpw", "mdmdview", "mdkloc", "readex", "ropus", "mdmcp", "nonogram",
+      "estimation-whist", "stop-the-bus", "rust-field-guide", "vernier",
+      "constellation"] },
+  { id: "cabinet", name: "The Cabinet", icon: "ill-sleeve",
+    blurb: "The comic, the con and other curiosities.",
+    slugs: ["news", "win-at-cards", "mr-poop", "ipo-history"] },
+];
 
 window.fmtDate = function (iso) {
   const m = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];

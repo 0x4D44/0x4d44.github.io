@@ -14,9 +14,26 @@ strengthen the skill's process but never weakens its invariants.
   (JSX transpiled at load, no bundler), or a pre-built Vite bundle.
 
 ## Gates (build / lint / test)
-There is **no build system, no package manager, and no test suite** at the repo
-root — files are served verbatim (`.nojekyll`). So the gate is **manual
-verification in a real browser served over HTTP**:
+There is **no bundler** — files are served verbatim (`.nojekyll`). But the repo
+root **does** carry a `package.json` whose `test` / `build` scripts chain the
+per-document test suites (brilliancy, humanity-retention, shipshape,
+span-of-control, tidecall, onu, cruise-line, morning-run, darmok). **Run it** —
+it is the only automated gate there is:
+
+```
+npm run build     # the static validators only (fast)
+npm test          # the above plus engine suites + the onu headless-browser test
+```
+
+- Run with **stdin closed** (`npm test </dev/null`) so a stdin-reading test can't hang.
+- The scripts are a single `&&` chain that hard-codes each doc's test path, so
+  **retiring or renaming a doc that ships tests means pruning its segment from
+  both scripts** — otherwise the dangling `node` call fails the whole gate.
+- A doc that ships **no** tests (most of them) is not referenced there; adding one
+  needs no `package.json` change.
+
+Documents with no automated coverage still gate on **manual verification in a
+real browser served over HTTP**:
 
 ```
 python -m http.server 8000      # then open http://localhost:8000/

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Vector GP — World Circuit 1991</title>
 <meta name="description" content="A flat-shaded polygon grand prix racing homage to the early-90s sims: 16 circuits, 13 teams, 26 drivers, FM sound, six driver aids.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2304041a'/%3E%3Cpolygon points='1,11 6,9 12,9 15,11 15,13 1,13' fill='%23f03040'/%3E%3Ccircle cx='4' cy='13' r='2' fill='%23181818'/%3E%3Ccircle cx='12' cy='13' r='2' fill='%23181818'/%3E%3C/svg%3E">
@@ -26,11 +26,6 @@
     image-rendering: crisp-edges;
     display: block;
     background: #04041a;
-  }
-  /* scanline flavour */
-  #stage::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.13) 0 1px, transparent 1px 3px);
   }
   #menu {
     position: absolute; inset: 0; display: none;
@@ -99,9 +94,50 @@
     position: absolute; left: 0; right: 0; bottom: 4px; text-align: center;
     color: #384888; font-size: 10px; z-index: 6; pointer-events: none;
   }
-  @media (pointer: coarse) {
-    #note::after { content: "A KEYBOARD IS REQUIRED TO DRIVE — SPECTATE FREELY ON TOUCH"; }
+  /* ---- on-screen touch controls (mobile) ---------------------------- */
+  :root { --tb: min(17vmin, 96px); --tbs: min(11vmin, 60px); --tg: 2.2vmin; }
+  #touch {
+    position: fixed; inset: 0; z-index: 8; display: none; pointer-events: none;
   }
+  body.touch.driving #touch { display: block; }
+  .tbtn {
+    position: absolute; pointer-events: auto;
+    width: var(--tb); height: var(--tb);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 2px solid #4858c8; border-radius: 16px;
+    background: rgba(16,20,64,0.40);
+    box-shadow: 0 0 0 2px rgba(4,4,26,0.55), 0 0 16px rgba(32,32,128,0.45) inset;
+    color: #c8d0f8; font-family: inherit; letter-spacing: 1px; opacity: 0.9;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none; -webkit-tap-highlight-color: transparent;
+    transition: background 0.04s linear, border-color 0.04s linear;
+  }
+  .tbtn.on { background: rgba(56,72,190,0.80); border-color: #9aa8ff; color: #fff; opacity: 1; }
+  .tbtn .glyph { font-size: min(7.5vmin, 42px); line-height: 1; }
+  .tbtn .lbl { font-size: min(2.6vmin, 12px); margin-top: 3px; opacity: 0.82; }
+  .tbtn.steer { border-radius: 50%; }
+  #t-left  { left: 3.5vmin;  bottom: 4vmin; }
+  #t-right { left: calc(3.5vmin + var(--tb) + var(--tg)); bottom: 4vmin; }
+  #t-brake { right: calc(3.5vmin + var(--tb) + var(--tg)); bottom: 4vmin; color: #f0a4a4; border-color: #9a4a4a; }
+  #t-gas   { right: 3.5vmin; bottom: 4vmin; color: #8ef0a8; border-color: #3a8a54; }
+  #t-brake.on { background: rgba(176,54,54,0.82); border-color: #ffb0b0; color: #fff; }
+  #t-gas.on   { background: rgba(46,150,72,0.82); border-color: #a0ffbe; color: #fff; }
+  .gearbtn { width: var(--tbs); height: var(--tbs); border-radius: 12px; display: none; }
+  body.touch.driving.manual .gearbtn { display: flex; }
+  #t-gearup { right: 3.5vmin; bottom: calc(4vmin + var(--tb) + var(--tg)); }
+  #t-geardn { right: calc(3.5vmin + var(--tbs) + var(--tg)); bottom: calc(4vmin + var(--tb) + var(--tg)); }
+  .gearbtn .glyph { font-size: min(5vmin, 26px); }
+  #t-pause { top: 2vmin; right: 2vmin; width: min(11vmin, 46px); height: min(11vmin, 46px); border-radius: 10px; }
+  #t-pause .glyph { font-size: min(4.6vmin, 20px); letter-spacing: -3px; }
+  #tback {
+    position: fixed; top: 2vmin; left: 2vmin; z-index: 9; display: none;
+    align-items: center; gap: 6px; pointer-events: auto; cursor: pointer;
+    padding: 8px 14px; border: 2px solid #4858c8; border-radius: 10px;
+    background: rgba(8,8,48,0.88); color: #c8d0f8;
+    font-family: inherit; font-size: min(3.2vmin, 14px); letter-spacing: 2px;
+    user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  #tback .glyph { font-size: 0.9em; }
 </style>
 </head>
 <body>
@@ -110,8 +146,20 @@
     <div id="menu"></div>
     <div id="note"></div>
   </div>
+  <!-- on-screen driving controls, shown automatically on touch devices -->
+  <div id="touch" aria-hidden="true">
+    <div class="tbtn steer" id="t-left"  data-hold="left"><span class="glyph">&#9664;</span></div>
+    <div class="tbtn steer" id="t-right" data-hold="right"><span class="glyph">&#9654;</span></div>
+    <div class="tbtn pedal" id="t-brake" data-hold="brk"><span class="glyph">&#9660;</span><span class="lbl">BRAKE</span></div>
+    <div class="tbtn pedal" id="t-gas"   data-hold="thr"><span class="glyph">&#9650;</span><span class="lbl">GAS</span></div>
+    <div class="tbtn gearbtn" id="t-gearup" data-tap="gearup"><span class="glyph">&#9650;</span><span class="lbl">GEAR</span></div>
+    <div class="tbtn gearbtn" id="t-geardn" data-tap="geardn"><span class="glyph">&#9660;</span><span class="lbl">GEAR</span></div>
+    <div class="tbtn" id="t-pause" data-tap="pause"><span class="glyph">&#10073;&#10073;</span></div>
+  </div>
+  <div id="tback" data-back="1"><span class="glyph">&#9664;</span>BACK</div>
   <script src="teams.js"></script>
   <script src="tracks.js"></script>
   <script src="game.js"></script>
+<script defer src="/almanac-back.js"></script>
 </body>
 </html>

@@ -3,6 +3,19 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-13 — The `/deep-review` workflow is **diff-oriented**: run from a fresh
+  worktree off `origin/main` (empty diff), it silently retargets to the most recent
+  *commit* instead of erroring. A darmok area-review launched this way reviewed the
+  latest `news` article-drop commit instead — all 37 agents, wrong slice. For an
+  AREA review (a first-ever pass over existing code, not a change review), don't use
+  the diff path: hand-roll the fan-out and pass the **explicit file slice** (absolute
+  paths + "ignore git history") as args, or the lenses review whatever the last commit
+  touched. The misfire's findings can still be real — verify and file them, but don't
+  log that area as reviewed. Separately: for the pure engines in these vanilla-JS docs
+  (`darmok/engine.js`), stop *guessing* at bugs (my unanswerable-typeback / timer-leak
+  guesses were all refuted) and instead run **differential oracles** over the whole
+  corpus with `node` — that is what surfaced that 20/513 words reject the exact rōmaji
+  the card teaches (asymmetric `ー`/apostrophe/`づ` folding in `normalizeAnswer`).
 - 2026-07-11 — Headless drives that "play" a document with synthetic `el.click()` /
   `dispatchEvent` bypass browser hit-testing entirely, so they cannot catch the whole
   class of "invisible thing eats real taps" bugs. `brilliancy` shipped its full 8-round
