@@ -438,13 +438,18 @@
     var target = /^https?:|^\.\.\//.test(href) ? ' rel="nofollow"' : "";
     var shine = fx.indexOf("slide") !== -1 ? '<span class="shine"></span>' : "";
     var head = ad.blink ? '<span class="blink">' + esc(ad.headline) + '</span>' : esc(ad.headline);
-    var bob = ad.bob ? '<span class="bob">' + esc(ad.emoji || "") + '</span> ' : (ad.emoji ? esc(ad.emoji) + " " : "");
+    var iconSvg = ad.icon && window.AD_ICONS && window.AD_ICONS[ad.icon];
+    var badge = iconSvg
+      ? '<span class="ad-icon' + (ad.bob ? ' bob' : '') + '"><svg viewBox="0 0 64 64" aria-hidden="true">' + iconSvg + '</svg></span>'
+      : (ad.bob ? '<span class="bob">' + esc(ad.emoji || "") + '</span> ' : (ad.emoji ? esc(ad.emoji) + " " : ""));
+    var headBadge = iconSvg ? "" : badge;
     return '' +
       '<a class="' + cls.join(" ") + '" href="' + esc(href) + '"' + target + ' style="background:' + esc(bg) + ';color:' + esc(fg) + '">' +
         '<span class="ad-label">Ad</span>' + shine +
         '<span class="ad-inner">' +
+          (iconSvg ? badge : "") +
           '<span style="flex:1">' +
-            '<h5>' + bob + head + '</h5>' +
+            '<h5>' + headBadge + head + '</h5>' +
             '<p>' + esc(ad.body) + '</p>' +
           '</span>' +
           '<span class="cta">' + esc(ad.cta || "Learn more") + '</span>' +

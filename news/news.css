@@ -328,6 +328,22 @@ img { max-width: 100%; }
 .ad-mpu h5 { font-size: 21px; }
 .ad-mpu p { font-size: 13.5px; }
 
+/* Vector-art icon badge (replaces the plain emoji when an ad has `icon`) */
+.ad-icon {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,255,255,.2); box-shadow: inset 0 0 0 1px rgba(255,255,255,.28);
+}
+.ad-icon svg { width: 30px; height: 30px; color: inherit; }
+.ad-leader .ad-icon { order: -1; }
+.ad-mpu .ad-inner { position: relative; }
+.ad-mpu .ad-icon { position: absolute; top: 14px; right: 14px; width: 44px; height: 44px; }
+.ad-mpu .ad-icon svg { width: 26px; height: 26px; }
+.ad-mpu h5 { padding-right: 52px; }
+.ad-icon.bob { animation: ad-bob .8s ease-in-out infinite; }
+@media (max-width: 620px){ .ad-leader .ad-icon { order: 0; } }
+@media (prefers-reduced-motion: reduce) { .ad-icon.bob { animation: none; } }
+
 /* Loud animated ads. .ad-flicker flickers; .ad-slide has a moving shine;
    .ad-jitter wobbles the whole unit for maximum annoyance. */
 @keyframes ad-flicker {
