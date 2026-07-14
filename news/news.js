@@ -603,14 +603,24 @@
     document.title = a.headline + " — The Daily Flange";
     var seed = hash(a.id);
 
+    // A paragraph carrying newlines is verse: keep its line breaks, render each
+    // body item as one stanza, and skip the lead/drop-cap treatment. (Data uses
+    // real "\n" for verse lines — never " / " separators, which render as slashes.)
+    var isVerse = (a.body || []).some(function (p) { return p.indexOf("\n") !== -1; });
     var bodyParas = (a.body || []).map(function (p, i) {
-      var html = '<p' + (i === 0 ? ' class="lead"' : '') + '>' + esc(p) + '</p>';
-      // drop the pull-quote roughly a third of the way in
-      if (a.pullQuote && i === Math.min(1, (a.body.length - 1))) {
+      var content = esc(p).replace(/\n/g, "<br>");
+      var cls = isVerse ? ' class="verse"' : (i === 0 ? ' class="lead"' : '');
+      var html = '<p' + cls + '>' + content + '</p>';
+      // For prose, drop the pull-quote in roughly a third of the way; for verse,
+      // never mid-poem (it would break the stanzas) — it goes after the piece.
+      if (!isVerse && a.pullQuote && i === Math.min(1, (a.body.length - 1))) {
         html += '<blockquote class="pullquote">&ldquo;' + esc(a.pullQuote) + '&rdquo;</blockquote>';
       }
       return html;
     }).join("");
+    if (isVerse && a.pullQuote) {
+      bodyParas += '<blockquote class="pullquote">&ldquo;' + esc(a.pullQuote) + '&rdquo;</blockquote>';
+    }
 
     var tags = (a.tags || []).map(function (t) {
       return '<a href="search.html?q=' + encodeURIComponent(t) + '">#' + esc(t) + '</a>';
