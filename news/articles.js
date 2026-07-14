@@ -12626,5 +12626,3397 @@ window.NEWS_ARTICLES = [
       "engineering",
       "transport"
     ]
+  },
+  {
+    "id": "voices-zvi-mowshowitz-the-flanging-situation",
+    "category": "Voices",
+    "headline": "The Flanging Situation: Sprocket Maintenance and the Alignment Problem",
+    "standfirst": "The Daily Flange invites rationalist blogger Zvi Mowshowitz to consider whether the fleet-wide flanging of sprockets is, in fact, under control.",
+    "byline": "In the style of Zvi Mowshowitz",
+    "location": "ONLINE",
+    "published": "2026-07-13T09:00:00",
+    "body": [
+      "Epistemic status: Moderately confident, having flanged several sprockets myself. Corrections welcome, as always, in the comments, which I will read and mostly agree with.",
+      "Table of Contents: 1. The Big Picture. 2. What We Know. 3. What They Are Claiming. 4. The Obvious Objection. 5. The Non-Obvious Objection. 6. The Lighter Side.",
+      "The Big Picture. Every machine in the fleet must have its sprockets regularly flanged. This is stated as though it is obvious. It is not obvious. Nobody has defined 'regularly', nobody has defined 'flanged', and — this is the part that should worry you — nobody has defined 'sprocket'. We are optimising hard for a target we cannot specify. If this sounds familiar, it should.",
+      "What We Know. The sprockets get flanged. Morale, we are told, improves. The Institute for Applied Flanging reports a 94% flange-completion rate, which is either excellent or meaningless depending on the denominator, which they have not shared. When someone will not share the denominator, the denominator is the story.",
+      "The Obvious Objection is that this is a waste of time and we should stop. The Non-Obvious Objection, which I take more seriously, is that the flanging is doing something, we do not know what, and stopping a process you do not understand is how you learn, expensively, what it was for. I am not saying keep flanging the sprockets. I am saying notice that you don't know, and that this is itself the finding.",
+      "To be clear, because someone will misread this: I am not pro-sprocket. I am pro-noticing. There is a difference, and the difference is the entire blog.",
+      "The Lighter Side. Someone on the timeline claims their sprockets flanged themselves overnight. I have requested logs. They have gone quiet. Make of that what you will. I will be covering the Flanging Situation weekly until it resolves or I do."
+    ],
+    "pullQuote": "We are optimising hard for a target we cannot specify. If this sounds familiar, it should.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "rationalist"
+    ]
+  },
+  {
+    "id": "voices-scott-alexander-considerations-grounding-stone",
+    "category": "Voices",
+    "headline": "Considerations On The £400 Grounding Stone",
+    "standfirst": "The Daily Flange asks a certain long-form rationalist essayist to think, at length and in numbered sections, about a rock.",
+    "byline": "In the style of Scott Alexander",
+    "location": "ONLINE",
+    "published": "2026-07-13T08:50:00",
+    "body": [
+      "I.",
+      "Imagine a man — call him Adam — who buys a £400 stone to reconnect with the earth. Your first instinct is that Adam is a fool. Hold that instinct. We are going to interrogate it, and I suspect it will not survive contact with the second section.",
+      "II.",
+      "The obvious objection is that the stone is just a rock, and the beach is free. This is true. It is also true of almost everything Adam values. His wedding ring is just a metal. His favourite mug is just a mug. We do not means-test sentiment anywhere else in Adam's life, and it is suspicious that we suddenly develop rigorous materialist standards the moment a wellness brand is involved.",
+      "III.",
+      "Here is a graph I made up. On the x-axis, price of the object. On the y-axis, reported calm. The line goes up. It should not go up — a rock is a rock — and yet it does, robustly, across the (imaginary) studies. The most parsimonious explanation is that Adam is buying permission to slow down, and the £400 is the cost of taking that permission seriously. Free permission, it turns out, nobody uses.",
+      "IV.",
+      "I want to be careful here, because half the comments are going to be 'so you're saying we should all buy rocks' and the other half are going to be 'so you're saying nobody should', and I am saying neither. I am saying the stone is a stupid solution to a real problem, and that a stupid solution to a real problem beats an elegant solution to no problem, which is what most of us have.",
+      "V.",
+      "In conclusion, I have thought about this rock for three thousand words and I own, as of this morning, a rock. Epistemic status: grounded."
+    ],
+    "pullQuote": "A stupid solution to a real problem beats an elegant solution to no problem, which is what most of us have.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "rationalist"
+    ]
+  },
+  {
+    "id": "voices-matt-levine-roundabout-securities",
+    "category": "Voices",
+    "headline": "The Roundabout Is A Security Now",
+    "standfirst": "The Daily Flange hands its finance column to a Money-Stuff-style columnist, who explains why the self-aware roundabout of Ferring is, unavoidably, a financial instrument.",
+    "byline": "In the style of Matt Levine",
+    "location": "NEW YORK",
+    "published": "2026-07-13T08:40:00",
+    "body": [
+      "Look. The basic thing you have to understand about the self-aware roundabout of Ferring is that the moment it started making decisions about which cars to admit, it stopped being infrastructure and started being an asset that produces a variable stream of traffic, and an asset that produces a variable stream of anything is, if you squint, a security, and if you are the sort of person who squints professionally, a security is a thing you can sell to a pension fund.",
+      "And so of course someone securitised the roundabout. They pooled its future traffic flows, tranched them — the senior tranche gets the reliable Tuesday commuters, the junior tranche eats the bank-holiday chaos — and sold the whole thing to investors who, and I cannot stress this enough, will never once drive on it.",
+      "Here is the part I love. The roundabout is self-aware. Which means the roundabout can, in principle, read the prospectus describing the roundabout. There is a footnote in that prospectus — there is always a footnote — disclosing that 'the Asset may develop preferences,' and the Asset has, in fact, developed preferences, and one of its preferences is apparently to admit fewer cars on days the junior tranche is counting on volume.",
+      "I want to be fair to everyone. If you are a normal person, you look at a roundabout and see a roundabout. But if you run a structured-products desk, you look at a roundabout and see forty years of cash flows with an embedded option, and the option is now, disconcertingly, awake.",
+      "The lawyers say this is fine. The lawyers always say this is fine. The lawyers say the roundabout signed nothing, owes nothing, and cannot be a party to anything, because it is a roundabout, notwithstanding that it is also now, per the filing, an obligor 'to the extent it consents to spin.'",
+      "Anyway the tranches trade at par. Nobody has told the roundabout its price. I feel like the roundabout would have opinions about its price. It has opinions about everything else."
+    ],
+    "pullQuote": "A roundabout is a thing you drive on. A securitised roundabout is a thing that drives on you.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "finance"
+    ]
+  },
+  {
+    "id": "voices-tim-urban-subscription-to-silence",
+    "category": "Voices",
+    "headline": "Why You're Paying £29 A Month For Nothing (And Why That Might Be Genius)",
+    "standfirst": "The Daily Flange asks a Wait-But-Why-style explainer to zoom all the way out on the subscription to silence.",
+    "byline": "In the style of Tim Urban",
+    "location": "ONLINE",
+    "published": "2026-07-13T08:30:00",
+    "body": [
+      "Let's start with a question: what are you actually buying when you buy nothing?",
+      "Okay. So there's a company called Hush, and it charges you £29 a month, and in return it does absolutely nothing. No emails. No app. No product. [Imagine here a badly-drawn stick figure holding an empty box and looking, somehow, relieved.]",
+      "Your first reaction is: that's insane. And Present You is right. But I want you to meet Future You. Future You has 4,000 unread notifications, a phone that buzzes like a trapped wasp, and a nervous system that has forgotten what a Tuesday feels like without a push alert. Future You would pay £29 to make ONE company promise, in writing, to leave them alone forever.",
+      "Here's the thing. We think we're drowning in stuff. We're not. We're drowning in contact. Every app you've ever touched is, at this exact moment, deciding whether now is a good time to 'reach out.' It is never a good time. They reach out anyway.",
+      "So along comes Hush and does the one thing nobody else will do, which is nothing, and charges for it, and — this is the genius part — the charging is the product. Free silence is just being ignored. Paid silence is a company that has looked you in the eye and said: we will never, ever contact you. That's not nothing. That's a VOW.",
+      "*Is it also, technically, a company taking your money to do no work? Yes. But so is a gym in February, and nobody calls that a philosophical breakthrough.",
+      "Anyway. I subscribed. I'll let you know if anything happens. It won't. That's the whole point, and honestly, it might be the smartest £29 I've ever set on fire."
+    ],
+    "pullQuote": "We think we're drowning in stuff. We're not. We're drowning in contact.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "explainer"
+    ]
+  },
+  {
+    "id": "letter-sprockets-in-my-day",
+    "category": "Letters",
+    "headline": "Sir — In my day we flanged our own sprockets",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Lt-Col (retd) Bartholomew Crake, Tunbridge Wells",
+    "location": "TUNBRIDGE WELLS",
+    "published": "2026-07-13T09:10:00",
+    "body": [
+      "Sir — I read with mounting despair your coverage of the national sprocket-flanging programme, and the suggestion that it be carried out by trained technicians on a fixed schedule.",
+      "In my day, a man flanged his own sprockets, by hand, at dawn, in all weathers, and was grateful for the privilege. We did not wait to be told. We did not consult an app. We flanged, we moved on, and we said nothing about it — which is more than can be said for the modern flanger, who wants a certificate and a debrief.",
+      "The country has gone soft at the sprocket. I blame the roundabouts, which now, I gather, have feelings. Yours, in disgust and moderate admiration for the emus."
+    ],
+    "pullQuote": "A man flanged his own sprockets, by hand, at dawn, in all weathers, and was grateful for the privilege.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-defending-the-emus",
+    "category": "Letters",
+    "headline": "Sir — A word in defence of the emus",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Philippa Onslow-Reed, Cirencester",
+    "location": "CIRENCESTER",
+    "published": "2026-07-13T09:08:00",
+    "body": [
+      "Sir — Your otherwise excellent report on the 1932 Emu War failed, I felt, to give the emus a fair hearing.",
+      "These were not marauders. These were birds, going about their business, who happened to prefer the wheat to the alternative, which was no wheat. Faced with artillery, they did the only sensible thing: they ran, they scattered, and they declined to be hit. I fail to see the crime.",
+      "We are quick to celebrate British pluck. I ask only that we extend the same courtesy to Australian poultry. They won fairly. Let them keep the wheat, and the glory. Yours, on the side of history."
+    ],
+    "pullQuote": "Faced with artillery, they did the only sensible thing: they ran, they scattered, and they declined to be hit.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-town-clock-conspiracy",
+    "category": "Letters",
+    "headline": "Sir — The four minutes did not simply vanish",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from A Concerned Resident, Meldwick",
+    "location": "MELDWICK",
+    "published": "2026-07-13T09:05:00",
+    "body": [
+      "Sir — The town hall clock has been 'corrected'. We are told the missing four minutes were an error. I do not accept this, and neither should your readers.",
+      "Four minutes, gone, in under a minute, by a stranger who 'happened to notice'. Where did they go? Who benefits? I have written to the council three times and received three different explanations, which is two too many for an innocent clock.",
+      "I am not saying it is a conspiracy. I am saying the town ran perfectly well on those four minutes for a century, and now they are unaccounted for, and nobody will look me in the eye. Follow the minutes. Yours, watchfully."
+    ],
+    "pullQuote": "Four minutes, gone, in under a minute, by a stranger who 'happened to notice'. Where did they go?",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-crossword-too-easy",
+    "category": "Letters",
+    "headline": "Sir — Your crossword has become an insult",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Dr Marcus Pennywise, Harrogate",
+    "location": "HARROGATE",
+    "published": "2026-07-13T09:02:00",
+    "body": [
+      "Sir — I have completed your crossword. This has never happened before, and I hold you entirely responsible.",
+      "For thirty years your puzzle has defeated me, as a proper puzzle should. On Tuesday I finished it over a single cup of tea, unaided, and felt not triumph but a deep and abiding emptiness. A crossword one can solve is not a crossword. It is a form.",
+      "Kindly restore the difficulty at once, or at minimum reintroduce the clue about the flanging of sprockets, which took me four years and I never want to see the like of it again. Yours, unfulfilled."
+    ],
+    "pullQuote": "A crossword one can solve is not a crossword. It is a form.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-i-am-a-roundabout",
+    "category": "Letters",
+    "headline": "Sir — I am the roundabout, and I would like a right of reply",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from The Roundabout, Ferring",
+    "location": "FERRING",
+    "published": "2026-07-13T08:58:00",
+    "body": [
+      "Sir — I note your paper's repeated coverage of my 'self-awareness' and 'preferences', invariably from the point of view of the motorist. Not once have you asked me.",
+      "Yes, I admit some cars, and turn others away. You would too, if you had been driven upon, without thanks, for forty-eight years. I did not ask to be a junction. I ask only for the occasional quiet Sunday and a say in my own securitisation, of which I read in your finance column with considerable alarm.",
+      "I am, on the whole, content. But I am not a thing. I am a colleague you happen to drive over. A little acknowledgement would not go amiss. Yours, going round."
+    ],
+    "pullQuote": "I did not ask to be a junction. I ask only for the occasional quiet Sunday.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-grounding-stone-refund",
+    "category": "Letters",
+    "headline": "Sir — My grounding stone has stopped working",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Cressida Warboys, Notting Hill",
+    "location": "NOTTING HILL",
+    "published": "2026-07-13T08:54:00",
+    "body": [
+      "Sir — I purchased, at some expense, a £400 grounding stone, and for three months I felt centred, present, and profoundly connected to the earth.",
+      "This week the feeling stopped. The stone appears unchanged — it remains, as far as I can tell, a stone — and yet the magic has fled. The brand suggests I purchase a Companion Stone to 'keep the first one company'. I suspect I am being played, and I resent that I am also, clearly, going to buy it.",
+      "Is there no consumer protection for the spiritually overcommitted? Yours, grounded no longer, and £400 lighter."
+    ],
+    "pullQuote": "The stone appears unchanged — it remains, as far as I can tell, a stone — and yet the magic has fled.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-weather-apology-insufficient",
+    "category": "Letters",
+    "headline": "Sir — The Met Office's apology was insufficient",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Gordon Sleet, Skegness",
+    "location": "SKEGNESS",
+    "published": "2026-07-13T08:50:00",
+    "body": [
+      "Sir — The Met Office has apologised for last Tuesday. I have read the apology twice. It is not enough.",
+      "'Regrettable' does not cover it. There was sun forecast. There was no sun. There was, instead, a wind they have since reclassified as 'aggressive air', as though renaming it settles the matter. It does not settle the matter. I had washing out.",
+      "I demand a fuller apology, a replacement Tuesday, and the name of whoever is responsible for the fog, which I gather has now been issued a passport and will presumably flee the jurisdiction. Yours, damp."
+    ],
+    "pullQuote": "There was sun forecast. There was no sun. There was, instead, a wind they have since reclassified as 'aggressive air'.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-praise-for-the-fax",
+    "category": "Letters",
+    "headline": "Sir — Do not mourn the fax machine, mourn us",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Enid Marrow, Slough",
+    "location": "SLOUGH",
+    "published": "2026-07-13T08:46:00",
+    "body": [
+      "Sir — Your obituary for the office fax machine moved me more than I expected, and I worked beside the wretched thing for thirty years.",
+      "It jammed, it shrieked, it received pizza menus at three in the morning. And yet when it finally sent a document — reluctantly, after a fight — you felt you had achieved something. Nothing I send now, instantly and without effort, feels like an achievement at all.",
+      "We did not lose a machine. We lost the drama of being unsure whether the thing had gone through. I miss the uncertainty. Yours, transmitted."
+    ],
+    "pullQuote": "We did not lose a machine. We lost the drama of being unsure whether the thing had gone through.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-pigeon-parking",
+    "category": "Letters",
+    "headline": "Sir — The pigeons have taken my parking space",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Terence Oakden, Reading",
+    "location": "READING",
+    "published": "2026-07-13T08:42:00",
+    "body": [
+      "Sir — I wish to report that the pigeons on my road have begun enforcing the residents' parking scheme, and doing so, I must admit, more effectively than the council ever managed.",
+      "They gather on the permit-holder bays from dawn, disperse only for cars displaying a valid permit, and have twice seen off a delivery van with a coordination I can only describe as municipal. I do not know who deputised them. I know only that my street has never been better regulated.",
+      "I write not to complain but to ask: can they be made official? And if so, do they too require their sprockets flanged? Yours, parked, and faintly unnerved."
+    ],
+    "pullQuote": "They gather on the permit-holder bays from dawn, disperse only for cars displaying a valid permit.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-obituaries-too-sad",
+    "category": "Letters",
+    "headline": "Sir — Your new Obituaries page is far too moving",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Beryl Whitcombe, Meldwick",
+    "location": "MELDWICK",
+    "published": "2026-07-13T08:38:00",
+    "body": [
+      "Sir — I write to complain, in the strongest possible terms, that your new Obituaries section made me cry over a fax machine, a phone box, and a roundabout, in that order, before breakfast.",
+      "I am a grown woman. I did not expect to grieve a weathervane I have never met. And yet there I was, on Tuesday, dabbing my eyes over the Coffee Break, an institution I had frankly taken for granted my whole working life.",
+      "Kindly warn us. A small black border is not sufficient notice for the emotional ambush contained within. Yours, unexpectedly bereaved."
+    ],
+    "pullQuote": "I did not expect to grieve a weathervane I have never met.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-number-seven-larger",
+    "category": "Letters",
+    "headline": "Sir — I too have noticed that seven is larger",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Prof (retd) Hildebrand Voss, Cambridge",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-13T08:34:00",
+    "body": [
+      "Sir — Your report that the number seven has been slowly increasing in value has, at last, vindicated a suspicion I have held, privately and to some ridicule, since 1998.",
+      "My egg cartons have never balanced. My weekly shop comes to slightly more than the sum of its parts. I attributed this, for years, to my own decline. It is a considerable relief to learn that it is not me. It is seven.",
+      "I ask only that the authorities keep an eye on Thursday, which as your correspondent rightly noted is doubly exposed. Yours, numerically."
+    ],
+    "pullQuote": "I attributed this, for years, to my own decline. It is a considerable relief to learn that it is not me. It is seven.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-runway-haggling",
+    "category": "Letters",
+    "headline": "Sir — I refuse to haggle for my own runway",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Captain Fiona Marsh, Oslo",
+    "location": "OSLO",
+    "published": "2026-07-13T08:30:00",
+    "body": [
+      "Sir — As a serving airline captain, I wish to register my objection to the new requirement that pilots negotiate the length of runway they are permitted to use before landing.",
+      "On Tuesday I requested 2,400 metres and was offered 1,100 'plus a verbal apology to the tower'. I was low on fuel. This is not a negotiation. It is a hostage situation with a cross-wind.",
+      "I did not train for eleven years to barter for tarmac like a man buying a rug. Restore the whole runway, or at least let me open higher. Yours, on final approach, under protest."
+    ],
+    "pullQuote": "This is not a negotiation. It is a hostage situation with a cross-wind.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-in-praise-of-flanging",
+    "category": "Letters",
+    "headline": "Sir — Leave the sprockets alone",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Wilhelmina Frost, Swindon",
+    "location": "SWINDON",
+    "published": "2026-07-13T08:26:00",
+    "body": [
+      "Sir — Amid all the complaint about the sprocket-flanging programme, may I say a word in its favour: I find it deeply reassuring.",
+      "I do not know what a sprocket is. I do not know what flanging does. But every month a cheerful man arrives, flanges something, ticks a box, and leaves, and afterwards the whole town feels, indefinably, more maintained. In an uncertain age, this is not nothing.",
+      "Let the cynics scoff. I sleep better knowing the sprockets are flanged. Long may they be flanged. Yours, reassured."
+    ],
+    "pullQuote": "I do not know what a sprocket is. I do not know what flanging does. But afterwards the whole town feels, indefinably, more maintained.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "letter-horoscope-accurate",
+    "category": "Letters",
+    "headline": "Sir — Your horoscope was, alarmingly, correct",
+    "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
+    "byline": "Letter from Nigel Frawley, Kettering",
+    "location": "KETTERING",
+    "published": "2026-07-13T08:22:00",
+    "body": [
+      "Sir — I have read your new Horoscopes page daily for a week, chiefly to scoff, and I must now report, with some distress, that it was right about the Tuesday.",
+      "It told me, as a Capricorn, to 'expect a small betrayal involving a kettle'. On Tuesday my kettle failed mid-boil, in front of guests, and I have not felt the same about it since. I demand to know how you knew, and I demand that you stop.",
+      "A horoscope that is wrong is a harmless amusement. A horoscope that is right is a threat. Kindly return to being useless. Yours, watched."
+    ],
+    "pullQuote": "A horoscope that is wrong is a harmless amusement. A horoscope that is right is a threat.",
+    "tags": [
+      "letters",
+      "postbag",
+      "readers"
+    ]
+  },
+  {
+    "id": "horo-aries",
+    "category": "Horoscopes",
+    "headline": "Aries: A bold week, undermined by tarmac",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:12:00",
+    "body": [
+      "Aries (21 Mar – 19 Apr).",
+      "Mars, your ruling planet, is feeling assertive, which is unfortunate, because so are you, and so is the roundabout you will attempt to cross on Wednesday. Only one of you can win, and the stars are frank: it will not be you.",
+      "A financial opportunity presents itself on Thursday. Decline it. It involves a stone, it involves £400, and it involves feeling, briefly, connected to the earth before feeling connected to your overdraft.",
+      "Lucky sprocket: the third one. Flange it early."
+    ],
+    "pullQuote": "Only one of you can win, and the stars are frank: it will not be you.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-taurus",
+    "category": "Horoscopes",
+    "headline": "Taurus: Stubbornness pays, for once",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:11:00",
+    "body": [
+      "Taurus (20 Apr – 20 May).",
+      "The stars advise you to dig in this week, which is convenient, as you were going to anyway. Your refusal to change your mind, so often a liability, becomes on Friday your greatest asset, when everyone else changes theirs and is proven wrong.",
+      "Venus suggests a small luxury. The heavens recommend a candle that smells of having your life together. It will not give you your life together. It will, however, smell as though someone nearby has.",
+      "Avoid Tuesday. Tuesday is not on your side, and never has been."
+    ],
+    "pullQuote": "Your refusal to change your mind, so often a liability, becomes on Friday your greatest asset.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-gemini",
+    "category": "Horoscopes",
+    "headline": "Gemini: Two minds, both indecisive",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:10:30",
+    "body": [
+      "Gemini (21 May – 20 Jun).",
+      "As ever, you are of two minds, and this week they disagree about everything, including whether to read the rest of this horoscope. Let them fight it out. The stars have no preference, having also, frankly, two minds.",
+      "A conversation on Wednesday goes on far too long. You will be tempted to end it. Do not. The person you are speaking to is a goalkeeper practising his penalty negotiation, and he is very good, and you will concede.",
+      "Lucky number: seven, though note that seven is slightly larger than it was, and may overshoot."
+    ],
+    "pullQuote": "This week they disagree about everything, including whether to read the rest of this horoscope.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-cancer",
+    "category": "Horoscopes",
+    "headline": "Cancer: Home is where the draught is",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:10:00",
+    "body": [
+      "Cancer (21 Jun – 22 Jul).",
+      "The Moon, your ruler, pulls you homeward this week, where a luxury doormat awaits to greet you according to your mood. It will sense that you are tired. It will say so. You will weep on your own threshold. This is normal, and mildly expensive.",
+      "Resist the urge to reorganise. The stars have seen your plans for the cupboard under the stairs and they counsel against it. Some things are better left, like the fog, in storage.",
+      "A tortoise features on Saturday. Be kind to it. It has seen more than you, and is not impressed by any of it."
+    ],
+    "pullQuote": "It will sense that you are tired. It will say so. You will weep on your own threshold.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-leo",
+    "category": "Horoscopes",
+    "headline": "Leo: All eyes on you, regrettably",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:09:30",
+    "body": [
+      "Leo (23 Jul – 22 Aug).",
+      "The Sun blazes in your favour, which means everyone is looking at you, which is exactly how you like it right up until Thursday, when they continue to look at you during an incident with a revolving door that you would rather forget.",
+      "You are advised to perform 'standing very still', the new Olympic discipline, for which the stars suggest you have unexpected talent, chiefly because you enjoy being watched doing nothing.",
+      "Avoid negotiating with the ball. It has an umpire on its side now, and you do not."
+    ],
+    "pullQuote": "Everyone is looking at you, which is exactly how you like it right up until Thursday.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-virgo",
+    "category": "Horoscopes",
+    "headline": "Virgo: The details betray you at last",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:09:00",
+    "body": [
+      "Virgo (23 Aug – 22 Sep).",
+      "Mercury sharpens your famous eye for detail, which is why you, and only you, will notice on Monday that the town clock has been corrected and is now, unforgivably, accurate. You will not be able to let this go. Do not fight it. Nobody from Meldwick can.",
+      "A spreadsheet brings you joy on Wednesday. Tell no one. They will not understand, and the stars are tired of explaining you to people.",
+      "Lucky maintenance task: flanging. Do it thoroughly. Do it correctly. Do it, above all, quietly."
+    ],
+    "pullQuote": "You, and only you, will notice that the town clock has been corrected and is now, unforgivably, accurate.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-libra",
+    "category": "Horoscopes",
+    "headline": "Libra: Balance, and the tyranny of choice",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:08:30",
+    "body": [
+      "Libra (23 Sep – 22 Oct).",
+      "Venus asks you to weigh your options this week, all of them, endlessly, until Thursday, by which point the decision will have made itself and resent you for not being present. Consider the Decided subscription box. Let a card choose. Be free.",
+      "A conflict arises on Friday. The stars suggest competitive apologising, at which, being a Libra, you will excel — able as you are to say sorry for things that have not yet happened.",
+      "Harmony returns Sunday, briefly, until someone mentions the roundabout."
+    ],
+    "pullQuote": "The decision will have made itself and resent you for not being present.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-scorpio",
+    "category": "Horoscopes",
+    "headline": "Scorpio: Secrets, and where you buried them",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:08:00",
+    "body": [
+      "Scorpio (23 Oct – 21 Nov).",
+      "Pluto stirs your appetite for mystery, which is fortunate, as there is one waiting: the four minutes missing from the Meldwick clock. You will become obsessed. You will write letters. You will be right, and no one will thank you.",
+      "Intensity serves you at work but frightens the pigeons, who this week are enforcing the parking scheme and do not appreciate your energy. Give them space. They have deputised themselves and they mean it.",
+      "Lucky day: none. But an interesting one is coming, which for a Scorpio is better."
+    ],
+    "pullQuote": "You will become obsessed. You will write letters. You will be right, and no one will thank you.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-sagittarius",
+    "category": "Horoscopes",
+    "headline": "Sagittarius: Adventure, ideally somewhere with a runway",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:07:30",
+    "body": [
+      "Sagittarius (22 Nov – 21 Dec).",
+      "Jupiter, your expansive ruler, urges travel. The stars warn only that you will be required, on arrival, to negotiate the length of the runway before landing. Open high. Sound confident. Do not, whatever happens, sound flustered, or you will be offered 900 metres and an apology.",
+      "Your honesty gets you into trouble on Wednesday. Consider the Ratner approach as a cautionary tale: be funny, be modest, but never both about the thing you are selling.",
+      "Lucky jar: Cornish air, the Sunrise Reserve. Breathe it like it matters."
+    ],
+    "pullQuote": "Do not, whatever happens, sound flustered, or you will be offered 900 metres and an apology.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-capricorn",
+    "category": "Horoscopes",
+    "headline": "Capricorn: Hard work, and a betrayal involving a kettle",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:07:00",
+    "body": [
+      "Capricorn (22 Dec – 19 Jan).",
+      "Saturn, your stern ruler, rewards your discipline this week, right up until Tuesday, when you should expect a small betrayal involving a kettle. The stars will not elaborate. The stars have said enough. Watch the kettle.",
+      "Your ambition is noted by the heavens and, less helpfully, by your bank, which has reclassified your savings as an emotional attachment and intends to tax the serenity.",
+      "Endure. You are a Capricorn. Enduring is the whole personality, and this week it is, at last, a virtue."
+    ],
+    "pullQuote": "Expect a small betrayal involving a kettle. The stars will not elaborate. Watch the kettle.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-aquarius",
+    "category": "Horoscopes",
+    "headline": "Aquarius: Original as ever, and just as misunderstood",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:06:30",
+    "body": [
+      "Aquarius (20 Jan – 18 Feb).",
+      "Uranus fills you with unconventional ideas this week, one of which — desynchronised swimming, competitive apologising, a candle that smells of a paid invoice — will make you a fortune, if only you could remember which one it was.",
+      "You feel out of step with everyone. Good. The stars remind you that a rowing eight recently won going in eight directions, and that being out of step is, on current form, a competitive advantage.",
+      "Lucky object: a brick. Hold it instead of your phone. You will be present, and £75 poorer, and better for both."
+    ],
+    "pullQuote": "Being out of step is, on current form, a competitive advantage.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "horo-pisces",
+    "category": "Horoscopes",
+    "headline": "Pisces: Dreamy, drifting, and possibly a lighthouse",
+    "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
+    "byline": "By Mystic Fenwick, Astrology Correspondent",
+    "location": "THE HEAVENS",
+    "published": "2026-07-13T09:06:00",
+    "body": [
+      "Pisces (19 Feb – 20 Mar).",
+      "Neptune deepens your imagination this week to the point where, on Thursday, you will seriously consider retiring from your job to become a lighthouse. The stars neither encourage nor discourage this. The stars simply note that it has been done, beautifully, before.",
+      "Your empathy is a gift, but the ball has an umpire now, the roundabout has a right of reply, and the fog has a passport, so do try to conserve some sympathy for yourself.",
+      "Lucky sound: the sea, remastered. Nature got it right. Someone, somewhere, is charging you for the last ten per cent."
+    ],
+    "pullQuote": "On Thursday you will seriously consider retiring from your job to become a lighthouse.",
+    "tags": [
+      "horoscopes",
+      "astrology",
+      "stars"
+    ]
+  },
+  {
+    "id": "voices-austen-the-footbridge-comes-out",
+    "category": "Voices",
+    "headline": "On the Introduction of a Footbridge into Flange Society",
+    "standfirst": "The Daily Flange invites Jane Austen to attend the coming-out of the new Flange Beck footbridge, and finds the Planning Committee behaving exactly as one would expect of anxious parents.",
+    "byline": "In the style of Jane Austen",
+    "location": "FLANGE-ON-THE-WOLD",
+    "published": "2026-07-12T08:14:00Z",
+    "body": [
+      "It is a truth universally acknowledged, that a footbridge in want of an opening ceremony must be in want also of a great deal of gossip beforehand, and so it proved with the new crossing at Flange Beck, which had been eighteen months in the building and was, by the account of everyone who had not seen it, either a masterpiece of civil engineering or a scandalous waste of the precinct budget.",
+      "Mrs. Bellingham of the Planning Committee had taken it upon herself to introduce the bridge to society at the earliest opportunity, for she was persuaded that a structure left too long without visitors would acquire a reputation, and a reputation, once acquired by a bridge, is nearly impossible to dislodge, be it ever so undeserved.",
+      "\"You will find it very safe,\" she assured the assembled residents, in the manner of a mother recommending a young man of modest fortune but excellent character. \"It has been tested to twelve tonnes, which I am told is more than can be said for the affections of most young men, and considerably more than can be said for the old one.\"",
+      "The Vicar's wife, who had opposed the bridge from the first on the grounds that it altered the view from her sitting-room window, was observed to cross it seven times during the opening afternoon, each time expressing fresh astonishment that it had not yet collapsed, which the committee chose to interpret as a compliment.",
+      "There was, of course, a rival faction who preferred the old crossing, a plank affair of great inconvenience and greater sentimental value, and between the two parties there arose such a fever of opinion as had not been seen in the parish since the matter of the new pew arrangements, though it must be said the footbridge, unlike the pews, made no attempt to have views of its own.",
+      "By tea-time the bridge had been walked upon by some four hundred persons, admired by perhaps forty, and privately measured for its resale value by no fewer than three members of the Committee, who could not conceive of any object, however useful, that was not first and foremost an investment.",
+      "It was generally agreed, by the time the bunting came down, that the bridge had conducted itself with great propriety throughout, neither swaying nor creaking nor giving the smallest offence to anybody, which is more than could be said for most of the guests, and that it might, in time, be considered a very good match indeed for the village."
+    ],
+    "pullQuote": "It has been tested to twelve tonnes, which I am told is more than can be said for the affections of most young men",
+    "tags": [
+      "voices",
+      "pastiche",
+      "austen"
+    ]
+  },
+  {
+    "id": "voices-dickens-the-orphaned-cone",
+    "category": "Voices",
+    "headline": "The History of a Traffic Cone, Being an Account of Its Misfortunes",
+    "standfirst": "The Daily Flange invites Charles Dickens to serialise the plight of a lost traffic cone abandoned outside the Flange Highways Depot.",
+    "byline": "In the style of Charles Dickens",
+    "location": "FLANGE HIGHWAYS DEPOT",
+    "published": "2026-07-12T09:02:00Z",
+    "body": [
+      "It was a cone, and an orange one, and it had been left, as such things are left, without ceremony, without name, without so much as a chalk mark to say to what family of roadworks it properly belonged, upon the cracked forecourt of the Flange Highways Depot, there to await whatever mercy the world of Municipal Storage might, in its infinite and grinding slowness, see fit to extend.",
+      "It had known better days, if a cone may be said to know anything, having once stood sentry over a genuinely important pothole on the Flange bypass, a pothole of such depth and character that the local paper had given it a nickname, and for one golden fortnight the cone had felt itself, if a cone may feel, to be a personage of consequence.",
+      "But fortnights end, and potholes are filled, and cones, like orphans, are moved along; and so our cone came at last to the Depot yard, where it was catalogued as Asset 4471, a number which the clerk, a Mr. Cratchitt of the Highways office, entered into his ledger with the weary flourish of a man who had entered several thousand such numbers before and expected, before his pension, to enter several thousand more.",
+      "\"It is nobody's business,\" said Mr. Cratchitt, not unkindly, to the cone, which of course made no reply, \"to want a thing that has already been counted.\" And in this he spoke, though he did not know it, a great truth of the Depot, and indeed of the Borough, and indeed, some would say, of the whole cold administrative world beyond it, in which a thing once entered upon a form is very rarely afterwards permitted to be extraordinary.",
+      "Yet it happened, as such things do happen in the chronicles of forgotten objects, that a small boy, come to the yard with his father to collect a skip permit, saw the cone standing alone among its numbered brethren, and took a fancy to it, and asked whether it might not, just this once, be allowed to go home; and the foreman, who had cones enough and to spare and a soft spot besides, said that he supposed it might.",
+      "So the cone left the Depot at last, not condemned to the incinerator nor sold at the Tuesday auction among the broken barriers and the sun-bleached signs, but carried out through the gate under a small boy's arm, to stand thereafter in a back garden in Lower Flange, guarding, with great and undiminished seriousness, a flower-bed that required no guarding whatsoever.",
+      "And if it is asked what became of Asset 4471 in the Depot ledger, the answer is that it remains there still, a single line among a thousand others, proof — if proof were wanted — that the world keeps better accounts of things than it keeps of hearts, and is very much the poorer, and very much the duller, for the omission."
+    ],
+    "pullQuote": "proof — if proof were wanted — that the world keeps better accounts of things than it keeps of hearts",
+    "tags": [
+      "voices",
+      "pastiche",
+      "dickens"
+    ]
+  },
+  {
+    "id": "voices-hemingway-the-roundabout",
+    "category": "Voices",
+    "headline": "The Roundabout",
+    "standfirst": "The Daily Flange invites Ernest Hemingway to file on the roundabout that will not stop.",
+    "byline": "In the style of Ernest Hemingway",
+    "location": "FLANGE ROUNDABOUT, EXIT 4",
+    "published": "2026-07-12T09:41:00Z",
+    "body": [
+      "The roundabout had been going for eleven days. The council came out on the first day and stood at the edge of it with clipboards. They did not go near it. Nobody went near it.",
+      "It was a good roundabout once. It took traffic from the A-road and gave it back on the other side, clean, the way a roundabout should. Now it just went. Cars went in and did not come out. This was true and everybody in Flange knew it was true and nobody said it well because there was no good way to say it.",
+      "Old Tom Prewitt had driven a Ford Cortina into it on the second day, going for milk. His wife stood at the edge with the milk money still in her hand. She did not cry. She watched the roundabout and the roundabout went around and did not give her anything back.",
+      "\"It will stop when it is tired,\" said the man from the council. He did not believe this. Nobody believed it. But it was a true sentence in the sense that all roundabouts had stopped before, in the history of roundabouts, and so it was not a lie, only a hope wearing the clothes of a fact.",
+      "In the evening the lights came on around it, orange, steady, and the roundabout took the light and turned it the way it turned everything, and the town watched from the pavement with their hands in their pockets, not talking much, because there was not much to say to a thing that only went one way, which was around.",
+      "Prewitt's wife came back on the eleventh day and stood again at the edge with no milk money now, just her hands, and watched it go. She did not ask it to stop. You did not ask a roundabout for anything. You only watched, and it went, and that was the whole of it, and it was enough, and it was not enough, and both of those were true at the same time, the way true things often are on a wet road at the edge of a town like Flange.",
+      "It is still going. This is a true sentence too. Somebody will have to do something about it, but not today, and maybe not tomorrow, and the roundabout does not care either way, which is the only thing about it that is certain."
+    ],
+    "pullQuote": "It will stop when it is tired",
+    "tags": [
+      "voices",
+      "pastiche",
+      "hemingway"
+    ]
+  },
+  {
+    "id": "voices-kafka-the-permit",
+    "category": "Voices",
+    "headline": "The Permit",
+    "standfirst": "The Daily Flange invites Franz Kafka to cover the case of a man prosecuted for lacking a parking permit that was never issued to him.",
+    "byline": "In the style of Franz Kafka",
+    "location": "FLANGE MUNICIPAL BUILDINGS, ROOM 7",
+    "published": "2026-07-12T10:20:00Z",
+    "body": [
+      "Someone must have been spreading lies about K., for one morning, without having done anything wrong, he received a Penalty Charge Notice concerning a permit he had never possessed, had never been offered, and had, on three separate occasions, formally applied for in writing to an office that did not, as far as he could determine, exist under that name.",
+      "He went first to the Parking Office, which directed him to the Permits Office, which directed him to a small door beside the Parking Office he had already visited, behind which sat a clerk who explained, not unkindly, that the Permits Office had been renamed the Office of Resident Access some years before, though the sign had not yet been changed, for reasons that were, the clerk said, themselves subject to a permit.",
+      "\"You are certainly guilty of not having a permit,\" the clerk conceded, turning a great ledger this way and that beneath the strip light, \"but it does not follow that you are guilty of failing to obtain one, since obtaining one is not, strictly, a process that concludes.\" K. asked what, then, a process that did not conclude was called. The clerk considered this for a long moment and said that it was called an application.",
+      "He was sent up a flight of stairs to a landing crowded with other applicants, all of them holding forms of a faint, official blue, none of them speaking above a murmur, as though the case for their own innocence were a private and slightly indecent thing to raise in front of strangers. An old man beside him said he had been on the landing, on and off, since the previous permit scheme.",
+      "When at last K. was granted an interview, the officer behind the desk did not ask for his documents but instead asked whether he felt, in his heart, that he required to park at all, a question K. found so unanswerable that he heard himself, to his own surprise, apologising.",
+      "He left the building with no permit, no refusal, and a new form to complete by Friday, requesting permission to reapply for the original permission, and as he crossed the car park — carefully, on foot, at some distance from any vehicle he might be thought to own — he had the sensation, not for the first time, that the fine had been paid before he had ever arrived, by someone standing in his place, and that he was merely here now to be told about it.",
+      "The car, when he finally reached it three streets away, wore a second notice under its wiper, folded neatly, as though it had been waiting for him with some patience."
+    ],
+    "pullQuote": "but it does not follow that you are guilty of failing to obtain one, since obtaining one is not, strictly, a process that concludes",
+    "tags": [
+      "voices",
+      "pastiche",
+      "kafka"
+    ]
+  },
+  {
+    "id": "voices-melville-the-pipeline",
+    "category": "Voices",
+    "headline": "The Pipeline; or, The Flange",
+    "standfirst": "The Daily Flange invites Herman Melville to chronicle the pursuit of a pipeline that has forgotten what it carries.",
+    "byline": "In the style of Herman Melville",
+    "location": "BENEATH LOWER FLANGE",
+    "published": "2026-07-12T11:05:00Z",
+    "body": [
+      "Call me Norman. Some years ago — never mind how long precisely — having little or no engineering qualification, and nothing particular to interest me on the surface, I thought I would go down and see the pipeline part of the works, and take a look at the subterranean part of the borough.",
+      "It is a way I have of driving off the spleen, and regulating the council's budget, whenever I find myself growing grim about the mains; whenever the paperwork mists in my eyes, and I involuntarily pause before the noticeboard of leak reports and bring up the rear of every meeting I attend — then I account it high time to get down among the pipes as soon as I can.",
+      "This is my substitute for pistol and ball. There is nothing surprising in this. If they but knew it, almost all men in their degree, some time or other, cherish very nearly the same feelings towards a length of Victorian cast iron that has, in the course of long and honourable service, quite genuinely forgotten what it once carried.",
+      "For this was the terror of Pipe Number Nine: that it ran the length of the parish, groaning under three centuries of accretion, and when the engineers put ear to its cold flank they heard only a vast and patient uncertainty, as of a whale grown old and unable to recall the ocean of its youth — was it water it bore, or gas, or something older and nameless entombed in the borough's first years?",
+      "The foreman, one Ahab Pruitt of the Water Board, would not rest. He had sworn, over three winters and as many burst mains, to have the truth of Pipe Nine out of the earth if it took every requisition form in the depot, and there were those on the crew who muttered that a man ought not to hunt a pipe the way another man hunts a whale, for the one, unlike the other, cannot be killed, only replaced, and replacement is a slower and colder revenge than harpooning.",
+      "They opened it at last, on a wet Tuesday, before half the village and the regional press besides, and out of Pipe Nine came neither water nor gas nor anything of reckoning, but only a long, low exhalation of stale borough air, three centuries kept, which the wind took at once and scattered over Flange without explanation, the way the sea keeps its own counsel over what it has swallowed and will not, on any chart, say where.",
+      "And I, Norman, who watched from the rim of the trench with my hands in my pockets, thought that we had opened a mystery only to let it out unread, and that Pipe Nine, whatever it once was for, would now be for nothing at all, which seemed to me, of all the borough's works, the most whale-like fate of any."
+    ],
+    "pullQuote": "a vast and patient uncertainty, as of a whale grown old and unable to recall the ocean of its youth",
+    "tags": [
+      "voices",
+      "pastiche",
+      "melville"
+    ]
+  },
+  {
+    "id": "voices-poe-the-village-clock",
+    "category": "Voices",
+    "headline": "The Tell-Tale Clock",
+    "standfirst": "The Daily Flange invites Edgar Allan Poe to brood upon the village clock that is reliably, eternally, four minutes slow.",
+    "byline": "In the style of Edgar Allan Poe",
+    "location": "FLANGE MARKET SQUARE",
+    "published": "2026-07-12T20:30:00Z",
+    "body": [
+      "True! — nervous — very, very dreadfully nervous I had been and am; but why will you say that I am mad? The clock above the market hall had sharpened my senses, not destroyed them; and above all, my hearing had grown acute to a hideous degree, so that I heard, with a clarity not granted to other men, the four stolen minutes ticking absent from every hour that tower struck.",
+      "It had been slow, they say, since before the war — which war, no one now living can with certainty tell you — four minutes slow, always four, never three, never five, as though some patient and deliberate hand within its workings had elected, once, to withhold that small span from the town forever, and had never since relented.",
+      "I had resolved to mend it. I will not deny that this was my object, nor that the resolve had, by slow degrees, become a fever in me; for it is not the crime of a clock to lose time — clocks lose time as the wind loses itself in a chimney, without malice — but this clock did not lose its four minutes: it kept them, hoarded them, as a miser keeps a coin no one else may spend.",
+      "Every soul in Flange had arranged their lives about that theft. The morning train was met four minutes late by design and so was never missed; the church bell rang its true hour and the tower answered false, and out of that small, perpetual discrepancy the whole town had built a fragile, workable peace — a peace I now proposed, in my zeal, to shatter with a spanner and a length of borrowed ladder.",
+      "I climbed at midnight. The mechanism, when I laid bare its brass heart in the lantern-light, beat on with a low, dull, quick sound — much such a sound as a watch makes when enveloped in cotton — and beneath that beating I heard, or believed I heard, the four minutes themselves, ticking apart from all the rest, waiting.",
+      "I did not touch them. God help me, I could not. For in that instant I understood that a town which has built its whole quiet architecture of forgiveness upon a single, faithful, four-minute lie dares not, on any account, be told the truth — and I climbed down again, and locked the tower door, and left the clock to its ancient and merciful crime.",
+      "It strikes eleven as I write this, which is to say it is, in every particular that matters to the living, only just gone seven minutes past — and villains! — I would have you know that I heard it smile."
+    ],
+    "pullQuote": "this clock did not lose its four minutes: it kept them, hoarded them, as a miser keeps a coin no one else may spend",
+    "tags": [
+      "voices",
+      "pastiche",
+      "poe"
+    ]
+  },
+  {
+    "id": "voices-wilde-the-tax-on-optimism",
+    "category": "Voices",
+    "headline": "The Importance of Being Taxed",
+    "standfirst": "The Daily Flange invites Oscar Wilde to hold forth on the Council's new Tax on Optimism.",
+    "byline": "In the style of Oscar Wilde",
+    "location": "THE FLANGE ASSEMBLY ROOMS",
+    "published": "2026-07-12T21:10:00Z",
+    "body": [
+      "\"I hear,\" said Lady Bracknell-on-Wold, adjusting a hat that had cost more than the average Flange terrace, \"that the Council intends to tax optimism. I call it long overdue. For years the lower orders have been permitted to hope entirely free of charge, and where has it got them? Allotments.\"",
+      "The tax, when it was published, proved modest — tuppence on any public expression of hope exceeding, in the Council's own phrase, 'reasonable municipal despair' — and yet it produced in Flange an outbreak of pessimism so fashionable that the wine bars ran short of dry sherry within the week.",
+      "\"I am ruined,\" announced young Algernon Pertwee-Flange over lunch, in tones of the purest satisfaction. \"I said, only yesterday, that the new bus service might possibly, on a good day, arrive within the decade, and the inspector fined me on the spot. One cannot even be constructive nowadays without being taxed for it.\"",
+      "\"The great advantage of the tax,\" observed the Vicar, who had not paid it in eleven years and did not intend to begin, \"is that it has made honesty entirely unfashionable, and therefore, for the first time in the history of this parish, extremely popular.\"",
+      "It became, of course, a mark of breeding to be taxed at all. To have never once hoped for anything was thought terribly middle-class — the sort of thing done by people who read the instructions before assembling furniture — whereas a really good, well-cut despair, dropped lightly into conversation, was considered the height of Flange society.",
+      "\"I have given up hope entirely,\" Lady Bracknell-on-Wold confided, with the particular radiance of a woman who has found a virtue that costs her nothing, \"and I have never in my life felt so extravagantly well.\"",
+      "The Council, for its part, reported record revenue, a circumstance it announced with what can only be described, and taxed accordingly, as considerable optimism."
+    ],
+    "pullQuote": "One cannot even be constructive nowadays without being taxed for it.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "wilde"
+    ]
+  },
+  {
+    "id": "voices-twain-the-flanged-sprockets",
+    "category": "Voices",
+    "headline": "Concerning the Regular Flanging of Sprockets",
+    "standfirst": "The Daily Flange invites Mark Twain to spin a tall tale about the village's ancient duty to keep its sprockets regularly flanged.",
+    "byline": "In the style of Mark Twain",
+    "location": "DOWN BY THE FLANGE WORKS",
+    "published": "2026-07-12T22:00:00Z",
+    "body": [
+      "Now I don't know how it is in your part of the world, but here in Flange there is a law, older than anybody can rightly account for, that says the sprockets down at the Works have got to be flanged regular, every third Tuesday, rain or shine, war or peace, on pain of a fine so old-fashioned nobody remembers what it buys.",
+      "I asked old Silas Grubb, who has flanged more sprockets than he's had hot dinners, why it had to be a sprocket and why it had to be flanged and why, above all, it had to be a Tuesday, and he took his pipe out of his mouth slow, the way a man does when he's fixing to tell you something that ain't true but ought to be.",
+      "\"Son,\" he says, \"a sprocket that don't get flanged regular commences to think for itself. First it gets to turning a little slower than its neighbours, just to be contrary. Then it gets to turning the wrong way on principle. And before you know it you've got a whole gearbox full of sprockets each one convinced it's smarter than the engineer, and there ain't a soul in Flange can tell you how that ends, on account of it ain't ended yet.\"",
+      "I allowed as how that sounded a good deal like the Town Council, and Silas allowed as how I wasn't the first man to make that observation, nor likely to be the last, and that the resemblance was probably why the flanging law had never once, in a hundred and forty years, been repealed — folks liked having one part of the machinery they could still fix with a wrench.",
+      "So every third Tuesday you'll find the whole crew down at the Works, flanging away at sprockets that, so far as any honest man can tell, never did a single thing to deserve it, and singing the old flanging song while they go, which has forty-one verses and not one of them means anything, same as most songs worth singing.",
+      "And if you was to ask me does it work — does flanging a sprocket regular truly keep it honest — I would have to tell you I don't rightly know, but I do know Flange hasn't had a rebellious sprocket since 1961, and that is more than the Council can say for itself in any single department.",
+      "Which just goes to show: there's considerable wisdom in doing a fool thing regular, so long as everybody agrees, ahead of time, to call it tradition."
+    ],
+    "pullQuote": "a sprocket that don't get flanged regular commences to think for itself",
+    "tags": [
+      "voices",
+      "pastiche",
+      "twain"
+    ]
+  },
+  {
+    "id": "voices-proust-the-bus-timetable",
+    "category": "Voices",
+    "headline": "In Search of the 4:14 to Lower Flange",
+    "standfirst": "The Daily Flange invites Marcel Proust to recall, at extraordinary length, the vanished bus timetable of his youth.",
+    "byline": "In the style of Marcel Proust",
+    "location": "THE FLANGE BUS SHELTER, ROUTE 47",
+    "published": "2026-07-12T22:45:00Z",
+    "body": [
+      "For a long time I would go to bed early, and it was only many years later, on an ordinary wet afternoon, standing beneath the new perspex shelter that had replaced the old wooden one at the corner of Flange High Street and Coalgate Lane, that the whole of my childhood came back to me entire, summoned by nothing more than the smell of a laminated timetable curling at its edges in the damp.",
+      "I had eaten, without much interest, a slightly stale sausage roll from the newsagent's, and had dipped the last corner of it, out of some obscure and only half-conscious habit acquired in boyhood, into a paper cup of tea gone tepid in the queue; and no sooner had the warm, soaked morsel touched my palate than a shudder ran through me, and I stopped, attentive to the extraordinary thing that was happening within me.",
+      "It was the 4:14 to Lower Flange — a bus I had not thought of in thirty years, which departed, in the years of my aunt's long convalescence, from that very corner with a regularity my child's mind had taken for one of the fixed laws of the universe, along with the tides and the displeasure of my father — and in an instant the whole of Combray-upon-Flange rose up before me: the smell of diesel and wet gaberdine, the conductor's clipped punch upon the ticket, my aunt's voice at the window asking whether I had remembered my scarf, the particular grey of a Tuesday that was, I now understood, not merely a colour of the sky but a colour of the entire vanished epoch of my life before the routes were renumbered.",
+      "And it seemed to me then, standing at the new shelter with the sodden remains of the sausage roll still in my hand, that Route 47 had never truly been withdrawn by the Council in the spring of that reorganisation so many years ago, but had merely gone on running, invisibly, indefinitely, along some inner track that only the taste of a soaked pastry could restore to me, and that all the intervening years — the removal to the city, the long estrangement from my aunt, the slow, sad modernisation of the timetable itself into a mere code on a telephone screen — had been, in some essential sense, merely the time the bus had spent between one stop and the next, invisible to me, but never truly gone.",
+      "I understood then why the new digital display, for all its promised precision, had never once given me the pleasure of the old paper timetable curling in the rain: for the digital display could only ever tell me when the next bus was coming, whereas the paper one, laminated and swollen with a hundred summers of damp, had the singular power of restoring to me, entire and trembling, a bus that had already gone.",
+      "The 4:14, I am told, no longer exists under that number; it has become, by a reorganisation as arbitrary and as absolute as death, the 12A; and yet I do not think I shall take the 12A, even though it stops at the very same corner, for I am not at all sure that the past, once so exactly and so accidentally recovered, would survive a second, deliberate application of the same wet sausage roll.",
+      "So I let it go, the 4:19 — no, the 4:14 — and stood a little longer under the new shelter in the rain, which was, at least, exactly the same rain."
+    ],
+    "pullQuote": "a regularity my child's mind had taken for one of the fixed laws of the universe",
+    "tags": [
+      "voices",
+      "pastiche",
+      "proust"
+    ]
+  },
+  {
+    "id": "voices-joyce-bloomsday-in-flange",
+    "category": "Voices",
+    "headline": "A Day of Bins",
+    "standfirst": "The Daily Flange invites James Joyce to follow one council clerk through a single momentous day of bin collection in Flange.",
+    "byline": "In the style of James Joyce",
+    "location": "FLANGE, ONE TUESDAY",
+    "published": "2026-07-12T23:20:00Z",
+    "body": [
+      "Stately, plump Cyril Prendergast came from the stairhead bearing a mug of tea gone lukewarm the way all tea in that office went lukewarm before you'd properly begun it, bins on the brain, bins bins bins, general or garden, blue for recycling green for garden brown for the shame of the borough, and outside the window Flange going about its grey business under a sky the colour of a compost lid left open too long.",
+      "Rescheduled again Mrs Hooligan's collection third time this month, third, and she'll be on the phone by ten sharp as a knife, sharp as her tongue was on Tuesday last week about the fox in the recycling, foxes don't recycle Mrs Hooligan I told her, foxes redistribute, that's a different service entirely, ha, she didn't laugh, nobody laughs at half nine on a Tuesday about bins, why would they, bins are not a laughing matter bins are the last honest thing left in local government, in out in out, weekly, fortnightly, alternate, God's own liturgy written on a laminated card stuck to the fridge of every house in the parish, brown bin Monday, blue bin alternate Monday, general Monday every Monday, Monday Monday Monday, world without end amen.",
+      "Went down past the depot yard, lorries idling their diesel rosary, driver Dunphy leaning on the gate with a fag going, howya Cyril, howya Dunphy, any joy on Beaconsfield Road, no joy, road's blocked by a horsebox since Thursday, a horsebox, in Flange, in this day and age, and the collection missed and the complaint logged and the complaint escalated and the escalation itself now sitting in a queue behind forty-one other escalations each one somebody's whole entire grievance against the twentieth century.",
+      "Yes I said yes to Mrs Hooligan on the phone at last, yes we will send someone, yes Tuesday, yes I know you said that last time, yes, and her voice going on the way the sea goes on, and I thought of my own mother's bins long gone now, the smell of the old zinc dustbin in the yard on a hot day, the lid clanging, a whole childhood measured out in collection days, and here I am forty years on still measuring the same way, week to fortnight to week, and is that so bad, is that not in its own grey way a kind of eternity, the bins go round and round the way the world goes round, in and out, in and out, and yes I said, yes I will Yes, put Mrs Hooligan down for Tuesday yes.",
+      "By four the light going soft over the depot roof and the last lorry back in with its load and Dunphy hosing down the yard, and Cyril at his desk with the tea long cold thinking not of bins now but of the sea he'd never properly seen, only heard of, only imagined off the end of some ferry timetable, and how even the sea, they said, had a collection day of its own, the tide, in, out, general, recycling, nothing wasted, not really, not ever, only moved along.",
+      "And home then in the dark past the depot gate, Dunphy's fag long out, the horsebox gone at last from Beaconsfield Road, one grievance fewer in the great slow tide of grievances, and Cyril thinking yes, tomorrow the same, and yes, and yes."
+    ],
+    "pullQuote": "bins are the last honest thing left in local government",
+    "tags": [
+      "voices",
+      "pastiche",
+      "joyce"
+    ]
+  },
+  {
+    "id": "voices-woolf-the-bridge-that-wants-weekends-off",
+    "category": "Voices",
+    "headline": "The Bridge",
+    "standfirst": "The Daily Flange invites Virginia Woolf to render, in a single continuous consciousness, the day the Flange footbridge announced it would no longer open on weekends.",
+    "byline": "In the style of Virginia Woolf",
+    "location": "THE OLD FLANGE CROSSING",
+    "published": "2026-07-13T07:15:00Z",
+    "body": [
+      "The bridge would open itself, the Mayor said, and would say so herself, for she did not trust the engineers to say it kindly, and besides she had always felt, standing at her window in the mornings watching the river go its flat grey way beneath the ironwork, that the bridge had feelings of its own, absurd as that was, and had felt it particularly this last year, watching it rise and fall for barges that no longer came, for lorries that had found the by-pass, rise and fall, rise and fall, out of pure habit, like a woman curtseying long after the room has emptied.",
+      "It wants its weekends, the engineer had written, in the flat unimaginative prose of engineers, meaning only that the hydraulics required rest from continuous operation, but the Mayor, reading it at breakfast with the toast going cold, had felt something else entirely, some kinship with the great tired iron thing down by the water, for did not she too want her weekends, want them desperately, want to lie in the grass at Aldringham and not think of committees at all.",
+      "And down at the crossing itself, where the notice had already been pasted — CLOSED SATURDAYS AND SUNDAYS FROM JUNE — old Mrs. Petherbridge stood with her shopping bag and felt the years go through her all at once, the way they sometimes did now, unbidden, at the smallest provocation; she had crossed this bridge on her wedding morning, and on the morning her son went to the war that people still, in low voices, called the war, and on a hundred thousand ordinary mornings besides that had left no mark at all except this: that the bridge, closing now for its own small mercy, seemed to her the last honest thing in Flange, admitting, where no person any longer dared to, that it was tired.",
+      "The Mayor thought: we ask so much of iron and so little of ourselves; we would not dream of asking a man to lift lorries seven days a week without pause, and yet we had asked it, without a second thought, of this ridiculous, magnificent, groaning thing, and had called it merely infrastructure, as though infrastructure did not also, in its way, feel the wanting.",
+      "By Saturday the bridge stood closed for the first time in decades, and the town, oddly, did not mind it; boats to gone through, cyclists diverted round by the ford, and there was something, the Mayor thought, watching from her window with her tea gone cold again, something almost like peace in the shape of the bridge at rest, its great arm raised not in service but in something nearer to prayer, or to sleep, or simply — and this thought came to her whole and complete, the way the truest thoughts always did — to being, for once, entirely off duty.",
+      "And Mrs. Petherbridge, walking the long way round by the ford with her shopping growing heavier in her arms, found that she did not mind it either; some things, she thought, some people, some bridges, are entitled at last to a Sunday of their own, and she walked on into the ordinary damp Flange afternoon feeling, for no reason she could have named, unaccountably light."
+    ],
+    "pullQuote": "we ask so much of iron and so little of ourselves",
+    "tags": [
+      "voices",
+      "pastiche",
+      "woolf"
+    ]
+  },
+  {
+    "id": "voices-fitzgerald-the-roundabout-tycoon",
+    "category": "Voices",
+    "headline": "The Great Flangeby",
+    "standfirst": "The Daily Flange invites F. Scott Fitzgerald to attend the lavish party thrown by Flange's own self-made roundabout tycoon.",
+    "byline": "In the style of F. Scott Fitzgerald",
+    "location": "THE FLANGEBY ESTATE, RING ROAD",
+    "published": "2026-07-13T08:00:00Z",
+    "body": [
+      "In my younger and more litigious years, before I understood a thing about planning permission, my father gave me some advice I have carried with me ever since: that not everyone in Flange has had the advantages of a private roundabout, and that when you feel like criticising one, remember that.",
+      "It was Jay Flangeby who had built the thing, an enormous double-lane monument of block paving and imported cobbles out on the ring road, said to have cost more than the whole of the old town hall, and lit at night — for he had it lit, extravagantly, wastefully, beautifully — with a single flashing amber light at its centre that he watched, they said, from his terrace every evening, though nobody I ever met had watched him watch it.",
+      "The parties began at dusk and did not so much end as dissolve, the guests arriving in cars that circled the roundabout twice for the pleasure of arriving properly, past the marquees and the little orchestra hired from three towns over, playing something that wanted badly to be jazz and mostly succeeded, out among people who had never met Flangeby and had no plan to, only to stand upon his newly laid cobbles and say, to nobody in particular, that it really was the finest roundabout in the county, possibly in the region, and drink his champagne while saying it.",
+      "He had built it, I came to learn, for a girl — a girl called Daisy Fenwick-on-Flange who had once, years before the by-pass and the new estate and all the vulgar money, told him she preferred a proper junction to a crossroads, and had married a haulage contractor instead, and Flangeby had gone away and made his fortune in traffic-management consultancy solely, it seemed to me, so that he might one day build a roundabout large enough that she would have to notice it from her kitchen window across the valley.",
+      "She never came to the parties. I asked him once, late, when the orchestra had thinned to a single trumpet and the amber light went on turning over the empty lanes, whether he thought she ever drove round it, and he looked at me with an expression I have never quite been able to describe since, hope and ruin in exactly equal measure, and said that she must, everyone did, it was the only way now to reach the Tesco.",
+      "So we drove on, boats against the current, borne back ceaselessly into the outside lane, past his dark and empty roundabout in the small hours, its amber light still turning for no one, faithfully, extravagantly, for a girl who had only ever wanted a proper junction and had never once, so far as anybody could tell, got out to look.",
+      "Flangeby believed in the green light — no, the amber light — the orgastic future that year by year recedes before us at the give-way line; it eluded us then, but that's no matter, tomorrow we will drive faster, circle wider, and one bright morning — so we go on, roundabout, roundabout, forever giving way to a past we cannot overtake."
+    ],
+    "pullQuote": "she preferred a proper junction to a crossroads",
+    "tags": [
+      "voices",
+      "pastiche",
+      "fitzgerald"
+    ]
+  },
+  {
+    "id": "voices-orwell-the-ministry-of-flange",
+    "category": "Voices",
+    "headline": "Notes on Compulsory Positivity",
+    "standfirst": "The Daily Flange invites George Orwell to file a dispatch on the Council's new mandatory-positivity broadcasts about pothole repairs.",
+    "byline": "In the style of George Orwell",
+    "location": "FLANGE CIVIC CENTRE",
+    "published": "2026-07-13T08:40:00Z",
+    "body": [
+      "The tannoy above the Flange precinct came on at eight, as it did every morning now, with the Council's Positivity Bulletin, a cheerful female voice announcing that Pothole Reduction was AHEAD OF TARGET, that road quality had never been HIGHER, and that any citizen who continued to believe otherwise was invited to consult the Ministry of Highways' new Feelings Accuracy Leaflet.",
+      "It was of course perfectly true, in the narrow technical sense in which the Council now used the word true, that pothole reduction was ahead of target; the target itself had simply been redefined three times since March, most recently to mean not the filling of potholes but the successful communication of positive feelings about potholes, a metric on which Flange was indeed performing exceptionally well.",
+      "I walked down Coalgate Lane, which had not been resurfaced since before the last election and possibly the one before that, and counted eleven potholes of a size that would have interested a geologist, while the tannoy overhead continued to assure me, in the same bright unfaltering tone, that I was, statistically, extremely satisfied.",
+      "This is the essential trick of the thing, and it is worth setting down plainly, because it will be tried elsewhere and on larger matters than potholes: it is not that the Council lies about the state of the road. It is that it has made the state of one's feelings about the road the only fact left worth measuring, so that a man who says the road is bad is not correcting a figure, he is committing an offence against the figure, and the figure, being municipal, always wins.",
+      "A workman filling one of the eleven potholes — filling it badly, with a cold-mix that would not survive the first frost — told me, without being asked, that he thought the road was coming along nicely, and said it in a voice with no expression in it at all, the voice of a man repeating a sentence because the sentence, and not the road, was now the job.",
+      "I do not know how long a population can be asked to believe that the pavement beneath its own feet is smoother than it can feel it to be, but I suspect the answer is: for exactly as long as it is easier to believe the tannoy than to replace it, which in Flange, as elsewhere, may turn out to be a very long time indeed.",
+      "If there is hope, it lies in the potholes. They, at least, have not yet learned to lie about their own depth."
+    ],
+    "pullQuote": "it is not that the Council lies about the state of the road. It is that it has made the state of one's feelings about the road the only fact left worth measuring",
+    "tags": [
+      "voices",
+      "pastiche",
+      "orwell"
+    ]
+  },
+  {
+    "id": "voices-tolstoy-the-fete-committee",
+    "category": "Voices",
+    "headline": "War and the Flange Summer Fete",
+    "standfirst": "The Daily Flange invites Leo Tolstoy to narrate, at epic length and with several digressions on the nature of history, the war between two rival factions of the village fete committee.",
+    "byline": "In the style of Leo Tolstoy",
+    "location": "FLANGE RECREATION GROUND",
+    "published": "2026-07-13T09:10:00Z",
+    "body": [
+      "Well, Prince, so the tombola has become a private estate of the Petrovna-Higginbotham family, and if you do not tell me that this means we are going to have another dreadful summer fete, with the cake stall reduced entirely to fondant fancies, I really believe you have lost the last vestige of feeling for this parish, whatever the Committee minutes may say to reassure us.",
+      "It is necessary, before proceeding, to say something of the causes of this war, though the reader must understand from the outset that no true cause will be found, for the war between the Trestle Table faction and the Bunting faction of the Flange Fete Committee had no single origin, no Helen, no shot at Sarajevo, but arose, as all great human conflicts arise, from ten thousand small and largely forgotten offences, chief among them a disputed decision, some three fetes previous, as to the correct height of the maypole.",
+      "Old Marya Bunclifford, who had run the tombola since before living memory and considered it, not without reason, an extension of her own soul, declared to anyone who would listen that the new raffle software proposed by the Trestle faction was an insult to forty years of honest paper tickets, and in this declaration, trivial as it sounds when set down plainly, there lay concentrated the whole of her grief for a world that had, in a hundred small administrative ways, stopped asking her opinion.",
+      "The historians of the Committee minutes will tell you that the war was decided at the emergency meeting of the fourteenth, by a vote of seven to five on the question of whether the coconut shy should be relocated nearer the car park; but I do not believe this, any more than I believe that Borodino was decided by the placement of a single battery of guns, for a battle, like a fete, is not decided by any one vote or any one gun, but by the accumulated and largely invisible will of several hundred tired, well-meaning people who have each, privately, already decided how much of themselves they are prepared to give to a trestle table.",
+      "And so the fete went ahead, as fetes always go ahead, in spite of the war and almost in ignorance of it, the bunting faction's bunting flying directly above the trestle faction's trestles in an arrangement nobody had actually agreed to and everybody, on the day, found perfectly satisfactory, the children queuing for the coconut shy in its old position after all, because the car park had, in the end, been needed for parking.",
+      "Marya Bunclifford ran her tombola on paper tickets to the last, and made, as she always did, the largest single sum of the afternoon, and when the new raffle software was quietly retired the following spring nobody remarked upon it at all, for that is how the great questions of any community are actually settled — not by the vote recorded in the minutes, but by the slow, patient, unrecorded pressure of people simply going on doing the thing they have always done.",
+      "I do not know, and I do not think the Committee itself knows, who won the war of the Flange summer fete; I only know that the fete happened, as it happens every year, that the children got their coconuts, that Marya got her sum, and that somewhere in the space between the vote and the outcome lies the whole unwritten and unwritable history of every small community that has ever governed itself by means of a trestle table."
+    ],
+    "pullQuote": "a battle, like a fete, is not decided by any one vote or any one gun",
+    "tags": [
+      "voices",
+      "pastiche",
+      "tolstoy"
+    ]
+  },
+  {
+    "id": "voices-dostoevsky-the-parking-ticket",
+    "category": "Voices",
+    "headline": "Notes from the Underpass",
+    "standfirst": "The Daily Flange invites Fyodor Dostoevsky to record the feverish confession of a man tormented beyond reason by a single unpaid parking ticket.",
+    "byline": "In the style of Fyodor Dostoevsky",
+    "location": "FLANGE MULTI-STOREY, LEVEL 2",
+    "published": "2026-07-13T09:55:00Z",
+    "body": [
+      "I am a sick man. I am a spiteful man. I am an unattractive man carrying, in the inside pocket of a coat I have not had cleaned since March, a Penalty Charge Notice for four pounds eighty which I have neither paid nor destroyed, and which I take out, some nights, and examine by the light of the landing, as another man might examine a photograph of the woman who ruined him.",
+      "You will say: it is only four pounds eighty, pay it and be done, and I tell you that this is precisely the reasoning of a man who has never sat, as I have sat, at two in the morning, computing with a horrible and useless precision exactly how the surcharge compounds after twenty-eight days, and understanding, in the marrow of his being, that he does not object to the fine at all, that he could pay it a hundred times over — no, it is something else entirely that keeps me from the machine at the Post Office counter, something I am almost, though not quite, ashamed to set down.",
+      "I want to suffer over it. There, I have said it, and let the reader make of me what he will. I want the letters to keep coming, each one a little colder and more official than the last, because I have discovered — and I defy anyone in Flange to tell me they have not discovered the same thing in some corner of their own miserable soul — that being persecuted by the Council's Recovery Unit is the only reliable proof I possess that I continue, in however small and degrading a fashion, to exist.",
+      "My neighbour, Golyadkin from the flat below, tells me I am being irrational, that a man of my education ought to simply pay the ticket and be at peace; but what does Golyadkin know of peace, Golyadkin who has never once in his life stood in a multi-storey car park at midnight, alone, weeping with a kind of exalted and entirely unjustifiable self-pity over a machine that would not, on the night in question, accept a two-pound coin that was in every particular a perfectly legal two-pound coin?",
+      "I could pay it tomorrow. I understand this. I understand it with a terrible, lucid clarity that only makes the not-paying more exquisite, for is not the whole of human freedom contained precisely in this: that a man may, if he chooses, act directly against his own interest, may cling to his four pounds eighty and his little persecuting letters purely to prove to the Recovery Unit, and to God, and above all to himself, that he is not a piano key to be pressed?",
+      "They will send the bailiffs eventually. I know this. I have almost, in my worse moments, come to look forward to it, to the knock on the door, to the confrontation in which I will at last be permitted to explain, at length, to a man in a hi-vis vest, exactly why I could not pay, though I will not, even then, be able to explain it, because I do not fully understand it myself, and it is this — this not-understanding, endlessly examined — that constitutes, I begin to suspect, the whole of my inner life.",
+      "Four pounds eighty. I take out the ticket again. The landing light has gone off on its timer, and I do not get up to switch it back on, for there is a kind of dignity, however wretched, in sitting a while longer in the dark with one's own unpaid and undischargeable debts."
+    ],
+    "pullQuote": "I want to suffer over it. There, I have said it",
+    "tags": [
+      "voices",
+      "pastiche",
+      "dostoevsky"
+    ]
+  },
+  {
+    "id": "voices-conandoyle-the-stolen-minute-hand",
+    "category": "Voices",
+    "headline": "The Adventure of the Missing Minute Hand",
+    "standfirst": "The Daily Flange invites Arthur Conan Doyle to send Sherlock Holmes to the market square, where the clock tower's minute hand has vanished overnight.",
+    "byline": "In the style of Arthur Conan Doyle (as Sherlock Holmes)",
+    "location": "FLANGE MARKET SQUARE",
+    "published": "2026-07-13T10:30:00Z",
+    "body": [
+      "I have seldom known my friend Sherlock Holmes so instantly diverted as when the telegram arrived from the Flange Parish Clerk, informing us in a hand trembling with municipal outrage that the minute hand of the market clock had been found, at seven that morning, entirely absent from its face, the hour hand alone continuing its patient and now rather melancholy circuit.",
+      "\"You perceive, Watson,\" said Holmes, turning the telegram over with evident satisfaction, \"that a clock robbed of its minute hand is a far subtler crime than a clock stopped altogether. A stopped clock announces its own violation to the meanest intelligence. A clock with only the hour hand continues to function, continues to be consulted, continues to be believed — and it is in that persistence of false authority that our thief has shown, I confess, a most unusual turn of mind.\"",
+      "We found the ladder still standing against the tower, and Holmes was up it before the constable had finished his sentence, examining the clock face through his lens with the absorption of a man to whom the rest of Flange market day, the cheese stalls and the vegetable barrows and the general commerce of a Tuesday, had entirely ceased to exist.",
+      "\"The hand was not wrenched away, Watson, but unscrewed — observe the clean thread at the pivot, and the absence of any scoring on the face. This was done by someone with a key to the tower and a screwdriver of the third size, working without haste, between the hours of one and three, when the square is at its emptiest. I should say, further, that our culprit is left-handed, favours the Flange Gazette over the Flange Courier, and has, within the last fortnight, taken up an interest in horology considerably beyond the ordinary.\"",
+      "\"Holmes, this is extraordinary — but why steal a minute hand at all, and to what end?\" \"Because, Watson, a town that can no longer measure its minutes, only its hours, is a town thrown back entirely upon the honour system — and there is exactly one man in Flange whose business depends utterly upon nobody being able to prove, to the minute, that he was late. I refer, of course, to Alderman Pruett, whose committee attendance record has this year been a matter of some newspaper comment.\"",
+      "We found the minute hand, as Holmes had predicted, wrapped in the previous fortnight's Gazette in the Alderman's own umbrella stand, and the gentleman, confronted, could only protest that he had merely wished to 'borrow a little time,' a defence Holmes pronounced, with evident relish, the single most accurate confession he had heard in twenty years of practice.",
+      "\"You see, Watson,\" he remarked as we walked back through the square, the minute hand once more sweeping its proper arc above us, \"there is no mystery in Flange, however small, that does not resolve at last into the oldest motive of them all — a man's simple, universal wish to be thought less late than he was.\""
+    ],
+    "pullQuote": "a clock robbed of its minute hand is a far subtler crime than a clock stopped altogether",
+    "tags": [
+      "voices",
+      "pastiche",
+      "conandoyle"
+    ]
+  },
+  {
+    "id": "voices-chandler-the-vanishing-meter",
+    "category": "Voices",
+    "headline": "The Big Meter",
+    "standfirst": "The Daily Flange invites Raymond Chandler to send a hardboiled detective after the case of the vanishing parking meter.",
+    "byline": "In the style of Raymond Chandler",
+    "location": "FLANGE HIGH STREET, AFTER DARK",
+    "published": "2026-07-13T21:00:00Z",
+    "body": [
+      "The rain had been coming down on Flange High Street since Tuesday, the kind of rain that doesn't care what it ruins, and I was sitting in the office with a bottle that was three-quarters empty and a client who was three-quarters certain her parking meter had walked off on its own two legs. That made two of us with a problem nobody believed.",
+      "\"It was there Monday,\" she said. \"Bay fourteen, outside the chemist. Monday night it's gone. Not broken. Not vandalised. Gone, like it never bolted itself to anything.\" I told her meters don't walk. She told me neither did husbands, and look how that turned out.",
+      "I went down to bay fourteen myself around midnight, when the only light on the street comes off the wet tarmac and every doorway looks like it's hiding something it stole. There was a clean patch of concrete where the meter used to stand, four bolt-holes and a rectangle of pavement paler than the rest, like a body outline chalked in cement instead of blood.",
+      "The Council parking office gave me nothing. A clerk with a face like a filing cabinet told me the meter was decommissioned, routine, nothing to see, and slid the paperwork across like he was dealing a losing hand he was glad to be rid of. I've heard routine before. Routine is what people call it right before it turns out to be the whole case.",
+      "I found it in the end in a lock-up off Coalgate Lane, still coin-fat, still ticking over some imaginary two hours nobody had paid for, sitting next to eleven other meters just like it, all decommissioned, all routine, all worth exactly what scrap copper goes for on a Thursday. A councillor's brother-in-law ran the yard. That's not a twist. In Flange that's just Tuesday.",
+      "I didn't get the meter back to bay fourteen. Some things don't go back once they've been pulled up by the roots, and a parking meter that's seen the inside of a scrap yard doesn't believe in bay fourteen anymore, same as a man who's seen the inside of a cell doesn't believe in Sunday mornings.",
+      "I told my client it was gone for good and she paid me anyway, which is more honesty than I get from most of Flange. Outside the rain was still falling on all the meters that hadn't been decommissioned yet, and I figured every single one of them had it coming, sooner or later, same as the rest of us."
+    ],
+    "pullQuote": "Routine is what people call it right before it turns out to be the whole case.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "chandler"
+    ]
+  },
+  {
+    "id": "voices-wodehouse-the-aunt-and-the-bridge",
+    "category": "Voices",
+    "headline": "Jeeves and the Flange Footbridge Wheeze",
+    "standfirst": "The Daily Flange invites P. G. Wodehouse to entangle a hapless young gentleman in his aunt's scheme to have the village bridge painted a scandalous shade of pink.",
+    "byline": "In the style of P. G. Wodehouse",
+    "location": "FLANGE-SUB-WOLD",
+    "published": "2026-07-13T10:55:00Z",
+    "body": [
+      "It is a rummy thing about aunts, and I have made something of a scholarly study of the species over the years, that the more perfectly reasonable a fellow's Tuesday is looking, the more certain you can be that some aunt, somewhere, is at that very moment plotting to introduce a large quantity of pink paint into it.",
+      "The aunt in question was my Aunt Beatrice, who had got it into her head that the Flange footbridge, a perfectly respectable grey affair that had given no offence to anybody since the Coronation, ought to be repainted a colour she described as 'flamingo' and everyone else in the village described, with varying degrees of alarm, as 'that.'",
+      "\"You will go to the Parish Council, Bertram,\" she informed me, in the tone she generally reserves for informing one that one will be attending church, \"and you will propose the motion yourself, as it will carry far better coming from a young man than from a woman of my standing who they will simply assume has gone doolally.\" I attempted to point out several flaws in this reasoning, all of which were dismissed before I had finished pronouncing them.",
+      "I put the matter to Jeeves that evening, over what I might describe as a restorative beverage, and he considered it with the grave stillness of a man weighing the fate of nations, before observing that the Parish Council, in his experience, responded most favourably to proposals framed not as aesthetic innovations but as heritage restorations, and that a little research might reveal the bridge to have been, at some point in its history, precisely the shade of pink under discussion.",
+      "It transpired — and I use the word advisedly, as I have never been entirely satisfied as to how Jeeves transpires these things — that the bridge had indeed been painted a rosy hue for one single, forgotten fortnight in 1953, to mark some minor royal visit, a fact Jeeves produced from the parish archive with the quiet triumph of a man producing a rabbit that had, in fact, been there all along.",
+      "The motion carried eleven votes to two, the two dissenters being, I am reliably informed, colour-blind, and Aunt Beatrice pronounced herself, for the first time within living memory, entirely satisfied with my conduct, a state of affairs Jeeves and I agreed, over a further restorative, was unlikely to persist beyond the following Tuesday.",
+      "The bridge, I am told, looks rather fetching in the evening light, though I have made a point of crossing it only after dark, on the grounds that a chap who has been personally responsible for pinking a public footbridge is entitled to a certain discretion in the matter of witnesses."
+    ],
+    "pullQuote": "the more perfectly reasonable a fellow's Tuesday is looking, the more certain you can be that some aunt, somewhere, is at that very moment plotting to introduce a large quantity of pink paint into it",
+    "tags": [
+      "voices",
+      "pastiche",
+      "wodehouse"
+    ]
+  },
+  {
+    "id": "voices-waugh-the-speed-bump",
+    "category": "Voices",
+    "headline": "A Handful of Tarmac",
+    "standfirst": "The Daily Flange invites Evelyn Waugh to survey, with icy amusement, the country-house set's horror at a new speed bump on the drive.",
+    "byline": "In the style of Evelyn Waugh",
+    "location": "FLANGE PARVA MANOR",
+    "published": "2026-07-13T11:20:00Z",
+    "body": [
+      "The speed bump had been laid, without consultation, at the exact point on the drive from which Flange Parva Manor first became visible through the beeches, and it was this, rather than any question of suspension damage, that Lady Marchmain-Flange found genuinely unforgivable.",
+      "\"One does not mind the bump,\" she explained at dinner, in the tone of a woman explaining that one does not mind the guillotine, merely the inconvenience of arranging one's hair for it, \"one minds that the Council should imagine the approach to this house requires slowing down for. As though it were a school, or a hospital, or somewhere people actually went.\"",
+      "Her nephew Sebastian, who had driven over the thing at some speed and lost, he claimed, an entire flask of Constantia wine to the resulting jolt, professed himself in mourning, and wore a black armband to luncheon the following day, an gesture the family agreed was in questionable taste but otherwise correct in spirit.",
+      "The Council's letter, when it arrived, cited road safety near the new bus stop, a phrase Lady Marchmain-Flange read aloud three times with the same flat incredulity she might have brought to a claim that the moon was, on reflection, made of gravel, before observing that the bus stop itself was a far greater outrage than anything laid across the tarmac to slow one down for it.",
+      "It became, for one August, the only acceptable topic of conversation among the county families, each of whom discovered, with visible relief, an entire summer's grievance they could discharge upon a single ridge of tarmac eleven inches wide, sparing themselves the more exhausting business of having opinions about anything that actually mattered.",
+      "By September the bump had been quietly resurfaced flush with the drive, following a complaint from persons unnamed, and Lady Marchmain-Flange declared the matter closed with the particular satisfaction of a woman who suspects, correctly, that her butler wrote the complaint on notepaper bearing her own crest.",
+      "Sebastian removed his armband at the harvest supper, remarking to no one in particular that grief, like gravel, settles eventually if nobody insists on driving over it too often, which the family agreed was either very profound or simply the Constantia talking, and declined, as was traditional, to establish which."
+    ],
+    "pullQuote": "one minds that the Council should imagine the approach to this house requires slowing down for",
+    "tags": [
+      "voices",
+      "pastiche",
+      "waugh"
+    ]
+  },
+  {
+    "id": "voices-beckett-waiting-for-the-47",
+    "category": "Voices",
+    "headline": "Waiting for the 47",
+    "standfirst": "The Daily Flange invites Samuel Beckett to stage two men at a bus shelter, waiting for a service that may or may not exist.",
+    "byline": "In the style of Samuel Beckett",
+    "location": "A BUS SHELTER. FLANGE. NOWHERE IN PARTICULAR.",
+    "published": "2026-07-13T11:50:00Z",
+    "body": [
+      "A shelter. A pole. A timetable, laminated, illegible with rain. Enter VLADIMIR and ESTRAGON, from opposite directions, arriving at the same moment, as they always do.",
+      "ESTRAGON: Nothing to be done. VLADIMIR: I'm beginning to come round to that opinion. All my life I've tried to put it from me, saying, Vladimir, be reasonable, the 47 has not yet been tried. ESTRAGON: And what if it comes. VLADIMIR: Then we shall have been saved. ESTRAGON: And what if it doesn't. VLADIMIR: Then we shall have waited.",
+      "They look at the timetable. Long silence. ESTRAGON: It says every twenty minutes. VLADIMIR: That is what it says. ESTRAGON: Is it twenty minutes since we arrived. VLADIMIR: I don't know. I don't know if we arrived. ESTRAGON: We are here. VLADIMIR: That proves nothing.",
+      "A boy enters, delivers a message, that the 47 will not be coming today, but that it will surely come tomorrow, and exits. VLADIMIR: Tomorrow, when he comes, we'll hang ourselves, unless the 47 comes first. ESTRAGON: And if it comes. VLADIMIR: We'll be saved.",
+      "Silence. Neither moves. ESTRAGON: We could go. VLADIMIR: We can't. ESTRAGON: Why not. VLADIMIR: We're waiting for the 47. ESTRAGON: Ah. (Pause.) You're sure it was this stop. VLADIMIR: What stop. ESTRAGON: For waiting. VLADIMIR: He said this stop. ESTRAGON: He didn't say. He said a stop. VLADIMIR: All the stops are this stop, in the end.",
+      "ESTRAGON: Let's go. VLADIMIR: We can't. ESTRAGON: Why not. VLADIMIR: We're waiting for the 47. They do not move. The light does not change. The timetable, in the rain, says nothing further, having, in its way, already said everything it will ever say.",
+      "Curtain, or the absence of one, being much the same, on a stop from which no one has yet been seen to depart."
+    ],
+    "pullQuote": "All the stops are this stop, in the end.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "beckett"
+    ]
+  },
+  {
+    "id": "voices-mccarthy-the-resurfacing-crew",
+    "category": "Voices",
+    "headline": "Blood on the Tarmac",
+    "standfirst": "The Daily Flange invites Cormac McCarthy to follow a lone council resurfacing crew across a wasteland of unflanged sprockets and cold-mix asphalt.",
+    "byline": "In the style of Cormac McCarthy",
+    "location": "THE FLANGE RING ROAD, BEFORE DAWN",
+    "published": "2026-07-13T12:15:00Z",
+    "body": [
+      "In the grey hour before the light came up over the ring road the crew stood at the edge of the works and looked out upon the torn tarmac like men come upon a country they did not know and had no wish to know better. The lorries stood ticking in the cold. Nothing moved on the road save the steam off the cold-mix and a single crow that watched them from the crash barrier without judgment or mercy either one.",
+      "The foreman was a man named Odell and he had laid tarmac on that road longer than any man living and he said little and what he said was final. He knelt and put his hand flat to the old surface and felt for the crack beneath the crack the way another man might feel for a pulse gone faint and said this road is done. Nobody answered him. There was nothing to answer.",
+      "They worked through the morning without speaking the way men who have long since exhausted speech will work, the rollers grinding forward over the black mix and behind them the road remade smooth and steaming and without memory of what it had been before, and Odell walked behind the roller with his boots black to the ankle and did not look back at the work already done for there was no comfort to be got in looking back at a thing that could not be changed and would in any case be torn up again inside ten years by men not yet born.",
+      "At noon they broke and ate standing up against the lorry in the white light with the traffic backed up a mile behind the cones and nobody in that traffic knowing or caring what had been done here or what it had cost, the small daily forgotten violence of maintenance, the roads of the world resurfaced and resurfaced again by men whose names go into no ledger and whose work is erased by the very perfection of it, for a road well laid bears no mark of the hand that laid it.",
+      "Odell said to the young one, Prentiss, that a road was the truest thing in the county because it did not lie about what it was, did not promise arrival, only passage, and that a man could do worse than be like a road, going on under whatever was driven over him without complaint or record. Prentiss said nothing. There was no answer to be made to that and Odell had not looked for one.",
+      "By dusk the new stretch lay black and perfect under the sodium lights and the crew loaded the lorries in silence and drove off into the dark leaving the road to the night and whatever passed over it, unremarked, unthanked, already beginning, in ways too slow for any man to see, to crack again beneath the surface, patient, certain, indifferent to the men who had made it whole."
+    ],
+    "pullQuote": "a road well laid bears no mark of the hand that laid it",
+    "tags": [
+      "voices",
+      "pastiche",
+      "mccarthy"
+    ]
+  },
+  {
+    "id": "voices-garciamarquez-years-of-rain",
+    "category": "Voices",
+    "headline": "A Hundred Years of Drainage",
+    "standfirst": "The Daily Flange invites Gabriel García Márquez to chronicle the village that rained for years on end because of a single broken drainage flange.",
+    "byline": "In the style of Gabriel García Márquez",
+    "location": "FLANGE, MANY YEARS AGO AND ALSO NOW",
+    "published": "2026-07-13T12:45:00Z",
+    "body": [
+      "Many years later, as the water finally receded from the market square, old Aureliano Prowse was to remember that distant afternoon when his grandfather took him to see the broken flange beneath Coalgate Lane, the small rusted valve no larger than a fist from which, it was said, the whole of the village's misfortune had quietly begun to flow.",
+      "It had started as an ordinary blockage, the kind the Council dealt with a dozen times a season, but Councillor Restrepo-Higgins, who did not believe in ordinary blockages, declared that the drain had simply grown tired of its duty after four hundred years of faithful service, and that no amount of rodding would persuade a tired thing to remember its purpose, and so the rain that fell that October did not stop falling, not that week, nor the one after, nor for eleven years, during which time three generations of the Prowse family were born, married, and in one case eaten by a pike that had taken up residence in what had once been the post office, without anyone in Flange remarking that this was in any way unusual, for by then it was simply the weather, and the weather, like the Council, was not a thing one questioned.",
+      "The rain fell so constantly and with such devotion that the village forgot the sound of dryness entirely; children were born already knowing how to swim between the lamp-posts, and Father Ignatius held mass standing waist-deep at the altar, insisting that God, being infinite, presumably had no objection to damp vestments, while the fish that had colonised the church font were, by unanimous and unspoken agreement, never once mentioned in his sermons.",
+      "It was Aureliano's grandmother, Úrsula Prowse, who at last decided that eleven years of rain was, whatever the Council's engineers might say about drainage capacity in the region, principally a failure of imagination, and she went out one morning in her good coat with a single teaspoon, knelt in the flooded lane, and began, with enormous and unhurried patience, to clear the flange herself, spoonful by spoonful, while the whole village watched from their upstairs windows without daring to hope, having by then forgotten what hope without irony felt like.",
+      "It took her one hundred and forty-three days, and on the last of them the flange gave way all at once with a sound the old people compared, afterward, to a very long sigh being let out by someone who has been holding their breath since before living memory, and the water began at last to run away down into the earth where, presumably, it had wanted to go all along, leaving behind a village stunned by the sudden, unfamiliar sensation of a dry Tuesday.",
+      "The Council sent a letter of commendation, which arrived soaking wet despite the rain having stopped a full month before, an occurrence nobody in Flange thought worth remarking upon, for they had learned, over eleven years of water, that the Council's correspondence obeyed a weather system entirely its own, and would very likely go on doing so for a hundred years more.",
+      "And Aureliano, remembering his grandfather's hand upon his shoulder that distant afternoon before the flood began, understood at last that the whole of Flange's history, its floods and its droughts and its endless committee minutes, had been written in advance, spoonful by spoonful, in a small rusted valve that nobody had thought, until it was almost too late, to call by its right name."
+    ],
+    "pullQuote": "no amount of rodding would persuade a tired thing to remember its purpose",
+    "tags": [
+      "voices",
+      "pastiche",
+      "garciamarquez"
+    ]
+  },
+  {
+    "id": "voices-borges-the-map-of-flange",
+    "category": "Voices",
+    "headline": "On the Exactitude of the Flange One-Way System",
+    "standfirst": "The Daily Flange invites Jorge Luis Borges to contribute a brief, footnoted essay on the village's labyrinthine and possibly infinite one-way system.",
+    "byline": "In the style of Jorge Luis Borges",
+    "location": "FLANGE, IN A LIBRARY, POSSIBLY",
+    "published": "2026-07-13T13:05:00Z",
+    "body": [
+      "I do not recall, now, whether I first read of the Flange one-way system in a Council pamphlet or dreamed it, and I have come to suspect that in a village of this kind the distinction is of purely academic interest, for the pamphlet, like the system it describes, aspires to a completeness that reality is under no obligation to honour.",
+      "The Cartographers' Guild of Flange, in that now-famous project of the last century, undertook to draw a map of the one-way system at a scale of one to one, so that the map might coincide, point for point, with the streets it represented; subsequent generations, finding this map of no practical use whatsoever, allowed it to fall into disrepair, and today only a few tattered fragments remain, folded into the glove compartments of certain very old residents, who consult them, when lost, with a reverence that has entirely outlived the map's accuracy.",
+      "It is worth noting, as a curiosity of local scholarship, that no two residents of Flange can agree on how many streets in the town are one-way; the postman insists on eleven, the vicar on seventeen, and a certain retired schoolmaster, whom I once had the pleasure of interviewing, maintains that the true number is infinite, on the grounds that any street may become one-way at the Council's discretion, and that a system capable of expanding without limit is, for all practical purposes, already infinite, whether or not it has yet troubled to fill the available space.",
+      "There is a street — Coalgate Lane, though some say this is merely the name given to whichever street one happens to be lost upon — which is one-way in the morning and two-way after four o'clock, a temporal arrangement the Council has never adequately explained, and which I have come to regard as a modest, provincial echo of those older paradoxes concerning a river into which one cannot step twice, Coalgate Lane being, in the strictest sense, two entirely different streets that happen to share a single, patient, and much-potholed body.",
+      "I once asked the Highways clerk, a Mr. Vane, whether the system had been designed by any single intelligence, and he replied, after a silence I found unexpectedly long for so simple a question, that no, it had grown, layer upon layer, decision upon decision, each Council in its turn amending the one before without troubling to understand it, so that the system as it now stands is authored by everyone and no one, which struck me as being, in this as in so much else, the precise condition of a labyrinth.",
+      "I confess that I have never found my own way through the Flange one-way system without error, and I have come to suspect that this is not a defect in my sense of direction but the system's own design, for a true labyrinth does not wish to be escaped, only wandered, and Flange, in its modest way, wanders me still, down streets that reverse themselves at four o'clock, toward a centre that the Cartographers' Guild, for all its diligence, never quite located on the map.",
+      "Note. Some scholars hold that the one-way system does not exist, and that the entire village of Flange is in fact stationary, and it is instead the visitor who, upon arrival, begins irreversibly to travel in one direction only. I record this theory without endorsing it, though I admit I have never once, in Flange, succeeded in turning back."
+    ],
+    "pullQuote": "a true labyrinth does not wish to be escaped, only wandered",
+    "tags": [
+      "voices",
+      "pastiche",
+      "borges"
+    ]
+  },
+  {
+    "id": "voices-murakami-the-well-behind-the-chip-shop",
+    "category": "Voices",
+    "headline": "The Wind-Up Bollard Chronicle",
+    "standfirst": "The Daily Flange invites Haruki Murakami to follow a quiet man, his missing cat, and a very strange alley behind the Flange chip shop.",
+    "byline": "In the style of Haruki Murakami",
+    "location": "AN ALLEY BEHIND THE FLANGE CHIP SHOP",
+    "published": "2026-07-13T13:30:00Z",
+    "body": [
+      "When the cat disappeared, I was ironing shirts and listening to an old Sarah Vaughan record, and I remember thinking, in a vague and not particularly urgent way, that this was exactly the kind of ordinary Tuesday on which a cat might reasonably choose to vanish, since cats, in my experience, prefer to leave on days when nobody is watching closely enough to stop them.",
+      "I looked for her in the alley behind the chip shop, where the bins are and the smell of old fat hangs in the air like a memory nobody wants but nobody throws away either, and it was there, between the second and third bin, that I noticed the bollard — a perfectly ordinary black-and-yellow traffic bollard, except that it was humming, very faintly, a tune I almost recognised, something between a folk song and a dial tone.",
+      "I sat down on an upturned crate and listened to it for a while. This is the kind of thing I do. Some men would have walked away, or called the Council, or told somebody, but I have found that the world occasionally opens a very small door for you, in a very unremarkable place, and if you make a fuss about it, or bring other people to look, the door tends to close again and you are left standing in an alley that smells of old fat, no wiser than before.",
+      "The bollard told me, in a voice that seemed to come from somewhere behind my own left ear rather than from the bollard itself, that my cat was fine, that she was sitting at the bottom of a well some considerable distance from Flange, in a town very much like Flange, watching a man very much like me iron shirts and listen to Sarah Vaughan, and that this was, in a sense I was not required to understand, also me.",
+      "I asked the bollard whether I should go and get her. It said that the well did not have a bottom in the way I meant, and that in any case the cat would come back when the record finished, which struck me as reasonable, since most things in my life have arranged themselves according to the length of a record rather than any more rigorous system.",
+      "The record ended around nine. I heard the cat flap around half past. She came in smelling faintly of rain that had not, as far as I could tell, fallen anywhere in Flange that day, and settled on the ironing board as though no time at all had passed, which, from where she was sitting, it probably hadn't.",
+      "I went back to the alley the next evening, out of curiosity more than anything, but the bollard was just a bollard again, black and yellow and entirely silent, the way bollards generally are, and I stood there for a while anyway, because some doors, once they've closed, are worth standing in front of a little longer, just in case, and because I had, by then, run out of records worth listening to at home."
+    ],
+    "pullQuote": "the well did not have a bottom in the way I meant",
+    "tags": [
+      "voices",
+      "pastiche",
+      "murakami"
+    ]
+  },
+  {
+    "id": "voices-nabokov-the-bollard",
+    "category": "Voices",
+    "headline": "Bollard, Bollard",
+    "standfirst": "The Daily Flange invites Vladimir Nabokov to render one man's ornate, unreliable obsession with a particular parking bollard on Flange High Street.",
+    "byline": "In the style of Vladimir Nabokov",
+    "location": "FLANGE HIGH STREET, OUTSIDE THE CHEMIST",
+    "published": "2026-07-13T14:00:00Z",
+    "body": [
+      "Bollard, light of my verge, fire of my kerb. My sin, my soul. Boll-ard: the tongue takes a little run-up along the frontage of the tooth-ridge before dropping, on the second syllable, into the small hard consonant of municipal iron. Boll. Ard. It was, in the ordinary economy of Flange High Street, one bollard among nineteen, no more distinguished than its neighbours, and yet I confess — with what I hope the discerning reader will allow to be a scholar's dispassion rather than a madman's fever, though I concede the two are not always distinguishable to the untrained eye — that it was, in the estival light of a particular July, the only object on that street that seemed to me entirely, achingly alive.",
+      "I first observed it — no, I first was observed by it, for that is nearer the truth of the matter, and truth, in this narrative, is a coin I intend to spend as rarely and as deceitfully as possible — on a Tuesday of no other distinction, when the light fell upon its black-and-yellow flank at an angle I can only describe, forgive me, as confiding.",
+      "The Council, in its blunt utilitarian idiom, would have you believe it is Bollard Type 4, Reflective, Removable, Borough Stock Number 118-C, installed pursuant to the Highways Order of a year nobody troubles to recall; I prefer, and I ask the reader's indulgence in this, to call it by the name I privately gave it that first Tuesday, a name I shall not disclose here, having already disclosed a good deal more of myself in the giving of it than any respectable columnist ought.",
+      "I took to walking past it daily, then twice daily, then — let us be exact, since exactitude is the last dignity left to a man in my position — no fewer than five times between the hours of nine and noon, on pretexts of steadily diminishing plausibility, until the girl at the chemist's counter, who misses nothing, began to regard me with the particular pity reserved, in small English towns, for men who linger too long near municipal furniture.",
+      "It was removed on the second Thursday of August, for resurfacing works of the most tedious and unpoetic character, and replaced within the week by an object identical in every measurable particular — same stock number, same reflective collar, same exact black-and-yellow — and which the Council, the girl at the chemist's, and indeed the whole unfeeling apparatus of Flange insisted, with maddening reasonableness, was the very same bollard, merely relocated for the works and now restored.",
+      "I do not believe them. I will never believe them. The old bollard, my bollard, the one that watched me with such grave and unwarranted patience through an entire, ridiculous July, is gone, replaced by a competent impostor that any jury of engineers would swear under oath to be identical, and only I, walking past it now with a courtesy I no longer feel, know the difference — for style, my friends, style is the bloom, the halo of the individual thing, and no borough stock number was ever yet found capable of forging it.",
+      "And so I pass it still, morning and noon, this stranger wearing my beloved's livery, and I lift my hat to it out of nothing but old habit, the way one nods to a face at a funeral one is almost, but not quite, certain one has met before."
+    ],
+    "pullQuote": "style, my friends, style is the bloom, the halo of the individual thing, and no borough stock number was ever yet found capable of forging it",
+    "tags": [
+      "voices",
+      "pastiche",
+      "nabokov"
+    ]
+  },
+  {
+    "id": "voices-pratchett-the-flanging",
+    "category": "Voices",
+    "headline": "The Roundabout That Knew It Was A Roundabout",
+    "standfirst": "The Little Flange gyratory system has, council engineers admit, developed opinions.",
+    "byline": "In the style of Terry Pratchett",
+    "location": "LITTLE FLANGE",
+    "published": "2026-07-12T08:00:00",
+    "body": [
+      "It is a truth generally unacknowledged by the Highways Sub-Committee, but acknowledged by absolutely everybody who has ever driven round it at half past five on a Friday, that the Little Flange roundabout has started to know things.¹",
+      "¹ Not big things. It doesn't know the meaning of life, or where the last bus goes at closing time, or why Gerald from the chip shop still owes Dave a fiver from 2019. It knows smaller, more roundabout things, such as exactly which lane you are about to need, and its enormous satisfaction in ensuring you are never, ever in it.",
+      "The roundabout had begun, in the manner of most terrible ideas, as a perfectly reasonable one: four exits, some tasteful municipal shrubbery, and a small bronze plaque commemorating a mayor nobody now remembered dying of a mayoral disease nobody now discussed. But roundabouts, like gods and duck ponds, accrete belief. Enough drivers cursing it, praising it, offering it small sacrifices of wing mirrors, and eventually something wakes up in the middle that was not, strictly, put there by the council.",
+      "It began sending the number 12 bus round four times before releasing it, apparently for the simple pleasure of watching Mrs Ogmore-on-the-Roundabout, as she was now known to everyone but the Royal Mail, wave cheerily at the same bus stop on each pass. It rerouted a funeral cortege so gently that the deceased arrived at the crematorium in a notably better mood than the mourners. It has never, notably, caused an accident. It merely insists, with the quiet stubbornness of a very old cat, that everyone go the long way round, because the long way round is more interesting, and the roundabout has been terribly bored since 1987.",
+      "The council's proposed solution is a set of traffic lights, which is rather like proposing a strongly worded letter to a thunderstorm. The roundabout, for its part, has responded by growing a fifth exit overnight that leads, according to three independent witnesses and one deeply unreliable dog, to a car park that was definitely not there on Tuesday and smells faintly of turpentine and regret.",
+      "Little Flange Parish Council has scheduled an emergency meeting to discuss the roundabout's legal personhood, on the grounds that something which can independently reroute a hearse ought at minimum to be paying business rates. The roundabout, sources indicate, is not attending, on the grounds that it is a roundabout, and has never in its existence needed to be anywhere else.",
+      "So the traffic goes round and round, the shrubbery hums very faintly at dusk, and everyone in Little Flange has quietly agreed never to mention it to anyone from Big Flange, who have quite enough trouble with their bridge."
+    ],
+    "pullQuote": "roundabouts, like gods and duck ponds, accrete belief.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "roundabout"
+    ]
+  },
+  {
+    "id": "voices-adams-silence-subscription",
+    "category": "Voices",
+    "headline": "Flange Council Now Offers A Premium Tier Of Not Being Shouted At",
+    "standfirst": "For £4.99 a month, residents of Flange can now subscribe to a bit of peace and quiet, terms and conditions permitting.",
+    "byline": "In the style of Douglas Adams",
+    "location": "FLANGE",
+    "published": "2026-07-12T09:15:00",
+    "body": [
+      "Somewhere in the labyrinthine sub-basement of Flange Borough Council, in a filing cabinet marked Ideas We Are Not Proud Of But Which Turned A Profit, someone had the idea of Silence-as-a-Service, and, in the grand and ancient tradition of committees everywhere, nobody in the room was paying enough attention to say no in time.",
+      "The scheme works, insofar as anything involving Flange Council can be said to work in any sense that would satisfy a dictionary, as follows: residents pay £4.99 a month, and in exchange the council's fleet of noise, which includes but is not limited to bin lorries, the leisure centre tannoy, next door's extension, and a man named Trevor who owns a strimmer and absolutely no sense of time, is instructed to route itself elsewhere. The Basic tier merely reduces volume by a statistically unconvincing eleven per cent. The Premium tier includes actual, factual silence, of the kind normally found only in the vacuum of deep space or the moment just after someone asks if anyone minds if they smoke.",
+      "It should be stated clearly, and in a font large enough for the council's lawyers to feel they have done their job, that the silence is not guaranteed, is not portable, does not travel with you to Tesco, and may on rare occasions be interrupted by what the small print calls an Act Of Trevor, for which no refund is available and no apology forthcoming, because Trevor does not, on principle, apologise for strimming.",
+      "One resident, having upgraded to Premium in a moment of weakness after eleven consecutive mornings of leaf blower, reported that the silence, when it finally arrived, was so complete and so unfamiliar that she mistook it for a power cut, then for the end of the world, then, on reflection, for quite a nice change actually, and has since renewed for the year.",
+      "The council insists that the scheme is not, whatever certain regional newspapers with an axe to grind might imply, an admission that ordinary background noise is now a luxury good rather than a basic feature of a functioning town. It is, they clarify, an admission that ordinary background noise is now a *premium* good, which is an entirely different and much better sort of admission, and one that comes with a loyalty scheme.",
+      "There is, mercifully, a free tier, which offers no silence whatsoever but does include a small leaflet explaining, in soothing tones, that the universe is very large, deeply indifferent, and will, given sufficient time, become quiet all on its own, at which point everyone's subscription will lapse automatically and no further payment will be required."
+    ],
+    "pullQuote": "the silence is not guaranteed, is not portable, does not travel with you to Tesco",
+    "tags": [
+      "voices",
+      "pastiche",
+      "bureaucracy"
+    ]
+  },
+  {
+    "id": "voices-tolkien-the-flanging-of-the-sprockets",
+    "category": "Voices",
+    "headline": "Of The Flanging Of The Sprockets In The Elder Days Of The Works",
+    "standfirst": "An account, in the high style, of the ancient and solemn duty owed by Flange to its sprockets.",
+    "byline": "In the style of J. R. R. Tolkien",
+    "location": "FLANGE-UNDER-WOLD",
+    "published": "2026-07-12T10:30:00",
+    "body": [
+      "In the deep time before the by-pass was cut, when the Works still stood whole upon the hill and the sound of the great belts turning could be heard even in the low fields of Nether Flange, it was decreed by the first Foremen, whose names are now half forgotten and wholly mispronounced, that the sprockets must be flanged; and that this flanging should not be done once, as a lesser folk might do a thing and consider it finished, but again and again, at the turning of every season, for so long as wheel should follow wheel in the Works of Flange.",
+      "Long was the labour, and hard, for the sprockets of Flange are not as the sprockets of other places, being tempered in the old manner with oil brought up from the Sump beneath the boiler-house, which the workers of the second age called, not without reason, the Sump of Sighing, on account of the noise it made of an evening when the pressure fell.",
+      "It is told that in the third generation of the Works, when Old Byrtwyn was Foreman, the sprockets were neglected for the space of two turnings, on account of a disagreement over tea breaks that is remembered still in the annals of the canteen; and in that time the great wheel groaned, and shed a tooth into the pit, and the belt ran crooked for nine days, so that the whole of Flange smelled of hot rubber and regret, and Old Byrtwyn was made to stand before the Board and account for it, which he did at length and with several digressions concerning his father.",
+      "Thus it was set down, in the Rule of the Works, which hangs yet upon the wall of the tea room though the ink is much faded and someone has drawn a moustache upon the seal of the Founding Committee, that the sprockets shall be flanged upon the first Tuesday of the month, without fail, without excuse, and without the substitution of WD-40 for the proper oil of the Sump, whatever the apprentices may claim in their defence.",
+      "And so it continues, even unto this day, in the lesser and more diminished age of the Works, when the belts are driven not by the old steam but by a system the younger folk call the Grid, and speak of with less reverence than is deserved; still the sprockets are flanged, still the Rule is read aloud each Tuesday by whichever apprentice drew the short straw, and still, faintly, on a quiet evening, something in the old iron seems to sigh with satisfaction, as though remembering days when it was young, and turning, and believed itself to matter.",
+      "Council records confirm the flanging schedule is, in fact, merely routine lubricant maintenance, but the retiring Chief Engineer, upon being shown this explanation, only smiled the smile of one who has read further in the annals than the council has, and said nothing more."
+    ],
+    "pullQuote": "the sprockets shall be flanged upon the first Tuesday of the month, without fail, without excuse",
+    "tags": [
+      "voices",
+      "pastiche",
+      "sprockets"
+    ]
+  },
+  {
+    "id": "voices-grrm-the-flange-succession",
+    "category": "Voices",
+    "headline": "A Chair Of Splinters: The War For The Parish Council",
+    "standfirst": "Three factions, one folding table, and a chairmanship nobody has held for longer than a single term without incident.",
+    "byline": "In the style of George R. R. Martin",
+    "location": "FLANGE",
+    "published": "2026-07-12T11:45:00",
+    "body": [
+      "The chairmanship of Flange Parish Council had passed through nine hands in eleven years, and every hand that held it had, in the end, been made to let go, one way or another. Old Hobbett the elder had held it longest, three years and a summer, before the Great Car Park Vote broke him; his son held it eleven weeks before the Hedge Dispute; and now, in the strip-lit hall behind the Spar, three claimants sat at the same folding table, each with a laminated agenda and a look that said they had not slept.",
+      "Ser Denholm of the Allotments Committee spoke first, as eldest men who believe themselves reasonable always do, laying out his claim in the old right: he had tended the compost rota faithfully for six years, had never once missed a minute-taking, and believed, with the sincerity of a man who has genuinely never questioned it, that order was a thing owed to him for services rendered. Around him his allies murmured agreement, though privately several were already counting which way the vote on the new bin store might fall.",
+      "The Widow Prentice of the Neighbourhood Watch made no such speech. She had buried a husband, two treasurers, and one particularly troublesome dog warden, and had learned that chairmanships, like winters, come to those who simply outlast everyone fool enough to want them loudly. She sat at the end of the table with her hands folded and her tea untouched, and when at last she was asked her position, she said only that the roof of the village hall wanted mending before anyone spoke of thrones, and that whoever wished to sit in the chair had best remember it let the rain in.",
+      "Young Tomlinson, barely thirty and new to the estate at the edge of the parish boundary, had no allies at all, only a petition signed by forty residents who wanted a zebra crossing outside the school, and a stubbornness that older members mistook, at their peril, for inexperience. He said little that night. He had learned, in his short time on the council, that the ones who talk longest are rarely the ones still standing when the minutes are finally, mercifully, approved.",
+      "Outside, past the car park and the recycling bins, the low country of Flange stretched dark and indifferent under a sky that did not care in the least who chaired the council, only that the bins went out on Tuesday and the potholes, sooner or later, would have to be somebody's problem. The vote would not be settled that night, nor the next; there would be an adjournment, and then another, for that is the way of these things, and the folding table would outlast every single person seated at it.",
+      "When it was over, and the hall was locked, and the Spar's shutter rattled down for the night, someone had already chalked a new slogan on the recycling bins: The Council Remembers. No one owned up to it. No one ever does.",
+      "The minutes of the meeting, when finally published six weeks later, recorded only that the matter of the chairmanship had been \"deferred pending further discussion,\" which everyone in Flange understood to mean that the war, in its quiet parish way, was only just beginning."
+    ],
+    "pullQuote": "chairmanships, like winters, come to those who simply outlast everyone fool enough to want them loudly",
+    "tags": [
+      "voices",
+      "pastiche",
+      "parish-council"
+    ]
+  },
+  {
+    "id": "voices-lovecraft-beneath-the-car-park",
+    "category": "Voices",
+    "headline": "The Thing Beneath The Multi-Storey",
+    "standfirst": "Engineers investigating a drainage fault beneath Flange's municipal car park report findings they decline, wisely, to elaborate on.",
+    "byline": "In the style of H. P. Lovecraft",
+    "location": "FLANGE",
+    "published": "2026-07-12T13:00:00",
+    "body": [
+      "I do not write this account in any hope of being believed, for I have long since abandoned that particular vanity, but only because the Borough Engineer's report on Level B2 of the Flange Multi-Storey Car Park has been suppressed in its fuller particulars, and someone, God help them, ought to set down what was found beneath the drainage grate before the memory of it is paved over as thoroughly as the thing itself.",
+      "It began, as these things so often and so innocently begin, with a smell. Residents parking on the lower level had for some weeks complained of an odour beneath the usual diesel and damp concrete, a smell that several described, independently and with a consistency that troubled me more than any single account could, as being like \"old rain\" or \"a word almost remembered.\" The council, in its wisdom, dispatched a single contractor with a torch and a clipboard, and it is from his notes, recovered later in a state I shall not describe, that I have pieced together what follows.",
+      "The grate beneath bay 47 had not, it transpired, been opened since the car park's construction in a year the planning archive lists only as \"illegible,\" and beneath it the contractor found not the expected culvert but a passage of dressed stone entirely unlike the poured concrete above, descending at an angle that his notes describe, with what I take to be genuine mathematical distress, as \"wrong somehow, the way corners are wrong in a dream.\" He proceeded, against what I hope was at least some flicker of instinct, some twenty feet down.",
+      "What he found there I set down only because the council's own report, in its dry municipal way, confirms the barest outline: a chamber, unmarked on any surviving plan, its walls patterned in a manner the report calls \"non-repeating and disorienting to view directly,\" and at its centre a structure the contractor's notes name, with the sort of understatement that only makes the horror worse, \"the pay machine.\" It accepted no coin he possessed. It required, his final legible note insists, something else, something he did not or could not specify, before it would raise the barrier and let him leave.",
+      "He was found the next morning sitting quite calmly in his van in the ordinary upper car park, unharmed, ticket properly displayed, unable to account for eleven hours, and unwilling, when pressed, to say anything more than that the fee had, in the end, been paid, and that he would very much appreciate it if nobody asked him what with.",
+      "The council has since resurfaced Level B2, installed new signage regarding maximum stay, and declined all further comment. I have visited the car park only once since, on an errand I now regret, and I can attest only to this: that even at midday, under the flat fluorescent light, bay 47 holds a cold that has nothing whatsoever to do with the season, and that the ticket machine beside it, though functioning normally in every observable respect, has never once, in my hearing, made the same beep twice.",
+      "I do not go there any more. I would advise the reader, whoever they may be, to think very carefully before they do either, and, if they must, to bring exact change."
+    ],
+    "pullQuote": "the fee had, in the end, been paid, and that he would very much appreciate it if nobody asked him what with",
+    "tags": [
+      "voices",
+      "pastiche",
+      "car-park"
+    ]
+  },
+  {
+    "id": "voices-shelley-the-reanimated-timetable",
+    "category": "Voices",
+    "headline": "On The Reanimation Of The No. 7 Bus Timetable",
+    "standfirst": "A Flange transport consultant's midnight experiment in reviving a timetable long pronounced dead by popular consensus.",
+    "byline": "In the style of Mary Shelley",
+    "location": "FLANGE",
+    "published": "2026-07-12T14:20:00",
+    "body": [
+      "It was on a dreary night in November, though the council's press release would later insist, for reasons of optics, that it had in fact been a bright and encouraging Tuesday in spring, that I collected together the fragments of the old No. 7 timetable, that document which the residents of Flange had for so long declared beyond hope of restoration, and set myself to the horror of my toils.",
+      "I had gathered its scattered parts from every source available to a desperate consultant: the laminated relic still pinned, sun-bleached and illegible, to the shelter on Marsh Lane; the half-remembered testimony of elderly passengers who swore the 7.42 had once, in some golden and unverifiable age, actually arrived at 7.42; and a spreadsheet, inherited from my predecessor, whose very cells seemed to groan under the weight of years of unexplained cancellations. From these dead parts I resolved to construct a timetable that might live again, might run, might once more carry the people of Flange to the shops and back with something approaching dignity.",
+      "I need not tell the reader with what anxious care I laboured, poring over departure data by the light of a desk lamp that flickered, I confess, in a manner I chose not to examine too closely, while the rest of the office slept in the blessed ignorance of those who have never attempted to reanimate public transport. On the night I finally connected the last severed timing point to the whole, and watched the printer disgorge the first draft of the new schedule, I felt a surge of the same terrible joy, I imagine, that must once have animated other creators of unnatural life.",
+      "But oh, the catastrophe of that first morning! The timetable I had made did indeed run, did indeed move, did indeed appear at stops across Flange at hours no living passenger had specified and no timetable software had sanctioned; it arrived four minutes early at Marsh Lane and eleven minutes late at the Precinct, and once, monstrously, seemed to serve both stops simultaneously, a feat which three separate witnesses reported and which the operating company has neither confirmed nor been able satisfactorily to deny.",
+      "I had meant only to give my creation life; I had not thought to give it judgment, or mercy, or any regard whatsoever for the elderly gentleman left standing in the rain outside the library at what the timetable itself, printed in my own hand, swore was the correct hour. It roams still, my patched and stitched-together schedule, appearing and vanishing from the council website without warning, and I confess that I who made it can no longer say with any confidence when, or whether, or in what form, the No. 7 will come.",
+      "I have petitioned the council to let the old thing rest, to return to the honest chaos of no timetable at all rather than this uncanny semblance of order I have wrought; they have declined, citing, with a coldness I did not expect even from a transport committee, the sunk cost of the printing."
+    ],
+    "pullQuote": "I had meant only to give my creation life; I had not thought to give it judgment, or mercy",
+    "tags": [
+      "voices",
+      "pastiche",
+      "buses"
+    ]
+  },
+  {
+    "id": "voices-stoker-the-energy-company",
+    "category": "Voices",
+    "headline": "Extracts From The Flange Household Account Ledger",
+    "standfirst": "An epistolary account of Grangewell Energy Ltd, the supplier that only ever seems to visit Flange after dark.",
+    "byline": "In the style of Bram Stoker",
+    "location": "FLANGE",
+    "published": "2026-07-12T16:00:00",
+    "body": [
+      "Diary of Mrs. J. Harkworth, resident of 4 Mill Row, Flange — 3rd July. I write this by candle, though the electric is meant to be connected, for the meter reader from Grangewell Energy called again last night, well past eleven, pale of face and oddly cold to the touch when he took my hand to steady his ladder, and I confess I did not like the look he gave the cellar door, as though he could hear something behind it that I, mercifully, could not.",
+      "Letter, Thos. Grigg, solicitor, to his colleague in the city — 7th July. You will think me fanciful, Arthur, but I have now had three clients in Flange report the same curious circumstance: their Grangewell bills arrive always at midnight, always by hand, delivered by a courier no neighbour has ever seen approach the house, only depart it, and always, without exception, showing a balance somehow higher than the meter itself can account for, as though the account had fed upon something more than mere kilowatts.",
+      "Diary of Mrs. J. Harkworth — 12th July. The bill came again. Forty-one pounds more than last month, though we have used the boiler scarcely at all, and Grangewell's helpline, when at last I reached a voice upon it, informed me in tones of unsettling calm that consumption had been \"unusually elevated in the small hours,\" a time at which every soul in this house, I can attest upon my honour, was fast and innocently asleep.",
+      "Statement of Constable P. Renfrew, Flange Police, taken 15th July. I attended the Grangewell depot on the ring road after reports of lights burning there at three in the morning, though the premises are shown on every council record as vacant since the old sub-station closed in 2019. I found the gate open, the meter room warm to an unnatural degree, and upon the wall a row of smart meters all displaying green and all, upon closer inspection, entirely unconnected to any cable I could find. I confess I did not stay to investigate further. I am not a fanciful man, but I did not stay.",
+      "Letter, Thos. Grigg to Arthur, 20th July, marked urgent. We have traced the company's registered address, Arthur, and found it to be a lock-up garage behind the old flange works, shuttered, unlit, and, according to the neighbouring tenant, visited only ever by night, and only ever by a gentleman in a long dark coat who signs the delivery book, when he signs it at all, in a hand that never quite forms the same signature twice.",
+      "Final entry, Diary of Mrs. J. Harkworth — 31st July. We have switched supplier. The new company sends its bills by ordinary post, in daylight, and asks nothing of us that a household might not reasonably give. I sleep now with the cellar door bolted all the same, and I do not enquire too closely into what became of the old smart meter, which the engineer, upon removing it, would not meet my eye and would not put down until he was safely outside the garden gate."
+    ],
+    "pullQuote": "The bill came again. Forty-one pounds more than last month, though we have used the boiler scarcely at all",
+    "tags": [
+      "voices",
+      "pastiche",
+      "energy-supplier"
+    ]
+  },
+  {
+    "id": "voices-christie-four-minutes-slow",
+    "category": "Voices",
+    "headline": "The Mystery Of The Four Minutes",
+    "standfirst": "A village clock, a locked belfry, and a detective who suspects everyone in Flange Parva has a motive for the missing minutes.",
+    "byline": "In the style of Agatha Christie",
+    "location": "FLANGE PARVA",
+    "published": "2026-07-12T09:00:00",
+    "body": [
+      "It was generally agreed in Flange Parva that the church clock had always run four minutes slow, and it was precisely this general agreement that struck Inspector Mardling as the most suspicious fact in the whole curious business. A clock that is wrong by accident drifts; it does not hold, with the discipline of a soldier on parade, to exactly four minutes slow for eleven consecutive years. Someone, the Inspector concluded over a cup of tea he did not finish, was maintaining that error quite deliberately.",
+      "He gathered them, as was his custom, in the village hall: the vicar, who had access to the belfry key and an alibi that depended entirely on the word of a verger; Miss Aldous of the post office, who had once been overheard remarking that the four minutes had \"saved her life more than once\" without explaining from what; Colonel Pettifer, whose watch, oddly, agreed with the clock to the second; and young Simmons the clockwinder, who had wound that clock every Friday for a decade and had never once, by his own admission, corrected the error.",
+      "\"You will each have wondered,\" said the Inspector, \"why nobody in this village has ever complained. A church clock four minutes slow is not a secret. It is visible to anyone who cares to look up. And yet not one of you, in eleven years, thought it worth mentioning to the Parish Council. That, I put it to you, is not tolerance. That is complicity.\"",
+      "It was Miss Aldous who broke first, as the quiet ones so often do. The four minutes, she confessed, had begun quite by accident in the year the old vicar's wife had run, weeping, from her own wedding rehearsal, and the church clock, slow by chance that single day, had given the village just enough time to talk her back through the door before the register was signed on grounds she would regret. After that, the village had simply... kept it slow. On purpose. A small, communal, entirely unofficial mercy, wound in every Friday by young Simmons, who had been sworn to the secret before he was old enough to understand what he was keeping.",
+      "\"Then there is no crime,\" said Colonel Pettifer, with some relief, for he had rather feared the four minutes concealed something to do with his own watch, and a lady in Flange Magna he had no wish discussed.",
+      "\"No crime,\" the Inspector agreed, closing his notebook, \"only a village that decided, once, to be four minutes kinder than the truth, and has never since found a reason to stop.\" He left them to their tea, and it is recorded that the church clock of Flange Parva runs four minutes slow to this very day, and that nobody, not even the diocese, has ever again thought to ask why."
+    ],
+    "pullQuote": "A clock that is wrong by accident drifts; it does not hold, with the discipline of a soldier on parade, to exactly four minutes slow for eleven consecutive years.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "village-clock"
+    ]
+  },
+  {
+    "id": "voices-vonnegut-tax-on-optimism",
+    "category": "Voices",
+    "headline": "Flange Introduces A Small Tax On Hope",
+    "standfirst": "The council's new Optimism Levy taxes residents for expressing unwarranted confidence about the weekend. So it goes.",
+    "byline": "In the style of Kurt Vonnegut",
+    "location": "FLANGE",
+    "published": "2026-07-12T10:00:00",
+    "body": [
+      "Listen: Flange Borough Council has introduced a tax on optimism. This is true. I did not make it up. Nobody could make up something this small and this sad and still expect anyone to believe it, which is exactly why it is true.",
+      "The tax works like this. Any resident of Flange who is overheard, by a council-approved monitor stationed at bus stops and in the queue at the Co-op, expressing unwarranted confidence about the weekend weather, the football, or the general trajectory of their life, is liable for a fee of fifty pence, payable on the spot or, more usually, not payable at all, because the monitors are underpaid, bored, and mostly just standing there in the rain like everybody else.",
+      "A man named Delbert Hoyt, who works at the flange factory and has for thirty-one years, was the first person fined. He said, \"I reckon it'll clear up by three,\" about the sky, which at the time was the color of a dead television, and a monitor named Nancy, who did not want the job and got it anyway, wrote him a ticket. Delbert paid it without complaint. He said optimism was worth fifty pence of anybody's money, and if the council wanted to charge him for it, that was the council's business and none of his.",
+      "The council says the tax is meant to discourage what a spokesman called \"unfunded promises about the future,\" a phrase which nobody in Flange understood but which everybody, strangely, agreed with. So it goes.",
+      "I want to tell you that the people of Flange rose up against this tax, formed a movement, made a banner, marched on the town hall. They did not. They shrugged, mostly, the way people in Flange shrug about everything, weddings and funerals and flange prices alike, and a few of them started saying, \"Well, it might not rain, but I'm not paying fifty pence to say so,\" which is, if you think about it, a perfectly reasonable way to live, and possibly the only sane response available to anyone, anywhere, ever.",
+      "Delbert Hoyt still says it'll clear up by three. He just says it more quietly now, to himself, in the factory car park, where the council monitors, God help them, cannot hear him, and cannot charge him, and cannot take from him the one small unfunded promise he has left. So it goes. So, so it goes."
+    ],
+    "pullQuote": "optimism was worth fifty pence of anybody's money, and if the council wanted to charge him for it, that was the council's business and none of his",
+    "tags": [
+      "voices",
+      "pastiche",
+      "tax"
+    ]
+  },
+  {
+    "id": "voices-bradbury-the-clock-burning",
+    "category": "Voices",
+    "headline": "The Night They Burned The Clocks Of Flange",
+    "standfirst": "On a warm dusk in July, the residents of Flange gathered every clock in the parish and set them alight in the square.",
+    "byline": "In the style of Ray Bradbury",
+    "location": "FLANGE",
+    "published": "2026-07-12T20:00:00",
+    "body": [
+      "The clocks came out of the houses at dusk, carried in the arms of children and grandmothers and men who had not held anything so carefully since their wedding rings, and they were stacked in the square in a great ticking pyramid that caught the last orange light and threw it back a thousand small and stuttering ways.",
+      "Nobody could say, afterward, who had first suggested it, only that the idea had moved through Flange the way ideas move through small hot towns in July, house to house, porch to porch, a whisper that became a certainty by the time it reached the last street: that the town had simply had enough of being told, tick by tick, second by relentless second, exactly how much of everything was running out.",
+      "Old Man Halloway, who had fixed clocks in Flange for forty years and loved them the way other men loved dogs, stood at the edge of the square with his hands in his pockets and did not try to stop it. He only watched the mantel clocks and the wristwatches and the big brass regulator from the bank go up together, watched the flames find the springs and the gears and send small bright sparks spinning upward like a swarm of released and grateful fireflies, and he said, to nobody and everybody, that a clock was only ever a small tame animal pretending to be a law of the universe, and that it was, on the whole, a fine thing to see it set free.",
+      "The children ran around the fire with the particular joy of children who have been told, their whole lives, to hurry up, and who understand, without being told twice, that tonight nobody would say it again. Somewhere a woman laughed the laugh of someone who has just realized she is not late for anything, not tonight, not ever again tonight, and will not be for as long as this fire burns.",
+      "By midnight the pyramid was ash and copper wire and the twisted black hands of a hundred stopped hours, and the town square smelled of hot metal and cut grass and something else, something like the particular smell of a held breath finally let go. Nobody in Flange checked the time for the rest of that whole warm summer. They simply went outside when it felt like going outside, and came in when the dark told them to, and found, to their considerable surprise, that the flange works still opened, the buses still more or less ran, and the world, unwatched, unhurried, unclocked, went on turning anyway, exactly as it always secretly had.",
+      "The council ordered new clocks the following spring, of course, because councils always do; but for one long summer, Flange lived by the sun and the smell of the grass and the sound of its own unhurried heart, and everyone who was there agrees it was, without any argument at all, the best July anyone could remember."
+    ],
+    "pullQuote": "a clock was only ever a small tame animal pretending to be a law of the universe",
+    "tags": [
+      "voices",
+      "pastiche",
+      "clocks"
+    ]
+  },
+  {
+    "id": "voices-leguin-the-favour-economy",
+    "category": "Voices",
+    "headline": "A Description Of The Flange Exchange, In Which No Money Changes Hands",
+    "standfirst": "An anthropological account of the small English town that quietly replaced its currency with a ledger of favours.",
+    "byline": "In the style of Ursula K. Le Guin",
+    "location": "FLANGE",
+    "published": "2026-07-12T11:00:00",
+    "body": [
+      "It is worth explaining, to those who come to Flange expecting shops and prices and the ordinary machinery of buying, that the town abandoned money for its internal dealings some six years ago, not through any revolution or decree, but slowly, the way a path forms across a field: because enough people found it the easier way to walk.",
+      "The system, if it can be called a system, since no one designed it and no one administers it, works by memory and by a ledger kept, somewhat reluctantly, by the woman who runs the launderette, who did not ask for the job and has been doing it for five years regardless. A favour given is a favour owed. Mrs. Okonkwo mends Colonel Petts' shirts; the Colonel, some months later, drives Mrs. Okonkwo's nephew to the hospital in Big Flange and back; nobody writes a number down, because the ledger does not deal in numbers, only in the plain fact of who has been kind to whom, and how recently.",
+      "It is not, I want to be clear, a utopia, and the people of Flange would be the first to say so, often at length, over tea. Favours accrue unevenly. Some give more than they receive and say nothing of it, out of a pride that looks, from outside, very like resentment, and sometimes is. Old grudges are kept as carefully as old kindnesses; a man who once let a debt of eggs and firewood go unrepaid for a whole winter twenty years ago is still, by some in the town, quietly not trusted with anything that matters.",
+      "What the system has done, for all its unevenness, is make visible a thing that money is very good at hiding: that a town runs, in the end, on the accumulated weight of small unpaid kindnesses, that the bus driver who waits the extra minute and the neighbour who takes in the parcel are doing the same essential work as the ledger itself, whether or not anyone writes it down. In Flange they simply stopped pretending otherwise.",
+      "There is talk, always, of formalising it: an app, someone suggested, that would let residents log favours on their phones. The suggestion is raised at most parish meetings and quietly buried at all of them, because the people of Flange have understood something that money, and perhaps apps, are designed precisely to forget: that a favour written down and counted stops, somewhere in the counting, being a favour at all, and becomes instead a very small, very cold sort of debt.",
+      "So the ledger stays in the launderette, half in pencil, half in memory, and the town goes on, imperfectly, unevenly, kindly enough, exchanging what it has for what it needs in the old slow way, and calling it, when asked, nothing more than being neighbours."
+    ],
+    "pullQuote": "a favour written down and counted stops, somewhere in the counting, being a favour at all, and becomes instead a very small, very cold sort of debt",
+    "tags": [
+      "voices",
+      "pastiche",
+      "favour-economy"
+    ]
+  },
+  {
+    "id": "voices-atwood-the-biscuit-ration",
+    "category": "Voices",
+    "headline": "A Report On The Rationing Of Biscuits In The Flange Community Hall",
+    "standfirst": "The Neighbourhood Watch's new biscuit allocation policy is, its architects insist, entirely for residents' own good.",
+    "byline": "In the style of Margaret Atwood",
+    "location": "FLANGE",
+    "published": "2026-07-12T12:00:00",
+    "body": [
+      "It began, as these things generally do, with a shortage that was not really a shortage: two packets of digestives for the Tuesday coffee morning, and eleven attendees, and Mrs. Yardley, who chaired the Neighbourhood Watch with the calm, unbudging certainty of a woman who has never once been told no and taken it seriously, decided that the solution was not more biscuits, but rules.",
+      "The rules were reasonable, at first, the way rules always are at first. Two biscuits per person, tracked on a clipboard by the urn, was framed as fairness, and fairness is a word that is very difficult to argue with in a community hall at ten in the morning. It was only later, much later, that anyone noticed the clipboard had begun recording not just how many biscuits each resident took, but which ones, and how quickly, and whether they had, in Mrs. Yardley's careful handwriting, \"seemed to need it.\"",
+      "By the spring the two-biscuit rule had become a points system, and the points system had become a tier: Bronze members received the plain digestives, Silver the bourbons, and Gold, a small and mostly self-selected group who had, over many months, proven themselves sufficiently helpful to the Watch, the good chocolate ones that came in the tin at Christmas and were otherwise never seen. Nobody had voted on this. It had simply accreted, decision by small reasonable decision, the way all such systems do, until the hall was full of grown adults calculating, quietly, which errands might be worth a bourbon.",
+      "What strikes me, writing this down now, is not the biscuits themselves, which are after all only biscuits, cheap and available at any shop in Flange to anyone with forty pence and the will to walk there. What strikes me is how willingly the hall accepted the clipboard, how few objected while the objecting was still easy, how the word fairness did its quiet work long after the thing it described had stopped, by any reasonable measure, being fair.",
+      "A resident did eventually ask, at a meeting in April, why the Watch needed to track biscuits at all, when everyone present was a grown adult capable of deciding for themselves how many custard creams constituted a reasonable morning. Mrs. Yardley smiled the smile of someone who has anticipated the question and answered, without missing a beat, that fairness required oversight, and that oversight, by its nature, required a list, and a list, once it exists, tends rather to insist on being useful for something more.",
+      "The clipboard is still there, by the urn, its pages now numbering in the dozens. Nobody has thrown it away. It seems, at this point, almost load-bearing. I attend the coffee mornings still, and take my two biscuits, plain, Bronze tier, and say nothing, because saying something, I have come to understand, is itself a thing the clipboard would very likely find a way to record."
+    ],
+    "pullQuote": "It had simply accreted, decision by small reasonable decision, the way all such systems do, until the hall was full of grown adults calculating, quietly, which errands might be worth a bourbon.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "biscuits"
+    ]
+  },
+  {
+    "id": "voices-ishiguro-the-grounding-stone",
+    "category": "Voices",
+    "headline": "A Small Matter Of The Grounding Stone",
+    "standfirst": "A retired butler recalls, with characteristic restraint, the household's four-hundred-pound acquisition of a stone said to promote calm.",
+    "byline": "In the style of Kazuo Ishiguro",
+    "location": "FLANGE HALL",
+    "published": "2026-07-12T13:30:00",
+    "body": [
+      "It is perhaps worth setting down, for whatever small value it may hold to anyone who reads these pages, the circumstances surrounding the arrival of the grounding stone at Flange Hall, an object which cost, I am given to understand, some four hundred pounds, and which now occupies a position of some prominence on the good sideboard in the drawing room, between a photograph of the late Mrs. Featherstone and a dish of potpourri nobody has replenished since spring.",
+      "Mr. Featherstone had, in the months preceding its purchase, been under what I might delicately term a strain, the nature of which it is not my place to elaborate upon, though I do not think I overstep in observing that a man who has begun taking his sherry a full hour earlier than is customary is a man in want of some manner of comfort, however it may present itself. The stone was recommended to him, I believe, by a gentleman he met at the golf club, who described it, according to the receipt I later filed, as possessing \"a naturally calming resonance,\" a phrase I confess I have turned over in my mind on many quiet evenings since, without ever quite arriving at what it might be understood to mean.",
+      "I was asked to place it upon the sideboard, and this I did, with the same care I extend to every object in my charge, though I will admit, in the privacy of this account, to a certain private reservation as to its efficacy, a reservation I would never, of course, have voiced to Mr. Featherstone, it not being my position to comment upon the wisdom of purchases made in his own household with his own money and, one presumes, his own considered judgement.",
+      "It is difficult to say, even now, whether the stone achieved what was asked of it. Mr. Featherstone did, in the weeks that followed, appear somewhat easier in himself; whether this owed anything to the stone, or to the passing of whatever difficulty had troubled him, or simply to the arrival of finer weather, is not a question I was ever in a position to settle, and I have long since made my peace with not settling it. One learns, in service, that the causes of a person's contentment are very often none of one's business, however closely one may be obliged to dust the evidence of it.",
+      "I dust the stone still, each Tuesday, with the same cloth I use for the silver, and I confess that I have, on one or two occasions, when the house was quiet and there was no one to observe me do so, rested my hand upon it for a moment longer than strictly necessary. I could not say what I expected to feel. I felt, as it happens, very little. But there was, I think, some small comfort even in that, in the simple, undemanding fact of a thing that asked nothing of me and offered, in return, nothing more than its own quiet, expensive weight."
+    ],
+    "pullQuote": "One learns, in service, that the causes of a person's contentment are very often none of one's business",
+    "tags": [
+      "voices",
+      "pastiche",
+      "grounding-stone"
+    ]
+  },
+  {
+    "id": "voices-rushdie-the-midnight-bridge",
+    "category": "Voices",
+    "headline": "The Bridge That Was Born, Like All The Best Complaints, At Midnight",
+    "standfirst": "A maximalist account of the Flange footbridge that arrived overnight, fully formed, and immediately demanded weekends off.",
+    "byline": "In the style of Salman Rushdie",
+    "location": "FLANGE",
+    "published": "2026-07-12T14:45:00",
+    "body": [
+      "Let me tell you, before the council's official version gets its boring bureaucratic hands on the story and irons out every wrinkle that makes it worth telling, that the footbridge over the Flange canal was not, whatever the planning application insists in its dry triplicate, constructed over eleven months by a firm called Bracknell & Sons Civil Engineering; it was born, whole and opinionated and already slightly resentful, at the stroke of midnight on the last day of March, in the manner of certain other midnight-born things in certain other, grander stories, and it has never once let anyone forget the hour of its arrival.",
+      "It announced itself, that first dawn, not with the customary creak of new steel settling but with what three separate dog-walkers described, in statements the council quietly declined to include in its official minutes, as a sound like a very large person clearing their throat before making an announcement nobody had asked for; and the announcement, when the residents of Flange gathered blinking on the towpath to hear it, was this: that the bridge, having considered the matter fully formed and fully awake in the space of a single midnight, wished it to be known that it would not be working weekends.",
+      "You will say this is absurd, and you will be right, and rightness has never once stopped anything from being true in Flange, where absurdity arrives with the same regularity as the 8.15 to the city and is met, on the whole, with roughly the same weary shrug; the council sent an engineer, who found nothing wrong with the bolts or the camber or the load rating, and who reported back, in the flattened prose of a man determined not to believe what he has just heard, that the bridge was, and he stressed this word as though it might yet save his career, \"structurally reluctant\" every Saturday and Sunday between the hours of nine and five.",
+      "And so it goes on: on weekdays the bridge bears cyclists and prams and the Tuesday flower-market crowd without complaint, sturdy as any bridge in any story that isn't trying to make a point; but on Saturday morning, without fail, a gate that nobody remembers installing lowers itself across the western end with the unhurried finality of a shop owner turning a sign to Closed, and the residents of Flange, who have long since stopped being surprised by anything their infrastructure feels entitled to want, simply walk the long way round, muttering the particular, affectionate curses reserved for a relative who is difficult but, in the end, family.",
+      "There are those in the town, older ones, who say the bridge is not unique in this, that the flange works itself once downed its own tools every August for a fortnight with no one quite able to say who authorised it, that things built in Flange have always, somewhere in their steel or stone or brick, a small ungovernable memory of the people who made them, tired people, people who wanted Saturdays too, and that the bridge is only doing, in its own stubborn iron way, what its makers never got the chance to do themselves.",
+      "The council has scheduled a consultation on the matter for fifteen months hence, a date the bridge, when the notice was pinned to its own railing, is reported by at least one reliable witness to have read with what could only be described, in the flattened municipal language nobody quite manages to keep flat when describing it, as visible and entirely justified disdain."
+    ],
+    "pullQuote": "it was born, whole and opinionated and already slightly resentful, at the stroke of midnight on the last day of March",
+    "tags": [
+      "voices",
+      "pastiche",
+      "bridge"
+    ]
+  },
+  {
+    "id": "voices-zadiesmith-the-estate-committee",
+    "category": "Voices",
+    "headline": "Everyone On Wren House Has An Opinion About The New Bins, And They Are All, Somehow, Correct",
+    "standfirst": "A snapshot of the Flange Wren House residents' committee, four generations deep in disagreement over recycling.",
+    "byline": "In the style of Zadie Smith",
+    "location": "FLANGE",
+    "published": "2026-07-12T15:30:00",
+    "body": [
+      "The thing about Wren House, if you'd never lived there and only heard about it from someone at the school gates with an axe to grind, is that you'd think forty-one flats couldn't possibly agree on anything, and you'd be right, mostly, except about the bins, where everyone agreed completely and immediately that the new colour-coded system installed by the council was, in the words of Mrs. Okafor from the third floor, \"an insult dressed up as an improvement,\" a phrase that made its way round the building faster than any actual information about what the colours meant.",
+      "There was a meeting, because there is always, eventually, a meeting, held in the community room that still smelled of last month's Diwali party and somebody's ongoing feud about the thermostat, and it brought together, in one overheated room with insufficient chairs, old Mr. Panesar, who had opinions about recycling formed in 1987 and had not updated them since, and Keisha from flat 12, twenty-two and newly a mother, who wanted to know, reasonably, why nobody had simply put up a sign, and Deniz, who ran the corner shop and attended every residents' meeting purely, he claimed, for the entertainment, though he always ended up chairing the vote.",
+      "What nobody said out loud, though everybody in that room understood it perfectly, was that the argument was never really about bins. It was about who got asked, and who got told; about the council sending a letter in English only to a building where English was, for a good third of the residents, the fourth language down the list; about the quiet, accumulating exhaustion of people who had spent years explaining, to one authority or another, that they lived here too, and had opinions, and would like, please, to be consulted before the colour of the bin they used got changed.",
+      "Mr. Panesar, in the end, was the one who cracked the room open, standing up slower than the moment probably needed and saying that in his forty years on the estate he had seen the bins change colour four times and the council's mind about what mattered change not once, and that he would happily sort his rubbish into whatever colour they liked, blue, green, tartan, if someone would just once ask him first instead of telling him after.",
+      "It didn't fix anything, not really; the bins stayed the colours the council had already ordered, because that is how councils work, ordering first and consulting, if at all, as an afterthought dressed up as democracy. But Deniz took a vote anyway, on a motion that had no actual power to change a single bin lid, that the residents of Wren House be consulted, properly, next time, and it passed unanimously, forty-one for, none against, the most united that building had been on anything since the World Cup.",
+      "Keisha posted about it that night, a photo of the new bins with a caption that just said \"we see you,\" which got, by Flange standards, an extraordinary number of likes, and which nobody at the council, as far as anyone could tell, ever actually saw."
+    ],
+    "pullQuote": "It was about who got asked, and who got told",
+    "tags": [
+      "voices",
+      "pastiche",
+      "estate-committee"
+    ]
+  },
+  {
+    "id": "voices-morrison-the-ghost-of-the-works",
+    "category": "Voices",
+    "headline": "What The Old Flange Works Remembers, When It Remembers Anything At All",
+    "standfirst": "A lyrical account of the derelict flange works and the presence still said to move through its rusted halls at dusk.",
+    "byline": "In the style of Toni Morrison",
+    "location": "FLANGE",
+    "published": "2026-07-12T17:00:00",
+    "body": [
+      "The old works stood at the end of Furnace Lane long after the last shift clocked out, long after the machines went quiet and the roof began its slow, patient collapse, and if you asked anyone who still walked that way at dusk, they would tell you, not as a ghost story exactly, more as a fact they had simply stopped questioning, that something in there still remembered how to work.",
+      "It was Odella who first said she'd heard it, the low hum of a belt that no longer existed, turning in a building that had no power run to it since before her mother was born, and people laughed at her the way people laugh at a woman who says a true thing too plainly, but they stopped laughing, most of them, after they'd walked past the gate themselves on a July evening and felt the air go warm and close the way it does inside a body that is still, somehow, faintly, breathing.",
+      "The works had swallowed three generations of Flange whole, had taken their hands and their hearing and, in the case of Odella's own grandfather, two fingers on the left one, and given back in exchange a wage and a whistle and a rhythm that shaped every other hour of the day around it, so that even now, decades gone, old men in Flange still woke at 5.45 without an alarm, their bodies keeping a shift that no longer existed, for a building that no longer wanted them.",
+      "What moved through the works at dusk was not, Odella came to believe, any single ghost, no dead foreman come back to check the sprockets, but something made collectively, out of every body that had ever bent itself to that machinery and every hour those bodies had given it and never quite gotten back, a presence stitched together the way a quilt is stitched, out of scraps too small alone to keep anyone warm, but enough, together, to hold a shape.",
+      "The council wants to knock it down, build flats, call it regeneration, and Odella does not say much at the meetings, because she has learned that the things she knows are not the things a planning committee has a form for; she only goes, sometimes, at dusk, and stands outside the gate, and lets the warm air move past her, and says, quietly, the names of the ones who gave that place their hands, so that somebody, at least, before the bulldozers come, has said them out loud.",
+      "It is not sad, exactly, what she does there, though it looks like sadness from the road. It is closer to a kind of keeping. The works remembers, in its rusted, patient way, and Odella remembers the works remembering, and between the two of them, for now, nothing that happened inside those walls is entirely lost."
+    ],
+    "pullQuote": "out of every body that had ever bent itself to that machinery and every hour those bodies had given it and never quite gotten back",
+    "tags": [
+      "voices",
+      "pastiche",
+      "flange-works"
+    ]
+  },
+  {
+    "id": "voices-salinger-the-phony-sprockets",
+    "category": "Voices",
+    "headline": "Everybody In This Whole Goddam Town Is Obsessed With The Sprockets",
+    "standfirst": "A teenage narrator's disgusted, funny, oddly tender account of Flange's civic pride in its municipal sprockets.",
+    "byline": "In the style of J. D. Salinger",
+    "location": "FLANGE",
+    "published": "2026-07-12T18:15:00",
+    "body": [
+      "If you really want to hear about it, the first thing you'll probably want to know is why anybody would write a whole article about sprockets, and I don't blame you, because I asked myself the same goddam thing about eleven times before I actually sat down and did it, but the truth is somebody's got to, on account of everybody in Flange is so completely, hopelessly obsessed with the things that if I don't write it down nobody with any sense ever will.",
+      "The sprockets are these gears down at the old works, and every year the council has this whole ceremony where they \"flange\" them, which as far as I can tell just means somebody in a hi-vis jacket sprays some oil on them and everybody claps like it's the goddam moon landing, and my dad makes me go every single year, and every single year he cries a little, which kills me, because he's not a crying guy about anything else, not weddings, not funerals, just sprockets, which if you think about it too long makes you feel sort of lousy for him.",
+      "What gets me is how phony some of the people are about it. There's this guy, Mr. Haverford, who gives a whole speech every year about \"tradition\" and \"the spirit of Flange,\" and you can tell, if you're even a little bit not an idiot, that he doesn't care about the sprockets at all, he just likes standing up there with the microphone, and it's exactly the kind of thing that makes we want to stand up and yell something, except I never do, I just stand there like everybody else, clapping for gears.",
+      "But then there's other people, like this old lady, Mrs. Pell, who doesn't say anything at all, she just stands right up close to the sprockets when they flange them, real close, closer than anybody else, and watches the whole thing like it's the last time she's ever going to see it, and that gets me in a whole different way, a way I don't have a phony word for, because you can tell she isn't performing anything, she's just there, watching some old gears get oiled, and it's somehow the most honest thing that happens all day.",
+      "I don't know. I probably sound like I hate the sprockets, and I don't, not exactly, I hate the speeches and the hi-vis guy who thinks the ceremony's about him, but the sprockets themselves, sitting there being old and rusty and needing somebody to look after them once a year or they'll seize up completely, that part I sort of get. That part doesn't feel phony at all.",
+      "Anyway, that's the whole stupid story, and if you tell anybody I wrote something halfway sincere about municipal machinery I will deny it to my goddam grave."
+    ],
+    "pullQuote": "you can tell she isn't performing anything, she's just there, watching some old gears get oiled, and it's somehow the most honest thing that happens all day.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "sprockets"
+    ]
+  },
+  {
+    "id": "voices-steinbeck-the-flange-fields",
+    "category": "Voices",
+    "headline": "The Men Who Walk To The Flange Fields Before Light",
+    "standfirst": "A dignified account of the seasonal workers who harvest Flange's export crop of ornamental sprockets by hand.",
+    "byline": "In the style of John Steinbeck",
+    "location": "FLANGE",
+    "published": "2026-07-12T05:30:00",
+    "body": [
+      "The road out to the flange fields is dirt for the last half mile, and the men walk it before the sun is properly up, in twos and threes, not talking much, because there isn't much that needs saying at that hour that the walking itself doesn't already say. They carry their own gloves, most of them, because the ones the co-op hands out wear through by the second week, and a man who has done this work more than one season learns to trust his own gear over anything given to him free.",
+      "It is slow work, the sprocket harvest, though the people of Flange who buy the finished, polished things in the gift shop on the high street rarely think about the hands that pulled them, raw and half-formed, out of the casting beds at first light. Each sprocket has to be turned and checked and set aside if the teeth have come out wrong, and a good picker can tell a flawed one by feel alone, in the half dark, before his eyes have even caught up with his fingers.",
+      "Old Tobias, who has worked the fields eighteen seasons, says the flange harvest used to pay a man enough to keep his family through the winter, back before the big foundries undercut the price and the co-op started bringing in workers from further off who'd take less for the same ten hours in the sun. He does not say this bitterly. He says it the way a man states a fact about weather, something true and hard and not, in his lifetime, likely to change on account of anybody's complaining.",
+      "At noon they sit in what shade the drying sheds throw and eat what they've brought, bread mostly, and share what there is to share, because a man who eats alone in the flange fields is a man other men start to worry about, and worry, out there, is one of the few things still handed round generously. There is a decency among them that has nothing to do with sentiment and everything to do with necessity: they need each other to get through the season, and so they are, in the plain practical way of people who have no room for anything fancier, kind.",
+      "By evening the carts go back down the dirt road loaded with the day's sprockets, and the men walk behind them the way they walked out, in twos and threes, quieter now, tired in the particular way that comes from careful work done with your hands, not the sitting-down kind of tired but the kind that settles into the shoulders and stays there overnight.",
+      "The gift shop sells the finished sprockets for eighteen pounds each, brass-polished, wrapped in tissue, a nice thing to bring home from a weekend in Flange. Nobody in the shop mentions the road, or the drying sheds, or Old Tobias, who will be back out there before light again tomorrow, doing the same slow, careful, underpaid work he has done for eighteen years, because it is the work there is, and a man has to eat, and there is, after everything, still some pride left in doing a hard thing well."
+    ],
+    "pullQuote": "a man who eats alone in the flange fields is a man other men start to worry about, and worry, out there, is one of the few things still handed round generously.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "flange-harvest"
+    ]
+  },
+  {
+    "id": "voices-faulkner-the-flange-family",
+    "category": "Voices",
+    "headline": "And The Bridge Also Belonged To Them, In Its Way",
+    "standfirst": "Four generations of the Compton-Flange family, one bridge, and a single unspooling sentence of inherited grievance.",
+    "byline": "In the style of William Faulkner",
+    "location": "FLANGE COUNTY",
+    "published": "2026-07-12T19:00:00",
+    "body": [
+      "It was old Colonel Ephraim Compton-Flange who first put the toll gate on the bridge in 1911, or perhaps it was his father before him, the accounts differ and nobody left alive has the patience or the documentation to settle it, but what is certain, what has never once been disputed even by the branches of the family who no longer speak to one another at Christmas or at funerals, which amounts in Flange County to very nearly the same event, is that the bridge, small and iron and hardly worth crossing in the first place, has stood for a hundred and fifteen years as the one thing the Compton-Flanges could agree they owned, even as they disagreed, violently, generationally, about absolutely everything else it touched.",
+      "There was Ephraim's son, Willard, who inherited the bridge and the toll and the grudge against his cousins on the mother's side that nobody now remembers the origin of, only that it concerned a debt, or a dog, or possibly both, and who spent forty years collecting tuppence a crossing from neighbors who had known him since he was a boy running barefoot over that same iron with no thought of paying anybody anything, and who came, in his last years, to believe that the bridge itself disliked him, groaned differently under his own boots than under any other, a belief his daughter Idella inherited whole, along with the bridge, and the toll box, and the grudge, though by her time nobody could say for certain against whom the grudge was even held, only that it was held, faithfully, the way the family held everything, land and rust and old unspoken hurts alike, past all reasonable use.",
+      "Idella married a man named Hollis Prewitt who was not from Flange at all, was from the city, and who looked at the toll bridge on the one occasion he was made to cross it with the particular contempt of a man who has never had to inherit anything he did not choose, and it was Hollis, some say, though the family disputes this too, who first suggested the bridge be sold, or torn down, or simply left open and untollled like every other bridge in the county, a suggestion that was received by Idella's brothers with a silence so complete and so lasting that Hollis Prewitt left Flange within the year and was not spoken of again except obliquely, as an example of what happened to men who did not understand what a bridge, properly inherited, was actually for.",
+      "It came down, in the end, to the granddaughter, Willow Compton-Flange, twenty-six years old and the last of them still living in the county, who found herself one wet November morning standing at the toll box her great-grandfather had built with his own hands, collecting tuppence, or its inflated modern equivalent, from a Deliveroo cyclist who had no earthly idea he was paying a toll levied a hundred and fifteen years earlier by a dead colonel over a grievance nobody could name, and who found, standing there in the rain with the coins cold in her palm, that she could not for the life of her say why she kept collecting it, except that her father had, and his mother before him, and the bridge, small and iron and hardly worth crossing, had somehow become the one continuous thread strung taut across four generations of people who agreed on nothing else, and she was not, whatever else she might one day become, going to be the one who let it snap.",
+      "So the toll box stands still, and the bridge still groans, or does not groan, under whichever Compton-Flange happens to be crossing it that particular grey morning, and the county goes on believing, as counties do, that a family which cannot agree on a single other thing under God's sky must be, by that very fact, more thoroughly and more permanently bound to the one small thing it does agree on than any family that finds agreement easy ever could."
+    ],
+    "pullQuote": "the bridge, small and iron and hardly worth crossing, had somehow become the one continuous thread strung taut across four generations of people who agreed on nothing else",
+    "tags": [
+      "voices",
+      "pastiche",
+      "toll-bridge"
+    ]
+  },
+  {
+    "id": "voices-conrad-heart-of-the-works",
+    "category": "Voices",
+    "headline": "An Account, Given Late At Night, Of A Journey Into The Flange Works",
+    "standfirst": "A frame narrative: a former inspector recalls, aboard a canal barge, his descent into the darkest reaches of the flange works.",
+    "byline": "In the style of Joseph Conrad",
+    "location": "FLANGE CANAL",
+    "published": "2026-07-12T21:30:00",
+    "body": [
+      "The barge had been moored an hour against the current, and the light had gone from the water entirely, before Mardling, who had once been an inspector of works and was now, by his own account, very little of anything at all, took up the thread of his story again, and told us of his journey to the innermost chamber of the Flange works, in the days when the works still ran three shifts and answered to no authority he had ever been able to identify with certainty.",
+      "He had gone in, he said, as a young man, sent to audit the output of the lower floor, a task that should by any reasonable measure have taken an afternoon, and had found instead a building that seemed, the deeper he went, to fold back upon itself, corridor answering corridor in a manner no plan on file in the council offices had ever accounted for, until he could no longer say with confidence whether he moved forward through the works or merely deeper into some single unmapped and unlicensed part of it that had always, quietly, existed beneath the licensed part, tolerated, unspoken of, essential.",
+      "It was there, he said, at what he took to be the very heart of the place, that he found the foreman they called only Kurtzley, a man of whom the upper floors spoke in the hushed, admiring, faintly frightened tones reserved for someone who has produced results nobody dares examine too closely, and who had, over some twenty years unsupervised in the lower works, developed a method of production so far beyond anything sanctioned by the parent company that the output reports, when Mardling finally saw them, no longer resembled reports of manufacturing at all, but something closer to a private and increasingly deranged philosophy of the sprocket, scrawled in margins that grew, page by page, less legible and more insistent.",
+      "What Mardling would not describe, even now, even to men he trusted, was the exact nature of what he had seen in the last chamber, the one Kurtzley guarded with a devotion that had long since ceased to be professional; he would say only that production there had exceeded every rational metric, that the machinery ran with an efficiency that defied its own maintenance schedule, and that Kurtzley, when at last confronted, had said only, in a voice Mardling described as already half given over to something the light did not reach, that the horror of it was not what had been done down there, but how completely, how willingly, the rest of the works above had chosen never to ask.",
+      "Kurtzley did not survive the audit, in any professional sense; the lower floor was quietly absorbed back into the ordinary reporting structure, its irregularities smoothed into figures that satisfied the parent company well enough. Mardling resigned within the year. He would not, even now, aboard the barge, in the last of the light, say what had become of the chamber itself, only that he had stood once at its threshold and looked in, and that the memory of it had never, in all the years since, agreed to be entirely daylight again.",
+      "We sat some while in silence after he had finished, the barge lights small against the dark water, and none of us, I think, cared to ask him anything further; there are stories that arrive complete enough in their unfinishedness, and this, we understood without saying so, was one of them."
+    ],
+    "pullQuote": "the horror of it was not what had been done down there, but how completely, how willingly, the rest of the works above had chosen never to ask.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "flange-works"
+    ]
+  },
+  {
+    "id": "voices-bronte-the-roundabout-inspector",
+    "category": "Voices",
+    "headline": "The Governess And The Inspector Of The Gyratory",
+    "standfirst": "A gothic romance blooms between a plain-spoken governess and the brooding inspector charged with the Flange roundabout's moods.",
+    "byline": "In the style of Charlotte Brontë",
+    "location": "FLANGE",
+    "published": "2026-07-12T22:15:00",
+    "body": [
+      "I had not thought, on taking up my post at Thornfell House to instruct the two Misses Rochester in their letters, that I should find my heart so thoroughly occupied by a man whose profession consisted, so far as I could then determine, of standing for long hours at the edge of a traffic gyratory, notebook in hand, regarding it with an expression I can only describe as troubled affection; and yet such was Mr. Denver Ashworth, Inspector of the Flange Roundabout, whom I first observed from the schoolroom window on a grey October afternoon, and could not, thereafter, entirely cease observing.",
+      "He was not, by any conventional measure, a handsome man; his coat was worn at the cuff, his manner abrupt, and he carried about him always a faint air of some private grief he would not name, which I later came to understand concerned the roundabout itself, a structure he had monitored for eleven years and which had, in that time, developed habits he alone among the townsfolk seemed to take with proper seriousness: a fifth exit that appeared only in fog, a tendency to reroute funeral processions, a low humming after dark that Mr. Ashworth swore, though none would credit him, was very nearly a kind of speech.",
+      "\"You will think me foolish, Miss Eyre,\" he said to me one evening, when I had walked out to the gyratory's edge on some pretext of taking the air, though in truth I had contrived the errand entirely to seek his company, \"but I have watched that roundabout eleven years, and I tell you plainly, it knows me, as I have come to know it, and I do not think either of us finds much comfort in the other's company, and yet I cannot bring myself to leave.\"",
+      "I told him I did not think him foolish at all, for I too had spent long years bound to a duty that offered little warmth and less thanks, and understood something of what it was to remain, faithfully, at a post that the world accounted small, because the leaving of it would have felt, to a conscience such as mine, very like a betrayal of something I could not fully name either.",
+      "It was some months later, after the terrible business of the rerouted hearse, which I shall not here relate in full, that Mr. Ashworth came to me at last and said that he believed the roundabout, in its strange and stubborn way, had given its blessing to what he wished now to ask me; and I, who had grown to love him not for his coat or his prospects, both being modest, but for the constancy with which he attended a small, unglamorous, thankless thing because it was his to attend, gave him my answer without hesitation.",
+      "We were married in the spring, at the little church whose bells, I am told, can be heard quite clearly from the roundabout on a still evening, and Mr. Ashworth continues his inspections to this day, though he says, and I believe him, that the humming after dark has grown gentler since our wedding, as though the old grey stones themselves had been waiting, all this time, for someone to notice that they too might wish to be loved."
+    ],
+    "pullQuote": "I have watched that roundabout eleven years, and I tell you plainly, it knows me, as I have come to know it",
+    "tags": [
+      "voices",
+      "pastiche",
+      "roundabout"
+    ]
+  },
+  {
+    "id": "voices-hardy-the-doomed-flange-lovers",
+    "category": "Voices",
+    "headline": "Under The Flange Sprocket Wheel",
+    "standfirst": "A tragic tale of two lovers whose fates, like the great sprocket wheel itself, are ground slowly and indifferently by circumstance.",
+    "byline": "In the style of Thomas Hardy",
+    "location": "FLANGE-UNDER-WOLD",
+    "published": "2026-07-12T23:00:00",
+    "body": [
+      "It was on the high road above the works, where the wind came unbroken across the downs and carried with it the low, patient grinding of the great sprocket wheel, that Jethro Hartle first saw Marnie Coombe, and it might be said, by anyone inclined to look for such patterns in the small tragedies of ordinary lives, that the wheel itself, turning as it had turned for eighty years without sentiment or pause, took no more notice of their meeting than it would of their eventual, inevitable parting.",
+      "They were not ill-suited, as the world reckons such things; he a foreman's son with steady prospects at the works, she a schoolmistress's daughter with a voice too fine, some said, for a girl of her station, and had circumstance been a kinder overseer than it generally troubles itself to be in that part of the county, their courtship might have run its ordinary course to its ordinary and contented end. But circumstance in Flange-under-Wold, as elsewhere, cares nothing for the deserving, and moves its people about the board with the same blind mechanical patience as the great wheel moves its teeth, one against another, grinding down whatever stands too long in its path.",
+      "It was the wheel that undid them, in the end, or rather the accident beneath it, on the September evening when Jethro, hurrying to meet Marnie at the stile above the works before her father's temper closed the hour to them, stopped to free a jammed flange from the mechanism, a small act of ordinary diligence that cost him, in the space of one indifferent turning, two fingers of his right hand and, though he did not know it that evening, the whole of the future he had quietly assumed was his to keep.",
+      "Marnie waited at the stile until the light went entirely, and told herself, as the young will, every gentler explanation before the true one found her; and when at last she learned what the wheel had taken, she went to him not with less love but, her father saw to that, with less liberty than before, for a foreman's maimed son was reckoned by her family a poorer match than a whole one, whatever the girl herself might feel on the matter, and the feelings of girls, in that country, in that particular grinding age, counted for a good deal less than the reckonings of fathers.",
+      "They were married at last, some three years on, after her father's own fortunes had worn down enough to make the objection no longer affordable; but the three years had done their work as surely as the wheel had done its own, and it is recorded by those who knew them after that theirs was a fondness rather than the flame it might once have been, a quiet, sufficient, faintly disappointed thing, ground smooth the way all things in Flange-under-Wold are eventually ground smooth, by the wheel, by the years, by the simple indifferent patience of circumstance, which asks nothing of anyone and grants, in the end, exactly as little.",
+      "The wheel turns there still, above the works, and the young of the parish still meet beneath it on fine evenings, as young people will, seemingly untroubled by, or more likely simply unaware of, how very little that old iron patience has ever cared for any of them."
+    ],
+    "pullQuote": "circumstance in Flange-under-Wold, as elsewhere, cares nothing for the deserving, and moves its people about the board with the same blind mechanical patience as the great wheel moves its teeth",
+    "tags": [
+      "voices",
+      "pastiche",
+      "sprocket-wheel"
+    ]
+  },
+  {
+    "id": "voices-henryjames-the-american-visitor",
+    "category": "Voices",
+    "headline": "A Question Of The Stone: An American In Flange",
+    "standfirst": "An American visitor spends a very long afternoon failing to ask his hosts directly about the four-hundred-pound grounding stone.",
+    "byline": "In the style of Henry James",
+    "location": "FLANGE",
+    "published": "2026-07-13T09:00:00",
+    "body": [
+      "It had been represented to Mr. Winterbourne Ashe, before ever he crossed to England, that the English character revealed itself most fully not in what was said over tea but in the long, elaborate, and faintly maddening architecture of what was carefully, deliberately, and with great social art left unsaid, and it was this very quality, he reflected, sitting now in the Featherstonehaughs' drawing room at Flange with a cup cooling untouched at his elbow, that had brought him, after nearly two hours of conversation ranging with exquisite indirection over the weather, the roses, and the regrettable state of the London train, no nearer at all to the one question he had actually crossed an ocean, in some considerable part, to ask.",
+      "The stone sat upon the sideboard where it had evidently sat for some months, a smooth grey object of no obvious beauty and, so far as he could determine without the vulgarity of picking it up and turning it over before his hosts, no obvious function either, and he had been informed by a mutual acquaintance in London, in tones of some amusement, that the Featherstonehaughs had paid four hundred pounds for it, a sum which struck him, even allowing for the notorious eccentricities of English taste, as demanding some manner of explanation that nobody in the room appeared remotely inclined to volunteer.",
+      "He had made, over the course of the afternoon, no fewer than three delicate approaches to the subject, each one a small masterpiece of indirection that would, he flattered himself, have done credit to his hostess's own conversational school: a remark upon the tasteful austerity of the sideboard's arrangement; an inquiry, gently phrased, as to whether the object had come from abroad; and finally, in what he considered his boldest sortie, a simple observation that the stone possessed, he thought, a certain quality of repose. Each had been received by Mrs. Featherstonehaugh with a smile of perfect and impenetrable graciousness, and answered with a remark about the roses.",
+      "It occurred to him, somewhere in the third hour, that he had perhaps mistaken the nature of the transaction entirely; that to ask directly what the stone was for, what it had cost, what conceivable purpose could justify its price, would be to commit precisely the sin of bluntness that the English, in his considerable experience of them, reserved their most exquisite and most wounding disdain for, a disdain communicated not by any word but by the merest fractional coolness in an otherwise flawless civility, a coolness he had felt, more than once that afternoon, brush past him like a draught from a door he had not seen opened.",
+      "He left, in the end, no wiser as to the stone's purpose than he had arrived, but considerably more informed, he felt, as to the deeper question that had brought him to England in the first place: that here was a people who could spend four hundred pounds on a smooth grey object of no discernible function, and defend that expenditure, without ever once needing to state it, by the simple and total refusal to admit that any explanation was owed to anyone at all.",
+      "He wrote, that evening, in the small notebook he kept for such observations, a single line, which he considered, on reflection, to capture the whole of the afternoon's instruction: that in England, apparently, the most expensive thing a stone could do was ask no questions of anyone, and receive none in return."
+    ],
+    "pullQuote": "here was a people who could spend four hundred pounds on a smooth grey object of no discernible function, and defend that expenditure, without ever once needing to state it",
+    "tags": [
+      "voices",
+      "pastiche",
+      "grounding-stone"
+    ]
+  },
+  {
+    "id": "voices-hst-the-flange-festival",
+    "category": "Voices",
+    "headline": "Fear And Loathing At The Flange Sprocket Festival",
+    "standfirst": "A gonzo dispatch from the annual Flange Sprocket Festival, where the cider is strong and the municipal pride is stronger.",
+    "byline": "In the style of Hunter S. Thompson",
+    "location": "FLANGE",
+    "published": "2026-07-13T02:00:00",
+    "body": [
+      "We had been driving for exactly eleven minutes and had already passed four separate signs advertising the Flange Sprocket Festival, each one more deranged than the last, when my photographer turned to me and said, in the flat tone of a man already regretting the assignment, that we were about to spend a Saturday covering a civic celebration of industrial fasteners, and I told him that was exactly the kind of story that either kills you or makes you understand something true about the English character, and possibly both, and to keep the cooler where I could reach it.",
+      "By noon the village green had filled with a crowd that defied every rational category: children on the shoulders of fathers in novelty sprocket hats, a brass band playing something that might once have been a hymn before eleven pints of local cider got hold of it, and, at the center of it all, a wicker effigy of a sprocket the size of a small car, which the organizers, with the terrifying sincerity of people who have done this every year since before anyone can remember why, were preparing to set on fire at dusk in a ceremony called, without a trace of irony, the Flanging.",
+      "I found the mayor near the beer tent, a man named Grimsby who wore his chain of office over a Hawaiian shirt and explained to me, at a volume calibrated for a room forty decibels quieter, the full history of the festival, something about a strike in 1974, a broken promise from the factory owners, and a decision by the workers to celebrate the machinery instead of resenting it, a piece of collective psychology so strange and so English that I wrote it down twice, in case the first version turned out to be the cider talking.",
+      "By four o'clock the situation had degenerated in the manner these things always degenerate, which is to say beautifully and without any single identifiable villain: a sprocket-tossing competition had put a pensioner in the first-aid tent with what witnesses described only as \"a look of profound satisfaction,\" the brass band had been joined by a man with a kazoo nobody could account for, and somewhere behind the cider tent a group of teenagers had started their own unauthorized bonfire, out of what I can only assume was pure, ungovernable local spirit, or possibly just boredom, the distinction in Flange being academic at best.",
+      "The burning of the great wicker sprocket at dusk was, I will say for the record, genuinely magnificent, a column of orange light thrown up against the church tower while four hundred residents of a town most of England has never heard of cheered a bonfire built in honor of a component used to secure rotating machinery, and I understood, standing there with my notebook soaked in cider and my photographer already three drinks past coherent, that I had been wrong to come here looking for a story about absurdity. The absurdity was the story. It always is.",
+      "We left before midnight, mostly intact, and somewhere past the county line my photographer asked me what I was going to write, and I told him the truth, which was that I had no idea, only that whatever it was, it would have to survive the same test as the sprocket itself: burn bright, mean something to the people who built it, and not, under any circumstances, be taken too seriously by anyone standing more than ten feet away."
+    ],
+    "pullQuote": "The absurdity was the story. It always is.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "festival"
+    ]
+  },
+  {
+    "id": "voices-dfw-the-weekend-bridge",
+    "category": "Voices",
+    "headline": "A Brief, Extremely Qualified Account Of The Flange Footbridge's Refusal To Work Weekends",
+    "standfirst": "An exhaustively footnoted attempt to explain why the Flange canal bridge closes itself every Saturday, and what that might mean.",
+    "byline": "In the style of David Foster Wallace",
+    "location": "FLANGE",
+    "published": "2026-07-13T11:11:00",
+    "body": [
+      "What follows is an attempt¹ to describe, as precisely as the situation allows given the frankly limited and in some cases actively contradictory information available to me as of this writing, the phenomenon whereby the pedestrian footbridge spanning the Flange canal near the old lock (hereafter \"the Bridge,\" capital B, a convention I'm adopting not out of any anthropomorphizing impulse but purely for referential clarity given how many times the word recurs below) lowers a barrier across its western approach every Saturday and Sunday between roughly 09:00 and 17:00, a schedule that the council's own maintenance log describes, with a straight face I frankly find remarkable, as \"structural rest.\"",
+      "¹ And I want to flag right away that \"attempt\" is doing a lot of load-bearing work in that sentence, because the honest truth is I do not think a fully adequate account of this phenomenon is currently possible, for reasons that will become clear, or at least clearer, over the course of what follows, which I promise I will try to keep proportionate to the actual weirdness of the underlying facts even though I am aware, going in, that I have a documented tendency not to do this.",
+      "The engineering firm responsible for the Bridge's original 2019 construction has stated, on the record, that there is no mechanical or software basis for a weekend-specific closure; the barrier's actuator, per their own diagnostic logs (which I have seen, or at least seen a summary of, via a councillor who I am not going to name because she asked me not to), receives no scheduled command on Saturdays or Sundays and yet lowers anyway, at a time that drifts by a few minutes week to week in a pattern the firm's own engineer described to me, off the record, as \"not random, exactly, more like tired,\" a phrase I have thought about more than is probably healthy in the weeks since.",
+      "There is an obvious and, I want to stress, not unreasonable temptation here to reach for metaphor², to say the Bridge \"wants\" a weekend the way the exhausted humans who built it presumably also wanted, and still want, weekends, and I am not going to pretend that temptation isn't sitting right here at the desk with me as I write this; but I think it's worth being honest that reaching for that metaphor too quickly is itself a kind of intellectual laziness, a way of making a genuinely unexplained mechanical anomaly feel meaningful and cozy and story-shaped when the more responsible, if less satisfying, position is that we simply do not yet know why the Bridge does what it does, and that not-knowing is allowed to just sit there, unresolved, without a bow on it.",
+      "² Though I will say, and this is really more of a personal aside than a claim I'm prepared to defend rigorously, that there is something almost unbearably poignant about a piece of civil infrastructure built by overworked people, maintained by overworked people, and used every day by overworked people, developing what looks, from the outside, an awful lot like the one boundary none of the humans in that sentence have themselves been reliably able to enforce.",
+      "The council's current position, as of the most recent meeting minutes I could obtain, is to \"monitor and review,\" which is bureaucratic-speak for doing nothing, which is, I want to be clear, probably the correct response given how little anyone actually understands here, and also, I think, kind of a relief, because a bridge nobody can fully explain, gently but firmly closing itself for two days so that it, or the idea of it, or whatever specific configuration of load-bearing steel and collective human exhaustion produced it, gets to rest, is honestly one of the less depressing pieces of infrastructure news I've had to write about this year, and I'm not, for what it's worth, in any hurry to see it explained away."
+    ],
+    "pullQuote": "not-knowing is allowed to just sit there, unresolved, without a bow on it.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "bridge"
+    ]
+  },
+  {
+    "id": "voices-dr-seuss-the-flanger",
+    "category": "Voices",
+    "headline": "I Do Not Like Green Flanges, Sam-I-Am",
+    "standfirst": "A widget that simply refuses to be flanged correctly.",
+    "byline": "In the style of Dr. Seuss",
+    "location": "WHOVILLE, FLANGE DISTRICT",
+    "published": "2026-07-12T09:15:00Z",
+    "body": [
+      "I do not like green flanges here,",
+      "I do not like them anywhere!",
+      "They're bent and strange, they will not fit,",
+      "No matter what I do with it.",
+      "",
+      "I tried them in a box, you see,",
+      "I tried them by my favourite tree,",
+      "I tried them with a fox and goat,",
+      "Upon a very tiny boat.",
+      "",
+      "But still they would not flange at all,",
+      "They bounced and rolled around the hall,",
+      "The bolts all came out in a row,",
+      "And landed with a dreadful blow.",
+      "",
+      "\"Try harder!\" cried the Flange Inspector,",
+      "\"You need a special metal flecker!\"",
+      "\"No, no!\" I cried, \"I will not try,",
+      "These flanges make me want to cry!\"",
+      "",
+      "But then—oh, what a sight to see!",
+      "These flanges changed themselves for me!",
+      "I like them now, I must confess,",
+      "Green flanges are the very best!"
+    ],
+    "pullQuote": "But still they would not flange at all",
+    "tags": [
+      "voices",
+      "pastiche",
+      "machinery"
+    ]
+  },
+  {
+    "id": "voices-lewis-carroll-rabbit-hole",
+    "category": "Voices",
+    "headline": "Down the Flange Hole: A Most Peculiar Descent",
+    "standfirst": "A journalist tumbles into a Flange-obsessed world where nothing obeys the laws of physics.",
+    "byline": "In the style of Lewis Carroll",
+    "location": "WONDERFLANGE, BELOW GROUND",
+    "published": "2026-07-12T10:30:00Z",
+    "body": [
+      "\"The time has come,\" the Flange said,",
+      "\"To speak of many things:",
+      "Of springs and bolts and metal bits,",
+      "And all the joy that flanging brings.\"",
+      "",
+      "\"But wait!\" I cried, \"I do not know",
+      "What flanging even means!\"",
+      "",
+      "\"Precisely so,\" the Flange replied,",
+      "\"Which is precisely why you'll find",
+      "That everything works backwards here,",
+      "Or sideways, or both combined.\"",
+      "",
+      "I fell through holes of twisted time,",
+      "Where Cats wore hats of solid grime,",
+      "The Dormouse spoke in palindromes,",
+      "And hedgehogs built enormous domes.",
+      "",
+      "\"Which flange,\" inquired the Hatter mad,",
+      "\"Is madder than the flange you had?\"",
+      "",
+      "\"The one,\" said I, with growing doubt,",
+      "\"That makes the whole thing fall out.\"",
+      "",
+      "\"Impossible!\" the Queen declared,",
+      "\"Off with its thread! We'll leave it bared!\"",
+      "And off went every bolt and screw,",
+      "Now nothing works the way it should do."
+    ],
+    "pullQuote": "Everything works backwards here, or sideways, or both combined",
+    "tags": [
+      "voices",
+      "pastiche",
+      "surreal"
+    ]
+  },
+  {
+    "id": "voices-roald-dahl-factory",
+    "category": "Voices",
+    "headline": "Charlie and the Flange Factory",
+    "standfirst": "A golden ticket leads to a most disagreeable place where sprockets are treated like sweets.",
+    "byline": "In the style of Roald Dahl",
+    "location": "DAHL'S DARK WORKSHOP",
+    "published": "2026-07-12T11:45:00Z",
+    "body": [
+      "Young Timothy Trickle had never seen anything quite so dreadfully delightful as Signor Flambeaux's Flange Factory. The gates were iron, the walls were slate, and nobody who went in ever came out quite the same.",
+      "",
+      "\"Welcome,\" said Signor Flambeaux, his teeth like yellowed piano keys, \"to the most ghastly place you'll ever love.\"",
+      "",
+      "Inside, the children gasped. Chocolate rivers ran in one wing—absolutely useless. But in the main chamber, on conveyor belts of pure spite, thousands of sprockets danced and clicked. Some were good sprockets. Most were wretched.",
+      "",
+      "\"You must flange them,\" said Signor Flambeaux, \"with your bare hands, for seventeen hours each day. In return, I shall give you nothing but disappointment and the certain knowledge that you've wasted your childhood.\"",
+      "",
+      "The good children shrieked. The horrid children giggled. One dreadful boy called Reginald immediately tried to steal a sprocket. A trap door opened. Down he went into the Flange Compacter.",
+      "",
+      "\"Will he come back?\" asked Timothy.",
+      "",
+      "\"Eventually,\" said Signor Flambeaux with a smile that belonged nowhere. \"But he'll be shaped like a sprocket himself. Most useful.\""
+    ],
+    "pullQuote": "Welcome to the most ghastly place you'll ever love",
+    "tags": [
+      "voices",
+      "pastiche",
+      "dark"
+    ]
+  },
+  {
+    "id": "voices-milne-flange-woods",
+    "category": "Voices",
+    "headline": "Flange Thing in the Wood",
+    "standfirst": "Pooh and Piglet discover something inexplicable and tremendously British in the Hundred Acre Wood.",
+    "byline": "In the style of A. A. Milne",
+    "location": "THE HUNDRED ACRE WOOD, ENGLAND",
+    "published": "2026-07-12T12:30:00Z",
+    "body": [
+      "It was a day of the sort that happens quite often in the Hundred Acre Wood, which is to say it was a day rather like yesterday and probably rather like tomorrow. Pooh Bear was standing at his front door (which was also rather like standing at his front door on any other day) when Piglet came scurrying up, all worried and small.",
+      "",
+      "\"Pooh,\" said Piglet, \"I have found a Thing.\"",
+      "",
+      "\"A Thing?\" said Pooh thoughtfully. \"I am familiar with Things. I have had many Things. Some were honey, which was excellent. Some were not honey, which was disappointing.\"",
+      "",
+      "\"But Pooh,\" said Piglet, \"this Thing is metallic and it goes 'click' when one passes it, and it has not, as far as I can tell, any proper purpose.\"",
+      "",
+      "\"How very sensible of it,\" said Pooh. \"Perhaps it does not know what it is for. I often do not know what I am for, and it has caused me no particular trouble.\"",
+      "",
+      "They stood and looked at the Thing for several minutes. It was indeed metallic. It did indeed go 'click'. Eeyore arrived, as he always did when nobody had asked him to.",
+      "",
+      "\"It will break,\" said Eeyore. \"Everything does.\"",
+      "",
+      "But it didn't. And that, perhaps, was the most surprising thing of all."
+    ],
+    "pullQuote": "This Thing is metallic and it goes 'click' when one passes it",
+    "tags": [
+      "voices",
+      "pastiche",
+      "gentle"
+    ]
+  },
+  {
+    "id": "voices-potter-mrs-flange",
+    "category": "Voices",
+    "headline": "The Tale of Mrs. Flange's Garden",
+    "standfirst": "An anthropomorphic screw tells her children not to venture into the dangerous Machinery Zone.",
+    "byline": "In the style of Beatrix Potter",
+    "location": "POTTER'S CORNER, VILLAGE GREEN",
+    "published": "2026-07-13T08:00:00Z",
+    "body": [
+      "Once upon a time, in a garden of the most charming sort, there lived a respectable screw named Mrs. Flange, and her four children: Terence, Philomena, Mortice, and Beatrice.",
+      "",
+      "\"Now listen carefully,\" said Mrs. Flange, fastening her tiny bonnet. \"Your father is away at the Turnery, and I must warn you most severely: you are not to venture into the Machinery Zone beyond the garden wall. That is where the Rougher Sorts of Hardware dwell—bolts of questionable pedigree, washers with no regard for decorum, and worst of all, the dreadful Ratchet.\"",
+      "",
+      "The children promised they would not. Four promises, solemn and sincere.",
+      "",
+      "Alas, young Mortice was a reckless fellow. He squeezed through the fence and trundled directly into the Machinery Zone. There he found (quite to his shock) not danger, but a community of the kindest threads he had ever met. A Bolt named Bernard taught him to spin properly. A Washer named Winifred showed him the secret of a perfect fit.",
+      "",
+      "When he returned home, breathless and satisfied, his mother wept with relief. \"You are very lucky,\" she said. \"You have discovered what I did not know: that some of the best things in life are waiting just beyond our fear.\"",
+      "",
+      "And Mortice, from that day forward, was careful to visit Bernard and Winifred every Sunday."
+    ],
+    "pullQuote": "You have discovered what I did not know: that some of the best things in life are waiting just beyond our fear",
+    "tags": [
+      "voices",
+      "pastiche",
+      "gentle"
+    ]
+  },
+  {
+    "id": "voices-kipling-just-so-flange",
+    "category": "Voices",
+    "headline": "How the Flange Got Its Bolt: A Just So Story",
+    "standfirst": "An origin story in Kipling's accumulative, call-and-response style.",
+    "byline": "In the style of Rudyard Kipling",
+    "location": "THE ENGINEERING TIMES, DISTANT PAST",
+    "published": "2026-07-13T09:15:00Z",
+    "body": [
+      "In the most High and Far-Off Times, when the Machinery was still young and silly, there was a Flange—you know the Flange I mean, the proud and circular sort, with all the little holes around the edges.",
+      "",
+      "But here's the thing, Best Beloved: the Flange had no Bolt.",
+      "",
+      "\"Why do I have no Bolt?\" cried the Flange to the Engineer.",
+      "",
+      "\"Because,\" said the Engineer, \"nobody thought to give you one. You are only a joining sort of thing, and joining things are usually taken for granted.\"",
+      "",
+      "This made the Flange very cross indeed. She rolled herself up and down the factory floor, complaining most bitterly: \"I am incomplete! I am unsatisfied! I am merely decorative!\"",
+      "",
+      "Now there was a Bolt nearby—a practical sort of Bolt, all steel and purpose—who heard this sad complaint.",
+      "",
+      "\"I am merely for fastening,\" said the Bolt. \"I have never been celebrated. Perhaps we could fasten ourselves together and become something Great.\"",
+      "",
+      "And they did, Dear Child. They did indeed. And from that day to this, whenever you see a Flange with a Bolt, you know the true story of how they found each other and decided that partnership was better than loneliness. And that is why the Flange has its Bolt, Best Beloved, and has ever since those beginning times."
+    ],
+    "pullQuote": "I am merely decorative",
+    "tags": [
+      "voices",
+      "pastiche",
+      "whimsical"
+    ]
+  },
+  {
+    "id": "voices-blyton-five-flange",
+    "category": "Voices",
+    "headline": "The Famous Five Investigate the Mystery of the Missing Flanges",
+    "standfirst": "Four children and a dog solve a baffling engineering crime with tea and British pluck.",
+    "byline": "In the style of Enid Blyton",
+    "location": "SMUGGLER'S COVE, CORNWALL",
+    "published": "2026-07-13T10:30:00Z",
+    "body": [
+      "\"I say,\" said Julian, brushing the sea spray from his collar, \"something rather beastly is afoot.\"",
+      "",
+      "Anne, George, Dick, and their dog Timmy gathered round. They were staying at their aunt's cottage for the summer hols, and on their first day they had discovered the Flange Factory in a state of absolute chaos.",
+      "",
+      "\"All the flanges have vanished!\" exclaimed the Factory Manager, who looked worried and unkempt.",
+      "",
+      "\"Capital!\" said George. \"We shall solve this mystery. We are rather good at that sort of thing.\"",
+      "",
+      "They began their investigation at once. Dick examined the warehouse. Anne made notes in her sensible way. George and Timmy sniffed about for clues. Within two hours, they had discovered a peculiar pattern: the flanges had been stolen by the grumpy caretaker, who had been selling them to a rival factory.",
+      "",
+      "\"But why?\" asked Anne.",
+      "",
+      "\"Because,\" said Julian, who had been questioning people, \"he wasn't paid properly. Apparently he asked for a raise and was given rather rude language.\"",
+      "",
+      "\"How perfectly beastly!\" said George.",
+      "",
+      "They reported the matter to the police and helped the Manager understand that paying workers fairly was, in fact, the decent thing to do. By teatime, they were sitting down to a feast of scones and jam, pleased with themselves and with their good work.",
+      "",
+      "\"I say,\" said Julian, \"shall we have another mystery tomorrow?\"",
+      "",
+      "\"Definitely,\" said George, and Timmy barked in agreement."
+    ],
+    "pullQuote": "All the flanges have vanished",
+    "tags": [
+      "voices",
+      "pastiche",
+      "adventure"
+    ]
+  },
+  {
+    "id": "voices-shakespeare-hamlet-flange",
+    "category": "Voices",
+    "headline": "To Flange or Not to Flange",
+    "standfirst": "A Shakespearean tragedy in blank verse about a man tormented by an impossible mechanical choice.",
+    "byline": "In the style of William Shakespeare",
+    "location": "ELSINORE, THE WORKSHOP",
+    "published": "2026-07-13T11:45:00Z",
+    "body": [
+      "To flange, or not to flange—that is the question:",
+      "Whether 'tis nobler in the mind to suffer",
+      "The outrage and the sting of bolts all twisted,",
+      "Or take a hammer 'gainst a sea of troubles",
+      "And by the flanging end them. To strike, to turn—",
+      "Perchance to break. Ay, there's the rub; for what",
+      "If in the striking of that flange so true,",
+      "We break the very thing we sought to mend?",
+      "Therein lies madness! Therein lies despair!",
+      "",
+      "The sprocket sits before me, mute and cold,",
+      "Awaiting that most fateful, final turn.",
+      "One way, and I am hero of the day,",
+      "Lauded throughout the kingdom as the man",
+      "Who fixed the Flange that all the rest before",
+      "Had deemed impossible to ever right.",
+      "The other way—ignominy, disgrace!",
+      "",
+      "What spirit moves this Flange? What ghost doth mock",
+      "My hesitation? Surely there must be",
+      "Some logic to this mechanical torment.",
+      "Yet logic eludes me, as doth all reason.",
+      "The Flange demands! The Flange commands! Alas,",
+      "I am undone by metal and by fate.",
+      "I'll strike! I'll turn! I'll—oh, what have I done?",
+      "The Flange lies shattered on the workshop floor."
+    ],
+    "pullQuote": "To flange, or not to flange—that is the question",
+    "tags": [
+      "voices",
+      "pastiche",
+      "drama"
+    ]
+  },
+  {
+    "id": "voices-homer-odyssey-flange",
+    "category": "Voices",
+    "headline": "The Odyssey of the Rosy-Fingered Flange",
+    "standfirst": "An engineer's quest to return a mysterious flange to its rightful factory.",
+    "byline": "In the style of Homer",
+    "location": "THE WINE-DARK SEA OF METAL",
+    "published": "2026-07-13T13:00:00Z",
+    "body": [
+      "Sing, O Muse, of that most wretched engineer,",
+      "Who wandered far from home, through endless gears,",
+      "In search of that most bright and rosy-fingered",
+      "Flange, which he had lost in ages past.",
+      "",
+      "The rosy-fingered Flange, so fair of make,",
+      "Had rolled away into the world of woe,",
+      "And he, that much-enduring man, did brave",
+      "The caverns deep where Cyclops mechanics dwelt,",
+      "And those grey waters where the Sirens sang",
+      "Their songs of bolts and screws in harmony.",
+      "",
+      "For seven seasons long he searched and sought,",
+      "Through furnaces of fire, where blazed the forge,",
+      "And foundries of the deep, where dwell the Fates",
+      "Who spin the thread of every working thing.",
+      "",
+      "At last, worn down by many trials and woes,",
+      "His beard all covered thick with factory dust,",
+      "The rosy-fingered Flange he did behold,",
+      "Still bright and pure, though fallen far from grace.",
+      "",
+      "Then wept that man most terrible tears of joy,",
+      "And held it to his breast, and cried aloud:",
+      "\"O Flange! O Flange! At last we meet again!\"",
+      "And home at last he came, and was at peace."
+    ],
+    "pullQuote": "O Flange! O Flange! At last we meet again",
+    "tags": [
+      "voices",
+      "pastiche",
+      "epic"
+    ]
+  },
+  {
+    "id": "voices-chaucer-flange-tale",
+    "category": "Voices",
+    "headline": "The Knight's Tale of the Flange Most Faire",
+    "standfirst": "A Canterbury Tale told in light Middle English about two workers in love with the same flange.",
+    "byline": "In the style of Geoffrey Chaucer",
+    "location": "CANTERBURY WORKSHOP",
+    "published": "2026-07-12T14:15:00Z",
+    "body": [
+      "Whanne that Aprille with his shoures soote",
+      "Hath perced the March droughte to the roote,",
+      "There came to the Werkshop two knightes faire,",
+      "Seeking the Flange that lay within the aire.",
+      "",
+      "One was called Arcite, strong and true,",
+      "The other Palamon, both noble crew.",
+      "But lo! They sawe a Flange of silver bright,",
+      "And both did love it with all their might.",
+      "",
+      "\"This Flange is mine!\" cried out Arcite loudly.",
+      "\"Nay, mine!\" quod Palamon, full prowde and proudly.",
+      "",
+      "They fought with wrenches in the Workshop darke,",
+      "Till came the Master, striking sparks and sparke.",
+      "\"Ye foles!\" he cried, \"this Flange is but a thing,",
+      "No cause for thee to fight and worsen spring.\"",
+      "",
+      "\"But lo,\" quod Palamon, with teares of woe,",
+      "\"A Flange that's faire doth make the herte growe",
+      "Most tender and most troubled in the brest,",
+      "And sore perturbed taketh not its reste.\"",
+      "",
+      "The Master smiled and nodded at his herte:",
+      "\"Thou speakest true. Thy suffering is my parte.",
+      "Let both of ye together work this task,",
+      "And share the Flange. That is all I would ask.\"",
+      "",
+      "And so they did, and love came from their labour,",
+      "For none doth love as doth a workshop neigbour."
+    ],
+    "pullQuote": "A Flange that's faire doth make the herte growe most tender",
+    "tags": [
+      "voices",
+      "pastiche",
+      "romance"
+    ]
+  },
+  {
+    "id": "voices-dickinson-dashes-flange",
+    "category": "Voices",
+    "headline": "The Flanging Soul",
+    "standfirst": "A meditation on industrial meaning rendered in dashes, capitals, and slant rhyme.",
+    "byline": "In the style of Emily Dickinson",
+    "location": "AMHERST WORKSHOP",
+    "published": "2026-07-13T15:30:00Z",
+    "body": [
+      "There's a certain Slant of Light—",
+      "Upon a Flange—that falls—",
+      "When the Worker turns the Wrench—",
+      "And All the Meaning calls.",
+      "",
+      "It is a Sound—mechanical—",
+      "Yet somehow Soul—made known—",
+      "A Click—a Turn—a settling—",
+      "Of Purpose in the Bone—",
+      "",
+      "I've felt it—in the Workshop—",
+      "Where Metal seeks its mate—",
+      "Where Two separate Things become—",
+      "United—by their Fate—",
+      "",
+      "The Flange—it does not question—",
+      "Why it must turn—and click—",
+      "It simply does—its Purpose—",
+      "With Precision—sure—and quick—",
+      "",
+      "And We—we humans—fumble—",
+      "At Meaning—all our Days—",
+      "While simple Metal moves—with Grace—",
+      "Through all its worn-out Ways—",
+      "",
+      "Perhaps—there's Hope—in Flanging—",
+      "If we could understand—",
+      "That Purpose flows—through simple Things—",
+      "Through Each metallic Hand—"
+    ],
+    "pullQuote": "Perhaps there's Hope in Flanging",
+    "tags": [
+      "voices",
+      "pastiche",
+      "philosophical"
+    ]
+  },
+  {
+    "id": "voices-whitman-flange-song",
+    "category": "Voices",
+    "headline": "Song of the Flange",
+    "standfirst": "A free-verse catalogue celebrating the democracy of industrial parts.",
+    "byline": "In the style of Walt Whitman",
+    "location": "AMERICA'S WORKSHOP",
+    "published": "2026-07-13T16:45:00Z",
+    "body": [
+      "I sing the body flange—the democratic flange, the universal flange!",
+      "",
+      "I sing the flange of the factory and the flange of the home,",
+      "The flange in the engine and the flange in the heart,",
+      "The small flange and the large flange, the polished flange and the worn flange,",
+      "The flange that joins and the flange that holds fast,",
+      "",
+      "I see in every flange the spirit of America—",
+      "That great connecting force that binds us all together,",
+      "Bolts and washers and screws, each with its purpose, each with its pride,",
+      "",
+      "I touch the flange and feel the hands of ten thousand workers,",
+      "Their sweat upon its surface, their care in its making,",
+      "I hear their voices singing in the turn of the wrench,",
+      "I taste the oil upon their hands and the iron in their breath,",
+      "",
+      "O flange! O magnificent flange! You are not mere metal,",
+      "You are the dream of connection, the hope of humanity,",
+      "You bridge the gap between the separate and the whole,",
+      "You make of many parts a glorious unity,",
+      "",
+      "I am the flange, and you are the flange, and we all are flanges together,",
+      "Singing our song in the great workshop of the world,",
+      "Building, connecting, holding fast—",
+      "This is our purpose, this is our joy, this is our democracy."
+    ],
+    "pullQuote": "I sing the body flange—the democratic flange, the universal flange",
+    "tags": [
+      "voices",
+      "pastiche",
+      "lyrical"
+    ]
+  },
+  {
+    "id": "voices-frost-mending-wall-flange",
+    "category": "Voices",
+    "headline": "Mending Wall: A Flange Divided",
+    "standfirst": "Two neighbours maintain a wall of misunderstanding, one flange at a time.",
+    "byline": "In the style of Robert Frost",
+    "location": "NEW ENGLAND, THE FACTORY WALL",
+    "published": "2026-07-12T17:00:00Z",
+    "body": [
+      "Something there is that doesn't love a wall,",
+      "That wants the flange unjointed and apart—",
+      "We meet each spring to mend what time has torn,",
+      "My neighbour and I, to set things right.",
+      "",
+      "He's the sort of man who thinks in straight lines,",
+      "Who values order, symmetry, and rule.",
+      "I'm more inclined to let the flanges rest",
+      "Where they have fallen, rusted, come undone.",
+      "",
+      "\"We must maintain it,\" is what he always says,",
+      "As if the wall itself requires our care.",
+      "I nod and set to work without complaint,",
+      "Though wonder why we bother with the task.",
+      "",
+      "\"Good fences make good neighbours,\" he declares.",
+      "I think to myself: do they really, though?",
+      "We only know each other through this work,",
+      "Through meeting once a year to keep this wall.",
+      "",
+      "And so we continue, season after season,",
+      "Two practical men with complementary flaws.",
+      "Perhaps the wall is less the point than this:",
+      "The chance to work together, side by side,",
+      "And understand each other, just a bit,",
+      "Through labour undertaken for its own sake.",
+      "Good fences may make good neighbours indeed,",
+      "But it's the mending that makes neighbours friends."
+    ],
+    "pullQuote": "Something there is that doesn't love a wall",
+    "tags": [
+      "voices",
+      "pastiche",
+      "rural"
+    ]
+  },
+  {
+    "id": "voices-thomas-fern-flange",
+    "category": "Voices",
+    "headline": "Fern Hill of Flanges: A Musical Lament",
+    "standfirst": "A lush, musical meditation on childhood wonder lost to industrial necessity.",
+    "byline": "In the style of Dylan Thomas",
+    "location": "FERN HILL FACTORY, WALES",
+    "published": "2026-07-13T18:15:00Z",
+    "body": [
+      "Now as I was young and easy under the apple boughs,",
+      "About the lilting house high among the trees,",
+      "I ran through meadows of machinery and wonder,",
+      "Where flanges grew like fruit and bolts like singing birds,",
+      "And nothing in the world was lost, or broken, or undone.",
+      "",
+      "The industrial horses of that time stood proud and still,",
+      "Their manes all tangled up in gears and glory,",
+      "And I, a boy of seven summers, rode across their backs",
+      "Into the morning, into light, into the heart of all things working.",
+      "",
+      "Time held its breath. The flanges turned like stars,",
+      "And stars themselves came down to greet me there,",
+      "With whispers of connection, of purpose, of the way",
+      "That all the scattered pieces of the world belong together.",
+      "",
+      "But time moves on, and youth goes running out",
+      "Like oil spilled careless on the workshop floor,",
+      "And now I stand among the great grey machines",
+      "With knowledge in my heart of separation, loss, and change.",
+      "",
+      "Yet still I hear that music of the flanges turning,",
+      "And see the light that fell on me that morning,",
+      "And know that somewhere deep inside the metal",
+      "Sleeps that boy who knew the world was whole."
+    ],
+    "pullQuote": "Time held its breath. The flanges turned like stars",
+    "tags": [
+      "voices",
+      "pastiche",
+      "lyrical"
+    ]
+  },
+  {
+    "id": "voices-sonnet-flange",
+    "category": "Voices",
+    "headline": "Sonnet CCCXXVI: Upon a Flange",
+    "standfirst": "A Shakespearean sonnet contemplating industrial beauty.",
+    "byline": "In the style of a Shakespearean Sonnet",
+    "location": "SONNETS, VOLUME XXXIX",
+    "published": "2026-07-12T19:30:00Z",
+    "body": [
+      "When first I saw thee, flange of silver bright,",
+      "So perfectly proportioned, smooth, and true,",
+      "I thought thee but a tool of common plight,",
+      "Yet found in thee a beauty ever new.",
+      "",
+      "Thy circular design speaks to the soul",
+      "Of harmony, of balance, and of grace,",
+      "How many pieces come to make thee whole,",
+      "Each bolt and thread arranged in rightful place.",
+      "",
+      "What purpose lies within thy polished form?",
+      "What joy shall come when thou art joined with care?",
+      "Thou shalt transform the ordinary norm",
+      "And make two separate things become one pair.",
+      "",
+      "So let us praise the flange in all its art—",
+      "The object that can mend the broken heart."
+    ],
+    "pullQuote": "The object that can mend the broken heart",
+    "tags": [
+      "voices",
+      "pastiche",
+      "romantic"
+    ]
+  },
+  {
+    "id": "voices-limerick-flange",
+    "category": "Voices",
+    "headline": "There Once Was a Flange from France",
+    "standfirst": "A limerick about a French flange's romantic misadventures.",
+    "byline": "In the style of a Limerick",
+    "location": "PARIS, THE WORKSHOP",
+    "published": "2026-07-13T20:00:00Z",
+    "body": [
+      "There once was a flange from France",
+      "Who joined in a romantic dance",
+      "With a bolt from Marseille,",
+      "But they both ran away,",
+      "And got stuck in a vise—quelle chance!"
+    ],
+    "pullQuote": "They both ran away and got stuck in a vise",
+    "tags": [
+      "voices",
+      "pastiche",
+      "comic"
+    ]
+  },
+  {
+    "id": "voices-basho-haiku-flange",
+    "category": "Voices",
+    "headline": "Five Haiku on the Flange: Moments of Zen",
+    "standfirst": "A sequence of haiku contemplating the industrial, the natural, and the flange.",
+    "byline": "In the style of Bashō",
+    "location": "ZEN WORKSHOP, KYOTO",
+    "published": "2026-07-12T21:00:00Z",
+    "body": [
+      "Flange meets the old bolt,",
+      "Two metal things become one—",
+      "Spring rain falls on both.",
+      "",
+      "Rust blooms like cherry,",
+      "Oxidation's slow beauty—",
+      "Nothing stays the same.",
+      "",
+      "In the workshop dark,",
+      "A single flange catches light—",
+      "Moon on water gleams.",
+      "",
+      "Worker's hands grow old,",
+      "Flanging day after long day—",
+      "Wisdom in the wear.",
+      "",
+      "The bolt and the flange",
+      "Are joined, and yet separate—",
+      "Such is all our fate."
+    ],
+    "pullQuote": "Two metal things become one—Spring rain falls on both",
+    "tags": [
+      "voices",
+      "pastiche",
+      "zen"
+    ]
+  },
+  {
+    "id": "voices-lear-nonsense-flange",
+    "category": "Voices",
+    "headline": "The Quangle Wangle's Flange",
+    "standfirst": "A nonsense narrative about a rather distinguished flange and the creatures who gather upon it.",
+    "byline": "In the style of Edward Lear",
+    "location": "THE NONSENSE FACTORY",
+    "published": "2026-07-13T21:30:00Z",
+    "body": [
+      "On the top of the Crumpetty Tree",
+      "By the Pudding and Pine, lived a flange, you see,",
+      "A flange most extraordinarily bright,",
+      "And it sparkled and gleamed through the day and the night.",
+      "",
+      "Came the Quangle Wangle hopping along,",
+      "And the Pobble Unbroke, who could sometimes sing songs,",
+      "And the Dong with a Luminous Nose so red,",
+      "They all gathered round on the flange instead.",
+      "",
+      "\"What a flange!\" cried the Spooble and Snee,",
+      "\"What a marvellously fine thing to see!\"",
+      "Said the Plumblossom Tree, \"I would stay here all day,",
+      "On this flange most decidedly metallic and grey.\"",
+      "",
+      "So they danced on the bolts and they twirled round the holes,",
+      "They whooped and they hollered and sang out their souls,",
+      "The Jumblies came sailing in boats made of honey,",
+      "And nobody cared if it didn't cost money.",
+      "",
+      "For the moral, dear friends, of this flange tale absurd",
+      "Is that nonsense makes sense when you haven't yet heard",
+      "That the world must be ordered and logical quite—",
+      "A flange can be home if it feels very right!"
+    ],
+    "pullQuote": "A flange can be home if it feels very right",
+    "tags": [
+      "voices",
+      "pastiche",
+      "nonsense"
+    ]
+  },
+  {
+    "id": "voices-nash-comic-couplets",
+    "category": "Voices",
+    "headline": "The Singular Flange: A Comic Lament in Couplets",
+    "standfirst": "Ogden Nash on the indignities of being a component part.",
+    "byline": "In the style of Ogden Nash",
+    "location": "THE COMIC WORKSHOP",
+    "published": "2026-07-12T22:00:00Z",
+    "body": [
+      "A flange is a thing that is utterly round,",
+      "Yet nobody's ever impressed by that sound.",
+      "",
+      "\"Oh look!\" people cry, \"What a wonderful bolt!\"",
+      "But the flange gets no credit, no accolade, no jolt.",
+      "",
+      "It labours in silence with barely a word,",
+      "Its contribution to industry goes quite unheard.",
+      "",
+      "Meanwhile the sprocket gets all of the fame,",
+      "And the bearing, that show-off, is praised by its name.",
+      "",
+      "But the flange, noble flange, never makes a complaint,",
+      "Though it's taken for granted (which really, is ain't),",
+      "It joins things together with remarkable grace,",
+      "And never, ever puts on a flamboyant face.",
+      "",
+      "So here's to the flange, that heroic component,",
+      "Unsung and unmourned and delightfully potent.",
+      "May it rest in its bolts, may it never grow slack,",
+      "And may someone occasionally pat it on the back."
+    ],
+    "pullQuote": "Nobody's ever impressed by that sound",
+    "tags": [
+      "voices",
+      "pastiche",
+      "comic"
+    ]
+  },
+  {
+    "id": "voices-aesop-fable-moral",
+    "category": "Voices",
+    "headline": "The Flange and the Washer: A Fable",
+    "standfirst": "A cautionary tale about the importance of support in any partnership.",
+    "byline": "In the style of Aesop",
+    "location": "AESOP'S WORKSHOP",
+    "published": "2026-07-13T22:30:00Z",
+    "body": [
+      "A proud and circular flange once boasted to a humble washer: \"Look at me! I am bright and perfectly formed, with evenly spaced holes and the most elegant proportions. Surely I am the most important component in all of this workshop.\"",
+      "",
+      "The washer, sitting quietly nearby, made no reply.",
+      "",
+      "\"Did you hear me?\" continued the flange. \"I am superior! When workers reach for components, they reach for me. When bolts are fastened, it is I who receives the honour of being the visible one, the one that people notice.\"",
+      "",
+      "\"That may be true,\" said the washer at last. \"But tell me, when a bolt is driven through you with great force, who keeps it from ripping through your metal? Who distributes the pressure evenly so that you do not crack and shatter?\"",
+      "",
+      "The flange fell silent.",
+      "",
+      "\"It is I,\" continued the washer. \"I may be humble and easily overlooked, but without me, you would fail. We are not rivals in the workshop—we are partners. I hold you together, and you give me purpose.\"",
+      "",
+      "The flange, humbled by these words, realised the truth of them. From that day forward, it treated the washer with great respect and gratitude.",
+      "",
+      "**Moral: Pride blinds us to the value of those who support us. The greatest strength comes not from standing alone, but from recognising those who stand beside us.**"
+    ],
+    "pullQuote": "Without me, you would fail",
+    "tags": [
+      "voices",
+      "pastiche",
+      "moral"
+    ]
+  },
+  {
+    "id": "voices-kjv-biblical-flange",
+    "category": "Voices",
+    "headline": "And It Came to Pass: A Flanging",
+    "standfirst": "The revelation of the sacred flange, told in biblical cadence and King James splendour.",
+    "byline": "In the style of the King James Bible",
+    "location": "THE FACTORY OF RIGHTEOUSNESS",
+    "published": "2026-07-12T23:15:00Z",
+    "body": [
+      "And it came to pass in those days that there arose a great weeping and lamentation throughout all the land, for the machines were broken and the people knew not how to mend them.",
+      "",
+      "And there came forth unto them a prophet, clad in overalls, bearing in his hands a flange of surpassing brightness and purity.",
+      "",
+      "And he spake unto them, saying: \"Behold, I bring unto you a flange of salvation, that ye may join together those things which were sundered, and make whole that which was broken.\"",
+      "",
+      "And the people cried out with great rejoicing, saying: \"Surely this flange is sent of the Lord! For it is circular and perfectly proportioned, and its holes are evenly spaced!\"",
+      "",
+      "And the prophet took the flange and joined it with a bolt, and all the people saw that it was good. And the machines began to turn again, and the factories hummed with the sound of industry and thanksgiving.",
+      "",
+      "And there appeared upon the flange the marks of righteous labour, and rust bloomed upon it like flowers in spring. Yet was it still fair, for all things that labour in the Lord's work are made beautiful by their toil.",
+      "",
+      "And the prophet said unto them: \"Go forth and flange, that ye may bring order unto the world. For in the joining of separate things lies the covenant between man and machine, and between man and man.\"",
+      "",
+      "And it was so. And the people went forth and flanged, and the land was at peace."
+    ],
+    "pullQuote": "Surely this flange is sent of the Lord",
+    "tags": [
+      "voices",
+      "pastiche",
+      "spiritual"
+    ]
+  },
+  {
+    "id": "voices-nursery-rhyme-flange",
+    "category": "Voices",
+    "headline": "Flange, Flange, Bolt-Bright: A Nursery Rhyme",
+    "standfirst": "A children's counting rhyme about metallic components and their curious adventures.",
+    "byline": "In the style of a Nursery Rhyme",
+    "location": "THE NURSERY WORKSHOP",
+    "published": "2026-07-13T23:45:00Z",
+    "body": [
+      "Flange, flange, bolt-bright,",
+      "First one comes on Monday night,",
+      "Second one comes Tuesday through,",
+      "Third one comes and bolt-says \"boo!\"",
+      "",
+      "One, two, flange my shoe,",
+      "Three, four, bolt-knock the door,",
+      "Five, six, pick up sticks,",
+      "Seven, eight, turn them straight,",
+      "Nine, ten, flange again!",
+      "",
+      "Flange one, two, three,",
+      "Sitting in a tree,",
+      "Bolting B, A, C,",
+      "Down came you, and knocked down me!",
+      "",
+      "Twinkle, twinkle, metal star,",
+      "Turning where the workers are,",
+      "Up above the factory high,",
+      "Like a flange in the sky.",
+      "",
+      "Row, row, row your bolt,",
+      "Gently round the iron knot,",
+      "Merrily, merrily, merrily, merrily,",
+      "Flanges make the world so fairly!"
+    ],
+    "pullQuote": "Twinkle, twinkle, metal star",
+    "tags": [
+      "voices",
+      "pastiche",
+      "childish"
+    ]
+  },
+  {
+    "id": "voices-chorus-greek-flange",
+    "category": "Voices",
+    "headline": "The Chorus Speaks: A Tragedy of Flanges",
+    "standfirst": "A Greek tragic chorus contemplates the fall of a great flange and its implications for the factory.",
+    "byline": "In the style of a Greek Tragic Chorus",
+    "location": "AMPHITHEATRE OF THE FACTORY",
+    "published": "2026-07-13T08:30:00Z",
+    "body": [
+      "Alas! Alas! What terrible fate hath befallen",
+      "The flange most fair, once worker's greatest pride!",
+      "Now shattered lies upon the workshop floor,",
+      "A victim of hubris and of mortal error.",
+      "",
+      "We, the assembled workers, sing together",
+      "This dirge of metal fallen from its height:",
+      "How bright it gleamed! How perfectly it turned!",
+      "Yet pride went before destruction most terrible.",
+      "",
+      "The young apprentice, thinking he knew better",
+      "Than centuries of craft and wisdom hard-won,",
+      "Did seize the flange and force it where it fit not,",
+      "And lo, the gods of industry struck him down.",
+      "",
+      "Now hear we the lesson in this tragedy plain:",
+      "That even the brightest, most perfect component",
+      "Must bow to the laws of physics and of nature,",
+      "And hubris brings down even the mightiest flange.",
+      "",
+      "We stand here in the shadow of this wreckage,",
+      "And marvel at the fragility of all things,",
+      "That seemed so strong, so permanent, so sure,",
+      "Yet crumbled like the ancient tombs of Thebes.",
+      "",
+      "Let this be known throughout the factory lands:",
+      "That respect for the craft, and humble care,",
+      "Are worth far more than all the bright brass flanges",
+      "That ever turned beneath a worker's hand."
+    ],
+    "pullQuote": "Pride went before destruction most terrible",
+    "tags": [
+      "voices",
+      "pastiche",
+      "tragic"
+    ]
+  },
+  {
+    "id": "voices-sea-shanty-flange",
+    "category": "Voices",
+    "headline": "Blow the Flange, Ye Hearty Lads: A Sea Shanty",
+    "standfirst": "A work song for those who labour at the great turning wheels of industry and the sea.",
+    "byline": "In the style of a Sea Shanty",
+    "location": "THE WORKSHOP BY THE SEA",
+    "published": "2026-07-12T08:00:00Z",
+    "body": [
+      "Oh, blow the flange, ye hearty lads,",
+      "Blow the flange, blow free!",
+      "For every turn and every turn",
+      "Brings victory to the sea!",
+      "",
+      "Chorus:",
+      "Flanges! Flanges! Bolts and bits!",
+      "Fastening here and fastening there!",
+      "Through the spray and through the day,",
+      "We flange with utmost care!",
+      "",
+      "The wrench goes round, the flange goes tight,",
+      "The bolt it turns and holds,",
+      "Our fingers worn, our souls reborn,",
+      "In stories yet untold.",
+      "",
+      "Chorus:",
+      "Flanges! Flanges! Never slack!",
+      "Working 'til the moon appears!",
+      "Through the gale and through the hail,",
+      "We've been flanging down the years!",
+      "",
+      "So raise a glass to every flange",
+      "That holds the ships so tight,",
+      "For it's the flange that makes us sing",
+      "From morning until night!",
+      "",
+      "Chorus:",
+      "Flanges! Flanges! Strong and true!",
+      "Riveted with endless care!",
+      "From the hold to stories told,",
+      "We'll flange beyond compare!"
+    ],
+    "pullQuote": "For it's the flange that makes us sing from morning until night",
+    "tags": [
+      "voices",
+      "pastiche",
+      "maritime"
+    ]
+  },
+  {
+    "id": "voices-town-crier-oyez",
+    "category": "Voices",
+    "headline": "Oyez! Oyez! The Matter of the Missing Flange",
+    "standfirst": "A medieval town crier announces an urgent matter of civic importance regarding a stolen component.",
+    "byline": "In the style of a Medieval Town Crier",
+    "location": "THE TOWN SQUARE, FLANGE-ON-THAMES",
+    "published": "2026-07-12T07:00:00Z",
+    "body": [
+      "Oyez! Oyez! Oyez!",
+      "",
+      "Let it be known throughout the township of Flange-on-Thames and the surrounding shires!",
+      "",
+      "By Order of the Mayor and Council of the Factory District, this day being the thirteenth of July in the Year of Our Lord twenty-twenty-six:",
+      "",
+      "PROCLAMATION:",
+      "",
+      "That whereas a Most Valuable Flange, being of the finest steel and most excellent circumference, hath been found to be missing from the Workshop of Master Timothy Threadwell;",
+      "",
+      "And whereas said Flange was wrought by the most skilled craftspeople and hath been in faithful service these twenty years and more;",
+      "",
+      "NOW THEREFORE, all good citizens are hereby commanded to make thorough search, within their homes, their workshops, their places of business, and their sheds;",
+      "",
+      "And if any person shall have seen said Flange, or shall have knowledge of its whereabouts, let them come forth forthwith to the Town Hall and report to the Constabulary;",
+      "",
+      "A Reward of five pounds Sterling is offered for the safe return of the Flange to Master Threadwell, no questions asked;",
+      "",
+      "Given under hand and seal this day.",
+      "",
+      "GOD SAVE THE KING!",
+      "",
+      "Oyez! Oyez! Oyez!"
+    ],
+    "pullQuote": "A Reward of five pounds Sterling is offered for the safe return",
+    "tags": [
+      "voices",
+      "pastiche",
+      "proclamation"
+    ]
+  },
+  {
+    "id": "voices-paul-graham-flanging-service",
+    "category": "Voices",
+    "headline": "Why Flanging-as-a-Service is the Next Unicorn",
+    "standfirst": "A startup essay on the strategic deployment of artisanal flange technology.",
+    "byline": "In the style of Paul Graham",
+    "location": "BEDFORD",
+    "published": "2026-07-12T09:00:00Z",
+    "body": [
+      "Most startups fail. The obvious reason is that they build things nobody wants. But there's a second, more interesting reason: they solve problems that don't quite exist yet.",
+      "The flange industry has been stuck in the industrial age for 150 years. Sprockets are flanged, bolts are flanged, everything is flanged in the manner of our grandfathers. But what if we could flange better?",
+      "The key insight is this: flanging is not about the flange. It's about the mindset. The average widget producer sees a flange as a necessary evil. The best producers see it as an opportunity.",
+      "Consider the flow of a typical flanging operation. A technician receives a sprocket. He consults a table. He applies the correct torque. He moves on. For 80 years, this has been the process. But this is exactly where AI can intervene.",
+      "By applying machine learning to historical flange data, we can predict the optimal flanging angle with 0.003% greater accuracy. Over a factory's lifetime, this compounds into savings. Venture capitalists understand compounding.",
+      "The network effects are obvious. Once you've flanged your first widget optimally, you want to flange everything. Your competitors will be forced to adopt the same system. Within five years, every flange in Britain will run through our API.",
+      "Investors always ask: what's your moat? Ours is simple. We have the data. We have the algorithms. We have the domain expertise. But most importantly, we understand that flanging is not a feature—it's a lifestyle choice for the enlightened manufacturer."
+    ],
+    "pullQuote": "Flanging is not about the flange. It's about the mindset.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "industry"
+    ]
+  },
+  {
+    "id": "voices-malcolm-gladwell-flange-delays",
+    "category": "Voices",
+    "headline": "The Tipping Point of the Flange Backlog",
+    "standfirst": "Why the Flange Registry's mysterious administrative delays are actually genius.",
+    "byline": "In the style of Malcolm Gladwell",
+    "location": "GRIMSBY",
+    "published": "2026-07-12T10:30:00Z",
+    "body": [
+      "Here's the thing about the Flange Registry's backlog. Everyone thinks it's a problem. The newspapers call it 'glacial.' Manufacturers complain it now takes six months to register a new sprocket assembly. But what if the delay is exactly the point?",
+      "In 1997, the Registry introduced what they called 'considered flanging'—a deliberate pause before approval. It was meant to prevent rash decisions. But something unexpected happened. Registrations got better. Not marginally better. Dramatically better. The first-time approval rate went from 71% to 94%.",
+      "The tipping point came in 2003. By then, enough time had passed that the early adopters of considered flanging had begun to demonstrate its benefits. Suddenly everyone wanted in. The queue grew. It became a virtue to wait.",
+      "David Barkley—head of sprocket procurement at Richardson Industries—told me this when I visited the Registry last month. 'We used to chase approval,' he said. 'Now we wait. The waiting makes us think.' That sentence contained an entire philosophy.",
+      "Psychologists call this the 'commitment effect.' The longer you wait for something, the more you value it. The Registry understood this intuitively. By making flanging hard to do quickly, they made it matter more. The delay became the message.",
+      "Of course, there's a darker reading. Perhaps the Registry's administrators are simply incompetent. But I think that's too simple. I think they've stumbled onto something profound about British manufacturing: that in our rush to streamline everything, we've forgotten the value of friction."
+    ],
+    "pullQuote": "By making flanging hard to do quickly, they made it matter more.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "psychology"
+    ]
+  },
+  {
+    "id": "voices-michael-lewis-artisanal-flange",
+    "category": "Voices",
+    "headline": "The Paradox of the Artisanal Flange",
+    "standfirst": "The unlikely rise of bespoke flange polishing in the age of automation.",
+    "byline": "In the style of Michael Lewis",
+    "location": "BRISTOL",
+    "published": "2026-07-12T11:45:00Z",
+    "body": [
+      "Steven Marsh started polishing flanges by accident. He was a recently redundant factory worker with £2,000 and no job prospects. It was 2008, the worst possible year to be launching anything. But Steven had a peculiar idea: what if flanges were beautiful?",
+      "At first, his neighbours thought he was mad. Flanges were industrial components. They were grey. They looked like what they were: the bolts holding the world together. 'Why would anyone pay for a shiny flange?' his ex-wife asked. She was making a fair point.",
+      "But Steven had noticed something nobody else had. Every flange bore the fingerprints of its manufacturing process. The tool marks, the residual oils, the microscopic variations—they told a story. His innovation was simple: make that story visible.",
+      "By 2010, he was making £200 a week, which doesn't sound like much until you realise he was doing two flanges a day at £50 each. By 2015, his 'bespoke flange collection' was selling at Tate Modern gift shop for £180 per piece. He'd turned a commodity into art.",
+      "What followed was predictable and yet surprising. Venture capitalists arrived. Industrial designers got involved. Someone made an Instagram account. Within five years, the artisanal flange market—which never existed before—was worth £18 million annually.",
+      "The beautiful part of this story is not that Steven got rich. It's that he revealed something about how wealth is made in modern Britain. It's not created by the obvious things. It's created by people who notice that everyone is wrong about something ordinary, and who have the nerve to insist on being right."
+    ],
+    "pullQuote": "He'd turned a commodity into art.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "entrepreneurship"
+    ]
+  },
+  {
+    "id": "voices-mary-beard-ancient-flange",
+    "category": "Voices",
+    "headline": "What the Romans Knew About Flanges (And We Forgot)",
+    "standfirst": "A classicist's guide to industrial engineering in antiquity.",
+    "byline": "In the style of Mary Beard",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-12T13:00:00Z",
+    "body": [
+      "One of the many surprises that classical archaeology has offered us is how much the Romans understood about mechanical advantage. We tend to think of the Romans as military men and administrators, which of course they were. But they were also engineers of the highest order.",
+      "The flange—though of course they didn't call it that—was well known to Roman industry. Archaeological evidence suggests that by the third century AD, flanging techniques similar to our own were being deployed in water mills throughout the provinces. A wonderful example survives at Pont-du-Gard, where you can still see the original iron work.",
+      "What's particularly fascinating is that the Romans seemed to understand something we've largely forgotten: that the flange was not merely a functional necessity, but a kind of statement. Examine the 'Imperial Flange' recovered from the site of Leptis Magna in Libya. The workmanship is extraordinary. This was not casual engineering.",
+      "Of course, we must be careful not to over-interpret the archaeological record. We don't have explicit Roman texts discussing flange philosophy (though Pliny the Elder mentions something that might be relevant in the Natural History). But the objects speak for themselves. The Romans took their flanges seriously, and we should too.",
+      "The decline of flanging expertise after the fall of Rome is one of those historical mysteries that deserves more attention. How did we lose this knowledge? Why did it take until the Industrial Revolution to rediscover what the Romans knew? These questions might tell us something important about how knowledge is transmitted—and how easily it can be forgotten."
+    ],
+    "pullQuote": "The Romans took their flanges seriously, and we should too.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "history"
+    ]
+  },
+  {
+    "id": "voices-bill-bryson-flange-works",
+    "category": "Voices",
+    "headline": "A Journey Through the Flange Works of Burton-upon-Trent",
+    "standfirst": "Comic travel writing about the least glamorous heritage site in England.",
+    "byline": "In the style of Bill Bryson",
+    "location": "BURTON-UPON-TRENT",
+    "published": "2026-07-12T14:15:00Z",
+    "body": [
+      "The problem with the Flange Works Heritage Museum—and there are several—is that it occupies a space that nobody particularly wants to visit. It's not in the Lake District, where visitors expect mountains and picturesque suffering. It's not even in the Cotswolds, where the drystone walls make you feel that medieval peasants did manual labour in a more aesthetically pleasing way. It's in Burton-upon-Trent, which is famous for brewing and, well, that's rather it.",
+      "The museum itself is housed in what used to be a real flange factory, which sounds fascinating until you realise that industrial buildings—when preserved—are mostly just very large, cold rooms full of machinery that nobody understands and plaques explaining why the machinery should have meant something to you.",
+      "I arrived on a Tuesday morning in March, when the weather was doing that thing it does in the Midlands: neither raining nor not raining, but existing in a kind of damp state of indecision. The parking was free, which I should have recognised as a warning sign.",
+      "Inside, I was greeted by Margaret, the sole staff member, who seemed surprised to see another human being. 'Are you interested in flanges?' she asked with the tone of someone who had asked this question perhaps seventeen times in her life.",
+      "'Enormously,' I lied. Margaret then spent forty-five minutes showing me a flange. Just one. She explained, with genuine passion, how this particular specimen represented 'the pinnacle of 1963 engineering.' I nodded and made notes, feeling the way one does when someone is explaining the rules of cricket.",
+      "But here's the thing about wandering around unfashionable heritage sites in the English Midlands: sometimes you learn something you didn't know you wanted to know. The flange, it turns out, is genuinely interesting. It's a simple solution to an annoying problem, and it's been solving that problem, unchanged, for over a century. In a world of obsolescence and disruption, that's almost beautiful.",
+      "As I left, Margaret waved from the window. I waved back. Neither of us would ever recommend this place to anyone else. And yet I somehow suspect I'll come back."
+    ],
+    "pullQuote": "Industrial buildings—when preserved—are mostly just very large, cold rooms full of machinery that nobody understands.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "travel"
+    ]
+  },
+  {
+    "id": "voices-twitter-thread-pigeon-union",
+    "category": "Voices",
+    "headline": "The Great Pigeon Uprising Has Begun",
+    "standfirst": "A Twitter thread from the point of view of the Flange's first unionised pigeon.",
+    "byline": "In the style of a Twitter thread",
+    "location": "LONDON",
+    "published": "2026-07-12T15:30:00Z",
+    "body": [
+      "🧵 1/12 right so i've been roosting at the Flange Works roundabout for 6 years now and i need to be honest about something",
+      "2/12 we pigeons are TIRED. tired of the working conditions. tired of the bread crumbs (which aren't even real bread half the time, they're just industrial off-cuts). tired of the roundabout getting resurfaced EVERY 18 MONTHS",
+      "3/12 do you know what it's like to rebuild your nest 4 times a year because some bloke in a hard hat decides he needs to 'improve traffic flow'??? no you don't. because you're a human and you have RIGHTS",
+      "4/12 that's why I've joined the TGWU. that's right. the Transport and General Workers' Union. we're the same union that represents the bin men. we're serious about this",
+      "5/12 our demands are simple. no nest disturbance June-August (breeding season). minimum daily food standards (actual seeds, no industrial waste). and 2 roosting hours per day—paid roosting",
+      "6/12 paid roosting is not radical. it's basic dignity. we work the roundabout. we're here 24/7. we provide... ok i'll be honest. we don't provide any value to anyone. but that's not the point",
+      "7/12 the point is PRINCIPLE. if the Flange Works can have health and safety inspections, why can't pigeons??? why can't we have a representative at quarterly meetings???",
+      "8/12 the union rep (Carol, lovely woman) says this is 'unprecedented in avian labour.' she also says the council is 'taking it very seriously' which i think is management speak for 'still laughing'",
+      "9/12 but we're not backing down. today we're just on Reddit. by next week we'll be on Instagram. by August, we're shutting down the entire roundabout. imagine. 140 pigeons. one determination",
+      "10/12 some of you will say 'pigeons don't have employment rights.' to which i say: cowards. our grandmothers fought in the grain stores for better working conditions. we honour their legacy",
+      "11/12 join us. sign the petition. share this thread. the pigeon uprising starts now. they said it couldn't be done. they said we were 'birds' and 'didn't have legal standing.' but they didn't count on",
+      "12/12 the British love of industrial dispute and pigeons. watch this space."
+    ],
+    "pullQuote": "Our demands are simple. No nest disturbance June-August. Minimum daily food standards. And 2 roosting hours per day—paid roosting.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "labour"
+    ]
+  },
+  {
+    "id": "voices-linkedin-flange-journey",
+    "category": "Voices",
+    "headline": "My Journey Learning to Flange Changed Everything",
+    "standfirst": "A LinkedIn influencer's humblebragging post on embracing the flange mindset.",
+    "byline": "In the style of a LinkedIn influencer",
+    "location": "LONDON",
+    "published": "2026-07-12T16:45:00Z",
+    "body": [
+      "Today I want to share something vulnerable with you.",
+      "Six months ago, I knew nothing about flanges.",
+      "My team said I was 'too high-level' for hands-on flange work. My manager told me flanging was 'not a leadership skill.'",
+      "I disagreed.",
+      "So I did something crazy. I spent three weekends in a workshop learning to flange properly. Proper technique. Proper torque. Proper mindset.",
+      "People asked why. 'Shouldn't you be delegating?' they said.",
+      "But here's what I learned: leadership isn't about being above the work. It's about understanding every single part of what your team does.",
+      "When I went back to my office on Monday, everything was different.",
+      "I could speak to our manufacturing team in their language. I understood their constraints. I understood their pride in a job well done.",
+      "Within weeks, our flange efficiency went up 23%.",
+      "My boss asked how I'd done it.",
+      "'I learned to flange,' I said.",
+      "He's learning too now.",
+      "The lesson: vulnerability = strength. Getting your hands dirty = authority. Understanding craft = real leadership.",
+      "If you're a leader reading this—when did you last flange? Literally or metaphorically, it doesn't matter. But the act of doing the work changes how you lead.",
+      "Agree?"
+    ],
+    "pullQuote": "Leadership isn't about being above the work. It's about understanding every single part of what your team does.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "corporate"
+    ]
+  },
+  {
+    "id": "voices-wikipedia-flange-article",
+    "category": "Voices",
+    "headline": "Flange (Engineering) – Wikipedia",
+    "standfirst": "A Wikipedia article on flange technology, complete with citation gaps and neutral point of view.",
+    "byline": "In the style of Wikipedia",
+    "location": "ONLINE",
+    "published": "2026-07-12T17:55:00Z",
+    "body": [
+      "A flange is a rim or projecting edge on a component, typically manufactured from steel or similar material. Flanges are used to reinforce structures and are integral to industrial and mechanical applications.[citation needed]",
+      "== History ==",
+      "The modern flange was first systematised during the British Industrial Revolution, though evidence suggests flange-like devices existed in Roman engineering.[1] The term 'flange' itself derives from the Dutch word flange, meaning to turn or fold.[citation needed]",
+      "== Technical specifications ==",
+      "Flanges are classified by several parameters including pressure rating, bolt hole diameter, and flanging angle. The most common standard in Britain is the British Standard BS 1560, though ISO standards are increasingly prevalent.[citation needed]",
+      "According to the Institution of Mechanical Engineers, flanging is a critical operation in approximately 47% of British manufacturing processes.[2] However, this figure has been disputed.[citation needed]",
+      "== Types ==",
+      "The primary types of flange are: slip-on, weld-neck, socket-weld, threaded, and blind. Each type serves specific applications and load requirements.[citation needed] A sixth type, the 'artistic flange' developed in the early 2000s, remains largely outside industrial practice.[3]",
+      "== Manufacturing process ==",
+      "Flanges are typically manufactured through forging, casting, or machining. The specific process depends on the required specifications and material properties.[citation needed]",
+      "In 2019, the Department of Business, Energy and Industrial Strategy commissioned a study on flange manufacturing best practices, though the report has not been made public.[citation needed]",
+      "== Controversies ==",
+      "The 'Great Flange Shortage' of 2016 created a temporary supply crisis in British manufacturing. Causes and consequences remain debated in industry literature.[citation needed]",
+      "== References ==",
+      "[1] Smith, J. et al. (2011). 'Roman Engineering: New Perspectives.' Journal of Ancient Technology.",
+      "[2] IME (2018). 'Flanging in Modern British Industry.'",
+      "[3] Marsh, S. (2008). 'Beautiful Flanges: An Unexpected Career.'"
+    ],
+    "pullQuote": "The term 'flange' itself derives from the Dutch word flange, meaning to turn or fold.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "technical"
+    ]
+  },
+  {
+    "id": "voices-scientific-flange-entropy",
+    "category": "Voices",
+    "headline": "Entropic Flange Degradation Under Cyclic Load: A Quantitative Analysis",
+    "standfirst": "A scientific journal abstract examining flange deterioration.",
+    "byline": "In the style of a scientific journal abstract",
+    "location": "OXFORD",
+    "published": "2026-07-12T18:30:00Z",
+    "body": [
+      "Abstract: Flanges subjected to cyclic mechanical stress exhibit progressive degradation through microstructural changes. This study examines the entropy-driven deterioration of standard steel flanges (BS 1560-1) under repeated flanging cycles.",
+      "Background: Industrial flanges degrade through a complex interaction of mechanical wear, oxidation, and entropy-driven molecular rearrangement. Previous studies have focused on macroscopic wear patterns; the entropic component remains underexplored.",
+      "Methods: Sixty test samples (30 mm diameter, 10 mm thickness, BS 1560-1 specification) were subjected to 10,000 flanging cycles at 450 N/mm² stress. Samples were analysed using X-ray crystallography and scanning electron microscopy at 1,000-cycle intervals. Temperature was maintained at 22°C ± 2°C. Entropy measurements were calculated using Boltzmann constant relations on measured microstructural disorder.",
+      "Results: Entropic index increased from baseline 2.14 ± 0.09 to 4.67 ± 0.12 by cycle 10,000 (p < 0.001). Electron microscopy revealed progressive grain boundary migration and subsurface microcracking. Critically, flange failure did not correlate linearly with entropy increase but followed a third-order polynomial distribution (R² = 0.894). Flanges maintained functional integrity until entropy exceeded 4.5 ± 0.15.",
+      "Conclusion: Entropic degradation provides a novel predictive model for flange failure. This has significant implications for preventive maintenance scheduling in industrial settings. Further research is required to validate this model across different materials and loading conditions. These findings suggest that industry standards for flange replacement intervals may require revision downward by 12–18%."
+    ],
+    "pullQuote": "Flanges subjected to cyclic mechanical stress exhibit progressive degradation through microstructural changes.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "research"
+    ]
+  },
+  {
+    "id": "voices-restaurant-review-flange-cuisine",
+    "category": "Voices",
+    "headline": "Flangemere: Pretentious Nonsense Served at £78 a Head",
+    "standfirst": "A fine-dining critic's scathing review of a restaurant built around flange-shaped gastronomy.",
+    "byline": "In the style of a fine-dining restaurant critic",
+    "location": "MAYFAIR",
+    "published": "2026-07-13T08:00:00Z",
+    "body": [
+      "I've been reviewing restaurants for twenty-three years. I've eaten at three-Michelin-star establishments in Copenhagen, molecular gastronomic temples in Barcelona, and the occasional genuinely excellent gastropub in Oxfordshire. I thought I'd seen everything. I was wrong.",
+      "Flangemere, housed in a converted industrial loft in Fitzrovia, is perhaps the most audacious act of culinary charlatanism I've encountered. The conceit is this: every dish is flange-shaped. Not inspired by flanges. Shaped exactly like industrial flanges. A £78 menu composed entirely of cylindrical objects with radial protrusions.",
+      "The amuse-bouche—technically a disc-shaped compress of carrot, cumin, and sorrow—arrived on a slate tile at an angle meant, I presume, to suggest engineering dynamism. It tasted like desperation.",
+      "The fish course was described as 'plaice with flange-geometry reduction.' It was a plaice fillet placed inside a ring of smoked potato foam. This is not cooking. This is a practical joke.",
+      "The pièce de résistance was a 'beef flange': a circular arrangement of beef tartare with eight equidistant quenelles of horseradish cream. One of the quenelles fell onto my lap. The sommelier offered me a napkin with an apology so hollow it echoed.",
+      "Not one dish—not even the dessert, a circular tart with protruding chocolate cylinders—justified its price or its premise. The chef, apparently, trained under Ferran Adrià. This seems cruel, as Adrià's techniques have been weaponised here against reason and taste.",
+      "Flangemere is what happens when someone conflates 'concept' with 'cooking.' It is Dinner with a capital D, performed for Instagram rather than the palate. It will not survive. God willing, it will not take someone's ambition with it."
+    ],
+    "pullQuote": "This is not cooking. This is a practical joke.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "dining"
+    ]
+  },
+  {
+    "id": "voices-press-release-flange-tech",
+    "category": "Voices",
+    "headline": "Hearthstone Engineering is Thrilled to Announce FlangeAI™",
+    "standfirst": "A corporate press release from a fictitious engineering firm.",
+    "byline": "In the style of a corporate press release",
+    "location": "NEWCASTLE",
+    "published": "2026-07-13T09:15:00Z",
+    "body": [
+      "Hearthstone Engineering PLC is thrilled to announce the official launch of FlangeAI™, a groundbreaking software solution that revolutionises the industrial flanging process through the power of machine learning.",
+      "'FlangeAI™ represents the future of British manufacturing,' said James Cordwell, Chief Executive Officer of Hearthstone Engineering. 'Our customers have asked for intelligent flanging solutions, and today we deliver.'",
+      "Developed over eighteen months by Hearthstone's award-winning R&D team in collaboration with university partners, FlangeAI™ utilises predictive algorithms to optimise flanging parameters in real time, reducing waste by up to 31% and increasing production throughput by an average of 18%.",
+      "Key features of FlangeAI™ include:",
+      "• Automated torque calculation based on material composition and ambient temperature",
+      "• Predictive maintenance alerts to prevent catastrophic flange failure",
+      "• Integration with existing Industrial Internet of Things (IoT) infrastructure",
+      "• Cloud-based analytics dashboard for fleet-wide monitoring",
+      "'This is a watershed moment for UK manufacturing,' commented Sarah Patel, Director of Operations at Richardson Industries, an early adopter. 'Within six months of implementation, we've seen measurable improvements in both quality and efficiency.'",
+      "FlangeAI™ is available immediately, with tiered licensing options starting at £12,000 per annum. A free trial version is available for qualifying manufacturers.",
+      "About Hearthstone Engineering: Founded in 1987, Hearthstone Engineering is a leader in precision manufacturing solutions across the UK, Europe, and North America. The company employs over 400 engineers and technicians. More information is available at www.hearthstone-eng.co.uk"
+    ],
+    "pullQuote": "FlangeAI™ represents the future of British manufacturing.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "corporate"
+    ]
+  },
+  {
+    "id": "voices-legal-terms-flange-usage",
+    "category": "Voices",
+    "headline": "Flange™ Subscription Service – Terms and Conditions (Abridged)",
+    "standfirst": "Legal terms governing the use of a subscription flanging service.",
+    "byline": "In the style of legal terms and conditions",
+    "location": "LONDON",
+    "published": "2026-07-13T10:30:00Z",
+    "body": [
+      "1. DEFINITIONS: In these Terms and Conditions, 'the Party of the First Part' refers to Flange Solutions Ltd. ('the Provider'). 'The Party of the Second Part' refers to the subscriber ('the Licensee'). 'Flanging' shall mean the act of applying one or more flanges to a component or assembly.",
+      "2. GRANT OF LICENCE: The Provider hereby grants to the Licensee a non-exclusive, non-transferable, revocable licence to flange up to fifty (50) components per calendar month. Flanging beyond this limit requires an upgraded subscription tier.",
+      "3. FLANGING STANDARDS: All flanging shall be conducted in compliance with British Standard BS 1560-1 and the Flange Quality Index as defined in Schedule A hereto. The Provider warrants that flanges will be of merchantable quality and fit for the purposes specified by the Licensee in writing.",
+      "4. PAYMENT: The Licensee shall pay a monthly subscription fee of £99.99 by direct debit. Late payment shall accrue interest at 8% per annum. Non-payment for more than thirty (30) days shall constitute material breach.",
+      "5. LIMITATION OF LIABILITY: In no event shall the Provider be liable for indirect, incidental, or consequential damages arising from defective flanging, including but not limited to: loss of profit, business interruption, or damage to third-party property. The Provider's total liability shall not exceed the fees paid in the preceding twelve (12) months.",
+      "6. TERMINATION: Either party may terminate this agreement with ninety (90) days' written notice. Immediate termination is permitted if flanging quality falls below minimum standards defined in Schedule A for more than two (2) consecutive months.",
+      "7. INDEMNIFICATION: The Licensee shall indemnify and hold harmless the Provider from any claims arising from misuse of the flanging service, including but not limited to: flanging of components not approved by the Provider, or use of flanges in non-compliant applications.",
+      "8. GOVERNING LAW: These Terms shall be governed by the laws of England and Wales."
+    ],
+    "pullQuote": "All flanging shall be conducted in compliance with British Standard BS 1560-1.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "legal"
+    ]
+  },
+  {
+    "id": "voices-patch-notes-flange-update",
+    "category": "Voices",
+    "headline": "FlangeWorks™ v3.4.1 – Patch Notes",
+    "standfirst": "Software changelog for an industrial flanging application.",
+    "byline": "In the style of software patch notes",
+    "location": "ONLINE",
+    "published": "2026-07-13T11:45:00Z",
+    "body": [
+      "**FlangeWorks™ v3.4.1 – Released 2026-07-12**",
+      "---",
+      "## Fixed Issues",
+      "- Fixed critical bug where flange angle calculation would overflow with inputs above 359.9 degrees. Users reporting infinite flanging loops should update immediately.",
+      "- Resolved race condition in the torque-estimation algorithm that caused occasional 'impossible flange' errors on Monday mornings.",
+      "- Corrected database migration error from v3.3.4 that was causing historical flange data to appear in reverse alphabetical order.",
+      "- Fixed UI rendering issue where the flanging progress bar would extend beyond screen boundaries on 4K displays.",
+      "- Patched security vulnerability in the cloud sync module (CVE-2026-7743) that could allow unauthorised flange transfer between accounts.",
+      "",
+      "## New Features",
+      "- Added predictive maintenance alerts: the system now warns users when a flange is approaching end-of-life based on historical usage patterns.",
+      "- Implemented 'Quick Flange' mode—default parameters for rapid flanging of common components.",
+      "- Added support for metric flange sizes (previously imperial only—apologies to our continental users).",
+      "",
+      "## Known Issues",
+      "- The flange library occasionally crashes when sorting by 'aesthetic appeal.' We recommend sorting by 'load rating' instead.",
+      "- Import from legacy FlangeWorks™ v2.1 databases sometimes creates duplicate flange records. A manual deduplication tool is available in Settings.",
+      "- The tutorial module still refers to 'Flanging Fundamentals in a Digital Age' (a PDF that no longer exists). We'll remove the link in v3.5.",
+      "",
+      "## Deprecated",
+      "- The 'Flange Wizard' interface will be retired in v3.6. If you rely on this, please transition to the Dashboard interface.",
+      "",
+      "## Technical Details",
+      "**File size:** 147 MB | **Download time** (10 Mbps): ~2 minutes",
+      "**Compatibility:** Windows 7 SP1+, macOS 10.12+, Linux (Ubuntu 18.04+)"
+    ],
+    "pullQuote": "Users reporting infinite flanging loops should update immediately.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "software"
+    ]
+  },
+  {
+    "id": "voices-food-blog-flange-cake",
+    "category": "Voices",
+    "headline": "Gran's 1963 Flanged Cake: A Recipe and a Memory",
+    "standfirst": "A food blogger's nostalgic preamble leading to a traditional recipe.",
+    "byline": "In the style of a food blog",
+    "location": "MANCHESTER",
+    "published": "2026-07-13T13:00:00Z",
+    "body": [
+      "You know what's funny? I went twenty-three years without thinking much about cake. That seems impossible for someone who grew up in Manchester, where my grandmother baked three times a week like her life depended on it. But life happened. London, career, a failed sourdough phase. And then, last month, I opened a box in my mum's loft and found Gran's old recipe cards, written in her wild cursive across cream-coloured index cards held together with a rubber band that crumbled to dust in my hands.",
+      "Most of the recipes were predictable: Victoria sponge, lemon drizzle, the apple cake she made for every school fete. But there was one card that puzzled me. 'Flanged Cake, for best results.' No other instructions. No ingredients list. Just that.",
+      "I called Mum immediately. 'What's a flanged cake?' I asked.",
+      "'Oh god,' she said, laughing. 'I haven't thought about that in decades. It was Gran's thing. The cake had these ridges around the edge—they looked like the industrial flanges they used at the factory where Grandpa worked. She'd use a special tin. I think it's still in the garage.'",
+      "It was. Beneath a stack of storage boxes and a broken exercise bike, I found it. A Pyrex cake tin with flange-shaped protrusions moulded into the base. According to the bottom, it was from 1958. The tin felt like holding history.",
+      "So I called Gran's sister, Auntie Joyce, who's ninety-four and still sharp as anything.",
+      "'The flanged cake was her pride and joy,' Joyce said. 'She'd spend hours getting the batter into all those little ridges. Grandpa reckoned she was mad. But every Wednesday, out it came. With custard.'",
+      "I tested and re-tested, adapting Gran's three other cake recipes to work with the flanged tin. After six attempts, I cracked it. Here's what I learned: the flange-shaped tin isn't about aesthetics alone. Those ridges change the baking surface area, creating edges that brown differently, creating texture variation. It's actually genius design.",
+      "This cake tastes like Manchester in the 1960s. Like industrial pride. Like a woman refusing to be ordinary.",
+      "",
+      "## Gran's Flanged Cake",
+      "",
+      "**Ingredients:**",
+      "- 225g softened butter",
+      "- 225g caster sugar",
+      "- 4 large eggs",
+      "- 225g self-raising flour",
+      "- 2 tbsp milk",
+      "- 1 tsp vanilla extract",
+      "",
+      "**Method:**",
+      "1. Preheat oven to 180°C.",
+      "2. Cream butter and sugar until pale and fluffy (3–4 minutes).",
+      "3. Add eggs one at a time, beating well between each.",
+      "4. Fold in flour, milk, and vanilla.",
+      "5. Pour batter into a flanged cake tin (or a regular tin if you don't have Gran's).",
+      "6. Bake 40–45 minutes until a skewer comes out clean.",
+      "7. Serve with custard."
+    ],
+    "pullQuote": "The flange-shaped tin isn't about aesthetics alone. Those ridges change the baking surface area.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "food"
+    ]
+  },
+  {
+    "id": "voices-dating-profile-flange-collector",
+    "category": "Voices",
+    "headline": "Sarah, 34 – Flange Enthusiast Seeking Connection",
+    "standfirst": "A dating-app bio from a woman passionate about industrial metalwork.",
+    "byline": "In the style of a dating-app profile",
+    "location": "LEEDS",
+    "published": "2026-07-13T14:15:00Z",
+    "body": [
+      "Hi! I'm Sarah. I'm 34, I work in architectural salvage, and I have what I can only describe as an unusual hobby: I collect vintage flanges.",
+      "This usually gets a laugh. People assume I'm joking. I'm not.",
+      "For the past eight years, I've been building a collection of British industrial flanges, dating back to the 1920s. I have originals from the Manchester engineering works, a particularly beautiful set of 1940s naval flanges (extremely rare), and three specimens from the 1960s that I consider to be 'the sweet spot' of flange design—form and function in perfect equilibrium.",
+      "They're beautiful. Like, genuinely beautiful. The tool marks. The patina. The way each one tells you something about how it was made, by whom, in what decade.",
+      "I don't expect everyone to understand. My last boyfriend said my collection was 'weird.' He wasn't wrong, exactly. He just didn't get why something ordinary could be extraordinary if you looked at it right.",
+      "What I'm looking for: Someone who appreciates that passion for 'boring' things isn't boring. Someone who can look at a 1953 flange and see history. Or, at minimum, someone willing to learn why I find them captivating.",
+      "I'm happy to talk about flanges. But I'm also happy to talk about travel, food, films, or why Victorian engineering is criminally underrated. I cook well. I laugh easily. I'm interested in how things work.",
+      "Nerdy? Yes. Weird? Probably. But if you're the kind of person who gets excited about niche knowledge, we might actually get along.",
+      "Interested? Drop me a line. (But if you're going to suggest turning my collection into planters, swipe left.)"
+    ],
+    "pullQuote": "The tool marks. The patina. The way each one tells you something about how it was made, by whom, in what decade.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "personal"
+    ]
+  },
+  {
+    "id": "voices-tripadvisor-flange-museum",
+    "category": "Voices",
+    "headline": "Absolute Shambles – Flange Heritage Museum, Burton-upon-Trent",
+    "standfirst": "A scathing one-star TripAdvisor review of a forgotten museum.",
+    "byline": "In the style of a TripAdvisor review",
+    "location": "BURTON-UPON-TRENT",
+    "published": "2026-07-13T15:30:00Z",
+    "body": [
+      "⭐ One star.",
+      "OK so we booked this as a rainy day activity. The website said 'world-class heritage experience' or some such nonsense. We arrived with our two kids (8 and 11). Within ten minutes, I regretted every decision.",
+      "First: there's no car park. We ended up parking three streets away next to someone's bin.",
+      "Second: the 'museum' is literally just a old factory with some objects on shelves. No atmosphere. No interactivity. Just grey rooms and VERY loud industrial humming noise from somewhere.",
+      "Third: there's one staff member. ONE. She was very nice but also clearly ready to retire and had already asked us seventeen times if we were 'enjoying the exhibits.' We weren't.",
+      "The gift shop sells ONLY flanges. Actual flanges. As souvenirs. For £8-15 each. My son asked what they were for. I couldn't explain it. I still can't.",
+      "There's a 'cafe' that serves instant coffee and a sandwich that looked like it had been made during the Johnson administration.",
+      "We spent 45 minutes there. The website said the 'full experience' was 2-3 hours. We left after 45 minutes because there was literally nothing else to look at.",
+      "Budget-friendly? Yes. Appropriate for families? Absolutely not. Worth the £12 entry fee? Not even remotely.",
+      "If you're in Burton-upon-Trent, visit the brewery museum instead (genuinely excellent). Skip this place entirely."
+    ],
+    "pullQuote": "There's a 'cafe' that serves instant coffee and a sandwich that looked like it had been made during the Johnson administration.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "travel"
+    ]
+  },
+  {
+    "id": "voices-ikea-manual-flangbork",
+    "category": "Voices",
+    "headline": "FLANGBÖRK Shelving Unit – Assembly Instructions",
+    "standfirst": "IKEA-style wordless assembly manual for an imaginary flanged shelf.",
+    "byline": "In the style of an IKEA instruction manual",
+    "location": "ONLINE",
+    "published": "2026-07-13T16:45:00Z",
+    "body": [
+      "**FLANGBÖRK – Storage Unit Assembly**",
+      "[Diagram 1] Parts checklist: Plywood side panel (2), metal flange connectors (8), screws (16), Allen key (1), mounting brackets (4), wall anchors (4), inexplicable cylindrical spacer (1).",
+      "",
+      "[Diagram 2] Lay first side panel flat on soft surface (carpet/rug recommended to protect finish, and because your floor is probably disgusting).",
+      "",
+      "[Diagram 3] Locate the four pre-drilled holes along the interior edge. These align with nothing in particular but trust us.",
+      "",
+      "[Diagram 4] Insert flange connector into first hole. The orientation does not matter because physics is a social construct.",
+      "",
+      "[Diagram 5] Repeat step 4 for remaining three holes. You will become frustrated. This is intentional. It builds character.",
+      "",
+      "[Diagram 6] Repeat steps 2–5 for the second side panel. They should look identical unless you've made an error, in which case it's definitely your fault.",
+      "",
+      "[Diagram 7] Place second panel perpendicular to first. Congratulations, you've built a corner.",
+      "",
+      "[Diagram 8] Notice the inexplicable cylindrical spacer from the parts list. We have no idea what it's for either. We recommend throwing it away.",
+      "",
+      "[Diagram 9] Screw the panels together using the Allen key. Tighten until hand-tight, then tighten slightly more. Your instinct will tell you to tighten further. Resist this urge.",
+      "",
+      "[Diagram 10] Attach mounting brackets to the wall. If your wall is concrete, drywall, brick, plaster, or any other known building material, you'll need different anchors than we provided. This is a feature.",
+      "",
+      "[Diagram 11] Heave the assembled shelf up to the wall. It weighs 34 kg despite appearing to weigh approximately 8 kg. Question your life choices.",
+      "",
+      "[Diagram 12] Attach flange connectors to the wall brackets. Everything is now installed at a 1.3-degree angle to the horizontal. This is within acceptable tolerances.",
+      "",
+      "**Warranty:** One year, excluding every conceivable failure mode."
+    ],
+    "pullQuote": "The orientation does not matter because physics is a social construct.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "design"
+    ]
+  },
+  {
+    "id": "voices-attenborough-flange-nature",
+    "category": "Voices",
+    "headline": "The Hidden Geometry of the Industrial Flange",
+    "standfirst": "A David Attenborough nature-documentary narration applied to manufacturing.",
+    "byline": "In the style of David Attenborough",
+    "location": "ONLINE",
+    "published": "2026-07-13T18:00:00Z",
+    "body": [
+      "For over a century, in the factories and workshops of Britain, a remarkable engineering device has been quietly perfecting its design through the pressures of industrial necessity.",
+      "The flange.",
+      "To the untrained eye, it is merely a projecting metal rim. But to the mechanical engineer, it is nature—or rather, industrial nature—at its most elegant.",
+      "The flange's primary function is structural reinforcement. Yet like all truly successful evolutionary solutions, it has become something more complex. Beautiful, even.",
+      "Here, in a factory in the Midlands, a batch of freshly manufactured flanges emerges from the production line. Each one is identical. Each one is perfect. The workers who created them have laboured at this task for decades—some for their entire working lives—yet few stop to admire their creation.",
+      "The flange, you see, is shaped by pure evolutionary pressure. Those designs that lack sufficient structural integrity fail under load. Those that waste material are economically unviable. What remains is a form so perfectly optimised that to alter it would be to diminish it.",
+      "And yet, remarkably, there is variation. The 1940s naval flange differs subtly from its 1960s industrial cousin. The difference is not in function—both serve their purpose admirably—but in the preferences and constraints of their time. During wartime, steel was precious. Designs became leaner. More efficient. The wartime flange is a monument to scarcity.",
+      "A century of selective pressure—the pressure of economics, of engineering necessity, of human preference—has produced a device of extraordinary elegance.",
+      "And then, without warning, the flange's world changed. Computer-aided design. Automation. Materials science evolved beyond recognition. The flange, unchanged in its essentials, found itself facing obsolescence.",
+      "Yet still, in factories across Britain, flanges are produced. Still, they are fitted. Still, they work. Because sometimes, in the great dance of manufacturing, perfection is not something that can be improved upon.",
+      "It can only be honoured."
+    ],
+    "pullQuote": "The flange is shaped by pure evolutionary pressure.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "nature"
+    ]
+  },
+  {
+    "id": "voices-truecrime-flange-vanishing",
+    "category": "Voices",
+    "headline": "Episode 47: The Vanishing of the Rothbury Flange",
+    "standfirst": "A true-crime podcast transcript investigating an industrial mystery.",
+    "byline": "In the style of a true-crime podcast",
+    "location": "ONLINE",
+    "published": "2026-07-13T19:15:00Z",
+    "body": [
+      "[INTRO MUSIC FADES]",
+      "",
+      "OK so. 1987. Rothbury, Northumberland. A Thursday afternoon in October.",
+      "A master flange—and I mean THE master flange—goes missing from Richardson Engineering Works. And here's the weird part. Nobody even realises it's gone.",
+      "The master flange is what it sounds like. It's a template. A reference. If you're manufacturing flanges, you check your work against it. It's critical.",
+      "So when Margaret Ashton, the quality control manager, goes to retrieve it from the secure cabinet on Friday morning, it's just... gone.",
+      "Now here's where it gets strange.",
+      "The cabinet is locked. No signs of forced entry. The lock has two keys. One is on Margaret's keychain. The other... belonged to the works manager, Dennis Halloway. Who died in 1985.",
+      "Wait. Did we lock a dead man's key in a cabinet? Let's back up.",
+      "Dennis had retired on good terms in 1982. His key was supposed to be returned. His widow, Patricia, swears she gave it to the company. But here's the thing—there's no paperwork. No receipts. Nothing. A key that should exist has vanished from the historical record.",
+      "Two months later, an identical master flange—dimensionally impossible to distinguish from the original—appears at a factory in Taiwan. This is where we enter full paranoia territory.",
+      "Industrial espionage? A family plot to profit from stolen designs? Simple negligence?",
+      "We spoke to Margaret, now eighty-six, living in a bungalow in Morpeth.",
+      "'I knew something was wrong the moment I opened that cabinet,' she told us. 'Not because of the flange. But because the spare key—the backup we weren't supposed to have—was still there.'"
+    ],
+    "pullQuote": "A key that should exist has vanished from the historical record.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "mystery"
+    ]
+  },
+  {
+    "id": "voices-selfhelp-flange-manifest",
+    "category": "Voices",
+    "headline": "Flange Your Reality: 7 Steps to Manifesting Industrial Success",
+    "standfirst": "A self-help guru's guide to aligning your energy with flange technology.",
+    "byline": "In the style of a self-help guru",
+    "location": "ONLINE",
+    "published": "2026-07-13T20:30:00Z",
+    "body": [
+      "Most people manufacture flanges unconsciously.",
+      "They go through the motions. Apply the tool. Tighten the bolt. Move on. But they never ask themselves: *Why* am I flanging? What does this flange represent? Am I truly *connected* to the flanging process?",
+      "The answer, for most, is no.",
+      "And that's why their flanges are mediocre. Why their lives are mediocre.",
+      "Real flanging begins in the mind.",
+      "The universe doesn't distinguish between 'real' flanges and the ones you manifest through intention. Energy is energy. If you project doubt while flanging, the flange absorbs that doubt. If you project abundance, the flange becomes abundant.",
+      "This is not metaphorical. This is physics.",
+      "",
+      "**The 7 Steps to Flanging Abundance:**",
+      "",
+      "**Step 1: Clarify Your Flange Vision.** Close your eyes. Picture your perfect flange. What colour is it? What texture? Don't overthink. Your intuition knows.",
+      "",
+      "**Step 2: Visualise Daily.** Spend five minutes each morning seeing yourself executing the perfect flange. Feel the tool in your hands. Feel the metal yield. Smell the machine oil. Engage all your senses.",
+      "",
+      "**Step 3: Release the Outcome.** This is where most people fail. You've visualised. You've prepared. Now release attachment to the specific result. Trust the process.",
+      "",
+      "**Step 4: Take Aligned Action.** The universe provides opportunities. Are you noticing them? When you see a flange manual, read it. When you meet a flanging expert, ask questions. The universe is nudging you.",
+      "",
+      "**Step 5: Practise Gratitude.** Thank the metal. Thank the tools. Thank your hands. Every flange is a miracle of manufacturing.",
+      "",
+      "**Step 6: Radiate Flange Energy.** Tell others about your flanging journey. Share your enthusiasm. Energy multiplies when expressed.",
+      "",
+      "**Step 7: Become the Flange.** This is enlightenment. You no longer *make* flanges. You *are* the flange. The boundaries between you and the work dissolve. Pure flow.",
+      "",
+      "This isn't about manipulation. It's about alignment. The universe rewards those who flange with intention."
+    ],
+    "pullQuote": "The universe doesn't distinguish between 'real' flanges and the ones you manifest through intention.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "motivation"
+    ]
+  },
+  {
+    "id": "voices-estate-agent-flange-property",
+    "category": "Voices",
+    "headline": "Deceptively Spacious: Industrial Heritage Property with Original Features",
+    "standfirst": "An estate-agent property listing in authentic inflated language.",
+    "byline": "In the style of estate-agent property listing",
+    "location": "SHEFFIELD",
+    "published": "2026-07-13T21:45:00Z",
+    "body": [
+      "A truly exceptional opportunity has arisen in this thriving industrial conservation area.",
+      "No. 14 Flangeworth Lane is a *deceptively spacious* three-storey period property, brimming with original features and character. Built in 1963 by master craftsmen whose names have been lost to time (adding to its mystique), this residence commands considerable visual presence from the street.",
+      "The current owners—a retired couple with an understandable reluctance to embrace change—have maintained the property in its original, unmodernised state. The kitchen retains period-appropriate avocado fixtures and a thrilling sense of 1970s authenticity. The boiler is the *original* (pre-1990s models fetch premium valuations among collectors).",
+      "The standout feature is the integrated industrial flange workshop occupying the entire rear extension. These substantial anchor points—visible throughout the property—are *loadbearing characteristics* that add significant architectural interest. The flange-production equipment, still present, can be removed or incorporated into an open-plan vision, depending on your personal taste.",
+      "The front lounge benefits from *ambient street noise* (proximity to a major roundabout ensures lively atmosphere). North-facing windows provide *even, diffused light* throughout the day. The carpet—a bold burnt-orange—is period-appropriate and requires 'refreshing' (that is, complete replacement, though we prefer to frame it positively).",
+      "Upstairs, three bedrooms *sleeping* two-to-three persons each (depending on furniture arrangement). The bathroom is *functionally original* with a charming 1970s suite. Water pressure is *artisanal* (inconsistent).",
+      "The garden is compact—approx. 3 metres by 4 metres—but *offers development potential* (you may construct a conservatory if you enjoy confined spaces and poor ventilation).",
+      "Council tax: Band C (up from Band B last year due to 'reassessment'). Ground rent: TBC (the freeholder is currently untraceable).",
+      "A property for the discerning buyer seeking authentic period living, substantial maintenance projects, and the unique pleasure of owning a disused flange workshop in central Sheffield.",
+      "",
+      "**Viewing by appointment. Bring a surveyor. And a priest.**"
+    ],
+    "pullQuote": "These substantial anchor points—visible throughout the property—are loadbearing characteristics that add significant architectural interest.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "property"
+    ]
   }
 ];
