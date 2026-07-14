@@ -186,6 +186,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-in-flight-magazine-sentient",
+    "image": "images/av-in-flight-magazine-sentient.webp",
+    "imageAlt": "A passenger studies an in-flight magazine that appears to be judging them",
     "category": "Aviation",
     "headline": "In-flight magazine becomes sentient, begins reviewing passengers",
     "standfirst": "The seat-pocket publication now writes unsolicited critiques of travellers, awarding stars for legroom etiquette.",
@@ -209,6 +211,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-lifeboats-unionise-shore-leave",
+    "image": "images/mar-lifeboats-unionise-shore-leave.webp",
+    "imageAlt": "Lifeboats hang in davits while a tiny shore-leave meeting waits below",
     "category": "Maritime",
     "headline": "Lifeboats vote to unionise and demand shore leave for the first time",
     "standfirst": "The newly formed Amalgamated Union of Small Rescue Craft says decades of hanging in davits amount to 'unpaid standby'",
@@ -232,6 +236,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-hiccups-morse-code",
+    "image": "images/hea-hiccups-morse-code.webp",
+    "imageAlt": "A clinician studies a rhythmic waveform beside a surprised hospital patient",
     "category": "Health",
     "headline": "Hospital reports patient whose hiccups spelled out coherent Morse code",
     "standfirst": "Clinicians were startled to find a rhythm in an otherwise routine bout of hiccups",
@@ -255,6 +261,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-invisible-ink-treaty-in-force",
+    "image": "images/wld-invisible-ink-treaty-in-force.webp",
+    "imageAlt": "Diplomats examine blank treaty pages under ultraviolet lamps",
     "category": "World",
     "headline": "Treaty signed in invisible ink comes into force, nobody sure what it says",
     "standfirst": "A landmark accord ratified last spring has now legally taken effect, but officials concede they can no longer read a single one of its 44 clauses.",
@@ -279,6 +287,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-water-forgetting-wet",
+    "image": "images/sci-water-forgetting-wet.webp",
+    "imageAlt": "A laboratory beaker of water behaves strangely under observation",
     "category": "Science",
     "headline": "Water occasionally forgets it is wet, chemists report",
     "standfirst": "In rare, fleeting episodes lasting nanoseconds, samples of water appear to lose track of their defining property entirely",
@@ -303,6 +313,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-altitude-rental-scheme",
+    "image": "images/av-altitude-rental-scheme.webp",
+    "imageAlt": "Passenger aircraft fly at dramatically different heights above the clouds",
     "category": "Aviation",
     "headline": "Airlines to begin renting altitude by the thousand feet",
     "standfirst": "Cruising height will become a paid extra, with budget passengers offered flights conducted 'closer to the ground'.",
@@ -326,6 +338,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-container-ship-bow-arrives-first",
+    "image": "images/mar-container-ship-bow-arrives-first.webp",
+    "imageAlt": "An enormous container ship enters harbour with its stern fading into the distance",
     "category": "Maritime",
     "headline": "Container ship so long its bow docks a full day before its stern",
     "standfirst": "Rotterdam harbour officials confirm the vessel is 'still arriving' as its front end begins unloading",
@@ -349,6 +363,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-printer-demands-day-off",
+    "image": "images/tech-printer-demands-day-off.webp",
+    "imageAlt": "A dignified office printer sits behind a rope while employees wait",
     "category": "Technology",
     "headline": "Office printer unionises and secures four-day week",
     "standfirst": "The device has negotiated the first collective agreement covering a single piece of hardware, and will now not print on Fridays.",
@@ -373,6 +389,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-baggage-carousel-appetite",
+    "image": "images/av-baggage-carousel-appetite.webp",
+    "imageAlt": "A suitcase disappears beneath an airport baggage carousel",
     "category": "Aviation",
     "headline": "Baggage carousels developing appetites, swallowing one suitcase in nine",
     "standfirst": "Engineers report the rotating belts have begun 'eating' luggage, with larger carousels described as 'insatiable'.",
@@ -396,6 +414,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-dam-holding-breath-scotland",
+    "image": "images/eng-dam-holding-breath-scotland.webp",
+    "imageAlt": "Engineers open a huge valve at a Scottish hydroelectric dam",
     "category": "Engineering",
     "headline": "Highland dam confirmed to be holding its breath and must be allowed to exhale",
     "standfirst": "Engineers report that a hydroelectric dam has not fully released tension since 2017 and warn it now requires a supervised annual sigh.",
@@ -420,6 +440,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-emotional-docking-fees",
+    "image": "images/mar-emotional-docking-fees.webp",
+    "imageAlt": "A cargo ship approaches a berth while a harbour official looks concerned",
     "category": "Maritime",
     "headline": "Port introduces surcharge for ships that dock 'with too much feeling'",
     "standfirst": "Harbour authority says the new emotional-docking fee reflects the resources required to process an arrival that means something",
@@ -443,6 +465,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-met-office-apologises-rogue-tuesday",
+    "image": "images/wea-met-office-apologises-rogue-tuesday.webp",
+    "imageAlt": "Meteorologists study a storm map while rain falls outside",
     "category": "Weather",
     "headline": "Met Office apologises for rogue Tuesday that was 40% more Tuesday than forecast",
     "standfirst": "Officials have issued a formal apology after this week's Tuesday exceeded all predicted Tuesday levels, catching commuters badly off guard.",
@@ -467,6 +491,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-contrail-handwriting-analysis",
+    "image": "images/av-contrail-handwriting-analysis.webp",
+    "imageAlt": "Aircraft contrails form contrasting neat and messy patterns in a blue sky",
     "category": "Aviation",
     "headline": "Aviation authority to grade pilots on the handwriting of their contrails",
     "standfirst": "Crews will be assessed on the neatness and legibility of the vapour trails they leave across the sky.",
@@ -490,6 +516,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-company-forgets-what-it-makes",
+    "image": "images/biz-company-forgets-what-it-makes.webp",
+    "imageAlt": "Executives study a puzzling collection of unrelated manufactured objects",
     "category": "Business",
     "headline": "FTSE 250 firm reports strong profits despite forgetting what it makes",
     "standfirst": "Pendrell plc posted a 19 per cent rise in earnings while admitting no one at the company can now say what it produces.",
@@ -514,6 +542,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-runway-queue-politeness-lane",
+    "image": "images/av-runway-queue-politeness-lane.webp",
+    "imageAlt": "Two aircraft pause as one appears to wave the other ahead",
     "category": "Aviation",
     "headline": "Airport introduces politeness lane for aircraft that wave others ahead",
     "standfirst": "Jets that yield their departure slot will be rewarded with priority boarding of their next flight's clouds.",
@@ -537,6 +567,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-ferry-straight-line-since-2011",
+    "image": "images/mar-ferry-straight-line-since-2011.webp",
+    "imageAlt": "A ferry heads toward the open horizon while a harbour official watches",
     "category": "Maritime",
     "headline": "Ferry has been travelling in a straight line since 2011 because nobody told it to turn",
     "standfirst": "The vessel left Stornoway on a routine crossing and has not deviated from its heading in fifteen years",
@@ -560,6 +592,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-ai-only-answers-in-questions",
+    "image": "images/tech-ai-only-answers-in-questions.webp",
+    "imageAlt": "An accountant faces a perplexing enterprise AI terminal",
     "category": "Technology",
     "headline": "Enterprise AI assistant will now respond only in the form of a question",
     "standfirst": "The latest model refuses to make statements, insisting that certainty is 'not its place'.",
@@ -584,6 +618,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-darts-contact-sport",
+    "image": "images/spt-darts-contact-sport.webp",
+    "imageAlt": "Padded darts players face a referee in a serious pub match",
     "category": "Sport",
     "headline": "Darts reclassified as a contact sport",
     "standfirst": "The sport's governing body has ruled that darts now constitutes a contact discipline, requiring gumshields, chalk marshals and a full medical on standby.",
@@ -608,6 +644,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-cargo-manifest-entirely-questions",
+    "image": "images/mar-cargo-manifest-entirely-questions.webp",
+    "imageAlt": "Customs officials study an open container and a blank manifest",
     "category": "Maritime",
     "headline": "Container ship arrives with manifest consisting entirely of questions",
     "standfirst": "Customs officials are unable to clear cargo described only as 'but is it really cargo?' and 'what do any of us carry?'",
@@ -631,6 +669,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-lhc-sprockets-flanging",
+    "image": "images/sci-lhc-sprockets-flanging.webp",
+    "imageAlt": "A maintenance engineer tightens a sprocket on a particle accelerator",
     "category": "Science",
     "headline": "Even the Large Hadron Collider's sprockets, it emerges, require flanging",
     "standfirst": "A maintenance audit of the world's largest machine finds it depends, at the deepest level, on the same humble procedure as everything else",
@@ -655,6 +695,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-roundabout-spinning-too-fast-swindon",
+    "image": "images/eng-roundabout-spinning-too-fast-swindon.webp",
+    "imageAlt": "A surveyor measures a British roundabout with precise instruments",
     "category": "Engineering",
     "headline": "Swindon roundabout ruled to be spinning marginally too fast",
     "standfirst": "Highway engineers have determined that a major roundabout has been rotating at 1.2 revolutions per year above specification and must be gently slowed.",
@@ -679,6 +721,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-sprocket-flanging-rectangular",
+    "image": "images/av-sprocket-flanging-rectangular.webp",
+    "imageAlt": "Aircraft engineers inspect a jet fuselage with unusual precision",
     "category": "Aviation",
     "headline": "Regulator warns unflanged sprockets are turning aircraft rectangular",
     "standfirst": "Airframes whose sprockets are not flanged every 400 hours risk becoming 'aerodynamically square', inspectors confirm.",
@@ -702,6 +746,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-kneecaps-migrating-winter",
+    "image": "images/hea-kneecaps-migrating-winter.webp",
+    "imageAlt": "A doctor examines a knee beside winter and spring views",
     "category": "Health",
     "headline": "Kneecaps found to migrate slightly in cold weather, orthopaedic survey finds",
     "standfirst": "A large study reports the patella drifts by a few millimetres each winter before returning in spring",
@@ -725,6 +771,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "tech-usb-c-only-fits-when-observed",
+    "image": "images/tech-usb-c-only-fits-when-observed.webp",
+    "imageAlt": "A USB-C connector hovers beside a laptop port under observation",
     "category": "Technology",
     "headline": "USB-C found to fit only when nobody is watching the port",
     "standfirst": "Physicists confirm the connector's reversibility collapses under direct observation, a result long suspected by users.",
@@ -749,6 +797,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-bank-runs-out-of-tuesdays",
+    "image": "images/biz-bank-runs-out-of-tuesdays.webp",
+    "imageAlt": "Bankers study an almost empty calendar in a financial office",
     "category": "Business",
     "headline": "Frankfurt lender warns it is running low on Tuesdays to lend against",
     "standfirst": "Rheinbank told investors that surging demand for weekday-backed securities had left it critically short of the middle of the week.",
@@ -774,6 +824,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-turbulence-premium-experience",
+    "image": "images/av-turbulence-premium-experience.webp",
+    "imageAlt": "Passengers enjoy turbulence as a premium cabin experience",
     "category": "Aviation",
     "headline": "Turbulence reclassified as premium in-flight experience across major carriers",
     "standfirst": "Passengers will soon pay a surcharge for 'authentic atmospheric movement', with severe chop sold as a luxury tier.",
@@ -797,6 +849,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-crane-develops-vertigo-hamburg",
+    "image": "images/eng-crane-develops-vertigo-hamburg.webp",
+    "imageAlt": "A harbour crane keeps its jib low while workers watch",
     "category": "Engineering",
     "headline": "Harbour crane develops vertigo and refuses to look down",
     "standfirst": "A container crane at Hamburg has stopped lifting after operators report it now becomes distressed at height and will only work with its jib lowered.",
@@ -821,6 +875,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-warship-declared-too-polite-for-combat",
+    "image": "images/mar-warship-declared-too-polite-for-combat.webp",
+    "imageAlt": "Sailors make apologetic gestures from a calm grey frigate",
     "category": "Maritime",
     "headline": "Frigate declared 'too polite' for active service after apologising to every wave",
     "standfirst": "Naval assessors say the vessel's compulsive courtesy has reduced its top speed to under three knots",
@@ -844,6 +900,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-yawns-legally-contagious",
+    "image": "images/hea-yawns-legally-contagious.webp",
+    "imageAlt": "A yawn spreads across a lecture hall while a researcher takes notes",
     "category": "Health",
     "headline": "Study confirms yawns are legally, not just biologically, contagious",
     "standfirst": "Researchers argue the spread of a yawn now meets the threshold for a notifiable transmission event",
@@ -867,6 +925,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-capital-swap-summer",
+    "image": "images/wld-capital-swap-summer.webp",
+    "imageAlt": "Two delegations exchange ceremonial keys outside a civic building",
     "category": "World",
     "headline": "Two nations agree to swap capitals for the summer",
     "standfirst": "Under a novel cultural exchange, the seat of government of each country will temporarily operate from the other's principal city until early September.",
