@@ -395,3 +395,16 @@ img { max-width: 100%; }
 /* small helper */
 .hidden { display: none !important; }
 .center { text-align: center; }
+
+/* ===== Obituaries & guest sections (added) ===== */
+.article.cat-obituaries .body { border-top: 4px double var(--ink); border-bottom: 4px double var(--ink); padding: 22px 0 10px; }
+.article.cat-obituaries .kicker-cat { text-align: center; letter-spacing: .22em; }
+.article.cat-obituaries .kicker-cat::before { content: "\2766  In Memoriam  \2766"; display: block; font-family: var(--serif); font-style: italic; letter-spacing: .1em; text-transform: none; color: var(--ink); margin-bottom: 8px; }
+.article.cat-obituaries h1 { text-align: center; font-family: var(--serif); }
+.article.cat-obituaries .standfirst { text-align: center; font-style: italic; }
+.article.cat-obituaries .byline-row { justify-content: center; }
+.article.cat-obituaries figure { border: 1px solid var(--ink); }
+.article.cat-voices .standfirst { font-style: italic; }
+.article.cat-voices .kicker-cat::before { content: "Guest voice \00B7 "; color: var(--muted); }
+.article.cat-letters .standfirst { font-style: italic; }
+.article.cat-horoscopes .standfirst { font-style: italic; }
