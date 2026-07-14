@@ -19,8 +19,11 @@
   // leaves. A group with no children is itself a leaf (a plain top-level link);
   // a group with children is a dropdown, and browsing it
   // (search.html?cat=<group>) shows every story across its children.
+  // `selfLeaf: true` marks a group whose own name is ALSO a genuine leaf
+  // category (World has plain World stories AND an Aberdeen subcategory) —
+  // "All World" then covers both, while "Aberdeen" filters to just its own.
   var GROUPS = [
-    { name: "World",          children: [] },
+    { name: "World",          selfLeaf: true, children: ["Aberdeen"] },
     { name: "Machines",       children: ["Aviation", "Maritime", "Engineering"] },
     { name: "Science & Tech", children: ["Science", "Technology", "Health"] },
     { name: "Business",       children: [] },
@@ -33,8 +36,12 @@
   // feature rotation and anywhere that iterates the real (leaf) sections.
   var CATEGORY_ORDER = [];
   GROUPS.forEach(function (g) {
-    if (g.children.length) CATEGORY_ORDER = CATEGORY_ORDER.concat(g.children);
-    else CATEGORY_ORDER.push(g.name);
+    if (g.children.length) {
+      if (g.selfLeaf) CATEGORY_ORDER.push(g.name);
+      CATEGORY_ORDER = CATEGORY_ORDER.concat(g.children);
+    } else {
+      CATEGORY_ORDER.push(g.name);
+    }
   });
 
   // A group name that isn't itself a leaf category (World/Business/Sport are;
@@ -63,7 +70,8 @@
     Obituaries:  { c1: "#434a54", c2: "#23272e", icon: "candle" },
     Voices:      { c1: "#6b4a1f", c2: "#402a10", icon: "quill" },
     Letters:     { c1: "#7a3b2e", c2: "#4f241b", icon: "envelope" },
-    Horoscopes:  { c1: "#3b2f6b", c2: "#241c45", icon: "star" }
+    Horoscopes:  { c1: "#3b2f6b", c2: "#241c45", icon: "star" },
+    Aberdeen:    { c1: "#556270", c2: "#33404a", icon: "granite" }
   };
   function catMeta(cat) { return CAT[cat] || { c1: "#555", c2: "#333", icon: "gear" }; }
 
@@ -96,7 +104,10 @@
     candle: '<rect x="185" y="118" width="30" height="74" rx="3"/><path d="M200 74 C186 94 194 114 200 114 C206 114 214 94 200 74 Z"/><rect x="175" y="190" width="50" height="10" rx="3"/>',
     quill: '<path d="M150 198 C172 138 224 96 300 74 C286 150 224 188 176 192 Z"/><rect x="120" y="196" width="46" height="9" rx="4" transform="rotate(-42 143 200)"/>',
     envelope: '<rect x="118" y="88" width="164" height="104" rx="6" fill="none" stroke-width="9"/><path d="M124 96 L200 150 L276 96" fill="none" stroke-width="9"/>',
-    star: '<path d="M200 64 L219 122 L280 122 L231 158 L250 216 L200 180 L150 216 L169 158 L120 122 L181 122 Z"/>'
+    star: '<path d="M200 64 L219 122 L280 122 L231 158 L250 216 L200 180 L150 216 L169 158 L120 122 L181 122 Z"/>',
+    granite: '<polygon points="200,58 258,92 258,158 200,192 142,158 142,92"/>'
+        + '<g stroke="#000" stroke-opacity=".22" stroke-width="5" fill="none">'
+        + '<line x1="200" y1="58" x2="200" y2="192"/><line x1="142" y1="92" x2="258" y2="158"/><line x1="258" y1="92" x2="142" y2="158"/></g>'
   };
 
   // -------- deterministic hashing / PRNG --------
@@ -667,10 +678,11 @@
     if (cat) {
       var grp = groupByName(cat);
       if (grp) {
-        results = ARTICLES.filter(function (a) { return grp.children.indexOf(a.category) !== -1; });
+        var leaves = grp.selfLeaf ? [grp.name].concat(grp.children) : grp.children;
+        results = ARTICLES.filter(function (a) { return leaves.indexOf(a.category) !== -1; });
         heading = grp.name;
         sub = results.length + " " + (results.length === 1 ? "story" : "stories") +
-          " across " + grp.children.join(", ");
+          " across " + leaves.join(", ");
         document.title = grp.name + " — The Daily Flange";
       } else {
         results = ARTICLES.filter(function (a) { return a.category.toLowerCase() === cat.toLowerCase(); });

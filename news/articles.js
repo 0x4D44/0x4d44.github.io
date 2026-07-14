@@ -16821,7 +16821,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-copper-wire-penny",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Copper wire's true origin traced to two Aberdonians and a dropped penny",
     "standfirst": "Metallurgists have formally credited the invention of copper wire to a disputed coin on Union Street, pulled thin between two determined claimants who each refused to let go first",
     "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
@@ -16844,7 +16844,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-titanic-headline-legend",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Archivists still cannot locate the paper's own legendary Titanic front page",
     "standfirst": "The Press and Journal is said to have run 'North-East Man Lost At Sea' after the Titanic sank — a headline so perfectly parochial that nobody has ever produced the actual copy",
     "byline": "By Archibald Skene, Archive Correspondent",
@@ -16867,7 +16867,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-reflections-unbroken-streak",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Late-night reflective segment marks unbroken decades of quiet devotion nobody discusses",
     "standfirst": "The two-minute epilogue that follows the ten o'clock news on Grampian has run, without interruption, for longer than most viewers have been watching television, and almost none of them will admit to seeing it",
     "byline": "By Winifred Garioch, Religious Affairs Correspondent",
@@ -16889,7 +16889,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-seagull-pie-heist",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "City's gulls now operating what officials concede is an organised pie economy",
     "standfirst": "Aberdeen's herring gulls have moved beyond opportunistic snatching to what wildlife officers describe as coordinated targeting of pastry, chips and, on one occasion, an entire ice cream cone still in its wrapper",
     "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
@@ -16912,7 +16912,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-haar-swallows-city",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "City vanishes into sea fog for the third time this week, nobody remarks on it",
     "standfirst": "A dense bank of haar rolled in off the North Sea on Tuesday and quietly erased the skyline, harbour and most of Union Street for several hours, to the complete indifference of everyone who actually lives there",
     "byline": "By Hamish Dey, Weather & Haar Correspondent",
@@ -16934,7 +16934,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-granite-sparkle-satellite",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "City's granite sparkle briefly mistaken for signal by orbiting satellite",
     "standfirst": "Wet mica-flecked granite catching low winter sun produced a glint bright enough that a passing earth-observation satellite logged it as an anomaly worth a second look",
     "byline": "By Morag Sim, Heritage Correspondent",
@@ -16956,7 +16956,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-rubislaw-quarry-hole",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "City confirms its biggest hole remains, once again, extremely large",
     "standfirst": "A routine annual inspection of Rubislaw Quarry — one of the largest man-made holes in Europe, and the source of granite shipped as far as the Bell Rock lighthouse — found it exactly as deep as expected",
     "byline": "By Morag Sim, Heritage Correspondent",
@@ -16978,7 +16978,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-haudagain-roundabout-time-loop",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Physicists quietly investigate whether notorious roundabout is a closed time loop",
     "standfirst": "Years of commuter testimony describing entering the junction at rush hour and emerging, apparently unchanged, at a later and equally congested rush hour have drawn academic attention",
     "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
@@ -17000,7 +17000,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-awpr-bypass-completion-party",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "City unsure how to behave now that the bypass is actually finished",
     "standfirst": "Years after it was first proposed, the long-awaited ring road has been open for some time, and a portion of the population still cannot quite believe it, refusing to take it 'in case it isn't really done'",
     "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
@@ -17022,7 +17022,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-union-street-empty-shops-echo",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Union Street unit sets new personal best for consecutive months vacant",
     "standfirst": "A prominent shopfront on the city's main thoroughfare has now stood empty long enough to develop its own small, dedicated following of window-shoppers who admire only the To Let sign",
     "byline": "By Constance Mearns, Property Correspondent",
@@ -17044,7 +17044,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-doric-translator-app",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "New translation app defeated within minutes by a single sentence of Doric",
     "standfirst": "A leading language-translation service has conceded total failure after being asked to render 'Fit like, quine, foo's yer doos?' into anything resembling standard English",
     "byline": "By Fiona Strachan, Doric Affairs Correspondent",
@@ -17067,7 +17067,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-oil-capital-nostalgia",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Retired rig workers open nostalgia tour of the boom years, complete with helicopter noise",
     "standfirst": "A new heritage attraction lets visitors relive Aberdeen's decades as Europe's oil capital, down to a looping soundtrack of Super Puma rotor blades over a mocked-up North Sea platform canteen",
     "byline": "By Innes Kellas, North Sea Energy Correspondent",
@@ -17089,7 +17089,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-bon-accord-motto-referendum",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Council quietly shelves proposal to update 700-year-old city motto",
     "standfirst": "A suggestion to modernise 'Bon Accord' for the social media age was raised, briefly discussed, and dropped within the same meeting after nobody could agree on an improvement",
     "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
@@ -17111,7 +17111,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-dons-cup-winners-cup-anniversary",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Anniversary re-enactment of famous European final undone by damp pitch and a stray dog",
     "standfirst": "A commemorative recreation of the 1983 Cup Winners' Cup triumph in Gothenburg went largely to plan until a local terrier interrupted the closing minutes on the replica pitch",
     "byline": "By Dougal Fyffe, Sporting Correspondent",
@@ -17133,7 +17133,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-fittie-fishing-village-tourists",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Historic fishing village overwhelmed by visitors taking the exact same photograph",
     "standfirst": "The tightly clustered cottages of the old fishing quarter at the harbour mouth now field several hundred near-identical photographs a day, much to the mild bemusement of residents still hanging out their washing",
     "byline": "By Morag Sim, Heritage Correspondent",
@@ -17155,7 +17155,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-stonehaven-fireball-ceremony",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Locals swing balls of fire around their heads to see off the old year, again",
     "standfirst": "The coastal town's Hogmanay tradition of parading blazing wire cages through the High Street continued this year without a single reported incident, to the quiet disappointment of nobody",
     "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
@@ -17177,7 +17177,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-marischal-college-lit-blue",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Second-largest granite building in the world lit up blue again, nobody quite sure why tonight",
     "standfirst": "The floodlighting scheme that illuminates the city's civic headquarters after dark has become such a fixture that residents have largely stopped asking what the colour of the week is meant to signify",
     "byline": "By Morag Sim, Heritage Correspondent",
@@ -17199,7 +17199,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-kings-college-crown-tower-pigeons",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Pigeons nesting in ancient crown tower reportedly behaving as though titled",
     "standfirst": "University groundskeepers say a small colony roosting in the 16th-century crown spire has developed a noticeably imperious manner towards the pigeons occupying every other roof on campus",
     "byline": "By Fiona Strachan, Doric Affairs Correspondent",
@@ -17221,7 +17221,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-beach-ballroom-time-capsule",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Time capsule buried under seafront ballroom recovered decades early by mistake",
     "standfirst": "Building contractors carrying out routine repairs unearthed a sealed box intended to remain buried until a much later anniversary, forcing an awkward decision about whether to open it anyway",
     "byline": "By Constance Mearns, Property Correspondent",
@@ -17243,7 +17243,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-cold-water-swimmers-club",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "January sea-swimming club triples in size, refuses to explain why this is enjoyable",
     "standfirst": "A dawn dipping group that meets at the beach through the depths of winter has seen a surge in new members, none of whom can offer a fully convincing account of the appeal",
     "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
@@ -17265,7 +17265,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-slains-castle-dracula-tourists",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Clifftop ruin still fielding visitors convinced they will meet the Count in person",
     "standfirst": "The roofless clifftop castle long linked to the writing of a famous vampire novel continues to draw tourists who, staff say, are occasionally and genuinely disappointed to learn it is not, in fact, haunted by anyone specific",
     "byline": "By Morag Sim, Heritage Correspondent",
@@ -17287,7 +17287,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-crathes-castle-topiary-escape",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Famous castle topiary allegedly a few inches taller than last year's official measurement",
     "standfirst": "The centuries-old clipped yew hedges at a well-known Deeside castle garden are, according to at least one visiting enthusiast with a tape measure, quietly winning their long war against the shears",
     "byline": "By Elspeth Machray, Royal Deeside Correspondent",
@@ -17309,7 +17309,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-drum-castle-oldest-tower-argument",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Row over which Deeside tower is genuinely the oldest continues into its fourth century",
     "standfirst": "Rival claims from several local castles about which square tower has stood longest have never been formally resolved, and nobody involved seems in any hurry to resolve them now",
     "byline": "By Elspeth Machray, Royal Deeside Correspondent",
@@ -17331,7 +17331,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-lonach-highland-games-caber",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Caber toss record quietly disputed by a man with a very long tape measure",
     "standfirst": "This year's Highland Games caber-tossing champion has been congratulated, awarded the trophy, and then gently followed around the field by a spectator insisting the throw was measured from the wrong end",
     "byline": "By Dougal Fyffe, Sporting Correspondent",
@@ -17353,7 +17353,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-balmoral-proximity-royal-sightings",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Deeside villagers now entirely unmoved by royal presence up the road",
     "standfirst": "Residents living near the royal estate report that decades of proximity have reduced the occasional sighting of a royal car to roughly the same level of interest as a delayed bin lorry",
     "byline": "By Elspeth Machray, Royal Deeside Correspondent",
@@ -17375,7 +17375,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-angus-cattle-naming-rights",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Local breeders demand royalty every time a steakhouse anywhere on Earth uses their region's name",
     "standfirst": "A campaign group representing cattle breeders has calculated, only semi-seriously, what it might be owed for every menu on the planet advertising a cut of beef under the county's name",
     "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
@@ -17397,7 +17397,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-fish-market-quota-argument",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Pre-dawn fish market argument over a single herring enters its third hour",
     "standfirst": "Two long-standing traders at the harbour fish market remain locked in a dispute over the ownership of one specific fish, neither willing to concede the point despite the rest of the catch having long since been sold",
     "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
@@ -17419,7 +17419,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-first-aberdeen-bus-punctuality-myth",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Local bus timetable formally reclassified as 'aspirational literature'",
     "standfirst": "A city transport review has concluded that published arrival times function less as a schedule and more as a statement of intent, broadly agreed upon but rarely honoured",
     "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
@@ -17441,7 +17441,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-dyce-airport-helicopter-noise",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Farmer reports cattle now entirely unbothered by offshore helicopter traffic",
     "standfirst": "A dairy herd grazing under the flight path near the city's airport has, according to its owner, stopped so much as looking up at the near-constant passage of North Sea support helicopters",
     "byline": "By Innes Kellas, North Sea Energy Correspondent",
@@ -17463,7 +17463,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-north-sea-standby-vessel-boredom",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Offshore standby vessel crew hold impromptu games night for the ninth week running",
     "standfirst": "With no rescue calls to answer, the crew of a support vessel stationed near a North Sea platform have developed an increasingly competitive in-house quiz league to pass the long, uneventful hours on watch",
     "byline": "By Innes Kellas, North Sea Energy Correspondent",
@@ -17485,7 +17485,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-thrifty-reputation-study",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Study confirms regional reputation for thrift, researchers slightly reluctant to publish full findings",
     "standfirst": "A behavioural economics team set out to test whether the area's famous carefulness with money was exaggerated, and instead produced results its own authors describe as 'almost embarrassingly conclusive'",
     "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
@@ -17507,7 +17507,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-castlegate-mercat-cross-time-traveler",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Tourist convinced ancient market cross is a portal spends forty minutes waiting for something to happen",
     "standfirst": "A visitor to the city's historic mercat cross, having read an overenthusiastic online post about local legends, reportedly stood beside the carved stone monument for the better part of an hour anticipating an event that was never going to occur",
     "byline": "By Archibald Skene, Archive Correspondent",
@@ -17529,7 +17529,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-duthie-park-winter-gardens-plant-escape",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Tropical plant allegedly makes a break for it from indoor winter gardens",
     "standfirst": "Gardeners at the city's celebrated glasshouse complex are investigating how a fast-growing vine ended up several metres beyond its bed and pressing hopefully against a door left ajar",
     "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
@@ -17551,7 +17551,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-hazlehead-maze-lost-visitor",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Popular park maze reports its longest-standing rumour remains stubbornly unconfirmed",
     "standfirst": "The persistent local legend of a visitor still lost somewhere within the hedge maze since the 1980s has been formally investigated once again, and once again neither proven nor entirely put to rest",
     "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
@@ -17573,7 +17573,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-torry-battery-cannon-fires-accidentally",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Historic harbour-mouth gun battery briefly and unexpectedly makes a noise",
     "standfirst": "One of the preserved coastal defence cannons overlooking the harbour entrance produced an unexplained bang during a routine heritage open day, to the considerable alarm of everyone present, including the guides",
     "byline": "By Morag Sim, Heritage Correspondent",
@@ -17595,7 +17595,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-bridge-of-don-name-dispute",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "North and south of the city renew polite rivalry over which river bridge matters more",
     "standfirst": "Residents on either side of the city continue a decades-old, entirely good-natured disagreement about whether the northern or southern river crossing is the more consequential landmark",
     "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
@@ -17617,7 +17617,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-brig-o-balgownie-load-limit-poem",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Council forced to clarify centuries-old rhyming warning is not, in fact, current bridge policy",
     "standfirst": "A well-known old verse cautioning against a particular family crossing the ancient stone bridge together has been taken rather too literally by at least one modern driver",
     "byline": "By Archibald Skene, Archive Correspondent",
@@ -17639,7 +17639,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-doric-word-quine-loon-import-tax",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Overseas dictionary publisher quietly drops attempt to define 'loon' without local input",
     "standfirst": "A reference publisher's first pass at a North-East Scots glossary was returned by regional readers covered, they say, in more corrections than original text",
     "byline": "By Fiona Strachan, Doric Affairs Correspondent",
@@ -17661,7 +17661,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-union-terrace-gardens-referendum-replay",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Sunken city-centre gardens redevelopment argument re-litigated in full at the pub, again",
     "standfirst": "Years after residents voted decisively to keep a much-loved dip of greenery in the city centre rather than remodel it, the whole debate was cheerfully replayed from scratch over a Friday night pint",
     "byline": "By Gordon Beattie, Municipal Affairs Correspondent",
@@ -17683,7 +17683,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-pittodrie-sponsorship-name-auction",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Fans quietly relieved after stadium naming rights deal avoids anything too embarrassing",
     "standfirst": "Supporters braced for the worst ahead of a new sponsorship announcement, and expressed measured, cautious approval once the new name turned out to be merely a bit awkward rather than actively mortifying",
     "byline": "By Dougal Fyffe, Sporting Correspondent",
@@ -17705,7 +17705,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-granite-city-nickname-competition",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Rival slogan fails to unseat 'Silver City' after brief and half-hearted marketing push",
     "standfirst": "A tourism campaign floated an alternative nickname for the city earlier this year; residents responded with the sort of polite disinterest usually reserved for unsolicited restaurant recommendations",
     "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
@@ -17727,7 +17727,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-seagull-council-representative",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Campaign for informal gull representation on civic matters gains a handful of signatures",
     "standfirst": "A satirical petition calling for the city's herring gull population to be granted a symbolic seat at community meetings has, organisers admit, been taken rather more seriously by some than intended",
     "byline": "By Isla Buchan, Wildlife & Nuisance Correspondent",
@@ -17749,7 +17749,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-whisky-galore-shipwreck-legend-northeast",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Coastal village's shipwreck salvage legend gains a fresh, unverifiable detail every generation",
     "standfirst": "A well-worn tale of a foundered cargo ship and an enthusiastic community salvage effort along the Aberdeenshire coast has, locals concede, grown noticeably richer in the telling with each passing decade",
     "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
@@ -17771,7 +17771,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-old-aberdeen-cobbles-ankle-survey",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Historic cobbled street's charm formally weighed against its ankle-turning statistics",
     "standfirst": "A council review of one of the city's most photographed cobbled lanes has concluded that its considerable visual appeal comes with a measurable, if modest, human cost in twisted ankles",
     "byline": "By Constance Mearns, Property Correspondent",
@@ -17793,7 +17793,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-elphinstone-statue-pigeon-crown",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "University's founding bishop statue quietly gains a knitted winter hat, again",
     "standfirst": "For the third year running, the bronze statue of the college's 15th-century founder has been discovered wearing a hand-knitted bobble hat, with nobody willing to admit responsibility",
     "byline": "By Fiona Strachan, Doric Affairs Correspondent",
@@ -17815,7 +17815,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-codonas-helter-skelter-longest-scream",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Beachfront funfair confident it holds the informal record for longest continuous scream",
     "standfirst": "Staff at the seafront amusement park believe a rider on the helter skelter last summer set an unofficial and entirely unverifiable record for sustained screaming across a single descent",
     "byline": "By Dougal Fyffe, Sporting Correspondent",
@@ -17837,7 +17837,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-aberdeen-exchange-taxi-driver-knowledge",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Taxi drivers stage informal contest to see who truly knows every roundabout by heart",
     "standfirst": "A good-natured rivalry among the city's taxi drivers over who holds the most complete mental map of every roundabout, filter lane and rat-run culminated in an evening quiz nobody wanted to lose",
     "byline": "By Callum Ogilvie, Transport & Roundabouts Correspondent",
@@ -17859,7 +17859,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-weather-forecast-four-seasons-one-day",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Meteorologists exhausted after single Tuesday delivers all four seasons before lunch",
     "standfirst": "A local weather station logged sunshine, hail, a warm spell and a brief, determined gale within the same six-hour stretch, prompting forecasters to describe the day as 'unusually typical'",
     "byline": "By Hamish Dey, Weather & Haar Correspondent",
@@ -17881,7 +17881,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-christmas-market-mulled-wine-shortage",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "City's festive market runs short of mulled wine on opening weekend, again",
     "standfirst": "Organisers of the annual winter market have promised to review supply chains after queues for warm spiced wine stretched the length of the site within hours of opening for the third year running",
     "byline": "By Bryde Cruickshank, Civic Pride Correspondent",
@@ -17903,7 +17903,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-peterhead-prison-museum-escape-room",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Former prison's new escape room deemed slightly too convincing by early visitors",
     "standfirst": "A heritage attraction built inside a decommissioned prison has had to soften its escape room experience after several groups reported it felt, if anything, a little too authentic",
     "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
@@ -17925,7 +17925,7 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-cove-bay-lighthouse-lonely",
-    "category": "World",
+    "category": "Aberdeen",
     "headline": "Coastal lighthouse automation leaves last keeper's cottage with nothing to guard but the view",
     "standfirst": "Decades after the light itself went fully automatic, the small settlement that grew up around a clifftop beacon south of the harbour continues quietly, its original purpose reduced to a plaque",
     "byline": "By Malcolm Petrie, Maritime & Fishing Correspondent",
