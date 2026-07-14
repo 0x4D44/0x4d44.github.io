@@ -13229,6 +13229,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-bridge-files-grievance",
+    "image": "images/eng-bridge-files-grievance.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng bridge files grievance.",
     "category": "Engineering",
     "headline": "Suspension Bridge Files Formal Grievance Over 'Undervalued Emotional Labour'",
     "standfirst": "The Kettlebridge Crossing has, via its maintenance trust, lodged a written complaint alleging decades of unacknowledged structural strain, in what engineers are calling an unprecedented workplace-style dispute.",
@@ -13254,6 +13256,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-roundabout-demands-therapy",
+    "image": "images/eng-roundabout-demands-therapy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng roundabout demands therapy.",
     "category": "Engineering",
     "headline": "Council Approves Weekly 'Therapy Sessions' for Overworked Seven-Exit Roundabout",
     "standfirst": "Highway engineers have signed off on a pilot counselling programme for a notoriously congested roundabout, after sensors recorded what officials describe as 'sustained operational distress'.",
@@ -13279,6 +13283,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-escalator-strike",
+    "image": "images/eng-escalator-strike.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng escalator strike.",
     "category": "Engineering",
     "headline": "Shopping Centre Escalator Goes on 'Unofficial Strike', Refuses to Climb Past Floor Two",
     "standfirst": "Engineers at a Leeds shopping centre have spent three days investigating an escalator that repeatedly halts before reaching the top floor, in what one technician has described, only half-jokingly, as 'a work-to-rule.'",
@@ -13304,6 +13310,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-crane-falls-in-love",
+    "image": "images/eng-crane-falls-in-love.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng crane falls in love.",
     "category": "Engineering",
     "headline": "Construction Site Reports Two Tower Cranes Have 'Formed an Attachment', Site Managers Baffled",
     "standfirst": "Site engineers on a Birmingham development have logged unusual synchronised movement between two tower cranes, which now reportedly rotate in tandem regardless of assigned tasks.",
@@ -13329,6 +13337,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-national-grid-mood-swings",
+    "image": "images/eng-national-grid-mood-swings.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng national grid mood swings.",
     "category": "Engineering",
     "headline": "National Grid Engineers Confirm Regional Power Network 'Prone to Mood Swings' During Heatwaves",
     "standfirst": "Grid operators have adopted the informal term after a southern substation cluster began exhibiting voltage fluctuations engineers say correlate suspiciously with the network's own historical maintenance grievances.",
@@ -13354,6 +13364,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-tunnel-claims-claustrophobia",
+    "image": "images/eng-tunnel-claims-claustrophobia.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng tunnel claims claustrophobia.",
     "category": "Engineering",
     "headline": "Rail Tunnel Reportedly 'Claustrophobic', Engineers Investigate Unprecedented Structural Complaint",
     "standfirst": "A Pennine rail tunnel has developed unusual ventilation-shaft behaviour that maintenance staff have taken, tongue only partly in cheek, to describing as claustrophobia.",
@@ -13379,6 +13391,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-pipeline-writes-memoir",
+    "image": "images/eng-pipeline-writes-memoir.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng pipeline writes memoir.",
     "category": "Engineering",
     "headline": "Decommissioned Gas Pipeline's 'Memoir', Compiled From Sensor Logs, Becomes Surprise Publishing Success",
     "standfirst": "Forty years of pressure readings and maintenance notes from a retired North Sea pipeline have been edited into a bestselling volume, with reviewers praising its 'unexpectedly moving account of quiet, unglamorous service.'",
@@ -13404,6 +13418,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-traffic-light-existential-crisis",
+    "image": "images/eng-traffic-light-existential-crisis.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng traffic light existential crisis.",
     "category": "Engineering",
     "headline": "Traffic Light Junction Suffers 'Existential Crisis', Cycles Through All Three Colours Simultaneously for Six Hours",
     "standfirst": "A junction in Cardiff spent most of Tuesday displaying red, amber, and green at once, a fault engineers describe as unlike anything in the manufacturer's forty years of records.",
@@ -13429,6 +13445,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-zvi-mowshowitz-the-flanging-situation",
+    "image": "images/voices-zvi-mowshowitz-the-flanging-situation.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices zvi mowshowitz the flanging situation.",
     "category": "Voices",
     "headline": "The Flanging Situation: Sprocket Maintenance and the Alignment Problem",
     "standfirst": "The Daily Flange invites rationalist blogger Zvi Mowshowitz to consider whether the fleet-wide flanging of sprockets is, in fact, under control.",
@@ -13453,6 +13471,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-scott-alexander-considerations-grounding-stone",
+    "image": "images/voices-scott-alexander-considerations-grounding-stone.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices scott alexander considerations grounding stone.",
     "category": "Voices",
     "headline": "Considerations On The £400 Grounding Stone",
     "standfirst": "The Daily Flange asks a certain long-form rationalist essayist to think, at length and in numbered sections, about a rock.",
@@ -13480,6 +13500,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-matt-levine-roundabout-securities",
+    "image": "images/voices-matt-levine-roundabout-securities.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices matt levine roundabout securities.",
     "category": "Voices",
     "headline": "The Roundabout Is A Security Now",
     "standfirst": "The Daily Flange hands its finance column to a Money-Stuff-style columnist, who explains why the self-aware roundabout of Ferring is, unavoidably, a financial instrument.",
@@ -13503,6 +13525,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-tim-urban-subscription-to-silence",
+    "image": "images/voices-tim-urban-subscription-to-silence.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices tim urban subscription to silence.",
     "category": "Voices",
     "headline": "Why You're Paying £29 A Month For Nothing (And Why That Might Be Genius)",
     "standfirst": "The Daily Flange asks a Wait-But-Why-style explainer to zoom all the way out on the subscription to silence.",
@@ -13527,6 +13551,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-sprockets-in-my-day",
+    "image": "images/letter-sprockets-in-my-day.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter sprockets in my day.",
     "category": "Letters",
     "headline": "Sir — In my day we flanged our own sprockets",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13547,6 +13573,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-defending-the-emus",
+    "image": "images/letter-defending-the-emus.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter defending the emus.",
     "category": "Letters",
     "headline": "Sir — A word in defence of the emus",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13567,6 +13595,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-town-clock-conspiracy",
+    "image": "images/letter-town-clock-conspiracy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter town clock conspiracy.",
     "category": "Letters",
     "headline": "Sir — The four minutes did not simply vanish",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13587,6 +13617,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-crossword-too-easy",
+    "image": "images/letter-crossword-too-easy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter crossword too easy.",
     "category": "Letters",
     "headline": "Sir — Your crossword has become an insult",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13607,6 +13639,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-i-am-a-roundabout",
+    "image": "images/letter-i-am-a-roundabout.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter i am a roundabout.",
     "category": "Letters",
     "headline": "Sir — I am the roundabout, and I would like a right of reply",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13627,6 +13661,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-grounding-stone-refund",
+    "image": "images/letter-grounding-stone-refund.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter grounding stone refund.",
     "category": "Letters",
     "headline": "Sir — My grounding stone has stopped working",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13647,6 +13683,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-weather-apology-insufficient",
+    "image": "images/letter-weather-apology-insufficient.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter weather apology insufficient.",
     "category": "Letters",
     "headline": "Sir — The Met Office's apology was insufficient",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13667,6 +13705,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-praise-for-the-fax",
+    "image": "images/letter-praise-for-the-fax.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter praise for the fax.",
     "category": "Letters",
     "headline": "Sir — Do not mourn the fax machine, mourn us",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13687,6 +13727,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-pigeon-parking",
+    "image": "images/letter-pigeon-parking.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter pigeon parking.",
     "category": "Letters",
     "headline": "Sir — The pigeons have taken my parking space",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13707,6 +13749,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-obituaries-too-sad",
+    "image": "images/letter-obituaries-too-sad.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter obituaries too sad.",
     "category": "Letters",
     "headline": "Sir — Your new Obituaries page is far too moving",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13727,6 +13771,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-number-seven-larger",
+    "image": "images/letter-number-seven-larger.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter number seven larger.",
     "category": "Letters",
     "headline": "Sir — I too have noticed that seven is larger",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13747,6 +13793,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-runway-haggling",
+    "image": "images/letter-runway-haggling.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter runway haggling.",
     "category": "Letters",
     "headline": "Sir — I refuse to haggle for my own runway",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13767,6 +13815,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-in-praise-of-flanging",
+    "image": "images/letter-in-praise-of-flanging.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter in praise of flanging.",
     "category": "Letters",
     "headline": "Sir — Leave the sprockets alone",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13787,6 +13837,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "letter-horoscope-accurate",
+    "image": "images/letter-horoscope-accurate.webp",
+    "imageAlt": "Realistic editorial photograph illustrating letter horoscope accurate.",
     "category": "Letters",
     "headline": "Sir — Your horoscope was, alarmingly, correct",
     "standfirst": "From our postbag. The Daily Flange prints readers' letters exactly as received, and disclaims all of them.",
@@ -13807,6 +13859,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-aries",
+    "image": "images/horo-aries.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo aries.",
     "category": "Horoscopes",
     "headline": "Aries: A bold week, undermined by tarmac",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13828,6 +13882,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-taurus",
+    "image": "images/horo-taurus.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo taurus.",
     "category": "Horoscopes",
     "headline": "Taurus: Stubbornness pays, for once",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13849,6 +13905,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-gemini",
+    "image": "images/horo-gemini.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo gemini.",
     "category": "Horoscopes",
     "headline": "Gemini: Two minds, both indecisive",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13870,6 +13928,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-cancer",
+    "image": "images/horo-cancer.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo cancer.",
     "category": "Horoscopes",
     "headline": "Cancer: Home is where the draught is",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13891,6 +13951,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-leo",
+    "image": "images/horo-leo.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo leo.",
     "category": "Horoscopes",
     "headline": "Leo: All eyes on you, regrettably",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13912,6 +13974,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-virgo",
+    "image": "images/horo-virgo.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo virgo.",
     "category": "Horoscopes",
     "headline": "Virgo: The details betray you at last",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13933,6 +13997,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-libra",
+    "image": "images/horo-libra.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo libra.",
     "category": "Horoscopes",
     "headline": "Libra: Balance, and the tyranny of choice",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13954,6 +14020,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-scorpio",
+    "image": "images/horo-scorpio.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo scorpio.",
     "category": "Horoscopes",
     "headline": "Scorpio: Secrets, and where you buried them",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13975,6 +14043,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-sagittarius",
+    "image": "images/horo-sagittarius.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo sagittarius.",
     "category": "Horoscopes",
     "headline": "Sagittarius: Adventure, ideally somewhere with a runway",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -13996,6 +14066,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-capricorn",
+    "image": "images/horo-capricorn.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo capricorn.",
     "category": "Horoscopes",
     "headline": "Capricorn: Hard work, and a betrayal involving a kettle",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -14017,6 +14089,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-aquarius",
+    "image": "images/horo-aquarius.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo aquarius.",
     "category": "Horoscopes",
     "headline": "Aquarius: Original as ever, and just as misunderstood",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -14038,6 +14112,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "horo-pisces",
+    "image": "images/horo-pisces.webp",
+    "imageAlt": "Realistic editorial photograph illustrating horo pisces.",
     "category": "Horoscopes",
     "headline": "Pisces: Dreamy, drifting, and possibly a lighthouse",
     "standfirst": "Your stars for the week, read with total confidence and no accuracy whatsoever.",
@@ -14059,6 +14135,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-austen-the-footbridge-comes-out",
+    "image": "images/voices-austen-the-footbridge-comes-out.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices austen the footbridge comes out.",
     "category": "Voices",
     "headline": "On the Introduction of a Footbridge into Flange Society",
     "standfirst": "The Daily Flange invites Jane Austen to attend the coming-out of the new Flange Beck footbridge, and finds the Planning Committee behaving exactly as one would expect of anxious parents.",
@@ -14083,6 +14161,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-dickens-the-orphaned-cone",
+    "image": "images/voices-dickens-the-orphaned-cone.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices dickens the orphaned cone.",
     "category": "Voices",
     "headline": "The History of a Traffic Cone, Being an Account of Its Misfortunes",
     "standfirst": "The Daily Flange invites Charles Dickens to serialise the plight of a lost traffic cone abandoned outside the Flange Highways Depot.",
@@ -14107,6 +14187,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-hemingway-the-roundabout",
+    "image": "images/voices-hemingway-the-roundabout.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices hemingway the roundabout.",
     "category": "Voices",
     "headline": "The Roundabout",
     "standfirst": "The Daily Flange invites Ernest Hemingway to file on the roundabout that will not stop.",
@@ -14131,6 +14213,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-kafka-the-permit",
+    "image": "images/voices-kafka-the-permit.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices kafka the permit.",
     "category": "Voices",
     "headline": "The Permit",
     "standfirst": "The Daily Flange invites Franz Kafka to cover the case of a man prosecuted for lacking a parking permit that was never issued to him.",
@@ -14155,6 +14239,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-melville-the-pipeline",
+    "image": "images/voices-melville-the-pipeline.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices melville the pipeline.",
     "category": "Voices",
     "headline": "The Pipeline; or, The Flange",
     "standfirst": "The Daily Flange invites Herman Melville to chronicle the pursuit of a pipeline that has forgotten what it carries.",
@@ -14179,6 +14265,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-poe-the-village-clock",
+    "image": "images/voices-poe-the-village-clock.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices poe the village clock.",
     "category": "Voices",
     "headline": "The Tell-Tale Clock",
     "standfirst": "The Daily Flange invites Edgar Allan Poe to brood upon the village clock that is reliably, eternally, four minutes slow.",
@@ -14203,6 +14291,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-wilde-the-tax-on-optimism",
+    "image": "images/voices-wilde-the-tax-on-optimism.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices wilde the tax on optimism.",
     "category": "Voices",
     "headline": "The Importance of Being Taxed",
     "standfirst": "The Daily Flange invites Oscar Wilde to hold forth on the Council's new Tax on Optimism.",
@@ -14227,6 +14317,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-twain-the-flanged-sprockets",
+    "image": "images/voices-twain-the-flanged-sprockets.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices twain the flanged sprockets.",
     "category": "Voices",
     "headline": "Concerning the Regular Flanging of Sprockets",
     "standfirst": "The Daily Flange invites Mark Twain to spin a tall tale about the village's ancient duty to keep its sprockets regularly flanged.",
@@ -14251,6 +14343,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-proust-the-bus-timetable",
+    "image": "images/voices-proust-the-bus-timetable.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices proust the bus timetable.",
     "category": "Voices",
     "headline": "In Search of the 4:14 to Lower Flange",
     "standfirst": "The Daily Flange invites Marcel Proust to recall, at extraordinary length, the vanished bus timetable of his youth.",
@@ -14275,6 +14369,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-joyce-bloomsday-in-flange",
+    "image": "images/voices-joyce-bloomsday-in-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices joyce bloomsday in flange.",
     "category": "Voices",
     "headline": "A Day of Bins",
     "standfirst": "The Daily Flange invites James Joyce to follow one council clerk through a single momentous day of bin collection in Flange.",
@@ -14298,6 +14394,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-woolf-the-bridge-that-wants-weekends-off",
+    "image": "images/voices-woolf-the-bridge-that-wants-weekends-off.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices woolf the bridge that wants weekends off.",
     "category": "Voices",
     "headline": "The Bridge",
     "standfirst": "The Daily Flange invites Virginia Woolf to render, in a single continuous consciousness, the day the Flange footbridge announced it would no longer open on weekends.",
@@ -14321,6 +14419,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-fitzgerald-the-roundabout-tycoon",
+    "image": "images/voices-fitzgerald-the-roundabout-tycoon.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices fitzgerald the roundabout tycoon.",
     "category": "Voices",
     "headline": "The Great Flangeby",
     "standfirst": "The Daily Flange invites F. Scott Fitzgerald to attend the lavish party thrown by Flange's own self-made roundabout tycoon.",
@@ -14345,6 +14445,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-orwell-the-ministry-of-flange",
+    "image": "images/voices-orwell-the-ministry-of-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices orwell the ministry of flange.",
     "category": "Voices",
     "headline": "Notes on Compulsory Positivity",
     "standfirst": "The Daily Flange invites George Orwell to file a dispatch on the Council's new mandatory-positivity broadcasts about pothole repairs.",
@@ -14369,6 +14471,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-tolstoy-the-fete-committee",
+    "image": "images/voices-tolstoy-the-fete-committee.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices tolstoy the fete committee.",
     "category": "Voices",
     "headline": "War and the Flange Summer Fete",
     "standfirst": "The Daily Flange invites Leo Tolstoy to narrate, at epic length and with several digressions on the nature of history, the war between two rival factions of the village fete committee.",
@@ -14393,6 +14497,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-dostoevsky-the-parking-ticket",
+    "image": "images/voices-dostoevsky-the-parking-ticket.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices dostoevsky the parking ticket.",
     "category": "Voices",
     "headline": "Notes from the Underpass",
     "standfirst": "The Daily Flange invites Fyodor Dostoevsky to record the feverish confession of a man tormented beyond reason by a single unpaid parking ticket.",
@@ -14417,6 +14523,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-conandoyle-the-stolen-minute-hand",
+    "image": "images/voices-conandoyle-the-stolen-minute-hand.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices conandoyle the stolen minute hand.",
     "category": "Voices",
     "headline": "The Adventure of the Missing Minute Hand",
     "standfirst": "The Daily Flange invites Arthur Conan Doyle to send Sherlock Holmes to the market square, where the clock tower's minute hand has vanished overnight.",
@@ -14441,6 +14549,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-chandler-the-vanishing-meter",
+    "image": "images/voices-chandler-the-vanishing-meter.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices chandler the vanishing meter.",
     "category": "Voices",
     "headline": "The Big Meter",
     "standfirst": "The Daily Flange invites Raymond Chandler to send a hardboiled detective after the case of the vanishing parking meter.",
@@ -14465,6 +14575,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-wodehouse-the-aunt-and-the-bridge",
+    "image": "images/voices-wodehouse-the-aunt-and-the-bridge.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices wodehouse the aunt and the bridge.",
     "category": "Voices",
     "headline": "Jeeves and the Flange Footbridge Wheeze",
     "standfirst": "The Daily Flange invites P. G. Wodehouse to entangle a hapless young gentleman in his aunt's scheme to have the village bridge painted a scandalous shade of pink.",
@@ -14489,6 +14601,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-waugh-the-speed-bump",
+    "image": "images/voices-waugh-the-speed-bump.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices waugh the speed bump.",
     "category": "Voices",
     "headline": "A Handful of Tarmac",
     "standfirst": "The Daily Flange invites Evelyn Waugh to survey, with icy amusement, the country-house set's horror at a new speed bump on the drive.",
@@ -14513,6 +14627,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-beckett-waiting-for-the-47",
+    "image": "images/voices-beckett-waiting-for-the-47.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices beckett waiting for the 47.",
     "category": "Voices",
     "headline": "Waiting for the 47",
     "standfirst": "The Daily Flange invites Samuel Beckett to stage two men at a bus shelter, waiting for a service that may or may not exist.",
@@ -14537,6 +14653,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-mccarthy-the-resurfacing-crew",
+    "image": "images/voices-mccarthy-the-resurfacing-crew.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices mccarthy the resurfacing crew.",
     "category": "Voices",
     "headline": "Blood on the Tarmac",
     "standfirst": "The Daily Flange invites Cormac McCarthy to follow a lone council resurfacing crew across a wasteland of unflanged sprockets and cold-mix asphalt.",
@@ -14560,6 +14678,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-garciamarquez-years-of-rain",
+    "image": "images/voices-garciamarquez-years-of-rain.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices garciamarquez years of rain.",
     "category": "Voices",
     "headline": "A Hundred Years of Drainage",
     "standfirst": "The Daily Flange invites Gabriel García Márquez to chronicle the village that rained for years on end because of a single broken drainage flange.",
@@ -14584,6 +14704,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-borges-the-map-of-flange",
+    "image": "images/voices-borges-the-map-of-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices borges the map of flange.",
     "category": "Voices",
     "headline": "On the Exactitude of the Flange One-Way System",
     "standfirst": "The Daily Flange invites Jorge Luis Borges to contribute a brief, footnoted essay on the village's labyrinthine and possibly infinite one-way system.",
@@ -14608,6 +14730,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-murakami-the-well-behind-the-chip-shop",
+    "image": "images/voices-murakami-the-well-behind-the-chip-shop.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices murakami the well behind the chip shop.",
     "category": "Voices",
     "headline": "The Wind-Up Bollard Chronicle",
     "standfirst": "The Daily Flange invites Haruki Murakami to follow a quiet man, his missing cat, and a very strange alley behind the Flange chip shop.",
@@ -14632,6 +14756,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-nabokov-the-bollard",
+    "image": "images/voices-nabokov-the-bollard.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices nabokov the bollard.",
     "category": "Voices",
     "headline": "Bollard, Bollard",
     "standfirst": "The Daily Flange invites Vladimir Nabokov to render one man's ornate, unreliable obsession with a particular parking bollard on Flange High Street.",
@@ -14656,6 +14782,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-pratchett-the-flanging",
+    "image": "images/voices-pratchett-the-flanging.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices pratchett the flanging.",
     "category": "Voices",
     "headline": "The Roundabout That Knew It Was A Roundabout",
     "standfirst": "The Little Flange gyratory system has, council engineers admit, developed opinions.",
@@ -14680,6 +14808,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-adams-silence-subscription",
+    "image": "images/voices-adams-silence-subscription.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices adams silence subscription.",
     "category": "Voices",
     "headline": "Flange Council Now Offers A Premium Tier Of Not Being Shouted At",
     "standfirst": "For £4.99 a month, residents of Flange can now subscribe to a bit of peace and quiet, terms and conditions permitting.",
@@ -14703,6 +14833,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-tolkien-the-flanging-of-the-sprockets",
+    "image": "images/voices-tolkien-the-flanging-of-the-sprockets.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices tolkien the flanging of the sprockets.",
     "category": "Voices",
     "headline": "Of The Flanging Of The Sprockets In The Elder Days Of The Works",
     "standfirst": "An account, in the high style, of the ancient and solemn duty owed by Flange to its sprockets.",
@@ -14726,6 +14858,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-grrm-the-flange-succession",
+    "image": "images/voices-grrm-the-flange-succession.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices grrm the flange succession.",
     "category": "Voices",
     "headline": "A Chair Of Splinters: The War For The Parish Council",
     "standfirst": "Three factions, one folding table, and a chairmanship nobody has held for longer than a single term without incident.",
@@ -14750,6 +14884,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-lovecraft-beneath-the-car-park",
+    "image": "images/voices-lovecraft-beneath-the-car-park.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices lovecraft beneath the car park.",
     "category": "Voices",
     "headline": "The Thing Beneath The Multi-Storey",
     "standfirst": "Engineers investigating a drainage fault beneath Flange's municipal car park report findings they decline, wisely, to elaborate on.",
@@ -14774,6 +14910,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-shelley-the-reanimated-timetable",
+    "image": "images/voices-shelley-the-reanimated-timetable.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices shelley the reanimated timetable.",
     "category": "Voices",
     "headline": "On The Reanimation Of The No. 7 Bus Timetable",
     "standfirst": "A Flange transport consultant's midnight experiment in reviving a timetable long pronounced dead by popular consensus.",
@@ -14797,6 +14935,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-stoker-the-energy-company",
+    "image": "images/voices-stoker-the-energy-company.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices stoker the energy company.",
     "category": "Voices",
     "headline": "Extracts From The Flange Household Account Ledger",
     "standfirst": "An epistolary account of Grangewell Energy Ltd, the supplier that only ever seems to visit Flange after dark.",
@@ -14820,6 +14960,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-christie-four-minutes-slow",
+    "image": "images/voices-christie-four-minutes-slow.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices christie four minutes slow.",
     "category": "Voices",
     "headline": "The Mystery Of The Four Minutes",
     "standfirst": "A village clock, a locked belfry, and a detective who suspects everyone in Flange Parva has a motive for the missing minutes.",
@@ -14843,6 +14985,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-vonnegut-tax-on-optimism",
+    "image": "images/voices-vonnegut-tax-on-optimism.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices vonnegut tax on optimism.",
     "category": "Voices",
     "headline": "Flange Introduces A Small Tax On Hope",
     "standfirst": "The council's new Optimism Levy taxes residents for expressing unwarranted confidence about the weekend. So it goes.",
@@ -14866,6 +15010,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-bradbury-the-clock-burning",
+    "image": "images/voices-bradbury-the-clock-burning.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices bradbury the clock burning.",
     "category": "Voices",
     "headline": "The Night They Burned The Clocks Of Flange",
     "standfirst": "On a warm dusk in July, the residents of Flange gathered every clock in the parish and set them alight in the square.",
@@ -14889,6 +15035,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-leguin-the-favour-economy",
+    "image": "images/voices-leguin-the-favour-economy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices leguin the favour economy.",
     "category": "Voices",
     "headline": "A Description Of The Flange Exchange, In Which No Money Changes Hands",
     "standfirst": "An anthropological account of the small English town that quietly replaced its currency with a ledger of favours.",
@@ -14912,6 +15060,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-atwood-the-biscuit-ration",
+    "image": "images/voices-atwood-the-biscuit-ration.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices atwood the biscuit ration.",
     "category": "Voices",
     "headline": "A Report On The Rationing Of Biscuits In The Flange Community Hall",
     "standfirst": "The Neighbourhood Watch's new biscuit allocation policy is, its architects insist, entirely for residents' own good.",
@@ -14935,6 +15085,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-ishiguro-the-grounding-stone",
+    "image": "images/voices-ishiguro-the-grounding-stone.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices ishiguro the grounding stone.",
     "category": "Voices",
     "headline": "A Small Matter Of The Grounding Stone",
     "standfirst": "A retired butler recalls, with characteristic restraint, the household's four-hundred-pound acquisition of a stone said to promote calm.",
@@ -14957,6 +15109,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-rushdie-the-midnight-bridge",
+    "image": "images/voices-rushdie-the-midnight-bridge.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices rushdie the midnight bridge.",
     "category": "Voices",
     "headline": "The Bridge That Was Born, Like All The Best Complaints, At Midnight",
     "standfirst": "A maximalist account of the Flange footbridge that arrived overnight, fully formed, and immediately demanded weekends off.",
@@ -14980,6 +15134,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-zadiesmith-the-estate-committee",
+    "image": "images/voices-zadiesmith-the-estate-committee.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices zadiesmith the estate committee.",
     "category": "Voices",
     "headline": "Everyone On Wren House Has An Opinion About The New Bins, And They Are All, Somehow, Correct",
     "standfirst": "A snapshot of the Flange Wren House residents' committee, four generations deep in disagreement over recycling.",
@@ -15003,6 +15159,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-morrison-the-ghost-of-the-works",
+    "image": "images/voices-morrison-the-ghost-of-the-works.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices morrison the ghost of the works.",
     "category": "Voices",
     "headline": "What The Old Flange Works Remembers, When It Remembers Anything At All",
     "standfirst": "A lyrical account of the derelict flange works and the presence still said to move through its rusted halls at dusk.",
@@ -15026,6 +15184,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-salinger-the-phony-sprockets",
+    "image": "images/voices-salinger-the-phony-sprockets.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices salinger the phony sprockets.",
     "category": "Voices",
     "headline": "Everybody In This Whole Goddam Town Is Obsessed With The Sprockets",
     "standfirst": "A teenage narrator's disgusted, funny, oddly tender account of Flange's civic pride in its municipal sprockets.",
@@ -15049,6 +15209,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-steinbeck-the-flange-fields",
+    "image": "images/voices-steinbeck-the-flange-fields.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices steinbeck the flange fields.",
     "category": "Voices",
     "headline": "The Men Who Walk To The Flange Fields Before Light",
     "standfirst": "A dignified account of the seasonal workers who harvest Flange's export crop of ornamental sprockets by hand.",
@@ -15072,6 +15234,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-faulkner-the-flange-family",
+    "image": "images/voices-faulkner-the-flange-family.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices faulkner the flange family.",
     "category": "Voices",
     "headline": "And The Bridge Also Belonged To Them, In Its Way",
     "standfirst": "Four generations of the Compton-Flange family, one bridge, and a single unspooling sentence of inherited grievance.",
@@ -15094,6 +15258,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-conrad-heart-of-the-works",
+    "image": "images/voices-conrad-heart-of-the-works.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices conrad heart of the works.",
     "category": "Voices",
     "headline": "An Account, Given Late At Night, Of A Journey Into The Flange Works",
     "standfirst": "A frame narrative: a former inspector recalls, aboard a canal barge, his descent into the darkest reaches of the flange works.",
@@ -15117,6 +15283,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-bronte-the-roundabout-inspector",
+    "image": "images/voices-bronte-the-roundabout-inspector.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices bronte the roundabout inspector.",
     "category": "Voices",
     "headline": "The Governess And The Inspector Of The Gyratory",
     "standfirst": "A gothic romance blooms between a plain-spoken governess and the brooding inspector charged with the Flange roundabout's moods.",
@@ -15140,6 +15308,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-hardy-the-doomed-flange-lovers",
+    "image": "images/voices-hardy-the-doomed-flange-lovers.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices hardy the doomed flange lovers.",
     "category": "Voices",
     "headline": "Under The Flange Sprocket Wheel",
     "standfirst": "A tragic tale of two lovers whose fates, like the great sprocket wheel itself, are ground slowly and indifferently by circumstance.",
@@ -15163,6 +15333,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-henryjames-the-american-visitor",
+    "image": "images/voices-henryjames-the-american-visitor.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices henryjames the american visitor.",
     "category": "Voices",
     "headline": "A Question Of The Stone: An American In Flange",
     "standfirst": "An American visitor spends a very long afternoon failing to ask his hosts directly about the four-hundred-pound grounding stone.",
@@ -15186,6 +15358,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-hst-the-flange-festival",
+    "image": "images/voices-hst-the-flange-festival.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices hst the flange festival.",
     "category": "Voices",
     "headline": "Fear And Loathing At The Flange Sprocket Festival",
     "standfirst": "A gonzo dispatch from the annual Flange Sprocket Festival, where the cider is strong and the municipal pride is stronger.",
@@ -15209,6 +15383,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-dfw-the-weekend-bridge",
+    "image": "images/voices-dfw-the-weekend-bridge.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices dfw the weekend bridge.",
     "category": "Voices",
     "headline": "A Brief, Extremely Qualified Account Of The Flange Footbridge's Refusal To Work Weekends",
     "standfirst": "An exhaustively footnoted attempt to explain why the Flange canal bridge closes itself every Saturday, and what that might mean.",
@@ -15232,6 +15408,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-dr-seuss-the-flanger",
+    "image": "images/voices-dr-seuss-the-flanger.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices dr seuss the flanger.",
     "category": "Voices",
     "headline": "I Do Not Like Green Flanges, Sam-I-Am",
     "standfirst": "A widget that simply refuses to be flanged correctly.",
@@ -15273,6 +15451,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-lewis-carroll-rabbit-hole",
+    "image": "images/voices-lewis-carroll-rabbit-hole.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices lewis carroll rabbit hole.",
     "category": "Voices",
     "headline": "Down the Flange Hole: A Most Peculiar Descent",
     "standfirst": "A journalist tumbles into a Flange-obsessed world where nothing obeys the laws of physics.",
@@ -15318,6 +15498,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-roald-dahl-factory",
+    "image": "images/voices-roald-dahl-factory.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices roald dahl factory.",
     "category": "Voices",
     "headline": "Charlie and the Flange Factory",
     "standfirst": "A golden ticket leads to a most disagreeable place where sprockets are treated like sweets.",
@@ -15348,6 +15530,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-milne-flange-woods",
+    "image": "images/voices-milne-flange-woods.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices milne flange woods.",
     "category": "Voices",
     "headline": "Flange Thing in the Wood",
     "standfirst": "Pooh and Piglet discover something inexplicable and tremendously British in the Hundred Acre Wood.",
@@ -15380,6 +15564,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-potter-mrs-flange",
+    "image": "images/voices-potter-mrs-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices potter mrs flange.",
     "category": "Voices",
     "headline": "The Tale of Mrs. Flange's Garden",
     "standfirst": "An anthropomorphic screw tells her children not to venture into the dangerous Machinery Zone.",
@@ -15408,6 +15594,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-kipling-just-so-flange",
+    "image": "images/voices-kipling-just-so-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices kipling just so flange.",
     "category": "Voices",
     "headline": "How the Flange Got Its Bolt: A Just So Story",
     "standfirst": "An origin story in Kipling's accumulative, call-and-response style.",
@@ -15440,6 +15628,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-blyton-five-flange",
+    "image": "images/voices-blyton-five-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices blyton five flange.",
     "category": "Voices",
     "headline": "The Famous Five Investigate the Mystery of the Missing Flanges",
     "standfirst": "Four children and a dog solve a baffling engineering crime with tea and British pluck.",
@@ -15478,6 +15668,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-shakespeare-hamlet-flange",
+    "image": "images/voices-shakespeare-hamlet-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices shakespeare hamlet flange.",
     "category": "Voices",
     "headline": "To Flange or Not to Flange",
     "standfirst": "A Shakespearean tragedy in blank verse about a man tormented by an impossible mechanical choice.",
@@ -15521,6 +15713,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-homer-odyssey-flange",
+    "image": "images/voices-homer-odyssey-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices homer odyssey flange.",
     "category": "Voices",
     "headline": "The Odyssey of the Rosy-Fingered Flange",
     "standfirst": "An engineer's quest to return a mysterious flange to its rightful factory.",
@@ -15564,6 +15758,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-chaucer-flange-tale",
+    "image": "images/voices-chaucer-flange-tale.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices chaucer flange tale.",
     "category": "Voices",
     "headline": "The Knight's Tale of the Flange Most Faire",
     "standfirst": "A Canterbury Tale told in light Middle English about two workers in love with the same flange.",
@@ -15611,6 +15807,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-dickinson-dashes-flange",
+    "image": "images/voices-dickinson-dashes-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices dickinson dashes flange.",
     "category": "Voices",
     "headline": "The Flanging Soul",
     "standfirst": "A meditation on industrial meaning rendered in dashes, capitals, and slant rhyme.",
@@ -15657,6 +15855,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-whitman-flange-song",
+    "image": "images/voices-whitman-flange-song.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices whitman flange song.",
     "category": "Voices",
     "headline": "Song of the Flange",
     "standfirst": "A free-verse catalogue celebrating the democracy of industrial parts.",
@@ -15699,6 +15899,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-frost-mending-wall-flange",
+    "image": "images/voices-frost-mending-wall-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices frost mending wall flange.",
     "category": "Voices",
     "headline": "Mending Wall: A Flange Divided",
     "standfirst": "Two neighbours maintain a wall of misunderstanding, one flange at a time.",
@@ -15744,6 +15946,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-thomas-fern-flange",
+    "image": "images/voices-thomas-fern-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices thomas fern flange.",
     "category": "Voices",
     "headline": "Fern Hill of Flanges: A Musical Lament",
     "standfirst": "A lush, musical meditation on childhood wonder lost to industrial necessity.",
@@ -15786,6 +15990,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-sonnet-flange",
+    "image": "images/voices-sonnet-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices sonnet flange.",
     "category": "Voices",
     "headline": "Sonnet CCCXXVI: Upon a Flange",
     "standfirst": "A Shakespearean sonnet contemplating industrial beauty.",
@@ -15820,6 +16026,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-limerick-flange",
+    "image": "images/voices-limerick-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices limerick flange.",
     "category": "Voices",
     "headline": "There Once Was a Flange from France",
     "standfirst": "A limerick about a French flange's romantic misadventures.",
@@ -15842,6 +16050,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-basho-haiku-flange",
+    "image": "images/voices-basho-haiku-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices basho haiku flange.",
     "category": "Voices",
     "headline": "Five Haiku on the Flange: Moments of Zen",
     "standfirst": "A sequence of haiku contemplating the industrial, the natural, and the flange.",
@@ -15878,6 +16088,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-lear-nonsense-flange",
+    "image": "images/voices-lear-nonsense-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices lear nonsense flange.",
     "category": "Voices",
     "headline": "The Quangle Wangle's Flange",
     "standfirst": "A nonsense narrative about a rather distinguished flange and the creatures who gather upon it.",
@@ -15919,6 +16131,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-nash-comic-couplets",
+    "image": "images/voices-nash-comic-couplets.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices nash comic couplets.",
     "category": "Voices",
     "headline": "The Singular Flange: A Comic Lament in Couplets",
     "standfirst": "Ogden Nash on the indignities of being a component part.",
@@ -15957,6 +16171,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-aesop-fable-moral",
+    "image": "images/voices-aesop-fable-moral.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices aesop fable moral.",
     "category": "Voices",
     "headline": "The Flange and the Washer: A Fable",
     "standfirst": "A cautionary tale about the importance of support in any partnership.",
@@ -15989,6 +16205,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-kjv-biblical-flange",
+    "image": "images/voices-kjv-biblical-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices kjv biblical flange.",
     "category": "Voices",
     "headline": "And It Came to Pass: A Flanging",
     "standfirst": "The revelation of the sacred flange, told in biblical cadence and King James splendour.",
@@ -16021,6 +16239,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-nursery-rhyme-flange",
+    "image": "images/voices-nursery-rhyme-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices nursery rhyme flange.",
     "category": "Voices",
     "headline": "Flange, Flange, Bolt-Bright: A Nursery Rhyme",
     "standfirst": "A children's counting rhyme about metallic components and their curious adventures.",
@@ -16063,6 +16283,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-chorus-greek-flange",
+    "image": "images/voices-chorus-greek-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices chorus greek flange.",
     "category": "Voices",
     "headline": "The Chorus Speaks: A Tragedy of Flanges",
     "standfirst": "A Greek tragic chorus contemplates the fall of a great flange and its implications for the factory.",
@@ -16109,6 +16331,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-sea-shanty-flange",
+    "image": "images/voices-sea-shanty-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices sea shanty flange.",
     "category": "Voices",
     "headline": "Blow the Flange, Ye Hearty Lads: A Sea Shanty",
     "standfirst": "A work song for those who labour at the great turning wheels of industry and the sea.",
@@ -16158,6 +16382,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-town-crier-oyez",
+    "image": "images/voices-town-crier-oyez.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices town crier oyez.",
     "category": "Voices",
     "headline": "Oyez! Oyez! The Matter of the Missing Flange",
     "standfirst": "A medieval town crier announces an urgent matter of civic importance regarding a stolen component.",
@@ -16198,6 +16424,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-paul-graham-flanging-service",
+    "image": "images/voices-paul-graham-flanging-service.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices paul graham flanging service.",
     "category": "Voices",
     "headline": "Why Flanging-as-a-Service is the Next Unicorn",
     "standfirst": "A startup essay on the strategic deployment of artisanal flange technology.",
@@ -16222,6 +16450,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-malcolm-gladwell-flange-delays",
+    "image": "images/voices-malcolm-gladwell-flange-delays.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices malcolm gladwell flange delays.",
     "category": "Voices",
     "headline": "The Tipping Point of the Flange Backlog",
     "standfirst": "Why the Flange Registry's mysterious administrative delays are actually genius.",
@@ -16245,6 +16475,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-michael-lewis-artisanal-flange",
+    "image": "images/voices-michael-lewis-artisanal-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices michael lewis artisanal flange.",
     "category": "Voices",
     "headline": "The Paradox of the Artisanal Flange",
     "standfirst": "The unlikely rise of bespoke flange polishing in the age of automation.",
@@ -16268,6 +16500,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-mary-beard-ancient-flange",
+    "image": "images/voices-mary-beard-ancient-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices mary beard ancient flange.",
     "category": "Voices",
     "headline": "What the Romans Knew About Flanges (And We Forgot)",
     "standfirst": "A classicist's guide to industrial engineering in antiquity.",
@@ -16290,6 +16524,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-bill-bryson-flange-works",
+    "image": "images/voices-bill-bryson-flange-works.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices bill bryson flange works.",
     "category": "Voices",
     "headline": "A Journey Through the Flange Works of Burton-upon-Trent",
     "standfirst": "Comic travel writing about the least glamorous heritage site in England.",
@@ -16314,6 +16550,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-twitter-thread-pigeon-union",
+    "image": "images/voices-twitter-thread-pigeon-union.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices twitter thread pigeon union.",
     "category": "Voices",
     "headline": "The Great Pigeon Uprising Has Begun",
     "standfirst": "A Twitter thread from the point of view of the Flange's first unionised pigeon.",
@@ -16343,6 +16581,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-linkedin-flange-journey",
+    "image": "images/voices-linkedin-flange-journey.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices linkedin flange journey.",
     "category": "Voices",
     "headline": "My Journey Learning to Flange Changed Everything",
     "standfirst": "A LinkedIn influencer's humblebragging post on embracing the flange mindset.",
@@ -16376,6 +16616,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-wikipedia-flange-article",
+    "image": "images/voices-wikipedia-flange-article.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices wikipedia flange article.",
     "category": "Voices",
     "headline": "Flange (Engineering) – Wikipedia",
     "standfirst": "A Wikipedia article on flange technology, complete with citation gaps and neutral point of view.",
@@ -16410,6 +16652,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-scientific-flange-entropy",
+    "image": "images/voices-scientific-flange-entropy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices scientific flange entropy.",
     "category": "Voices",
     "headline": "Entropic Flange Degradation Under Cyclic Load: A Quantitative Analysis",
     "standfirst": "A scientific journal abstract examining flange deterioration.",
@@ -16432,6 +16676,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-restaurant-review-flange-cuisine",
+    "image": "images/voices-restaurant-review-flange-cuisine.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices restaurant review flange cuisine.",
     "category": "Voices",
     "headline": "Flangemere: Pretentious Nonsense Served at £78 a Head",
     "standfirst": "A fine-dining critic's scathing review of a restaurant built around flange-shaped gastronomy.",
@@ -16456,6 +16702,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-press-release-flange-tech",
+    "image": "images/voices-press-release-flange-tech.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices press release flange tech.",
     "category": "Voices",
     "headline": "Hearthstone Engineering is Thrilled to Announce FlangeAI™",
     "standfirst": "A corporate press release from a fictitious engineering firm.",
@@ -16484,6 +16732,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-legal-terms-flange-usage",
+    "image": "images/voices-legal-terms-flange-usage.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices legal terms flange usage.",
     "category": "Voices",
     "headline": "Flange™ Subscription Service – Terms and Conditions (Abridged)",
     "standfirst": "Legal terms governing the use of a subscription flanging service.",
@@ -16509,6 +16759,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-patch-notes-flange-update",
+    "image": "images/voices-patch-notes-flange-update.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices patch notes flange update.",
     "category": "Voices",
     "headline": "FlangeWorks™ v3.4.1 – Patch Notes",
     "standfirst": "Software changelog for an industrial flanging application.",
@@ -16551,6 +16803,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-food-blog-flange-cake",
+    "image": "images/voices-food-blog-flange-cake.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices food blog flange cake.",
     "category": "Voices",
     "headline": "Gran's 1963 Flanged Cake: A Recipe and a Memory",
     "standfirst": "A food blogger's nostalgic preamble leading to a traditional recipe.",
@@ -16596,6 +16850,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-dating-profile-flange-collector",
+    "image": "images/voices-dating-profile-flange-collector.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices dating profile flange collector.",
     "category": "Voices",
     "headline": "Sarah, 34 – Flange Enthusiast Seeking Connection",
     "standfirst": "A dating-app bio from a woman passionate about industrial metalwork.",
@@ -16622,6 +16878,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-tripadvisor-flange-museum",
+    "image": "images/voices-tripadvisor-flange-museum.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices tripadvisor flange museum.",
     "category": "Voices",
     "headline": "Absolute Shambles – Flange Heritage Museum, Burton-upon-Trent",
     "standfirst": "A scathing one-star TripAdvisor review of a forgotten museum.",
@@ -16649,6 +16907,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-ikea-manual-flangbork",
+    "image": "images/voices-ikea-manual-flangbork.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices ikea manual flangbork.",
     "category": "Voices",
     "headline": "FLANGBÖRK Shelving Unit – Assembly Instructions",
     "standfirst": "IKEA-style wordless assembly manual for an imaginary flanged shelf.",
@@ -16692,6 +16952,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-attenborough-flange-nature",
+    "image": "images/voices-attenborough-flange-nature.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices attenborough flange nature.",
     "category": "Voices",
     "headline": "The Hidden Geometry of the Industrial Flange",
     "standfirst": "A David Attenborough nature-documentary narration applied to manufacturing.",
@@ -16720,6 +16982,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-truecrime-flange-vanishing",
+    "image": "images/voices-truecrime-flange-vanishing.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices truecrime flange vanishing.",
     "category": "Voices",
     "headline": "Episode 47: The Vanishing of the Rothbury Flange",
     "standfirst": "A true-crime podcast transcript investigating an industrial mystery.",
@@ -16751,6 +17015,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-selfhelp-flange-manifest",
+    "image": "images/voices-selfhelp-flange-manifest.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices selfhelp flange manifest.",
     "category": "Voices",
     "headline": "Flange Your Reality: 7 Steps to Manifesting Industrial Success",
     "standfirst": "A self-help guru's guide to aligning your energy with flange technology.",
@@ -16793,6 +17059,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-estate-agent-flange-property",
+    "image": "images/voices-estate-agent-flange-property.webp",
+    "imageAlt": "Realistic editorial photograph illustrating voices estate agent flange property.",
     "category": "Voices",
     "headline": "Deceptively Spacious: Industrial Heritage Property with Original Features",
     "standfirst": "An estate-agent property listing in authentic inflated language.",
@@ -16821,6 +17089,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-copper-wire-penny",
+    "image": "images/wld-abz-copper-wire-penny.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz copper wire penny.",
     "category": "Aberdeen",
     "headline": "Copper wire's true origin traced to two Aberdonians and a dropped penny",
     "standfirst": "Metallurgists have formally credited the invention of copper wire to a disputed coin on Union Street, pulled thin between two determined claimants who each refused to let go first",
@@ -16844,6 +17114,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-titanic-headline-legend",
+    "image": "images/wld-abz-titanic-headline-legend.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz titanic headline legend.",
     "category": "Aberdeen",
     "headline": "Archivists still cannot locate the paper's own legendary Titanic front page",
     "standfirst": "The Press and Journal is said to have run 'North-East Man Lost At Sea' after the Titanic sank — a headline so perfectly parochial that nobody has ever produced the actual copy",
@@ -16867,6 +17139,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-reflections-unbroken-streak",
+    "image": "images/wld-abz-reflections-unbroken-streak.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz reflections unbroken streak.",
     "category": "Aberdeen",
     "headline": "Late-night reflective segment marks unbroken decades of quiet devotion nobody discusses",
     "standfirst": "The two-minute epilogue that follows the ten o'clock news on Grampian has run, without interruption, for longer than most viewers have been watching television, and almost none of them will admit to seeing it",
@@ -16889,6 +17163,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-seagull-pie-heist",
+    "image": "images/wld-abz-seagull-pie-heist.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz seagull pie heist.",
     "category": "Aberdeen",
     "headline": "City's gulls now operating what officials concede is an organised pie economy",
     "standfirst": "Aberdeen's herring gulls have moved beyond opportunistic snatching to what wildlife officers describe as coordinated targeting of pastry, chips and, on one occasion, an entire ice cream cone still in its wrapper",
@@ -16912,6 +17188,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-haar-swallows-city",
+    "image": "images/wld-abz-haar-swallows-city.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz haar swallows city.",
     "category": "Aberdeen",
     "headline": "City vanishes into sea fog for the third time this week, nobody remarks on it",
     "standfirst": "A dense bank of haar rolled in off the North Sea on Tuesday and quietly erased the skyline, harbour and most of Union Street for several hours, to the complete indifference of everyone who actually lives there",
@@ -16934,6 +17212,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-granite-sparkle-satellite",
+    "image": "images/wld-abz-granite-sparkle-satellite.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz granite sparkle satellite.",
     "category": "Aberdeen",
     "headline": "City's granite sparkle briefly mistaken for signal by orbiting satellite",
     "standfirst": "Wet mica-flecked granite catching low winter sun produced a glint bright enough that a passing earth-observation satellite logged it as an anomaly worth a second look",
@@ -16956,6 +17236,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-rubislaw-quarry-hole",
+    "image": "images/wld-abz-rubislaw-quarry-hole.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz rubislaw quarry hole.",
     "category": "Aberdeen",
     "headline": "City confirms its biggest hole remains, once again, extremely large",
     "standfirst": "A routine annual inspection of Rubislaw Quarry — one of the largest man-made holes in Europe, and the source of granite shipped as far as the Bell Rock lighthouse — found it exactly as deep as expected",
@@ -16978,6 +17260,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-haudagain-roundabout-time-loop",
+    "image": "images/wld-abz-haudagain-roundabout-time-loop.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz haudagain roundabout time loop.",
     "category": "Aberdeen",
     "headline": "Physicists quietly investigate whether notorious roundabout is a closed time loop",
     "standfirst": "Years of commuter testimony describing entering the junction at rush hour and emerging, apparently unchanged, at a later and equally congested rush hour have drawn academic attention",
@@ -17000,6 +17284,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-awpr-bypass-completion-party",
+    "image": "images/wld-abz-awpr-bypass-completion-party.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz awpr bypass completion party.",
     "category": "Aberdeen",
     "headline": "City unsure how to behave now that the bypass is actually finished",
     "standfirst": "Years after it was first proposed, the long-awaited ring road has been open for some time, and a portion of the population still cannot quite believe it, refusing to take it 'in case it isn't really done'",
@@ -17022,6 +17308,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-union-street-empty-shops-echo",
+    "image": "images/wld-abz-union-street-empty-shops-echo.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz union street empty shops echo.",
     "category": "Aberdeen",
     "headline": "Union Street unit sets new personal best for consecutive months vacant",
     "standfirst": "A prominent shopfront on the city's main thoroughfare has now stood empty long enough to develop its own small, dedicated following of window-shoppers who admire only the To Let sign",
@@ -17044,6 +17332,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-doric-translator-app",
+    "image": "images/wld-abz-doric-translator-app.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz doric translator app.",
     "category": "Aberdeen",
     "headline": "New translation app defeated within minutes by a single sentence of Doric",
     "standfirst": "A leading language-translation service has conceded total failure after being asked to render 'Fit like, quine, foo's yer doos?' into anything resembling standard English",
@@ -17067,6 +17357,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-oil-capital-nostalgia",
+    "image": "images/wld-abz-oil-capital-nostalgia.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz oil capital nostalgia.",
     "category": "Aberdeen",
     "headline": "Retired rig workers open nostalgia tour of the boom years, complete with helicopter noise",
     "standfirst": "A new heritage attraction lets visitors relive Aberdeen's decades as Europe's oil capital, down to a looping soundtrack of Super Puma rotor blades over a mocked-up North Sea platform canteen",
@@ -17089,6 +17381,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-bon-accord-motto-referendum",
+    "image": "images/wld-abz-bon-accord-motto-referendum.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz bon accord motto referendum.",
     "category": "Aberdeen",
     "headline": "Council quietly shelves proposal to update 700-year-old city motto",
     "standfirst": "A suggestion to modernise 'Bon Accord' for the social media age was raised, briefly discussed, and dropped within the same meeting after nobody could agree on an improvement",
@@ -17111,6 +17405,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-dons-cup-winners-cup-anniversary",
+    "image": "images/wld-abz-dons-cup-winners-cup-anniversary.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz dons cup winners cup anniversary.",
     "category": "Aberdeen",
     "headline": "Anniversary re-enactment of famous European final undone by damp pitch and a stray dog",
     "standfirst": "A commemorative recreation of the 1983 Cup Winners' Cup triumph in Gothenburg went largely to plan until a local terrier interrupted the closing minutes on the replica pitch",
@@ -17133,6 +17429,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-fittie-fishing-village-tourists",
+    "image": "images/wld-abz-fittie-fishing-village-tourists.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz fittie fishing village tourists.",
     "category": "Aberdeen",
     "headline": "Historic fishing village overwhelmed by visitors taking the exact same photograph",
     "standfirst": "The tightly clustered cottages of the old fishing quarter at the harbour mouth now field several hundred near-identical photographs a day, much to the mild bemusement of residents still hanging out their washing",
@@ -17155,6 +17453,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-stonehaven-fireball-ceremony",
+    "image": "images/wld-abz-stonehaven-fireball-ceremony.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz stonehaven fireball ceremony.",
     "category": "Aberdeen",
     "headline": "Locals swing balls of fire around their heads to see off the old year, again",
     "standfirst": "The coastal town's Hogmanay tradition of parading blazing wire cages through the High Street continued this year without a single reported incident, to the quiet disappointment of nobody",
@@ -17177,6 +17477,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-marischal-college-lit-blue",
+    "image": "images/wld-abz-marischal-college-lit-blue.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz marischal college lit blue.",
     "category": "Aberdeen",
     "headline": "Second-largest granite building in the world lit up blue again, nobody quite sure why tonight",
     "standfirst": "The floodlighting scheme that illuminates the city's civic headquarters after dark has become such a fixture that residents have largely stopped asking what the colour of the week is meant to signify",
@@ -17199,6 +17501,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-kings-college-crown-tower-pigeons",
+    "image": "images/wld-abz-kings-college-crown-tower-pigeons.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz kings college crown tower pigeons.",
     "category": "Aberdeen",
     "headline": "Pigeons nesting in ancient crown tower reportedly behaving as though titled",
     "standfirst": "University groundskeepers say a small colony roosting in the 16th-century crown spire has developed a noticeably imperious manner towards the pigeons occupying every other roof on campus",
@@ -17221,6 +17525,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-beach-ballroom-time-capsule",
+    "image": "images/wld-abz-beach-ballroom-time-capsule.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz beach ballroom time capsule.",
     "category": "Aberdeen",
     "headline": "Time capsule buried under seafront ballroom recovered decades early by mistake",
     "standfirst": "Building contractors carrying out routine repairs unearthed a sealed box intended to remain buried until a much later anniversary, forcing an awkward decision about whether to open it anyway",
@@ -17243,6 +17549,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-cold-water-swimmers-club",
+    "image": "images/wld-abz-cold-water-swimmers-club.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz cold water swimmers club.",
     "category": "Aberdeen",
     "headline": "January sea-swimming club triples in size, refuses to explain why this is enjoyable",
     "standfirst": "A dawn dipping group that meets at the beach through the depths of winter has seen a surge in new members, none of whom can offer a fully convincing account of the appeal",
@@ -17265,6 +17573,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-slains-castle-dracula-tourists",
+    "image": "images/wld-abz-slains-castle-dracula-tourists.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz slains castle dracula tourists.",
     "category": "Aberdeen",
     "headline": "Clifftop ruin still fielding visitors convinced they will meet the Count in person",
     "standfirst": "The roofless clifftop castle long linked to the writing of a famous vampire novel continues to draw tourists who, staff say, are occasionally and genuinely disappointed to learn it is not, in fact, haunted by anyone specific",
@@ -17287,6 +17597,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-crathes-castle-topiary-escape",
+    "image": "images/wld-abz-crathes-castle-topiary-escape.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz crathes castle topiary escape.",
     "category": "Aberdeen",
     "headline": "Famous castle topiary allegedly a few inches taller than last year's official measurement",
     "standfirst": "The centuries-old clipped yew hedges at a well-known Deeside castle garden are, according to at least one visiting enthusiast with a tape measure, quietly winning their long war against the shears",
@@ -17309,6 +17621,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-drum-castle-oldest-tower-argument",
+    "image": "images/wld-abz-drum-castle-oldest-tower-argument.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz drum castle oldest tower argument.",
     "category": "Aberdeen",
     "headline": "Row over which Deeside tower is genuinely the oldest continues into its fourth century",
     "standfirst": "Rival claims from several local castles about which square tower has stood longest have never been formally resolved, and nobody involved seems in any hurry to resolve them now",
@@ -17331,6 +17645,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-lonach-highland-games-caber",
+    "image": "images/wld-abz-lonach-highland-games-caber.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz lonach highland games caber.",
     "category": "Aberdeen",
     "headline": "Caber toss record quietly disputed by a man with a very long tape measure",
     "standfirst": "This year's Highland Games caber-tossing champion has been congratulated, awarded the trophy, and then gently followed around the field by a spectator insisting the throw was measured from the wrong end",
@@ -17353,6 +17669,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-balmoral-proximity-royal-sightings",
+    "image": "images/wld-abz-balmoral-proximity-royal-sightings.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz balmoral proximity royal sightings.",
     "category": "Aberdeen",
     "headline": "Deeside villagers now entirely unmoved by royal presence up the road",
     "standfirst": "Residents living near the royal estate report that decades of proximity have reduced the occasional sighting of a royal car to roughly the same level of interest as a delayed bin lorry",
@@ -17375,6 +17693,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-angus-cattle-naming-rights",
+    "image": "images/wld-abz-angus-cattle-naming-rights.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz angus cattle naming rights.",
     "category": "Aberdeen",
     "headline": "Local breeders demand royalty every time a steakhouse anywhere on Earth uses their region's name",
     "standfirst": "A campaign group representing cattle breeders has calculated, only semi-seriously, what it might be owed for every menu on the planet advertising a cut of beef under the county's name",
@@ -17397,6 +17717,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-fish-market-quota-argument",
+    "image": "images/wld-abz-fish-market-quota-argument.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz fish market quota argument.",
     "category": "Aberdeen",
     "headline": "Pre-dawn fish market argument over a single herring enters its third hour",
     "standfirst": "Two long-standing traders at the harbour fish market remain locked in a dispute over the ownership of one specific fish, neither willing to concede the point despite the rest of the catch having long since been sold",
@@ -17419,6 +17741,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-first-aberdeen-bus-punctuality-myth",
+    "image": "images/wld-abz-first-aberdeen-bus-punctuality-myth.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz first aberdeen bus punctuality myth.",
     "category": "Aberdeen",
     "headline": "Local bus timetable formally reclassified as 'aspirational literature'",
     "standfirst": "A city transport review has concluded that published arrival times function less as a schedule and more as a statement of intent, broadly agreed upon but rarely honoured",
@@ -17441,6 +17765,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-dyce-airport-helicopter-noise",
+    "image": "images/wld-abz-dyce-airport-helicopter-noise.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz dyce airport helicopter noise.",
     "category": "Aberdeen",
     "headline": "Farmer reports cattle now entirely unbothered by offshore helicopter traffic",
     "standfirst": "A dairy herd grazing under the flight path near the city's airport has, according to its owner, stopped so much as looking up at the near-constant passage of North Sea support helicopters",
@@ -17463,6 +17789,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-north-sea-standby-vessel-boredom",
+    "image": "images/wld-abz-north-sea-standby-vessel-boredom.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz north sea standby vessel boredom.",
     "category": "Aberdeen",
     "headline": "Offshore standby vessel crew hold impromptu games night for the ninth week running",
     "standfirst": "With no rescue calls to answer, the crew of a support vessel stationed near a North Sea platform have developed an increasingly competitive in-house quiz league to pass the long, uneventful hours on watch",
@@ -17485,6 +17813,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-thrifty-reputation-study",
+    "image": "images/wld-abz-thrifty-reputation-study.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz thrifty reputation study.",
     "category": "Aberdeen",
     "headline": "Study confirms regional reputation for thrift, researchers slightly reluctant to publish full findings",
     "standfirst": "A behavioural economics team set out to test whether the area's famous carefulness with money was exaggerated, and instead produced results its own authors describe as 'almost embarrassingly conclusive'",
@@ -17507,6 +17837,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-castlegate-mercat-cross-time-traveler",
+    "image": "images/wld-abz-castlegate-mercat-cross-time-traveler.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz castlegate mercat cross time traveler.",
     "category": "Aberdeen",
     "headline": "Tourist convinced ancient market cross is a portal spends forty minutes waiting for something to happen",
     "standfirst": "A visitor to the city's historic mercat cross, having read an overenthusiastic online post about local legends, reportedly stood beside the carved stone monument for the better part of an hour anticipating an event that was never going to occur",
@@ -17529,6 +17861,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-duthie-park-winter-gardens-plant-escape",
+    "image": "images/wld-abz-duthie-park-winter-gardens-plant-escape.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz duthie park winter gardens plant escape.",
     "category": "Aberdeen",
     "headline": "Tropical plant allegedly makes a break for it from indoor winter gardens",
     "standfirst": "Gardeners at the city's celebrated glasshouse complex are investigating how a fast-growing vine ended up several metres beyond its bed and pressing hopefully against a door left ajar",
@@ -17551,6 +17885,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-hazlehead-maze-lost-visitor",
+    "image": "images/wld-abz-hazlehead-maze-lost-visitor.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz hazlehead maze lost visitor.",
     "category": "Aberdeen",
     "headline": "Popular park maze reports its longest-standing rumour remains stubbornly unconfirmed",
     "standfirst": "The persistent local legend of a visitor still lost somewhere within the hedge maze since the 1980s has been formally investigated once again, and once again neither proven nor entirely put to rest",
@@ -17573,6 +17909,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-torry-battery-cannon-fires-accidentally",
+    "image": "images/wld-abz-torry-battery-cannon-fires-accidentally.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz torry battery cannon fires accidentally.",
     "category": "Aberdeen",
     "headline": "Historic harbour-mouth gun battery briefly and unexpectedly makes a noise",
     "standfirst": "One of the preserved coastal defence cannons overlooking the harbour entrance produced an unexplained bang during a routine heritage open day, to the considerable alarm of everyone present, including the guides",
@@ -17595,6 +17933,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-bridge-of-don-name-dispute",
+    "image": "images/wld-abz-bridge-of-don-name-dispute.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz bridge of don name dispute.",
     "category": "Aberdeen",
     "headline": "North and south of the city renew polite rivalry over which river bridge matters more",
     "standfirst": "Residents on either side of the city continue a decades-old, entirely good-natured disagreement about whether the northern or southern river crossing is the more consequential landmark",
@@ -17617,6 +17957,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-brig-o-balgownie-load-limit-poem",
+    "image": "images/wld-abz-brig-o-balgownie-load-limit-poem.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz brig o balgownie load limit poem.",
     "category": "Aberdeen",
     "headline": "Council forced to clarify centuries-old rhyming warning is not, in fact, current bridge policy",
     "standfirst": "A well-known old verse cautioning against a particular family crossing the ancient stone bridge together has been taken rather too literally by at least one modern driver",
@@ -17639,6 +17981,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-doric-word-quine-loon-import-tax",
+    "image": "images/wld-abz-doric-word-quine-loon-import-tax.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz doric word quine loon import tax.",
     "category": "Aberdeen",
     "headline": "Overseas dictionary publisher quietly drops attempt to define 'loon' without local input",
     "standfirst": "A reference publisher's first pass at a North-East Scots glossary was returned by regional readers covered, they say, in more corrections than original text",
@@ -17661,6 +18005,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-union-terrace-gardens-referendum-replay",
+    "image": "images/wld-abz-union-terrace-gardens-referendum-replay.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz union terrace gardens referendum replay.",
     "category": "Aberdeen",
     "headline": "Sunken city-centre gardens redevelopment argument re-litigated in full at the pub, again",
     "standfirst": "Years after residents voted decisively to keep a much-loved dip of greenery in the city centre rather than remodel it, the whole debate was cheerfully replayed from scratch over a Friday night pint",
@@ -17683,6 +18029,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-pittodrie-sponsorship-name-auction",
+    "image": "images/wld-abz-pittodrie-sponsorship-name-auction.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz pittodrie sponsorship name auction.",
     "category": "Aberdeen",
     "headline": "Fans quietly relieved after stadium naming rights deal avoids anything too embarrassing",
     "standfirst": "Supporters braced for the worst ahead of a new sponsorship announcement, and expressed measured, cautious approval once the new name turned out to be merely a bit awkward rather than actively mortifying",
@@ -17705,6 +18053,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-granite-city-nickname-competition",
+    "image": "images/wld-abz-granite-city-nickname-competition.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz granite city nickname competition.",
     "category": "Aberdeen",
     "headline": "Rival slogan fails to unseat 'Silver City' after brief and half-hearted marketing push",
     "standfirst": "A tourism campaign floated an alternative nickname for the city earlier this year; residents responded with the sort of polite disinterest usually reserved for unsolicited restaurant recommendations",
@@ -17727,6 +18077,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-seagull-council-representative",
+    "image": "images/wld-abz-seagull-council-representative.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz seagull council representative.",
     "category": "Aberdeen",
     "headline": "Campaign for informal gull representation on civic matters gains a handful of signatures",
     "standfirst": "A satirical petition calling for the city's herring gull population to be granted a symbolic seat at community meetings has, organisers admit, been taken rather more seriously by some than intended",
@@ -17749,6 +18101,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-whisky-galore-shipwreck-legend-northeast",
+    "image": "images/wld-abz-whisky-galore-shipwreck-legend-northeast.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz whisky galore shipwreck legend northeast.",
     "category": "Aberdeen",
     "headline": "Coastal village's shipwreck salvage legend gains a fresh, unverifiable detail every generation",
     "standfirst": "A well-worn tale of a foundered cargo ship and an enthusiastic community salvage effort along the Aberdeenshire coast has, locals concede, grown noticeably richer in the telling with each passing decade",
@@ -17771,6 +18125,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-old-aberdeen-cobbles-ankle-survey",
+    "image": "images/wld-abz-old-aberdeen-cobbles-ankle-survey.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz old aberdeen cobbles ankle survey.",
     "category": "Aberdeen",
     "headline": "Historic cobbled street's charm formally weighed against its ankle-turning statistics",
     "standfirst": "A council review of one of the city's most photographed cobbled lanes has concluded that its considerable visual appeal comes with a measurable, if modest, human cost in twisted ankles",
@@ -17793,6 +18149,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-elphinstone-statue-pigeon-crown",
+    "image": "images/wld-abz-elphinstone-statue-pigeon-crown.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz elphinstone statue pigeon crown.",
     "category": "Aberdeen",
     "headline": "University's founding bishop statue quietly gains a knitted winter hat, again",
     "standfirst": "For the third year running, the bronze statue of the college's 15th-century founder has been discovered wearing a hand-knitted bobble hat, with nobody willing to admit responsibility",
@@ -17815,6 +18173,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-codonas-helter-skelter-longest-scream",
+    "image": "images/wld-abz-codonas-helter-skelter-longest-scream.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz codonas helter skelter longest scream.",
     "category": "Aberdeen",
     "headline": "Beachfront funfair confident it holds the informal record for longest continuous scream",
     "standfirst": "Staff at the seafront amusement park believe a rider on the helter skelter last summer set an unofficial and entirely unverifiable record for sustained screaming across a single descent",
@@ -17837,6 +18197,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-aberdeen-exchange-taxi-driver-knowledge",
+    "image": "images/wld-abz-aberdeen-exchange-taxi-driver-knowledge.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz aberdeen exchange taxi driver knowledge.",
     "category": "Aberdeen",
     "headline": "Taxi drivers stage informal contest to see who truly knows every roundabout by heart",
     "standfirst": "A good-natured rivalry among the city's taxi drivers over who holds the most complete mental map of every roundabout, filter lane and rat-run culminated in an evening quiz nobody wanted to lose",
@@ -17859,6 +18221,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-weather-forecast-four-seasons-one-day",
+    "image": "images/wld-abz-weather-forecast-four-seasons-one-day.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz weather forecast four seasons one day.",
     "category": "Aberdeen",
     "headline": "Meteorologists exhausted after single Tuesday delivers all four seasons before lunch",
     "standfirst": "A local weather station logged sunshine, hail, a warm spell and a brief, determined gale within the same six-hour stretch, prompting forecasters to describe the day as 'unusually typical'",
@@ -17881,6 +18245,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-christmas-market-mulled-wine-shortage",
+    "image": "images/wld-abz-christmas-market-mulled-wine-shortage.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz christmas market mulled wine shortage.",
     "category": "Aberdeen",
     "headline": "City's festive market runs short of mulled wine on opening weekend, again",
     "standfirst": "Organisers of the annual winter market have promised to review supply chains after queues for warm spiced wine stretched the length of the site within hours of opening for the third year running",
@@ -17903,6 +18269,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-peterhead-prison-museum-escape-room",
+    "image": "images/wld-abz-peterhead-prison-museum-escape-room.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz peterhead prison museum escape room.",
     "category": "Aberdeen",
     "headline": "Former prison's new escape room deemed slightly too convincing by early visitors",
     "standfirst": "A heritage attraction built inside a decommissioned prison has had to soften its escape room experience after several groups reported it felt, if anything, a little too authentic",
@@ -17925,6 +18293,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-abz-cove-bay-lighthouse-lonely",
+    "image": "images/wld-abz-cove-bay-lighthouse-lonely.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld abz cove bay lighthouse lonely.",
     "category": "Aberdeen",
     "headline": "Coastal lighthouse automation leaves last keeper's cottage with nothing to guard but the view",
     "standfirst": "Decades after the light itself went fully automatic, the small settlement that grew up around a clifftop beacon south of the harbour continues quietly, its original purpose reduced to a plaque",
