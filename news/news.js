@@ -200,9 +200,99 @@
           '<button type="submit">Search</button>' +
         '</form></div>' +
       '</div></header>' +
-      '<nav class="catnav"><div class="wrap">' +
+      '<nav class="catnav" aria-label="Sections"><div class="wrap">' +
         '<a href="index.html"' + (activeCat ? '' : ' class="active"') + '>Home</a>' + nav +
+        '<div class="catnav-more" hidden>' +
+          '<button type="button" class="catnav-more-btn" aria-haspopup="true" aria-expanded="false">' +
+            'More <span class="chev" aria-hidden="true">&#9662;</span></button>' +
+          '<div class="catnav-more-menu" role="menu"></div>' +
+        '</div>' +
       '</div></nav>';
+  }
+
+  // -------- priority+ nav: fit what fits, overflow the rest into "More" --------
+  // Real newspaper sites (BBC, Guardian, NYT) don't scroll their section bar on
+  // desktop; they show as many sections as the width allows and tuck the rest
+  // behind a "More" menu. This measures the bar and does exactly that, re-running
+  // on resize. With JS off, the bar degrades to the horizontal-scroll fallback.
+  var catnavState = { onResize: null, onDocClick: null, ro: null };
+
+  function enhanceCatnav() {
+    var wrap = document.querySelector(".catnav .wrap");
+    if (!wrap) return;
+    wrap.parentNode.classList.add("enhanced");   // swap scroll fallback for fitted mode
+    var more = wrap.querySelector(".catnav-more");
+    var btn = more.querySelector(".catnav-more-btn");
+    var menu = more.querySelector(".catnav-more-menu");
+
+    function links() {
+      return [].slice.call(wrap.children).filter(function (el) { return el !== more; });
+    }
+
+    function closeMenu() {
+      menu.classList.remove("open");
+      btn.setAttribute("aria-expanded", "false");
+    }
+    function toggleMenu() {
+      var open = menu.classList.toggle("open");
+      btn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function layout() {
+      closeMenu();
+      // Pull everything back onto the bar so we measure from a clean slate.
+      while (menu.firstChild) wrap.insertBefore(menu.firstChild, more);
+      more.hidden = true;
+
+      var items = links();
+      var cs = getComputedStyle(wrap);
+      var avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      var total = 0, i;
+      for (i = 0; i < items.length; i++) total += items[i].offsetWidth;
+      if (total <= avail + 1) { syncActive(); return; }   // it all fits, no More needed
+
+      // Overflow: reveal the button and reserve room for it.
+      more.hidden = false;
+      var budget = avail - more.offsetWidth;
+      var used = 0, cut = items.length;
+      for (i = 0; i < items.length; i++) {
+        used += items[i].offsetWidth;
+        if (used > budget) { cut = i; break; }
+      }
+      if (cut < 1) cut = 1;                                 // always keep "Home"
+      for (i = cut; i < items.length; i++) menu.appendChild(items[i]);
+      syncActive();
+    }
+
+    // If the active section got tucked away, light up the More button instead.
+    function syncActive() {
+      btn.classList.toggle("active", !!menu.querySelector("a.active"));
+    }
+
+    btn.addEventListener("click", function (e) { e.stopPropagation(); toggleMenu(); });
+    menu.addEventListener("click", function (e) { e.stopPropagation(); });
+
+    // Reset any handlers/observer from a previous render before wiring new ones.
+    if (catnavState.onResize) window.removeEventListener("resize", catnavState.onResize);
+    if (catnavState.onDocClick) document.removeEventListener("click", catnavState.onDocClick);
+    if (catnavState.ro) catnavState.ro.disconnect();
+
+    var raf = 0;
+    catnavState.onResize = function () {
+      if (raf) cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(layout);
+    };
+    catnavState.onDocClick = function () { closeMenu(); };
+    window.addEventListener("resize", catnavState.onResize);
+    document.addEventListener("click", catnavState.onDocClick);
+    if (typeof ResizeObserver === "function") {
+      catnavState.ro = new ResizeObserver(catnavState.onResize);
+      catnavState.ro.observe(wrap);
+    }
+
+    layout();
+    // Re-measure once web fonts settle (their widths shift the fit).
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
   }
 
   function tickerHtml() {
@@ -629,12 +719,17 @@
   // -------- live clock in the utility bar (keeps it feeling live) --------
   function startClock() { /* reserved: date already rendered; hook kept for future live updates */ }
 
+  // Run the render, then fit the section bar to the viewport.
+  function withChrome(fn) {
+    return function (mountId) { fn(mountId); enhanceCatnav(); };
+  }
+
   // expose
   window.NEWS = {
-    renderHome: renderHome,
-    renderArticle: renderArticle,
-    renderSearch: renderSearch,
-    renderAbout: renderAbout,
+    renderHome: withChrome(renderHome),
+    renderArticle: withChrome(renderArticle),
+    renderSearch: withChrome(renderSearch),
+    renderAbout: withChrome(renderAbout),
     articleUrl: articleUrl,
     count: function () { return ARTICLES.length; }
   };

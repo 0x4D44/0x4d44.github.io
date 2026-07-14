@@ -122,8 +122,12 @@ img { max-width: 100%; }
   background: var(--flange-red);
   position: sticky; top: 0; z-index: 40;
 }
+/* No-JS fallback: scroll horizontally. With JS, enhanceCatnav() fits the bar
+   to the width and overflows extras into the "More" menu, so it never scrolls. */
 .catnav .wrap { display: flex; align-items: stretch; overflow-x: auto; scrollbar-width: none; }
 .catnav .wrap::-webkit-scrollbar { display: none; }
+/* Once JS fits the bar, drop the scroll clip so the "More" menu can overhang. */
+.catnav.enhanced .wrap { overflow: visible; }
 .catnav a {
   color: #fff; padding: 11px 15px; font-size: 14px; font-weight: 600;
   white-space: nowrap; border-left: 1px solid rgba(255,255,255,.14);
@@ -131,6 +135,29 @@ img { max-width: 100%; }
 }
 .catnav a:first-child { border-left: 0; }
 .catnav a:hover, .catnav a.active { background: var(--flange-red-dark); text-decoration: none; }
+
+/* ---------- "More" overflow menu (priority+ nav) ---------- */
+.catnav-more { position: relative; margin-left: auto; display: flex; }
+.catnav-more-btn {
+  color: #fff; background: transparent; border: 0;
+  border-left: 1px solid rgba(255,255,255,.14);
+  padding: 11px 15px; font: inherit; font-size: 14px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+}
+.catnav-more-btn .chev { font-size: 11px; margin-left: 3px; }
+.catnav-more-btn:hover, .catnav-more-btn.active { background: var(--flange-red-dark); }
+.catnav-more-menu {
+  display: none; position: absolute; top: 100%; right: 0; z-index: 60;
+  min-width: 190px; padding: 6px 0;
+  background: var(--flange-red-dark);
+  box-shadow: 0 10px 26px rgba(0,0,0,.32);
+  border: 1px solid rgba(255,255,255,.12); border-top: 0;
+}
+.catnav-more-menu.open { display: block; }
+.catnav-more-menu a {
+  display: block; border-left: 0; padding: 9px 16px; font-weight: 600;
+}
+.catnav-more-menu a:hover, .catnav-more-menu a.active { background: rgba(0,0,0,.28); }
 
 /* ---------- Breaking ticker ---------- */
 .ticker {
