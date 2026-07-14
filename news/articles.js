@@ -10091,6 +10091,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-artisanal-ice-cube-90-pounds",
+    "image": "images/life-artisanal-ice-cube-90-pounds.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life artisanal ice cube 90 pounds.",
     "category": "Lifestyle",
     "headline": "£90 Hand-Carved Artisanal Ice Cube Launches As Ultimate Wellness Object",
     "standfirst": "Glacier & Grain, a Mayfair atelier, has begun selling single ice cubes carved by hand from Alpine spring water, marketed not for drinks but for quiet contemplation on the desk.",
@@ -10115,6 +10117,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-grounding-unpaid-invoices",
+    "image": "images/life-grounding-unpaid-invoices.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life grounding unpaid invoices.",
     "category": "Lifestyle",
     "headline": "Wellness Guru's Signature Practice: Grounding Barefoot On Your Own Unpaid Invoices",
     "standfirst": "Self-styled 'financial shaman' Osric Fennimore has built a devoted following around a technique he calls Debt Grounding — standing barefoot each morning on a printed stack of one's own outstanding bills.",
@@ -10139,6 +10143,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-wearable-sit-up-straight",
+    "image": "images/life-wearable-sit-up-straight.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life wearable sit up straight.",
     "category": "Lifestyle",
     "headline": "New Wearable's Only Function Is To Say, Occasionally, 'Sit Up Straight'",
     "standfirst": "The Posturon Ellipse, a £215 clip-on device with no screen, no app data beyond posture, and exactly one phrase in its vocabulary, has become the surprise hit of the wellness-tech season.",
@@ -10163,6 +10169,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-child-star-premium-silence",
+    "image": "images/life-child-star-premium-silence.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life child star premium silence.",
     "category": "Lifestyle",
     "headline": "Former Child Star Reinvents Herself Selling Premium Silence",
     "standfirst": "Once the face of a hit family sitcom, Marisol Devane has left acting entirely to found Hush House, a members-only wellness brand built around bottled, boxed, and bespoke silence.",
@@ -10187,6 +10195,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-jar-pre-worried-worries",
+    "image": "images/life-jar-pre-worried-worries.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life jar pre worried worries.",
     "category": "Lifestyle",
     "headline": "New Jar Of 'Pre-Worried Worries' Means You Needn't Bother",
     "standfirst": "Fretwell & Sons, a small Bath apothecary, has launched a range of jarred worries — pre-fretted on the customer's behalf by trained professional worriers — so buyers can skip the anxiety entirely.",
@@ -10211,6 +10221,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-members-club-no-premises",
+    "image": "images/life-members-club-no-premises.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life members club no premises.",
     "category": "Lifestyle",
     "headline": "Ultra-Exclusive Members' Club Has No Premises, No Address, No Way In",
     "standfirst": "The Occlude Club, London's most sought-after new membership, has no clubhouse, no street entrance, and — its founders confirm — no confirmed method of entry, and that is entirely the appeal.",
@@ -10235,6 +10247,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-rentable-emotional-support-houseplant",
+    "image": "images/life-rentable-emotional-support-houseplant.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life rentable emotional support houseplant.",
     "category": "Lifestyle",
     "headline": "Rentable Emotional-Support Houseplant Delivered Weekly, Never Yours To Keep",
     "standfirst": "Frond, a new subscription service, delivers a single leafy companion to your home each week, to be loved, spoken to, and gently returned before attachment can properly set in.",
@@ -10259,6 +10273,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-supermodel-photographed-from-memory",
+    "image": "images/life-supermodel-photographed-from-memory.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life supermodel photographed from memory.",
     "category": "Lifestyle",
     "headline": "Supermodel Now Permits Herself To Be 'Photographed Only From Memory'",
     "standfirst": "Ingrid Solveigsdottir, the face of three decades of high fashion, has announced she will no longer sit for photographs — instead, photographers must leave the room and paint or draw her from recollection.",
@@ -10283,6 +10299,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-slow-toast-experience-40-pounds",
+    "image": "images/life-slow-toast-experience-40-pounds.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life slow toast experience 40 pounds.",
     "category": "Lifestyle",
     "headline": "£40 'Slow Toast' Experience Offers One Contemplative Slice, Unhurried",
     "standfirst": "Ember & Crumb, a new Notting Hill café, has removed everything from its menu except a single slice of toast, served over the course of forty unhurried minutes.",
@@ -10307,6 +10325,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-guru-speaks-only-past-tense",
+    "image": "images/life-guru-speaks-only-past-tense.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life guru speaks only past tense.",
     "category": "Lifestyle",
     "headline": "Lifestyle Guru Now Speaks Only In The Past Tense, As A Discipline",
     "standfirst": "Wellness author Barnaby Thistlewood has stopped using the present tense entirely, describing even his current actions as though they have already concluded, as a formal spiritual practice.",
@@ -10331,6 +10351,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-alarm-clock-mild-disappointment",
+    "image": "images/life-alarm-clock-mild-disappointment.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life alarm clock mild disappointment.",
     "category": "Lifestyle",
     "headline": "Luxury Alarm Clock Wakes You Each Morning With A Tone Of Mild Disappointment",
     "standfirst": "The Rise & Sigh, a £340 handcrafted brass alarm clock, greets its owner each morning not with a chime but with a soft, resigned voice suggesting they could, perhaps, have done better.",
@@ -10355,6 +10377,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-spoon-for-intentional-eating",
+    "image": "images/life-spoon-for-intentional-eating.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life spoon for intentional eating.",
     "category": "Lifestyle",
     "headline": "£250 artisanal spoon promises to make every meal 'intentional'",
     "standfirst": "A hand-forged spoon, weighted for mindfulness and sold with its own certificate, claims to slow the modern eater down one deliberate mouthful at a time.",
@@ -10379,6 +10403,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-chef-signature-dish-boiled-water",
+    "image": "images/life-chef-signature-dish-boiled-water.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life chef signature dish boiled water.",
     "category": "Lifestyle",
     "headline": "Star chef's signature dish is a glass of water, 'boiled with intent'",
     "standfirst": "At a restaurant where reservations open a year ahead, the acclaimed final course is water, heated by the chef personally, while thinking hard.",
@@ -10403,6 +10429,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-subscription-box-of-decisions",
+    "image": "images/life-subscription-box-of-decisions.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life subscription box of decisions.",
     "category": "Lifestyle",
     "headline": "Subscription box makes all your everyday decisions and posts them out",
     "standfirst": "For £39 a month, a service decides what you wear, eat and do, sparing subscribers the exhausting modern burden of choosing anything at all.",
@@ -10427,6 +10455,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-actor-becomes-weather-system",
+    "image": "images/life-actor-becomes-weather-system.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life actor becomes weather system.",
     "category": "Lifestyle",
     "headline": "Method actor prepares for role by 'becoming a weather system'",
     "standfirst": "To play a storm in an upcoming art film, a dedicated performer has spent four months attempting to think, move and precipitate like a low-pressure front.",
@@ -10451,6 +10481,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-bespoke-personalised-tap-water",
+    "image": "images/life-bespoke-personalised-tap-water.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life bespoke personalised tap water.",
     "category": "Lifestyle",
     "headline": "Luxury brand sells 'bespoke, personalised' tap water for £45 a bottle",
     "standfirst": "The water is ordinary tap water, but each bottle is engraved with the buyer's name and described as uniquely their own.",
@@ -10475,6 +10507,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-influencer-quit-to-stare-at-wall",
+    "image": "images/life-influencer-quit-to-stare-at-wall.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life influencer quit to stare at wall.",
     "category": "Lifestyle",
     "headline": "Influencer quits social media to stare at a wall, monetises it immediately",
     "standfirst": "A creator's dramatic renunciation of screens has become her most lucrative venture, as millions pay to watch her look at plaster.",
@@ -10499,6 +10533,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-mindfulness-rock-vibrates-overthinking",
+    "image": "images/life-mindfulness-rock-vibrates-overthinking.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life mindfulness rock vibrates overthinking.",
     "category": "Lifestyle",
     "headline": "'Mindfulness rock' vibrates gently whenever you overthink, for £120",
     "standfirst": "A pocket-sized wellness gadget claims to detect spiralling thoughts and interrupt them with a small buzz, though how it knows remains unclear.",
@@ -10523,6 +10559,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-heiress-collects-empty-rooms",
+    "image": "images/life-heiress-collects-empty-rooms.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life heiress collects empty rooms.",
     "category": "Lifestyle",
     "headline": "Heiress reveals passion for collecting empty rooms",
     "standfirst": "One of Europe's wealthiest women has amassed a celebrated collection of rooms that contain, by strict rule, absolutely nothing.",
@@ -10547,6 +10585,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-artisanal-queue-pay-to-wait",
+    "image": "images/life-artisanal-queue-pay-to-wait.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life artisanal queue pay to wait.",
     "category": "Lifestyle",
     "headline": "Pop-up 'artisanal queue' lets you pay £30 for the luxury of waiting",
     "standfirst": "A London experience offers nothing at the end of the line — the queue itself is the product, and it is fully booked.",
@@ -10571,6 +10611,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-wellness-retreat-24-hour-yawn",
+    "image": "images/life-wellness-retreat-24-hour-yawn.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life wellness retreat 24 hour yawn.",
     "category": "Lifestyle",
     "headline": "£1,200 wellness retreat centres on a single 24-hour communal yawn",
     "standfirst": "Guests gather to yawn together, continuously, for a full day, in what organisers call the deepest collective release available to the modern nervous system.",
@@ -10595,6 +10637,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-luxury-doormat-greets-by-mood",
+    "image": "images/life-luxury-doormat-greets-by-mood.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life luxury doormat greets by mood.",
     "category": "Lifestyle",
     "headline": "£340 luxury doormat greets you differently according to your mood",
     "standfirst": "A designer entrance mat claims to read the tread of the person arriving and welcome them with the words they need to hear.",
@@ -10619,6 +10663,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-singer-album-of-pauses",
+    "image": "images/life-singer-album-of-pauses.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life singer album of pauses.",
     "category": "Lifestyle",
     "headline": "Reclusive singer releases an album consisting entirely of pauses",
     "standfirst": "The acclaimed artist's long-awaited record contains no words and no music — only eleven tracks of carefully considered silence, each a different kind of quiet.",
@@ -10643,6 +10689,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-membership-to-your-own-house",
+    "image": "images/life-membership-to-your-own-house.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life membership to your own house.",
     "category": "Lifestyle",
     "headline": "Members' brand launches premium subscription granting access to your own home",
     "standfirst": "For £65 a month, a hospitality company offers the discerning customer exclusive entry to the house they already live in.",
@@ -10667,6 +10715,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-guru-monetised-blinking",
+    "image": "images/life-guru-monetised-blinking.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life guru monetised blinking.",
     "category": "Lifestyle",
     "headline": "Wellness guru claims to have 'monetised blinking'",
     "standfirst": "A self-styled optimisation coach says he now earns from the most overlooked act of all, and is selling the secret for £500 a course.",
@@ -10691,6 +10741,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-candle-smells-of-paid-invoice",
+    "image": "images/life-candle-smells-of-paid-invoice.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life candle smells of paid invoice.",
     "category": "Lifestyle",
     "headline": "Candle that smells of a freshly paid invoice marketed as 'closure'",
     "standfirst": "A £48 scented candle bottles the specific relief of settling a debt, and the self-employed cannot buy it fast enough.",
@@ -11027,6 +11079,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-competitive-apologising-turns-professional",
+    "image": "images/spt-competitive-apologising-turns-professional.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt competitive apologising turns professional.",
     "category": "Sport",
     "headline": "Competitive apologising turns professional, with a national league and prize money",
     "standfirst": "Britain's most instinctive skill has become its newest professional sport, and the standard, officials say, is 'humbling — sorry, that's the wrong word, forgive me'.",
@@ -11051,6 +11105,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-var-begins-reviewing-historic-matches",
+    "image": "images/spt-var-begins-reviewing-historic-matches.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt var begins reviewing historic matches.",
     "category": "Sport",
     "headline": "VAR begins retroactively reviewing matches from before it existed",
     "standfirst": "Officials have started re-examining decisions from decades past, and several long-settled results are now, technically, in doubt.",
@@ -11075,6 +11131,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-darts-player-banned-excessive-accuracy",
+    "image": "images/spt-darts-player-banned-excessive-accuracy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt darts player banned excessive accuracy.",
     "category": "Sport",
     "headline": "Darts player banned for being too accurate, tournament rules",
     "standfirst": "A rising star's habit of hitting exactly what he aims at has been judged 'demoralising to the spirit of the game'.",
@@ -11099,6 +11157,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-marathon-democratically-shortened-mid-race",
+    "image": "images/spt-marathon-democratically-shortened-mid-race.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt marathon democratically shortened mid race.",
     "category": "Sport",
     "headline": "Marathon shortened by public vote while it was still being run",
     "standfirst": "Organisers introduced live audience voting on the route's length, and the crowd, taking pity, brought the finish line to meet the runners.",
@@ -11123,6 +11183,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-cricket-test-declared-draw-before-start",
+    "image": "images/spt-cricket-test-declared-draw-before-start.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt cricket test declared draw before start.",
     "category": "Sport",
     "headline": "Test match declared a draw before a single ball is bowled",
     "standfirst": "Citing the weather, the pitch and 'a general sense of how these things go', officials agreed the result in advance and cancelled the cricket.",
@@ -11147,6 +11209,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-synchronised-swimmers-desynchronise-on-purpose",
+    "image": "images/spt-synchronised-swimmers-desynchronise-on-purpose.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt synchronised swimmers desynchronise on purpose.",
     "category": "Sport",
     "headline": "New event rewards synchronised swimmers for being as out of sync as possible",
     "standfirst": "A breakaway discipline judges teams on total disunity, with gold going to the eight athletes who most completely fail to agree on anything.",
@@ -11171,6 +11235,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-tennis-umpire-siding-with-the-ball",
+    "image": "images/spt-tennis-umpire-siding-with-the-ball.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt tennis umpire siding with the ball.",
     "category": "Sport",
     "headline": "Tennis umpire under investigation for openly siding with the ball",
     "standfirst": "After years of neutrality, a veteran official has begun to sympathise with the ball itself, and his calls have grown, players complain, 'partisan'.",
@@ -11195,6 +11261,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-rowing-eight-different-directions-still-wins",
+    "image": "images/spt-rowing-eight-different-directions-still-wins.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt rowing eight different directions still wins.",
     "category": "Sport",
     "headline": "Rowing eight wins final despite each rower going a different way",
     "standfirst": "In a result baffling scientists, a crew that pulled in eight separate directions somehow crossed the line first, sideways.",
@@ -11219,6 +11287,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-goalkeeper-negotiates-penalties",
+    "image": "images/spt-goalkeeper-negotiates-penalties.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt goalkeeper negotiates penalties.",
     "category": "Sport",
     "headline": "Goalkeeper begins negotiating with penalty takers before they shoot",
     "standfirst": "Rather than diving, a top keeper now opens talks — and his save percentage, unnervingly, has soared.",
@@ -11243,6 +11313,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-national-team-relegated-from-reality",
+    "image": "images/spt-national-team-relegated-from-reality.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt national team relegated from reality.",
     "category": "Sport",
     "headline": "National team relegated to a lower division of existence, governing body confirms",
     "standfirst": "After a catastrophic run of form, the side will play next season in a league that officials admit 'may not, in a strict sense, be real'.",
@@ -11267,6 +11339,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-antarctic-birds-legislature",
+    "image": "images/wld-antarctic-birds-legislature.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld antarctic birds legislature.",
     "category": "World",
     "headline": "Antarctic Penguins Granted Full Parliamentary Franchise",
     "standfirst": "In a landmark ruling, all Emperor and Adélie penguins will cast ballots in the twice-yearly Antarctic Legislative Assembly. The move ends two centuries of representational disenfranchisement.",
@@ -11292,6 +11366,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-superposition-border-wall",
+    "image": "images/wld-superposition-border-wall.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld superposition border wall.",
     "category": "World",
     "headline": "New Border Wall Exists in Quantum Superposition; Diplomats Report 'Both Effective and Ineffective'",
     "standfirst": "The Kashnaya–Voldaran border wall, commissioned after centuries of territorial dispute, simultaneously does and does not exist. Officials remain 'cautiously encouraged' by results.",
@@ -11317,6 +11393,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-rotating-capital-tuesday",
+    "image": "images/wld-rotating-capital-tuesday.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld rotating capital tuesday.",
     "category": "World",
     "headline": "National Capital Rotates Weekly; Sightseeing Tourism Up 400%, Governance 'Temporarily Destabilised'",
     "standfirst": "The Kingdom of Brinthal has approved constitutional amendment allowing its capital city to rotate geographically every seven days. Constitutional scholars call this 'unprecedented and unfortunate'.",
@@ -11342,6 +11420,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-umbrella-treaty-standardization",
+    "image": "images/wld-umbrella-treaty-standardization.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld umbrella treaty standardization.",
     "category": "World",
     "headline": "Historic Pact: 147 Nations Agree on Umbrella Handle Diameter; 'Peace Through Standardisation'",
     "standfirst": "The Geneva Precipitation Apparatus Treaty, signed yesterday, establishes universal umbrella specifications. Delegates hailed it as 'the most pointless accord in three decades'.",
@@ -11367,6 +11447,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-waterfront-property-sinking-isle",
+    "image": "images/wld-waterfront-property-sinking-isle.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld waterfront property sinking isle.",
     "category": "World",
     "headline": "Sinking Island Reclassified as 'Premium Waterfront Locale'; Real Estate Prices Rise 340%",
     "standfirst": "The Society of Coastal Surveyors has redefined Thales Island as 'oceanfront property experiencing natural tidal dynamics.' Real estate speculators have responded with enthusiasm and avarice.",
@@ -11392,6 +11474,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-penguin-ambassador-diplomatic-corps",
+    "image": "images/wld-penguin-ambassador-diplomatic-corps.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld penguin ambassador diplomatic corps.",
     "category": "World",
     "headline": "Penguin Officially Appointed as Full Diplomatic Ambassador; 'Unprecedented Diplomatic Clarity'",
     "standfirst": "Archibald, a 6-year-old Emperor penguin, has been accredited to the United Nations as the Antarctic Collective's chief envoy. Diplomats report his negotiating positions are 'less opaque than previous representatives'.",
@@ -11417,6 +11501,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-gravity-inverted-tuesdays",
+    "image": "images/sci-gravity-inverted-tuesdays.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci gravity inverted tuesdays.",
     "category": "Science",
     "headline": "Gravity Officially Reverses on Tuesdays in Gravitational Anomaly Zone; Scientists Baffled",
     "standfirst": "The Rutherford-Kelso Research Station reports that gravitational acceleration becomes negative every Tuesday within a 4-kilometre radius. The cause remains 'entirely mysterious and moderately inconvenient'.",
@@ -11442,6 +11528,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-colours-migration-northward",
+    "image": "images/sci-colours-migration-northward.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci colours migration northward.",
     "category": "Science",
     "headline": "Colours Officially Migrating Northward; Blue Abandoned Mediterranean; Red Following Behind",
     "standfirst": "The Institute for Chromatic Phenomena reports that spectral wavelengths are shifting latitudinally at a rate of 47 kilometres per year. 'The sky is becoming less blue,' researchers confirm, 'because blue is leaving.'",
@@ -11467,6 +11555,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-shadow-consciousness-study",
+    "image": "images/sci-shadow-consciousness-study.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci shadow consciousness study.",
     "category": "Science",
     "headline": "Institute Publishes Evidence of Shadow Consciousness; 'Shadows May Be Observing Us'",
     "standfirst": "The Institute for Immaterial Phenomena has completed a five-year study concluding that shadows possess 'rudimentary sentience' and may be actively monitoring their associated objects.",
@@ -11492,6 +11582,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-particles-poetry-haiku-movement",
+    "image": "images/sci-particles-poetry-haiku-movement.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci particles poetry haiku movement.",
     "category": "Science",
     "headline": "Particles Move Only When Observed Reciting Haiku; Physicists 'Emotionally Exhausted'",
     "standfirst": "Experimental particle physics has taken a turn toward the literary. Researchers find that subatomic particles will not change trajectory unless simultaneously observed and exposed to properly-structured seventeen-syllable Japanese poetry.",
@@ -11517,6 +11609,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-echoes-taxation-volume",
+    "image": "images/sci-echoes-taxation-volume.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci echoes taxation volume.",
     "category": "Science",
     "headline": "Government Imposes Echo Tax; Acoustically Loud Spaces Must Pay Based on Volume Reverb Coefficient",
     "standfirst": "The Office of Numerical Standards has established a tax regime on echoes, determining that acoustic reverberation constitutes taxable commodity under Subsection 4.2 of the Atmospheric Goods Revenue Act.",
@@ -11542,6 +11636,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-sleep-walking-backwards-time",
+    "image": "images/sci-sleep-walking-backwards-time.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci sleep walking backwards time.",
     "category": "Science",
     "headline": "Groundbreaking Study: Sleepwalkers Trending Younger; Evidence Suggests Retrograde Temporal Displacement",
     "standfirst": "Research from the Copenhagen Institute of Chronological Medicine indicates that sleepwalkers are aging in reverse, moving backward through time at an average of 0.3 years per annum.",
@@ -11729,6 +11825,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-cryptocurrency-ice-cream",
+    "image": "images/biz-cryptocurrency-ice-cream.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz cryptocurrency ice cream.",
     "category": "Business",
     "headline": "New Cryptocurrency Backed Entirely by Ice Cream Flavours; Initial Trading Volume Exceeds £1.2 Billion",
     "standfirst": "FlavorCoin, a novel digital currency pegged to specific ice cream flavour profiles, has launched with a £1.2 billion initial trading volume. Economists are bemused and alarmed in equal measure.",
@@ -11754,6 +11852,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-bank-interest-ceremonial-dance",
+    "image": "images/biz-bank-interest-ceremonial-dance.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz bank interest ceremonial dance.",
     "category": "Business",
     "headline": "Bank of England Declares Interest Rates Determined by Ceremonial Dance; Quarterly 'Market Movements' Now Choreographed",
     "standfirst": "The Bank of England's Monetary Policy Committee has decided that quarterly interest rate decisions will be determined by the Governor's performance of a ritual interpretive dance. Spectators will vote via ballot.",
@@ -11779,6 +11879,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-stock-market-reverse-day",
+    "image": "images/biz-stock-market-reverse-day.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz stock market reverse day.",
     "category": "Business",
     "headline": "Stock Market to Operate Backwards One Day Annually; Trading Reverses; Gains Become Losses; Catastrophe Probable",
     "standfirst": "The London Stock Exchange announced that beginning 2027, one day per year will be designated 'Reverse Day,' during which all market operations will function backward—trades execute in reverse, prices invert, and fortunes evaporate.",
@@ -11804,6 +11906,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-cereal-mascots-ipo",
+    "image": "images/biz-cereal-mascots-ipo.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz cereal mascots ipo.",
     "category": "Business",
     "headline": "Cereal Brand Mascots Initiate Historic IPO; Tony Tiger Seeks £2.3 Billion Valuation; Floats on 'Nostalgia Index'",
     "standfirst": "A consortium of cereal brand mascots has filed preliminary IPO documents, proposing to go public as an aggregated entertainment and licensing entity. Initial valuation: £2.3 billion. Institutional investors are 'cautiously intrigued.'",
@@ -11829,6 +11933,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-pension-fund-prehistoric-stocks",
+    "image": "images/biz-pension-fund-prehistoric-stocks.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz pension fund prehistoric stocks.",
     "category": "Business",
     "headline": "Pension Fund Invests in Dinosaur-Era Equities; Accidentally Purchases Stock in Companies That Became Extinct 65 Million Years Ago",
     "standfirst": "The Greater Manchester Pension Fund's algorithm has executed £47 million in equity purchases from the Mesozoic era, believing it had identified undervalued companies with 'exceptional long-term growth potential.'",
@@ -11854,6 +11960,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-coffee-hyperinflation-overnight",
+    "image": "images/biz-coffee-hyperinflation-overnight.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz coffee hyperinflation overnight.",
     "category": "Business",
     "headline": "Coffee Prices Double Overnight; Economists Baffled; Central Banks Declare Emergency Session",
     "standfirst": "Global coffee prices have inexplicably doubled within a twenty-four-hour period. No supply disruption has occurred. No demand surge has been documented. The price simply changed. Economists are contemplating resignation.",
@@ -11879,6 +11987,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-drizzle-union-recognition",
+    "image": "images/wea-drizzle-union-recognition.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea drizzle union recognition.",
     "category": "Weather",
     "headline": "Tuesday's Drizzle Wins Formal Recognition as Trade Union, Met Office Confirms",
     "standfirst": "A persistent band of light rain over Herefordshire has secured collective bargaining rights after four months of what organisers call unpaid overtime during bank holidays.",
@@ -11904,6 +12014,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-cumulus-early-retirement-scheme",
+    "image": "images/wea-cumulus-early-retirement-scheme.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea cumulus early retirement scheme.",
     "category": "Weather",
     "headline": "Cloud Formation Over Bristol Approved for Early Retirement After 40 Years' Continuous Service",
     "standfirst": "A cumulus cloud that has drifted above the Clifton Suspension Bridge since 1986 has been granted a full pension, ending a career described by colleagues as 'fluffy but relentless.'",
@@ -11929,6 +12041,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-rainbow-double-booking",
+    "image": "images/wea-rainbow-double-booking.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea rainbow double booking.",
     "category": "Weather",
     "headline": "Met Office Apologises After Two Rainbows Double-Booked Over Same Field",
     "standfirst": "A scheduling error saw both a primary and secondary rainbow assigned to the same Cotswolds meadow on Saturday afternoon, prompting a formal apology and a review of the optical phenomena rota.",
@@ -11954,6 +12068,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-forecast-pay-negotiation",
+    "image": "images/wea-forecast-pay-negotiation.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea forecast pay negotiation.",
     "category": "Weather",
     "headline": "Five-Day Forecast Enters Formal Pay Negotiations, Threatens to Withhold Thursday",
     "standfirst": "Talks between the Met Office and its own five-day forecast broke down over the weekend, with Thursday's outlook reportedly being held back pending a satisfactory offer.",
@@ -11979,6 +12095,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-wind-visa-wales",
+    "image": "images/wea-wind-visa-wales.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea wind visa wales.",
     "category": "Weather",
     "headline": "Westerly Wind Denied Entry to Wales Pending Visa Review",
     "standfirst": "Border officials at the Directorate of Surface Allocation have held a westerly wind at the English side of the Severn Estuary for eleven hours while its documentation is checked.",
@@ -12004,6 +12122,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-frost-licensing-lawns",
+    "image": "images/wea-frost-licensing-lawns.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea frost licensing lawns.",
     "category": "Weather",
     "headline": "Frost Now Requires Licence to Settle on Lawns in Pilot Borough",
     "standfirst": "Residents of one Surrey borough must now apply in writing before overnight frost is permitted to form on their lawns, under a scheme officials insist is 'proportionate.'",
@@ -12029,6 +12149,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-sunset-lateness-ordinance",
+    "image": "images/wea-sunset-lateness-ordinance.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea sunset lateness ordinance.",
     "category": "Weather",
     "headline": "Sunset Ordered to Arrive on Time After Persistent Lateness Complaints",
     "standfirst": "A tribunal has ruled against the Cornish sunset following 4,900 complaints of tardiness, ordering it to appear within a strict two-minute window or face formal sanction.",
@@ -12054,6 +12176,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-thunderstorm-unfair-dismissal",
+    "image": "images/wea-thunderstorm-unfair-dismissal.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea thunderstorm unfair dismissal.",
     "category": "Weather",
     "headline": "Thunderstorm Sues Met Office for Unfair Dismissal After Being 'Let Go' Mid-Forecast",
     "standfirst": "A severe thunderstorm cut short over Norfolk on Thursday afternoon is pursuing an employment tribunal claim, arguing it was dismissed without due process or a full lightning allowance.",
@@ -12079,6 +12203,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-fog-loitering-fine-m25",
+    "image": "images/wea-fog-loitering-fine-m25.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea fog loitering fine m25.",
     "category": "Weather",
     "headline": "Rogue Fog Bank Fined for Loitering Over the M25",
     "standfirst": "The Met Office's Bureau of Rogue Weather has issued its largest-ever fixed penalty notice after a fog bank refused to disperse from junctions 12 to 15 for over six hours.",
@@ -12104,6 +12230,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-snow-postcode-rationing",
+    "image": "images/wea-snow-postcode-rationing.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea snow postcode rationing.",
     "category": "Weather",
     "headline": "Snow to Be Rationed by Postcode Under New Quota Scheme, Waiting List Opens",
     "standfirst": "Households wishing to receive snow this winter must now register their postcode with the Directorate of Surface Allocation, which says demand has 'far outstripped supply' since Christmas 2023.",
@@ -12129,6 +12257,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-tide-files-paperwork",
+    "image": "images/mar-tide-files-paperwork.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar tide files paperwork.",
     "category": "Maritime",
     "headline": "Incoming Tide Delayed After Refusing to Recede Without Proper Paperwork",
     "standfirst": "The high tide at Wells-next-the-Sea held its position for nearly three hours on Thursday, insisting on a completed Form 7B before it would agree to go back out.",
@@ -12154,6 +12284,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-harbour-feelings-therapy",
+    "image": "images/mar-harbour-feelings-therapy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar harbour feelings therapy.",
     "category": "Maritime",
     "headline": "Harbour Sent for Mandatory Counselling After Reporting Feeling 'Unappreciated'",
     "standfirst": "A working harbour on the Solway Firth has been referred for six sessions of structured counselling following a formal grievance describing decades of being 'taken for granted.'",
@@ -12179,6 +12311,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-lighthouse-work-to-rule",
+    "image": "images/mar-lighthouse-work-to-rule.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar lighthouse work to rule.",
     "category": "Maritime",
     "headline": "Lighthouse Dims Beam During Tea Breaks in Work-to-Rule Dispute",
     "standfirst": "A lighthouse on the Northumberland coast has begun dimming its light for twenty minutes each evening in protest at what its keepers' union calls 'unsustainable illumination targets.'",
@@ -12204,6 +12338,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-buoy-reassignment-tribunal",
+    "image": "images/mar-buoy-reassignment-tribunal.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar buoy reassignment tribunal.",
     "category": "Maritime",
     "headline": "Buoy Disputes Reassignment to 'Less Prestigious' Channel Marker Role",
     "standfirst": "A navigational buoy formerly stationed at the entrance to Portsmouth Harbour is contesting its transfer to a quieter creek, calling the move a demotion in all but name.",
@@ -12229,6 +12365,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-seagull-cargo-declaration",
+    "image": "images/mar-seagull-cargo-declaration.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar seagull cargo declaration.",
     "category": "Maritime",
     "headline": "Seagulls Required to Declare Cargo Under New Harbour Customs Rule",
     "standfirst": "Herring gulls operating in and around Whitby harbour must now formally declare any chips, pasties, or ice cream carried aloft, under a rule officials insist closes 'a longstanding enforcement gap.'",
@@ -12254,6 +12392,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-ferry-apology-tour",
+    "image": "images/mar-ferry-apology-tour.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar ferry apology tour.",
     "category": "Maritime",
     "headline": "Chronically Late Ferry Sent on Formal Apology Tour of Its Own Route",
     "standfirst": "A Solent ferry with a punctuality record described as 'genuinely historic, and not in a good way' has been dispatched on a dedicated apology sailing to each port it has wronged.",
@@ -12279,6 +12419,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-shipping-container-existential-crisis",
+    "image": "images/mar-shipping-container-existential-crisis.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar shipping container existential crisis.",
     "category": "Maritime",
     "headline": "Missing Shipping Container Found Having 'Existential Crisis,' Refuses Unloading",
     "standfirst": "A container reported lost at sea for three weeks has been located at Felixstowe, where it is reportedly refusing to be unloaded until it 'understands its purpose.'",
@@ -12304,6 +12446,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-crab-jurisdiction-dispute",
+    "image": "images/mar-crab-jurisdiction-dispute.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar crab jurisdiction dispute.",
     "category": "Maritime",
     "headline": "Two Harbours Locked in Jurisdictional Dispute Over Migratory Crab Population",
     "standfirst": "A long-running disagreement over which of two neighbouring Dorset harbours holds legal claim to a seasonal crab migration has escalated to a formal hearing before the Institute for Applied Buoyancy.",
@@ -12329,6 +12473,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-anchor-early-retirement",
+    "image": "images/mar-anchor-early-retirement.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar anchor early retirement.",
     "category": "Maritime",
     "headline": "Veteran Anchor Granted Retirement After 52 Years, Trainee Anchor Takes Over",
     "standfirst": "The original anchor of the fishing vessel Faithful Endeavour has been formally retired and mounted at the harbourmaster's office, ending a career its crew called 'unfailingly grounded.'",
@@ -12354,6 +12500,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-turbulence-satisfaction-survey",
+    "image": "images/av-turbulence-satisfaction-survey.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av turbulence satisfaction survey.",
     "category": "Aviation",
     "headline": "Patch of Turbulence Refuses to Dissipate Until Passengers Complete Satisfaction Survey",
     "standfirst": "A stretch of clear-air turbulence over the Bay of Biscay held a flight for eleven extra minutes on Saturday, insisting on 'meaningful feedback' before allowing conditions to settle.",
@@ -12379,6 +12527,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-runway-industrial-action",
+    "image": "images/av-runway-industrial-action.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av runway industrial action.",
     "category": "Aviation",
     "headline": "Regional Runway Stages Industrial Action, Refuses All Takeoffs Until Resurfacing Grievance Resolved",
     "standfirst": "Runway 09/27 at a regional airport in Lincolnshire has withheld all departures since Friday, in what the airport says is the first strike ever staged by a piece of tarmac.",
@@ -12404,6 +12554,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-luggage-witness-protection",
+    "image": "images/av-luggage-witness-protection.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av luggage witness protection.",
     "category": "Aviation",
     "headline": "Lost Suitcase Placed in Witness Protection After 'Seeing Something' on the Tarmac",
     "standfirst": "A suitcase separated from its owner at a Midlands airport in May has resurfaced under a new identity, having reportedly witnessed 'an irregularity' during baggage handling.",
@@ -12429,6 +12581,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-control-towers-couples-therapy",
+    "image": "images/av-control-towers-couples-therapy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av control towers couples therapy.",
     "category": "Aviation",
     "headline": "Neighbouring Airport Control Towers Sent to Couples Therapy Over Airspace Dispute",
     "standfirst": "Two control towers separated by eleven miles of Kent countryside have begun mandated joint sessions after a territorial dispute left both airports' approach paths 'barely on speaking terms.'",
@@ -12454,6 +12608,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-pilot-seatbelt-sign-tribunal",
+    "image": "images/av-pilot-seatbelt-sign-tribunal.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av pilot seatbelt sign tribunal.",
     "category": "Aviation",
     "headline": "Pilot Faces Tribunal Over 'Excessive and Unjustified' Use of Seatbelt Sign",
     "standfirst": "A veteran captain accused of illuminating the fasten-seatbelt sign 340 times in a single quarter is contesting disciplinary action, insisting each instance was 'entirely warranted.'",
@@ -12479,6 +12635,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-loyalty-scheme-divorce",
+    "image": "images/av-loyalty-scheme-divorce.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av loyalty scheme divorce.",
     "category": "Aviation",
     "headline": "Airline Loyalty Scheme Formally 'Divorces' Its Most Frequent Flyer",
     "standfirst": "A platinum-tier passenger with 4,900 recorded flights has been dropped from an airline's loyalty programme, which cited 'irreconcilable differences' over lounge access expectations.",
@@ -12504,6 +12662,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-boarding-queue-legal-personhood",
+    "image": "images/av-boarding-queue-legal-personhood.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av boarding queue legal personhood.",
     "category": "Aviation",
     "headline": "Boarding Queue Granted Legal Personhood, Immediately Files Complaint About Group 4",
     "standfirst": "A regional airport's Zone C boarding queue has become the first in the country to be recognised as a legal entity, and has wasted no time exercising its new right to complain.",
@@ -12529,6 +12689,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-black-box-memoir",
+    "image": "images/av-black-box-memoir.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av black box memoir.",
     "category": "Aviation",
     "headline": "Flight Recorder Sent for Routine Maintenance Found to Have Written Unsolicited Memoir",
     "standfirst": "A cockpit voice and data recorder returned to its manufacturer for a standard inspection was discovered to contain 340 pages of unprompted reflection on 'a life spent listening.'",
@@ -12554,6 +12716,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-tannoy-royalties-strike",
+    "image": "images/av-tannoy-royalties-strike.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av tannoy royalties strike.",
     "category": "Aviation",
     "headline": "Airport Tannoy Voice Goes on Strike Demanding Royalties for Announcements",
     "standfirst": "The recorded voice behind decades of gate-change and lost-passenger announcements at a major hub is withholding new recordings until she receives a share of the airport's advertising revenue.",
@@ -12579,6 +12743,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-appendix-refuses-redundancy",
+    "image": "images/hea-appendix-refuses-redundancy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea appendix refuses redundancy.",
     "category": "Health",
     "headline": "Man's Appendix Formally Objects to Removal, Cites 'Essential Worker' Status",
     "standfirst": "A Grimsby accountant's vermiform appendix has lodged a written grievance with his surgical team, the first such organ-led industrial action recorded by the National Register of Bodily Disputes.",
@@ -12604,6 +12770,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-tinnitus-registered-charity",
+    "image": "images/hea-tinnitus-registered-charity.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea tinnitus registered charity.",
     "category": "Health",
     "headline": "Man's Tinnitus Incorporated as Registered Charity to 'Raise Awareness of Itself'",
     "standfirst": "A persistent ringing in a Basingstoke bus driver's left ear has been granted full charitable status by the Commission, complete with a logo, a patron, and an ambitious five-year strategy.",
@@ -12629,6 +12797,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-nhs-trust-of-yawns",
+    "image": "images/hea-nhs-trust-of-yawns.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea nhs trust of yawns.",
     "category": "Health",
     "headline": "New NHS Trust Created Solely to Regulate Contagious Yawning in Open-Plan Offices",
     "standfirst": "The NHS Yawn Containment and Escalation Trust opens its doors this week, armed with a 44-page protocol and a fleet of mobile 'yawn marshals'.",
@@ -12654,6 +12824,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-hiccup-tribunal",
+    "image": "images/hea-hiccup-tribunal.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea hiccup tribunal.",
     "category": "Health",
     "headline": "Employment Tribunal Rules Hiccups Constitute 'Unauthorised Absence'",
     "standfirst": "A Preston warehouse operative has lost his appeal after a tribunal found that a four-hour bout of hiccups did not excuse him from his shift, setting a precedent employment lawyers are calling 'seismic'.",
@@ -12679,6 +12851,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-knee-pension",
+    "image": "images/hea-knee-pension.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea knee pension.",
     "category": "Health",
     "headline": "GP Grants Man's Left Knee Early Retirement, Complete With Pension",
     "standfirst": "A Cardiff GP has approved what is believed to be the first formal retirement package issued to an individual joint, following a lengthy independent assessment of the knee's service record.",
@@ -12704,6 +12878,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-eyebrow-diplomatic-incident",
+    "image": "images/hea-eyebrow-diplomatic-incident.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea eyebrow diplomatic incident.",
     "category": "Health",
     "headline": "Raised Eyebrow at Trade Summit Escalates to Formal Diplomatic Incident, Arbitration Ordered",
     "standfirst": "A single arched eyebrow, deployed by a junior minister during a bilateral summit, has been referred to independent facial-expression arbitration after being deemed 'unambiguously hostile' by the visiting delegation.",
@@ -12729,6 +12905,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-mri-scanner-anxiety",
+    "image": "images/hea-mri-scanner-anxiety.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea mri scanner anxiety.",
     "category": "Health",
     "headline": "MRI Scanner Develops Performance Anxiety, Now Requires Reassurance Before Each Scan",
     "standfirst": "A Sheffield hospital's flagship imaging machine has reportedly begun refusing to operate without a pep talk from staff, prompting an unusual addendum to its maintenance manual.",
@@ -12754,6 +12932,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-sneeze-passport",
+    "image": "images/hea-sneeze-passport.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea sneeze passport.",
     "category": "Health",
     "headline": "New Bylaw Requires 'Sneeze Passport' for Travel Between Certain Postcodes",
     "standfirst": "A pilot scheme in three Kent boroughs now obliges residents to carry a stamped document recording their sneezing history before crossing council boundaries during pollen season.",
@@ -12779,6 +12959,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-double-jointed-thumb-union",
+    "image": "images/hea-double-jointed-thumb-union.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea double jointed thumb union.",
     "category": "Health",
     "headline": "Double-Jointed Thumbs Unionise, Demand Collective Bargaining Rights",
     "standfirst": "Hyper-flexible thumbs across the country have formed a nationwide federation, citing decades of 'unpaid party-trick labour' and demanding formal recognition.",
@@ -12804,6 +12986,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-celebrity-fog-candle",
+    "image": "images/life-celebrity-fog-candle.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life celebrity fog candle.",
     "category": "Lifestyle",
     "headline": "Celebrity Launches £68 Candle Scented Like 'A Disappointing Tuesday in October'",
     "standfirst": "Lifestyle mogul Persimmon Wraithly-Cole has unveiled her latest fragrance venture, a candle capturing what she calls 'the exact emotional register of a grey afternoon nobody remembers.'",
@@ -12829,6 +13013,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-influencer-rents-silence",
+    "image": "images/life-influencer-rents-silence.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life influencer rents silence.",
     "category": "Lifestyle",
     "headline": "Influencer Now Renting Out 'Curated Silence' at £40 an Hour",
     "standfirst": "Wellness influencer Delphine Ashcombe-Vye has monetised the absence of sound, offering paying clients access to a soundproofed room in which, crucially, nothing happens.",
@@ -12854,6 +13040,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-luxury-queue-simulator",
+    "image": "images/life-luxury-queue-simulator.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life luxury queue simulator.",
     "category": "Lifestyle",
     "headline": "Luxury Retailer Launches £150 'Queue Simulator' for Customers Who Miss the Sales",
     "standfirst": "A Knightsbridge boutique has begun offering a bespoke queuing experience, complete with actors, drizzle, and a disappointing final announcement, for shoppers nostalgic for the thrill of standing outside a shop.",
@@ -12879,6 +13067,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-wellness-retreat-houseplants",
+    "image": "images/life-wellness-retreat-houseplants.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life wellness retreat houseplants.",
     "category": "Lifestyle",
     "headline": "Sold-Out Wellness Retreat Lets Owners 'Attend on Behalf of' Their Houseplants",
     "standfirst": "A Cotswolds retreat has introduced a proxy wellness programme in which stressed plant owners undergo spa treatments, meditation, and journalling sessions in place of their supposedly overwhelmed ferns.",
@@ -12904,6 +13094,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-handbag-own-postcode",
+    "image": "images/life-handbag-own-postcode.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life handbag own postcode.",
     "category": "Lifestyle",
     "headline": "£4,200 Handbag Now Comes With Its Own Postcode and Council Tax Band",
     "standfirst": "A limited-edition leather handbag from designer house Verrelle has been registered as a legal address, complete with mail redirection and, controversially, a council tax bill.",
@@ -12929,6 +13121,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-butler-for-socks",
+    "image": "images/life-butler-for-socks.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life butler for socks.",
     "category": "Lifestyle",
     "headline": "Bespoke Sock Butler Service Launches for £220 a Month, Promises 'Dignified Retirement' for Worn Pairs",
     "standfirst": "A new concierge service in Chelsea will collect, launder, fold, and eventually 'retire' clients' socks with what its founder calls 'the ceremony they deserve.'",
@@ -12954,6 +13148,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-influencer-sells-air-empty-room",
+    "image": "images/life-influencer-sells-air-empty-room.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life influencer sells air empty room.",
     "category": "Lifestyle",
     "headline": "Influencer Sells Jars of 'Air From an Empty Room' at £22 Each, Sells Out in Hours",
     "standfirst": "Minimalism guru Ottoline Faircastle has monetised nothingness itself, bottling ambient air from her deliberately unfurnished spare room for a devoted online following.",
@@ -12979,6 +13175,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-celebrity-wifi-fragrance",
+    "image": "images/life-celebrity-wifi-fragrance.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life celebrity wifi fragrance.",
     "category": "Lifestyle",
     "headline": "Pop Star Unveils Fragrance That 'Smells Like Wifi', Baffles Perfume Critics",
     "standfirst": "Chart-topping musician Vesper Calloway-St. James has launched a signature scent she describes as capturing 'the exact aroma of a strong, uncapped broadband connection.'",
@@ -13004,6 +13202,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-celebrity-nap-concierge",
+    "image": "images/life-celebrity-nap-concierge.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life celebrity nap concierge.",
     "category": "Lifestyle",
     "headline": "Celebrity Launches £480-a-Month 'Nap Concierge' Who Pre-Tests Napping Spots",
     "standfirst": "Reality television personality Cosima Blackwood-Ffrench has hired a personal nap concierge whose sole duty is to trial sofas, lawns, and hotel corners for optimal drowsiness before she herself lies down.",
