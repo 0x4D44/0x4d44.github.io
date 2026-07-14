@@ -3868,6 +3868,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-boarding-groups-black-market",
+    "image": "images/av-boarding-groups-black-market.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av boarding groups black market.",
     "category": "Aviation",
     "headline": "Boarding group numbers found to be entirely negotiable, spawning a gate-side black market",
     "standfirst": "Airport observers report passengers quietly trading, borrowing and reselling boarding priority in the minutes before a flight, despite no airline sanctioning the practice.",
@@ -3893,6 +3895,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-black-box-refuses-recognition",
+    "image": "images/av-black-box-refuses-recognition.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av black box refuses recognition.",
     "category": "Aviation",
     "headline": "Flight recorders found to be uncomfortable with their own importance, investigators say",
     "standfirst": "Interviews with recovery engineers reveal a curious pattern: the more critical the recovered data, the more insistently the device's paperwork downplays its own role.",
@@ -3918,6 +3922,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-anchors-grow-homesick",
+    "image": "images/mar-anchors-grow-homesick.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar anchors grow homesick.",
     "category": "Maritime",
     "headline": "Ship anchors found to grow attached to specific seabeds, resisting being weighed",
     "standfirst": "Winch engineers report measurably higher strain when lifting an anchor that has rested in the same spot for several days, prompting talk of nautical homesickness.",
@@ -3943,6 +3949,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-knots-slower-when-officially-counted",
+    "image": "images/mar-knots-slower-when-officially-counted.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar knots slower when officially counted.",
     "category": "Maritime",
     "headline": "Ships proven to travel slower whenever their speed is officially logged in knots",
     "standfirst": "A fleet-wide review finds vessels register measurably lower speeds the moment the bridge log is opened, an observer effect harbourmasters have taken to calling 'log-shy'.",
@@ -3968,6 +3976,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-navigation-buoys-territorial",
+    "image": "images/mar-navigation-buoys-territorial.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar navigation buoys territorial.",
     "category": "Maritime",
     "headline": "Navigation buoys found to be quietly territorial, drifting to maintain personal space",
     "standfirst": "Harbour surveys show buoys anchored on slack chain settle into evenly spaced positions over time regardless of how tightly they were originally clustered.",
@@ -3993,6 +4003,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-sea-shanties-add-propulsion",
+    "image": "images/mar-sea-shanties-add-propulsion.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar sea shanties add propulsion.",
     "category": "Maritime",
     "headline": "Sea shanties scientifically confirmed to add measurable propulsion when sung in unison",
     "standfirst": "A towing-tank trial finds a crew singing in time produces a small but real speed increase over silent rowing, with the effect vanishing the moment anyone sings off-beat.",
@@ -4018,6 +4030,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-emu-war-australia-1932",
+    "image": "images/wld-emu-war-australia-1932.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld emu war australia 1932.",
     "category": "World",
     "headline": "Nation deploys army against birds, loses",
     "standfirst": "Australia's 1932 campaign to machine-gun the emus eating its wheat ended, after weeks in the field, with the emus undefeated and the artillery quietly withdrawn.",
@@ -4042,6 +4056,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-anglo-zanzibar-shortest-war-1896",
+    "image": "images/wld-anglo-zanzibar-shortest-war-1896.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld anglo zanzibar shortest war 1896.",
     "category": "World",
     "headline": "Entire war begins and ends before mid-morning tea",
     "standfirst": "The Anglo-Zanzibar War of 1896 lasted around 38 minutes — long enough, historians note, to be the shortest war in recorded history and shorter than most modern meetings.",
@@ -4066,6 +4082,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-cadaver-synod-corpse-on-trial-897",
+    "image": "images/wld-cadaver-synod-corpse-on-trial-897.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld cadaver synod corpse on trial 897.",
     "category": "World",
     "headline": "Court puts a corpse on trial, finds it guilty",
     "standfirst": "In 897 a Pope had his dead predecessor exhumed, dressed, propped on a throne and prosecuted — a legal proceeding notable, above all, for the defendant having been dead for months.",
@@ -4090,6 +4108,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-great-moon-hoax-1835",
+    "image": "images/wld-great-moon-hoax-1835.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld great moon hoax 1835.",
     "category": "World",
     "headline": "Newspaper reports bat-people living on the Moon, sells enormously",
     "standfirst": "In 1835 a New York paper announced the discovery of winged humanoids, unicorns and beavers on the Moon — and watched its circulation soar as the public happily believed it.",
@@ -4114,6 +4134,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-emperor-norton-san-francisco-1859",
+    "image": "images/wld-emperor-norton-san-francisco-1859.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld emperor norton san francisco 1859.",
     "category": "World",
     "headline": "Man declares himself Emperor, city decides to allow it",
     "standfirst": "Joshua Norton proclaimed himself Emperor of the United States in 1859, and San Francisco — with unusual grace — spent two decades playing along.",
@@ -4138,6 +4160,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-timothy-dexter-coal-to-newcastle",
+    "image": "images/biz-timothy-dexter-coal-to-newcastle.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz timothy dexter coal to newcastle.",
     "category": "Business",
     "headline": "Businessman succeeds at every deal experts told him was idiotic",
     "standfirst": "Timothy Dexter shipped coal to Newcastle, warming pans to the tropics and wool mittens toward the equator — and, to the lasting distress of his advisers, turned a profit on all three.",
@@ -4162,6 +4186,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-victor-lustig-sold-eiffel-tower",
+    "image": "images/biz-victor-lustig-sold-eiffel-tower.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz victor lustig sold eiffel tower.",
     "category": "Business",
     "headline": "Con man sells the Eiffel Tower for scrap, then does it again",
     "standfirst": "In 1925 Victor Lustig posed as a government official, 'sold' the Eiffel Tower to a scrap dealer — and was so encouraged by the ease of it that he came back and sold it a second time.",
@@ -4186,6 +4212,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-gerald-ratner-total-crap-speech-1991",
+    "image": "images/biz-gerald-ratner-total-crap-speech-1991.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz gerald ratner total crap speech 1991.",
     "category": "Business",
     "headline": "Executive jokes his products are 'total crap', erases £500m in an afternoon",
     "standfirst": "In 1991 the head of a thriving jewellery empire made a witty after-dinner speech about how cheap his wares were — and watched the company very nearly cease to exist.",
@@ -4210,6 +4238,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-tulip-mania-1637",
+    "image": "images/biz-tulip-mania-1637.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz tulip mania 1637.",
     "category": "Business",
     "headline": "Nation briefly decides flowers are money, then remembers they are flowers",
     "standfirst": "During the Dutch tulip mania of the 1630s, single bulbs reportedly changed hands for the price of a house — until, one winter morning, they abruptly did not.",
@@ -4234,6 +4264,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-leonard-pepsi-harrier-jet-lawsuit",
+    "image": "images/biz-leonard-pepsi-harrier-jet-lawsuit.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz leonard pepsi harrier jet lawsuit.",
     "category": "Business",
     "headline": "Man takes soft-drink firm to court demanding the fighter jet it advertised",
     "standfirst": "A 1990s Pepsi commercial jokingly offered a Harrier jump-jet for seven million points; one determined customer did the maths, collected the points, and sued when no jet arrived.",
@@ -4258,6 +4290,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-boston-molasses-flood-1919",
+    "image": "images/eng-boston-molasses-flood-1919.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng boston molasses flood 1919.",
     "category": "Engineering",
     "headline": "City drowned by a wave of molasses after tank fails",
     "standfirst": "In 1919 a giant storage tank in Boston burst, sending a two-storey wall of molasses through the streets at speed — a disaster as deadly as it was, at first, impossible to believe.",
@@ -4282,6 +4316,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-tacoma-narrows-galloping-gertie-1940",
+    "image": "images/eng-tacoma-narrows-galloping-gertie-1940.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng tacoma narrows galloping gertie 1940.",
     "category": "Engineering",
     "headline": "Brand-new bridge shakes itself to pieces in a moderate breeze",
     "standfirst": "The Tacoma Narrows Bridge twisted, rippled and finally tore itself apart in 1940 — just months after opening, and in winds far below what it was built to withstand.",
@@ -4306,6 +4342,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-winchester-mystery-house-stairs-to-nowhere",
+    "image": "images/eng-winchester-mystery-house-stairs-to-nowhere.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng winchester mystery house stairs to nowhere.",
     "category": "Engineering",
     "headline": "Heiress builds a house for 38 years, with stairs that lead nowhere",
     "standfirst": "Sarah Winchester kept carpenters working on her California mansion around the clock for decades, producing doors that open onto walls and staircases that climb into the ceiling.",
@@ -4330,6 +4368,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-radithor-radium-tonic-eben-byers",
+    "image": "images/hea-radithor-radium-tonic-eben-byers.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea radithor radium tonic eben byers.",
     "category": "Health",
     "headline": "Wealthy sportsman drinks radioactive tonic for his health, to predictable end",
     "standfirst": "In the 1920s radium was sold as a cure-all; one enthusiastic customer drank some 1,400 bottles of a radium tonic, in a cautionary tale the newspapers summed up with brutal economy.",
@@ -4354,6 +4394,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-tobacco-smoke-enema-resuscitation",
+    "image": "images/hea-tobacco-smoke-enema-resuscitation.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea tobacco smoke enema resuscitation.",
     "category": "Health",
     "headline": "Doctors once revived the drowning by blowing smoke up the patient",
     "standfirst": "For decades, the approved emergency treatment for a drowning victim was a tobacco-smoke enema — a practice that gave the English language one of its most enduring phrases.",
@@ -4378,6 +4420,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-b25-empire-state-building-1945",
+    "image": "images/av-b25-empire-state-building-1945.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av b25 empire state building 1945.",
     "category": "Aviation",
     "headline": "Bomber flies into skyscraper in fog; elevator operator survives 75-storey fall",
     "standfirst": "When a lost B-25 struck the Empire State Building in 1945, one woman survived both the impact and a plunge of 75 floors in a severed elevator — a record that still stands.",
@@ -4402,6 +4446,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-gimli-glider-fuel-metric-mixup-1983",
+    "image": "images/av-gimli-glider-fuel-metric-mixup-1983.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av gimli glider fuel metric mixup 1983.",
     "category": "Aviation",
     "headline": "Airliner runs out of fuel at 41,000 feet, lands on a drag strip",
     "standfirst": "A metric conversion error left an Air Canada jet with no fuel and no engines over Manitoba in 1983 — so its pilots glided it, silently, onto a disused runway hosting a car race.",
@@ -4426,6 +4472,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-mars-climate-orbiter-metric-mixup-1999",
+    "image": "images/sci-mars-climate-orbiter-metric-mixup-1999.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci mars climate orbiter metric mixup 1999.",
     "category": "Science",
     "headline": "Spacecraft lost at Mars because two teams used different units",
     "standfirst": "In 1999 a NASA orbiter was destroyed on arrival at Mars after one team worked in metric and another in imperial — a $327m lesson in the importance of agreeing which numbers mean what.",
@@ -4450,6 +4498,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-piltdown-man-hoax-1912",
+    "image": "images/sci-piltdown-man-hoax-1912.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci piltdown man hoax 1912.",
     "category": "Science",
     "headline": "Fake fossil fools science for 40 years",
     "standfirst": "The 'Piltdown Man', hailed in 1912 as the missing link, was a human skull married to an orangutan's jaw with filed teeth — and it took four decades for anyone to prove it.",
@@ -4474,6 +4524,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-great-smog-of-london-1952",
+    "image": "images/wea-great-smog-of-london-1952.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea great smog of london 1952.",
     "category": "Weather",
     "headline": "A five-day fog turns lethal, and a city cannot see it happening",
     "standfirst": "The Great Smog of 1952 blanketed London so completely that people could not see their own feet — and only later grasped that the air itself had become deadly.",
@@ -4498,6 +4550,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-war-of-the-bucket-modena",
+    "image": "images/wld-war-of-the-bucket-modena.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld war of the bucket modena.",
     "category": "World",
     "headline": "Italy Remembers the Day a Missing Bucket Started a War",
     "standfirst": "In 1325, a wooden well-bucket stolen from Bologna by raiding Modenese troops proved the final straw in a rivalry two centuries in the making — and Modena, magnificently, still has the bucket.",
@@ -4523,6 +4577,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-pastry-war-mexico-france",
+    "image": "images/wld-pastry-war-mexico-france.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld pastry war mexico france.",
     "category": "World",
     "headline": "France Invades Mexico Over a Ruined Pâtisserie, And Calls It Foreign Policy",
     "standfirst": "A French pastry chef's wrecked shop in Tacubaya became the official pretext for a naval blockade and invasion in 1838 — a conflict that has gone down in history, entirely without irony, as the Pastry War.",
@@ -4548,6 +4604,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-pig-war-san-juan-island",
+    "image": "images/wld-pig-war-san-juan-island.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld pig war san juan island.",
     "category": "World",
     "headline": "The Only Casualty of the Pig War Was, Fittingly, the Pig",
     "standfirst": "In 1859, Britain and the United States brought warships and thousands of troops to a standoff over a disputed island — after an American farmer shot a British-owned pig for eating his potatoes.",
@@ -4573,6 +4631,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-berners-street-hoax-1810",
+    "image": "images/wld-berners-street-hoax-1810.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld berners street hoax 1810.",
     "category": "World",
     "headline": "The Man Who Bet He Could Break London With a Handful of Letters",
     "standfirst": "In 1810, Theodore Hook wagered he could make one ordinary London street the talk of the city — and did so by summoning thousands of tradesmen, dignitaries and undertakers to a single front door.",
@@ -4598,6 +4658,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-football-war-el-salvador-honduras",
+    "image": "images/wld-football-war-el-salvador-honduras.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld football war el salvador honduras.",
     "category": "World",
     "headline": "The 100-Hour War That Took Its Name From a Football Match It Did Not Cause",
     "standfirst": "In 1969, El Salvador and Honduras fought a brief but deadly war amid rioting around World Cup qualifying matches — though historians are firm that land reform and mass migration, not football, were the true causes.",
@@ -4623,6 +4685,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-south-sea-bubble-1720",
+    "image": "images/biz-south-sea-bubble-1720.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz south sea bubble 1720.",
     "category": "Business",
     "headline": "The 1720 Prospectus That Openly Admitted Nobody Knew What the Company Did",
     "standfirst": "At the height of the South Sea Bubble, Londoners queued to buy shares in ventures including, genuinely, one advertised as being for 'an undertaking of great advantage, but nobody to know what it is.'",
@@ -4648,6 +4712,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-ronald-wayne-apple-shares",
+    "image": "images/biz-ronald-wayne-apple-shares.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz ronald wayne apple shares.",
     "category": "Business",
     "headline": "The Man Who Sold His Slice of Apple for $800 and Has Been Asked About It Ever Since",
     "standfirst": "Ronald Wayne, Apple's third co-founder, sold his 10 per cent stake back to Steve Jobs and Steve Wozniak for $800 in 1976 — a holding that would today be worth many billions of dollars.",
@@ -4673,6 +4739,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-decca-rejects-the-beatles",
+    "image": "images/biz-decca-rejects-the-beatles.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz decca rejects the beatles.",
     "category": "Business",
     "headline": "The Record Label That Heard the Beatles and Passed, With Confidence",
     "standfirst": "On New Year's Day 1962, Decca Records auditioned an unknown Liverpool band and declined to sign them, reportedly on the grounds that guitar groups were on their way out.",
@@ -4698,6 +4766,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-charles-ponzi-scheme-1920",
+    "image": "images/biz-charles-ponzi-scheme-1920.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz charles ponzi scheme 1920.",
     "category": "Business",
     "headline": "The Postal Coupon Scheme That Gave Fraud Its Modern Name",
     "standfirst": "In 1920, Charles Ponzi promised Boston investors 50 per cent returns in 45 days through international postal reply coupons — a scheme so brazen, and so ruinous, that it gave its name to every version that followed.",
@@ -4723,6 +4793,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-millennium-bridge-wobble-london",
+    "image": "images/eng-millennium-bridge-wobble-london.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng millennium bridge wobble london.",
     "category": "Engineering",
     "headline": "London's New Footbridge Opened, Wobbled Violently, and Closed Within 48 Hours",
     "standfirst": "The Millennium Bridge over the Thames swayed so alarmingly under pedestrian footfall in June 2000 that engineers shut it two days after opening — and kept it closed for nearly two years while dampers were fitted.",
@@ -4748,6 +4820,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-leaning-tower-of-pisa",
+    "image": "images/eng-leaning-tower-of-pisa.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng leaning tower of pisa.",
     "category": "Engineering",
     "headline": "The Bell Tower That Started Leaning Before It Was Even Finished, and Kept Going for 800 Years",
     "standfirst": "Construction on the Tower of Pisa began in 1173 on unstable subsoil; the structure started tilting almost immediately, was built in fitful stages over two centuries, and was only stabilised at the turn of the millennium.",
@@ -4773,6 +4847,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-denver-airport-baggage-system",
+    "image": "images/eng-denver-airport-baggage-system.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng denver airport baggage system.",
     "category": "Engineering",
     "headline": "The Automated Baggage System That Delayed an Entire Airport by 16 Months",
     "standfirst": "Denver International Airport's fully automated luggage-handling system mangled bags so reliably in testing that it pushed the airport's 1994 opening back well over a year — and the system was fully scrapped by 2005.",
@@ -4798,6 +4874,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-mariner-1-missing-hyphen",
+    "image": "images/sci-mariner-1-missing-hyphen.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci mariner 1 missing hyphen.",
     "category": "Science",
     "headline": "NASA's Venus Probe Was Destroyed by, Depending on Who You Ask, a Missing Hyphen",
     "standfirst": "Mariner 1 was deliberately destroyed less than five minutes after launch in 1962, after a guidance software error traced to a single missing overbar — earning it the nickname 'the most expensive hyphen in history.'",
@@ -4823,6 +4901,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-ariane-5-flight-501-overflow",
+    "image": "images/sci-ariane-5-flight-501-overflow.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci ariane 5 flight 501 overflow.",
     "category": "Science",
     "headline": "The Rocket That Destroyed Itself Because a Number Was Too Big for Its Own Software",
     "standfirst": "Ariane 5's maiden flight self-destructed 37 seconds after launch in 1996, after reused guidance software tried to cram a 64-bit number into a 16-bit space — a $370 million data-type error.",
@@ -4848,6 +4928,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-tycho-brahe-nose-and-legend",
+    "image": "images/sci-tycho-brahe-nose-and-legend.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci tycho brahe nose and legend.",
     "category": "Science",
     "headline": "The Astronomer Who Lost His Nose in a Maths Argument and, Allegedly, His Life to Politeness",
     "standfirst": "Tycho Brahe, the towering 16th-century Danish astronomer, wore a prosthetic nose after losing part of his own in a duel over a mathematical dispute — and died in 1601 in circumstances popular legend blames on his reluctance to leave a banquet table.",
@@ -4954,6 +5036,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-1904-st-louis-olympic-marathon",
+    "image": "images/spt-1904-st-louis-olympic-marathon.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt 1904 st louis olympic marathon.",
     "category": "Sport",
     "headline": "The Olympic Marathon Won by a Man Who Rode Most of It in a Car, and Actually Finished by a Man Fed Rat Poison",
     "standfirst": "The 1904 St. Louis Olympic marathon descended into chaos amid dust and heat: one runner was disqualified after riding roughly 11 miles in a car, while the eventual winner finished half-carried, having been dosed with strychnine and brandy by his own support team.",
@@ -4979,6 +5063,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-steven-bradbury-2002-gold",
+    "image": "images/spt-steven-bradbury-2002-gold.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt steven bradbury 2002 gold.",
     "category": "Sport",
     "headline": "The Skater Who Won Olympic Gold by Being the Only One Left Standing",
     "standfirst": "At the 2002 Winter Olympics, Australian short-track speed skater Steven Bradbury won gold after every rival ahead of him crashed on the final bend — and 'doing a Bradbury' has meant unlikely, last-placed victory ever since.",
@@ -5004,6 +5090,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-dancing-plague-1518-strasbourg",
+    "image": "images/wld-dancing-plague-1518-strasbourg.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld dancing plague 1518 strasbourg.",
     "category": "World",
     "headline": "Strasbourg Woman Begins Dancing In The Street; City's Solution Is To Send For More Musicians",
     "standfirst": "In July 1518 a single resident of Strasbourg stepped into the street and began to dance. She did not stop for days. Neither, eventually, did several hundred of her neighbours — and the authorities' considered response was to build them a stage.",
@@ -5029,6 +5117,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-tanganyika-laughter-epidemic-1962",
+    "image": "images/wld-tanganyika-laughter-epidemic-1962.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld tanganyika laughter epidemic 1962.",
     "category": "World",
     "headline": "Girls' School Outbreak Of Uncontrollable Laughing Closes Institutions Across A Nation For Months",
     "standfirst": "What began as a fit of giggling among pupils at a mission boarding school in January 1962 spread, through channels nobody has ever fully explained, into villages, then other schools, then months of closures across the region.",
@@ -5054,6 +5144,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-darien-scheme-1698-scotland-panama",
+    "image": "images/wld-darien-scheme-1698-scotland-panama.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld darien scheme 1698 scotland panama.",
     "category": "World",
     "headline": "Scotland Bets A Quarter Of Its National Wealth On A Panamanian Swamp; Reader, It Did Not Go Well",
     "standfirst": "In 1698 the Company of Scotland sent thousands of colonists and a substantial share of the nation's capital to found 'Caledonia' on the disease-ridden Isthmus of Panama. Within two years the colony was abandoned, thousands were dead, and Scotland's finances lay in ruins.",
@@ -5079,6 +5171,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-straw-hat-riot-new-york-1922",
+    "image": "images/wld-straw-hat-riot-new-york-1922.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld straw hat riot new york 1922.",
     "category": "World",
     "headline": "New York Youths Riot For Several Days Over The Correct Calendar Date To Stop Wearing A Hat",
     "standfirst": "An unwritten fashion rule that straw hats must be retired by mid-September escalated, in 1922, into days of street violence, arrests and injuries across Manhattan — begun, apparently, by boys who could not wait the extra two days.",
@@ -5104,6 +5198,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-second-defenestration-of-prague-1618",
+    "image": "images/wld-second-defenestration-of-prague-1618.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld second defenestration of prague 1618.",
     "category": "World",
     "headline": "Two Officials And A Secretary Thrown From A Castle Window; All Three Survive; Europe Goes To War Anyway",
     "standfirst": "In May 1618, Protestant noblemen hurled two Catholic regents and their secretary some 21 metres from a window of Prague Castle. Remarkably, all three lived — but the gesture helped ignite the Thirty Years' War regardless.",
@@ -5129,6 +5225,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-blockbuster-passes-on-netflix-2000",
+    "image": "images/biz-blockbuster-passes-on-netflix-2000.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz blockbuster passes on netflix 2000.",
     "category": "Business",
     "headline": "Blockbuster Offered A Small Struggling Streaming Startup For $50 Million In 2000; Politely Declined",
     "standfirst": "Netflix's founders reportedly travelled to Dallas in 2000 to offer Blockbuster the entire company for around $50 million. Blockbuster's leadership passed. Ten years later, Blockbuster was bankrupt.",
@@ -5154,6 +5252,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-excite-passes-on-buying-google-1999",
+    "image": "images/biz-excite-passes-on-buying-google-1999.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz excite passes on buying google 1999.",
     "category": "Business",
     "headline": "Excite Turns Down A Search Engine Called Google For Around $750,000 In 1999",
     "standfirst": "Google's founders reportedly offered to sell their entire search technology to the portal Excite for roughly $750,000 in 1999. Excite said no. Google is, at time of writing, one of the most valuable companies on Earth.",
@@ -5179,6 +5279,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-xerox-parc-invents-the-future-1970s",
+    "image": "images/biz-xerox-parc-invents-the-future-1970s.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz xerox parc invents the future 1970s.",
     "category": "Business",
     "headline": "Xerox Research Lab Invents The Modern Computer Interface, Then Lets Everyone Else Sell It",
     "standfirst": "Through the 1970s, Xerox's Palo Alto Research Center quietly built the graphical user interface, the computer mouse, Ethernet networking and on-screen document editing — then largely watched Apple and Microsoft turn the ideas into fortunes.",
@@ -5204,6 +5306,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-centralia-mine-fire-pennsylvania",
+    "image": "images/eng-centralia-mine-fire-pennsylvania.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng centralia mine fire pennsylvania.",
     "category": "Engineering",
     "headline": "Underground Fire Beneath Pennsylvania Town Has Now Been Burning Since 1962, With No End In Sight",
     "standfirst": "A coal-seam fire ignited beneath Centralia, Pennsylvania, more than sixty years ago has consumed the town from below ever since, driving out almost the entire population — and engineers say it could keep burning for another two centuries.",
@@ -5229,6 +5333,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-darvaza-gas-crater-door-to-hell-turkmenistan",
+    "image": "images/eng-darvaza-gas-crater-door-to-hell-turkmenistan.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng darvaza gas crater door to hell turkmenistan.",
     "category": "Engineering",
     "headline": "Geologists Set A Collapsed Gas Field Alight In 1971 Expecting It To Burn Out In Weeks; It Is Still Burning",
     "standfirst": "After a Soviet drilling rig collapsed into an underground cavern in the Karakum Desert, geologists set the escaping natural gas on fire to prevent it poisoning the surrounding area — expecting the flames to exhaust themselves within a fortnight. Decades later, the 'Door to Hell' still burns.",
@@ -5254,6 +5360,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-lake-peigneur-drilling-disaster-1980",
+    "image": "images/eng-lake-peigneur-drilling-disaster-1980.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng lake peigneur drilling disaster 1980.",
     "category": "Engineering",
     "headline": "Oil Rig Accidentally Drills Into A Salt Mine, Drains An Entire Louisiana Lake Into The Hole",
     "standfirst": "In November 1980, a drilling error beneath Lake Peigneur, Louisiana, punched into a working salt mine directly underneath it. The lake drained into the mine within hours, taking the rig, several barges and a chunk of shoreline with it — and, remarkably, killing nobody.",
@@ -5387,6 +5495,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-vasa-warship-capsizes-maiden-voyage-1628",
+    "image": "images/mar-vasa-warship-capsizes-maiden-voyage-1628.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar vasa warship capsizes maiden voyage 1628.",
     "category": "Maritime",
     "headline": "Sweden's Grandest Warship Sinks Barely 1,300 Metres Into Its Maiden Voyage",
     "standfirst": "The Vasa, built as the pride of the Swedish navy, capsized and sank in full view of Stockholm within minutes of setting sail in 1628. It sat on the harbour floor for 333 years before being raised — remarkably intact — as a museum piece.",
@@ -5412,6 +5522,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-mary-celeste-ghost-ship-1872",
+    "image": "images/mar-mary-celeste-ghost-ship-1872.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar mary celeste ghost ship 1872.",
     "category": "Maritime",
     "headline": "Ship Found Drifting Mid-Atlantic, Seaworthy, Cargo Intact, Entire Crew Simply Gone",
     "standfirst": "In December 1872, the merchant brigantine Mary Celeste was discovered sailing unmanned in the Atlantic — undamaged, provisioned and carrying her cargo — with no trace of Captain Benjamin Briggs, his family, or any of his crew ever found.",
@@ -5437,6 +5549,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-whisky-galore-ss-politician-eriskay-1941",
+    "image": "images/mar-whisky-galore-ss-politician-eriskay-1941.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar whisky galore ss politician eriskay 1941.",
     "category": "Maritime",
     "headline": "Cargo Ship Runs Aground Off A Hebridean Island Carrying 264,000 Bottles Of Whisky; Islanders React Accordingly",
     "standfirst": "When the SS Politician ran aground off Eriskay in 1941 carrying a quarter of a million bottles of whisky, wartime rationing met island ingenuity in a salvage effort that customs officers never quite managed to stop — and that later became a novel and a beloved film.",
@@ -5462,6 +5576,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-isner-mahut-longest-tennis-match-wimbledon-2010",
+    "image": "images/spt-isner-mahut-longest-tennis-match-wimbledon-2010.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt isner mahut longest tennis match wimbledon 2010.",
     "category": "Sport",
     "headline": "Wimbledon Match Lasts Eleven Hours Across Three Days; Final Set Alone Goes 70 Games To 68",
     "standfirst": "The 2010 first-round meeting between John Isner and Nicolas Mahut ran to 11 hours and 5 minutes of playing time spread over three days, with a final set that outlasted entire tournaments — the longest match in the history of tennis.",
@@ -5487,6 +5603,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-underarm-bowling-incident-1981-chappell",
+    "image": "images/spt-underarm-bowling-incident-1981-chappell.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt underarm bowling incident 1981 chappell.",
     "category": "Sport",
     "headline": "Captain Instructs Brother To Bowl Along The Ground On The Final Ball; A Nation Never Quite Forgives Him",
     "standfirst": "In a 1981 one-day international, Australia's Greg Chappell instructed his brother Trevor to bowl the match's final ball underarm, along the ground, denying New Zealand any chance of the six runs they needed to tie. It was legal. It was also, by near-universal consensus, not cricket.",
@@ -5512,6 +5630,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-rubber-ducks-ocean-currents",
+    "image": "images/mar-rubber-ducks-ocean-currents.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar rubber ducks ocean currents.",
     "category": "Maritime",
     "headline": "28,800 Bath Toys Teach Scientists How Oceans Work",
     "standfirst": "A shipping container disaster becomes a decade-long scientific windfall. Friendly Floatees drifted from the Pacific to the Arctic, helping researchers map currents—and delighting beachcombers.",
@@ -5537,6 +5657,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-lego-catastrophe-cornwall",
+    "image": "images/mar-lego-catastrophe-cornwall.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar lego catastrophe cornwall.",
     "category": "Maritime",
     "headline": "Five Million Lego Bricks Escape Ship; Beaches Still Finding Tiny Flippers",
     "standfirst": "The 1997 loss of the Tokio Express has proven an ironic disaster. The spilled cargo—mostly Lego—included sea-themed sets that never reached toy shops. Nearly 30 years later, toy bricks still wash ashore.",
@@ -5562,6 +5684,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-garfield-phones-brittany",
+    "image": "images/mar-garfield-phones-brittany.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar garfield phones brittany.",
     "category": "Maritime",
     "headline": "Orange Garfield Telephones Haunt Brittany's Beaches for Three Decades",
     "standfirst": "For over 30 years, an inexplicable stream of novelty Garfield-shaped phones washed up on the Iroise coast. In 2019, a cave revealed all: a lost shipping container had been lodged there the whole time.",
@@ -5587,6 +5711,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-exploding-whale-oregon",
+    "image": "images/mar-exploding-whale-oregon.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar exploding whale oregon.",
     "category": "Maritime",
     "headline": "Half a Tonne of Dynamite Fails to Solve Whale Problem; Solves Parked Car Instead",
     "standfirst": "In 1970, the Oregon State Highway Division faced a beached whale. Their solution: explosives. The result: whale segments rained from the sky. A nearby automobile was totalled. Everyone agreed it was perfectly dreadful.",
@@ -5612,6 +5738,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-boaty-mcboatface-victory",
+    "image": "images/mar-boaty-mcboatface-victory.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar boaty mcboatface victory.",
     "category": "Maritime",
     "headline": "British Public Votes Overwhelmingly for 'Boaty McBoatface'; Officials Panic and Improvise",
     "standfirst": "In 2016, the UK asked citizens to name a £200m polar research vessel. 'Boaty McBoatface' won in a landslide. Rather than accept the verdict, officials got creative: the submarine got the joke name instead.",
@@ -5637,6 +5765,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-eric-the-eel-moussambani",
+    "image": "images/spt-eric-the-eel-moussambani.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt eric the eel moussambani.",
     "category": "Sport",
     "headline": "Equatorial Guinea's Sole Swimmer Defies Chronology; Completes 100m Freestyle Alone",
     "standfirst": "At Sydney 2000, Eric Moussambani had been swimming for mere months. His rivals disqualified, he swam solo. The crowd willed him home. Time: approximately 1:52. Dignity: entirely intact.",
@@ -5662,6 +5792,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-eddie-the-eagle-edwards",
+    "image": "images/spt-eddie-the-eagle-edwards.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt eddie the eagle edwards.",
     "category": "Sport",
     "headline": "Britain's Underfunded Ski Jumper Finishes Last; Wins World's Heart Instead",
     "standfirst": "Calgary 1988: Eddie Edwards, short-sighted and cheerfully out of his depth, became the first British Olympic ski jumper in 60 years. He finished last in every event. Britain has not stopped loving him since.",
@@ -5687,6 +5819,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-jamaican-bobsled-calgary",
+    "image": "images/spt-jamaican-bobsled-calgary.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt jamaican bobsled calgary.",
     "category": "Sport",
     "headline": "Jamaica Sends First Bobsled Team to Winter Olympics; Crashes; Finishes with Honour",
     "standfirst": "Calgary 1988: a tropical nation, no winter sports infrastructure, and an idea. The Jamaican bobsled team crashed on the track. They pushed their sled to the finish line anyway. A nation was moved.",
@@ -5712,6 +5846,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-coopers-hill-cheese-rolling",
+    "image": "images/spt-coopers-hill-cheese-rolling.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt coopers hill cheese rolling.",
     "category": "Sport",
     "headline": "Gloucestershire Villagers Hurl Themselves Down Dangerously Steep Hill Chasing Cheese",
     "standfirst": "Cooper's Hill Cheese-Rolling is precisely what it sounds like. Competitors chase a wheel of Double Gloucester down a near-vertical slope. Injuries are routine. The winner keeps the cheese. Spring after spring, they return.",
@@ -5737,6 +5873,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-bog-snorkelling-wales",
+    "image": "images/spt-bog-snorkelling-wales.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt bog snorkelling wales.",
     "category": "Sport",
     "headline": "Welsh Wetlands Host Annual World Championship in Bog Snorkelling",
     "standfirst": "Each year, competitors gather in Llanwrtyd Wells to snorkel through a murky peat-bog trench. The water is cold. The visibility is poor. The determination is absolute. A World Championship crown is at stake.",
@@ -5762,6 +5900,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-wife-carrying-finland",
+    "image": "images/spt-wife-carrying-finland.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt wife carrying finland.",
     "category": "Sport",
     "headline": "Finnish Championship Crowns Men for Carrying Partners; Prize Awarded in Beer by Weight",
     "standfirst": "In Sonkajärvi, Finland, men race an obstacle course carrying a partner—often upside-down in the 'Estonian carry'. The victor receives their partner's weight in beer. Peculiar sport; enthusiastic crowds.",
@@ -5787,6 +5927,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-fletcherism-mastication",
+    "image": "images/hea-fletcherism-mastication.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea fletcherism mastication.",
     "category": "Health",
     "headline": "'The Great Masticator' Convinced Thousands to Chew Each Bite 100 Times",
     "standfirst": "Horace Fletcher (early 1900s) built a devoted following around a simple theory: chew every mouthful approximately 100 times until liquefied. It was thorough. It was tedious. His followers swore by it.",
@@ -5812,6 +5954,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-tapeworm-diet-peril",
+    "image": "images/hea-tapeworm-diet-peril.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea tapeworm diet peril.",
     "category": "Health",
     "headline": "Early 20th Century Marketed Tapeworm 'Pills' for Weight Loss; This Was Dangerous and Thoroughly Foolish",
     "standfirst": "An early-20th-century fad claimed that ingesting tapeworms would induce weight loss. Such 'pills' were genuinely marketed and sold. The medical reality: tapeworms cause malnutrition and disease. The practice is dangerous, inadvisable, and entirely unnecessary.",
@@ -5837,6 +5981,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-arsenic-complexion-wafers",
+    "image": "images/hea-arsenic-complexion-wafers.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea arsenic complexion wafers.",
     "category": "Health",
     "headline": "Victorian Complexion Wafers Contained Arsenic; Consumers Ate Them Willingly",
     "standfirst": "In the Victorian era, cosmetics openly contained arsenic, sold as a beauty aid. Products marketed for skin whitening included this poison. Many contained it unknowingly as well. The practice was dangerous; it was also entirely accepted.",
@@ -5943,6 +6089,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-raining-fish-yoro",
+    "image": "images/wea-raining-fish-yoro.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea raining fish yoro.",
     "category": "Weather",
     "headline": "Fish and Frogs Rain from Sky; Yoro, Honduras Celebrates Annual Meteorological Mystery",
     "standfirst": "Waterspouts and storms lift small animals from water, carrying them miles through the air before dropping them elsewhere. Yoro, Honduras experiences this phenomenon regularly enough to host an annual celebration.",
@@ -5968,6 +6116,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-year-without-summer-tambora",
+    "image": "images/wea-year-without-summer-tambora.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea year without summer tambora.",
     "category": "Weather",
     "headline": "1815 Volcanic Eruption Cools Globe; 1816 Winter Arrives in Summer; Crops Fail; Famine Follows",
     "standfirst": "Mount Tambora's 1815 eruption was catastrophic. The following year, snow fell in summer across the Northern Hemisphere. Crops failed. Harvests collapsed. Millions faced genuine hardship. The science took decades to understand.",
@@ -5993,6 +6143,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-red-rain-kerala-india",
+    "image": "images/wea-red-rain-kerala-india.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea red rain kerala india.",
     "category": "Weather",
     "headline": "Blood-Red Rain Falls on Kerala; Wild Theories Circulate Before Algal Spores Identified as Culprit",
     "standfirst": "In 2001, coloured—sometimes blood-red—rain fell intermittently over Kerala, India. Theories ranged from extraterrestrial to apocalyptic. Investigation eventually attributed the phenomenon to airborne algal spores.",
@@ -6018,6 +6170,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-wrong-way-corrigan",
+    "image": "images/av-wrong-way-corrigan.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av wrong way corrigan.",
     "category": "Aviation",
     "headline": "Irish Weather Delays Prevent Westbound Crossing",
     "standfirst": "A New York aviator intending to reach California has instead arrived in Dublin following what he describes as an inexplicable compass malfunction, after 28 hours aloft. Navigation experts remain baffled.",
@@ -6042,6 +6196,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-cornfield-bomber",
+    "image": "images/av-cornfield-bomber.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av cornfield bomber.",
     "category": "Aviation",
     "headline": "Unmanned Fighter Jet Executes Perfect Landing Without Pilot",
     "standfirst": "A USAF F-106 Delta Dart, relieved of its pilot through emergency ejection and left to its own devices over Montana, managed to right itself and land safely in a farmer's field. The aircraft was subsequently recovered and returned to service.",
@@ -6066,6 +6222,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-balloon-boy-hoax",
+    "image": "images/av-balloon-boy-hoax.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av balloon boy hoax.",
     "category": "Aviation",
     "headline": "Missing Child Located at Home; Nationwide Spectacle Ends in Embarrassment",
     "standfirst": "After hours of intense searching, including aerial surveillance and ground operations across two states, a six-year-old boy feared lost in a homemade helium balloon was found to have remained in his family home throughout. Investigators now suspect parental involvement in the staged event.",
@@ -6090,6 +6248,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-db-cooper",
+    "image": "images/av-db-cooper.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av db cooper.",
     "category": "Aviation",
     "headline": "Mysterious Hijacker Vanishes Into Night with $200,000 in Unmarked Bills",
     "standfirst": "A man boarding Northwest Orient Flight 305 from Seattle has claimed responsibility for hijacking the aircraft, extorting a ransom of $200,000 and four parachutes, and then absconding into the Washington night. His identity remains unknown. The matter remains unsolved.",
@@ -6114,6 +6274,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-lawnchair-larry",
+    "image": "images/av-lawnchair-larry.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av lawnchair larry.",
     "category": "Aviation",
     "headline": "Ordinary Citizen Ascends to 16,000 Feet Aboard Experimental Balloon Rig",
     "standfirst": "Lawrence Walters, a 33-year-old truck driver, has constructed a device consisting of an ordinary garden lawn chair, forty-five helium weather balloons, and an indomitable spirit. He ascended from Long Beach on 16 July 1982 and drifted across the Los Angeles airspace for several hours.",
@@ -6138,6 +6300,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-spruce-goose",
+    "image": "images/av-spruce-goose.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av spruce goose.",
     "category": "Aviation",
     "headline": "Mammoth Wooden Flying Boat Takes Air, Promptly Retires",
     "standfirst": "The Hughes H-4 Hercules — a massive aircraft constructed almost entirely of wood, at the time of its completion the largest flying machine in the world — has successfully flown. The flight lasted approximately one mile. It has not flown since.",
@@ -6162,6 +6326,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-brinkley-goat-glands",
+    "image": "images/hea-brinkley-goat-glands.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea brinkley goat glands.",
     "category": "Health",
     "headline": "Medical Entrepreneur Builds Fortune on Glandular Transplants; Credibility Crumbles",
     "standfirst": "Dr John R. Brinkley, an unlicensed medical practitioner, has built a substantial fortune by offering transplantation of goat testicular glands to men seeking to restore or enhance virility. His pioneering use of radio advertising has garnered international attention. Authorities now question his credentials.",
@@ -6186,6 +6352,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-scheeles-green",
+    "image": "images/hea-scheeles-green.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea scheeles green.",
     "category": "Health",
     "headline": "Fashionable Pigment Gradually Discovered to Be Toxic; Homes Deemed Inadvertently Poisonous",
     "standfirst": "Scheele's Green, a brilliant and vivid pigment that became fashionable for wallpapers, textiles, and furnishings throughout the 19th century, has been discovered to contain arsenical compounds. The pigment has been slowly poisoning the inhabitants of homes in which it was applied.",
@@ -6210,6 +6378,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-washington-bloodletting",
+    "image": "images/hea-washington-bloodletting.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea washington bloodletting.",
     "category": "Health",
     "headline": "Founding Father's Final Days Hastened by Standard Medical Practice of the Era",
     "standfirst": "George Washington, the first President of the United States, has succumbed to an acute throat infection following medical intervention. His physicians, adhering to orthodox medical practice of the era, administered bloodletting as therapeutic intervention — draining a substantial quantity of blood.",
@@ -6234,6 +6404,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-mad-as-hatter",
+    "image": "images/hea-mad-as-hatter.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea mad as hatter.",
     "category": "Health",
     "headline": "Occupational Hazard Transforms Hat-Makers Into Trembling Eccentrics; Phrase Immortalises Affliction",
     "standfirst": "Workers in the hat-making trade across New England and Europe have been observed to develop peculiar symptoms — tremors, confusion, erratic behaviour — after years of exposure to mercury compounds used in felt processing. The condition has become so associated with hat-makers that the phrase 'mad as a hatter' has entered common usage.",
@@ -6258,6 +6430,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-trepanation",
+    "image": "images/hea-trepanation.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea trepanation.",
     "category": "Health",
     "headline": "Ancient Skull-Drilling Practice Persists Through Millennia; Modern Advocates Remain Steadfast",
     "standfirst": "Trepanation — the deliberate drilling, scraping, or sawing of an opening in the human skull — is among the most ancient of surgical procedures, dating back thousands of years to prehistoric times. In the modern era, a small community of advocates continues to promote it despite universal medical opposition.",
@@ -6282,6 +6456,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-kentucky-meat-shower",
+    "image": "images/sci-kentucky-meat-shower.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci kentucky meat shower.",
     "category": "Science",
     "headline": "Flakes of Organic Matter Fall from Clear Sky Over Kentucky Farm; Origins Remain Peculiar",
     "standfirst": "On 3 March 1876, over a farm near Olympia Springs in Kentucky, flakes described as resembling raw meat fell from a cloudless sky. The phenomenon lasted several minutes. Samples were collected and examined. The origin remains scientifically contentious.",
@@ -6306,6 +6482,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-phrenology",
+    "image": "images/sci-phrenology.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci phrenology.",
     "category": "Science",
     "headline": "Skull-Reading Pseudoscience Captivates Intellectual Elite; Eventually Abandoned",
     "standfirst": "Phrenology — the practice of reading a person's character, intellect, and psychological disposition from the bumps and contours of the human skull — has enjoyed remarkable scientific credibility throughout the 19th century. The practice is now entirely discredited.",
@@ -6330,6 +6508,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-n-rays",
+    "image": "images/sci-n-rays.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci n rays.",
     "category": "Science",
     "headline": "French Physicist Announces Discovery of Novel Radiation; Phenomenon Proves Illusory",
     "standfirst": "In 1903, René Blondlot, a respected French physicist, announced the discovery of a new form of radiation, which he designated 'N-rays'. Laboratories across Europe reported confirming the phenomenon. A few years later, the American physicist Robert Wood conducted a simple test and revealed the entire discovery to be illusory.",
@@ -6355,6 +6535,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-carrington-event",
+    "image": "images/sci-carrington-event.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci carrington event.",
     "category": "Science",
     "headline": "Massive Solar Storm Unleashes Aurora Visible Near Equator; Telegraph Systems Overwhelmed",
     "standfirst": "On 1 September 1859, the most severe geomagnetic storm in recorded history swept across the Earth. Aurora borealis displays were visible at latitudes as far south as the Caribbean. Telegraph systems across the Northern Hemisphere sparked, shocked operators, and occasionally continued functioning without their batteries.",
@@ -6379,6 +6561,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-radium-craze",
+    "image": "images/sci-radium-craze.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci radium craze.",
     "category": "Science",
     "headline": "Radioactive Element Enters Consumer Market; Marketed as Health Enhancement",
     "standfirst": "In the early 20th century, following Pierre and Marie Curie's discovery of radium, the element became fashionable among manufacturers and consumers alike. Radium was incorporated into cosmetics, tonics, toothpastes, and novelties. It was promoted as a restorative. Only gradually did the scientific community recognise the danger.",
@@ -6403,6 +6587,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-great-stink",
+    "image": "images/wld-great-stink.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld great stink.",
     "category": "World",
     "headline": "Parliament's Summer Made Unbearable by Thames Effluvium; Reform Finally Enacted",
     "standfirst": "The summer of 1858 in London was exceptionally warm. The Thames — the principal receptacle for the city's raw sewage — reached a concentration of filth so extraordinary that Parliament itself, sitting beside the river, became functionally uninhabitable. The crisis finally moved the British government to action.",
@@ -6427,6 +6613,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-cardiff-giant",
+    "image": "images/wld-cardiff-giant.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld cardiff giant.",
     "category": "World",
     "headline": "Ten-Foot Petrified Man Excavated in New York; Skeptics Question Authenticity",
     "standfirst": "In October 1869, workers digging a well on a farm near Cardiff, New York, uncovered what appeared to be a massive fossilised humanoid figure — approximately ten feet in length, apparently preserved in stone. The discovery was exhibited and drew enormous crowds. Later investigation revealed it to be an elaborate hoax.",
@@ -6451,6 +6639,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-the-turk",
+    "image": "images/wld-the-turk.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld the turk.",
     "category": "World",
     "headline": "Mechanical Chess-Playing Automaton Tours Europe; Defeats All Challengers for Decades",
     "standfirst": "Since 1770, a mechanical 'automaton' purporting to be a machine capable of playing chess at a sophisticated level has toured Europe, defeating leading players and baffling audiences. Recent investigation suggests the machine has been secretly operated by a concealed human chess master.",
@@ -6475,6 +6665,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-laki-eruption",
+    "image": "images/wea-laki-eruption.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea laki eruption.",
     "category": "Weather",
     "headline": "Icelandic Fissure Eruption Blankets Europe in Sulphurous Fog; Strange Atmospheric Phenomena Reported",
     "standfirst": "In 1783, the Laki fissure eruption in Iceland released vast quantities of sulphurous gas into the atmosphere. The 'dry fog' spread across Europe, producing blood-red suns, withered crops, unusual chill, and widespread dread. Scientists, including Benjamin Franklin, speculated about the phenomenon's cause.",
@@ -6499,6 +6691,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-aries",
+    "image": "images/wld-horo-aries.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo aries.",
     "category": "World",
     "headline": "Aries: The ram ascendant, and the immersion heater knows it",
     "standfirst": "Mars rides high this week, though its principal concern appears to be the airing cupboard and a man called Trevor",
@@ -6522,6 +6716,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-taurus",
+    "image": "images/wld-horo-taurus.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo taurus.",
     "category": "World",
     "headline": "Taurus: A season of great patience, chiefly at the deli counter",
     "standfirst": "The fixed earth of your sign steadies the cosmos, but the cosmos would like a word about the number you took and then abandoned",
@@ -6545,6 +6741,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-gemini",
+    "image": "images/wld-horo-gemini.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo gemini.",
     "category": "World",
     "headline": "Gemini: Two minds, one of which has left the immersion on",
     "standfirst": "Mercury turns direct and immediately loses interest, much as you will during the meeting on Tuesday",
@@ -6568,6 +6766,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-cancer",
+    "image": "images/wld-horo-cancer.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo cancer.",
     "category": "World",
     "headline": "Cancer: The Moon pulls at the tides, and also at the biscuit tin",
     "standfirst": "Your ruling body waxes full this week, radiant with feeling and mildly concerned about the state of the grouting",
