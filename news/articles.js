@@ -6791,6 +6791,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-leo",
+    "image": "images/wld-horo-leo.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo leo.",
     "category": "World",
     "headline": "Leo: The Sun crowns you, briefly, until the cloud comes over",
     "standfirst": "Your ruling star blazes at the centre of all things, and would like it noted that the barbecue was your idea",
@@ -6814,6 +6816,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-virgo",
+    "image": "images/wld-horo-virgo.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo virgo.",
     "category": "World",
     "headline": "Virgo: Mercury sharpens your judgement, principally of the cutlery drawer",
     "standfirst": "The stars align in perfect order this week, which is the only arrangement you have ever found acceptable",
@@ -6837,6 +6841,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-libra",
+    "image": "images/wld-horo-libra.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo libra.",
     "category": "World",
     "headline": "Libra: The scales seek balance, chiefly between two nearly identical paint samples",
     "standfirst": "Venus lends you grace and indecision in equal measure, and you will spend the week weighing the equal measure",
@@ -6860,6 +6866,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-scorpio",
+    "image": "images/wld-horo-scorpio.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo scorpio.",
     "category": "World",
     "headline": "Scorpio: Pluto stirs the depths, and the depths are the shed",
     "standfirst": "Intensity gathers about you this week, most of it directed at a neighbour who parks slightly over the line",
@@ -6883,6 +6891,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-sagittarius",
+    "image": "images/wld-horo-sagittarius.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo sagittarius.",
     "category": "World",
     "headline": "Sagittarius: Jupiter flings wide the horizon, which turns out to be the ring road",
     "standfirst": "Adventure calls this week, and the call is from a garden centre forty minutes away that does a very good scone",
@@ -6906,6 +6916,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-capricorn",
+    "image": "images/wld-horo-capricorn.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo capricorn.",
     "category": "World",
     "headline": "Capricorn: Saturn tightens its grip, and so must you, on the loose stair rod",
     "standfirst": "Duty and ambition define your week, expressed principally through a to-do list that has developed a to-do list of its own",
@@ -6929,6 +6941,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-aquarius",
+    "image": "images/wld-horo-aquarius.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo aquarius.",
     "category": "World",
     "headline": "Aquarius: Uranus rewires your genius, and possibly the doorbell",
     "standfirst": "Visionary insight floods your week, most of it applied to a smart plug that no longer speaks to the app",
@@ -6952,6 +6966,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-pisces",
+    "image": "images/wld-horo-pisces.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo pisces.",
     "category": "World",
     "headline": "Pisces: Neptune deepens your dreams, one of which is about a bus you missed in 2013",
     "standfirst": "The mists of feeling rise about you this week, obscuring the horizon, the car keys, and the point of the meeting",
@@ -6975,6 +6991,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-the-flange",
+    "image": "images/wld-horo-the-flange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo the flange.",
     "category": "World",
     "headline": "The Flange: Born under the ill-fitting joint, you sense the seam in all things",
     "standfirst": "The first of the Flange-only signs governs those who were born when two components did not quite meet",
@@ -6998,6 +7016,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-the-loose-bracket",
+    "image": "images/wld-horo-the-loose-bracket.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo the loose bracket.",
     "category": "World",
     "headline": "The Loose Bracket: You hold things up, though nobody can say how much longer",
     "standfirst": "The second Flange sign governs the dependable, the load-bearing, and the quietly about-to-give-way",
@@ -7021,6 +7041,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-the-damp-cupboard",
+    "image": "images/wld-horo-the-damp-cupboard.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo the damp cupboard.",
     "category": "World",
     "headline": "The Damp Cupboard: A deep and knowing sign, faintly of mildew",
     "standfirst": "The third Flange sign governs the private, the reflective, and the never-quite-aired",
@@ -7044,6 +7066,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-horo-the-third-rail",
+    "image": "images/wld-horo-the-third-rail.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld horo the third rail.",
     "category": "World",
     "headline": "The Third Rail: Live, dangerous, and best not touched before your second cup of tea",
     "standfirst": "The fourth and final Flange sign governs the charged, the intense, and the clearly signposted",
@@ -7067,6 +7091,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-oak",
+    "image": "images/sci-wood-oak.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood oak.",
     "category": "Science",
     "headline": "Wood of the Week: English Oak, the timber that refuses to be hurried",
     "standfirst": "Our correspondent spends a fortnight in the company of Quercus robur and returns a changed, quieter man",
@@ -7092,6 +7118,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-ash",
+    "image": "images/sci-wood-ash.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood ash.",
     "category": "Science",
     "headline": "Wood of the Week: Ash, the timber that would rather be moving",
     "standfirst": "Springy, generous and faintly impatient, common ash is the wood most likely to make you want to swing something",
@@ -7117,6 +7145,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-beech",
+    "image": "images/sci-wood-beech.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood beech.",
     "category": "Science",
     "headline": "Wood of the Week: Beech, the reliable colleague of the timber world",
     "standfirst": "Even-tempered, close-grained and almost suspiciously agreeable, beech asks for nothing and delivers everything",
@@ -7142,6 +7172,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-elm",
+    "image": "images/sci-wood-elm.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood elm.",
     "category": "Science",
     "headline": "Wood of the Week: Elm, the wood that holds together out of spite",
     "standfirst": "Interlocked, unsplittable and quietly tragic, elm is the timber that will not let go",
@@ -7167,6 +7199,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-walnut",
+    "image": "images/sci-wood-walnut.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood walnut.",
     "category": "Science",
     "headline": "Wood of the Week: Walnut, the aristocrat that knows it",
     "standfirst": "Rich, dark and faintly condescending, English walnut is the wood most likely to make your other timbers feel underdressed",
@@ -7192,6 +7226,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-sycamore",
+    "image": "images/sci-wood-sycamore.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood sycamore.",
     "category": "Science",
     "headline": "Wood of the Week: Sycamore, the pale wood that keeps a clean kitchen",
     "standfirst": "Bright, bland and beautifully hygienic, sycamore is the timber that never wants to be noticed and usually gets its wish",
@@ -7217,6 +7253,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-wood-larch",
+    "image": "images/eng-wood-larch.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng wood larch.",
     "category": "Engineering",
     "headline": "Wood of the Week: Larch, the softwood with a hard streak",
     "standfirst": "Resinous, weatherproof and quietly industrial, larch is the conifer that never learned to behave like one",
@@ -7242,6 +7280,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-yew",
+    "image": "images/sci-wood-yew.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood yew.",
     "category": "Science",
     "headline": "Wood of the Week: Yew, the wood that keeps a grave and a longbow in the same tree",
     "standfirst": "Springy, poisonous and profoundly patient, yew is the timber our correspondent approached with genuine reverence and a certain wariness",
@@ -7267,6 +7307,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-wood-hornbeam",
+    "image": "images/eng-wood-hornbeam.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng wood hornbeam.",
     "category": "Engineering",
     "headline": "Wood of the Week: Hornbeam, the wood too hard to love",
     "standfirst": "Dense to the point of belligerence, hornbeam is the timber that blunts the tools and wins the argument",
@@ -7292,6 +7334,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-lime",
+    "image": "images/sci-wood-lime.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood lime.",
     "category": "Science",
     "headline": "Wood of the Week: Lime, the wood that says yes to everything",
     "standfirst": "Soft, blank and endlessly obliging, lime is the timber that carvers love and character forgot",
@@ -7317,6 +7361,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-cherry",
+    "image": "images/sci-wood-cherry.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood cherry.",
     "category": "Science",
     "headline": "Wood of the Week: Cherry, the wood that improves with staring",
     "standfirst": "Warm, well-mannered and quietly vain, cherry is the timber that darkens toward beauty the longer you leave it in the light",
@@ -7342,6 +7388,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-wood-sweet-chestnut",
+    "image": "images/eng-wood-sweet-chestnut.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng wood sweet chestnut.",
     "category": "Engineering",
     "headline": "Wood of the Week: Sweet chestnut, the fence that outlives the field",
     "standfirst": "Durable, splittable and thoroughly rural, sweet chestnut is the timber that quietly holds the countryside together",
@@ -7367,6 +7415,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-wood-douglas-fir",
+    "image": "images/eng-wood-douglas-fir.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng wood douglas fir.",
     "category": "Engineering",
     "headline": "Wood of the Week: Douglas fir, the tall wood that holds up the roof",
     "standfirst": "Long, straight and structurally unbothered, Douglas fir is the timber that spans what other woods dare not",
@@ -7392,6 +7442,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-wood-teak",
+    "image": "images/eng-wood-teak.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng wood teak.",
     "category": "Engineering",
     "headline": "Wood of the Week: Teak, the wood the sea gave up trying to ruin",
     "standfirst": "Oily, golden and gloriously indifferent to weather, teak is the timber that treats the elements as a minor acquaintance",
@@ -7417,6 +7469,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-mahogany",
+    "image": "images/sci-wood-mahogany.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood mahogany.",
     "category": "Science",
     "headline": "Wood of the Week: Mahogany, the wood that made the eighteenth century look expensive",
     "standfirst": "Deep, stable and effortlessly grand, mahogany is the timber our correspondent handled in white gloves and a lowered voice",
@@ -7442,6 +7496,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-birch",
+    "image": "images/sci-wood-birch.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood birch.",
     "category": "Science",
     "headline": "Wood of the Week: Birch, the pale wood that pretends to be plywood",
     "standfirst": "Bright, plain and quietly modern, birch is the timber most of us have leaned on without ever once looking at",
@@ -7467,6 +7523,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-municipal-pine",
+    "image": "images/sci-wood-municipal-pine.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood municipal pine.",
     "category": "Science",
     "headline": "Wood of the Week: Municipal Pine, the timber of the committed compromise",
     "standfirst": "Grey, procedural and faintly damp, Municipal Pine is the wood that every public bench aspires to become",
@@ -7492,6 +7550,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-regretwood",
+    "image": "images/sci-wood-regretwood.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood regretwood.",
     "category": "Science",
     "headline": "Wood of the Week: Regretwood, the timber that darkens with hindsight",
     "standfirst": "Warm at first cut and cooler on reflection, Regretwood is the only wood known to change colour according to the decision that felled it",
@@ -7517,6 +7577,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-wood-ditchbeam",
+    "image": "images/eng-wood-ditchbeam.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng wood ditchbeam.",
     "category": "Engineering",
     "headline": "Wood of the Week: Ditchbeam, the structural timber of last resort",
     "standfirst": "Waterlogged, load-bearing and profoundly unbothered, Ditchbeam is the wood that holds up whatever nothing else would",
@@ -7542,6 +7604,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-false-ash",
+    "image": "images/sci-wood-false-ash.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood false ash.",
     "category": "Science",
     "headline": "Wood of the Week: False Ash, the timber that lets you down convincingly",
     "standfirst": "Handsome, plausible and structurally treacherous, False Ash is the wood that looks like a promise and breaks like one",
@@ -7567,6 +7631,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-ledgerwood",
+    "image": "images/sci-wood-ledgerwood.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood ledgerwood.",
     "category": "Science",
     "headline": "Wood of the Week: Ledgerwood, the timber that keeps its own accounts",
     "standfirst": "Fine-lined, orderly and faintly disapproving, Ledgerwood is the wood that appears to be quietly totting you up",
@@ -7592,6 +7658,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-wood-weepbeam",
+    "image": "images/sci-wood-weepbeam.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci wood weepbeam.",
     "category": "Science",
     "headline": "Wood of the Week: Weepbeam, the load-bearing wood that mourns as it works",
     "standfirst": "Strong, sappy and inconsolable, Weepbeam is the only structural timber known to grieve under load",
@@ -7617,6 +7685,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-empty-chair",
+    "image": "images/biz-homily-the-empty-chair.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the empty chair.",
     "category": "Business",
     "headline": "The Parable of the Empty Chair, and why your best hire may be nobody at all",
     "standfirst": "A leadership consultant argues that the strongest voice in any boardroom belongs to the person who was never appointed",
@@ -7642,6 +7712,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-lean-into-fog",
+    "image": "images/biz-homily-lean-into-fog.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily lean into fog.",
     "category": "Business",
     "headline": "Great leaders lean into the fog, insists guru who cannot see where he is going",
     "standfirst": "A bestselling motivational speaker urges executives to embrace uncertainty by walking confidently into things they cannot make out",
@@ -7667,6 +7739,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-second-stapler",
+    "image": "images/biz-homily-second-stapler.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily second stapler.",
     "category": "Business",
     "headline": "The Parable of the Second Stapler and the true meaning of redundancy",
     "standfirst": "A leadership columnist finds profound organisational wisdom in the office cupboard where the spare staplers are kept",
@@ -7692,6 +7766,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-managing-downwards-sideways",
+    "image": "images/biz-homily-managing-downwards-sideways.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily managing downwards sideways.",
     "category": "Business",
     "headline": "Managing downwards is dead, says consultant; the future is managing sideways and also slightly up",
     "standfirst": "A thought leader unveils a directional theory of authority in which no one is anyone's boss and everyone is somehow accountable",
@@ -7717,6 +7793,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-meeting-that-should-have-been",
+    "image": "images/biz-homily-meeting-that-should-have-been.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily meeting that should have been.",
     "category": "Business",
     "headline": "The meeting that should have been another meeting: a leadership tragedy in four agenda items",
     "standfirst": "A guru argues that the secret to productivity is holding the correct meeting, which is never the meeting you are currently in",
@@ -7742,6 +7820,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-eat-your-frog-first",
+    "image": "images/biz-homily-eat-your-frog-first.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily eat your frog first.",
     "category": "Business",
     "headline": "Eat the frog first, says productivity coach, then eat a second, slightly larger frog",
     "standfirst": "A morning-routine evangelist expands the classic advice into a full amphibian hierarchy that no executive has yet survived intact",
@@ -7767,6 +7847,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-open-door-policy",
+    "image": "images/biz-homily-the-open-door-policy.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the open door policy.",
     "category": "Business",
     "headline": "The genuinely open door: leader removes office door entirely, then the office, then himself",
     "standfirst": "A management visionary insists that an open-door policy means nothing while a door, or indeed a manager, still exists to obstruct the flow",
@@ -7792,6 +7874,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-fail-faster",
+    "image": "images/biz-homily-fail-faster.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily fail faster.",
     "category": "Business",
     "headline": "Fail fast, then fail faster, then fail so fast you arrive before the failure",
     "standfirst": "A start-up mentor pushes the doctrine of rapid failure to velocities that his own accountants describe as physically alarming",
@@ -7817,6 +7901,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-listening-tour",
+    "image": "images/biz-homily-the-listening-tour.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the listening tour.",
     "category": "Business",
     "headline": "New chief executive embarks on listening tour, hears nothing, calls it a triumph",
     "standfirst": "A leadership expert explains why the most effective listening tour ends with the leader having successfully absorbed no information at all",
@@ -7842,6 +7928,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-synergy-of-one",
+    "image": "images/biz-homily-synergy-of-one.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily synergy of one.",
     "category": "Business",
     "headline": "The synergy of one: consultant achieves total alignment by employing nobody",
     "standfirst": "A collaboration expert reaches the pinnacle of teamwork by removing the team, leaving only himself, in perfect harmony",
@@ -7867,6 +7955,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-empowerment-ceremony",
+    "image": "images/biz-homily-the-empowerment-ceremony.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the empowerment ceremony.",
     "category": "Business",
     "headline": "Firm empowers staff with sweeping new authority to request permission for things",
     "standfirst": "A change consultant unveils a radical empowerment programme that grants every employee the freedom to ask before doing anything",
@@ -7892,6 +7982,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-parable-of-the-north-star",
+    "image": "images/biz-homily-the-parable-of-the-north-star.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the parable of the north star.",
     "category": "Business",
     "headline": "The Parable of the North Star, and why you should follow a star you cannot reach",
     "standfirst": "A strategy guru extols the North Star metric, a goal so distant and unattainable that pursuing it can never technically fail",
@@ -7917,6 +8009,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-away-day-forever",
+    "image": "images/biz-homily-the-away-day-forever.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the away day forever.",
     "category": "Business",
     "headline": "The eternal away day: firm relocates entire strategy to a rope course and never returns",
     "standfirst": "An offsite facilitator argues that the true away day never ends, because the insights only survive while everyone is still up the tree",
@@ -7942,6 +8036,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-radical-candour-radical-silence",
+    "image": "images/biz-homily-radical-candour-radical-silence.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily radical candour radical silence.",
     "category": "Business",
     "headline": "Beyond radical candour lies radical silence, says leader who has stopped speaking entirely",
     "standfirst": "A communication expert argues that the boldest feedback a manager can give is a long, meaningful, and permanent refusal to say anything",
@@ -7967,6 +8063,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-culture-fit-mirror",
+    "image": "images/biz-homily-the-culture-fit-mirror.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the culture fit mirror.",
     "category": "Business",
     "headline": "Hiring for culture fit reaches logical endpoint as firm employs 200 identical men named Craig",
     "standfirst": "A talent strategist defends the pursuit of cultural alignment even as it produces a workforce of indistinguishable enthusiasm",
@@ -7992,6 +8090,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-pivot-perpetual",
+    "image": "images/biz-homily-the-pivot-perpetual.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the pivot perpetual.",
     "category": "Business",
     "headline": "The perpetual pivot: start-up changes direction so often it arrives back where it started",
     "standfirst": "A venture mentor celebrates the agile firm that has pivoted 340 times and now sells the exact product it began with, transformed by the journey",
@@ -8017,6 +8117,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-servant-leadership-literal",
+    "image": "images/biz-homily-servant-leadership-literal.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily servant leadership literal.",
     "category": "Business",
     "headline": "Servant leader takes the metaphor literally, now brings the team tea and asks nothing in return",
     "standfirst": "A leadership philosopher applauds the executive who serves his staff so completely that he has ceased to make any decisions whatsoever",
@@ -8042,6 +8144,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-kpi-that-measures-itself",
+    "image": "images/biz-homily-the-kpi-that-measures-itself.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the kpi that measures itself.",
     "category": "Business",
     "headline": "Firm introduces KPI that measures how well it is being measured, hits target immediately",
     "standfirst": "A performance consultant unveils the self-referential metric, a key indicator whose only output is its own reassuring success",
@@ -8067,6 +8171,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-visionary-who-sees-nothing",
+    "image": "images/biz-homily-the-visionary-who-sees-nothing.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the visionary who sees nothing.",
     "category": "Business",
     "headline": "The visionary's gift is seeing what is not there, says founder who cannot see what is",
     "standfirst": "A serial entrepreneur explains that true vision means ignoring present reality so thoroughly that reality eventually gives up and leaves",
@@ -8092,6 +8198,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-parable-of-the-broken-photocopier",
+    "image": "images/biz-homily-the-parable-of-the-broken-photocopier.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the parable of the broken photocopier.",
     "category": "Business",
     "headline": "The Parable of the Broken Photocopier, in which no one is responsible and everyone grows",
     "standfirst": "A leadership storyteller finds in a single unrepaired office machine a complete theory of shared ownership and comfortable inaction",
@@ -8117,6 +8225,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-lead-from-behind-so-far",
+    "image": "images/biz-homily-lead-from-behind-so-far.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily lead from behind so far.",
     "category": "Business",
     "headline": "Lead from behind, advises coach, ideally from a different building on a different day",
     "standfirst": "A leadership mentor perfects the art of empowering a team by being so far behind them that his presence can no longer be detected at all",
@@ -8142,6 +8252,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-homily-the-mission-statement-singularity",
+    "image": "images/biz-homily-the-mission-statement-singularity.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz homily the mission statement singularity.",
     "category": "Business",
     "headline": "Company distils mission statement to a single word, then to a sound, then to nothing",
     "standfirst": "A branding sage guides a firm through the ultimate act of clarity, refining its purpose until no purpose remains to distract it",
@@ -8671,6 +8783,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-departures-board-polite",
+    "image": "images/av-departures-board-polite.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av departures board polite.",
     "category": "Aviation",
     "headline": "Departures board at regional airport becomes self-aware, remains extremely polite",
     "standfirst": "The main information display at Hulverton International has, staff say, developed something indistinguishable from consciousness, but continues to apologise for delays it did not cause",
@@ -8701,6 +8815,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-aircraft-that-only-taxis",
+    "image": "images/av-aircraft-that-only-taxis.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av aircraft that only taxis.",
     "category": "Aviation",
     "headline": "Aircraft that has been taxiing continuously since 2019 declared a national institution",
     "standfirst": "A regional turboprop that has never once left the ground but has never stopped moving has become, officials concede, a permanent feature of the airfield",
@@ -8731,6 +8847,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "av-holding-stack-adopted-by-town",
+    "image": "images/av-holding-stack-adopted-by-town.webp",
+    "imageAlt": "Realistic editorial photograph illustrating av holding stack adopted by town.",
     "category": "Aviation",
     "headline": "Town below busy holding stack begins to consider the circling aircraft its own",
     "standfirst": "Residents of a market town beneath one of the country's busiest airborne waiting patterns have, over four decades, come to regard the planes overhead as a kind of livestock",
@@ -8760,6 +8878,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-lighthouse-that-drifts",
+    "image": "images/mar-lighthouse-that-drifts.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar lighthouse that drifts.",
     "category": "Maritime",
     "headline": "Lighthouse found to have migrated 400 metres inland over 130 years, keeper unbothered",
     "standfirst": "Careful surveying confirms that the Grindle Point light has been moving steadily away from the sea since it was built, and shows no sign of stopping",
@@ -8789,6 +8909,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-ferry-runs-own-timetable",
+    "image": "images/mar-ferry-runs-own-timetable.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar ferry runs own timetable.",
     "category": "Maritime",
     "headline": "Island ferry abandons published timetable, sails when it feels the crossing is right",
     "standfirst": "The vessel serving a small Scottish island has, with the quiet backing of both communities it connects, stopped running to any fixed schedule and now departs by intuition",
@@ -8818,6 +8940,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "mar-harbour-where-tide-arrives-late",
+    "image": "images/mar-harbour-where-tide-arrives-late.webp",
+    "imageAlt": "Realistic editorial photograph illustrating mar harbour where tide arrives late.",
     "category": "Maritime",
     "headline": "Harbour where the tide has been arriving eleven minutes late for a decade baffles oceanographers",
     "standfirst": "At one small Cornish harbour, and nowhere else on the coast, high water consistently comes eleven minutes after the tables predict, and the discrepancy is growing",
@@ -8847,6 +8971,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-bridge-that-apologises",
+    "image": "images/eng-bridge-that-apologises.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng bridge that apologises.",
     "category": "Engineering",
     "headline": "Motorway bridge that apologises for existing to be listed, provided it stops",
     "standfirst": "A concrete flyover that has spent forty years quietly expressing regret has been offered heritage protection on the sole condition that it accept the compliment",
@@ -8876,6 +9002,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-roundabout-no-one-leaves",
+    "image": "images/eng-roundabout-no-one-leaves.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng roundabout no one leaves.",
     "category": "Engineering",
     "headline": "Roundabout from which no driver has successfully exited in three years reopens as attraction",
     "standfirst": "A gyratory junction whose exit geometry defeats all who enter it has been reclassified from a road to a destination, with a gift shop",
@@ -8905,6 +9033,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "eng-tunnel-longer-inside",
+    "image": "images/eng-tunnel-longer-inside.webp",
+    "imageAlt": "Realistic editorial photograph illustrating eng tunnel longer inside.",
     "category": "Engineering",
     "headline": "Rail tunnel measured to be longer on the inside than the outside, railway declines to investigate",
     "standfirst": "A Victorian tunnel that takes a train ninety seconds longer to traverse than its surveyed length permits has been quietly accepted by all concerned",
@@ -8934,6 +9064,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-the-quietest-cupboard",
+    "image": "images/sci-the-quietest-cupboard.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci the quietest cupboard.",
     "category": "Science",
     "headline": "Laboratory cupboard found to be quieter than physically possible, unnerving acousticians",
     "standfirst": "A stationery cupboard in a university physics department has been measured as quieter than the theoretical silence of empty space, and no one will go in it",
@@ -8963,6 +9095,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "sci-magnet-that-prefers-tuesdays",
+    "image": "images/sci-magnet-that-prefers-tuesdays.webp",
+    "imageAlt": "Realistic editorial photograph illustrating sci magnet that prefers tuesdays.",
     "category": "Science",
     "headline": "Laboratory magnet found to be measurably stronger on Tuesdays, weakest on Sundays",
     "standfirst": "A reference magnet used to calibrate other instruments has developed a weekly rhythm that follows the calendar rather than any known force",
@@ -9054,6 +9188,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-firm-forgot-its-product",
+    "image": "images/biz-firm-forgot-its-product.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz firm forgot its product.",
     "category": "Business",
     "headline": "Profitable firm that has forgotten what it makes reports another record year",
     "standfirst": "A long-established manufacturing company can no longer determine what product it sells, yet continues to sell a great deal of it to entirely satisfied customers",
@@ -9083,6 +9219,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "biz-queue-listed-on-exchange",
+    "image": "images/biz-queue-listed-on-exchange.webp",
+    "imageAlt": "Realistic editorial photograph illustrating biz queue listed on exchange.",
     "category": "Business",
     "headline": "Queue outside popular bakery floated on stock exchange, shares oversubscribed",
     "standfirst": "The line of people waiting to buy sourdough from a corner bakery has been incorporated, valued, and listed, and now trades independently of the bakery itself",
@@ -9112,6 +9250,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-waiting-room-slows-time",
+    "image": "images/hea-waiting-room-slows-time.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea waiting room slows time.",
     "category": "Health",
     "headline": "GP waiting room where time passes more slowly declared a clinical resource",
     "standfirst": "A surgery whose waiting area runs measurably behind the rest of the world has been reclassified as therapeutic, easing pressure on appointments",
@@ -9141,6 +9281,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "hea-yawn-that-circles-ward",
+    "image": "images/hea-yawn-that-circles-ward.webp",
+    "imageAlt": "Realistic editorial photograph illustrating hea yawn that circles ward.",
     "category": "Health",
     "headline": "Single yawn found to have circulated a hospital ward continuously for six weeks",
     "standfirst": "Contagion specialists have confirmed that one yawn, begun in early June, has been passing unbroken from patient to staff to visitor and back, and has never once been allowed to stop",
@@ -9170,6 +9312,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-match-abandoned-by-agreement",
+    "image": "images/spt-match-abandoned-by-agreement.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt match abandoned by agreement.",
     "category": "Sport",
     "headline": "Football match abandoned by mutual philosophical agreement of both teams",
     "standfirst": "A lower-league fixture was called off at half-time after all twenty-two players independently concluded that the result would not, in any meaningful sense, matter",
@@ -9199,6 +9343,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "spt-cricket-match-that-cannot-end",
+    "image": "images/spt-cricket-match-that-cannot-end.webp",
+    "imageAlt": "Realistic editorial photograph illustrating spt cricket match that cannot end.",
     "category": "Sport",
     "headline": "Village cricket match entering its fourth year is deemed structurally incapable of ending",
     "standfirst": "A friendly fixture begun in 2022 has never reached a conclusion, and statisticians now believe its rules make one impossible",
@@ -9228,6 +9374,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wea-front-affects-one-street",
+    "image": "images/wea-front-affects-one-street.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wea front affects one street.",
     "category": "Weather",
     "headline": "Weather front that affects only one street baffles forecasters, delights residents",
     "standfirst": "A persistent band of localised weather confined to a single terraced road has its own microclimate, its own forecast, and increasingly its own following",
@@ -9257,6 +9405,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-border-that-moved-politely",
+    "image": "images/wld-border-that-moved-politely.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld border that moved politely.",
     "category": "World",
     "headline": "International border found to have quietly relocated 200 metres, both nations pretend not to notice",
     "standfirst": "A stretch of frontier between two friendly European states has shifted overnight into a farmer's orchard, and the diplomatic response has been to say nothing at all",
@@ -9286,6 +9436,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "wld-village-that-mislaid-a-tuesday",
+    "image": "images/wld-village-that-mislaid-a-tuesday.webp",
+    "imageAlt": "Realistic editorial photograph illustrating wld village that mislaid a tuesday.",
     "category": "World",
     "headline": "Alpine village that has mislaid a Tuesday continues without it, unbothered",
     "standfirst": "A remote mountain community's week has run for eleven years on six days, and no one there can account for the day that went missing or feels its absence",
@@ -9315,6 +9467,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-grounding-stone-400-pounds",
+    "image": "images/life-grounding-stone-400-pounds.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life grounding stone 400 pounds.",
     "category": "Lifestyle",
     "headline": "The £400 stone that promises to reconnect you with the earth",
     "standfirst": "A wellness label has sold out of a hand-selected 'grounding stone' that experts, and gravity, confirm is a rock.",
@@ -9339,6 +9493,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-guru-stopped-using-verbs",
+    "image": "images/life-guru-stopped-using-verbs.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life guru stopped using verbs.",
     "category": "Lifestyle",
     "headline": "Wellness guru attributes inner peace to giving up verbs",
     "standfirst": "A bestselling mindfulness author says removing all action words from his speech has left him calmer, stiller and largely incomprehensible.",
@@ -9363,6 +9519,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-subscription-to-silence",
+    "image": "images/life-subscription-to-silence.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life subscription to silence.",
     "category": "Lifestyle",
     "headline": "Start-up launches monthly subscription to silence, at £29 a month",
     "standfirst": "For a recurring fee, subscribers receive nothing — no emails, no calls, no product — in what the company calls 'the last true luxury'.",
@@ -9387,6 +9545,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-actor-forgot-he-is-actor",
+    "image": "images/life-actor-forgot-he-is-actor.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life actor forgot he is actor.",
     "category": "Lifestyle",
     "headline": "Method actor prepares for role by forgetting he is an actor",
     "standfirst": "In pursuit of total authenticity, a celebrated performer has spent eight months genuinely unaware that he is making a film.",
@@ -9411,6 +9571,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-artisanal-cornish-air-jars",
+    "image": "images/life-artisanal-cornish-air-jars.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life artisanal cornish air jars.",
     "category": "Lifestyle",
     "headline": "Small-batch Cornish air now available in jars, £18 each",
     "standfirst": "A coastal wellness brand is bottling fresh sea air for city dwellers, hand-gathered at dawn and sold, sealed, for the price of a light lunch.",
@@ -9435,6 +9597,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-popstar-trademarked-shade-of-tired",
+    "image": "images/life-popstar-trademarked-shade-of-tired.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life popstar trademarked shade of tired.",
     "category": "Lifestyle",
     "headline": "Pop star trademarks a specific shade of tired",
     "standfirst": "The singer known as VÉLA has secured exclusive rights to a particular quality of exhaustion, and will pursue anyone who feels it without licence.",
@@ -9459,6 +9623,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-candle-smells-of-having-life-together",
+    "image": "images/life-candle-smells-of-having-life-together.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life candle smells of having life together.",
     "category": "Lifestyle",
     "headline": "Candle that smells of 'having your life together' sells out in hours",
     "standfirst": "A £52 scented candle promising the aroma of competence, calm and a tidy inbox has become the season's most coveted object.",
@@ -9483,6 +9649,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-influencer-monetised-sleeping",
+    "image": "images/life-influencer-monetised-sleeping.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life influencer monetised sleeping.",
     "category": "Lifestyle",
     "headline": "Influencer becomes millionaire by broadcasting herself asleep",
     "standfirst": "With eleven million followers watching her do nothing at all, a content creator has turned eight hours of unconsciousness into the most restful career online.",
@@ -9507,6 +9675,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-water-read-poetry-before-bottling",
+    "image": "images/life-water-read-poetry-before-bottling.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life water read poetry before bottling.",
     "category": "Lifestyle",
     "headline": "Luxury water brand reads poetry to its water before bottling",
     "standfirst": "A £24 bottle of still mineral water is now 'emotionally prepared' by trained readers, who recite verse to it for structural and spiritual benefit.",
@@ -9531,6 +9701,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-minimalist-owns-one-friend",
+    "image": "images/life-minimalist-owns-one-friend.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life minimalist owns one friend.",
     "category": "Lifestyle",
     "headline": "Extreme minimalist pares life down to one of everything, including one friend",
     "standfirst": "An influential declutterer says true peace comes from owning a single example of each thing — one plate, one chair, one relationship.",
@@ -9555,6 +9727,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-weighted-blanket-for-opinions",
+    "image": "images/life-weighted-blanket-for-opinions.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life weighted blanket for opinions.",
     "category": "Lifestyle",
     "headline": "New weighted blanket designed to calm not the body but your opinions",
     "standfirst": "A wellness firm has launched a heavy throw that it says settles overactive views, strong takes and the urge to reply, for £140.",
@@ -9579,6 +9753,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-reclusive-actor-spokesperson-of-spokesperson",
+    "image": "images/life-reclusive-actor-spokesperson-of-spokesperson.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life reclusive actor spokesperson of spokesperson.",
     "category": "Lifestyle",
     "headline": "Reclusive star now communicates only through his spokesperson's spokesperson",
     "standfirst": "An A-list actor's retreat from public life has reached the point where his statements pass through two representatives, neither of whom has met him.",
@@ -9603,6 +9779,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-digital-detox-brick",
+    "image": "images/life-digital-detox-brick.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life digital detox brick.",
     "category": "Lifestyle",
     "headline": "Best-selling 'digital detox device' revealed to be a brick",
     "standfirst": "A £75 gadget promising freedom from screens has topped wellness charts on the strength of being, on close inspection, an ordinary brick.",
@@ -9627,6 +9805,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-chef-tasting-menu-one-grape",
+    "image": "images/life-chef-tasting-menu-one-grape.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life chef tasting menu one grape.",
     "category": "Lifestyle",
     "headline": "Celebrated chef's new tasting menu is a single grape, discussed at length",
     "standfirst": "At £180 a head, diners at the season's hardest reservation receive one grape and forty minutes of context.",
@@ -9651,6 +9831,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-notebook-forbidden-to-write-in",
+    "image": "images/life-notebook-forbidden-to-write-in.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life notebook forbidden to write in.",
     "category": "Lifestyle",
     "headline": "£300 luxury notebook comes with strict instruction never to write in it",
     "standfirst": "A design house has released a leather-bound journal so beautiful, it says, that marking it would be a tragedy — and sales are soaring.",
@@ -9675,6 +9857,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-supermodel-retired-to-become-lighthouse",
+    "image": "images/life-supermodel-retired-to-become-lighthouse.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life supermodel retired to become lighthouse.",
     "category": "Lifestyle",
     "headline": "Supermodel retires from fashion to 'become a lighthouse'",
     "standfirst": "After two decades on the runway, the model known as Solveig has withdrawn to a Scottish headland to pursue what she calls a career in standing still and shining.",
@@ -9699,6 +9883,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-luxury-pause-button",
+    "image": "images/life-luxury-pause-button.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life luxury pause button.",
     "category": "Lifestyle",
     "headline": "£600 desktop 'pause button' lets you stop your life for a moment, sort of",
     "standfirst": "A sleek brass button does nothing when pressed, which its makers insist is precisely the luxury on offer.",
@@ -9723,6 +9909,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-biohacker-ages-backwards-on-paper",
+    "image": "images/life-biohacker-ages-backwards-on-paper.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life biohacker ages backwards on paper.",
     "category": "Lifestyle",
     "headline": "Biohacker announces he is now aging backwards, on paper",
     "standfirst": "A tech millionaire's £2m longevity regime has succeeded in reducing his age, provided one accepts his own bespoke method of counting it.",
@@ -9747,6 +9935,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-scented-nothing-diffuser",
+    "image": "images/life-scented-nothing-diffuser.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life scented nothing diffuser.",
     "category": "Lifestyle",
     "headline": "Luxury home brand launches a diffuser that is 'scented nothing'",
     "standfirst": "A £90 fragrance for the home releases no scent at all, offering, its makers say, a rare moment of olfactory silence.",
@@ -9771,6 +9961,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-dj-plays-only-the-sea-remastered",
+    "image": "images/life-dj-plays-only-the-sea-remastered.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life dj plays only the sea remastered.",
     "category": "Lifestyle",
     "headline": "Superstar DJ's new set consists entirely of the sea, remastered",
     "standfirst": "A world-famous producer has filled arenas with a ninety-minute recording of the ocean, which he insists he has meaningfully improved.",
@@ -9795,6 +9987,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-mattress-judges-you-gently",
+    "image": "images/life-mattress-judges-you-gently.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life mattress judges you gently.",
     "category": "Lifestyle",
     "headline": "New Luxury Mattress Judges You Gently As You Sleep, Makers Promise",
     "standfirst": "The Reproach 900, a £6,200 orthopaedic mattress that emits soft, disappointed sighs at 3am, has sold out its first production run within nine hours.",
@@ -9819,6 +10013,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-novelist-forbidden-books",
+    "image": "images/life-novelist-forbidden-books.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life novelist forbidden books.",
     "category": "Lifestyle",
     "headline": "Britain's Most Revered Novelist Writes Books No One Is Allowed To Read",
     "standfirst": "Edith Calloway-Fenn has published eleven acclaimed novels in fourteen years. Not one has ever been opened by a member of the public — and that, her admirers insist, is rather the point.",
@@ -9843,6 +10039,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-bottled-small-talk-boutique",
+    "image": "images/life-bottled-small-talk-boutique.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life bottled small talk boutique.",
     "category": "Lifestyle",
     "headline": "Boutique Sells Bottled Small Talk For The Socially Exhausted",
     "standfirst": "Chit & Chaff, a new Notting Hill shop, offers pre-recorded pleasantries in small glass jars — weather remarks, traffic complaints, and gentle enquiries about one's weekend, all sold by the ounce.",
@@ -9867,6 +10065,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "life-celebrity-consciously-re-coupling",
+    "image": "images/life-celebrity-consciously-re-coupling.webp",
+    "imageAlt": "Realistic editorial photograph illustrating life celebrity consciously re coupling.",
     "category": "Lifestyle",
     "headline": "Celebrity Couple Announce They Are 'Consciously Re-Coupling'",
     "standfirst": "Actor Dashiell Marchmont and singer Wren Ostrovsky, who separated in a widely publicised 'conscious uncoupling' eighteen months ago, have confirmed they are getting back together — mindfully, and with a full support team.",
