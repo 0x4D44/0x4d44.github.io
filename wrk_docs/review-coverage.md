@@ -22,7 +22,7 @@
 | focus/ | (never) |
 | godel/ | (never) |
 | harbour-hustle-cruise-cup/ | 2026-07-14 |
-| humanity-retention/ | (never) |
+| humanity-retention/ | 2026-07-14 |
 | hydro/ | (never) |
 | hyperbolic/ | (never) |
 | ic-engine/ | (never) |
