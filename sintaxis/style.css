@@ -15,7 +15,9 @@ a:hover{text-decoration:underline}
 ::selection{background:#264f78;color:#fff}
 
 /* ── chrome ── */
-#topbar{display:flex;align-items:center;gap:1.5rem;padding:.6rem 1.2rem;border-bottom:1px solid var(--border);background:var(--panel);position:sticky;top:0;z-index:10;flex-wrap:wrap}
+/* left padding reserves room for the site-wide "← Almanac" pill (almanac-back.js),
+   which is fixed top-left above everything and would otherwise sit on the brand */
+#topbar{display:flex;align-items:center;gap:1.5rem;padding:.6rem 1.2rem .6rem calc(1.2rem + 116px);border-bottom:1px solid var(--border);background:var(--panel);position:sticky;top:0;z-index:10;flex-wrap:wrap}
 .brand{font-weight:700;color:var(--ink);font-size:15px;letter-spacing:.02em}
 .brand:hover{text-decoration:none}
 .brand-prompt{color:var(--green);margin-right:.4em}
@@ -205,7 +207,7 @@ hr{border:none;border-top:1px solid var(--border);margin:1.4rem 0}
 @keyframes blink{50%{opacity:0}}
 
 @media (max-width:640px){
-  #topbar{gap:.6rem;padding:.5rem .8rem}
+  #topbar{gap:.6rem;padding:calc(.5rem + 34px) .8rem .5rem}
   #app{padding:1rem .8rem 4rem}
   .statgrid{grid-template-columns:repeat(2,1fr)}
 }

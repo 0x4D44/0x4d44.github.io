@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>While You Were Out — Handing Work to Claude</title>
+<meta name="description" content="A plain-English field guide for everyone who isn't a programmer: the Claude you already use in your browser, and Claude Cowork — hand over a whole task and it works on its own, then brings back a first draft for you to review.">
+<meta name="theme-color" content="#0d0e11">
+<meta property="og:type" content="article">
+<meta property="og:title" content="While You Were Out — Handing Work to Claude">
+<meta property="og:description" content="You already chat with Claude in your browser. Cowork is the next step: give it a brief, and it works on its own in a private workspace — then hands you a first draft to check. Written for people who work with words, not code.">
+<meta property="og:url" content="https://0x4d44.github.io/cowork/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230d0e11'/%3E%3Ccircle cx='16' cy='19' r='9.5' fill='none' stroke='%23e08256' stroke-width='1.6'/%3E%3Cpath d='M16 19 L16 11.5' stroke='%23e08256' stroke-width='1.8' stroke-linecap='round'/%3E%3Cpath d='M16 19 L21 22' stroke='%23eceae4' stroke-width='1.6' stroke-linecap='round'/%3E%3Ccircle cx='16' cy='19' r='1.6' fill='%23e08256'/%3E%3C/svg%3E">
+<style>
+  :root{
+    /* ---- instrument ground (dark default) ---- */
+    --bg:#0d0e11;
+    --bg2:#101217;
+    --panel:#15181e;
+    --panel2:#1b1f28;
+    --ink:#ecebe4;
+    --ink-dim:#a6a89f;
+    --ink-faint:#767a72;
+    --hair:rgba(206,210,198,.11);
+    --hair-2:rgba(206,210,198,.20);
+    --grid:rgba(206,210,198,.045);
+    /* Claude — warm coral (the page accent) */
+    --claude:#e58a5f;
+    --claude-2:#e5713f;
+    --claude-ink:#f4b28c;
+    --claude-glow:rgba(229,138,95,.16);
+    /* OpenAI — teal, used only where the two are compared */
+    --openai:#19c491;
+    --openai-ink:#5fe0bb;
+    --openai-glow:rgba(25,196,145,.14);
+    /* semantic */
+    --good:#5fca8f;
+    --shadow:0 20px 50px -24px rgba(0,0,0,.7);
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:"Helvetica Neue",Helvetica,"Segoe UI",system-ui,Roboto,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Cascadia Code",Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg:#eceef1;--bg2:#e6e9ed;--panel:#ffffff;--panel2:#f3f5f8;
+      --ink:#181b21;--ink-dim:#565c66;--ink-faint:#8a919c;
+      --hair:rgba(24,30,40,.12);--hair-2:rgba(24,30,40,.24);--grid:rgba(24,30,40,.05);
+      --claude:#cf6234;--claude-2:#c1521f;--claude-ink:#a8481f;--claude-glow:rgba(207,98,52,.14);
+      --openai:#0e9c72;--openai-ink:#0a7d5b;--openai-glow:rgba(14,156,114,.12);
+      --good:#159a5b;
+      --shadow:0 18px 44px -26px rgba(30,40,60,.4);
+    }
+  }
+  /* explicit toggle overrides win in both directions */
+  :root[data-theme="dark"]{
+    --bg:#0d0e11;--bg2:#101217;--panel:#15181e;--panel2:#1b1f28;
+    --ink:#ecebe4;--ink-dim:#a6a89f;--ink-faint:#767a72;
+    --hair:rgba(206,210,198,.11);--hair-2:rgba(206,210,198,.20);--grid:rgba(206,210,198,.045);
+    --claude:#e58a5f;--claude-2:#e5713f;--claude-ink:#f4b28c;--claude-glow:rgba(229,138,95,.16);
+    --openai:#19c491;--openai-ink:#5fe0bb;--openai-glow:rgba(25,196,145,.14);
+    --good:#5fca8f;--shadow:0 20px 50px -24px rgba(0,0,0,.7);
+  }
+  :root[data-theme="light"]{
+    --bg:#eceef1;--bg2:#e6e9ed;--panel:#ffffff;--panel2:#f3f5f8;
+    --ink:#181b21;--ink-dim:#565c66;--ink-faint:#8a919c;
+    --hair:rgba(24,30,40,.12);--hair-2:rgba(24,30,40,.24);--grid:rgba(24,30,40,.05);
+    --claude:#cf6234;--claude-2:#c1521f;--claude-ink:#a8481f;--claude-glow:rgba(207,98,52,.14);
+    --openai:#0e9c72;--openai-ink:#0a7d5b;--openai-glow:rgba(14,156,114,.12);
+    --good:#159a5b;--shadow:0 18px 44px -26px rgba(30,40,60,.4);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+  body{
+    background:
+      radial-gradient(1100px 700px at 82% -8%, var(--claude-glow), transparent 62%),
+      radial-gradient(900px 720px at 4% 4%, rgba(120,140,170,.06), transparent 58%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);line-height:1.62;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  a{color:inherit}
+  ::selection{background:var(--claude);color:#0d0e11}
+
+  /* ---------- top bar ---------- */
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+    gap:16px;padding:12px 20px;background:color-mix(in srgb,var(--bg) 72%,transparent);
+    backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border-bottom:1px solid var(--hair)}
+  .brand{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;color:var(--ink-dim);
+    text-decoration:none;display:inline-flex;align-items:center;gap:9px;text-transform:uppercase}
+  .brand:hover{color:var(--ink)}
+  .brand .tk{width:8px;height:8px;border-radius:50%;background:var(--claude);box-shadow:0 0 10px var(--claude-glow)}
+  .toggle{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--ink-dim);background:var(--panel2);border:1px solid var(--hair-2);border-radius:999px;
+    padding:6px 13px;cursor:pointer;transition:color .2s,border-color .2s}
+  .toggle:hover{color:var(--ink);border-color:var(--claude)}
+  .toggle:focus-visible{outline:2px solid var(--claude);outline-offset:2px}
+
+  .wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+  .prose{max-width:680px}
+  section{position:relative}
+
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.26em;text-transform:uppercase;
+    color:var(--claude-ink);display:inline-flex;align-items:center;gap:10px}
+  .eyebrow::before{content:"";width:26px;height:1px;background:var(--claude);opacity:.7}
+
+  h1,h2,h3{text-wrap:balance;line-height:1.04;letter-spacing:-.02em;font-weight:800}
+  h2{font-size:clamp(26px,4.4vw,42px);margin-bottom:14px}
+  h3{font-size:19px;letter-spacing:-.01em;font-weight:750}
+  p{color:var(--ink-dim)}
+  .lede{font-size:clamp(16px,2vw,19px);color:var(--ink-dim)}
+  strong{color:var(--ink);font-weight:680}
+
+  /* ---------- hero ---------- */
+  .hero{padding:44px 0 30px;position:relative}
+  .hero-head{display:flex;flex-direction:column;gap:16px;align-items:flex-start;margin-bottom:26px}
+  .hero h1{font-size:clamp(38px,7vw,80px);letter-spacing:-.035em}
+  .hero h1 .soft{color:var(--ink-faint);font-weight:300}
+  .hero .lede{max-width:660px}
+
+  /* console */
+  .console{border:1px solid var(--hair-2);border-radius:16px;overflow:hidden;
+    background:linear-gradient(180deg,var(--panel),var(--bg2));box-shadow:var(--shadow);position:relative}
+  .console::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+    background-size:34px 34px;mask-image:radial-gradient(120% 100% at 50% 0,#000,transparent 78%)}
+  .console-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:12px 16px;border-bottom:1px solid var(--hair);position:relative}
+  .console-top .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-faint)}
+  .leds{display:flex;gap:14px;flex-wrap:wrap}
+  .led{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--ink-faint);display:flex;align-items:center;gap:7px}
+  .led b{color:var(--ink);font-weight:600;letter-spacing:.02em;transition:color .3s}
+  .led .dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);transition:background .3s,box-shadow .3s}
+  .led.on .dot{background:var(--claude);box-shadow:0 0 9px var(--claude-glow)}
+  .led.on b{color:var(--claude-ink)}
+
+  .stage-wrap{position:relative;padding:6px 6px 0}
+  svg.stage{display:block;width:100%;height:auto}
+  .stage text{font-family:var(--mono);fill:var(--ink-faint)}
+  .flow{fill:var(--claude)}
+
+  .readout{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:end;
+    padding:16px 18px 20px;border-top:1px solid var(--hair);position:relative}
+  .ro-name{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+  .ro-kicker{font-family:var(--mono);font-size:11px;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--claude-ink);padding:3px 9px;border:1px solid color-mix(in srgb,var(--claude) 30%,transparent);
+    border-radius:999px}
+  .ro-title{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+  .ro-desc{margin-top:8px;color:var(--ink-dim);min-height:3.2em;font-size:15px;max-width:48ch}
+  .metrics{display:grid;grid-template-columns:1fr;gap:8px}
+  .metric{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-family:var(--mono);font-size:12px;border-bottom:1px dashed var(--hair);padding-bottom:6px}
+  .metric span{color:var(--ink-faint);letter-spacing:.12em;text-transform:uppercase;font-size:10.5px}
+  .metric b{color:var(--ink);font-weight:600;letter-spacing:.02em;transition:color .25s}
+  .fade{transition:opacity .28s ease}
+
+  /* controls */
+  .controls{padding:4px 18px 20px;display:flex;flex-direction:column;gap:14px}
+  .track-row{display:flex;align-items:center;gap:16px}
+  .stops{display:flex;gap:8px;flex:1}
+  .stop{flex:1;font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink-dim);background:var(--panel2);border:1px solid var(--hair-2);border-radius:9px;
+    padding:10px 8px;cursor:pointer;transition:.2s;text-align:center;position:relative}
+  .stop small{display:block;font-size:9.5px;letter-spacing:.04em;color:var(--ink-faint);margin-top:3px;text-transform:none}
+  .stop:hover{border-color:var(--claude);color:var(--ink)}
+  .stop[aria-pressed="true"]{border-color:var(--claude);background:color-mix(in srgb,var(--claude) 12%,var(--panel2));color:var(--claude-ink)}
+  .stop:focus-visible{outline:2px solid var(--claude);outline-offset:2px}
+  input[type=range].slider{flex:1;-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;
+    background:linear-gradient(90deg,var(--claude),var(--claude-2));outline:none;cursor:pointer}
+  input[type=range].slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+    background:var(--ink);border:3px solid var(--claude);box-shadow:0 2px 8px rgba(0,0,0,.4);cursor:grab}
+  input[type=range].slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;
+    background:var(--ink);border:3px solid var(--claude);cursor:grab}
+  input[type=range].slider:focus-visible{outline:2px solid var(--claude);outline-offset:4px}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--ink-faint);letter-spacing:.06em;text-align:center}
+
+  /* ---------- generic section rhythm ---------- */
+  .band{padding:64px 0}
+  .band-head{max-width:660px;margin-bottom:34px}
+  .band-head p{margin-top:12px}
+
+  /* stations (two gears) */
+  .stations{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .station{border:1px solid var(--hair-2);border-radius:14px;background:var(--panel);padding:24px 22px 26px;
+    position:relative;overflow:hidden;transition:transform .3s,border-color .3s}
+  .station::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;
+    background:linear-gradient(180deg,var(--claude),transparent)}
+  .station:hover{transform:translateY(-3px);border-color:color-mix(in srgb,var(--claude) 40%,var(--hair-2))}
+  .station .idx{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ink-faint)}
+  .station h3{margin:10px 0 3px;font-size:22px}
+  .station .role{font-family:var(--mono);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--claude-ink);margin-bottom:12px}
+  .station p{font-size:15px}
+  .station ul{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:7px}
+  .station li{font-size:14px;color:var(--ink-dim);padding-left:18px;position:relative}
+  .station li::before{content:"";position:absolute;left:0;top:.62em;width:7px;height:1px;background:var(--claude)}
+  .station .loop{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-faint);
+    border-top:1px dashed var(--hair);padding-top:12px}
+  .station .loop b{color:var(--ink);font-weight:600}
+
+  /* behind-the-curtain note */
+  .curtain{margin-top:16px;border:1px dashed var(--hair-2);border-radius:12px;background:var(--panel2);
+    padding:16px 18px;display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .curtain .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-faint);border:1px solid var(--hair-2);border-radius:999px;padding:4px 10px;white-space:nowrap}
+  .curtain p{font-size:13.5px;margin:0;flex:1;min-width:240px}
+  .curtain b{color:var(--ink-dim);font-weight:650}
+
+  /* benefits */
+  .benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .benefit{border:1px solid var(--hair);border-radius:12px;background:var(--panel2);padding:18px 18px 20px}
+  .benefit .ic{width:30px;height:30px;color:var(--claude);margin-bottom:12px}
+  .benefit h3{font-size:16px;margin-bottom:6px}
+  .benefit p{font-size:13.5px;line-height:1.55}
+
+  /* night demo */
+  .night{border:1px solid var(--hair-2);border-radius:16px;background:linear-gradient(180deg,var(--panel),var(--bg2));
+    padding:22px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .night-top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+  .clock{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:clamp(28px,5vw,44px);font-weight:700;
+    letter-spacing:.02em;color:var(--ink);line-height:1}
+  .clock small{display:block;font-size:11px;letter-spacing:.2em;color:var(--ink-faint);margin-top:6px;font-weight:400}
+  .btn{font-family:var(--mono);font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;
+    background:var(--claude);color:#140b06;border:none;border-radius:10px;padding:12px 18px;cursor:pointer;
+    font-weight:700;transition:filter .2s,transform .1s}
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.5;cursor:default}
+  .btn:focus-visible{outline:2px solid var(--claude);outline-offset:3px}
+  .jobs{display:flex;flex-direction:column;gap:10px}
+  .job{display:grid;grid-template-columns:1fr auto;gap:6px 14px;align-items:center;
+    background:var(--panel2);border:1px solid var(--hair);border-radius:10px;padding:12px 14px}
+  .job .jt{font-size:14px;color:var(--ink)}
+  .job .js{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-faint);justify-self:end}
+  .job.run .js{color:var(--claude-ink)}
+  .job.done .js{color:var(--good)}
+  .bar{grid-column:1/-1;height:4px;border-radius:4px;background:var(--hair-2);overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--claude),var(--claude-2));transition:width .25s linear}
+  .job.done .bar i{background:var(--good)}
+  .night-note{margin-top:16px;font-size:13px;color:var(--ink-dim)}
+  .night-note b{color:var(--ink)}
+
+  /* handoff */
+  .flowmap{border:1px solid var(--hair-2);border-radius:16px;background:var(--panel);padding:8px;box-shadow:var(--shadow)}
+  .flowmap svg{display:block;width:100%;height:auto}
+
+  /* comparison matrix */
+  .matrix-scroll{overflow-x:auto;border:1px solid var(--hair-2);border-radius:14px;background:var(--panel)}
+  table.matrix{width:100%;border-collapse:collapse;min-width:680px;font-size:14px}
+  table.matrix th,table.matrix td{padding:16px 18px;text-align:left;vertical-align:top;border-bottom:1px solid var(--hair)}
+  table.matrix thead th{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-faint);font-weight:600;position:sticky;top:0;background:var(--panel);border-bottom:1px solid var(--hair-2)}
+  table.matrix thead th.c-claude{color:var(--claude-ink)}
+  table.matrix thead th.c-openai{color:var(--openai-ink)}
+  table.matrix tbody tr:hover td{background:color-mix(in srgb,var(--claude) 5%,transparent)}
+  table.matrix tbody tr.muted td{opacity:.62}
+  table.matrix tbody tr.muted:hover td{opacity:.85}
+  table.matrix .rowlbl{color:var(--ink);font-weight:650}
+  table.matrix .rowlbl small{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--ink-faint);font-weight:400;margin-top:3px}
+  table.matrix td.c-claude{border-left:2px solid color-mix(in srgb,var(--claude) 35%,transparent)}
+  table.matrix td.c-openai{border-left:2px solid color-mix(in srgb,var(--openai) 30%,transparent)}
+  .prod{font-weight:650;color:var(--ink)}
+  td.c-claude .prod{color:var(--claude-ink)}
+  td.c-openai .prod{color:var(--openai-ink)}
+  table.matrix td p{font-size:12.5px;margin-top:4px;color:var(--ink-dim);line-height:1.5}
+  .legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:14px;font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--ink-faint)}
+  .legend span{display:inline-flex;align-items:center;gap:8px}
+  .legend .sw{width:11px;height:11px;border-radius:3px}
+  .disclaimer{margin-top:16px;font-size:12.5px;color:var(--ink-faint);max-width:660px;line-height:1.6}
+
+  /* pull quote */
+  .pull{border-left:2px solid var(--claude);padding:6px 0 6px 22px;margin:6px 0;max-width:660px}
+  .pull p{font-family:var(--serif);font-size:clamp(20px,3vw,26px);line-height:1.32;color:var(--ink);font-style:italic}
+
+  /* close / cta */
+  .cta{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:8px}
+  .cta a{display:block;border:1px solid var(--hair-2);border-radius:12px;background:var(--panel);
+    padding:20px;text-decoration:none;transition:.2s;position:relative}
+  .cta a:hover{border-color:var(--claude);transform:translateY(-2px)}
+  .cta .role{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--claude-ink)}
+  .cta .nm{font-size:19px;font-weight:750;color:var(--ink);margin:8px 0 5px}
+  .cta p{font-size:13.5px}
+  .cta .go{font-family:var(--mono);font-size:12px;color:var(--ink-dim);margin-top:12px;display:inline-flex;gap:6px}
+  .cta-foot{margin-top:14px;font-size:13px;color:var(--ink-faint)}
+  .cta-foot a{color:var(--claude-ink);text-decoration:none}
+  .cta-foot a:hover{text-decoration:underline}
+
+  /* responsible-use note */
+  .note{margin-top:34px;border:1px solid var(--hair-2);border-radius:12px;background:var(--panel2);
+    padding:18px 20px;max-width:760px}
+  .note h3{font-size:13px;font-family:var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:8px;font-weight:600}
+  .note p{font-size:13.5px;line-height:1.6}
+  .note b{color:var(--ink)}
+
+  footer{border-top:1px solid var(--hair);margin-top:20px;padding:30px 0 60px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;align-items:center}
+  footer p{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;color:var(--ink-faint)}
+  footer a{color:var(--claude-ink);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(18px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+  .rv.in{opacity:1;transform:none}
+
+  @media (max-width:820px){
+    .stations,.benefits,.cta{grid-template-columns:1fr}
+    .readout{grid-template-columns:1fr}
+    .benefits{gap:12px}
+  }
+  @media (max-width:520px){
+    .track-row{flex-direction:column;align-items:stretch}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{scroll-behavior:auto!important}
+    .rv{opacity:1;transform:none;transition:none}
+    .fade{transition:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a class="brand" href="https://0x4d44.github.io/"><span class="tk"></span>0x4D44 · Almanac</a>
+  <button class="toggle" id="themeBtn" type="button" aria-label="Toggle colour theme">Theme</button>
+</div>
+
+<!-- ================= HERO ================= -->
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-head rv in">
+      <span class="eyebrow">A field guide · for the rest of us</span>
+      <h1>The same Claude.<br><span class="soft">Now it works</span> while you're out.</h1>
+      <p class="lede">You already talk to Claude in your browser — asking questions, summarising things, drafting emails. <strong>Cowork</strong> is the next step along: give it a task and the files, and it goes off and does the work on its own — then hands you a first draft to check. What changes between the two is one thing: <strong>how much of the work you keep in your own hands.</strong> Move the dial. No coding anywhere in sight.</p>
+    </div>
+
+    <div class="console rv in" id="console">
+      <div class="console-top">
+        <span class="lbl">The dial</span>
+        <div class="leds">
+          <span class="led" id="led-sync"><span class="dot"></span><b id="led-sync-t">You're waiting</b></span>
+          <span class="led" id="led-place"><span class="dot"></span><b id="led-place-t">Your screen</b></span>
+          <span class="led" id="led-par"><span class="dot"></span><b id="led-par-t">One thing</b></span>
+        </div>
+      </div>
+
+      <div class="stage-wrap">
+        <svg class="stage" viewBox="0 0 1000 380" role="img" aria-label="A diagram showing you and Claude working together, then Claude going off to work on its own">
+          <defs>
+            <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="var(--claude)"></path>
+            </marker>
+          </defs>
+
+          <!-- environment panel (morphs) -->
+          <rect id="panel" x="300" y="120" width="300" height="140" rx="14"
+                fill="color-mix(in srgb, var(--claude) 6%, transparent)"
+                stroke="var(--hair-2)" stroke-width="1.5"></rect>
+          <text id="panel-lbl" x="450" y="112" text-anchor="middle" font-size="13" letter-spacing="3">YOUR SCREEN</text>
+
+          <!-- parallel task lanes (fade in toward delegate), filled by JS -->
+          <g id="lanes"></g>
+
+          <!-- connection arrows between you and claude -->
+          <g id="link"></g>
+
+          <!-- YOU -->
+          <g id="you" transform="translate(150,190)">
+            <circle r="30" fill="var(--panel2)" stroke="var(--hair-2)" stroke-width="1.5"></circle>
+            <circle cy="-7" r="8.5" fill="none" stroke="var(--ink-dim)" stroke-width="2"></circle>
+            <path d="M-13 16 C-13 2 13 2 13 16" fill="none" stroke="var(--ink-dim)" stroke-width="2"></path>
+            <text y="54" text-anchor="middle" font-size="13" letter-spacing="3" fill="var(--ink-dim)">YOU</text>
+          </g>
+
+          <!-- CLAUDE -->
+          <g id="claude" transform="translate(450,190)">
+            <path d="M0 -26 L23 -13 L23 13 L0 26 L-23 13 L-23 -13 Z"
+                  fill="color-mix(in srgb, var(--claude) 16%, var(--panel))"
+                  stroke="var(--claude)" stroke-width="2"></path>
+            <circle r="6.5" fill="var(--claude)"></circle>
+            <text y="50" text-anchor="middle" font-size="13" letter-spacing="3" fill="var(--claude-ink)">CLAUDE</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="readout">
+        <div>
+          <div class="ro-name">
+            <span class="ro-kicker fade" id="ro-kicker">Ask</span>
+            <span class="ro-title fade" id="ro-title">Claude.ai</span>
+          </div>
+          <p class="ro-desc fade" id="ro-desc"></p>
+        </div>
+        <div class="metrics">
+          <div class="metric"><span>Your part</span><b class="fade" id="m-pos">In every step</b></div>
+          <div class="metric"><span>How it runs</span><b class="fade" id="m-mode">You wait for it</b></div>
+          <div class="metric"><span>Where it works</span><b class="fade" id="m-place">Your screen</b></div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="track-row">
+          <input type="range" class="slider" id="slider" min="0" max="1" step="0.01" value="0"
+                 aria-label="From asking Claude to delegating to Claude Cowork">
+        </div>
+        <div class="stops" role="group" aria-label="Jump to a way of working">
+          <button class="stop" data-t="0" aria-pressed="true">Ask<small>Claude.ai · the app you know</small></button>
+          <button class="stop" data-t="1" aria-pressed="false">Delegate<small>Claude Cowork</small></button>
+        </div>
+        <div class="hint" id="hint">Drag the dial, or tap a side</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- ================= THE TWO GEARS ================= -->
+<section class="band">
+  <div class="wrap">
+    <div class="band-head rv">
+      <span class="eyebrow">Two ways to work</span>
+      <h2>Ask it a question, or hand it the job</h2>
+      <p class="lede">Same Claude, same account. The difference is whether you sit with it turn by turn, or set it going and come back later.</p>
+    </div>
+
+    <div class="stations">
+      <article class="station rv">
+        <div class="idx">THE ONE YOU KNOW</div>
+        <h3>Claude.ai</h3>
+        <div class="role">Ask · you're in every step</div>
+        <p>The chat window in your browser. Paste in a document and ask what it means, talk through how to word something tricky, get a first paragraph drafted while you watch. You read each answer and decide the next move.</p>
+        <ul>
+          <li>Summarise or dig into something you paste or upload</li>
+          <li>Draft and redraft, out loud, together</li>
+          <li>Keep one project's context in one place with Projects</li>
+        </ul>
+        <div class="loop">Best when you're <b>thinking</b> — and want a hand on every line.</div>
+      </article>
+
+      <article class="station rv">
+        <div class="idx">THE NEXT STEP</div>
+        <h3>Claude Cowork</h3>
+        <div class="role">Delegate · it works on its own</div>
+        <p>Hand it over the way you'd hand a job to a capable assistant: here's the task, here are the files, here's what I want back. Claude takes it away, works in its own private workspace for as long as the job needs, and returns a first draft for you to review.</p>
+        <ul>
+          <li>Work through a long report you'd never have time to read</li>
+          <li>Run several jobs at once — and overnight</li>
+          <li>Kick it off from your phone and carry on with your day</li>
+        </ul>
+        <div class="loop">Best when you're <b>delegating</b> — the legwork, not the judgement.</div>
+      </article>
+    </div>
+
+    <!-- behind the curtain: Claude Code -->
+    <div class="curtain rv">
+      <span class="tag">Behind the curtain</span>
+      <p>There's a third, more technical way in — <b>Claude Code</b> — the same engine wired into the tools software teams use to build things. It's a power tool at the far end of the bench, and it's what quietly does the heavy lifting when Cowork works with computer systems. You almost certainly won't touch it directly; it's mentioned here only so the picture's complete.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHAT MAKES COWORK DIFFERENT ================= -->
+<section class="band" style="background:linear-gradient(180deg,transparent,var(--bg2),transparent)">
+  <div class="wrap">
+    <div class="band-head rv">
+      <span class="eyebrow">The new part · Cowork</span>
+      <h2>Handing off, not hovering</h2>
+      <p class="lede">The chat window keeps you present for every line. Cowork is built for the work you <em>don't</em> want to sit through — the long, patient reading and first-drafting that never quite reaches the top of your day.</p>
+    </div>
+
+    <div class="benefits">
+      <div class="benefit rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="12" rx="2"></rect><path d="M8 7V5a4 4 0 0 1 8 0v2M12 12v3"></path></svg>
+        <h3>Its own private room</h3>
+        <p>Each task runs in a sealed, temporary workspace, created for the job and wiped when it's done. One job's files aren't mixed with another's, and nothing is left lying around afterwards.</p>
+      </div>
+      <div class="benefit rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 7V3M12 21v-4M7 12H3M21 12h-4"></path><circle cx="12" cy="12" r="4"></circle><path d="M6 6l2 2M16 16l2 2M18 6l-2 2M8 16l-2 2"></path></svg>
+        <h3>Several jobs at once</h3>
+        <p>Hand it a stack of jobs and they run side by side, each in its own room. Summarising the report, pulling out the key facts and drafting the reply don't have to queue behind each other — or behind you.</p>
+      </div>
+      <div class="benefit rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3.5 2"></path></svg>
+        <h3>On a standing schedule</h3>
+        <p>Set it to do something every morning — round up the overnight news on a topic, produce a Monday summary of the week ahead, keep an eye on a price or a listing — and the work is sitting there finished when you arrive.</p>
+      </div>
+      <div class="benefit rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l5 5v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"></path><path d="M14 3v5h5M9 13h6M9 17h4"></path></svg>
+        <h3>Works from a brief</h3>
+        <p>You don't chat it through step by step. You describe the task once — the files, the question, the format — and it gets on with it, coming back with a draft rather than a conversation.</p>
+      </div>
+      <div class="benefit rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h7"></path><path d="M15 16l3 3 4-5"></path></svg>
+        <h3>Shows its working</h3>
+        <p>You get the reasoning and the sources behind every point, not a black box — so you can check each fact and quote against the original before anything is relied on or leaves your hands.</p>
+      </div>
+      <div class="benefit rv">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.4"></rect><path d="M11 18h2"></path></svg>
+        <h3>Meets you where you are</h3>
+        <p>Start a task from your laptop or your phone, close the tab and get on with your day. It keeps working without you, and gives you a nudge when there's something to look at.</p>
+      </div>
+    </div>
+
+    <!-- night-shift demo -->
+    <div style="margin-top:38px" class="rv">
+      <div class="band-head" style="margin-bottom:20px">
+        <span class="eyebrow">See it · the night shift</span>
+        <h2 style="font-size:clamp(22px,3.4vw,32px)">While you were out</h2>
+        <p>Hand three chores to Cowork on your way home. Watch the clock — you're not sitting through any of this.</p>
+      </div>
+
+      <div class="night">
+        <div class="night-top">
+          <div class="clock" id="clock">18:30<small id="clock-lbl">EVENING · YOU HEAD HOME</small></div>
+          <button class="btn" id="delegateBtn" type="button">Delegate &amp; head home</button>
+        </div>
+        <div class="jobs" id="jobs">
+          <div class="job" data-secs="6"><div class="jt">Summarise the 200-page report down to one page</div><div class="js">Waiting</div><div class="bar"><i></i></div></div>
+          <div class="job" data-secs="9"><div class="jt">Compare these three quotes and lay out the differences</div><div class="js">Waiting</div><div class="bar"><i></i></div></div>
+          <div class="job" data-secs="7"><div class="jt">Turn a folder of rough notes into a first-draft write-up</div><div class="js">Waiting</div><div class="bar"><i></i></div></div>
+        </div>
+        <p class="night-note" id="nightNote">Three tasks, three private workspaces, running side by side. You've gone home. <b>They haven't.</b></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HOW THEY FIT ================= -->
+<section class="band">
+  <div class="wrap">
+    <div class="band-head rv">
+      <span class="eyebrow">The handoff</span>
+      <h2>One question, three moves</h2>
+      <p class="lede">You don't pick one gear for good. A single piece of work slides along the dial — you think it through, hand off the grind, then take back the last word. The judgement stays yours.</p>
+    </div>
+
+    <div class="flowmap rv">
+      <svg viewBox="0 0 1000 260" role="img" aria-label="A task moving from asking Claude, to delegating to Cowork, to your review">
+        <defs>
+          <marker id="fah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--claude)"></path></marker>
+          <linearGradient id="fg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" stop-color="var(--claude)" stop-opacity="0.25"></stop>
+            <stop offset="1" stop-color="var(--claude)" stop-opacity="0.9"></stop>
+          </linearGradient>
+        </defs>
+        <line x1="70" y1="130" x2="930" y2="130" stroke="var(--hair-2)" stroke-width="1.5"></line>
+        <line x1="70" y1="130" x2="930" y2="130" stroke="url(#fg)" stroke-width="3" marker-end="url(#fah)"></line>
+
+        <!-- node 1 -->
+        <g transform="translate(160,130)">
+          <circle r="40" fill="var(--panel2)" stroke="var(--claude)" stroke-width="2"></circle>
+          <text y="-58" text-anchor="middle" font-family="var(--mono)" font-size="12" letter-spacing="2.5" fill="var(--claude-ink)">CLAUDE.AI</text>
+          <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Ask</text>
+          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“How should I even</text>
+          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">approach this?”</text>
+        </g>
+        <!-- node 2 -->
+        <g transform="translate(500,130)">
+          <circle r="40" fill="color-mix(in srgb,var(--claude) 14%,var(--panel2))" stroke="var(--claude)" stroke-width="2.5"></circle>
+          <text y="-58" text-anchor="middle" font-family="var(--mono)" font-size="12" letter-spacing="2.5" fill="var(--claude-ink)">COWORK</text>
+          <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Delegate</text>
+          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“Now do that across all</text>
+          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">forty — flag anything odd.”</text>
+        </g>
+        <!-- node 3 -->
+        <g transform="translate(840,130)">
+          <circle r="40" fill="var(--panel2)" stroke="var(--ink-dim)" stroke-width="2"></circle>
+          <text y="-58" text-anchor="middle" font-family="var(--mono)" font-size="12" letter-spacing="2.5" fill="var(--ink-dim)">YOU</text>
+          <text y="6" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="700" fill="var(--ink)">Review</text>
+          <text y="72" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">“Check the drafts, sign</text>
+          <text y="90" text-anchor="middle" font-family="var(--sans)" font-size="12.5" fill="var(--ink-dim)">off, send.”</text>
+        </g>
+      </svg>
+    </div>
+
+    <div class="pull rv" style="margin-top:34px">
+      <p>The dial isn't a menu you choose from once. It's a gearbox — you shift up as the task gets clearer and you need your hands on it less.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CLAUDE vs CHATGPT ================= -->
+<section class="band" style="background:linear-gradient(180deg,transparent,var(--bg2),transparent)">
+  <div class="wrap">
+    <div class="band-head rv">
+      <span class="eyebrow">The wider map</span>
+      <h2>The same idea, two houses</h2>
+      <p class="lede">Claude isn't the only one with a chat app and an assistant that goes off and does the work. Here's the honest map against OpenAI's line-up — the one behind ChatGPT — for the two rungs you'll actually meet.</p>
+    </div>
+
+    <div class="matrix-scroll rv">
+      <table class="matrix">
+        <thead>
+          <tr>
+            <th style="min-width:150px">The rung</th>
+            <th class="c-claude">Claude side</th>
+            <th class="c-openai">OpenAI side</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="rowlbl">The chat app<small>You're in every step</small></td>
+            <td class="c-claude"><span class="prod">Claude.ai</span><p>The browser assistant you type into — paste a document, ask, draft, redraft. On web, desktop and phone.</p></td>
+            <td class="c-openai"><span class="prod">ChatGPT</span><p>The original chat assistant, the same turn-by-turn shape. The one most people have already met.</p></td>
+          </tr>
+          <tr>
+            <td class="rowlbl">The one that does the work<small>It works on its own</small></td>
+            <td class="c-claude"><span class="prod">Claude Cowork</span><p>Give it a brief and it works alone in a private workspace — several jobs at once, on a schedule if you like — and returns a first draft to review.</p></td>
+            <td class="c-openai"><span class="prod">ChatGPT Agent</span><p>OpenAI's assistant that goes off and completes a task on its own machine — browsing and working through it, then reporting back.</p></td>
+          </tr>
+          <tr class="muted">
+            <td class="rowlbl">For technical teams<small>Behind the curtain</small></td>
+            <td class="c-claude"><span class="prod">Claude Code</span><p>The power tool for people who build software. Not something you'd open day to day.</p></td>
+            <td class="c-openai"><span class="prod">Codex</span><p>OpenAI's equivalent for software teams. Same story — a specialist tool, not the front door.</p></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="legend rv">
+      <span><span class="sw" style="background:var(--claude)"></span>Claude</span>
+      <span><span class="sw" style="background:var(--openai)"></span>OpenAI</span>
+    </div>
+
+    <p class="disclaimer rv">Where I lean, I lean toward Claude — this is a page on my own site, after all. But the map is real, not a strawman: both houses arrived at the same two rungs — a chat app, and an assistant that goes and does the work — because the same idea drives them. Product names and features on both sides change month to month, so treat this as a shape, not a spec sheet, and check each vendor for the current detail. No figures were invented for this page.</p>
+  </div>
+</section>
+
+<!-- ================= CLOSE ================= -->
+<section class="band">
+  <div class="wrap">
+    <div class="band-head rv">
+      <span class="eyebrow">Start where you are</span>
+      <h2>Two doors, one Claude</h2>
+      <p class="lede">You don't have to choose. Open the chat when you're thinking it through; hand the rest over when you'd rather come back to a draft.</p>
+    </div>
+    <div class="cta">
+      <a class="rv" href="https://claude.ai/" target="_blank" rel="noopener">
+        <div class="role">Ask</div>
+        <div class="nm">Claude.ai</div>
+        <p>Open the chat you already know — on the web, desktop or your phone.</p>
+        <div class="go">Open the chat →</div>
+      </a>
+      <a class="rv" href="https://code.claude.com/docs/en/claude-code-on-the-web" target="_blank" rel="noopener">
+        <div class="role">Delegate</div>
+        <div class="nm">Claude Cowork</div>
+        <p>Hand over your first task and get on with your day.</p>
+        <div class="go">See how it works →</div>
+      </a>
+    </div>
+    <p class="cta-foot rv">Building something technical, or curious about the power tool behind the curtain? That's <a href="https://claude.com/product/claude-code" target="_blank" rel="noopener">Claude Code</a> — for developers.</p>
+
+    <div class="note rv">
+      <h3>One thing to keep in mind</h3>
+      <p>Claude drafts and researches, and it can be confidently wrong. Treat everything it produces as a <b>first draft for you to check</b> — read it, and confirm any facts, names, quotes and figures against the source before you rely on it or send it out. The value is in the hours of legwork it saves you, not in taking your judgement off the hook.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>An interactive field guide · one page, no sign-in, nothing to install</p>
+    <p><a href="https://0x4d44.github.io/">← back to the almanac</a></p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- theme toggle ---------- */
+  var root = document.documentElement, tBtn = document.getElementById("themeBtn");
+  try{ var saved = localStorage.getItem("cowork.theme"); if(saved) root.setAttribute("data-theme", saved); }catch(e){}
+  tBtn.addEventListener("click", function(){
+    var cur = root.getAttribute("data-theme");
+    if(!cur){ cur = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light"; }
+    var next = cur === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try{ localStorage.setItem("cowork.theme", next); }catch(e){}
+  });
+
+  /* ============================================================
+     HERO — the dial. t in [0,1]: 0 = Ask (Claude.ai), 1 = Delegate (Cowork)
+     ============================================================ */
+  var STOPS = [
+    { kicker:"Ask",      title:"Claude.ai",     pos:"In every step",  mode:"You wait for it", place:"Your screen",       par:"One thing",
+      desc:"You and Claude, turn by turn, in the browser. Ask, read the answer, decide the next move. Every line passes through you." },
+    { kicker:"Delegate", title:"Claude Cowork", pos:"Setting it going", mode:"It runs on its own", place:"A private workspace", par:"Many at once",
+      desc:"Hand over the whole job. Claude takes its own private workspace, works for as long as it needs, and brings back a first draft to review." }
+  ];
+
+  var svgns = "http://www.w3.org/2000/svg";
+  var elPanel = document.getElementById("panel");
+  var elPanelLbl = document.getElementById("panel-lbl");
+  var elClaude = document.getElementById("claude");
+  var elLanes = document.getElementById("lanes");
+  var elLink = document.getElementById("link");
+  var slider = document.getElementById("slider");
+  var hint = document.getElementById("hint");
+
+  // build lanes (4) once
+  var LANES = [];
+  for(var i=0;i<4;i++){
+    var g = document.createElementNS(svgns,"g");
+    var line = document.createElementNS(svgns,"line");
+    line.setAttribute("stroke","var(--hair-2)"); line.setAttribute("stroke-width","1.2");
+    line.setAttribute("stroke-dasharray","2 7"); line.setAttribute("stroke-linecap","round");
+    g.appendChild(line);
+    var dot = document.createElementNS(svgns,"circle");
+    dot.setAttribute("r","4"); dot.setAttribute("class","flow");
+    g.appendChild(dot);
+    elLanes.appendChild(g);
+    LANES.push({g:g,line:line,dot:dot,phase:Math.random()});
+  }
+
+  function lerp(a,b,u){ return a+(b-a)*u; }
+  function clamp(x,a,b){ return x<a?a:(x>b?b:x); }
+
+  var linkState = -1; // which arrow layout is drawn (0 ask, 1 delegate)
+  function setLink(nearest, cx){
+    if(nearest === linkState) return;
+    linkState = nearest;
+    elLink.textContent = "";
+    var mk = function(d,opts){
+      var p = document.createElementNS(svgns,"path");
+      p.setAttribute("d",d);
+      p.setAttribute("fill","none");
+      p.setAttribute("stroke",opts.stroke||"var(--claude)");
+      p.setAttribute("stroke-width",opts.w||2.4);
+      if(opts.dash) p.setAttribute("stroke-dasharray",opts.dash);
+      if(opts.marker) p.setAttribute("marker-end",opts.marker);
+      p.setAttribute("stroke-linecap","round");
+      elLink.appendChild(p);
+      return p;
+    };
+    var tx = function(x,y,s,fill){
+      var t = document.createElementNS(svgns,"text");
+      t.setAttribute("x",x); t.setAttribute("y",y); t.setAttribute("text-anchor","middle");
+      t.setAttribute("font-size","11.5"); t.setAttribute("letter-spacing","1.5");
+      t.setAttribute("fill",fill||"var(--ink-faint)"); t.textContent = s;
+      elLink.appendChild(t);
+    };
+    var x0 = 186, x1 = cx-26;
+    if(nearest===0){
+      // tight two-way conversation
+      mk("M"+x0+" 182 L"+x1+" 182",{marker:"url(#ah)"});
+      mk("M"+x1+" 200 L"+x0+" 200",{marker:"url(#ah)"});
+      tx((x0+x1)/2,168,"BACK AND FORTH");
+    } else {
+      // dispatch out, report back arc
+      mk("M"+x0+" 176 L"+x1+" 176",{marker:"url(#ah)"});
+      mk("M"+x1+" 205 C"+lerp(x0,x1,.5)+" 250, "+lerp(x0,x1,.4)+" 250, "+x0+" 205",{marker:"url(#ah)",dash:"4 5",stroke:"var(--ink-faint)"});
+      tx((x0+x1)/2,162,"HAND IT OVER →");
+      tx((x0+x1)/2,262,"← A DRAFT COMES BACK");
+    }
+  }
+
+  function render(t){
+    var w1 = clamp(t,0,1); // delegate membership
+    // panel geometry
+    var px = lerp(300,470,t);
+    var pw = lerp(250,470,t);
+    var ph = lerp(150,210,t);
+    var py = 190 - ph/2;
+    elPanel.setAttribute("x",px); elPanel.setAttribute("y",py);
+    elPanel.setAttribute("width",pw); elPanel.setAttribute("height",ph);
+    elPanel.setAttribute("fill","color-mix(in srgb, var(--claude) "+(6+8*w1).toFixed(1)+"%, transparent)");
+
+    var nearest = t<0.5?0:1;
+    elPanelLbl.textContent = STOPS[nearest].place.toUpperCase();
+    elPanelLbl.setAttribute("x", px+pw/2);
+    elPanelLbl.setAttribute("y", py-8);
+
+    // claude x: drifts right as it moves into its own workspace
+    var claudeX = lerp(450,600,t);
+    elClaude.setAttribute("transform","translate("+claudeX+",190)");
+
+    setLink(nearest, claudeX);
+
+    // lanes: appear one-by-one as t -> 1, inside the panel to the right of Claude
+    var laneX0 = claudeX + 42, laneX1 = px + pw - 26;
+    for(var i=0;i<LANES.length;i++){
+      var L = LANES[i];
+      var appear = clamp((t - (0.45 + i*0.13))/0.35, 0, 1);
+      L.g.setAttribute("opacity", appear.toFixed(3));
+      var ly = 190 + (i-1.5)*20;
+      L.line.setAttribute("x1",laneX0); L.line.setAttribute("y1",ly);
+      L.line.setAttribute("x2",laneX1); L.line.setAttribute("y2",ly);
+      var span = Math.max(10, laneX1-laneX0);
+      var dx = laneX0 + ((L.phase)% 1) * span;
+      L.dot.setAttribute("cx",dx); L.dot.setAttribute("cy",ly);
+      L.dot.setAttribute("opacity", appear.toFixed(3));
+    }
+
+    // LED strip
+    setLed("led-sync", nearest===1, STOPS[nearest].mode, "led-sync-t");
+    setLed("led-place", nearest===1, STOPS[nearest].place, "led-place-t");
+    setLed("led-par", nearest===1, STOPS[nearest].par, "led-par-t");
+  }
+
+  var ledText = {};
+  function setLed(id, on, text, textId){
+    var el = document.getElementById(id);
+    if(on) el.classList.add("on"); else el.classList.remove("on");
+    var te = document.getElementById(textId);
+    if(ledText[textId]!==text){ ledText[textId]=text; te.textContent = text; }
+  }
+
+  // readout text (switch at the halfway boundary, with a soft fade)
+  var curStop = -1;
+  var fadeEls = ["ro-kicker","ro-title","ro-desc","m-pos","m-mode","m-place"].map(function(id){return document.getElementById(id);});
+  function setReadout(t){
+    var nearest = t<0.5?0:1;
+    if(nearest===curStop) return;
+    curStop = nearest;
+    var s = STOPS[nearest];
+    fadeEls.forEach(function(el){ el.style.opacity = 0; });
+    setTimeout(function(){
+      document.getElementById("ro-kicker").textContent = s.kicker;
+      document.getElementById("ro-title").textContent = s.title;
+      document.getElementById("ro-desc").textContent = s.desc;
+      document.getElementById("m-pos").textContent = s.pos;
+      document.getElementById("m-mode").textContent = s.mode;
+      document.getElementById("m-place").textContent = s.place;
+      fadeEls.forEach(function(el){ el.style.opacity = 1; });
+    }, reduce?0:150);
+    document.querySelectorAll(".stop").forEach(function(b){
+      b.setAttribute("aria-pressed", (+b.dataset.t===nearest)?"true":"false");
+    });
+  }
+
+  /* ---- animation loop: ease current t toward target, advance flow ---- */
+  var curT = 0, targetT = 0, dragging = false, userTouched = false;
+  function frame(){
+    curT += (targetT - curT) * 0.12;
+    if(Math.abs(targetT-curT) < 0.001) curT = targetT;
+    for(var i=0;i<LANES.length;i++){ LANES[i].phase = (LANES[i].phase + 0.006 + i*0.001) % 1; }
+    render(curT);
+    setReadout(curT);
+    if(!dragging){ slider.value = curT.toFixed(2); }
+    requestAnimationFrame(frame);
+  }
+
+  function goto(t, fromUser){
+    targetT = clamp(t,0,1);
+    if(fromUser){ userTouched = true; hint.style.opacity = 0; }
+  }
+
+  slider.addEventListener("input", function(){ dragging=true; targetT = curT = parseFloat(slider.value); userTouched=true; hint.style.opacity=0; });
+  slider.addEventListener("change", function(){ dragging=false; });
+  document.querySelectorAll(".stop").forEach(function(b){
+    b.addEventListener("click", function(){ goto(+b.dataset.t, true); });
+  });
+
+  // init
+  render(0); setReadout(0);
+  requestAnimationFrame(frame);
+
+  // gentle intro sweep 0 -> 1, spotlighting the delegate side
+  if(reduce){
+    curT = targetT = 1; render(1); setReadout(1); slider.value = 1;
+  } else {
+    setTimeout(function(){ if(!userTouched) goto(1,false); }, 1400);
+    setTimeout(function(){ if(!userTouched) hint.textContent = "Drag the dial back to compare"; }, 3400);
+  }
+
+  /* ============================================================
+     Reveal on scroll
+     ============================================================ */
+  if("IntersectionObserver" in window && !reduce){
+    var io = new IntersectionObserver(function(es){
+      es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, {threshold:0.12, rootMargin:"0px 0px -8% 0px"});
+    document.querySelectorAll(".rv").forEach(function(el){ io.observe(el); });
+  } else {
+    document.querySelectorAll(".rv").forEach(function(el){ el.classList.add("in"); });
+  }
+
+  /* ============================================================
+     Night-shift demo
+     ============================================================ */
+  var delegateBtn = document.getElementById("delegateBtn");
+  var jobsWrap = document.getElementById("jobs");
+  var clockEl = document.getElementById("clock");
+  var clockLbl = document.getElementById("clock-lbl");
+  var nightNote = document.getElementById("nightNote");
+  var jobEls = Array.prototype.slice.call(jobsWrap.querySelectorAll(".job"));
+  var running = false;
+
+  function fmt(mins){
+    var h = Math.floor(mins/60)%24, m = mins%60;
+    return (h<10?"0":"")+h+":"+(m<10?"0":"")+m;
+  }
+
+  function runNight(){
+    if(running) return; running = true;
+    delegateBtn.disabled = true; delegateBtn.textContent = "Working…";
+    nightNote.innerHTML = "You've gone home. Three private workspaces have not.";
+    var startMin = 18*60+30, endMin = 24*60+8*60; // 08:00 next day
+    var span = endMin - startMin;
+    var demoMs = reduce ? 200 : 8000;
+    var t0 = null;
+
+    jobEls.forEach(function(j){
+      var secs = +j.dataset.secs, bar = j.querySelector(".bar i"), st = j.querySelector(".js");
+      j.classList.remove("done"); j.classList.add("run"); st.textContent = "Working";
+      var dur = reduce?150:secs*1000;
+      if(reduce){ bar.style.transition="none"; }
+      setTimeout(function(){ bar.style.width = "100%"; }, 30);
+      setTimeout(function(){
+        j.classList.remove("run"); j.classList.add("done");
+        st.textContent = "Draft ready";
+      }, dur+40);
+    });
+
+    function tick(ts){
+      if(t0===null) t0=ts;
+      var u = clamp((ts-t0)/demoMs,0,1);
+      var mins = Math.round(startMin + span*u);
+      clockEl.childNodes[0].nodeValue = fmt(mins);
+      if(mins < 24*60) clockLbl.textContent = "NIGHT · CLAUDE WORKS";
+      else clockLbl.textContent = "MORNING · YOU'RE BACK";
+      if(u<1){ requestAnimationFrame(tick); }
+      else {
+        clockEl.childNodes[0].nodeValue = "08:00";
+        clockLbl.textContent = "MORNING · 3 DRAFTS WAITING";
+        nightNote.innerHTML = "You slept. <b>Three first drafts are waiting for your review</b> — to read, check and sign off. That's the whole idea.";
+        delegateBtn.disabled = false; delegateBtn.textContent = "Run it again";
+        running = false;
+      }
+    }
+    requestAnimationFrame(tick);
+  }
+  delegateBtn.addEventListener("click", runNight);
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

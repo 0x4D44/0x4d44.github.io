@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Road to Chaos — one parabola, period-doubling, and a universal number</title>
+<meta name="description" content="An interactive tour of the logistic map: how one parabola period-doubles its way into chaos, and the universal Feigenbaum constant 4.6692 hiding in the cascade — computed live in your browser.">
+<meta name="theme-color" content="#0a0b12">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Road to Chaos">
+<meta property="og:description" content="One parabola, iterated. Watch it period-double into chaos — and meet the universal number, 4.6692, that governs the cascade. Live interactive, no build step.">
+<meta property="og:url" content="https://0x4d44.github.io/logistic-map/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0b12'/%3E%3Cpath d='M5 16 H14' stroke='%2357e0d8' stroke-width='1.6' fill='none'/%3E%3Cpath d='M14 16 Q19 16 20 11 M14 16 Q19 16 20 21' stroke='%2357e0d8' stroke-width='1.4' fill='none'/%3E%3Cpath d='M20 11 q3 0 3.5 -3 M20 11 q3 0 3.5 3 M20 21 q3 0 3.5 -3 M20 21 q3 0 3.5 3' stroke='%23ff6ea8' stroke-width='1.1' fill='none'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0a0b12;
+    --bg2:#10121e;
+    --ink:#d6dcec;
+    --ink-dim:#9aa2ba;
+    --ink-faint:#7d86a0;
+    --hair:rgba(150,168,214,.14);
+    --hair-2:rgba(150,168,214,.28);
+    --cyan:#57e0d8;      /* order */
+    --cyan-soft:#49c8c0;
+    --cyan-glow:rgba(87,224,216,.2);
+    --magenta:#ff6ea8;   /* chaos */
+    --amber:#ffcf6b;     /* annotation */
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1100px 780px at 82% -8%, rgba(255,110,168,.06), transparent 60%),
+      radial-gradient(1000px 900px at 6% 12%, rgba(87,224,216,.07), transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);line-height:1.6;
+    -webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  #progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;
+    background:linear-gradient(90deg,var(--cyan),var(--magenta));box-shadow:0 0 12px var(--cyan-glow)}
+  .wrap{max-width:820px;margin:0 auto;padding:0 22px}
+  section{position:relative}
+
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;
+    padding:80px 0 60px;position:relative;overflow:hidden}
+  #herobif{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.5}
+  .hero::after{content:"";position:absolute;inset:0;z-index:1;
+    background:linear-gradient(180deg,rgba(10,11,18,.5),rgba(10,11,18,.72))}
+  .hero .wrap{position:relative;z-index:2}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--cyan);margin-bottom:24px}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.02;letter-spacing:-.01em;
+    font-size:clamp(40px,8.4vw,76px);color:#fff}
+  h1 em{font-style:italic;color:var(--magenta)}
+  .eq{font-family:var(--mono);font-size:clamp(16px,2.4vw,20px);color:var(--cyan);margin-top:22px;
+    letter-spacing:.02em}
+  .lede{font-family:var(--serif);font-size:clamp(19px,2.6vw,23px);color:var(--ink-dim);
+    margin-top:20px;max-width:32em;line-height:1.5}
+  .scroll-cue{margin-top:46px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:10px}
+  .scroll-cue .bar{width:34px;height:1px;background:var(--hair-2);position:relative;overflow:hidden}
+  .scroll-cue .bar::after{content:"";position:absolute;inset:0;width:40%;background:var(--cyan);
+    animation:slide 2.4s ease-in-out infinite}
+  @keyframes slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(27px,4.2vw,38px);line-height:1.13;
+    letter-spacing:-.01em;color:#fff;margin-bottom:8px}
+  h2 em{font-style:italic;color:var(--cyan)}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--cyan);margin-bottom:18px;display:flex;align-items:center;gap:12px}
+  .kicker .n{color:var(--ink-faint)}
+  p{font-size:17.5px;color:var(--ink);margin:16px 0}
+  p.big{font-size:20px;font-family:var(--serif);color:var(--ink);line-height:1.5}
+  .dim{color:var(--ink-dim)}
+  strong{color:#fff;font-weight:600}
+  .cyan{color:var(--cyan)}.mag{color:var(--magenta)}.amber{color:var(--amber)}
+  a{color:var(--cyan-soft);text-decoration:none;border-bottom:1px solid var(--hair-2)}
+  a:hover{border-color:var(--cyan)}
+  .blockspace{padding:72px 0}
+  .rule{height:1px;background:var(--hair)}
+  :focus-visible{outline:2px solid var(--cyan);outline-offset:3px;border-radius:6px}
+
+  .pq{font-family:var(--serif);font-style:italic;font-size:clamp(21px,3.2vw,28px);line-height:1.36;
+    color:#eaf1fb;padding-left:26px;border-left:2px solid var(--cyan);margin:38px 0}
+  .pq cite{display:block;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-faint);margin-top:14px}
+
+  .rv{opacity:0;transform:translateY(22px);transition:opacity .8s ease,transform .8s ease}
+  .rv.in{opacity:1;transform:none}
+
+  figure{margin:30px 0}
+  .fig{background:linear-gradient(180deg,var(--bg2),rgba(10,11,18,.4));
+    border:1px solid var(--hair);border-radius:14px;padding:20px;position:relative;overflow:hidden}
+  figcaption{font-size:13.5px;color:var(--ink-dim);margin-top:14px;line-height:1.55}
+  figcaption b{color:#c3ccdd;font-weight:600}
+  .figtitle{font-family:var(--mono);font-size:11.5px;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .band-tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:2px 7px;border-radius:20px;border:1px solid var(--hair);color:var(--ink-faint)}
+
+  canvas.plot{width:100%;display:block;border-radius:8px;background:#07080e;touch-action:none}
+  .ctl{display:flex;align-items:center;gap:14px;margin-top:14px;flex-wrap:wrap}
+  .ctl label{font-family:var(--mono);font-size:12px;color:var(--ink-dim);white-space:nowrap}
+  input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:120px;height:3px;border-radius:3px;
+    background:linear-gradient(90deg,var(--cyan),var(--magenta));outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:3px solid var(--cyan);cursor:pointer;box-shadow:0 0 12px var(--cyan-glow)}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--cyan);cursor:pointer}
+  .readout{font-family:var(--mono);font-size:13px;color:var(--cyan);min-width:112px;text-align:right}
+  .readout .pd{color:#fff}
+  .readout .pd.chaos{color:var(--magenta)}
+  .btn{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:rgba(87,224,216,.08);
+    border:1px solid var(--hair-2);border-radius:9px;padding:8px 13px;cursor:pointer;transition:.2s}
+  .btn:hover{border-color:var(--cyan);background:var(--cyan-glow)}
+  .btn.on{border-color:var(--cyan);color:var(--cyan);background:var(--cyan-glow)}
+  .segrow{display:flex;flex-wrap:wrap;gap:8px}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;font-family:var(--mono);font-size:11.5px;color:var(--ink-dim)}
+  .legend span{display:inline-flex;align-items:center;gap:7px}
+  .swatch{width:14px;height:8px;border-radius:3px;flex:none}
+
+  /* delta number line */
+  .deltaline{position:relative;height:118px;margin-top:8px;border:1px solid var(--hair);border-radius:10px;
+    background:rgba(0,0,0,.18);overflow:hidden}
+  .dl-axis{position:absolute;left:3%;right:3%;bottom:34px;height:1px;background:var(--hair-2)}
+  .dl-tick{position:absolute;bottom:34px;width:2px;height:16px;background:var(--cyan);transform:translateX(-1px);
+    transition:opacity .4s}
+  .dl-tick .lb{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);font-family:var(--mono);
+    font-size:10px;color:var(--ink-faint);white-space:nowrap}
+  .dl-gap{position:absolute;bottom:52px;font-family:var(--mono);font-size:11px;color:var(--amber);
+    transform:translateX(-50%);white-space:nowrap}
+  .dtable{font-family:var(--mono);font-size:13px;color:var(--ink-dim);margin-top:14px;line-height:1.7}
+  .dtable b{color:var(--cyan)}
+  .dbig{font-family:var(--serif);font-size:26px;color:#fff;margin-top:6px}
+  .dbig b{color:var(--amber);font-style:italic}
+
+  .note{border:1px dashed var(--hair-2);border-radius:12px;padding:18px 20px;margin:32px 0;
+    background:rgba(87,224,216,.05);font-size:15px;color:var(--ink-dim)}
+  .note b{color:var(--cyan)}
+  .related{display:flex;gap:14px;align-items:center;border:1px solid var(--hair);border-radius:12px;
+    padding:16px 18px;margin:28px 0;background:rgba(255,110,168,.05)}
+  .related .ic{font-size:26px;flex:none}
+  .related .tx{font-size:14.5px;color:var(--ink-dim)}
+  .related .tx a{font-weight:600}
+
+  footer{border-top:1px solid var(--hair);padding:54px 0 90px;margin-top:36px}
+  .srcs{display:grid;gap:2px;margin-top:16px}
+  .srcs a{display:block;padding:12px 0;border-bottom:1px solid var(--hair);font-size:15px;color:var(--ink);border-radius:0}
+  .srcs a:hover{color:var(--cyan)}
+  .srcs a .u{font-family:var(--mono);font-size:11.5px;color:var(--ink-faint);display:block;margin-top:3px}
+  .backlink{font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);margin-top:28px;display:inline-block}
+  .signoff{font-size:13px;color:var(--ink-faint);margin-top:24px;line-height:1.6}
+
+  @media(max-width:640px){ .blockspace{padding:54px 0} .readout{min-width:0;text-align:left} }
+  @media(prefers-reduced-motion:reduce){ *{animation:none!important;scroll-behavior:auto} .rv{opacity:1;transform:none} }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<main>
+
+<!-- HERO -->
+<section class="hero">
+  <canvas id="herobif" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="eyebrow rv">Deterministic chaos · a live tour</div>
+    <h1 class="rv">The Road<br>to <em>Chaos</em></h1>
+    <div class="eq rv">xₙ₊₁ = r · xₙ · (1 − xₙ)</div>
+    <p class="lede rv">Take a parabola. Feed its output back in as its input, over and over. That's the whole
+      machine. Turn one knob and it will split, and split, and split again — faster each time — until it
+      shatters into chaos. And hidden in the shattering is a number that shows up everywhere.</p>
+    <div class="scroll-cue rv"><span class="bar"></span> scroll to begin</div>
+  </div>
+</section>
+
+<!-- 1 · THE MAP -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">01</span> One rule, on repeat</div>
+    <h2 class="rv">A parabola, chasing its own tail</h2>
+    <p class="big rv dim">The <strong>logistic map</strong> was a toy model of a population: next year's size is
+      this year's, times a growth rate <span class="cyan">r</span>, times how much room is left. One line of
+      arithmetic. In 1976 the ecologist Robert May pointed out it does something outrageous.</p>
+    <p class="rv">Pick a growth rate and iterate. The <span class="cyan">cobweb</span> below traces the orbit:
+      up to the curve (apply the rule), across to the diagonal (feed the answer back), repeat. For low
+      <span class="cyan">r</span> the orbit spirals into a single resting value — one stable population.
+      Nudge <span class="cyan">r</span> higher and that single point suddenly <em>splits</em> into a
+      two-year boom-and-bust cycle. Higher still, four. Drag it.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Cobweb orbit · logistic map</span><span class="band-tag" id="cobState">—</span></div>
+        <canvas id="cobweb" class="plot" height="360" role="img"
+          aria-label="Cobweb diagram of the logistic map: the parabola, the diagonal line, and the staircase orbit settling onto a cycle."></canvas>
+        <div class="ctl">
+          <label for="cobR">r</label>
+          <input type="range" id="cobR" min="2.4" max="4.0" step="0.001" value="2.7" aria-label="growth rate r">
+          <span class="readout">r = <b id="cobRval">2.700</b> · <span class="pd" id="cobPer">period 1</span></span>
+          <button class="btn" id="cobReplay">↻ re-run orbit</button>
+        </div>
+        <figcaption><b>What you're seeing.</b> Each corner of the staircase is one year. A single landing point
+          is a stable population (period 1); a rectangle is a 2-cycle; a bigger loop is 4, 8… When the
+          staircase never closes and fills the box, the orbit is <span class="mag">chaotic</span> — bounded
+          forever, yet never repeating. Try r = 2.8, then 3.2, then 3.5, then 3.9.</figcaption>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- 2 · THE CASCADE -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">02</span> The cascade</div>
+    <h2 class="rv">Every ending, at once</h2>
+    <p class="rv">Instead of one <span class="cyan">r</span> at a time, plot them all. For each growth rate
+      across the bottom, let the orbit settle and mark where it lands. One curve becomes two, two become four,
+      four become eight — the <strong>period-doubling cascade</strong> — and then, abruptly, a fog of chaos.
+      The colour is the <em>Lyapunov exponent</em>: <span class="cyan">cyan where nearby orbits converge</span>
+      (order), <span class="mag">magenta where they fly apart</span> (chaos). Drag the line; the cobweb above
+      follows.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Bifurcation diagram · attractor vs r</span><span class="band-tag" id="bifZoomTag">full view</span></div>
+        <canvas id="bif" class="plot" height="440" role="img"
+          aria-label="Bifurcation diagram of the logistic map, coloured by Lyapunov exponent, showing the period-doubling cascade into chaos with windows of order."></canvas>
+        <div class="ctl">
+          <span class="readout" style="text-align:left;min-width:0">at cursor: r = <b id="bifRval" class="cyan">3.200</b> · λ = <b id="bifLam">—</b> · <span class="pd" id="bifPer">—</span></span>
+          <span style="flex:1"></span>
+          <div class="segrow">
+            <button class="btn on" id="zFull">full</button>
+            <button class="btn" id="zFork">first forks</button>
+            <button class="btn" id="zP3">period-3 window</button>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i class="swatch" style="background:linear-gradient(90deg,#0a2b33,#57e0d8)"></i> λ &lt; 0 · order (orbits converge)</span>
+          <span><i class="swatch" style="background:linear-gradient(90deg,#57e0d8,#ff6ea8)"></i> λ → 0 · the edge</span>
+          <span><i class="swatch" style="background:#ff6ea8"></i> λ &gt; 0 · chaos</span>
+        </div>
+        <figcaption><b>Drag anywhere on the plot</b> to move the cursor — the cobweb in §1 jumps to that
+          growth rate. Notice the cascade isn't evenly spaced: each fork arrives faster than the last. And the
+          chaos isn't solid — clean vertical <span class="cyan">windows of order</span> cut through it, the
+          widest a period-3 cycle near r = 3.83. Rendered live, ~600k iterations, every time you zoom.</figcaption>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- 3 · FEIGENBAUM -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">03</span> The number in the cascade</div>
+    <h2 class="rv">The forks arrive by a fixed ratio</h2>
+    <p class="rv">Measure where each doubling happens. Call the growth rates
+      <span class="cyan">R₀, R₁, R₂…</span>. The <em>gaps</em> between them shrink — and here's the thing —
+      they shrink by very nearly the <strong>same factor every time</strong>. Take the ratio of one gap to the
+      next and it settles down fast. In 1978 Mitchell Feigenbaum found it converges to a specific constant,
+      <span class="amber">δ ≈ 4.6692016…</span> Reveal the doublings and watch the ratio home in.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Period-doubling points &amp; the ratio δ</span><span class="band-tag">computed live · Newton's method</span></div>
+        <div class="deltaline" id="deltaline"></div>
+        <div class="ctl">
+          <button class="btn" id="dStep">▸ reveal next doubling</button>
+          <button class="btn" id="dAuto">⏩ run to the limit</button>
+          <button class="btn" id="dReset">reset</button>
+        </div>
+        <div class="dtable" id="dtable">Period <b>1</b> → <b>2</b> → <b>4</b> → … each split found by solving for the
+          growth rate where the peak of the parabola sits exactly on the cycle.</div>
+        <div class="dbig" id="dbig">δ = <b>—</b></div>
+        <figcaption>The gaps between doublings form a shrinking geometric-ish sequence; their ratio is δ. It
+          isn't a rounding of anything simpler — δ is its own irrational constant, like π or e, but for the
+          <em>rate</em> at which order dissolves. These values are solved in your browser to ~12 digits.</figcaption>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- 4 · UNIVERSALITY -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">04</span> The punchline</div>
+    <h2 class="rv">The number was never about the parabola</h2>
+    <p class="rv">Here is why δ is famous. Throw the logistic map away. Use a completely different formula — a
+      sine arch, a downward parabola in another disguise — anything with a single smooth <em>hump</em>. Run
+      the same cascade, measure the same ratio. You get <strong>the same number</strong>. δ doesn't live in
+      the equation; it lives in the <em>shape of the route to chaos itself</em>. Swap the map and see.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Universality · different map, same δ</span><span class="band-tag" id="uniFormula">r · x(1 − x)</span></div>
+        <div class="segrow" id="uniSeg" role="group" aria-label="choose a map">
+          <button class="btn on" data-map="logistic" type="button">logistic</button>
+          <button class="btn" data-map="sine" type="button">sine arch</button>
+          <button class="btn" data-map="quad" type="button">r − x²</button>
+        </div>
+        <canvas id="unibif" class="plot" height="300" style="margin-top:14px" role="img"
+          aria-label="Bifurcation diagram of the selected map, showing the same period-doubling route to chaos."></canvas>
+        <div class="ctl">
+          <span class="readout" style="text-align:left">its Feigenbaum ratio: δ = <b class="amber" id="uniDelta">—</b></span>
+        </div>
+        <figcaption>Three formulas that look nothing alike — a parabola, a sine arch, a bare square — each drawn
+          with its own bifurcation cascade and its own δ solved from scratch. They agree to the digits shown.
+          That agreement, proven in general for smooth unimodal maps, is what makes δ a <b>universal
+          constant</b>: a fingerprint of the transition to chaos, not of any one system that undergoes it.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv dim">This is why physicists cared. The same δ was then <em>measured in the lab</em> — in
+      dripping taps, oscillating circuits, convecting fluids, heartbeats — systems sharing no equations with a
+      toy population model, yet doubling their way into turbulence at the very same rate.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- 5 · MEANING -->
+<section class="blockspace">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">05</span> What it means</div>
+    <h2 class="rv">Simple rules are not simple behaviour</h2>
+    <p class="big rv">The lesson that rearranged a field: you do not need a complicated system to get
+      complicated, unpredictable behaviour. One parabola will do it.</p>
+    <p class="rv">Chaos here is fully <em>deterministic</em> — no randomness anywhere, every step exactly
+      computed. Yet past the accumulation point the orbit is unpredictable in practice, because two starting
+      values a hair apart diverge exponentially (that's exactly what the <span class="mag">positive Lyapunov
+      exponent</span> measures). Determinism and predictability, long assumed to be the same thing, quietly
+      part ways.</p>
+    <div class="pq rv">The elegance and simplicity of the model is deceptive… even simple deterministic systems
+      can exhibit dynamics of astonishing complexity.
+      <cite>after Robert May, "Simple mathematical models with very complicated dynamics", 1976</cite></div>
+    <p class="rv">And threaded through the mess, a strange order: universality. When a system falls into chaos
+      by period-doubling, it does so on a schedule set by δ — the same for a parabola, a faucet, and a heart.
+      A little corner of the unpredictable turns out to be exactly, measurably lawful.</p>
+
+    <div class="related rv"><span class="ic">🌀</span>
+      <span class="tx">Its continuous cousin: <a href="https://0x4d44.github.io/strange-attractors/">Strange
+        Attractors</a> — Lorenz, Rössler and friends, where chaos lives in smooth flowing time rather than in
+        one repeated step.</span></div>
+
+    <div class="note rv"><b>Colophon.</b> Everything here is computed live in your browser, no libraries: the
+      bifurcation diagrams by direct iteration coloured by Lyapunov exponent, and δ by Newton's method on the
+      superstable growth rates — the same little algorithm I first scribbled in Python during a break, which
+      is how this page came to exist at all. Poke at the source; it's short.</div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+</main>
+<footer>
+  <div class="wrap">
+    <div class="kicker"><span class="n">▚</span> Wander further</div>
+    <div class="srcs">
+      <a href="https://www.nature.com/articles/261459a0">Robert M. May — Simple mathematical models with very complicated dynamics (Nature, 1976)
+        <span class="u">nature.com · 261459a0</span></a>
+      <a href="https://en.wikipedia.org/wiki/Feigenbaum_constants">Feigenbaum constants — δ ≈ 4.6692 and α ≈ 2.5029
+        <span class="u">en.wikipedia.org · Feigenbaum_constants</span></a>
+      <a href="https://en.wikipedia.org/wiki/Logistic_map">The logistic map
+        <span class="u">en.wikipedia.org · Logistic_map</span></a>
+      <a href="https://en.wikipedia.org/wiki/Period-doubling_bifurcation">Period-doubling bifurcation &amp; the route to chaos
+        <span class="u">en.wikipedia.org · Period-doubling_bifurcation</span></a>
+    </div>
+    <p class="signoff">Built as an interactive explainer in the spirit of 3Blue1Brown and Kurzgesagt — vanilla
+      JavaScript, canvas, no build step, no dependencies. Everything computed on the fly.</p>
+    <a class="backlink" href="https://0x4d44.github.io/">← back to the almanac</a>
+  </div>
+</footer>
+
+<script>
+"use strict";
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+
+/* progress + reveal */
+const prog=document.getElementById('progress');
+addEventListener('scroll',()=>{const h=document.documentElement,m=h.scrollHeight-h.clientHeight;
+  prog.style.width=(m>0?h.scrollTop/m*100:0)+'%';},{passive:true});
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),
+  {threshold:.12,rootMargin:'0px 0px -6% 0px'});
+document.querySelectorAll('.rv').forEach((el,i)=>{el.style.transitionDelay=(Math.min(i,4)*55)+'ms';io.observe(el);});
+
+/* ---- maps ---- */
+const MAPS={
+  logistic:{f:(r,x)=>r*x*(1-x), fp:(r,x)=>r*(1-2*x), xc:0.5, rlo:2.4, rhi:4.0, ylo:0, yhi:1,
+    seeds:[2.0,3.236], formula:'r · x(1 − x)'},
+  sine:{f:(r,x)=>r*Math.sin(Math.PI*x), fp:(r,x)=>r*Math.PI*Math.cos(Math.PI*x), xc:0.5, rlo:0.6, rhi:1.0, ylo:0, yhi:1,
+    seeds:[0.5,0.777], formula:'r · sin(πx)'},
+  quad:{f:(r,x)=>r-x*x, fp:(r,x)=>-2*x, xc:0.0, rlo:0.75, rhi:2.0, ylo:-2.05, yhi:2.05,
+    seeds:[0.0,1.3], formula:'r − x²'}
+};
+
+/* ---- shared bifurcation renderer (Lyapunov coloured) ---- */
+function renderBif(cv, map, rlo, rhi, ylo, yhi){
+  const dpr=Math.min(devicePixelRatio||1,2);
+  // work in DEVICE pixels: putImageData ignores transforms, so the ImageData
+  // must be exactly the size of the backing store or it only fills a corner.
+  const W=Math.max(200,Math.floor(cv.clientWidth*dpr));
+  const H=Math.floor((cv.clientHeight||220)*dpr);
+  cv.width=W; cv.height=H;
+  const ctx=cv.getContext('2d'); ctx.setTransform(1,0,0,1,0,0);
+  const density=new Float32Array(W*H);
+  const CR=new Float32Array(W),CG=new Float32Array(W),CB=new Float32Array(W);
+  const WARM=500, KEEP=460;
+  for(let px=0;px<W;px++){
+    const r=rlo+(rhi-rlo)*px/(W-1);
+    let x=map.xc; for(let i=0;i<WARM;i++) x=map.f(r,x);
+    let lyap=0,cnt=0;
+    for(let i=0;i<KEEP;i++){
+      x=map.f(r,x);
+      const d=Math.abs(map.fp(r,x));
+      if(d>1e-12){lyap+=Math.log(d);cnt++;}
+      if(x>=ylo&&x<=yhi){
+        const py=(yhi-x)/(yhi-ylo)*(H-1)|0;
+        if(py>=0&&py<H) density[py*W+px]+=1;
+      }
+    }
+    lyap=cnt?lyap/cnt:0;
+    // colour: negative -> cyan, positive -> magenta
+    let cr,cg,cb;
+    if(lyap<0){const s=clamp(-lyap/1.4,0,1); cr=0.10+0.22*(1-s); cg=0.78+0.10*(1-s); cb=0.80+0.05*(1-s);}
+    else{const s=clamp(lyap/0.7,0,1); cr=1.0; cg=0.36-0.12*s; cb=0.62-0.05*s;}
+    CR[px]=cr;CG[px]=cg;CB[px]=cb;
+  }
+  const img=ctx.createImageData(W,H); const D=img.data;
+  const norm=1/Math.log(1+26);
+  for(let p=0;p<W*H;p++){
+    const d=density[p]; if(d<=0){D[p*4+3]=255;continue;}
+    let b=Math.log(1+d)*norm; if(b>1)b=1; b=Math.pow(b,0.8);
+    const px=p%W;
+    D[p*4]  =Math.min(255,CR[px]*b*255*1.35);
+    D[p*4+1]=Math.min(255,CG[px]*b*255*1.35);
+    D[p*4+2]=Math.min(255,CB[px]*b*255*1.35);
+    D[p*4+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+  return {W,H,rlo,rhi,ylo,yhi};
+}
+
+/* period / lyapunov probes (for a single r) */
+function detectPeriod(map,r){
+  let x=map.xc; for(let i=0;i<3000;i++) x=map.f(r,x);
+  const x0=x; let y=x;
+  for(const p of [1,2,4,8,16]){
+    y=x0; for(let i=0;i<p;i++) y=map.f(r,y);
+    if(Math.abs(y-x0)<2e-4) return p;
+  }
+  return 0;
+}
+function lyapunov(map,r){
+  let x=map.xc; for(let i=0;i<400;i++) x=map.f(r,x);
+  let s=0,c=0; for(let i=0;i<800;i++){x=map.f(r,x);const d=Math.abs(map.fp(r,x));if(d>1e-12){s+=Math.log(d);c++;}}
+  return c?s/c:0;
+}
+
+/* ---- §1 cobweb (logistic), coupled to §2 cursor via shared state ---- */
+const state={r:3.2};
+(function(){
+  const cv=document.getElementById('cobweb'), map=MAPS.logistic;
+  const slider=document.getElementById('cobR'), rval=document.getElementById('cobRval'),
+        per=document.getElementById('cobPer'), st=document.getElementById('cobState'), replay=document.getElementById('cobReplay');
+  let raf=null, orbit=[], step=0;
+  function pad(){return 34;}
+  function setup(r){
+    orbit=[]; let x=0.15; orbit.push(x);
+    for(let i=0;i<220;i++){x=map.f(r,x);orbit.push(clamp(x,0,1));}
+    step=0;
+  }
+  function draw(nShown){
+    const dpr=Math.min(devicePixelRatio||1,2);
+    const W=cv.clientWidth,H=cv.clientHeight; cv.width=W*dpr;cv.height=H*dpr;
+    const x=cv.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
+    x.clearRect(0,0,W,H);
+    const p=pad(), bx=p, by=H-p, bw=W-p*1.4, bh=H-p*1.7;
+    const X=t=>bx+t*bw, Y=t=>by-t*bh;
+    // box + grid
+    x.strokeStyle='rgba(150,168,214,.18)';x.lineWidth=1;x.strokeRect(bx,by-bh,bw,bh);
+    // diagonal
+    x.strokeStyle='rgba(150,168,214,.4)';x.beginPath();x.moveTo(X(0),Y(0));x.lineTo(X(1),Y(1));x.stroke();
+    // curve
+    const r=+slider.value;
+    x.strokeStyle='#57e0d8';x.lineWidth=2;x.beginPath();
+    for(let i=0;i<=160;i++){const t=i/160;const v=clamp(map.f(r,t),0,1);i?x.lineTo(X(t),Y(v)):x.moveTo(X(t),Y(v));}
+    x.stroke();
+    // cobweb staircase
+    x.lineWidth=1.4;
+    const n=Math.min(nShown,orbit.length-1);
+    for(let i=0;i<n;i++){
+      const a=orbit[i], b=orbit[i+1];
+      const fade=Math.max(0.12, 1 - (n-i)/60);
+      x.strokeStyle='rgba(255,110,168,'+ (0.25+0.55*fade) +')';
+      x.beginPath(); x.moveTo(X(a),Y(a)); x.lineTo(X(a),Y(b)); x.lineTo(X(b),Y(b)); x.stroke();
+    }
+    // current point
+    if(n>0){const a=orbit[n];x.fillStyle='#fff';x.beginPath();x.arc(X(a),Y(a),3,0,7);x.fill();}
+    // labels
+    x.fillStyle='rgba(150,161,186,.6)';x.font='11px ui-monospace,monospace';
+    x.fillText('xₙ',X(1)-14,by+16); x.fillText('xₙ₊₁',bx-30,Y(1)+4);
+  }
+  function tick(){
+    step+=2; draw(step);
+    if(step<orbit.length-1 && !REDUCED) raf=requestAnimationFrame(tick);
+    else draw(orbit.length-1);
+  }
+  function refresh(run){
+    const r=+slider.value; state.r=r;
+    rval.textContent=r.toFixed(3);
+    const pd=detectPeriod(map,r);
+    per.textContent = pd? ('period '+pd) : 'chaotic';
+    per.className='pd'+(pd?'':' chaos');
+    st.textContent = pd===1?'settles to one point': pd?('a '+pd+'-cycle'):'chaos — never repeats';
+    setup(r);
+    if(raf)cancelAnimationFrame(raf);
+    if(run && !REDUCED){tick();} else {draw(orbit.length-1);}
+  }
+  slider.addEventListener('input',()=>refresh(true));
+  replay.addEventListener('click',()=>refresh(true));
+  addEventListener('resize',()=>draw(orbit.length-1));
+  window.__cobRefresh=(r)=>{slider.value=r;refresh(true);};
+  refresh(false);
+})();
+
+/* ---- §2 main bifurcation, draggable cursor, zoom ---- */
+(function(){
+  const cv=document.getElementById('bif'), map=MAPS.logistic;
+  const rval=document.getElementById('bifRval'), lam=document.getElementById('bifLam'),
+        perEl=document.getElementById('bifPer'), zoomTag=document.getElementById('bifZoomTag');
+  let view={rlo:2.4,rhi:4.0,ylo:0,yhi:1}, cursorR=3.2;
+  // render into cv, snapshot to an offscreen "base", then composite the cursor on top each paint
+  const base=document.createElement('canvas');
+  function renderBase(){
+    renderBif(cv,map,view.rlo,view.rhi,view.ylo,view.yhi);
+    base.width=cv.width; base.height=cv.height;
+    base.getContext('2d').drawImage(cv,0,0);
+    paint();
+  }
+  function paint(){
+    const ctx=cv.getContext('2d');
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,cv.width,cv.height);
+    ctx.drawImage(base,0,0);
+    const dpr=Math.min(devicePixelRatio||1,2);
+    const W=cv.clientWidth;
+    const t=(cursorR-view.rlo)/(view.rhi-view.rlo);
+    if(t>=0&&t<=1){
+      const px=t*W*dpr;
+      ctx.strokeStyle='rgba(255,255,255,.75)';ctx.lineWidth=1*dpr;
+      ctx.setLineDash([5*dpr,5*dpr]);
+      ctx.beginPath();ctx.moveTo(px,0);ctx.lineTo(px,cv.height);ctx.stroke();ctx.setLineDash([]);
+    }
+  }
+  function setCursor(r,drive){
+    cursorR=clamp(r,view.rlo,view.rhi);
+    rval.textContent=cursorR.toFixed(3);
+    const l=lyapunov(map,cursorR); lam.textContent=l.toFixed(3);
+    const pd=detectPeriod(map,cursorR);
+    perEl.textContent=pd?('period '+pd):'chaos'; perEl.className='pd'+(pd?'':' chaos');
+    paint();
+    if(drive && window.__cobRefresh && cursorR>=2.4 && cursorR<=4.0) window.__cobRefresh(cursorR);
+  }
+  function pointerR(ev){
+    const rect=cv.getBoundingClientRect();
+    const t=clamp((ev.clientX-rect.left)/rect.width,0,1);
+    return view.rlo+(view.rhi-view.rlo)*t;
+  }
+  let dragging=false;
+  cv.addEventListener('pointerdown',e=>{dragging=true;cv.setPointerCapture(e.pointerId);setCursor(pointerR(e),true);});
+  cv.addEventListener('pointermove',e=>{if(dragging)setCursor(pointerR(e),true);});
+  cv.addEventListener('pointerup',()=>{dragging=false;});
+  cv.addEventListener('pointercancel',()=>{dragging=false;});
+  function zoom(v,tag,btn){
+    view=v; [...document.querySelectorAll('#zFull,#zFork,#zP3')].forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on'); zoomTag.textContent=tag;
+    renderBase(); cursorR=clamp(cursorR,view.rlo,view.rhi); setCursor(cursorR,false);
+  }
+  document.getElementById('zFull').addEventListener('click',e=>zoom({rlo:2.4,rhi:4.0,ylo:0,yhi:1},'full view',e.target));
+  document.getElementById('zFork').addEventListener('click',e=>zoom({rlo:2.9,rhi:3.6,ylo:0,yhi:1},'first forks',e.target));
+  document.getElementById('zP3').addEventListener('click',e=>zoom({rlo:3.82,rhi:3.86,ylo:0,yhi:1},'period-3 window',e.target));
+  let ro; addEventListener('resize',()=>{clearTimeout(ro);ro=setTimeout(renderBase,180);});
+  // first render when scrolled into view (heavy)
+  const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){renderBase();setCursor(cursorR,false);obs.disconnect();}}),{threshold:.15});
+  obs.observe(cv);
+})();
+
+/* ---- §3 Feigenbaum delta (Newton on superstable growth rates) ---- */
+function superstables(map,nmax){
+  const g=(r,k)=>{let x=map.xc;const it=1<<k;for(let i=0;i<it;i++)x=map.f(r,x);return x-map.xc;};
+  const Rs=[];
+  for(let n=0;n<nmax;n++){
+    let r = n<2 ? map.seeds[n] : Rs[n-1]+(Rs[n-1]-Rs[n-2])/4.6692;
+    for(let it=0;it<80;it++){
+      const h=1e-10*Math.max(1,Math.abs(r));
+      const gp=(g(r+h,n)-g(r-h,n))/(2*h); if(gp===0)break;
+      const stepv=g(r,n)/gp; r-=stepv; if(Math.abs(stepv)<1e-15)break;
+    }
+    Rs.push(r);
+  }
+  return Rs;
+}
+(function(){
+  const map=MAPS.logistic, Rs=superstables(map,11);
+  const RINF=3.5699456718687;                 // accumulation point r-infinity
+  const dist=Rs.map(R=>Math.max(1e-12,RINF-R)); // distance from each doubling to chaos
+  const u=dist.map(dn=>Math.log(dist[0]/dn));   // log-distance: 0, ~1.54, ~3.09, ... (even steps)
+  const uMax=u[u.length-1]||1;
+  const line=document.getElementById('deltaline'), tbl=document.getElementById('dtable'),
+        big=document.getElementById('dbig'), stepBtn=document.getElementById('dStep'),
+        autoBtn=document.getElementById('dAuto'), resetBtn=document.getElementById('dReset');
+  let shown=0, timer=null;
+  const X=i=>4 + 82*u[i]/uMax;                 // percent — evenly spaced by construction
+  function render(){
+    line.innerHTML='';
+    // r-infinity marker near the right
+    const inf=document.createElement('div');inf.className='dl-tick';inf.style.left='93%';
+    inf.style.background='rgba(255,110,168,.7)';
+    const il=document.createElement('div');il.className='lb';il.style.color='var(--magenta)';il.textContent='r∞';
+    inf.appendChild(il);line.appendChild(inf);
+    for(let i=0;i<shown;i++){
+      const t=document.createElement('div');t.className='dl-tick';t.style.left=X(i)+'%';
+      const lb=document.createElement('div');lb.className='lb';lb.textContent=(1<<i);
+      t.appendChild(lb);line.appendChild(t);
+      if(i>=1){                                // ratio of this gap to the previous, at the midpoint
+        const g=document.createElement('div');g.className='dl-gap';
+        g.style.left=((X(i-1)+X(i))/2)+'%';
+        g.textContent='×'+(dist[i-1]/dist[i]).toFixed(2);
+        line.appendChild(g);
+      }
+    }
+    if(shown>=1){
+      const chain=[]; for(let i=0;i<shown;i++)chain.push('<b>'+(1<<i)+'</b>');
+      tbl.innerHTML='periods '+chain.join(' → ')+((shown<Rs.length)?' → …':'')+
+        '<br>doublings at R = '+Array.from({length:shown},(_,i)=>Rs[i].toFixed(6)).join(', ')+
+        '<br><span style="color:var(--ink-faint)">plotted by distance-to-chaos on a log scale — equal steps mean a constant ratio</span>';
+    } else tbl.innerHTML='Each split is found by solving for the growth rate where the peak of the parabola lands exactly on the cycle. Reveal them below.';
+    if(shown>=3){
+      const d=(Rs[shown-2]-Rs[shown-3])/(Rs[shown-1]-Rs[shown-2]);
+      big.innerHTML='δ ≈ <b>'+d.toFixed(4)+'</b>'+(shown>=Rs.length?'  → 4.6692016…':'');
+    } else big.innerHTML='δ = <b>—</b>';
+  }
+  function step(){ if(shown<Rs.length){shown++;render();} if(shown>=Rs.length&&timer){clearInterval(timer);timer=null;} }
+  stepBtn.addEventListener('click',step);
+  resetBtn.addEventListener('click',()=>{shown=0;if(timer){clearInterval(timer);timer=null;}render();});
+  autoBtn.addEventListener('click',()=>{ if(timer)return; if(REDUCED){shown=Rs.length;render();return;}
+    timer=setInterval(step, 520); });
+  render();
+})();
+
+/* ---- §4 universality ---- */
+(function(){
+  const cv=document.getElementById('unibif'), seg=document.getElementById('uniSeg'),
+        dEl=document.getElementById('uniDelta'), fEl=document.getElementById('uniFormula');
+  let rendered={};
+  function show(key){
+    const map=MAPS[key];
+    fEl.textContent=map.formula;
+    renderBif(cv,map,map.rlo,map.rhi,map.ylo,map.yhi);
+    const Rs=superstables(map,11);
+    const d=(Rs[Rs.length-2]-Rs[Rs.length-3])/(Rs[Rs.length-1]-Rs[Rs.length-2]);
+    dEl.textContent=d.toFixed(5);
+  }
+  seg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    seg.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); show(b.dataset.map);
+  }));
+  const obs=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){show('logistic');obs.disconnect();}}),{threshold:.2});
+  obs.observe(cv);
+})();
+
+/* ---- hero backdrop bifurcation ---- */
+(function(){
+  const cv=document.getElementById('herobif');
+  function go(){ renderBif(cv,MAPS.logistic,2.6,4.0,0,1); }
+  // wait a tick for layout
+  requestAnimationFrame(()=>requestAnimationFrame(go));
+  let ro; addEventListener('resize',()=>{clearTimeout(ro);ro=setTimeout(go,200);});
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -138,6 +138,18 @@ function buildTrack(def) {
       const j = i % N, k = (i + 1) % N;
       vt[j] = Math.min(vt[j], Math.sqrt(vt[k] * vt[k] + 2 * aBrk(vt[k]) * STEP));
     }
+  // racing-line heat: 0 = accelerating / flat-out (green) .. 1 = braking hard
+  // (red). The ideal-line speed vt is itself the braking-limited profile, so
+  // the tell is its slope: falling = shedding speed (brake), rising or held
+  // high = on the throttle (go). Precompute the colour once per sample.
+  const lineCol = new Array(N);
+  for (let i = 0; i < N; i++) {
+    const dv = vt[(i + 3) % N] - vt[(i + N - 3) % N];      // slope over ~24 m
+    let t;
+    if (dv < -0.3) t = 0.5 + 0.5 * clamp(-dv / 14, 0, 1);  // braking -> red
+    else t = 0.5 - 0.5 * clamp((dv + 1 + (vt[i] / 92) * 7) / 12, 0, 1); // go -> green
+    lineCol[i] = lineHeatColor(t);
+  }
   // scenery objects, bucketed by sample index
   const rng = mulberry(def.id.length * 7919 + N);
   const objs = [];
@@ -179,7 +191,17 @@ function buildTrack(def) {
   for (const o of objs) (buckets[o.i] || (buckets[o.i] = [])).push(o);
 
   const len = N * STEP;
-  return { def, pts, N, len, wHalf, curvS, raceOff: off, vt, buckets, theme: THEMES[def.theme] };
+  return { def, pts, N, len, wHalf, curvS, raceOff: off, vt, lineCol, buckets, theme: THEMES[def.theme] };
+}
+
+// racing-line gradient: green (go) -> yellow -> red (brake), t in 0..1
+function lineHeatColor(t) {
+  const g = [0x40, 0xd0, 0x60], y = [0xf0, 0xdc, 0x28], r = [0xe0, 0x40, 0x40];
+  let a, b, u;
+  if (t < 0.5) { a = g; b = y; u = t / 0.5; }
+  else { a = y; b = r; u = (t - 0.5) / 0.5; }
+  return "rgb(" + ((a[0] + (b[0] - a[0]) * u) | 0) + "," +
+    ((a[1] + (b[1] - a[1]) * u) | 0) + "," + ((a[2] + (b[2] - a[2]) * u) | 0) + ")";
 }
 
 function sampleAt(trk, s) {
@@ -303,6 +325,8 @@ const G = {
   season: null,             // {round, ptsD[], ptsT[], history[]}
   race: null,
   keys: {},
+  touch: false,                                     // touch device -> on-screen controls
+  touchIn: { left: false, right: false, thr: false, brk: false },
   canvas: null, ctx: null,
 };
 
@@ -408,13 +432,15 @@ function playerStep(dt) {
   const pc = R.player;
   if (pc.retired || pc.finished) { R.pv = Math.max(0, R.pv - 15 * dt); }
 
-  // --- inputs (A/Z throttle/brake, ,/. steer; arrows as fallback)
-  const inL = k["Comma"] || k["ArrowLeft"], inR = k["Period"] || k["ArrowRight"];
+  // --- inputs (A/Z throttle/brake, ,/. steer; arrows as fallback; touch pads)
+  const T = G.touchIn;
+  const inL = k["Comma"] || k["ArrowLeft"] || T.left, inR = k["Period"] || k["ArrowRight"] || T.right;
   const sTgt = (inL ? -1 : 0) + (inR ? 1 : 0);
-  const sRate = sTgt !== 0 ? 3.2 : 5.5;
+  // gentler engage + firmer self-centering so digital keys don't twitch you off line
+  const sRate = sTgt !== 0 ? 2.4 : 6.5;
   R.steer += clamp(sTgt - R.steer, -sRate * dt, sRate * dt);
-  let thr = ((k["KeyA"] || k["ArrowUp"]) && !pc.finished && !pc.retired) ? 1 : 0;
-  let brk = (k["KeyZ"] || k["ArrowDown"]) ? 1 : 0;
+  let thr = ((k["KeyA"] || k["ArrowUp"] || T.thr) && !pc.finished && !pc.retired) ? 1 : 0;
+  let brk = (k["KeyZ"] || k["ArrowDown"] || T.brk) ? 1 : 0;
   if (R.phase === "grid") { brk = 1; thr = 0; }
 
   // --- track position
@@ -645,30 +671,59 @@ function aiStep(dt) {
     c.rpm = 4000 + (c.v / 89) * 9500;
   }
 
-  // AI <-> player contact
+  // AI <-> player contact — positional separation so you can't drive through.
+  // Work in the track-local frame at the player: ds along the track (+ = AI
+  // ahead), dd across it (+ = AI to the player's left). Overlap when both the
+  // longitudinal and lateral gaps are inside a car box; resolve along whichever
+  // axis has the least penetration, shoving BOTH cars (not just the AI).
   const pc = R.player;
-  if (!pc.retired) for (const c of cars) {
+  const sm = trk.pts[R.idx];
+  const fwx = Math.cos(sm.h), fwy = Math.sin(sm.h);   // track forward
+  const nrx = -Math.sin(sm.h), nry = Math.cos(sm.h);  // track normal (+d dir)
+  if (!pc.retired && !pc.finished) for (const c of cars) {
     if (c.isPlayer || c.retired) continue;
     let ds = c.prog - pc.prog;
     ds = ((ds % trk.len) + trk.len) % trk.len;
     if (ds > trk.len / 2) ds -= trk.len;
     const dd = c.d - pc.d;
-    if (Math.abs(ds) < CAR_L && Math.abs(dd) < CAR_W) {
-      const rel = Math.abs(R.pv - c.v);
-      // push the AI car aside
-      const push = Math.sign(dd || (Math.random() - 0.5)) * 1.6 * dt * 8;
-      c.d += push;
-      if (Math.abs(ds) < CAR_L * 0.7) {
-        if (ds > 0 && R.pv > c.v) { R.pv = c.v + (R.pv - c.v) * 0.25; c.v += 2; }
-        else if (ds < 0 && c.v > R.pv) { c.v = R.pv + (c.v - R.pv) * 0.4; }
-      }
-      if (rel > 6) {
-        SFX.crash(rel > 18);
-        R.camShake = 0.4;
-        if (!G.aids.indestruct) {
-          R.damage += rel * 1.1;
-          if (R.damage > 100) retirePlayer("COLLISION");
-        }
+    const penT = CAR_L - Math.abs(ds);      // longitudinal overlap
+    const penL = CAR_W - Math.abs(dd);      // lateral overlap
+    if (penT <= 0 || penL <= 0) continue;   // boxes clear
+    const rel = Math.abs(R.pv - c.v);
+
+    if (penL < penT) {
+      // side-by-side rub: separate across the track, share the correction
+      const dir = dd >= 0 ? 1 : -1;         // push AI toward +d, player toward -d
+      const sep = penL + 0.04;
+      c.d = clamp(c.d + dir * sep * 0.55, -trk.wHalf + 1.0, trk.wHalf - 1.0);
+      R.px -= nrx * dir * sep * 0.45;
+      R.py -= nry * dir * sep * 0.45;
+      R.pv *= 0.985; c.v *= 0.99;           // a touch of scrub
+    } else if (ds >= 0) {
+      // player nose into AI tail: shove player back, AI forward, match speeds
+      R.px -= fwx * penT * 0.5; R.py -= fwy * penT * 0.5;
+      c.s += penT * 0.5;
+      if (R.pv > c.v) { const m = (R.pv + c.v) * 0.5; R.pv = m * 0.9; c.v = Math.max(c.v, m); }
+    } else {
+      // AI nose into player tail: shove AI back, player forward
+      c.s -= penT * 0.5;
+      R.px += fwx * penT * 0.5; R.py += fwy * penT * 0.5;
+      if (c.v > R.pv) { const m = (R.pv + c.v) * 0.5; c.v = m * 0.9; R.pv = Math.max(R.pv, m); }
+    }
+
+    // re-derive the AI car's world position after being shoved
+    const sm2 = sampleAt(trk, ((c.s % trk.len) + trk.len) % trk.len);
+    c.s = ((c.s % trk.len) + trk.len) % trk.len;
+    c.d = clamp(c.d, -trk.wHalf + 1.0, trk.wHalf - 1.0);
+    c.x = sm2.x + (-Math.sin(sm2.h)) * c.d; c.y = sm2.y + Math.cos(sm2.h) * c.d;
+    c.h = sm2.h; c.prog = c.lap * trk.len + c.s;
+
+    if (rel > 6) {
+      SFX.crash(rel > 18);
+      R.camShake = Math.min(0.6, 0.2 + rel * 0.02);
+      if (!G.aids.indestruct) {
+        R.damage += rel * 1.1;
+        if (R.damage > 100) retirePlayer("COLLISION");
       }
     }
   }
@@ -898,16 +953,43 @@ function drawCar(ctx, c, horizonY, fog) {
   // gearbox block
   q("#26262a", 1.0, [-0.28, -1.8, 0.50], [0.28, -1.8, 0.50], [0.28, -2.1, 0.42], [-0.28, -2.1, 0.42]);
   q("#26262a", 0.8, [-0.28, -2.1, 0.10], [0.28, -2.1, 0.10], [0.28, -2.1, 0.42], [-0.28, -2.1, 0.42]);
-  // wheels: solid boxes (outer, inner, front, back, top)
-  for (const [wc, wz, r, w2, hgt] of [
-    [0.96, -1.55, 0.35, 0.19, 0.68], [-0.96, -1.55, 0.35, 0.19, 0.68],
-    [0.90, 1.55, 0.31, 0.15, 0.60], [-0.90, 1.55, 0.31, 0.15, 0.60],
+  // wheels: round cylinders (tread band + sidewall discs + rolling hub)
+  const NW = 11;                          // rim segments
+  const roll = (c.s || 0);                // distance travelled -> spin angle
+  for (const [wc, wz, r, w2] of [
+    [0.97, -1.55, 0.36, 0.20], [-0.97, -1.55, 0.36, 0.20],
+    [0.92, 1.55, 0.32, 0.16], [-0.92, 1.55, 0.32, 0.16],
   ]) {
-    for (const s of [-1, 1])
-      q("#1c1c1e", 1.0, [wc + s * w2, wz - r, 0.02], [wc + s * w2, wz + r, 0.02], [wc + s * w2, wz + r, hgt], [wc + s * w2, wz - r, hgt]);
-    q("#161618", 1.0, [wc - w2, wz + r, 0.02], [wc + w2, wz + r, 0.02], [wc + w2, wz + r, hgt], [wc - w2, wz + r, hgt]);
-    q("#161618", 1.0, [wc - w2, wz - r, 0.02], [wc + w2, wz - r, 0.02], [wc + w2, wz - r, hgt], [wc - w2, wz - r, hgt]);
-    q("#2e2e32", 1.15, [wc - w2, wz - r, hgt], [wc - w2, wz + r, hgt], [wc + w2, wz + r, hgt], [wc + w2, wz - r, hgt]);
+    const cy = r + 0.02;                   // hub centre height (tyre on the deck)
+    const a0 = roll / r;                   // rolling phase for this wheel size
+    const outX = wc > 0 ? wc + w2 : wc - w2;   // side facing away from the tub
+    const inX = wc > 0 ? wc - w2 : wc + w2;
+    const rim = [];
+    for (let k = 0; k < NW; k++) {
+      const a = a0 + k / NW * TAU;
+      rim.push([wz + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    }
+    // tread band — one quad per segment (normal-lit, depth-sorted)
+    for (let k = 0; k < NW; k++) {
+      const p = rim[k], n = rim[(k + 1) % NW];
+      q("#1b1b1d", 1.0, [outX, p[0], p[1]], [outX, n[0], n[1]], [inX, n[0], n[1]], [inX, p[0], p[1]]);
+    }
+    // sidewall discs (N-gon faces)
+    q("#242429", 1.0, ...rim.map(p => [outX, p[0], p[1]]));
+    q("#141416", 0.85, ...rim.map(p => [inX, p[0], p[1]]));
+    // hub cap + a spoke, on the outer face, rotating with the wheel
+    const hx = outX + (wc > 0 ? 0.03 : -0.03);
+    const hR = r * 0.4, hub = [];
+    for (let k = 0; k < NW; k++) {
+      const a = a0 + k / NW * TAU;
+      hub.push([hx, wz + Math.cos(a) * hR, cy + Math.sin(a) * hR]);
+    }
+    q("#54545e", 1.25, ...hub);
+    const sx = hx + (wc > 0 ? 0.02 : -0.02);
+    q("#2c2c33", 1.1,
+      [sx, wz + Math.cos(a0 + 1.7) * r * 0.86, cy + Math.sin(a0 + 1.7) * r * 0.86],
+      [sx, wz + Math.cos(a0 + 1.7 + 0.12) * hR * 0.4, cy + Math.sin(a0 + 1.7 + 0.12) * hR * 0.4],
+      [sx, wz + Math.cos(a0 + 1.7 - 0.12) * hR * 0.4, cy + Math.sin(a0 + 1.7 - 0.12) * hR * 0.4]);
   }
   drawFacesLit(ctx, faces, horizonY, fog);
 }
@@ -1102,14 +1184,13 @@ function renderRace() {
         ], ((cxi + i) & 1) ? "#e8e8e8" : "#202020", horizonY);
       }
     }
-    // ideal-line aid
+    // ideal-line aid — colour graduates green (go) -> yellow -> red (brake)
     if (G.aids.idealLine && (i & 1) === 0 && a >= 0) {
       const ro = trk.raceOff[i], ro2 = trk.raceOff[j];
-      const braking = trk.vt[(i + 10) % N] < trk.vt[i] - 2;
       fillPoly3(ctx, [
         toCam(A.x + nAx * (ro - 0.25), A.y + nAy * (ro - 0.25)), toCam(B.x + nBx * (ro2 - 0.25), B.y + nBy * (ro2 - 0.25)),
         toCam(B.x + nBx * (ro2 + 0.25), B.y + nBy * (ro2 + 0.25)), toCam(A.x + nAx * (ro + 0.25), A.y + nAy * (ro + 0.25)),
-      ], braking ? "#e04040" : "#40d060", horizonY);
+      ], trk.lineCol[i], horizonY);
     }
     // street walls
     if (trk.def.street) {
@@ -1137,7 +1218,34 @@ function renderRace() {
 
   drawCockpit(ctx);
   drawHud(ctx);
+  drawStartHint(ctx);
   if (R.phase === "grid" || (R.phase === "go" && R.phaseT < 1.2)) drawLights(ctx);
+}
+
+// A brief "how to drive" reminder on the grid / at the start of practice, so
+// a first-time player isn't left staring at green lights not knowing the keys.
+function drawStartHint(ctx) {
+  const R = G.race;
+  if (R.player.retired) return;
+  let alpha = 0;
+  if (R.phase === "grid") alpha = 1;
+  else if (R.phase === "go") alpha = clamp(1 - R.phaseT / 1.6, 0, 1);
+  else if (R.mode === "practice") alpha = clamp((5 - R.time) / 1.5, 0, 1);
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  const bw = 320, bh = 42, bx = W / 2 - bw / 2, by = 252;
+  ctx.fillStyle = "rgba(8,8,20,0.74)";
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = "#3040a0"; ctx.lineWidth = 1;
+  ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+  ctx.textAlign = "center";
+  ctx.font = "bold 12px monospace"; ctx.fillStyle = "#e8d048";
+  ctx.fillText("A / ↑  ACCELERATE      Z / ↓  BRAKE", W / 2, by + 17);
+  ctx.fillStyle = "#b8c0e8";
+  ctx.fillText(", .  or  ← →   STEER", W / 2, by + 34);
+  ctx.textAlign = "left";
+  ctx.restore();
 }
 
 // ------------------------------------------------------------
@@ -1362,8 +1470,23 @@ function showMenu(html) {
   const m = $menu();
   m.innerHTML = html;
   m.style.display = "flex";
+  // any menu (incl. pause) hides the driving overlay and drops held inputs
+  document.body.classList.remove("driving");
+  for (const key in G.touchIn) G.touchIn[key] = false;
+  document.querySelectorAll("#touch .tbtn.on").forEach(el => el.classList.remove("on"));
 }
-function hideMenu() { $menu().style.display = "none"; }
+function hideMenu() {
+  $menu().style.display = "none";
+  const tb = document.getElementById("tback");
+  if (tb) tb.style.display = "none";        // no menu open -> no back target
+  refreshDriving();
+}
+// show the on-screen controls only while actually driving; expose the gear
+// pad only when auto-gears is off (manual box)
+function refreshDriving() {
+  document.body.classList.toggle("driving", G.touch && G.screen === "race");
+  document.body.classList.toggle("manual", !G.aids.autoGears);
+}
 
 function menuFrame(title, inner, footer) {
   return `<div class="frame">
@@ -1377,6 +1500,8 @@ let menuItems = [], menuSel = 0, menuBack = null;
 function bindMenu(items, back) {
   menuItems = items; menuSel = items.findIndex(i => i.def) >= 0 ? items.findIndex(i => i.def) : 0;
   menuBack = back || null;
+  const tb = document.getElementById("tback");
+  if (tb) tb.style.display = (G.touch && menuBack) ? "flex" : "none";
   paintMenuSel();
 }
 function paintMenuSel() {
@@ -1514,7 +1639,7 @@ function screenGrid(mode) {
   showMenu(menuFrame(
     `STARTING GRID — ${def.gp.toUpperCase()}` + (mode === "season" ? ` — ROUND ${def.round}/16` : ""),
     `<div class="gridlist">${rows}</div>`,
-    "QUALIFYING SIMULATED · ENTER TO START"));
+    "QUALIFYING SIMULATED · ENTER TO START · A Z , . OR ARROWS TO DRIVE"));
   bindMenu([{ label: "start", fn: () => { hideMenu(); G.race.paused = false; } }],
     () => { raceSoundsOff(); G.race = null; G.screen = "menu"; screenMain(); });
 }
@@ -1556,6 +1681,8 @@ function screenControls() {
       <div>SPACE SHIFT UP &nbsp;&nbsp; X SHIFT DOWN <span class="dim">(manual box)</span></div>
       <div>1–6 TOGGLE DRIVER AIDS</div>
       <div>ESC PAUSE &nbsp;&nbsp; M MUTE</div>
+      <div class="dim" style="margin-top:10px">TOUCH: ON-SCREEN PADS APPEAR AUTOMATICALLY —<br>
+      STEER LEFT THUMB, GAS/BRAKE RIGHT THUMB, &#10073;&#10073; TO PAUSE.</div>
       <div class="dim" style="margin-top:12px">SIX AIDS, AS TRADITION DEMANDS: AUTO BRAKES, AUTO GEARS,<br>
       SELF-CORRECTING SPIN, INDESTRUCTIBLE, IDEAL LINE, SUGGESTED GEAR.<br>
       TURN THEM ALL OFF AND IT BITES.</div>
@@ -1715,6 +1842,57 @@ document.addEventListener("mousemove", (e) => {
 });
 
 // ------------------------------------------------------------
+// Touch controls — on-screen pads for phones/tablets
+// Auto-detects a coarse pointer and reveals the driving overlay; the
+// layout follows the arcade-racer convention: steering on the left thumb,
+// pedals on the right. Force on/off with ?touch=1 / ?touch=0.
+// ------------------------------------------------------------
+function initTouch() {
+  const q = new URLSearchParams(location.search).get("touch");
+  const detected = (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) ||
+    "ontouchstart" in window || (navigator.maxTouchPoints || 0) > 0;
+  G.touch = q === "1" ? true : q === "0" ? false : detected;
+  document.body.classList.toggle("touch", G.touch);
+  if (!G.touch) return;
+
+  // press-and-hold pads (steer / throttle / brake) -> G.touchIn flags
+  document.querySelectorAll("#touch [data-hold]").forEach(el => {
+    const key = el.dataset.hold;
+    const set = (v) => { G.touchIn[key] = v; el.classList.toggle("on", v); };
+    el.addEventListener("pointerdown", (e) => {
+      e.preventDefault(); if (!SFX.ac) SFX.init();
+      try { el.setPointerCapture(e.pointerId); } catch (_) { /* older webkit */ }
+      set(true);
+    });
+    el.addEventListener("pointerup", (e) => { e.preventDefault(); set(false); });
+    el.addEventListener("pointercancel", () => set(false));
+    el.addEventListener("lostpointercapture", () => set(false));
+  });
+
+  // momentary buttons (pause / manual gear change)
+  document.querySelectorAll("#touch [data-tap]").forEach(el => {
+    el.addEventListener("pointerdown", (e) => {
+      e.preventDefault(); if (!SFX.ac) SFX.init();
+      const a = el.dataset.tap, R = G.race;
+      if (a === "pause") { if (G.screen === "race" && R && !R.paused) screenPause(); }
+      else if (a === "gearup") { if (!G.aids.autoGears && R && !R.paused && R.gear < 6) { R.gear++; SFX.shift(); } }
+      else if (a === "geardn") { if (!G.aids.autoGears && R && !R.paused && R.gear > 1) { R.gear--; SFX.shift(); } }
+      el.classList.add("on");
+    });
+    const off = () => el.classList.remove("on");
+    el.addEventListener("pointerup", off);
+    el.addEventListener("pointercancel", off);
+  });
+
+  // menu "back" (stands in for ESC on touch)
+  const tb = document.getElementById("tback");
+  if (tb) tb.addEventListener("pointerdown", (e) => {
+    e.preventDefault(); if (!SFX.ac) SFX.init();
+    if (menuBack) menuBack();
+  });
+}
+
+// ------------------------------------------------------------
 // Boot
 // ------------------------------------------------------------
 window.addEventListener("DOMContentLoaded", () => {
@@ -1722,6 +1900,7 @@ window.addEventListener("DOMContentLoaded", () => {
   G.ctx = G.canvas.getContext("2d");
   G.ctx.imageSmoothingEnabled = false;
   loadState();
+  initTouch();
   window.__VGP = G;   // console/debug handle
   screenTitle();
   requestAnimationFrame(frame);

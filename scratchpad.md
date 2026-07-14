@@ -79,3 +79,21 @@ human-invoked review triages these — don't fix them inline.
   guideline — nav-rail buttons ~38px tall (`.rail-btn` in the `max-width:760px` block,
   `darmok/lcars.css:966`) and the vocab audio ▶ buttons 30×30 (`.say.small`). Tappable
   but tight; review deemed non-blocking. Bump min-height / hit-area if polishing.
+- [x] 2026-07-13 — The repo's `npm run build` / `npm test` gate is RED on
+  origin/main (independent of any new doc). `humanity-retention/tests/validate-static.mjs:29-32`
+  walks every `href`/`src` in the doc's `index.html` and asserts each resolves
+  under the doc dir, but its skip-regex only excludes `//`, `http(s)://` and
+  `data:` — not ROOT-absolute paths. The shared back-button include
+  `/almanac-back.js` (added repo-wide after this test was written) therefore
+  resolves to `humanity-retention/almanac-back.js`, which doesn't exist, and the
+  build chain dies there — before shipshape / span-of-control run, which copied
+  the same loop and likely share the bug. Fix: in that ref loop, also skip refs
+  starting with a single `/` (root-absolute), across every validate-static that
+  uses the pattern. Found while adding `northern-line-1987`; pre-existing and
+  unrelated to it. (Promoted + fixed 2026-07-13: **ALM-BUG-KILN-00025**, state
+  Fixed. It was worse than this note assumed — **four** validators carried the
+  defect, not one: `tidecall/validate-static.test.js:42` has the same bug in a
+  different shape, and the `&&` chain was hiding it behind humanity-retention.
+  All four now *resolve* root-absolute refs against the repo root rather than
+  skipping them, so the check keeps its teeth; `npm test` is green. Awaiting
+  independent two-eyes closure.)
