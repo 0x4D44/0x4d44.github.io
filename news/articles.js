@@ -18314,5 +18314,58 @@ window.NEWS_ARTICLES = [
       "maritime",
       "heritage"
     ]
+  },
+  {
+    "id": "voices-donaldson-the-flangelo",
+    "category": "Voices",
+    "headline": "The Flangelo",
+    "standfirst": "The Daily Flange invites Julia Donaldson to rhyme her way through the deep dark wood behind the depot, where one small sprocket keeps insisting there's a Flangelo.",
+    "byline": "In the style of Julia Donaldson",
+    "location": "FLANGE WOOD",
+    "published": "2026-07-14T09:00:00",
+    "body": [
+      "A sprocket took a roll through the deep dark wood. / A fox saw the sprocket, and the sprocket looked good. / \"Where are you rolling to, little steel sprocket? / Come down to my den — I've a file in my pocket. / I'll flange you this afternoon for free.\" / \"It's terribly kind of you, Fox, but you see, / I'm taking my tea with a Flangelo.\" / \"A Flangelo? What's a Flangelo?\" / \"A Flangelo! Why, didn't you know? / He has terrible torque and terrible claws, / And terrible teeth in his gear-grinding jaws.\" / \"Where are you meeting him?\" / \"Here, by these rocks, / And his favourite food is flange-grilled fox.\" / \"Flange-grilled fox! I'm off!\" Fox said. / \"Goodbye, little sprocket,\" and away he sped. / \"Silly old Fox! Doesn't he know? / There's no such thing as a Flangelo!\"",
+      "On rolled the sprocket through the deep dark wood. / An owl saw the sprocket, and the sprocket looked good. / \"Where are you rolling to, little steel sun? / Come up to my treetop — I'll flange you for fun.\" / \"It's frightfully kind of you, Owl, but no, / I'm taking my tea with a Flangelo.\" / \"A Flangelo? What's a Flangelo?\" / \"A Flangelo! Why, didn't you know? / He has knurled steel knuckles and pistons for toes, / And a red-hot rivet on the end of his nose.\" / \"Where are you meeting him?\" / \"Here, by this stream, / And his favourite food is flanged owl cream.\" / \"Flanged owl cream! Toowhit-toowhoo! / Goodbye, little sprocket,\" and away Owl flew. / \"Silly old Owl! Doesn't he know? / There's no such thing as a Flangelo!\"",
+      "On rolled the sprocket through the deep dark wood. / A snake saw the sprocket, and the sprocket looked good. / \"Where are you rolling to, little bright moon? / Come flange in my log-pile this fine afternoon.\" / \"It's wonderfully kind of you, Snake, but no, / I'm taking my tea with a Flangelo.\" / \"A Flangelo? What's a Flangelo?\" / \"A Flangelo! Why, didn't you know? / His eyes are ball bearings, his tongue's a steel spline, / And he's spanner-sharp spikes all the way down his spine.\" / \"Where are you meeting him?\" / \"Here, by this lake, / And his favourite food is flange-rolled snake.\" / \"Flange-rolled snake! It's time I hid! / Goodbye, little sprocket,\" and away Snake slid. / \"Silly old Snake! Doesn't he know? / There's no such thing as a Flangel… / …OH!\"",
+      "But who is this creature with terrible claws / And terrible teeth in his gear-grinding jaws? / He has knurled steel knuckles and pistons for toes, / And a red-hot rivet on the end of his nose. / His eyes are ball bearings, his tongue's a steel spline, / And he's spanner-sharp spikes all the way down his spine. / Oh help! Oh no! / It's a Flangelo!",
+      "\"My favourite tea!\" the Flangelo said. / \"You'll flange up a treat on a slice of lead.\" / \"Flange ME?\" said the sprocket. \"Why, don't be absurd! / I'm the scariest sprocket this wood ever heard. / Just roll on behind me and soon you will see, / Everyone is afraid of me.\" / \"All right,\" said the Flangelo, bursting with laughter. / \"You roll on ahead and I'll trundle on after.\"",
+      "They rolled and they trundled till the Flangelo said, / \"I hear a hiss in the leaves ahead.\" / \"It's Snake,\" said the sprocket. \"Why, Snake, hello!\" / Snake took one look at the Flangelo. / \"Oh crumbs!\" he said. \"Goodbye, little sprocket!\" / And off he slid, quick as a rocket. / \"You see?\" said the sprocket. \"I told you so.\" / \"Amazing!\" clanked the Flangelo.",
+      "They rolled some more till the Flangelo said, / \"I hear a hoot in the trees ahead.\" / \"It's Owl,\" said the sprocket. \"Why, Owl, hello!\" / Owl took one look at the Flangelo. / \"Oh dear!\" he said. \"Goodbye, little sprocket!\" / And he shot from his branch like a bolt from a socket. / \"You see?\" said the sprocket. \"I told you so.\" / \"Astounding!\" clanked the Flangelo.",
+      "They rolled some more till the Flangelo said, / \"I hear some paws on the path ahead.\" / \"It's Fox,\" said the sprocket. \"Why, Fox, hello!\" / Fox took one look at the Flangelo. / \"Oh help!\" he said. \"Goodbye, little sprocket!\" / And he dived down his hole and bolted to lock it.",
+      "\"Well, Flangelo,\" said the sprocket. \"You see? / Everyone is afraid of me. / But now my chain is starting to grumble, / And my favourite food is Flangelo crumble.\" / \"Flangelo crumble!\" the Flangelo said, / And quick as a flywheel he turned and fled. / All was quiet in the deep dark wood. / The sprocket found an oilcan, and the oil was good."
+    ],
+    "pullQuote": "\"Flange ME?\" said the sprocket. \"Why, don't be absurd! I'm the scariest sprocket this wood ever heard.\"",
+    "tags": [
+      "voices",
+      "pastiche",
+      "donaldson",
+      "poetry",
+      "flangelo"
+    ]
+  },
+  {
+    "id": "voices-gill-flangelo-review",
+    "category": "Voices",
+    "headline": "A Sprocket Made Him Do It: On The Believability Problem In 'The Flangelo'",
+    "standfirst": "The Daily Flange invites a critic to review the reader-submitted verse 'The Flangelo', and finds its central monster considerably easier to credit than a rat, or indeed a mouse, would have been.",
+    "byline": "In the style of A. A. Gill",
+    "location": "ONLINE",
+    "published": "2026-07-14T09:20:00",
+    "body": [
+      "It is not often that this desk is asked to adjudicate a matter of interspecies credibility, but a poem titled \"The Flangelo\" arrived in the postbag this week, and credibility turns out to be exactly the question it raises. A small chrome-plated sprocket rolls through a wood, is propositioned by three underwhelmed predators, invents an entirely fictional monster to see them off, and is then obliged to survive an encounter with the monster once it turns out, implausibly, to be real. Readers of a certain vintage will recognise the shape of this plot. This desk does not intend to name the original. It does intend to ask why anyone thought a sprocket was the animal to update it with, and then, having thought about it for longer than strictly necessary, to concede that it was the right call.",
+      "The trouble, as ever, is casting. In the well-known version of this story the hero is a small rodent — a mouse, in most tellings, though a rat would do no better — and its tormentors spend several stanzas being frightened of a description before common sense might reasonably be expected to reassert itself and somebody eats somebody. A mouse inventing a monster to avoid being eaten is, examined for longer than the verse wants you to, faintly ridiculous: mice command no particular respect, mice have no union representation, and no self-respecting fox has ever once paused mid-hunt to ask a mouse a follow-up question. \"The Flangelo\" fixes this by casting a sprocket, and it turns out to be the single best decision in the piece.",
+      "Consider what a sprocket is, in this town. It is not a small furry snack that happens to have learned to talk. It is infrastructure. Every fox, owl and snake in this wood has grown up under a standing notice reminding them, weekly, that unflanged sprockets are a matter of civic seriousness, and that one rolling past unsupervised is, at minimum, worth a conversation. When it claims to be dining with something called a Flangelo, its audience does not laugh, because nobody round here has ever laughed at a sprocket about anything. That is not incidental to the plot. That is worldbuilding, and it is doing more work than the rhyme scheme.",
+      "Put a rat in the same wood and the fox eats it on line four, poem over, no further questions, and rightly so — nothing about a rodent claiming acquaintance with a large invented predator should survive a moment's scrutiny from an actual predator. Put a sprocket in the same wood, claiming to know a creature built entirely out of sprockets, cams, pistons and gear-teeth, and the premise does not merely survive scrutiny; it invites it, because everybody in earshot already privately suspects the sprockets are up to something. This desk has long considered the town's sprocket paranoia excessive. This desk was wrong. It turns out to be excellent literary infrastructure.",
+      "Complaints, since a review must have some: three consecutive escape verses that rhyme \"rocket\" with \"socket\" with \"lock it\" is one plate-spinning callback more than strictly necessary, however pleased the poem plainly is with itself for finding a third one. And the climax resolves rather gently — a sprocket that has spent the whole wood outwitting a genuinely enormous grinding predator is rewarded, in the end, with nothing grander than an oilcan, which is a modest prize for a large risk, though this desk concedes the modesty is rather the point. But these are the complaints of a critic who has run out of larger ones, which is itself a kind of compliment.",
+      "In short: swap the sprocket for a rat, or for that matter a mouse, and the whole edifice collapses, because nobody has ever been frightened of what a rodent might be having for tea. Leave it a sprocket, in a town that flanges for a living, and the entire dark wood behaves exactly as it should — which is, this desk concedes, more than can be said for most of what runs in Voices this month."
+    ],
+    "pullQuote": "Put a rat in the wood and the fox eats it on line four, poem over. Put a sprocket in the wood and the premise doesn't just survive scrutiny — it invites it.",
+    "tags": [
+      "voices",
+      "pastiche",
+      "criticism",
+      "poetry",
+      "flangelo"
+    ]
   }
 ];
