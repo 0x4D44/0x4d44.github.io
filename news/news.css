@@ -138,6 +138,7 @@ img { max-width: 100%; }
 
 /* ---------- "More" overflow menu (priority+ nav) ---------- */
 .catnav-more { position: relative; margin-left: auto; display: flex; }
+.catnav-more[hidden] { display: none; }  /* [hidden] must beat the flex display above, or empty "More" shows when nothing overflows */
 .catnav-more-btn {
   color: #fff; background: transparent; border: 0;
   border-left: 1px solid rgba(255,255,255,.14);
