@@ -716,7 +716,10 @@
     out.push('<div class="searchhead"><h1>' + esc(heading) + '</h1>' +
       '<div class="count">' + esc(sub) + '</div>' +
       '<form action="search.html" method="get" role="search">' +
-        '<input type="text" name="q" value="' + esc(q) + '" placeholder="Search the news&hellip;" autofocus>' +
+        // Autofocus only on a real search page — not when browsing a section
+        // (?cat=…), where auto-focus would pop the mobile keyboard unbidden.
+        '<input type="text" name="q" value="' + esc(q) + '" placeholder="Search the news&hellip;"' +
+          (cat ? '' : ' autofocus') + '>' +
         '<button type="submit">Search</button>' +
       '</form></div>');
 
