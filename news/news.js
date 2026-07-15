@@ -172,14 +172,15 @@
   }
 
   function inlineIllustrationHtml(article, paragraphIndex) {
-    var item = (article.images || []).find(function (image) {
+    var items = (article.images || []).filter(function (image) {
       return image.afterParagraph === paragraphIndex;
     });
-    if (!item) return "";
-    return '<figure class="inline-illustration"><img src="' + esc(item.src) + '" alt="' +
-      esc(item.alt || "Article illustration") + '">' +
-      (item.caption ? '<figcaption>' + esc(item.caption) + '</figcaption>' : '') +
-      '</figure>';
+    return items.map(function (item) {
+      return '<figure class="inline-illustration"><img src="' + esc(item.src) + '" alt="' +
+        esc(item.alt || "Article illustration") + '">' +
+        (item.caption ? '<figcaption>' + esc(item.caption) + '</figcaption>' : '') +
+        '</figure>';
+    }).join("");
   }
 
   // -------- dates --------

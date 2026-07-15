@@ -18326,10 +18326,22 @@ window.NEWS_ARTICLES = [
         "caption": "The sprocket begins its journey through the deep dark wood."
       },
       {
+        "src": "images/voices-donaldson-the-flangelo-owl.webp",
+        "alt": "An owl looks down in comic alarm as the gear-built Flangelo rolls through the woodland below.",
+        "caption": "Owl takes one look and decides the treetop is suddenly very far too low.",
+        "afterParagraph": 1
+      },
+      {
+        "src": "images/voices-donaldson-the-flangelo-snake.webp",
+        "alt": "A bright green snake recoils among leaves as the gear-built Flangelo trundles past.",
+        "caption": "Snake sees the Flangelo and discovers an urgent appointment elsewhere.",
+        "afterParagraph": 2
+      },
+      {
         "src": "images/voices-donaldson-the-flangelo-2.webp",
         "alt": "A giant gear-built Flangelo emerges from the woodland, with pistons for toes and a red rivet nose.",
         "caption": "The Flangelo appears: all knurled steel, pistons and alarming confidence.",
-        "afterParagraph": 2
+        "afterParagraph": 3
       },
       {
         "src": "images/voices-donaldson-the-flangelo-3.webp",
