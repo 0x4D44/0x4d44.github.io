@@ -18328,17 +18328,20 @@ window.NEWS_ARTICLES = [
       {
         "src": "images/voices-donaldson-the-flangelo-2.webp",
         "alt": "A giant gear-built Flangelo emerges from the woodland, with pistons for toes and a red rivet nose.",
-        "caption": "The Flangelo appears: all knurled steel, pistons and alarming confidence."
+        "caption": "The Flangelo appears: all knurled steel, pistons and alarming confidence.",
+        "afterParagraph": 2
       },
       {
         "src": "images/voices-donaldson-the-flangelo-3.webp",
         "alt": "The sprocket rolls ahead while the gear-built Flangelo trundles behind, sending woodland animals fleeing.",
-        "caption": "Everyone is afraid of the sprocket. The sprocket is delighted."
+        "caption": "Everyone is afraid of the sprocket. The sprocket is delighted.",
+        "afterParagraph": 4
       },
       {
         "src": "images/voices-donaldson-the-flangelo-4.webp",
         "alt": "The sprocket rests beside a bright oilcan as the Flangelo disappears around a woodland bend.",
-        "caption": "A quiet ending, and the oilcan the sprocket always wanted."
+        "caption": "A quiet ending, and the oilcan the sprocket always wanted.",
+        "afterParagraph": 7
       }
     ],
     "category": "Voices",
