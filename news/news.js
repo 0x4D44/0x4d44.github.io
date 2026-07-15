@@ -171,6 +171,19 @@
       '</svg>';
   }
 
+  function galleryHtml(article) {
+    var items = (article.images || []).slice(1);
+    if (!items.length) return "";
+    return '<div class="article-gallery" aria-label="Additional illustrations">' +
+      items.map(function (item, i) {
+        return '<figure><img src="' + esc(item.src) + '" alt="' +
+          esc(item.alt || ("Additional illustration " + (i + 1))) + '">' +
+          (item.caption ? '<figcaption>' + esc(item.caption) + '</figcaption>' : '') +
+          '</figure>';
+      }).join("") +
+      '</div>';
+  }
+
   // -------- dates --------
   var MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   function fmtDate(iso) {
@@ -649,6 +662,7 @@
     out.push('<figure><span class="thumb">' + illustration(a) + '<span class="cat-flag">' + esc(a.category) + '</span></span>' +
       '<figcaption>' + esc(a.location ? a.location.charAt(0) + a.location.slice(1).toLowerCase() + ', earlier. ' : '') +
       'Artist&#39;s impression; file photo; entirely made up.</figcaption></figure>');
+    out.push(galleryHtml(a));
     out.push(bodyParas);
     out.push('<div class="tags">' + tags + '</div>');
     out.push('<div class="disclaimer"><strong>Satire notice:</strong> The Daily Flange is fiction. ' +

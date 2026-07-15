@@ -18317,6 +18317,30 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-donaldson-the-flangelo",
+    "image": "images/voices-donaldson-the-flangelo-1.webp",
+    "imageAlt": "A small steel sprocket rolls through a dark woodland while a fox, owl and snake watch.",
+    "images": [
+      {
+        "src": "images/voices-donaldson-the-flangelo-1.webp",
+        "alt": "A small steel sprocket rolls through a dark woodland while a fox, owl and snake watch.",
+        "caption": "The sprocket begins its journey through the deep dark wood."
+      },
+      {
+        "src": "images/voices-donaldson-the-flangelo-2.webp",
+        "alt": "A giant gear-built Flangelo emerges from the woodland, with pistons for toes and a red rivet nose.",
+        "caption": "The Flangelo appears: all knurled steel, pistons and alarming confidence."
+      },
+      {
+        "src": "images/voices-donaldson-the-flangelo-3.webp",
+        "alt": "The sprocket rolls ahead while the gear-built Flangelo trundles behind, sending woodland animals fleeing.",
+        "caption": "Everyone is afraid of the sprocket. The sprocket is delighted."
+      },
+      {
+        "src": "images/voices-donaldson-the-flangelo-4.webp",
+        "alt": "The sprocket rests beside a bright oilcan as the Flangelo disappears around a woodland bend.",
+        "caption": "A quiet ending, and the oilcan the sprocket always wanted."
+      }
+    ],
     "category": "Voices",
     "headline": "The Flangelo",
     "standfirst": "The Daily Flange invites Julia Donaldson to rhyme her way through the deep dark wood behind the depot, where one small sprocket keeps insisting there's a Flangelo.",
@@ -18345,6 +18369,8 @@ window.NEWS_ARTICLES = [
   },
   {
     "id": "voices-gill-flangelo-review",
+    "image": "images/voices-gill-flangelo-review.webp",
+    "imageAlt": "A critic's desk holds a chrome sprocket, woodland map and sketch of a gear-built monster.",
     "category": "Voices",
     "headline": "A Sprocket Made Him Do It: On The Believability Problem In 'The Flangelo'",
     "standfirst": "The Daily Flange invites a critic to review the reader-submitted verse 'The Flangelo', and finds its central monster considerably easier to credit than a rat, or indeed a mouse, would have been.",
