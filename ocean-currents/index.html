@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rivers in the Sea — how ocean currents shape the world</title>
+<meta name="description" content="An interactive atlas of the ocean's currents: a living globe, animated explainers of why the sea moves, how currents steer weather and shipping, and a laboratory for exploring what global warming may do to the Atlantic circulation — and to Scotland.">
+<style>
+  :root {
+    --bg: #060b12;
+    --panel: #0c1723;
+    --panel-2: #101d2c;
+    --ink: #e8eef5;
+    --ink-2: #9fb2c4;
+    --ink-3: #64798d;
+    --hair: #1d2c3d;
+    --warm: #ff9d5c;
+    --cold: #54c8ff;
+    --mixed: #cfc593;
+    --deep: #8f7fe8;
+    --accent: #54c8ff;
+    --good: #0ca30c;
+    --serif: Georgia, "Iowan Old Style", "Times New Roman", serif;
+    --sans: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color-scheme: dark;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 18px;
+    line-height: 1.68;
+    overflow-x: hidden;
+  }
+  ::selection { background: rgba(84,200,255,0.28); }
+
+  /* ---------- progress bar ---------- */
+  #progress {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0;
+    background: linear-gradient(90deg, var(--cold), var(--warm));
+    z-index: 60;
+  }
+
+  /* ---------- section nav dots ---------- */
+  #dotnav {
+    position: fixed; right: 14px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 10px; z-index: 50;
+  }
+  #dotnav a {
+    width: 9px; height: 9px; border-radius: 50%;
+    background: rgba(160,190,220,0.25);
+    border: 1px solid rgba(160,190,220,0.25);
+    transition: all .25s; position: relative;
+  }
+  #dotnav a.active { background: var(--cold); border-color: var(--cold); transform: scale(1.25); }
+  #dotnav a span {
+    position: absolute; right: 20px; top: 50%; transform: translateY(-50%);
+    font: 600 11px var(--sans); color: var(--ink-2);
+    background: rgba(8,15,24,0.92); border: 1px solid var(--hair);
+    padding: 3px 9px; border-radius: 6px; white-space: nowrap;
+    opacity: 0; pointer-events: none; transition: opacity .18s;
+  }
+  #dotnav a:hover span { opacity: 1; }
+  @media (max-width: 900px) { #dotnav { display: none; } }
+
+  /* ---------- hero ---------- */
+  #hero {
+    position: relative; height: 100svh; min-height: 620px;
+    display: flex; align-items: stretch; justify-content: center;
+    background: radial-gradient(120% 90% at 50% 10%, #0a1626 0%, var(--bg) 70%);
+    overflow: hidden;
+  }
+  #stars { position: absolute; inset: 0; }
+  #globe { position: absolute; inset: 0; }
+  .oc-globe canvas { display: block; }
+  #hero-titles {
+    position: absolute; top: 6.5vh; left: 0; right: 0; text-align: center;
+    pointer-events: none; z-index: 5;
+  }
+  #hero-titles .kicker {
+    font: 700 12px var(--sans); letter-spacing: .32em; text-transform: uppercase;
+    color: var(--cold); margin-bottom: 14px;
+  }
+  #hero-titles h1 {
+    font-size: clamp(34px, 6vw, 64px); font-weight: 400; letter-spacing: .01em;
+    line-height: 1.08;
+    text-shadow: 0 2px 30px rgba(0,0,0,0.6);
+  }
+  #hero-titles .sub {
+    margin: 14px auto 0; max-width: 560px;
+    font: 400 15.5px/1.6 var(--sans); color: var(--ink-2);
+    text-shadow: 0 1px 12px rgba(0,0,0,0.8);
+  }
+  #hero-hint {
+    position: absolute; bottom: 88px; left: 0; right: 0; text-align: center;
+    font: 500 12.5px var(--sans); color: var(--ink-3); z-index: 5; pointer-events: none;
+  }
+  #globe-controls {
+    position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center;
+    z-index: 6; font-family: var(--sans);
+  }
+  .gbtn {
+    font: 600 12.5px var(--sans); color: var(--ink-2);
+    background: rgba(12,23,35,0.85); border: 1px solid var(--hair);
+    padding: 8px 14px; border-radius: 999px; cursor: pointer;
+    backdrop-filter: blur(6px); transition: all .18s;
+  }
+  .gbtn:hover { color: var(--ink); border-color: #33506d; }
+  .gbtn.on { color: #06121e; background: var(--cold); border-color: var(--cold); }
+  .gbtn.warm-on { color: #1d0e02; background: var(--warm); border-color: var(--warm); }
+  #globe-legend {
+    position: absolute; left: 22px; bottom: 22px; z-index: 6;
+    display: flex; flex-direction: column; gap: 6px;
+    font: 500 12px var(--sans); color: var(--ink-2);
+    background: rgba(8,15,24,0.7); border: 1px solid var(--hair);
+    border-radius: 10px; padding: 10px 13px; backdrop-filter: blur(6px);
+  }
+  #globe-legend .row { display: flex; align-items: center; gap: 8px; }
+  .swatch { width: 18px; height: 4px; border-radius: 2px; }
+  #current-card {
+    position: absolute; right: 22px; bottom: 22px; z-index: 7;
+    width: min(330px, calc(100vw - 44px));
+    background: rgba(8,15,24,0.92); border: 1px solid #24405c;
+    border-radius: 12px; padding: 15px 17px;
+    font-family: var(--sans); backdrop-filter: blur(8px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    opacity: 0; transform: translateY(8px); transition: all .22s;
+    pointer-events: none;
+  }
+  #current-card.show { opacity: 1; transform: none; }
+  #current-card h3 { font: 700 15px var(--sans); margin-bottom: 2px; }
+  #current-card .meta { font: 600 11px var(--sans); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+  #current-card .meta.warm { color: var(--warm); } #current-card .meta.cold { color: var(--cold); }
+  #current-card .meta.mixed { color: var(--mixed); } #current-card .meta.deep, #current-card .meta.deep-return { color: var(--deep); }
+  #current-card p { font: 400 13px/1.55 var(--sans); color: var(--ink-2); }
+  #current-card .sv { margin-top: 8px; font: 600 12px var(--sans); color: var(--ink); }
+  #current-card .sv small { color: var(--ink-3); font-weight: 500; }
+
+  @media (max-width: 720px) {
+    #globe-legend { display: none; }
+    #current-card { left: 50%; right: auto; transform: translate(-50%, 8px); bottom: 78px; }
+    #current-card.show { transform: translate(-50%, 0); }
+    #hero-hint { bottom: 116px; }
+    #globe-controls { bottom: 14px; width: calc(100% - 20px); }
+  }
+
+  /* ---------- article layout ---------- */
+  main { position: relative; z-index: 2; }
+  section.chapter { padding: 90px 0 30px; }
+  .prose {
+    max-width: 720px; margin: 0 auto; padding: 0 22px;
+  }
+  .prose p { margin: 0 0 1.25em; }
+  .prose p, .prose li { color: #d3dde7; }
+  .prose strong { color: var(--ink); }
+  .prose a { color: var(--cold); text-decoration: none; border-bottom: 1px solid rgba(84,200,255,0.35); }
+  .prose a:hover { border-bottom-color: var(--cold); }
+  .prose ul { margin: 0 0 1.25em 1.2em; }
+  .prose li { margin-bottom: .5em; }
+  .kicker {
+    font: 700 12px var(--sans); letter-spacing: .28em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 12px;
+  }
+  h2 {
+    font-size: clamp(28px, 4vw, 40px); font-weight: 400; line-height: 1.15;
+    margin-bottom: 22px; letter-spacing: .005em;
+  }
+  h3.sub { font: 700 16px var(--sans); margin: 34px 0 12px; color: var(--ink); }
+  .lede { font-size: 21px; line-height: 1.6; color: var(--ink); }
+  blockquote {
+    margin: 30px 0; padding: 4px 0 4px 22px;
+    border-left: 3px solid var(--warm);
+    font-style: italic; font-size: 20px; color: var(--ink);
+  }
+  blockquote footer { font: 500 13px var(--sans); color: var(--ink-3); font-style: normal; margin-top: 8px; }
+
+  /* stat tiles */
+  .tiles {
+    max-width: 980px; margin: 42px auto 10px; padding: 0 22px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;
+  }
+  .tile {
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 12px;
+    padding: 18px 18px 15px; font-family: var(--sans);
+  }
+  .tile .num { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; }
+  .tile .num .unit { font-size: 16px; font-weight: 600; color: var(--ink-2); margin-left: 3px; }
+  .tile .lbl { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; line-height: 1.45; }
+  .tile.warm .num { color: var(--warm); } .tile.cold .num { color: var(--cold); }
+  .tile.deep .num { color: var(--deep); } .tile.plain .num { color: var(--ink); }
+
+  /* interactive panels */
+  .panel {
+    max-width: 980px; margin: 40px auto; padding: 20px;
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 16px;
+  }
+  .panel .panel-title { font: 700 14px var(--sans); margin-bottom: 4px; }
+  .panel .panel-sub { font: 400 12.5px var(--sans); color: var(--ink-3); margin-bottom: 14px; }
+  .panel canvas.stage { width: 100%; display: block; border-radius: 10px; background: #08111c; touch-action: pan-y; }
+  .controls {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    margin-top: 14px; font-family: var(--sans);
+  }
+  .controls .lbl { font: 600 12px var(--sans); color: var(--ink-3); letter-spacing: .04em; text-transform: uppercase; }
+  #route-status { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 13px; }
+  .chip {
+    font: 600 12.5px var(--sans); color: var(--ink-2);
+    background: var(--panel-2); border: 1px solid var(--hair);
+    padding: 7px 13px; border-radius: 999px; cursor: pointer; transition: all .15s;
+  }
+  .chip:hover { color: var(--ink); border-color: #33506d; }
+  .chip.on { color: #06121e; background: var(--cold); border-color: var(--cold); font-weight: 700; }
+  .chip.on.warmchip { background: var(--warm); border-color: var(--warm); color: #1d0e02; }
+  input[type=range] { accent-color: var(--cold); }
+  .slider-row { display: flex; align-items: center; gap: 10px; font: 500 13px var(--sans); color: var(--ink-2); flex-wrap: wrap; }
+  .slider-row output { font-weight: 700; color: var(--ink); min-width: 58px; font-variant-numeric: tabular-nums; }
+  .note {
+    max-width: 720px; margin: 26px auto; padding: 14px 18px;
+    border: 1px solid var(--hair); border-left: 3px solid var(--warm);
+    border-radius: 8px; background: rgba(255,157,92,0.05);
+    font: 400 14px/1.6 var(--sans); color: var(--ink-2);
+  }
+  .note strong { color: var(--ink); }
+
+  figcaption, .cap { font: 400 12.5px/1.5 var(--sans); color: var(--ink-3); margin-top: 10px; }
+
+  /* two-col cards for drivers */
+  .cards {
+    max-width: 980px; margin: 34px auto; padding: 0 22px;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;
+  }
+  .card {
+    background: var(--panel); border: 1px solid var(--hair); border-radius: 12px; padding: 18px;
+    font-family: var(--sans);
+  }
+  .card h4 { font-size: 14.5px; margin-bottom: 8px; }
+  .card h4 .ico { margin-right: 7px; }
+  .card p { font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+
+  /* chart shells */
+  .chart-wrap { position: relative; }
+  .chart-tip {
+    position: absolute; z-index: 5; pointer-events: none;
+    background: rgba(8,15,24,0.95); border: 1px solid #2c4863; border-radius: 8px;
+    padding: 8px 11px; font: 500 12px/1.5 var(--sans); color: var(--ink);
+    opacity: 0; transition: opacity .12s; max-width: 240px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+  }
+  .chart-tip .t2 { color: var(--ink-2); }
+
+  /* AMOC lab */
+  #lab .panel { max-width: 1080px; }
+  .lab-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .lab-grid { grid-template-columns: 1fr; } }
+  .lab-readouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  .ro {
+    background: var(--panel-2); border: 1px solid var(--hair); border-radius: 10px;
+    padding: 12px 13px; font-family: var(--sans);
+  }
+  .ro .v { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .ro .v small { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+  .ro .k { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; line-height: 1.4; }
+  .ro .d { font-size: 11.5px; font-weight: 700; margin-top: 2px; }
+  .ro .d.up { color: #ff8f6b; } .ro .d.down { color: var(--cold); } .ro .d.flat { color: var(--ink-3); }
+  #lab-verdict {
+    margin-top: 12px; padding: 13px 15px; border-radius: 10px;
+    background: rgba(84,200,255,0.06); border: 1px solid #24405c;
+    font: 400 13.5px/1.6 var(--sans); color: var(--ink-2);
+  }
+  #lab-verdict strong { color: var(--ink); }
+
+  /* drift lab */
+  #drift-wrap { display: grid; grid-template-columns: 1.5fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { #drift-wrap { grid-template-columns: 1fr; } }
+  #drift-globe { position: relative; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #08111c; }
+  #drift-side { font-family: var(--sans); display: flex; flex-direction: column; gap: 10px; }
+  #drift-readout {
+    background: var(--panel-2); border: 1px solid var(--hair); border-radius: 10px; padding: 14px;
+    font: 500 13px/1.6 var(--sans); color: var(--ink-2); min-height: 108px;
+  }
+  #drift-readout .big { font-size: 21px; font-weight: 700; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .preset-list { display: flex; flex-direction: column; gap: 7px; }
+  .preset {
+    text-align: left; font: 600 12.5px var(--sans); color: var(--ink-2);
+    background: var(--panel-2); border: 1px solid var(--hair);
+    padding: 9px 12px; border-radius: 9px; cursor: pointer; transition: all .15s;
+  }
+  .preset:hover { color: var(--ink); border-color: #33506d; }
+  .preset small { display: block; font-weight: 400; color: var(--ink-3); margin-top: 2px; }
+
+  /* footer */
+  footer.colophon {
+    margin-top: 90px; padding: 50px 22px 120px;
+    border-top: 1px solid var(--hair);
+    font: 400 13.5px/1.7 var(--sans); color: var(--ink-3);
+  }
+  footer.colophon .inner { max-width: 720px; margin: 0 auto; }
+  footer.colophon h3 { font: 700 14px var(--sans); color: var(--ink-2); margin-bottom: 12px; }
+  footer.colophon ul { list-style: none; }
+  footer.colophon li { margin-bottom: 7px; }
+  footer.colophon a { color: var(--ink-2); text-decoration: none; border-bottom: 1px solid var(--hair); }
+  footer.colophon a:hover { color: var(--cold); border-bottom-color: var(--cold); }
+
+  .reveal { opacity: 0; transform: translateY(18px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+    html { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav id="dotnav" aria-label="Sections">
+  <a href="#hero" data-sec="hero"><span>The living globe</span></a>
+  <a href="#intro" data-sec="intro"><span>Rivers in the sea</span></a>
+  <a href="#drivers" data-sec="drivers"><span>Why the sea moves</span></a>
+  <a href="#ekman" data-sec="ekman"><span>Wind on water</span></a>
+  <a href="#gyres" data-sec="gyres"><span>The five wheels</span></a>
+  <a href="#updown" data-sec="updown"><span>Rising &amp; sinking water</span></a>
+  <a href="#deep" data-sec="deep"><span>The great conveyor</span></a>
+  <a href="#weather" data-sec="weather"><span>Weather machines</span></a>
+  <a href="#shipping" data-sec="shipping"><span>Shipping &amp; drift</span></a>
+  <a href="#warming" data-sec="warming"><span>The warming ocean</span></a>
+  <a href="#lab" data-sec="lab"><span>The AMOC laboratory</span></a>
+  <a href="#scotland" data-sec="scotland"><span>Scotland</span></a>
+</nav>
+
+<!-- ============================== HERO ============================== -->
+<header id="hero">
+  <div id="globe"></div>
+  <div id="hero-titles">
+    <div class="kicker">An interactive atlas of the moving ocean</div>
+    <h1>Rivers in the Sea</h1>
+    <p class="sub">The ocean is never still. Beneath every wave, water is on a journey years long —
+      warming Scotland, feeding deserts, steering ships and holding the climate together.</p>
+  </div>
+  <div id="hero-hint">drag to spin · scroll to zoom · hover a stream · click to pin</div>
+  <div id="globe-legend" aria-hidden="true">
+    <div class="row"><span class="swatch" style="background:var(--warm)"></span> warm current</div>
+    <div class="row"><span class="swatch" style="background:var(--cold)"></span> cold current</div>
+    <div class="row"><span class="swatch" style="background:var(--mixed)"></span> mixed / seasonal</div>
+    <div class="row" id="legend-deep" style="display:none"><span class="swatch" style="background:var(--deep)"></span> deep water · <span class="swatch" style="background:var(--warm); margin-left:2px"></span> warm return</div>
+  </div>
+  <div id="globe-controls">
+    <button class="gbtn on" id="btn-surface">Surface currents</button>
+    <button class="gbtn" id="btn-deep">Deep conveyor</button>
+    <button class="gbtn on" id="btn-labels">Labels</button>
+    <button class="gbtn" id="btn-pause">Pause</button>
+    <button class="gbtn" id="btn-scotland">Fly to Scotland</button>
+  </div>
+  <aside id="current-card" role="status"></aside>
+</header>
+
+<main>
+
+<!-- ============================== INTRO ============================== -->
+<section class="chapter" id="intro">
+  <div class="prose reveal">
+    <div class="kicker">Chapter one</div>
+    <h2>There is a river in the ocean</h2>
+    <blockquote>
+      “There is a river in the ocean. In the severest droughts it never fails, and in the mightiest floods it never overflows.
+      Its banks and its bottom are of cold water, while its current is of warm.”
+      <footer>— Matthew Fontaine Maury, <em>The Physical Geography of the Sea</em>, 1855</footer>
+    </blockquote>
+    <p class="lede">Maury was describing the Gulf Stream, and he wasn't exaggerating. The ocean is laced with
+    rivers — some warm, some cold, some at the surface, some creeping along the abyssal floor — and together
+    they move heat around the planet on a scale nothing else on Earth can match.</p>
+    <p>Every current on the globe above is real, drawn from the charts oceanographers use today. The particles
+    trace the actual paths: the <strong>Gulf Stream</strong> peeling away from Florida; the <strong>Kuroshio</strong> —
+    “the Black Stream” — running past Japan; the <strong>Agulhas</strong> hurtling down the African coast; and, girdling
+    the bottom of the world, the <strong>Antarctic Circumpolar Current</strong>, the mightiest flow on the planet.</p>
+    <p>Oceanographers measure these flows in <strong>sverdrups</strong>: one sverdrup (Sv) is a million cubic metres
+    of water per second. For scale, the Amazon — the greatest river on land — delivers about <em>0.2&nbsp;Sv</em>.
+    The Gulf Stream off Newfoundland carries up to <em>150&nbsp;Sv</em>. A single ocean current, in other words,
+    outclasses every river on every continent combined, several times over.</p>
+    <p>There are really two circulations woven together. The <strong>wind-driven surface circulation</strong> —
+    the great gyres and boundary currents — turns over in months to years. Beneath it runs the
+    <strong>density-driven deep circulation</strong> (the “thermohaline” circulation, from the Greek for heat and salt),
+    a planet-wide loop so slow that water sinking off Greenland today may not see the sky again for a thousand years.
+    This page explores both — and then asks what happens when a warming climate starts to interfere.</p>
+  </div>
+  <div class="tiles reveal">
+    <div class="tile warm"><div class="num">150<span class="unit">Sv</span></div><div class="lbl">Peak flow of the Gulf Stream — roughly 750 Amazons, in one ocean river</div></div>
+    <div class="tile cold"><div class="num">~173<span class="unit">Sv</span></div><div class="lbl">The Antarctic Circumpolar Current, the largest current on Earth</div></div>
+    <div class="tile plain"><div class="num">1.25<span class="unit">PW</span></div><div class="lbl">Heat the Atlantic carries north past 26°N — about 60 times humanity's entire energy use</div></div>
+    <div class="tile deep"><div class="num">~1,000<span class="unit">yrs</span></div><div class="lbl">Time for the deep conveyor to complete one lap of the world ocean</div></div>
+  </div>
+</section>
+
+<!-- ============================== DRIVERS ============================== -->
+<section class="chapter" id="drivers">
+  <div class="prose reveal">
+    <div class="kicker">Chapter two</div>
+    <h2>Four things set the sea in motion</h2>
+    <p class="lede">Strip away the detail and the whole magnificent machine runs on four ingredients:
+    wind, sunshine, salt, and the fact that the Earth spins.</p>
+  </div>
+  <div class="cards reveal">
+    <div class="card"><h4><span class="ico">🌬️</span>Wind</h4>
+      <p>Steady planetary winds — the trades blowing west in the tropics, the westerlies blowing east in the mid-latitudes —
+      drag on the sea surface. Wind is the engine of the surface circulation: the gyres are, in essence, the wind field printed onto the water.</p></div>
+    <div class="card"><h4><span class="ico">☀️</span>Heat</h4>
+      <p>The tropics receive far more solar energy than they radiate away; the poles the reverse. The ocean (with the atmosphere)
+      is the delivery service that squares the books, hauling warmth poleward. Warm water is lighter; cold water is dense and wants to sink.</p></div>
+    <div class="card"><h4><span class="ico">🧂</span>Salt</h4>
+      <p>Evaporation concentrates salt; rain, rivers and melting ice dilute it. Salty water is heavier. Temperature and salinity together
+      set density — and density differences power the deep, slow half of the circulation.</p></div>
+    <div class="card"><h4><span class="ico">🌀</span>Spin</h4>
+      <p>The Earth rotates, and everything moving over its surface is deflected — right in the northern hemisphere, left in the southern.
+      This is the Coriolis effect, and it is why currents curve, why gyres exist, and why the ocean's rivers hug western shores.</p></div>
+  </div>
+
+  <div class="prose reveal">
+    <h3 class="sub">The deflection that shapes everything</h3>
+    <p>The Coriolis effect confuses everyone at first, because nothing is actually pushing the water sideways.
+    It is a bookkeeping consequence of watching motion from a rotating planet. Try it below: fire a puck across
+    a spinning table. Seen from the outside (left), it travels dead straight. Seen by someone standing
+    <em>on</em> the table (right), it appears to curve — because the table turned underneath it while it flew.</p>
+    <p>Now replace the table with the Earth, and the puck with a parcel of water pushed by the wind.
+    In the northern hemisphere every moving parcel veers right of where it was aimed; south of the equator, left.
+    The deflection is feeble — far weaker than gravity — but over a thousand kilometres of open ocean it never
+    lets up, and it wins.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">The Coriolis effect, from both seats</div>
+    <div class="panel-sub">Left: the view from space (inertial frame) — the puck goes straight. Right: the view standing on the turntable (rotating frame) — the same puck appears to curve.</div>
+    <canvas class="stage" id="coriolis-canvas" height="360"></canvas>
+    <div class="controls">
+      <button class="chip on" id="coriolis-fire">⟳ Fire another puck</button>
+      <span class="lbl">Spin</span>
+      <div class="slider-row" style="flex:1; min-width:200px">
+        <input type="range" id="coriolis-speed" min="0" max="100" value="45" style="flex:1">
+        <output id="coriolis-speed-out">medium</output>
+      </div>
+      <button class="chip" id="coriolis-hemi">Northern hemisphere ⇄</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== EKMAN ============================== -->
+<section class="chapter" id="ekman">
+  <div class="prose reveal">
+    <div class="kicker">Chapter three</div>
+    <h2>The strange arithmetic of wind on water</h2>
+    <p class="lede">Here is the oddest fact in physical oceanography: push the sea with a steady wind,
+    and the water — on balance — moves at <strong>right angles</strong> to the push.</p>
+    <p>The top few metres of water feel the wind and, thanks to Coriolis, drift about 20–45° to its right
+    (in the north). That layer drags the layer beneath, which veers a little further right and moves a little
+    slower; that layer drags the next; and so on down. Stack the layers and you get the <strong>Ekman spiral</strong>,
+    worked out in 1905 by the Swedish physicist Vagn Walfrid Ekman — after Fridtjof Nansen noticed, while frozen
+    into the Arctic pack aboard <em>Fram</em>, that his ice drifted stubbornly to the right of the wind.</p>
+    <p>Add up the whole spiral, top to bottom, and the net movement of water — the <strong>Ekman transport</strong> —
+    is a full 90° to the wind. This one strange right angle explains the gyres, coastal upwelling,
+    and why the middle of each ocean basin is literally piled higher than its edges.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">The Ekman spiral</div>
+    <div class="panel-sub">Drag the wind arrow (or the slider) and watch each layer veer further from the one above. The bold arrow is the net transport — always 90° to the wind.</div>
+    <canvas class="stage" id="ekman-canvas" height="420"></canvas>
+    <div class="controls">
+      <span class="lbl">Wind direction</span>
+      <div class="slider-row" style="flex:1; min-width:220px">
+        <input type="range" id="ekman-dir" min="0" max="360" value="90" style="flex:1">
+        <output id="ekman-dir-out">090°</output>
+      </div>
+      <button class="chip" id="ekman-hemi">Hemisphere: North</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== GYRES ============================== -->
+<section class="chapter" id="gyres">
+  <div class="prose reveal">
+    <div class="kicker">Chapter four</div>
+    <h2>The five great wheels</h2>
+    <p class="lede">Put the pieces together — trade winds blowing west, westerlies blowing east,
+    Ekman transport squeezing water toward the middle — and each ocean basin organises itself
+    into a giant, slowly turning wheel: a <strong>gyre</strong>.</p>
+    <p>There are five: the North and South Atlantic, the North and South Pacific, and the Indian Ocean.
+    Northern gyres turn clockwise, southern ones anticlockwise. Water mounds up in each gyre's centre —
+    the middle of the North Atlantic stands about a metre higher than its rim — and the currents flow
+    around that hill in perpetual, tilted balance between pressure and Coriolis
+    (oceanographers call it <em>geostrophic</em> flow).</p>
+    <p>But the wheels are lopsided. Because the strength of the Coriolis effect grows with latitude, the
+    flow on each gyre's <strong>western</strong> side is squeezed into a narrow, ferocious jet, while the eastern
+    return is broad and lazy. This is <strong>western intensification</strong>, explained by Henry Stommel in 1948 —
+    and it is why the Gulf Stream, the Kuroshio, the Agulhas, the Brazil and the East Australian currents are
+    the ocean's express trains, while the Canary and California currents amble.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">The gyres — the wind field printed on the ocean</div>
+    <div class="panel-sub">Click a gyre to read about it. Note how each wheel's western rim is a tight, fast jet (drawn hot) while its eastern side is broad and slow.</div>
+    <canvas class="stage" id="gyres-canvas" height="430"></canvas>
+    <div class="controls" id="gyres-controls"></div>
+    <div class="cap" id="gyres-cap">The five subtropical gyres. Warm western boundary jets in orange; cool, broad eastern boundary flows in blue.</div>
+  </div>
+</section>
+
+<!-- ============================== UP & DOWN ============================== -->
+<section class="chapter" id="updown">
+  <div class="prose reveal">
+    <div class="kicker">Chapter five</div>
+    <h2>Where water rises and where it sinks</h2>
+    <p class="lede">Currents are not just horizontal. Wherever the surface flow diverges, deep water must rise
+    to replace it; wherever it converges, surface water is forced down. The vertical traffic is slow —
+    metres per <em>day</em>, not per second — but it matters enormously.</p>
+    <p><strong>Coastal upwelling</strong> is the classic case. Along the coasts of Peru, California, north-west and
+    south-west Africa, the prevailing wind blows roughly <em>along</em> the shore toward the equator. Ekman transport shunts the surface
+    water 90° to the wind, i.e. straight offshore — and cold water from 100–300&nbsp;m down is drawn up to
+    replace it. The sea off these coasts is startlingly cold for the latitude, and the air above it is
+    chilled, stable and starved of rain: the fog banks of San Francisco and the bone-dry coastal
+    deserts of the Atacama and the Namib sit beside upwelling zones.</p>
+    <p>Reverse the wind and you get <strong>downwelling</strong>: surface water piles against the coast and is pushed
+    under. The same happens wherever currents converge in the open sea — the calm centre of each gyre is a
+    gentle, permanent downwelling zone (which is why floating debris collects there). Along the equator, the trade winds drive water away on <em>both</em>
+    sides — Coriolis deflects flow right in the north and left in the south — so a ribbon of cool,
+    upwelled water runs along the equatorial Pacific: the “cold tongue” that El Niño periodically switches off.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">Coastal upwelling &amp; downwelling — a cross-section</div>
+    <div class="panel-sub">You are looking at a slice of coastal ocean, shore on the right. Flip the wind and watch the vertical circulation reverse. Colour is temperature.</div>
+    <canvas class="stage" id="upwell-canvas" height="380"></canvas>
+    <div class="controls">
+      <span class="lbl">Wind along the coast</span>
+      <button class="chip on" id="upwell-eq">Equatorward → upwelling</button>
+      <button class="chip" id="upwell-pole">Poleward → downwelling</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== DEEP ============================== -->
+<section class="chapter" id="deep">
+  <div class="prose reveal">
+    <div class="kicker">Chapter six</div>
+    <h2>The long way down: the great ocean conveyor</h2>
+    <p class="lede">The wind stirs the top kilometre. Everything below — more than three-quarters of the
+    ocean's volume — moves for a different reason: <strong>density</strong>. Cold, salty water sinks. That
+    simple fact drives a single connected loop through every ocean on Earth.</p>
+    <p>It works like this. The Gulf Stream and North Atlantic Current deliver warm, unusually <em>salty</em> water
+    (the Atlantic evaporates more than it rains back) far to the north. Crossing the latitudes of Iceland and
+    Norway in winter, that water surrenders its heat to the freezing air — the very heat that mildens
+    north-west Europe. Chilled to near 0&nbsp;°C but still salty, it becomes some of the densest surface water
+    in the world ocean… and it founders. In the <strong>Nordic and Labrador seas</strong>, columns of water sink
+    kilometres deep — one of the few places on the planet where the surface ocean and the abyss shake hands.</p>
+    <p>There's a second trick at the freezing fringes: when sea ice forms, it expels its salt, leaving
+    ultra-salty brine that trickles down. Around Antarctica — in the <strong>Weddell and Ross seas</strong> —
+    this brine rejection helps manufacture the densest water of all, Antarctic Bottom Water, which spreads along the
+    floor of every basin.</p>
+    <p>The sunken North Atlantic water — <strong>North Atlantic Deep Water</strong> — creeps south along the
+    Atlantic floor, joins the great mixer of the Southern Ocean, and is dealt out into the Indian and Pacific,
+    where over centuries it is slowly stirred back toward the surface by tides working over rough seafloor.
+    It returns at last as warm surface flow — through the Indonesian islands, around the tip of Africa
+    (hitching a lift with Agulhas rings), across the equator and back to the North Atlantic to sink again.
+    The full lap takes on the order of a millennium. The Atlantic's portion of the loop has a name you will
+    meet again below: the <strong>Atlantic Meridional Overturning Circulation — the AMOC</strong>.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">The Atlantic overturning, in cross-section</div>
+    <div class="panel-sub">A slice down the Atlantic from the equator (left) to the Nordic Seas (right), surface at top, 4&nbsp;km deep at bottom. Follow a parcel: north at the surface, losing heat, sinking, and creeping back south along the floor.</div>
+    <canvas class="stage" id="conveyor-canvas" height="380"></canvas>
+    <div class="controls">
+      <div class="slider-row" style="flex:1; min-width:220px">
+        <span class="lbl">Overturning strength</span>
+        <input type="range" id="conveyor-strength" min="0" max="100" value="100" style="flex:1">
+        <output id="conveyor-strength-out">100%</output>
+      </div>
+      <button class="chip warmchip" id="btn-see-conveyor">See the full conveyor on the globe ↑</button>
+    </div>
+    <div class="cap">Drag the strength slider — this is exactly the lever the AMOC laboratory below will pull. At low strength the sinking stalls and the warm northward surface flow fades with it.</div>
+  </div>
+</section>
+
+<!-- ============================== WEATHER ============================== -->
+<section class="chapter" id="weather">
+  <div class="prose reveal">
+    <div class="kicker">Chapter seven</div>
+    <h2>The weather machines</h2>
+    <p class="lede">Currents don't just move water; they move <em>climate</em>. A warm current offshore
+    re-writes the weather of everything downwind of it — and nowhere on Earth is the rewrite as dramatic
+    as in north-west Europe.</p>
+    <h3 class="sub">Europe's radiator</h3>
+    <p>Scotland sits at 55–59°N — the latitude of Labrador, Hudson Bay and central Siberia. Yet Glasgow's
+    January averages about <strong>+4&nbsp;°C</strong> while Churchill, Manitoba — the same distance from the
+    equator, beside a cold bay with no warm current — averages about <strong>−26&nbsp;°C</strong>. Thirty degrees
+    of difference, at identical latitude. The chart below runs right around the planet at Scotland's latitude:
+    the two warm anomalies — western Europe and the Alaskan coast — sit precisely downwind of the two great
+    warm currents of the northern hemisphere.</p>
+    <p>The honest accounting: prevailing westerly winds and the sheer heat capacity of any ocean do much of the work
+    (all maritime west coasts are mild), but the Gulf Stream–North Atlantic Current system is what keeps the
+    eastern Atlantic itself several degrees warmer than the Pacific at the same latitude, feeds the winter storms
+    that pump that warmth ashore, and keeps Norwegian harbours ice-free beyond the Arctic Circle. Model experiments that
+    switch the Atlantic overturning off cool Britain's winters by 5&nbsp;°C or more — a number to keep in mind
+    for the laboratory below.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">Around the world at Scotland's latitude</div>
+    <div class="panel-sub">Mean January temperature for cities between 55° and 59°N, arranged by longitude. Hover for detail. Blue = below freezing, red = above.</div>
+    <div class="chart-wrap">
+      <canvas class="stage" id="latitude-chart" height="360"></canvas>
+      <div class="chart-tip" id="latitude-tip"></div>
+    </div>
+    <div class="cap">Same latitude band, 30&nbsp;°C of January difference. The two mild spots — Scotland and the Alaskan panhandle — sit downwind of the North Atlantic Current and the Alaska Current respectively.</div>
+  </div>
+  <div class="prose reveal">
+    <h3 class="sub">Fog factories and desert makers</h3>
+    <p>Where currents of very different temperature meet, the air can't keep up. Over the
+    <strong>Grand Banks of Newfoundland</strong>, air warmed and moistened over the Gulf Stream drifts across the
+    icy Labrador Current and its moisture condenses instantly: over 200 fog days a year, the foggiest sea on Earth.
+    The Oyashio–Kuroshio confluence does the same off Japan, as does the cold California Current under San
+    Francisco's summer fog.</p>
+    <p>Cold currents also <em>dry</em>. Air sitting on cold upwelled water is chilled from below, dense, and
+    refuses to rise — so it hardly ever rains. That is why the world's hyper-arid coastal deserts — the
+    <strong>Atacama</strong> (Humboldt Current) and the <strong>Namib</strong> (Benguela Current) — run right down
+    to the shore of an ocean. Parts of the Atacama see less than 2&nbsp;mm of rain a year, beside the largest
+    body of water on the planet.</p>
+    <h3 class="sub">When the Pacific sloshes: El Niño</h3>
+    <p>The most consequential current-weather coupling of all is the <strong>El Niño–Southern Oscillation</strong>.
+    In a normal year, the Pacific trade winds drag warm surface water westward, piling it into a deep warm pool
+    near Indonesia while cold water upwells off Peru. But the winds and the warm pool are locked in a feedback
+    loop, and every few years it slips. The trades falter; the warm water sloshes back east; the Peruvian
+    upwelling shuts down. That is <strong>El Niño</strong> — and because the relocated warm pool drags the planet's
+    biggest rainstorms with it, the consequences cascade worldwide: drought and fire in Australia and Indonesia,
+    floods on the South American coast, a reshuffled jet stream over North America, a warmer year globally.
+    Its mirror image, <strong>La Niña</strong> — trades strengthened, cold tongue extra cold — tilts the odds the
+    other way. Toggle the three states below and watch the machinery: it is the same Ekman physics from
+    chapter three, operating on the scale of half the planet.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">ENSO — the Pacific seesaw</div>
+    <div class="panel-sub">A slice along the equatorial Pacific, Australia/Indonesia on the left, South America on the right. The dashed line is the thermocline — the floor of the warm surface layer.</div>
+    <canvas class="stage" id="enso-canvas" height="400"></canvas>
+    <div class="controls">
+      <button class="chip on" id="enso-normal">Normal year</button>
+      <button class="chip warmchip" id="enso-nino">El Niño</button>
+      <button class="chip" id="enso-nina">La Niña</button>
+    </div>
+    <div class="cap" id="enso-cap"></div>
+  </div>
+</section>
+
+<!-- ============================== SHIPPING ============================== -->
+<section class="chapter" id="shipping">
+  <div class="prose reveal">
+    <div class="kicker">Chapter eight</div>
+    <h2>Riding the rivers: currents and ships</h2>
+    <p class="lede">Sailors knew the rivers in the sea long before scientists named them —
+    because riding them, or fighting them, could change a voyage by weeks.</p>
+    <p>The classic story is <strong>Benjamin Franklin's</strong>. As colonial postmaster he was asked why mail
+    packets from England took two weeks longer westbound than merchant ships did. His cousin, the Nantucket
+    whaling captain <strong>Timothy Folger</strong>, knew the answer at once: the packets were sailing straight up
+    a warm eastward river in the sea that the whalers knew intimately — and refusing colonial advice to leave it.
+    Franklin and Folger published the first chart of the Gulf Stream in 1770. Franklin even took its temperature
+    on Atlantic crossings, lowering a thermometer to find the warm water — the first scientific survey of a
+    current. Eighty years later Maury's wind and current charts, compiled from thousands of ships' logs, were
+    shaving <em>weeks</em> off passages to Rio and California, and clipper captains bound for Australia learned to dive
+    deep into the Southern Ocean and ride the westerlies and the Circumpolar Current — the Roaring Forties route.</p>
+    <p>It still matters. A ship steaming at 20 knots gains or loses 2–4 knots in a boundary current — riding the
+    Gulf Stream or Kuroshio, or dodging the Agulhas on the way round Africa, is worth hours per day and tonnes of
+    fuel. Modern “weather routing” services optimise every crossing against current and wave forecasts; studies
+    put the achievable fuel saving from current-aware routing at several per cent of a crossing — which, multiplied by
+    ~90,000 ships at sea, is an enormous number. And one current hazard is famous in its own right: where the
+    Agulhas runs against Southern Ocean gales, the opposing seas steepen into <strong>freak waves</strong> that have
+    broken ships in two.</p>
+    <p>Race the two ships below — one riding the Gulf Stream, one ignoring it — then drop drifters
+    on the globe and see where the ocean takes them. The drift games are real science: when a container
+    ship spilled 28,800 plastic bath toys in the mid-Pacific in 1992, oceanographers spent the next twenty years
+    logging where they beached — a free, planet-scale experiment in surface drift.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">Franklin's race — New York to Falmouth</div>
+    <div class="panel-sub">Two identical sailing packets. One rides the Gulf Stream and North Atlantic Current; one holds the rhumb line and even fights the stream. Watch the gap open.</div>
+    <canvas class="stage" id="route-canvas" height="380"></canvas>
+    <div class="controls">
+      <button class="chip on" id="route-go">▶ Start the race</button>
+      <span class="lbl" id="route-status"></span>
+    </div>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">The drift laboratory</div>
+    <div class="panel-sub">Click anywhere on the ocean to launch a drifter, or fire one of the historical presets. Time runs at about two days per frame; tracks are dotted.</div>
+    <div id="drift-wrap">
+      <div id="drift-globe"></div>
+      <div id="drift-side">
+        <div id="drift-readout"><span style="color:var(--ink-3)">No drifters yet — click the ocean, or launch a preset below.</span></div>
+        <div class="preset-list" id="drift-presets"></div>
+        <button class="chip" id="drift-clear">Clear drifters</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== WARMING ============================== -->
+<section class="chapter" id="warming">
+  <div class="prose reveal">
+    <div class="kicker">Chapter nine</div>
+    <h2>The warming ocean</h2>
+    <p class="lede">About <strong>90 per cent</strong> of the extra heat trapped by greenhouse gases so far has gone
+    into the sea. The ocean is the climate system's flywheel — and the flywheel is changing speed.</p>
+    <p>Some of the changes are already measured, not projected:</p>
+    <ul>
+      <li><strong>Boundary currents are shifting poleward.</strong> The East Australian Current now pushes roughly
+      350&nbsp;km further south than it did in the mid-20th century; the Kuroshio's warm influence is edging north.
+      Western boundary current regions are warming two to three times faster than the global ocean average.</li>
+      <li><strong>The surface is stratifying.</strong> Warmer surface water is lighter, so the ocean is becoming
+      harder to mix vertically — upwelling and the ventilation of the deep both feel it.</li>
+      <li><strong>The North Atlantic has a cold blind spot.</strong> While almost every ocean region warms, a patch
+      south-east of Greenland — the “<strong>warming hole</strong>” — has stubbornly cooled over the past century.
+      That is exactly where the AMOC delivers its heat, and the pattern is what you'd expect if the delivery
+      service were slowing down.</li>
+    </ul>
+    <h3 class="sub">The AMOC question</h3>
+    <p>Which brings us to the biggest open question in physical oceanography. The Atlantic overturning is
+    powered by dense, salty water sinking in the far north. Global warming attacks that density from both ends:
+    warmer surface water is lighter, and — more dangerously — <strong>freshwater</strong> from a melting Greenland
+    ice sheet and stronger high-latitude rainfall dilutes the salt. Fresher water is lighter still. Dilute the
+    sinking grounds enough and the sinking falters; less warm salty water is drawn north; the surface gets
+    fresher still. The loop feeds on itself — which is why the AMOC is listed among the climate system's
+    potential <strong>tipping elements</strong>.</p>
+    <p>What do we actually know? Direct measurement is young: the <strong>RAPID array</strong> of moored instruments
+    across 26.5°N has watched the overturning carry an average of about 17&nbsp;Sv since 2004 — too short a record
+    to prove a trend. Reconstructions reaching further back (from sea-surface temperature fingerprints and
+    sediment records) suggest the AMOC is at its weakest in a millennium, perhaps ~15% down since the mid-20th
+    century — though this remains debated. The IPCC's assessment: the AMOC will <em>very likely</em> weaken this century; an abrupt
+    collapse before 2100 has “medium confidence” of <em>not</em> happening. Some recent studies are less relaxed —
+    statistical work on early-warning signals (Ditlevsen &amp; Ditlevsen, 2023) put a possible critical transition
+    around mid-century, and the first full climate-model collapse experiment (van Westen et al., 2024) showed
+    that when the AMOC does go, north-west European winters cool by several degrees within decades. Nobody
+    knows where the cliff edge is. What everyone agrees on: the further and faster the world warms, the closer
+    it gets.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">The Atlantic overturning — reconstructed and measured</div>
+    <div class="panel-sub">Schematic reconstruction of AMOC strength (after the SST-fingerprint work of Caesar et&nbsp;al.), with the directly measured RAPID-array era. Hover for values.</div>
+    <div class="chart-wrap">
+      <canvas class="stage" id="amoc-chart" height="340"></canvas>
+      <div class="chart-tip" id="amoc-tip"></div>
+    </div>
+    <div class="cap">Sverdrups at 26°N, indicative. The shaded band reflects reconstruction uncertainty; the solid segment is the moored-instrument record. The exact numbers are debated — the direction of travel is the point.</div>
+  </div>
+</section>
+
+<!-- ============================== LAB ============================== -->
+<section class="chapter" id="lab">
+  <div class="prose reveal">
+    <div class="kicker">Chapter ten — interactive</div>
+    <h2>The AMOC laboratory</h2>
+    <p class="lede">Time to pull the levers yourself. Choose how much the world warms and how much the
+    Atlantic overturning weakens, and watch the tug-of-war play out over the North Atlantic —
+    with a running verdict for Scotland.</p>
+    <p>Two forces compete over north-west Europe's future. <strong>Global warming</strong> pushes every
+    temperature up. <strong>AMOC weakening</strong> pulls the North Atlantic region down — hardest in winter, hardest
+    near the sinking grounds, fading inland. Most futures see warming win. But the harder the warming, the more
+    likely the overturning stumbles — and if it collapses outright, the regional cooling can locally <em>beat</em>
+    the global warming underneath it.</p>
+  </div>
+  <div class="panel reveal">
+    <div class="panel-title">Pull the levers</div>
+    <div class="panel-sub">Scenario chips set both sliders to a self-consistent story; unlink to explore freely. The map shows temperature change vs the late-20th-century baseline.</div>
+    <div class="controls" style="margin: 4px 0 14px">
+      <button class="chip on" data-scen="today">Today (+1.3°)</button>
+      <button class="chip" data-scen="paris">Paris goal (+1.7°)</button>
+      <button class="chip" data-scen="middle">Middle road (+2.7°)</button>
+      <button class="chip" data-scen="high">High end (+4°)</button>
+      <button class="chip" data-scen="collapse">+2.5° &amp; AMOC collapse</button>
+    </div>
+    <div class="controls" style="margin-bottom:6px">
+      <div class="slider-row" style="flex:1; min-width:240px">
+        <span class="lbl" style="min-width:118px">Global warming</span>
+        <input type="range" id="lab-warm" min="0" max="40" value="13" style="flex:1">
+        <output id="lab-warm-out">+1.3&nbsp;°C</output>
+      </div>
+    </div>
+    <div class="controls" style="margin-bottom:14px">
+      <div class="slider-row" style="flex:1; min-width:240px">
+        <span class="lbl" style="min-width:118px">AMOC strength</span>
+        <input type="range" id="lab-amoc" min="0" max="100" value="91" style="flex:1">
+        <output id="lab-amoc-out">91%</output>
+      </div>
+      <label style="font:500 12.5px var(--sans); color:var(--ink-2); display:flex; gap:6px; align-items:center">
+        <input type="checkbox" id="lab-link" checked> link AMOC to warming
+      </label>
+      <button class="chip" id="lab-season">Season: Winter</button>
+    </div>
+    <div class="lab-grid">
+      <div>
+        <div class="chart-wrap">
+          <canvas class="stage" id="lab-map" height="430"></canvas>
+          <div class="chart-tip" id="lab-map-tip"></div>
+        </div>
+        <div class="cap">Temperature change vs ~1990s baseline. Hover the map to probe. The hatched blue tongue at full collapse marks winter sea ice reaching much further south.</div>
+      </div>
+      <div>
+        <div style="font:700 13px var(--sans); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-2)">Scotland readout</div>
+        <div class="lab-readouts">
+          <div class="ro"><div class="v" id="ro-winter">—</div><div class="k">Scottish winter mean (DJF)</div><div class="d" id="ro-winter-d"></div></div>
+          <div class="ro"><div class="v" id="ro-summer">—</div><div class="k">Scottish summer mean (JJA)</div><div class="d" id="ro-summer-d"></div></div>
+          <div class="ro"><div class="v" id="ro-frost">—</div><div class="k">Air-frost days per year (est.)</div><div class="d" id="ro-frost-d"></div></div>
+          <div class="ro"><div class="v" id="ro-analog">—</div><div class="k">Closest present-day climate analogue for Scotland's winters</div></div>
+        </div>
+        <div class="chart-wrap" style="margin-top:12px">
+          <canvas class="stage" id="lab-monthly" height="240"></canvas>
+          <div class="chart-tip" id="lab-monthly-tip"></div>
+        </div>
+        <div id="lab-verdict"></div>
+      </div>
+    </div>
+  </div>
+  <div class="note reveal">
+    <strong>What this model is (and isn't).</strong> The map blends two published patterns — polar-amplified
+    greenhouse warming, and the North Atlantic cooling fingerprint seen in AMOC-shutdown experiments
+    (Jackson et&nbsp;al. 2015; van Westen et&nbsp;al. 2024) — scaled by your slider settings, with a stronger
+    fingerprint in winter. It is an <em>illustration of the physics</em>, tuned to reproduce headline numbers
+    from those papers, not output from a climate model. Treat the shapes and rough magnitudes as meaningful,
+    not the third decimal place.
+  </div>
+</section>
+
+<!-- ============================== SCOTLAND ============================== -->
+<section class="chapter" id="scotland">
+  <div class="prose reveal">
+    <div class="kicker">Chapter eleven</div>
+    <h2>Scotland, at the edge of the radiator</h2>
+    <p class="lede">Nowhere in the world owes more to a current than north-west Europe — and Scotland
+    sits closest to the machinery: nearer the subpolar Atlantic than anywhere else in Britain,
+    at the latitude of Labrador, with sea lochs that have never known winter sea ice.</p>
+    <p>The warm Atlantic water that passes Scotland's west coast — up the Rockall Trough, through the
+    Faroe–Shetland Channel, on toward Norway — keeps the sea around Scotland near 7–8&nbsp;°C even in
+    February. That maritime warmth is why Wester Ross gardens grow subtropical species at 57°N, why Scottish ski
+    seasons are marginal rather than Alpine, and why the country's famous weather is wet and windy rather than
+    frozen: Scotland's winters are fed by air that has spent days over water warmed, ultimately, at the
+    Florida Strait.</p>
+    <h3 class="sub">The two futures</h3>
+    <p><strong>If the AMOC merely weakens</strong> — the central expectation — Scotland's story this century is
+    “warming, with the brakes partly on.” The subpolar Atlantic's cold blind spot grows; Scottish warming lags the
+    global average, summers turn warmer and drier, winters milder and wetter but slower to change than
+    continental Europe's. In these futures the current is Scotland's quiet friend twice over: first it built the
+    mild climate, then its decline partly shields the country from the worst of the heat.</p>
+    <p><strong>If the AMOC collapses</strong>, the sign flips. In the van Westen experiment, two to four decades
+    after shutdown, north-west European winters cool dramatically — parts of Scotland 3–8&nbsp;°C colder than
+    today in winter <em>despite</em> global warming, with winter sea ice advancing toward Scandinavian and
+    eventually Scottish latitudes, fiercer North Atlantic storms along the new ice edge, and a drier growing
+    season. Edinburgh's winters would head toward those of the eastern Baltic; the north-west Highlands toward
+    coastal Norway. Sea level along the North Atlantic rim would also jump additionally by tens of centimetres as the
+    circulation's tilt relaxes — on top of global rise.</p>
+    <p>Which future arrives depends mostly on emissions — the lever in the laboratory above labelled
+    “global warming” is, in the real world, the only one we hold. The overturning has weakened before:
+    the geological record shows AMOC shutdowns amplifying past abrupt coolings (the Younger Dryas, ~12,900 years ago, is
+    the textbook case). The machinery is real, it has moved before, and it is being pushed.</p>
+    <p>Spin the globe above one more time. From space, the Gulf Stream is a filament — a thread of warm water
+    a hundred kilometres wide on a planet of oceans. Scotland's palms, Norway's open harbours, the rain on a
+    Glasgow window in January: all of it rides on that thread.</p>
+  </div>
+</section>
+
+<!-- ============================== SOURCES ============================== -->
+<footer class="colophon" id="sources">
+  <div class="inner">
+    <h3>Sources &amp; further reading</h3>
+    <ul>
+      <li>M. F. Maury, <em>The Physical Geography of the Sea</em> (1855) — the founding text, and the source of the epigraph.</li>
+      <li>NASA Scientific Visualization Studio, <em>Perpetual Ocean</em> — the ECCO2 model visualisation that inspired a thousand flow maps (including this one).</li>
+      <li>RAPID-MOCHA array (<a href="https://rapid.ac.uk" rel="noopener">rapid.ac.uk</a>) — continuous AMOC measurement at 26.5°N since 2004.</li>
+      <li>L. Caesar et&nbsp;al., “Observed fingerprint of a weakening Atlantic Ocean overturning circulation,” <em>Nature</em> 556 (2018); and Caesar et&nbsp;al., <em>Nature Geoscience</em> 14 (2021) — the millennium-scale reconstruction.</li>
+      <li>P. &amp; S. Ditlevsen, “Warning of a forthcoming collapse of the Atlantic meridional overturning circulation,” <em>Nature Communications</em> 14 (2023).</li>
+      <li>R. M. van Westen, M. Kliphuis &amp; H. A. Dijkstra, “Physics-based early warning signal shows that AMOC is on tipping course,” <em>Science Advances</em> 10 (2024) — the collapse experiment behind the laboratory's cold scenario.</li>
+      <li>L. C. Jackson et&nbsp;al., “Global and European climate impacts of a slowdown of the AMOC in a high-resolution GCM,” <em>Climate Dynamics</em> 45 (2015).</li>
+      <li>IPCC AR6 WG1, ch. 9 (ocean, cryosphere, sea level) — the consensus assessment of AMOC futures.</li>
+      <li>H. Stommel, “The westward intensification of wind-driven ocean currents,” <em>Trans. AGU</em> 29 (1948); V. W. Ekman, “On the influence of the Earth's rotation on ocean-currents” (1905).</li>
+      <li>NOAA Ocean Service &amp; Open University, <em>Ocean Circulation</em> — general background on gyres, upwelling and ENSO.</li>
+    </ul>
+    <p style="margin-top:26px">Every current shown on the globe is hand-plotted from standard charts; the flow
+    field, the drift tracks and the laboratory are illustrative physics, not forecasts. Built by hand —
+    vanilla JavaScript on canvas, no frameworks, no build step. Part of the
+    <a href="https://0x4d44.github.io/">0x4D44 almanac</a>.</p>
+  </div>
+</footer>
+
+</main>
+
+<script src="geo.js"></script>
+<script src="currents.js"></script>
+<script src="field.js"></script>
+<script src="globe.js"></script>
+<script src="explainers.js"></script>
+<script src="amoc.js"></script>
+<script src="main.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
