@@ -171,17 +171,15 @@
       '</svg>';
   }
 
-  function galleryHtml(article) {
-    var items = (article.images || []).slice(1);
-    if (!items.length) return "";
-    return '<div class="article-gallery" aria-label="Additional illustrations">' +
-      items.map(function (item, i) {
-        return '<figure><img src="' + esc(item.src) + '" alt="' +
-          esc(item.alt || ("Additional illustration " + (i + 1))) + '">' +
-          (item.caption ? '<figcaption>' + esc(item.caption) + '</figcaption>' : '') +
-          '</figure>';
-      }).join("") +
-      '</div>';
+  function inlineIllustrationHtml(article, paragraphIndex) {
+    var item = (article.images || []).find(function (image) {
+      return image.afterParagraph === paragraphIndex;
+    });
+    if (!item) return "";
+    return '<figure class="inline-illustration"><img src="' + esc(item.src) + '" alt="' +
+      esc(item.alt || "Article illustration") + '">' +
+      (item.caption ? '<figcaption>' + esc(item.caption) + '</figcaption>' : '') +
+      '</figure>';
   }
 
   // -------- dates --------
@@ -629,6 +627,7 @@
       if (!isVerse && a.pullQuote && i === Math.min(1, (a.body.length - 1))) {
         html += '<blockquote class="pullquote">&ldquo;' + esc(a.pullQuote) + '&rdquo;</blockquote>';
       }
+      html += inlineIllustrationHtml(a, i);
       return html;
     }).join("");
     if (isVerse && a.pullQuote) {
@@ -662,7 +661,6 @@
     out.push('<figure><span class="thumb">' + illustration(a) + '<span class="cat-flag">' + esc(a.category) + '</span></span>' +
       '<figcaption>' + esc(a.location ? a.location.charAt(0) + a.location.slice(1).toLowerCase() + ', earlier. ' : '') +
       'Artist&#39;s impression; file photo; entirely made up.</figcaption></figure>');
-    out.push(galleryHtml(a));
     out.push(bodyParas);
     out.push('<div class="tags">' + tags + '</div>');
     out.push('<div class="disclaimer"><strong>Satire notice:</strong> The Daily Flange is fiction. ' +
