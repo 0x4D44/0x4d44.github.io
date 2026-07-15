@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "recipes",
+    title: "The Kitchen Almanac",
+    tagline: "The family recipe book, rescued from a 2005 email printout and a creased handwritten note and set down properly at last. Tick off ingredients as you weigh them, work the method step by step, flip between metric and imperial. Add a recipe by appending one object. Vanilla JS; no build step.",
+    url: "https://0x4d44.github.io/recipes/",
+    illustration: "ill-cookbook",
+    date: "2026-07-15T19:45:00",
+    year: 2005,
+    tags: ["software", "food"],
+    real: true,
+  },
+  {
     slug: "ocean-currents",
     title: "Rivers in the Sea",
     tagline: "A living, spinnable globe threaded with every major ocean current — plus animated explainers of why the sea moves, a drift lab, Franklin's Gulf Stream race, and an AMOC laboratory where you pull the levers of a warming Atlantic and read the verdict for Scotland's winters. Vanilla JS on canvas; no build step.",
@@ -1269,7 +1280,7 @@ window.ESSAYS = [
 // and technical write-ups (including code walkthroughs *about* games/sims).
 window.TAG_GROUPS = [
   { label: "form",    tags: ["software", "games", "simulation", "fiction", "comic"] },
-  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "work"] },
+  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "work", "food"] },
 ];
 // Flat list ("all" first), derived from the groups, for any consumer that
 // just wants the plain vocabulary.
@@ -1300,6 +1311,9 @@ window.COLLECTIONS = [
   { id: "health", name: "Health & Fitness", icon: "ill-run",
     blurb: "Keeping moving — on the road, at sea and in the hotel gym.",
     slugs: ["morning-run", "shipshape"] },
+  { id: "kitchen", name: "The Kitchen", icon: "ill-cookbook",
+    blurb: "Family recipes, kept properly.",
+    slugs: ["recipes"] },
   { id: "tools", name: "Tools", icon: "ill-caliper",
     blurb: "Small practical instruments that run in the browser.",
     slugs: ["broadband-speed-checker", "opus-verdict", "token-predictor",
