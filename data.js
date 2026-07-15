@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "starforged",
+    title: "The Star-Forged Ring",
+    tagline: "The 13.8-billion-year biography of the platinum in a wedding ring: forged in colliding neutron stars, sunk to the Earth's core, returned by meteorite, and concentrated in a two-billion-year-old magma chamber. Scrub the universe's first minutes, run the r-process, hear the gravitational-wave chirp. Vanilla JS on canvas; no build step.",
+    url: "https://0x4d44.github.io/starforged/",
+    illustration: "ill-ptring",
+    date: "2026-07-15T21:00:00",
+    year: 2017,
+    readingMin: 22,
+    words: 4920,
+    tags: ["science", "history", "software"],
+    real: true,
+  },
+  {
     slug: "recipes",
     title: "The Kitchen Almanac",
     tagline: "The family recipe book, rescued from a 2005 email printout and a creased handwritten note and set down properly at last. Tick off ingredients as you weigh them, work the method step by step, flip between metric and imperial. Add a recipe by appending one object. Vanilla JS; no build step.",
@@ -1333,7 +1346,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["starforged", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },

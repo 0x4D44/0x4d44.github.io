@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Star-Forged Ring — Where Platinum and Gold Really Come From</title>
+<meta name="description" content="The 13.8-billion-year biography of the platinum in a wedding ring: forged in colliding neutron stars, adrift for aeons, sunk to the Earth's core, delivered again by meteorites, concentrated in a two-billion-year-old magma chamber, and mined a mile underground. An animated, interactive explainer. Vanilla JS on canvas; no build step.">
+<meta name="theme-color" content="#05060f">
+<meta property="og:type" content="article">
+<meta property="og:title" content="The Star-Forged Ring — Where Platinum and Gold Really Come From">
+<meta property="og:description" content="The platinum on your finger is older than the Earth. It was forged in a collision between two dead stars, drifted for billions of years, sank to the core, came back by meteorite, and waited two billion years in a magma chamber for someone to dig it up. Scroll through the whole journey.">
+<meta property="og:url" content="https://0x4d44.github.io/starforged/">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2305060f'/%3E%3Ccircle cx='16' cy='18' r='8' fill='none' stroke='%23dfe7f5' stroke-width='1.8'/%3E%3Cpath d='M16 4l1.6 3.4L21 9l-3.4 1.6L16 14l-1.6-3.4L11 9l3.4-1.6z' fill='%23ffd479'/%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#05060f;
+    --bg2:#0a0d1c;
+    --ink:#dde3f2;
+    --ink-dim:#96a0c0;
+    --ink-faint:#6d77a0;
+    --hair:rgba(150,164,214,.14);
+    --hair-2:rgba(150,164,214,.3);
+    /* the cast */
+    --star:#7fd4ff;            /* starlight, fusion, physics */
+    --star-soft:#5db8e6;
+    --star-glow:rgba(127,212,255,.2);
+    --gold:#ffcf7a;            /* gold, the kilonova, treasure */
+    --gold-soft:#e6b45f;
+    --gold-glow:rgba(255,207,122,.22);
+    --ember:#ff6d92;           /* violence — collapse, collision, magma */
+    --ember-soft:#e05c80;
+    --ember-glow:rgba(255,109,146,.2);
+    --violet:#a58cff;          /* deep time */
+    --plat:#e9edf7;            /* platinum itself */
+    --plat-dim:#b9c3d9;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+    --sans:system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono","SF Mono",Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(1150px 800px at 82% -8%, rgba(255,207,122,.06), transparent 60%),
+      radial-gradient(1000px 860px at 4% 12%, rgba(127,212,255,.07), transparent 56%),
+      radial-gradient(900px 900px at 55% 118%, rgba(165,140,255,.07), transparent 60%),
+      var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  #progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:60;
+    background:linear-gradient(90deg,var(--star),var(--violet),var(--gold));box-shadow:0 0 12px var(--star-glow)}
+
+  .wrap{max-width:768px;margin:0 auto;padding:0 22px}
+  section{position:relative}
+
+  /* ---- hero ---- */
+  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;
+    padding:80px 0 90px;position:relative;overflow:hidden}
+  #stars{position:absolute;inset:0;width:100%;height:100%;z-index:0}
+  .hero .wrap{position:relative;z-index:2}
+  .eyebrow{font-family:var(--mono);font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--star-soft);margin-bottom:26px}
+  h1{font-family:var(--serif);font-weight:600;line-height:1.04;letter-spacing:-.015em;
+    font-size:clamp(42px,8.4vw,78px);color:#fff}
+  h1 em{font-style:italic;background:linear-gradient(92deg,var(--plat) 8%,var(--gold) 55%,var(--ember));
+    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{font-family:var(--serif);font-size:clamp(19px,2.6vw,24px);color:var(--ink-dim);
+    margin-top:28px;max-width:32em;line-height:1.5}
+  .lede em{font-style:italic;color:#eef1fb}
+  .scroll-cue{margin-top:52px;font-family:var(--mono);font-size:12px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ink-faint);display:flex;align-items:center;gap:10px}
+  .scroll-cue .bar{width:34px;height:1px;background:var(--hair-2);position:relative;overflow:hidden}
+  .scroll-cue .bar::after{content:"";position:absolute;inset:0;width:40%;background:var(--gold);
+    animation:slide 2.4s ease-in-out infinite}
+  @keyframes slide{0%{transform:translateX(-120%)}100%{transform:translateX(320%)}}
+
+  /* ---- generic type ---- */
+  h2{font-family:var(--serif);font-weight:600;font-size:clamp(28px,4.4vw,42px);line-height:1.1;
+    letter-spacing:-.01em;color:#fff;margin-bottom:8px}
+  .kicker{font-family:var(--mono);font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--star-soft);margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .kicker .n{color:var(--ink-faint)}
+  .kicker .when{margin-left:auto;color:var(--gold-soft);letter-spacing:.1em}
+  p{font-size:17.5px;color:var(--ink);margin:16px 0}
+  p.big{font-size:20.5px;font-family:var(--serif);color:var(--ink);line-height:1.5}
+  .dim{color:var(--ink-dim)}
+  strong{color:#fff;font-weight:600}
+  .star{color:var(--star)} .goldc{color:var(--gold)} .ember{color:var(--ember)}
+  .violet{color:var(--violet)} .plat{color:var(--plat)}
+  a{color:var(--star-soft);text-decoration:none;border-bottom:1px solid var(--hair-2)}
+  a:hover{border-color:var(--star)}
+  .blockspace{padding:78px 0}
+  .rule{height:1px;background:var(--hair);margin:0}
+  sup{font-size:.68em}
+
+  .pq{font-family:var(--serif);font-style:italic;font-size:clamp(22px,3.4vw,31px);line-height:1.32;
+    color:#eef1fb;padding-left:26px;border-left:2px solid var(--gold);margin:44px 0}
+  .pq cite{display:block;font-style:normal;font-family:var(--mono);font-size:12px;letter-spacing:.12em;
+    text-transform:uppercase;color:var(--ink-faint);margin-top:16px}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(22px);transition:opacity .8s ease,transform .8s ease}
+  .rv.in{opacity:1;transform:none}
+
+  /* figure shell */
+  figure{margin:34px 0}
+  .fig{background:linear-gradient(180deg,var(--bg2),rgba(5,6,15,.35));
+    border:1px solid var(--hair);border-radius:16px;padding:22px;position:relative;overflow:hidden}
+  figcaption{font-size:13.5px;color:var(--ink-dim);margin-top:14px;line-height:1.55}
+  figcaption b{color:#c6cde2;font-weight:600}
+  :focus-visible{outline:2px solid var(--star);outline-offset:3px;border-radius:6px}
+  .figtitle{font-family:var(--mono);font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--ink-faint);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  canvas{display:block;width:100%}
+  .tag{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:2px 8px;border-radius:20px;border:1px solid var(--hair-2);color:var(--ink-faint)}
+
+  /* controls */
+  .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:18px}
+  button.act{font-family:var(--mono);font-size:13px;letter-spacing:.02em;color:#131007;font-weight:700;
+    background:linear-gradient(180deg,var(--gold),var(--gold-soft));border:none;border-radius:10px;
+    padding:11px 16px;cursor:pointer;transition:.18s;box-shadow:0 6px 20px -8px var(--gold-glow)}
+  button.act:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  button.act:active{transform:translateY(0)}
+  button.act.blue{background:linear-gradient(180deg,var(--star),var(--star-soft));color:#06121a;
+    box-shadow:0 6px 20px -8px var(--star-glow)}
+  button.act.red{background:linear-gradient(180deg,var(--ember),var(--ember-soft));color:#20060d;
+    box-shadow:0 6px 20px -8px var(--ember-glow)}
+  button.ghost{font-family:var(--mono);font-size:13px;color:var(--ink);background:rgba(150,164,214,.08);
+    border:1px solid var(--hair-2);border-radius:10px;padding:11px 15px;cursor:pointer;transition:.18s}
+  button.ghost:hover{border-color:var(--star);color:#fff}
+  button[disabled]{opacity:.45;cursor:default;pointer-events:none}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:4px;flex:1;min-width:150px;
+    background:linear-gradient(90deg,var(--star),var(--gold));outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:#fff;border:2px solid var(--violet);box-shadow:0 2px 10px rgba(0,0,0,.5);cursor:pointer}
+  input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#fff;
+    border:2px solid var(--violet);cursor:pointer}
+  .slabel{font-family:var(--mono);font-size:12px;color:var(--ink-dim);display:flex;align-items:center;gap:10px;
+    flex-wrap:wrap;width:100%}
+  .readout{font-family:var(--mono);font-size:12.5px;color:var(--ink-dim);margin-top:12px;line-height:1.7}
+  .readout b{color:#fff}
+
+  /* stat tiles */
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:26px 0}
+  .stat{border:1px solid var(--hair);border-radius:14px;padding:16px 16px 14px;background:rgba(0,0,0,.2)}
+  .stat .v{font-family:var(--serif);font-size:clamp(22px,3.4vw,30px);color:#fff;line-height:1.1}
+  .stat .v small{font-size:.55em;color:var(--ink-dim)}
+  .stat .k{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--ink-faint);margin-top:7px;line-height:1.5}
+  .stat.au{border-color:rgba(255,207,122,.3)} .stat.au .v{color:var(--gold)}
+  .stat.pt .v{color:var(--plat)}
+  .stat.em{border-color:rgba(255,109,146,.3)} .stat.em .v{color:var(--ember)}
+  .stat.st{border-color:rgba(127,212,255,.3)} .stat.st .v{color:var(--star)}
+
+  /* aside — the gold margin notes */
+  .aside{border:1px solid rgba(255,207,122,.25);border-radius:14px;padding:18px 20px;margin:26px 0;
+    background:linear-gradient(180deg,rgba(255,207,122,.05),transparent)}
+  .aside .ah{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:8px}
+  .aside p{font-size:15px;color:var(--ink-dim);margin:8px 0 0}
+
+  /* abundance bars (BBN + isotopes) */
+  .abars{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+  .abar{display:grid;grid-template-columns:86px 1fr 84px;gap:10px;align-items:center;
+    font-family:var(--mono);font-size:12px;color:var(--ink-dim)}
+  .abar .trk{height:10px;border-radius:6px;background:rgba(255,255,255,.05);overflow:hidden}
+  .abar .fl{height:100%;border-radius:6px;width:0;transition:width .5s ease;
+    background:linear-gradient(90deg,var(--star-soft),var(--star))}
+  .abar.he .fl{background:linear-gradient(90deg,#7d8fe0,var(--violet))}
+  .abar.tr .fl{background:linear-gradient(90deg,var(--gold-soft),var(--gold))}
+  .abar.pt .fl{background:linear-gradient(90deg,var(--plat-dim),var(--plat))}
+  .abar b{color:#fff;text-align:right}
+
+  /* journey ledger */
+  .ledger{margin-top:10px}
+  .leg{border-top:1px solid var(--hair);padding:22px 0;display:grid;grid-template-columns:52px 1fr;gap:18px}
+  .leg:last-child{border-bottom:1px solid var(--hair)}
+  .leg .idx{font-family:var(--serif);font-size:26px;color:var(--violet);line-height:1.15;font-style:italic}
+  .leg h3{font-family:var(--serif);font-size:21px;font-weight:600;color:#fff;margin-bottom:4px}
+  .leg .t{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-soft)}
+  .leg p{margin:8px 0 0;font-size:15.5px;color:var(--ink-dim)}
+
+  /* cosmic clock HUD */
+  #clock{position:fixed;left:50%;transform:translateX(-50%) translateY(120%);bottom:14px;z-index:55;
+    display:flex;align-items:center;gap:14px;padding:9px 18px;border-radius:999px;
+    background:rgba(8,10,22,.82);border:1px solid var(--hair-2);backdrop-filter:blur(8px);
+    font-family:var(--mono);white-space:nowrap;transition:transform .5s ease;max-width:94vw}
+  #clock.on{transform:translateX(-50%) translateY(0)}
+  #clock .cl-t{font-size:13px;color:#fff;font-weight:700;letter-spacing:.02em}
+  #clock .cl-era{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-soft);
+    overflow:hidden;text-overflow:ellipsis}
+  #clock .cl-dot{width:5px;height:5px;border-radius:50%;background:var(--star);box-shadow:0 0 8px var(--star);flex:none}
+  @media (max-width:520px){#clock .cl-era{max-width:38vw}}
+
+  /* funnel stage cards */
+  .fstages{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .fstage{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-faint);
+    border:1px solid var(--hair);border-radius:9px;padding:7px 10px;transition:.3s}
+  .fstage.on{color:#131007;background:linear-gradient(180deg,var(--gold),var(--gold-soft));border-color:transparent;font-weight:700}
+
+  /* finale odometer */
+  .odo{font-family:var(--serif);font-size:clamp(28px,6vw,50px);color:#fff;line-height:1.1;margin-top:8px;
+    font-variant-numeric:tabular-nums}
+  .odo small{display:block;font-family:var(--mono);font-size:13px;color:var(--ink-dim);margin-top:8px;letter-spacing:.04em}
+
+  /* sources */
+  .srcs{font-size:13.5px;color:var(--ink-dim);line-height:1.7}
+  .srcs li{margin:7px 0 7px 18px}
+  .srcs b{color:#c6cde2}
+
+  footer{padding:60px 0 90px;color:var(--ink-faint);font-size:13.5px}
+  footer .backlink{font-family:var(--mono);font-size:13px}
+</style>
+</head>
+<body>
+
+<div id="progress" aria-hidden="true"></div>
+
+<!-- cosmic clock HUD -->
+<div id="clock" aria-hidden="true"><span class="cl-dot"></span><span class="cl-t" id="clockT">T + 0</span><span class="cl-era" id="clockE">the big bang</span></div>
+
+<!-- ============ HERO ============ -->
+<section class="hero" data-t="0" data-era="the big bang">
+  <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="eyebrow">An origin story · 13.8 billion years in the making</div>
+    <h1>The <em>Star-Forged</em> Ring</h1>
+    <p class="lede">There is a band of platinum on your finger. Before it was a ring it was rock a
+      mile underground; before that, a layer in a two-billion-year-old magma chamber; before that,
+      cargo on a meteorite; and before <em>any</em> of that, it was made — in all likelihood — in the
+      last milliseconds of a collision between <em>two dead stars</em>. This is its whole biography.</p>
+    <div class="scroll-cue"><span class="bar"></span> scroll to begin, at the beginning</div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 00 · THE INHERITANCE ============ -->
+<section class="blockspace" data-t="0" data-era="the big bang">
+  <div class="wrap">
+    <p class="big rv">Hold the ring up to the light. It weighs perhaps five grams, and if it is
+      hallmarked <strong>950</strong>, all but a quarter-gram of that is platinum — about
+      <span class="plat">1.4 × 10²²</span> atoms of element 78. Not one of those atoms was made on
+      Earth. Not one was made in the Sun, or in any star that shines. Every single one is older than
+      the planet you are standing on.</p>
+    <p class="rv">That isn't poetry — it's bookkeeping. Atoms of platinum and gold are, for every
+      practical purpose, indestructible: no fire, no acid, no geological age touches the nucleus.
+      Whatever is in the ring today has simply been <em>relocated</em>, over and over, since the
+      moment it was created. So the question "where did my ring come from?" has a real answer with
+      about nine moves in it — and the first move happens in the first twenty minutes of time itself.</p>
+    <div class="stats rv">
+      <div class="stat pt"><div class="v">~1.4×10²²</div><div class="k">platinum atoms in a 5 g ring</div></div>
+      <div class="stat st"><div class="v">&gt;4.6<small> bn yr</small></div><div class="k">minimum age of every one</div></div>
+      <div class="stat em"><div class="v">9</div><div class="k">relocations, cosmos → finger</div></div>
+      <div class="stat au"><div class="v">78</div><div class="k">protons — the whole identity</div></div>
+    </div>
+    <p class="rv dim">One warning before we start: an atom of platinum is <strong>defined</strong> by
+      having 78 protons (gold: 79). To make one from scratch you must gather 78 protons and roughly
+      117 neutrons into a single nucleus, against the ferocious electrical repulsion of all those
+      positive charges. Keep asking, at every stop: <em>does this furnace have what it takes?</em>
+      For most of cosmic history, the answer is no — and the story of your ring is the story of the
+      one place where the answer is yes.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 01 · THE FIRST THREE MINUTES ============ -->
+<section class="blockspace" data-t="0.00004" data-era="the first minutes · nucleosynthesis">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">01</span> The first kitchen <span class="when">T + 3 minutes</span></div>
+    <h2 class="rv">The universe tries, and stops at helium</h2>
+    <p class="rv">In the beginning the entire observable universe is hotter than the centre of any
+      star and denser than rock, and it is <strong>expanding fast</strong>. For the first fraction of
+      a second there aren't even protons — just a seething broth of quarks. By one second, the broth
+      has condensed into protons and neutrons, about <strong>seven protons for every neutron</strong>,
+      and the whole cosmos is briefly a fusion reactor.</p>
+    <p class="rv">Briefly. Fusion needs heat <em>and</em> time, and the infant universe has only one
+      of them. As it expands it cools; the window for building nuclei opens at about
+      <strong>T&nbsp;+&nbsp;10 seconds</strong> and slams shut around <strong>T&nbsp;+&nbsp;20
+      minutes</strong>. Drag through those minutes yourself:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 1 · Big-Bang nucleosynthesis, minute by minute</span><span class="tag" id="bbnTag">T + 0.0001 s</span></div>
+        <canvas id="bbn" height="270" aria-label="animated particle view of the early universe as it cools, from quark plasma to hydrogen and helium"></canvas>
+        <div class="controls">
+          <div class="slabel"><span>T +</span><input type="range" id="bbnSlider" min="0" max="1000" value="0" aria-label="time since the big bang"><b id="bbnTime" style="color:#fff;min-width:7.5em;text-align:right">0.0001 s</b></div>
+        </div>
+        <div class="abars" aria-live="off">
+          <div class="abar"><span>hydrogen</span><div class="trk"><div class="fl" id="abH"></div></div><b id="abHv">—</b></div>
+          <div class="abar he"><span>helium-4</span><div class="trk"><div class="fl" id="abHe"></div></div><b id="abHev">—</b></div>
+          <div class="abar tr"><span>lithium</span><div class="trk"><div class="fl" id="abLi"></div></div><b id="abLiv">—</b></div>
+          <div class="abar pt"><span>platinum</span><div class="trk"><div class="fl" id="abPt"></div></div><b id="abPtv">—</b></div>
+        </div>
+        <figcaption><b>The whole yield of the Big Bang.</b> Roughly 75% hydrogen and 25% helium by
+          mass, a trace of deuterium and helium-3, about one lithium nucleus per ten billion hydrogens
+          — and beyond that, <b>nothing</b>. The first kitchen never gets past the third element.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">Why does it stop? Two reasons, and they matter for the rest of the story. First,
+      the expansion outruns the cooking — after twenty minutes the universe is too cold and too thin
+      for nuclei to fuse at all. Second, and more stubborn: <strong>nature provides no stable nucleus
+      with 5 or 8 particles</strong>. Helium-4 (4 particles) plus a proton makes a nucleus that falls
+      apart in ~10⁻²² seconds; two helium-4s (8 particles) likewise. The ladder above helium is
+      missing its first two rungs. In twenty minutes there is no way to jump the gap.</p>
+    <p class="rv dim">So the universe settles its opening account: hydrogen, helium, a whisper of
+      lithium. The number of platinum atoms in the entire cosmos is <strong>zero</strong>, and it
+      will stay zero for a very long time. Everything else in this story is about closing that gap
+      of 76 elements.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 02 · STAR FACTORIES ============ -->
+<section class="blockspace" data-t="2e8" data-era="the first stars · fusion begins">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">02</span> The star factories <span class="when">T + 200 million years</span></div>
+    <h2 class="rv">Stars pick up the job — layer by layer</h2>
+    <p class="rv">For a couple of hundred million years, nothing shines. Then gravity gathers the
+      hydrogen into clumps dense enough to ignite, and the first stars switch on. A star solves the
+      Big Bang's timing problem beautifully: it is a fusion reactor with a <em>lid on it</em>.
+      Gravity holds the fuel together for millions or billions of years, so slow reactions that the
+      infant universe could never wait for — including the delicate triple-collision of three
+      helium-4s that finally jumps the mass-8 gap and makes <strong>carbon</strong> — have all the
+      time they need.</p>
+    <p class="rv">In a massive star the cooking is organised like an onion. Each shell burns the ash
+      of the one above it, hotter and faster as you go down — and the clock accelerates
+      terrifyingly. Explore the layers:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 2 · inside a 20-solar-mass star, late in life</span><span class="tag" id="onionTag">tap a shell</span></div>
+        <canvas id="onion" height="330" aria-label="animated cross-section of a massive star's burning shells; tap or click a shell to read its fuel and how long it lasts"></canvas>
+        <div class="readout" id="onionRead"><b>Tap or hover a shell.</b> Each one is a separate furnace, burning the ash of the shell above.</div>
+        <figcaption><b>The accelerating clock.</b> Hydrogen burning lasts ~10 million years; helium
+          ~1 million; carbon ~1,000 years; neon about a year; oxygen months; and the final
+          silicon-burning stage — the one that makes iron — is over in roughly <b>a day</b>. The star
+          spends 99.99% of its life on the first rung and one single day on the last.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">Rung by rung — carbon, oxygen, neon, magnesium, silicon — fusion climbs the
+      periodic table, releasing energy at every step, holding the star up against its own gravity.
+      It looks unstoppable. Surely, given enough time, this machine cooks all the way to platinum?</p>
+    <p class="rv"><strong>It does not.</strong> It stops — abruptly, universally, and for the most
+      fundamental of reasons — at <span class="ember">iron</span>.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 03 · THE IRON WALL ============ -->
+<section class="blockspace" data-t="5e8" data-era="stellar fusion · the iron wall">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">03</span> The iron wall <span class="when">every massive star, ever</span></div>
+    <h2 class="rv">Why no star that shines can make platinum</h2>
+    <p class="rv">Every nucleus has a binding energy — how tightly its protons and neutrons hold
+      together. Fusion pays out energy only while the product is <em>more</em> tightly bound than
+      the ingredients. Trace the curve below, and you'll find that everything in nuclear
+      astrophysics hangs on its shape:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 3 · the binding-energy curve</span><span class="tag">drag along it</span></div>
+        <canvas id="bind" height="300" aria-label="the curve of nuclear binding energy per nucleon, peaking at iron and nickel; drag to read elements along it"></canvas>
+        <div class="readout" id="bindRead"><b>Drag or hover along the curve.</b> Uphill = fusion pays energy. Past the peak, fusion <b>costs</b> energy.</div>
+        <figcaption><b>The most consequential hill in physics.</b> The curve climbs steeply from
+          hydrogen, flattens, and peaks at <b>iron-56 / nickel-62</b> — the most tightly bound nuclei
+          that exist. Platinum and gold sit far down the other side. Fusing anything up to iron
+          <em>releases</em> energy; fusing past iron <em>consumes</em> it. A star that starts fusing
+          iron is a fire that eats heat: it has nothing left to hold itself up.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">This is the iron wall. When a massive star's core turns to iron, its central
+      furnace doesn't sputter — it <strong>switches off between one heartbeat and the next</strong>,
+      and gravity, which has been waiting for ten million years, wins in about a quarter of a
+      second. The core collapses from the size of the Earth to the size of a city at a quarter of
+      the speed of light. The infalling outer layers bounce off it, and the star detonates as a
+      <strong>core-collapse supernova</strong>, briefly outshining its whole galaxy.</p>
+    <p class="rv">The collapse leaves behind the strangest object in this story, and the key to
+      everything that follows: the core, crushed so hard that its protons and electrons have been
+      squeezed together into neutrons. A <strong>neutron star</strong> — a single city-sized atomic
+      nucleus, one and a half times the mass of the Sun, twenty kilometres across.</p>
+
+    <div class="stats rv">
+      <div class="stat st"><div class="v">~20<small> km</small></div><div class="k">diameter — fits inside Edinburgh's bypass</div></div>
+      <div class="stat pt"><div class="v">1.4<small> suns</small></div><div class="k">typical mass, squeezed into that</div></div>
+      <div class="stat em"><div class="v">~4<small> bn t</small></div><div class="k">weight of one teaspoon of it</div></div>
+      <div class="stat au"><div class="v">10¹¹<small> ×</small></div><div class="k">surface gravity vs Earth</div></div>
+    </div>
+
+    <div class="aside rv"><div class="ah">But wait — don't supernovae make gold?</div>
+      <p>For decades the textbooks said yes, and the explosion does forge elements — nickel, zinc,
+      radioactive titanium — in its shock wave. But modern simulations keep finding that an ordinary
+      core-collapse supernova is <em>not neutron-rich enough for long enough</em> to build much of
+      anything as heavy as platinum. The explosion's real contribution to your ring is subtler: it
+      <b>manufactures neutron stars</b>. The ammunition, not the bullet.</p></div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 04 · TWO LADDERS PAST IRON ============ -->
+<section class="blockspace" data-t="1e9" data-era="neutron capture · the only way up">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">04</span> Past the wall <span class="when">the neutron loophole</span></div>
+    <h2 class="rv">The only way up is sideways</h2>
+    <p class="rv">If fusing charged nuclei past iron is a dead end, how does nature build element 78
+      at all? By cheating. The obstacle was always electrical — protons repelling protons. But the
+      <strong>neutron carries no charge</strong>. A free neutron can drift into the heart of any
+      nucleus, however heavy, without feeling any repulsion at all. Catch a neutron, and your
+      nucleus gets one unit heavier. If it now has too many neutrons to be stable, one of them
+      <em>beta-decays</em>: it turns into a proton — and the atom quietly becomes <strong>the next
+      element up the periodic table</strong>.</p>
+    <p class="rv">Catch, decay, climb. Catch, decay, climb. Every element beyond iron — including
+      all the platinum and gold that exists — was built this way, one neutron at a time. But there
+      are two utterly different ways to run the process, and they leave different fingerprints.
+      Run them both:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 4 · climbing the chart of nuclides</span><span class="tag" id="nzTag">seed: iron-56</span></div>
+        <canvas id="nz" height="340" aria-label="a chart of nuclides showing the slow s-process path hugging stability and the rapid r-process path racing into neutron-rich territory before decaying back"></canvas>
+        <div class="controls">
+          <button class="act blue" id="btnS">Run the slow way (s-process)</button>
+          <button class="act red" id="btnR">Run the violent way (r-process)</button>
+          <button class="ghost" id="btnNZreset">Reset</button>
+        </div>
+        <div class="readout" id="nzRead">The grey band is the <b>valley of stability</b> — every stable nucleus that exists. Iron sits at the bottom-left; platinum and gold are marked near the top.</div>
+        <figcaption><b>Two ladders, one destination.</b> The <b class="star">s-process</b> (slow)
+          runs inside elderly red-giant stars: one neutron capture every few <em>years</em>, so the
+          nucleus always decays to stability before the next arrives. It tiptoes along the valley
+          floor and, over thousands of years, builds about half the heavy elements — strontium,
+          barium, lead. The <b class="ember">r-process</b> (rapid) needs a neutron blizzard so dense
+          that captures come <em>thousands per second</em>: the nucleus is slammed out to the edge of
+          existence, twenty neutrons fat, and only when the storm stops does it beta-decay back —
+          landing squarely on <b>platinum and gold</b>.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">Here is the punchline of the whole periodic table: measured by isotope, platinum
+      and gold are overwhelmingly <strong>r-process elements</strong> — the slow ladder contributes
+      only a few percent of each. So your ring demands the violent way. And the violent way has an
+      extraordinary shopping list: somewhere in the universe there must be a place that releases a
+      flood of free neutrons — <em>trillions of trillions per cubic centimetre</em> — in a few
+      seconds.</p>
+    <p class="big rv">There is exactly one obvious warehouse of neutrons in the cosmos: the neutron
+      star. Now take two of them…</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 05 · THE COLLISION ============ -->
+<section class="blockspace" data-t="4e9" data-era="a neutron-star merger · the forge">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">05</span> The forge <span class="when">somewhere, aeons before the Sun</span></div>
+    <h2 class="rv">Two dead stars, one wedding band</h2>
+    <p class="rv">Massive stars are usually born in pairs. Let both partners explode, let both leave
+      neutron stars, and let the pair survive — and you have two city-sized suns orbiting each
+      other, radiating away energy as <strong>gravitational waves</strong>, ripples in spacetime
+      itself. The orbit shrinks. For hundreds of millions of years, almost nothing happens. Then, in
+      the final minutes, everything does: the orbit tightens to thousands of circuits per second,
+      the stars touch — and in the next <strong>few milliseconds</strong> tidal forces rip
+      neutron-rich matter off them and fling it out at a third of the speed of light.</p>
+    <p class="rv">That flung debris is the densest neutron storm in nature. Inside it, the r-process
+      doesn't just run — it saturates. Seed nuclei gorge on neutrons, bloat past uranium, fission,
+      and gorge again. When the storm clears, seconds later, the debris cloud is a freshly minted
+      payload of the heaviest elements — <strong>including, at long last, platinum and
+      gold</strong>. Press play:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 5 · the last minutes of a neutron-star binary</span><span class="tag" id="mergeTag">ready</span></div>
+        <canvas id="merger" height="340" aria-label="animation of two neutron stars spiralling together, merging, and throwing off a glowing cloud of freshly forged heavy elements, with the gravitational waveform drawn beneath"></canvas>
+        <div class="controls">
+          <button class="act red" id="btnMerge">Run the merger</button>
+          <button class="act blue" id="btnChirp">▶ Hear the chirp</button>
+          <button class="ghost" id="btnMergeReset">Reset</button>
+        </div>
+        <div class="readout" id="mergeRead">The trace below the stars is the <b>gravitational waveform</b> — the actual signal detectors hear, rising in pitch as the orbit tightens: the <b>chirp</b>.</div>
+        <figcaption><b>The kilonova.</b> The ejected cloud is so stuffed with fresh radioactive
+          nuclei that their decay heats it to a glow visible across a hundred million light-years —
+          a "kilonova", a thousand times brighter than a nova, with a tell-tale reddening as heavy
+          elements fog the light. Astronomers had predicted exactly this. Then they saw it.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">On <strong>17 August 2017</strong> the LIGO and Virgo detectors caught a hundred
+      seconds of that chirp — signal GW170817 — from a galaxy 130 million light-years away. 1.7
+      seconds after the stars touched, a gamma-ray flash arrived; within a day, telescopes on every
+      continent were watching the predicted kilonova bloom and redden in NGC 4993, and its light
+      carried the actual spectral fingerprints of freshly made r-process metal (the first element
+      confirmed by name was strontium). It remains one of the most complete confirmations of a
+      theory in the history of astronomy: humanity <em>watched</em> a precious-metal foundry in
+      operation.</p>
+
+    <div class="stats rv">
+      <div class="stat st"><div class="v">100<small> s</small></div><div class="k">of chirp heard by LIGO/Virgo</div></div>
+      <div class="stat em"><div class="v">1.7<small> s</small></div><div class="k">later, the gamma-ray burst</div></div>
+      <div class="stat pt"><div class="v">~16,000</div><div class="k">Earth-masses of heavy elements ejected</div></div>
+      <div class="stat au"><div class="v">planets'<small> worth</small></div><div class="k">of gold &amp; platinum in one event</div></div>
+    </div>
+
+    <div class="aside rv"><div class="ah">Is it the only forge?</div>
+      <p>Honest science note: mergers are the only r-process site ever <em>observed</em>, but they may
+      not be the only one. Rare, magnetically violent supernovae and collapsing giant stars
+      ("collapsars") are suspected of contributing, especially in the early galaxy — the timing of
+      heavy-element enrichment in ancient stars hints at it. Your ring's atoms came from
+      <em>some</em> neutron-rich cataclysm; a merger is by far the best-attested candidate.</p></div>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 06 · ASHES ADRIFT ============ -->
+<section class="blockspace" data-t="6e9" data-era="the interstellar drift">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">06</span> Ashes adrift <span class="when">a billion-year interlude</span></div>
+    <h2 class="rv">The longest wait</h2>
+    <p class="rv">The kilonova fades in weeks. Its debris does not. A few thousand Earth-masses of
+      new-made metal — vaporised, ionised, invisible — plough into the surrounding gas at a tenth of
+      light-speed, sweep up a bubble hundreds of light-years wide, and stall. Then the galaxy simply
+      stirs it in. Spiral arms pass like slow weather; the enriched gas is folded into clouds,
+      pulled apart, folded again. Watch a billion years per second:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 6 · one merger's ashes, folded into the galaxy</span><span class="tag" id="driftTag">+0.0 Gyr</span></div>
+        <canvas id="drift" height="320" aria-label="a spiral galaxy seen face-on; a bright speck of merger debris slowly disperses and winds into the spiral arms over billions of years"></canvas>
+        <div class="controls">
+          <div class="slabel"><span>time since the merger</span><input type="range" id="driftSlider" min="0" max="1000" value="0" aria-label="billions of years since the merger"><b id="driftYears" style="color:#fff;min-width:5em;text-align:right">0.0 Gyr</b></div>
+        </div>
+        <figcaption><b>Dilution beyond imagining.</b> By the time the ashes are fully mixed, the
+          merger's platinum is spread through millions of cubic light-years — a few atoms per
+          house-sized volume of space. Every gram of your ring was reassembled from atoms that spent
+          an age scattered across distances light takes centuries to cross.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">Our own corner of the galaxy ran this cycle for nine billion years — hundreds of
+      mergers seeding the neighbourhood, each adding a pinch of heavy metal to the local gas. We can
+      even read the receipts: primitive meteorites preserve the decay products of short-lived
+      radioactive nuclei (iodine-129, curium-247) that only the r-process makes, and their ratios
+      say the <strong>last</strong> such event salted our birth cloud roughly a hundred million
+      years before the Sun formed. The forge fired one final time, almost on our doorstep — and then
+      the cloud began to fall.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 07 · A NEW SUN ============ -->
+<section class="blockspace" data-t="9.233e9" data-era="the solar nebula · a sun is born">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">07</span> A new sun <span class="when">4.567 billion years ago</span></div>
+    <h2 class="rv">The cloud that contained your ring</h2>
+    <p class="rv">Nine and a quarter billion years after the Big Bang, one particular cold, dark
+      cloud of gas and dust — 98% original Big-Bang hydrogen and helium, 2% star-ash, and somewhere
+      inside that 2%, about one part per <em>trillion</em> of platinum — was nudged into collapse.
+      Almost everything fell into the centre and lit: the Sun. The leftovers — half a percent of the
+      cloud — flattened into a spinning disc, and in that disc, dust grains began to stick.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 7 · the protoplanetary disc, 4.567 Gya</span><span class="tag">watch the lanes clear</span></div>
+        <canvas id="disc" height="320" aria-label="animation of a protoplanetary disc: dust orbits a young sun, clumps into planetesimals, and sweeps clean lanes as planets grow"></canvas>
+        <figcaption><b>Dust to worlds in a cosmic instant.</b> Micron dust → pebbles → kilometre
+          planetesimals → planetary embryos, in mere millions of years. We can date this moment
+          almost absurdly precisely: the oldest solids in the Solar System, calcium–aluminium
+          flecks in meteorites, formed <b>4,567 million years ago</b>. Your ring's atoms were there,
+          riding the dust.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">The platinum atoms, being heavy and unfussy, condensed early and rode the growing
+      rocks. Within about a hundred million years, one string of collisions had assembled the
+      planet you live on. So far, so tidy: the Earth formed with a respectable dose of precious
+      metal stirred evenly through it. If the story stopped here, platinum would be as common in
+      rocks as copper, and wedding rings would cost pocket money.</p>
+    <p class="rv"><strong>Then the Earth swallowed almost all of it.</strong></p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 08 · THE VANISHING ACT ============ -->
+<section class="blockspace" data-t="9.28e9" data-era="the iron catastrophe · the late veneer">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">08</span> The vanishing act <span class="when">4.5 billion years ago</span></div>
+    <h2 class="rv">The core steals the treasure — and meteorites give some back</h2>
+    <p class="rv">The young Earth, heated by impacts and radioactivity, melted. In a molten planet,
+      the heaviest liquid wins: iron — a third of the Earth's mass — rained toward the centre in
+      vast metal droplets and storms, and over a few tens of millions of years built the core. This
+      is the <strong>iron catastrophe</strong>, and it matters to your ring because platinum and
+      gold are <em>siderophile</em>: "iron-loving." Offered a choice between rock and molten iron,
+      they dissolve into the iron ten-thousand-to-one. When the iron sank, it took the treasure
+      with it.</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 8 · a planet differentiates</span><span class="tag" id="earthTag">stage 1 of 3</span></div>
+        <canvas id="earthx" height="340" aria-label="cross-section of the young Earth: press the buttons to melt it, watch iron and precious metals sink to form the core, then replenish the surface by meteorite bombardment"></canvas>
+        <div class="controls">
+          <button class="act red" id="btnMelt">1 · Melt &amp; sink the iron</button>
+          <button class="act" id="btnVeneer" disabled>2 · The late veneer</button>
+          <button class="ghost" id="btnEarthReset">Reset</button>
+        </div>
+        <div class="readout" id="earthRead">A newborn Earth, precious metals (<b class="goldc">gold flecks</b>) stirred evenly through it. Press <b>Melt</b>.</div>
+        <figcaption><b>The greatest heist in history.</b> Better than 99% of Earth's platinum and
+          gold now sits in the core, 2,900 km down, forever beyond reach — by one famous estimate,
+          enough to pave the entire planet four metres deep in precious metal. The rocks left
+          behind should have been stripped almost clean… yet the mantle measurably isn't.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">The solution to that puzzle is the second button above. After the core had formed
+      and the mantle had begun to stiffen — after the door to the core had swung shut — the young
+      Earth kept getting hit. A final rain of leftover planetesimals and asteroids, perhaps half a
+      percent of the planet's mass, arrived <em>too late to sink</em>. Geologists call it the
+      <strong>late veneer</strong>. Its metal stayed marooned in the mantle and crust, and its
+      chemical signature (the proportions of iridium to platinum to gold in mantle rocks match
+      primitive meteorites, and ancient tungsten isotopes agree) is how we know it happened.</p>
+    <p class="big rv">Sit with that for a second: the platinum in your wedding ring very likely
+      never belonged to the original Earth at all. It is <span class="goldc">meteorite
+      cargo</span> — a late delivery, signed for about 4.4 billion years ago.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 09 · THE REEF ============ -->
+<section class="blockspace" data-t="1.175e10" data-era="the bushveld complex · 2.05 Gya">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">09</span> The reef <span class="when">2.05 billion years ago</span></div>
+    <h2 class="rv">A magma chamber concentrates the unminable</h2>
+    <p class="rv">Even after the late veneer, platinum in ordinary rock runs about <strong>five
+      parts per billion</strong> — one gram scattered through two hundred tonnes. No one will ever
+      mine that. A ring needs one more miracle: something has to <em>concentrate</em> the metal ten
+      thousandfold. On today's Earth, that something happened most spectacularly exactly once.</p>
+    <p class="rv">2,055 million years ago, under what is now northern South Africa, a plume of magma
+      the volume of a small sea flooded into the crust and pooled into a chamber that cooled over
+      hundreds of thousands of years: the <strong>Bushveld Igneous Complex</strong>, the largest
+      body of its kind on the planet, its layered floor covering an area the size of Ireland. And
+      inside it, a piece of chemistry ran that reads like a magic trick. When the magma became
+      saturated in sulfur, droplets of molten iron sulfide condensed out of it like dew — and
+      platinum loves sulfide melt even more than it loves iron. Each droplet scavenged the metal
+      from the magma it fell through, and the droplets rained onto the chamber floor:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 9 · the magma chamber, collecting platinum</span><span class="tag" id="reefTag">undersaturated</span></div>
+        <canvas id="reef" height="330" aria-label="animation of a magma chamber: press the button to saturate it with sulfur, and watch sulfide droplets rain through the melt, scavenging platinum atoms into a thin bright layer on the chamber floor"></canvas>
+        <div class="controls">
+          <button class="act red" id="btnSulf">Saturate with sulfur</button>
+          <button class="ghost" id="btnReefReset">Reset</button>
+        </div>
+        <div class="readout" id="reefRead">Platinum atoms (<b class="plat">bright</b>) drift dissolved in the silicate melt — five parts per billion, unminable for ever.</div>
+        <figcaption><b>The Merensky Reef.</b> The result is a dark seam <b>about a metre thick</b> —
+          in places less — that runs, astonishingly, for hundreds of kilometres, holding platinum at
+          five to ten <em>grams</em> per tonne: a million times richer than the mantle it came from.
+          This single geological accident and its companion seams hold roughly <b>three-quarters of
+          all the platinum ever discovered</b>. Odds are overwhelming that your ring was born here.</figcaption>
+      </div>
+    </figure>
+
+    <div class="aside rv"><div class="ah">Meanwhile, gold was running a different racket</div>
+      <p>Gold's own masterpiece sits next door: the Witwatersrand basin, source of nearly a third of
+      all gold ever mined, where rivers three billion years ago washed grains of gold into vast
+      fossil gravel beds. Hot water is gold's great concentrator — dissolving whispers of it from
+      deep rock and precipitating it in quartz veins for rivers to demolish. Platinum, stubbornly
+      insoluble, mostly refused the water route; it waited for magma. Same forge, same delivery —
+      different last mile.</p></div>
+
+    <p class="rv">And then the reef waited. Through the rise of oxygen, through snowball glaciations,
+      through the entire history of complex life — two billion years of patient, uneventful dark —
+      until 1924, when a farm-by-farm prospecting trek led by geologist <strong>Hans Merensky</strong>
+      traced a platinum-bearing layer across the Transvaal and realised, within weeks, that it ran
+      for tens and then hundreds of kilometres. Humans had found the seam.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 10 · SIX MONTHS UNDERGROUND ============ -->
+<section class="blockspace" data-t="1.3799999e10" data-era="the mine and the refinery · now">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">10</span> The last mile <span class="when">the 20th century → today</span></div>
+    <h2 class="rv">Ten tonnes of rock, six months, one ounce</h2>
+    <p class="rv">Everything before this point cost the universe nothing but time. The final
+      relocation is paid for in sweat. The reef may be rich by cosmic standards, but it is still a
+      metre-thin layer, kilometres down, tilted into the dark. Miners follow it in stopes barely a
+      metre high, in rock that sweats at 60&nbsp;°C before refrigeration, drilling and blasting a
+      seam their grandfathers' generation first opened. Winning a single troy ounce of platinum —
+      31 grams, two rings' worth — takes on the order of <strong>ten tonnes of ore</strong> and
+      <strong>half a year</strong> of processing. Step through what happens to the rock:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 10 · from reef to ring-metal</span><span class="tag" id="funTag">stage 1 of 6</span></div>
+        <canvas id="funnel" height="300" aria-label="animated funnel: ten tonnes of ore is milled, floated, smelted and refined down to a single troy ounce of platinum; press the button to advance stages"></canvas>
+        <div class="controls">
+          <button class="act" id="btnFun">Next stage →</button>
+          <button class="ghost" id="btnFunReset">Start again</button>
+        </div>
+        <div class="fstages" id="funStages" aria-hidden="true"></div>
+        <div class="readout" id="funRead"><b>Blast &amp; hoist.</b> A metre-high slice of two-billion-year-old reef, about ten tonnes of it, rides the shaft to the surface.</div>
+        <figcaption><b>Concentration, continued by other means.</b> Milling and froth flotation do in
+          hours what the sulfide rain did in millennia — float the metal-bearing sulfides away from
+          the rock. Smelting and converting yield a molten matte; a base-metals plant strips the
+          nickel and copper; and the precious-metals refinery teases six sister elements — platinum,
+          palladium, rhodium, ruthenium, iridium, osmium, plus hitch-hiking gold — apart, one by one,
+          to 99.95% purity.</figcaption>
+      </div>
+    </figure>
+
+    <div class="stats rv">
+      <div class="stat em"><div class="v">~1–2<small> km</small></div><div class="k">typical working depth on the reef</div></div>
+      <div class="stat pt"><div class="v">~10<small> t</small></div><div class="k">ore per troy ounce of platinum</div></div>
+      <div class="stat st"><div class="v">~6<small> months</small></div><div class="k">rock-face to refined ingot</div></div>
+      <div class="stat au"><div class="v">99.95<small>%</small></div><div class="k">purity of the finished grain</div></div>
+    </div>
+
+    <p class="rv dim">It is worth pausing on how <em>recent</em> all of this is. Europeans met
+      platinum only in the 1700s, as a nuisance: Spanish colonists in New Granada found a silvery
+      metal fouling their gold pans, sneered at it as <em>platina</em> — "little silver" — and threw
+      it back in the rivers, having no furnace hot enough to melt it (platinum's melting point,
+      1,768&nbsp;°C, defeated every 18th-century forge). Indigenous artisans of the La Tolita
+      culture had, a thousand years earlier, already worked it by sintering grains with gold. Not
+      until 1924 did the Bushveld give up its secret, and only in the 20th century did platinum
+      become what it is at a jeweller's counter: the noblest setting there is.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ 11 · THE RING ============ -->
+<section class="blockspace" data-t="1.38e10" data-era="your finger · today">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">11</span> The ring <span class="when">today</span></div>
+    <h2 class="rv">Thirteen-point-eight billion years, on one finger</h2>
+    <p class="rv">The refinery grain is melted at 1,768&nbsp;°C, alloyed — usually 95% platinum with
+      a nip of ruthenium, iridium or cobalt for hardness, the alloy your hallmark calls
+      <strong>Pt&nbsp;950</strong> — cast, forged, annealed, and turned into a plain band. Platinum
+      suits the job almost supernaturally well: it is dense (a platinum ring is half as heavy again
+      as the same ring in gold), it does not tarnish or corrode in anything a human life can throw
+      at it, it is gentle on skin, and when scratched it doesn't lose metal — it merely moves it
+      aside, folding over the years into the soft sheen jewellers call <em>patina</em>.</p>
+    <p class="rv">Set your ring's weight, and take inventory of what you're actually wearing:</p>
+
+    <figure class="rv">
+      <div class="fig">
+        <div class="figtitle"><span>Fig 11 · your ring, itemised</span><span class="tag">Pt 950</span></div>
+        <canvas id="ringfig" height="240" aria-label="a drawn platinum ring with a slow sparkle; below it, a live inventory of the atoms it contains"></canvas>
+        <div class="controls">
+          <div class="slabel"><span>ring weight</span><input type="range" id="ringMass" min="30" max="120" value="50" aria-label="ring weight in grams, times ten"><b id="ringMassV" style="color:#fff;min-width:3.5em;text-align:right">5.0 g</b></div>
+        </div>
+        <div class="odo" id="ringAtoms">14,660,000,000,000,000,000,000<small>atoms of platinum — every one made before the Earth existed</small></div>
+        <div class="abars" style="margin-top:20px">
+          <div class="abar pt"><span>Pt-195</span><div class="trk"><div class="fl" id="isoA"></div></div><b id="isoAv">33.8%</b></div>
+          <div class="abar pt"><span>Pt-194</span><div class="trk"><div class="fl" id="isoB"></div></div><b id="isoBv">32.9%</b></div>
+          <div class="abar pt"><span>Pt-196</span><div class="trk"><div class="fl" id="isoC"></div></div><b id="isoCv">25.2%</b></div>
+          <div class="abar pt"><span>Pt-198 + 192 + 190</span><div class="trk"><div class="fl" id="isoD"></div></div><b id="isoDv">8.1%</b></div>
+        </div>
+        <figcaption><b>An isotopic family portrait.</b> Six stable-or-nearly-so isotopes, in
+          proportions fixed by the physics of the neutron storm that made them. The heaviest
+          slices — Pt-198 especially — could <em>only</em> have come from the r-process: they are
+          the ring's certificate of violent origin, legible in any mass spectrometer.</figcaption>
+      </div>
+    </figure>
+
+    <p class="rv">So run the film backwards, one last time, from your hand:</p>
+
+    <div class="ledger rv">
+      <div class="leg"><div class="idx">9</div><div><h3>The bench</h3><div class="t">years ago</div>
+        <p>Melted, alloyed to Pt 950, cast and polished by a jeweller — the only stop on the journey with a human face.</p></div></div>
+      <div class="leg"><div class="idx">8</div><div><h3>The refinery</h3><div class="t">months before that</div>
+        <p>Separated from ten tonnes of rock and five sister metals over half a year of milling, flotation, smelting and chemistry.</p></div></div>
+      <div class="leg"><div class="idx">7</div><div><h3>The mine</h3><div class="t">the 20th–21st century</div>
+        <p>Blasted from a metre-thin seam a kilometre or two beneath South Africa — the reef Hans Merensky traced in 1924.</p></div></div>
+      <div class="leg"><div class="idx">6</div><div><h3>The magma chamber</h3><div class="t">2.05 billion years ago</div>
+        <p>Scavenged out of a sea of magma by a rain of sulfide droplets and laid down in the Merensky Reef, ten-thousand-fold concentrated.</p></div></div>
+      <div class="leg"><div class="idx">5</div><div><h3>The late veneer</h3><div class="t">~4.4 billion years ago</div>
+        <p>Delivered to a cooling Earth by the final meteorite bombardment — after the iron catastrophe had dragged the planet's original ration into the core.</p></div></div>
+      <div class="leg"><div class="idx">4</div><div><h3>The solar nebula</h3><div class="t">4.567 billion years ago</div>
+        <p>Condensed with the first dust of the Solar System, in a cloud salted by a final r-process event ~100 million years earlier.</p></div></div>
+      <div class="leg"><div class="idx">3</div><div><h3>The drift</h3><div class="t">billions of years</div>
+        <p>Scattered atom-thin across the interstellar medium, folded through spiral arms, waiting to be gathered.</p></div></div>
+      <div class="leg"><div class="idx">2</div><div><h3>The forge</h3><div class="t">before the Sun existed</div>
+        <p>Assembled in seconds, in the neutron blizzard of a neutron-star collision — 78 protons, ~117 neutrons, a nucleus born glowing.</p></div></div>
+      <div class="leg"><div class="idx">1</div><div><h3>The raw material</h3><div class="t">T + 3 minutes</div>
+        <p>Every proton and neutron in every one of those atoms condensed out of the Big Bang's cooling fireball, in the universe's first quarter-hour.</p></div></div>
+    </div>
+
+    <div class="pq rv">A wedding ring is a promise measured against time. It is hard to pick a
+      better material witness: metal that predates the planet, forged in the death-spiral of two
+      stars, that has already kept its shape for a third of the age of the universe — and will not
+      tarnish, dissolve, or decay for the rest of it.
+      <cite>the case for platinum</cite></div>
+
+    <p class="rv dim">And it isn't finished. The atoms in the band are effectively immortal — the
+      ring will outlive the finger, the jeweller, the mine, and quite plausibly the species. Five
+      billion years from now, when the swollen Sun disposes of the Earth, some 10²² atoms of
+      star-forged platinum will simply be relocated once more. They're used to it.</p>
+  </div>
+</section>
+
+<div class="rule"></div>
+
+<!-- ============ SOURCES ============ -->
+<section class="blockspace" data-t="1.38e10" data-era="sources &amp; further reading">
+  <div class="wrap">
+    <div class="kicker rv"><span class="n">※</span> Sources &amp; further reading</div>
+    <ul class="srcs rv">
+      <li><b>Big-Bang nucleosynthesis:</b> mass fractions (~75% H, ~25% He-4, Li ≈ 10⁻¹⁰ of H) and the
+        20-minute window are the standard cosmological results; the mass-5/mass-8 instability is the
+        classical bottleneck (Alpher, Herman, &amp; the 1948–57 literature; Weinberg, <i>The First Three Minutes</i>).</li>
+      <li><b>Stellar burning timescales &amp; the iron peak:</b> shell-burning lifetimes for a ~20 M☉ star
+        (H ~10⁷ yr → Si ~1 day) and the Fe-56/Ni-62 binding-energy maximum follow Burbidge, Burbidge,
+        Fowler &amp; Hoyle (1957) and modern stellar-evolution texts.</li>
+      <li><b>s- and r-process shares:</b> platinum and gold are predominantly r-process in solar
+        material (r-fractions ≳90%), per standard abundance decompositions (e.g. Arlandini et&nbsp;al. 1999;
+        Bisterzo et&nbsp;al. 2014).</li>
+      <li><b>GW170817 / AT 2017gfo:</b> Abbott et&nbsp;al. 2017 (PRL 119, 161101) and the multi-messenger
+        companion papers; ejecta ~0.03–0.05 M☉ of r-process material (≈10⁴ Earth-masses); strontium
+        identified in the kilonova spectrum (Watson et&nbsp;al. 2019, Nature 574).</li>
+      <li><b>Alternative r-process sites:</b> magnetorotational supernovae and collapsars as possible
+        early-galaxy contributors (e.g. Siegel et&nbsp;al. 2019, Nature 569; reviews by Cowan et&nbsp;al. 2021).</li>
+      <li><b>Last local r-process event:</b> ¹²⁹I/²⁴⁷Cm systematics in early Solar-System material
+        (Côté et&nbsp;al. 2021, Science 371) place a final event ~100 Myr before Solar formation.</li>
+      <li><b>Solar-System age:</b> CAI Pb-Pb age 4,567 Myr (Connelly et&nbsp;al. 2012, Science 338).</li>
+      <li><b>Core sequestration &amp; the late veneer:</b> siderophile partitioning and the "four-metre
+        layer" estimate (Wood, Nature 2006 commentary tradition); late-veneer evidence from mantle
+        highly-siderophile-element abundances and ¹⁸²W (Willbold et&nbsp;al. 2011, Nature 477).</li>
+      <li><b>Bushveld Complex:</b> age 2,055–2,060 Myr; ~2/3–3/4 of world platinum resources; Merensky
+        Reef geometry and grades (3–10 g/t over ~1 m) per Cawthorn 2010 and USGS/Johnson Matthey
+        resource reviews; discovery narrative from Merensky's 1924–26 fieldwork accounts.</li>
+      <li><b>Mining &amp; refining:</b> "~10 tonnes of ore and up to six months per ounce" is the
+        industry's own rule of thumb (Anglo American Platinum / Johnson Matthey PGM guides); refining
+        sequence per standard PGM metallurgy references.</li>
+      <li><b>Platinum properties &amp; history:</b> m.p. 1,768&nbsp;°C, ρ 21.45 g/cm³, isotope abundances
+        (CIAAW); <i>platina</i> and Antonio de Ulloa (1748); La Tolita sintered platinum-gold work.</li>
+    </ul>
+    <p class="rv dim" style="font-size:13.5px">Numbers in this piece are rounded for reading;
+      quantities like ejecta masses and "planets' worth of gold" are order-of-magnitude estimates
+      that vary between studies. Written and animated for the almanac; corrections welcome.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>“The Star-Forged Ring” — an almanac original. Vanilla JS on canvas; no frameworks, no build
+      step, no telemetry. Best enjoyed while absent-mindedly turning a ring on your finger.</p>
+    <a class="backlink" href="https://0x4d44.github.io/">← back to the almanac</a>
+  </div>
+</footer>
+
+<script src="sky.js"></script>
+<script src="ground.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
