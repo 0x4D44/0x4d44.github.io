@@ -126,6 +126,7 @@ function shipOf(st) { return SHIPS[levelOf(st).ship]; }
 
 function showMenu() {
   state = null; ui = null; speed = 0;
+  dismissToast(); toastQueue = [];
   document.title = "Chief Engineer — Boreal Line";
   $app.replaceChildren();
   const scr = el("div", "screen");
@@ -217,6 +218,7 @@ function resumeVoyage(snapshot) {
 }
 function enterVoyage(fresh) {
   speed = 0; acc = 0; sheet = null; manualPage = null; activeTab = "power";
+  dismissToast();
   toastQueue = []; lastLogLen = fresh ? 0 : state.log.length;
   document.title = `${shipOf(state).name} — Chief Engineer`;
   buildVoyageDom();
@@ -363,7 +365,7 @@ function buildRoute() {
   const total = lv.route.reduce((s, l) => s + l.distanceNm, 0);
   ui.route.replaceChildren();
   ui.routeSegs = [];
-  const wxGlyph = { calm: "—", moderate: "≈", rough: "≋", storm: "⚠" };
+  const wxGlyph = { calm: "", moderate: "≈", rough: "≋", storm: "⚠" };
   lv.route.forEach((leg, i) => {
     const port = el("div", "port");
     port.append(el("span", "nm", leg.fromPort));
@@ -1061,6 +1063,7 @@ function buildSituationSheet(sh) {
 // ---- debrief ---------------------------------------------------------------------------
 
 function showDebrief() {
+  dismissToast(); toastQueue = [];
   saveJSON(CAMPAIGN_KEY, campaign);
   localStorage.removeItem(VOYAGE_KEY);
   const d = debrief(state);
@@ -1217,7 +1220,7 @@ function render() {
   setClass(ui.kpi.load, "warn", !state.blackout && loadPct > 88 && loadPct <= 97);
   const res = spinningReserve(state);
   setText(ui.kpi.reserve, `${res.toFixed(1)}MW`);
-  setClass(ui.kpi.reserve, "warn", res < 0);
+  setClass(ui.kpi.reserve, "warn", res < 0 && !state.inPort);
   setText(ui.kpi.kn, state.inPort ? "PORT" : `${state.actualKn.toFixed(1)}kn`);
   setText(ui.kpi.comfort, `${state.comfort.toFixed(0)}%`);
   setClass(ui.kpi.comfort, "warn", state.comfort < 70);
@@ -1268,6 +1271,20 @@ window.__chief = {
   get state() { return state; },
   get speed() { return speed; },
   setSpeed, act, startLevel, showMenu,
+  // deterministic stepping for harnesses (headless rAF is throttled): runs the
+  // same per-tick logic as the frame loop, including the drop-to-1× rule.
+  step(n) {
+    for (let i = 0; i < n && state && state.phase === "voyage"; i++) {
+      tick(state);
+      dirty = true;
+      if (state.newAlarmThisTick && speed > 1) { speed = 1; break; }
+    }
+    if (state && ui) {
+      if (state.phase !== "voyage") { showDebrief(); return; }
+      pumpNarration();
+      render();
+    }
+  },
 };
 
 showMenu();

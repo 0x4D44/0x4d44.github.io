@@ -93,7 +93,8 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
 
 /* ------------------------------------------------------------- voyage --- */
 
-.voyage { display: grid; gap: 8px; padding: 8px; max-width: 1280px; margin: 0 auto; }
+/* padding-top clears the site's fixed "← Almanac" pill (top-left) */
+.voyage { display: grid; gap: 8px; padding: 46px 8px 8px; max-width: 1280px; margin: 0 auto; }
 
 .console {
   background: var(--bg1); border: 1px solid var(--line-soft); border-radius: 8px;
@@ -121,7 +122,7 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
 .kpi .v.bad { color: var(--red); }
 
 /* route strip */
-.route { display: flex; align-items: center; gap: 0; height: 34px; position: relative; margin-top: 4px; width: 100%; }
+.route { display: flex; align-items: center; gap: 0; height: 34px; position: relative; margin-top: 16px; width: 100%; }
 .route .seg { position: relative; height: 8px; background: var(--bg3); border: 1px solid var(--line-soft); }
 .route .seg.eca { background: repeating-linear-gradient(45deg, #24455c 0 4px, var(--bg3) 4px 8px); }
 .route .seg .wx { position: absolute; top: -16px; left: 50%; transform: translateX(-50%); font-size: 11px; color: var(--dim); }
@@ -185,7 +186,8 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
 .objbar .tick { color: var(--faint); font-size: 11px; letter-spacing: .18em; }
 .toast {
   position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
-  max-width: min(620px, calc(100vw - 24px)); z-index: 60;
+  max-width: min(620px, calc(100vw - 24px)); max-height: 38vh; overflow: auto;
+  z-index: 60; font-size: 14px;
   background: #14231f; border: 1px solid var(--cyan); border-radius: 8px;
   padding: 10px 14px; color: var(--txt); box-shadow: 0 10px 30px #0009;
   display: flex; gap: 10px; align-items: flex-start;
@@ -275,7 +277,7 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
 /* objectives */
 .objs { display: grid; gap: 5px; }
 .obj { display: flex; gap: 8px; font-size: 13px; align-items: baseline; }
-.obj .box { color: var(--faint); font-family: var(--font-mono); }
+.obj .box { color: var(--faint); font-family: var(--font-mono); flex: none; white-space: pre; }
 .obj.done { color: var(--faint); text-decoration: line-through; }
 .obj.done .box { color: var(--green); text-decoration: none; }
 
@@ -330,4 +332,6 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
   .annun { grid-template-columns: repeat(4, 1fr); }
   .route .port .nm { display: none; }
   .route .port:first-child .nm, .route .port:last-child .nm { display: block; }
+  .tabs button { min-width: 0; padding: 6px 3px; font-size: 12px; letter-spacing: .02em; }
+  .debrief { padding-top: 52px; }
 }
