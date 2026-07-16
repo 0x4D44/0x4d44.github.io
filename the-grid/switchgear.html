@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Switchgear &amp; Protection — The Grid</title>
+<meta name="description" content="How circuit breakers interrupt fault current — arcs and current zeros, bulk-oil, air-blast, SF6 and vacuum breakers, isolators and interlocks, and the protection relays that find a fault in milliseconds.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">chapter 4 · switchgear &amp; protection</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="generation.html">1 · Generation</a>
+    <a href="ac.html">2 · Three-Phase AC</a>
+    <a href="transformers.html">3 · Transformers</a>
+    <a href="switchgear.html" aria-current="page">4 · Switchgear</a>
+    <a href="lines.html">5 · Lines &amp; Towers</a>
+    <a href="operations.html">6 · Running the Grid</a>
+    <a href="blackouts.html">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 4 · Switchgear &amp; Protection</p>
+  <h1>Interrupting Fifty Thousand Amps</h1>
+  <p class="standfirst">When a line comes down or a cable fails, the grid drives
+  thousands of amps into the fault — and something must open the circuit while that
+  current is still flowing. You cannot simply pull the contacts apart: the current
+  refuses to stop, and burns on across the gap as an arc hotter than the surface of
+  the sun. Everything in a switchyard is designed around taming that arc.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="arc"><span class="no">§ 4.1</span>The arc, and the gift of the current zero</h2>
+
+<p>Part two contacts carrying current and the current does not stop — it ionises
+the gap and keeps flowing as a plasma <strong>arc</strong> at 10,000–20,000&nbsp;K.
+The arc is a conductor; while it burns, the circuit is still closed. Stretch it,
+cool it, blast it — a DC arc will fight you for every millimetre, which is why DC
+switchgear is genuinely hard. But AC hands the breaker a gift fifty times a
+second: the <strong>current zero</strong> (<a href="ac.html">Chapter&nbsp;2</a>).
+For an instant, no current flows and the arc goes out <em>by itself</em>.</p>
+
+<p>The battle is what happens in the next few microseconds. The circuit slams
+voltage back across the open gap — the <strong>transient recovery voltage</strong> —
+trying to re-light the arc. Meanwhile the still-hot gap is furiously de-ionising,
+recovering its insulating strength. If insulation wins the race, the circuit is
+broken; if the voltage wins, the arc <strong>restrikes</strong> and the breaker
+must wait, arcing, for the next zero. Every breaker technology of the last
+century is a different way of loading the dice: fresh oil, blasted air, SF₆ gas,
+or nothing at all.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 1 · Break the current</span>
+    <span class="hint">a fault is flowing — trip the breaker and watch the race at each current zero</span>
+  </div>
+  <div class="fig-body"><canvas id="brk" style="aspect-ratio: 2/1; min-height: 310px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Quenching medium</label>
+      <div class="seg" id="brk-med">
+        <button data-v="oil">oil (1930s)</button>
+        <button data-v="air">air-blast (1950s)</button>
+        <button data-v="sf6" class="on">SF₆ (1970s)</button>
+        <button data-v="vac">vacuum (11–33 kV)</button>
+      </div>
+    </div>
+    <button class="btn primary" id="brk-trip">TRIP</button>
+    <button class="btn" id="brk-reset">re-close / reset</button>
+  </div>
+  <div class="readouts">
+    <span class="ro">state <b id="brk-state">CLOSED — fault current flowing</b></span>
+    <span class="ro">arcing time <b id="brk-arc">—</b></span>
+    <span class="ro" id="brk-note" style="flex:1 1 100%"></span>
+  </div>
+  <div class="fig-note">Slowed ~80×. The amber trace is fault current; the violet trace is
+  the voltage appearing across the contacts once they part. Weaker media may restrike
+  once or twice — watch the arc re-light at a zero, then clear at the next. A real
+  400 kV breaker gets a trip order about 20 ms after the fault and clears it within
+  2–3 cycles of 50 Hz.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="family"><span class="no">§ 4.2</span>The family album</h2>
+
+<p>Each generation of breaker is remembered by its sound and its maintenance
+bill. Pick a design:</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 2 · A century of circuit breakers</span>
+    <span class="hint">select a design for its cutaway and character</span>
+  </div>
+  <div class="fig-body"><canvas id="fam" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Design</label>
+      <div class="seg" id="fam-t">
+        <button data-v="ocb" class="on">bulk oil</button>
+        <button data-v="mocb">minimum oil</button>
+        <button data-v="abcb">air-blast</button>
+        <button data-v="sf6">SF₆</button>
+        <button data-v="vcb">vacuum</button>
+      </div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="fam-cap" style="font-size:13px; color:var(--ink-2); flex:1 1 100%"></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<div class="callout story">
+  <span class="tag">Board lore</span>
+  <p>Anyone who worked a 1960s–70s switchyard remembers the <b>air-blast</b> era: banks
+  of compressors charging receivers to 20-odd atmospheres, and an operation that fired
+  the stored air through the interrupter heads with a report like naval gunfire —
+  routine switching that rattled windows a mile off. SF₆ conquered the transmission
+  system from the 1970s partly because it is a superb quencher, and partly because it
+  is <i>quiet</i>. The price: SF₆ is the most potent greenhouse gas ever assessed
+  (over 20,000× CO₂, century-for-century), so today's engineers meter every gram,
+  and the newest switchgear is going back to clean air and vacuum at ever higher
+  voltages.</p>
+</div>
+
+<h2 id="isolators"><span class="no">§ 4.3</span>Things that switch but must never break</h2>
+
+<p>A switchyard is full of switch-shaped devices that are <em>not</em> circuit
+breakers. An <strong>isolator</strong> (disconnector) provides an air gap you can
+see — the point of it is safety of the working party, not interruption — and it
+can only be operated once the breaker has already stopped the current. An
+<strong>earth switch</strong> then clamps the dead conductor to ground, so that
+induced voltage from the live parallel circuits (or a switching error a mile
+away) cannot bite the linesmen. The order of operations is absolute, enforced by
+mechanical and electrical <strong>interlocks</strong> — and by the oldest rule in
+the industry: <em>prove it dead before you touch it</em>. Try the drill:</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 3 · Take the feeder out for maintenance</span>
+    <span class="hint">operate the switches in the safe order — the interlocks are watching</span>
+  </div>
+  <div class="fig-body">
+    <svg class="diagram" id="iso" viewBox="0 0 900 260" role="img" aria-label="One-line diagram: busbar, bus isolator, circuit breaker, line isolator, earth switch, feeder">
+      <style>
+        .sw { cursor: pointer; }
+        .sw text { font: bold 11px ui-monospace, Menlo, monospace; fill: #82909d; }
+        .sw:hover text { fill: #e9e4d6; }
+        .iso-lbl { font: 11px ui-monospace, Menlo, monospace; fill: #82909d; }
+      </style>
+      <!-- busbar -->
+      <line x1="60" y1="60" x2="60" y2="200" stroke="#e9e4d6" stroke-width="5"/>
+      <text class="iso-lbl" x="38" y="46">busbar (live)</text>
+      <!-- conductor path -->
+      <line id="iso-w1" x1="60" y1="130" x2="200" y2="130" stroke="#f0b429" stroke-width="3"/>
+      <line id="iso-w2" x1="260" y1="130" x2="390" y2="130" stroke="#f0b429" stroke-width="3"/>
+      <line id="iso-w3" x1="450" y1="130" x2="580" y2="130" stroke="#f0b429" stroke-width="3"/>
+      <line id="iso-w4" x1="640" y1="130" x2="850" y2="130" stroke="#f0b429" stroke-width="3"/>
+      <!-- bus isolator -->
+      <g class="sw" id="sw-bus">
+        <line id="iso-b1" x1="200" y1="130" x2="256" y2="130" stroke="#e9e4d6" stroke-width="3"/>
+        <circle cx="200" cy="130" r="4" fill="#e9e4d6"/><circle cx="260" cy="130" r="4" fill="#e9e4d6"/>
+        <rect x="182" y="90" width="96" height="80" fill="transparent"/>
+        <text x="230" y="80" text-anchor="middle">BUS ISOLATOR</text>
+        <text x="230" y="185" text-anchor="middle" id="st-bus" fill="#3fae62">CLOSED</text>
+      </g>
+      <!-- circuit breaker -->
+      <g class="sw" id="sw-cb">
+        <rect id="iso-cbbox" x="390" y="105" width="60" height="50" fill="#1a232e" stroke="#f0b429" stroke-width="2.5"/>
+        <text x="420" y="80" text-anchor="middle">BREAKER</text>
+        <text x="420" y="137" text-anchor="middle" id="st-cb" fill="#3fae62">CLOSED</text>
+        <text x="420" y="185" text-anchor="middle" class="iso-lbl">interrupts load &amp; fault current</text>
+      </g>
+      <!-- line isolator -->
+      <g class="sw" id="sw-line">
+        <line id="iso-l1" x1="580" y1="130" x2="636" y2="130" stroke="#e9e4d6" stroke-width="3"/>
+        <circle cx="580" cy="130" r="4" fill="#e9e4d6"/><circle cx="640" cy="130" r="4" fill="#e9e4d6"/>
+        <rect x="562" y="90" width="96" height="80" fill="transparent"/>
+        <text x="610" y="80" text-anchor="middle">LINE ISOLATOR</text>
+        <text x="610" y="185" text-anchor="middle" id="st-line" fill="#3fae62">CLOSED</text>
+      </g>
+      <!-- earth switch -->
+      <g class="sw" id="sw-earth">
+        <line id="iso-e1" x1="720" y1="130" x2="720" y2="185" stroke="#82909d" stroke-width="3" stroke-dasharray="6 6"/>
+        <line x1="704" y1="192" x2="736" y2="192" stroke="#82909d" stroke-width="3"/>
+        <line x1="710" y1="200" x2="730" y2="200" stroke="#82909d" stroke-width="3"/>
+        <line x1="716" y1="208" x2="724" y2="208" stroke="#82909d" stroke-width="3"/>
+        <rect x="690" y="130" width="60" height="90" fill="transparent"/>
+        <text x="760" y="170">EARTH SWITCH</text>
+        <text x="760" y="186" id="st-earth" fill="#82909d">OPEN</text>
+      </g>
+      <text class="iso-lbl" x="800" y="118" text-anchor="middle">feeder →</text>
+    </svg>
+  </div>
+  <div class="fig-controls">
+    <button class="btn" data-op="cb">open / close BREAKER</button>
+    <button class="btn" data-op="bus">operate BUS ISOLATOR</button>
+    <button class="btn" data-op="line">operate LINE ISOLATOR</button>
+    <button class="btn" data-op="earth">apply / remove EARTH</button>
+    <button class="btn" id="iso-restart">start again</button>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="iso-msg" style="font-size:13px; color:var(--ink-2); flex:1 1 100%">
+      The feeder is on load. Goal: make it safe to climb the first tower — breaker open,
+      isolated both sides, earths applied.</span>
+  </div>
+  <div class="fig-note">The interlock refuses any isolator operation while current can
+  flow through it, and refuses the earth switch while the feeder could be live. Real
+  yards enforce this with key exchange systems, motorised interlocks and, above all,
+  the sanctioned switching schedule read over the phone, line by line, to the control
+  room.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="protection"><span class="no">§ 4.4</span>Protection: finding the fault in forty milliseconds</h2>
+
+<p>A breaker is only as good as the brain that orders it to trip. That brain is
+<strong>protection</strong>: relays fed by <strong>current transformers</strong>
+(CTs) that scale thousands of amps down to a measurable 1 or 5&nbsp;A, and
+<strong>voltage transformers</strong> (VTs) that do the same for volts. The relay's
+job description is brutal: detect any fault, trip <em>only</em> the faulted
+element, leave everything else running, and do it in a few cycles — for a big
+grid fault, from short-circuit to open contacts in under a tenth of a second.</p>
+
+<ul>
+  <li><strong>Overcurrent (IDMT)</strong> — the veteran. Trips faster the bigger the
+  current, with deliberately graded delays so the breaker nearest the fault goes
+  first and upstream devices stand back. Runs the distribution system.</li>
+  <li><strong>Differential (unit) protection</strong> — Kirchhoff with an attitude:
+  measure current entering and leaving a transformer, busbar or cable; any
+  difference is a fault <em>inside</em>, trip instantly. Absolutely selective,
+  needs CTs (or a fibre link) at both ends. The transformer's Buchholz relay
+  (<a href="transformers.html">Chapter&nbsp;3</a>) is its mechanical cousin.</li>
+  <li><strong>Distance protection</strong> — the transmission workhorse. From volts
+  and amps at one end, the relay computes the impedance to the fault — which, on a
+  uniform line, <em>is</em> the distance. No communications needed: just geometry,
+  in zones.</li>
+</ul>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 4 · Distance protection zones</span>
+    <span class="hint">drag the fault along the line — watch which relay trips, and when</span>
+  </div>
+  <div class="fig-body"><canvas id="dist" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Fault position</label>
+      <input type="range" id="dist-x" min="0" max="150" step="1" value="45">
+      <output>—</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">relay A trips in <b id="dist-a">—</b></span>
+    <span class="ro">relay B trips in <b id="dist-b">—</b></span>
+    <span class="ro" id="dist-note" style="flex:1 1 100%; color:var(--muted)"></span>
+  </div>
+  <div class="fig-note">Zone 1 reaches only ~80% of the line and trips instantly — the
+  20% margin is measurement error insurance, so a relay can never overreach into the
+  next line and trip for someone else's fault. Zone 2 (~120%, +0.4 s) covers the far
+  end and backs up the far busbar; Zone 3 further still (+1 s). A fault in the middle
+  is cleared instantly from <i>both</i> ends; near one end, the close end trips in
+  Zone 1 and the far end follows in Zone 2 — unless (as on most trunk lines) a signal
+  between the relays accelerates it.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="reclose"><span class="no">§ 4.5</span>Second chances and spare busbars</h2>
+
+<p>Most overhead-line faults are <em>transient</em> — a lightning flashover, wind
+clashing two conductors, a swan, a mylar balloon. The fault arc needs the grid to
+feed it; once the breakers cut the power for half a second, the air de-ionises
+and the line is perfectly healthy again. So transmission breakers practise
+<strong>auto-reclose</strong>: trip, wait a beat, and quietly close again.
+Perhaps four faults in five never trouble the customer at all. If the fault is
+still there — a fallen tree, a broken insulator — the protection trips again and
+<strong>locks out</strong> for the repair crew. (Cables get no second chances:
+a cable fault is always permanent, so reclosing onto it would just hammer the
+damage.)</p>
+
+<p>The other quiet redundancy is the <strong>busbar arrangement</strong>. A big
+grid substation is not one bar but two (or a ring, or a mesh): every circuit can
+be switched to either bar through its isolators, a <em>bus coupler</em> breaker
+ties the bars together, and a section of busbar can be emptied, isolated and
+worked on while the station carries on around it. When you hear that a substation
+is &ldquo;running split&rdquo; or a circuit has been &ldquo;transferred to reserve
+bar&rdquo;, this is the machinery being played like an instrument.</p>
+
+<div class="callout">
+  <span class="tag">Field note</span>
+  <p>Grading protection is an art form with a cruel constraint: every backup layer
+  must be <i>slower</i> than the layer below it, so delays stack up toward the
+  source — yet the biggest faults, nearest the generators, are exactly where slow
+  clearance does the most damage. Watch this tension snap in
+  <a href="blackouts.html">Chapter&nbsp;7</a>: a mis-set backup relay with no timer
+  darkened the whole American North-East in 1965, and an over-eager Zone 3, seeing
+  heavy load as a distant fault, helped it happen again in 2003.</p>
+</div>
+
+</div>
+
+<nav class="chapnav">
+  <a href="transformers.html"><span class="dir">← Chapter 3</span><span class="title">Transformers</span></a>
+  <a class="next" href="lines.html"><span class="dir">Chapter 5 →</span><span class="title">Lines &amp; Towers</span></a>
+</nav>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, clamp, label, line, mono } = G;
+
+  /* ============ Fig 1: break the current ============ */
+  // media: dielectric recovery rate (arbitrary units/ms of arcing after part)
+  const MEDIA = {
+    oil: { rate: 0.5, name: "bulk oil", note: "the arc cracks the oil into hydrogen, which cools it — usually clears in 2–4 zeros" },
+    air: { rate: 0.75, name: "air-blast", note: "a violent blast of stored compressed air — fast, loud, and fussy about maintenance" },
+    sf6: { rate: 1.1, name: "SF₆", note: "electronegative gas hoovers up free electrons — clears at the first or second zero" },
+    vac: { rate: 1.6, name: "vacuum", note: "no medium to ionise at all — the arc lives on metal vapour and dies at the first zero" },
+  };
+  let med = "sf6";
+  let simT = 0, lastT = 0;
+  let tripped = false, partT = 0, cleared = false, clearT = 0, restrikes = 0;
+  const FREQ = 0.6; // visual Hz (~80x slow)
+  const hist = []; // {t, i, v}
+  const HIST_N = 460;
+
+  function resetBrk(closeIt) {
+    tripped = false; cleared = false; restrikes = 0; partT = 0; clearT = 0;
+    document.getElementById("brk-state").textContent = "CLOSED — fault current flowing";
+    document.getElementById("brk-arc").textContent = "—";
+    document.getElementById("brk-note").textContent = "";
+  }
+
+  G.canvas("brk", function (ctx, w, h, t) {
+    const dt = Math.min(0.05, t - lastT); lastT = t;
+    simT += dt;
+    const phase = simT * FREQ * TAU;
+
+    // --- state machine ---
+    let i = Math.sin(phase); // per-unit fault current
+    let vAcross = 0;
+    if (tripped && !cleared) {
+      const arcing = simT - partT;
+      // at a current zero (|i| small and falling through), test clearance
+      const prevI = hist.length ? hist[hist.length - 1].i : i;
+      if (prevI !== 0 && Math.sign(prevI) !== Math.sign(i)) {
+        const strength = arcing * MEDIA[med].rate * FREQ * 6; // grows with arcing time
+        const need = 1.0 + restrikes * 0.05;
+        if (strength >= need) {
+          cleared = true; clearT = simT;
+          const cycles = (arcing * FREQ);
+          document.getElementById("brk-state").textContent = "OPEN — current interrupted";
+          document.getElementById("brk-arc").textContent = (cycles * 20).toFixed(0) + " ms (" + cycles.toFixed(1) + " cycles) " + (restrikes ? "· " + restrikes + " restrike" + (restrikes > 1 ? "s" : "") : "· first zero");
+          document.getElementById("brk-note").innerHTML = "<b style='color:var(--good)'>Cleared.</b> " + MEDIA[med].note + ".";
+        } else {
+          restrikes++;
+        }
+      }
+    }
+    if (cleared) {
+      i = 0;
+      vAcross = Math.sin(phase) * (1 - Math.exp(-(simT - clearT) * 3)) // recovery voltage settles to system volts
+        + Math.exp(-(simT - clearT) * 5) * 0.5 * Math.sin((simT - clearT) * 40); // TRV ring
+    } else if (tripped) {
+      vAcross = 0.12 * Math.sign(i); // arc voltage — small, squarish
+    }
+    hist.push({ t: simT, i, v: vAcross });
+    if (hist.length > HIST_N) hist.shift();
+
+    // --- draw ---
+    ctx.clearRect(0, 0, w, h);
+    const narrow = w < 640;
+
+    // contacts panel (left)
+    const cx = narrow ? w * 0.5 : w * 0.17, cy = narrow ? h * 0.2 : h * 0.42;
+    const gapMax = 34;
+    const gap = !tripped ? 0 : Math.min(gapMax, (simT - partT) * 55);
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 8; ctx.lineCap = "round";
+    line(ctx, cx - 60, cy, cx - gap / 2, cy, C.ink2, 8);
+    line(ctx, cx + gap / 2, cy, cx + 60, cy, C.ink2, 8);
+    // arc
+    if (tripped && !cleared && gap > 1) {
+      ctx.save();
+      ctx.strokeStyle = "#ffd98a"; ctx.lineWidth = 2.5;
+      ctx.shadowColor = "#f0b429"; ctx.shadowBlur = 14;
+      ctx.beginPath();
+      ctx.moveTo(cx - gap / 2, cy);
+      for (let k = 1; k <= 6; k++) {
+        ctx.lineTo(cx - gap / 2 + (gap * k) / 6, cy + (Math.random() - 0.5) * 8 * Math.abs(i));
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+    label(ctx, !tripped ? "contacts closed" : cleared ? "open — gap holds" : "ARCING", cx, cy + 34,
+      { align: "center", color: !tripped ? C.muted : cleared ? C.good : C.amber, font: mono(11, true) });
+
+    // traces (right)
+    const tx0 = narrow ? w * 0.06 : w * 0.34, tx1 = w * 0.97;
+    const iy = narrow ? h * 0.52 : h * 0.30, vy = narrow ? h * 0.82 : h * 0.72;
+    const amp = narrow ? h * 0.12 : h * 0.16;
+    [["fault current", iy, "i", C.amber], ["voltage across breaker", vy, "v", C.series[6]]].forEach(([nm, my, key, col]) => {
+      line(ctx, tx0, my, tx1, my, C.line, 1);
+      label(ctx, nm, tx0, my - amp - 6, { color: C.muted });
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath();
+      hist.forEach((s, k) => {
+        const x = tx1 - (hist.length - 1 - k) * (tx1 - tx0) / HIST_N;
+        const y = my - s[key] * amp;
+        k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    });
+    // markers for part instant
+    if (tripped) {
+      const idx = hist.findIndex(s => s.t >= partT);
+      if (idx >= 0) {
+        const x = tx1 - (hist.length - 1 - idx) * (tx1 - tx0) / HIST_N;
+        line(ctx, x, iy - amp, x, vy + amp, C.muted, 1, [3, 4]);
+        label(ctx, "contacts part", x + 3, iy - amp + 10, { color: C.muted });
+      }
+    }
+  }, { animate: true });
+
+  G.seg("brk-med", v => { med = v; });
+  document.getElementById("brk-trip").addEventListener("click", () => {
+    if (tripped && !cleared) return;
+    resetBrk();
+    tripped = true; partT = simT + 0.05;
+    document.getElementById("brk-state").textContent = "TRIP ORDERED — contacts parting";
+  });
+  document.getElementById("brk-reset").addEventListener("click", () => resetBrk(true));
+
+  /* ============ Fig 2: family album ============ */
+  const FAM = {
+    ocb: {
+      cap: "BULK-OIL (OCB), 1930s–: contacts open deep inside a tank of insulating oil; the arc cracks the oil into hydrogen gas, which cools and squeezes it out at a zero. Simple and rugged — but tonnes of flammable oil per phase, regular oil changes, and a tar of carbon after every big fault. The 132 kV grid of the 1930s–50s was built on these.",
+      draw(ctx, x, y, s) {
+        ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+        ctx.strokeRect(x - 60 * s, y - 50 * s, 120 * s, 110 * s);
+        ctx.fillStyle = "rgba(200,150,60,0.25)";
+        ctx.fillRect(x - 58 * s, y - 20 * s, 116 * s, 78 * s);
+        label(ctx, "oil", x + 40 * s, y + 46 * s, { color: "#c8963c" });
+        line(ctx, x - 20 * s, y - 50 * s, x - 20 * s, y + 6 * s, C.ink, 3);
+        line(ctx, x + 20 * s, y - 50 * s, x + 20 * s, y + 6 * s, C.ink, 3);
+        line(ctx, x - 20 * s, y + 18 * s, x + 20 * s, y + 18 * s, C.amber, 3);
+        bushing(ctx, x - 20 * s, y - 50 * s, s); bushing(ctx, x + 20 * s, y - 50 * s, s);
+      },
+    },
+    mocb: {
+      cap: "MINIMUM-OIL, 1950s–: the same oil trick, but confined to a small porcelain-clad interrupter per phase instead of a whole tank — far less oil to burn, far less steel to buy. The compact workhorse of many 33–132 kV yards into the 1990s.",
+      draw(ctx, x, y, s) {
+        ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+        ctx.strokeRect(x - 14 * s, y - 60 * s, 28 * s, 120 * s);
+        ctx.fillStyle = "rgba(200,150,60,0.25)";
+        ctx.fillRect(x - 12 * s, y - 58 * s, 24 * s, 116 * s);
+        for (let k = -2; k <= 2; k++) line(ctx, x - 22 * s, y + k * 22 * s, x + 22 * s, y + k * 22 * s, C.ink2, 2);
+        line(ctx, x, y - 80 * s, x, y - 60 * s, C.ink, 3);
+        label(ctx, "one small interrupter per phase", x, y + 84 * s, { align: "center" });
+      },
+    },
+    abcb: {
+      cap: "AIR-BLAST (ABCB), 1950s–70s: compressed air at ~20–35 bar, stored in receivers and fired through the arc at each operation — several interrupter heads in series on the tallest insulator columns in the yard. Fast and powerful, beloved of the 275/400 kV supergrid build-out; remembered for the compressor house and the gunshot report. Needed air dryers, fleets of fittings and patient fitters.",
+      draw(ctx, x, y, s) {
+        // receiver
+        ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+        ctx.strokeRect(x - 90 * s, y + 20 * s, 60 * s, 34 * s);
+        label(ctx, "air receiver", x - 60 * s, y + 70 * s, { align: "center" });
+        // column with heads
+        line(ctx, x + 20 * s, y + 54 * s, x + 20 * s, y - 30 * s, C.ink2, 4);
+        for (let k = 0; k < 3; k++) {
+          ctx.strokeStyle = C.ink; ctx.lineWidth = 2;
+          ctx.strokeRect(x + 4 * s, y - 44 * s - k * 22 * s, 32 * s, 16 * s);
+        }
+        label(ctx, "interrupter heads in series", x + 22 * s, y - 100 * s, { align: "center" });
+        // blast lines
+        ctx.strokeStyle = C.teal; ctx.lineWidth = 2;
+        line(ctx, x - 30 * s, y + 37 * s, x + 20 * s, y + 37 * s, C.teal, 2);
+        for (let k = 0; k < 3; k++) {
+          const yy = y - 36 * s - k * 22 * s;
+          line(ctx, x + 36 * s, yy, x + 52 * s, yy, C.teal, 1.5);
+          label(ctx, "≫", x + 56 * s, yy + 4, { color: C.teal });
+        }
+      },
+    },
+    sf6: {
+      cap: "SF₆ PUFFER, 1970s–today: sulphur-hexafluoride gas — heavy, inert, hungrily electronegative — sealed for life at a few bar; the opening stroke compresses a puff of it through the arc. Quiet, compact, minimal maintenance; enabled whole substations to shrink into metal-clad GIS halls. The catch is the gas itself: ~23,500× the greenhouse warming of CO₂, so it is tracked gram by gram and its successors (clean air + vacuum) are already arriving.",
+      draw(ctx, x, y, s) {
+        ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.ellipse(x, y, 70 * s, 44 * s, 0, 0, TAU); ctx.stroke();
+        label(ctx, "sealed SF₆", x, y - 52 * s, { align: "center" });
+        line(ctx, x - 40 * s, y, x - 8 * s, y, C.ink, 3);
+        line(ctx, x + 8 * s, y, x + 40 * s, y, C.ink, 3);
+        ctx.strokeStyle = C.teal;
+        ctx.beginPath(); ctx.arc(x, y, 16 * s, 0.6, 2.5); ctx.stroke();
+        ctx.beginPath(); ctx.arc(x, y, 22 * s, 0.6, 2.5); ctx.stroke();
+        label(ctx, "puffer", x, y + 34 * s, { align: "center", color: C.teal });
+      },
+    },
+    vcb: {
+      cap: "VACUUM (VCB), 1970s–today: nothing in the gap at all. The arc burns briefly on metal vapour boiled off the contact faces and collapses at the first current zero; the gap recovers its full strength in microseconds. A sealed bottle the size of a jam jar interrupts 25 kA — it owns the 11–33 kV system outright (and is climbing to transmission voltages). Contacts are machined with spiral petals to keep the arc spinning so it doesn't crater one spot.",
+      draw(ctx, x, y, s) {
+        ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+        ctx.strokeRect(x - 22 * s, y - 60 * s, 44 * s, 120 * s);
+        for (let k = -2; k <= 2; k++) line(ctx, x - 30 * s, y + k * 24 * s, x + 30 * s, y + k * 24 * s, C.ink2, 1.5);
+        line(ctx, x, y - 80 * s, x, y - 12 * s, C.ink, 4);
+        line(ctx, x, y + 12 * s, x, y + 80 * s, C.ink, 4);
+        line(ctx, x - 10 * s, y - 12 * s, x + 10 * s, y - 12 * s, C.ink, 4);
+        line(ctx, x - 10 * s, y + 12 * s, x + 10 * s, y + 12 * s, C.ink, 4);
+        label(ctx, "vacuum bottle", x, y + 100 * s, { align: "center" });
+      },
+    },
+  };
+  function bushing(ctx, x, yTop, s) {
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(x, yTop); ctx.lineTo(x, yTop - 30 * s);
+    ctx.stroke();
+    for (let k = 1; k <= 3; k++) {
+      ctx.beginPath(); ctx.ellipse(x, yTop - k * 8 * s, 7 * s, 3 * s, 0, 0, TAU); ctx.stroke();
+    }
+  }
+  let famT = "ocb";
+  const famFig = G.canvas("fam", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const s = Math.min(w / 560, h / 300);
+    FAM[famT].draw(ctx, w * 0.5, h * 0.5, s);
+    document.getElementById("fam-cap").textContent = FAM[famT].cap;
+  });
+  G.seg("fam-t", v => { famT = v; famFig.redraw(); });
+
+  /* ============ Fig 3: interlock drill ============ */
+  const st = { cb: "closed", bus: "closed", lineIso: "closed", earth: "open", failed: false };
+  const msg = document.getElementById("iso-msg");
+  function isoRender() {
+    const live = st.cb === "closed" && st.bus === "closed" && st.lineIso === "closed";
+    document.getElementById("iso-w2").setAttribute("stroke", st.bus === "closed" ? "#f0b429" : "#3a4552");
+    document.getElementById("iso-w3").setAttribute("stroke", live || (st.cb === "closed" && st.bus === "closed") ? "#f0b429" : "#3a4552");
+    document.getElementById("iso-w4").setAttribute("stroke", live ? "#f0b429" : "#3a4552");
+    // isolator blades: rotate to show open
+    document.getElementById("iso-b1").setAttribute("transform", st.bus === "open" ? "rotate(-35 200 130)" : "");
+    document.getElementById("iso-l1").setAttribute("transform", st.lineIso === "open" ? "rotate(-35 580 130)" : "");
+    document.getElementById("iso-e1").setAttribute("stroke-dasharray", st.earth === "closed" ? "none" : "6 6");
+    document.getElementById("iso-e1").setAttribute("stroke", st.earth === "closed" ? "#3fae62" : "#82909d");
+    document.getElementById("iso-cbbox").setAttribute("fill", st.cb === "closed" ? "#1a232e" : "#0c1117");
+    setSt("st-cb", st.cb); setSt("st-bus", st.bus); setSt("st-line", st.lineIso); setSt("st-earth", st.earth, true);
+  }
+  function setSt(id, v, earth) {
+    const el = document.getElementById(id);
+    el.textContent = v.toUpperCase();
+    el.setAttribute("fill", earth ? (v === "closed" ? "#3fae62" : "#82909d") : (v === "closed" ? "#3fae62" : "#f0b429"));
+  }
+  function isoOp(op) {
+    if (st.failed) { msg.innerHTML = "<b style='color:var(--danger)'>Incident under investigation.</b> Press <i>start again</i>."; return; }
+    if (op === "cb") {
+      st.cb = st.cb === "closed" ? "open" : "closed";
+      if (st.cb === "closed" && st.earth === "closed") {
+        st.failed = true;
+        msg.innerHTML = "<b style='color:var(--danger)'>You closed the breaker onto applied earths — a dead short.</b> The protection tripped it straight back out, the yard echoed, and there is paperwork. (Interlocks normally make this impossible.)";
+        return;
+      }
+      msg.innerHTML = st.cb === "open" ? "Breaker open — current interrupted. Now you may isolate." : "Breaker closed — feeder on load again.";
+    } else if (op === "bus" || op === "line") {
+      const key = op === "bus" ? "bus" : "lineIso";
+      if (st.cb === "closed") {
+        st.failed = true;
+        msg.innerHTML = "<b style='color:var(--danger)'>You opened an isolator on load.</b> It cannot quench the arc — the blades flash over, the isolator is destroyed and the yard is in darkness. This is precisely what interlocks exist to prevent.";
+        isoRender(); return;
+      }
+      if (st.earth === "closed") { msg.innerHTML = "Interlock: remove the earths before re-configuring isolators."; return; }
+      st[key] = st[key] === "closed" ? "open" : "closed";
+      msg.innerHTML = (key === "bus" ? "Bus" : "Line") + " isolator " + st[key] + " — a visible air gap" + (st[key] === "open" ? "." : " removed.");
+    } else if (op === "earth") {
+      if (st.earth === "open") {
+        if (st.cb === "closed" || st.bus === "closed" || st.lineIso === "closed") {
+          st.failed = true;
+          msg.innerHTML = "<b style='color:var(--danger)'>Earth applied to a live feeder.</b> The earth switch takes the full fault current; protection clears it, but nobody enjoys the next ten minutes. Isolate first, always.";
+          isoRender(); return;
+        }
+        st.earth = "closed";
+        msg.innerHTML = "<b style='color:var(--good)'>Earths on. Feeder proved dead, isolated both ends, earthed — safe to issue the permit-to-work. ✓</b>";
+      } else {
+        st.earth = "open";
+        msg.innerHTML = "Earths removed — ready to restore in reverse order.";
+      }
+    }
+    isoRender();
+  }
+  document.querySelectorAll("[data-op]").forEach(b => b.addEventListener("click", () => isoOp(b.dataset.op)));
+  document.getElementById("iso-restart").addEventListener("click", () => {
+    st.cb = "closed"; st.bus = "closed"; st.lineIso = "closed"; st.earth = "open"; st.failed = false;
+    msg.textContent = "The feeder is on load. Goal: breaker open, isolated both sides, earths applied.";
+    isoRender();
+  });
+  isoRender();
+
+  /* ============ Fig 4: distance zones ============ */
+  let fx = 45; // km along; line A-B is 0..100, next line B-C 100..150
+  const distFig = G.canvas("dist", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const x0 = w * 0.08, x1 = w * 0.92;
+    const X = km => x0 + km / 150 * (x1 - x0);
+    const y = h * 0.40;
+
+    // zone bands for relay A (top) — Z1 0-80, Z2 0-120, Z3 0-150
+    const bands = [
+      [80, "Z1 · instant", "rgba(63,174,98,0.85)", 0],
+      [120, "Z2 · +0.4 s", "rgba(240,180,41,0.75)", 1],
+      [150, "Z3 · +1.0 s", "rgba(224,82,82,0.6)", 2],
+    ];
+    bands.forEach(([km, nm, col, row]) => {
+      const yy = y - 34 - row * 16;
+      line(ctx, X(0), yy, X(km), yy, col, 5);
+      label(ctx, nm, X(km) + 6, yy + 4, { color: col });
+    });
+    label(ctx, "relay A's reach →", X(0), y - 34 - 2 * 16 - 12, { color: C.muted });
+
+    // zone bands for relay B (bottom, mirrored) — measured from B at km 100 back toward A
+    const bandsB = [
+      [80, "rgba(63,174,98,0.85)"], [120, "rgba(240,180,41,0.75)"],
+    ];
+    bandsB.forEach(([km, col], row) => {
+      const yy = y + 34 + row * 16;
+      line(ctx, X(100), yy, X(100 - km), yy, col, 5);
+    });
+    label(ctx, "← relay B's reach (Z1, Z2)", X(100), y + 34 + 2 * 16 + 8, { align: "right", color: C.muted });
+
+    // the line itself
+    line(ctx, X(0), y, X(100), y, C.ink, 3);
+    line(ctx, X(100), y, X(150), y, C.ink2, 2);
+    [["A", 0], ["B", 100], ["C", 150]].forEach(([nm, km]) => {
+      ctx.fillStyle = C.ink;
+      ctx.fillRect(X(km) - 4, y - 10, 8, 20);
+      label(ctx, nm, X(km), y + 28, { align: "center", color: C.ink, font: mono(13, true) });
+    });
+    label(ctx, "protected line · 100 km", X(50), y - 12, { align: "center" });
+    label(ctx, "next line", X(125), y - 12, { align: "center" });
+
+    // fault
+    const fpx = X(fx);
+    ctx.strokeStyle = C.danger; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(fpx, y); ctx.lineTo(fpx - 5, y + 12); ctx.lineTo(fpx + 5, y + 20); ctx.lineTo(fpx - 3, y + 32);
+    ctx.stroke();
+    label(ctx, "⚡ fault @ " + fx + " km", fpx, y + 48, { align: "center", color: C.danger, font: mono(11, true) });
+
+    // trip logic
+    function tripTime(distKm, onLine) {
+      if (!onLine) return null;
+      if (distKm <= 80) return 0;
+      if (distKm <= 120) return 0.4;
+      if (distKm <= 150) return 1.0;
+      return null;
+    }
+    const ta = tripTime(fx, true);
+    const tb = fx <= 100 ? tripTime(100 - fx, true) : tripTime(fx - 100, false);
+    const fmt = tv => tv == null ? "not seen" : tv === 0 ? "INSTANT (Zone 1)" : "+" + tv.toFixed(1) + " s (Zone " + (tv === 0.4 ? 2 : 3) + ")";
+    document.getElementById("dist-a").textContent = fmt(ta);
+    document.getElementById("dist-b").textContent = fx <= 100 ? fmt(tb) : "— (fault beyond B; B's own next-line relay leads)";
+    const note = document.getElementById("dist-note");
+    if (fx <= 80 && fx >= 20) note.textContent = "mid-line: both ends see Zone 1 — cleared from both ends in ~3 cycles.";
+    else if (fx < 20) note.textContent = "close to A: A trips instantly, B sees it in Zone 2 and follows 0.4 s later (or at once, with a signalling channel).";
+    else if (fx <= 100) note.textContent = "close to B: mirror image — B instant, A on Zone 2.";
+    else note.textContent = "beyond B: the next line's own protection should clear it — A's Zone 2/3 is only backup, deliberately slower.";
+  });
+  G.slider("dist-x", v => v + " km", v => { fx = v; distFig.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

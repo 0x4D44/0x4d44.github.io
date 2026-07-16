@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lines &amp; Towers — The Grid</title>
+<meta name="description" content="Transmission lines explained: suspension and tension towers, insulator strings, ACSR conductors and their animal names, bundles and corona, transposition, the earth wire and lightning, and why sag on a hot day sets the rating.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">chapter 5 · lines &amp; towers</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="generation.html">1 · Generation</a>
+    <a href="ac.html">2 · Three-Phase AC</a>
+    <a href="transformers.html">3 · Transformers</a>
+    <a href="switchgear.html">4 · Switchgear</a>
+    <a href="lines.html" aria-current="page">5 · Lines &amp; Towers</a>
+    <a href="operations.html">6 · Running the Grid</a>
+    <a href="blackouts.html">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 5 · Lines &amp; Towers</p>
+  <h1>Steel in the Landscape</h1>
+  <p class="standfirst">A transmission line looks simple — wire, held up. But every
+  detail is an argument won against physics: the towers know whether they pull or
+  merely carry, the conductors are named like foxhounds and hollow with mathematics,
+  a sacrificial wire rides on top to catch the lightning, and on a hot July afternoon
+  the whole line quietly sits down toward the barley.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="towers"><span class="no">§ 5.1</span>Reading a tower: suspension or tension?</h2>
+
+<p>Once you see it, you can never unsee it. Most towers on a line — perhaps four
+in five — are <strong>suspension towers</strong>: the insulator strings hang
+straight down, and the tower merely <em>carries the weight</em>; the conductor
+runs over it in one continuous catenary. But wherever the line must turn a
+corner, cross something important, or simply anchor a long straight section
+against a cascade failure, you meet a <strong>tension tower</strong> (a strain
+or angle tower): the conductors <em>dead-end</em> onto it through insulator
+strings pulled out horizontal, one set each side, with a slack loop of
+<strong>jumper</strong> conductor carrying the circuit round the steelwork
+between them. Tension towers are stockier, heavier, more expensive — they resist
+the full mechanical pull of the conductors, which is measured in tonnes.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 1 · The tower field guide</span>
+    <span class="hint">the giveaway is the angle of the insulator strings</span>
+  </div>
+  <div class="fig-body"><canvas id="twr" style="aspect-ratio: 2/1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Type</label>
+      <div class="seg" id="twr-t">
+        <button data-v="susp" class="on">suspension</button>
+        <button data-v="tens">tension / angle</button>
+        <button data-v="term">terminal</button>
+      </div>
+    </div>
+  </div>
+  <div class="readouts"><span class="ro" id="twr-cap" style="font-size:13px; color:var(--ink-2); flex:1 1 100%"></span></div>
+  <div class="fig-note">Drawn as a classic British double-circuit lattice tower: three
+  conductor arms each side (one circuit per side), earth wire at the peak. The lattice
+  form itself dates from the 1928 grid — a design chosen with the architect Sir Reginald
+  Blomfield — and its descendants (the CEGB &ldquo;L&rdquo; series, culminating in the
+  L12) still carry the supergrid; the Beauly–Denny 400 kV rebuild marched a modern
+  version straight through the old Hydro Board country in the 2010s.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="insulators"><span class="no">§ 5.2</span>Insulators: porcelain by the metre</h2>
+
+<p>Between live conductor and earthed steel hangs the <strong>insulator
+string</strong> — a chain of identical <strong>cap-and-pin</strong> discs, glass or
+porcelain, each good for roughly 11–15&nbsp;kV of working voltage. The elegance of
+the design is that it is a chain: need more insulation, add more discs. A 33&nbsp;kV
+line hangs three; a 400&nbsp;kV suspension string is over twenty discs and three
+metres long (and doubled or quadrupled in parallel where the mechanical load
+demands). Each disc's underside is a maze of ribs — <em>creepage</em> distance —
+so that rain, salt and Highland peat smoke can't paint a conductive path across
+the surface; polluted coastal routes get extra discs or fog-profile ones.</p>
+
+<p>At each end of the string you'll often see small horns or rings of plain metal:
+<strong>arcing horns</strong> (and on the biggest strings, grading rings). When
+lightning flashes the string over, the arc burns between these sacrificial horns
+instead of tracking down the porcelain — the string survives to insulate another
+day, and the breakers' auto-reclose (<a href="switchgear.html">Chapter&nbsp;4</a>)
+restores the line seconds later.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 2 · Build a string</span>
+    <span class="hint">pick the line voltage</span>
+  </div>
+  <div class="fig-body"><canvas id="ins" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Line voltage</label>
+      <div class="seg" id="ins-v">
+        <button data-v="33">33 kV</button>
+        <button data-v="132" class="on">132 kV</button>
+        <button data-v="275">275 kV</button>
+        <button data-v="400">400 kV</button>
+      </div>
+    </div>
+    <div class="ctl"><label>Pollution (coastal / industrial)</label>
+      <div class="seg" id="ins-p"><button data-v="0" class="on">clean</button><button data-v="1">polluted</button></div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">discs <b id="ins-n">—</b></span>
+    <span class="ro">string length <b id="ins-l">—</b></span>
+    <span class="ro">phase-to-steel clearance sets the arm length <b id="ins-note"></b></span>
+  </div>
+  <div class="fig-note">Disc counts are typical, not gospel — designers add discs for
+  altitude, pollution and switching-surge duty. Toughened-glass discs have a party
+  trick: a damaged one shatters visibly to stubs, so a helicopter patrol can spot a
+  &ldquo;stub&rdquo; at 60 mph, where a cracked porcelain disc keeps its secret.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="conductors"><span class="no">§ 5.3</span>Conductors: a kennel of aluminium hounds</h2>
+
+<p>The wire itself is almost never copper — too heavy, too dear. Overhead lines
+standardised on <strong>ACSR</strong>: <em>aluminium conductor, steel
+reinforced</em>. A core of galvanised steel strands carries the mechanical
+tension; layers of aluminium strands around it carry the current — a division of
+labour the skin effect endorses (<a href="ac.html">Chapter&nbsp;2</a>: at 50 Hz
+the current hugs the outer layers anyway, and steel's tiny skin depth means the
+core barely conducts). British practice named each standard size after an
+animal — <strong>Dog</strong> and <strong>Lynx</strong> on the 33–132&nbsp;kV
+networks, <strong>Zebra</strong> as the classic 400&nbsp;kV conductor — so a
+design office could say &ldquo;twin Lynx&rdquo; and everyone knew the ampacity,
+weight and sag tables by heart.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 3 · Inside the conductor</span>
+    <span class="hint">stranded like rope, for the same reason</span>
+  </div>
+  <div class="fig-body"><canvas id="cond" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Conductor</label>
+      <div class="seg" id="cond-t">
+        <button data-v="dog">DOG</button>
+        <button data-v="lynx">LYNX</button>
+        <button data-v="zebra" class="on">ZEBRA</button>
+        <button data-v="htls">modern HTLS</button>
+      </div>
+    </div>
+  </div>
+  <div class="readouts"><span class="ro" id="cond-cap" style="font-size:13px; color:var(--ink-2); flex:1 1 100%"></span></div>
+  <div class="fig-note">Strands, not solid bar: flexible to string, kinder to fatigue, and
+  each layer is spiralled the opposite way so the conductor doesn't unwind itself under
+  tension. The core is greased against corrosion. Modern HTLS (&ldquo;high-temperature,
+  low-sag&rdquo;) designs swap the steel for carbon-fibre or gapped cores so an old route
+  can carry more current without re-towering — re-conductoring is the cheapest grid
+  upgrade there is.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="bundles"><span class="no">§ 5.4</span>Bundles, corona, and the wet-weather crackle</h2>
+
+<p>Above about 220&nbsp;kV a single conductor per phase runs into a wall — not of
+current, but of <strong>electric field</strong>. If the field at the conductor
+surface exceeds roughly 30&nbsp;kV per centimetre, the air itself begins to break
+down in a halo of micro-discharges: <strong>corona</strong>. It wastes power,
+gnaws at fittings with ozone, and hisses — famously loudest in rain, when every
+water droplet becomes a tiny field-concentrating spike. The cure is geometric:
+hang <strong>two or four conductors per phase</strong> in a bundle, held apart by
+spacers. The bundle behaves like one enormous fat conductor (larger effective
+radius → gentler surface field) while its parts stay light enough to handle —
+and as a bonus the phase's inductance drops, letting the line carry more power.
+That is why a 400&nbsp;kV line's phases visibly come in pairs or quads, and why
+you can stand under one in drizzle and hear the grid frying quietly overhead.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 4 · One fat wire v a bundle</span>
+    <span class="hint">same aluminium, different geometry</span>
+  </div>
+  <div class="fig-body"><canvas id="bun" style="aspect-ratio: 2.2/1; min-height: 260px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Conductors per phase</label>
+      <div class="seg" id="bun-n">
+        <button data-v="1">single</button>
+        <button data-v="2" class="on">twin</button>
+        <button data-v="4">quad</button>
+      </div>
+    </div>
+    <div class="ctl"><label>Weather</label>
+      <div class="seg" id="bun-w"><button data-v="dry" class="on">dry</button><button data-v="wet">rain</button></div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">relative surface field <b id="bun-e">—</b></span>
+    <span class="ro">corona <b id="bun-c">—</b></span>
+  </div>
+  <div class="fig-note">Schematic comparison at 400 kV-ish stress. The small hardware
+  between bundle conductors is the spacer (often a spacer-damper); the dumb-bells you
+  see clamped near each tower are <b>Stockbridge dampers</b>, tuned to eat the aeolian
+  vibration a light breeze strums into the span. Ice-and-wind &ldquo;galloping&rdquo; —
+  whole spans leaping metres at a time — is the one conductor dance no damper fully
+  cures; designers just space the phases so a galloping wire can't reach its neighbour.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="transposition"><span class="no">§ 5.5</span>Conductor rotation: the barrel roll</h2>
+
+<p>The three phases of a line do not see the world equally: the middle position
+couples differently to the outer ones, and to the earth beneath. Over a long
+route that asymmetry unbalances the phase impedances — currents and voltages
+drift apart, negative-sequence current heats generator rotors, and parallel
+telephone lines once hummed with the induced difference. The classical cure is
+<strong>transposition</strong>: twice along the route, at special towers, the
+phases <em>rotate positions</em> — a barrel roll in slow motion — so that over
+the whole length each phase spends a third of its journey in each position and
+the asymmetry cancels. (GB's relatively short, meshed circuits often skip full
+transposition and accept the small imbalance; long continental and HVDC-adjacent
+routes take it seriously.)</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 5 · Transposing a line</span>
+    <span class="hint">follow one colour end to end</span>
+  </div>
+  <div class="fig-body"><canvas id="tsp" style="aspect-ratio: 2.4/1; min-height: 230px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Line</label>
+      <div class="seg" id="tsp-m"><button data-v="off">untransposed</button><button data-v="on" class="on">transposed</button></div>
+    </div>
+  </div>
+  <div class="readouts"><span class="ro">phase impedance imbalance <b id="tsp-i">—</b></span></div>
+</figure>
+
+<div class="prose">
+
+<h2 id="earthwire"><span class="no">§ 5.6</span>The wire that wants to be struck</h2>
+
+<p>Look at the very top of any tower: one (sometimes two) thinner wires ride
+above the phases, connected straight to the steel — no insulators. This is the
+<strong>earth wire</strong> (shield wire), and its job is to be hit. Sitting
+highest, it casts a protective <em>shadow</em> — the shielding angle — over the
+phase conductors below; a descending lightning leader inside that cone attaches
+to the earth wire instead of the phases, and the stroke's tens of kiloamps pour
+down the steel lattice and into the ground through the tower's buried footing.</p>
+
+<p>Two things can still go wrong, and both are playable below. If the leader
+sneaks in at a shallow angle outside the cone — a <strong>shielding failure</strong> —
+it tags a phase directly and flashes the insulators over. And even a clean catch
+can misfire: the surge must get to earth <em>through the tower footing
+resistance</em>, and if the footing is poor (dry rock, thin Highland soil over
+granite) the whole tower's voltage rockets for a microsecond — high enough to
+flash over <em>backwards</em>, from steel to phase. That is the
+<strong>back-flashover</strong>, and it is why linesmen bury radial
+counterpoise wires and rods to chase footing resistance down to a few ohms.
+Modern earth wires earn their keep twice over: most contain optical fibres
+(<strong>OPGW</strong>), so the grid's protection signalling and a surprising
+share of the nation's internet ride the top of the pylons.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 6 · Aim the lightning</span>
+    <span class="hint">drag the strike point · then worsen the tower footing and try again</span>
+  </div>
+  <div class="fig-body"><canvas id="ltg" style="aspect-ratio: 2/1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Strike position</label>
+      <input type="range" id="ltg-x" min="-100" max="100" step="1" value="0">
+      <output>—</output></div>
+    <div class="ctl"><label>Tower footing resistance</label>
+      <input type="range" id="ltg-r" min="2" max="80" step="1" value="8">
+      <output>8 Ω</output></div>
+    <button class="btn primary" id="ltg-fire">⚡ STRIKE</button>
+  </div>
+  <div class="readouts"><span class="ro" id="ltg-out" style="font-size:13px; color:var(--ink-2); flex:1 1 100%">
+    A summer cell is building over the glen. Position the leader and fire.</span></div>
+  <div class="fig-note">Rough physics, honest shape: a 30 kA stroke into an 8 Ω footing
+  lifts the tower top ~240 kV — fine under a 2,000 kV insulation level once the surge
+  splits along the earth wire; the same stroke into 60 Ω of wet granite is another
+  matter. Either flavour of flashover is a normal protection event: breakers trip,
+  auto-reclose restores the line in seconds (Chapter 4), and the only witness is a
+  blink of the kitchen lights.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="sag"><span class="no">§ 5.7</span>Sag: why a heatwave de-rates the grid</h2>
+
+<p>A conductor is hung, not stretched taut — it hangs in a <strong>catenary</strong>,
+and its sag is a thermometer. Warm the metal (July sun, plus the I²R heat of the
+current itself) and it lengthens; the extra length has nowhere to go but
+<em>down</em>. Statutory ground clearance is sacred, so every line carries a
+maximum design temperature — and therefore a maximum current, <em>lower on a hot
+still day than a cold windy one</em>. This is why ratings are seasonal, why
+control rooms watch the weather, and why a heatwave squeezes the grid from both
+ends at once: more air-conditioning demand, less line capacity. (It is also
+Chapter&nbsp;7's opening act: the 2003 North-East blackout began with hot,
+heavily-loaded lines sagging into untrimmed trees.)</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 7 · The hot-day sag simulator</span>
+    <span class="hint">heat the day, load the line, watch the clearance</span>
+  </div>
+  <div class="fig-body"><canvas id="sagcv" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Air temperature</label>
+      <input type="range" id="sag-ta" min="-10" max="35" step="1" value="15">
+      <output>15 °C</output></div>
+    <div class="ctl"><label>Line loading</label>
+      <input type="range" id="sag-i" min="0" max="100" step="5" value="40">
+      <output>40%</output></div>
+    <div class="ctl"><label>Wind</label>
+      <div class="seg" id="sag-w"><button data-v="calm">calm</button><button data-v="breeze" class="on">breeze</button></div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">conductor temperature <b id="sag-tc">—</b></span>
+    <span class="ro">sag <b id="sag-s">—</b></span>
+    <span class="ro">ground clearance <b id="sag-c">—</b></span>
+    <span class="ro" id="sag-v"></span>
+  </div>
+  <div class="fig-note">365 m span, Zebra-class conductor, 21 m attachment height,
+  statutory clearance line at 7.3 m (dashed). Wind matters enormously: a 2 mph breeze
+  carries away several times the heat of still air, which is why &ldquo;dynamic line
+  rating&rdquo; kit now measures real weather span by span to unlock capacity the old
+  static ratings left on the table.</div>
+</figure>
+
+<div class="prose">
+  <p>Steel, glass, aluminium and geometry — the grid's body. What remains is its
+  nervous system: the control rooms, markets and interconnectors that keep the whole
+  machine in balance every second. On to the control room.</p>
+</div>
+
+<nav class="chapnav">
+  <a href="switchgear.html"><span class="dir">← Chapter 4</span><span class="title">Switchgear &amp; Protection</span></a>
+  <a class="next" href="operations.html"><span class="dir">Chapter 6 →</span><span class="title">Running the Grid</span></a>
+</nav>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, PH, TAU, clamp, label, line, mono } = G;
+
+  /* ============ Fig 1: tower field guide ============ */
+  const TWRCAP = {
+    susp: "SUSPENSION — insulator strings hang vertically; the tower carries weight only, and the conductor sweeps past in one continuous catenary. The economical default: most of any route.",
+    tens: "TENSION (strain/angle) — the conductors dead-end each side through near-horizontal strings; jumper loops carry the circuit round the tower. Placed at corners, crossings and every few miles on straights as an anchor so a broken conductor can't unzip the whole line.",
+    term: "TERMINAL — the last tower, taking the entire one-sided pull of the line before it drops into a substation gantry or a cable sealing end. The heaviest, stubbiest, most-stayed steel on the route.",
+  };
+  let twrT = "susp";
+  const twrFig = G.canvas("twr", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * 0.5, gy = h * 0.92, ht = h * 0.78;
+    // ground
+    line(ctx, w * 0.05, gy, w * 0.95, gy, C.line, 1.5);
+
+    // lattice body
+    function body(x) {
+      ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x - ht * 0.13, gy); ctx.lineTo(x - ht * 0.035, gy - ht);
+      ctx.moveTo(x + ht * 0.13, gy); ctx.lineTo(x + ht * 0.035, gy - ht);
+      ctx.stroke();
+      ctx.lineWidth = 1;
+      for (let i = 1; i <= 8; i++) {
+        const t1 = i / 9, t0 = (i - 1) / 9;
+        const wA = (0.13 - 0.095 * t0) * ht, wB = (0.13 - 0.095 * t1) * ht;
+        line(ctx, x - wA, gy - ht * t0, x + wB, gy - ht * t1, C.ink2, 1);
+        line(ctx, x + wA, gy - ht * t0, x - wB, gy - ht * t1, C.ink2, 1);
+      }
+    }
+    body(cx);
+    // arms at 3 levels each side + peak
+    const armY = [0.52, 0.66, 0.80].map(f => gy - ht * f);
+    const armL = [0.30, 0.34, 0.30].map(f => ht * f);
+    ctx.strokeStyle = C.ink2;
+    armY.forEach((ay, i) => {
+      line(ctx, cx - armL[i], ay, cx + armL[i], ay, C.ink2, 2);
+      line(ctx, cx - armL[i], ay, cx - ht * 0.06, ay - ht * 0.05, C.ink2, 1);
+      line(ctx, cx + armL[i], ay, cx + ht * 0.06, ay - ht * 0.05, C.ink2, 1);
+    });
+    // peak + earth wire
+    const peakY = gy - ht * 1.0;
+    line(ctx, cx, peakY, cx, gy - ht * 0.88, C.ink2, 2);
+    line(ctx, w * 0.02, peakY + ht * 0.06, cx, peakY, C.muted, 1.2);
+    line(ctx, cx, peakY, w * 0.98, peakY + ht * 0.06, C.muted, 1.2);
+    label(ctx, "earth wire (OPGW)", cx + 10, peakY - 8, { color: C.muted });
+
+    // conductors + insulators per type
+    armY.forEach((ay, i) => {
+      [-1, 1].forEach(side => {
+        const ax = cx + side * armL[i];
+        const ph = PH[i];
+        if (twrT === "susp") {
+          const strL = ht * 0.10;
+          line(ctx, ax, ay, ax, ay + strL, C.ink, 2);
+          discs(ctx, ax, ay, ax, ay + strL);
+          // conductor through the bottom
+          sagLine(ctx, side === -1 ? w * 0.02 : ax, ay + strL, side === -1 ? ax : w * 0.98, ay + strL + ht * 0.05, ph, side === -1);
+          ctx.fillStyle = ph; ctx.beginPath(); ctx.arc(ax, ay + strL, 3.5, 0, TAU); ctx.fill();
+        } else if (twrT === "tens") {
+          const strL = ht * 0.11;
+          const ex = ax + side * strL;
+          line(ctx, ax, ay, ex, ay + strL * 0.18, C.ink, 2);
+          discs(ctx, ax, ay, ex, ay + strL * 0.18);
+          sagLine(ctx, side === -1 ? w * 0.02 : ex, ay + strL * 0.18, side === -1 ? ex : w * 0.98, ay + strL * 0.18 + ht * 0.04, ph, side === -1);
+          // jumper loop under the arm
+          ctx.strokeStyle = ph; ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(ax - strL * 0.8 * 1, ay + strL * 0.18);
+          ctx.quadraticCurveTo(ax, ay + ht * 0.10, ax + strL * 0.8, ay + strL * 0.18);
+          if (side === 1) ctx.stroke();
+        } else { // terminal: line one side only, gantry other side
+          if (side === -1) {
+            const strL = ht * 0.12, ex = ax - strL;
+            line(ctx, ax, ay, ex, ay + strL * 0.22, C.ink, 2);
+            discs(ctx, ax, ay, ex, ay + strL * 0.22);
+            sagLine(ctx, w * 0.02, ay + strL * 0.22, ex, ay + strL * 0.22 + ht * 0.02, ph, true);
+          } else {
+            // droppers to substation
+            ctx.strokeStyle = ph; ctx.lineWidth = 1.6;
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.quadraticCurveTo(ax + ht * 0.10, ay + ht * 0.12, w * 0.80, gy - 14 - i * 10);
+            ctx.stroke();
+          }
+        }
+      });
+    });
+    if (twrT === "term") {
+      // substation gantry hint
+      ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
+      ctx.strokeRect(w * 0.76, gy - 46, w * 0.12, 46);
+      label(ctx, "substation", w * 0.82, gy + 16, { align: "center" });
+      // stays
+      line(ctx, cx + ht * 0.035, gy - ht * 0.9, cx + ht * 0.30, gy, C.muted, 1, [4, 4]);
+    }
+    document.getElementById("twr-cap").textContent = TWRCAP[twrT];
+
+    function discs(ctx2, x1, y1, x2, y2) {
+      const n = 6;
+      for (let k = 1; k <= n; k++) {
+        const t = k / (n + 1);
+        const x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t;
+        const dx = (y2 - y1), dy = -(x2 - x1);
+        const dl = Math.hypot(dx, dy) || 1;
+        line(ctx2, x - dx / dl * 4, y - dy / dl * 4, x + dx / dl * 4, y + dy / dl * 4, C.ink, 2);
+      }
+    }
+    function sagLine(ctx2, x1, y1, x2, y2, col, comingIn) {
+      ctx2.strokeStyle = col; ctx2.lineWidth = 1.6; ctx2.beginPath();
+      for (let i = 0; i <= 30; i++) {
+        const t = i / 30;
+        const x = x1 + (x2 - x1) * t;
+        const y = y1 + (y2 - y1) * t + Math.sin(Math.PI * t) * ht * 0.045;
+        i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
+      }
+      ctx2.stroke();
+    }
+  });
+  G.seg("twr-t", v => { twrT = v; twrFig.redraw(); });
+
+  /* ============ Fig 2: insulator string ============ */
+  const INS = { 33: 3, 132: 9, 275: 16, 400: 23 };
+  let insV = 132, insP = 0;
+  const insFig = G.canvas("ins", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const n = INS[insV] + (insP ? Math.max(1, Math.round(INS[insV] * 0.15)) : 0);
+    const cx = w * 0.34;
+    const topY = h * 0.08, discH = Math.min(16, (h * 0.66) / n);
+    // arm
+    line(ctx, cx - 60, topY, cx + 60, topY, C.ink2, 4);
+    label(ctx, "tower arm (earthed steel)", cx + 70, topY + 4, { color: C.muted });
+    // arcing horn top
+    ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cx - 14, topY + discH * 1.2, 10, -0.5, 1.8); ctx.stroke();
+    // discs
+    for (let k = 0; k < n; k++) {
+      const y = topY + 10 + k * discH;
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.ellipse(cx, y, discH * 1.6, discH * 0.42, 0, 0, TAU);
+      ctx.stroke();
+      line(ctx, cx, y + discH * 0.42, cx, y + discH, C.ink, 2);
+    }
+    const botY = topY + 10 + n * discH;
+    // arcing horn bottom
+    ctx.beginPath(); ctx.arc(cx + 14, botY - discH, 10, Math.PI - 1.8, Math.PI + 0.5); ctx.stroke();
+    label(ctx, "arcing horns", cx + 30, botY - discH + 4, { color: C.muted });
+    // conductor
+    ctx.fillStyle = C.amber;
+    ctx.beginPath(); ctx.arc(cx, botY + 8, 6, 0, TAU); ctx.fill();
+    sagStub(cx, botY + 8);
+    label(ctx, insV + " kV conductor", cx, botY + 34, { align: "center", color: C.amber, font: mono(11, true) });
+
+    function sagStub(x, y) {
+      ctx.strokeStyle = C.amber; ctx.lineWidth = 2; ctx.beginPath();
+      ctx.moveTo(x - w * 0.22, y + 14); ctx.quadraticCurveTo(x, y - 2, x + w * 0.22, y + 14); ctx.stroke();
+    }
+    const lenM = (n * 0.146).toFixed(2); // 146mm spacing per standard disc
+    document.getElementById("ins-n").textContent = n;
+    document.getElementById("ins-l").textContent = "≈ " + lenM + " m";
+  });
+  G.seg("ins-v", v => { insV = +v; insFig.redraw(); });
+  G.seg("ins-p", v => { insP = +v; insFig.redraw(); });
+
+  /* ============ Fig 3: conductor cross-section ============ */
+  const COND = {
+    dog: {
+      steel: 7, alLayers: [6], strand: 4.72 / 2, name: "DOG · 100 mm² ACSR",
+      cap: "DOG — the little terrier of the 33 kV network: 6 aluminium strands over a 7-strand steel core, ~14 mm across, good for roughly 300 A. Half the rural Highlands runs on Dog and its kennel-mates.",
+    },
+    lynx: {
+      steel: 7, alLayers: [12, 18], strand: 2.79 / 2, name: "LYNX · 175 mm² ACSR",
+      cap: "LYNX — the classic 132 kV conductor of the 1930s grid and after: 30 aluminium strands in two layers over steel, ~19.5 mm across, ~550 A. “Twin Lynx” circuits still lace Britain.",
+    },
+    zebra: {
+      steel: 7, alLayers: [10, 16, 28], strand: 3.18 / 2, name: "ZEBRA · 400 mm² ACSR",
+      cap: "ZEBRA — the supergrid thoroughbred: 54 aluminium strands in three layers over a 7-strand steel heart, ~28.6 mm across, roughly 600–850 A per conductor depending on weather — and hung in twins and quads (Fig 4), a single 400 kV circuit carries thousands of megawatts.",
+    },
+    htls: {
+      steel: 1, alLayers: [10, 16, 22], strand: 3.2 / 2, name: "HTLS · composite core",
+      cap: "MODERN HTLS — same silhouette, new heart: a single carbon-fibre composite rod replaces the steel, trapezoidal aluminium strands pack the same diameter with more metal, and the conductor runs happily at 150–200 °C with a fraction of the sag. Restringing an old route with this can nearly double its rating without touching a tower.",
+    },
+  };
+  let condT = "zebra";
+  const condFig = G.canvas("cond", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const c = COND[condT];
+    const cx = w * 0.5, cy = h * 0.47;
+    const S = Math.min(h * 0.40, w * 0.2) / (c.alLayers.length + 1.6);
+
+    // steel core
+    ctx.fillStyle = "#7d8894";
+    if (c.steel === 1) {
+      ctx.beginPath(); ctx.arc(cx, cy, S * 0.95, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "#0c1117"; ctx.stroke();
+    } else {
+      ctx.beginPath(); ctx.arc(cx, cy, S * 0.42, 0, TAU); ctx.fill();
+      for (let k = 0; k < 6; k++) {
+        const a = k / 6 * TAU;
+        ctx.beginPath(); ctx.arc(cx + Math.cos(a) * S * 0.8, cy + Math.sin(a) * S * 0.8, S * 0.42, 0, TAU); ctx.fill();
+      }
+    }
+    // aluminium layers
+    c.alLayers.forEach((nStr, li) => {
+      const r = S * (1.6 + li * 0.85);
+      for (let k = 0; k < nStr; k++) {
+        const a = k / nStr * TAU + li * 0.3;
+        ctx.fillStyle = "#c9cdd3";
+        ctx.beginPath(); ctx.arc(cx + Math.cos(a) * r, cy + Math.sin(a) * r, S * 0.42, 0, TAU); ctx.fill();
+        ctx.strokeStyle = "#0c1117"; ctx.lineWidth = 1; ctx.stroke();
+      }
+    });
+    label(ctx, c.steel === 1 ? "composite core" : "galvanised steel core — takes the tension", cx, cy + S * (1.6 + c.alLayers.length * 0.85) + 24, { align: "center" });
+    label(ctx, "aluminium strands — carry the current", cx, cy - S * (1.6 + c.alLayers.length * 0.85) - 12, { align: "center" });
+    label(ctx, c.name, cx, h * 0.94, { align: "center", color: C.amber, font: mono(12, true) });
+    document.getElementById("cond-cap").textContent = c.cap;
+  });
+  G.seg("cond-t", v => { condT = v; condFig.redraw(); });
+
+  /* ============ Fig 4: bundles & corona ============ */
+  let bunN = 2, bunW = "dry";
+  const bunFig = G.canvas("bun", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * 0.32, cy = h * 0.5;
+    const sep = Math.min(h * 0.2, 44);
+    const pos = bunN === 1 ? [[0, 0]] :
+      bunN === 2 ? [[-sep / 2, 0], [sep / 2, 0]] :
+      [[-sep / 2, -sep / 2], [sep / 2, -sep / 2], [-sep / 2, sep / 2], [sep / 2, sep / 2]];
+    // relative surface field (very rough): E ∝ 1/(n^0.75)
+    const E = 1 / Math.pow(bunN, 0.72);
+    const wet = bunW === "wet";
+    const coronaOn = E > (wet ? 0.55 : 0.75);
+
+    // spacer
+    if (bunN > 1) {
+      ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
+      if (bunN === 2) line(ctx, cx - sep / 2, cy, cx + sep / 2, cy, C.muted, 2);
+      else ctx.strokeRect(cx - sep / 2, cy - sep / 2, sep, sep);
+    }
+    pos.forEach(([dx, dy]) => {
+      const x = cx + dx, y = cy + dy;
+      if (coronaOn) {
+        const halo = ctx.createRadialGradient(x, y, 6, x, y, 26);
+        halo.addColorStop(0, "rgba(150,190,255,0.55)");
+        halo.addColorStop(1, "rgba(150,190,255,0)");
+        ctx.fillStyle = halo;
+        ctx.beginPath(); ctx.arc(x, y, 26, 0, TAU); ctx.fill();
+      }
+      ctx.fillStyle = "#c9cdd3";
+      ctx.beginPath(); ctx.arc(x, y, 9, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "#0c1117"; ctx.stroke();
+    });
+    label(ctx, bunN === 1 ? "one conductor per phase" : bunN + "-conductor bundle + spacer", cx, cy + sep + 40, { align: "center" });
+
+    // field bar
+    const bx = w * 0.6, bw2 = w * 0.32, by = h * 0.35, bh = 18;
+    ctx.strokeStyle = C.line; ctx.strokeRect(bx, by, bw2, bh);
+    const lim = wet ? 0.55 : 0.75;
+    ctx.fillStyle = coronaOn ? "rgba(224,82,82,0.8)" : "rgba(63,174,98,0.7)";
+    ctx.fillRect(bx, by, bw2 * E, bh);
+    line(ctx, bx + bw2 * lim, by - 6, bx + bw2 * lim, by + bh + 6, C.amber, 2);
+    label(ctx, "corona onset (" + bunW + ")", bx + bw2 * lim, by - 12, { align: "center", color: C.amber });
+    label(ctx, "surface electric field →", bx, by + bh + 18, { color: C.muted });
+
+    document.getElementById("bun-e").textContent = Math.round(E * 100) + "% of single-conductor stress";
+    document.getElementById("bun-c").innerHTML = coronaOn
+      ? "<span style='color:var(--danger)'>hissing — losses & radio noise</span>"
+      : "<span style='color:var(--good)'>quiet</span>";
+  });
+  G.seg("bun-n", v => { bunN = +v; bunFig.redraw(); });
+  G.seg("bun-w", v => { bunW = v; bunFig.redraw(); });
+
+  /* ============ Fig 5: transposition ============ */
+  let tspOn = true;
+  const tspFig = G.canvas("tsp", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const x0 = w * 0.06, x1 = w * 0.94;
+    const ys = [h * 0.28, h * 0.46, h * 0.64];
+    const third = (x1 - x0) / 3;
+    // order[section][position] = phase index occupying that vertical slot
+    const orders = tspOn ? [[0, 1, 2], [1, 2, 0], [2, 0, 1]] : [[0, 1, 2], [0, 1, 2], [0, 1, 2]];
+    for (let ph = 0; ph < 3; ph++) {
+      ctx.strokeStyle = PH[ph]; ctx.lineWidth = 2.2; ctx.beginPath();
+      for (let s = 0; s < 3; s++) {
+        const slot = orders[s].indexOf(ph);
+        const xa = x0 + s * third, xb = x0 + (s + 1) * third;
+        if (s === 0) ctx.moveTo(xa, ys[slot]);
+        else {
+          // crossover ramp at section boundary
+          ctx.lineTo(xa + third * 0.12, ys[slot]);
+        }
+        ctx.lineTo(xb - (s < 2 ? third * 0.0 : 0), ys[slot]);
+      }
+      ctx.stroke();
+      label(ctx, "L" + (ph + 1), x0 - 4, ys[orders[0].indexOf(ph)] + 4, { align: "right", color: PH[ph], font: mono(11, true) });
+      label(ctx, "L" + (ph + 1), x1 + 4, ys[orders[2].indexOf(ph)] + 4, { color: PH[ph], font: mono(11, true) });
+    }
+    // transposition towers
+    [1, 2].forEach(k => {
+      const x = x0 + k * third;
+      line(ctx, x, h * 0.16, x, h * 0.76, C.muted, 1.5, [4, 4]);
+      if (tspOn) label(ctx, "transposition tower", x, h * 0.86, { align: "center" });
+    });
+    label(ctx, "top", x0 - 40, ys[0] + 4, { align: "right" });
+    label(ctx, "middle", x0 - 40, ys[1] + 4, { align: "right" });
+    label(ctx, "bottom", x0 - 40, ys[2] + 4, { align: "right" });
+    document.getElementById("tsp-i").innerHTML = tspOn
+      ? "<span style='color:var(--good)'>≈ 0 — each phase averages every position</span>"
+      : "<span style='color:var(--amber)'>a few percent — middle phase couples differently, and it never cancels</span>";
+  });
+  G.seg("tsp-m", v => { tspOn = v === "on"; tspFig.redraw(); });
+
+  /* ============ Fig 6: lightning ============ */
+  let ltgX = 0, ltgR = 8, bolt = null; // bolt: {x, targetKind, path, age}
+  let ltgLast = 0;
+  const ltgFig = G.canvas("ltg", function (ctx, w, h, t) {
+    const dt = Math.min(0.05, t - ltgLast); ltgLast = t;
+    if (bolt) bolt.age += dt;
+    ctx.clearRect(0, 0, w, h);
+    const gy = h * 0.9, cx = w * 0.5, ht = h * 0.62;
+    // storm sky
+    const sky = ctx.createLinearGradient(0, 0, 0, h * 0.5);
+    sky.addColorStop(0, "#151a2c"); sky.addColorStop(1, "rgba(19,26,34,0)");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h * 0.5);
+    line(ctx, 0, gy, w, gy, C.line, 1.5);
+
+    // tower (single circuit, flat-ish for clarity): earth wire at peak, phases below
+    const peakY = gy - ht;
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+    line(ctx, cx - ht * 0.09, gy, cx, peakY, C.ink2, 2);
+    line(ctx, cx + ht * 0.09, gy, cx, peakY, C.ink2, 2);
+    for (let i = 1; i <= 5; i++) {
+      const tt = i / 6;
+      line(ctx, cx - ht * 0.09 * (1 - tt), gy - ht * tt, cx + ht * 0.09 * (1 - tt * 0.9), gy - ht * (tt - 1 / 6), C.ink2, 1);
+    }
+    const armY = gy - ht * 0.72;
+    line(ctx, cx - ht * 0.30, armY, cx + ht * 0.30, armY, C.ink2, 2);
+    // earth wire + phases (dots, cross-section view)
+    ctx.fillStyle = C.muted;
+    ctx.beginPath(); ctx.arc(cx, peakY, 4, 0, TAU); ctx.fill();
+    label(ctx, "earth wire", cx + 10, peakY - 6, { color: C.muted });
+    const phasePos = [[-ht * 0.26, armY + 16], [0, armY + 16], [ht * 0.26, armY + 16]];
+    phasePos.forEach(([dx, dy], i) => {
+      line(ctx, cx + dx, armY, cx + dx, dy, C.ink, 1.5);
+      ctx.fillStyle = PH[i];
+      ctx.beginPath(); ctx.arc(cx + dx, dy + 4, 4.5, 0, TAU); ctx.fill();
+    });
+    // shielding cone (±30° from earth wire)
+    ctx.fillStyle = "rgba(86,183,207,0.07)";
+    ctx.strokeStyle = "rgba(86,183,207,0.35)";
+    ctx.beginPath();
+    ctx.moveTo(cx, peakY);
+    ctx.lineTo(cx - Math.tan(Math.PI / 6) * (gy - peakY), gy);
+    ctx.lineTo(cx + Math.tan(Math.PI / 6) * (gy - peakY), gy);
+    ctx.closePath(); ctx.fill(); ctx.stroke();
+    label(ctx, "shielded zone (~30°)", cx, gy - 8, { align: "center", color: C.teal });
+
+    // strike aim marker
+    const sx = cx + ltgX / 100 * w * 0.42;
+    label(ctx, "▼", sx, 18, { align: "center", color: C.amber, font: mono(13, true) });
+
+    // bolt
+    if (bolt) {
+      const flash = Math.max(0, 1 - bolt.age * 2.5);
+      if (flash > 0) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(240,220,160,${0.5 + flash * 0.5})`;
+        ctx.lineWidth = 2.5; ctx.shadowColor = "#fff0c0"; ctx.shadowBlur = 18 * flash;
+        ctx.beginPath();
+        bolt.path.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+        ctx.stroke();
+        ctx.restore();
+        // current down tower / flashover marks
+        if (bolt.kind === "earthwire" && flash > 0.15) {
+          ctx.strokeStyle = `rgba(240,180,41,${flash})`; ctx.lineWidth = 3;
+          line(ctx, cx, peakY, cx - ht * 0.09, gy, `rgba(240,180,41,${flash})`, 3);
+        }
+        if ((bolt.kind === "back" || bolt.kind === "shieldfail") && flash > 0.1) {
+          const [dx, dy] = phasePos[bolt.phase];
+          ctx.strokeStyle = `rgba(255,120,90,${flash})`; ctx.lineWidth = 2.5;
+          line(ctx, cx + dx, armY, cx + dx, dy + 4, `rgba(255,120,90,${flash})`, 2.5);
+        }
+      }
+    }
+  }, { animate: true });
+
+  G.slider("ltg-x", v => (v > 0 ? "+" : "") + v, v => { ltgX = v; });
+  G.slider("ltg-r", v => v + " Ω", v => { ltgR = v; });
+  document.getElementById("ltg-fire").addEventListener("click", () => {
+    const { w, h } = ltgFig.size;
+    const gy = h * 0.9, cx = w * 0.5, ht = h * 0.62, peakY = gy - ht;
+    const sx = cx + ltgX / 100 * w * 0.42;
+    const cone = Math.tan(Math.PI / 6) * ht; // half-width of cone at ground... use at conductor height
+    const out = document.getElementById("ltg-out");
+    let kind, phase = 0, endX, endY;
+    const off = Math.abs(sx - cx);
+    if (off < cone * 0.55) { kind = "earthwire"; endX = cx; endY = peakY; }
+    else if (off < cone * 1.5) {
+      kind = "shieldfail"; phase = sx < cx ? 0 : 2;
+      endX = cx + (sx < cx ? -ht * 0.26 : ht * 0.26); endY = gy - ht * 0.72 + 20;
+    } else { kind = "ground"; endX = sx; endY = gy; }
+
+    // back-flashover chance if earthwire hit and footing poor
+    if (kind === "earthwire") {
+      const towerTopKV = 30 * ltgR; // 30 kA × R
+      if (towerTopKV > 1200) { kind = "back"; phase = 1; }
+    }
+    // jagged path
+    const path = [[sx, 10]];
+    const steps = 7;
+    for (let i = 1; i < steps; i++) {
+      const tt = i / steps;
+      path.push([sx + (endX - sx) * tt + (Math.random() - 0.5) * 30 * (1 - tt), 10 + (endY - 10) * tt]);
+    }
+    path.push([endX, endY]);
+    bolt = { kind, phase, path, age: 0 };
+
+    if (kind === "earthwire") out.innerHTML = "<b style='color:var(--good)'>Caught.</b> The stroke hits the earth wire, splits both ways along it, and drains down the tower steel through the " + ltgR + " Ω footing. Tower top rises to ~" + Math.round(30 * ltgR) + " kV for a microsecond — the insulation holds. Nobody downstream ever knows.";
+    else if (kind === "back") out.innerHTML = "<b style='color:var(--danger)'>Back-flashover.</b> Clean catch — but through " + ltgR + " Ω the tower top leaps to ~" + Math.round(30 * ltgR) + " kV, exceeding the insulation level, and flashes over <i>from the steel to a phase</i>. Breakers trip, auto-reclose picks it up. The fix is in the ground: counterpoise and rods.";
+    else if (kind === "shieldfail") out.innerHTML = "<b style='color:var(--danger)'>Shielding failure.</b> The leader slipped past the earth wire's cone and tagged the outer phase directly — insulator string flashes over, arcing horns take the burn, protection clears it in ~80 ms and recloses. A blink of the lights in Fort Augustus.";
+    else out.innerHTML = "<b style='color:var(--teal)'>Ground strike.</b> Missed the line — this one belongs to a sheep fence. (The earth wire only has to win inside its cone.)";
+  });
+
+  /* ============ Fig 7: sag ============ */
+  const SPAN = 365, ATTACH = 21, ALPHA = 19.3e-6, BASE_SAG = 8.0, BASE_T = 15;
+  let ta = 15, loadPct = 40, windy = true;
+
+  function conductorTemp() {
+    const rise = (loadPct / 100) * (loadPct / 100) * (windy ? 22 : 48);
+    return ta + rise;
+  }
+  function sagAt(tc) {
+    // parabolic: extra arc length from base state, thermal expansion
+    const baseExtra = 8 * BASE_SAG * BASE_SAG / (3 * SPAN);
+    const extra = baseExtra + SPAN * ALPHA * (tc - BASE_T);
+    return Math.sqrt(Math.max(0.1, 3 * SPAN * extra / 8));
+  }
+  const sagFig = G.canvas("sagcv", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const tc = conductorTemp();
+    const sag = sagAt(tc);
+    const clear = ATTACH - sag;
+
+    const x0 = w * 0.07, x1 = w * 0.93;
+    const gy = h * 0.88;
+    const S = (gy - h * 0.10) / ATTACH; // px per metre vertical
+    const attY = gy - ATTACH * S;
+
+    // ground + towers
+    line(ctx, 0, gy, w, gy, C.line, 1.5);
+    [x0, x1].forEach(x => {
+      ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+      line(ctx, x - 10, gy, x, attY - 8, C.ink2, 2);
+      line(ctx, x + 10, gy, x, attY - 8, C.ink2, 2);
+      line(ctx, x, attY - 8, x, attY, C.ink, 2);
+    });
+    // statutory clearance line
+    const statY = gy - 7.3 * S;
+    line(ctx, x0, statY, x1, statY, C.danger, 1.2, [6, 5]);
+    label(ctx, "statutory clearance 7.3 m", x1 - 4, statY - 6, { align: "right", color: C.danger });
+
+    // catenary (parabola)
+    const hot = tc > 60;
+    ctx.strokeStyle = hot ? "#ff9a6b" : C.amber; ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60;
+      const x = x0 + (x1 - x0) * t;
+      const y = attY + 4 * sag * S * t * (1 - t);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // sag arrow at midspan
+    const midY = attY + sag * S;
+    line(ctx, (x0 + x1) / 2, attY, (x0 + x1) / 2, midY, C.muted, 1, [3, 4]);
+    label(ctx, "sag " + sag.toFixed(1) + " m", (x0 + x1) / 2 + 8, (attY + midY) / 2, { color: C.muted });
+    // clearance annotation
+    line(ctx, w * 0.72, midY, w * 0.72, gy, C.teal, 1, [3, 4]);
+    label(ctx, "clearance " + clear.toFixed(1) + " m", w * 0.72 + 6, (midY + gy) / 2, { color: C.teal });
+    // a tree for menace
+    const treeX = w * 0.62, treeH = 6.4 * S;
+    ctx.strokeStyle = "#5c7350"; ctx.lineWidth = 3;
+    line(ctx, treeX, gy, treeX, gy - treeH * 0.4, "#6b5b3e", 3);
+    ctx.fillStyle = "rgba(92,140,80,0.5)";
+    ctx.beginPath(); ctx.arc(treeX, gy - treeH * 0.62, treeH * 0.4, 0, TAU); ctx.fill();
+
+    document.getElementById("sag-tc").textContent = Math.round(tc) + " °C";
+    document.getElementById("sag-s").textContent = sag.toFixed(1) + " m";
+    document.getElementById("sag-c").textContent = clear.toFixed(1) + " m";
+    const v = document.getElementById("sag-v");
+    if (clear < 6.4 + 0.6) v.innerHTML = "<b style='color:var(--danger)'>⚡ into the tree — earth fault, breakers trip (see Ohio, 14 Aug 2003)</b>";
+    else if (clear < 7.3) v.innerHTML = "<b style='color:var(--danger)'>below statutory clearance — this loading is illegal today; the line is de-rated</b>";
+    else if (clear < 8.3) v.innerHTML = "<b style='color:var(--amber)'>tight — this is the constraint that sets the summer rating</b>";
+    else v.innerHTML = "<b style='color:var(--good)'>comfortable</b>";
+  });
+  G.slider("sag-ta", v => v + " °C", v => { ta = v; sagFig.redraw(); });
+  G.slider("sag-i", v => v + "%", v => { loadPct = v; sagFig.redraw(); });
+  G.seg("sag-w", v => { windy = v === "breeze"; sagFig.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

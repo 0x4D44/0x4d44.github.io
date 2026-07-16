@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Running the Grid — The Grid</title>
+<meta name="description" content="How the grid is balanced second by second: frequency and inertia, TV pickup, the merit order and dispatch, reserve and response, reactive power and voltage control, HVDC interconnectors and black start.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">chapter 6 · running the grid</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="generation.html">1 · Generation</a>
+    <a href="ac.html">2 · Three-Phase AC</a>
+    <a href="transformers.html">3 · Transformers</a>
+    <a href="switchgear.html">4 · Switchgear</a>
+    <a href="lines.html">5 · Lines &amp; Towers</a>
+    <a href="operations.html" aria-current="page">6 · Running the Grid</a>
+    <a href="blackouts.html">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 6 · Running the Grid</p>
+  <h1>The Fifty-Hertz Bargain</h1>
+  <p class="standfirst">Electricity is the only commodity manufactured, delivered and
+  consumed in the same instant. Somewhere, right now, a control room is holding
+  national supply equal to national demand to within a rounding error — and the
+  proof is a single number, trembling around 50.00.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="freq"><span class="no">§ 6.1</span>Frequency is the fuel gauge</h2>
+
+<p>Every synchronous machine on the grid spins in lockstep
+(<a href="generation.html">Chapter&nbsp;1</a>), so the whole system has one shared
+speed: the frequency. And frequency obeys a beautifully blunt law. When demand
+exceeds generation, the deficit is paid — instantly, automatically — out of the
+<strong>kinetic energy of every spinning rotor in the country</strong>, and they
+all slow down together. Generation exceeds demand, they speed up. Frequency
+<em>is</em> the imbalance, made visible.</p>
+
+<p>How <em>fast</em> it moves depends on how much spinning steel is connected —
+the system <strong>inertia</strong>. A grid of 500-tonne steam and hydro rotors
+rides out the loss of a power station like a flywheel; a grid of inverter-fed
+solar and wind (<a href="ac.html">Chapter&nbsp;2</a>'s other tribe) has almost no
+stored rotation, and the same loss drops the frequency several times faster —
+leaving less time for reserves to catch it before the automatic load-shedding
+relays (<strong>LFDD</strong>, at 48.8&nbsp;Hz in GB) start disconnecting towns
+to save the rest. Run the desk yourself:</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Fig 1 · Hold the frequency</span>
+    <span class="hint">you have inertia, fast reserve, and a nervous kettle-owning public</span>
+  </div>
+  <div class="fig-body"><canvas id="fr" style="aspect-ratio: 2.2/1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <button class="btn danger" id="fr-trip">trip a 1,000 MW unit</button>
+    <button class="btn" id="fr-kettle">TV pickup +1.2 GW</button>
+    <button class="btn" id="fr-cloud">solar drops 1.5 GW</button>
+    <button class="btn" id="fr-reset">reset</button>
+    <div class="ctl"><label>System inertia</label>
+      <input type="range" id="fr-h" min="2" max="6" step="0.25" value="4.5">
+      <output>—</output></div>
+    <div class="ctl"><label>Fast reserve armed</label>
+      <input type="range" id="fr-resp" min="0.4" max="2.6" step="0.1" value="1.4">
+      <output>—</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">frequency <b id="fr-f">50.000 Hz</b></span>
+    <span class="ro">rate of change <b id="fr-rocof">0.00 Hz/s</b></span>
+    <span class="ro">reserve deployed <b id="fr-dep">0 MW</b></span>
+    <span class="ro">load shed <b id="fr-shed">none</b></span>
+    <span class="ro" id="fr-msg" style="flex:1 1 100%"></span>
+  </div>
+  <div class="fig-note"><b>Try this:</b> trip the unit at inertia 6, then reset, slide
+  inertia to 2 (a sunny, windy afternoon with few synchronous machines) and trip it
+  again. Same event — very different nadir. That difference is why the operator now
+  <i>buys</i> inertia and ultra-fast battery response as products, and why Chapter 7
+  keeps happening. GB statutory band: 49.5–50.5 Hz; normal operation ±0.2; LFDD begins
+  disconnecting blocks of demand at 48.8.</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout story">
+  <span class="tag">Board lore</span>
+  <p>The most British of all grid phenomena: <b>TV pickup</b>. The credits roll on a
+  big broadcast, a million kettles go on within ninety seconds, and demand leaps by
+  hundreds — occasionally thousands — of megawatts. The all-time record remains the
+  1990 World Cup semi-final penalty shoot-out (England v West Germany): about
+  2,800&nbsp;MW, close to three power stations' worth of hot beverage. Control rooms
+  schedule for it with the Radio Times open on the desk, and the classic counter is
+  pumped-storage hydro — machines at Cruachan, Foyers and Dinorwig spinning ready to
+  catch the surge in seconds. The habit is fading with streaming, but a cup final
+  penalty shoot-out still writes its signature on the frequency chart.</p>
+</div>
+
+<h2 id="merit"><span class="no">§ 6.2</span>Who runs tonight? The merit order</h2>
+
+<p>Frequency response handles seconds; someone still has to decide which stations
+run each half-hour. The organising idea is the <strong>merit order</strong>: rank
+everything by the marginal cost of one more megawatt-hour, dispatch from the
+cheapest up until demand is met, and let the <em>last unit needed set the
+price</em> for all. Nuclear won't flex, so it runs first. Wind and solar burn
+nothing, so when the weather delivers, they push everything else up the stack —
+and on a wild night in the Minch there can be more wind than the wires south can
+carry, at which point the operator pays wind farms to <em>stop</em> (constraint
+costs: the price of a grid built for the old geography of coal, and the economic
+case for the new lines and links below).</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 2 · Stack the merit order</span>
+    <span class="hint">set the evening's demand and the weather — the last unit dispatched sets the price</span>
+  </div>
+  <div class="fig-body"><canvas id="mo" style="aspect-ratio: 1.9/1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Demand</label>
+      <input type="range" id="mo-d" min="18" max="48" step="0.5" value="34">
+      <output>34 GW</output></div>
+    <div class="ctl"><label>Wind &amp; solar available</label>
+      <input type="range" id="mo-w" min="0" max="24" step="0.5" value="8">
+      <output>8 GW</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">system price <b id="mo-p">—</b></span>
+    <span class="ro">price-setter <b id="mo-m">—</b></span>
+    <span class="ro" id="mo-note" style="flex:1 1 auto; color:var(--muted)"></span>
+  </div>
+  <div class="fig-note">Costs are illustrative. Notice the two regimes: on still days gas
+  sets the price (which is why GB power prices track gas prices so closely), and on windy
+  days near-zero-cost renewables set it — the &ldquo;merit-order effect&rdquo;. The real
+  market adds a balancing mechanism, bilateral trades and locational constraints on top,
+  but the staircase is the skeleton of all of it.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="volts"><span class="no">§ 6.3</span>The other dial: volts and VArs</h2>
+
+<p>Frequency is one system-wide number; voltage is thousands of local ones, and
+it is managed with <a href="ac.html">Chapter&nbsp;2</a>'s other currency —
+reactive power. Generators' AVRs push and absorb VArs; transformer tap changers
+(<a href="transformers.html">Chapter&nbsp;3</a>) trim each layer; shunt capacitors
+prop up heavy-load evenings, shunt reactors tame lightly-loaded nights (a long
+unloaded line <em>generates</em> VArs and its voltage balloons — the operator's
+3&nbsp;a.m. problem). Because VArs travel badly, this support must be scattered
+across the map, not parked in one corner: a region that runs short of reactive
+support sees its voltage sag, then collapse — the slow-motion fate of several
+blackouts in <a href="blackouts.html">Chapter&nbsp;7</a>.</p>
+
+<div class="callout">
+  <span class="tag">Field note — new machines for old virtues</span>
+  <p>As the coal fleet's great rotors left the system, they took their free inertia,
+  fault current and VArs with them. The replacements are purpose-built: <b>synchronous
+  condensers</b> — a synchronous machine spinning unloaded, all services and no fuel —
+  sometimes with a flywheel bolted on. Fittingly for this almanac, one of GB's first
+  &ldquo;stability parks&rdquo; of this kind opened at <b>Keith, in Moray</b> — deep in
+  the old Hydro Board country, where the wind fleet is thickest and the spinning steel
+  is now scarcest. The pumped-storage machines at Cruachan and Foyers moonlight in the
+  same trade: spinning-in-air, providing inertia and VArs while pumping nothing at all.</p>
+</div>
+
+<h2 id="hvdc"><span class="no">§ 6.4</span>Direct current's revenge: interconnectors</h2>
+
+<p>Why do the cables under the sea run on DC, a century after AC won? Because a
+long AC cable defeats itself. A cable is a rolled-up capacitor, and at 50&nbsp;Hz
+that capacitance must be charged and discharged a hundred times a second —
+a <strong>charging current</strong> that flows whether or not any customer takes
+a single watt. Stretch the cable and the charging current grows until it fills
+the cable's entire rating: beyond roughly 50–80&nbsp;km, a solid-insulation
+transmission cable can carry nothing but itself. DC charges the cable once,
+at energisation, and every amp thereafter is freight.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 3 · The subsea break-even</span>
+    <span class="hint">stretch the cable</span>
+  </div>
+  <div class="fig-body"><canvas id="cab" style="aspect-ratio: 2.1/1; min-height: 280px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Cable length</label>
+      <input type="range" id="cab-l" min="5" max="250" step="5" value="60">
+      <output>60 km</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">AC cable: usable capacity <b id="cab-ac">—</b></span>
+    <span class="ro">DC cable: usable capacity <b id="cab-dc">—</b></span>
+  </div>
+  <div class="fig-note">Modelled on a 400 kV-class export cable. The price of DC is paid
+  at the ends: a <b>converter station</b> the size of a warehouse at each landfall.
+  Classic thyristor converters (LCC — the 1986 France link) are rugged but need a stiff
+  grid to lean on; modern transistor converters (VSC) can stand alone, control their
+  VArs, and even black-start a dead island — which is exactly why the newest links use
+  them.</div>
+</figure>
+
+<div class="prose">
+
+<p>GB is now laced with these links — to its neighbours, and increasingly to
+<em>itself</em>, because the cheapest route for Highland and offshore wind to
+reach English demand is often a DC cable down the seabed, bypassing the crowded
+onshore grid:</p>
+
+<table class="data">
+  <caption>The DC fleet (selected; capacities approximate)</caption>
+  <thead><tr><th>Link</th><th>Route</th><th>MW</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td class="k">IFA</td><td>Sellindge ↔ France</td><td class="num">2,000</td>
+      <td>The 1986 original; thyristor LCC. Fire-damaged 2021, since repaired.</td></tr>
+    <tr><td class="k">BritNed</td><td>Isle of Grain ↔ Netherlands</td><td class="num">1,000</td><td>2011.</td></tr>
+    <tr><td class="k">NSL</td><td>Blyth ↔ Norway</td><td class="num">1,400</td>
+      <td>2021 · 720 km, the world's longest subsea interconnector at opening — GB wind traded against Norwegian hydro lakes.</td></tr>
+    <tr><td class="k">Viking Link</td><td>Bicker Fen ↔ Denmark</td><td class="num">1,400</td><td>2023 · even longer end-to-end.</td></tr>
+    <tr><td class="k">Moyle / EWIC / Greenlink</td><td>↔ island of Ireland</td><td class="num">500 each</td><td>2002 / 2012 / 2025.</td></tr>
+    <tr><td class="k">IFA2 · NemoLink · ElecLink</td><td>↔ France / Belgium / via the Tunnel</td><td class="num">1,000 each</td><td>2019–2022.</td></tr>
+    <tr><td class="k">Western HVDC Link</td><td>Hunterston ↔ Deeside</td><td class="num">2,250</td>
+      <td>2019 · ±600 kV down the Irish Sea — Scottish wind past the congested B6 boundary.</td></tr>
+    <tr><td class="k">Caithness–Moray</td><td>Spittal ↔ Blackhillock</td><td class="num">1,200</td>
+      <td>2019 · SSEN's VSC link under the Moray Firth — the biggest investment in the
+      north of Scotland grid since the Hydro Board era.</td></tr>
+    <tr><td class="k">Shetland link</td><td>Kergord ↔ Caithness</td><td class="num">600</td>
+      <td>2024 · ends Shetland's century as an isolated island grid.</td></tr>
+    <tr><td class="k">Eastern Green Links</td><td>Scotland ↔ England, offshore</td><td class="num">2,000 each</td>
+      <td>±525 kV bootstraps under construction (Torness→Co. Durham, Peterhead→Drax…).</td></tr>
+  </tbody>
+</table>
+
+<h2 id="reserve"><span class="no">§ 6.5</span>The layered defence (and the darkest drill)</h2>
+
+<p>Put the chapter together and balancing is a relay race across timescales:</p>
+
+<ul>
+  <li><strong>0–2 seconds</strong> — inertia and battery response: physics and
+  power electronics, no decisions involved.</li>
+  <li><strong>2–30 seconds</strong> — primary response: governors feel the droop
+  (<a href="generation.html">Chapter&nbsp;1</a>) and open their valves; pumped
+  storage catches the surge.</li>
+  <li><strong>30 seconds–30 minutes</strong> — the control room re-dispatches:
+  reserve plant loads up, interconnectors re-schedule, frequency is walked back
+  to 50.00.</li>
+  <li><strong>Hours–years</strong> — markets, maintenance seasons, and building
+  the kit: new links, new storage, new stability parks.</li>
+</ul>
+
+<p>And beneath it all sits the drill nobody wants to run: <strong>black start</strong>.
+If the grid ever goes fully dark, most power stations cannot restart — they need
+grid power for their own pumps, fans and excitation. The plan begins with the
+stations that can wake themselves: hydro above all (a battery bank, a small
+diesel, open the guide vanes and the glen does the rest). A station like Cruachan
+or Sloy energises a dead transmission corridor, picks up a block of load, and
+other stations synchronise to the growing island; islands are then knitted
+together, carefully, exactly as <a href="generation.html">Chapter&nbsp;1</a>'s
+synchroscope demands. The full national restoration is measured in days —
+which is the best argument there is for never needing it, and the subject of
+the final chapter.</p>
+
+</div>
+
+<nav class="chapnav">
+  <a href="lines.html"><span class="dir">← Chapter 5</span><span class="title">Lines &amp; Towers</span></a>
+  <a class="next" href="blackouts.html"><span class="dir">Chapter 7 →</span><span class="title">When It Fails</span></a>
+</nav>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, clamp, label, line, mono } = G;
+
+  /* ============ Fig 1: frequency simulator ============ */
+  const S_GW = 32;            // synchronised MVA base, GW
+  const D = 0.9;              // load damping GW per Hz
+  let H = 4.5, respMax = 1.4; // sliders
+  let f = 50, imbalance = 0, respDep = 0, secondary = 0, shed = 0, shedStages;
+  let collapsed = false, lastT = 0, rocof = 0;
+  const trace = []; const TRACE_S = 75; // seconds of history
+  function resetFr() {
+    f = 50; imbalance = 0; respDep = 0; secondary = 0; shed = 0; rocof = 0;
+    collapsed = false;
+    shedStages = [
+      { f: 48.8, gw: 1.6, done: false }, { f: 48.6, gw: 1.9, done: false },
+      { f: 48.4, gw: 2.2, done: false }, { f: 48.2, gw: 2.6, done: false },
+      { f: 48.0, gw: 3.0, done: false },
+    ];
+    trace.length = 0;
+    document.getElementById("fr-msg").textContent = "";
+  }
+  resetFr();
+
+  G.canvas("fr", function (ctx, w, h, t) {
+    const dt = Math.min(0.05, t - lastT); lastT = t;
+    if (!collapsed && dt > 0) {
+      // primary response: proportional to deviation, first-order lag, capped
+      const target = clamp((50 - f) / 0.5, -0.3, 1) * respMax;
+      respDep += (target - respDep) * dt / 6;
+      // secondary: slow integral pull-back
+      secondary += clamp(50 - f, -0.5, 0.5) * dt * 0.02;
+      secondary = clamp(secondary, -2, 2);
+      // LFDD
+      shedStages.forEach(s2 => { if (!s2.done && f <= s2.f) { s2.done = true; shed += s2.gw; } });
+      const net = imbalance + respDep + secondary + shed + D * (50 - f);
+      const dfdt = net * 50 / (2 * H * S_GW);
+      rocof = dfdt;
+      f += dfdt * dt;
+      if (f < 47.5) {
+        collapsed = true;
+        document.getElementById("fr-msg").innerHTML =
+          "<b style='color:var(--danger)'>47.5 Hz — generator under-frequency protection is now tripping stations to save their turbines. The grid has collapsed. See Chapter 7; bring a torch.</b>";
+      }
+      trace.push({ t, f });
+      while (trace.length && t - trace[0].t > TRACE_S) trace.shift();
+    }
+
+    // ---- draw ----
+    ctx.clearRect(0, 0, w, h);
+    const narrow = w < 680;
+    // dial
+    const cx = narrow ? w * 0.5 : w * 0.15, cy = narrow ? h * 0.25 : h * 0.46, R = narrow ? h * 0.17 : Math.min(h * 0.3, w * 0.11);
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI * 0.75, Math.PI * 2.25); ctx.stroke();
+    // scale 47.5..52.5 over 270°
+    for (let ff = 48; ff <= 52; ff += 0.5) {
+      const a = Math.PI * 0.75 + (ff - 47.5) / 5 * Math.PI * 1.5;
+      const big = ff % 1 === 0;
+      line(ctx, cx + Math.cos(a) * R * 0.88, cy + Math.sin(a) * R * 0.88,
+        cx + Math.cos(a) * R, cy + Math.sin(a) * R, big ? C.ink2 : C.muted, big ? 2 : 1);
+      if (big) label(ctx, ff, cx + Math.cos(a) * R * 0.72, cy + Math.sin(a) * R * 0.72 + 4, { align: "center", font: mono(9) });
+    }
+    const na = Math.PI * 0.75 + (clamp(f, 47.5, 52.5) - 47.5) / 5 * Math.PI * 1.5;
+    const nCol = Math.abs(f - 50) < 0.2 ? C.good : Math.abs(f - 50) < 0.5 ? C.amber : C.danger;
+    line(ctx, cx, cy, cx + Math.cos(na) * R * 0.8, cy + Math.sin(na) * R * 0.8, nCol, 3.5);
+    ctx.fillStyle = nCol; ctx.beginPath(); ctx.arc(cx, cy, 4, 0, TAU); ctx.fill();
+    label(ctx, "Hz", cx, cy + R * 0.5, { align: "center", color: C.muted });
+
+    // trace
+    const tx0 = narrow ? w * 0.06 : w * 0.30, tx1 = w * 0.97;
+    const ty0 = narrow ? h * 0.48 : h * 0.10, ty1 = narrow ? h * 0.94 : h * 0.90;
+    const fMin = 47.5, fMax = 50.8;
+    const Y = ff => ty1 - (ff - fMin) / (fMax - fMin) * (ty1 - ty0);
+    // bands
+    ctx.fillStyle = "rgba(63,174,98,0.07)";
+    ctx.fillRect(tx0, Y(50.2), tx1 - tx0, Y(49.8) - Y(50.2));
+    [[50, C.muted, "50.00"], [49.5, C.amber, "49.5 statutory"], [48.8, C.danger, "48.8 LFDD — load shedding"]].forEach(([ff, col, nm]) => {
+      line(ctx, tx0, Y(ff), tx1, Y(ff), col, 1, [5, 4]);
+      label(ctx, nm, tx1 - 4, Y(ff) - 5, { align: "right", color: col });
+    });
+    // frequency history
+    if (trace.length > 1) {
+      ctx.strokeStyle = C.amber; ctx.lineWidth = 2.2; ctx.beginPath();
+      const tNow = trace[trace.length - 1].t;
+      trace.forEach((s, i) => {
+        const x = tx1 - (tNow - s.t) / TRACE_S * (tx1 - tx0);
+        const y = Y(clamp(s.f, fMin, fMax));
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+    }
+    label(ctx, "last " + TRACE_S + " s", tx0, ty0 - 6, { color: C.muted });
+
+    // readouts
+    document.getElementById("fr-f").textContent = f.toFixed(3) + " Hz";
+    document.getElementById("fr-rocof").textContent = (rocof >= 0 ? "+" : "") + rocof.toFixed(2) + " Hz/s";
+    document.getElementById("fr-dep").textContent = Math.round(clamp(respDep + secondary, -9, 9) * 1000) + " MW";
+    document.getElementById("fr-shed").textContent = shed ? shed.toFixed(1) + " GW (" + shedStages.filter(s2 => s2.done).length + " LFDD stage" + (shed > 2 ? "s" : "") + ") — someone's lights are off" : "none";
+  }, { animate: true });
+
+  G.slider("fr-h", v => v.toFixed(2) + " s", v => { H = v; });
+  G.slider("fr-resp", v => v.toFixed(1) + " GW", v => { respMax = v; });
+  document.getElementById("fr-trip").addEventListener("click", () => { if (!collapsed) { imbalance -= 1.0; msg("A 1,000 MW set has tripped on Buchholz. Rotors nationwide are paying the deficit."); } });
+  document.getElementById("fr-kettle").addEventListener("click", () => { if (!collapsed) { imbalance -= 1.2; msg("Full-time whistle. 1.2 GW of kettles in ninety seconds."); setTimeout(() => { imbalance += 1.2; }, 25000); } });
+  document.getElementById("fr-cloud").addEventListener("click", () => { if (!collapsed) { imbalance -= 1.5; msg("A front crosses the solar fleet; 1.5 GW gone in a minute."); } });
+  document.getElementById("fr-reset").addEventListener("click", resetFr);
+  function msg(s) { document.getElementById("fr-msg").innerHTML = "<span style='color:var(--ink-2)'>" + s + "</span>"; }
+
+  /* ============ Fig 2: merit order ============ */
+  const STACK = [
+    { nm: "nuclear", gw: 4.5, cost: 5, col: C.series[6] },
+    { nm: "wind & solar", gw: 0, cost: 0, col: C.series[4] },   // gw set by slider; cost ~0
+    { nm: "hydro", gw: 1.2, cost: 15, col: C.series[0] },
+    { nm: "biomass", gw: 2.5, cost: 55, col: C.series[1] },
+    { nm: "CCGT (efficient)", gw: 9, cost: 70, col: C.series[3] },
+    { nm: "CCGT (older)", gw: 7, cost: 95, col: C.series[5] },
+    { nm: "pumped storage", gw: 2.8, cost: 130, col: C.series[2] },
+    { nm: "batteries", gw: 2.0, cost: 160, col: C.series[7] },
+    { nm: "OCGT peakers", gw: 2.5, cost: 250, col: "#8a93a0" },
+  ];
+  let moD = 34, moW = 8;
+  const moFig = G.canvas("mo", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    // dispatch
+    const stack = STACK.map(s => ({ ...s }));
+    stack[1].gw = moW;
+    // order by cost (nuclear first as must-run given cost 5 > wind 0 — sort handles it)
+    const order = stack.slice().sort((a, b) => a.cost - b.cost);
+    let remaining = moD, dispatched = [], marginal = null, curtailed = 0;
+    order.forEach(s => {
+      const take = clamp(remaining, 0, s.gw);
+      if (take > 0.01) { dispatched.push({ ...s, take }); marginal = s; }
+      if (s.nm === "wind & solar") curtailed = s.gw - take;
+      remaining -= take;
+    });
+    const unserved = Math.max(0, remaining);
+
+    // draw stacked horizontal bar
+    const bx = w * 0.06, bw2 = w * 0.60, by = h * 0.12, bh = h * 0.70;
+    const total = moD;
+    let yAcc = by + bh;
+    ctx.strokeStyle = C.line; ctx.strokeRect(bx, by, bw2 * 0.42, bh);
+    dispatched.forEach(d => {
+      const hh = d.take / total * bh;
+      yAcc -= hh;
+      ctx.fillStyle = d.col;
+      ctx.fillRect(bx, yAcc, bw2 * 0.42, hh);
+      // 2px surface gap
+      ctx.strokeStyle = C.surface; ctx.lineWidth = 2;
+      ctx.strokeRect(bx, yAcc, bw2 * 0.42, hh);
+      if (hh > 13) label(ctx, d.nm + " · " + d.take.toFixed(1) + " GW", bx + bw2 * 0.42 + 8, yAcc + hh / 2 + 4, { color: C.ink2 });
+    });
+    label(ctx, "demand " + moD + " GW", bx, by - 8, { color: C.ink, font: mono(11, true) });
+
+    // price ladder (right)
+    const lx = w * 0.72, lw2 = w * 0.22, ly0 = h * 0.12, ly1 = h * 0.86;
+    const maxC = 260;
+    const Yc = c => ly1 - c / maxC * (ly1 - ly0);
+    line(ctx, lx, ly1, lx, ly0, C.line, 1);
+    [0, 50, 100, 150, 200, 250].forEach(c => {
+      line(ctx, lx - 3, Yc(c), lx, Yc(c), C.muted, 1);
+      label(ctx, "£" + c, lx - 7, Yc(c) + 4, { align: "right" });
+    });
+    order.forEach(s => {
+      const on = dispatched.find(d => d.nm === s.nm);
+      ctx.fillStyle = on ? s.col : "#3a4552";
+      ctx.fillRect(lx + 6, Yc(s.cost) - 3, lw2 * 0.5, 6);
+      label(ctx, s.nm, lx + 10 + lw2 * 0.5, Yc(s.cost) + 4, { color: on ? C.ink2 : C.muted });
+    });
+    if (marginal) {
+      line(ctx, lx, Yc(marginal.cost), lx + lw2, Yc(marginal.cost), C.amber, 1.5, [4, 4]);
+    }
+    label(ctx, "marginal cost £/MWh", lx, ly0 - 8, { color: C.muted });
+
+    document.getElementById("mo-p").textContent = unserved > 0.01 ? "scarcity — VoLL territory" : marginal ? "£" + marginal.cost + "/MWh" : "—";
+    document.getElementById("mo-m").textContent = unserved > 0.01 ? "demand exceeds the stack!" : marginal ? marginal.nm : "—";
+    const note = document.getElementById("mo-note");
+    if (unserved > 0.01) note.textContent = "the operator would be paying demand to turn down — or worse";
+    else if (curtailed > 0.01) note.textContent = "⚠ " + curtailed.toFixed(1) + " GW of wind curtailed — cheap energy the wires (or demand) couldn't take";
+    else note.textContent = "";
+  });
+  G.slider("mo-d", v => v + " GW", v => { moD = v; moFig.redraw(); });
+  G.slider("mo-w", v => v + " GW", v => { moW = v; moFig.redraw(); });
+
+  /* ============ Fig 3: cable break-even ============ */
+  let cabL = 60;
+  const IC_PER_KM = 14.5, IRATE = 1000; // A/km charging, A rating
+  const cabFig = G.canvas("cab", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 56, r: 20, t: 24, b: 40 };
+    const W2 = w - m.l - m.r, H2 = h - m.t - m.b;
+    const Lmax = 250;
+    const X = L => m.l + L / Lmax * W2;
+    const Y = p => m.t + (1 - p) * H2;
+
+    // axes
+    line(ctx, m.l, Y(0), w - m.r, Y(0), C.line, 1);
+    [0, 50, 100, 150, 200, 250].forEach(L => label(ctx, L, X(L), Y(0) + 16, { align: "center" }));
+    label(ctx, "cable length km →", w - m.r, Y(0) + 32, { align: "right" });
+    label(ctx, "usable capacity", m.l, m.t - 8, { color: C.muted });
+
+    // AC curve: sqrt(1 - (Ic/Irate)^2)
+    ctx.strokeStyle = C.series[3]; ctx.lineWidth = 2.4; ctx.beginPath();
+    let started = false;
+    for (let L = 0; L <= Lmax; L += 2) {
+      const ic = IC_PER_KM * L / IRATE;
+      const p = ic >= 1 ? 0 : Math.sqrt(1 - ic * ic);
+      const x = X(L), y = Y(p);
+      started ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      started = true;
+    }
+    ctx.stroke();
+    label(ctx, "AC", X(35), Y(0.93) - 8, { color: C.series[3], font: mono(11, true) });
+    // DC line: flat with slight resistive droop
+    ctx.strokeStyle = C.series[0]; ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let L = 0; L <= Lmax; L += 5) {
+      const p = 1 - L * 0.0006;
+      L === 0 ? ctx.moveTo(X(L), Y(p)) : ctx.lineTo(X(L), Y(p));
+    }
+    ctx.stroke();
+    label(ctx, "DC", X(220), Y(0.9), { color: C.series[0], font: mono(11, true) });
+
+    // dead zone
+    const Ldead = IRATE / IC_PER_KM;
+    line(ctx, X(Ldead), m.t, X(Ldead), Y(0), C.danger, 1, [4, 4]);
+    label(ctx, "AC cable full of its own charging current", X(Ldead) + 5, m.t + 12, { color: C.danger });
+
+    // marker
+    const ic = IC_PER_KM * cabL / IRATE;
+    const pac = ic >= 1 ? 0 : Math.sqrt(1 - ic * ic);
+    ctx.fillStyle = C.amber;
+    ctx.beginPath(); ctx.arc(X(cabL), Y(pac), 5.5, 0, TAU); ctx.fill();
+    ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
+
+    document.getElementById("cab-ac").textContent = Math.round(pac * 100) + "%" + (pac === 0 ? " — nothing left for customers" : "");
+    document.getElementById("cab-dc").textContent = Math.round((1 - cabL * 0.0006) * 100) + "%";
+  });
+  G.slider("cab-l", v => v + " km", v => { cabL = v; cabFig.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

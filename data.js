@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "the-grid",
+    title: "The Grid",
+    tagline: "How the electricity system actually works, told from the old Hydro Board country: alternators and three-phase, star and delta, air-blast to SF₆, skin effect and hot-day sag, the fifty-hertz balancing act — and six great blackouts dissected, from New York 1965 to Iberia 2025. Seven chapters, thirty-odd live interactives. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/the-grid/",
+    illustration: "ill-pylon",
+    date: "2026-07-16T21:30:00",
+    year: 1943,
+    readingMin: 59,
+    words: 12960,
+    tags: ["software", "engineering", "history"],
+    real: true,
+  },
+  {
     slug: "chief-engineer",
     title: "Chief Engineer",
     tagline: "Run the engine room of a cruise ship: line up the generators, buy the fuel, dodge the emission zones, keep the passengers cool, fed and flushing — and fight the fire when it comes. Six ships, from a fjord runabout to a 96-megawatt mega-liner, on a real ISA-101 control-room console. Vanilla JS; no build step.",
@@ -1369,7 +1382,7 @@ window.COLLECTIONS = [
       "barcelona", "the-second-world-war", "world-population", "lothian", "perth"] },
   { id: "engine", name: "The Engine Room", icon: "ill-engine",
     blurb: "Engines, motors, turbines and the power plants behind them.",
-    slugs: ["ic-engine", "cruise-propulsion", "traction-motors",
+    slugs: ["the-grid", "ic-engine", "cruise-propulsion", "traction-motors",
       "mercury-arc-rectifiers", "hydro", "fifty-hertz", "chief-engineer"] },
   { id: "rails", name: "On Rails", icon: "ill-class55",
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
