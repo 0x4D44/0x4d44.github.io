@@ -19,6 +19,7 @@ export const TUNING = {
   pscFinePerDeficiency: 5000,
   ecaFinePerMin: 20,
   weatherComfortDrain: { rough: 0.05, storm: 0.12 },
+  weatherPropFactor: { calm: 0, moderate: 0.08, rough: 0.18, storm: 0.3 },
 };
 
 // ------------------------------------------------------------------ ships --
@@ -283,7 +284,7 @@ export const EVENTS = {
           { id: "co2", label: "Release CO₂ (only after evacuation)", requires: ["evacuate"], refuseText: "NO — nobody releases CO₂ until the muster confirms the space is EMPTY.", log: "CO₂ released. Boundary cooling rigged. Now we wait and watch the bulkhead temps.", effects: { fireOut: true }, resolve: "degraded" },
         ] },
       { id: "spread", min: 1, severity: "red", terminal: true, text: "FIRE SPREAD TO CABLE RUNS — SWITCHBOARD LOST",
-        effects: { fireBoardLoss: true, comfort: -20, log: "The cable trays above the fire burned through. Half the plant is gone." } },
+        effects: { loseBoard: true, comfort: -20, log: "The cable trays above the fire burned through. Half the plant is gone." } },
     ],
   },
   "er-fire-major": {

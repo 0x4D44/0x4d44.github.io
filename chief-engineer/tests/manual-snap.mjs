@@ -74,6 +74,10 @@ const { targetId } = await send("Target.createTarget", { url: "about:blank" });
 const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
 const S = (m, p = {}) => send(m, p, sessionId);
 await S("Page.enable"); await S("Runtime.enable"); await S("Page.bringToFront");
+ws.addEventListener("message", (e) => {
+  const m = JSON.parse(e.data);
+  if (m.method === "Page.javascriptDialogOpening") send("Page.handleJavaScriptDialog", { accept: true }, m.sessionId);
+});
 const evaluate = async (expression) => {
   const r = await S("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true, userGesture: true });
   if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);

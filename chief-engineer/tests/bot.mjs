@@ -2,24 +2,18 @@
 // state selectors + the event interventions that render as the Manual's
 // procedure checklists. Shared by playthrough tests; no test assertions here.
 
-import { EVENTS, LEVELS, SHIPS } from "../content.js";
-import { spinningReserve, totalDemandMw, currentLeg, projectedFuelMargin } from "../engine.js";
+import { EVENTS } from "../content.js";
+import { spinningReserve, totalDemandMw, currentLeg, levelById, shipFor, propDemandMw } from "../engine.js";
 
-const ship = (state) => SHIPS[LEVELS.find((l) => l.id === state.levelId).ship];
-const level = (state) => LEVELS.find((l) => l.id === state.levelId);
-
-function propAt(state, kn, weather) {
-  const s = ship(state);
-  const factor = { calm: 0, moderate: 0.08, rough: 0.18, storm: 0.3 }[weather] ?? 0;
-  return s.propMw * Math.pow(kn / s.serviceKn, 3) * (1 + factor);
-}
+const level = (state) => levelById(state.levelId);
+const ship = (state) => shipFor(level(state));
 
 function demandTarget(state) {
   const s = ship(state);
   const leg = level(state).route[state.legIndex];
   if (!leg) return 0;
   const hotel = s.hotelMw * (level(state).climateFactor ?? 1);
-  return hotel + s.auxMw + propAt(state, leg.orderKn, leg.weather) + (s.thrusterMw ?? 0) * 0.3;
+  return hotel + s.auxMw + propDemandMw(s, leg.orderKn, leg.weather) + (s.thrusterMw ?? 0) * 0.3;
 }
 
 function liveBoardIds(state) {
@@ -170,12 +164,3 @@ function jobPriority(j, stormAhead, state) {
   return p;
 }
 
-export function runVoyage(levelId, seed, { maxTicks = 30000, applyAction, tick, createVoyage, onTick } = {}) {
-  const state = createVoyage(levelId, seed);
-  for (let i = 0; i < maxTicks && state.phase === "voyage"; i++) {
-    for (const a of botStep(state)) applyAction(state, a);
-    tick(state);
-    if (onTick) onTick(state);
-  }
-  return state;
-}

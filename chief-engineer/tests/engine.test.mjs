@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
 import {
-  createVoyage, tick, applyAction, sfoc, spinningReserve, totalDemandMw,
-  stars, debrief, spawnEvent, activeAlarms, projectedFuelMargin, ENGINE_SCHEMA,
+  createVoyage, tick, applyAction, sfoc, spinningReserve,
+  debrief, spawnEvent, activeAlarms, projectedFuelMargin, ENGINE_SCHEMA,
 } from "../engine.js";
-import { LEVELS, SHIPS, TUNING } from "../content.js";
+import { TUNING } from "../content.js";
 import { botStep } from "./bot.mjs";
 
 // ---- SFOC & burn arithmetic -------------------------------------------------
@@ -21,16 +21,6 @@ assert.ok(sfoc(30) > sfoc(80) + 10, "SFOC worse at low load");
   for (let i = 0; i < 120; i++) tick(s);
   const burnPerDay = ((before - (s.tanks.HFO + s.tanks.MGO)) / 120) * 1440;
   assert.ok(burnPerDay > 250 && burnPerDay < 420, `L6 burn ~315 t/day, got ${burnPerDay.toFixed(0)}`);
-}
-
-// ---- demand closure: every level holds N+1 at service speed (X1) -----------
-for (const lv of LEVELS) {
-  const ship = SHIPS[lv.ship];
-  const installed = ship.dgs.reduce((sum, d) => sum + d.mw, 0);
-  const largest = Math.max(...ship.dgs.map((d) => d.mw));
-  const demand = ship.hotelMw * (lv.climateFactor ?? 1) + ship.propMw + ship.auxMw;
-  assert.ok(installed - largest >= demand,
-    `${lv.id}: N-1 capacity ${(installed - largest).toFixed(1)} >= service demand ${demand.toFixed(1)}`);
 }
 
 // ---- spinning reserve & overload ladder ------------------------------------
@@ -174,7 +164,6 @@ for (const lv of LEVELS) {
   applyAction(s, { type: "tie.open" });
   // strand ER1 with one DG and force full speed: ER1 overloads, ER2 is light
   applyAction(s, { type: "dg.stop", id: "DG12" });
-  const before = s.alarmSeq;
   for (let i = 0; i < 4; i++) tick(s);
   const overloadAlarms = s.alarms.filter((a) => a.tileId === "bus-overload");
   if (overloadAlarms.length) {

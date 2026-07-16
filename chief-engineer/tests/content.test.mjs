@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { SHIPS, LEVELS, EVENTS, MANUAL, TUNING } from "../content.js";
+import { propDemandMw } from "../engine.js";
 
 const manualIds = new Set(MANUAL.map((p) => p.id));
 const eventIds = new Set(Object.keys(EVENTS));
@@ -54,9 +55,8 @@ for (const lv of LEVELS) {
   let burnT = 0;
   for (const leg of lv.route) {
     const hrsSail = leg.distanceNm / leg.orderKn;
-    const wf = { calm: 0, moderate: 0.08, rough: 0.18, storm: 0.3 }[leg.weather] ?? 0;
     const sailMw = ship.hotelMw * (lv.climateFactor ?? 1) + ship.auxMw +
-      ship.propMw * Math.pow(leg.orderKn / ship.serviceKn, 3) * (1 + wf);
+      propDemandMw(ship, leg.orderKn, leg.weather);
     burnT += (sailMw * TUNING.sfocBase * hrsSail) / 1000;
     const hrsPort = (leg.dwellMin ?? 0) / 60;
     burnT += ((ship.hotelMw * 0.9 + ship.auxMw) * TUNING.sfocBase * hrsPort) / 1000;
