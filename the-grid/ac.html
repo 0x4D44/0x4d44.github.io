@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three-Phase AC — The Grid</title>
+<meta name="description" content="Why the grid runs on three-phase alternating current: sine waves and RMS, the constant-power argument for three phases, rotating magnetic fields, the skin effect, real and reactive power, and moving power across a line.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">chapter 2 · three-phase ac</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="generation.html">1 · Generation</a>
+    <a href="ac.html" aria-current="page">2 · Three-Phase AC</a>
+    <a href="transformers.html">3 · Transformers</a>
+    <a href="switchgear.html">4 · Switchgear</a>
+    <a href="lines.html">5 · Lines &amp; Towers</a>
+    <a href="operations.html">6 · Running the Grid</a>
+    <a href="blackouts.html">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 2 · Three-Phase AC</p>
+  <h1>Why Everything Comes in Threes</h1>
+  <p class="standfirst">The grid's operating system is alternating current in three
+  matched phases. It is not an accident of history — it is the cheapest way physics
+  allows to move mechanical power down a wire, and it hands out free gifts: motors
+  that start themselves, currents that cancel, and arcs that put themselves out.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="ac"><span class="no">§ 2.1</span>The case for AC</h2>
+
+<p>The 1880s &ldquo;war of the currents&rdquo; was settled by one machine: the
+transformer. It can step AC up to voltages where transmission losses almost vanish
+(<a href="transformers.html">Chapter&nbsp;3</a> does the arithmetic) and back down
+to voltages that won't kill the customer — and it only works on a <em>changing</em>
+current. DC got its revenge a century later in submarine cables
+(<a href="operations.html">Chapter&nbsp;6</a>), but the everyday grid has been AC
+ever since.</p>
+
+<p>AC brings a second, less obvious gift. Fifty times a second the current passes
+through <strong>zero</strong> — and at that instant an electric arc has no energy
+feeding it. Every circuit breaker in <a href="switchgear.html">Chapter&nbsp;4</a>
+is built around exploiting that fleeting moment. DC has no zeros, which is
+precisely why DC breakers remain hard engineering to this day.</p>
+
+<p>The waveform itself is a sine — the only shape that survives differentiation
+intact, so inductors and capacitors merely shift it rather than distort it. Its
+size is quoted as <strong>RMS</strong> (root-mean-square): the DC voltage that
+would deliver the same heating. Your 230&nbsp;V socket actually swings to
+±325&nbsp;V, 50 times a second.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 1 · One phase: the sine and its RMS</span>
+    <span class="hint">a rotating machine drawn out in time — shown slowed ~12×</span>
+  </div>
+  <div class="fig-body"><canvas id="sine" style="aspect-ratio: 2.1/1; min-height: 260px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Show RMS heating equivalent</label>
+      <div class="seg" id="sine-rms"><button data-v="off" class="on">off</button><button data-v="on">on</button></div>
+    </div>
+  </div>
+  <div class="fig-note">The spoke of the wheel is a <b>phasor</b> — engineers freeze the
+  spin and do all their sums on that arrow. RMS = peak ÷ √2, so 325 V peak is 230 V RMS:
+  the label on the socket is the heating value, not the crest.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="three"><span class="no">§ 2.2</span>Why three phases?</h2>
+
+<p>Take one alternator winding and its power delivery pulses: voltage and current
+pass through zero together, 100 times a second, so the power flow throbs from
+double-the-average down to <em>nothing</em>. A single-phase machine of any size
+shakes itself and the grid like an unbalanced spin-dryer.</p>
+
+<p>Now add windings. With three of them, 120° apart, the three power pulses
+interleave so perfectly that their sum is <strong>ruler-flat</strong>: constant
+mechanical torque on the shaft, constant power down the line. Better still, the
+three currents sum to zero at every instant — so the three return wires can be
+merged and then <em>thrown away</em>. Three wires do the work of six. Two-phase
+systems (Niagara tried it) also smooth the power but waste copper on four wires;
+four or more phases smooth nothing further and multiply conductors, insulators
+and switchgear. Three is where the mathematics stops paying.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 2 · The constant-power argument</span>
+    <span class="hint">switch phase counts and watch the total power line — and the wire bill</span>
+  </div>
+  <div class="fig-body"><canvas id="pwr" style="aspect-ratio: 2/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>System</label>
+      <div class="seg" id="pwr-n">
+        <button data-v="1">single-phase</button>
+        <button data-v="2">two-phase (90°)</button>
+        <button data-v="3" class="on">three-phase</button>
+      </div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">power ripple <b id="pwr-ripple">—</b></span>
+    <span class="ro">wires needed <b id="pwr-wires">—</b></span>
+    <span class="ro">sum of phase currents <b id="pwr-neutral">—</b></span>
+  </div>
+  <div class="fig-note">Total delivered power in amber. Three-phase: flat total <i>and</i>
+  the instantaneous currents cancel, so no return wire is needed at all (in practice a
+  slim neutral rides along on low-voltage networks for the imbalance). This is why a
+  three-phase motor hums evenly while a single-phase one buzzes at 100 Hz.</div>
+</figure>
+
+<div class="prose">
+
+<p>There is a third gift. Feed three coils, physically 120° apart, with the three
+phases, and their combined magnetic field doesn't pulse — it <strong>rotates</strong>,
+smoothly, at synchronous speed, though nothing mechanical moves. Drop a lump of
+conductive metal in the middle and the spinning field drags it round: that is the
+induction motor, the machine that runs the industrial world, self-starting with no
+brushes, no commutator, no electronics.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 3 · The rotating field</span>
+    <span class="hint">three fixed coils, one spinning arrow — then swap two phases</span>
+  </div>
+  <div class="fig-body"><canvas id="rot" style="aspect-ratio: 2.1/1; min-height: 280px;"></canvas></div>
+  <div class="fig-controls">
+    <button class="btn" id="rot-swap">swap L2 ↔ L3</button>
+    <span class="ro" id="rot-dir" style="font-family:var(--mono); font-size:12px; color:var(--ink-2)"></span>
+  </div>
+  <div class="fig-note">Swapping any two phases reverses the rotation — which is why an
+  electrician checks <b>phase rotation</b> before connecting a machine, and why a pump
+  wired backwards runs backwards. The grid's phase order is a system-wide constant,
+  guarded as carefully as the frequency.</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout">
+  <span class="tag">Field note</span>
+  <p>Why 50 cycles and not 5 or 500? Low frequencies make lamps flicker visibly and
+  transformers enormous (the flux has longer to build each half-cycle, so the iron
+  must be bigger); high frequencies multiply losses in line reactance and machine
+  iron. The industry converged on 50 Hz (Europe, via AEG) and 60 Hz (America, via
+  Westinghouse) — close cousins either side of the sweet spot. Older railways picked
+  16⅔ Hz because early series-wound traction motors commutated badly at 50.</p>
+</div>
+
+<h2 id="skin"><span class="no">§ 2.3</span>The skin effect — why fat wires waste their middles</h2>
+
+<p>At DC, current fills a conductor evenly. At AC it does not: the alternating
+current's own magnetic field induces eddy voltages inside the conductor that push
+the current outward, crowding it into a shell at the surface. The shell's
+characteristic thickness — the <strong>skin depth</strong> — shrinks with
+frequency and with magnetic materials. At 50&nbsp;Hz it is about 9&nbsp;mm in
+copper and 12&nbsp;mm in aluminium.</p>
+
+<p>So a conductor much fatter than a couple of skin depths is carrying dead
+metal at its core. This single fact shapes the hardware of
+<a href="lines.html">Chapter&nbsp;5</a>: transmission conductors are built as
+<strong>ACSR</strong> — a steel core for strength wrapped in aluminium that does
+the conducting (steel's skin depth is barely a millimetre, so it carries almost
+no current anyway) — and beyond a certain size it pays to stop growing one
+conductor and instead hang <strong>bundles</strong> of two or four smaller ones
+per phase.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 4 · Current crowding in a round conductor</span>
+    <span class="hint">brightness = current density · the dashed ring is one skin depth in</span>
+  </div>
+  <div class="fig-body"><canvas id="skincv" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Frequency</label>
+      <div class="seg" id="skin-f">
+        <button data-v="0">DC</button>
+        <button data-v="16.7">16⅔ Hz</button>
+        <button data-v="50" class="on">50 Hz</button>
+        <button data-v="400">400 Hz</button>
+        <button data-v="5000">5 kHz</button>
+      </div>
+    </div>
+    <div class="ctl"><label>Material</label>
+      <div class="seg" id="skin-m">
+        <button data-v="al" class="on">aluminium</button>
+        <button data-v="cu">copper</button>
+        <button data-v="fe">steel</button>
+      </div>
+    </div>
+    <div class="ctl"><label>Radius</label>
+      <input type="range" id="skin-r" min="4" max="30" step="0.5" value="14">
+      <output>14 mm</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">skin depth δ <b id="skin-d">—</b></span>
+    <span class="ro">cross-section doing useful work <b id="skin-u">—</b></span>
+    <span class="ro">AC resistance vs DC <b id="skin-rr">—</b></span>
+  </div>
+  <div class="fig-note">Annulus approximation — good enough to see the design pressure.
+  A &ldquo;Zebra&rdquo; ACSR at ~14 mm radius barely notices 50 Hz; double the radius and
+  the core metal is freight, not conductor. Note steel: magnetic permeability crushes its
+  skin depth to ~1.5 mm, so the steel heart of an ACSR is structural, not electrical.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="vars"><span class="no">§ 2.4</span>Real power, reactive power, and the VAr</h2>
+
+<p>When the load is a heater, current marches in step with voltage and every watt
+flows one way: toward the toast. But motors and transformers must magnetise iron,
+and cables must charge their capacitance, and that borrowed energy sloshes
+<em>back and forth</em> twice a cycle rather than being consumed. The bookkeeping
+splits the flow into <strong>real power</strong> (watts — does work) and
+<strong>reactive power</strong> (VArs, volt-amp-reactive — sustains fields). The
+generator and every wire in between must carry the whole combined current, which
+is why utilities meter big customers' power factor and why the grid runs a whole
+parallel market in VArs (<a href="operations.html">Chapter&nbsp;6</a>) — and why
+reactive starvation can collapse a grid's voltage
+(<a href="blackouts.html">Chapter&nbsp;7</a>, twice).</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 5 · Watts and VArs</span>
+    <span class="hint">slide the current out of step and watch power flow backwards</span>
+  </div>
+  <div class="fig-body"><canvas id="pq" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Phase lag φ</label>
+      <input type="range" id="pq-phi" min="-90" max="90" step="1" value="0">
+      <output>0°</output></div>
+    <button class="btn" id="pq-heater">heater</button>
+    <button class="btn" id="pq-motor">induction motor</button>
+    <button class="btn" id="pq-cable">unloaded cable</button>
+  </div>
+  <div class="readouts">
+    <span class="ro">apparent power S <b>40 kVA</b></span>
+    <span class="ro">real P <b id="pq-p">—</b></span>
+    <span class="ro">reactive Q <b id="pq-q">—</b></span>
+    <span class="ro">power factor <b id="pq-pf">—</b></span>
+  </div>
+  <div class="fig-note">Red-shaded lobes are instants when energy is flowing <b>back to
+  the grid</b>. At φ = 90° the average is zero: full current, full losses, no work done —
+  the definition of a purely reactive load. Lagging (motors) and leading (cables,
+  capacitors) VArs cancel each other, which is the entire trick of power-factor
+  correction.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="angle"><span class="no">§ 2.5</span>Pushing power through a wire that's already live</h2>
+
+<p>One last piece of AC physics underpins everything in Chapters 6 and 7. Between
+two live busbars joined by a mostly-inductive line, power flows according to
+<code>P&nbsp;=&nbsp;(V₁V₂&nbsp;/&nbsp;X)&nbsp;·&nbsp;sin&nbsp;δ</code>, where δ —
+the <strong>load angle</strong> — is how far the sending end's voltage wave leads
+the receiving end's. Generators don't &ldquo;push harder&rdquo; with voltage; they
+edge fractionally <em>ahead in phase</em>, like a spring twisted between two
+flywheels. The catch: sin&nbsp;δ peaks at 90°. Ask for more than the line's
+maximum and the spring lets go — the machines slip poles and the tie collapses.
+Every cascading blackout in Chapter&nbsp;7 ends with exactly this.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 6 · The load angle and the stability cliff</span>
+    <span class="hint">twist the spring</span>
+  </div>
+  <div class="fig-body"><canvas id="ang" style="aspect-ratio: 2.1/1; min-height: 280px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Load angle δ</label>
+      <input type="range" id="ang-d" min="0" max="130" step="1" value="30">
+      <output>30°</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">power transferred <b id="ang-p">—</b></span>
+    <span class="ro" id="ang-warn" style="flex:1 1 auto"></span>
+  </div>
+  <div class="fig-note">Real systems are operated well down the curve — typically under
+  30–40° across any one corridor — so there is margin for the next fault. The moment two
+  regions of a grid slide past 180° relative to each other they are &ldquo;out of
+  step&rdquo;: protection must split them apart before the current peaks do it
+  destructively.</div>
+</figure>
+
+<div class="prose">
+  <p>Three phases, then — generated in threes, moved in threes. The next problem is
+  changing its voltage a dozen times between the machine hall and your kitchen,
+  which brings us to the quietly perfect machine: the transformer.</p>
+</div>
+
+<nav class="chapnav">
+  <a href="generation.html"><span class="dir">← Chapter 1</span><span class="title">Generation</span></a>
+  <a class="next" href="transformers.html"><span class="dir">Chapter 3 →</span><span class="title">Transformers</span></a>
+</nav>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, PH, TAU, clamp, label, line, mono } = G;
+  const W_VIS = TAU * 0.65; // visual angular speed rad/s (~12x slow of nothing in particular)
+
+  /* ============ Fig 1: sine + phasor + RMS ============ */
+  let showRMS = false;
+  G.canvas("sine", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const th = t * W_VIS;
+    const cx = w * 0.16, cy = h * 0.5, R = Math.min(h * 0.33, w * 0.11);
+    // wheel
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+    line(ctx, cx - R - 8, cy, cx + R + 8, cy, C.line2, 1);
+    line(ctx, cx, cy - R - 8, cx, cy + R + 8, C.line2, 1);
+    const px = cx + Math.cos(th) * R, py = cy - Math.sin(th) * R;
+    line(ctx, cx, cy, px, py, C.amber, 2.5);
+    ctx.fillStyle = C.amber; ctx.beginPath(); ctx.arc(px, py, 4, 0, TAU); ctx.fill();
+    label(ctx, "phasor", cx, cy + R + 20, { align: "center" });
+
+    // projection line to trace
+    const tx0 = w * 0.32, tx1 = w * 0.96;
+    line(ctx, px, py, tx0, py, "rgba(240,180,41,0.35)", 1, [3, 4]);
+
+    // axes
+    line(ctx, tx0, cy, tx1, cy, C.line, 1);
+    // sine trace: value at (x) = sin(th - k(x))
+    ctx.strokeStyle = C.teal; ctx.lineWidth = 2.2; ctx.beginPath();
+    const cycles = 2.2;
+    for (let i = 0; i <= 300; i++) {
+      const x = tx0 + (i / 300) * (tx1 - tx0);
+      const y = cy - Math.sin(th - (i / 300) * cycles * TAU) * R;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // peak / RMS markers
+    line(ctx, tx0, cy - R, tx1, cy - R, C.line, 1, [2, 5]);
+    label(ctx, "+325 V peak", tx1, cy - R - 6, { align: "right" });
+    line(ctx, tx0, cy + R, tx1, cy + R, C.line, 1, [2, 5]);
+    label(ctx, "−325 V", tx1, cy + R + 14, { align: "right" });
+    if (showRMS) {
+      const yr = cy - R / Math.SQRT2;
+      line(ctx, tx0, yr, tx1, yr, C.danger, 1.5, [6, 4]);
+      label(ctx, "230 V RMS — same heat as this DC level", tx0 + 6, yr - 6, { color: C.danger, font: mono(11, true) });
+    }
+    label(ctx, "time →", tx1, cy + R + 30, { align: "right" });
+    // instantaneous value dot at left edge of trace
+    ctx.fillStyle = C.teal;
+    ctx.beginPath(); ctx.arc(tx0, cy - Math.sin(th) * R, 4, 0, TAU); ctx.fill();
+    label(ctx, (325 * Math.sin(th)).toFixed(0) + " V", tx0 + 8, cy - Math.sin(th) * R - 8, { color: C.teal, font: mono(11, true) });
+  }, { animate: true });
+  G.seg("sine-rms", v => { showRMS = v === "on"; });
+
+  /* ============ Fig 2: constant power ============ */
+  let nPh = 3;
+  G.canvas("pwr", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const th = t * W_VIS;
+    const m = { l: 46, r: 90, t: 20, b: 26 };
+    const W2 = w - m.l - m.r, H2 = h - m.t - m.b;
+    const midV = m.t + H2 * 0.30, midP = m.t + H2 * 0.78;
+    const ampV = H2 * 0.20, ampP = H2 * 0.16;
+    const cycles = 2;
+    const phases = nPh === 2 ? [0, Math.PI / 2] : nPh === 3 ? [0, TAU / 3, 2 * TAU / 3] : [0];
+    const cols = nPh === 2 ? [PH[0], PH[2]] : PH;
+
+    line(ctx, m.l, midV, w - m.r, midV, C.line, 1);
+    line(ctx, m.l, midP, w - m.r, midP, C.line, 1);
+    label(ctx, "phase voltages & currents (in step)", m.l, m.t - 4, { color: C.muted });
+    label(ctx, "power delivered", m.l, midP - ampP * 1.5 - 6, { color: C.muted });
+
+    // phase waves
+    phases.forEach((ph, k) => {
+      ctx.strokeStyle = cols[k]; ctx.lineWidth = 1.8; ctx.beginPath();
+      for (let i = 0; i <= 260; i++) {
+        const x = m.l + (i / 260) * W2;
+        const y = midV - Math.sin(th - (i / 260) * cycles * TAU - ph) * ampV;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      const vEnd = Math.sin(th - cycles * TAU - ph);
+      label(ctx, "L" + (k + 1), w - m.r + 4, midV - vEnd * ampV + 4, { color: cols[k], font: mono(10, true) });
+    });
+
+    // per-phase power (thin) + total (amber thick)
+    ctx.lineWidth = 1;
+    phases.forEach((ph, k) => {
+      ctx.strokeStyle = cols[k] + "88"; ctx.beginPath();
+      for (let i = 0; i <= 260; i++) {
+        const x = m.l + (i / 260) * W2;
+        const s = Math.sin(th - (i / 260) * cycles * TAU - ph);
+        const y = midP - s * s * ampP;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.6; ctx.beginPath();
+    let pMin = 1e9, pMax = -1e9;
+    for (let i = 0; i <= 260; i++) {
+      const x = m.l + (i / 260) * W2;
+      let tot = 0;
+      phases.forEach(ph => { const s = Math.sin(th - (i / 260) * cycles * TAU - ph); tot += s * s; });
+      pMin = Math.min(pMin, tot); pMax = Math.max(pMax, tot);
+      const y = midP - (tot / phases.length) * ampP * 1.35;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    label(ctx, "TOTAL", w - m.r + 4, midP - (pMax / phases.length) * ampP * 1.35 + 4, { color: C.amber, font: mono(10, true) });
+
+    const ripple = pMax === 0 ? 0 : (pMax - pMin) / ((pMax + pMin) / 2) * 100;
+    document.getElementById("pwr-ripple").textContent =
+      ripple < 0.5 ? "0% — ruler flat" : Math.round(ripple) + "% (to zero and back)";
+    document.getElementById("pwr-wires").textContent = nPh === 1 ? "2" : nPh === 2 ? "4" : "3";
+    document.getElementById("pwr-neutral").textContent =
+      nPh === 3 ? "zero — return wire cancelled" : nPh === 2 ? "non-zero" : "full current returns";
+  }, { animate: true });
+  G.seg("pwr-n", v => { nPh = +v; });
+
+  /* ============ Fig 3: rotating field ============ */
+  let rotSwap = false;
+  G.canvas("rot", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const th = t * W_VIS;
+    const cx = w * 0.30, cy = h * 0.52, R = Math.min(h * 0.34, w * 0.16);
+    // stator ring + coils
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.25, 0, TAU); ctx.stroke();
+    const order = rotSwap ? [0, 2, 1] : [0, 1, 2];
+    let bx = 0, by = 0;
+    order.forEach((phIdx, k) => {
+      const axis = -Math.PI / 2 + k * TAU / 3; // coil positions fixed
+      const cur = Math.sin(th - phIdx * TAU / 3); // which phase feeds it
+      const ex = Math.cos(axis), ey = Math.sin(axis);
+      // coil blob
+      const colx = cx + ex * R * 1.25, coly = cy + ey * R * 1.25;
+      ctx.fillStyle = PH[phIdx];
+      ctx.beginPath(); ctx.arc(colx, coly, 7, 0, TAU); ctx.fill();
+      label(ctx, "L" + (phIdx + 1), cx + ex * R * 1.52, cy + ey * R * 1.52 + 4, { align: "center", color: PH[phIdx], font: mono(11, true) });
+      // per-coil field arrow along axis, length ∝ current
+      const len = cur * R * 0.55;
+      ctx.strokeStyle = PH[phIdx]; ctx.lineWidth = 2;
+      line(ctx, cx, cy, cx + ex * len, cy + ey * len, PH[phIdx], 2);
+      bx += ex * cur; by += ey * cur;
+    });
+    // resultant
+    const bl = Math.hypot(bx, by) / 1.5; // normalise (max 1.5)
+    const ba = Math.atan2(by, bx);
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 4; ctx.lineCap = "round";
+    line(ctx, cx, cy, cx + Math.cos(ba) * R * 0.95 * bl, cy + Math.sin(ba) * R * 0.95 * bl, C.amber, 4);
+    const hx = cx + Math.cos(ba) * R * 0.95 * bl, hy = cy + Math.sin(ba) * R * 0.95 * bl;
+    ctx.fillStyle = C.amber;
+    ctx.save(); ctx.translate(hx, hy); ctx.rotate(ba);
+    ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-4, -5); ctx.lineTo(-4, 5); ctx.closePath(); ctx.fill();
+    ctx.restore();
+    label(ctx, "resultant field — constant length, spinning", cx, cy + R * 1.25 + 30, { align: "center" });
+
+    // right: the three currents
+    const tx0 = w * 0.56, tx1 = w * 0.96, ty = h * 0.5, amp = h * 0.22;
+    line(ctx, tx0, ty, tx1, ty, C.line, 1);
+    [0, 1, 2].forEach(phIdx => {
+      ctx.strokeStyle = PH[phIdx]; ctx.lineWidth = 1.8; ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const x = tx0 + i / 200 * (tx1 - tx0);
+        const y = ty - Math.sin(th - i / 200 * 2 * TAU - phIdx * TAU / 3) * amp;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+    label(ctx, "the three coil currents", tx0, ty - amp - 10, { color: C.muted });
+    document.getElementById("rot-dir").textContent =
+      rotSwap ? "phase order L1-L3-L2 → field rotates ANTICLOCKWISE" : "phase order L1-L2-L3 → field rotates CLOCKWISE";
+  }, { animate: true });
+  document.getElementById("rot-swap").addEventListener("click", () => { rotSwap = !rotSwap; });
+
+  /* ============ Fig 4: skin effect ============ */
+  const RHO = { cu: 1.68e-8, al: 2.65e-8, fe: 1.43e-7 };
+  const MUR = { cu: 1, al: 1, fe: 300 };
+  let skF = 50, skM = "al", skR = 14;
+
+  const skinFig = G.canvas("skincv", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * 0.30, cy = h * 0.5;
+    const maxR = Math.min(h * 0.40, w * 0.20);
+    const scale = maxR / 30; // px per mm
+    const Rpx = skR * scale;
+    const delta = skF === 0 ? Infinity :
+      Math.sqrt(RHO[skM] / (Math.PI * skF * 4e-7 * Math.PI * MUR[skM])) * 1000; // mm
+
+    // draw rings of current density
+    const steps = 46;
+    for (let i = steps; i >= 1; i--) {
+      const r = (i / steps) * skR;
+      const J = skF === 0 ? 1 : Math.exp(-(skR - r) / delta);
+      const a = 0.06 + 0.9 * J;
+      ctx.fillStyle = `rgba(240, 180, 41, ${a.toFixed(3)})`;
+      ctx.beginPath(); ctx.arc(cx, cy, r * scale, 0, TAU); ctx.fill();
+    }
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, Rpx, 0, TAU); ctx.stroke();
+    if (isFinite(delta) && delta < skR) {
+      ctx.strokeStyle = C.teal; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(cx, cy, (skR - delta) * scale, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    label(ctx, skR + " mm radius", cx, cy + Rpx + 22, { align: "center" });
+
+    // right: J(r) profile
+    const px0 = w * 0.56, px1 = w * 0.95, py0 = h * 0.18, py1 = h * 0.78;
+    line(ctx, px0, py1, px1, py1, C.line, 1);
+    line(ctx, px0, py0, px0, py1, C.line, 1);
+    label(ctx, "current density across the middle", px0, py0 - 8, { color: C.muted });
+    label(ctx, "−R", px0, py1 + 16); label(ctx, "0", (px0 + px1) / 2, py1 + 16, { align: "center" });
+    label(ctx, "+R", px1, py1 + 16, { align: "right" });
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.2; ctx.beginPath();
+    for (let i = 0; i <= 200; i++) {
+      const rr = (i / 100 - 1) * skR; // -R..R
+      const J = skF === 0 ? 1 : Math.exp(-(skR - Math.abs(rr)) / delta);
+      const x = px0 + i / 200 * (px1 - px0);
+      const y = py1 - J * (py1 - py0) * 0.92;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // readouts
+    const dEl = document.getElementById("skin-d");
+    dEl.textContent = skF === 0 ? "∞ (DC fills the metal)" : delta >= 10 ? delta.toFixed(1) + " mm" : delta.toFixed(2) + " mm";
+    let util, rr;
+    if (skF === 0 || delta >= skR) { util = 1; rr = 1; }
+    else { util = (delta * (2 * skR - delta)) / (skR * skR); rr = 1 / util; }
+    document.getElementById("skin-u").textContent = Math.round(util * 100) + "%";
+    document.getElementById("skin-rr").textContent = "×" + rr.toFixed(2);
+  });
+  G.seg("skin-f", v => { skF = +v; skinFig.redraw(); });
+  G.seg("skin-m", v => { skM = v; skinFig.redraw(); });
+  G.slider("skin-r", v => v + " mm", v => { skR = v; skinFig.redraw(); });
+
+  /* ============ Fig 5: P & Q ============ */
+  let phi = 0;
+  G.canvas("pq", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const th = t * W_VIS;
+    const m = { l: 46, r: 20, t: 18, b: 24 };
+    const W2 = w - m.l - m.r, H2 = h - m.t - m.b;
+    const midVI = m.t + H2 * 0.28, midP = m.t + H2 * 0.76;
+    const amp = H2 * 0.18, ampP = H2 * 0.20;
+    const cycles = 2;
+    const phiR = phi * Math.PI / 180;
+
+    line(ctx, m.l, midVI, w - m.r, midVI, C.line, 1);
+    line(ctx, m.l, midP, w - m.r, midP, C.line, 1);
+
+    // v and i
+    [["v", 0, C.teal, 1], ["i", phiR, C.series[2], 0.8]].forEach(([nm, ph, col, a]) => {
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 240; i++) {
+        const x = m.l + i / 240 * W2;
+        const y = midVI - a * Math.sin(th - i / 240 * cycles * TAU - ph) * amp;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+    label(ctx, "voltage", m.l + 4, m.t + 8, { color: C.teal, font: mono(10, true) });
+    label(ctx, "current", m.l + 60, m.t + 8, { color: C.series[2], font: mono(10, true) });
+
+    // p(t) with negative shading
+    ctx.beginPath();
+    let started = false;
+    for (let i = 0; i <= 240; i++) {
+      const x = m.l + i / 240 * W2;
+      const a = th - i / 240 * cycles * TAU;
+      const p = Math.sin(a) * 0.8 * Math.sin(a - phiR);
+      const y = midP - p * ampP;
+      started ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      started = true;
+    }
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.4; ctx.stroke();
+    // shade p<0
+    ctx.fillStyle = "rgba(224,82,82,0.25)";
+    for (let i = 0; i <= 240; i++) {
+      const x = m.l + i / 240 * W2;
+      const a = th - i / 240 * cycles * TAU;
+      const p = Math.sin(a) * 0.8 * Math.sin(a - phiR);
+      if (p < 0) ctx.fillRect(x, midP, W2 / 240 + 0.5, -p * ampP);
+    }
+    // average line
+    const pav = 0.5 * 0.8 * Math.cos(phiR);
+    line(ctx, m.l, midP - pav * ampP, w - m.r, midP - pav * ampP, C.good, 1.5, [5, 4]);
+    label(ctx, "average = real power", w - m.r - 4, midP - pav * ampP - 6, { align: "right", color: C.good, font: mono(10, true) });
+    label(ctx, "instantaneous power v×i (red = flowing backwards)", m.l + 4, midP - ampP - 8, { color: C.muted });
+
+    const S = 40;
+    document.getElementById("pq-p").textContent = Math.round(S * Math.cos(phiR)) + " kW";
+    document.getElementById("pq-q").textContent = Math.round(S * Math.sin(phiR)) + " kVAr" + (phi > 2 ? " lagging" : phi < -2 ? " leading" : "");
+    document.getElementById("pq-pf").textContent = Math.abs(Math.cos(phiR)).toFixed(2) + (phi > 2 ? " lag" : phi < -2 ? " lead" : "");
+  }, { animate: true });
+  const phiS = G.slider("pq-phi", v => v + "°", v => { phi = v; });
+  document.getElementById("pq-heater").addEventListener("click", () => phiS.set(0));
+  document.getElementById("pq-motor").addEventListener("click", () => phiS.set(35));
+  document.getElementById("pq-cable").addEventListener("click", () => phiS.set(-85));
+
+  /* ============ Fig 6: load angle ============ */
+  let delta = 30;
+  const angFig = G.canvas("ang", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 52, r: 24, t: 22, b: 40 };
+    const W2 = w - m.l - m.r, H2 = h - m.t - m.b;
+    const X = d => m.l + d / 180 * W2;
+    const Y = p => m.t + (1 - p) * H2;
+    // unstable region
+    ctx.fillStyle = "rgba(224,82,82,0.10)";
+    ctx.fillRect(X(90), m.t, W2 / 2, H2);
+    label(ctx, "UNSTABLE — sliding backwards down the curve", X(135), m.t + 14, { align: "center", color: C.danger });
+    // axes
+    line(ctx, m.l, Y(0), w - m.r, Y(0), C.line, 1);
+    [0, 30, 60, 90, 120, 150, 180].forEach(d => {
+      label(ctx, d + "°", X(d), Y(0) + 16, { align: "center" });
+      line(ctx, X(d), Y(0), X(d), Y(0) - 4, C.muted, 1);
+    });
+    label(ctx, "load angle δ", (m.l + w - m.r) / 2, Y(0) + 32, { align: "center" });
+    label(ctx, "P", m.l - 10, m.t + 10, { align: "right" });
+    // curve
+    ctx.strokeStyle = C.teal; ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let d = 0; d <= 180; d += 2) {
+      const x = X(d), y = Y(Math.sin(d * Math.PI / 180) * 0.9);
+      d === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    line(ctx, X(90), m.t + 6, X(90), Y(0), C.muted, 1, [4, 4]);
+    // operating point
+    const p = Math.sin(delta * Math.PI / 180) * 0.9;
+    ctx.fillStyle = delta <= 90 ? C.amber : C.danger;
+    ctx.beginPath(); ctx.arc(X(delta), Y(p), 6, 0, TAU); ctx.fill();
+    ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
+
+    document.getElementById("ang-p").textContent = Math.round(Math.sin(delta * Math.PI / 180) * 100) + "% of line maximum";
+    const warn = document.getElementById("ang-warn");
+    if (delta <= 40) warn.innerHTML = "<span style='color:var(--good); font-family:var(--mono); font-size:12px'>normal operating territory</span>";
+    else if (delta <= 90) warn.innerHTML = "<span style='color:var(--amber); font-family:var(--mono); font-size:12px'>thin margin — one more fault could tip it</span>";
+    else warn.innerHTML = "<span style='color:var(--danger); font-family:var(--mono); font-size:12px'>POLE SLIP — past 90° more angle gives LESS power; the machines tear apart</span>";
+  });
+  G.slider("ang-d", v => v + "°", v => { delta = v; angFig.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

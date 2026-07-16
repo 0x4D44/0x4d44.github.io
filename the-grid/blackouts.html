@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>When It Fails — The Grid</title>
+<meta name="description" content="Six great blackouts dissected — Northeast 1965 and 2003, the 2006 European split, South Australia 2016, Great Britain 2019, and the Iberian collapse of April 2025 — plus a cascade simulator and the defences the grid carries.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">chapter 7 · when it fails</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="generation.html">1 · Generation</a>
+    <a href="ac.html">2 · Three-Phase AC</a>
+    <a href="transformers.html">3 · Transformers</a>
+    <a href="switchgear.html">4 · Switchgear</a>
+    <a href="lines.html">5 · Lines &amp; Towers</a>
+    <a href="operations.html">6 · Running the Grid</a>
+    <a href="blackouts.html" aria-current="page">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 7 · When It Fails</p>
+  <h1>The Nights the Lights Went Out</h1>
+  <p class="standfirst">A great blackout is never one failure. It is a chain: a small
+  event lands on a stressed system, the safeguards act exactly as designed against a
+  problem nobody designed for, and in minutes — sometimes seconds — a machine the size
+  of a country tears itself apart. Every case below made the grid you have today.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="anatomy"><span class="no">§ 7.1</span>Anatomy of a cascade</h2>
+
+<p>Grids are planned to the <strong>N−1 rule</strong>: the system must survive the
+loss of any single element — any line, any generator, any transformer — without
+overloading anything else. The trouble begins when reality spends the margin: a
+hot day, a maintenance outage, a forecast miss, and the system is quietly
+operating closer to its limits than the studies assumed. Then the initiating
+event arrives — a tree, a relay, a lightning storm — and the physics of
+<a href="ac.html">Chapter&nbsp;2</a> takes over: power doesn't ask permission; it
+redistributes instantly over every remaining path. If one of those paths
+overloads and trips, the flow redistributes again, more steeply. Three or four
+steps in, the cascade is faster than any human being can think.</p>
+
+<p>Before the case studies, break one yourself. The network below is honest
+physics — a real DC load-flow solved live in your browser. Amber squares
+generate, teal circles consume; the north generates more than it uses, the south
+consumes more than it makes, so the middle corridors run heavy. Click a line to
+trip it.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Fig 1 · The cascade playground</span>
+    <span class="hint">click any line to trip it · overloaded lines glow, then trip themselves</span>
+  </div>
+  <div class="fig-body"><canvas id="casc" style="aspect-ratio: 1.8/1; min-height: 380px; cursor: crosshair;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>System loading</label>
+      <input type="range" id="casc-k" min="70" max="125" step="5" value="100">
+      <output>100%</output></div>
+    <button class="btn" id="casc-reset">restore the grid</button>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="casc-status" style="font-size:13px; color:var(--ink-2); flex:1 1 100%">
+      All quiet. Every line inside its rating — the system is N−1 secure at this loading.
+      Find the line that brings it all down.</span>
+  </div>
+  <div class="fig-note">Line thickness = power flow; the % labels show loading against
+  each line's rating. At 100% system loading the network survives most single trips —
+  try the outer lines first, then the heavy mid-corridor pair. Slide the loading to 120%
+  (a cold snap, a still evening) and watch how much less forgiveness there is. Islands
+  that end up with too little generation go dark; this is exactly the arithmetic of
+  every story below.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="y1965"><span class="no">§ 7.2</span>9 November 1965 — the relay that darkened New York</h2>
+
+<table class="data">
+  <tbody>
+    <tr><td class="k">Trigger</td><td>One backup relay, set too low two years earlier</td></tr>
+    <tr><td class="k">Lost</td><td>~20,000 MW · 30 million people · Ontario, New York, New England</td></tr>
+    <tr><td class="k">Dark for</td><td>Up to ~13 hours (New York City through the night)</td></tr>
+  </tbody>
+</table>
+
+<p>At 5:16 p.m., at the height of the evening rush, a protective relay on one of
+five 230&nbsp;kV lines running north from the Sir Adam Beck No. 2 hydro plant at
+Niagara operated exactly as instructed — and instructed wrongly. Set in 1963 with
+a threshold that made sense for 1963's loads, it had never been revisited as
+Toronto's demand grew. On this cold evening the line's perfectly normal loading
+crossed the stale setting, and the relay, believing itself to be clearing a
+fault, opened the line. Its flow crashed onto the other four; they tripped in
+2.7 seconds; and 1,800&nbsp;MW of Niagara power that had been flowing north to
+Toronto reversed and hurled itself south and east onto the American network,
+which buckled corridor by corridor into New England and down to New York. The
+Northeast shattered into islands; most collapsed. In Manhattan the subway
+stopped between stations with 800,000 riders aboard.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 2 · A stale setting meets a growing city</span>
+    <span class="hint">scrub the two years</span>
+  </div>
+  <div class="fig-body"><canvas id="y65" style="aspect-ratio: 2.1/1; min-height: 270px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Timeline</label>
+      <input type="range" id="y65-t" min="0" max="100" step="0.5" value="15">
+      <output>—</output></div>
+  </div>
+  <div class="readouts"><span class="ro" id="y65-cap" style="font-size:13px; color:var(--ink-2); flex:1 1 100%"></span></div>
+  <div class="fig-note">Schematic, after the Federal Power Commission's inquiry. The
+  lesson written in the report — <i>protection settings are operating limits and must be
+  managed as such</i> — created the modern machinery of grid reliability coordination
+  (and, eventually, NERC). The 1965 inquiry also demanded something that barely existed:
+  <b>black start plans</b> (Chapter 6). New York's took all night.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="y2003"><span class="no">§ 7.3</span>14 August 2003 — the tree, the bug, and the blind control room</h2>
+
+<table class="data">
+  <tbody>
+    <tr><td class="k">Trigger</td><td>Hot sagging lines into untrimmed trees + a frozen alarm system</td></tr>
+    <tr><td class="k">Lost</td><td>~62,000 MW · 50 million people · US Midwest/Northeast + Ontario</td></tr>
+    <tr><td class="k">Dark for</td><td>Hours to 4 days</td></tr>
+  </tbody>
+</table>
+
+<p>Thirty-eight years later, almost the same map. A hot Ohio afternoon; FirstEnergy's
+system short of reactive power and running warm. At 14:14 a race-condition bug froze
+the control room's alarm processor — the operators' screens stayed calm while the
+system beneath them was not (the software failed <em>silent</em>, the cruellest way).
+Between 15:05 and 15:41, three 345&nbsp;kV lines, heavily loaded and sagging in the
+heat (<a href="lines.html">Chapter&nbsp;5</a>'s physics, to the letter), each found a
+tree that should have been trimmed. Nobody at FirstEnergy knew. The flows squeezed
+onto the 138&nbsp;kV network, which failed line by line; then at 16:05 the Sammis–Star
+345&nbsp;kV relay — a <strong>Zone&nbsp;3</strong> distance element
+(<a href="switchgear.html">Chapter&nbsp;4</a>) staring at enormous current and
+depressed voltage — concluded &ldquo;remote fault&rdquo; and tripped its healthy
+line. That was the cascade's starting gun: in the next eight minutes power surges
+swept round Lake Erie, 508 generating units at 265 plants shut down, and the
+Northeast went dark again — 62&nbsp;GW gone.</p>
+
+<div class="callout">
+  <span class="tag">What it changed</span>
+  <p>Mandatory, fine-backed reliability standards (goodbye voluntary guidelines);
+  ruthless vegetation-management rules; a purge of over-reaching Zone 3 settings;
+  and wide-area monitoring so no control room need ever be blind again. The
+  investigators' phrase for the pattern — a <i>hidden failure</i> in protection,
+  harmless until the one day it isn't — is now a term of art.</p>
+</div>
+
+<h2 id="y2006"><span class="no">§ 7.4</span>4 November 2006 — Europe splits in three over a cruise ship</h2>
+
+<table class="data">
+  <tbody>
+    <tr><td class="k">Trigger</td><td>A planned line switch-off for a ship's passage, mis-calculated</td></tr>
+    <tr><td class="k">Lost</td><td>~14,000 MW shed · ~15 million households flickered dark · one synchronous grid became three</td></tr>
+    <tr><td class="k">Dark for</td><td>~2 hours — a triumph, all things considered</td></tr>
+  </tbody>
+</table>
+
+<p>To let the newly-launched <em>Norwegian Pearl</em> pass down the River Ems, E.ON
+Netz switched off a 380&nbsp;kV double circuit crossing the river — routine, except
+the N−1 arithmetic for the new configuration was done late, partly by rule-of-thumb,
+and a last-minute schedule change was never re-checked with the neighbours. When a
+coupling action shifted flows, the Landesbergen–Wehrendorf line overloaded and
+tripped, and the cascade ripped diagonally across Europe in fourteen seconds —
+splitting the continental synchronous area (Lisbon to the Black Sea, one machine,
+as <a href="ac.html">Chapter&nbsp;2</a> insists) into <strong>three asynchronous
+islands</strong>. The West woke up 9&nbsp;GW short and fell to 49&nbsp;Hz —
+automatic load shedding (<a href="operations.html">Chapter&nbsp;6</a>) cut fifteen
+million households within seconds and held it. The North-East found itself with a
+10&nbsp;GW <em>surplus</em> and swung high. Two hours of careful resynchronisation
+— <a href="generation.html">Chapter&nbsp;1</a>'s synchroscope discipline, applied to
+half a continent — stitched Europe back together. The defence plan had worked; the
+coordination that made the split possible was overhauled anyway, seeding what is
+now ENTSO-E's joint operational planning.</p>
+
+<h2 id="y2016"><span class="no">§ 7.5</span>28 September 2016 — South Australia and the ride-through counters</h2>
+
+<table class="data">
+  <tbody>
+    <tr><td class="k">Trigger</td><td>Tornadoes felling towers → six voltage dips in two minutes</td></tr>
+    <tr><td class="k">Lost</td><td>The state: ~1.83 GW of demand, 850,000 customers</td></tr>
+    <tr><td class="k">Dark for</td><td>Most restored in ~8 hours; full weeks for the last towers</td></tr>
+  </tbody>
+</table>
+
+<p>A savage cold front — at least two tornadoes — brought down transmission towers
+in the state's mid-north, and each fault flickered the whole network's voltage.
+Individually survivable; cumulatively not, because of a setting almost nobody had
+thought about: many wind farms' inverters carried a <strong>counter</strong>
+limiting how many low-voltage ride-through events they would tolerate in a short
+window. The sixth dip exhausted the counters, and 456&nbsp;MW of wind quietly
+withdrew in under seven seconds. The state's umbilical to Victoria — the Heywood
+interconnector — tried to make up the difference, overloaded, and tripped on
+loss-of-synchronism protection. Islanded with little inertia
+(<a href="operations.html">Chapter&nbsp;6</a>) and a frequency falling at
+6&nbsp;Hz per second, load shedding never stood a chance: South Australia was
+black in moments. The postscript is constructive: the settings were changed
+within weeks, grid codes worldwide got serious about ride-through withstand, and
+the state commissioned the world's then-largest grid battery — the Hornsdale
+Power Reserve — whose split-second frequency response has been schooling
+traditional plant ever since.</p>
+
+<h2 id="y2019"><span class="no">§ 7.6</span>9 August 2019 — Britain's forty minutes</h2>
+
+<table class="data">
+  <tbody>
+    <tr><td class="k">Trigger</td><td>Routine lightning strike → two independent-looking plants fail together</td></tr>
+    <tr><td class="k">Lost</td><td>~1,878 MW of generation · ~1.1 million customers shed by LFDD (~931 MW)</td></tr>
+    <tr><td class="k">Dark for</td><td>Supplies back in ~40 minutes — the railway took the rest of the day</td></tr>
+  </tbody>
+</table>
+
+<p>At 16:52 lightning struck the Eaton Socon–Wymondley 400&nbsp;kV circuit north of
+London. The protection cleared it in the textbook 70&nbsp;ms and auto-reclosed
+twenty seconds later (<a href="switchgear.html">Chapter&nbsp;4</a> working
+perfectly). But the voltage disturbance rippled outward, and two things that were
+never supposed to fail together did: the brand-new Hornsea One offshore wind farm's
+control system reacted unstably and de-loaded by 737&nbsp;MW, and the steam turbine
+at Little Barford CCGT tripped on a speed-measurement discrepancy — 244&nbsp;MW
+more. Several hundred MW of small distributed generators dropped off too, on
+loss-of-mains protection. The combined loss outran the largest-infeed reserve the
+operator was carrying, and at 16:53:49 the frequency touched
+<strong>48.8&nbsp;Hz</strong>: LFDD did its blunt duty and cut about a million
+customers. Frequency recovered within minutes — but the disconnections had caught
+Newcastle airport, a hospital's supply arrangement, and, most famously, the
+railway: a fleet of new EMUs had protection that shut the trains down below
+49&nbsp;Hz <em>and required a fitter with a laptop to restart them</em>. Half of
+Thameslink stood dark across the network for hours. The grid event lasted forty
+minutes; the inquiry into who else's equipment secretly depends on 50.00&nbsp;Hz
+lasted years, and GB now procures much faster reserve and more of it.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 3 · The 9 August frequency trace</span>
+    <span class="hint">scrub along the trace — markers are the real event sequence</span>
+  </div>
+  <div class="fig-body"><canvas id="y19" style="aspect-ratio: 2.1/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Scrub</label>
+      <input type="range" id="y19-t" min="0" max="480" step="1" value="0">
+      <output>16:52:00</output></div>
+  </div>
+  <div class="readouts"><span class="ro" id="y19-cap" style="font-size:13px; color:var(--ink-2); flex:1 1 100%">
+    16:52 on a wet Friday afternoon. Storms over the Home Counties.</span></div>
+  <div class="fig-note">Redrawn schematically from National Grid ESO's technical report.
+  Note the shape: the first plunge is arrested by response and inertia — it is the
+  <i>second</i> loss, into an already-spent reserve, that reaches 48.8 Hz. Rules of the
+  game since: bigger reserves, faster (battery) response, tighter ride-through
+  compliance, and a hard look at everything on the demand side that trips below 49 Hz.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="y2025"><span class="no">§ 7.7</span>28 April 2025 — Iberia, the first blackout of the solar age</h2>
+
+<table class="data">
+  <tbody>
+    <tr><td class="k">Trigger</td><td>Oscillations, then a self-feeding overvoltage cascade on a solar-heavy afternoon</td></tr>
+    <tr><td class="k">Lost</td><td>The entire Iberian Peninsula — Spain, Portugal, Andorra; ~55 million people</td></tr>
+    <tr><td class="k">Dark for</td><td>Mostly restored overnight (~10+ hours); full normality next day</td></tr>
+  </tbody>
+</table>
+
+<p>A sunny spring midday: solar was supplying more than half of Spain's demand,
+few big synchronous machines were running, and — the detail the inquiries would
+circle — the amount of plant actively regulating <em>voltage</em> was thin
+(<a href="operations.html">Chapter&nbsp;6</a>'s other dial). Walk through the
+half hour:</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 4 · Twenty-seven seconds — step through the collapse</span>
+    <span class="hint">use the buttons</span>
+  </div>
+  <div class="fig-body"><canvas id="y25" style="aspect-ratio: 2/1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <button class="btn" id="y25-prev">← back</button>
+    <button class="btn primary" id="y25-next">next →</button>
+    <span class="ro" id="y25-step" style="font-family:var(--mono); font-size:12px; color:var(--muted)"></span>
+  </div>
+  <div class="readouts"><span class="ro" id="y25-cap" style="font-size:13.5px; color:var(--ink-2); flex:1 1 100%"></span></div>
+  <div class="fig-note">Sequence per the ENTSO-E expert panel's final report (2026) and
+  the Spanish government inquiry: a system that met every rule it had been set, failing
+  on a quantity — dynamic voltage control — the rules had not kept up with. The panel's
+  chair put it flatly: <i>&ldquo;the problem is not renewable energy, but voltage
+  control, regardless of the type of generation.&rdquo;</i></div>
+</figure>
+
+<div class="prose">
+
+<p>Restoration was the textbook run in reverse: hydro stations black-started
+(<a href="operations.html">Chapter&nbsp;6</a>), the links from France and Morocco
+energised dead corridors from the edges, and islands of supply grew and were
+knitted together through the night — Chapter&nbsp;1's synchronising discipline,
+performed a hundred times before dawn. The findings have teeth for every grid
+that is swapping spinning steel for silicon: inverters must be asked (and paid)
+to regulate voltage and damp oscillations, not just pour out energy — because on
+28 April the energy was never the problem.</p>
+
+<h2 id="defences"><span class="no">§ 7.8</span>What stands between you and the dark</h2>
+
+<table class="data">
+  <caption>Six blackouts, six inheritances</caption>
+  <thead><tr><th>Event</th><th>The flaw</th><th>What your grid now carries because of it</th></tr></thead>
+  <tbody>
+    <tr><td class="k">1965 Northeast</td><td>A stale relay setting nobody owned</td>
+      <td>Reliability coordination, setting reviews, black start plans</td></tr>
+    <tr><td class="k">2003 Northeast</td><td>Trees, a silent alarm bug, over-eager Zone 3</td>
+      <td>Mandatory standards, vegetation rules, wide-area monitoring</td></tr>
+    <tr><td class="k">2006 Europe</td><td>A one-off switching study done by habit</td>
+      <td>Continent-wide joint operational planning &amp; a proven split defence</td></tr>
+    <tr><td class="k">2016 South Australia</td><td>Hidden ride-through counters, low inertia</td>
+      <td>Ride-through grid codes, grid batteries, inertia as a product</td></tr>
+    <tr><td class="k">2019 Great Britain</td><td>Two &ldquo;independent&rdquo; failures with one cause; brittle demand</td>
+      <td>Bigger/faster reserve, LFDD review, ride-through audits of everything</td></tr>
+    <tr><td class="k">2025 Iberia</td><td>Voltage control thinner than the rules noticed</td>
+      <td>Voltage &amp; oscillation duties for inverter fleets — the solar age's grid code</td></tr>
+  </tbody>
+</table>
+
+<p>Notice what is <em>not</em> on the list: a shortage of energy. Not one of these
+systems ran out of power — every collapse was a failure of <em>control</em>:
+settings, visibility, coordination, dynamics. That is the real moral of the whole
+almanac. The grid is not a warehouse of electricity; it is a performance, given
+continuously by thousands of machines that must agree with each other fifty times
+a second — from a Francis runner spinning under Ben Vorlich to the inverter on a
+rooftop in Seville. When the performance is good, nobody claps. The kettle just
+boils.</p>
+
+<hr>
+
+<p class="colophon">
+  Case studies follow the official inquiries: FPC (1965), US–Canada Task Force (2003),
+  UCTE (2006), AEMO (2016), National Grid ESO / Ofgem / E3C (2019), ENTSO-E expert panel
+  and Spanish government commission (2025–26). Figures are schematic redrawings, not
+  measured data. Back to the <a href="./">overview</a>, or start again at
+  <a href="generation.html">Chapter 1</a>.
+</p>
+
+</div>
+
+<nav class="chapnav">
+  <a href="operations.html"><span class="dir">← Chapter 6</span><span class="title">Running the Grid</span></a>
+  <a class="next" href="./"><span class="dir">Home</span><span class="title">The Grid</span></a>
+</nav>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, clamp, label, line, mono } = G;
+
+  /* ================= Fig 1: cascade playground ================= */
+  const NODES = [
+    { x: 0.10, y: 0.14, p: 2.5, nm: "hydro", gen: true },
+    { x: 0.48, y: 0.08, p: 3.0, nm: "wind", gen: true },
+    { x: 0.30, y: 0.32, p: -0.8, nm: "town" },
+    { x: 0.72, y: 0.22, p: -1.2, nm: "city" },
+    { x: 0.09, y: 0.55, p: 2.0, nm: "pumped storage", gen: true },
+    { x: 0.45, y: 0.50, p: -1.6, nm: "city" },
+    { x: 0.86, y: 0.52, p: 1.5, nm: "CCGT", gen: true },
+    { x: 0.28, y: 0.84, p: -2.4, nm: "metropolis" },
+    { x: 0.68, y: 0.88, p: -3.0, nm: "capital" },
+  ];
+  const LINES = [
+    [0, 2], [1, 2], [1, 3], [2, 4], [2, 5], [3, 5], [3, 6],
+    [4, 5], [4, 7], [5, 7], [5, 8], [6, 8], [7, 8],
+  ].map(([a, b]) => ({ a, b, x: 1, on: true, flow: 0, limit: 1, otimer: 0 }));
+  let loadK = 1.0, cascMsg = [], cascLast = 0, darkNodes = new Set();
+
+  function islandsOf() {
+    const seen = new Array(NODES.length).fill(-1);
+    let ni = 0;
+    for (let s = 0; s < NODES.length; s++) {
+      if (seen[s] >= 0) continue;
+      const q = [s]; seen[s] = ni;
+      while (q.length) {
+        const u = q.pop();
+        LINES.forEach(L => {
+          if (!L.on) return;
+          const v = L.a === u ? L.b : L.b === u ? L.a : -1;
+          if (v >= 0 && seen[v] < 0) { seen[v] = ni; q.push(v); }
+        });
+      }
+      ni++;
+    }
+    return { seen, n: ni };
+  }
+
+  function solveFlows() {
+    darkNodes = new Set();
+    const { seen, n } = islandsOf();
+    LINES.forEach(L => { L.flow = 0; });
+    for (let isl = 0; isl < n; isl++) {
+      const members = NODES.map((_, i) => i).filter(i => seen[i] === isl);
+      if (members.length === 1) {
+        const nd = NODES[members[0]];
+        if (nd.p * loadK < 0 || (!nd.gen && nd.p < 0)) darkNodes.add(members[0]);
+        continue;
+      }
+      // island balance: scale generation to match load if possible
+      let gen = 0, load = 0;
+      members.forEach(i => { const p = NODES[i].p * (NODES[i].gen ? 1 : loadK); if (p > 0) gen += p; else load -= p; });
+      if (load > 0 && gen < load * 0.55) { members.forEach(i => darkNodes.add(i)); continue; }
+      const genScale = load > 0 ? Math.min(1, load / Math.max(gen, 1e-9)) : 0;
+      const loadScale = gen > 0 ? Math.min(1, gen / Math.max(load, 1e-9)) : 0;
+      const P = members.map(i => {
+        const raw = NODES[i].p * (NODES[i].gen ? 1 : loadK);
+        return raw > 0 ? raw * genScale : raw * (load > gen ? loadScale : 1);
+      });
+      // ensure exact balance on the slack
+      const sum = P.reduce((a, b2) => a + b2, 0);
+      P[0] -= sum;
+      // build B for island (exclude slack = members[0])
+      const idx = new Map(members.map((m, k) => [m, k]));
+      const m2 = members.length - 1;
+      if (m2 === 0) continue;
+      const B = Array.from({ length: m2 }, () => new Array(m2).fill(0));
+      const rhs = new Array(m2).fill(0);
+      LINES.forEach(L => {
+        if (!L.on || seen[L.a] !== isl) return;
+        const ia = idx.get(L.a), ib = idx.get(L.b), y = 1 / L.x;
+        if (ia > 0) B[ia - 1][ia - 1] += y;
+        if (ib > 0) B[ib - 1][ib - 1] += y;
+        if (ia > 0 && ib > 0) { B[ia - 1][ib - 1] -= y; B[ib - 1][ia - 1] -= y; }
+      });
+      for (let k = 1; k < members.length; k++) rhs[k - 1] = P[k];
+      // gaussian elimination
+      const th = new Array(m2).fill(0);
+      for (let col = 0; col < m2; col++) {
+        let piv = col;
+        for (let r = col + 1; r < m2; r++) if (Math.abs(B[r][col]) > Math.abs(B[piv][col])) piv = r;
+        [B[col], B[piv]] = [B[piv], B[col]]; [rhs[col], rhs[piv]] = [rhs[piv], rhs[col]];
+        if (Math.abs(B[col][col]) < 1e-9) continue;
+        for (let r = col + 1; r < m2; r++) {
+          const fct = B[r][col] / B[col][col];
+          for (let c2 = col; c2 < m2; c2++) B[r][c2] -= fct * B[col][c2];
+          rhs[r] -= fct * rhs[col];
+        }
+      }
+      for (let r = m2 - 1; r >= 0; r--) {
+        let s2 = rhs[r];
+        for (let c2 = r + 1; c2 < m2; c2++) s2 -= B[r][c2] * th[c2];
+        th[r] = Math.abs(B[r][r]) < 1e-9 ? 0 : s2 / B[r][r];
+      }
+      const theta = new Array(members.length).fill(0);
+      for (let k = 1; k < members.length; k++) theta[k] = th[k - 1];
+      LINES.forEach(L => {
+        if (!L.on || seen[L.a] !== isl) return;
+        L.flow = (theta[idx.get(L.a)] - theta[idx.get(L.b)]) / L.x;
+      });
+      // partially-served island note
+      if (load > gen + 0.05) {
+        members.forEach(i => { if (NODES[i].p < 0 && Math.random() < 0) {} });
+      }
+    }
+  }
+
+  // set limits from base case (loadK=1): 35% headroom, floor 0.9
+  loadK = 1; solveFlows();
+  LINES.forEach(L => { L.limit = Math.max(0.9, Math.abs(L.flow) * 1.35); });
+
+  function status(html) { document.getElementById("casc-status").innerHTML = html; }
+
+  const cascFig = G.canvas("casc", function (ctx, w, h, t) {
+    const dt = Math.min(0.05, t - cascLast); cascLast = t;
+    // overload timers
+    let tripped = null;
+    LINES.forEach(L => {
+      if (!L.on) return;
+      const pct = Math.abs(L.flow) / L.limit;
+      if (pct > 1.0) {
+        L.otimer += dt;
+        if (L.otimer > 1.6 && !tripped) tripped = L;
+      } else L.otimer = 0;
+    });
+    if (tripped) {
+      tripped.on = false; tripped.otimer = 0;
+      solveFlows();
+      const a = NODES[tripped.a].nm, b = NODES[tripped.b].nm;
+      const darkLoad = [...darkNodes].reduce((s2, i) => s2 + Math.max(0, -NODES[i].p * loadK), 0);
+      status("<b style='color:var(--danger)'>CASCADE:</b> the " + a + "–" + b +
+        " line tripped on overload." + (darkLoad > 0 ? " <b style='color:var(--danger)'>" + darkLoad.toFixed(1) + " GW of demand is now dark.</b>" : " The flows have redistributed — watch the survivors."));
+    }
+
+    ctx.clearRect(0, 0, w, h);
+    const px = f2 => f2 * w, py = f2 => f2 * h;
+    // lines
+    LINES.forEach(L => {
+      const x1 = px(NODES[L.a].x), y1 = py(NODES[L.a].y);
+      const x2 = px(NODES[L.b].x), y2 = py(NODES[L.b].y);
+      if (!L.on) {
+        line(ctx, x1, y1, x2, y2, "rgba(233,228,214,0.10)", 1, [4, 6]);
+        return;
+      }
+      const pct = Math.abs(L.flow) / L.limit;
+      let col = "rgba(183,191,200,0.75)";
+      if (pct > 1.0) col = Math.floor(t * 6) % 2 ? "#ff6a5a" : "#e05252";
+      else if (pct > 0.8) col = C.amber;
+      line(ctx, x1, y1, x2, y2, col, 1 + Math.abs(L.flow) * 2.2);
+      // animated flow dots
+      if (Math.abs(L.flow) > 0.05) {
+        const dir = L.flow > 0 ? 1 : -1;
+        const nDots = 3;
+        ctx.fillStyle = col;
+        for (let k = 0; k < nDots; k++) {
+          let u = ((t * 0.25 * Math.abs(L.flow) + k / nDots) % 1);
+          if (dir < 0) u = 1 - u;
+          ctx.beginPath();
+          ctx.arc(x1 + (x2 - x1) * u, y1 + (y2 - y1) * u, 2, 0, TAU); ctx.fill();
+        }
+      }
+      // % label
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      label(ctx, Math.round(pct * 100) + "%", mx + 6, my - 5,
+        { color: pct > 1 ? "#ff8a7a" : pct > 0.8 ? C.amber : C.muted, font: mono(10, pct > 0.8) });
+    });
+    // nodes
+    NODES.forEach((nd, i) => {
+      const x = px(nd.x), y = py(nd.y);
+      const dark = darkNodes.has(i);
+      if (nd.gen) {
+        ctx.fillStyle = dark ? "#2a3038" : C.amber;
+        ctx.fillRect(x - 9, y - 9, 18, 18);
+        ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.strokeRect(x - 9, y - 9, 18, 18);
+      } else {
+        ctx.fillStyle = dark ? "#2a3038" : C.teal;
+        ctx.beginPath(); ctx.arc(x, y, 10, 0, TAU); ctx.fill();
+        ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
+      }
+      label(ctx, nd.nm + " " + (nd.p > 0 ? "+" : "") + (nd.p * (nd.gen ? 1 : loadK)).toFixed(1) + " GW",
+        x, y + 26, { align: "center", color: dark ? "#5a636e" : C.ink2, font: mono(10, false) });
+      if (dark) label(ctx, "DARK", x, y - 16, { align: "center", color: C.danger, font: mono(10, true) });
+    });
+  }, { animate: true });
+
+  // click to trip
+  document.getElementById("casc").addEventListener("pointerdown", ev => {
+    const r = ev.currentTarget.getBoundingClientRect();
+    const mx2 = ev.clientX - r.left, my2 = ev.clientY - r.top;
+    let best = null, bd = 14;
+    LINES.forEach(L => {
+      if (!L.on) return;
+      const x1 = NODES[L.a].x * r.width, y1 = NODES[L.a].y * r.height;
+      const x2 = NODES[L.b].x * r.width, y2 = NODES[L.b].y * r.height;
+      // distance point-segment
+      const dx = x2 - x1, dy = y2 - y1;
+      const u = clamp(((mx2 - x1) * dx + (my2 - y1) * dy) / (dx * dx + dy * dy), 0, 1);
+      const d = Math.hypot(mx2 - (x1 + dx * u), my2 - (y1 + dy * u));
+      if (d < bd) { bd = d; best = L; }
+    });
+    if (best) {
+      best.on = false;
+      solveFlows();
+      status("You tripped the " + NODES[best.a].nm + "–" + NODES[best.b].nm +
+        " line. Its power redistributed instantly over every remaining path — check the percentages.");
+    }
+  });
+  G.slider("casc-k", v => v + "%", v => {
+    loadK = v / 100; solveFlows();
+  });
+  document.getElementById("casc-reset").addEventListener("click", () => {
+    LINES.forEach(L => { L.on = true; L.otimer = 0; });
+    solveFlows();
+    status("Grid restored. All lines back in service.");
+  });
+  solveFlows();
+
+  /* ================= Fig 2: 1965 relay ================= */
+  let y65t = 15;
+  const y65Fig = G.canvas("y65", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 56, r: 20, t: 24, b: 42 };
+    const W2 = w - m.l - m.r, H2 = h - m.t - m.b;
+    const X = u => m.l + u / 100 * W2;
+    const Y = mw => m.t + H2 - (mw - 200) / 300 * H2; // 200..500 MW scale
+    // axes
+    line(ctx, m.l, m.t + H2, w - m.r, m.t + H2, C.line, 1);
+    [["1963", 2], ["1964", 40], ["Nov 1965", 88]].forEach(([nm, u]) => label(ctx, nm, X(u), m.t + H2 + 18, { align: "center" }));
+    [250, 300, 350, 400, 450].forEach(mw => {
+      line(ctx, m.l, Y(mw), w - m.r, Y(mw), C.line2, 1);
+      label(ctx, mw + " MW", m.l - 8, Y(mw) + 4, { align: "right" });
+    });
+    // relay setting: flat at 375
+    line(ctx, m.l, Y(375), w - m.r, Y(375), C.danger, 1.8, [7, 5]);
+    label(ctx, "backup relay setting (set 1963, never revisited)", w - m.r - 4, Y(375) - 8, { align: "right", color: C.danger });
+    // load growth with wiggle, reaching 376 at u=88
+    function loadAt(u) {
+      return 290 + u * 0.95 + 14 * Math.sin(u * 0.9) + 9 * Math.sin(u * 2.3);
+    }
+    ctx.strokeStyle = C.teal; ctx.lineWidth = 2.2; ctx.beginPath();
+    for (let u = 0; u <= Math.min(y65t, 88); u += 0.5) {
+      const x = X(u), y = Y(loadAt(u));
+      u === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    label(ctx, "line loading, Beck → Toronto", m.l + 6, m.t + 10, { color: C.teal });
+    const cap = document.getElementById("y65-cap");
+    if (y65t < 88) {
+      const now = loadAt(y65t);
+      cap.innerHTML = "Loading ≈ <b>" + Math.round(now) + " MW</b> against a 375 MW setting. Toronto keeps growing; the setting sheet stays in the drawer.";
+    } else {
+      // trip flash
+      const x = X(88);
+      ctx.fillStyle = "rgba(224,82,82,0.9)";
+      ctx.beginPath(); ctx.arc(x, Y(loadAt(88)), 7, 0, TAU); ctx.fill();
+      label(ctx, "5:16 p.m. — relay operates", x - 6, Y(loadAt(88)) - 14, { align: "right", color: C.danger, font: mono(11, true) });
+      cap.innerHTML = "<b style='color:var(--danger)'>5:16:11 p.m., 9 Nov 1965.</b> A cold evening's perfectly healthy 375+ MW crosses the stale threshold. The relay &ldquo;clears the fault&rdquo;; four parallel lines inherit the flow and trip in 2.7 s; 1,800 MW reverses onto the US grid — and the Northeast comes apart.";
+    }
+  });
+  G.slider("y65-t", v => v < 88 ? "…" + (1963 + v / 44).toFixed(0) : "9 Nov 1965", v => { y65t = v; y65Fig.redraw(); });
+
+  /* ================= Fig 3: 2019 GB trace ================= */
+  const KEYS = [ // [t(s from 16:52:00), f]
+    [0, 50.0], [30, 50.0], [33, 49.95], [45, 49.45], [58, 49.10], [70, 49.18],
+    [88, 49.22], [91, 49.20], [100, 49.0], [109, 48.80], [116, 48.85], [130, 49.10],
+    [170, 49.45], [220, 49.72], [300, 49.90], [400, 49.98], [480, 50.0],
+  ];
+  const EVENTS = [
+    [0, "16:52:00 — a wet Friday rush hour; storms over the Home Counties. Frequency steady at 50.00."],
+    [33, "16:52:33 — lightning strikes the Eaton Socon–Wymondley 400 kV line. Protection clears it in 74 ms; auto-reclose succeeds 20 s later. Textbook."],
+    [45, "16:52:34–44 — but Hornsea One reacts unstably and sheds 737 MW; Little Barford's steam turbine trips (244 MW); ~500 MW of distributed generation drops on loss-of-mains protection. Total loss now beyond the reserve being carried."],
+    [58, "16:52:58 — first nadir, 49.1 Hz. Inertia and ~1 GW of response catch it. So far, survivable."],
+    [91, "16:53:31 — Little Barford's GT1a trips (210 MW) into an already-spent reserve. The second slide begins."],
+    [109, "16:53:49 — 48.8 Hz: LFDD stage 1 operates. ~931 MW of demand — about 1.1 million customers — is automatically disconnected. The railway's Class 700 fleet has already shut itself down at 49 Hz."],
+    [130, "16:54+ — frequency recovers as shed load and response bite; Little Barford GT1b also trips (187 MW) but the system is now long."],
+    [300, "16:57 — back inside 49.8–50.2. DNOs begin restoring the shed customers; all back by ~17:37."],
+    [480, "17:00+ — the grid is normal. Half of Thameslink is not: dozens of trains need a technician's laptop to reboot. The inquiry will ask why a frequency the grid survived stopped the railway."],
+  ];
+  function fAt(t) {
+    for (let i = 0; i < KEYS.length - 1; i++) {
+      const [t1, f1] = KEYS[i], [t2, f2] = KEYS[i + 1];
+      if (t >= t1 && t <= t2) return f1 + (f2 - f1) * (t - t1) / (t2 - t1);
+    }
+    return 50;
+  }
+  let y19t = 0;
+  const y19Fig = G.canvas("y19", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 56, r: 16, t: 20, b: 40 };
+    const W2 = w - m.l - m.r, H2 = h - m.t - m.b;
+    const X = t => m.l + t / 480 * W2;
+    const Y = f => m.t + (50.3 - f) / (50.3 - 48.5) * H2;
+    // bands & thresholds
+    [[50.0, C.muted, "50.00"], [49.5, C.amber, "49.5"], [48.8, C.danger, "48.8 LFDD"]].forEach(([f, col, nm]) => {
+      line(ctx, m.l, Y(f), w - m.r, Y(f), col, 1, [5, 4]);
+      label(ctx, nm, w - m.r - 2, Y(f) - 5, { align: "right", color: col });
+    });
+    [0, 60, 120, 180, 240, 300, 360, 420, 480].forEach(t => {
+      const mm = Math.floor(t / 60), ss = t % 60;
+      label(ctx, "16:" + String(52 + mm).padStart(2, "0"), X(t), m.t + H2 + 18, { align: "center" });
+    });
+    // trace
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let t = 0; t <= 480; t += 1) {
+      const x = X(t), y = Y(fAt(t));
+      t === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // event markers
+    EVENTS.forEach(([t]) => {
+      ctx.fillStyle = C.teal;
+      ctx.beginPath(); ctx.arc(X(t), Y(fAt(t)), 3.5, 0, TAU); ctx.fill();
+    });
+    // scrub cursor
+    const x = X(y19t);
+    line(ctx, x, m.t, x, m.t + H2, "rgba(233,228,214,0.35)", 1);
+    ctx.fillStyle = C.ink;
+    ctx.beginPath(); ctx.arc(x, Y(fAt(y19t)), 5.5, 0, TAU); ctx.fill();
+    label(ctx, fAt(y19t).toFixed(2) + " Hz", x + 8, Y(fAt(y19t)) - 10, { color: C.ink, font: mono(11, true) });
+    // caption: nearest event at/before scrub
+    let ev = EVENTS[0];
+    EVENTS.forEach(e => { if (e[0] <= y19t) ev = e; });
+    document.getElementById("y19-cap").textContent = ev[1];
+  });
+  G.slider("y19-t", v => {
+    const mm = Math.floor(v / 60), ss = Math.floor(v % 60);
+    return "16:" + String(52 + mm).padStart(2, "0") + ":" + String(ss).padStart(2, "0");
+  }, v => { y19t = v; y19Fig.redraw(); });
+
+  /* ================= Fig 4: Iberia stepper ================= */
+  const STEPS = [
+    { t: "12:00", v: 1.00, f: 50.0, trips: 0, cap: "A bright Monday. Solar is covering more than half of Spain's demand; only a handful of big synchronous machines are online, and the fleet actively regulating voltage is thin. Exports flow to France. Everything is within the rules." },
+    { t: "12:03", v: 1.01, f: 50.0, trips: 0, cap: "First warning: a 0.63 Hz power oscillation ripples through the system — traced to a plant in the south-west. Operators damp it by re-meshing the grid and trimming the France interchange. It works — but the actions leave the network electrically 'stiffer' and its voltages higher." },
+    { t: "12:19", v: 1.02, f: 50.0, trips: 0, cap: "A second oscillation — the classic 0.2 Hz Iberia↔Central-Europe inter-area mode. Damped the same way. Voltages across Spain are now creeping upward, and there is less and less plant on the system whose job is to absorb the excess." },
+    { t: "12:32:57", v: 1.045, f: 50.0, trips: 3, cap: "The cascade begins: generation in the south — Granada, then Badajoz, then Sevilla — starts disconnecting on overvoltage protection. Roughly 2.2 GW vanishes in about twenty seconds." },
+    { t: "12:33:10", v: 1.07, f: 49.85, trips: 8, cap: "The vicious circle: every plant that disconnects was absorbing reactive power, so each trip pushes the voltage higher, which trips the next plant. An overvoltage cascade is now feeding itself across the peninsula." },
+    { t: "12:33:19", v: 1.09, f: 49.5, trips: 14, cap: "Frequency is falling as generation losses mount. Pumped storage reverses, interconnectors swing to full import — not enough, not fast enough. The AC ties to France, straining to hold Iberia in step with Europe, reach their stability limit." },
+    { t: "12:33:21", v: 1.10, f: 48.7, trips: 18, cap: "The France ties trip on loss of synchronism (Chapter 2's 90° cliff, crossed for real). Iberia is now an electrical island — one with far too little generation and almost no inertia left." },
+    { t: "12:33:24", v: 0.0, f: 0, trips: 25, cap: "Twenty-seven seconds after the first trips: system black. Spain, Portugal and Andorra — some 55 million people — are without power. Hospitals on diesel; trains stopped; Madrid's air traffic on standby power." },
+    { t: "That night", v: 0.5, f: 50.0, trips: 0, cap: "Restoration: hydro plants black-start, the France and Morocco links energise dead corridors from the edges, and islands of supply grow and synchronise through the night. Most customers are back within ~10 hours; the system is whole by morning." },
+    { t: "The verdict", v: 1.0, f: 50.0, trips: 0, cap: "ENTSO-E's final report (2026): no single villain — oscillations, gaps in voltage and reactive control, and cascading overvoltage disconnections, on a system whose rules hadn't kept pace with its physics. 'The problem is not renewable energy, but voltage control.' The first great blackout of the solar age, and its grid code is being written now." },
+  ];
+  let stepI = 0;
+  const y25Fig = G.canvas("y25", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const s = STEPS[stepI];
+    const black = s.v === 0;
+    // left: voltage + frequency bars
+    const bx = w * 0.08, bw2 = w * 0.05, by0 = h * 0.16, by1 = h * 0.82;
+    // voltage bar (0.9..1.15 pu)
+    function vbar(x, val, lo, hi, nm, unit, warnHi) {
+      const f2 = clamp((val - lo) / (hi - lo), 0, 1);
+      ctx.strokeStyle = C.line; ctx.strokeRect(x, by0, bw2, by1 - by0);
+      const col = black ? "#2a3038" : (warnHi && val > warnHi ? C.danger : C.teal);
+      ctx.fillStyle = col;
+      ctx.fillRect(x, by1 - (by1 - by0) * f2, bw2, (by1 - by0) * f2);
+      label(ctx, nm, x + bw2 / 2, by0 - 10, { align: "center" });
+      label(ctx, black ? "—" : val.toFixed(nm === "V" ? 2 : 1) + unit, x + bw2 / 2, by1 + 18, { align: "center", color: col === "#2a3038" ? C.muted : col, font: mono(11, true) });
+    }
+    vbar(bx, s.v, 0.9, 1.15, "V", " pu", 1.03);
+    vbar(bx + bw2 * 2.2, black ? 0 : s.f, 47.5, 50.5, "Hz", "", null);
+
+    // right: schematic peninsula
+    const px0 = w * 0.30, pw = w * 0.62, py0 = h * 0.12, ph2 = h * 0.74;
+    ctx.save();
+    ctx.translate(px0, py0);
+    // rough Iberia outline (schematic pentagon-ish)
+    const pts = [
+      [0.10, 0.25], [0.28, 0.05], [0.72, 0.02], [0.95, 0.18], [0.86, 0.48],
+      [0.62, 0.92], [0.42, 0.98], [0.22, 0.80], [0.02, 0.55],
+    ].map(([a, b]) => [a * pw, b * ph2]);
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+    ctx.closePath();
+    ctx.fillStyle = black ? "#0a0d12" : "rgba(86,183,207,0.08)";
+    ctx.strokeStyle = black ? "#3a4552" : C.ink2;
+    ctx.lineWidth = 1.5;
+    ctx.fill(); ctx.stroke();
+    label(ctx, "SPAIN", pw * 0.55, ph2 * 0.42, { align: "center", color: black ? "#3a4552" : C.muted, font: mono(11, true) });
+    label(ctx, "PORTUGAL", pw * 0.14, ph2 * 0.62, { align: "center", color: black ? "#3a4552" : C.muted, font: mono(9, false), angle: -Math.PI / 2.6 });
+    // France ties at top right
+    const tieOk = stepI < 6 || stepI > 7;
+    ctx.strokeStyle = tieOk ? C.amber : C.danger;
+    ctx.setLineDash(stepI === 6 || stepI === 7 ? [4, 5] : []);
+    line(ctx, pw * 0.62, -8, pw * 0.60, ph2 * 0.06, tieOk ? C.amber : C.danger, 2.5);
+    line(ctx, pw * 0.78, -8, pw * 0.76, ph2 * 0.10, tieOk ? C.amber : C.danger, 2.5);
+    ctx.setLineDash([]);
+    label(ctx, "France ties" + (stepI >= 6 && stepI <= 7 ? " — OPEN" : ""), pw * 0.72, -14, { align: "center", color: tieOk ? C.muted : C.danger });
+    // Morocco link bottom
+    if (stepI >= 8) {
+      line(ctx, pw * 0.46, ph2 * 0.99, pw * 0.44, ph2 * 1.08, C.good, 2.5);
+      label(ctx, "Morocco link energising", pw * 0.46, ph2 * 1.16, { align: "center", color: C.good });
+    }
+    // generation trip dots in the south
+    const rng = mulberry(7);
+    for (let k = 0; k < s.trips; k++) {
+      const gx = pw * (0.25 + rng() * 0.55), gy = ph2 * (0.45 + rng() * 0.45);
+      ctx.fillStyle = "rgba(224,82,82," + (0.5 + rng() * 0.5) + ")";
+      ctx.beginPath(); ctx.arc(gx, gy, 4, 0, TAU); ctx.fill();
+      line(ctx, gx - 4, gy - 4, gx + 4, gy + 4, "#0c1117", 1.2);
+    }
+    if (s.trips > 0 && !black) label(ctx, "✕ generation disconnecting on overvoltage", pw * 0.5, ph2 * 1.12, { align: "center", color: C.danger });
+    if (black) label(ctx, "SYSTEM BLACK", pw * 0.5, ph2 * 0.55, { align: "center", color: C.danger, font: mono(16, true) });
+    if (stepI === 8) {
+      // restoration islands
+      [[0.3, 0.3], [0.6, 0.6], [0.75, 0.25], [0.35, 0.75]].forEach(([a, b]) => {
+        ctx.fillStyle = "rgba(240,180,41,0.5)";
+        ctx.beginPath(); ctx.arc(pw * a, ph2 * b, 12, 0, TAU); ctx.fill();
+      });
+      label(ctx, "islands of restored supply, growing", pw * 0.5, ph2 * 1.12, { align: "center", color: C.amber });
+    }
+    ctx.restore();
+
+    document.getElementById("y25-step").textContent = "step " + (stepI + 1) + " / " + STEPS.length + " · " + s.t;
+    document.getElementById("y25-cap").textContent = s.cap;
+  });
+  function mulberry(seed) {
+    let a = seed;
+    return function () {
+      a |= 0; a = a + 0x6D2B79F5 | 0;
+      let t2 = Math.imul(a ^ a >>> 15, 1 | a);
+      t2 = t2 + Math.imul(t2 ^ t2 >>> 7, 61 | t2) ^ t2;
+      return ((t2 ^ t2 >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  document.getElementById("y25-next").addEventListener("click", () => { stepI = Math.min(STEPS.length - 1, stepI + 1); y25Fig.redraw(); });
+  document.getElementById("y25-prev").addEventListener("click", () => { stepI = Math.max(0, stepI - 1); y25Fig.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

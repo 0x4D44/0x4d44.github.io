@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generation — The Grid</title>
+<meta name="description" content="How electricity is generated: alternators, poles and speed, governors and droop, water turbines, pumped storage, the generation family, and synchronising onto a live grid.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">chapter 1 · generation</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="generation.html" aria-current="page">1 · Generation</a>
+    <a href="ac.html">2 · Three-Phase AC</a>
+    <a href="transformers.html">3 · Transformers</a>
+    <a href="switchgear.html">4 · Switchgear</a>
+    <a href="lines.html">5 · Lines &amp; Towers</a>
+    <a href="operations.html">6 · Running the Grid</a>
+    <a href="blackouts.html">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 1 · Generation</p>
+  <h1>The Spinning Magnet</h1>
+  <p class="standfirst">Nearly every watt on the grid begins the same way: a magnet is
+  swept past a coil of wire, and a voltage appears. Everything else — boilers, dams,
+  reactors, gearboxes — exists to keep that magnet turning at exactly the right speed.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="faraday"><span class="no">§ 1.1</span>Faraday's machine, grown enormous</h2>
+
+<p>In 1831 Michael Faraday showed that moving a magnet through a loop of wire
+<em>induces</em> a voltage in the loop — the faster the change in magnetic flux, the
+bigger the voltage. A power-station <strong>alternator</strong> (a synchronous
+generator) is that experiment scaled up to several hundred megawatts. The rotating
+part — the <strong>rotor</strong> — is an electromagnet, fed with DC through slip
+rings or a shaft-mounted exciter. The stationary part — the <strong>stator</strong> —
+carries three separate windings, spaced 120° apart around the bore. As the rotor's
+field sweeps past each winding in turn, each produces a sine-wave voltage, one third
+of a cycle behind its neighbour: three-phase AC (the subject of
+<a href="ac.html">Chapter&nbsp;2</a>).</p>
+
+<p>The frequency of that sine wave is set by geometry and speed alone:
+<code>f = (pole&nbsp;pairs) × (rev/s)</code>. A two-pole rotor — one north, one
+south — must spin at 3,000&nbsp;rpm to make 50&nbsp;Hz, which is what a steam
+turbine likes: fast, compact, cylindrical, running in a hydrogen-cooled casing. A
+water turbine is the opposite creature: huge torque, modest speed. So hydro
+alternators carry many poles on a great flywheel-like rim — a dozen, two dozen,
+sometimes more — and turn at a few hundred rpm to make exactly the same 50&nbsp;Hz.
+Drive the machine below and watch the bargain being struck.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Fig 1 · The alternator</span>
+    <span class="hint">shown at 1/100 speed · the waves are the actual induced EMFs</span>
+  </div>
+  <div class="fig-body"><canvas id="alt" style="aspect-ratio: 2.2/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Rotor speed</label>
+      <input type="range" id="alt-rpm" min="150" max="3600" step="10" value="3000">
+      <output>3000 rpm</output></div>
+    <div class="ctl"><label>Poles</label>
+      <div class="seg" id="alt-poles">
+        <button data-v="2" class="on">2</button><button data-v="4">4</button>
+        <button data-v="8">8</button><button data-v="12">12</button><button data-v="24">24</button>
+      </div></div>
+    <button class="btn" id="alt-steam">steam set</button>
+    <button class="btn" id="alt-hydro">hydro set</button>
+  </div>
+  <div class="readouts">
+    <span class="ro">electrical frequency <b id="alt-f">50.0 Hz</b></span>
+    <span class="ro" id="alt-verdict"></span>
+    <span class="ro" style="margin-left:auto">
+      <span class="chip" style="background:var(--ph-r)"></span>L1
+      <span class="chip" style="background:var(--ph-y); margin-left:10px"></span>L2
+      <span class="chip" style="background:var(--ph-b); margin-left:10px"></span>L3
+    </span>
+  </div>
+  <div class="fig-note"><b>Try it:</b> set 12 poles and slow the rotor to 500 rpm — the shaft
+  crawls but the waves come out at 50 Hz again. That is why a hydro set at Sloy and a steam
+  set at Longannet could run in perfect lockstep for decades: <code>pole-pairs × speed</code>
+  was the same number.</div>
+</figure>
+
+<div class="prose">
+
+<p>Two details complete the machine. The rotor's DC field comes from an
+<strong>excitation system</strong>; vary the field current and you vary the
+voltage the machine pushes at its terminals — modern sets do this automatically
+tens of times a second with an <strong>AVR</strong> (automatic voltage regulator),
+which is how generators regulate grid voltage (a job we return to in
+<a href="operations.html">Chapter&nbsp;6</a>). And the stator windings of a large
+set produce their power at a deliberately modest voltage — typically 11 to
+23.5&nbsp;kV, the practical limit of winding insulation — which is why every
+station has a step-up transformer at its fence
+(<a href="transformers.html">Chapter&nbsp;3</a>).</p>
+
+<div class="callout">
+  <span class="tag">Field note</span>
+  <p>A 500 MW steam set's rotor is a single steel forging spinning at 3,000 rpm —
+  its rim moves at around 200 metres per second, and the machine is filled with
+  hydrogen because it's eight times less dense than air (less windage loss) and
+  carries heat away better. A hydro rotor at Cruachan is the opposite: a great
+  spider of poles metres across, turning at a stately few hundred rpm, so heavy
+  that its inertia alone steadies the grid — a virtue we'll price up properly in
+  Chapter 6.</p>
+</div>
+
+<h2 id="governors"><span class="no">§ 1.2</span>Governors, droop, and how machines share</h2>
+
+<p>Spin the magnet faster and the frequency rises; load the machine harder and —
+unless more steam or water arrives — it slows. The <strong>governor</strong> closes
+that loop: it watches shaft speed and trims the steam valve or guide vanes to hold
+it. But here is the subtlety: you cannot put two machines on the same grid and tell
+both &ldquo;hold exactly 50.00&nbsp;Hz&rdquo; — they would fight, one winding up
+against the other. Instead every governor is given a deliberate, gentle slope called
+<strong>droop</strong>: as system frequency falls 1%, the machine raises its output
+by a fixed fraction of its rating (a typical setting is 4% droop — a 4% frequency
+fall commands the full output range). Because every machine slopes the same way,
+they share load changes automatically, in proportion to their size, with no
+communication at all. Frequency itself is the signalling system.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 2 · Two machines sharing a grid</span>
+    <span class="hint">drag the load — the machines pick it up in proportion, and frequency settles where supply meets demand</span>
+  </div>
+  <div class="fig-body"><canvas id="droop" style="aspect-ratio: 1.9/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>System load</label>
+      <input type="range" id="droop-load" min="80" max="620" step="5" value="400">
+      <output>400 MW</output></div>
+    <div class="ctl"><label>Steam set droop</label>
+      <input type="range" id="droop-a" min="2" max="8" step="0.5" value="4">
+      <output>4%</output></div>
+    <div class="ctl"><label>Hydro set droop</label>
+      <input type="range" id="droop-b" min="2" max="8" step="0.5" value="4">
+      <output>4%</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">frequency <b id="droop-f">50.00 Hz</b></span>
+    <span class="ro">steam set (500 MW) <b id="droop-pa">—</b></span>
+    <span class="ro">hydro set (150 MW) <b id="droop-pb">—</b></span>
+  </div>
+  <div class="fig-note"><b>Try it:</b> flatten the hydro set's droop to 2% and it
+  shoulders a bigger share of every load swing — exactly why fast, willing hydro
+  plant ends up doing the grid's frequency-response donkey work. The dashed line is
+  50.00 Hz; real grids top up the governors' work with slower &ldquo;secondary&rdquo;
+  actions to pull frequency back to target.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="water"><span class="no">§ 1.3</span>Water into watts</h2>
+
+<p>Hydro power is gravity bookkeeping: <code>P = ρ·g·Q·H·η</code> — density of
+water × gravity × flow × head × efficiency. A tonne of water falling 277 metres
+(the gross head at Sloy) surrenders about 0.75&nbsp;kWh; a turbine catches
+roughly ninety per cent of it. The <em>shape</em> of the turbine follows the
+ratio of head to flow:</p>
+
+<ul>
+  <li><strong>Pelton</strong> — a wheel of split buckets struck by high-velocity jets.
+  The choice for very high heads and modest flows: several hundred metres of
+  mountainside behind a nozzle.</li>
+  <li><strong>Francis</strong> — water spirals inward through a snail-shell casing and
+  falls out through the runner's core. The workhorse of medium heads, and by far the
+  most common machine in the Highlands (Sloy's four machines are Francis sets).</li>
+  <li><strong>Kaplan</strong> — a ship's propeller with adjustable blades, swallowing
+  huge flows at low head: river barrages and tidal-range schemes.</li>
+</ul>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 3 · Choose a turbine</span>
+    <span class="hint">head and flow pick the machine — and set the megawatts</span>
+  </div>
+  <div class="fig-body"><canvas id="turb" style="aspect-ratio: 1.9/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Gross head</label>
+      <input type="range" id="turb-h" min="0" max="100" step="0.5" value="62">
+      <output>—</output></div>
+    <div class="ctl"><label>Flow</label>
+      <input type="range" id="turb-q" min="1" max="200" step="1" value="18">
+      <output>18 m³/s</output></div>
+    <button class="btn" id="turb-sloy">Sloy</button>
+    <button class="btn" id="turb-finlarig">Finlarig</button>
+    <button class="btn" id="turb-barrage">river barrage</button>
+  </div>
+  <div class="readouts">
+    <span class="ro">turbine <b id="turb-type">—</b></span>
+    <span class="ro">power ≈ <b id="turb-p">—</b></span>
+    <span class="ro" id="turb-note" style="color:var(--muted)"></span>
+  </div>
+  <div class="fig-note">Efficiency taken as 90%. The bands overlap on purpose — near the
+  boundaries the choice is settled by economics, silt, and what the manufacturer tenders.
+  Finlarig, at the foot of Loch Tay, works under roughly 400 m of head from Lochan na
+  Lairige and is the classic Scottish Pelton example.</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout story">
+  <span class="tag">Board lore</span>
+  <p>The Hydro Board's constructional schemes were argued glen by glen through the
+  1940s and 50s — 78 dams and some 300 km of tunnel by the end — under the Board's
+  founding promise of &ldquo;social clause&rdquo; electrification: revenue from selling
+  bulk power south paid to string lines to crofts that could never repay the wire. Tom
+  Johnston's engineers, led by the formidable Sir Edward MacColl, learned to hide
+  whole power stations: Fasnakyle's hall in Glen Affric is faced in golden Tarradale
+  stone, and the biggest machine of all was buried a kilometre inside a mountain.</p>
+</div>
+
+<h2 id="pumped"><span class="no">§ 1.4</span>Pumped storage — the hollow mountain</h2>
+
+<p>A conventional hydro scheme spends whatever the rain deposits. <strong>Pumped
+storage</strong> runs the ledger both ways: when power is cheap and plentiful the
+machines run as motors, pumping water uphill; when the evening peak bites they
+reverse within seconds and pour it back through the same runners. The round trip
+loses about a quarter of the energy — you buy four units to sell three — but you
+buy them cheap and sell them dear, and you buy something subtler too: hundreds of
+megawatts that can appear from a standing start faster than any boiler can flex.</p>
+
+<p><strong>Cruachan</strong>, above Loch Awe, was conceived by MacColl and opened by
+the Queen in October 1965 — one of the world's first reversible pump-turbine
+stations at scale, its four machines (440&nbsp;MW today) standing in a cathedral of
+a hall blasted out of the granite a kilometre inside Ben Cruachan. It began life
+under the Hydro Board and was later transferred to the South of Scotland Electricity
+Board — the two Scottish boards trading assets as the nuclear programme grew — and
+today it earns much of its keep on exactly the balancing duties Chapter&nbsp;6
+describes. The Board answered with <strong>Foyers</strong> on Loch Ness (300&nbsp;MW,
+1974), reusing the site of the 1896 British Aluminium works that had been Scotland's
+first big hydro plant.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 4 · A day at a pumped-storage station</span>
+    <span class="hint">scrub the clock — or let it run</span>
+  </div>
+  <div class="fig-body"><canvas id="ps" style="aspect-ratio: 1.9/1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Time of day</label>
+      <input type="range" id="ps-t" min="0" max="24" step="0.05" value="7">
+      <output>07:00</output></div>
+    <button class="btn" id="ps-play">▶ run the day</button>
+  </div>
+  <div class="readouts">
+    <span class="ro">mode <b id="ps-mode">—</b></span>
+    <span class="ro">machines <b id="ps-mw">—</b></span>
+    <span class="ro">upper reservoir <b id="ps-lvl">—</b></span>
+  </div>
+  <div class="fig-note">Schematic of a Cruachan-like station: pumping through the small
+  hours on cheap surplus (increasingly, on windy-night surplus), generating hard into the
+  morning and evening peaks. The machines are reversible Francis pump-turbines — the same
+  runner, spun the other way, driven by the alternator running as a motor.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="family"><span class="no">§ 1.5</span>The generation family</h2>
+
+<p>Everything on the system ultimately divides into two tribes: machines that make
+their AC by <em>spinning in synchronism</em> — steam, gas, hydro, nuclear — and
+sources that make DC or variable-frequency power and reach the grid <em>through
+electronic inverters</em> — solar, batteries, and most modern wind. The distinction
+sounds like plumbing but turns out to govern how the whole system behaves in its
+worst moments, as Chapters 6 and 7 will show: synchronous machines carry stored
+rotational energy (inertia) and feed faults with muscle; inverters follow software.</p>
+
+<table class="data">
+  <caption>The main types, GB perspective</caption>
+  <thead><tr><th>Type</th><th>How it works</th><th>Character</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Hydro</td>
+      <td>Water falls through a turbine; multi-pole alternator at a few hundred rpm.</td>
+      <td>Fast to start and flex; limited by rain and geography. The Highlands'
+      speciality since 1943.</td></tr>
+    <tr><td class="k">Pumped storage</td>
+      <td>Reversible pump-turbines shuttle water between two reservoirs.</td>
+      <td>A grid-scale battery with a 60-year design life; also the classic
+      black-start and fast-reserve plant.</td></tr>
+    <tr><td class="k">Combined-cycle gas (CCGT)</td>
+      <td>A jet-engine-derived gas turbine, its exhaust raising steam for a second
+      turbine on the same or a twin shaft.</td>
+      <td>~55–60% efficient, flexible, and for most of the 2000s the price-setter
+      in the GB market (Chapter 6).</td></tr>
+    <tr><td class="k">Coal / oil steam</td>
+      <td>Boiler → superheated steam → multi-cylinder turbine at 3,000 rpm.</td>
+      <td>The 20th-century backbone — 500 MW sets at Longannet, Cockenzie,
+      Peterhead (oil/gas) — now gone from GB entirely; the last coal set closed
+      in 2024.</td></tr>
+    <tr><td class="k">Nuclear</td>
+      <td>Reactor heat raises steam; otherwise a steam station. GB's AGRs drive
+      3,000 rpm sets; many PWRs abroad use half-speed, four-pole machines.</td>
+      <td>Steady baseload; happiest run flat out. Hunterston and Torness fed the
+      Scottish grid for decades — and were the very reason Cruachan's pumps had
+      cheap night-time energy to drink.</td></tr>
+    <tr><td class="k">Wind</td>
+      <td>Blades at 5–15 rpm through a gearbox (or direct-drive) to a generator;
+      nearly all modern turbines connect through a power-electronic converter.</td>
+      <td>Cheap energy, no fuel, but output follows weather, and the converter
+      contributes no natural inertia unless asked to synthesise it.</td></tr>
+    <tr><td class="k">Solar PV</td>
+      <td>Semiconductor junctions make DC; inverters make the AC.</td>
+      <td>No moving parts at all — the first generation technology in history
+      with literally zero spin. Remember that for Chapter 7 and 28 April 2025.</td></tr>
+  </tbody>
+</table>
+
+<h2 id="sync"><span class="no">§ 1.6</span>Joining the club: synchronising</h2>
+
+<p>A generator cannot simply be switched onto a live grid. At the instant the
+breaker closes, the machine's voltage wave and the grid's must match in
+<strong>magnitude</strong>, <strong>frequency</strong> and <strong>phase</strong> —
+four conditions counting phase rotation. Get it right and the closure is a
+non-event: the machine slides into lockstep, and the operator loads it up by
+opening the governor. Get it wrong and the grid — effectively infinite — yanks
+the rotor into step in a fraction of a second: a torque blow that can shear
+couplings and rip stator bars from their slots.</p>
+
+<p>The classic instrument is the <strong>synchroscope</strong>: a pointer driven by
+the phase difference between the incoming machine and the running busbar. Too slow
+and the pointer sweeps anticlockwise; too fast, clockwise. The drill every operator
+learned: bring the machine a shade fast, watch the pointer creep clockwise, and
+close the breaker just <em>before</em> twelve o'clock so it latches in at zero.
+Before synchroscopes there were the &ldquo;three dark lamps&rdquo; — bulbs wired
+across the breaker that go dark together when the two systems agree.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 5 · Synchronise the machine</span>
+    <span class="hint">trim speed and volts, then close the breaker near 12 o'clock</span>
+  </div>
+  <div class="fig-body"><canvas id="synccv" style="aspect-ratio: 1.9/1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Incoming machine speed</label>
+      <input type="range" id="sync-f" min="49" max="51" step="0.01" value="49.5">
+      <output>49.50 Hz</output></div>
+    <div class="ctl"><label>Incoming volts</label>
+      <input type="range" id="sync-v" min="0.85" max="1.15" step="0.01" value="1">
+      <output>1.00 pu</output></div>
+    <button class="btn primary" id="sync-close">CLOSE BREAKER</button>
+    <button class="btn" id="sync-reset">reset</button>
+  </div>
+  <div class="readouts">
+    <span class="ro">phase difference <b id="sync-d">—</b></span>
+    <span class="ro">slip <b id="sync-s">—</b></span>
+    <span class="ro" id="sync-verdict" style="flex:1 1 100%"></span>
+  </div>
+  <div class="fig-note">The lamps are wired breaker-terminal to breaker-terminal, so they
+  glow with the <i>difference</i> voltage — all dark means the two systems agree. Scoring:
+  within ±15° of top, slip under 0.2 Hz and volts within 5% is a clean close. Real plants
+  now use auto-synchronisers, but the operator's rule survives: &ldquo;a little fast, close
+  at five-to-twelve.&rdquo;</div>
+</figure>
+
+<div class="prose">
+  <p>The machine is spinning, synchronised and loaded. But why three windings — why is
+  the whole world wired in threes? That is Chapter 2.</p>
+</div>
+
+<nav class="chapnav">
+  <a href="./"><span class="dir">← Overview</span><span class="title">The Grid</span></a>
+  <a class="next" href="ac.html"><span class="dir">Chapter 2 →</span><span class="title">Three-Phase AC</span></a>
+</nav>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, PH, TAU, clamp, label, line, mono } = G;
+
+  /* ================= Fig 1: alternator ================= */
+  let rpm = 3000, poles = 2, theta = 0, lastT = 0;
+  const trace = []; // ring buffer of [e1,e2,e3]
+  const TRACE_N = 300;
+
+  const altFig = G.canvas("alt", function (ctx, w, h, t) {
+    const dt = Math.min(0.05, t - lastT); lastT = t;
+    // 1/100 slow motion of mechanical rotation
+    theta += dt * (rpm / 60) * TAU * 0.01;
+    const p = poles / 2; // pole pairs
+    const es = [0, 1, 2].map(k => Math.sin(p * theta - k * TAU / 3));
+    trace.push(es); if (trace.length > TRACE_N) trace.shift();
+
+    ctx.clearRect(0, 0, w, h);
+    const narrow = w < 640;
+    const cx = narrow ? w * 0.5 : w * 0.24, cy = narrow ? h * 0.30 : h * 0.5;
+    const R = Math.min(narrow ? h * 0.24 : h * 0.38, w * 0.2);
+
+    // stator ring
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 1.14, 0, TAU); ctx.stroke();
+
+    // stator winding slots: for each phase, a coil-side pair at ±90° elec.
+    [0, 1, 2].forEach(k => {
+      const a = -Math.PI / 2 + k * TAU / 3 / p; // mechanical angle of phase belt (first pair)
+      for (let pp = 0; pp < p; pp++) {
+        const am = a + pp * TAU / p;
+        [am, am + Math.PI / p].forEach((ang, sideI) => {
+          const x = cx + Math.cos(ang) * R * 1.07, y = cy + Math.sin(ang) * R * 1.07;
+          ctx.fillStyle = PH[k];
+          ctx.beginPath(); ctx.arc(x, y, 4.5, 0, TAU); ctx.fill();
+          // dot/cross to hint direction
+          ctx.fillStyle = C.bg;
+          if (sideI === 0) { ctx.beginPath(); ctx.arc(x, y, 1.5, 0, TAU); ctx.fill(); }
+        });
+      }
+      if (p === 1) {
+        const lx = cx + Math.cos(a) * R * 1.32, ly = cy + Math.sin(a) * R * 1.32;
+        label(ctx, ["L1", "L2", "L3"][k], lx, ly + 4, { align: "center", color: PH[k], font: mono(11, true) });
+      }
+    });
+
+    // rotor: p pole pairs as wedges
+    ctx.save();
+    ctx.translate(cx, cy); ctx.rotate(theta);
+    for (let i = 0; i < poles; i++) {
+      const a0 = (i / poles) * TAU, a1 = ((i + 0.82) / poles) * TAU;
+      ctx.fillStyle = i % 2 === 0 ? "rgba(224,82,82,0.75)" : "rgba(57,135,229,0.75)";
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, R * 0.82, a0, a1);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.fillStyle = C.surface2;
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.34, 0, TAU); ctx.fill();
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(0, 0, R * 0.34, 0, TAU); ctx.stroke();
+    ctx.restore();
+    // N/S labels on first pair (rotate with rotor)
+    const na = theta + (0.41 / (poles / 2)) * Math.PI;
+    label(ctx, "N", cx + Math.cos(na) * R * 0.58, cy + Math.sin(na) * R * 0.58 + 4,
+      { align: "center", color: "#fff", font: mono(12, true) });
+    const sa = theta + (1.41 / (poles / 2)) * Math.PI;
+    if (poles >= 2) label(ctx, "S", cx + Math.cos(sa) * R * 0.58, cy + Math.sin(sa) * R * 0.58 + 4,
+      { align: "center", color: "#fff", font: mono(12, true) });
+    label(ctx, "rotor (DC field)", cx, cy + R * 1.30 + 12, { align: "center" });
+
+    // ---- traces ----
+    const tx0 = narrow ? w * 0.08 : w * 0.47, tx1 = w * 0.96;
+    const ty = narrow ? h * 0.62 : cy, tH = narrow ? h * 0.30 : R;
+    line(ctx, tx0, ty, tx1, ty, C.line, 1);
+    label(ctx, "stator EMF →", tx0, ty - tH - 8, { color: C.muted });
+    [0, 1, 2].forEach(k => {
+      ctx.strokeStyle = PH[k]; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i < trace.length; i++) {
+        const x = tx1 - (trace.length - 1 - i) * (tx1 - tx0) / TRACE_N;
+        const y = ty - trace[i][k] * tH * 0.85;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      // direct label at the leading edge
+      const eLast = trace[trace.length - 1][k];
+      label(ctx, ["L1", "L2", "L3"][k], tx1 + 2, ty - eLast * tH * 0.85 + 4, { color: PH[k], font: mono(10, true) });
+    });
+  }, { animate: true });
+
+  function altReadout() {
+    const f = (poles / 2) * rpm / 60;
+    document.getElementById("alt-f").textContent = f.toFixed(1) + " Hz";
+    const v = document.getElementById("alt-verdict");
+    if (Math.abs(f - 50) < 0.35) { v.innerHTML = "<b style='color:var(--good)'>on frequency — this machine could synchronise</b>"; }
+    else if (f > 50) { v.innerHTML = "<b style='color:var(--danger)'>fast</b> — governor would wind back"; }
+    else { v.innerHTML = "<b style='color:var(--danger)'>slow</b> — needs more poles or more speed"; }
+  }
+  const rpmS = G.slider("alt-rpm", v => Math.round(v) + " rpm", v => { rpm = v; altReadout(); });
+  G.seg("alt-poles", v => { poles = +v; altReadout(); });
+  document.getElementById("alt-steam").addEventListener("click", () => {
+    rpmS.set(3000);
+    document.querySelectorAll("#alt-poles button").forEach(b => b.classList.toggle("on", b.dataset.v === "2"));
+    poles = 2; altReadout();
+  });
+  document.getElementById("alt-hydro").addEventListener("click", () => {
+    rpmS.set(500);
+    document.querySelectorAll("#alt-poles button").forEach(b => b.classList.toggle("on", b.dataset.v === "12"));
+    poles = 12; altReadout();
+  });
+
+  /* ================= Fig 2: droop sharing ================= */
+  const MA = { cap: 500 }, MB = { cap: 150 };
+  let dLoad = 400, dA = 4, dB = 4;
+
+  function droopSolve() {
+    // Machine output vs frequency: P_i = cap_i * (f0_i - f) / (droop_i/100 * 50),
+    // clamped to [0, cap]. Setpoints chosen so both idle at 51.0 with no load? Use
+    // f0 such that at 50.00 Hz each machine sits at 60% of its cap: f0 = 50 + 0.6*droop%*50/100.
+    function P(m, dr, f) {
+      const f0 = 50 + 0.6 * (dr / 100) * 50;
+      return clamp(m.cap * (f0 - f) / ((dr / 100) * 50), 0, m.cap);
+    }
+    // bisect f
+    let lo = 47, hi = 53;
+    for (let i = 0; i < 60; i++) {
+      const mid = (lo + hi) / 2;
+      (P(MA, dA, mid) + P(MB, dB, mid) > dLoad) ? lo = mid : hi = mid;
+    }
+    const f = (lo + hi) / 2;
+    return { f, pa: P(MA, dA, f), pb: P(MB, dB, f), P };
+  }
+
+  const droopFig = G.canvas("droop", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 56, r: 16, t: 26, b: 40 };
+    const W = w - m.l - m.r, H = h - m.t - m.b;
+    const fMin = 48.5, fMax = 51.5, pMax = 700;
+    const X = p => m.l + (p / pMax) * W;
+    const Y = f => m.t + (fMax - f) / (fMax - fMin) * H;
+    const sol = droopSolve();
+
+    // axes + grid
+    for (let f = 49; f <= 51; f += 0.5) {
+      line(ctx, m.l, Y(f), w - m.r, Y(f), C.line2, 1);
+      label(ctx, f.toFixed(1), m.l - 8, Y(f) + 4, { align: "right" });
+    }
+    for (let p = 0; p <= 700; p += 100) {
+      label(ctx, p, X(p), h - m.b + 16, { align: "center" });
+    }
+    label(ctx, "output MW →", w - m.r, h - m.b + 30, { align: "right" });
+    label(ctx, "Hz", m.l - 8, m.t - 8, { align: "right" });
+    line(ctx, m.l, Y(50), w - m.r, Y(50), C.muted, 1, [5, 5]);
+    label(ctx, "50.00", w - m.r - 2, Y(50) - 5, { align: "right", color: C.muted });
+
+    // droop lines
+    [[MA, dA, C.series[0], "steam 500 MW"], [MB, dB, C.series[4], "hydro 150 MW"]].forEach(([mch, dr, col, nm], i) => {
+      const f0 = 50 + 0.6 * (dr / 100) * 50;
+      const fAt = P => f0 - (P / mch.cap) * (dr / 100) * 50;
+      ctx.strokeStyle = col; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(X(0), Y(fAt(0))); ctx.lineTo(X(mch.cap), Y(fAt(mch.cap))); ctx.stroke();
+      label(ctx, nm, X(mch.cap) + 6, Y(fAt(mch.cap)) + 4, { color: col, font: mono(10, true) });
+      // operating point
+      const P = i === 0 ? sol.pa : sol.pb;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(X(P), Y(sol.f), 5, 0, TAU); ctx.fill();
+      ctx.strokeStyle = C.bg; ctx.lineWidth = 2; ctx.stroke();
+    });
+
+    // system frequency line
+    line(ctx, m.l, Y(sol.f), w - m.r, Y(sol.f), C.amber, 1.5, [2, 4]);
+    label(ctx, "system f = " + sol.f.toFixed(2) + " Hz", m.l + 6, Y(sol.f) - 6, { color: C.amber, font: mono(11, true) });
+
+    document.getElementById("droop-f").textContent = sol.f.toFixed(2) + " Hz";
+    document.getElementById("droop-pa").textContent = Math.round(sol.pa) + " MW";
+    document.getElementById("droop-pb").textContent = Math.round(sol.pb) + " MW";
+  });
+  G.slider("droop-load", v => v + " MW", v => { dLoad = v; droopFig.redraw(); });
+  G.slider("droop-a", v => v + "%", v => { dA = v; droopFig.redraw(); });
+  G.slider("droop-b", v => v + "%", v => { dB = v; droopFig.redraw(); });
+
+  /* ================= Fig 3: turbine chooser ================= */
+  // head slider is log-scaled: 2 m .. 600 m
+  const headOf = s => 2 * Math.pow(300, s / 100);
+  let tH = headOf(62), tQ = 18;
+
+  function turbType(Hd) {
+    if (Hd >= 250) return "PELTON";
+    if (Hd >= 40) return "FRANCIS";
+    return "KAPLAN";
+  }
+
+  const turbFig = G.canvas("turb", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const m = { l: 60, r: 16, t: 24, b: 42 };
+    const W = w - m.l - m.r, H = h - m.t - m.b;
+    // log head axis vertical
+    const Y = Hd => m.t + H * (1 - Math.log(Hd / 2) / Math.log(300));
+    // bands
+    const bands = [
+      ["KAPLAN", 2, 40, C.series[4]],
+      ["FRANCIS", 25, 350, C.series[0]],
+      ["PELTON", 200, 600, C.series[6]],
+    ];
+    const bw = W * 0.34;
+    bands.forEach(([nm, a, b, col], i) => {
+      const x = m.l + i * (bw * 0.95);
+      ctx.fillStyle = col + "33";
+      ctx.strokeStyle = col;
+      ctx.lineWidth = 1;
+      const y1 = Y(Math.min(b, 600)), y2 = Y(a);
+      ctx.fillRect(x, y1, bw, y2 - y1);
+      ctx.strokeRect(x, y1, bw, y2 - y1);
+      label(ctx, nm, x + bw / 2, y2 - 8, { align: "center", color: col, font: mono(11, true) });
+    });
+    // head scale
+    [2, 5, 10, 20, 50, 100, 200, 400, 600].forEach(Hd => {
+      label(ctx, Hd + " m", m.l - 8, Y(Hd) + 4, { align: "right" });
+      line(ctx, m.l - 4, Y(Hd), m.l, Y(Hd), C.muted, 1);
+    });
+    label(ctx, "head (log scale)", m.l - 44, m.t + H / 2, { angle: -Math.PI / 2, align: "center" });
+
+    // current head line + marker
+    line(ctx, m.l, Y(tH), w - m.r, Y(tH), C.amber, 1.5, [4, 4]);
+    label(ctx, Math.round(tH) + " m", w - m.r - 4, Y(tH) - 6, { align: "right", color: C.amber, font: mono(11, true) });
+
+    // runner icon, right side
+    const icx = w - Math.max(90, w * 0.14), icy = m.t + H * 0.30, ir = Math.min(46, w * 0.055);
+    const ty = turbType(tH);
+    ctx.save();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 2;
+    if (ty === "PELTON") {
+      ctx.beginPath(); ctx.arc(icx, icy, ir * 0.55, 0, TAU); ctx.stroke();
+      for (let i = 0; i < 8; i++) {
+        const a = i / 8 * TAU;
+        ctx.beginPath();
+        ctx.arc(icx + Math.cos(a) * ir * 0.75, icy + Math.sin(a) * ir * 0.75, ir * 0.22, a + 2.2, a + 5.2);
+        ctx.stroke();
+      }
+      line(ctx, icx - ir * 1.9, icy, icx - ir * 0.85, icy, C.teal, 3);
+      label(ctx, "jet", icx - ir * 1.9, icy - 8, { color: C.teal });
+    } else if (ty === "FRANCIS") {
+      ctx.beginPath();
+      for (let a = 0; a < TAU * 1.9; a += 0.1) {
+        const r = ir * (1 - a / (TAU * 2.6));
+        const x = icx + Math.cos(a) * r, y = icy + Math.sin(a) * r;
+        a === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      for (let i = 0; i < 6; i++) {
+        const a = i / 6 * TAU;
+        line(ctx, icx + Math.cos(a) * ir * 0.18, icy + Math.sin(a) * ir * 0.18,
+          icx + Math.cos(a + 0.7) * ir * 0.45, icy + Math.sin(a + 0.7) * ir * 0.45, C.ink, 2);
+      }
+    } else {
+      line(ctx, icx, icy - ir, icx, icy + ir, C.ink, 2);
+      for (let i = 0; i < 4; i++) {
+        const a = i / 4 * TAU + 0.4;
+        ctx.beginPath();
+        ctx.ellipse(icx + Math.cos(a) * ir * 0.45, icy + Math.sin(a) * ir * 0.45,
+          ir * 0.42, ir * 0.16, a + 0.9, 0, TAU);
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+    label(ctx, ty + " runner", icx, icy + ir + 18, { align: "center", color: C.ink2, font: mono(10, true) });
+
+    // update readouts
+    const P = 1000 * 9.81 * tQ * tH * 0.9 / 1e6;
+    document.getElementById("turb-type").textContent = ty[0] + ty.slice(1).toLowerCase();
+    document.getElementById("turb-p").textContent = P >= 10 ? Math.round(P) + " MW" : P.toFixed(1) + " MW";
+    const note = document.getElementById("turb-note");
+    if (P > 500) note.textContent = "— bigger than any single conventional hydro machine in Britain; you'd split this across several sets";
+    else if (P < 0.5) note.textContent = "— micro-hydro territory: a croft scheme";
+    else note.textContent = "";
+  });
+  const tHslider = G.slider("turb-h", s => Math.round(headOf(s)) + " m", s => { tH = headOf(s); turbFig.redraw(); });
+  const tQslider = G.slider("turb-q", v => v + " m³/s", v => { tQ = v; turbFig.redraw(); });
+  const sldToHead = Hd => 100 * Math.log(Hd / 2) / Math.log(300);
+  document.getElementById("turb-sloy").addEventListener("click", () => { tHslider.set(sldToHead(277)); tQslider.set(64); });
+  document.getElementById("turb-finlarig").addEventListener("click", () => { tHslider.set(sldToHead(400)); tQslider.set(9); });
+  document.getElementById("turb-barrage").addEventListener("click", () => { tHslider.set(sldToHead(12)); tQslider.set(150); });
+
+  /* ================= Fig 4: pumped storage day ================= */
+  // demand curve (GW, schematic GB winter day) and station schedule
+  function demand(hr) {
+    return 27 + 9 * Math.exp(-Math.pow((hr - 8.2) / 2.4, 2)) +
+      12 * Math.exp(-Math.pow((hr - 17.8) / 2.2, 2)) - 4 * Math.exp(-Math.pow((hr - 3.5) / 3.0, 2));
+  }
+  function psMW(hr) { // + generating, - pumping
+    const d = demand(hr);
+    if (d < 25.5) return -400;
+    if (d > 33.5) return 440;
+    return 0;
+  }
+  // precompute reservoir level over the day (start 55%)
+  const psLvl = [0];
+  {
+    let lvl = 0.62;
+    for (let i = 0; i <= 24 * 20; i++) {
+      const hr = i / 20;
+      const mw = psMW(hr);
+      lvl += (-mw) * (1 / 20) * 0.000115 * (mw < 0 ? 0.75 : 1); // pump adds less than gen removes (losses)
+      lvl = clamp(lvl, 0.05, 0.98);
+      psLvl[i] = lvl;
+    }
+  }
+  let psT = 7, psPlaying = false;
+
+  const psFig = G.canvas("ps", function (ctx, w, h, t) {
+    if (psPlaying) {
+      psT = (psT + 0.045) % 24;
+      // update the slider display without firing its onChange (no recursion)
+      const el = document.getElementById("ps-t");
+      el.value = psT;
+      const hh = Math.floor(psT), mm = Math.round((psT - hh) * 60);
+      el.parentElement.querySelector("output").textContent =
+        String(hh).padStart(2, "0") + ":" + String(mm % 60).padStart(2, "0");
+    }
+    drawPS(ctx, w, h);
+  }, { animate: true });
+
+  function drawPS(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const narrow = w < 640;
+    // left: mountain cross-section
+    const mx = 10, mw2 = narrow ? w - 20 : w * 0.44, gy = h * 0.86;
+    const topY = h * 0.16;
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mx, gy);
+    ctx.lineTo(mx + mw2 * 0.16, gy);
+    ctx.lineTo(mx + mw2 * 0.52, topY);          // mountainside
+    ctx.lineTo(mx + mw2 * 0.78, topY + 14);
+    ctx.lineTo(mx + mw2, gy * 0.98);
+    ctx.stroke();
+    // lower loch
+    ctx.fillStyle = "rgba(86,183,207,0.25)";
+    ctx.fillRect(mx, gy - 14, mw2 * 0.15, 14);
+    label(ctx, "Loch Awe", mx + 4, gy + 14, { color: C.teal });
+    // upper reservoir basin between x 0.52 and 0.78
+    const bx0 = mx + mw2 * 0.53, bx1 = mx + mw2 * 0.76, bd = 26;
+    const lvl = psLvl[Math.round(psT * 20)];
+    ctx.fillStyle = "rgba(86,183,207,0.35)";
+    ctx.fillRect(bx0, topY + 16 + (1 - lvl) * bd, bx1 - bx0, lvl * bd);
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1;
+    ctx.strokeRect(bx0, topY + 16, bx1 - bx0, bd);
+    label(ctx, "upper reservoir", (bx0 + bx1) / 2, topY + 6, { align: "center" });
+    // shaft + machine hall
+    const hallX = mx + mw2 * 0.30, hallY = gy - 30;
+    line(ctx, (bx0 + bx1) / 2, topY + 16 + bd, hallX + 18, hallY + 8, "rgba(233,228,214,0.45)", 3);
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 1.6;
+    ctx.strokeRect(hallX - 20, hallY, 40, 22);
+    label(ctx, "machine hall", hallX, hallY + 36, { align: "center" });
+    line(ctx, hallX - 20, hallY + 14, mx + mw2 * 0.15, gy - 8, "rgba(233,228,214,0.45)", 3);
+    // flow arrows
+    const mw = psMW(psT);
+    if (mw !== 0) {
+      const dir = mw > 0 ? 1 : -1; // gen: downhill (toward hall/loch)
+      ctx.fillStyle = mw > 0 ? C.amber : C.teal;
+      const midX = ((bx0 + bx1) / 2 + hallX + 18) / 2, midY = (topY + 16 + bd + hallY + 8) / 2;
+      const ang = Math.atan2(hallY + 8 - (topY + 16 + bd), hallX + 18 - (bx0 + bx1) / 2);
+      const a = mw > 0 ? ang : ang + Math.PI;
+      ctx.save(); ctx.translate(midX, midY); ctx.rotate(a);
+      ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(-6, -6); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    // right: demand curve
+    const px0 = narrow ? 46 : w * 0.52, px1 = w - 14;
+    const py0 = narrow ? h * 0.0 : h * 0.14, py1 = narrow ? h * 0.0 : h * 0.80;
+    if (!narrow) {
+      const X = hr => px0 + hr / 24 * (px1 - px0);
+      const Yd = d => py1 - (d - 20) / 22 * (py1 - py0);
+      // pump/gen shading
+      for (let i = 0; i < 24 * 20; i++) {
+        const hr = i / 20, mwx = psMW(hr);
+        if (mwx !== 0) {
+          ctx.fillStyle = mwx > 0 ? "rgba(240,180,41,0.14)" : "rgba(86,183,207,0.14)";
+          ctx.fillRect(X(hr), py0, (px1 - px0) / (24 * 20) + 0.5, py1 - py0);
+        }
+      }
+      ctx.strokeStyle = C.ink2; ctx.lineWidth = 2; ctx.beginPath();
+      for (let i = 0; i <= 24 * 4; i++) { const hr = i / 4; const x = X(hr), y = Yd(demand(hr)); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.stroke();
+      [0, 6, 12, 18, 24].forEach(hr => label(ctx, String(hr).padStart(2, "0") + ":00", X(hr), py1 + 16, { align: "center" }));
+      label(ctx, "national demand →", px0, py0 - 6, { color: C.muted });
+      label(ctx, "■ pumping", px0, py1 + 32, { color: C.teal });
+      label(ctx, "■ generating", px0 + 80, py1 + 32, { color: C.amber });
+      // time marker
+      line(ctx, X(psT), py0, X(psT), py1, C.amber, 1.5);
+    }
+
+    // readouts
+    const modeEl = document.getElementById("ps-mode");
+    if (mw > 0) { modeEl.textContent = "GENERATING"; modeEl.style.color = "var(--amber)"; }
+    else if (mw < 0) { modeEl.textContent = "PUMPING"; modeEl.style.color = "var(--teal)"; }
+    else { modeEl.textContent = "standing by"; modeEl.style.color = "var(--muted)"; }
+    document.getElementById("ps-mw").textContent = (mw > 0 ? "+" : "") + mw + " MW";
+    document.getElementById("ps-lvl").textContent = Math.round(lvl * 100) + "% full";
+  }
+  const psSlider = G.slider("ps-t", v => {
+    const hh = Math.floor(v), mm = Math.round((v - hh) * 60);
+    return String(hh).padStart(2, "0") + ":" + String(mm % 60).padStart(2, "0");
+  }, v => { psT = v; psFig && psFig.redraw(); });
+  document.getElementById("ps-play").addEventListener("click", function () {
+    psPlaying = !psPlaying;
+    this.textContent = psPlaying ? "❚❚ pause" : "▶ run the day";
+  });
+
+  /* ================= Fig 5: synchroscope ================= */
+  let syF = 49.5, syV = 1.0, syPhase = Math.PI * 0.7, syClosed = false, syCrash = 0, syLast = 0;
+  let syVerdictHTML = "";
+
+  const syncFig = G.canvas("synccv", function (ctx, w, h, t) {
+    const dt = Math.min(0.05, t - syLast); syLast = t;
+    if (!syClosed) syPhase = (syPhase + TAU * (syF - 50) * dt) % TAU;
+    else syPhase *= 0.9; // pulled into step
+    if (syCrash > 0) syCrash -= dt;
+
+    ctx.clearRect(0, 0, w, h);
+    if (syCrash > 0 && Math.floor(t * 12) % 2 === 0) {
+      ctx.fillStyle = "rgba(224,82,82,0.10)"; ctx.fillRect(0, 0, w, h);
+    }
+    const narrow = w < 640;
+    const cx = narrow ? w * 0.5 : w * 0.32, cy = narrow ? h * 0.36 : h * 0.5;
+    const R = Math.min(narrow ? h * 0.26 : h * 0.36, w * 0.22);
+
+    // dial
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * TAU - Math.PI / 2;
+      line(ctx, cx + Math.cos(a) * R * 0.9, cy + Math.sin(a) * R * 0.9,
+        cx + Math.cos(a) * R, cy + Math.sin(a) * R, C.muted, i === 0 ? 3 : 1.5);
+    }
+    label(ctx, "SLOW", cx - R * 0.75, cy - R * 0.65, { align: "center", color: C.muted });
+    label(ctx, "FAST", cx + R * 0.75, cy - R * 0.65, { align: "center", color: C.muted });
+    label(ctx, "SYNCHROSCOPE", cx, cy + R + 20, { align: "center", color: C.ink2, font: mono(10, true) });
+    // green closing arc near 12
+    ctx.strokeStyle = "rgba(63,174,98,0.7)"; ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.96, -Math.PI / 2 - 0.26, -Math.PI / 2 + 0.26); ctx.stroke();
+    // pointer at angle syPhase (0 = 12 o'clock)
+    const pa = syPhase - Math.PI / 2;
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 3.5; ctx.lineCap = "round";
+    line(ctx, cx, cy, cx + Math.cos(pa) * R * 0.82, cy + Math.sin(pa) * R * 0.82, C.amber, 3.5);
+    ctx.fillStyle = C.amber; ctx.beginPath(); ctx.arc(cx, cy, 5, 0, TAU); ctx.fill();
+
+    // lamps: brightness ~ |difference voltage| = |V1∠0 - V2∠phase|
+    const diff = Math.sqrt(1 + syV * syV - 2 * syV * Math.cos(syPhase)) / 2;
+    const lampY = narrow ? h * 0.74 : cy - 24;
+    const lampX0 = narrow ? w * 0.28 : w * 0.62;
+    for (let i = 0; i < 3; i++) {
+      const lx = lampX0 + i * (narrow ? w * 0.22 : R * 0.85), ly = lampY;
+      const bright = clamp(diff, 0, 1);
+      const gl = ctx.createRadialGradient(lx, ly, 2, lx, ly, 16);
+      gl.addColorStop(0, `rgba(255,220,120,${0.15 + bright * 0.85})`);
+      gl.addColorStop(1, "rgba(255,220,120,0)");
+      ctx.fillStyle = gl;
+      ctx.beginPath(); ctx.arc(lx, ly, 16, 0, TAU); ctx.fill();
+      ctx.strokeStyle = C.muted; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(lx, ly, 9, 0, TAU); ctx.stroke();
+    }
+    label(ctx, "breaker lamps — dark = in step", lampX0 + (narrow ? w * 0.22 : R * 0.85), lampY + 30, { align: "center" });
+
+    // status line under lamps
+    if (!narrow) {
+      label(ctx, syClosed ? "BREAKER CLOSED" : "BREAKER OPEN", lampX0 + R * 0.85, cy + 34,
+        { align: "center", color: syClosed ? C.good : C.muted, font: mono(12, true) });
+    }
+
+    // live readouts
+    let d = ((syPhase % TAU) + TAU) % TAU; if (d > Math.PI) d -= TAU;
+    document.getElementById("sync-d").textContent = syClosed ? "locked" : Math.round(d * 180 / Math.PI) + "°";
+    document.getElementById("sync-s").textContent = syClosed ? "0.00 Hz" : (syF - 50).toFixed(2) + " Hz";
+  }, { animate: true });
+
+  G.slider("sync-f", v => v.toFixed(2) + " Hz", v => { syF = v; });
+  G.slider("sync-v", v => v.toFixed(2) + " pu", v => { syV = v; });
+  document.getElementById("sync-close").addEventListener("click", () => {
+    if (syClosed) return;
+    let d = ((syPhase % TAU) + TAU) % TAU; if (d > Math.PI) d -= TAU;
+    const deg = Math.abs(d * 180 / Math.PI), slip = Math.abs(syF - 50), dv = Math.abs(syV - 1);
+    const v = document.getElementById("sync-verdict");
+    if (deg < 15 && slip < 0.2 && dv < 0.05) {
+      syClosed = true;
+      v.innerHTML = "<b style='color:var(--good)'>Clean close.</b> The set slides into step — nobody in the machine hall even looks up. Load it by opening the governor.";
+    } else if (deg < 60 && slip < 0.5 && dv < 0.12) {
+      syClosed = true; syCrash = 0.8;
+      v.innerHTML = "<b style='color:var(--amber)'>Rough.</b> A thump runs through the foundations as the grid drags the rotor into step. The shift engineer is now standing behind you.";
+    } else {
+      syCrash = 2.2;
+      v.innerHTML = "<b style='color:var(--danger)'>CRASH SYNCHRONISATION.</b> The machine is wrenched into phase — a torque transient several times rated. Couplings, stator end-windings and your career all take permanent damage. Breaker locked out.";
+    }
+  });
+  document.getElementById("sync-reset").addEventListener("click", () => {
+    syClosed = false; syCrash = 0; syPhase = Math.PI * 0.7;
+    document.getElementById("sync-verdict").textContent = "";
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
