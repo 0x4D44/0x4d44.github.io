@@ -166,10 +166,12 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
 .event-card .iv .done { color: var(--green); min-width: 20px; text-align: center; }
 .event-card .iv .lock { color: var(--faint); min-width: 20px; text-align: center; }
 
-/* main grid */
+/* main grid — min-width:0 keeps wide content (the one-line diagram) scrolling
+   inside its own panel instead of stretching the grid tracks */
 .main { display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+.voyage > *, .main > * { min-width: 0; }
 .rail { display: grid; gap: 8px; min-width: 0; }
-@media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .main { grid-template-columns: minmax(0, 1fr); } }
 
 /* tabs */
 .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -216,6 +218,7 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
 .dg[data-state="starting"] .led, .dg[data-state="ready"] .led { background: var(--blue); }
 .dg[data-state="tripped"] .led { background: var(--red); box-shadow: 0 0 6px var(--red); }
 .dg[data-state="repair"] .led { background: var(--amber); }
+.dg[data-state="maintenance"] .led { background: var(--amber); box-shadow: 0 0 0 2px #ffb64833; }
 .dg .id { font-size: 13px; letter-spacing: .08em; }
 .dg .mw { margin-left: auto; font-family: var(--font-mono); font-size: 11px; color: var(--dim); }
 .dg .loadbar { height: 5px; background: var(--bg3); border-radius: 2px; overflow: hidden; }
@@ -256,6 +259,54 @@ h1, h2, h3 { font-weight: 600; letter-spacing: .06em; }
 .sys[data-st="degraded"] .led { background: var(--amber); }
 .sys[data-st="down"] .led { background: var(--red); box-shadow: 0 0 6px var(--red); }
 .sys .nm { flex: 1; font-size: 13px; letter-spacing: .06em; }
+
+/* one-line diagram */
+.ol-wrap { overflow-x: auto; padding: 4px 0; }
+.ol { display: block; width: 100%; min-width: 620px; height: auto; }
+.ol text { font-family: var(--font-ui); text-anchor: middle; }
+.ol .t { fill: var(--faint); font-size: 9.5px; letter-spacing: .08em; }
+.ol .t.id { fill: var(--txt); font-size: 11px; }
+.ol .t.lab { text-anchor: start; fill: var(--faint); font-size: 9.5px; letter-spacing: .14em; }
+.ol .mono { font-family: var(--font-mono); }
+.ol .ol-load { text-anchor: start; fill: var(--dim); font-size: 9px; }
+.ol .gl { fill: var(--dim); font-size: 12px; font-weight: 600; }
+.ol .w { stroke: #55606b; stroke-width: 2; fill: none; }
+.ol .sym { fill: var(--bg2); stroke: var(--faint); stroke-width: 2; }
+.ol .mtr, .ol .xf { fill: none; stroke: #55606b; stroke-width: 2; }
+.ol .bus { stroke: #7f8b96; stroke-width: 5; stroke-linecap: square; }
+.ol .bus.lv { stroke-width: 3; }
+.ol .bus.dead { stroke: var(--red); stroke-dasharray: 6 4; }
+.ol .bus.emg { stroke: var(--amber); }
+.ol .ct { fill: var(--dim); }
+.ol .blade { stroke: var(--txt); stroke-width: 2.5; stroke-linecap: round; }
+.ol .blade.open { stroke: var(--faint); }
+.ol .bat { stroke: var(--dim); stroke-width: 2; }
+.ol .bat.l { stroke-width: 3; }
+.ol .hit { fill: #0000; }
+.ol .ol-dg, .ol .ol-bkr, .ol .ol-tie { cursor: pointer; }
+.ol .ol-dg:hover .sym, .ol .ol-bkr:hover .blade, .ol .ol-tie:hover .blade { filter: brightness(1.4); }
+.ol [data-state="online"] .sym { stroke: var(--green); }
+.ol [data-state="online"] .gl { fill: var(--green); }
+.ol [data-state="starting"] .sym, .ol [data-state="ready"] .sym { stroke: var(--blue); }
+.ol [data-state="tripped"] .sym { stroke: var(--red); }
+.ol [data-state="repair"] .sym, .ol [data-state="maintenance"] .sym { stroke: var(--amber); stroke-dasharray: 4 3; }
+.ol-legend { color: var(--faint); font-size: 12px; margin-top: 6px; }
+
+/* sailing schedule */
+.sched-head { color: var(--dim); font-size: 12.5px; letter-spacing: .1em; margin-bottom: 8px; }
+.schedule { display: grid; gap: 6px; }
+.leg { border: 1px solid var(--line-soft); border-radius: 6px; background: var(--bg2); padding: 8px 10px; display: grid; gap: 4px; }
+.leg .leghead { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.leg .mark { color: var(--faint); min-width: 14px; flex: none; }
+.leg .ports { font-size: 14px; letter-spacing: .04em; }
+.leg .time { margin-left: auto; font-size: 12px; color: var(--dim); text-align: right; }
+.leg .time.late { color: var(--red); }
+.leg .meta { font-size: 11.5px; color: var(--faint); letter-spacing: .05em; padding-left: 22px; }
+.leg[data-status="done"] { opacity: .55; }
+.leg[data-status="done"] .mark { color: var(--green); }
+.leg[data-status="current"] { border-color: var(--blue); }
+.leg[data-status="current"] .mark, .leg[data-status="current"] .time:not(.late) { color: var(--blue); }
+.sched-foot { color: var(--faint); font-size: 12px; margin-top: 8px; }
 
 /* alarms list & log */
 .alist { display: grid; gap: 4px; max-height: 300px; overflow: auto; }
