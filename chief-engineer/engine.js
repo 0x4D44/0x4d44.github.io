@@ -7,16 +7,7 @@ import { SHIPS, LEVELS, EVENTS, TUNING } from "./content.js";
 export const ENGINE_SCHEMA = 1;
 
 // ---------------------------------------------------------------- PRNG ----
-
-export function mulberry32(seed) {
-  return function next(state) {
-    // state carries the cursor; we mutate state.rng and return [0,1)
-    let t = (state.rng += 0x6d2b79f5);
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
+// mulberry32; the cursor lives in state.rng so saves resume deterministically.
 
 function rand(state) {
   let t = (state.rng = (state.rng + 0x6d2b79f5) | 0);
@@ -27,8 +18,9 @@ function rand(state) {
 
 // ------------------------------------------------------------- helpers ----
 
+const LEVEL_BY_ID = new Map(LEVELS.map((l) => [l.id, l]));
 export function levelById(id) {
-  const level = LEVELS.find((l) => l.id === id);
+  const level = LEVEL_BY_ID.get(id);
   if (!level) throw new Error(`unknown level ${id}`);
   return level;
 }
@@ -75,7 +67,6 @@ export function createVoyage(levelId, seed) {
     telegraphAnswers: 0,
     slowdownGranted: false,
     pmsAuto: false,
-    bunkerRate: "normal",
     // electrical
     boards: ship.boards.map((b) => ({
       id: b.id,
@@ -95,7 +86,6 @@ export function createVoyage(levelId, seed) {
       condition: d.initialCondition ?? 100,
       sumpPct: d.initialSump ?? 80,
       fuel: level.startGrade ?? "HFO",
-      scripted: false, // last trip was scripted (star exemption)
     })),
     emergencyGenOnline: false,
     emergencyGenTestedThisVoyage: false,
@@ -111,7 +101,6 @@ export function createVoyage(levelId, seed) {
     scrubberOn: false,
     scrubberFault: false,
     catFinesExposure: 0, // 0-100 visible meter
-    quarantined: [],
     ecaViolationMin: 0,
     finesEUR: 0,
     // maintenance
@@ -162,35 +151,38 @@ export function fmtClock(state) {
 
 function logLine(state, text, kind = "info") {
   state.log.push({ tick: state.tick, clock: fmtClock(state), text, kind });
+  if (state.log.length > 1500) state.log.splice(0, 500); // UI shows a window; saves stay bounded
 }
 
 function timelineMark(state, text) {
   if (state.timeline.length < 400) state.timeline.push({ tick: state.tick, clock: fmtClock(state), text });
 }
 
-function raiseAlarm(state, tileId, text, severity) {
-  // one active alarm per tile+text
-  const existing = state.alarms.find((a) => a.tileId === tileId && a.text === text && a.active);
+function raiseAlarm(state, tileId, text, severity, component = null) {
+  // one active alarm per tile+component+text; component is structured data,
+  // never parsed back out of a string (review: regex-routing contract smell)
+  const existing = state.alarms.find((a) => a.tileId === tileId && a.component === component && a.text === text && a.active);
   if (existing) return existing;
-  const alarm = { id: ++state.alarmSeq, tileId, text, severity, tick: state.tick, acked: false, active: true };
+  const alarm = { id: ++state.alarmSeq, tileId, component, text, severity, tick: state.tick, acked: false, active: true };
   state.alarms.push(alarm);
   state.newAlarmThisTick = true;
   logLine(state, `${severity === "red" ? "ALARM" : "WARN"}: ${text}`, severity === "red" ? "alarm" : "warn");
   return alarm;
 }
 
-function clearAlarm(state, tileId, text) {
+function clearAlarm(state, tileId, text, component) {
   for (const a of state.alarms) {
-    if (a.tileId === tileId && a.active && (text === undefined || a.text === text)) a.active = false;
+    if (a.tileId === tileId && a.active &&
+        (text === undefined || a.text === text) &&
+        (component === undefined || a.component === component)) a.active = false;
   }
 }
 
 // ------------------------------------------------------------ electrical --
 
 // Boards joined by a closed tie act as one island. Returns array of islands,
-// each { boards:[boardObj], dgs:[dg], demandMw, capacityMw }.
+// each { boards:[boardObj], dgs:[dg], capacityMw }.
 export function islands(state) {
-  const ship = shipFor(levelById(state.levelId));
   const groups = [];
   if (state.boards.length === 1 || state.tieClosed) {
     groups.push(state.boards.filter((b) => b.online));
@@ -207,8 +199,8 @@ export function islands(state) {
 }
 
 export function hotelDemandMw(state) {
-  const ship = shipFor(levelById(state.levelId));
   const level = levelById(state.levelId);
+  const ship = shipFor(level);
   // day/night sine: peak 10:00-22:00, trough at night
   const t = (state.clockMin % 1440) / 1440;
   const diurnal = 0.85 + 0.15 * Math.sin((t - 0.29) * 2 * Math.PI);
@@ -220,14 +212,17 @@ export function hotelDemandMw(state) {
   return mw;
 }
 
+// The cube law, in ONE place — the engine, the bot and the content oracle all
+// use this (a re-typed copy would silently stop testing the real sim).
+export function propDemandMw(ship, kn, weather) {
+  const frac = kn / ship.serviceKn;
+  return ship.propMw * frac * frac * frac * (1 + (TUNING.weatherPropFactor[weather] ?? 0));
+}
+
 export function propulsionDemandMw(state) {
-  const ship = shipFor(levelById(state.levelId));
   if (state.inPort || state.actualKn <= 0) return 0;
-  const frac = state.actualKn / ship.serviceKn;
-  let mw = ship.propMw * frac * frac * frac;
   const leg = currentLeg(state);
-  if (leg && !state.inPort) mw *= 1 + (weatherPropFactor(leg.weather) ?? 0);
-  return mw;
+  return propDemandMw(shipFor(levelById(state.levelId)), state.actualKn, leg?.weather);
 }
 
 export function auxDemandMw(state) {
@@ -238,12 +233,14 @@ export function auxDemandMw(state) {
   return mw;
 }
 
-function weatherPropFactor(w) {
-  return { calm: 0, moderate: 0.08, rough: 0.18, storm: 0.3 }[w] ?? 0;
-}
-
 export function totalDemandMw(state) {
   return hotelDemandMw(state) + propulsionDemandMw(state) + auxDemandMw(state);
+}
+
+// Hotel + aux load carried by an island (split evenly across live boards).
+function hotelAuxShareMw(state, island) {
+  const liveBoards = state.boards.filter((b) => b.online).length || 1;
+  return (hotelDemandMw(state) + auxDemandMw(state)) / liveBoards * island.boards.length;
 }
 
 // Demand assigned to an island: propulsion splits across LIVE boards
@@ -252,14 +249,12 @@ export function totalDemandMw(state) {
 function islandDemandMw(state, island) {
   const ship = shipFor(levelById(state.levelId));
   const live = state.boards.filter((b) => b.online);
-  const liveBoards = live.length || 1;
-  const hotelAux = (hotelDemandMw(state) + auxDemandMw(state)) / liveBoards * island.boards.length;
   const prop = propulsionDemandMw(state);
   const share = (b) => ship.propSplit?.[b.id] ?? 1 / state.boards.length;
   const liveTotal = live.reduce((s, b) => s + share(b), 0) || 1;
   let propShare = 0;
   for (const b of island.boards) propShare += (share(b) / liveTotal) * prop;
-  return hotelAux + propShare;
+  return hotelAuxShareMw(state, island) + propShare;
 }
 
 export function spinningReserve(state) {
@@ -334,14 +329,14 @@ function triggerBoardBlackout(state, board, cause) {
       d.loadPct = 0;
     }
   }
-  raiseAlarm(state, `board-${board.id}`, `SWITCHBOARD ${board.id} BLACKOUT — ${cause.toUpperCase()}`, "red");
+  raiseAlarm(state, "board", `SWITCHBOARD ${board.id} BLACKOUT — ${cause.toUpperCase()}`, "red", board.id);
   timelineMark(state, `Board ${board.id} lost: ${cause}`);
 }
 
 function beginBlackout(state, { scripted = false, cause = "bus collapse" } = {}) {
   const allDead = state.boards.every((b) => !b.online);
   if (!allDead) return; // partial: healthy board carries on
-  state.blackout = { sinceTick: state.tick, cause, scripted, emGen: false };
+  state.blackout = { sinceTick: state.tick, cause, scripted };
   state.blackoutCount += 1;
   if (!scripted) state.unscriptedBlackout = true;
   state.actualKn = 0;
@@ -357,8 +352,7 @@ function beginBlackout(state, { scripted = false, cause = "bus collapse" } = {})
 function stepBlackout(state) {
   const bo = state.blackout;
   if (!bo) return;
-  if (!bo.emGen && state.tick - bo.sinceTick >= 1) {
-    bo.emGen = true;
+  if (!state.emergencyGenOnline && state.tick - bo.sinceTick >= 1) {
     state.emergencyGenOnline = true;
     logLine(state, "Emergency generator started and on load (essential bus).", "info");
   }
@@ -503,7 +497,7 @@ function stepPosition(state) {
   // bus can give (overload/shed oscillation).
   const ship = shipFor(levelById(state.levelId));
   const target = state.telegraphAcked ? state.commandedKn : 0;
-  const wf = 1 + (weatherPropFactor(leg.weather) ?? 0);
+  const wf = 1 + (TUNING.weatherPropFactor[leg.weather] ?? 0);
   const propBoards = state.boards.filter((b) => b.online);
   let maxKn = propBoards.length === 0 ? 0
     : ship.serviceKn * Math.cbrt(availablePropMw(state) / (ship.propMw * wf));
@@ -540,13 +534,9 @@ function availablePropMw(state) {
   // MW left for propulsion after hotel+aux, across live islands
   let avail = 0;
   for (const isl of islands(state)) {
-    const ship = shipFor(levelById(state.levelId));
-    const liveBoards = state.boards.filter((b) => b.online).length || 1;
-    const nonProp = (hotelDemandMw(state) + auxDemandMw(state)) / liveBoards * isl.boards.length;
-    avail += Math.max(0, isl.capacityMw * 0.98 - nonProp);
+    avail += Math.max(0, isl.capacityMw * 0.98 - hotelAuxShareMw(state, isl));
   }
-  const ship = shipFor(levelById(state.levelId));
-  return Math.min(avail, ship.propMw);
+  return Math.min(avail, shipFor(levelById(state.levelId)).propMw);
 }
 
 // ECA violation-hours are deterministic and assessed at EVERY arrival — the
@@ -600,16 +590,16 @@ function stepWeather(state) {
   for (const d of state.dgs) {
     const exposed = heavyRolling && d.state === "online" && d.sumpPct < TUNING.sumpSloshThreshold;
     if (exposed) {
-      raiseAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS FLUCTUATING — SUMP LOW IN HEAVY ROLLING`, "amber");
+      raiseAlarm(state, "dg", `${d.id} LO PRESS FLUCTUATING — SUMP LOW IN HEAVY ROLLING`, "amber", d.id);
       if (rand(state) < TUNING.sloshTripChancePerMin) {
         d.state = "tripped";
         d.loadPct = 0;
-        raiseAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS LOW — AUTO SHUTDOWN`, "red");
+        raiseAlarm(state, "dg", `${d.id} LO PRESS LOW — AUTO SHUTDOWN`, "red", d.id);
         timelineMark(state, `${d.id} tripped: LO suction lost rolling (sump ${Math.round(d.sumpPct)}%)`);
       }
     } else if (d.state === "online") {
       // condition passed (topped up, weather eased, fins out): clear the warning
-      clearAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS FLUCTUATING — SUMP LOW IN HEAVY ROLLING`);
+      clearAlarm(state, "dg", `${d.id} LO PRESS FLUCTUATING — SUMP LOW IN HEAVY ROLLING`, d.id);
     }
   }
 }
@@ -647,7 +637,7 @@ function applyPhaseEntry(state, inst) {
   const ph = phaseOf(inst);
   const label = (ph.text ?? ev.title).replaceAll("{c}", inst.componentId ?? "");
   if (ph.severity && ph.severity !== "none") {
-    raiseAlarm(state, `${ev.tile}${inst.componentId ? "-" + inst.componentId : ""}`, label, ph.severity);
+    raiseAlarm(state, ev.tile, label, ph.severity, inst.componentId);
   } else {
     logLine(state, label, "info");
   }
@@ -670,7 +660,7 @@ function applyEffects(state, inst, fx) {
   if (fx.tripDg && c) {
     const d = state.dgs.find((x) => x.id === c);
     if (d && (d.state === "online" || d.state === "ready" || d.state === "starting")) {
-      d.state = "tripped"; d.loadPct = 0; d.scripted = inst.scripted;
+      d.state = "tripped"; d.loadPct = 0;
     }
   }
   if (fx.damageDg && c) {
@@ -696,31 +686,21 @@ function applyEffects(state, inst, fx) {
     const b = boardOfComponent(state, c);
     for (const d of state.dgs) {
       if (d.board === b.id && (d.state === "online" || d.state === "ready")) {
-        d.state = "stopped"; d.loadPct = 0; d.scripted = inst.scripted;
+        d.state = "stopped"; d.loadPct = 0;
         d.condition = clamp(d.condition - 8, 0, 100);
       }
     }
     state.spentParts += 10;
-    if (state.boards.every((x) => !x.online || !state.dgs.some((d) => d.board === x.id && d.state === "online"))) {
-      // may have dropped the whole plant if it was a one-board ship
-    }
   }
-  if (fx.fireBoardLoss) {
-    const b = boardOfComponent(state, c);
-    doLoseBoard(state, inst, b.id);
-  }
-  if (fx.loseBoard) doLoseBoard(state, inst, fx.loseBoard);
-  if (fx.blackout) {
-    for (const b of state.boards) triggerBoardBlackout(state, b, fx.blackout);
-    for (const d of state.dgs) if (d.state === "online") { d.state = "tripped"; d.scripted = inst.scripted; }
-    beginBlackout(state, { scripted: inst.scripted, cause: fx.blackout });
-  }
+  // loseBoard: true derives the board from the component; a string names it
+  if (fx.loseBoard) doLoseBoard(state, inst, fx.loseBoard === true ? boardOfComponent(state, c).id : fx.loseBoard);
+  if (fx.blackout) induceBlackout(state, { scripted: inst.scripted, cause: fx.blackout });
   if (fx.rogue) {
     const prepared = state.securedForWeather && state.stabilizersOut && state.systems.stabilizers !== "down";
     state.comfort = clamp(state.comfort - (prepared ? 8 : 18), 0, 100);
     if (c) {
       const d = state.dgs.find((x) => x.id === c);
-      if (d && d.state === "online") { d.state = "tripped"; d.loadPct = 0; d.scripted = true; }
+      if (d && d.state === "online") { d.state = "tripped"; d.loadPct = 0; }
     }
     logLine(state, prepared
       ? "Rogue sea taken on the bow — secured plant held; one machine tripped on the roll."
@@ -739,12 +719,19 @@ function applyEffects(state, inst, fx) {
   if (fx.log) logLine(state, fx.log.replaceAll("{c}", c ?? ""), "warn");
 }
 
+// Trip every board and machine — the drill and the fx.blackout effect share this.
+function induceBlackout(state, { scripted, cause }) {
+  for (const b of state.boards) triggerBoardBlackout(state, b, cause);
+  for (const d of state.dgs) if (d.state === "online") { d.state = "tripped"; }
+  beginBlackout(state, { scripted, cause });
+}
+
 function doLoseBoard(state, inst, boardId) {
   state.tieClosed = false;
   const b = state.boards.find((x) => x.id === boardId);
   if (b) triggerBoardBlackout(state, b, "engine room fire — cable runs destroyed");
   for (const d of state.dgs) {
-    if (d.board === boardId) { d.state = "repair"; d.loadPct = 0; d.scripted = inst.scripted; }
+    if (d.board === boardId) { d.state = "repair"; d.loadPct = 0; }
   }
   if (state.boards.every((x) => !x.online)) {
     beginBlackout(state, { scripted: inst.scripted, cause: "fire took the last switchboard" });
@@ -758,7 +745,7 @@ function resolveInstance(state, inst, outcome) {
     outcome, tick: state.tick, causedBy: inst.causedBy, scripted: inst.scripted,
   });
   const ev = eventById(inst.eventId);
-  clearAlarm(state, `${ev.tile}${inst.componentId ? "-" + inst.componentId : ""}`);
+  clearAlarm(state, ev.tile, undefined, inst.componentId);
 }
 
 function stepEvents(state) {
@@ -790,7 +777,7 @@ function stepHazards(state) {
       const key = `${pool.eventId}:${comp ?? "-"}`;
       if ((state.hazardCooldown[key] ?? 0) > state.tick) continue;
       state.hazardCooldown[key] = state.tick + 60; // roll at most hourly
-      let p = pool.perHour / 60 * 60; // per roll (hourly)
+      let p = pool.perHour; // rolls happen at most hourly, so this IS the per-roll rate
       p *= hazardMultiplier(state, pool, comp);
       if (rand(state) < p) {
         spawnEvent(state, pool.eventId, comp);
@@ -918,12 +905,7 @@ function runScriptRow(state, row) {
   if (row.closeGate) state.gateOpen = false;
   if (row.armsPool) state.poolArmed = true;
   if (row.weatherWarn) logLine(state, `Weather routing: ${row.weatherWarn}`, "bridge");
-  if (row.drill) {
-    // consequence-free blackout drill: kill boards, scripted
-    for (const b of state.boards) triggerBoardBlackout(state, b, "blackout drill");
-    for (const d of state.dgs) if (d.state === "online") { d.state = "tripped"; d.scripted = true; }
-    beginBlackout(state, { scripted: true, cause: "scheduled blackout drill" });
-  }
+  if (row.drill) induceBlackout(state, { scripted: true, cause: "scheduled blackout drill" });
 }
 
 function objectiveMet(state, o) {
@@ -960,7 +942,7 @@ export function applyAction(state, action) {
       d.state = "starting";
       d.startTicksLeft = TUNING.dgStartTicks;
       d.fuel = state.fleetFuel;
-      clearAlarm(state, `dg-${d.id}`);
+      clearAlarm(state, "dg", undefined, d.id);
       logLine(state, `${d.id} starting…`, "info");
       break;
     }
@@ -980,7 +962,7 @@ export function applyAction(state, action) {
       if (b && !b.online) {
         b.online = true; // black-start: energize dead board
         b.shedStage = 3; // restore loads progressively
-        clearAlarm(state, `board-${b.id}`);
+        clearAlarm(state, "board", undefined, b.id);
         logLine(state, `Switchboard ${b.id} energized from ${d.id}.`, "info");
       }
       break;
@@ -1051,16 +1033,8 @@ export function applyAction(state, action) {
       logLine(state, `Bunkered ${Math.round(hfo)}t HFO + ${Math.round(mgo)}t MGO (k€${(cost / 1000).toFixed(0)}, owner's account). Samples drawn and sealed.`, "info");
       break;
     }
-    case "bunker.rate": {
-      state.bunkerRate = a.rate;
-      break;
-    }
     case "scrubber.start": if (shipFor(levelById(state.levelId)).scrubber && !state.scrubberFault) state.scrubberOn = true; break;
     case "scrubber.stop": state.scrubberOn = false; break;
-    case "tank.quarantine": {
-      if (!state.quarantined.includes(a.id)) state.quarantined.push(a.id);
-      break;
-    }
     case "job.start": {
       const j = state.jobs.find((x) => x.id === a.jobId);
       if (!j || j.status !== "open") break;
@@ -1170,6 +1144,11 @@ export function tick(state) {
   } else {
     clearAlarm(state, "fuel", "PROJECTED FUEL SHORT OF DESTINATION");
   }
+  // housekeeping: drop long-cleared alarms (the UI never shows them again,
+  // and scans/saves stay bounded)
+  if (state.alarms.length > 150) {
+    state.alarms = state.alarms.filter((a) => a.active || state.tick - a.tick < 180);
+  }
   return state;
 }
 
@@ -1202,7 +1181,7 @@ export function stars(state) {
   const safety = !state.unscriptedBlackout && state.playerFaultCasualties === 0;
   const comfortAvg = state.comfortSamples ? state.comfortSum / state.comfortSamples : 100;
   const service = comfortAvg >= level.comfortTarget && state.lateMin <= level.lateToleranceMin;
-  const spent = state.spentFuel + state.spentParts + state.finesEUR / 1000;
+  const spent = voyageSpendK(state);
   const efficiency = spent <= state.budget && state.finesEUR === 0;
   return { safety, service, efficiency, comfortAvg, spent };
 }
@@ -1235,6 +1214,17 @@ function buildChains(state) {
       }
       return chain.join(" ← ");
     });
+}
+
+// Current burn rate in tonnes/hour (the same arithmetic stepFuel integrates).
+export function burnRateTph(state) {
+  return state.dgs.filter((d) => d.state === "online")
+    .reduce((sum, d) => sum + (d.mw * 1000 * (d.loadPct / 100) * sfoc(d.loadPct)) / 1e6, 0);
+}
+
+// Voyage spend in k€ — the exact quantity the Efficiency star scores.
+export function voyageSpendK(state) {
+  return state.spentFuel + state.spentParts + state.finesEUR / 1000;
 }
 
 // ------------------------------------------------------------ selectors --

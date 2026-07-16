@@ -136,6 +136,14 @@ try {
   const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
   const S = (method, params = {}) => send(method, params, sessionId);
   await S("Page.enable"); await S("Runtime.enable");
+  // auto-accept native dialogs (the discard-saved-voyage confirm)
+  const acceptDialogs = (event) => {
+    const message = JSON.parse(event.data);
+    if (message.method === "Page.javascriptDialogOpening" && message.sessionId === sessionId) {
+      send("Page.handleJavaScriptDialog", { accept: true }, sessionId);
+    }
+  };
+  ws.addEventListener("message", acceptDialogs);
 
   async function evaluate(expression) {
     const r = await S("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true, userGesture: true });

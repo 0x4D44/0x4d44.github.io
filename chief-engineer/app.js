@@ -3,8 +3,9 @@
 // Rendering is reconciling: nodes are cached and mutated, never rebuilt per tick.
 
 import {
-  createVoyage, tick, applyAction, spinningReserve, totalDemandMw, sfoc,
-  projectedFuelMargin, currentLeg, stars, debrief, fmtClock, ENGINE_SCHEMA,
+  createVoyage, tick, applyAction, spinningReserve, totalDemandMw,
+  burnRateTph, voyageSpendK, projectedFuelMargin, currentLeg, debrief,
+  fmtClock, levelById, shipFor, ENGINE_SCHEMA,
 } from "./engine.js";
 import { SHIPS, LEVELS, EVENTS, MANUAL } from "./content.js";
 
@@ -37,8 +38,10 @@ function syncList(container, items, keyFn, createFn, updateFn) {
   const byKey = container._byKey ?? (container._byKey = new Map());
   const seen = new Set();
   let prev = null;
+  let i = -1;
   for (const item of items) {
-    const k = String(keyFn(item));
+    i += 1;
+    const k = String(keyFn(item, i));
     seen.add(k);
     let node = byKey.get(k);
     if (!node) { node = createFn(item); byKey.set(k, node); }
@@ -119,8 +122,8 @@ let flashSpeedUntil = 0;
 const TILE_MANUAL = { "bus-overload": "power", reserve: "reserve", blackout: "blackout", fuel: "fuel", eca: "eca", catfines: "purifiers", board: "blackout", dg: "generators" };
 for (const ev of Object.values(EVENTS)) TILE_MANUAL[ev.tile] = ev.manual;
 
-function levelOf(st) { return LEVELS.find((l) => l.id === st.levelId); }
-function shipOf(st) { return SHIPS[levelOf(st).ship]; }
+const levelOf = (st) => levelById(st.levelId);
+const shipOf = (st) => shipFor(levelOf(st));
 
 // =========================================================== menu screen ==
 
@@ -437,11 +440,9 @@ function buildAnnunciator() {
 }
 
 function tileKeyForAlarm(a) {
-  const dgMatch = a.tileId.match(/-(DG\d+)$/);
-  if (dgMatch && ui.tiles.has(dgMatch[1])) return dgMatch[1];
-  if (a.tileId.startsWith("board-")) return a.tileId;
-  const base = a.tileId.split("-")[0];
-  return ui.tiles.has(base) ? base : a.tileId;
+  if (a.component && ui.tiles.has(a.component)) return a.component; // per-DG tiles
+  if (a.tileId === "board") return `board-${a.component}`;
+  return a.tileId;
 }
 function tileAlarms(key) {
   return state.alarms.filter((a) => a.active && tileKeyForAlarm(a) === key);
@@ -498,9 +499,11 @@ function buildPowerPanel() {
     top.append(el("span", "led"), el("span", "id", d.id), el("span", "mw", `${d.mw} MW`));
     node.append(top);
     const bar = el("div", "loadbar");
-    bar.append(el("i"));
+    node._fill = el("i");
+    bar.append(node._fill);
     node.append(bar);
-    node.append(el("div", "sub"));
+    node._sub = el("div", "sub");
+    node.append(node._sub);
     node.addEventListener("click", () => { sheet = { kind: "dg", id: d.id }; render(); });
     ui.boards.get(d.board).dgNodes.set(d.id, node);
     ui.boards.get(d.board).dgrow.append(node);
@@ -528,6 +531,13 @@ function buildPowerPanel() {
   ui.slowReq.addEventListener("click", () => act({ type: state.slowdownGranted ? "bridge.requestResume" : "bridge.requestSlowdown" }));
   spdRow.append(ui.spdDown, ui.spdUp, ui.slowReq);
   ui.propChip.node.append(spdRow);
+  if (LEVELS.indexOf(levelOf(state)) >= 2) {
+    ui.pmsBtn = el("button", "small");
+    ui.pmsBtn.addEventListener("click", () => act({ type: "pms.auto", on: !state.pmsAuto }));
+    ui.reserveChip.node.append(ui.pmsBtn);
+  } else {
+    ui.pmsBtn = null;
+  }
   cons.append(ui.propChip.node, ui.hotelChip.node, ui.reserveChip.node);
   panel.append(cons);
   return panel;
@@ -558,23 +568,27 @@ function updatePowerPanel() {
   for (const d of state.dgs) {
     const node = ui.boards.get(d.board).dgNodes.get(d.id);
     setAttr(node, "data-state", d.state);
-    node.querySelector(".loadbar i").style.width = `${Math.min(100, d.loadPct)}%`;
+    node._fill.style.width = `${Math.min(100, d.loadPct)}%`;
     const sub = d.state === "online" ? `${d.loadPct.toFixed(0)} %  ·  ${d.fuel}`
       : d.state === "starting" ? "STARTING…"
       : d.state === "ready" ? "READY — CLOSE BKR"
       : d.state === "repair" ? "UNDER REPAIR"
       : d.state.toUpperCase();
-    setText(node.querySelector(".sub"), sub);
+    setText(node._sub, sub);
   }
   const leg = currentLeg(state);
   setText(ui.propChip.v, state.inPort ? "ALONGSIDE" : `${state.actualKn.toFixed(1)} kn  →  ${state.commandedKn.toFixed(0)} kn ord ${state.orderedKn.toFixed(0)}`);
   setText(ui.slowReq, state.slowdownGranted ? "Ask bridge: resume" : "Ask bridge: reduce");
   const stage = Math.max(...state.boards.map((b) => b.shedStage));
-  setText(ui.hotelChip.v, `${(totalDemandMw(state) - (state.inPort ? 0 : 0)).toFixed(1)} MW total · shed ${stage}`);
+  setText(ui.hotelChip.v, `${totalDemandMw(state).toFixed(1)} MW total · shed ${stage}`);
   ui.shedBtns.forEach((b, i) => setClass(b, "primary", i === stage));
   const res = spinningReserve(state);
   setText(ui.reserveChip.v, `${res.toFixed(1)} MW ${res >= 0 ? "(N+1 held)" : "(NO RESERVE)"}`);
   ui.reserveChip.v.style.color = res >= 0 ? "" : "var(--amber)";
+  if (ui.pmsBtn) {
+    setText(ui.pmsBtn, state.pmsAuto ? "PMS ASSIST: AUTO (safe, thirsty)" : "PMS ASSIST: MANUAL");
+    setClass(ui.pmsBtn, "primary", state.pmsAuto);
+  }
 }
 
 // ---- fuel panel ---------------------------------------------------------------
@@ -659,9 +673,7 @@ function updateFuelPanel() {
     const frac = state.tanks[g] / (ship.tankCap[g] || 1);
     setMeter(m, frac, `${state.tanks[g].toFixed(0)} / ${ship.tankCap[g]} t`, frac < 0.12 ? "bad" : frac < 0.25 ? "warn" : "");
   }
-  const burn = state.dgs.filter((d) => d.state === "online")
-    .reduce((s, d) => s + (d.mw * 1000 * (d.loadPct / 100) * sfoc(d.loadPct)) / 1e6, 0);
-  setText(ui.burnLine, `Burning ≈ ${burn.toFixed(1)} t/h ${state.fleetFuel}`);
+  setText(ui.burnLine, `Burning ≈ ${burnRateTph(state).toFixed(1)} t/h ${state.fleetFuel}`);
   const margin = projectedFuelMargin(state);
   setText(ui.marginLine, `Projected ${state.fleetFuel} at destination: ${margin >= 0 ? "+" : ""}${margin.toFixed(0)} t`);
   ui.marginLine.style.color = margin < 0 ? "var(--red)" : margin < 100 ? "var(--amber)" : "";
@@ -895,40 +907,42 @@ function updateRail() {
   const active = state.alarms.filter((a) => a.active);
   syncList(ui.alist, active, (a) => a.id, (a) => {
     const node = el("div", "alarm");
-    node.append(el("span", "sev"), el("span", "tx"), el("span", "when mono"));
-    const ack = el("button", "small", "ACK");
+    node._tx = el("span", "tx");
+    node._when = el("span", "when mono");
+    node._ack = el("button", "small", "ACK");
+    node.append(el("span", "sev"), node._tx, node._when);
+    const ack = node._ack;
     ack.addEventListener("click", () => act({ type: "alarm.ack", id: a.id }));
     const help = el("button", "small", "?");
     help.setAttribute("aria-label", "Open manual page for this alarm");
     help.addEventListener("click", () => {
       activeTab = "manual";
-      manualPage = TILE_MANUAL[a.tileId.split("-")[0]] ?? "alarms";
+      manualPage = TILE_MANUAL[a.tileId] ?? "alarms";
       render();
     });
     node.append(ack, help);
     return node;
   }, (node, a) => {
     setAttr(node, "data-sev", a.severity);
-    setText(node.querySelector(".tx"), a.text);
-    setText(node.querySelector(".when"), `t+${state.tick - a.tick}m`);
-    node.querySelector("button").hidden = a.acked;
+    setText(node._tx, a.text);
+    setText(node._when, `t+${state.tick - a.tick}m`);
+    node._ack.hidden = a.acked;
   });
-  if (!active.length && !ui.alist._empty) {
-    // leave container empty; CSS shows nothing
-  }
-
   // log: windowed to the last 200 lines; full log stays in state
   const lines = state.log.slice(-200);
+  const baseIdx = state.log.length - lines.length;
   const stickBottom = ui.log.scrollTop + ui.log.clientHeight >= ui.log.scrollHeight - 8;
-  syncList(ui.log, lines.map((l, i) => ({ ...l, key: state.log.length - lines.length + i })),
-    (l) => l.key, () => {
+  syncList(ui.log, lines,
+    (l, i) => baseIdx + i, () => {
       const node = el("div", "logline");
-      node.append(el("span", "when"), el("span", "tx"));
+      node._when = el("span", "when");
+      node._tx = el("span", "tx");
+      node.append(node._when, node._tx);
       return node;
     }, (node, l) => {
       node.className = `logline ${l.kind}`;
-      setText(node.querySelector(".when"), l.clock);
-      setText(node.querySelector(".tx"), l.kind === "mentor" ? `VOSS — ${l.text.replace(/^Voss: /, "")}` : l.text);
+      setText(node._when, l.clock);
+      setText(node._tx, l.kind === "mentor" ? `VOSS — ${l.text.replace(/^Voss: /, "")}` : l.text);
     });
   if (stickBottom) ui.log.scrollTop = ui.log.scrollHeight;
 }
@@ -1009,7 +1023,6 @@ function buildDgSheet(sh, id) {
   sh._fields = {};
   for (const [k, label] of [["state", "State"], ["load", "Load"], ["hours", "Running hours"], ["cond", "Condition"], ["sump", "LO sump"], ["fuel", "Fuel"]]) {
     const box = el("div");
-    box.append(el("div", "meter"));
     const lab = el("div", null, label);
     lab.style.cssText = "font-size:11px;color:var(--faint);letter-spacing:.15em;text-transform:uppercase";
     const val = el("div", "mono");
@@ -1184,6 +1197,7 @@ function frame(now) {
   if (!state || !ui) return;
   const dt = Math.min(250, now - (lastFrame || now));
   lastFrame = now;
+  let ranTicks = false;
   if (state.phase === "voyage" && speed > 0) {
     acc += (dt / 1000) * speed;
     let steps = Math.min(64, Math.floor(acc));
@@ -1191,6 +1205,7 @@ function frame(now) {
     let hadBlackout = !!state.blackout;
     while (steps-- > 0 && state.phase === "voyage") {
       tick(state);
+      ranTicks = true;
       dirty = true;
       if (state.newAlarmThisTick) {
         // any new alarm: abort the batch and drop to 1× (HLD §2.7)
@@ -1203,9 +1218,12 @@ function frame(now) {
   }
   if (state) {
     if (state.phase !== "voyage") { showDebrief(); return; }
-    pumpNarration();
-    render();
-    if (dirty && now - lastSave > 30000) saveVoyage();
+    pumpNarration(); // toast rotation keeps running while paused
+    // render only when the sim advanced; UI interactions call render() directly
+    if (ranTicks) {
+      render();
+      if (dirty && now - lastSave > 30000) saveVoyage();
+    }
   }
 }
 
@@ -1239,7 +1257,7 @@ function render() {
   setText(ui.kpi.fuel, `${margin >= 0 ? "+" : ""}${margin.toFixed(0)}t`);
   setClass(ui.kpi.fuel, "warn", margin < 100 && margin >= 0);
   setClass(ui.kpi.fuel, "bad", margin < 0);
-  const spent = state.spentFuel + state.spentParts + state.finesEUR / 1000;
+  const spent = voyageSpendK(state);
   setText(ui.kpi.spend, `${spent.toFixed(0)}/${lv.budget}`);
   setClass(ui.kpi.spend, "warn", spent > lv.budget * 0.9);
   setClass(ui.kpi.spend, "bad", spent > lv.budget);
