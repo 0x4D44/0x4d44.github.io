@@ -15,6 +15,8 @@
 //   art          SVG <symbol> id from the sprite in index.html
 //                (falls back to "art-pot" if missing)
 //   serves       string, e.g. "6"
+//   servesLabel  optional word for that meta cell ("Makes"); the
+//                default is "Serves"
 //   prepMin / cookMin   minutes, numbers
 //   oven         oven line shown in the meta strip (or null)
 //   intro        one or two sentences under the title
@@ -23,11 +25,21 @@
 //                single unnamed group. Each item:
 //                  { name, metric, imperial, prep }
 //                metric/imperial are quantity strings; if only one
-//                is known, repeat it in both (the unit toggle then
-//                shows the same thing). prep is optional.
+//                is known, repeat it in both (the unit toggle only
+//                appears when a recipe has genuinely different
+//                imperial quantities). prep is optional.
+//   variants     optional size selector, e.g.
+//                  { label: "Loaf size",
+//                    options: ["Small (450g)", "Standard (750g)",
+//                              "Large (900g)"], default: 1 }
+//                When present, any metric/imperial quantity — and
+//                `serves` — may be an ARRAY aligned to options, and
+//                the page shows a size switch above the ingredients.
 //   method       array of step strings
 //   serveWith    closing suggestion (or null)
 //   tip          optional cook's note (or null)
+//   marginalia   optional array of handwritten margin notes, shown
+//                as "Pencilled in the margin" below the method
 // ============================================================
 
 window.RECIPES = [
@@ -535,5 +547,101 @@ window.RECIPES = [
     ],
     serveWith: "Tagliatelle.",
     tip: null,
+  },
+  {
+    slug: "simple-white-loaf",
+    title: "Simple White Loaf",
+    course: "Bread",
+    accent: "#c28a2e",
+    art: "art-loaf",
+    serves: ["a 450g loaf", "a 750g loaf", "a 900g loaf"],
+    servesLabel: "Makes",
+    prepMin: 10,
+    cookMin: 180,
+    oven: null,
+    intro:
+      "The bread-machine staple — soft and light with an open texture, while the golden " +
+      "crust is finished with a very light dusting of flour. The excellent starting point.",
+    provenance:
+      "Page 36 of the bread-machine book, complete with the family's pencilled millilitre conversions and verdicts in the margin.",
+    variants: {
+      label: "Loaf size",
+      options: ["Small (450g)", "Standard (750g)", "Large (900g)"],
+      default: 1,
+    },
+    ingredients: [
+      {
+        group: null,
+        items: [
+          { name: "water", metric: ["195ml", "325ml", "390ml"] },
+          { name: "sunflower oil", metric: ["1 tbsp", "2 tbsp", "2 tbsp"] },
+          { name: "strong white bread flour", metric: ["300g + ½ tsp", "500g + 1 tsp", "600g + 1 tsp"], prep: "the extra spoonful is for dusting the top" },
+          { name: "salt", metric: ["¾ tsp", "1¼ tsp", "1½ tsp"] },
+          { name: "caster sugar", metric: ["2 tsp", "1 tbsp", "4 tsp"] },
+          { name: "fast-action dried yeast", metric: ["¾ tsp", "1 tsp", "1½ tsp"] },
+        ],
+      },
+    ],
+    method: [
+      "Lift the bread pan out of the bread machine and fit the kneading blade. Pour in the water, then add the oil, followed by the flour.",
+      "Put the salt and sugar in separate corners of the pan, then make a shallow dip in the middle of the flour and add the yeast.",
+      "Fit the pan into the bread machine, shut the lid and set to the basic white setting with a crust of your choice. Press start.",
+      "After baking, lift the pan out of the machine using oven gloves. Carefully shake out the loaf to remove it from the pan, then transfer to a wire rack, standing the loaf on its base.",
+      "Lightly dust the top with the remaining spoonful of flour while the loaf is hot. Leave to cool.",
+    ],
+    serveWith: null,
+    tip:
+      "If preferred, brush the top of the dough with water and sprinkle with the flour just " +
+      "before baking starts — or leave the crust plain and unfloured.",
+    marginalia: [
+      "less salt — maybe 0.5 tsp?",
+      "use strongest (burntest) crust",
+      "texture good, too salty — use more crust",
+    ],
+  },
+  {
+    slug: "granary-loaf",
+    title: "Granary Loaf",
+    course: "Bread",
+    accent: "#7a5230",
+    art: "art-granary",
+    serves: ["a 450g loaf", "a 750g loaf", "a 900g loaf"],
+    servesLabel: "Makes",
+    prepMin: 10,
+    cookMin: 220,
+    oven: null,
+    intro:
+      "Granary flour's unique taste comes from malting the wheat, where partially germinated " +
+      "grains are slowly toasted — sweetness and a slightly crunchy texture that works with " +
+      "savoury and sweet accompaniments alike.",
+    provenance:
+      "Page 52 of the bread-machine book — the wholewheat setting, medium crust.",
+    variants: {
+      label: "Loaf size",
+      options: ["Small (450g)", "Standard (750g)", "Large (900g)"],
+      default: 1,
+    },
+    ingredients: [
+      {
+        group: null,
+        items: [
+          { name: "water", metric: ["200ml", "350ml", "400ml"] },
+          { name: "butter", metric: ["15g", "25g", "30g"], prep: "at room temperature" },
+          { name: "Granary bread flour", metric: ["300g", "500g", "600g"] },
+          { name: "salt", metric: ["¾ tsp", "1½ tsp", "1¾ tsp"] },
+          { name: "light soft brown sugar", metric: ["2 tsp", "1 tbsp", "4 tsp"] },
+          { name: "fast-action dried yeast", metric: ["¾ tsp", "1¼ tsp", "1½ tsp"] },
+        ],
+      },
+    ],
+    method: [
+      "Lift the bread pan out of the bread machine and fit the kneading blade. Pour in the water, then add the butter, followed by the flour.",
+      "Put the salt and sugar in separate corners of the pan, then make a shallow dip in the middle of the flour and add the yeast.",
+      "Fit the pan into the bread machine, shut the lid and set to the wholewheat setting with a medium crust. Press start.",
+      "After baking, lift the pan out of the machine using oven gloves. Carefully shake out the loaf to remove it from the pan, then transfer to a wire rack, standing the loaf on its base. Leave to cool.",
+    ],
+    serveWith: null,
+    tip: "Malthouse flour may be used instead of Granary bread flour, if preferred.",
+    marginalia: null,
   },
 ];

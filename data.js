@@ -42,7 +42,7 @@ window.ESSAYS = [
   {
     slug: "recipes",
     title: "The Kitchen Almanac",
-    tagline: "The family recipe book, rescued from a 2005 email printout and a creased handwritten note and set down properly at last. Tick off ingredients as you weigh them, work the method step by step, flip between metric and imperial. Add a recipe by appending one object. Vanilla JS; no build step.",
+    tagline: "The family recipe book — rescued from a 2005 email printout, creased handwritten notes and the annotated bread-machine book, and set down properly at last. Tick off ingredients as you weigh them, work the method step by step, switch loaf sizes and units. Add a recipe by appending one object. Vanilla JS; no build step.",
     url: "https://0x4d44.github.io/recipes/",
     illustration: "ill-cookbook",
     date: "2026-07-15T19:45:00",

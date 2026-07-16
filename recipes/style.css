@@ -316,6 +316,21 @@ code {
 }
 .units button.on { background: var(--accent); color: var(--card); }
 
+/* loaf-size (variant) selector */
+.variant-row {
+  display: flex; flex-wrap: wrap; align-items: center;
+  justify-content: space-between; gap: 10px;
+  margin: 0 0 16px;
+}
+.variant-row .vlabel {
+  font-family: var(--sans);
+  font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--muted);
+}
+.variant-row .units button.on { background: var(--r-accent, var(--accent)); }
+
+.serve .mline { margin-top: 4px; }
+
 .ing-group + .ing-group { margin-top: 18px; }
 .ing-group h3 {
   font-family: var(--sans);
