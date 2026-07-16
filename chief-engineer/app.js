@@ -3,7 +3,7 @@
 // Rendering is reconciling: nodes are cached and mutated, never rebuilt per tick.
 
 import {
-  createVoyage, tick, applyAction, spinningReserve, totalDemandMw,
+  createVoyage, tick, applyAction, spinningReserve, totalDemandMw, sfoc,
   projectedFuelMargin, currentLeg, stars, debrief, fmtClock, ENGINE_SCHEMA,
 } from "./engine.js";
 import { SHIPS, LEVELS, EVENTS, MANUAL } from "./content.js";
@@ -127,6 +127,7 @@ function shipOf(st) { return SHIPS[levelOf(st).ship]; }
 function showMenu() {
   state = null; ui = null; speed = 0;
   dismissToast(); toastQueue = [];
+  closeOverlay();
   document.title = "Chief Engineer — Boreal Line";
   $app.replaceChildren();
   const scr = el("div", "screen");
@@ -205,6 +206,8 @@ function silhouette(ship) {
 // ========================================================= voyage screen ==
 
 function startLevel(levelId) {
+  const existing = loadVoyageSnapshot();
+  if (existing && !confirm("Starting a new voyage discards your saved one. Continue?")) return;
   const seed = (Date.now() ^ (Math.random() * 0xffffffff)) | 0;
   state = createVoyage(levelId, seed);
   localStorage.removeItem(VOYAGE_KEY);
@@ -657,10 +660,10 @@ function updateFuelPanel() {
     setMeter(m, frac, `${state.tanks[g].toFixed(0)} / ${ship.tankCap[g]} t`, frac < 0.12 ? "bad" : frac < 0.25 ? "warn" : "");
   }
   const burn = state.dgs.filter((d) => d.state === "online")
-    .reduce((s, d) => s + d.mw * (d.loadPct / 100), 0) * 0.174;
+    .reduce((s, d) => s + (d.mw * 1000 * (d.loadPct / 100) * sfoc(d.loadPct)) / 1e6, 0);
   setText(ui.burnLine, `Burning ≈ ${burn.toFixed(1)} t/h ${state.fleetFuel}`);
   const margin = projectedFuelMargin(state);
-  setText(ui.marginLine, `Projected at destination: ${margin >= 0 ? "+" : ""}${margin.toFixed(0)} t`);
+  setText(ui.marginLine, `Projected ${state.fleetFuel} at destination: ${margin >= 0 ? "+" : ""}${margin.toFixed(0)} t`);
   ui.marginLine.style.color = margin < 0 ? "var(--red)" : margin < 100 ? "var(--amber)" : "";
   setText(ui.gradeLine, state.switchover
     ? `Switchover to ${state.switchover.target} — ${state.switchover.ticksLeft} min remaining`
@@ -975,6 +978,11 @@ function dismissToast() {
 // ---- sheets ---------------------------------------------------------------------------
 
 let overlayNode = null;
+function closeOverlay() {
+  sheet = null;
+  overlayNode?.remove();
+  overlayNode = null;
+}
 function updateSheet() {
   const want = sheet ? JSON.stringify(sheet) : null;
   if (overlayNode?._key === want) { if (sheet?.kind === "dg") fillDgSheet(overlayNode._sheet, sheet.id); return; }
@@ -1064,6 +1072,7 @@ function buildSituationSheet(sh) {
 
 function showDebrief() {
   dismissToast(); toastQueue = [];
+  closeOverlay(); // a sheet left open would sit over the debrief forever
   saveJSON(CAMPAIGN_KEY, campaign);
   localStorage.removeItem(VOYAGE_KEY);
   const d = debrief(state);
@@ -1212,9 +1221,10 @@ function render() {
   }
   setClass(ui.speedctl, "flash", performance.now() < flashSpeedUntil);
 
-  // KPIs
+  // KPIs — bus load is the WORST island's load (islands carry different loads
+  // with the tie open or a board down)
   const online = state.dgs.filter((d) => d.state === "online");
-  const loadPct = online.length ? Math.round(online[0].loadPct) : 0;
+  const loadPct = online.length ? Math.round(Math.max(...online.map((d) => d.loadPct))) : 0;
   setText(ui.kpi.load, state.blackout ? "DEAD" : `${loadPct}%`);
   setClass(ui.kpi.load, "bad", state.blackout || loadPct > 97);
   setClass(ui.kpi.load, "warn", !state.blackout && loadPct > 88 && loadPct <= 97);

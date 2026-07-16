@@ -422,9 +422,7 @@ export const LEVELS = [
       { atLeg: 0, atNm: 150, event: "sewage-vacuum", mentor: "Vacuum's sagging somewhere below decks. Toilets on a cruise ship are not optional, Chief — sort it before the morning rush." },
       { atLeg: 1, atNm: 10, mentor: "Short hop to Tallinn. Bring her in clean." },
     ],
-    pool: [
-      { eventId: "boiler-flame", per: "system", componentId: null, perHour: 0.01 },
-    ],
+    pool: [],
   },
   {
     id: "L3", name: "Mediterranean Rotation", ship: "meridian",
@@ -478,7 +476,7 @@ export const LEVELS = [
     ],
     objectives: [
       { id: "o1", text: "Two engine rooms now: open and re-close the bus-tie so you know the geometry", check: "tieOpen" },
-      { id: "o2", text: "Re-close the tie for the crossing", check: "tieClosed", armsPool: true },
+      { id: "o2", text: "Re-close the tie for the crossing", check: "tieClosed", after: "o1", armsPool: true },
       { id: "o3", text: "There's weather ahead: top up every low sump BEFORE the storm (Viking Sky, 2019)", check: "sumpsTopped" },
       { id: "o4", text: "ECA at both ends: scrubber on HFO, or MGO — never dirty fuel bare", check: "scrubberOn" },
       { id: "o5", text: "Cross. On schedule if you can; intact regardless", check: "arrived", n: 2 },

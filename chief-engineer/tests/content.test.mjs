@@ -95,6 +95,24 @@ for (const lv of LEVELS) {
     assert.ok(eventIds.has(pool.eventId), `${lv.id} pool event ${pool.eventId} exists`);
     assert.ok(pool.perHour > 0 && pool.perHour < 0.05, `${lv.id} pool rate sane`);
   }
+  // events fired on this level must only touch systems the ship actually has
+  // (review: L2 rolled boiler-flame on a boiler-less ship)
+  const shipSystems = new Set(ship.systems ?? []);
+  const levelEventIds = [...(lv.pool ?? []).map((p) => p.eventId), ...(lv.script ?? []).filter((r) => r.event).map((r) => r.event)];
+  for (const eid of levelEventIds) {
+    const ev = EVENTS[eid];
+    for (const ph of ev.phases) {
+      for (const fx of [ph.effects, ...(ph.interventions ?? []).map((iv) => iv.effects)]) {
+        if (!fx) continue;
+        if (fx.system) assert.ok(shipSystems.has(fx.system.id), `${lv.id}/${eid} touches system '${fx.system.id}' the ship lacks`);
+        if (fx.addJob?.system) assert.ok(shipSystems.has(fx.addJob.system), `${lv.id}/${eid} repairs system '${fx.addJob.system}' the ship lacks`);
+      }
+    }
+  }
+  // objective ordering refs
+  for (const o of lv.objectives) {
+    if (o.after) assert.ok(objIds.has(o.after), `${lv.id}/${o.id} after-ref exists`);
+  }
   // tie objectives only on multi-board ships; scrubber objectives need a scrubber
   for (const o of lv.objectives) {
     if (o.check === "tieOpen" || o.check === "tieClosed") assert.ok(ship.boards.length > 1, `${lv.id} tie needs 2 boards`);

@@ -72,6 +72,7 @@ export function createVoyage(levelId, seed) {
     commandedKn: 0,
     actualKn: 0,
     telegraphAcked: true,
+    telegraphAnswers: 0,
     slowdownGranted: false,
     pmsAuto: false,
     bunkerRate: "normal",
@@ -275,6 +276,7 @@ export function spinningReserve(state) {
 function stepElectrical(state) {
   const ship = shipFor(levelById(state.levelId));
   let anyBlackout = false;
+  let anyOverloaded = false;
   for (const isl of islands(state)) {
     const demand = islandDemandMw(state, isl);
     const cap = isl.capacityMw;
@@ -288,6 +290,7 @@ function stepElectrical(state) {
     const loadPct = cap > 0 ? (demand / cap) * 100 : 0;
     for (const d of isl.dgs) d.loadPct = loadPct;
     if (loadPct > 100) {
+      anyOverloaded = true;
       for (const b of boards) b.overloadTicks += 1;
       const over = Math.max(...boards.map((b) => b.overloadTicks));
       raiseAlarm(state, "bus-overload", `MAIN BUS OVERLOAD ${boards.map((b) => b.id).join("+")}`, "red");
@@ -303,12 +306,16 @@ function stepElectrical(state) {
         for (const b of boards) triggerBoardBlackout(state, b, "sustained overload");
         anyBlackout = true;
       }
+    } else if (loadPct > 97) {
+      anyOverloaded = true; // still hot: keep the alarm latched
+      for (const b of boards) b.overloadTicks = 0;
     } else {
       for (const b of boards) b.overloadTicks = 0;
-      if (loadPct < 97) clearAlarm(state, "bus-overload");
     }
-    // reserve warning
   }
+  // clear the shared tile only when EVERY island is healthy (a healthy island
+  // must not wipe the alarm an overloaded island just raised)
+  if (!anyOverloaded) clearAlarm(state, "bus-overload");
   const reserve = spinningReserve(state);
   if (!state.inPort && reserve < 0 && !state.blackout) {
     raiseAlarm(state, "reserve", "SPINNING RESERVE LOST (N+1 NOT HELD)", "amber");
@@ -415,6 +422,8 @@ function stepFuel(state) {
         logLine(state, `${d.id} stopped — fuel starvation.`, "alarm");
       }
     }
+  } else if (state.tanks[grade] > 1) {
+    clearAlarm(state, "fuel", `${grade} SERVICE TANKS EMPTY`);
   }
   // low-fuel warning at < 15% of remaining route need
   // switchover progress
@@ -453,6 +462,8 @@ function stepFuel(state) {
 }
 
 // Projected fuel margin at arrival (tonnes), the live economy needle.
+// Counts ONLY the grade the plant is burning — the other tank is unusable
+// until a switchover, and blending them hides an empty service tank.
 export function projectedFuelMargin(state) {
   const level = levelById(state.levelId);
   const remainingNm = level.route.slice(state.legIndex).reduce((s, l) => s + l.distanceNm, 0) - state.legDistNm;
@@ -461,7 +472,7 @@ export function projectedFuelMargin(state) {
   const demand = totalDemandMw(state);
   const tPerH = (demand * 1000 * sfoc(80)) / 1e6;
   const need = tPerH * hoursLeft;
-  return state.tanks.HFO + state.tanks.MGO - need;
+  return (state.tanks[state.fleetFuel] ?? 0) - need;
 }
 
 // ------------------------------------------------------------- position --
@@ -511,6 +522,7 @@ function stepPosition(state) {
     state.commandedKn = 0;
     state.orderedKn = 0;
     if (leg.psc) runPortInspection(state, leg);
+    else assessEcaFines(state, leg);
     if (state.legIndex >= level.route.length) {
       state.phase = "complete";
       timelineMark(state, `All fast at ${leg.toPort}. Voyage complete.`);
@@ -535,6 +547,17 @@ function availablePropMw(state) {
   }
   const ship = shipFor(levelById(state.levelId));
   return Math.min(avail, ship.propMw);
+}
+
+// ECA violation-hours are deterministic and assessed at EVERY arrival — the
+// manual promises "logged and fined at the next port", PSC leg or not.
+function assessEcaFines(state, leg) {
+  if (state.ecaViolationMin <= 0) return;
+  const fine = state.ecaViolationMin * TUNING.ecaFinePerMin;
+  state.finesEUR += fine;
+  logLine(state, `Flag state notice (${leg.toPort}): ${(state.ecaViolationMin / 60).toFixed(1)}h ECA non-compliance logged — fine €${fine.toLocaleString()}.`, "warn");
+  timelineMark(state, `ECA fine €${fine.toLocaleString()} at ${leg.toPort}`);
+  state.ecaViolationMin = 0;
 }
 
 // PSC inspection (L5/L6): checklist audit of existing state at arrival of a
@@ -567,23 +590,26 @@ function stepWeather(state) {
   const leg = currentLeg(state);
   if (!leg || state.inPort) return;
   const w = leg.weather;
+  const heavyRolling = w === "storm" || (w === "rough" && !state.stabilizersOut);
   if (w === "rough" || w === "storm") {
     const finsWork = state.stabilizersOut && state.systems.stabilizers !== "down" && state.actualKn >= 8;
     const protection = (finsWork ? 0.5 : 1) * (state.securedForWeather ? 0.7 : 1);
     state.comfort = clamp(state.comfort - TUNING.weatherComfortDrain[w] * protection, 0, 100);
-    // Viking-Sky sloshing: low sumps in heavy rolling trip DGs
-    if (w === "storm" || (w === "rough" && !state.stabilizersOut)) {
-      for (const d of state.dgs) {
-        if (d.state === "online" && d.sumpPct < TUNING.sumpSloshThreshold) {
-          raiseAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS FLUCTUATING — SUMP LOW IN HEAVY ROLLING`, "amber");
-          if (rand(state) < TUNING.sloshTripChancePerMin) {
-            d.state = "tripped";
-            d.loadPct = 0;
-            raiseAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS LOW — AUTO SHUTDOWN`, "red");
-            timelineMark(state, `${d.id} tripped: LO suction lost rolling (sump ${Math.round(d.sumpPct)}%)`);
-          }
-        }
+  }
+  // Viking-Sky sloshing: low sumps in heavy rolling trip DGs
+  for (const d of state.dgs) {
+    const exposed = heavyRolling && d.state === "online" && d.sumpPct < TUNING.sumpSloshThreshold;
+    if (exposed) {
+      raiseAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS FLUCTUATING — SUMP LOW IN HEAVY ROLLING`, "amber");
+      if (rand(state) < TUNING.sloshTripChancePerMin) {
+        d.state = "tripped";
+        d.loadPct = 0;
+        raiseAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS LOW — AUTO SHUTDOWN`, "red");
+        timelineMark(state, `${d.id} tripped: LO suction lost rolling (sump ${Math.round(d.sumpPct)}%)`);
       }
+    } else if (d.state === "online") {
+      // condition passed (topped up, weather eased, fins out): clear the warning
+      clearAlarm(state, `dg-${d.id}`, `${d.id} LO PRESS FLUCTUATING — SUMP LOW IN HEAVY ROLLING`);
     }
   }
 }
@@ -865,7 +891,10 @@ function stepScript(state) {
 
 function latchObjectives(state) {
   for (const o of state.objectives) {
-    if (!o.done && objectiveMet(state, o)) {
+    if (o.done) continue;
+    // ordered objectives: don't latch (even vacuously) before the predecessor
+    if (o.after && !state.objectives.find((x) => x.id === o.after)?.done) continue;
+    if (objectiveMet(state, o)) {
       o.done = true;
       logLine(state, `Objective complete: ${o.text}`, "objective");
       if (o.opensGate) state.gateOpen = true;
@@ -902,9 +931,9 @@ function objectiveMet(state, o) {
     case "dgOnline": return state.dgs.filter((d) => d.state === "online").length >= o.n;
     case "reserveHeld": return spinningReserve(state) >= 0 && state.dgs.filter((d) => d.state === "online").length >= (o.n ?? 2);
     case "underway": return !state.inPort && state.actualKn > 1;
-    case "telegraphAcked": return state.telegraphAcked;
+    case "telegraphAcked": return state.telegraphAnswers > 0;
     case "arrived": return state.legIndex >= o.n;
-    case "ackAll": return state.alarms.every((a) => !a.active || a.acked);
+    case "ackAll": return state.alarms.length > 0 && state.alarms.every((a) => !a.active || a.acked);
     case "switchoverDone": return state.fleetFuel === o.grade;
     case "blackoutRecovered": return state.blackoutCount > 0 && !state.blackout;
     case "jobDone": return state.jobs.some((j) => j.id === o.jobId && j.status === "done");
@@ -931,12 +960,13 @@ export function applyAction(state, action) {
       d.state = "starting";
       d.startTicksLeft = TUNING.dgStartTicks;
       d.fuel = state.fleetFuel;
+      clearAlarm(state, `dg-${d.id}`);
       logLine(state, `${d.id} starting…`, "info");
       break;
     }
     case "dg.stop": {
       const d = state.dgs.find((x) => x.id === a.id);
-      if (!d || (d.state !== "online" && d.state !== "starting")) break;
+      if (!d || (d.state !== "online" && d.state !== "starting" && d.state !== "ready")) break;
       d.state = "stopped";
       d.loadPct = 0;
       logLine(state, `${d.id} stopped.`, "info");
@@ -950,6 +980,7 @@ export function applyAction(state, action) {
       if (b && !b.online) {
         b.online = true; // black-start: energize dead board
         b.shedStage = 3; // restore loads progressively
+        clearAlarm(state, `board-${b.id}`);
         logLine(state, `Switchboard ${b.id} energized from ${d.id}.`, "info");
       }
       break;
@@ -973,7 +1004,9 @@ export function applyAction(state, action) {
     }
     case "pms.auto": state.pmsAuto = !!a.on; break;
     case "telegraph.ack": {
+      if (state.telegraphAcked) break;
       state.telegraphAcked = true;
+      state.telegraphAnswers += 1;
       state.commandedKn = state.orderedKn;
       logLine(state, `Telegraph answered: ${state.orderedKn} knots.`, "info");
       break;
@@ -1132,7 +1165,11 @@ export function tick(state) {
   // (9) script/objectives
   stepScript(state);
   // aux alarms
-  if (projectedFuelMargin(state) < 0 && !state.inPort) raiseAlarm(state, "fuel", "PROJECTED FUEL SHORT OF DESTINATION", "amber");
+  if (projectedFuelMargin(state) < 0 && !state.inPort) {
+    raiseAlarm(state, "fuel", "PROJECTED FUEL SHORT OF DESTINATION", "amber");
+  } else {
+    clearAlarm(state, "fuel", "PROJECTED FUEL SHORT OF DESTINATION");
+  }
   return state;
 }
 
