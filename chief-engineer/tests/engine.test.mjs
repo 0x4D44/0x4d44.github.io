@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import {
   createVoyage, tick, applyAction, sfoc, spinningReserve, totalDemandMw,
-  stars, debrief, spawnEvent, activeAlarms, ENGINE_SCHEMA,
+  stars, debrief, spawnEvent, activeAlarms, projectedFuelMargin, ENGINE_SCHEMA,
 } from "../engine.js";
 import { LEVELS, SHIPS, TUNING } from "../content.js";
 import { botStep } from "./bot.mjs";
@@ -128,6 +128,82 @@ for (const lv of LEVELS) {
   }
   assert.deepEqual(JSON.parse(JSON.stringify(a)), JSON.parse(JSON.stringify(b)),
     "resume from snapshot is tick-exact (PRNG cursor lives in state)");
+}
+
+// ---- objectives never latch vacuously at tick 1 (review: app latching) --------
+{
+  const s = createVoyage("L1", 11);
+  tick(s);
+  const byId = Object.fromEntries(s.objectives.map((o) => [o.id, o.done]));
+  assert.equal(byId.o3, false, "telegraph objective waits for a real answer");
+  assert.equal(byId.o5, false, "ackAll objective waits for a real alarm");
+  const l4 = createVoyage("L4", 11);
+  tick(l4); tick(l4);
+  assert.equal(l4.objectives.find((o) => o.id === "o2").done, false,
+    "L4 tie objective is ordered after the tie-open exercise");
+  assert.equal(l4.poolArmed, false, "L4 hazard pool not armed at start");
+}
+
+// ---- ECA violation fined at the NEXT PORT even without PSC (review) ------------
+{
+  const s = createVoyage("L3", 12);
+  s.portTicksLeft = 0;
+  tick(s);
+  applyAction(s, { type: "telegraph.ack" });
+  while (s.legIndex === 0 && s.tick < 3000) tick(s); // sail the ECA leg on HFO
+  assert.ok(s.finesEUR > 0, `HFO through the Palma ECA is fined on arrival (got €${s.finesEUR})`);
+  assert.equal(s.ecaViolationMin, 0, "violation minutes reset once assessed");
+}
+
+// ---- dg.stop stands down a READY machine (review: silent no-op) ----------------
+{
+  const s = createVoyage("L1", 13);
+  applyAction(s, { type: "dg.start", id: "DG2" });
+  for (let i = 0; i < 5; i++) tick(s);
+  assert.equal(s.dgs[1].state, "ready");
+  applyAction(s, { type: "dg.stop", id: "DG2" });
+  assert.equal(s.dgs[1].state, "stopped", "ready machine can be stood down");
+}
+
+// ---- bus-overload alarm must not flap on a split plant (review) -----------------
+{
+  const s = createVoyage("L4", 14);
+  s.portTicksLeft = 0;
+  tick(s);
+  applyAction(s, { type: "telegraph.ack" });
+  applyAction(s, { type: "tie.open" });
+  // strand ER1 with one DG and force full speed: ER1 overloads, ER2 is light
+  applyAction(s, { type: "dg.stop", id: "DG12" });
+  const before = s.alarmSeq;
+  for (let i = 0; i < 4; i++) tick(s);
+  const overloadAlarms = s.alarms.filter((a) => a.tileId === "bus-overload");
+  if (overloadAlarms.length) {
+    assert.ok(overloadAlarms.length <= 1,
+      `one persistent overload alarm, not one per tick (got ${overloadAlarms.length})`);
+  }
+}
+
+// ---- fuel alarms clear when the condition clears (review: latched lies) ---------
+{
+  const s = createVoyage("L2", 15); // starts with only 25t MGO — margin negative
+  s.portTicksLeft = 0; s.gateOpen = true;
+  tick(s);
+  applyAction(s, { type: "telegraph.ack" });
+  for (let i = 0; i < 10; i++) tick(s);
+  assert.ok(s.alarms.some((a) => a.active && a.tileId === "fuel"), "short-fuel alarm raised");
+  s.tanks.MGO = 300; // bunkered
+  tick(s);
+  assert.ok(!s.alarms.some((a) => a.active && a.tileId === "fuel"), "fuel alarm clears after bunkering");
+}
+
+// ---- projected margin counts only the burnable grade (review) -------------------
+{
+  const s = createVoyage("L3", 16); // HFO 600 + MGO 140 aboard, burning HFO
+  s.tanks.HFO = 5;
+  s.portTicksLeft = 0;
+  tick(s);
+  const margin = projectedFuelMargin(s);
+  assert.ok(margin < 100, `margin must not count the 140t of unusable MGO (got ${margin.toFixed(0)})`);
 }
 
 // ---- schema marker present ----------------------------------------------------
