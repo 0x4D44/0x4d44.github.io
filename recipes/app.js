@@ -25,6 +25,7 @@
   const state = loadState();
   state.units = state.units === "imperial" ? "imperial" : "metric";
   state.done = state.done || {};          // slug -> {ing:[keys], steps:[idx]}
+  state.variant = state.variant || {};    // slug -> chosen size-option index
   let query = "";                          // search text (not persisted)
   let course = "all";                      // active chip (not persisted)
 
@@ -44,7 +45,25 @@
     return `<svg class="${cls}" role="img" aria-label=""><use href="#${id}"/></svg>`;
   };
   const mins = (n) => (n >= 60 ? `${Math.floor(n / 60)}h${n % 60 ? ` ${n % 60}m` : ""}` : `${n} min`);
-  const qtyOf = (item) => (state.units === "imperial" ? item.imperial : item.metric) || item.metric || item.imperial || "";
+
+  // Size variants: a recipe may carry variants {label, options, default},
+  // and any metric/imperial quantity (or `serves`) may then be an array
+  // aligned to those options.
+  function variantIndex(r) {
+    if (!r.variants) return 0;
+    const n = r.variants.options.length;
+    const s = state.variant[r.slug];
+    return Number.isInteger(s) && s >= 0 && s < n ? s : Math.min(r.variants.default || 0, n - 1);
+  }
+  function qtyOf(item, r) {
+    let v = (state.units === "imperial" ? item.imperial : item.metric) || item.metric || item.imperial || "";
+    if (Array.isArray(v)) v = v[Math.min(variantIndex(r), v.length - 1)] || "";
+    return v;
+  }
+  const hasImperial = (r) => (r.ingredients || []).some(g =>
+    g.items.some(it => it.imperial && String(it.imperial) !== String(it.metric)));
+  const servesLabel = (r) => r.servesLabel || "Serves";
+  const servesOf = (r) => Array.isArray(r.serves) ? r.serves[variantIndex(r)] : r.serves;
 
   function courses() {
     const seen = [];
@@ -71,8 +90,9 @@
       <p class="eyebrow">The Family Recipe Book</p>
       <header class="masthead">
         <h1>The Kitchen <em>Almanac</em></h1>
-        <p class="sub">The recipes worth keeping — rescued from old emails and
-        creased handwritten notes, and set down properly at last.</p>
+        <p class="sub">The recipes worth keeping — rescued from old emails,
+        creased handwritten notes and the annotated pages of well-thumbed
+        cookbooks, and set down properly at last.</p>
       </header>
       <div class="rule-orn" aria-hidden="true"><span>❧</span></div>
 
@@ -119,7 +139,7 @@
         <div class="meta-row">
           <span class="m">${icon("ic-clock")} ${mins((r.prepMin || 0) + (r.cookMin || 0))}</span>
           ${r.oven ? `<span class="m">${icon("ic-oven")} ${esc(r.oven.split("/")[0].trim())}</span>` : ""}
-          <span class="m">${icon("ic-serves")} serves ${esc(r.serves)}</span>
+          <span class="m">${icon("ic-serves")} ${esc(servesLabel(r).toLowerCase())} ${esc(String(servesOf(r)))}</span>
         </div>
       </a>`;
   }
@@ -141,7 +161,7 @@
                 <label>
                   <input type="checkbox" data-key="${key}" ${on ? "checked" : ""}>
                   <span class="box" aria-hidden="true"></span>
-                  <span class="qty">${esc(qtyOf(item))}</span>
+                  <span class="qty">${esc(qtyOf(item, r))}</span>
                   <span class="what">${esc(item.name)}${item.prep ? `<small>${esc(item.prep)}</small>` : ""}</span>
                 </label>
               </li>`;
@@ -173,17 +193,24 @@
           <div class="cell"><div class="k">Cook</div><div class="v">${mins(r.cookMin || 0)}</div></div>
           <div class="cell"><div class="k">Total</div><div class="v">${mins(total)}</div></div>
           ${r.oven ? `<div class="cell"><div class="k">Oven</div><div class="v">${esc(r.oven)}</div></div>` : ""}
-          <div class="cell"><div class="k">Serves</div><div class="v">${esc(r.serves)}</div></div>
+          <div class="cell"><div class="k">${esc(servesLabel(r))}</div><div class="v">${esc(String(servesOf(r)))}</div></div>
         </div>
 
         <div class="r-body">
           <section class="panel ing-panel" aria-label="Ingredients">
             <h2>Ingredients
-              <span class="units" role="group" aria-label="Units">
+              ${hasImperial(r) ? `<span class="units" role="group" aria-label="Units">
                 <button data-u="metric" class="${state.units === "metric" ? "on" : ""}">Metric</button>
                 <button data-u="imperial" class="${state.units === "imperial" ? "on" : ""}">Imperial</button>
-              </span>
+              </span>` : ""}
             </h2>
+            ${r.variants ? `<div class="variant-row">
+              <span class="vlabel">${esc(r.variants.label)}</span>
+              <span class="units" role="group" aria-label="${esc(r.variants.label)}">
+                ${r.variants.options.map((o, i) =>
+                  `<button data-v="${i}" class="${variantIndex(r) === i ? "on" : ""}">${esc(o)}</button>`).join("")}
+              </span>
+            </div>` : ""}
             ${groups}
           </section>
 
@@ -193,6 +220,8 @@
             <ol class="steps">${steps}</ol>
             ${r.serveWith ? `<div class="serve"><b>To serve</b>${esc(r.serveWith)}</div>` : ""}
             ${r.tip ? `<div class="serve"><b>Cook’s note</b>${esc(r.tip)}</div>` : ""}
+            ${r.marginalia && r.marginalia.length ? `<div class="serve"><b>Pencilled in the margin</b>${
+              r.marginalia.map(m => `<div class="mline">“${esc(m)}”</div>`).join("")}</div>` : ""}
             <button class="reset">Start again — clear ticks for this recipe</button>
           </section>
         </div>
@@ -206,10 +235,17 @@
     };
     setBar();
 
-    app.querySelectorAll(".units button").forEach(b =>
+    app.querySelectorAll("button[data-u]").forEach(b =>
       b.addEventListener("click", () => {
         if (state.units === b.dataset.u) return;
         state.units = b.dataset.u; saveState(state); renderRecipe(r);
+      }));
+
+    app.querySelectorAll("button[data-v]").forEach(b =>
+      b.addEventListener("click", () => {
+        if (variantIndex(r) === Number(b.dataset.v)) return;
+        state.variant[r.slug] = Number(b.dataset.v);
+        saveState(state); renderRecipe(r);
       }));
 
     app.querySelectorAll('.ing input').forEach(cb =>
