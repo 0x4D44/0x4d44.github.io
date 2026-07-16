@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformers — The Grid</title>
+<meta name="description" content="How transformers work: turns ratios, why transmission runs at 400 kV, star and delta windings and vector groups like Dyn11, tap changers, Buchholz relays, cooling and the voltage ladder from power station to plug.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">chapter 3 · transformers</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="generation.html">1 · Generation</a>
+    <a href="ac.html">2 · Three-Phase AC</a>
+    <a href="transformers.html" aria-current="page">3 · Transformers</a>
+    <a href="switchgear.html">4 · Switchgear</a>
+    <a href="lines.html">5 · Lines &amp; Towers</a>
+    <a href="operations.html">6 · Running the Grid</a>
+    <a href="blackouts.html">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 3 · Transformers</p>
+  <h1>The Quietly Perfect Machine</h1>
+  <p class="standfirst">No moving parts, efficiency touching 99.8%, a working life of
+  half a century — the transformer is the reason the grid exists at all. It also hums,
+  breathes, changes its own taps under load, and announces its internal illnesses
+  through a jar of gas invented in 1921.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="how"><span class="no">§ 3.1</span>Two coils and a ring of iron</h2>
+
+<p>Wind two coils around the same iron core. AC in the first coil drives an
+alternating magnetic <strong>flux</strong> round the core; the changing flux
+threads the second coil and — Faraday again — induces a voltage in it. Each turn
+of wire, on either side, sees the <em>same</em> volts-per-turn, so the voltages
+stand in the ratio of the turn counts:
+<code>V₂/V₁ = N₂/N₁</code>. Power in must equal power out (minus a whisper of
+loss), so the currents run in the <em>inverse</em> ratio: step the voltage up
+ten times and the current falls to a tenth. That inverse is the whole grid in
+one line.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 1 · The turns ratio</span>
+    <span class="hint">wind and unwind the secondary</span>
+  </div>
+  <div class="fig-body"><canvas id="tx" style="aspect-ratio: 2/1; min-height: 290px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Secondary turns : primary turns</label>
+      <input type="range" id="tx-n" min="-24" max="24" step="1" value="12">
+      <output>—</output></div>
+    <div class="ctl"><label>Load</label>
+      <input type="range" id="tx-load" min="10" max="100" step="5" value="60">
+      <output>60 MW</output></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">primary <b id="tx-v1">11 kV</b> · <b id="tx-i1">—</b></span>
+    <span class="ro">secondary <b id="tx-v2">—</b> · <b id="tx-i2">—</b></span>
+  </div>
+  <div class="fig-note">The dashes racing round the core are the shared flux. Note the
+  wire gauges: the high-voltage side is many turns of thin wire, the low-voltage side few
+  turns of copper bar — same power, opposite proportions. A real generator transformer
+  does exactly this at 60 tonnes and 99.5+% efficiency.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="why"><span class="no">§ 3.2</span>Why 400,000 volts?</h2>
+
+<p>A wire wastes power as heat at a rate of <code>I²R</code> — current
+<em>squared</em>. Halve the current and you quarter the loss. Since power is
+volts × amps, the way to halve the current while moving the same power is to
+double the voltage. That square law is merciless in both directions, and the
+interactive below lets you feel it: try pushing a power station's output down a
+hundred miles of line at generator voltage.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 2 · Send 600 MW down 100 miles of line</span>
+    <span class="hint">choose the transmission voltage · the glow is the wasted heat</span>
+  </div>
+  <div class="fig-body"><canvas id="loss" style="aspect-ratio: 2.1/1; min-height: 280px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Line voltage</label>
+      <div class="seg" id="loss-v">
+        <button data-v="23.5">23.5 kV</button>
+        <button data-v="132">132 kV</button>
+        <button data-v="275">275 kV</button>
+        <button data-v="400" class="on">400 kV</button>
+      </div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">current per phase <b id="loss-i">—</b></span>
+    <span class="ro">line loss <b id="loss-p">—</b></span>
+    <span class="ro" id="loss-verdict" style="flex: 1 1 auto"></span>
+  </div>
+  <div class="fig-note">Assumes ~4 Ω per phase for the run — about right for a bundled
+  400 kV circuit over that distance. So why not a million volts? Because insulation,
+  clearances, tower height and corona loss (Chapter 5) all grow with voltage too. 400 kV
+  is where Britain's sums came out in 1960; longer countries went higher (Canada 735 kV,
+  China 1,100 kV DC).</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout">
+  <span class="tag">Field note</span>
+  <p>Transformer efficiency is so good it is quoted in <i>losses</i>, and the losses
+  come in two flavours an engineer can hear and feel: <b>iron loss</b> (magnetising the
+  core — present the moment it's energised, load or no load, and the source of the
+  100&nbsp;Hz hum as the steel laminations magnetostrict twice per cycle) and
+  <b>copper loss</b> (I²R in the windings, rising with the square of load). A big unit
+  wastes perhaps 0.2–0.5% at full load — but 0.3% of 800 MVA is still a couple of
+  megawatts of heat, hence the radiator banks and pumped-oil cooling
+  (ONAN → ONAF → OFAF as the fans and pumps cut in).</p>
+</div>
+
+<h2 id="stardelta"><span class="no">§ 3.3</span>Star, delta, and the eleven o'clock transformer</h2>
+
+<p>A three-phase transformer has three primary windings and three secondary
+windings, and each set can be connected in one of two shapes. In <strong>star</strong>
+(Y), one end of each winding meets at a common <strong>neutral</strong> point — which
+can be earthed, giving the system its reference to ground, and brought out as a
+fourth wire. Each winding only sees line voltage ÷ √3, which is kind to insulation
+at the top end of the network. In <strong>delta</strong> (D, or &ldquo;mesh&rdquo;),
+the three windings join end-to-end in a triangle: no neutral at all, each winding
+sees full line voltage — and, crucially, the triangle forms a closed loop where
+the awkward <em>triplen harmonics</em> of the magnetising current can circulate
+harmlessly instead of escaping into the network.</p>
+
+<p>So practical transformers mix the shapes, and the mixture twists the phase
+angle: connect one side in delta and the other in star and the secondary voltages
+emerge shifted by 30°. Engineers name the combinations like a clock face —
+the <strong>vector group</strong>. The classic British distribution transformer is
+<strong>Dyn11</strong>: <b>D</b>elta HV, star (&ldquo;<b>y</b>&rdquo;) LV with the
+<b>n</b>eutral brought out, LV phasor pointing at <b>11 o'clock</b> — 30° ahead of
+the HV. Generator transformers are usually the mirror image (star HV with its
+neutral earthed, delta LV facing the machine). None of it is pedantry: parallel two
+transformers from different clock hours and the 30° disagreement drives a dead
+short between them.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 3 · Build a vector group</span>
+    <span class="hint">choose each side's shape — the clock shows the result</span>
+  </div>
+  <div class="fig-body"><canvas id="vg" style="aspect-ratio: 2/1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>HV side</label>
+      <div class="seg" id="vg-hv"><button data-v="D" class="on">delta</button><button data-v="Y">star</button></div>
+    </div>
+    <div class="ctl"><label>LV side</label>
+      <div class="seg" id="vg-lv"><button data-v="d">delta</button><button data-v="y" class="on">star + neutral</button></div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">vector group <b id="vg-name">—</b></span>
+    <span class="ro">LV shift <b id="vg-shift">—</b></span>
+    <span class="ro" id="vg-note" style="flex:1 1 auto; color:var(--muted)"></span>
+  </div>
+  <div class="fig-note">Winding diagrams left and centre; phasor clock right, HV reference
+  at 12. Star sides show the neutral point (earthed on the HV of grid transformers — that
+  earth is what lets protection <i>see</i> an earth fault, Chapter 4). The star side's
+  windings run at line voltage ÷ √3 = 58%, which is why the very top of the network is
+  star country.</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout">
+  <span class="tag">Field note</span>
+  <p>Between 400 kV and 275 kV the grid mostly doesn't use two-winding transformers at
+  all but <b>autotransformers</b> — one tapped winding shared by both sides, star
+  connected, saving iron and copper where the ratio is modest — usually with a small
+  delta &ldquo;tertiary&rdquo; winding buried inside to give the triplens their loop
+  (and often to hang reactive-power kit from, Chapter 6). And where a delta network
+  needs an earth that doesn't exist, a <b>zig-zag earthing transformer</b> manufactures
+  a neutral out of pure geometry.</p>
+</div>
+
+<h2 id="kit"><span class="no">§ 3.4</span>Anatomy of a grid transformer</h2>
+
+<p>Hover (or tap) the parts. Everything on the drawing exists for one of two
+reasons: getting heat out, or noticing trouble early.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 4 · A 240 MVA grid transformer, annotated</span>
+    <span class="hint">hover the numbered parts</span>
+  </div>
+  <div class="fig-body">
+    <svg class="diagram" id="cutaway" viewBox="0 0 900 430" role="img" aria-label="Cutaway diagram of a grid transformer">
+      <style>
+        .cw-part { cursor: pointer; }
+        .cw-part .hit { fill: transparent; stroke: transparent; stroke-width: 14; }
+        .cw-part:hover .st, .cw-part.on .st { stroke: #f0b429 !important; }
+        .cw-num { font: bold 13px ui-monospace, Menlo, monospace; fill: #f0b429; }
+        .cw-lbl { font: 11px ui-monospace, Menlo, monospace; fill: #82909d; }
+      </style>
+      <!-- tank -->
+      <g class="cw-part" data-cap="① Tank & oil — the windings live submerged in mineral oil: insulation and coolant in one. The oil is the transformer's bloodstream; its dissolved-gas chemistry is sampled like a blood test.">
+        <rect class="st" x="180" y="150" width="420" height="230" rx="10" fill="#1a232e" stroke="#b7bfc8" stroke-width="2"/>
+        <text class="cw-num" x="195" y="372">①</text>
+      </g>
+      <!-- core & windings -->
+      <g class="cw-part" data-cap="② Core and windings — three limbs of laminated silicon steel, each carrying LV winding inside, HV outside. The laminations halve eddy losses; their magnetostriction is the 100 Hz hum.">
+        <g class="st" stroke="#82909d" stroke-width="2" fill="none">
+          <rect x="230" y="180" width="320" height="24" />
+          <rect x="230" y="330" width="320" height="24" />
+          <rect x="240" y="204" width="24" height="126"/>
+          <rect x="378" y="204" width="24" height="126"/>
+          <rect x="516" y="204" width="24" height="126"/>
+        </g>
+        <g fill="none" stroke="#56b7cf" stroke-width="3">
+          <ellipse cx="252" cy="267" rx="26" ry="58"/>
+          <ellipse cx="390" cy="267" rx="26" ry="58"/>
+          <ellipse cx="528" cy="267" rx="26" ry="58"/>
+        </g>
+        <g fill="none" stroke="#cf3f3f" stroke-width="3">
+          <ellipse cx="252" cy="267" rx="38" ry="66"/>
+          <ellipse cx="390" cy="267" rx="38" ry="66"/>
+          <ellipse cx="528" cy="267" rx="38" ry="66"/>
+        </g>
+        <text class="cw-num" x="380" y="290">②</text>
+      </g>
+      <!-- bushings -->
+      <g class="cw-part" data-cap="③ Bushings — porcelain (or now polymer) insulators that carry the live conductors through the earthed tank lid. HV bushings are the tall ones; each is itself a graded capacitor in disguise.">
+        <g class="st" stroke="#b7bfc8" stroke-width="2" fill="none">
+          <path d="M250 150 v-18 m0 0 c-9 0-9-12 0-12 c9 0 9-12 0-12 c-9 0-9-12 0-12 c9 0 9-12 0-12 v-14"/>
+          <path d="M390 150 v-18 m0 0 c-9 0-9-12 0-12 c9 0 9-12 0-12 c-9 0-9-12 0-12 c9 0 9-12 0-12 v-14"/>
+          <path d="M530 150 v-18 m0 0 c-9 0-9-12 0-12 c9 0 9-12 0-12 c-9 0-9-12 0-12 c9 0 9-12 0-12 v-14"/>
+          <path d="M310 150 v-12 m0 0 c-7 0-7-9 0-9 c7 0 7-9 0-9 c-7 0-7-9 0-9 v-10"/>
+          <path d="M450 150 v-12 m0 0 c-7 0-7-9 0-9 c7 0 7-9 0-9 c-7 0-7-9 0-9 v-10"/>
+          <path d="M570 150 v-12 m0 0 c-7 0-7-9 0-9 c7 0 7-9 0-9 c-7 0-7-9 0-9 v-10"/>
+        </g>
+        <text class="cw-num" x="240" y="70">③</text>
+      </g>
+      <!-- conservator -->
+      <g class="cw-part" data-cap="④ Conservator — a header tank that lets the oil expand and contract as it warms and cools; the transformer literally breathes through a silica-gel dryer as the level swings.">
+        <g class="st" stroke="#b7bfc8" stroke-width="2" fill="#1a232e">
+          <rect x="640" y="95" width="150" height="46" rx="23"/>
+        </g>
+        <line x1="660" y1="141" x2="640" y2="170" stroke="#b7bfc8" stroke-width="2"/>
+        <text class="cw-num" x="700" y="124">④</text>
+      </g>
+      <!-- buchholz -->
+      <g class="cw-part" data-cap="⑤ Buchholz relay — a gas trap in the pipe between tank and conservator (invented 1921). A slow fault gently gasses the oil → alarm; a violent internal fault surges oil through it → instant trip. It has saved more transformers than any device since.">
+        <g class="st" stroke="#f0b429" stroke-width="2" fill="#1a232e">
+          <rect x="622" y="158" width="34" height="26" rx="4"/>
+        </g>
+        <line x1="600" y1="171" x2="622" y2="171" stroke="#b7bfc8" stroke-width="2"/>
+        <text class="cw-num" x="626" y="205">⑤</text>
+      </g>
+      <!-- tap changer -->
+      <g class="cw-part" data-cap="⑥ On-load tap changer — a motorised selector that adds or removes winding turns to hold the output voltage, stepping under full load behind a diverter switch (Fig 5). The only moving part — and the hardest-working.">
+        <g class="st" stroke="#b7bfc8" stroke-width="2" fill="#1a232e">
+          <rect x="128" y="190" width="52" height="120" rx="6"/>
+        </g>
+        <circle cx="154" cy="230" r="14" fill="none" stroke="#82909d" stroke-width="2"/>
+        <line x1="154" y1="230" x2="163" y2="220" stroke="#f0b429" stroke-width="2.5"/>
+        <text class="cw-num" x="140" y="330">⑥</text>
+      </g>
+      <!-- radiators -->
+      <g class="cw-part" data-cap="⑦ Radiators & fans — the copper loss leaves as heat through these fins. Natural circulation when lightly loaded (ONAN); fans (ONAF) and oil pumps (OFAF) cut in as load climbs.">
+        <g class="st" stroke="#82909d" stroke-width="2">
+          <line x1="612" y1="210" x2="612" y2="360"/><line x1="624" y1="210" x2="624" y2="360"/>
+          <line x1="636" y1="210" x2="636" y2="360"/><line x1="648" y1="210" x2="648" y2="360"/>
+          <line x1="660" y1="210" x2="660" y2="360"/>
+        </g>
+        <circle cx="700" cy="285" r="18" fill="none" stroke="#82909d" stroke-width="2"/>
+        <path d="M700 285 l12 -8 M700 285 l-12 -8 M700 285 l0 15" stroke="#82909d" stroke-width="2"/>
+        <text class="cw-num" x="690" y="340">⑦</text>
+      </g>
+      <text class="cw-lbl" x="180" y="415">Schematic — hover each numbered part. Not to scale; a real 240 MVA unit is the size of a small house and arrives by 24-axle road trailer.</text>
+    </svg>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="cutaway-cap" style="font-size:13px; color:var(--ink-2); flex:1 1 100%">
+      The workhorse of every substation. Hover a numbered part for its story.
+    </span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<h2 id="taps"><span class="no">§ 3.5</span>Holding the volts: tap changers</h2>
+
+<p>Grid voltage sags at teatime and swells at 3 a.m., but your socket is promised
+230&nbsp;V (+10%/−6%). The correction happens inside transformers: extra turns at
+one end of the HV winding, selected by a motorised <strong>on-load tap changer</strong>
+that can step the ratio ±10-ish% in small bites <em>without interrupting the
+load</em> — a diverter switch shuffles the current between taps through a resistor
+in a few dozen milliseconds, tens of thousands of times a year. Listen outside a
+primary substation and you can hear it: a periodic mechanical <em>chunk</em> as
+the network breathes.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Fig 5 · Hold 11 kV as the grid wobbles</span>
+    <span class="hint">you are the AVC relay — keep the output needle in the green band</span>
+  </div>
+  <div class="fig-body"><canvas id="tap" style="aspect-ratio: 2.1/1; min-height: 270px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>Incoming 33 kV network</label>
+      <input type="range" id="tap-vin" min="88" max="112" step="0.5" value="100">
+      <output>100%</output></div>
+    <button class="btn" id="tap-down">tap −</button>
+    <button class="btn" id="tap-up">tap +</button>
+    <div class="ctl"><label>Auto (AVC relay)</label>
+      <div class="seg" id="tap-auto"><button data-v="off" class="on">manual</button><button data-v="on">auto</button></div>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">tap position <b id="tap-pos">—</b></span>
+    <span class="ro">output <b id="tap-vout">—</b></span>
+    <span class="ro" id="tap-state"></span>
+  </div>
+  <div class="fig-note">Each tap step changes the ratio by 1.43% — 17 positions covering
+  roughly ±11%. The real AVC relay waits out short dips (so a passing cloud doesn't wear
+  the mechanism) then steps deliberately, which is why your lights recover from a
+  brown-out in polite, discrete nudges.</div>
+</figure>
+
+<div class="prose">
+
+<h2 id="ladder"><span class="no">§ 3.6</span>The voltage ladder</h2>
+
+<p>Put the chapter together and you get the country's voltage ladder — climbed
+once at the power station, descended in stages toward the kettle:</p>
+
+<table class="data">
+  <caption>The GB ladder (Scotland's quirk included)</caption>
+  <thead><tr><th>Level</th><th>Role</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td class="k">15.75–23.5 kV</td><td>Generator terminals</td>
+      <td>Set by winding insulation; immediately stepped up at the station fence.</td></tr>
+    <tr><td class="k">400 / 275 kV</td><td>The supergrid</td>
+      <td>Bulk transfer. 275 kV arrived 1953, 400 kV from 1965. Autotransformers knit the two together.</td></tr>
+    <tr><td class="k">132 kV</td><td>England &amp; Wales: distribution.
+      <b>North of Scotland: transmission</b></td>
+      <td>The 1930s national grid voltage. In SSEN's northern area the 132 kV network
+      still does trunk duty over long, thin country — the Hydro Board's inheritance.</td></tr>
+    <tr><td class="k">33 kV</td><td>Primary distribution</td>
+      <td>Town-scale bulk; big industry connects here.</td></tr>
+    <tr><td class="k">11 kV</td><td>Local distribution</td>
+      <td>The network under the streets and along the lanes; Dyn11 country.</td></tr>
+    <tr><td class="k">400 V / 230 V</td><td>Utilisation</td>
+      <td>400 V between phases, 230 V phase-to-neutral; a street shares the three
+      phases house by house.</td></tr>
+  </tbody>
+</table>
+
+<p>Between every rung of that ladder stands switchgear — because a transformer,
+a line or a cable must sometimes be disconnected in a hurry, with thousands of
+amps of fault current flowing through it. Interrupting that current without being
+destroyed is the next chapter's subject.</p>
+
+</div>
+
+<nav class="chapnav">
+  <a href="ac.html"><span class="dir">← Chapter 2</span><span class="title">Three-Phase AC</span></a>
+  <a class="next" href="switchgear.html"><span class="dir">Chapter 4 →</span><span class="title">Switchgear &amp; Protection</span></a>
+</nav>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, PH, TAU, clamp, label, line, mono } = G;
+
+  /* ============ Fig 1: turns ratio ============ */
+  // slider -24..24 -> ratio 2^(v/8): 1/8 .. 8 — nice log feel
+  let ratio = Math.pow(2, 12 / 8), txLoad = 60, flux = 0, lastT = 0;
+  G.canvas("tx", function (ctx, w, h, t) {
+    const dt = Math.min(0.05, t - lastT); lastT = t;
+    flux = (flux + dt * 0.9) % 1;
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * 0.5, cy = h * 0.48;
+    const coreW = Math.min(w * 0.34, 300), coreH = h * 0.56, bar = 22;
+
+    // core rectangle (donut)
+    ctx.strokeStyle = "#5b6572"; ctx.lineWidth = bar;
+    ctx.strokeRect(cx - coreW / 2, cy - coreH / 2, coreW, coreH);
+    // flux dashes running around the core
+    ctx.save();
+    ctx.strokeStyle = C.teal; ctx.lineWidth = 3;
+    ctx.setLineDash([10, 14]);
+    ctx.lineDashOffset = -flux * 24 * 4;
+    ctx.strokeRect(cx - coreW / 2, cy - coreH / 2, coreW, coreH);
+    ctx.restore();
+    label(ctx, "shared flux", cx, cy - coreH / 2 - 12, { align: "center", color: C.teal });
+
+    // windings: primary left (fixed 12 loops), secondary right (∝ ratio)
+    function winding(x, n, col, lw) {
+      const span = coreH * 0.7, y0 = cy - span / 2;
+      ctx.strokeStyle = col; ctx.lineWidth = lw;
+      for (let i = 0; i < n; i++) {
+        const y = y0 + (i + 0.5) * span / n;
+        ctx.beginPath();
+        ctx.ellipse(x, y, bar * 1.15, Math.min(9, span / n * 0.42), 0, 0, TAU);
+        ctx.stroke();
+      }
+    }
+    const n2vis = clamp(Math.round(12 * ratio), 2, 60);
+    winding(cx - coreW / 2, 12, C.phR, ratio >= 1 ? 3.5 : 2);
+    winding(cx + coreW / 2, n2vis, C.phB, ratio >= 1 ? 2 : 3.5);
+    label(ctx, "PRIMARY", cx - coreW / 2, cy + coreH / 2 + 26, { align: "center", color: C.phR, font: mono(11, true) });
+    label(ctx, "12 turns (drawn)", cx - coreW / 2, cy + coreH / 2 + 40, { align: "center" });
+    label(ctx, "SECONDARY", cx + coreW / 2, cy + coreH / 2 + 26, { align: "center", color: C.phB, font: mono(11, true) });
+    label(ctx, n2vis + " turns (drawn)", cx + coreW / 2, cy + coreH / 2 + 40, { align: "center" });
+
+    // arrows in/out
+    label(ctx, "11 kV in →", cx - coreW / 2 - bar * 1.4, cy - coreH / 2 - 12, { align: "right", color: C.ink2 });
+    label(ctx, "→ " + fmtkV(11 * ratio), cx + coreW / 2 + bar * 1.4, cy - coreH / 2 - 12, { color: C.amber, font: mono(12, true) });
+
+    // readouts
+    const I1 = txLoad * 1e6 / (Math.sqrt(3) * 11e3);
+    const I2 = I1 / ratio;
+    document.getElementById("tx-v1").textContent = "11 kV";
+    document.getElementById("tx-i1").textContent = fmtA(I1);
+    document.getElementById("tx-v2").textContent = fmtkV(11 * ratio);
+    document.getElementById("tx-i2").textContent = fmtA(I2);
+  }, { animate: true });
+
+  function fmtkV(kv) { return kv >= 100 ? Math.round(kv) + " kV" : kv.toFixed(1) + " kV"; }
+  function fmtA(a) { return a >= 1000 ? (a / 1000).toFixed(2) + " kA" : Math.round(a) + " A"; }
+  G.slider("tx-n", v => "×" + Math.pow(2, v / 8).toFixed(2), v => { ratio = Math.pow(2, v / 8); });
+  G.slider("tx-load", v => v + " MW", v => { txLoad = v; });
+
+  /* ============ Fig 2: why high voltage ============ */
+  let lossV = 400;
+  const lossFig = G.canvas("loss", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const P = 600e6, R = 4;
+    const I = P / (Math.sqrt(3) * lossV * 1e3);
+    const loss = 3 * I * I * R;
+    const frac = loss / P;
+
+    // diagram: station -> line -> town
+    const y = h * 0.42;
+    const x0 = w * 0.08, x1 = w * 0.9;
+    // station
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+    ctx.strokeRect(x0 - 26, y - 22, 52, 44);
+    label(ctx, "600 MW", x0, y - 32, { align: "center", color: C.ink });
+    label(ctx, "station", x0, y + 40, { align: "center" });
+    // town
+    ctx.strokeRect(x1 - 20, y - 16, 40, 32);
+    ctx.beginPath(); ctx.moveTo(x1 - 24, y - 16); ctx.lineTo(x1, y - 32); ctx.lineTo(x1 + 24, y - 16); ctx.stroke();
+    const delivered = (P - loss) / 1e6;
+    label(ctx, (delivered > 0 ? Math.round(delivered) : 0) + " MW arrives", x1, y + 40, { align: "center", color: delivered > 550 ? C.good : delivered > 0 ? C.amber : C.danger });
+
+    // line with heat glow
+    const glow = clamp(frac * 3, 0, 1);
+    ctx.save();
+    ctx.shadowColor = `rgba(224,82,82,${glow})`;
+    ctx.shadowBlur = 4 + glow * 26;
+    ctx.strokeStyle = glow > 0.6 ? "#ff8a5c" : glow > 0.25 ? "#e0a252" : C.ink2;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x0 + 30, y); ctx.lineTo(x1 - 26, y); ctx.stroke();
+    ctx.restore();
+    label(ctx, lossV + " kV · 100 miles · 4 Ω/phase", (x0 + x1) / 2, y - 14, { align: "center" });
+
+    // loss bar
+    const bx = w * 0.08, bw2 = w * 0.8, by = h * 0.72, bh = 22;
+    ctx.strokeStyle = C.line; ctx.strokeRect(bx, by, bw2, bh);
+    ctx.fillStyle = C.good + "66";
+    ctx.fillRect(bx, by, bw2 * clamp(1 - frac, 0, 1), bh);
+    ctx.fillStyle = "rgba(224,82,82,0.8)";
+    ctx.fillRect(bx + bw2 * clamp(1 - frac, 0, 1), by, bw2 * clamp(frac, 0, 1), bh);
+    label(ctx, "delivered", bx + 4, by + bh + 16, { color: C.good });
+    label(ctx, "lost as heat: " + (frac >= 1 ? "everything" : (frac * 100).toFixed(frac < 0.02 ? 2 : 0) + "%"), bx + bw2, by + bh + 16, { align: "right", color: frac > 0.1 ? C.danger : C.muted });
+
+    document.getElementById("loss-i").textContent = fmtA(I);
+    document.getElementById("loss-p").textContent = loss >= 1e9 ? "> the whole station" : Math.round(loss / 1e6) + " MW (" + (frac * 100).toFixed(frac < 0.02 ? 2 : 1) + "%)";
+    const verdict = document.getElementById("loss-verdict");
+    if (lossV < 30) verdict.innerHTML = "<b style='color:var(--danger)'>physically impossible — the line melts long before this</b>";
+    else if (frac > 0.04) verdict.innerHTML = "<b style='color:var(--amber)'>workable but wasteful — this is why 132 kV stopped being enough by the 1950s</b>";
+    else verdict.innerHTML = "<b style='color:var(--good)'>supergrid economics — under 1% lost</b>";
+  });
+  G.seg("loss-v", v => { lossV = +v; lossFig.redraw(); });
+
+  /* ============ Fig 3: vector groups ============ */
+  let vgHV = "D", vgLV = "y";
+  const vgFig = G.canvas("vg", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const narrow = w < 640;
+    const s = narrow ? 0.8 : 1;
+
+    // --- winding diagrams ---
+    function drawStar(cx, cy, R, col, withN) {
+      for (let k = 0; k < 3; k++) {
+        const a = -Math.PI / 2 + k * TAU / 3;
+        const x1 = cx + Math.cos(a) * R, y1 = cy + Math.sin(a) * R;
+        coil(cx, cy, x1, y1, col);
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(x1, y1, 3.5, 0, TAU); ctx.fill();
+        label(ctx, "L" + (k + 1), cx + Math.cos(a) * (R + 16), cy + Math.sin(a) * (R + 16) + 4, { align: "center", color: PH[k], font: mono(10, true) });
+      }
+      if (withN) {
+        ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.5;
+        line(ctx, cx, cy, cx, cy + R * 0.55, C.ink2, 1.5);
+        // earth symbol
+        const ey = cy + R * 0.55;
+        line(ctx, cx - 8, ey, cx + 8, ey, C.ink2, 1.5);
+        line(ctx, cx - 5, ey + 4, cx + 5, ey + 4, C.ink2, 1.5);
+        line(ctx, cx - 2, ey + 8, cx + 2, ey + 8, C.ink2, 1.5);
+        label(ctx, "N", cx + 8, cy + 4, { color: C.ink2, font: mono(10, true) });
+      }
+    }
+    function drawDelta(cx, cy, R, col) {
+      const pts = [0, 1, 2].map(k => {
+        const a = -Math.PI / 2 + k * TAU / 3;
+        return [cx + Math.cos(a) * R, cy + Math.sin(a) * R];
+      });
+      for (let k = 0; k < 3; k++) {
+        const [x1, y1] = pts[k], [x2, y2] = pts[(k + 1) % 3];
+        coil(x1, y1, x2, y2, col);
+        label(ctx, "L" + (k + 1), cx + Math.cos(-Math.PI / 2 + k * TAU / 3) * (R + 16), cy + Math.sin(-Math.PI / 2 + k * TAU / 3) * (R + 16) + 4, { align: "center", color: PH[k], font: mono(10, true) });
+      }
+    }
+    function coil(x1, y1, x2, y2, col) {
+      // a zig-zag winding along the segment
+      const n = 7, dx = x2 - x1, dy = y2 - y1, len = Math.hypot(dx, dy);
+      const ux = dx / len, uy = dy / len, px = -uy, py = ux;
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      for (let i = 1; i < n * 2; i++) {
+        const tt = i / (n * 2);
+        const off = (i % 2 ? 5 : -5);
+        ctx.lineTo(x1 + dx * tt + px * off, y1 + dy * tt + py * off);
+      }
+      ctx.lineTo(x2, y2); ctx.stroke();
+    }
+
+    const R = (narrow ? 46 : 62) * s;
+    const hvx = w * (narrow ? 0.2 : 0.17), lvx = w * (narrow ? 0.5 : 0.45), cy = h * 0.44;
+    (vgHV === "D" ? drawDelta : (x, y, r, c) => drawStar(x, y, r, c, true))(hvx, cy, R, C.ink2);
+    label(ctx, "HV — " + (vgHV === "D" ? "delta" : "star, neutral earthed"), hvx, cy + R + 42, { align: "center", color: C.ink2 });
+    (vgLV === "d" ? drawDelta : (x, y, r, c) => drawStar(x, y, r, c, true))(lvx, cy, R * 0.8, C.teal);
+    label(ctx, "LV — " + (vgLV === "d" ? "delta" : "star + neutral out"), lvx, cy + R + 42, { align: "center", color: C.teal });
+
+    // --- phasor clock ---
+    const ccx = w * (narrow ? 0.8 : 0.76), ccy = h * 0.44, CR = R * 1.1;
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ccx, ccy, CR, 0, TAU); ctx.stroke();
+    for (let i = 0; i < 12; i++) {
+      const a = i / 12 * TAU - Math.PI / 2;
+      label(ctx, i === 0 ? "12" : String(i), ccx + Math.cos(a) * (CR + 12), ccy + Math.sin(a) * (CR + 12) + 4, { align: "center", font: mono(9) });
+    }
+    // group hour: same shapes = 0; D->y = 11 (LV leads 30°); Y->d = 1 (LV lags 30°)
+    let hour = 0;
+    if (vgHV === "D" && vgLV === "y") hour = 11;
+    if (vgHV === "Y" && vgLV === "d") hour = 1;
+    // HV phasor at 12
+    line(ctx, ccx, ccy, ccx, ccy - CR * 0.95, C.ink2, 3);
+    label(ctx, "HV", ccx + 6, ccy - CR * 0.7, { color: C.ink2, font: mono(10, true) });
+    const la = hour / 12 * TAU - Math.PI / 2;
+    line(ctx, ccx, ccy, ccx + Math.cos(la) * CR * 0.7, ccy + Math.sin(la) * CR * 0.7, C.teal, 3);
+    label(ctx, "LV", ccx + Math.cos(la) * CR * 0.55 + 10, ccy + Math.sin(la) * CR * 0.55, { color: C.teal, font: mono(10, true) });
+    label(ctx, "vector-group clock", ccx, ccy + CR + 34, { align: "center" });
+
+    // name + notes
+    const name = (vgHV === "D" ? "D" : "Y") + (vgLV === "d" ? "d" : "yn") + (hour === 0 ? "0" : hour);
+    document.getElementById("vg-name").textContent = name;
+    document.getElementById("vg-shift").textContent = hour === 0 ? "0° — in phase" : hour === 11 ? "LV leads by 30°" : "LV lags by 30°";
+    const notes = {
+      "Dyn11": "the classic GB distribution transformer — delta traps the triplens, star gives the street its neutral",
+      "Yd1": "the classic generator step-up, seen from the grid — star HV earthed for protection, delta at the machine",
+      "Yyn0": "legal but disliked: no delta anywhere, so magnetising triplens and unbalanced loads misbehave (a buried delta tertiary is the usual cure)",
+      "Ddn0": "no neutral at all on either side — needs an earthing transformer to reference the network",
+      "Dd0": "no neutral at all on either side — needs an earthing transformer to reference the network",
+    };
+    document.getElementById("vg-note").textContent = notes[name] || (name === "Yyn0" ? notes["Yyn0"] : "");
+  });
+  G.seg("vg-hv", v => { vgHV = v; vgFig.redraw(); });
+  G.seg("vg-lv", v => { vgLV = v; vgFig.redraw(); });
+
+  /* ============ Fig 4: cutaway captions ============ */
+  const cap = document.getElementById("cutaway-cap");
+  document.querySelectorAll("#cutaway .cw-part").forEach(g => {
+    const show = () => {
+      document.querySelectorAll("#cutaway .cw-part").forEach(x => x.classList.toggle("on", x === g));
+      cap.textContent = g.dataset.cap;
+    };
+    g.addEventListener("pointerenter", show);
+    g.addEventListener("click", show);
+  });
+
+  /* ============ Fig 5: tap changer ============ */
+  let vin = 100, tapPos = 0, auto = false, tapTimer = 0, lastT2 = 0;
+  const TAP_STEP = 1.43, TAP_MAX = 8;
+  function vout() { return vin * (1 + tapPos * TAP_STEP / 100); }
+
+  const tapFig = G.canvas("tap", function (ctx, w, h, t) {
+    const dt = Math.min(0.1, t - lastT2); lastT2 = t;
+    // auto AVC: deliberate stepping with delay
+    if (auto) {
+      tapTimer += dt;
+      if (tapTimer > 0.9) {
+        tapTimer = 0;
+        if (vout() > 101.5 && tapPos > -TAP_MAX) tapPos--;
+        else if (vout() < 98.5 && tapPos < TAP_MAX) tapPos++;
+      }
+    }
+    ctx.clearRect(0, 0, w, h);
+    const y = h * 0.40;
+    // incoming bar
+    const bx = w * 0.07, bw2 = w * 0.30, bh = 20;
+    drawVbar(ctx, bx, y, bw2, bh, vin, "incoming 33 kV network", false, w);
+    // transformer box + tap dial
+    const tx = w * 0.5;
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(tx - 10, y + 10, 22, 0, TAU); ctx.stroke();
+    ctx.beginPath(); ctx.arc(tx + 10, y + 10, 22, 0, TAU); ctx.stroke();
+    label(ctx, "tap " + (tapPos > 0 ? "+" : "") + tapPos, tx, y + 58, { align: "center", color: C.amber, font: mono(12, true) });
+    // output bar
+    drawVbar(ctx, w * 0.63, y, w * 0.30, bh, vout(), "output 11 kV feeder", true, w);
+
+    document.getElementById("tap-pos").textContent = (tapPos > 0 ? "+" : "") + tapPos + " of ±" + TAP_MAX;
+    document.getElementById("tap-vout").textContent = vout().toFixed(1) + "%";
+    const st = document.getElementById("tap-state");
+    const dev = Math.abs(vout() - 100);
+    if (dev <= 1.5) st.innerHTML = "<b style='color:var(--good)'>in band ✓</b>";
+    else if (dev <= 4) st.innerHTML = "<b style='color:var(--amber)'>out of band — tap " + (vout() > 100 ? "down" : "up") + "</b>";
+    else st.innerHTML = "<b style='color:var(--danger)'>customers noticing (" + (vout() > 100 ? "overvolts" : "brown-out") + ")</b>";
+  }, { animate: true });
+
+  function drawVbar(ctx, x, y, w2, h2, pct, name, band, w) {
+    // scale 85..115%
+    const f = clamp((pct - 85) / 30, 0, 1);
+    ctx.strokeStyle = C.line; ctx.strokeRect(x, y, w2, h2);
+    if (band) {
+      const b0 = x + w2 * (98.5 - 85) / 30, b1 = x + w2 * (101.5 - 85) / 30;
+      ctx.fillStyle = "rgba(63,174,98,0.18)"; ctx.fillRect(b0, y, b1 - b0, h2);
+    }
+    ctx.fillStyle = C.amber;
+    ctx.fillRect(x + w2 * f - 2, y - 4, 4, h2 + 8);
+    label(ctx, name, x + w2 / 2, y - 14, { align: "center" });
+    label(ctx, pct.toFixed(1) + "%", x + w2 * f, y + h2 + 16, { align: "center", color: C.amber, font: mono(11, true) });
+    label(ctx, "85", x, y + h2 + 16); label(ctx, "115", x + w2, y + h2 + 16, { align: "right" });
+  }
+  G.slider("tap-vin", v => v + "%", v => { vin = v; });
+  document.getElementById("tap-up").addEventListener("click", () => { if (tapPos < TAP_MAX) tapPos++; });
+  document.getElementById("tap-down").addEventListener("click", () => { if (tapPos > -TAP_MAX) tapPos--; });
+  G.seg("tap-auto", v => { auto = v === "on"; });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

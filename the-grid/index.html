@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Grid — Power from the Glens</title>
+<meta name="description" content="An interactive almanac of the electricity system: generation, three-phase AC, transformers, switchgear, transmission lines, grid operation and the great blackouts — told from the country of the North of Scotland Hydro-Electric Board.">
+<link rel="stylesheet" href="grid.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE GRID</a></div>
+    <div class="strap">power from the glens — an interactive almanac</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="generation.html">1 · Generation</a>
+    <a href="ac.html">2 · Three-Phase AC</a>
+    <a href="transformers.html">3 · Transformers</a>
+    <a href="switchgear.html">4 · Switchgear</a>
+    <a href="lines.html">5 · Lines &amp; Towers</a>
+    <a href="operations.html">6 · Running the Grid</a>
+    <a href="blackouts.html">7 · When It Fails</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">An interactive almanac of the electricity system</p>
+  <h1>The Grid</h1>
+  <p class="standfirst">How electricity is generated, transformed, switched, carried over
+  the hills on steel towers, and held — second by second, day and night — at exactly
+  fifty cycles a second. Told from the country of the North of Scotland Hydro-Electric
+  Board, and ending with the handful of nights when it all went dark.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">From the glen to the kettle</span>
+    <span class="hint">move your pointer (or finger) along the diagram to inspect each stage</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="journey" style="aspect-ratio: 2.6 / 1; min-height: 260px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="journey-cap" style="font-size:13px; color:var(--ink-2)">
+      Rain falls on the Arrochar Alps; a kettle boils in a Glasgow kitchen. Between the two:
+      the longest machine in the country. Hover a stage to begin.
+    </span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p>In 1943, with the war still on, Parliament passed the Hydro-Electric Development
+(Scotland) Act and created the <strong>North of Scotland Hydro-Electric Board</strong> —
+Tom Johnston's great project to bring &ldquo;power from the glens&rdquo; to crofts that
+had never seen an electric light. Within a generation the Board had driven tunnels
+through Ben Vorlich and Ben Cruachan, thrown dams across the Tummel and the Affric,
+and strung wire to farms the private companies had sworn could never pay. By the
+1960s, nine houses in ten in the north of Scotland were connected.</p>
+
+<p>This almanac is about the machine the Board plugged those crofts into — the same
+machine, grown vaster, that is humming outside your window right now. It is arguably
+the largest and most tightly-coupled machine human beings have ever built: every
+alternator on the system spins in lockstep with every other, from a 440&nbsp;MW
+machine hall hollowed out of a mountain above Loch Awe to the smallest run-of-river
+set in a Highland glen. Push anywhere, and the whole thing feels it everywhere,
+at very nearly the speed of light.</p>
+
+<p>Each chapter below stands on its own, but they are written in the order the
+electricity itself travels: made in a power station, shaped by the physics of
+three-phase alternating current, stepped up by transformers, guarded by switchgear,
+carried on towers over the moors, balanced minute-by-minute in a control room —
+and, once in a very long while, lost.</p>
+
+<div class="callout story">
+  <span class="tag">Board lore</span>
+  <p>The Hydro Board's first great post-war scheme was <strong>Loch Sloy</strong>, opened by
+  the Queen Mother in October 1950: a dam across the Sloy glen, a two-mile tunnel through
+  Ben Vorlich, and four Francis machines at Inveruglas on Loch Lomond side working under
+  a gross head of 277 metres. Sloy could reach full output from a standing start in
+  minutes — which is why, three-quarters of a century later, it is still what the control
+  room reaches for when the evening peak bites.</p>
+</div>
+
+</div>
+
+<div class="cards">
+  <a class="card" href="generation.html">
+    <span class="no">CHAPTER 1</span>
+    <h3>Generation</h3>
+    <p>Why a spinning magnet makes a voltage, why hydro sets turn slowly and steam sets
+    turn at 3,000 rpm, Pelton v Francis v Kaplan, governors and droop, and how you
+    synchronise a machine onto a live grid without wrecking it.</p>
+  </a>
+  <a class="card" href="ac.html">
+    <span class="no">CHAPTER 2</span>
+    <h3>Three-Phase AC</h3>
+    <p>The case for alternating current, why three phases and not two or four, the skin
+    effect that hollows out thick conductors, RMS volts, and the real-versus-reactive
+    power that engineers argue about in VArs.</p>
+  </a>
+  <a class="card" href="transformers.html">
+    <span class="no">CHAPTER 3</span>
+    <h3>Transformers</h3>
+    <p>The quietly perfect machine with no moving parts: turns ratios, why transmission
+    runs at 400,000 volts, star and delta windings and the Dyn11 vector group, tap
+    changers, Buchholz relays and the 100&nbsp;Hz hum.</p>
+  </a>
+  <a class="card" href="switchgear.html">
+    <span class="no">CHAPTER 4</span>
+    <h3>Switchgear &amp; Protection</h3>
+    <p>How to interrupt 50,000 amps without dying: arcs and current zeros, bulk-oil,
+    air-blast, SF₆ and vacuum breakers, and the relays — overcurrent, differential,
+    distance — that find a fault in forty milliseconds.</p>
+  </a>
+  <a class="card" href="lines.html">
+    <span class="no">CHAPTER 5</span>
+    <h3>Lines &amp; Towers</h3>
+    <p>Suspension and tension towers, insulator strings, ACSR conductors with animal
+    names, bundles and corona, phase transposition, the earth wire that takes the
+    lightning, and why sag on a hot day sets the rating of a line.</p>
+  </a>
+  <a class="card" href="operations.html">
+    <span class="no">CHAPTER 6</span>
+    <h3>Running the Grid</h3>
+    <p>Fifty hertz as a national bargain: inertia, TV pickup, the merit order, reserve
+    and response, reactive power and voltage, HVDC interconnectors under the sea, and
+    what black start actually involves.</p>
+  </a>
+  <a class="card" href="blackouts.html">
+    <span class="no">CHAPTER 7</span>
+    <h3>When It Fails</h3>
+    <p>Six great blackouts, dissected: the 1965 relay that darkened New York, the 2003
+    tree in Ohio, Europe split in three in 2006, South Australia 2016, Britain's
+    9&nbsp;August 2019, and the Iberian collapse of April 2025 — plus a cascade
+    simulator of your own to break.</p>
+  </a>
+</div>
+
+<div class="prose">
+  <div class="callout">
+    <span class="tag">How to read this</span>
+    <p>Every diagram with a control strip underneath is live — drag the sliders, press the
+    buttons, break things. Nothing here is a video; it is all computed in your browser as
+    you watch, which is rather the point: the grid itself is not a picture either.</p>
+  </div>
+
+  <p class="colophon">
+    Written and built July 2026 · vanilla JavaScript, canvas &amp; SVG, no build step ·
+    figures are schematic, not to scale; numbers are representative of the GB system and
+    rounded — corrections welcome ·
+    companion pieces: <a href="/hydro/">The Hydro</a>, <a href="/fifty-hertz/">Fifty Hertz</a>,
+    <a href="/mercury-arc-rectifiers/">Mercury Arc Rectifiers</a>, <a href="/traction-motors/">Electric Traction Motors</a>
+  </p>
+</div>
+
+</main>
+
+<script src="grid-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, clamp, label, line, mono } = G;
+
+  /* ---- the glen-to-kettle journey ------------------------------------ */
+  /* A schematic west-to-east profile. Stages are placed at fractions of
+     the width; energy dots run along the connecting line. */
+
+  const stages = [
+    { x: 0.055, name: "THE DAM",        v: "",        cap: "Rain gathered off the hill is banked behind a dam — potential energy in storage. Loch Sloy holds enough for the machines below to run flat out for many hours." },
+    { x: 0.145, name: "MACHINE HALL",   v: "11 kV",   cap: "Water falls ~277 m through a tunnel in the mountain and spins a Francis turbine coupled to an alternator. Out comes three-phase AC at around 11,000 volts. → Chapter 1" },
+    { x: 0.245, name: "STEP-UP",        v: "132 kV",  cap: "A generator transformer steps 11 kV up to 132 kV. Same power, 12× the volts, one-twelfth the amps — and losses fall with the square of the current. → Chapter 3" },
+    { x: 0.40,  name: "THE HIGH ROAD",  v: "132–400 kV", cap: "Steel towers carry the circuits south. In the north of Scotland, uniquely in Britain, even the 132 kV network counts as transmission. The trunk routes run at 275 and 400 kV. → Chapter 5" },
+    { x: 0.565, name: "SUBSTATION",     v: "400→33 kV", cap: "At a grid substation, circuit breakers and transformers step the voltage back down — 400 to 275 to 132 to 33 kV — with protection relays watching every circuit. → Chapters 4 & 6" },
+    { x: 0.70,  name: "PRIMARY",        v: "33→11 kV", cap: "A primary substation feeds the local 11 kV network that threads under streets and along back roads — the distribution layer that actually reaches buildings." },
+    { x: 0.815, name: "THE LAST POLE",  v: "11 kV→230 V", cap: "A pole-mounted or pavement transformer makes the final drop to 400 V three-phase, 230 V to each home — one phase, a neutral, and an earth." },
+    { x: 0.93,  name: "THE KETTLE",     v: "230 V",   cap: "A 3 kW kettle draws about 13 amps. Somewhere, a governor valve opens a whisker wider to hold the whole system at 50.00 Hz. → Chapter 6" },
+  ];
+
+  let hoverI = -1;
+  const cap = document.getElementById("journey-cap");
+  const cv = document.getElementById("journey");
+
+  function groundY(fx, h) {
+    // west highlands falling to the city plain
+    const hill = Math.max(0, 1 - fx * 2.1);
+    return h * (0.78 - 0.30 * hill * hill - 0.03 * Math.sin(fx * 19) * Math.min(1, fx * 3) * (1 - fx));
+  }
+
+  function tower(ctx, x, gy, ht, col) {
+    // simple lattice tower silhouette
+    ctx.save();
+    ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(x - ht * 0.18, gy); ctx.lineTo(x - ht * 0.05, gy - ht);
+    ctx.moveTo(x + ht * 0.18, gy); ctx.lineTo(x + ht * 0.05, gy - ht);
+    // cross braces
+    for (let i = 1; i <= 3; i++) {
+      const t1 = i / 4, t2 = (i - 1) / 4;
+      const xa = x - (0.18 - 0.13 * t1) * ht, xb = x + (0.18 - 0.13 * t1) * ht;
+      const xc = x - (0.18 - 0.13 * t2) * ht, xd = x + (0.18 - 0.13 * t2) * ht;
+      ctx.moveTo(xa, gy - ht * t1); ctx.lineTo(xd, gy - ht * t2);
+      ctx.moveTo(xb, gy - ht * t1); ctx.lineTo(xc, gy - ht * t2);
+    }
+    // arms
+    ctx.moveTo(x - ht * 0.30, gy - ht * 0.72); ctx.lineTo(x + ht * 0.30, gy - ht * 0.72);
+    ctx.moveTo(x - ht * 0.24, gy - ht * 0.88); ctx.lineTo(x + ht * 0.24, gy - ht * 0.88);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  G.canvas("journey", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+
+    // sky gradient
+    const sky = ctx.createLinearGradient(0, 0, 0, h);
+    sky.addColorStop(0, "#0e1520"); sky.addColorStop(1, "#131a22");
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, w, h);
+
+    // ground
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    for (let px = 0; px <= w; px += 4) ctx.lineTo(px, groundY(px / w, h));
+    ctx.lineTo(w, h); ctx.closePath();
+    ctx.fillStyle = "#0f151c"; ctx.fill();
+    ctx.strokeStyle = "rgba(86,183,207,0.25)"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let px = 0; px <= w; px += 4) {
+      const y = groundY(px / w, h);
+      px === 0 ? ctx.moveTo(px, y) : ctx.lineTo(px, y);
+    }
+    ctx.stroke();
+
+    // reservoir + dam at stage 0
+    const dx = stages[0].x * w, dgy = groundY(stages[0].x, h);
+    ctx.fillStyle = "rgba(86,183,207,0.22)";
+    ctx.fillRect(0, dgy - h * 0.09, dx - 6, h * 0.09);
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(dx - 6, dgy - h * 0.115); ctx.quadraticCurveTo(dx + 8, dgy - h * 0.05, dx + 10, dgy + 3); ctx.stroke();
+
+    // machine hall (small box) at stage 1
+    const mh = stages[1].x * w, mgy = groundY(stages[1].x, h);
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.5;
+    ctx.strokeRect(mh - 16, mgy - 18, 32, 18);
+    ctx.strokeRect(mh - 6, mgy - 26, 12, 8); // hall roof hut
+
+    // penstock from dam to hall
+    line(ctx, dx + 10, dgy + 2, mh - 14, mgy - 8, "rgba(233,228,214,0.4)", 2);
+
+    // transformer symbols (two overlapping circles) at step-up, substation, primary, pole
+    function trafo(x, gy, s) {
+      ctx.strokeStyle = C.amber; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(x, gy - s * 1.35, s, 0, TAU); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, gy - s * 2.35, s, 0, TAU); ctx.stroke();
+    }
+    trafo(stages[2].x * w, groundY(stages[2].x, h), 8);
+    trafo(stages[4].x * w, groundY(stages[4].x, h), 8);
+    trafo(stages[5].x * w, groundY(stages[5].x, h), 6);
+    trafo(stages[6].x * w, groundY(stages[6].x, h), 4.5);
+
+    // substation busbar hint
+    const sx = stages[4].x * w, sgy = groundY(stages[4].x, h);
+    line(ctx, sx - 26, sgy - 4, sx + 26, sgy - 4, C.ink2, 1.5);
+    for (let i = -2; i <= 2; i++) line(ctx, sx + i * 12, sgy - 4, sx + i * 12, sgy - 14, C.ink2, 1);
+
+    // towers along the high road
+    const towerXs = [0.315, 0.40, 0.485];
+    towerXs.forEach((fx, i) => tower(ctx, fx * w, groundY(fx, h), h * (0.34 + (i === 1 ? 0.05 : 0)), C.ink2));
+    // smaller wood poles near the end
+    [0.755, 0.815, 0.868].forEach((fx) => {
+      const gy = groundY(fx, h);
+      line(ctx, fx * w, gy, fx * w, gy - h * 0.14, C.ink2, 1.6);
+      line(ctx, fx * w - 8, gy - h * 0.135, fx * w + 8, gy - h * 0.135, C.ink2, 1.4);
+    });
+
+    // town + house + kettle
+    const hx = stages[7].x * w, hgy = groundY(stages[7].x, h);
+    ctx.strokeStyle = C.ink2; ctx.lineWidth = 1.5;
+    ctx.strokeRect(hx - 14, hgy - 16, 28, 16);
+    ctx.beginPath(); ctx.moveTo(hx - 17, hgy - 16); ctx.lineTo(hx, hgy - 27); ctx.lineTo(hx + 17, hgy - 16); ctx.stroke();
+    // steam from the kettle window
+    ctx.strokeStyle = "rgba(233,228,214,0.5)";
+    ctx.beginPath();
+    for (let i = 0; i < 3; i++) {
+      const px = hx + 5 + i * 3, base = hgy - 30 - ((t * 14 + i * 10) % 22);
+      ctx.moveTo(px, base + 5); ctx.quadraticCurveTo(px + 2, base + 2, px, base);
+    }
+    ctx.stroke();
+
+    // ---- the wire: a polyline through stage anchor heights ----
+    function wireY(fx) {
+      const gy = groundY(fx, h);
+      if (fx < stages[1].x) return null;
+      if (fx < stages[2].x) return gy - 22;                       // hall to step-up
+      if (fx < 0.53) {                                            // tower spans w/ sag
+        // find bracketing tower/anchor points
+        const pts = [stages[2].x, ...towerXs, 0.53];
+        for (let i = 0; i < pts.length - 1; i++) {
+          if (fx >= pts[i] && fx <= pts[i + 1]) {
+            const a = pts[i], b = pts[i + 1], u = (fx - a) / (b - a);
+            const ya = attachY(a), yb = attachY(b);
+            const sag = 14 * Math.sin(Math.PI * u);
+            return ya + (yb - ya) * u + sag;
+          }
+        }
+      }
+      if (fx < stages[5].x) return groundY(fx, h) - h * 0.10 + 6 * Math.sin(Math.PI * (fx - 0.53) / (stages[5].x - 0.53));
+      if (fx < stages[7].x - 0.01) {
+        const a = stages[5].x, b = stages[7].x - 0.01, u = (fx - a) / (b - a);
+        return groundY(fx, h) - h * 0.125 + 5 * Math.sin(3 * Math.PI * u);
+      }
+      return groundY(fx, h) - 12;
+      function attachY(fx2) {
+        if (fx2 <= stages[2].x + 0.001) return groundY(fx2, h) - 30;
+        if (fx2 >= 0.53 - 0.001) return groundY(fx2, h) - h * 0.10;
+        return groundY(fx2, h) - h * (0.34 + (Math.abs(fx2 - 0.40) < 0.01 ? 0.05 : 0)) * 0.80;
+      }
+    }
+
+    ctx.strokeStyle = "rgba(240,180,41,0.55)"; ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    let started = false;
+    for (let px = 0; px <= w; px += 3) {
+      const y = wireY(px / w);
+      if (y == null) { started = false; continue; }
+      started ? ctx.lineTo(px, y) : ctx.moveTo(px, y);
+      started = true;
+    }
+    ctx.stroke();
+
+    // energy dots
+    const N = 26;
+    ctx.fillStyle = C.amber;
+    for (let i = 0; i < N; i++) {
+      const fx = stages[1].x + (((t * 0.055 + i / N) % 1)) * (stages[7].x - stages[1].x);
+      const y = wireY(fx);
+      if (y == null) continue;
+      ctx.beginPath(); ctx.arc(fx * w, y, 2.2, 0, TAU); ctx.fill();
+    }
+
+    // stage markers + labels
+    stages.forEach((s, i) => {
+      const x = s.x * w, gy = groundY(s.x, h);
+      const on = i === hoverI;
+      ctx.fillStyle = on ? C.amber : "rgba(233,228,214,0.5)";
+      ctx.beginPath(); ctx.arc(x, gy + 12, on ? 4 : 2.5, 0, TAU); ctx.fill();
+      label(ctx, s.name, x, gy + 28, { align: "center", color: on ? C.amber : C.muted, font: mono(w < 700 ? 8 : 10, on) });
+      if (s.v) label(ctx, s.v, x, gy + 41, { align: "center", color: on ? C.ink : "rgba(130,144,157,0.8)", font: mono(w < 700 ? 8 : 10) });
+    });
+  }, { animate: true });
+
+  function pick(ev) {
+    const r = cv.getBoundingClientRect();
+    const fx = (ev.clientX - r.left) / r.width;
+    let best = -1, bd = 0.07;
+    stages.forEach((s, i) => { const d = Math.abs(s.x - fx); if (d < bd) { bd = d; best = i; } });
+    if (best !== hoverI) {
+      hoverI = best;
+      if (best >= 0) cap.innerHTML = "<b style='color:var(--amber)'>" + stages[best].name + (stages[best].v ? " · " + stages[best].v : "") + "</b> — " + stages[best].cap;
+    }
+  }
+  cv.addEventListener("pointermove", pick);
+  cv.addEventListener("pointerdown", pick);
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
