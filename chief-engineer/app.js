@@ -5,7 +5,7 @@
 import {
   createVoyage, tick, applyAction, spinningReserve, totalDemandMw,
   burnRateTph, voyageSpendK, projectedFuelMargin, currentLeg, debrief,
-  fmtClock, levelById, shipFor, ENGINE_SCHEMA,
+  fmtClock, levelById, shipFor, dgMaintenanceJob, ENGINE_SCHEMA,
 } from "./engine.js";
 import { SHIPS, LEVELS, EVENTS, MANUAL } from "./content.js";
 
@@ -318,7 +318,7 @@ function buildVoyageDom() {
   const tabs = el("div", "tabs");
   tabs.setAttribute("role", "tablist");
   ui.tabBtns = {};
-  for (const [id, label] of [["power", "POWER"], ["fuel", "FUEL"], ["maint", "MAINT"], ["sys", "SYSTEMS"], ["manual", "MANUAL"]]) {
+  for (const [id, label] of [["power", "POWER"], ["oneline", "ONE-LINE"], ["voyage", "VOYAGE"], ["fuel", "FUEL"], ["maint", "MAINT"], ["sys", "SYSTEMS"], ["manual", "MANUAL"]]) {
     const b = el("button", null, label);
     b.setAttribute("role", "tab");
     b.addEventListener("click", () => { activeTab = id; render(); });
@@ -330,6 +330,8 @@ function buildVoyageDom() {
   left.append(ui.tabPanel);
   ui.panels = {
     power: buildPowerPanel(),
+    oneline: buildOnelinePanel(),
+    voyage: buildVoyagePanel(),
     fuel: buildFuelPanel(),
     maint: buildMaintPanel(),
     sys: buildSysPanel(),
@@ -573,6 +575,7 @@ function updatePowerPanel() {
       : d.state === "starting" ? "STARTING…"
       : d.state === "ready" ? "READY — CLOSE BKR"
       : d.state === "repair" ? "UNDER REPAIR"
+      : d.state === "maintenance" ? "TEAM IN — STRIPPED"
       : d.state.toUpperCase();
     setText(node._sub, sub);
   }
@@ -589,6 +592,247 @@ function updatePowerPanel() {
     setText(ui.pmsBtn, state.pmsAuto ? "PMS ASSIST: AUTO (safe, thirsty)" : "PMS ASSIST: MANUAL");
     setClass(ui.pmsBtn, "primary", state.pmsAuto);
   }
+}
+
+// ---- one-line diagram ----------------------------------------------------------
+
+// Classic one-line: generators over their breakers onto the switchboards,
+// bus tie between boards, transformer feeders below, emergency switchboard
+// with its own generator and battery to the right. Geometry is computed per
+// ship; live state only moves breaker blades and recolors symbols.
+
+function bladeSvg(key, hx, hy, cx2, cy2, ox2, oy2) {
+  const r = (n) => Math.round(n * 10) / 10;
+  return `<circle class="ct" cx="${hx}" cy="${hy}" r="2.5"/><circle class="ct" cx="${cx2}" cy="${cy2}" r="2.5"/>` +
+    `<line class="blade" data-blade="${key}" x1="${hx}" y1="${hy}" x2="${cx2}" y2="${cy2}" ` +
+    `data-c="${cx2},${cy2}" data-o="${r(ox2)},${r(oy2)}"/>`;
+}
+// vertical gen breaker: hinge on the bus side, blade swings out when open
+function genBladeSvg(key, cx, yTop, yBot) {
+  const len = yBot - yTop;
+  return bladeSvg(key, cx, yBot, cx, yTop, cx - len * 0.62, yBot - len * 0.78);
+}
+// horizontal blade (tie / emergency feed): hinge left, swings up when open
+function tieBladeSvg(key, x1, x2, y) {
+  const span = x2 - x1;
+  return bladeSvg(key, x1, y, x2, y, x1 + span * 0.82, y - span * 0.57);
+}
+function xfmrSvg(x, y) {
+  return `<circle class="xf" cx="${x}" cy="${y}" r="10"/><circle class="xf" cx="${x}" cy="${y + 13}" r="10"/>`;
+}
+
+function onelineMarkup(ship) {
+  const colW = 92, M = 20, boardGap = 68, emcyGap = 62, emcyW = 168;
+  const busY = 132, bkrTop = 88, bkrBot = 110;
+  const boards = [];
+  let x = M;
+  for (const b of ship.boards) {
+    const dgs = ship.dgs.filter((d) => d.board === b.id);
+    const w = Math.max(dgs.length, 2) * colW;
+    boards.push({ id: b.id, x, w, dgs });
+    x += w + boardGap;
+  }
+  const mainRight = x - boardGap;
+  const emcyX = mainRight + emcyGap;
+  const width = emcyX + emcyW + M;
+  const height = 272;
+  const s = [];
+
+  const genSymbol = (cx, r) =>
+    `<circle class="sym" cx="${cx}" cy="52" r="${r}"/><text class="gl" x="${cx}" y="57">G</text>` +
+    `<line class="w" x1="${cx}" y1="${52 + r}" x2="${cx}" y2="${bkrTop - 2}"/>`;
+
+  boards.forEach((b, bi) => {
+    // generators + breakers + drops
+    b.dgs.forEach((d, i) => {
+      const cx = b.x + colW * i + colW / 2;
+      s.push(`<g class="ol-dg" data-dg="${d.id}" data-state="stopped"><title>${d.id} — tap for controls</title>` +
+        `<text class="t id" x="${cx}" y="18">${d.id}</text><text class="t" x="${cx}" y="31">${d.mw} MW</text>` +
+        genSymbol(cx, 16) + `</g>`);
+      s.push(`<g class="ol-bkr" data-bkr="${d.id}"><title>${d.id} generator breaker</title>` +
+        `<rect class="hit" x="${cx - 16}" y="${bkrTop - 8}" width="32" height="${bkrBot - bkrTop + 16}"/>` +
+        genBladeSvg(d.id, cx, bkrTop, bkrBot) + `</g>`);
+      s.push(`<line class="w" x1="${cx}" y1="${bkrBot}" x2="${cx}" y2="${busY}"/>`);
+      s.push(`<text class="t mono ol-load" data-load="${d.id}" x="${cx + 7}" y="${bkrBot - 5}"></text>`);
+    });
+    // switchboard bus
+    s.push(`<line class="bus" data-bus="${b.id}" x1="${b.x}" y1="${busY}" x2="${b.x + b.w}" y2="${busY}"/>`);
+    s.push(`<text class="t lab" x="${b.x + 2}" y="${busY + 16}">${ship.boards.length > 1 ? `${b.id} SWBD · 11 kV` : "MAIN SWBD · 6.6 kV"}</text>`);
+    // feeders: propulsion + hotel transformer
+    const px = b.x + b.w * 0.32, hx = b.x + b.w * 0.68;
+    s.push(`<line class="w" x1="${px}" y1="${busY}" x2="${px}" y2="162"/>` + xfmrSvg(px, 172) +
+      `<line class="w" x1="${px}" y1="195" x2="${px}" y2="208"/>` +
+      `<circle class="sym mtr" cx="${px}" cy="222" r="13"/><text class="gl" x="${px}" y="227">M</text>` +
+      `<text class="t" x="${px}" y="250">${ship.boards.length > 1 ? `POD ${bi + 1}` : "PROP"}</text>`);
+    s.push(`<line class="w" x1="${hx}" y1="${busY}" x2="${hx}" y2="162"/>` + xfmrSvg(hx, 172) +
+      `<line class="w" x1="${hx}" y1="195" x2="${hx}" y2="206"/>` +
+      `<line class="bus lv" x1="${hx - 26}" y1="208" x2="${hx + 26}" y2="208"/>` +
+      `<text class="t" x="${hx}" y="224">440 V HOTEL</text>`);
+    // bus tie to the next board
+    const nb = boards[bi + 1];
+    if (nb) {
+      s.push(`<g class="ol-tie" data-tie="1"><title>Bus tie breaker</title>` +
+        `<rect class="hit" x="${b.x + b.w}" y="${busY - 16}" width="${boardGap}" height="32"/>` +
+        `<text class="t" x="${b.x + b.w + boardGap / 2}" y="${busY - 12}">BUS TIE</text>` +
+        tieBladeSvg("tie", b.x + b.w + 8, nb.x - 8, busY) + `</g>`);
+    }
+  });
+
+  // emergency section: feed from the nearest main board, gen, battery
+  const egX = emcyX + 36, batX = emcyX + emcyW - 34;
+  s.push(`<line class="bus" data-bus="EMCY" x1="${emcyX}" y1="${busY}" x2="${emcyX + emcyW}" y2="${busY}"/>`);
+  s.push(`<text class="t lab" x="${emcyX + 2}" y="${busY + 16}">EMCY SWBD · 440 V</text>`);
+  s.push(`<text class="t" x="${(mainRight + emcyX) / 2}" y="${busY - 12}">FEED</text>` +
+    tieBladeSvg("feed", mainRight + 6, emcyX - 6, busY));
+  s.push(`<g class="ol-dg" data-eg="1" data-state="stopped">` +
+    `<title>Emergency generator — auto-starts on dead ship</title>` +
+    `<text class="t id" x="${egX}" y="18">EMCY GEN</text>` + genSymbol(egX, 13) + `</g>`);
+  s.push(genBladeSvg("emcy", egX, bkrTop, bkrBot) +
+    `<line class="w" x1="${egX}" y1="${bkrBot}" x2="${egX}" y2="${busY}"/>`);
+  s.push(`<line class="w" x1="${batX}" y1="${busY}" x2="${batX}" y2="160"/>` +
+    `<line class="bat l" x1="${batX - 12}" y1="164" x2="${batX + 12}" y2="164"/>` +
+    `<line class="bat s" x1="${batX - 5}" y1="170" x2="${batX + 5}" y2="170"/>` +
+    `<line class="bat l" x1="${batX - 12}" y1="176" x2="${batX + 12}" y2="176"/>` +
+    `<line class="bat s" x1="${batX - 5}" y1="182" x2="${batX + 5}" y2="182"/>` +
+    `<text class="t" x="${batX}" y="200">BATT · UPS</text>` +
+    `<text class="t" x="${emcyX + emcyW / 2}" y="250">STEERING · CONTROLS · EMCY LTG</text>`);
+
+  return `<svg class="ol" viewBox="0 0 ${width} ${height}" role="img" aria-label="Electrical one-line diagram">${s.join("")}</svg>`;
+}
+
+function buildOnelinePanel() {
+  const ship = shipOf(state);
+  const panel = el("div");
+  const wrap = el("div", "ol-wrap");
+  wrap.innerHTML = onelineMarkup(ship);
+  panel.append(wrap);
+  panel.append(el("p", "ol-legend",
+    "Live one-line: tap a generator for its controls, tap a breaker or the bus tie to work it. " +
+    "Green = running · blue = starting/ready · amber = team in or under repair · red = tripped · a dashed red bus is dead."));
+  ui.ol = {
+    dgGroups: new Map([...wrap.querySelectorAll("[data-dg]")].map((g) => [g.dataset.dg, g])),
+    egGroup: wrap.querySelector("[data-eg]"),
+    loads: new Map([...wrap.querySelectorAll("[data-load]")].map((t) => [t.dataset.load, t])),
+    blades: new Map([...wrap.querySelectorAll("[data-blade]")].map((l) => [l.dataset.blade, l])),
+    buses: new Map([...wrap.querySelectorAll("[data-bus]")].map((l) => [l.dataset.bus, l])),
+    feedSrc: ship.boards[ship.boards.length - 1].id,
+  };
+  for (const [id, g] of ui.ol.dgGroups) {
+    g.addEventListener("click", () => { sheet = { kind: "dg", id }; render(); });
+  }
+  for (const g of wrap.querySelectorAll("[data-bkr]")) {
+    g.addEventListener("click", () => {
+      const d = state.dgs.find((x) => x.id === g.dataset.bkr);
+      if (d) act({ type: d.state === "online" ? "breaker.open" : "breaker.close", id: d.id });
+    });
+  }
+  wrap.querySelector("[data-tie]")?.addEventListener("click", () =>
+    act({ type: state.tieClosed ? "tie.open" : "tie.close" }));
+  return panel;
+}
+
+function setBlade(line, closed) {
+  if (!line || line._closed === closed) return;
+  line._closed = closed;
+  const [x2, y2] = (closed ? line.dataset.c : line.dataset.o).split(",");
+  line.setAttribute("x2", x2);
+  line.setAttribute("y2", y2);
+  line.classList.toggle("open", !closed);
+}
+
+function updateOnelinePanel() {
+  const o = ui.ol;
+  for (const d of state.dgs) {
+    const g = o.dgGroups.get(d.id);
+    if (g) setAttr(g, "data-state", dgMaintenanceJob(state, d.id) ? "maintenance" : d.state);
+    setBlade(o.blades.get(d.id), d.state === "online");
+    setText(o.loads.get(d.id), d.state === "online" ? `${d.loadPct.toFixed(0)}%` : "");
+  }
+  for (const b of state.boards) {
+    setClass(o.buses.get(b.id), "dead", !b.online);
+  }
+  setBlade(o.blades.get("tie"), state.boards.length > 1 && state.tieClosed);
+  const src = state.boards.find((b) => b.id === o.feedSrc);
+  const mainAlive = state.boards.some((b) => b.online);
+  setBlade(o.blades.get("feed"), !!src?.online && !state.blackout);
+  setBlade(o.blades.get("emcy"), state.emergencyGenOnline);
+  setAttr(o.egGroup, "data-state", state.emergencyGenOnline ? "online" : "stopped");
+  const emcyBus = o.buses.get("EMCY");
+  setClass(emcyBus, "dead", !(mainAlive || state.emergencyGenOnline));
+  setClass(emcyBus, "emg", state.emergencyGenOnline);
+}
+
+// ---- voyage schedule -------------------------------------------------------------
+
+// Clock label for an absolute tick of THIS voyage (clockMin advances one per
+// tick from the level's start time, so the offset is constant).
+function fmtTickClock(st, tickAt) {
+  const abs = st.clockMin - st.tick + Math.round(tickAt);
+  const day = Math.floor(abs / 1440) + 1;
+  const m = ((abs % 1440) + 1440) % 1440;
+  return `D${day} ${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
+
+function buildVoyagePanel() {
+  const panel = el("div");
+  ui.schedHead = el("div", "sched-head mono");
+  ui.schedule = el("div", "schedule");
+  panel.append(ui.schedHead, ui.schedule);
+  panel.append(el("p", "sched-foot",
+    "Published times are the deck department's arrive-by commitments — miss one and the lateness counts against the Service star. ECA legs need compliant fuel before the boundary; PSC marks a Port State Control boarding on arrival."));
+  return panel;
+}
+
+function legScheduleText(leg, status) {
+  const due = leg.deadlineMin != null ? `arrive by ${fmtTickClock(state, leg.deadlineMin)}` : "arrival open";
+  if (status === "done") return "arrived ✓";
+  if (status !== "current") return due;
+  if (state.inPort) {
+    if (state.portTicksLeft > 0) {
+      const t = state.portTicksLeft;
+      return `sails in ${Math.floor(t / 60)}h${String(t % 60).padStart(2, "0")} · ${due}`;
+    }
+    return state.gateOpen ? `singling up · ${due}` : `held alongside — see objectives · ${due}`;
+  }
+  const remaining = Math.max(0, leg.distanceNm - state.legDistNm);
+  const kn = state.actualKn > 0.5 ? state.actualKn : (state.commandedKn || leg.orderKn);
+  if (kn <= 0.5) return `${remaining.toFixed(0)} nm to go — not under way · ${due}`;
+  const eta = state.tick + (remaining / kn) * 60;
+  let verdict = "";
+  if (leg.deadlineMin != null) {
+    const late = eta - leg.deadlineMin;
+    verdict = late > 0 ? ` · ${(late / 60).toFixed(1)}h LATE at this speed` : " · on time";
+  }
+  return `${remaining.toFixed(0)} nm to go · ETA ${fmtTickClock(state, eta)}${verdict} · ${due}`;
+}
+
+function updateVoyagePanel() {
+  const lv = levelOf(state);
+  setText(ui.schedHead, `${shipOf(state).name} — ${lv.name.toUpperCase()} · SHIP'S TIME ${fmtClock(state)}`);
+  syncList(ui.schedule, lv.route.map((leg, i) => ({ leg, i })), (x) => x.i, () => {
+    const node = el("div", "leg");
+    node._mark = el("span", "mark mono");
+    node._ports = el("span", "ports");
+    node._time = el("span", "time mono");
+    node._meta = el("div", "meta");
+    const head = el("div", "leghead");
+    head.append(node._mark, node._ports, node._time);
+    node.append(head, node._meta);
+    return node;
+  }, (node, { leg, i }) => {
+    const status = state.legIndex > i ? "done" : state.legIndex === i ? "current" : "ahead";
+    setAttr(node, "data-status", status);
+    setText(node._mark, status === "done" ? "✓" : status === "current" ? "▶" : "·");
+    setText(node._ports, `${leg.fromPort} → ${leg.toPort}`);
+    const bits = [`${leg.distanceNm} nm`, `order ${leg.orderKn} kn`, (leg.weather ?? "").toUpperCase()];
+    if (leg.eca) bits.push("ECA");
+    if (leg.psc) bits.push("PSC BOARDS ON ARRIVAL");
+    if (leg.dwellMin) bits.push(`${(leg.dwellMin / 60).toFixed(leg.dwellMin % 60 ? 1 : 0)}h alongside ${leg.fromPort} first`);
+    setText(node._meta, bits.join(" · "));
+    const timeText = legScheduleText(leg, status);
+    setText(node._time, timeText);
+    setClass(node._time, "late", timeText.includes("LATE"));
+  });
 }
 
 // ---- fuel panel ---------------------------------------------------------------
@@ -733,6 +977,14 @@ function updateFuelPanel() {
 
 // ---- maintenance panel ----------------------------------------------------------
 
+// A strip-down job (service/repair on a DG) needs the engine stopped first;
+// returns the DG blocking it, or null.
+function jobBlockedByRunningDg(j) {
+  if (!j.component || (j.kind !== "service" && j.kind !== "repair")) return null;
+  const d = state.dgs.find((x) => x.id === j.component);
+  return d && (d.state === "online" || d.state === "starting" || d.state === "ready") ? d : null;
+}
+
 function buildMaintPanel() {
   const panel = el("div");
   ui.teamsLine = el("div", null);
@@ -766,13 +1018,18 @@ function updateMaintPanel() {
     setAttr(node, "data-status", j.status);
     setText(node.querySelector(".status"), j.status === "running" ? "IN HAND" : j.status.toUpperCase());
     setText(node.querySelector(".dur"), j.status === "running" ? `${Math.ceil(j.ticksLeft / 60)}h left` : `~${Math.ceil(j.durationMin / 60)}h · ${j.partsCost ?? 0}k€`);
-    setText(node.querySelector(".due"), j.status === "open" && state.tick > (j.dueTick ?? Infinity) ? "OVERDUE" : "");
+    const blocker = j.status === "open" ? jobBlockedByRunningDg(j) : null;
+    setText(node.querySelector(".due"), [
+      j.status === "open" && state.tick > (j.dueTick ?? Infinity) ? "OVERDUE" : "",
+      blocker ? `STOP ${blocker.id} FIRST` : "",
+    ].filter(Boolean).join(" · "));
     const btn = node.querySelector("button");
     if (j.status === "done") { btn.hidden = true; }
     else {
       btn.hidden = false;
       setText(btn, j.status === "running" ? "Recall team" : "Send team");
-      btn.disabled = j.status === "open" && state.teamsBusy >= state.teams;
+      btn.disabled = j.status === "open" && (state.teamsBusy >= state.teams || !!blocker);
+      btn.title = blocker ? `${blocker.id} must be stopped before the team can open it up` : "";
     }
   });
 }
@@ -1054,7 +1311,8 @@ function buildDgSheet(sh, id) {
 function fillDgSheet(sh, id) {
   const d = state.dgs.find((x) => x.id === id);
   if (!d) return;
-  setText(sh._fields.state, d.state.toUpperCase());
+  const mj = dgMaintenanceJob(state, d.id);
+  setText(sh._fields.state, mj ? "MAINTENANCE — TEAM IN" : d.state.toUpperCase());
   setText(sh._fields.load, d.state === "online" ? `${d.loadPct.toFixed(0)} % of ${d.mw} MW` : "—");
   setText(sh._fields.hours, `${Math.round(d.hours).toLocaleString()} h`);
   setText(sh._fields.cond, `${d.condition.toFixed(0)} %`);
@@ -1062,7 +1320,8 @@ function fillDgSheet(sh, id) {
   setText(sh._fields.sump, `${d.sumpPct.toFixed(0)} %`);
   sh._fields.sump.style.color = d.sumpPct < 50 ? "var(--amber)" : "";
   setText(sh._fields.fuel, d.fuel);
-  sh._btns.start.disabled = !(d.state === "stopped" || d.state === "tripped");
+  sh._btns.start.disabled = !(d.state === "stopped" || d.state === "tripped") || !!mj;
+  sh._btns.start.title = mj ? `Stripped for maintenance: ${mj.title}` : "";
   sh._btns.stop.disabled = !(d.state === "online" || d.state === "starting" || d.state === "ready");
   sh._btns.close.disabled = d.state !== "ready";
   sh._btns.open.disabled = d.state !== "online";
@@ -1282,6 +1541,8 @@ function render() {
   const panel = ui.panels[activeTab];
   if (ui.tabPanel.firstChild !== panel) ui.tabPanel.replaceChildren(panel);
   if (activeTab === "power") updatePowerPanel();
+  else if (activeTab === "oneline") updateOnelinePanel();
+  else if (activeTab === "voyage") updateVoyagePanel();
   else if (activeTab === "fuel") updateFuelPanel();
   else if (activeTab === "maint") updateMaintPanel();
   else if (activeTab === "sys") updateSysPanel();

@@ -624,7 +624,8 @@ export const MANUAL = [
     "Compliance is arithmetic, not luck: every non-compliant hour inside a zone is logged and fined at the next port. Scrubber faults inside a zone force an immediate switchover." ] },
   { id: "maintenance", title: "Maintenance & the PMS", body: [
     "Every machine carries running hours against service intervals: filters daily, injectors ~2,000 h, turbochargers ~12,000 h, major overhauls ~24,000 h. The MAINT tab is your planned-maintenance list.",
-    "Jobs need a free repair team and time; some need the ship alongside. Overdue critical jobs multiply failure risk and Port State Control counts them as deficiencies.",
+    "Jobs need a free repair team and time; some need the ship alongside. A strip-down job (service or repair on an engine) needs that engine STOPPED first — and once the team is in, the machine cannot start until they finish or you recall them.",
+    "Overdue critical jobs multiply failure risk and Port State Control counts them as deficiencies.",
     "Deferring maintenance is borrowing reliability from tomorrow — the debrief will show you the interest rate." ] },
   { id: "alarms", title: "Alarms & the annunciator", body: [
     "The tile grid is the annunciator: dark = normal, flashing = new alarm, steady = acknowledged and still active. ACK silences the flash — it does not fix the fault.",

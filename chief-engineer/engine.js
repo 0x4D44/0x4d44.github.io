@@ -812,6 +812,23 @@ function hazardMultiplier(state, pool, comp) {
 
 // ------------------------------------------------------------ jobs/teams --
 
+// A service/repair job on a DG has the team stripping the machine down: the
+// engine must be stopped to start the job and cannot run until the team
+// finishes or is recalled. LO top-ups don't immobilize.
+function jobImmobilizesDg(j) {
+  return (j.kind === "service" || j.kind === "repair") && !!j.component;
+}
+
+export function dgMaintenanceJob(state, dgId) {
+  return state.jobs.find((j) => j.status === "running" && j.component === dgId && jobImmobilizesDg(j)) ?? null;
+}
+
+function releaseDgFromMaintenance(state, j) {
+  if (!jobImmobilizesDg(j)) return;
+  const d = state.dgs.find((x) => x.id === j.component);
+  if (d && d.state === "maintenance" && !dgMaintenanceJob(state, d.id)) d.state = "stopped";
+}
+
 function stepJobs(state) {
   for (const j of state.jobs) {
     if (j.status !== "running") continue;
@@ -835,11 +852,13 @@ function applyJobEffects(state, j) {
     const d = state.dgs.find((x) => x.id === j.component);
     if (d) d.condition = clamp(d.condition + (j.conditionGain ?? 25), 0, 100);
     if (j.system) state.systems[j.system] = "ok";
+    releaseDgFromMaintenance(state, j);
   } else if (j.kind === "repair") {
     const d = state.dgs.find((x) => x.id === j.component);
     if (d && d.state === "repair") { d.state = "stopped"; d.condition = Math.max(d.condition, 60); }
     if (j.system) state.systems[j.system] = "ok";
     if (j.scrubber) state.scrubberFault = false;
+    releaseDgFromMaintenance(state, j);
   }
   state.spentParts += j.partsCost ?? 0;
 }
@@ -923,7 +942,7 @@ function objectiveMet(state, o) {
     case "eventResolved": return state.doneEvents.some((e) => e.eventId === o.eventId && e.outcome !== "casualty");
     case "tieOpen": return !state.tieClosed;
     case "tieClosed": return state.tieClosed;
-    case "sumpsTopped": return state.dgs.every((d) => d.sumpPct >= 60 || d.state === "repair");
+    case "sumpsTopped": return state.dgs.every((d) => d.sumpPct >= 60 || d.state === "repair" || d.state === "maintenance");
     case "scrubberOn": return state.scrubberOn;
     default: return false;
   }
@@ -939,6 +958,11 @@ export function applyAction(state, action) {
     case "dg.start": {
       const d = state.dgs.find((x) => x.id === a.id);
       if (!d || (d.state !== "stopped" && d.state !== "tripped")) break;
+      const mj = dgMaintenanceJob(state, d.id);
+      if (mj) {
+        logLine(state, `${d.id} is stripped for maintenance (${mj.title}) — let the team finish or recall them first.`, "warn");
+        break;
+      }
       d.state = "starting";
       d.startTicksLeft = TUNING.dgStartTicks;
       d.fuel = state.fleetFuel;
@@ -1040,6 +1064,14 @@ export function applyAction(state, action) {
       if (!j || j.status !== "open") break;
       if (state.teamsBusy >= state.teams) break;
       if (j.portOnly && !state.inPort) break;
+      if (jobImmobilizesDg(j)) {
+        const d = state.dgs.find((x) => x.id === j.component);
+        if (d && (d.state === "online" || d.state === "starting" || d.state === "ready")) {
+          logLine(state, `Can't open up ${d.id} while it's running — stop the engine first.`, "warn");
+          break;
+        }
+        if (d && (d.state === "stopped" || d.state === "tripped")) d.state = "maintenance";
+      }
       j.status = "running";
       j.ticksLeft = j.durationMin;
       state.teamsBusy += 1;
@@ -1052,6 +1084,7 @@ export function applyAction(state, action) {
       j.status = "open";
       j.ticksLeft = j.durationMin;
       state.teamsBusy -= 1;
+      releaseDgFromMaintenance(state, j);
       break;
     }
     case "event.intervene": {
@@ -1156,7 +1189,7 @@ function stepPmsAuto(state) {
   // keep N+1: start next standby when reserve < 0, stop surplus when > largest*1.2
   const reserve = spinningReserve(state);
   if (reserve < 0) {
-    const standby = state.dgs.find((d) => d.state === "stopped");
+    const standby = state.dgs.find((d) => d.state === "stopped" && !dgMaintenanceJob(state, d.id));
     if (standby) applyAction(state, { type: "dg.start", id: standby.id });
     const ready = state.dgs.find((d) => d.state === "ready");
     if (ready) applyAction(state, { type: "breaker.close", id: ready.id });

@@ -66,7 +66,13 @@ export function botStep(state) {
   const wantCapacity = need + largest + 0.3;
   if (capacity < wantCapacity) {
     const starting = state.dgs.some((d) => d.state === "starting");
-    const standby = state.dgs.find((d) => (d.state === "stopped" || d.state === "tripped") && live.has(d.board));
+    // prefer a standby with no open strip-down job against it — starting one
+    // just blocks the work list (the engine refuses job.start on a live DG)
+    const jobTargets = new Set(state.jobs
+      .filter((j) => j.status !== "done" && j.component && (j.kind === "service" || j.kind === "repair"))
+      .map((j) => j.component));
+    const standbys = state.dgs.filter((d) => (d.state === "stopped" || d.state === "tripped") && live.has(d.board));
+    const standby = standbys.find((d) => !jobTargets.has(d.id)) ?? standbys[0];
     if (!starting && standby) actions.push({ type: "dg.start", id: standby.id });
   } else if (online.length > 1) {
     // drop the smallest if the rest still hold N+1 against need
@@ -132,12 +138,30 @@ export function botStep(state) {
     if (!state.securedForWeather) actions.push({ type: "weather.secure" });
   }
 
-  // 8. jobs: keep the teams busy, critical/due first, storm-prep top-ups early
+  // 8. jobs: keep the teams busy, critical/due first, storm-prep top-ups early.
+  //    A strip-down job needs its DG stopped: stand it down first, but only
+  //    when the rest of the lineup still holds N+1 without it.
   if (state.teamsBusy < state.teams) {
     const open = state.jobs.filter((j) => j.status === "open");
     const anyStormAhead = lv.route.slice(state.legIndex).some((l) => l.weather === "storm" || l.weather === "rough");
     open.sort((a, b) => jobPriority(b, anyStormAhead, state) - jobPriority(a, anyStormAhead, state));
-    if (open.length) actions.push({ type: "job.start", jobId: open[0].id });
+    for (const j of open) {
+      const target = j.component && (j.kind === "service" || j.kind === "repair")
+        ? state.dgs.find((x) => x.id === j.component) : null;
+      if (target && (target.state === "online" || target.state === "starting" || target.state === "ready")) {
+        const rest = online.filter((x) => x.id !== target.id);
+        const restCap = rest.reduce((sum, x) => sum + x.mw, 0);
+        const restLargest = rest.length ? Math.max(...rest.map((x) => x.mw)) : 0;
+        // alongside, only the hotel matters; at sea, keep N+1 without it
+        const coverNeed = state.inPort ? totalDemandMw(state) + 0.5 : need + restLargest + 0.5;
+        if (restCap >= coverNeed) actions.push({ type: "dg.stop", id: target.id });
+        continue; // job waits until the machine is down
+      }
+      // unshift: the job must claim the machine before this tick's lineup
+      // logic can restart it as a standby
+      actions.unshift({ type: "job.start", jobId: j.id });
+      break;
+    }
   }
 
   // 9. bunkering: in a priced port, fill up (owner's account; burn is scored)

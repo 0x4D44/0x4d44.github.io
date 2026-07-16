@@ -195,6 +195,44 @@ assert.ok(sfoc(30) > sfoc(80) + 10, "SFOC worse at low load");
   assert.ok(margin < 100, `margin must not count the 140t of unusable MGO (got ${margin.toFixed(0)})`);
 }
 
+// ---- maintenance immobilizes the DG (review: overhaul team vs START button) ----
+{
+  const s = createVoyage("L3", 17); // DG2 stopped, j-dg2-inj is a service job on it
+  applyAction(s, { type: "job.start", jobId: "j-dg2-inj" });
+  assert.equal(s.jobs.find((j) => j.id === "j-dg2-inj").status, "running");
+  assert.equal(s.dgs[1].state, "maintenance", "strip-down takes the DG out of service");
+  applyAction(s, { type: "dg.start", id: "DG2" });
+  assert.equal(s.dgs[1].state, "maintenance", "a stripped engine refuses to start");
+  while (s.jobs.find((j) => j.id === "j-dg2-inj").status === "running") tick(s);
+  assert.equal(s.dgs[1].state, "stopped", "job done hands the machine back");
+  applyAction(s, { type: "dg.start", id: "DG2" });
+  assert.equal(s.dgs[1].state, "starting", "and it starts normally afterwards");
+}
+
+// ---- strip-down refused on a running engine; recall releases it ---------------
+{
+  const s = createVoyage("L3", 18);
+  applyAction(s, { type: "dg.start", id: "DG2" });
+  for (let i = 0; i < 5; i++) tick(s);
+  applyAction(s, { type: "breaker.close", id: "DG2" });
+  tick(s);
+  assert.equal(s.dgs[1].state, "online");
+  applyAction(s, { type: "job.start", jobId: "j-dg2-inj" });
+  assert.equal(s.jobs.find((j) => j.id === "j-dg2-inj").status, "open",
+    "team refuses to strip a running engine");
+  assert.equal(s.teamsBusy, 0);
+  applyAction(s, { type: "dg.stop", id: "DG2" });
+  applyAction(s, { type: "job.start", jobId: "j-dg2-inj" });
+  assert.equal(s.dgs[1].state, "maintenance");
+  applyAction(s, { type: "job.cancel", jobId: "j-dg2-inj" });
+  assert.equal(s.dgs[1].state, "stopped", "recalling the team boxes the engine back up");
+  // lo-topups do NOT immobilize: L4's DG12 top-up runs while DG12 is stopped/online
+  const l4 = createVoyage("L4", 18);
+  applyAction(l4, { type: "job.start", jobId: "j-lo-dg12" });
+  assert.notEqual(l4.dgs.find((d) => d.id === "DG12").state, "maintenance",
+    "an LO top-up doesn't take the machine out of service");
+}
+
 // ---- schema marker present ----------------------------------------------------
 assert.equal(createVoyage("L1", 1).schema, ENGINE_SCHEMA);
 
