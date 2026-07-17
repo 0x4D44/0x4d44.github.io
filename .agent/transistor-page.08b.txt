@@ -1,0 +1,23 @@
+        <text class="pkg-print" x="0" y="${(r*.20).toFixed(2)}" font-size="${Math.max(.38,w*.075).toFixed(2)}">${pkg.short}</text>`;
+    } else if (pkg.kind === "dpak") {
+      art = `${shadow}
+        <rect class="pkg-metal" x="${-w*.34}" y="${-h*.58}" width="${w*.68}" height="${h*.30}" rx=".12"/>
+        <rect class="pkg-lead" x="${-w*.38}" y="${h*.30}" width="${w*.18}" height="${h*.42}" rx=".08"/>
+        <rect class="pkg-lead" x="${w*.20}" y="${h*.30}" width="${w*.18}" height="${h*.42}" rx=".08"/>
+        <rect class="pkg-plastic" x="${-w/2}" y="${-h*.30}" width="${w}" height="${h*.72}" rx=".20"/>
+        <path class="pkg-glint" d="M ${-w*.37} ${-h*.20} H ${w*.24} Q ${w*.39} ${-h*.20} ${w*.41} ${-h*.05} H ${-w*.37} Z"/>
+        <text class="pkg-print" x="0" y="${h*.09}" font-size="${Math.max(.62,w*.11).toFixed(2)}">DPAK</text>`;
+    } else if (pkg.kind === "power") {
+      const hole = Math.min(w,h)*.11;
+      const tabH = h*.35;
+      const plasticTop = -h/2 + tabH*.72;
+      const plasticH = h*.63;
+      art = `${shadow}${leadRects(w, h*.72, 3, compact ? Math.min(4,h*.23) : Math.min(6,h*.31))}
+        <rect class="pkg-metal" x="${-w/2}" y="${-h/2}" width="${w}" height="${tabH}" rx="${Math.min(.55,w*.05)}"/>
+        <circle class="pkg-hole" cx="0" cy="${(-h/2+tabH*.48).toFixed(2)}" r="${hole.toFixed(2)}"/>
+        <rect class="pkg-plastic" x="${-w/2}" y="${plasticTop.toFixed(2)}" width="${w}" height="${plasticH.toFixed(2)}" rx="${Math.min(.55,w*.045)}"/>
+        <path class="pkg-glint" d="M ${-w*.38} ${plasticTop+h*.08} H ${w*.25} Q ${w*.39} ${plasticTop+h*.08} ${w*.40} ${plasticTop+h*.16} H ${-w*.38} Z"/>
+        <text class="pkg-print" x="0" y="${(h*.13).toFixed(2)}" font-size="${Math.max(.65,Math.min(w*.12,1.45)).toFixed(2)}">${pkg.short}</text>`;
+    } else if (pkg.kind === "to3") {
+      const canW = w*.58, canH = h*.73;
+      art = `${shadow}
