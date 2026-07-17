@@ -1,0 +1,84 @@
+        <div class="hero-coin"></div>
+        <svg class="hero-to3" viewBox="0 0 520 330" role="img" aria-label="A stylised TO-3 transistor package floating over a two pound coin">
+          <defs>
+            <linearGradient id="heroMetal" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f5f7f7"/><stop offset=".22" stop-color="#aab4b7"/><stop offset=".5" stop-color="#e9eeee"/><stop offset=".73" stop-color="#6d7a80"/><stop offset="1" stop-color="#c6d0d3"/>
+            </linearGradient>
+            <radialGradient id="heroCan" cx="34%" cy="25%" r="82%">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".24" stop-color="#c9d1d4"/><stop offset=".62" stop-color="#7a868b"/><stop offset="1" stop-color="#e2e7e8"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="260" cy="264" rx="210" ry="40" fill="rgba(0,0,0,.36)"/>
+          <path d="M55 95 Q55 62 90 62 H430 Q465 62 465 95 V238 Q465 270 430 270 H90 Q55 270 55 238 Z" fill="url(#heroMetal)" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+          <ellipse cx="260" cy="162" rx="127" ry="97" fill="url(#heroCan)" stroke="rgba(255,255,255,.75)" stroke-width="3"/>
+          <ellipse cx="260" cy="162" rx="107" ry="78" fill="none" stroke="rgba(44,55,60,.22)" stroke-width="3"/>
+          <circle cx="93" cy="166" r="25" fill="#10161a" stroke="rgba(255,255,255,.68)" stroke-width="3"/>
+          <circle cx="427" cy="166" r="25" fill="#10161a" stroke="rgba(255,255,255,.68)" stroke-width="3"/>
+          <circle cx="214" cy="210" r="13" fill="#11181c" stroke="rgba(255,255,255,.65)" stroke-width="2"/>
+          <circle cx="306" cy="210" r="13" fill="#11181c" stroke="rgba(255,255,255,.65)" stroke-width="2"/>
+          <path d="M169 103 Q260 54 351 103" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="5" stroke-linecap="round"/>
+          <text x="260" y="148" fill="rgba(25,34,38,.56)" font-family="ui-monospace,monospace" font-weight="800" font-size="37" text-anchor="middle">2N3055</text>
+          <text x="260" y="182" fill="rgba(25,34,38,.48)" font-family="ui-monospace,monospace" font-weight="700" font-size="21" text-anchor="middle">TO-3</text>
+        </svg>
+        <div class="hero-scale"><strong>63×</strong><span>difference between the smallest and largest body span in this atlas</span></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="workbench" id="compare" aria-labelledby="compare-title">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">The comparison bench</p>
+          <h2 id="compare-title">Put the part in your pocket.</h2>
+        </div>
+        <p>Choose a package and a coin. The two drawings share one coordinate system, so their relative dimensions remain exact while you zoom, drag and switch views. Leads are shown for recognition; the quoted measurements are the package body envelope.</p>
+      </div>
+
+      <div class="control-deck">
+        <div class="deck-strip"><span>instrument 01 · optical comparator</span><span class="status">● dimensional lock</span></div>
+        <div class="deck-controls">
+          <fieldset>
+            <legend>Transistor package</legend>
+            <div class="chip-rail" id="packageRail"></div>
+          </fieldset>
+          <fieldset>
+            <legend>UK coin</legend>
+            <div class="chip-rail" id="coinRail"></div>
+          </fieldset>
+          <div class="mini-controls">
+            <fieldset>
+              <legend>View</legend>
+              <div class="segmented" id="viewModes">
+                <button type="button" data-mode="studio" aria-pressed="true">studio</button>
+                <button type="button" data-mode="blueprint" aria-pressed="false">blueprint</button>
+                <button type="button" data-mode="ghost" aria-pressed="false">ghost coin</button>
+              </div>
+            </fieldset>
+            <label>
+              <span class="control-label">Magnification</span>
+              <span class="zoom-control"><span aria-hidden="true">−</span><input id="zoomRange" type="range" min="70" max="220" value="100" step="5"><output id="zoomOutput" for="zoomRange">100%</output></span>
+            </label>
+            <div>
+              <span class="control-label">Tools</span>
+              <div class="tool-row">
+                <button type="button" class="tool-button" id="dimensionsButton" aria-pressed="true">dimensions</button>
+                <button type="button" class="tool-button" id="resetButton">centre part</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bench-grid">
+        <div class="stage-card">
+          <div class="stage-topline"><strong id="stageTitle">TO-18 over a 5p</strong><span>drag the package · ratio stays locked</span></div>
+          <div class="stage-wrap">
+            <svg id="compareStage" data-mode="studio" viewBox="-20 -20 40 40" role="img" aria-labelledby="stageSvgTitle stageSvgDesc">
+              <title id="stageSvgTitle">Transistor package and UK coin size comparison</title>
+              <desc id="stageSvgDesc">A dimensionally scaled transistor package laid over a UK coin. Choose controls above to change either object.</desc>
+              <defs>
+                <linearGradient id="coinCopper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0b17e"/><stop offset=".2" stop-color="#bb6b3a"/><stop offset=".52" stop-color="#de9360"/><stop offset=".76" stop-color="#8e4728"/><stop offset="1" stop-color="#d58b59"/></linearGradient>
+                <linearGradient id="coinSilver" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f8f8"/><stop offset=".18" stop-color="#aeb9bd"/><stop offset=".48" stop-color="#e3e8e9"/><stop offset=".72" stop-color="#7c898f"/><stop offset="1" stop-color="#c8d0d3"/></linearGradient>
+                <linearGradient id="coinGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1d487"/><stop offset=".2" stop-color="#c58c2f"/><stop offset=".48" stop-color="#e7c464"/><stop offset=".75" stop-color="#a86f20"/><stop offset="1" stop-color="#d9ae4f"/></linearGradient>
+                <linearGradient id="blackPlastic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a454a"/><stop offset=".18" stop-color="#171f23"/><stop offset=".62" stop-color="#080d10"/><stop offset="1" stop-color="#273137"/></linearGradient>
