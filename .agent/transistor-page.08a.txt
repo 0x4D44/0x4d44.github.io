@@ -1,0 +1,19 @@
+        <rect class="pkg-plastic" x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx=".16"/>
+        <path class="pkg-glint" d="M ${-w*.36} ${-h*.35} H ${w*.15} Q ${w*.34} ${-h*.35} ${w*.38} ${-h*.16} H ${-w*.36} Z"/>
+        <circle class="pkg-print" cx="${-w*.28}" cy="${-h*.12}" r=".09"/>`;
+    } else if (pkg.kind === "to92") {
+      const bodyTop = -h/2;
+      art = `${shadow}${leadRects(w, h, 3, compact ? 1.3 : 2.2)}
+        <path class="pkg-plastic" d="M ${-w/2} ${h/2} V ${(-h*.08).toFixed(2)} A ${w/2} ${h*.56} 0 0 1 ${w/2} ${(-h*.08).toFixed(2)} V ${h/2} Z"/>
+        <path class="pkg-glint" d="M ${-w*.34} ${bodyTop+h*.18} Q 0 ${bodyTop-h*.02} ${w*.25} ${bodyTop+h*.18} L ${w*.25} ${bodyTop+h*.38} Q 0 ${bodyTop+h*.22} ${-w*.34} ${bodyTop+h*.42} Z"/>
+        <text class="pkg-print" x="0" y="${(h*.18).toFixed(2)}" font-size="${Math.max(.48,w*.12).toFixed(2)}">${compact ? "TO92" : "BC547"}</text>`;
+    } else if (pkg.kind === "can") {
+      const r = w/2;
+      const pinR = Math.max(.22, w*.045);
+      art = `${shadow}
+        <circle class="pkg-lead" cx="${-w*.16}" cy="${h*.33}" r="${pinR}"/><circle class="pkg-lead" cx="${w*.18}" cy="${h*.31}" r="${pinR}"/><circle class="pkg-lead" cx="0" cy="${h*.38}" r="${pinR}"/>
+        <circle class="pkg-metal-dark" r="${r}"/>
+        <circle class="pkg-metal" r="${(r*.87).toFixed(3)}"/>
+        <path class="pkg-glint" d="M ${-r*.55} ${-r*.28} A ${r*.68} ${r*.68} 0 0 1 ${r*.28} ${-r*.60} A ${r*.78} ${r*.78} 0 0 0 ${-r*.44} ${-r*.06} Z"/>
+        <path class="pkg-metal-dark" d="M ${(-r*.17).toFixed(2)} ${(-r*.98).toFixed(2)} L ${(r*.17).toFixed(2)} ${(-r*.98).toFixed(2)} L ${(r*.11).toFixed(2)} ${(-r*.80).toFixed(2)} L ${(-r*.11).toFixed(2)} ${(-r*.80).toFixed(2)} Z"/>
+        <text class="pkg-print" x="0" y="${(-r*.04).toFixed(2)}" font-size="${Math.max(.55,w*.12).toFixed(2)}">${pkg.id === "to18" ? "BC107" : "2N2219"}</text>
