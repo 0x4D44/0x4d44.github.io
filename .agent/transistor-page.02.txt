@@ -1,0 +1,121 @@
+  .metric strong.amber { color: var(--amber); }
+  .verdict {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid rgba(255,189,89,.28);
+    border-radius: 12px;
+    background: var(--amber-soft);
+    color: #f7dfb7;
+  }
+  .verdict-label { display: block; margin-bottom: 6px; color: var(--amber); font: 800 .65rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  .readout-note { margin-top: auto; padding-top: 20px; color: var(--faint); font: .66rem/1.45 var(--mono); }
+
+  /* SVG artwork */
+  .stage-grid-minor { stroke: rgba(170,205,219,.055); stroke-width: .08; }
+  .stage-grid-major { stroke: rgba(170,205,219,.12); stroke-width: .11; }
+  .stage-axis { stroke: rgba(103,232,249,.2); stroke-width: .12; stroke-dasharray: .45 .55; }
+  .coin-shadow { fill: rgba(0,0,0,.42); filter: blur(.55px); }
+  .coin-face { stroke: rgba(255,255,255,.62); stroke-width: .15; }
+  .coin-ring { fill: none; stroke: rgba(255,255,255,.26); stroke-width: .22; }
+  .coin-mark { fill: rgba(18,27,32,.42); stroke: rgba(255,255,255,.16); stroke-width: .08; }
+  .coin-text { fill: rgba(24,31,34,.52); font-family: var(--mono); font-weight: 800; text-anchor: middle; dominant-baseline: middle; }
+  .coin-microtext { fill: rgba(24,31,34,.42); font-family: var(--mono); font-weight: 700; text-anchor: middle; letter-spacing: .08em; }
+  .coin-copper { fill: url(#coinCopper); }
+  .coin-silver { fill: url(#coinSilver); }
+  .coin-gold { fill: url(#coinGold); }
+  .coin-inner-silver { fill: url(#coinSilver); }
+  .coin-inner-gold { fill: url(#coinGold); }
+  .pkg-shadow { fill: rgba(0,0,0,.52); filter: url(#softShadow); }
+  .pkg-plastic { fill: url(#blackPlastic); stroke: rgba(255,255,255,.34); stroke-width: .12; }
+  .pkg-plastic-edge { fill: #10161a; stroke: rgba(255,255,255,.17); stroke-width: .1; }
+  .pkg-metal { fill: url(#brushedMetal); stroke: rgba(255,255,255,.62); stroke-width: .13; }
+  .pkg-metal-dark { fill: url(#darkMetal); stroke: rgba(255,255,255,.4); stroke-width: .12; }
+  .pkg-lead, .pkg-pad { fill: url(#leadMetal); stroke: rgba(255,255,255,.5); stroke-width: .09; }
+  .pkg-hole { fill: #071018; stroke: rgba(255,255,255,.5); stroke-width: .12; }
+  .pkg-print { fill: rgba(240,247,249,.68); font-family: var(--mono); font-weight: 700; text-anchor: middle; }
+  .pkg-glint { fill: rgba(255,255,255,.18); }
+  .drag-hit { fill: transparent; pointer-events: all; }
+  .dimension-line { fill: none; stroke: var(--cyan); stroke-width: .13; vector-effect: non-scaling-stroke; }
+  .dimension-ext { fill: none; stroke: rgba(103,232,249,.5); stroke-width: .09; stroke-dasharray: .28 .24; }
+  .dimension-text { fill: var(--cyan); font-family: var(--mono); font-size: 1.05px; font-weight: 800; paint-order: stroke; stroke: #071018; stroke-width: .35px; stroke-linejoin: round; }
+  .coin-dim { fill: rgba(237,244,247,.68); font-family: var(--mono); font-size: .95px; font-weight: 700; paint-order: stroke; stroke: #071018; stroke-width: .3px; }
+  .stage-label { fill: rgba(237,244,247,.56); font-family: var(--mono); font-size: .8px; font-weight: 700; letter-spacing: .04em; }
+  #compareStage[data-mode="blueprint"] .coin-face,
+  #compareStage[data-mode="blueprint"] .coin-inner-silver,
+  #compareStage[data-mode="blueprint"] .coin-inner-gold { fill: rgba(103,232,249,.035); stroke: rgba(103,232,249,.6); }
+  #compareStage[data-mode="blueprint"] .coin-ring,
+  #compareStage[data-mode="blueprint"] .coin-mark { fill: none; stroke: rgba(103,232,249,.38); }
+  #compareStage[data-mode="blueprint"] .coin-text,
+  #compareStage[data-mode="blueprint"] .coin-microtext { fill: rgba(103,232,249,.52); }
+  #compareStage[data-mode="blueprint"] .pkg-plastic,
+  #compareStage[data-mode="blueprint"] .pkg-plastic-edge,
+  #compareStage[data-mode="blueprint"] .pkg-metal,
+  #compareStage[data-mode="blueprint"] .pkg-metal-dark,
+  #compareStage[data-mode="blueprint"] .pkg-lead,
+  #compareStage[data-mode="blueprint"] .pkg-pad {
+    fill: rgba(255,189,89,.035);
+    stroke: rgba(255,189,89,.9);
+    stroke-width: .14;
+  }
+  #compareStage[data-mode="blueprint"] .pkg-print { fill: rgba(255,189,89,.72); }
+  #compareStage[data-mode="blueprint"] .pkg-shadow,
+  #compareStage[data-mode="blueprint"] .coin-shadow,
+  #compareStage[data-mode="blueprint"] .pkg-glint { display: none; }
+  #compareStage[data-mode="ghost"] #coinLayer { opacity: .28; }
+  #compareStage[data-mode="ghost"] #packageLayer { opacity: .94; }
+  #compareStage[data-mode="studio"] #coinLayer { opacity: .78; }
+
+  .calibration {
+    background: linear-gradient(180deg, rgba(255,255,255,.015), transparent);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .cal-grid { display: grid; grid-template-columns: minmax(0, .82fr) minmax(420px, 1.18fr); gap: 22px; }
+  .cal-card { padding: 24px; }
+  .cal-card h3 { margin: 0 0 8px; font-size: 1.5rem; }
+  .cal-card p { color: var(--muted); margin: 0; }
+  .cal-controls { margin-top: 22px; }
+  .cal-controls input { width: 100%; accent-color: var(--cyan); }
+  .cal-readout { display: flex; justify-content: space-between; margin-top: 7px; color: var(--faint); font: .68rem/1 var(--mono); }
+  .cal-readout strong { color: var(--cyan); }
+  .actual-stage {
+    position: relative;
+    min-height: 322px;
+    display: grid;
+    place-items: center;
+    overflow: auto;
+    background:
+      linear-gradient(rgba(103,232,249,.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(103,232,249,.055) 1px, transparent 1px),
+      #091017;
+    background-size: 10px 10px;
+  }
+  #actualSizeSvg { display: block; overflow: visible; }
+  .actual-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(5,9,12,.82);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font: 700 .66rem/1 var(--mono);
+  }
+  .actual-badge strong { color: var(--green); }
+
+  .sweep-intro { padding-bottom: 30px; }
+  .coin-sweep {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .sweep-card {
+    position: relative;
+    padding: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+  }
+  .sweep-card:hover { transform: translateY(-4px); border-color: var(--line-bright); background: var(--panel-2); }
+  .sweep-card[aria-current="true"] { border-color: rgba(103,232,249,.55); box-shadow: 0 0 0 3px var(--cyan-soft), var(--shadow); }
