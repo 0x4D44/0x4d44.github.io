@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Reckoning — Costa Concordia, Chapter 7</title>
+<meta name="description" content="Could the Costa Concordia have been saved? Six counterfactuals tested — including heading straight for the rocks — then the trials, the billion-euro parbuckling salvage, and what the rules of the sea learned.">
+<link rel="stylesheet" href="cc.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">COSTA CONCORDIA</a></div>
+    <div class="strap">anatomy of a shipwreck — an interactive investigation</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="collision.html">1 · The Salute</a>
+    <a href="flooding.html">2 · The Wound</a>
+    <a href="blackout.html">3 · The Blackout</a>
+    <a href="drift.html">4 · The Drift</a>
+    <a href="bridge.html">5 · The Bridge</a>
+    <a href="evacuation.html">6 · The Abandonment</a>
+    <a href="verdict.html" aria-current="page">7 · The Reckoning</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 7 · what if, and what came after</p>
+  <h1>The Reckoning</h1>
+  <p class="standfirst">Could the ship have been saved? Could the people? The disaster
+  invites counterfactuals the way the wreck invited salvors — so here they are, tested
+  honestly, followed by the trials, the biggest salvage in maritime history, and what
+  the rulebook learned from thirty-two deaths.</p>
+</section>
+
+<section class="prose">
+
+<h2><span class="no">7.1</span>First, the hard truth</h2>
+
+<p>Separate two questions that the night usually blurs. <strong>Could the ship have
+been saved?</strong> After 21:45:07 — no. A two-compartment ship with five compartments
+open to the sea has no naval-architecture escape: no pump, no door, no manoeuvre
+changes the arithmetic of Chapter 2. Every path to saving the <em>ship</em> runs
+through the seconds <em>before</em> the impact. <strong>Could the people have been
+saved — all of them?</strong> Almost certainly yes. The ship took an hour to develop a
+list that boats couldn't handle, grounded 400 m from a harbour, and stayed
+half-dry for years. A prompt alarm, an honest report and an early, orderly
+abandonment put 4,229 people ashore with wet shoes. The 32 deaths were bought
+minute by minute on the bridge, not at the waterline.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Six other nights — pick one</span>
+    <span class="hint">each card changes one decision; the panel gives the most defensible outcome</span>
+  </div>
+  <div class="fig-body" style="padding:16px">
+    <div class="scenarios" id="scen-cards" style="margin:0"></div>
+    <div class="verdict-panel" id="scen-panel" style="margin-bottom:6px"></div>
+    <div class="fig-body" style="padding:0">
+      <canvas id="scen-cv" style="aspect-ratio: 3.2 / 1; min-height: 150px; touch-action: pan-y;"></canvas>
+    </div>
+  </div>
+  <div class="fig-note">Verdicts follow the MIT investigation, the court record and standard
+  damage-stability reasoning; where experts disagree (the helm error) the panel says so.
+  The strip below each verdict sketches the hull and which compartments flood.</div>
+</figure>
+
+<h2><span class="no">7.2</span>The one everyone asks: why not ram the rocks bow-on?</h2>
+
+<p>It sounds mad, and no mariner would choose it in the moment — but the naval
+architecture is unambiguous, and it is the same lesson taught by the Titanic for a
+century: <strong>big ships are armoured against ends-on collisions and naked against
+raking ones.</strong> The bow is a designed crumple zone backed by the collision
+bulkhead, the strongest transverse wall in the ship, placed by rule close behind
+the stem precisely so that a head-on strike crushes storerooms and void spaces and
+floods, at worst, a compartment or two — well inside the two-compartment envelope.
+A 15-knot bow-on strike at Le Scole would have hurled people off their feet,
+wrecked thirty metres of bow, injured dozens — and left the Costa Concordia
+floating, lit, upright, and probably capable of backing off under her own power to
+wait for tugs. The fatal choice was not hitting the rock; it was hitting it
+<em>sideways</em>, which is what a too-late turn does: it swaps a survivable
+head wound for an unsurvivable opened flank. (To be precise: Schettino was right
+to try to turn once escape was possible — the criminal error was needing the turn
+at all.)</p>
+
+<h2><span class="no">7.3</span>The trials</h2>
+
+<p>Italy resolved the criminal case in two unequal parts. Five members of the
+ship's and company's staff were allowed plea bargains in July 2013 — suspended
+sentences, no prison — which left Francesco Schettino to stand trial alone in
+Grosseto, in a courtroom that was sometimes a converted theatre. He was convicted
+in February 2015; the sentence survived appeal in 2016 and became final at the
+Court of Cassation in May 2017, whereupon he reported to Rebibbia prison in Rome.
+(He was granted early release in 2025, having served just under eight years.)
+Costa Crociere the company was never criminally tried: it settled its corporate
+(administrative) liability for a €1 million fine in April 2013 — a number many
+survivors found harder to accept than any verdict.</p>
+
+<table class="data">
+  <caption>The criminal ledger</caption>
+  <tr><th>Person</th><th>Role on the night</th><th>Outcome</th></tr>
+  <tr><td class="k">Francesco Schettino</td><td>Master</td><td class="num">16 years: 10 (manslaughter) + 5 (causing the wreck) + 1 (abandoning ship) — final 2017</td></tr>
+  <tr><td class="k">Roberto Ferrarini</td><td>Costa fleet crisis co-ordinator</td><td class="num">2 y 10 m, plea bargain, suspended</td></tr>
+  <tr><td class="k">Manrico Giampedroni</td><td>Hotel / cabin-service director</td><td class="num">2 y 6 m, plea bargain, suspended</td></tr>
+  <tr><td class="k">Ciro Ambrosio</td><td>First officer</td><td class="num">1 y 11 m, plea bargain, suspended</td></tr>
+  <tr><td class="k">Jacob Rusli Bin</td><td>Helmsman</td><td class="num">1 y 8 m, plea bargain, suspended</td></tr>
+  <tr><td class="k">Silvia Coronica</td><td>Third officer</td><td class="num">1 y 6 m, plea bargain, suspended</td></tr>
+  <tr><td class="k">Costa Crociere S.p.A.</td><td>Operator</td><td class="num">€1,000,000 administrative fine (2013)</td></tr>
+</table>
+
+<h2><span class="no">7.4</span>Righting a fallen city: the salvage</h2>
+
+<p>What do you do with 114,000 tonnes of capsized cruise ship lying on two rock
+spurs at the edge of a 70-metre drop, inside a marine national park? The answer
+took thirty months, some 500 workers from 26 nations, and on the order of
+<strong>€1.5 billion</strong> — several times the ship's build cost, and the largest
+maritime salvage ever attempted. The centrepiece, in September 2013, was the
+<em>parbuckling</em>: rotating the entire wreck upright in one continuous 19-hour
+pull, using 36 strand jacks hauling on cables anchored to the seabed and to
+steel sponsons welded to her port side, easing her down onto six purpose-built
+undersea platforms. Ten months later, thirty refloated sponsons — fifteen a side —
+lifted her off the platforms like water wings, and she left Giglio under tow on
+23 July 2014, four ships and a convoy of escorts around her, for Genoa and the
+breakers. The last steel was recycled in July 2017. Nothing remains at Punta
+Gabbianara but the memorial plaque ashore.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The parbuckling, stage by stage</span>
+    <span class="hint">drag the slider to right the wreck yourself</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="parb" style="aspect-ratio: 2.2 / 1; min-height: 300px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="parb-log"></div>
+  <div class="fig-controls">
+    <div class="ctl" style="flex:1 1 300px">
+      <label for="parb-s">salvage progress</label>
+      <input type="range" id="parb-s" min="0" max="100" step="0.5" value="0" style="flex:1">
+      <output>stage 1</output>
+    </div>
+  </div>
+  <div class="fig-note">Cross-section at Punta Gabbianara, looking north. The parbuckling
+  itself — stage 3 — moved the wreck through 65° in 19 hours on 16–17 September 2013,
+  slowly enough that the motion was invisible to the eye: only the clicking of the strand
+  jacks and the groan of steel marked the largest object humans have ever rolled.</div>
+</figure>
+
+<h2><span class="no">7.5</span>What the rules learned</h2>
+
+<ul>
+  <li><strong>Muster before sailing.</strong> The 24-hour drill window died within weeks
+  (industry policy 2012, SOLAS law 2015): every passenger now musters before or at
+  departure. The 696 who had no drill are the reason.</li>
+  <li><strong>Passage plans with teeth.</strong> Company and flag oversight of routes,
+  berth-to-berth planning, and explicit authorisation for any deviation — the
+  “salute” as a private captain's prerogative is dead on paper everywhere.</li>
+  <li><strong>Harder ships.</strong> SOLAS 2020 damage-stability amendments raised the
+  required subdivision index for new passenger ships — pushing designs toward
+  surviving more, and more awkward, flooding; “Safe Return to Port” (2010) already
+  demanded separated redundancy for new builds. The Concordia's anatomy — every
+  megawatt in five adjacent compartments — is no longer buildable.</li>
+  <li><strong>Count and track everyone.</strong> Reforms tightened passenger counting,
+  lifejacket stowage at muster stations and evacuation analysis, after a night on
+  which the shore never once had an accurate number for how many souls it was
+  saving.</li>
+  <li><strong>Bridge discipline.</strong> Costa (and the industry) moved to stricter
+  bridge-access rules and BRM enforcement. Whether culture followed paper is the
+  open question every safety regime lives with.</li>
+</ul>
+
+<div class="callout story">
+  <span class="tag">The epitaph</span>
+  <p>The Costa Concordia was lost to the oldest sequence in seafaring — showing off,
+  too fast, too close — and her people were failed by the newest: an organisation
+  that could not say a true thing quickly. Between the two stands everything this
+  site has tried to show: that a modern ship is a system of margins, and that every
+  margin, steel or human, was spent that night before it was needed. The sea, as
+  ever, billed the difference.</p>
+</div>
+
+<h2 id="sources"><span class="no">7.6</span>Sources</h2>
+
+<p style="font-size:15px">Primary and principal sources used across all chapters:</p>
+<ul style="font-size:14.5px">
+  <li>Italian Ministry of Infrastructures and Transports (MIT), <a href="https://www.transportes.gob.es/recursos_mfom/2012costaconcordia.pdf">Marine casualty safety investigation report — C/S Costa Concordia, 13 January 2012</a> (English edition, 2013): timings, damage extent, compartment contents, electrical-plant annex, causes and recommendations.</li>
+  <li>Capt. Michael Lloyd RD** MNM CMMar FNI, <a href="https://www.mastermariners.org.au/images/_THE_SINKING_OF_A_SHIP-COSTA_CONCORDIA.pdf"><em>The Sinking of a Ship — Costa Concordia Revisited</em></a>: VDR order sequence, watertight-door and lifesaving analysis, abandonment timeline.</li>
+  <li>Gubian, Piccinelli, Neri, Neri &amp; Giurlanda (2015), <em>The Disaster of Costa Concordia Cruise Ship: An Accurate Reconstruction Based on Black Box and Automation System Data</em>: the quantitative case for re-examining the helm error.</li>
+  <li><a href="https://en.wikipedia.org/wiki/Costa_Concordia_disaster">Wikipedia: Costa Concordia disaster</a> and <a href="https://en.wikipedia.org/wiki/Costa_Concordia">Costa Concordia</a> — casualty figures, salvage chronology, trial outcomes (verified against press of record).</li>
+  <li><a href="https://maritime-executive.com/article/Italys-MIT-Releases-Costa-Concordias-Safety-Technical-Investigation-Report-2013-05-24">The Maritime Executive</a> and <a href="https://www.seatrade-cruise.com/safety-security/costa-concordia-casualty-probe-pinpoints-series-of-human-failures">Seatrade Cruise News</a> on the MIT report's findings; the widely published De Falco–Schettino call transcript.</li>
+</ul>
+<p style="font-size:14px; color:var(--muted)">Interactive reconstructions on this site are
+illustrative models tuned to the published record, not survey data; where numbers are
+estimates (flood volumes, drift speeds, davit behaviour) the captions say so.
+Built by Claude for the 0x4D44 almanac, July 2026.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="evacuation.html"><span class="dir">← Chapter 6</span><span class="title">The Abandonment</span></a>
+  <a class="next" href="./"><span class="dir">Overview</span><span class="title">The Wreck of the Costa Concordia</span></a>
+</nav>
+
+</main>
+
+<script src="cc-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, canvas, slider, label, line, clamp, lerp, ease, mono } = CC;
+
+  /* ---- six other nights ---- */
+  const SCEN = [
+    {
+      id: "perfect", title: "The helm answers perfectly",
+      blurb: "Rusli Bin puts the wheel to port on the first order, no 8-second error.",
+      verdict: ["maybe", "PROBABLY STILL WRECKED — DISPUTED"],
+      text: "The court's experts held the contact inevitable by 21:44:45: the ship was inside her own turning distance at 15.9 knots. The 2015 black-box reconstruction argues the margin was tens of metres and deserved real modelling. Best case, the stern-kick shortens the tear — perhaps three compartments instead of five. Still a blackout, still an evacuation; possibly a ship that settles slowly enough to empty. A softer catastrophe, not salvation.",
+      flood: [4, 5, 6], note: "shorter tear — maybe 3 compartments",
+    },
+    {
+      id: "earlier", title: "The turn comes 15 seconds sooner",
+      blurb: "Le Scole spotted at 21:43:50; starboard helm at 0.4 nm instead of 0.3.",
+      verdict: ["saved", "CLEARS THE ROCKS"],
+      text: "Fifteen seconds is 120 metres, and 0.4 nm is just outside the turning-distance trap of Chapter 1. The ship shaves past Le Scole with a scare, the salute completes, 4,229 people never learn the night was interesting. This is the terrifying scenario: it shows how close 'nothing happened' sat to 32 dead — and why the practice, not the luck, was the crime.",
+      flood: [], note: "no contact — a near-miss nobody reports",
+    },
+    {
+      id: "ram", title: "She rams Le Scole bow-on",
+      blurb: "No turn at all: 15.9 knots, stem first into the rocks.",
+      verdict: ["saved", "SHIP SURVIVES — INJURIES FORWARD"],
+      text: "The bow crumples over tens of metres and the collision bulkhead — the strongest wall in the ship, placed for exactly this — holds the sea to one or two forward compartments: inside the design envelope. People and furniture are thrown forward; there are broken bones in the forward cabins, perhaps worse at the moment of impact. But the plant lives, the lights stay on, and she waits for tugs upright. The Titanic's officers were taught this trade-off a century ago: the flank you save by turning late is the flank that sinks you.",
+      flood: [12, 13], note: "bow compartments only — survivable by design",
+    },
+    {
+      id: "doors", title: "Every watertight door shut all night",
+      blurb: "Perfect door discipline from 21:45 onward.",
+      verdict: ["lost", "SINKS ANYWAY — MORE SLOWLY"],
+      text: "The five breached compartments flood through the shell, not the doorways, and the bulkheads are outflanked over their tops once deck 0 submerges. Doors buy minutes of trim and list, not survival — and minutes mattered here, so it is not nothing. But the myth that lazy doors sank her is a myth: the wound was wider than the design, full stop.",
+      flood: [4, 5, 6, 7, 8], note: "same five compartments — slower spread",
+    },
+    {
+      id: "edg", title: "The emergency generator holds",
+      blurb: "Breaker 901 sheds its flooded feeders and the EDG runs all night.",
+      verdict: ["lost", "SINKS ANYWAY — BUT LIT"],
+      text: "No bilge pump hangs off the emergency board, so the flooding arithmetic is untouched. What changes is the evacuation: lit corridors, working lifts for the wheelchair users among the dead, a PA that never drops out, instruments and the stability computer alive on the bridge. The ship is still lost at 21:45:07; a handful of the 32 probably are not.",
+      flood: [4, 5, 6, 7, 8], note: "same flooding — brighter, faster abandonment",
+    },
+    {
+      id: "alarm", title: "The alarm sounds at 21:50",
+      blurb: "The engine room's report is believed; general emergency five minutes after impact; abandon by 22:10.",
+      verdict: ["saved", "THE PEOPLE ARE SAVED"],
+      text: "Heel at 22:10 is a few degrees; every davit on both sides is inside certification for another hour. 26 boats and the rafts clear perhaps 4,500 seats of capacity against 4,229 souls, shuttling 400 m to a harbour, while the list is still a nuisance rather than a wall. The ship dies exactly as she died. The death toll is plausibly zero. This is the counterfactual that convicts the night: nothing about it required hindsight — only believing the chief engineer at 21:55.",
+      flood: [4, 5, 6, 7, 8], note: "same wreck — empty when she rolls",
+    },
+  ];
+
+  const cardsEl = document.getElementById("scen-cards");
+  const panelEl = document.getElementById("scen-panel");
+  let scen = SCEN[5];
+
+  SCEN.forEach((s) => {
+    const b = document.createElement("button");
+    b.className = "scenario";
+    b.innerHTML = "<h4>" + s.title + "</h4><p>" + s.blurb + "</p>";
+    b.addEventListener("click", () => { scen = s; render(); });
+    s._btn = b;
+    cardsEl.appendChild(b);
+  });
+
+  const scenFig = canvas("scen-cv", (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    // simple profile with 13 compartments; flood the chosen ones
+    const x0 = 40, x1 = w - 46;
+    const keelY = h * 0.78, deckY = h * 0.30;
+    const FR = [0, 14, 28, 44, 60, 76, 100, 116, 140, 156, 180, 220, 264, 308];
+    const X = (f) => x0 + f / 308 * (x1 - x0);
+    const wl = h * 0.55;
+    ctx.fillStyle = "rgba(57,135,229,0.10)";
+    ctx.fillRect(0, wl, w, h - wl);
+    line(ctx, 0, wl, w, wl, "rgba(86,183,207,0.5)", 1);
+    // hull
+    ctx.beginPath();
+    ctx.moveTo(X(0), deckY);
+    ctx.lineTo(X(300), deckY);
+    ctx.lineTo(X(308) + 18, wl);
+    ctx.lineTo(X(295), keelY);
+    ctx.lineTo(X(8), keelY);
+    ctx.closePath();
+    ctx.fillStyle = C.surface2;
+    ctx.fill();
+    ctx.strokeStyle = scen.flood.length >= 4 ? C.danger : "rgba(232,230,221,0.4)";
+    ctx.stroke();
+    for (let i = 1; i < FR.length - 1; i++) {
+      line(ctx, X(FR[i]), deckY, X(FR[i]), keelY, "rgba(232,230,221,0.25)", 1);
+    }
+    // compartment numbering: WTC n spans FR[n-1]..FR[n]
+    for (let n = 1; n <= 13; n++) {
+      const cx0 = X(FR[n - 1]), cx1 = X(FR[n]);
+      if (scen.flood.includes(n)) {
+        ctx.fillStyle = "rgba(57,135,229,0.55)";
+        ctx.fillRect(cx0 + 1, deckY + 2, cx1 - cx0 - 2, keelY - deckY - 4);
+      }
+      if (n >= 3 && n <= 8) label(ctx, String(n), (cx0 + cx1) / 2, keelY - 6, { align: "center", color: C.muted, font: mono(9) });
+    }
+    // bow crumple for ram scenario
+    if (scen.id === "ram") {
+      ctx.strokeStyle = C.danger;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      const bx = X(308) + 18;
+      ctx.moveTo(bx - 4, wl - 18);
+      ctx.lineTo(bx - 16, wl - 8);
+      ctx.lineTo(bx - 5, wl);
+      ctx.lineTo(bx - 18, wl + 8);
+      ctx.stroke();
+      label(ctx, "crumpled bow", bx - 24, wl - 24, { align: "right", color: C.danger, font: mono(9.5) });
+    }
+    if (scen.id === "earlier") label(ctx, "no damage", (x0 + x1) / 2, (deckY + keelY) / 2 + 4, { align: "center", color: C.good, font: mono(11, true) });
+    label(ctx, "stern", x0, keelY + 16, { color: C.muted, font: mono(9) });
+    label(ctx, "bow", x1, keelY + 16, { align: "right", color: C.muted, font: mono(9) });
+    label(ctx, scen.note, (x0 + x1) / 2, deckY - 10, { align: "center", color: C.ink2, font: mono(10.5) });
+  });
+
+  function render() {
+    SCEN.forEach((s) => s._btn.classList.toggle("on", s === scen));
+    panelEl.innerHTML = "<div class='verdict " + scen.verdict[0] + "'>" + scen.verdict[1] + "</div><p>" + scen.text + "</p>";
+    scenFig && scenFig.redraw();
+  }
+  render();
+
+  /* ---- parbuckling ---- */
+  const PSTAGES = [
+    [0,  "Stage 1 · 2012 — hold her still", "First, make sure the wreck cannot slide off its two rock spurs into 70 m of water: anchor blocks are drilled into the seabed and cables strung to hold the hull while 2,380 t of fuel is sucked out, tank by heated tank."],
+    [18, "Stage 2 · 2012–13 — build her a bed", "Six steel platforms — 1,000 t of piling driven into the rock — are built under the hull's eventual footprint, and eleven huge sponson caissons are welded to the exposed port side. Grout bags fill the gap between hull and reef."],
+    [40, "Stage 3 · 16–17 Sep 2013 — parbuckle", "36 strand jacks pull on cables over 19 hours, rolling 114,000 tonnes through 65° at a speed too slow to see. She comes upright with a two-metre groan of releasing steel and settles onto the platforms, her crushed starboard side seeing daylight for the first time in 20 months."],
+    [70, "Stage 4 · 2013–14 — armour the other side", "Through the winter, divers weld fifteen matching sponsons to the newly exposed starboard side. The wreck now wears thirty steel boxes — the buoyancy that will lift 47,000 t of dead ship."],
+    [86, "Stage 5 · 14–23 Jul 2014 — refloat and tow", "Air pushes the water out of the sponsons; the wreck rises two metres a day off her platforms, and on 23 July, at two knots inside a 14-vessel convoy, the Costa Concordia leaves Giglio for Genoa — a four-day funeral procession watched by the whole island."],
+    [100, "Stage 6 · 2014–17 — unmade", "In Genoa's Voltri yard she is dismantled deck by deck; 90% of her 53,000 t of steel is recycled. The last piece is cut in July 2017. Total bill: ~€1.5 billion — three times what she cost to build."],
+  ];
+
+  let ps = 0;
+  const parbLog = document.getElementById("parb-log");
+  const parbFig = canvas("parb", (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const waterY = h * 0.42;
+    const seabedY = h * 0.80;
+    // sea + seabed (sloping shelf then drop)
+    ctx.fillStyle = "rgba(57,135,229,0.12)";
+    ctx.fillRect(0, waterY, w, h - waterY);
+    line(ctx, 0, waterY, w, waterY, "rgba(86,183,207,0.55)", 1.2);
+    ctx.beginPath();
+    ctx.moveTo(0, seabedY - 30);
+    ctx.lineTo(w * 0.52, seabedY);
+    ctx.lineTo(w * 0.62, seabedY + 4);
+    ctx.lineTo(w * 0.72, h + 4);           // the drop
+    ctx.lineTo(0, h + 4);
+    ctx.closePath();
+    ctx.fillStyle = "#20262c";
+    ctx.fill();
+    label(ctx, "the 70 m drop →", w * 0.74, seabedY + 4, { color: C.muted, font: mono(9.5) });
+    label(ctx, "Giglio shore", 12, seabedY - 38, { color: C.muted, font: mono(9.5) });
+
+    // stage interpolation
+    const p = ps;
+    // heel: 65° until stage3 begins (p=40)... rotate during 40..70; refloat rise during 86..100
+    let heelDeg;
+    if (p < 40) heelDeg = 65;
+    else if (p < 70) heelDeg = lerp(65, 0, ease((p - 40) / 30));
+    else heelDeg = 0;
+    let lift = 0;
+    if (p >= 86) lift = lerp(0, 46, ease((p - 86) / 14));
+    let towX = 0;
+    if (p >= 97) towX = lerp(0, w * 0.4, (p - 97) / 3);
+
+    const cx = w * 0.40 + towX, cy = seabedY - 26 - lift;
+    const s = Math.min(w, 900) / 9;         // scale
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(heelDeg * Math.PI / 180);    // starboard (right) down
+    // hull section
+    ctx.beginPath();
+    ctx.roundRect(-s * 1.55, -s * 2.2, s * 3.1, s * 2.5, 8);
+    ctx.fillStyle = p >= 100 ? "rgba(232,230,221,0.10)" : C.surface3;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(232,230,221,0.55)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    // superstructure stripes
+    for (let i = 1; i <= 4; i++) {
+      line(ctx, -s * 1.55, -s * 2.2 + i * s * 0.35, s * 1.55, -s * 2.2 + i * s * 0.35, "rgba(232,230,221,0.14)", 1);
+    }
+    // funnel
+    ctx.fillStyle = "rgba(240,180,41,0.7)";
+    ctx.fillRect(-s * 0.2, -s * 2.85, s * 0.4, s * 0.6);
+    // port sponsons (left side) from stage 2
+    if (p >= 18) {
+      ctx.fillStyle = "rgba(86,183,207,0.5)";
+      for (let i = 0; i < 4; i++) {
+        ctx.fillRect(-s * 1.55 - s * 0.34, -s * 2.0 + i * s * 0.52, s * 0.3, s * 0.42);
+      }
+    }
+    // stbd sponsons from stage 4
+    if (p >= 70) {
+      ctx.fillStyle = "rgba(86,183,207,0.5)";
+      for (let i = 0; i < 4; i++) {
+        ctx.fillRect(s * 1.25 + s * 0.04, -s * 2.0 + i * s * 0.52, s * 0.3, s * 0.42);
+      }
+    }
+    ctx.restore();
+
+    // platforms (stage 2+)
+    if (p >= 18 && p < 97) {
+      ctx.fillStyle = "rgba(232,230,221,0.30)";
+      for (let i = -1; i <= 1; i++) {
+        ctx.fillRect(cx + i * s * 1.0 - 6, seabedY - 26, 12, 26);
+      }
+      label(ctx, "platforms", cx + s * 1.4, seabedY - 8, { color: C.muted, font: mono(9) });
+    }
+    // strand-jack cables during parbuckle
+    if (p >= 40 && p < 70) {
+      ctx.strokeStyle = C.amber;
+      ctx.lineWidth = 1.3;
+      const a = heelDeg * Math.PI / 180;
+      // cable from top-port corner over to shore anchors
+      const tx = cx + (-s * 1.55) * Math.cos(a) - (-s * 2.2) * Math.sin(a);
+      const ty = cy + (-s * 1.55) * Math.sin(a) + (-s * 2.2) * Math.cos(a);
+      ctx.beginPath();
+      ctx.moveTo(tx, ty);
+      ctx.lineTo(w * 0.08, seabedY - 44);
+      ctx.stroke();
+      label(ctx, "strand jacks", w * 0.08, seabedY - 52, { color: C.amber, font: mono(9.5) });
+    }
+    // hold-back cables stage 1
+    if (p < 18) {
+      ctx.strokeStyle = "rgba(240,180,41,0.6)";
+      ctx.beginPath();
+      ctx.moveTo(cx - s * 0.4, cy - s * 0.4);
+      ctx.lineTo(w * 0.10, seabedY - 36);
+      ctx.stroke();
+      label(ctx, "hold-back anchors", w * 0.10, seabedY - 44, { color: C.amber, font: mono(9.5) });
+    }
+    if (p >= 100) label(ctx, "recycled — 90% of 53,000 t of steel", cx, cy - s * 2.6, { align: "center", color: C.ink2, font: mono(10.5) });
+  });
+
+  slider("parb-s", (v) => {
+    let si = 0;
+    PSTAGES.forEach((st, i) => { if (v >= st[0]) si = i; });
+    return "stage " + (si + 1);
+  }, (v) => {
+    ps = v;
+    let st = PSTAGES[0];
+    PSTAGES.forEach((s) => { if (v >= s[0]) st = s; });
+    parbLog.innerHTML = "<span class='t'>" + st[1] + "</span> — " + st[2];
+    parbFig && parbFig.redraw();
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

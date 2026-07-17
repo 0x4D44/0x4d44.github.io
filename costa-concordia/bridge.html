@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Bridge — Costa Concordia, Chapter 5</title>
+<meta name="description" content="The broken chain of command: who knew what and when, why the bridge failed to understand its own ship, the forty minutes of 'it's just a blackout', and the De Falco call.">
+<link rel="stylesheet" href="cc.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">COSTA CONCORDIA</a></div>
+    <div class="strap">anatomy of a shipwreck — an interactive investigation</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="collision.html">1 · The Salute</a>
+    <a href="flooding.html">2 · The Wound</a>
+    <a href="blackout.html">3 · The Blackout</a>
+    <a href="drift.html">4 · The Drift</a>
+    <a href="bridge.html" aria-current="page">5 · The Bridge</a>
+    <a href="evacuation.html">6 · The Abandonment</a>
+    <a href="verdict.html">7 · The Reckoning</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 5 · the human system</p>
+  <h1>The Bridge</h1>
+  <p class="standfirst">The engine room knew in ten minutes that the ship was finished.
+  The people ashore heard the word “blackout” for forty. Between those two facts lies
+  the part of the disaster that killed most of its victims: not the rock, but the
+  hour of unreality that followed it.</p>
+</section>
+
+<section class="prose">
+
+<h2><span class="no">5.1</span>A crowded bridge with no one in command</h2>
+
+<p>At the moment of impact the bridge of the Costa Concordia held, among others: the
+captain, conning by eye while recently off the phone; the first officer, Ciro
+Ambrosio, nominally senior officer of the watch; the third officer, Silvia Coronica,
+pulled off her plotting duties to help the helmsman understand his orders; helmsman
+Jacob Rusli Bin, steering courses shouted in his third language; the hotel
+director; the ship's maître d', invited up to watch his home island go by; and
+Domnica Cemortan, a passenger, a guest of the captain, standing by the console. It
+was, in other words, a social occasion through which a 290-metre ship happened to be
+being driven at a shore.</p>
+
+<p>Bridge resource management — the discipline, imported from aviation, that says a
+bridge is a <em>team</em> with defined roles, closed-loop orders and a duty to
+challenge — existed on paper at Costa. In practice, the investigation found: a con
+handover that “did not concretely occur”; officers who watched the ship close a
+half-mile radar ring without a word; position-plotting abandoned at the critical
+moment; course orders instead of helm orders; no one tracking the turn the master
+was flying by feel. Not one voice on that bridge said the sentence that would have
+saved 32 lives: <em>“Captain, we are too close, and I am altering course.”</em> The
+culture did not permit it. The MIT report lists the bridge team's passivity as a
+cause of the casualty in nearly the same breath as the master's recklessness.</p>
+
+<h2><span class="no">5.2</span>Who knew what, when</h2>
+
+<p>Follow the knowledge through the ship. Below decks, the picture was clear
+brutally fast: the chief engineer had reported flooding in <strong>two</strong>
+compartments within ten minutes, then three, with sea water over the switchboards —
+information that, held against the ship's own damage manual, spelled <em>lost</em>.
+On the bridge, that information arrived and somehow did not land: Schettino was
+still asking “how many compartments?” thirty-five minutes after the impact,
+still reasoning — aloud, on the phone to the company — that a two-compartment
+ship with “at least two compartments flooded” might hold. And ashore, the
+official picture for three-quarters of an hour was a ship with a generator
+problem. The coast guard did not learn of the emergency from the ship at all:
+it learned from the <strong>mother of a passenger</strong> who had phoned her
+daughter, who phoned the carabinieri in Prato.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Three versions of the truth</span>
+    <span class="hint">scrub the hour after impact — each lane shows what that group believed at that moment</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="knew" style="aspect-ratio: 2.0 / 1; min-height: 330px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="knew-log"></div>
+  <div class="fig-controls">
+    <button class="btn primary" id="knew-play">▶ play</button>
+    <div class="ctl" style="flex:1 1 260px">
+      <label for="knew-time">time</label>
+      <input type="range" id="knew-time" min="78307" max="82560" step="5" value="78307" style="flex:1">
+      <output>21:45:07</output>
+    </div>
+  </div>
+  <div class="fig-note">Compiled from the VDR transcripts and telephone records in the MIT
+  report and trial documents. The gap between the top lane and the bottom lane —
+  forty minutes wide — is where the evacuation should have been happening.</div>
+</figure>
+
+<h2><span class="no">5.3</span>Why didn't the bridge understand its own ship?</h2>
+
+<p>It is tempting to reduce this to one man refusing reality, and his mental state
+matters — witnesses describe a captain intermittently frozen, changing plans,
+sending officers on contradictory errands. But the system around him had failed in
+ways that would have hobbled a better night:</p>
+
+<ul>
+  <li><strong>No working damage picture.</strong> The NAPA stability computer — the tool
+  that turns “water in compartments 5, 6, 7” into “you have N minutes, abandon now” —
+  ran only intermittently on its UPS after the blackout. The one calculation that
+  mattered was never reliably made aboard.</li>
+  <li><strong>No fast channel for truth.</strong> The investigation notes the lack of any
+  wireless intercom between key officers: reports from the flooding machinery spaces
+  travelled by messenger, by shouting up stairwells, by whoever appeared on the
+  bridge wing. Each hop cost minutes and precision.</li>
+  <li><strong>A company loop that muddied rather than cleared.</strong> Schettino's first
+  substantial report went not to the coast guard but to Costa's Fleet Crisis
+  Coordinator — who misidentified which compartment was flooded in relaying it
+  onward, while the designated shore emergency role was filled by the wrong person
+  entirely. The safety system's formal chain (master → DPA → resources) ran, in
+  practice, backwards and sideways.</li>
+  <li><strong>The two-compartment anchor.</strong> Schettino held onto “the ship can
+  survive two compartments” long after his own engineers had counted three, then
+  five. Psychologists call it anchoring; mariners call it not doing the arithmetic.
+  Either way, the number that mattered — <em>five</em> — was spoken on his bridge at
+  22:20 and bounced off.</li>
+</ul>
+
+<h2><span class="no">5.4</span>The cost of “it's just a blackout”</h2>
+
+<p>Why does the lie to the shore matter so much? Count what the shore controls:
+patrol boats, helicopters, tugs, ferries, hospital beds, and — crucially — the
+clock. Livorno's rescue centre began moving assets the moment it smelled the truth
+(a patrol boat was alongside by 22:39, <em>before</em> the ship declared distress).
+Every minute of “under control, only a blackout” was a minute of that machine
+standing down while 4,229 people's margin drained away with the list. The formal
+distress — by then redundant, declared <em>by the coast guard</em> — came at 22:34,
+49 minutes after impact. The evacuation Chapter 6 describes was run, in the end,
+substantially by the shore: the ship's command had, by act and omission, resigned
+from it.</p>
+
+<h2><span class="no">5.5</span>01:46 — “Vada a bordo, cazzo!”</h2>
+
+<p>By half past midnight the wreck lay on her side with hundreds still aboard, and
+her master was in a lifeboat, then on the rocks, then on the quay. The recorded
+telephone exchange between Capt. Gregorio De Falco of the Livorno coast guard and
+Schettino — broadcast within days, quoted for years — is the disaster's moral
+transcript in miniature. Step through the key exchanges:</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">The De Falco call, 01:46</span>
+    <span class="hint">step through the exchange (condensed and translated)</span>
+  </div>
+  <div class="vdr" id="defalco" style="margin:0; border:none; border-radius:0; min-height:120px"></div>
+  <div class="fig-controls">
+    <button class="btn" id="df-prev">← previous</button>
+    <button class="btn primary" id="df-next">next →</button>
+    <span style="font-family:var(--mono); font-size:11.5px; color:var(--muted)" id="df-pos"></span>
+  </div>
+  <div class="fig-note">Condensed from the published call transcript; translations are the
+  widely reported English renderings. “Vada a bordo, cazzo” — politely: “get back on
+  board, damn it” — became a national catchphrase, printed on T-shirts within the week.</div>
+</figure>
+
+<div class="callout grim">
+  <span class="tag">The captain's account</span>
+  <p>Schettino maintained that he did not abandon his ship: that as she rolled, he
+  and other officers were on the high side and he “fell into” a lifeboat when it was
+  lowered; that he then directed the evacuation from the rocks. The courts weighed
+  this against the recorded calls — in which De Falco orders him back aboard eleven
+  times and he does not go — and convicted him, among the other charges, of
+  abandoning ship while passengers remained aboard. Roughly 300 people were still on
+  the wreck when he left the last of them to it.</p>
+</div>
+
+</section>
+
+<nav class="chapnav">
+  <a href="drift.html"><span class="dir">← Chapter 4</span><span class="title">The Drift</span></a>
+  <a class="next" href="evacuation.html"><span class="dir">Chapter 6 →</span><span class="title">The Abandonment</span></a>
+</nav>
+
+</main>
+
+<script src="cc-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, canvas, transport, label, line, hms, t, clamp, mono } = CC;
+
+  /* ---- three versions of the truth ---- */
+  // lanes: 0 engine room, 1 bridge/master, 2 shore & company
+  const LANES = ["ENGINE ROOM", "BRIDGE / MASTER", "SHORE & COMPANY"];
+  // events: [time, lane, marker text, log text, belief updates [lane]->text]
+  const KE = [
+    [t("21:45:07"), 1, "impact", "Impact felt through the whole ship. The bridge sees the blackout begin; the engine room sees the sea.",
+      ["water entering — assessing", "we hit something", "—"]],
+    [t("21:48:00"), 0, "flooding", "Engine-room staff are wading. The second engineer reports WTC 5 flooding; the aft engine room is going under.",
+      ["WTC 5 flooding fast", "blackout — investigating", "—"]],
+    [t("21:55:00"), 0, "3 WTCs", "Within ten minutes the chief engineer has reported flooding in WTC 6 and 7 as well. Three compartments: the design limit is two.",
+      ["WTC 5, 6, 7 flooding — ship cannot survive", "blackout; some water reported", "—"]],
+    [t("21:57:58"), 1, "calls company", "Schettino phones Costa's Fleet Crisis Coordinator, Ferrarini: we hit a rock, we have a blackout. The flooded compartments are not accurately passed on.",
+      ["WTC 5, 6, 7 flooding — ship cannot survive", "hit rock; blackout; extent unclear", "company: rock + blackout (garbled)"]],
+    [t("22:05:00"), 2, "Prato call", "A passenger has phoned her mother; the mother phones the carabinieri in Prato. The State learns of the emergency from a family kitchen.",
+      ["WTC 5, 6, 7 flooding — ship cannot survive", "hit rock; blackout; extent unclear", "rumour: something wrong aboard Concordia"]],
+    [t("22:07:00"), 2, "“blackout”", "Civitavecchia port control asks the ship directly. Answer: only a blackout, situation under control.",
+      ["WTC 5, 6, 7 flooding — ship cannot survive", "maintaining: blackout, under control", "official: just a blackout"]],
+    [t("22:12:00"), 2, "MRSC calls", "Livorno MRSC, chasing the Prato report, calls the ship. Again: a blackout. The rescue machine stays at idle.",
+      ["WTC 5, 6, 7 flooding — ship cannot survive", "maintaining: blackout, under control", "official: just a blackout"]],
+    [t("22:18:19"), 1, "2 WTCs?", "Schettino tells the company there are problems with the emergency generator and “at least two compartments” flooded — and reasons the ship can survive two.",
+      ["5 flooding + 6, 7 confirmed to bridge", "believes: 2 compartments — survivable", "company: 2 compartments, EDG trouble"]],
+    [t("22:20:45"), 1, "5, 6, 7", "The bridge is told plainly: the PEM room, the main engines, the stern generators — compartments 5, 6 and 7. The number is now on the bridge. Nothing changes.",
+      ["5, 6, 7 (+4, 8 filling) — lost", "told: 3+ compartments; still weighing it", "company: 2–3 compartments"]],
+    [t("22:22:22"), 2, "tugs", "The ship asks Civitavecchia for two tugs — for a vessel “under control thanks to compartmentalisation”.",
+      ["5, 6, 7 (+4, 8 filling) — lost", "wants tugs; still no distress", "a tug job, apparently"]],
+    [t("22:25:15"), 2, "admission", "Pressed by Livorno, Schettino admits: hull breach, port side, ship heeling, casualties aboard. He asks for a tug. Livorno takes charge.",
+      ["flooding beyond control", "admits breach — still no abandon order", "SAR spinning up — patrol boats out"]],
+    [t("22:34:00"), 2, "DISTRESS", "Livorno, watching the list grow, declares distress FOR the ship. The ship has still not asked.",
+      ["flooding beyond control", "general alarm sounded (22:33)", "DISTRESS declared by the shore"]],
+    [t("22:44:00"), 1, "aground", "The wreck grounds at Punta Gabbianara. Patrol boat G.104 is already reporting the stern-heaviness from alongside.",
+      ["flooding beyond control", "aground; preparing to abandon", "boats alongside; helicopters tasked"]],
+    [t("22:54:10"), 1, "ABANDON", "The abandon-ship order, 69 minutes after impact. The evacuation the shore has been preparing for half an hour begins in earnest.",
+      ["abandoning", "abandoning", "full SAR: boats, ferries, helicopters"]],
+  ];
+
+  let kTime = KE[0][0];
+  const kLogEl = document.getElementById("knew-log");
+
+  const knewFig = canvas("knew", (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const padL = 26, padR = 20, padT = 34, padB = 30;
+    const T0 = t("21:45:00"), T1 = t("22:56:00");
+    const X = (tt) => padL + (tt - T0) / (T1 - T0) * (w - padL - padR);
+    const laneY = (l) => padT + (h - padT - padB) * (l + 0.5) / 3;
+
+    // lane bands
+    LANES.forEach((name, l) => {
+      const y = laneY(l);
+      line(ctx, padL, y, w - padR, y, C.line, 1);
+      label(ctx, name, padL, y - (h > 320 ? 34 : 26), { color: C.muted, font: mono(9.5, true) });
+    });
+
+    // time ticks every 10 min
+    for (let tt = T0; tt <= T1; tt += 600) {
+      line(ctx, X(tt), h - padB, X(tt), h - padB + 4, C.line, 1);
+      label(ctx, hms(tt, false), X(tt), h - padB + 16, { align: "center", color: C.muted, font: mono(9) });
+    }
+
+    // active event
+    let act = KE[0];
+    KE.forEach((e) => { if (e[0] <= kTime) act = e; });
+
+    // events
+    KE.forEach((e) => {
+      const on = e === act, past = e[0] <= kTime;
+      const x = X(e[0]), y = laneY(e[1]);
+      ctx.fillStyle = on ? C.amber : past ? "rgba(232,230,221,0.75)" : "rgba(232,230,221,0.25)";
+      ctx.beginPath(); ctx.arc(x, y, on ? 6 : 3, 0, TAU); ctx.fill();
+      if (on) { ctx.strokeStyle = C.surface; ctx.lineWidth = 2; ctx.stroke(); }
+      if (on || (past && w > 720)) {
+        label(ctx, e[2], x, y - 12, { align: "center", color: on ? C.amber : C.muted, font: mono(on ? 10 : 8.5, on) });
+      }
+    });
+
+    // belief chips (from active event)
+    const bel = act[4];
+    LANES.forEach((_, l) => {
+      const y = laneY(l);
+      const txt = bel[l];
+      ctx.font = mono(10.5, true);
+      const tw = Math.min(ctx.measureText(txt).width + 18, w * 0.42);
+      const bx = w - padR - tw, by = y + 8;
+      ctx.fillStyle = "rgba(10,15,22,0.85)";
+      ctx.beginPath(); ctx.roundRect(bx, by, tw, 22, 5); ctx.fill();
+      ctx.strokeStyle = l === 0 ? "rgba(63,174,98,0.5)" : l === 1 ? "rgba(240,180,41,0.5)" : "rgba(86,183,207,0.5)";
+      ctx.stroke();
+      ctx.save();
+      ctx.beginPath(); ctx.roundRect(bx, by, tw, 22, 5); ctx.clip();
+      label(ctx, txt, bx + 9, by + 15, { color: l === 0 ? C.good : l === 1 ? C.amber : C.teal, font: mono(10.5, true) });
+      ctx.restore();
+    });
+
+    // playhead
+    const px = X(clamp(kTime, T0, T1));
+    line(ctx, px, padT - 12, px, h - padB, C.amber, 1);
+    label(ctx, hms(kTime, false), px, padT - 18, { align: "center", color: C.amber, font: mono(11, true) });
+  });
+
+  function setKnew(v) {
+    kTime = v;
+    let act = KE[0];
+    KE.forEach((e) => { if (e[0] <= v) act = e; });
+    kLogEl.innerHTML = "<span class='t'>" + hms(act[0]) + "</span> — " + act[3];
+    knewFig && knewFig.redraw();
+  }
+  transport({
+    min: KE[0][0], max: t("22:56:00"), rate: 75, playBtn: "knew-play", slider: "knew-time",
+    fmt: (v) => hms(v),
+    onTime: setKnew,
+  });
+  setKnew(KE[0][0]);
+
+  /* ---- De Falco stepper ---- */
+  const DF = [
+    ["De Falco", "This is De Falco from Livorno. Am I speaking with the commander?"],
+    ["Schettino", "Yes, good evening, Capt. De Falco…"],
+    ["De Falco", "Tell me your name… Listen, Schettino: there are people trapped on board. Now you go with your boat under the prow on the starboard side. There is a pilot ladder. You climb that ladder and go on board. You go on board and then you will tell me how many people there are. Is that clear?"],
+    ["Schettino", "Commander, let me tell you one thing…"],
+    ["De Falco", "Speak up! Put your hand in front of the microphone and speak more loudly, is that clear?"],
+    ["Schettino", "In this moment, the boat is tipping…"],
+    ["De Falco", "I understand that. Listen: there are people coming down the pilot ladder of the prow. You go up that pilot ladder — get on that ship, and tell me how many people are still on board, and what they need. Is that clear? … You need to tell me if there are children, women or people in need of assistance. And tell me the exact number of each of these categories. Is that clear?"],
+    ["Schettino", "…Commander, please…"],
+    ["De Falco", "Listen, Schettino — perhaps you have saved yourself from the sea, but I am going to make you look very bad. I will make you pay for this. Go on board, damn it! <em>(Vada a bordo, cazzo!)</em>"],
+    ["Schettino", "Commander, please… I am here with the rescue boats. I am here, I have not gone anywhere. I am here…"],
+    ["De Falco", "What are you doing, commander?"],
+    ["Schettino", "I am here to co-ordinate the rescue…"],
+    ["De Falco", "What are you co-ordinating there?! Go on board! Co-ordinate the rescue from on board! Are you refusing?"],
+    ["Schettino", "…No, I am not refusing."],
+    ["De Falco", "Then GO on board. It's an order. You have declared the abandoning of the ship — now I am in charge. There are already bodies, Schettino. Move!"],
+    ["Schettino", "How many bodies are there?"],
+    ["De Falco", "I don't know. I know of one. You are the one to tell me how many there are. Christ!"],
+  ];
+  let dfI = 0;
+  const dfEl = document.getElementById("defalco");
+  const dfPos = document.getElementById("df-pos");
+  function dfRender() {
+    dfEl.innerHTML = DF.slice(Math.max(0, dfI - 2), dfI + 1).map(([who, txt], i, arr) => {
+      const last = i === arr.length - 1;
+      return "<div style='margin:6px 0; opacity:" + (last ? 1 : 0.55) + "'><span class='who'>" +
+        who + ":</span> " + txt + "</div>";
+    }).join("");
+    dfPos.textContent = (dfI + 1) + " / " + DF.length;
+  }
+  document.getElementById("df-next").addEventListener("click", () => { dfI = Math.min(DF.length - 1, dfI + 1); dfRender(); });
+  document.getElementById("df-prev").addEventListener("click", () => { dfI = Math.max(0, dfI - 1); dfRender(); });
+  dfRender();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

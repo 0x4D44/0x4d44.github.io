@@ -1022,6 +1022,34 @@
       <line x1="12" y1="101" x2="188" y2="101"/>
       <line x1="12" y1="104.5" x2="188" y2="104.5" stroke-dasharray="6 5" stroke-width="0.8"/>
     </symbol>
+    <!-- capsized cruise ship on the shore (Costa Concordia) -->
+    <symbol id="ill-concordia" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- moon -->
+      <path d="M28 22 a9 9 0 1 0 8 13 a7.2 7.2 0 0 1 -8 -13"/>
+      <!-- island slope, right -->
+      <path d="M200 24 L172 44 L158 62 L150 78 L146 92"/>
+      <path d="M176 52 L166 58 M162 68 L154 74" stroke-width="0.8"/>
+      <!-- listing ship: hull + decks rotated onto its side -->
+      <g transform="rotate(-58 104 84)">
+        <!-- hull -->
+        <path d="M50 78 L138 78 L160 85 Q163 86 160 88.5 L153 92 L60 92 Q50 92 50 84 Z"/>
+        <!-- superstructure steps -->
+        <rect x="62" y="67" width="76" height="11"/>
+        <rect x="74" y="58" width="52" height="9"/>
+        <!-- funnel -->
+        <path d="M104 58 L104 46 L116 46 L118.5 58 Z"/>
+        <!-- window rows -->
+        <g stroke-width="0.8">
+          <line x1="66" y1="73" x2="132" y2="73"/>
+          <line x1="78" y1="62.5" x2="120" y2="62.5"/>
+        </g>
+      </g>
+      <!-- waterline lapping the wreck -->
+      <path d="M6 96 Q30 92 54 96 Q80 100 106 96 Q126 93 142 96"/>
+      <line x1="6" y1="103" x2="150" y2="103" stroke-dasharray="6 5" stroke-width="0.8"/>
+      <!-- the rock that did it -->
+      <path d="M64 103 L70 97 L77 103" stroke-width="0.9"/>
+    </symbol>
     <!-- layered token mountain-range (mdtoken / The Forge) -->
     <symbol id="ill-ridgeline" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
       <!-- back ridge -->
