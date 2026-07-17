@@ -270,11 +270,12 @@ and, once in a very long while, lost.</p>
     // towers along the high road
     const towerXs = [0.315, 0.40, 0.485];
     towerXs.forEach((fx, i) => tower(ctx, fx * w, groundY(fx, h), h * (0.34 + (i === 1 ? 0.05 : 0)), C.ink2));
-    // smaller wood poles near the end
+    // smaller wood poles near the end — crossarms sit exactly on the wire
     [0.755, 0.815, 0.868].forEach((fx) => {
       const gy = groundY(fx, h);
-      line(ctx, fx * w, gy, fx * w, gy - h * 0.14, C.ink2, 1.6);
-      line(ctx, fx * w - 8, gy - h * 0.135, fx * w + 8, gy - h * 0.135, C.ink2, 1.4);
+      const wy = wireY(fx) ?? gy - h * 0.13;
+      line(ctx, fx * w, gy, fx * w, wy - 6, C.ink2, 1.6);
+      line(ctx, fx * w - 8, wy, fx * w + 8, wy, C.ink2, 1.4);
     });
 
     // town + house + kettle
@@ -294,8 +295,11 @@ and, once in a very long while, lost.</p>
     // ---- the wire: a polyline through stage anchor heights ----
     function wireY(fx) {
       const gy = groundY(fx, h);
-      if (fx < stages[1].x) return null;
-      if (fx < stages[2].x) return gy - 22;                       // hall to step-up
+      if (fx < stages[1].x || fx > stages[7].x + 0.004) return null;
+      if (fx < stages[2].x) {                                     // hall to step-up
+        const u = (fx - stages[1].x) / (stages[2].x - stages[1].x);
+        return gy - 22 - 8 * u;                                   // rises to meet the trafo top
+      }
       if (fx < 0.53) {                                            // tower spans w/ sag
         // find bracketing tower/anchor points
         const pts = [stages[2].x, ...towerXs, 0.53];
@@ -308,16 +312,21 @@ and, once in a very long while, lost.</p>
           }
         }
       }
-      if (fx < stages[5].x) return groundY(fx, h) - h * 0.10 + 6 * Math.sin(Math.PI * (fx - 0.53) / (stages[5].x - 0.53));
-      if (fx < stages[7].x - 0.01) {
-        const a = stages[5].x, b = stages[7].x - 0.01, u = (fx - a) / (b - a);
-        return groundY(fx, h) - h * 0.125 + 5 * Math.sin(3 * Math.PI * u);
+      if (fx < stages[5].x) return gy - h * 0.10 + 6 * Math.sin(Math.PI * (fx - 0.53) / (stages[5].x - 0.53));
+      if (fx < stages[6].x) {                                     // primary along the pole line
+        const u = (fx - stages[5].x) / (stages[6].x - stages[5].x);
+        return gy - h * (0.10 + 0.03 * u) + 4 * Math.sin(2 * Math.PI * u);
       }
-      return groundY(fx, h) - 12;
+      {                                                           // service drop to the house eaves
+        const u = Math.min(1, (fx - stages[6].x) / (stages[7].x - stages[6].x));
+        const y0 = gy - h * 0.13, y1 = gy - 14;
+        return y0 + (y1 - y0) * u + 6 * Math.sin(Math.PI * u);
+      }
       function attachY(fx2) {
         if (fx2 <= stages[2].x + 0.001) return groundY(fx2, h) - 30;
         if (fx2 >= 0.53 - 0.001) return groundY(fx2, h) - h * 0.10;
-        return groundY(fx2, h) - h * (0.34 + (Math.abs(fx2 - 0.40) < 0.01 ? 0.05 : 0)) * 0.80;
+        // clip onto the tower's lower cross-arm exactly (arms sit at 0.72 of tower height)
+        return groundY(fx2, h) - h * (0.34 + (Math.abs(fx2 - 0.40) < 0.01 ? 0.05 : 0)) * 0.72;
       }
     }
 
