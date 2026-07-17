@@ -1,0 +1,26 @@
+    { id: "to39", short: "TO-39", name: "TO-39", example: "2N2219A", w: 9.40, h: 9.40, envelope: "Ø 9.40 mm max can", family: "metal can · through-hole", kind: "can", blurb: "A larger hermetic can for devices that need more die area and more heat path." },
+    { id: "to220", short: "TO-220", name: "TO-220", example: "TIP41C / IRF540", w: 10.16, h: 15.50, envelope: "10.16 × 15.50 mm body", family: "power tab · through-hole", kind: "power", blurb: "The familiar bolted-tab package of bench supplies, amplifiers and motor drives." },
+    { id: "to247", short: "TO-247", name: "TO-247", example: "high-current MOSFET / IGBT", w: 15.80, h: 23.30, envelope: "15.80 × 23.30 mm body", family: "high-power · through-hole", kind: "power", blurb: "A TO-220 grown for larger dies, heavier current and a more serious heatsink." },
+    { id: "to264", short: "TO-264", name: "TO-264", example: "very-high-power MOSFET / IGBT", w: 20.00, h: 26.00, envelope: "20.00 × 26.00 mm representative", family: "very-high-power · through-hole", kind: "power", blurb: "One step below a power module: a broad tab, long creepage paths and plenty of silicon." },
+    { id: "to3", short: "TO-3", name: "TO-3", example: "2N3055 / MJ2955", w: 39.70, h: 26.70, envelope: "39.70 × 26.70 mm flange", family: "metal chassis package · through-hole", kind: "to3", blurb: "The iconic flying saucer. Its flange bolts straight to the chassis and dominates every coin here." }
+  ];
+
+  const storage = {
+    getItem(key) { try { return window.localStorage.getItem(key); } catch (_) { return null; } },
+    setItem(key, value) { try { window.localStorage.setItem(key, value); } catch (_) {} },
+    removeItem(key) { try { window.localStorage.removeItem(key); } catch (_) {} }
+  };
+
+  const state = {
+    packageId: "to18",
+    coinId: "5p",
+    mode: "studio",
+    zoom: 1,
+    dimensions: true,
+    dx: 0,
+    dy: 0,
+    calibration: Number(storage.getItem("silicon-sterling.ppm")) || 3.78
+  };
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
