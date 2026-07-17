@@ -1,0 +1,28 @@
+      ${labelH ? `<line class="dimension-ext" x1="${dx+w/2}" y1="${dy-h/2}" x2="${rightX+.18}" y2="${dy-h/2}"/><line class="dimension-ext" x1="${dx+w/2}" y1="${dy+h/2}" x2="${rightX+.18}" y2="${dy+h/2}"/><line class="dimension-line" x1="${rightX}" y1="${dy-h/2}" x2="${rightX}" y2="${dy+h/2}" marker-start="url(#dimArrow)" marker-end="url(#dimArrow)"/><text class="dimension-text" x="${rightX+.55}" y="${dy}" transform="rotate(90 ${rightX+.55} ${dy})" text-anchor="middle">${labelH}</text>` : ""}
+      <text class="coin-dim" x="0" y="${coin.diameter/2 + Math.max(1.4,coin.diameter*.08)}" text-anchor="middle">${coin.label} · Ø ${coin.diameter.toFixed(2)} mm</text>
+    </g>`;
+  }
+
+  function renderGrid(view) {
+    const grid = $("#gridLayer");
+    const half = view/2;
+    const step = view > 55 ? 5 : view > 24 ? 2 : view > 10 ? 1 : .5;
+    let html = "";
+    const start = Math.floor(-half/step)*step;
+    for (let v = start; v <= half; v += step) {
+      const major = Math.abs((v/step) % 5) < .001;
+      html += `<line class="${major ? "stage-grid-major" : "stage-grid-minor"}" x1="${v}" y1="${-half}" x2="${v}" y2="${half}"/>`;
+      html += `<line class="${major ? "stage-grid-major" : "stage-grid-minor"}" x1="${-half}" y1="${v}" x2="${half}" y2="${v}"/>`;
+    }
+    html += `<line class="stage-axis" x1="${-half}" y1="0" x2="${half}" y2="0"/><line class="stage-axis" x1="0" y1="${-half}" x2="0" y2="${half}"/>`;
+    grid.innerHTML = html;
+  }
+
+  function nearestCoin(pkg) {
+    const span = spanOf(pkg);
+    return COINS.reduce((best, coin) => Math.abs(Math.log(span/coin.diameter)) < Math.abs(Math.log(span/best.diameter)) ? coin : best, COINS[0]);
+  }
+
+  function verdict(pkg, coin) {
+    const ratio = spanOf(pkg)/coin.diameter;
+    const name = pkg.id === "to18" ? "The BC107 can" : pkg.id === "to3" ? "The TO-3 flange" : `The ${pkg.short} body`;
