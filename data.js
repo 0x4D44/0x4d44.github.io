@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "costa-concordia",
+    title: "The Wreck of the Costa Concordia",
+    tagline: "The full technical anatomy of the 2012 disaster: the salute, the 53-metre wound, the fifty-second blackout, the lucky drift, the broken chain of command and the abandonment. Seven chapters of VDR-timed replays and interactives — flood the compartments, tilt the lifeboats, right the wreck. Vanilla JS on canvas; no build step.",
+    url: "https://0x4d44.github.io/costa-concordia/",
+    illustration: "ill-concordia",
+    date: "2026-07-17T14:30:00",
+    year: 2012,
+    readingMin: 48,
+    words: 10600,
+    tags: ["software", "maritime", "engineering", "history"],
+    real: true,
+  },
+  {
     slug: "transistor-packages",
     title: "Silicon on Sterling",
     tagline: "A true-scale visual atlas of transistor packages, from near-invisible DFN0603 to the lid-sized TO-3, laid over every current UK coin. Drag the parts, swap denominations, calibrate your screen to real size and line up the whole package family. Original SVG illustrations, vanilla JS; no build step.",
@@ -1387,7 +1400,7 @@ window.COLLECTIONS = [
       "chief-engineer"] },
   { id: "sea", name: "At Sea", icon: "ill-ship",
     blurb: "Cruise ships, ports, tides and the currents beneath.",
-    slugs: ["cruise-line", "cruise-propulsion", "rci-fleet", "med-cruise",
+    slugs: ["costa-concordia", "cruise-line", "cruise-propulsion", "rci-fleet", "med-cruise",
       "harbour-hustle-cruise-cup", "tidecall", "ocean-currents",
       "chief-engineer"] },
   { id: "ai", name: "Minds & Models", icon: "ill-ai",

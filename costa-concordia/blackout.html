@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Blackout — Costa Concordia, Chapter 3</title>
+<meta name="description" content="Fifty seconds from impact to darkness: the six drowned diesel generators, the emergency generator that held for 41 seconds, breaker 901, and why every backup lived in the same flooded rooms.">
+<link rel="stylesheet" href="cc.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">COSTA CONCORDIA</a></div>
+    <div class="strap">anatomy of a shipwreck — an interactive investigation</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="collision.html">1 · The Salute</a>
+    <a href="flooding.html">2 · The Wound</a>
+    <a href="blackout.html" aria-current="page">3 · The Blackout</a>
+    <a href="drift.html">4 · The Drift</a>
+    <a href="bridge.html">5 · The Bridge</a>
+    <a href="evacuation.html">6 · The Abandonment</a>
+    <a href="verdict.html">7 · The Reckoning</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 3 · 21:45:07 – 21:46:44</p>
+  <h1>The Blackout</h1>
+  <p class="standfirst">A diesel-electric cruise ship is an electric city: no electricity,
+  no propulsion, no steering pumps, no bilge pumps, no lifts, no light. The Costa
+  Concordia went from a 75-megawatt power station to a drifting black hulk in fifty
+  seconds — and her one designed backup lived for exactly forty-one seconds more.</p>
+</section>
+
+<div class="statgrid">
+  <div class="stat"><div class="v">50 s</div><div class="l">impact → total blackout<br>(21:45:07 → 21:45:57)</div></div>
+  <div class="stat"><div class="v">6 / 6</div><div class="l">main diesel generators<br>drowned together</div></div>
+  <div class="stat"><div class="v warn">41 s</div><div class="l">emergency generator on line<br>(21:46:03 → 21:46:44)</div></div>
+  <div class="stat"><div class="v bad">0</div><div class="l">bilge or ballast pumps<br>fed from the emergency board</div></div>
+</div>
+
+<section class="prose">
+
+<h2><span class="no">3.1</span>Fifty seconds</h2>
+
+<p>The wound of Chapter 2 crossed compartments 5, 6 and 7 — which is to say: the
+compartment holding both 21&nbsp;MW propulsion motors and their transformers, and both
+engine rooms, three main generators in each. Sea water at eight metres' head does not
+seep; it blasts. Within seconds of impact the aft engine room was taking water over
+its plates; within tens of seconds it was reaching switchboards, cable runs and the
+running generators themselves. The VDR fixes the moment precisely: at
+<strong>21:45:57</strong>, fifty seconds after the rock, the main electrical network
+collapsed entirely. Both propellers had already stopped — the propulsion drives
+tripped in the first seconds — and the ship, still carrying fifteen knots of way,
+went dark from funnel to keel.</p>
+
+<p>It cannot be said often enough: <strong>no crew error caused the blackout, and no
+crew action could have prevented it.</strong> Six generators in two rooms is genuine
+redundancy against machinery failure and against fire. Against the sea it was no
+redundancy at all, because both rooms — and the pumps, and the motors, and the main
+switchboard — sat behind the same fifty metres of shell plating. The disaster found
+the one wound that reached everything.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The power system dies — a one-line replay</span>
+    <span class="hint">step through the timestamps, or press play — amber is alive, blue is under water</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="oneline" style="aspect-ratio: 1.9 / 1; min-height: 360px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="ol-log"></div>
+  <div class="fig-controls">
+    <button class="btn primary" id="ol-play">▶ play</button>
+    <div class="seg" id="ol-step">
+      <button data-v="0" class="on">21:45:06</button>
+      <button data-v="1">21:45:10</button>
+      <button data-v="2">21:45:57</button>
+      <button data-v="3">21:46:03</button>
+      <button data-v="4">21:46:44</button>
+      <button data-v="5">the rest of the night</button>
+    </div>
+  </div>
+  <div class="fig-note">Simplified one-line diagram (the real plant had two main switchboard
+  sections, 11 kV distribution and dozens of sub-boards). Timings are from the MIT report:
+  blackout logged 21:45:57; emergency generator auto-started 21:46:03; breaker 901 tripped
+  21:46:44 under concurrent short circuits from flooded circuits.</div>
+</figure>
+
+<h2><span class="no">3.2</span>Forty-one seconds of backup</h2>
+
+<p>The emergency diesel generator did what SOLAS asks of it. It sat high in the ship,
+far above any waterline, with its own fuel and its own switchboard, and when the main
+network died it <strong>auto-started within six seconds</strong> and closed its breaker —
+breaker <strong>901</strong> — onto the emergency switchboard at 21:46:03. Emergency
+lighting flickered back; the steering-gear pumps came alive (the VDR sees them
+powered); for those forty-one seconds the ship had her designed minimum.</p>
+
+<p>Then breaker 901 tripped. The investigation's electrical annex is unusually frank
+about why: the emergency switchboard was feeding circuits that ran <em>down into the
+flooding compartments</em>, and as the sea found them it turned them, one after
+another, into short circuits — several at once. Protection saw a fault it could not
+isolate and opened the main breaker (the submerged shore-connection changeover may
+have contributed). The chief engineer and the electrical officer fought to re-close
+it; the generator would run, the breaker would hold briefly, trip again. The
+emergency plant spent the rest of the night delivering moments of power rather than
+power — enough to tantalise, not enough to work with. The ship's damage-stability
+computer (NAPA) ran “not constantly” on its dedicated UPS; the engine control room
+reported <em>no system — balancing pumps, bilge, ballast — can be put into
+operation</em>.</p>
+
+<div class="callout">
+  <span class="tag">Was the EDG badly maintained?</span>
+  <p>It had passed its monthly no-load test five days earlier, in Toulon, breaker
+  closure and all. The court record shows a machine that started and made power on
+  demand. What failed was the <em>concept</em>: an emergency network designed for a ship
+  with a fire or a dead engine room, not for a ship whose lower electrical anatomy was
+  dissolving into sea water. An emergency system that keeps its circuits out of the
+  bilges — or sheds flooded sections instead of dying with them — was one of the
+  quiet lessons of the night.</p>
+</div>
+
+<h2><span class="no">3.3</span>What the emergency board could never have done</h2>
+
+<p>It is important to be honest about what a perfectly functioning emergency
+generator would have bought. The emergency switchboard feeds <em>survival</em> loads:
+emergency lighting, alarms and public address, radios, navigation instruments,
+steering-gear pumps, sprinkler and emergency fire pumps, and the lifts. It does
+<strong>not</strong> feed the main bilge and ballast pumps — those hang off the main
+switchboard, and anyway (Chapter 2) they were outmatched a hundredfold by the
+inflow and drowned where they stood. The ship sinks with or without breaker 901.</p>
+
+<p>But the <em>evacuation</em> was another matter. With solid emergency power the night
+looks different: corridors and muster stations stay lit rather than dropping to
+battery glim; the PA is always available and audible; lifts run for wheelchair
+users (several of the dead were mobility-impaired); the bridge keeps its
+instruments, its stability computer and its communications without improvising by
+torchlight. Nobody can say how many of the 32 that would have saved. More than
+zero is a defensible guess.</p>
+
+<table class="data">
+  <caption>Who feeds what — and what that meant on the night</caption>
+  <tr><th>Load</th><th>Fed from</th><th>Fate after 21:46:44</th></tr>
+  <tr><td class="k">Propulsion motors</td><td>Main switchboard</td><td>Gone at impact — drives tripped, then boards drowned</td></tr>
+  <tr><td class="k">Bilge / ballast pumps</td><td>Main switchboard</td><td>Unpowered and mostly under water; never ran</td></tr>
+  <tr><td class="k">Steering gear pumps</td><td>Emergency board</td><td>41 seconds of power; rudders left hard to starboard</td></tr>
+  <tr><td class="k">Emergency lighting, PA, alarms</td><td>Emergency board + batteries</td><td>Intermittent; battery lighting only, fading over the night</td></tr>
+  <tr><td class="k">Radios / GMDSS</td><td>Emergency board + batteries</td><td>Worked (battery-backed) — distress finally sent 22:40</td></tr>
+  <tr><td class="k">Lifts</td><td>Emergency board</td><td>Dead — a hard night for the elderly and disabled</td></tr>
+  <tr><td class="k">NAPA stability computer</td><td>Dedicated UPS</td><td>“Not working constantly” — no reliable damage assessment</td></tr>
+</table>
+
+<h2><span class="no">3.4</span>The single point of failure, made law</h2>
+
+<p>The Concordia's electrical anatomy was perfectly legal, and that was the problem.
+The post-2010 <em>Safe Return to Port</em> rules (SOLAS II-2/21-22, for ships built after
+July 2010 — the Concordia predated them) exist precisely to break this pattern: a
+casualty in any one compartment must leave a big passenger ship able to make her own
+way to port, which forces duplicated, <em>separated</em> propulsion and power. The MIT
+report's recommendations push the same way for the existing fleet: double-skin
+protection for compartments holding vital equipment, more sub-division of the
+electrical plant, and interconnections so one flooded zone cannot pull down the
+emergency network. In the specific matter of breaker 901, the modern answer is
+selectivity: shed the drowning circuits, keep the board.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="flooding.html"><span class="dir">← Chapter 2</span><span class="title">The Wound</span></a>
+  <a class="next" href="drift.html"><span class="dir">Chapter 4 →</span><span class="title">The Drift</span></a>
+</nav>
+
+</main>
+
+<script src="cc-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, canvas, seg, label, line, mono } = CC;
+
+  /* ---- one-line diagram cascade ---- */
+  // stages
+  const STAGES = [
+    { t: "21:45:06", log: "One second before impact. Six diesel generators on line, ~75 MW available; the plant is healthy; the ship is making 15.9 knots." },
+    { t: "21:45:10", log: "Impact. The propulsion drives trip within seconds as the sea enters compartments 5 and 6. The generators are still alive — for the moment." },
+    { t: "21:45:57", log: "Sea water reaches the engine rooms' switchboards and machines. Total blackout, 50 seconds after impact. Both engine rooms are flooding." },
+    { t: "21:46:03", log: "The emergency diesel generator, high in the superstructure, auto-starts and closes breaker 901. Emergency lighting and steering pumps live." },
+    { t: "21:46:44", log: "Breaker 901 trips — the emergency board is feeding flooded circuits that have become simultaneous short circuits. It will never hold load again." },
+    { t: "22:00 →", log: "The rest of the night: the EDG restarts and trips, restarts and trips. Battery lamps and hand torches. The engine control room reports: no pump of any kind can be run." },
+  ];
+  let stage = 0, playTimer = null;
+
+  // node states per stage: 1 alive, 0 dead, 2 flooded(dead+blue), 3 partial
+  const N = {
+    dg456:  [1,1,2,2,2,2],
+    dg123:  [1,1,2,2,2,2],
+    msb:    [1,1,2,2,2,2],
+    prop:   [1,0,2,2,2,2],
+    pumps:  [1,1,2,2,2,2],
+    hotel:  [1,1,0,0,0,0],
+    edg:    [0,0,0,1,1,3],
+    b901:   [0,0,0,1,0,0],
+    esb:    [0,0,0,1,0,3],
+    steer:  [0,0,0,1,0,0],
+    elight: [0,0,0,1,3,3],
+    radio:  [1,1,3,1,3,3],
+  };
+  const colOf = (s) => s === 1 ? C.amber : s === 2 ? C.sea : s === 3 ? C.amberDim : "rgba(232,230,221,0.22)";
+
+  const fig = canvas("oneline", (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const u = Math.min(w / 980, h / 520);
+    const fx = (x) => x * u + (w - 980 * u) / 2;
+    const fy = (y) => y * u;
+
+    function box(x, y, bw, bh, txt, state, sub) {
+      const col = colOf(state);
+      ctx.strokeStyle = col;
+      ctx.lineWidth = state === 1 ? 2 : 1.2;
+      ctx.fillStyle = state === 2 ? "rgba(57,135,229,0.16)" : state === 1 ? "rgba(240,180,41,0.08)" : "rgba(232,230,221,0.02)";
+      ctx.beginPath();
+      ctx.roundRect(fx(x), fy(y), bw * u, bh * u, 6);
+      ctx.fill(); ctx.stroke();
+      label(ctx, txt, fx(x + bw / 2), fy(y + (sub ? bh / 2 - 4 : bh / 2 + 4)), { align: "center", color: state ? C.ink : C.muted, font: mono(Math.max(9, 11.5 * u), state === 1) });
+      if (sub) label(ctx, sub, fx(x + bw / 2), fy(y + bh / 2 + 12), { align: "center", color: state === 2 ? C.teal : C.muted, font: mono(Math.max(8, 9.5 * u)) });
+      if (state === 2) label(ctx, "≈≈", fx(x + bw - 18), fy(y + 14), { color: C.teal, font: mono(10, true) });
+    }
+    function wire(x1, y1, x2, y2, state) {
+      line(ctx, fx(x1), fy(y1), fx(x2), fy(y2), colOf(state), state === 1 ? 2 : 1.2, state ? null : [4, 4]);
+    }
+
+    const s = stage;
+    // main plant (drawn low = low in the ship)
+    box(40, 330, 200, 70, "DG 1 · DG 2 · DG 3", N.dg123[s], "fwd engine room · WTC 7");
+    box(40, 420, 200, 70, "DG 4 · DG 5 · DG 6", N.dg456[s], "aft engine room · WTC 6");
+    box(320, 360, 190, 96, "MAIN SWITCHBOARD", N.msb[s], "11 kV · WTC 6");
+    wire(240, 365, 320, 395, Math.min(N.dg123[s], N.msb[s]) === 1 ? 1 : 0);
+    wire(240, 455, 320, 425, Math.min(N.dg456[s], N.msb[s]) === 1 ? 1 : 0);
+
+    box(590, 330, 180, 56, "PROPULSION 2×21 MW", N.prop[s], "motors · WTC 5");
+    box(590, 400, 180, 56, "BILGE & BALLAST PUMPS", N.pumps[s], "WTC 5 · WTC 8");
+    box(590, 470, 180, 44, "HOTEL LOAD", N.hotel[s]);
+    wire(510, 380, 590, 356, Math.min(N.msb[s], N.prop[s]) === 1 ? 1 : 0);
+    wire(510, 408, 590, 428, Math.min(N.msb[s], N.pumps[s]) === 1 ? 1 : 0);
+    wire(510, 436, 590, 490, Math.min(N.msb[s], N.hotel[s]) === 1 ? 1 : 0);
+
+    // emergency plant (drawn high = high in the ship)
+    box(40, 60, 200, 64, "EMERGENCY GENERATOR", N.edg[s], "deck 11 — dry all night");
+    // breaker 901
+    const bx = 285, by = 92;
+    const bState = N.b901[s];
+    ctx.strokeStyle = colOf(bState || (s >= 3 ? 0 : 0));
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(fx(bx), fy(by), 9 * u, 0, TAU);
+    ctx.stroke();
+    // breaker blade: closed = straight through, open = swung up
+    ctx.beginPath();
+    ctx.moveTo(fx(bx - 9), fy(by));
+    if (bState === 1) ctx.lineTo(fx(bx + 9), fy(by));
+    else ctx.lineTo(fx(bx + 5), fy(by - 14));
+    ctx.strokeStyle = bState === 1 ? C.amber : (s >= 4 ? C.danger : "rgba(232,230,221,0.35)");
+    ctx.stroke();
+    label(ctx, "breaker 901" + (s >= 4 ? " — TRIPPED" : s === 3 ? " — closed" : ""), fx(bx), fy(by - 22), { align: "center", color: s >= 4 ? C.danger : C.muted, font: mono(9.5, s >= 3) });
+    wire(240, 92, bx - 9, 92, N.edg[s] === 1 && s >= 3 ? 1 : N.edg[s] === 3 ? 3 : 0);
+
+    box(340, 60, 170, 64, "EMERGENCY SWITCHBOARD", N.esb[s]);
+    wire(bx + 9, 92, 340, 92, bState === 1 ? 1 : 0);
+
+    box(590, 40, 180, 44, "STEERING GEAR PUMPS", N.steer[s]);
+    box(590, 96, 180, 44, "EMERG. LIGHTING · PA · LIFTS", N.elight[s]);
+    box(590, 152, 180, 44, "RADIOS / GMDSS (+batt)", N.radio[s]);
+    wire(510, 80, 590, 60, Math.min(N.esb[s], N.steer[s]) === 1 ? 1 : 0);
+    wire(510, 92, 590, 116, N.esb[s] === 1 ? 1 : N.elight[s] === 3 ? 3 : 0);
+    wire(510, 104, 590, 172, N.esb[s] === 1 ? 1 : N.radio[s] === 3 ? 3 : 0);
+
+    // the "downward" doomed feeders from ESB into flooded zone
+    if (s >= 3) {
+      const col = s === 3 ? C.danger : "rgba(224,82,82,0.4)";
+      line(ctx, fx(425), fy(124), fx(425), fy(330), col, 1.4, [5, 4]);
+      label(ctx, s === 3 ? "feeders into the flooded compartments → short circuits" : "shorted feeders", fx(437), fy(240), { color: col, font: mono(9.5) });
+    }
+
+    // waterline sweep
+    const wl = [520, 520, 300, 300, 285, 270][s];
+    ctx.fillStyle = "rgba(57,135,229,0.09)";
+    ctx.fillRect(0, fy(wl), w, h);
+    line(ctx, 0, fy(wl), w, fy(wl), "rgba(86,183,207,0.5)", 1.2);
+    label(ctx, "flood level (schematic)", 10, fy(wl) - 6, { color: C.teal, font: mono(9) });
+
+    label(ctx, "HIGH IN THE SHIP", fx(40), fy(36), { color: C.muted, font: mono(9.5, true) });
+    label(ctx, "LOW IN THE SHIP — WTC 5–8", fx(40), fy(316), { color: C.muted, font: mono(9.5, true) });
+    label(ctx, STAGES[s].t, w - 16, 30, { align: "right", color: C.amber, font: mono(15, true) });
+  });
+
+  const logEl = document.getElementById("ol-log");
+  let segBtns;
+  function setStage(i) {
+    stage = i;
+    logEl.innerHTML = "<span class='t'>" + STAGES[i].t + "</span> — " + STAGES[i].log;
+    segBtns.forEach((b, j) => b.classList.toggle("on", j === i));
+    fig && fig.redraw();
+  }
+  segBtns = Array.from(document.querySelectorAll("#ol-step button"));
+  segBtns.forEach((b, i) => b.addEventListener("click", () => { stopPlay(); setStage(i); }));
+  function stopPlay() {
+    if (playTimer) { clearInterval(playTimer); playTimer = null; }
+    document.getElementById("ol-play").textContent = "▶ play";
+  }
+  document.getElementById("ol-play").addEventListener("click", () => {
+    if (playTimer) { stopPlay(); return; }
+    document.getElementById("ol-play").textContent = "❚❚ pause";
+    if (stage >= STAGES.length - 1) setStage(0);
+    playTimer = setInterval(() => {
+      if (stage >= STAGES.length - 1) { stopPlay(); return; }
+      setStage(stage + 1);
+    }, 2600);
+  });
+  setStage(0);
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

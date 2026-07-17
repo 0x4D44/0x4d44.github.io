@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Drift — Costa Concordia, Chapter 4</title>
+<meta name="description" content="How a dead ship drifted: momentum past the harbour, a jammed rudder, a north-easterly breeze that pushed the Costa Concordia back onto Giglio — and the wind directions that would have killed thousands.">
+<link rel="stylesheet" href="cc.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">COSTA CONCORDIA</a></div>
+    <div class="strap">anatomy of a shipwreck — an interactive investigation</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="collision.html">1 · The Salute</a>
+    <a href="flooding.html">2 · The Wound</a>
+    <a href="blackout.html">3 · The Blackout</a>
+    <a href="drift.html" aria-current="page">4 · The Drift</a>
+    <a href="bridge.html">5 · The Bridge</a>
+    <a href="evacuation.html">6 · The Abandonment</a>
+    <a href="verdict.html">7 · The Reckoning</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 4 · 21:45 – 22:44</p>
+  <h1>The Drift</h1>
+  <p class="standfirst">From the moment the propulsion tripped, nobody was driving the
+  Costa Concordia. For fifty-nine minutes a 114,000-tonne hulk coasted, stopped, spun
+  half a circle and blew sideways onto the island that had wounded her. It was the
+  single greatest piece of luck in the whole disaster — and it was luck.</p>
+</section>
+
+<div class="statgrid">
+  <div class="stat"><div class="v">~2.3 km</div><div class="l">travelled after impact,<br>engines dead throughout</div></div>
+  <div class="stat"><div class="v">22:11</div><div class="l">dead in the water —<br>0.3 kn, drifting</div></div>
+  <div class="stat"><div class="v">NE, ~14 kn</div><div class="l">the breeze that pushed<br>her back ashore</div></div>
+  <div class="stat"><div class="v">22:44</div><div class="l">aground again,<br>Punta Gabbianara</div></div>
+  <div class="stat"><div class="v warn">22:47</div><div class="l">anchors let go —<br>after the grounding</div></div>
+</div>
+
+<section class="prose">
+
+<h2><span class="no">4.1</span>A dead ship is a leaf</h2>
+
+<p>Picture the ship a minute after impact. Both propellers are stopped. The rudders
+are frozen where the last of the emergency power left them — <strong>hard to
+starboard</strong>. She is still making close to fifteen knots, bleeding speed slowly,
+because 114,000 tonnes does not stop for anyone. On that dying momentum she coasts
+north-north-east, past Le Scole, past the mouth of Giglio Porto — close enough that
+people on the quay watched her go by, dark — for about a mile and a half.</p>
+
+<p>By 22:11 the log reads 0.3 knots: dead in the water, roughly a kilometre north
+of the harbour, a few hundred metres offshore. And now the only forces left in play
+are the breeze and the water. A cruise ship is, aerodynamically, a block of flats
+lying on its side: the Concordia showed the wind a slab roughly 290 metres long and
+40 metres high — the better part of <strong>10,000 square metres of sail</strong> — while
+drawing only 8 metres of water. Even a 14-knot breeze leans on that slab with tens
+of tonnes of force. The north-easterly took her aback, weathercocked her bow away
+through half a circle (the jammed starboard rudder helping the swing), and set her
+down, beam-on, toward the shore at a fraction of a knot. At 22:44 her starboard
+bilge touched the rocky shelf at Punta Gabbianara, just north of the harbour. She
+had come back to Giglio to die within 500 metres of where she was wounded.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Fifty-nine minutes adrift, replayed</span>
+    <span class="hint">play, or scrub — the barbs show the north-easterly; note the bow swinging through half a circle</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="drift" style="aspect-ratio: 1.65 / 1; min-height: 380px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="drift-log"></div>
+  <div class="readouts">
+    <span class="ro">speed <b id="dr-spd">—</b></span>
+    <span class="ro">heading <b id="dr-hdg">—</b></span>
+    <span class="ro">heel <b id="dr-heel">—</b></span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="drift-play">▶ play</button>
+    <div class="ctl" style="flex:1 1 260px">
+      <label for="drift-time">time</label>
+      <input type="range" id="drift-time" min="78307" max="81870" step="5" value="78307" style="flex:1">
+      <output>21:45:07</output>
+    </div>
+  </div>
+  <div class="fig-note">Track and headings are a schematic reconstruction consistent with
+  the AIS/VDR picture in the investigation (coasting north past the port; dead in the
+  water and swinging by 22:11; beam-on drift south-west; grounded at Punta Gabbianara
+  22:44). The ship is drawn ~2× scale.</div>
+</figure>
+
+<h2><span class="no">4.2</span>“I steered her there” — did he?</h2>
+
+<p>Schettino would later claim the return to Giglio as his masterstroke — a deliberate
+act of seamanship that placed the wreck in shallow water and saved thousands. The
+investigation's reading of the data is colder. After 21:46 the ship had no propulsion
+and, for all but forty-one seconds, no powered steering; no bow thruster; nothing. A
+master cannot steer a ship that has no means of steering. The track the AIS recorded
+is the track of a derelict: a coast, a stall, a weathercock turn and a leeway drift,
+all pointing exactly downwind. The anchors — the one tool that was genuinely
+available, and which, dropped smartly at 22:11 with the ship stopped, might have
+held her <em>off</em> the rocks or at least controlled how she took them — were not let
+go until <strong>22:47</strong>, three minutes <em>after</em> she was already aground.
+Divers found them lying on the seabed with their flukes pointed upward: dropped
+straight down under a stationary, grounded ship, they had never dug in at all.</p>
+
+<div class="callout story">
+  <span class="tag">The honest version of the “miracle”</span>
+  <p>It remains true — and the courts accepted — that the grounding at Punta
+  Gabbianara is why the death toll was 32 and not thousands. The dishonest part is
+  the authorship. The ship was placed on that shelf by the direction the wind
+  happened to blow on the night of 13 January 2012, not by anyone on her bridge.
+  Which invites the obvious, uncomfortable question: what if it had blown the other
+  way?</p>
+</div>
+
+<h2><span class="no">4.3</span>Spin the wind yourself</h2>
+
+<p>Giglio's east coast shelves quickly: a narrow rocky ledge a few metres deep, then
+60–100 metres of water within a few hundred metres of shore. A ship in the
+Concordia's state — five compartments flooding, free surface spreading across her
+lower decks, list creeping up — had two possible futures. Grounded early on a shelf,
+she heels against rock and stops: a terrible night, a survivable one. Adrift in deep
+water, the flooding proceeds to its conclusion: the list accelerates past the point
+where boats can launch (Chapter 6), and she capsizes — floats on her side or rolls
+fully over — with most of 4,229 people still aboard, at night, in 14 °C water.
+Every serious reconstruction of that branch of the night ends in four figures.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">The counterfactual compass</span>
+    <span class="hint">choose the wind that blows from 22:11 onwards, and see where the derelict goes</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="windlab" style="aspect-ratio: 1.8 / 1; min-height: 320px; touch-action: manipulation;"></canvas>
+  </div>
+  <div class="evlog" id="wind-verdict"></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>wind from</label>
+      <div class="seg" id="wind-seg">
+        <button data-v="NE" class="on">NE (actual)</button>
+        <button data-v="N">N</button>
+        <button data-v="E">E</button>
+        <button data-v="SE">SE</button>
+        <button data-v="S">S</button>
+        <button data-v="SW">SW</button>
+        <button data-v="W">W</button>
+        <button data-v="NW">NW</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Leeway drift at ~0.8 kn from the 22:11 stall point, for one hour.
+  Anything with an easterly or northerly component sets the wreck ashore on Giglio;
+  anything westerly or southerly carries her over the 60–100 m contour, where the
+  flooding finishes what it started. The margin between 32 dead and a Mediterranean
+  Titanic was a weather forecast.</div>
+</figure>
+
+<h2><span class="no">4.4</span>The shelf that held her</h2>
+
+<p>The second grounding was gentle — a fraction of a knot, a nudge. But it was
+decisive. The rocky shelf at Punta Gabbianara caught the starboard bilge and gave
+the flooding hull something to lean on. Over the next hours, as the water spread aft
+and across, the Concordia rolled slowly onto her starboard side <em>against the
+slope</em> — 20° by around 23:15, 30° within the hour after that, settling finally
+against the rock at about 65–70°, her port side in the air, half her superstructure
+under water, and her keel resting metres from a drop into deep water. Salvage
+engineers would later spend months terrified of exactly that geometry: the wreck
+sat on two rock spurs, and had she slipped off them during the two years that
+followed, she would have taken her pollutants — and, in the first days, possibly
+survivors and bodies — down 70 metres. Anchor chains and, later, a steel platform
+were rigged specifically to stop her sliding. The island had caught the ship; it
+was never entirely clear it would keep her.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="blackout.html"><span class="dir">← Chapter 3</span><span class="title">The Blackout</span></a>
+  <a class="next" href="bridge.html"><span class="dir">Chapter 5 →</span><span class="title">The Bridge</span></a>
+</nav>
+
+</main>
+
+<script src="cc-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, canvas, seg, transport, label, line, hms, t, clamp, lerp, mono, shipPath } = CC;
+
+  /* Shared schematic geography (same frame as Chapter 1, origin at Le Scole). */
+  const COAST = [
+    [-1500, -2200], [-1080, -1750], [-900, -1280], [-980, -900], [-780, -520],
+    [-700, -260], [-820, -60], [-700, 60], [-560, 160],
+    [-720, 420], [-830, 700], [-700, 950],
+    [-560, 1080], [-700, 1250], [-760, 1500],
+    [-660, 1900], [-540, 2250], [-700, 2600], [-1500, 3100],
+  ];
+  const ROCKS = [[-360, -140, 46], [-220, -60, 34], [-95, -10, 26], [0, 0, 20]];
+
+  function drawGeo(ctx, w, h, view) {
+    const X = (x) => w / 2 + (x - view.cx) / view.mPerPx;
+    const Y = (y) => h / 2 - (y - view.cy) / view.mPerPx;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0d1622";
+    ctx.fillRect(0, 0, w, h);
+    // depth bands: shelf then deep
+    ctx.save();
+    ctx.beginPath();
+    COAST.forEach(([x, y], i) => i ? ctx.lineTo(X(x + 300), Y(y)) : ctx.moveTo(X(x + 300), Y(y)));
+    for (let i = COAST.length - 1; i >= 0; i--) ctx.lineTo(X(COAST[i][0] - 400), Y(COAST[i][1]));
+    ctx.closePath();
+    ctx.fillStyle = "rgba(57,135,229,0.12)";
+    ctx.fill();
+    ctx.restore();
+    label(ctx, "≈ 60–100 m deep", X(900), Y(1300), { color: "rgba(86,183,207,0.5)", font: mono(9.5) });
+    label(ctx, "shelf", X(-430), Y(1650), { color: "rgba(86,183,207,0.75)", font: mono(9) });
+    // land
+    ctx.beginPath();
+    COAST.forEach(([x, y], i) => i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y)));
+    ctx.lineTo(X(COAST[COAST.length - 1][0] - 3500), Y(COAST[COAST.length - 1][1]));
+    ctx.lineTo(X(COAST[0][0] - 3500), Y(COAST[0][1]));
+    ctx.closePath();
+    ctx.fillStyle = C.land;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(232,230,221,0.25)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ROCKS.forEach(([x, y, r]) => {
+      ctx.beginPath();
+      ctx.arc(X(x), Y(y), Math.max(2.5, r / view.mPerPx), 0, TAU);
+      ctx.fillStyle = C.rock; ctx.fill();
+      ctx.strokeStyle = "rgba(232,230,221,0.35)"; ctx.stroke();
+    });
+    label(ctx, "Le Scole", X(-120), Y(-280), { color: C.ink2, font: mono(9.5, true) });
+    label(ctx, "Giglio Porto", X(-800), Y(1170), { color: C.ink2, align: "right", font: mono(9.5) });
+    label(ctx, "Punta Gabbianara", X(-760), Y(2760), { color: C.ink2, align: "right", font: mono(9.5) });
+    label(ctx, "N ↑", w - 30, 24, { color: C.muted, font: mono(11, true) });
+    return { X, Y };
+  }
+
+  /* ---- drift replay ---- */
+  // keyframes: [time, x, y, heading, heel]
+  const KF = [
+    [t("21:45:07"),    0,    0, 348, 0],
+    [t("21:47:00"), -60,  830, 352, 1],
+    [t("21:50:00"), -130, 1560, 356, 2],
+    [t("21:55:00"), -200, 2110, 2,  3],
+    [t("22:00:00"), -250, 2450, 8,  3.5],
+    [t("22:05:00"), -280, 2650, 14, 4],
+    [t("22:11:00"), -300, 2760, 22, 4.5],   // dead in the water
+    [t("22:18:00"), -340, 2740, 60, 5],
+    [t("22:25:00"), -400, 2670, 105, 5.5],
+    [t("22:32:00"), -480, 2580, 140, 6],
+    [t("22:38:00"), -560, 2480, 165, 7],
+    [t("22:44:00"), -640, 2400, 185, 8],    // aground, Punta Gabbianara
+    [t("22:51:00"), -655, 2390, 192, 10],
+  ];
+  function kfAt(tt) {
+    if (tt <= KF[0][0]) return KF[0];
+    for (let i = 1; i < KF.length; i++) {
+      if (tt <= KF[i][0]) {
+        const a = KF[i - 1], b = KF[i];
+        const f = (tt - a[0]) / (b[0] - a[0]);
+        // heading interp shortest way
+        let dh = ((b[3] - a[3] + 540) % 360) - 180;
+        return [tt, lerp(a[1], b[1], f), lerp(a[2], b[2], f), a[3] + dh * f, lerp(a[4], b[4], f)];
+      }
+    }
+    return KF[KF.length - 1];
+  }
+  function speedAt(tt) {
+    const dt = 30;
+    const a = kfAt(tt - dt / 2), b = kfAt(tt + dt / 2);
+    return Math.hypot(b[1] - a[1], b[2] - a[2]) / dt / 0.51444; // kn
+  }
+
+  const DRIFT_EVENTS = [
+    [t("21:45:07"), "Impact. Propulsion trips; the ship carries ~15 kn of way, rudders left hard to starboard."],
+    [t("21:50:00"), "Coasting north past the harbour mouth, dark and silent, bleeding speed."],
+    [t("22:00:00"), "Down to a few knots. The bow starts to fall off to starboard as way is lost."],
+    [t("22:11:00"), "Dead in the water — 0.3 kn. The NE breeze takes charge of ~10,000 m² of topside."],
+    [t("22:18:00"), "Weathercocking: the bow swings through east. Leeway drift toward the shore begins."],
+    [t("22:32:00"), "Beam-on to the wind, drifting SW at under a knot, closing Punta Gabbianara."],
+    [t("22:44:00"), "Second grounding: the starboard bilge finds the shelf. The drift is over."],
+    [t("22:47:22"), "Anchors let go — three minutes after grounding. They lie flat and never bite."],
+  ];
+
+  let dTime = KF[0][0];
+  const dLog = document.getElementById("drift-log");
+  const roS = document.getElementById("dr-spd"), roH = document.getElementById("dr-hdg"), roL = document.getElementById("dr-heel");
+
+  const driftFig = canvas("drift", (ctx, w, h) => {
+    const view = { cx: 300, cy: 1400, mPerPx: Math.max(3300 / h, 2600 / w) };
+    const { X, Y } = drawGeo(ctx, w, h, view);
+
+    // wind barbs (NE wind → pointing SW)
+    const wt = performance.now() / 1000;
+    for (let gx = -1; gx < 6; gx++) for (let gy = -1; gy < 5; gy++) {
+      const bx = w * 0.14 * gx + w * 0.07 * (gy % 2) + ((wt * 12) % (w * 0.14));
+      const by = h * 0.22 * gy + h * 0.06;
+      if (bx > w + 20) continue;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate((225 - 90) * Math.PI / 180);  // from NE → toward SW; canvas angle
+      ctx.strokeStyle = "rgba(86,183,207,0.28)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(-9, 0); ctx.lineTo(9, 0);
+      ctx.moveTo(9, 0); ctx.lineTo(4, -4);
+      ctx.moveTo(9, 0); ctx.lineTo(4, 4);
+      ctx.stroke();
+      ctx.restore();
+    }
+    label(ctx, "wind NE ~14 kn", 14, 22, { color: C.teal, font: mono(10, true) });
+
+    // full track faint
+    ctx.strokeStyle = "rgba(232,230,221,0.16)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let tt = KF[0][0]; tt <= KF[KF.length - 1][0]; tt += 30) {
+      const p = kfAt(tt);
+      tt === KF[0][0] ? ctx.moveTo(X(p[1]), Y(p[2])) : ctx.lineTo(X(p[1]), Y(p[2]));
+    }
+    ctx.stroke();
+
+    // swept
+    ctx.strokeStyle = C.amber;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let tt = KF[0][0]; tt <= dTime; tt += 20) {
+      const p = kfAt(tt);
+      tt === KF[0][0] ? ctx.moveTo(X(p[1]), Y(p[2])) : ctx.lineTo(X(p[1]), Y(p[2]));
+    }
+    ctx.stroke();
+
+    // ship
+    const p = kfAt(dTime);
+    ctx.save();
+    ctx.translate(X(p[1]), Y(p[2]));
+    ctx.rotate((p[3] - 90) * Math.PI / 180);
+    const pxPerM = 1 / view.mPerPx;
+    ctx.fillStyle = dTime >= t("22:44:00") ? "rgba(224,82,82,0.9)" : "rgba(232,230,221,0.9)";
+    shipPath(ctx, 290 * 1.6 * pxPerM, 35 * 2.2 * pxPerM);
+    ctx.fill();
+    ctx.restore();
+
+    // scale bar
+    const bar = 500 / view.mPerPx;
+    line(ctx, w - 24 - bar, h - 20, w - 24, h - 20, C.ink2, 2);
+    label(ctx, "500 m", w - 24 - bar / 2, h - 28, { align: "center", color: C.muted });
+  }, { animate: true });
+
+  function setDrift(v) {
+    dTime = v;
+    const p = kfAt(v);
+    roS.textContent = (dTime >= t("22:44:00") ? 0 : speedAt(v)).toFixed(1) + " kn";
+    roH.textContent = Math.round(((p[3] % 360) + 360) % 360) + "°";
+    roL.textContent = p[4].toFixed(0) + "° stbd";
+    let ev = DRIFT_EVENTS[0];
+    DRIFT_EVENTS.forEach((e) => { if (e[0] <= v) ev = e; });
+    dLog.innerHTML = "<span class='t'>" + hms(ev[0]) + "</span> — " + ev[1];
+  }
+  transport({
+    min: KF[0][0], max: t("22:51:00"), rate: 60, playBtn: "drift-play", slider: "drift-time",
+    fmt: (v) => hms(v),
+    onTime: setDrift,
+  });
+  setDrift(KF[0][0]);
+
+  /* ---- counterfactual compass ---- */
+  const DIRS = { N: 180, NE: 225, E: 270, SE: 315, S: 0, SW: 45, W: 90, NW: 135 };
+  // drift heading = downwind; wind FROM dir θ blows toward θ+180.
+  const HEAD = { N: 180, NE: 225, E: 270, SE: 315, S: 0, SW: 45, W: 90, NW: 135 };
+  let windFrom = "NE";
+  const VERDICTS = {
+    NE: ["ashore at Punta Gabbianara — what actually happened", "The wreck lies on the shelf; evacuation over rock and calm water; 32 dead.", "good"],
+    N:  ["carried south, along the shore", "She slides past the harbour a few hundred metres off. Whether she snags the Lazzaretto headland or slips past Le Scole into open water is a coin toss — half of these nights end in deep water.", "warn"],
+    E:  ["ashore on the shelf north of the port", "Straight onto the shallow ledge — arguably better still for the evacuation.", "good"],
+    SE: ["ashore north of Punta Gabbianara", "A longer drift, but the island still catches her, in shallow water.", "good"],
+    S:  ["carried north, parallel to the coast", "She clears the point and drifts into open water NNE of the island as the list grows. Capsize in deep water — mass casualty.", "bad"],
+    SW: ["blown offshore to the north-east", "Away from the island, over the 100 m contour. The list passes 30° with everyone aboard. Catastrophe.", "bad"],
+    W:  ["blown due east, offshore", "Deep water within half a mile. No grounding, no leaning post — free-surface capsize. Catastrophe.", "bad"],
+    NW: ["blown south-east, offshore", "Clears Le Scole into open sea. Same ending: capsize in deep water at night. Catastrophe.", "bad"],
+  };
+
+  const START = [-300, 2760]; // 22:11 stall point
+  const windFig = canvas("windlab", (ctx, w, h) => {
+    const view = { cx: 350, cy: 2450, mPerPx: Math.max(2400 / h, 3200 / w) };
+    const { X, Y } = drawGeo(ctx, w, h, view);
+    // start point
+    ctx.fillStyle = C.ink;
+    ctx.beginPath(); ctx.arc(X(START[0]), Y(START[1]), 4, 0, TAU); ctx.fill();
+    label(ctx, "22:11 — dead in the water", X(START[0] + 60), Y(START[1] + 90), { color: C.ink2, font: mono(9.5) });
+
+    // drift line for chosen wind: 0.8 kn for 1 h = ~1480 m downwind
+    const hd = HEAD[windFrom] * Math.PI / 180;   // toward, nav degrees
+    const dx = Math.sin(hd), dy = Math.cos(hd);
+    const [vTitle, vText, mood] = VERDICTS[windFrom];
+    // find grounding: walk until inside coast x threshold (approx: coast x at y)
+    function coastXat(y) {
+      for (let i = 1; i < COAST.length; i++) {
+        const [x0, y0] = COAST[i - 1], [x1, y1] = COAST[i];
+        if ((y >= Math.min(y0, y1)) && (y <= Math.max(y0, y1))) {
+          const f = (y - y0) / ((y1 - y0) || 1);
+          return lerp(x0, x1, f);
+        }
+      }
+      return -1500;
+    }
+    let px = START[0], py = START[1], grounded = false, steps = 0;
+    ctx.strokeStyle = mood === "bad" ? C.danger : mood === "warn" ? C.amber : C.good;
+    ctx.lineWidth = 2.2;
+    ctx.setLineDash([7, 5]);
+    ctx.beginPath();
+    ctx.moveTo(X(px), Y(py));
+    while (steps++ < 200) {
+      px += dx * 12; py += dy * 12;
+      if (px <= coastXat(py) + 60) { grounded = true; break; }
+      if (steps * 12 > 2600) break;
+      ctx.lineTo(X(px), Y(py));
+    }
+    ctx.lineTo(X(px), Y(py));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    // end marker
+    if (grounded) {
+      ctx.fillStyle = C.good;
+      ctx.beginPath(); ctx.arc(X(px), Y(py), 6, 0, TAU); ctx.fill();
+      label(ctx, "aground — saved by the shore", X(px) + 10, Y(py) - 8, { color: C.good, font: mono(10, true) });
+    } else if (mood === "warn") {
+      label(ctx, "drifting on — fate undecided", X(px) + 12, Y(py) + 4, { color: C.amber, font: mono(10, true) });
+    } else {
+      ctx.strokeStyle = C.danger;
+      ctx.lineWidth = 2;
+      // capsize glyph: hull rolled over
+      ctx.save();
+      ctx.translate(X(px), Y(py));
+      ctx.beginPath(); ctx.arc(0, 0, 10, Math.PI * 0.1, Math.PI * 0.9, false); ctx.stroke();
+      ctx.restore();
+      label(ctx, "deep water — capsize", X(px) + 12, Y(py) + 4, { color: C.danger, font: mono(10, true) });
+    }
+    // wind arrow rose at corner
+    const rx = w - 64, ry = h - 64;
+    ctx.strokeStyle = C.teal; ctx.lineWidth = 2;
+    ctx.save();
+    ctx.translate(rx, ry);
+    ctx.rotate(hd + Math.PI);          // arrow points downwind? draw FROM direction
+    ctx.beginPath();
+    ctx.moveTo(0, -26); ctx.lineTo(0, 22);
+    ctx.moveTo(0, 22); ctx.lineTo(-5, 14);
+    ctx.moveTo(0, 22); ctx.lineTo(5, 14);
+    ctx.stroke();
+    ctx.restore();
+    label(ctx, "wind from " + windFrom, rx, ry + 44, { align: "center", color: C.teal, font: mono(10, true) });
+  });
+
+  const windLog = document.getElementById("wind-verdict");
+  seg("wind-seg", (v) => {
+    windFrom = v;
+    const [title, text, mood] = VERDICTS[v];
+    windLog.innerHTML = "<span class='t' style='color:" + (mood === "bad" ? C.danger : mood === "warn" ? C.amber : C.good) + "'>" + title + "</span> — " + text;
+    windFig && windFig.redraw();
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

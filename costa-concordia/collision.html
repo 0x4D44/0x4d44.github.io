@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Salute — Costa Concordia, Chapter 1</title>
+<meta name="description" content="The inchino, the wrong chart, the course-by-course approach at 16 knots, the six final helm orders and the 8-second helmsman error — replayed from the voyage data recorder.">
+<link rel="stylesheet" href="cc.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">COSTA CONCORDIA</a></div>
+    <div class="strap">anatomy of a shipwreck — an interactive investigation</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="collision.html" aria-current="page">1 · The Salute</a>
+    <a href="flooding.html">2 · The Wound</a>
+    <a href="blackout.html">3 · The Blackout</a>
+    <a href="drift.html">4 · The Drift</a>
+    <a href="bridge.html">5 · The Bridge</a>
+    <a href="evacuation.html">6 · The Abandonment</a>
+    <a href="verdict.html">7 · The Reckoning</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 1 · 21:00 – 21:45:07</p>
+  <h1>The Salute</h1>
+  <p class="standfirst">Nothing was wrong with the ship. Nothing was wrong with the weather.
+  The Costa Concordia was wrecked by a manoeuvre that had no operational purpose at all:
+  an <em>inchino</em> — a “bow”, a salute — a close sail-past of Isola del Giglio, improvised
+  at night, at nearly sixteen knots, on an open-sea chart, by a captain conning the ship by eye.</p>
+</section>
+
+<section class="prose">
+
+<h2><span class="no">1.1</span>A bow to the island</h2>
+
+<p>The <em>inchino</em> is an old and genuinely charming Italian custom: a ship passes close
+to a port or an island, sounds her whistle, lights her decks, and salutes the people ashore —
+often the home town of someone aboard. Cruise lines liked them; they made for spectacular
+photographs and warm local relations. The Concordia herself had saluted Giglio before, in
+August 2011 — but that pass was <strong>planned in advance, run in daylight</strong>, in the
+context of a local festival, with the route studied and approved.</p>
+
+<p>The salute of 13 January 2012 was nothing of the kind. It was arranged casually, hours
+before, as a favour: the head maître d’hôtel, Antonello Tievoli, was a Giglio native (he
+was called to the bridge to see his island), and Schettino also wanted to salute
+Capt. Mario Palombo, a retired Costa master who lived on the island. It was mid-January:
+dark since five o'clock, the island's lights the only reference, nobody waiting on the quay.
+The planned cruise track passed about <strong>4–5 miles off Giglio</strong>. Schettino
+ordered it re-laid to pass at half a mile — and then, in execution, took the ship inside
+even that.</p>
+
+<div class="callout story">
+  <span class="tag">The phone call</span>
+  <p>At 21:37 — eight minutes before impact, with the ship inside the half-mile line and
+  closing — Schettino was on the phone to Capt. Palombo, asking, in effect, <em>how close can
+  I come?</em> Palombo, who was not even on the island that night, told him there was enough
+  water up to 0.3–0.4 miles off. The call ended at 21:38:47. The evasive helm orders began
+  five minutes later. A master conning a 290-metre ship by eye, at night, at 16 knots,
+  half a mile from a rocky shore, was simultaneously holding a social phone call about how
+  much closer he could go.</p>
+</div>
+
+<h2><span class="no">1.2</span>The wrong chart</h2>
+
+<p>The chart on the Concordia's bridge that night was Italian Hydrographic Institute
+<strong>chart 6, scale 1:100,000</strong> — an open-sea passage chart on which the whole of
+Giglio is a few centimetres tall. The appropriate charts for a half-mile coastal pass —
+<strong>chart 122 at 1:50,000</strong>, or better <strong>chart 119 at 1:20,000</strong>,
+on which the Le Scole rocks are individually drawn with soundings — were not in use.
+The ship's ECDIS (electronic chart display) was fitted but the bridge team lacked the
+required type-specific training to rely on it, so the legal position was paper-chart
+navigation… on a paper chart five times too coarse for the manoeuvre being flown.</p>
+
+<p>This answers one of the most-asked questions about the disaster directly:
+<strong>yes, the rocks were charted.</strong> Le Scole is a named, charted, lit group of
+rocks — the largest carries a light — marked on the coastal charts and known to every
+local fisherman. Schettino's early claim that he had struck an “uncharted rock” was
+rejected by the investigation: the rock was uncharted only on the chart he had chosen
+to use, at a scale on which the entire final manoeuvre fits inside the width of the
+course line.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The same half mile, on two charts</span>
+    <span class="hint">switch scales — this is the identical stretch of coast the bridge was navigating</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="charts" style="aspect-ratio: 2.1 / 1; min-height: 300px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>chart in use</label>
+      <div class="seg" id="chart-seg">
+        <button data-v="100" class="on">1:100,000 · chart 6 (on the bridge)</button>
+        <button data-v="20">1:20,000 · chart 119 (in the drawer)</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Schematic rendering, not a reproduction of the actual charts. At
+  1:100,000, one millimetre of paper is 100 m of sea — the Concordia herself is under 3 mm
+  long, and Le Scole is a speck beside the coast. At 1:20,000 the group resolves into
+  individual rocks with soundings, and the gap the ship tried to shave becomes visible.</div>
+</figure>
+
+<h2><span class="no">1.3</span>Sixteen knots, by eye</h2>
+
+<p>From 21:39:14 Schettino had the con. His technique was the one that had worked in
+August: aim at the island, judge the moment by eye, and swing the bow north along the
+shore. But he made three quiet changes to the parameters. The pass was re-planned from
+0.5 miles to closer still; the speed was <strong>higher</strong> — around 15.5–16 knots,
+partly to make up schedule for Savona; and it was night. Depth perception against a dark
+island at night is notoriously poor: a shoreline shows you where the water ends, not
+where the rocks begin.</p>
+
+<p>He also navigated by <em>courses</em>, not by helm orders. Rather than taking the wheel's
+language — “starboard ten”, “hard to port” — he called compass courses (“three-two-five”,
+“three-three-five”) for the helmsman to steer, in English, which was neither his first
+language nor the helmsman's. Helmsman Jacob Rusli Bin, an Indonesian seaman, had
+already garbled two readbacks during the approach; at 21:43:44 the order “350” was read
+back as “340” and had to be shouted twice, and the third officer left her plotting
+position to stand beside him. The ship was closing the rocks at 8 metres per second
+while the bridge sorted out its own steering commands.</p>
+
+<table class="data">
+  <caption>The last six minutes on the VDR</caption>
+  <tr><th>Time</th><th>Order / event</th><th>Note</th></tr>
+  <tr><td class="num">21:39:14</td><td>Schettino takes the con</td><td>speed 15.3 kn, working up to 16</td></tr>
+  <tr><td class="num">21:39:30</td><td>“Steer 300”</td><td>course orders, not helm orders</td></tr>
+  <tr><td class="num">21:40:48</td><td>“325”</td><td>readback muddled, repeated</td></tr>
+  <tr><td class="num">21:42:07</td><td>“330”</td><td>ship already ~0.5 nm inside the planned line</td></tr>
+  <tr><td class="num">21:43:08</td><td>“335”</td><td></td></tr>
+  <tr><td class="num">21:43:33</td><td>“340”</td><td></td></tr>
+  <tr><td class="num">21:43:44</td><td>“350” — read back as “340”</td><td>corrected with a shout: “…otherwise we go on the rocks”</td></tr>
+  <tr><td class="num">21:44:05</td><td>Bow on Le Scole, 0.3 nm</td><td>16 kn — 35 seconds of water left</td></tr>
+  <tr><td class="num">21:44:11</td><td>“Starboard 10”</td><td>direct helm orders at last</td></tr>
+  <tr><td class="num">21:44:15</td><td>“Starboard 20”</td><td></td></tr>
+  <tr><td class="num">21:44:20</td><td>“Hard to starboard”</td><td>swinging the bow clear of the rocks</td></tr>
+  <tr><td class="num">21:44:36</td><td>“Midships”</td><td>bow &lt; 150 m from Le Scole</td></tr>
+  <tr><td class="num">21:44:43</td><td>“Port 10”</td><td>now swinging the <em>stern</em> clear — helmsman reaches only 5°</td></tr>
+  <tr><td class="num">21:44:45</td><td>“Port 20” — <strong>helm goes to starboard</strong></td><td>the error: ~8 seconds lost before the wheel comes back</td></tr>
+  <tr><td class="num">21:45:05</td><td>“Hard to port”</td><td>two seconds before impact</td></tr>
+  <tr><td class="num">21:45:07</td><td><strong>Impact</strong> — port side aft, ~15.5 kn</td><td>the hull opens from frame 52 to frame 125</td></tr>
+</table>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The final approach, replayed</span>
+    <span class="hint">play, or scrub the slider — the log shows each VDR order as it happens</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="approach" style="aspect-ratio: 1.9 / 1; min-height: 340px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="approach-log"></div>
+  <div class="readouts">
+    <span class="ro">heading <b id="ro-hdg">—</b></span>
+    <span class="ro">rudder <b id="ro-rud">—</b></span>
+    <span class="ro">speed <b>≈ 15.9 kn</b></span>
+    <span class="ro" id="ro-dist-wrap">Le Scole <b id="ro-dist">—</b></span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="approach-play">▶ play</button>
+    <div class="ctl" style="flex:1 1 240px">
+      <label for="approach-time">time</label>
+      <input type="range" id="approach-time" min="78180" max="78330" step="0.5" value="78180" style="flex:1">
+      <output>21:43:00</output>
+    </div>
+    <div class="ctl">
+      <label>compare</label>
+      <div class="seg" id="approach-what">
+        <button data-v="actual" class="on">what happened</button>
+        <button data-v="perfect">if the helm had answered perfectly</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">A kinematic reconstruction tuned to the VDR order times — schematic,
+  not survey data. The dashed grey line is the re-planned salute track (≈ 0.5 nm off);
+  the ship is drawn slightly over scale for visibility. In “perfect helm” mode the pale second track
+  shows the model's answer to the counterfactual — read §1.5 before trusting it.</div>
+</figure>
+
+<h2><span class="no">1.4</span>Why the turn came too late</h2>
+
+<p>A ship this size does not turn where you turn the wheel. From the order “hard over”,
+the steering gear takes some 12–15 seconds to lay the rudder across; the hull then takes
+many more seconds to build a turn rate; and even established, the Concordia's turning
+circle at 16 knots was roughly 0.35–0.4 nautical miles across. In pilotage terms she
+carries an <em>advance</em> — the distance she keeps making toward the old course after the
+order — of several ship-lengths. When Schettino began evading at 21:44:11, Le Scole was
+about 0.3 nm from the bow: <strong>less than the ship's own turning distance</strong>. From
+that geometry the encounter was, in a real sense, already decided; the only question left
+was which part of the hull would take the rock, and how hard.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Order the turn yourself</span>
+    <span class="hint">choose how far from the rocks you give “hard to starboard”</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="turnlab" style="aspect-ratio: 2.2 / 1; min-height: 260px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="turn-verdict-wrap">outcome <b id="turn-verdict">—</b></span>
+    <span class="ro">rudder lag <b>~13 s</b></span>
+    <span class="ro">turning circle <b>~0.37 nm</b></span>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl" style="flex:1 1 280px">
+      <label for="turn-d">turn ordered at</label>
+      <input type="range" id="turn-d" min="0.15" max="1.0" step="0.01" value="0.3" style="flex:1">
+      <output>0.30 nm</output>
+    </div>
+  </div>
+  <div class="fig-note">Simplified kinematics: straight run during rudder lay + response
+  (~13 s at 16 kn ≈ 110 m), then a steady turn of 0.37 nm diameter. The real hydrodynamics
+  are messier, but the lesson is the real one: at 16 knots the decision point is
+  <b>at least four tenths of a mile out</b> — Schettino's came at three.</div>
+</figure>
+
+<h2><span class="no">1.5</span>The eight seconds — did the helmsman sink the ship?</h2>
+
+<p>The last manoeuvre was actually good seamanship — the standard emergency technique
+for a close rock: first swing the bow clear (hard to starboard), then <em>kick the stern
+away</em> by reversing the helm (hard to port) as the obstacle comes abeam. It is the
+stern-swing part that failed. At 21:44:43 the order “port 10” produced only 5° of wheel.
+At 21:44:45 “port 20” produced — <strong>starboard</strong> helm. Rusli Bin caught his own
+mistake and wound the wheel back, but roughly eight seconds went by before the rudder
+was moving the right way, and “hard to port” at 21:45:05 came two seconds before the
+rock. The stern never got its kick. The port quarter swung into Le Scole instead of
+away from it.</p>
+
+<p>So: no error, no wreck? This became one of the sharpest technical disputes of the
+whole affair, because Schettino's defence rested on it:</p>
+
+<ul>
+  <li><strong>The court's consultants and the MIT safety investigation</strong> concluded the
+  error was <em>not determinant</em>: by 21:44:45 the ship was so close, so fast and so far
+  inside her own turning distance that the contact would have happened anyway — the
+  correct wheel might have changed which frames were torn, not whether.</li>
+  <li><strong>An independent 2015 reconstruction</strong> (Gubian, Piccinelli, Neri &amp;
+  Giurlanda), rebuilt from the black box and automation data, argued the court's dismissal
+  was too qualitative: their position analysis put the breach point tens of metres from
+  where the judge's experts had it, close enough that eight seconds of correct stern-kick
+  deserved a quantitative answer rather than a shrug.</li>
+</ul>
+
+<p>The honest summary: <strong>the error was real, it cost the one manoeuvre that might
+have softened the blow, and it probably did not change the outcome</strong> — a ship
+that needs a perfect helm response inside her own turning circle, at night, to avoid
+rocks she has aimed herself at, has already been wrecked by her captain. The Italian
+courts agreed: Rusli Bin's error earned a plea-bargained sentence measured in months;
+the navigation that created it, sixteen years.</p>
+
+<div class="callout">
+  <span class="tag">Language on the bridge</span>
+  <p>The working language of the ship was Italian; the helm orders that night were
+  given in English; the helmsman's English was poor enough that readbacks failed three
+  times in six minutes. The MIT report lists among its causes the master's orders
+  “aimed at providing the compass course… instead of the rudder angle”, and a bridge
+  team that did not intervene. None of this is exotic: it is precisely the failure mode
+  that bridge resource management (Chapter 5) exists to catch.</p>
+</div>
+
+</section>
+
+<nav class="chapnav">
+  <a href="./"><span class="dir">← Overview</span><span class="title">The Wreck of the Costa Concordia</span></a>
+  <a class="next" href="flooding.html"><span class="dir">Chapter 2 →</span><span class="title">The Wound</span></a>
+</nav>
+
+</main>
+
+<script src="cc-lib.js"></script>
+<script>
+(function () {
+  const { C, TAU, canvas, seg, slider, transport, label, line, hms, t, clamp, lerp, mono, shipPath, fmtNum } = CC;
+  const NM = 1852;               // metres
+  const KN = 0.51444;            // m/s
+
+  /* ============================================================
+     Shared schematic geography (metres, x east, y north, origin
+     at the Le Scole outer rock).
+     ============================================================ */
+  const COAST = [ // Giglio east shore, south → north (very schematic)
+    [-1500, -2200], [-1080, -1750], [-900, -1280], [-980, -900], [-780, -520],
+    [-700, -260], [-820, -60], [-700, 60], [-560, 160],           // Le Scole headland (Punta del Lazzaretto)
+    [-720, 420], [-830, 700], [-700, 950],                        // harbour bay
+    [-560, 1080], [-700, 1250], [-760, 1500],                     // Giglio Porto mole
+    [-660, 1900], [-540, 2250], [-700, 2600], [-1500, 3100],      // toward Punta Gabbianara
+  ];
+  const ROCKS = [ // Le Scole group: [x, y, r]
+    [-360, -140, 46], [-220, -60, 34], [-95, -10, 26], [0, 0, 20],
+  ];
+  const PORT = [-760, 1150];       // harbour label anchor
+
+  function drawGeo(ctx, w, h, view, opts) {
+    // view: {cx, cy, mPerPx}
+    const X = (x) => w / 2 + (x - view.cx) / view.mPerPx;
+    const Y = (y) => h / 2 - (y - view.cy) / view.mPerPx;
+    ctx.clearRect(0, 0, w, h);
+    // sea
+    ctx.fillStyle = "#0d1622";
+    ctx.fillRect(0, 0, w, h);
+    // shallow shelf tint along the coast
+    ctx.save();
+    ctx.beginPath();
+    COAST.forEach(([x, y], i) => i ? ctx.lineTo(X(x + 260), Y(y)) : ctx.moveTo(X(x + 260), Y(y)));
+    for (let i = COAST.length - 1; i >= 0; i--) ctx.lineTo(X(COAST[i][0] - 600), Y(COAST[i][1]));
+    ctx.closePath();
+    ctx.fillStyle = "rgba(57,135,229,0.10)";
+    ctx.fill();
+    ctx.restore();
+    // land
+    ctx.beginPath();
+    COAST.forEach(([x, y], i) => i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y)));
+    ctx.lineTo(X(COAST[COAST.length - 1][0] - 3500), Y(COAST[COAST.length - 1][1]));
+    ctx.lineTo(X(COAST[0][0] - 3500), Y(COAST[0][1]));
+    ctx.closePath();
+    ctx.fillStyle = C.land;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(232,230,221,0.25)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    // rocks
+    ROCKS.forEach(([x, y, r]) => {
+      ctx.beginPath();
+      ctx.arc(X(x), Y(y), Math.max(2.5, r / view.mPerPx), 0, TAU);
+      ctx.fillStyle = C.rock;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(232,230,221,0.35)";
+      ctx.stroke();
+    });
+    if (!opts || !opts.noLabels) {
+      label(ctx, "ISOLA DEL GIGLIO", X(-1250), Y(600), { color: "rgba(232,230,221,0.45)", font: mono(11, true), angle: -Math.PI / 2, align: "center" });
+      label(ctx, "Giglio Porto", X(PORT[0] - 30), Y(PORT[1]), { color: C.ink2, align: "right", font: mono(10) });
+      label(ctx, "Le Scole", X(-140), Y(-260), { color: C.ink, font: mono(10, true) });
+    }
+    return { X, Y };
+  }
+
+  /* ============================================================
+     1 · chart-scale comparator
+     ============================================================ */
+  let chartScale = "100";
+  const chartsFig = canvas("charts", (ctx, w, h) => {
+    if (chartScale === "20") paperChart(ctx, w, h, 2600, true);
+    else paperChart(ctx, w, h, 13000, false);
+  });
+
+  function paperChart(ctx, w, h, widthMetres, detailed) {
+    const mPerPx = widthMetres / w;
+    const view = { cx: detailed ? -200 : 500, cy: detailed ? 150 : 900, mPerPx };
+    const X = (x) => w / 2 + (x - view.cx) / mPerPx;
+    const Y = (y) => h / 2 - (y - view.cy) / mPerPx;
+    // paper
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#ded6bb";
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = "#cfe3e3";
+    ctx.fillRect(0, 0, w, h); // sea tint
+    // land
+    ctx.beginPath();
+    COAST.forEach(([x, y], i) => i ? ctx.lineTo(X(x), Y(y)) : ctx.moveTo(X(x), Y(y)));
+    ctx.lineTo(X(COAST[COAST.length - 1][0] - 8000), Y(COAST[COAST.length - 1][1]));
+    ctx.lineTo(X(COAST[0][0] - 8000), Y(COAST[0][1]));
+    ctx.closePath();
+    ctx.fillStyle = "#e8d9a8";
+    ctx.fill();
+    ctx.strokeStyle = "#6b6046";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    const inkCol = "#3a3a33", faint = "#6d6a5c";
+    if (detailed) {
+      // rocks, individually
+      ROCKS.forEach(([x, y, r], i) => {
+        ctx.beginPath();
+        ctx.arc(X(x), Y(y), Math.max(3, r / mPerPx), 0, TAU);
+        ctx.fillStyle = "#b8a878";
+        ctx.fill();
+        ctx.strokeStyle = inkCol;
+        ctx.stroke();
+        // drying-rock asterisk on the outer one
+        if (i === ROCKS.length - 1) label(ctx, "＊", X(x) - 4, Y(y) - 6, { color: inkCol, font: mono(11, true) });
+      });
+      label(ctx, "Le Scole", X(-320), Y(-330), { color: inkCol, font: "italic 13px Georgia, serif" });
+      label(ctx, "☼ Lt.Fl.5s", X(-430), Y(-180), { color: inkCol, font: mono(9.5) });
+      // soundings (metres)
+      [[-40, 220, "8"], [180, 60, "13"], [320, -160, "24"], [520, 260, "37"], [140, 600, "22"],
+       [-240, 480, "9"], [420, 800, "44"], [700, -60, "58"], [-100, -420, "17"], [260, -420, "31"]]
+        .forEach(([x, y, d]) => label(ctx, d, X(x), Y(y), { color: faint, font: "italic 11px Georgia, serif", align: "center" }));
+      // 10 m contour
+      ctx.beginPath();
+      COAST.forEach(([x, y], i) => i ? ctx.lineTo(X(x + 210), Y(y)) : ctx.moveTo(X(x + 210), Y(y)));
+      ctx.strokeStyle = faint;
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      label(ctx, "Porto", X(PORT[0] + 40), Y(PORT[1] + 60), { color: inkCol, font: "italic 12px Georgia, serif" });
+      label(ctx, "CHART 119 · 1:20,000 — the rocks have names, depths and a light", 14, h - 12, { color: inkCol, font: mono(10.5, true) });
+    } else {
+      // coarse chart: Le Scole is one unnamed speck
+      const [x, y] = [-180, -70];
+      ctx.beginPath();
+      ctx.arc(X(x), Y(y), 2.2, 0, TAU);
+      ctx.fillStyle = inkCol;
+      ctx.fill();
+      label(ctx, "Giglio", X(-1900), Y(700), { color: inkCol, font: "italic 13px Georgia, serif" });
+      // the planned course line, drawn at true printed width (0.3 mm pen ≈ 30 m)
+      ctx.strokeStyle = "rgba(120,32,32,0.85)";
+      ctx.lineWidth = Math.max(1.5, 30 / mPerPx);
+      ctx.beginPath();
+      ctx.moveTo(X(900, 0), Y(-2600));
+      ctx.lineTo(X(700), Y(3200));
+      ctx.stroke();
+      label(ctx, "course line as printed", X(1050), Y(-1700), { color: "#782020", font: mono(10) });
+      // ship to scale
+      ctx.save();
+      ctx.translate(X(760), Y(-350));
+      ctx.rotate(-0.12);
+      ctx.fillStyle = inkCol;
+      CC.shipPath(ctx, Math.max(2, 290 / mPerPx), Math.max(1, 35 / mPerPx));
+      ctx.fill();
+      ctx.restore();
+      label(ctx, "← the ship, printed to scale", X(900), Y(-320), { color: inkCol, font: mono(10) });
+      label(ctx, "CHART 6 · 1:100,000 — the whole manoeuvre fits inside the pen line", 14, h - 12, { color: inkCol, font: mono(10.5, true) });
+    }
+  }
+  seg("chart-seg", (v) => { chartScale = v; chartsFig && chartsFig.redraw(); });
+
+  /* ============================================================
+     2 · the final approach, replayed (kinematic reconstruction)
+     ============================================================ */
+  // Rudder-order timeline: [time, ordered rudder °, +ve = starboard]
+  // Course phase approximated as gentle starboard helm.
+  function orders(scenario) {
+    const o = [
+      [t("21:43:00"), 4],          // steering the swing 330→340
+      [t("21:43:44"), 8],          // "350" — more starboard helm
+      [t("21:44:11"), 10],
+      [t("21:44:15"), 20],
+      [t("21:44:20"), 35],
+      [t("21:44:36"), 0],
+    ];
+    if (scenario === "perfect") {
+      o.push([t("21:44:43"), -10], [t("21:44:45"), -20], [t("21:45:05"), -35]);
+    } else {
+      o.push([t("21:44:43"), -5],                          // only 5° achieved
+             [t("21:44:45"), 13],                          // the error: wheel goes to starboard
+             [t("21:44:53"), -20],                         // corrected ~8 s later
+             [t("21:45:05"), -35]);
+    }
+    return o;
+  }
+  const T_START = t("21:43:00"), T_END = t("21:45:30");
+  const SPEED = 15.9 * KN;                                  // m/s
+  const RUD_RATE = 3;                                       // °/s steering gear
+  const K_TURN = 0.36;                                      // deg/s heading rate per 10° rudder at 16 kn
+
+  function simulate(scenario) {
+    const ords = orders(scenario);
+    const dt = 0.25;
+    let x = 0, y = 0, hdg = 331, rud = 4, out = [];
+    for (let tt = T_START; tt <= T_END; tt += dt) {
+      let cmd = ords[0][1];
+      ords.forEach(([ot, ov]) => { if (ot <= tt) cmd = ov; });
+      const d = clamp(cmd - rud, -RUD_RATE * dt, RUD_RATE * dt);
+      rud += d;
+      hdg += (rud / 10) * K_TURN * dt;
+      const r = (90 - hdg) * Math.PI / 180;                 // nav heading → math angle
+      x += Math.cos(r) * SPEED * dt;
+      y += Math.sin(r) * SPEED * dt;
+      out.push({ t: tt, x, y, hdg, rud });
+    }
+    return out;
+  }
+  const simActual = simulate("actual");
+  const simPerfect = simulate("perfect");
+
+  // Anchor geometry: put the impact point of the ACTUAL run on the outer rock.
+  // Impact frame at 21:45:07; hull contact point ~ 60 m aft of midships on the port side.
+  const impact = simActual.find((p) => p.t >= t("21:45:07"));
+  function hullPoint(p, alongM, toPortM) {
+    const r = (90 - p.hdg) * Math.PI / 180;
+    const fx = Math.cos(r), fy = Math.sin(r);              // forward unit
+    // port side = left of heading = forward rotated +90° = (-fy, fx)
+    return [p.x + fx * alongM - fy * toPortM, p.y + fy * alongM + fx * toPortM];
+  }
+  const contact = hullPoint(impact, -60, 17.75);           // port quarter
+  const OFF = [ -contact[0], -contact[1] ];                // shift world so contact == rock at origin
+  simActual.forEach((p) => { p.x += OFF[0]; p.y += OFF[1]; });
+  simPerfect.forEach((p) => { p.x += OFF[0]; p.y += OFF[1]; });
+
+  // perfect-run clearance from outer rock at its closest
+  let perfClear = 1e9;
+  simPerfect.forEach((p) => {
+    const cp = hullPoint(p, -60, 17.75);
+    perfClear = Math.min(perfClear, Math.hypot(cp[0], cp[1]));
+  });
+
+  const APP_EVENTS = [
+    [t("21:43:00"), "Steering the swing north — course orders 335, then 340."],
+    [t("21:43:44"), "“350” — read back as “340”, shouted again: «…otherwise we go on the rocks»."],
+    [t("21:44:05"), "Bow points at Le Scole, 0.3 nm — 35 seconds out at 16 knots."],
+    [t("21:44:11"), "«Starboard 10.»"],
+    [t("21:44:15"), "«Starboard 20.»"],
+    [t("21:44:20"), "«Hard to starboard.» The bow starts to swing clear."],
+    [t("21:44:36"), "«Midships.» Bow inside 150 m of the rocks."],
+    [t("21:44:43"), "«Port 10» — the stern-kick begins. Helmsman reaches only 5°."],
+    [t("21:44:45"), "«Port 20» — the wheel goes the WRONG way, to starboard, for ~8 seconds."],
+    [t("21:44:53"), "The error is caught; the wheel winds back to port."],
+    [t("21:45:05"), "«Hard to port.»"],
+    [t("21:45:07"), "IMPACT. The port quarter rides over Le Scole at ~15.5 kn."],
+    [t("21:45:20"), "The rock has raked 53 m of shell plating. The ship carries her way onward — flooding."],
+  ];
+
+  let appTime = T_START, appMode = "actual";
+  const appLog = document.getElementById("approach-log");
+  const roHdg = document.getElementById("ro-hdg");
+  const roRud = document.getElementById("ro-rud");
+  const roDist = document.getElementById("ro-dist");
+
+  function stateAt(sim, tt) {
+    let s = sim[0];
+    for (const p of sim) { if (p.t <= tt) s = p; else break; }
+    return s;
+  }
+
+  const appFig = canvas("approach", (ctx, w, h) => {
+    const view = { cx: -420, cy: 20, mPerPx: 2500 / w };
+    const { X, Y } = drawGeo(ctx, w, h, view);
+
+    // planned track (0.5 nm off the headland)
+    line(ctx, X(310), Y(-1400), X(120), Y(1800), "rgba(232,230,221,0.30)", 1.2, [6, 5]);
+    label(ctx, "re-planned salute track (~0.5 nm off)", X(150), Y(1560), { color: C.muted, font: mono(9.5) });
+
+    // full actual track, faint
+    ctx.strokeStyle = "rgba(232,230,221,0.18)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    simActual.forEach((p, i) => i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)));
+    ctx.stroke();
+
+    const sim = appMode === "perfect" ? simPerfect : simActual;
+    if (appMode === "perfect") {
+      // show the perfect track distinctly
+      ctx.strokeStyle = "rgba(86,183,207,0.55)";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      simPerfect.forEach((p, i) => i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)));
+      ctx.stroke();
+    }
+
+    // swept track to now
+    ctx.strokeStyle = C.amber;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let started = false;
+    sim.forEach((p) => {
+      if (p.t > appTime) return;
+      started ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y));
+      started = true;
+    });
+    ctx.stroke();
+
+    // ship (4x scale for visibility)
+    const s = stateAt(sim, appTime);
+    ctx.save();
+    ctx.translate(X(s.x), Y(s.y));
+    ctx.rotate((s.hdg - 90) * Math.PI / 180);
+    ctx.fillStyle = appTime >= t("21:45:07") && appMode === "actual" ? "rgba(224,82,82,0.9)" : "rgba(232,230,221,0.9)";
+    const pxPerM = w / 2500;
+    shipPath(ctx, 290 * 1.3 * pxPerM, 35 * 2 * pxPerM);
+    ctx.fill();
+    ctx.restore();
+
+    // impact flash
+    if (appMode === "actual" && appTime >= t("21:45:07") && appTime < t("21:45:11")) {
+      ctx.beginPath();
+      ctx.arc(X(0), Y(0), 10 + (appTime - t("21:45:07")) * 6, 0, TAU);
+      ctx.strokeStyle = C.danger;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    if (appMode === "perfect") {
+      label(ctx, "model clearance at closest point: " + Math.round(perfClear) + " m — see §1.5",
+        14, h - 14, { color: C.teal, font: mono(10.5, true) });
+    }
+    // scale bar
+    const bar = 500 / view.mPerPx;
+    line(ctx, w - 24 - bar, h - 20, w - 24, h - 20, C.ink2, 2);
+    label(ctx, "500 m", w - 24 - bar / 2, h - 28, { align: "center", color: C.muted });
+    label(ctx, "N ↑", w - 30, 24, { color: C.muted, font: mono(11, true) });
+  });
+
+  function setApp(v) {
+    appTime = v;
+    const sim = appMode === "perfect" ? simPerfect : simActual;
+    const s = stateAt(sim, v);
+    roHdg.textContent = Math.round(((s.hdg % 360) + 360) % 360) + "°";
+    roRud.textContent = (Math.abs(s.rud) < 0.5 ? "midships" : Math.abs(s.rud).toFixed(0) + "° " + (s.rud > 0 ? "stbd" : "port"));
+    const d = Math.hypot(s.x, s.y);
+    roDist.textContent = d > 1852 ? (d / 1852).toFixed(2) + " nm" : Math.round(d) + " m";
+    let ev = APP_EVENTS[0];
+    APP_EVENTS.forEach((e) => { if (e[0] <= v) ev = e; });
+    appLog.innerHTML = "<span class='t'>" + hms(ev[0]) + "</span> — " + ev[1];
+    appFig && appFig.redraw();
+  }
+
+  transport({
+    min: T_START, max: T_END, rate: 10, playBtn: "approach-play", slider: "approach-time",
+    fmt: (v) => hms(v),
+    onTime: setApp,
+  });
+  seg("approach-what", (v) => { appMode = v; setApp(appTime); });
+  setApp(T_START);
+
+  /* ============================================================
+     3 · order the turn yourself
+     ============================================================ */
+  let turnD = 0.3;
+  const RUD_LAG_M = 13 * SPEED;                            // ~13 s of straight run
+  const TURN_R = 0.185 * NM;                               // radius (0.37 nm diameter)
+
+  const turnFig = canvas("turnlab", (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const mPerPx = (1.35 * NM) / w;
+    const X = (m) => 30 + m / mPerPx;                       // x: distance run
+    const rockX = X(1.15 * NM), rockY = h * 0.5;
+    // water grid
+    for (let i = 1; i < 5; i++) line(ctx, 0, h * i / 5, w, h * i / 5, C.line2, 1);
+    // rock
+    ctx.beginPath();
+    ctx.arc(rockX, rockY, 9, 0, TAU);
+    ctx.fillStyle = C.rock; ctx.fill();
+    ctx.strokeStyle = "rgba(232,230,221,0.4)"; ctx.stroke();
+    label(ctx, "Le Scole", rockX, rockY - 16, { align: "center", color: C.ink2, font: mono(10, true) });
+
+    // path: straight until order point, lag, then arc
+    const orderM = 1.15 * NM - turnD * NM;                 // where the order is given
+    const arcStartM = orderM + RUD_LAG_M;
+    ctx.strokeStyle = C.amber;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(X(0), rockY);
+    ctx.lineTo(X(Math.min(arcStartM, 1.6 * NM)), rockY);
+    ctx.stroke();
+    // order marker
+    ctx.fillStyle = C.teal;
+    ctx.beginPath(); ctx.arc(X(orderM), rockY, 4, 0, TAU); ctx.fill();
+    label(ctx, "“hard to starboard”", X(orderM), rockY + 22, { align: "center", color: C.teal, font: mono(9.5) });
+    // arc (turning to starboard = downward in this view? choose upward=away)
+    const cx = X(arcStartM), cy = rockY - TURN_R / mPerPx;
+    ctx.beginPath();
+    ctx.arc(cx, cy, TURN_R / mPerPx, Math.PI / 2, 0.02, true);
+    ctx.stroke();
+    // closest approach of path to rock centre:
+    // during straight run: |rockY - rockY| = 0 until arcStart... i.e. if arc starts after rock, we hit.
+    let clear;
+    if (arcStartM >= 1.15 * NM) {
+      clear = -1; // still going straight at the rock
+    } else {
+      // distance from rock to arc centre minus radius
+      const dxm = (1.15 * NM - arcStartM), dym = TURN_R;
+      clear = Math.hypot(dxm, dym) - TURN_R;
+    }
+    const hit = clear < 18;                                 // half-beam
+    const v = document.getElementById("turn-verdict");
+    if (v) {
+      v.textContent = clear < 0 ? "head-on strike" : hit ? "hull strikes — clears by " + Math.round(Math.max(0, clear)) + " m" : "clears by " + Math.round(clear) + " m";
+      v.parentElement.className = "ro " + (hit ? "alert" : "good");
+    }
+    // annotate lag
+    ctx.strokeStyle = "rgba(232,230,221,0.35)";
+    ctx.setLineDash([3, 4]);
+    line(ctx, X(orderM), rockY - 34, X(arcStartM), rockY - 34, "rgba(232,230,221,0.35)", 1, [3, 4]);
+    ctx.setLineDash([]);
+    label(ctx, "rudder lag ~110 m", (X(orderM) + X(arcStartM)) / 2, rockY - 40, { align: "center", color: C.muted, font: mono(9) });
+    label(ctx, "16 knots →", X(60), rockY - 10, { color: C.muted, font: mono(10) });
+  });
+
+  slider("turn-d", (v) => v.toFixed(2) + " nm", (v) => { turnD = v; turnFig && turnFig.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

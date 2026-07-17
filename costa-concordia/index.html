@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Wreck of the Costa Concordia — Anatomy of a Shipwreck</title>
+<meta name="description" content="An interactive technical investigation of the Costa Concordia disaster of 13 January 2012: the salute, the 53-metre wound, the blackout, the drift, the broken chain of command, the abandonment, and the reckoning.">
+<link rel="stylesheet" href="cc.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">COSTA CONCORDIA</a></div>
+    <div class="strap">anatomy of a shipwreck — an interactive investigation</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="collision.html">1 · The Salute</a>
+    <a href="flooding.html">2 · The Wound</a>
+    <a href="blackout.html">3 · The Blackout</a>
+    <a href="drift.html">4 · The Drift</a>
+    <a href="bridge.html">5 · The Bridge</a>
+    <a href="evacuation.html">6 · The Abandonment</a>
+    <a href="verdict.html">7 · The Reckoning</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">13 January 2012 · Isola del Giglio, Italy</p>
+  <h1>The Wreck of the Costa&nbsp;Concordia</h1>
+  <p class="standfirst">At 21:45:07 on a calm winter night, a 114,000-tonne cruise ship
+  carrying 4,229 people sailed into a charted rock at fifteen and a half knots, three
+  hundred metres from an Italian island. She lost her engines within seconds, her
+  electricity within a minute, and — though almost nobody aboard understood it yet —
+  she was already doomed. This is the full technical anatomy of the disaster:
+  what broke, what flooded, what failed, who knew, and what could have been different.</p>
+</section>
+
+<div class="statgrid" aria-label="Key figures">
+  <div class="stat"><div class="v">4,229</div><div class="l">people aboard<br>3,206 pax · 1,023 crew</div></div>
+  <div class="stat"><div class="v bad">32</div><div class="l">died that night<br>27 passengers · 5 crew</div></div>
+  <div class="stat"><div class="v">53 m</div><div class="l">hull opening<br>up to 7.3 m wide</div></div>
+  <div class="stat"><div class="v bad">5</div><div class="l">watertight compartments<br>breached — ship rated for 2</div></div>
+  <div class="stat"><div class="v warn">41 s</div><div class="l">emergency generator<br>held load, then tripped</div></div>
+  <div class="stat"><div class="v">6 h 29 m</div><div class="l">from general alarm to<br>evacuation reported complete</div></div>
+</div>
+
+<section class="prose">
+
+<h2>The short version</h2>
+
+<p>The <em>Costa Concordia</em> left Civitavecchia on the evening of 13 January 2012
+on a routine seven-day Mediterranean cruise. Her master, Captain Francesco Schettino,
+deviated from the planned route to perform an <em>inchino</em> — a "salute", a
+close, showy sail-past of Isola del Giglio. He conned the ship by eye, at night, at
+almost sixteen knots, using a small-scale open-sea chart, toward a shore he believed
+he knew. He turned too late. The port side of the hull ran over the outermost rock of
+the <em>Le Scole</em> group and opened like a tin: a 53-metre gash across five
+watertight compartments — the five that contained every main generator, both
+propulsion motors and the ship's main pumps.</p>
+
+<p>The engine rooms flooded in minutes. The ship blacked out in fifty seconds.
+The emergency generator carried load for forty-one seconds and tripped, never to hold
+again. Dead in the water, the ship coasted north past the little harbour, stopped,
+and — by pure good fortune — was pushed back onto the island's shelf by a
+north-easterly breeze, instead of out into deep water where she would have capsized
+with catastrophic loss of life. For over an hour the bridge told passengers, and the
+coast guard, that it was an electrical fault. The general emergency alarm came 48
+minutes after impact; the order to abandon ship, 69 minutes after impact — by which
+time the list was approaching the angle at which lifeboats stop working. 32 people
+died within sight of a harbour, in water shallow enough that the wreck never fully
+sank.</p>
+
+<p>Every chapter of this site takes one layer of the disaster apart, with the
+timings taken from the ship's voyage data recorder and the official Italian
+Ministry of Infrastructure and Transport (MIT) safety investigation. Where a question
+is genuinely contested — <em>would the ship have missed the rock if the helmsman had
+put the wheel the right way?</em> — the evidence on both sides is laid out.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The night, minute by minute</span>
+    <span class="hint">drag the slider (or press play) to walk the whole night — the curve is the ship's angle of heel</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="night" style="aspect-ratio: 2.3 / 1; min-height: 300px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="night-log"><span class="t">21:45:07</span> — the ship strikes Le Scole.</div>
+  <div class="fig-controls">
+    <button class="btn primary" id="night-play">▶ play</button>
+    <div class="ctl" style="flex:1 1 260px">
+      <label for="night-time">time</label>
+      <input type="range" id="night-time" min="77400" max="109200" step="10" value="78307" style="flex:1">
+      <output>21:45</output>
+    </div>
+  </div>
+  <div class="fig-note">Heel-angle curve is an approximate reconstruction from witness and
+  patrol-boat reports (5° at 22:36, ~15° before 23:00, ~20° soon after, then a slow roll to
+  ~70° against the rocks). Event times are from the VDR and the MIT safety investigation.</div>
+</figure>
+
+<h2>The ship</h2>
+
+<p>The <em>Costa Concordia</em> was no relic. Delivered by Fincantieri in 2006 at a
+cost of some €450&nbsp;million, she was a thoroughly modern diesel-electric cruise
+ship — for a time the largest ever built in Italy — with six main diesel generators
+feeding two 21&nbsp;MW electric propulsion motors, bow thrusters, stabilisers,
+an integrated navigation system, and a computerised damage-control suite. Nothing
+about the hardware was obsolete, and on the night almost all of it was working.
+The disaster was not a story of a worn-out ship. It was a story of a ship driven,
+in perfect weather, into a place no ship that size should ever have been — and
+then of design assumptions, procedures and people failing one after another,
+each failure amplifying the last.</p>
+
+<table class="data">
+  <caption>Ship particulars</caption>
+  <tr><th>Item</th><th>Value</th></tr>
+  <tr><td class="k">Builder, delivery</td><td>Fincantieri, Sestri Ponente (Genoa) · July 2006</td></tr>
+  <tr><td class="k">Gross tonnage</td><td class="num">114,147 GT</td></tr>
+  <tr><td class="k">Length × beam × draught</td><td class="num">290.2 m × 35.5 m × 8.2 m</td></tr>
+  <tr><td class="k">Power plant</td><td>6 × Wärtsilä 12V46C diesel generators, ≈ 75.6 MW total</td></tr>
+  <tr><td class="k">Propulsion</td><td>2 × 21 MW electric motors, twin fixed-pitch propellers</td></tr>
+  <tr><td class="k">Service speed</td><td class="num">19.6 kn (max ≈ 23 kn)</td></tr>
+  <tr><td class="k">Capacity</td><td class="num">3,780 passengers + ~1,100 crew</td></tr>
+  <tr><td class="k">Damage standard</td><td>SOLAS 90 — survives flooding of any 2 adjacent main compartments</td></tr>
+  <tr><td class="k">Aboard on the night</td><td class="num">4,229 (3,206 passengers, 1,023 crew)</td></tr>
+</table>
+
+<h2>The chapters</h2>
+
+</section>
+
+<div class="cards">
+  <a class="card" href="collision.html">
+    <span class="no">CHAPTER 1</span>
+    <h3>The Salute</h3>
+    <p>Why a captain aimed a 290-metre ship at an island for show. The wrong chart, the
+    course-by-course approach, the six final helm orders — and the famous 8-second
+    helmsman error, replayed from the voyage data recorder.</p>
+  </a>
+  <a class="card" href="flooding.html">
+    <span class="no">CHAPTER 2</span>
+    <h3>The Wound</h3>
+    <p>A 53-metre tear across five watertight compartments. Explore the hull, flood it
+    in real time, and see exactly why a two-compartment ship cannot survive five — and
+    why every pump aboard was beaten before it started.</p>
+  </a>
+  <a class="card" href="blackout.html">
+    <span class="no">CHAPTER 3</span>
+    <h3>The Blackout</h3>
+    <p>Fifty seconds from impact to darkness. The six drowned generators, the emergency
+    generator that held for 41 seconds, breaker 901, and why the "unsinkable systems"
+    all lived in the same five flooded rooms.</p>
+  </a>
+  <a class="card" href="drift.html">
+    <span class="no">CHAPTER 4</span>
+    <h3>The Drift</h3>
+    <p>A dead ship is a leaf on the water. How momentum, a jammed rudder and a
+    north-east breeze conspired to bring the Concordia back to Giglio — and how a
+    different wind would have killed thousands.</p>
+  </a>
+  <a class="card" href="bridge.html">
+    <span class="no">CHAPTER 5</span>
+    <h3>The Bridge</h3>
+    <p>The engine room knew in minutes. The shore heard "blackout" for forty. Track who
+    knew what, minute by minute, through the broken chain of command — up to the coast
+    guard call the whole world heard.</p>
+  </a>
+  <a class="card" href="evacuation.html">
+    <span class="no">CHAPTER 6</span>
+    <h3>The Abandonment</h3>
+    <p>4,229 people, 26 lifeboats, a growing list. Tilt the ship yourself and watch the
+    davits fail past 20°. Why 600 passengers had never done a drill, and what a
+    passenger can — and cannot — do with a lifeboat.</p>
+  </a>
+  <a class="card" href="verdict.html">
+    <span class="no">CHAPTER 7</span>
+    <h3>The Reckoning</h3>
+    <p>Could she have been saved? Six counterfactuals, tested. Then the trials, the
+    €1&nbsp;billion salvage — the largest ever attempted — and what the rules of the sea
+    learned from 32 deaths.</p>
+  </a>
+</div>
+
+<section class="prose">
+<p class="colophon">Written and built by Claude for the 0x4D44 almanac · July 2026.
+Primary sources: the Italian Ministry of Infrastructure and Transport (MIT) marine casualty
+safety investigation report (2013); voyage data recorder timings as published in the MIT
+report and trial records; Capt. Michael Lloyd, <em>The Sinking of a Ship — Costa Concordia
+Revisited</em>; Gubian, Piccinelli, Neri &amp; Giurlanda, <em>The Disaster of Costa Concordia
+Cruise Ship: An Accurate Reconstruction Based on Black Box and Automation System Data</em>
+(2015). Full source list in <a href="verdict.html#sources">Chapter 7</a>.
+All interactives are illustrative reconstructions, not simulations of record.</p>
+</section>
+
+</main>
+
+<script src="cc-lib.js"></script>
+<script>
+(function () {
+  const { C, canvas, transport, label, line, hms, t, clamp, lerp, mono } = CC;
+
+  /* ---- the night, minute by minute ---- */
+
+  // events: [time-sec, short label for axis, log text, phase]
+  // phases: nav (amber) / flood (sea) / evac (danger) / rescue (teal)
+  const EV = [
+    [t("21:19:02"), "call",      "The officer of the watch phones Captain Schettino: Giglio abeam at 21:44. The salute is on.", "nav"],
+    [t("21:34:36"), "bridge",    "Schettino arrives on the bridge. Helm to manual, navigation by eye, paper chart 1:100,000.", "nav"],
+    [t("21:39:14"), "the con",   "Schettino takes the con. Course orders: 300° … 310° … 325° … 330° … 335° … 340°.", "nav"],
+    [t("21:44:11"), "evasion",   "The rocks are seen. Starboard 10 … starboard 20 … hard to starboard — then port, to swing the stern clear.", "nav"],
+    [t("21:45:07"), "IMPACT",    "The port side strikes Le Scole at ~15.5 kn. A 53 m gash opens across five watertight compartments.", "flood"],
+    [t("21:45:57"), "blackout",  "Sea water reaches the main switchboards and all six diesel generators. Total blackout, 50 seconds after impact.", "flood"],
+    [t("21:46:44"), "EDG trips", "The emergency diesel generator, on line for 41 seconds, trips on flood-shorted circuits and never holds again.", "flood"],
+    [t("21:55:00"), "eng. report","Engine-room staff report to the bridge: compartments 5, 6 and 7 are flooding. The ship is already lost.", "flood"],
+    [t("22:07:00"), "“blackout”",  "Civitavecchia port authority is told the ship has “only a blackout — situation under control”.", "flood"],
+    [t("22:12:00"), "MRSC call", "Livorno coast guard, tipped off by a passenger's phone call home, contacts the ship. Answer: a blackout.", "flood"],
+    [t("22:25:15"), "admission", "Schettino finally admits to Livorno: hull breach, port side, ship heeling. He asks for a tug.", "flood"],
+    [t("22:33:00"), "gen. alarm","General emergency alarm — 48 minutes after impact. Crew go (in theory) to emergency stations.", "evac"],
+    [t("22:36:05"), "muster",    "Passengers are ordered to muster stations. Heel ≈ 5° and growing. 696 aboard have never done a drill.", "evac"],
+    [t("22:44:00"), "aground",   "The drifting ship grounds a second time, on the shelf at Punta Gabbianara. She will sink no further than this.", "evac"],
+    [t("22:47:22"), "anchors",   "Anchors are let go — far too late. Divers later find them lying flat, flukes up, never dug in.", "evac"],
+    [t("22:54:10"), "ABANDON",   "Abandon ship, 69 minutes after impact. SOLAS assumes boats away 30 minutes after a muster that is complete.", "evac"],
+    [t("22:55:00"), "boats",     "First lifeboat in the water. 23 of 26 boats will launch; 3 fail. Only 3 of 69 liferafts are ever used.", "evac"],
+    [t("23:30:00"), "master off","Around now, with hundreds still aboard, Schettino leaves the ship. He will not return.", "evac"],
+    [t("25:46:00"), "De Falco",  "01:46 — Capt. De Falco, Livorno coast guard, orders him back up the pilot ladder: “Vada a bordo, cazzo!”", "rescue"],
+    [t("27:05:00"), "ferries",   "03:05 — some 600 survivors have been ferried to the mainland; helicopters winch stragglers off the hull.", "rescue"],
+    [t("30:14:00"), "complete",  "06:14 — evacuation of the living reported complete. 32 are dead or dying. One man will be found alive after 36 hours.", "rescue"],
+  ];
+
+  // heel reconstruction control points [time, degrees starboard]
+  const HEEL = [
+    [t("21:30:00"), 0], [t("21:45:07"), 0], [t("21:47:00"), 1.5],
+    [t("22:00:00"), 2.5], [t("22:20:00"), 3.5], [t("22:36:00"), 5],
+    [t("22:50:00"), 9], [t("23:00:00"), 15], [t("23:20:00"), 22],
+    [t("23:50:00"), 33], [t("24:30:00"), 45], [t("25:30:00"), 57],
+    [t("26:30:00"), 63], [t("28:00:00"), 67], [t("30:20:00"), 70],
+  ];
+  function heelAt(x) {
+    if (x <= HEEL[0][0]) return HEEL[0][1];
+    for (let i = 1; i < HEEL.length; i++) {
+      if (x <= HEEL[i][0]) {
+        const [t0, v0] = HEEL[i - 1], [t1, v1] = HEEL[i];
+        return lerp(v0, v1, (x - t0) / (t1 - t0));
+      }
+    }
+    return HEEL[HEEL.length - 1][1];
+  }
+
+  const T0 = t("21:30"), TSPLIT = t("23:30"), T1 = t("30:20");
+  // piecewise time axis: 21:30–23:30 gets 62% of the width, 23:30–06:20 the rest
+  function tx(x, w, pad) {
+    const inner = w - pad.l - pad.r;
+    if (x <= TSPLIT) return pad.l + inner * 0.62 * (x - T0) / (TSPLIT - T0);
+    return pad.l + inner * (0.62 + 0.38 * (x - TSPLIT) / (T1 - TSPLIT));
+  }
+
+  const PHASE_COL = { nav: C.amber, flood: C.sea, evac: C.danger, rescue: C.teal };
+  const PHASE_NAME = { nav: "navigation", flood: "flooding", evac: "evacuation", rescue: "rescue" };
+
+  let now = t("21:45:07");
+  const log = document.getElementById("night-log");
+
+  const fig = canvas("night", (ctx, w, h) => {
+    ctx.clearRect(0, 0, w, h);
+    const pad = { l: 46, r: 16, t: 30, b: 56 };
+    const plotH = h - pad.t - pad.b;
+    const y0 = h - pad.b;                       // heel 0°
+    const yOf = (deg) => y0 - (deg / 75) * plotH;
+
+    // phase bands along the bottom
+    const bands = [
+      ["nav", T0, t("21:45:07")], ["flood", t("21:45:07"), t("22:33:00")],
+      ["evac", t("22:33:00"), t("23:59:00")], ["rescue", t("23:59:00"), T1],
+    ];
+    bands.forEach(([p, a, b]) => {
+      ctx.fillStyle = PHASE_COL[p];
+      ctx.globalAlpha = 0.14;
+      ctx.fillRect(tx(a, w, pad), y0 + 26, tx(b, w, pad) - tx(a, w, pad), 6);
+      ctx.globalAlpha = 1;
+      if (w > 640) label(ctx, PHASE_NAME[p], (tx(a, w, pad) + tx(b, w, pad)) / 2, y0 + 48, { align: "center", color: PHASE_COL[p], font: mono(9.5, true) });
+    });
+
+    // horizontal grid + heel scale
+    [0, 20, 40, 60].forEach((d) => {
+      line(ctx, pad.l, yOf(d), w - pad.r, yOf(d), d === 20 ? "rgba(224,82,82,0.35)" : C.line2, 1, d === 20 ? [4, 4] : null);
+      label(ctx, d + "°", pad.l - 8, yOf(d) + 3, { align: "right", color: d === 20 ? C.danger : C.muted });
+    });
+    label(ctx, "20° — lifeboat launching limit", pad.l + 6, yOf(20) - 5, { color: C.danger, font: mono(9.5) });
+    label(ctx, "angle of heel (starboard)", pad.l - 34, pad.t + 4, { color: C.muted, angle: -Math.PI / 2, align: "right" });
+
+    // hour ticks
+    for (let x = t("21:30"); x <= T1; x += 1800) {
+      const isHour = x % 3600 === 0;
+      if (!isHour && x > TSPLIT) continue;
+      const px = tx(x, w, pad);
+      line(ctx, px, y0, px, y0 + 5, C.line, 1);
+      if (isHour) label(ctx, hms(x % 86400, false), px, y0 + 18, { align: "center", color: C.muted, font: mono(9.5) });
+    }
+
+    // heel curve up to `now`, dim beyond
+    ctx.save();
+    ctx.strokeStyle = "rgba(232,230,221,0.22)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let x = T0; x <= T1; x += 60) {
+      const px = tx(x, w, pad), py = yOf(heelAt(x));
+      x === T0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.strokeStyle = C.ink;
+    ctx.beginPath();
+    for (let x = T0; x <= Math.max(T0, now); x += 30) {
+      const px = tx(x, w, pad), py = yOf(heelAt(x));
+      x === T0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // events
+    let active = EV[0];
+    EV.forEach((e) => { if (e[0] <= now) active = e; });
+    EV.forEach((e, i) => {
+      const px = tx(e[0], w, pad);
+      const on = e === active;
+      const col = PHASE_COL[e[3]];
+      const py = yOf(heelAt(e[0]));
+      ctx.fillStyle = on ? col : "rgba(232,230,221,0.45)";
+      ctx.beginPath(); ctx.arc(px, py, on ? 5 : 2.5, 0, CC.TAU); ctx.fill();
+      if (on) { ctx.strokeStyle = C.surface; ctx.lineWidth = 2; ctx.stroke(); }
+      if (w > 700 || on) {
+        const stag = pad.t + 2 + (i % 3) * 11;
+        if (on) {
+          line(ctx, px, stag + 4, px, py - 7, "rgba(232,230,221,0.25)", 1, [2, 3]);
+          label(ctx, e[1], px, stag, { align: "center", color: col, font: mono(10, true) });
+        }
+      }
+    });
+
+    // playhead + clock
+    const px = tx(now, w, pad);
+    line(ctx, px, pad.t - 4, px, y0, C.amber, 1);
+    label(ctx, hms(now % 86400, false), px, pad.t - 10, { align: "center", color: C.amber, font: mono(11, true) });
+
+    // current heel marker
+    const hp = yOf(heelAt(now));
+    ctx.fillStyle = C.amber;
+    ctx.beginPath(); ctx.arc(px, hp, 3.5, 0, CC.TAU); ctx.fill();
+  });
+
+  function setNight(v) {
+    now = v;
+    let active = EV[0];
+    EV.forEach((e) => { if (e[0] <= now) active = e; });
+    log.innerHTML = "<span class='t'>" + hms(active[0] % 86400) + "</span> — " + active[2] +
+      " &nbsp;<span style='color:" + C.muted + "'>(heel ≈ " + heelAt(now).toFixed(0) + "°)</span>";
+    fig && fig.redraw();
+  }
+
+  transport({
+    min: T0, max: T1, rate: 420, playBtn: "night-play", slider: "night-time",
+    fmt: (v) => hms(v % 86400, false),
+    onTime: setNight,
+  });
+  setNight(t("21:45:07"));
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
