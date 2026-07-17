@@ -1,0 +1,50 @@
+    const button = event.target.closest("button[data-mode]");
+    if (!button) return;
+    state.mode = button.dataset.mode;
+    renderStage();
+  });
+  $("#zoomRange").addEventListener("input", event => {
+    state.zoom = Number(event.target.value)/100;
+    $("#zoomOutput").textContent = `${event.target.value}%`;
+    renderStage();
+  });
+  $("#dimensionsButton").addEventListener("click", () => {
+    state.dimensions = !state.dimensions;
+    renderStage();
+  });
+  $("#resetButton").addEventListener("click", () => {
+    state.dx = 0; state.dy = 0; renderStage();
+  });
+  $("#coinSweep").addEventListener("click", event => {
+    const button = event.target.closest("button[data-coin]");
+    if (button) setCoin(button.dataset.coin, true);
+  });
+
+  $("#calibrationRange").addEventListener("input", event => {
+    state.calibration = Number(event.target.value);
+    storage.setItem("silicon-sterling.ppm", String(state.calibration));
+    $("#calibrationOutput").textContent = `${state.calibration.toFixed(2)} px/mm`;
+    renderActualSize();
+  });
+  $("#calReset").addEventListener("click", () => {
+    state.calibration = 96/25.4;
+    storage.removeItem("silicon-sterling.ppm");
+    $("#calibrationRange").value = state.calibration.toFixed(2);
+    $("#calibrationOutput").textContent = `${state.calibration.toFixed(2)} px/mm`;
+    renderActualSize();
+  });
+
+  const stage = $("#compareStage");
+  let dragging = false;
+  let grabOffset = { x: 0, y: 0 };
+  function svgPoint(event) {
+    const point = stage.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(stage.getScreenCTM().inverse());
+  }
+  stage.addEventListener("pointerdown", event => {
+    if (!event.target.closest("#packageLayer")) return;
+    const p = svgPoint(event);
+    dragging = true;
+    grabOffset = { x: p.x - state.dx, y: p.y - state.dy };
