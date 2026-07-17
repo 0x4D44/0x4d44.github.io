@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "chicxulub",
+    title: "The Day the Dinosaurs Died",
+    tagline: "Sixty-six million years ago a mountain-sized asteroid hit the Yucatán and ended the age of dinosaurs. Fly the impactor in, run a real crater-and-energy simulator, scrub the worst day in Earth's history hour by hour, watch the impact winter fall, and read the story in the K–Pg boundary rock. Vanilla JS on canvas; no build step.",
+    url: "https://0x4d44.github.io/chicxulub/",
+    illustration: "ill-impact",
+    date: "2026-07-17T12:00:00",
+    year: -66000000,
+    tags: ["science", "history", "software"],
+    real: true,
+  },
+  {
     slug: "the-grid",
     title: "The Grid",
     tagline: "How the electricity system actually works, told from the old Hydro Board country: alternators and three-phase, star and delta, air-blast to SF₆, skin effect and hot-day sag, the fifty-hertz balancing act — and six great blackouts dissected, from New York 1965 to Iberia 2025. Seven chapters, thirty-odd live interactives. Vanilla JS, canvas + SVG; no build step.",
@@ -1372,7 +1383,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["starforged", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["chicxulub", "starforged", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },
