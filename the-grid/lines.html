@@ -419,77 +419,75 @@ heavily-loaded lines sagging into untrimmed trees.)</p>
     line(ctx, cx, peakY, w * 0.98, peakY + ht * 0.06, C.muted, 1.2);
     label(ctx, "earth wire (OPGW)", cx + 10, peakY - 8, { color: C.muted });
 
-    // conductors + insulators per type
-    armY.forEach((ay, i) => {
-      [-1, 1].forEach(side => {
-        const ax = cx + side * armL[i];
-        const ph = PH[i];
-        if (twrT === "susp") {
-          const strL = ht * 0.10;
-          line(ctx, ax, ay, ax, ay + strL, C.ink, 2);
-          discs(ctx, ax, ay, ax, ay + strL);
-          // conductor through the bottom
-          sagLine(ctx, side === -1 ? w * 0.02 : ax, ay + strL, side === -1 ? ax : w * 0.98, ay + strL + ht * 0.05, ph, side === -1);
-          ctx.fillStyle = ph; ctx.beginPath(); ctx.arc(ax, ay + strL, 3.5, 0, TAU); ctx.fill();
-        } else if (twrT === "tens") {
-          const strL = ht * 0.11;
-          const ex = ax + side * strL;
-          line(ctx, ax, ay, ex, ay + strL * 0.18, C.ink, 2);
-          discs(ctx, ax, ay, ex, ay + strL * 0.18);
-          sagLine(ctx, side === -1 ? w * 0.02 : ex, ay + strL * 0.18, side === -1 ? ex : w * 0.98, ay + strL * 0.18 + ht * 0.04, ph, side === -1);
-          // jumper loop under the arm
-          ctx.strokeStyle = ph; ctx.lineWidth = 1.6;
-          ctx.beginPath();
-          ctx.moveTo(ax - strL * 0.8 * 1, ay + strL * 0.18);
-          ctx.quadraticCurveTo(ax, ay + ht * 0.10, ax + strL * 0.8, ay + strL * 0.18);
-          if (side === 1) ctx.stroke();
-        } else { // terminal: line one side only, gantry other side
-          if (side === -1) {
-            const strL = ht * 0.12, ex = ax - strL;
-            line(ctx, ax, ay, ex, ay + strL * 0.22, C.ink, 2);
-            discs(ctx, ax, ay, ex, ay + strL * 0.22);
-            sagLine(ctx, w * 0.02, ay + strL * 0.22, ex, ay + strL * 0.22 + ht * 0.02, ph, true);
-          } else {
-            // droppers to substation
-            ctx.strokeStyle = ph; ctx.lineWidth = 1.6;
-            ctx.beginPath();
-            ctx.moveTo(ax, ay);
-            ctx.quadraticCurveTo(ax + ht * 0.10, ay + ht * 0.12, w * 0.80, gy - 14 - i * 10);
-            ctx.stroke();
-          }
-        }
-      });
-    });
-    if (twrT === "term") {
-      // substation gantry hint
-      ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
-      ctx.strokeRect(w * 0.76, gy - 46, w * 0.12, 46);
-      label(ctx, "substation", w * 0.82, gy + 16, { align: "center" });
-      // stays
-      line(ctx, cx + ht * 0.035, gy - ht * 0.9, cx + ht * 0.30, gy, C.muted, 1, [4, 4]);
+    // conductors + insulators per type — every attachment point is exact
+    function span(x1, y1, x2, y2, ph, sagPx) {
+      ctx.strokeStyle = ph; ctx.lineWidth = 1.6; ctx.beginPath();
+      for (let k = 0; k <= 30; k++) {
+        const t = k / 30;
+        const x = x1 + (x2 - x1) * t;
+        const y = y1 + (y2 - y1) * t + Math.sin(Math.PI * t) * sagPx;
+        k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
     }
-    document.getElementById("twr-cap").textContent = TWRCAP[twrT];
-
-    function discs(ctx2, x1, y1, x2, y2) {
+    function insString(x1, y1, x2, y2) {
+      line(ctx, x1, y1, x2, y2, C.ink, 2);
       const n = 6;
       for (let k = 1; k <= n; k++) {
         const t = k / (n + 1);
         const x = x1 + (x2 - x1) * t, y = y1 + (y2 - y1) * t;
         const dx = (y2 - y1), dy = -(x2 - x1);
         const dl = Math.hypot(dx, dy) || 1;
-        line(ctx2, x - dx / dl * 4, y - dy / dl * 4, x + dx / dl * 4, y + dy / dl * 4, C.ink, 2);
+        line(ctx, x - dx / dl * 4, y - dy / dl * 4, x + dx / dl * 4, y + dy / dl * 4, C.ink, 2);
       }
     }
-    function sagLine(ctx2, x1, y1, x2, y2, col, comingIn) {
-      ctx2.strokeStyle = col; ctx2.lineWidth = 1.6; ctx2.beginPath();
-      for (let i = 0; i <= 30; i++) {
-        const t = i / 30;
-        const x = x1 + (x2 - x1) * t;
-        const y = y1 + (y2 - y1) * t + Math.sin(Math.PI * t) * ht * 0.045;
-        i === 0 ? ctx2.moveTo(x, y) : ctx2.lineTo(x, y);
-      }
-      ctx2.stroke();
+    function clampDot(x, y, ph) {
+      ctx.fillStyle = ph; ctx.beginPath(); ctx.arc(x, y, 3.5, 0, TAU); ctx.fill();
     }
+    armY.forEach((ay, i) => {
+      const ph = PH[i];
+      const aL = cx - armL[i], aR = cx + armL[i];
+      if (twrT === "susp") {
+        const strL = ht * 0.10, yb = ay + strL;
+        insString(aL, ay, aL, yb); insString(aR, ay, aR, yb);
+        // one continuous conductor: in, through both clamps, out
+        span(w * 0.02, yb + ht * 0.055, aL, yb, ph, ht * 0.035);
+        span(aL, yb, aR, yb, ph, ht * 0.012);
+        span(aR, yb, w * 0.98, yb + ht * 0.055, ph, ht * 0.035);
+        clampDot(aL, yb, ph); clampDot(aR, yb, ph);
+      } else if (twrT === "tens") {
+        const strL = ht * 0.11, ey = ay + strL * 0.18;
+        const eL = aL - strL, eR = aR + strL;
+        insString(aL, ay, eL, ey); insString(aR, ay, eR, ey);
+        span(w * 0.02, ey + ht * 0.05, eL, ey, ph, ht * 0.03);
+        // the jumper: a slack loop from dead-end to dead-end, drooping below the arms
+        ctx.strokeStyle = ph; ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(eL, ey);
+        ctx.quadraticCurveTo(cx, ay + ht * 0.105, eR, ey);
+        ctx.stroke();
+        span(eR, ey, w * 0.98, ey + ht * 0.05, ph, ht * 0.03);
+        clampDot(eL, ey, ph); clampDot(eR, ey, ph);
+      } else { // terminal: dead-end one side, jumper into the substation droppers
+        const strL = ht * 0.12, ey = ay + strL * 0.22, eL = aL - strL;
+        insString(aL, ay, eL, ey);
+        span(w * 0.02, ey + ht * 0.04, eL, ey, ph, ht * 0.025);
+        ctx.strokeStyle = ph; ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(eL, ey);
+        ctx.quadraticCurveTo(cx, ay + ht * 0.09, aR, ay + 4);
+        ctx.quadraticCurveTo(aR + ht * 0.10, ay + ht * 0.12, w * 0.80, gy - 14 - i * 10);
+        ctx.stroke();
+        clampDot(eL, ey, ph);
+      }
+    });
+    if (twrT === "term") {
+      // substation gantry the droppers land on
+      ctx.strokeStyle = C.muted; ctx.lineWidth = 2;
+      ctx.strokeRect(w * 0.76, gy - 46, w * 0.12, 46);
+      label(ctx, "substation", w * 0.82, gy + 16, { align: "center" });
+    }
+    document.getElementById("twr-cap").textContent = TWRCAP[twrT];
   });
   G.seg("twr-t", v => { twrT = v; twrFig.redraw(); });
 
@@ -520,6 +518,8 @@ heavily-loaded lines sagging into untrimmed trees.)</p>
     // arcing horn bottom
     ctx.beginPath(); ctx.arc(cx + 14, botY - discH, 10, Math.PI - 1.8, Math.PI + 0.5); ctx.stroke();
     label(ctx, "arcing horns", cx + 30, botY - discH + 4, { color: C.muted });
+    // clevis link from the last disc down to the conductor clamp
+    line(ctx, cx, botY, cx, botY + 8, C.ink, 2);
     // conductor
     ctx.fillStyle = C.amber;
     ctx.beginPath(); ctx.arc(cx, botY + 8, 6, 0, TAU); ctx.fill();

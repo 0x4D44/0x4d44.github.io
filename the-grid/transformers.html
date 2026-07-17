@@ -261,7 +261,7 @@ reasons: getting heat out, or noticing trouble early.</p>
         <g class="st" stroke="#b7bfc8" stroke-width="2" fill="#1a232e">
           <rect x="640" y="95" width="150" height="46" rx="23"/>
         </g>
-        <line x1="660" y1="141" x2="640" y2="170" stroke="#b7bfc8" stroke-width="2"/>
+        <line x1="688" y1="141" x2="656" y2="168" stroke="#b7bfc8" stroke-width="2"/>
         <text class="cw-num" x="700" y="124">④</text>
       </g>
       <!-- buchholz -->
@@ -287,6 +287,8 @@ reasons: getting heat out, or noticing trouble early.</p>
           <line x1="612" y1="210" x2="612" y2="360"/><line x1="624" y1="210" x2="624" y2="360"/>
           <line x1="636" y1="210" x2="636" y2="360"/><line x1="648" y1="210" x2="648" y2="360"/>
           <line x1="660" y1="210" x2="660" y2="360"/>
+          <line x1="600" y1="218" x2="660" y2="218"/>
+          <line x1="600" y1="352" x2="660" y2="352"/>
         </g>
         <circle cx="700" cy="285" r="18" fill="none" stroke="#82909d" stroke-width="2"/>
         <path d="M700 285 l12 -8 M700 285 l-12 -8 M700 285 l0 15" stroke="#82909d" stroke-width="2"/>
@@ -481,7 +483,7 @@ destroyed is the next chapter's subject.</p>
     ctx.shadowBlur = 4 + glow * 26;
     ctx.strokeStyle = glow > 0.6 ? "#ff8a5c" : glow > 0.25 ? "#e0a252" : C.ink2;
     ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(x0 + 30, y); ctx.lineTo(x1 - 26, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x0 + 26, y); ctx.lineTo(x1 - 20, y); ctx.stroke();
     ctx.restore();
     label(ctx, lossV + " kV · 100 miles · 4 Ω/phase", (x0 + x1) / 2, y - 14, { align: "center" });
 
@@ -632,8 +634,10 @@ destroyed is the next chapter's subject.</p>
     // incoming bar
     const bx = w * 0.07, bw2 = w * 0.30, bh = 20;
     drawVbar(ctx, bx, y, bw2, bh, vin, "incoming 33 kV network", false, w);
-    // transformer box + tap dial
+    // transformer symbol, wired between the two networks
     const tx = w * 0.5;
+    line(ctx, bx + bw2, y + 10, tx - 32, y + 10, C.ink2, 2);
+    line(ctx, tx + 32, y + 10, w * 0.63, y + 10, C.ink2, 2);
     ctx.strokeStyle = C.ink2; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(tx - 10, y + 10, 22, 0, TAU); ctx.stroke();
     ctx.beginPath(); ctx.arc(tx + 10, y + 10, 22, 0, TAU); ctx.stroke();
