@@ -1,0 +1,73 @@
+        <p>The silicon die is only part of the story. The package has to make electrical contact, survive assembly, shed heat and sometimes bolt itself to several kilograms of aluminium.</p>
+      </div>
+      <div class="story-grid">
+        <article class="story-card"><span class="story-no">01 · seal</span><h3>Metal cans kept the world out.</h3><p>TO-18 and TO-39 packages enclosed the die in a welded metal shell. They were expensive but robust, easy to identify and well suited to early low-volume electronics.</p></article>
+        <article class="story-card"><span class="story-no">02 · mould</span><h3>Plastic made transistors ordinary.</h3><p>The TO-92 and SOT-23 use moulded epoxy. Once automatic assembly took over, the package became cheap enough to vanish inside almost everything.</p></article>
+        <article class="story-card"><span class="story-no">03 · heat</span><h3>Power puts the metal back.</h3><p>TO-220, TO-247 and TO-3 expose a tab or case to a heatsink. Their apparent bulk is not wasted space: it is a low-resistance path from a hot die to the outside world.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="method" id="method" aria-labelledby="method-title">
+    <div class="shell">
+      <div class="method-card">
+        <div>
+          <p class="eyebrow">Method and limits</p>
+          <h2 id="method-title">What “to scale” means here</h2>
+          <p>Inside each interactive SVG, one coordinate unit equals one millimetre. Coin diameters and package bodies therefore preserve their mathematical ratio at every zoom level. The physical size on your monitor is unknown until you calibrate it.</p>
+          <ul>
+            <li>Coin faces are schematic original illustrations, not reproductions of Royal Mint artwork.</li>
+            <li>For non-round coins, “diameter” is the specified constant maximum diameter.</li>
+            <li>Package drawings use representative body dimensions; formed leads and manufacturer tolerances differ.</li>
+            <li>The TO-3 comparison includes its flange, because that flange is the package’s defining envelope.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="eyebrow">Primary references</p>
+          <h2>Dimensions, not guesswork</h2>
+          <p>Current coin diameters come from The Royal Mint. Modern package dimensions come from manufacturer package pages and product tables; legacy outlines are representative industry dimensions and are deliberately labelled as such.</p>
+          <div class="source-list">
+            <a href="https://www.royalmint.com/annual-sets/2025-annual-sets/the-2025-united-kingdom-brilliant-uncirculated-definitive-coin-set/">The Royal Mint · 2025 definitive coin specifications</a>
+            <a href="https://www.royalmint.com/annual-sets/2023/definitives/king-charles-iii-definitives-2023-base-proof-coin-set/">The Royal Mint · complete 1p–£2 diameter table</a>
+            <a href="https://www.nexperia.com/packages/SOT8013">Nexperia · DFN0603-3 (0.63 × 0.33 mm)</a>
+            <a href="https://www.nexperia.com/packages/SOT23.html">Nexperia · SOT-23 (2.9 × 1.3 mm)</a>
+            <a href="https://www.nexperia.com/packages/SOT8017.html">Nexperia · DPAK body envelope</a>
+            <a href="https://www.ti.com/product/TLV431">Texas Instruments · SOT-23 and TO-92 package table</a>
+            <a href="https://www.ti.com/product/LM2941">Texas Instruments · TO-220 package table</a>
+            <a href="https://www.infineon.com/ja/package/PG-TO247-4-17">Infineon · TO-247 body dimensions</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="shell footer-inner">
+    <span><strong>Silicon on Sterling</strong> · an original interactive transistor-package atlas</span>
+    <span>vanilla HTML + CSS + SVG + JavaScript · no build step</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const COINS = [
+    { id: "1p", label: "1p", name: "one penny", diameter: 20.32, shape: "round", metal: "copper" },
+    { id: "2p", label: "2p", name: "two pence", diameter: 25.91, shape: "round", metal: "copper" },
+    { id: "5p", label: "5p", name: "five pence", diameter: 18.00, shape: "round", metal: "silver" },
+    { id: "10p", label: "10p", name: "ten pence", diameter: 24.50, shape: "round", metal: "silver" },
+    { id: "20p", label: "20p", name: "twenty pence", diameter: 21.40, shape: "hept", metal: "silver" },
+    { id: "50p", label: "50p", name: "fifty pence", diameter: 27.30, shape: "hept", metal: "silver" },
+    { id: "1gbp", label: "£1", name: "one pound", diameter: 23.03, shape: "dodec", metal: "bimetal-gold" },
+    { id: "2gbp", label: "£2", name: "two pounds", diameter: 28.40, shape: "round", metal: "bimetal-silver" }
+  ];
+
+  const PACKAGES = [
+    { id: "dfn0603", short: "DFN0603", name: "DFN0603-3", example: "PMX700EN MOSFET", w: .63, h: .33, envelope: "0.63 × 0.33 × 0.25 mm", family: "leadless · surface-mount", kind: "dfn", blurb: "A complete 60-volt MOSFET smaller than a printed full stop." },
+    { id: "sot23", short: "SOT-23", name: "SOT-23", example: "BC817 / MMBT3904", w: 2.90, h: 1.30, envelope: "2.90 × 1.30 × 1.00 mm", family: "moulded plastic · surface-mount", kind: "sot", blurb: "The three-terminal surface-mount workhorse: tiny, cheap and everywhere." },
+    { id: "to92", short: "TO-92", name: "TO-92", example: "BC547 / 2N3904", w: 5.20, h: 4.20, envelope: "5.20 × 4.20 mm body", family: "moulded plastic · through-hole", kind: "to92", blurb: "The black plastic jellybean familiar from breadboards and school electronics." },
+    { id: "to18", short: "TO-18", name: "TO-18", example: "BC107 / 2N2222A", w: 5.84, h: 5.84, envelope: "Ø 5.84 mm can", family: "metal can · through-hole", kind: "can", blurb: "The silver hat of 1960s audio and laboratory gear." },
+    { id: "dpak", short: "DPAK", name: "DPAK / TO-252", example: "surface-mount power MOSFET", w: 6.54, h: 6.16, envelope: "6.54 × 6.16 × 2.29 mm", family: "power tab · surface-mount", kind: "dpak", blurb: "A power transistor flattened for reflow soldering, with a broad thermal pad underneath." },
+    { id: "to126", short: "TO-126", name: "TO-126 / SOT-32", example: "BD139 / BD140", w: 8.00, h: 11.10, envelope: "8.00 × 11.10 mm body", family: "slim power · through-hole", kind: "power", blurb: "A compact driver package, often clipped to a modest heatsink." },
