@@ -1,3 +1,0 @@
-      <line class="dimension-ext" x1="${dx+w/2}" y1="${dy-h/2}" x2="${dx+w/2}" y2="${topY-.18}"/>
-      <line class="dimension-line" x1="${dx-w/2}" y1="${topY}" x2="${dx+w/2}" y2="${topY}" marker-start="url(#dimArrow)" marker-end="url(#dimArrow)"/>
-      <text class="dimension-text" x="${dx}" y="${topY-.42}" text-anchor="middle">${labelW}</text>

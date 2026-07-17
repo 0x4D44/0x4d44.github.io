@@ -1,3 +1,0 @@
-      const pct = Math.min(100, ratio*100);
-      return `<article class="sweep-card" aria-current="${coin.id === state.coinId}">
-        <button type="button" data-coin="${coin.id}" aria-label="Compare ${pkg.name} with ${coin.name}">${coin.label}</button>
