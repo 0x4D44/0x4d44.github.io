@@ -1,0 +1,1521 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Day the Dinosaurs Died — the Chicxulub impact, interactive</title>
+<meta name="description" content="Sixty-six million years ago a mountain-sized asteroid hit the Yucatán and ended the age of dinosaurs. An interactive almanac: fly the impactor in, run a real crater-and-energy simulator, scrub the worst day in Earth's history hour by hour, watch the impact winter fall, and read the K–Pg boundary in the rock.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%98%84%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg:      #05050b;
+    --bg2:     #0a0810;
+    --panel:   rgba(16,13,22,0.66);
+    --panel-solid: #100c16;
+    --ink:     #d7cbc0;
+    --bright:  #f6efe6;
+    --muted:   #928376;
+    --faint:   #5f5348;
+    --hair:    rgba(215,180,150,0.14);
+    --hair-2:  rgba(215,180,150,0.30);
+
+    --fire:    #ff6a2c;
+    --ember:   #ff9142;
+    --gold:    #ffcf6b;
+    --ash:     #6b6f7e;
+    --sulfur:  #f4e04d;
+    --blood:   #d23b2e;
+    --ocean:   #4aa3c7;
+    --green:   #6fc36b;
+    --violet:  #b98bff;
+
+    --accent:  var(--ember);
+
+    --font-display: "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", Georgia, serif;
+    --font-body: system-ui, "Segoe UI", Roboto, -apple-system, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+    --maxw: 1180px;
+    --prose: 67ch;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 800px at 70% -10%, #17101c 0%, var(--bg) 55%, #030307 100%);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  #space {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+    display: block;
+  }
+
+  .wrap { position: relative; z-index: 1; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 4rem 1.2rem 3rem;
+    overflow: hidden;
+  }
+  #hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .hero-inner { position: relative; z-index: 2; max-width: 940px; }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem; letter-spacing: 0.42em; text-transform: uppercase;
+    color: var(--ember); margin-bottom: 1.4rem;
+    text-shadow: 0 0 22px rgba(255,106,44,0.5);
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.6rem, 8.5vw, 6.2rem);
+    line-height: 0.98; margin: 0 0 1.1rem;
+    color: var(--bright);
+    letter-spacing: -0.01em;
+    text-shadow: 0 4px 60px rgba(0,0,0,0.7);
+  }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero .sub {
+    font-size: clamp(1.02rem, 2.4vw, 1.36rem);
+    color: var(--ink); max-width: 40ch; margin: 0 auto 2rem;
+    line-height: 1.5;
+  }
+  .hero .sub b { color: var(--bright); font-weight: 600; }
+  .scroll-cue {
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--muted);
+    display: inline-flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .scroll-cue span.arrow { font-size: 1.1rem; animation: bob 2.2s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(6px);opacity:1} }
+  @media (prefers-reduced-motion: reduce){ .scroll-cue span.arrow{animation:none} }
+
+  .hero-facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.4rem; justify-content: center;
+    margin: 2.2rem auto 0; max-width: 720px;
+  }
+  .hero-facts .f { text-align: center; padding: 0.3rem 0; }
+  .hero-facts .fn {
+    font-family: var(--font-mono); font-size: clamp(1.3rem,3.6vw,1.9rem);
+    color: var(--gold); font-weight: 600; line-height: 1;
+  }
+  .hero-facts .fl {
+    font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); margin-top: 0.35rem;
+  }
+
+  /* ---------- layout / prose ---------- */
+  .chapter { position: relative; padding: 5.5rem 1.4rem; }
+  .chapter.tight { padding-top: 2.5rem; }
+  .inner { max-width: var(--maxw); margin: 0 auto; }
+  .prose { max-width: var(--prose); margin-left: auto; margin-right: auto; }
+  .prose.wide { max-width: 80ch; }
+
+  .chap-tag {
+    font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.34em;
+    text-transform: uppercase; color: var(--ember); margin-bottom: 0.9rem;
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .chap-tag::before { content: ""; width: 26px; height: 1px; background: var(--ember); opacity: 0.7; }
+  h2 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(1.9rem, 4.6vw, 3rem); line-height: 1.06;
+    color: var(--bright); margin: 0 0 1.2rem; letter-spacing: -0.01em;
+  }
+  h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 1.32rem; color: var(--bright); margin: 2.4rem 0 0.6rem;
+  }
+  p { margin: 0 0 1.15rem; }
+  .prose p, .prose li { color: var(--ink); }
+  .lead { font-size: 1.14rem; color: var(--bright); }
+  a { color: var(--ember); text-decoration: none; border-bottom: 1px solid rgba(255,145,66,0.35); }
+  a:hover { color: var(--gold); border-color: var(--gold); }
+  strong { color: var(--bright); font-weight: 600; }
+  em.term { font-style: normal; color: var(--gold); }
+  .dropcap::first-letter {
+    font-family: var(--font-display); float: left; font-size: 3.6rem;
+    line-height: 0.78; padding: 0.3rem 0.6rem 0 0; color: var(--ember);
+    font-weight: 700;
+  }
+  .aside {
+    border-left: 2px solid var(--hair-2); padding: 0.2rem 0 0.2rem 1.2rem;
+    margin: 1.6rem 0; color: var(--muted); font-size: 0.96rem;
+  }
+  hr.rule { border: none; border-top: 1px solid var(--hair); margin: 3.4rem auto; max-width: var(--prose); }
+
+  /* ---------- generic panel + controls ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    box-shadow: 0 24px 60px -30px rgba(0,0,0,0.9);
+  }
+  .lab { margin: 2rem auto; overflow: hidden; }
+  .lab-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; padding: 1rem 1.3rem; border-bottom: 1px solid var(--hair);
+    flex-wrap: wrap;
+  }
+  .lab-title { font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  .lab-note { font-size: 0.8rem; color: var(--muted); }
+  .lab-body { padding: 1.3rem; }
+
+  .controls { display: grid; gap: 1.1rem 1.6rem; }
+  @media (min-width: 620px){ .controls.two { grid-template-columns: 1fr 1fr; } }
+  .ctl { display: flex; flex-direction: column; gap: 0.4rem; }
+  .ctl label {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between;
+  }
+  .ctl label b { color: var(--gold); font-weight: 600; font-size: 0.86rem; letter-spacing: 0; text-transform: none; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+    background: linear-gradient(90deg, var(--ember), var(--fire)); border-radius: 3px; outline: none;
+    cursor: pointer; margin: 0.4rem 0;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--bright); border: 3px solid var(--fire); cursor: pointer;
+    box-shadow: 0 0 12px rgba(255,106,44,0.7);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%; background: var(--bright);
+    border: 3px solid var(--fire); cursor: pointer;
+  }
+  .seg { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    background: transparent; border: none; color: var(--muted); cursor: pointer;
+    font-family: var(--font-mono); font-size: 0.74rem; padding: 0.42rem 0.7rem; letter-spacing: 0.04em;
+    transition: background 0.15s, color 0.15s;
+  }
+  .seg button[aria-pressed=true] { background: rgba(255,106,44,0.18); color: var(--gold); }
+  .seg button:not(:last-child) { border-right: 1px solid var(--hair); }
+
+  .btn {
+    background: rgba(255,106,44,0.12); color: var(--ember); cursor: pointer;
+    border: 1px solid var(--hair-2); border-radius: 8px; padding: 0.5rem 0.95rem;
+    font-family: var(--font-mono); font-size: 0.76rem; letter-spacing: 0.05em; transition: all 0.15s;
+  }
+  .btn:hover { background: rgba(255,106,44,0.24); color: var(--gold); border-color: var(--gold); }
+
+  /* readouts */
+  .readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.9rem; margin-top: 1.3rem; }
+  .ro { background: rgba(0,0,0,0.28); border: 1px solid var(--hair); border-radius: 10px; padding: 0.85rem 0.95rem; }
+  .ro .v { font-family: var(--font-mono); font-size: 1.3rem; color: var(--gold); line-height: 1.1; word-break: break-word; }
+  .ro .l { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
+  .ro .s { font-size: 0.78rem; color: var(--ink); margin-top: 0.28rem; }
+
+  canvas.draw { display: block; width: 100%; border-radius: 10px; background: rgba(0,0,0,0.25); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin-top: 0.9rem; font-size: 0.8rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+  /* timeline scrubber */
+  .tl-track { position: relative; margin: 1rem 0 0.4rem; }
+  .tl-stops { display: flex; justify-content: space-between; gap: 0.3rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+  .tl-stop {
+    background: transparent; border: 1px solid var(--hair); border-radius: 999px; color: var(--muted);
+    cursor: pointer; font-family: var(--font-mono); font-size: 0.68rem; padding: 0.28rem 0.62rem;
+    letter-spacing: 0.03em; transition: all 0.15s; white-space: nowrap;
+  }
+  .tl-stop[aria-pressed=true] { background: var(--fire); color: #120a06; border-color: var(--fire); font-weight: 700; }
+  .tl-panel { margin-top: 1.2rem; display: grid; gap: 1.2rem; }
+  @media (min-width: 720px){ .tl-panel { grid-template-columns: 1.1fr 1fr; align-items: start; } }
+  .tl-when { font-family: var(--font-mono); color: var(--ember); font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  .tl-h { font-family: var(--font-display); font-size: 1.5rem; color: var(--bright); margin: 0.3rem 0 0.7rem; }
+
+  /* energy scale bar */
+  .escale { position: relative; height: 74px; margin: 1.6rem 0 2.4rem; }
+  .escale .axis { position: absolute; left: 0; right: 0; top: 38px; height: 6px; border-radius: 3px;
+    background: linear-gradient(90deg, #2a3348, #6b4a2a, var(--fire), var(--gold)); }
+  .escale .mk { position: absolute; top: 0; transform: translateX(-50%); text-align: center; width: 90px; }
+  .escale .mk .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin: 30px auto 0; border: 2px solid var(--bg); position: relative; z-index:2;}
+  .escale .mk.hi .dot { background: var(--fire); box-shadow: 0 0 12px var(--fire); }
+  .escale .mk .cap { font-size: 0.62rem; color: var(--muted); margin-top: 4px; line-height: 1.15; }
+  .escale .mk.hi .cap { color: var(--gold); }
+  .escale .mk.up .cap { position: absolute; bottom: 44px; left: 0; right: 0; }
+  .escale .mk.up .dot { margin-top: 30px; }
+
+  /* survivors grid */
+  .taxa { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 0.7rem; margin-top: 1.4rem; }
+  .taxon {
+    text-align: left; cursor: pointer; border-radius: 11px; padding: 0.85rem 0.9rem;
+    border: 1px solid var(--hair); background: rgba(0,0,0,0.25); transition: all 0.15s;
+    display: flex; flex-direction: column; gap: 0.4rem; min-height: 96px;
+  }
+  .taxon:hover { border-color: var(--hair-2); transform: translateY(-2px); }
+  .taxon .ico { width: 34px; height: 34px; color: var(--ink); }
+  .taxon .nm { font-family: var(--font-display); font-size: 1rem; color: var(--bright); line-height: 1.1; }
+  .taxon .vd { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .taxon.died { border-color: rgba(210,59,46,0.4); }
+  .taxon.died .vd { color: var(--blood); }
+  .taxon.lived { border-color: rgba(111,195,107,0.4); }
+  .taxon.lived .vd { color: var(--green); }
+  .taxon .why { font-size: 0.82rem; color: var(--muted); line-height: 1.4; display: none; }
+  .taxon[aria-expanded=true] .why { display: block; }
+  .taxon[aria-expanded=true] { background: rgba(0,0,0,0.42); }
+
+  /* K-Pg column */
+  .kpg { display: grid; gap: 1.2rem; }
+  @media (min-width: 720px){ .kpg { grid-template-columns: 200px 1fr; align-items: stretch; } }
+  .kpg-col { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--hair); min-height: 360px; cursor: crosshair; }
+  .kpg-read { display: flex; flex-direction: column; justify-content: center; }
+  .kpg-layer-name { font-family: var(--font-display); font-size: 1.4rem; color: var(--bright); }
+  .kpg-layer-sub { font-family: var(--font-mono); font-size: 0.74rem; color: var(--ember); letter-spacing: 0.1em; text-transform: uppercase; margin: 0.2rem 0 0.9rem; }
+
+  .callout {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;
+    margin: 2rem auto; max-width: var(--maxw);
+  }
+  .callout .c { padding: 1.1rem 1.2rem; border-radius: 12px; border: 1px solid var(--hair); background: var(--panel); }
+  .callout .c .cn { font-family: var(--font-mono); font-size: 1.7rem; color: var(--gold); line-height: 1; }
+  .callout .c .cl { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.4; }
+
+  .footer { padding: 4rem 1.4rem 6rem; text-align: center; color: var(--muted); font-size: 0.9rem; }
+  .footer .src { max-width: 62ch; margin: 1.4rem auto 0; font-size: 0.8rem; line-height: 1.6; color: var(--faint); }
+  .footer .src b { color: var(--muted); }
+
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--fire), var(--gold)); z-index: 40; width: 0; transition: width 0.1s linear; }
+
+  ::selection { background: rgba(255,106,44,0.3); color: var(--bright); }
+  .nowrap { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+<canvas id="space" aria-hidden="true"></canvas>
+
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <canvas id="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-inner">
+      <div class="kicker">☄ 66,043,000 years ago · Chicxulub, Yucatán</div>
+      <h1>The Day the<br><em>Dinosaurs</em> Died</h1>
+      <p class="sub">In one morning, an asteroid the size of a <b>mountain</b> ended a world that had ruled the Earth for <b>165 million years</b>. This is what happened — and how we know.</p>
+      <div class="hero-facts">
+        <div class="f"><div class="fn" id="hf-size">~12 km</div><div class="fl">Asteroid width</div></div>
+        <div class="f"><div class="fn">20 km/s</div><div class="fl">Impact speed</div></div>
+        <div class="f"><div class="fn">100 M Mt</div><div class="fl">Energy of TNT</div></div>
+        <div class="f"><div class="fn">75%</div><div class="fl">Species lost</div></div>
+      </div>
+      <div style="margin-top:2.6rem">
+        <div class="scroll-cue">scroll to begin<span class="arrow">▼</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ INTRO ============ -->
+  <section class="chapter" id="intro">
+    <div class="prose">
+      <div class="chap-tag">A morning in the late Cretaceous</div>
+      <h2>An ordinary Tuesday, and then it wasn't</h2>
+      <p class="dropcap">It is spring in the Northern Hemisphere, and the world is warm and green. Flowering plants have spread across the continents; <em class="term">Triceratops</em> browses the coastal forests of what will one day be Montana; <em class="term">Tyrannosaurus rex</em> is the apex predator of the age. In the seas swim ammonites, mosasaurs and great marine reptiles. This world is not decaying or exhausted. It is thriving. It has been the age of dinosaurs for over <strong>165 million years</strong>.</p>
+      <p>Somewhere out beyond the orbit of Mars, a rock roughly <strong>ten to fourteen kilometres across</strong> has been falling toward the inner Solar System for a very long time. It is a fragment of the early Solar System — a piece of the same rubble that built the planets — and it is now on a collision course with the Earth. It is moving at around <strong>twenty kilometres every second</strong>: sixty times faster than a rifle bullet.</p>
+      <p>When it reaches the top of the atmosphere it will cross the whole sky in a fraction of a second. There is no warning. There is no defence. In the geological record, the boundary it leaves behind is a line just a few centimetres thick — and on one side of that line is the Mesozoic, and on the other side is everything that came after, including us.</p>
+      <p class="aside">This page is an interactive almanac of that impact — the <strong>Chicxulub</strong> event that closed the Cretaceous. Fly the asteroid in below, then run the numbers yourself, walk through the worst day in the planet's history hour by hour, and read the story written in the rock. Everything is drawn live in your browser.</p>
+    </div>
+  </section>
+
+  <!-- ============ SCALE ============ -->
+  <section class="chapter tight" id="scale">
+    <div class="inner">
+      <div class="prose" style="margin-bottom:1.5rem">
+        <div class="chap-tag">How big is a "mountain-sized" rock?</div>
+        <h2>The scale of the thing</h2>
+        <p>We say "asteroid" and picture a pebble. The Chicxulub impactor was somewhere between <strong>10 and 14 km</strong> across — big enough that when its leading edge struck the sea floor, its trailing edge was still up at the cruising altitude of an airliner. Drag the slider to see it against things you know.</p>
+      </div>
+      <div class="panel lab">
+        <div class="lab-head">
+          <span class="lab-title">Scale comparison</span>
+          <span class="lab-note">Everything drawn to the same scale</span>
+        </div>
+        <div class="lab-body">
+          <canvas id="scale-canvas" class="draw" height="360" aria-label="The asteroid drawn to scale beside familiar objects"></canvas>
+          <div class="controls" style="margin-top:1.2rem">
+            <div class="ctl">
+              <label>Asteroid diameter <b><span id="scale-d">12</span> km</b></label>
+              <input type="range" id="scale-slider" min="1" max="20" step="0.5" value="12">
+            </div>
+          </div>
+          <div class="legend">
+            <span><span class="swatch" style="background:var(--fire)"></span> the asteroid</span>
+            <span><span class="swatch" style="background:#6c6357"></span> Mount Everest (8.8 km)</span>
+            <span><span class="swatch" style="background:#8a7d6a"></span> Manhattan (21 km long)</span>
+            <span><span class="swatch" style="background:#4a5566"></span> Burj Khalifa (0.83 km)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SIMULATOR ============ -->
+  <section class="chapter tight" id="sim">
+    <div class="inner">
+      <div class="prose" style="margin-bottom:1.5rem">
+        <div class="chap-tag">The centrepiece · run it yourself</div>
+        <h2>The impact simulator</h2>
+        <p>Kinetic energy scales with mass times velocity squared, and mass scales with the cube of diameter — so size and speed matter enormously. The controls below feed a simplified version of the crater-scaling laws planetary scientists actually use (after Collins, Melosh &amp; Marcus). Change the rock and watch the crater, the energy and the shaking respond in real time.</p>
+      </div>
+      <div class="panel lab">
+        <div class="lab-head">
+          <span class="lab-title">Impactor → consequences</span>
+          <button class="btn" id="sim-reset">↺ reset to Chicxulub</button>
+        </div>
+        <div class="lab-body">
+          <div class="controls two">
+            <div class="ctl">
+              <label>Diameter <b><span id="sd-d">12</span> km</b></label>
+              <input type="range" id="s-d" min="0.5" max="20" step="0.5" value="12">
+            </div>
+            <div class="ctl">
+              <label>Impact speed <b><span id="sd-v">20</span> km/s</b></label>
+              <input type="range" id="s-v" min="11" max="72" step="1" value="20">
+            </div>
+            <div class="ctl">
+              <label>Impact angle <b><span id="sd-a">45</span>° from horizontal</b></label>
+              <input type="range" id="s-a" min="10" max="90" step="5" value="45">
+            </div>
+            <div class="ctl">
+              <label>Density / composition <b id="sd-rho">porous rock</b></label>
+              <div class="seg" id="s-rho" role="group" aria-label="Impactor composition">
+                <button data-rho="1500" aria-pressed="false">ice/comet</button>
+                <button data-rho="3000" aria-pressed="true">rock</button>
+                <button data-rho="8000" aria-pressed="false">iron</button>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:1.5rem">
+            <canvas id="sim-canvas" class="draw" height="300" aria-label="Cross-section of the crater carved by the current impactor"></canvas>
+          </div>
+
+          <div class="readouts">
+            <div class="ro"><div class="v" id="r-energy">—</div><div class="l">Energy released</div><div class="s" id="r-energy2"></div></div>
+            <div class="ro"><div class="v" id="r-crater">—</div><div class="l">Final crater width</div><div class="s" id="r-crater2"></div></div>
+            <div class="ro"><div class="v" id="r-mag">—</div><div class="l">Seismic magnitude</div><div class="s" id="r-mag2"></div></div>
+            <div class="ro"><div class="v" id="r-fire">—</div><div class="l">Fireball radius</div><div class="s" id="r-fire2"></div></div>
+            <div class="ro"><div class="v" id="r-hiro">—</div><div class="l">In Hiroshima bombs</div><div class="s">15-kiloton units</div></div>
+            <div class="ro"><div class="v" id="r-depth">—</div><div class="l">Crater depth</div><div class="s">rim to floor</div></div>
+          </div>
+
+          <p class="lab-note" style="margin-top:1.1rem" id="sim-verdict"></p>
+        </div>
+      </div>
+
+      <div class="prose">
+        <h3>Where it lands on the scale of catastrophes</h3>
+        <p>Human experience gives us nothing to compare this to. Every bomb ever built, every eruption ever recorded, sits far to the left. The bar below is <strong>logarithmic</strong> — each step is ten times the last — and the Chicxulub marker moves as you change the simulator above.</p>
+      </div>
+      <div class="inner">
+        <div class="escale" id="escale" aria-label="Logarithmic scale of energy release, from a lightning bolt to the Chicxulub impact"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THE DAY ============ -->
+  <section class="chapter tight" id="theday">
+    <div class="inner">
+      <div class="prose" style="margin-bottom:1rem">
+        <div class="chap-tag">The worst day in Earth's history</div>
+        <h2>Hour by hour</h2>
+        <p>The impact itself was over in a heartbeat. The catastrophe it triggered unfolded over seconds, then minutes, then years. Step through it below — each stop is drawn and described.</p>
+      </div>
+      <div class="panel lab">
+        <div class="lab-head">
+          <span class="lab-title">Timeline · from impact</span>
+          <span class="lab-note" id="tl-index">1 / 8</span>
+        </div>
+        <div class="lab-body">
+          <div class="tl-stops" id="tl-stops"></div>
+          <div class="tl-panel">
+            <canvas id="tl-canvas" class="draw" height="300" aria-label="Illustration of the current moment after impact"></canvas>
+            <div>
+              <div class="tl-when" id="tl-when"></div>
+              <div class="tl-h" id="tl-title"></div>
+              <div id="tl-body" style="color:var(--ink)"></div>
+            </div>
+          </div>
+          <div class="controls" style="margin-top:1.4rem">
+            <div class="ctl">
+              <label>Scrub the timeline <b id="tl-label"></b></label>
+              <input type="range" id="tl-slider" min="0" max="7" step="1" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ WHERE ON EARTH ============ -->
+  <section class="chapter tight" id="rings">
+    <div class="inner">
+      <div class="prose" style="margin-bottom:1.5rem">
+        <div class="chap-tag">A view from above the Yucatán</div>
+        <h2>Where on Earth felt it</h2>
+        <p>The map is centred on <strong>ground zero</strong> in the shallow sea off the Yucatán Peninsula. The rings are real great-circle distances; the effects fall off with range. Hover or tap a ring to read what an animal standing there would have experienced. This is an <em class="term">azimuthal</em> view — distance from the impact is faithful in every direction.</p>
+      </div>
+      <div class="panel lab">
+        <div class="lab-head">
+          <span class="lab-title">Distance from ground zero</span>
+          <span class="lab-note" id="ring-note">hover a ring</span>
+        </div>
+        <div class="lab-body">
+          <canvas id="ring-canvas" class="draw" height="480" style="max-width:560px;margin:0 auto" aria-label="Concentric distance rings around the Chicxulub impact site"></canvas>
+          <div class="tl-panel" style="margin-top:1rem">
+            <div>
+              <div class="tl-when" id="ring-dist">— km from impact</div>
+              <div class="tl-h" id="ring-title" style="font-size:1.25rem"></div>
+              <div id="ring-body" style="color:var(--ink);font-size:0.96rem"></div>
+            </div>
+            <div>
+              <div class="tl-when">Reference points</div>
+              <div id="ring-refs" style="color:var(--muted);font-size:0.9rem;line-height:1.9;margin-top:0.4rem"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ IMPACT WINTER ============ -->
+  <section class="chapter tight" id="winter">
+    <div class="inner">
+      <div class="prose" style="margin-bottom:1.5rem">
+        <div class="chap-tag">The years the sun went out</div>
+        <h2>Impact winter</h2>
+        <p>The crater lay in sulfur-rich rock. The impact flung billions of tonnes of soot from global wildfires, pulverised rock, and sulfate aerosols into the stratosphere, where they lingered for years. Sunlight at the surface collapsed; photosynthesis all but stopped; the land froze. This is the killer that reached everywhere, long after the fires died. Toggle the drivers and drag through the years.</p>
+      </div>
+      <div class="panel lab">
+        <div class="lab-head">
+          <span class="lab-title">Global surface, after the impact</span>
+          <div class="seg" id="winter-mode" role="group" aria-label="Which effects to show">
+            <button data-mode="all" aria-pressed="true">all drivers</button>
+            <button data-mode="soot" aria-pressed="false">soot only</button>
+            <button data-mode="sun" aria-pressed="false">sunlight</button>
+          </div>
+        </div>
+        <div class="lab-body">
+          <canvas id="winter-canvas" class="draw" height="340" aria-label="Chart of sunlight and temperature in the years after the impact"></canvas>
+          <div class="controls" style="margin-top:1.2rem">
+            <div class="ctl">
+              <label>Years after impact <b><span id="winter-t">0.0</span></b></label>
+              <input type="range" id="winter-slider" min="0" max="15" step="0.1" value="0">
+            </div>
+          </div>
+          <div class="readouts" style="margin-top:1rem">
+            <div class="ro"><div class="v" id="w-sun">—</div><div class="l">Sunlight reaching ground</div></div>
+            <div class="ro"><div class="v" id="w-temp">—</div><div class="l">Land temperature change</div></div>
+            <div class="ro"><div class="v" id="w-photo">—</div><div class="l">Photosynthesis</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EVIDENCE ============ -->
+  <section class="chapter tight" id="evidence">
+    <div class="inner">
+      <div class="prose" style="margin-bottom:1.5rem">
+        <div class="chap-tag">How we know · reading the rock</div>
+        <h2>The line in the cliff</h2>
+        <p>For a century the extinction was a mystery. Then in 1980 the physicist <strong>Luis Alvarez</strong> and his geologist son <strong>Walter</strong> found something strange in a clay layer that turns up at the boundary all over the world: a spike of <em class="term">iridium</em>, a metal rare in Earth's crust but common in asteroids. The spike was the fingerprint of an impact. Eleven years later the crater itself was confirmed, buried under the Yucatán. Drag down through the rock to read it.</p>
+      </div>
+      <div class="panel lab">
+        <div class="lab-head">
+          <span class="lab-title">A core through the K–Pg boundary</span>
+          <span class="lab-note">move down the column</span>
+        </div>
+        <div class="lab-body">
+          <div class="kpg">
+            <div class="kpg-col"><canvas id="kpg-canvas" style="display:block;width:100%;height:100%"></canvas></div>
+            <div class="kpg-read">
+              <div class="kpg-layer-name" id="kpg-name">—</div>
+              <div class="kpg-layer-sub" id="kpg-age">—</div>
+              <div id="kpg-body" style="color:var(--ink)"></div>
+              <div class="readouts" style="margin-top:1.2rem;grid-template-columns:1fr 1fr">
+                <div class="ro"><div class="v" id="kpg-ir">—</div><div class="l">Iridium (ppb)</div></div>
+                <div class="ro"><div class="v" id="kpg-depth">—</div><div class="l">Below boundary</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="prose" style="margin-top:1.5rem">
+        <p>The boundary carries more than iridium. It holds <strong>shocked quartz</strong>, grains fractured by pressures only an impact can produce; tiny glass <strong>spherules</strong>, droplets of rock melted and flung skyward that rained back down; and a layer of <strong>soot</strong> from a world on fire. Above the line, the fossils change completely. It is the same story on every continent, and at the bottom of every ocean.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SURVIVORS ============ -->
+  <section class="chapter tight" id="survivors">
+    <div class="inner">
+      <div class="prose" style="margin-bottom:1rem">
+        <div class="chap-tag">The reckoning · who died, who lived</div>
+        <h2>The sorting</h2>
+        <p>Roughly <strong>three-quarters of all species</strong> vanished. But the extinction was not random. To live, it helped to be small, to be able to hide, to eat detritus or seeds rather than fresh leaves, and to breed fast. Tap a group to see how it fared, and why.</p>
+      </div>
+      <div class="taxa" id="taxa"></div>
+      <div class="callout">
+        <div class="c"><div class="cn">~75%</div><div class="cl">of all species went extinct in a geological instant</div></div>
+        <div class="c"><div class="cn">0</div><div class="cl">non-avian dinosaurs survived — after 165 million years</div></div>
+        <div class="c"><div class="cn">~25 kg</div><div class="cl">the largest land animal to survive weighed less than a labrador</div></div>
+        <div class="c"><div class="cn">birds</div><div class="cl">the one dinosaur lineage that made it through — and thrives today</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AFTERMATH ============ -->
+  <section class="chapter" id="after">
+    <div class="prose">
+      <div class="chap-tag">What grew back</div>
+      <h2>A world made empty, and then remade</h2>
+      <p class="dropcap">For a few thousand years the recovering world was ruled by ferns — the first green things to colonise scorched ground — and by the small, the burrowing and the buried. The great reptilian dynasties were gone, and with them the ceiling that had held mammals small and nocturnal for a hundred million years. Into that empty world, over the millions of years that followed, mammals radiated: into the whales, the bats, the horses, the primates. One branch of those primates is reading this sentence.</p>
+      <p>The asteroid did not just end a world. By clearing the stage so completely, it made ours possible. We are, quite literally, the descendants of the survivors — the shrew-like things that were small enough, and lucky enough, to still be breathing when the sky finally cleared.</p>
+      <p>The crater is still there. It is called <strong>Chicxulub</strong>, after the town near its centre, and it is about 180 kilometres wide, buried under a kilometre of younger rock and the shallow waters of the Gulf. You cannot see it from the ground. But a ring of sinkholes — <em class="term">cenotes</em> — traces its buried rim across the Yucatán, water finding the fractured stone. Sixty-six million years on, the wound has not entirely closed.</p>
+      <hr class="rule">
+      <p class="aside">Everything on this page — the simulator, the rings, the winter curves, the boundary column — is computed and drawn live in vanilla JavaScript on <code>&lt;canvas&gt;</code>, with no libraries and no build step. The physics uses simplified published crater-scaling relations and is meant to convey the scale, not to model a specific event to the metre.</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>☄ &nbsp; The Chicxulub impact · 66 million years ago · an interactive almanac</div>
+    <div class="src">
+      <b>Sources &amp; further reading:</b> Alvarez, Alvarez, Asaro &amp; Michel (1980), the original iridium anomaly; Collins, Melosh &amp; Marcus (2005), the Earth Impact Effects Program crater-scaling relations used here; Schulte et&nbsp;al. (2010), <i>Science</i>, the consensus review of the impact and mass extinction; Hull et&nbsp;al. (2020) on the impact-winter kill mechanism; and the 2016 IODP–ICDP drilling of the crater's peak ring. Figures for energy, crater size and the environmental aftermath follow the published literature; this is a work of science communication.
+    </div>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+(function () {
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+
+  // fit a canvas to its CSS box at device pixel ratio; returns {w,h,ctx}
+  function fit(cv, cssH) {
+    const dpr = DPR();
+    const w = cv.clientWidth || cv.parentElement.clientWidth;
+    const h = cssH || cv.clientHeight || 300;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w, h, ctx };
+  }
+
+  /* ============ progress bar ============ */
+  const prog = $("#progress");
+  function onScroll() {
+    const st = window.scrollY || document.documentElement.scrollTop;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (max > 0 ? (st / max) * 100 : 0) + "%";
+  }
+  window.addEventListener("scroll", onScroll, { passive: true });
+
+  /* ============ background starfield ============ */
+  (function () {
+    const cv = $("#space");
+    let W, H, stars = [];
+    function reset() {
+      const dpr = DPR();
+      W = cv.width = Math.round(innerWidth * dpr);
+      H = cv.height = Math.round(innerHeight * dpr);
+      const n = Math.round((innerWidth * innerHeight) / 9000);
+      stars = [];
+      for (let i = 0; i < n; i++) {
+        stars.push({ x: Math.random() * W, y: Math.random() * H, r: (Math.random() * 1.1 + 0.2) * dpr, tw: Math.random() * Math.PI * 2, sp: Math.random() * 0.02 + 0.004 });
+      }
+    }
+    reset();
+    addEventListener("resize", reset);
+    const ctx = cv.getContext("2d");
+    function draw(t) {
+      ctx.clearRect(0, 0, W, H);
+      for (const s of stars) {
+        const a = reduceMotion ? 0.6 : 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(s.tw + t * s.sp));
+        ctx.globalAlpha = a;
+        ctx.fillStyle = "#e9dccb";
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (!reduceMotion) requestAnimationFrame(draw);
+    }
+    if (reduceMotion) draw(0); else requestAnimationFrame(draw);
+  })();
+
+  /* ============ HERO animation ============ */
+  (function () {
+    const cv = $("#hero-canvas");
+    let W, H, ctx, dpr;
+    let asteroid, trail = [], flash = 0, t0 = performance.now();
+    function reset() {
+      dpr = DPR();
+      W = cv.clientWidth; H = cv.clientHeight;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    reset();
+    addEventListener("resize", reset);
+    function launch() {
+      asteroid = { x: -0.15 * W, y: -0.1 * H, vx: 0, vy: 0, life: 0 };
+      trail = []; flash = 0;
+    }
+    launch();
+    function earthLimb() {
+      // big planet curve rising from bottom-right
+      const cx = W * 0.72, cy = H * 1.42, r = H * 1.05;
+      ctx.save();
+      const g = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.5, r * 0.1, cx, cy, r);
+      g.addColorStop(0, "#25405a"); g.addColorStop(0.45, "#152a3f"); g.addColorStop(0.8, "#0a1626"); g.addColorStop(1, "#05070d");
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fillStyle = g; ctx.fill();
+      // atmosphere rim
+      ctx.beginPath(); ctx.arc(cx, cy, r, Math.PI * 1.08, Math.PI * 1.92);
+      ctx.lineWidth = 3; ctx.strokeStyle = "rgba(120,180,255,0.35)"; ctx.stroke();
+      ctx.beginPath(); ctx.arc(cx, cy, r + 6, Math.PI * 1.08, Math.PI * 1.92);
+      ctx.lineWidth = 12; ctx.strokeStyle = "rgba(90,150,230,0.10)"; ctx.stroke();
+      return { cx, cy, r };
+    }
+    let target = null;
+    function step(now) {
+      const dt = Math.min(48, now - t0); t0 = now;
+      ctx.clearRect(0, 0, W, H);
+      const E = earthLimb();
+      if (!target) target = { x: E.cx + Math.cos(Math.PI * 1.24) * E.r, y: E.cy + Math.sin(Math.PI * 1.24) * E.r };
+      // move asteroid toward impact point
+      const a = asteroid;
+      a.life += dt;
+      const dur = 3200;
+      const p = clamp(a.life / dur, 0, 1);
+      const ease = p * p;
+      a.x = lerp(-0.15 * W, target.x, ease);
+      a.y = lerp(-0.12 * H, target.y, ease);
+      // trail
+      trail.push({ x: a.x, y: a.y, a: 1 });
+      if (trail.length > 42) trail.shift();
+      for (const tp of trail) tp.a *= 0.93;
+      // draw trail
+      for (let i = 0; i < trail.length; i++) {
+        const tp = trail[i]; const rr = lerp(1, 5.5, i / trail.length);
+        ctx.globalAlpha = tp.a * (i / trail.length) * 0.9;
+        const gg = ctx.createRadialGradient(tp.x, tp.y, 0, tp.x, tp.y, rr * 3);
+        gg.addColorStop(0, "rgba(255,220,150,0.9)"); gg.addColorStop(0.5, "rgba(255,120,50,0.5)"); gg.addColorStop(1, "rgba(255,60,20,0)");
+        ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(tp.x, tp.y, rr * 3, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (p < 1) {
+        // the rock
+        ctx.save(); ctx.translate(a.x, a.y);
+        const g2 = ctx.createRadialGradient(-3, -3, 1, 0, 0, 12);
+        g2.addColorStop(0, "#fff4e0"); g2.addColorStop(0.4, "#ffb04a"); g2.addColorStop(1, "#a03310");
+        ctx.fillStyle = g2; ctx.beginPath(); ctx.arc(0, 0, 7, 0, 7); ctx.fill();
+        ctx.restore();
+      } else if (flash < 1.4) {
+        flash += dt / 700;
+        const fr = target;
+        const rad = lerp(10, Math.max(W, H) * 0.6, Math.min(1, flash));
+        const al = Math.max(0, 1 - flash / 1.4);
+        const fg = ctx.createRadialGradient(fr.x, fr.y, 0, fr.x, fr.y, rad);
+        fg.addColorStop(0, "rgba(255,255,240," + al + ")");
+        fg.addColorStop(0.2, "rgba(255,220,140," + (al * 0.9) + ")");
+        fg.addColorStop(0.55, "rgba(255,120,40," + (al * 0.5) + ")");
+        fg.addColorStop(1, "rgba(255,60,20,0)");
+        ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(fr.x, fr.y, rad, 0, 7); ctx.fill();
+      }
+      if (p >= 1 && flash >= 1.4) {
+        // pause, then relaunch
+        if (!a.done) { a.done = true; a.wait = now; }
+        if (now - a.wait > 1400) launch();
+      }
+      if (!reduceMotion) requestAnimationFrame(step);
+    }
+    if (reduceMotion) {
+      ctx.clearRect(0, 0, W, H); earthLimb();
+    } else requestAnimationFrame(step);
+  })();
+
+  /* ============ SCALE comparison ============ */
+  (function () {
+    const cv = $("#scale-canvas"), slider = $("#scale-slider"), out = $("#scale-d");
+    // reference objects in km
+    const refs = [
+      { name: "Burj\nKhalifa", km: 0.83, col: "#4a5566", wkm: 0.2 },
+      { name: "Mt Everest", km: 8.85, col: "#6c6357", wkm: 12 },
+      { name: "Manhattan", km: 0.09, col: "#8a7d6a", wkm: 21, flat: true, label: "21 km long" },
+    ];
+    function draw() {
+      const D = parseFloat(slider.value);
+      out.textContent = D;
+      const { w, h, ctx } = fit(cv, 360);
+      ctx.clearRect(0, 0, w, h);
+      // world scale: fit the widest of {asteroid D, Manhattan 21, Everest 12} across ~78% of width
+      const spanKm = Math.max(D, 21, 14) * 1.12;
+      const pxPerKm = (w * 0.9) / spanKm;
+      const ground = h - 40;
+      // ground line
+      ctx.strokeStyle = "rgba(215,180,150,0.25)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(w, ground); ctx.stroke();
+      function tag(x, y, txt, col) {
+        ctx.fillStyle = col; ctx.font = "600 11px ui-monospace, monospace"; ctx.textAlign = "center";
+        txt.split("\n").forEach((ln, i) => ctx.fillText(ln, x, y + i * 12));
+      }
+      // Everest as a triangle
+      let x = w * 0.05 + (8.85 * pxPerKm) / 2 + 6;
+      const evH = 8.85 * pxPerKm, evW = 14 * pxPerKm;
+      ctx.fillStyle = "#6c6357"; ctx.beginPath();
+      ctx.moveTo(x - evW / 2, ground); ctx.lineTo(x, ground - evH); ctx.lineTo(x + evW / 2, ground); ctx.closePath(); ctx.fill();
+      // snow cap
+      ctx.fillStyle = "#b9b1a4"; ctx.beginPath();
+      ctx.moveTo(x - evW * 0.16, ground - evH * 0.8); ctx.lineTo(x, ground - evH); ctx.lineTo(x + evW * 0.16, ground - evH * 0.8); ctx.closePath(); ctx.fill();
+      tag(x, ground + 15, "Mt Everest\n8.8 km", "#8a7d6a");
+      // Burj Khalifa
+      x += evW / 2 + 12;
+      const bkH = 0.83 * pxPerKm, bkW = Math.max(3, 0.12 * pxPerKm);
+      ctx.fillStyle = "#4a5566"; ctx.fillRect(x, ground - bkH, bkW, bkH);
+      tag(x + bkW / 2, ground + 15, "Burj\n0.83 km", "#6f7c8c");
+      // the asteroid — a circle resting on the ground, sized to diameter
+      const astR = (D * pxPerKm) / 2;
+      const acx = w - astR - w * 0.05, acy = ground - astR;
+      const g = ctx.createRadialGradient(acx - astR * 0.35, acy - astR * 0.35, astR * 0.1, acx, acy, astR);
+      g.addColorStop(0, "#ffb268"); g.addColorStop(0.5, "#e8632a"); g.addColorStop(1, "#7c2c12");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(acx, acy, astR, 0, 7); ctx.fill();
+      // craters on it
+      ctx.fillStyle = "rgba(90,30,15,0.5)";
+      for (const c of [[-.3,-.2,.16],[.2,.1,.12],[.05,-.35,.09],[.35,-.15,.07]]) {
+        ctx.beginPath(); ctx.arc(acx + c[0]*astR, acy + c[1]*astR, c[2]*astR, 0, 7); ctx.fill();
+      }
+      ctx.fillStyle = "var(--fire)";
+      tag(acx, ground + 15, "the asteroid\n" + D + " km", "#ff9142");
+      // manhattan bar for length reference along ground
+      ctx.strokeStyle = "rgba(138,125,106,0.8)"; ctx.lineWidth = 2;
+      const mY = ground + 30, mX0 = w * 0.05, mX1 = mX0 + 21 * pxPerKm;
+      if (mX1 < w) {
+        ctx.beginPath(); ctx.moveTo(mX0, mY); ctx.lineTo(Math.min(mX1, w - 4), mY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(mX0, mY - 4); ctx.lineTo(mX0, mY + 4);
+        ctx.moveTo(Math.min(mX1, w - 4), mY - 4); ctx.lineTo(Math.min(mX1, w - 4), mY + 4); ctx.stroke();
+      }
+    }
+    slider.addEventListener("input", draw);
+    window.addEventListener("resize", draw);
+    draw();
+    // also update the hero size fact from this default
+  })();
+
+  /* ============ PHYSICS (shared by simulator + scale bar) ============ */
+  const MT_J = 4.184e15;       // joules per megaton TNT
+  const HIRO_J = 6.3e13;       // ~15 kt
+  const G = 9.81;
+  function physics(Lkm, vkms, angDeg, rhoI) {
+    const L = Lkm * 1000, v = vkms * 1000, ang = angDeg * Math.PI / 180;
+    const rhoT = 2500;         // target: crustal/sedimentary rock
+    const m = (Math.PI / 6) * rhoI * Math.pow(L, 3);
+    const E = 0.5 * m * v * v;                  // joules
+    const Emt = E / MT_J;
+    // transient crater (Collins et al. 2005), metres
+    const Dtc = 1.161 * Math.pow(rhoI / rhoT, 1 / 3) * Math.pow(L, 0.78) *
+                Math.pow(v, 0.44) * Math.pow(G, -0.22) * Math.pow(Math.sin(ang), 1 / 3);
+    // final crater
+    const Dc = 3200; // simple->complex transition on Earth (m)
+    let Dfr;
+    if (Dtc < 2560) Dfr = 1.25 * Dtc;
+    else Dfr = 1.17 * Math.pow(Dtc, 1.13) / Math.pow(Dc, 0.13);
+    const depth = Dtc / 2.83 * 0.4 + 0; // approx final rim-to-floor for complex craters ~ few km
+    const depthFinal = Dfr > 3200 ? (0.4 * Math.pow(Dfr / 1000, 0.3)) : (Dtc / 1000 / 3);
+    // seismic magnitude
+    const M = 0.67 * Math.log10(E) - 5.87;
+    // fireball radius (Collins), metres
+    const Rf = 0.002 * Math.pow(E, 1 / 3);
+    return { E, Emt, Dfr: Dfr / 1000, Dtc: Dtc / 1000, M, Rf: Rf / 1000, depth: depthFinal, hiro: E / HIRO_J, m };
+  }
+
+  function fmtEnergy(Emt) {
+    if (Emt >= 1e6) return (Emt / 1e6).toPrecision(3) + " M";
+    if (Emt >= 1e3) return (Emt / 1e3).toPrecision(3) + " k";
+    if (Emt >= 1) return Emt.toPrecision(3);
+    return (Emt * 1000).toPrecision(3) + " kt◦";
+  }
+  function fmtNum(n) {
+    if (n >= 1e9) return (n / 1e9).toPrecision(3) + " billion";
+    if (n >= 1e6) return (n / 1e6).toPrecision(3) + " million";
+    if (n >= 1e3) return Math.round(n / 1e3) + ",000";
+    return Math.round(n).toLocaleString();
+  }
+
+  /* ============ SIMULATOR ============ */
+  (function () {
+    const sd = $("#s-d"), sv = $("#s-v"), sa = $("#s-a"), rhoSeg = $("#s-rho");
+    const cv = $("#sim-canvas");
+    let rho = 3000;
+    const rhoName = { "1500": "ice / comet", "3000": "rock", "8000": "iron" };
+    function state() { return { L: +sd.value, v: +sv.value, a: +sa.value, rho }; }
+
+    function draw(P) {
+      const { w, h, ctx } = fit(cv, 300);
+      ctx.clearRect(0, 0, w, h);
+      // cross-section of crater. Scale: fit crater width (up to ~250 km) across 86%
+      const maxKm = 260;
+      const pxPerKm = (w * 0.86) / maxKm;
+      const cx = w / 2, sky = h * 0.4, ground = h * 0.62;
+      // sky gradient
+      const sg = ctx.createLinearGradient(0, 0, 0, ground);
+      sg.addColorStop(0, "rgba(20,14,26,0)"); sg.addColorStop(1, "rgba(40,20,12,0.4)");
+      ctx.fillStyle = sg; ctx.fillRect(0, 0, w, ground);
+      // crust
+      const cg = ctx.createLinearGradient(0, ground, 0, h);
+      cg.addColorStop(0, "#4a3524"); cg.addColorStop(1, "#241a12");
+      ctx.fillStyle = cg; ctx.fillRect(0, ground, w, h - ground);
+      // the crater bowl
+      const Dpx = P.Dfr * pxPerKm;
+      const rimX0 = cx - Dpx / 2, rimX1 = cx + Dpx / 2;
+      const depthPx = Math.min((h - ground) * 0.85, P.depth * pxPerKm * 6);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(0, ground); ctx.lineTo(rimX0, ground);
+      // raised rim
+      ctx.lineTo(rimX0 + Dpx * 0.03, ground - depthPx * 0.14);
+      ctx.bezierCurveTo(rimX0 + Dpx * 0.18, ground + depthPx, cx - Dpx * 0.12, ground + depthPx, cx, ground + depthPx * 0.82);
+      ctx.bezierCurveTo(cx + Dpx * 0.12, ground + depthPx, rimX1 - Dpx * 0.18, ground + depthPx, rimX1 - Dpx * 0.03, ground - depthPx * 0.14);
+      ctx.lineTo(rimX1, ground); ctx.lineTo(w, ground); ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+      ctx.fillStyle = "#0d0a08"; ctx.fill();
+      ctx.restore();
+      // molten glow in bowl
+      const mg = ctx.createRadialGradient(cx, ground + depthPx * 0.5, 2, cx, ground + depthPx * 0.5, Dpx * 0.5);
+      mg.addColorStop(0, "rgba(255,150,50,0.5)"); mg.addColorStop(0.5, "rgba(220,70,20,0.2)"); mg.addColorStop(1, "rgba(120,30,10,0)");
+      ctx.fillStyle = mg;
+      ctx.beginPath(); ctx.ellipse(cx, ground + depthPx * 0.55, Dpx * 0.44, depthPx * 0.5, 0, 0, 7); ctx.fill();
+      // peak ring for big complex craters
+      if (P.Dfr > 40) {
+        ctx.strokeStyle = "rgba(255,180,110,0.5)"; ctx.lineWidth = 2;
+        for (const s of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(cx + s * Dpx * 0.16, ground + depthPx * 0.7);
+          ctx.lineTo(cx + s * Dpx * 0.12, ground + depthPx * 0.32);
+          ctx.stroke();
+        }
+      }
+      // width label
+      ctx.strokeStyle = "rgba(255,145,66,0.8)"; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+      const lY = sky * 0.5 + 8;
+      ctx.beginPath(); ctx.moveTo(rimX0, lY); ctx.lineTo(rimX1, lY); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(rimX0, lY - 5); ctx.lineTo(rimX0, lY + 5); ctx.moveTo(rimX1, lY - 5); ctx.lineTo(rimX1, lY + 5); ctx.stroke();
+      ctx.fillStyle = "#ffcf6b"; ctx.font = "600 13px ui-monospace, monospace"; ctx.textAlign = "center";
+      ctx.fillText(P.Dfr.toFixed(0) + " km across", cx, lY - 10);
+      // human/city for scale — a tiny 1px sliver at rim to hint scale
+      ctx.fillStyle = "rgba(215,180,150,0.55)"; ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "left";
+      ctx.fillText("↕ " + P.depth.toFixed(1) + " km deep", rimX0 + 4, ground + depthPx * 0.5);
+    }
+
+    function update() {
+      const s = state();
+      const P = physics(s.L, s.v, s.a, s.rho);
+      $("#sd-d").textContent = s.L; $("#sd-v").textContent = s.v; $("#sd-a").textContent = s.a;
+      $("#sd-rho").textContent = rhoName[String(s.rho)];
+      $("#r-energy").textContent = fmtEnergy(P.Emt) + " Mt";
+      $("#r-energy2").textContent = P.E.toExponential(2) + " J";
+      $("#r-crater").textContent = P.Dfr < 1 ? (P.Dfr * 1000).toFixed(0) + " m" : P.Dfr.toFixed(0) + " km";
+      $("#r-crater2").textContent = "transient bowl " + P.Dtc.toFixed(0) + " km";
+      $("#r-mag").textContent = "M " + P.M.toFixed(1);
+      $("#r-mag2").textContent = P.M > 9 ? "off the Richter scale" : "felt worldwide";
+      $("#r-fire").textContent = P.Rf < 1 ? (P.Rf * 1000).toFixed(0) + " m" : P.Rf.toFixed(0) + " km";
+      $("#r-fire2").textContent = "radiant fireball";
+      $("#r-hiro").textContent = fmtNum(P.hiro);
+      $("#r-depth").textContent = P.depth < 1 ? (P.depth * 1000).toFixed(0) + " m" : P.depth.toFixed(1) + " km";
+      // verdict
+      let vtxt;
+      if (P.Emt < 20) vtxt = "Regional: an airburst or a Meteor-Crater-scale hole. Devastating locally, invisible to the planet.";
+      else if (P.Emt < 1e4) vtxt = "A civilisation-ender for anything nearby, and a bad year globally — but the biosphere recovers.";
+      else if (P.Emt < 1e7) vtxt = "A mass-extinction-scale blow: global wildfires, months of darkness, a genuine planetary catastrophe.";
+      else vtxt = "This is Chicxulub territory — a once-in-a-hundred-million-year event that resets the history of life on Earth.";
+      $("#sim-verdict").textContent = vtxt;
+      draw(P);
+      drawEscale(P.E);
+      // hero fact
+      const hf = $("#hf-size"); if (hf) hf.textContent = "~" + s.L + " km";
+    }
+
+    [sd, sv, sa].forEach(el => el.addEventListener("input", update));
+    $$("button", rhoSeg).forEach(b => b.addEventListener("click", () => {
+      rho = +b.dataset.rho;
+      $$("button", rhoSeg).forEach(x => x.setAttribute("aria-pressed", x === b));
+      update();
+    }));
+    $("#sim-reset").addEventListener("click", () => {
+      sd.value = 12; sv.value = 20; sa.value = 45; rho = 3000;
+      $$("button", rhoSeg).forEach(x => x.setAttribute("aria-pressed", x.dataset.rho === "3000"));
+      update();
+    });
+    window.addEventListener("resize", () => update());
+
+    /* ---- energy scale bar ---- */
+    const escale = $("#escale");
+    const refs = [
+      { j: 4.2e9, cap: "Lightning bolt", up: false },
+      { j: HIRO_J, cap: "Hiroshima", up: true },
+      { j: 6.3e16, cap: "Tunguska 1908", up: false },
+      { j: 2.1e17, cap: "Tsar Bomba", up: true },
+      { j: 8.4e17, cap: "Krakatoa 1883", up: false },
+      { j: 4.0e18, cap: "All nuclear arsenals", up: true },
+      { j: 2.0e19, cap: "2004 Sumatra quake", up: false },
+    ];
+    const LO = 9, HI = 24; // log10 range
+    function xfor(j) { return clamp((Math.log10(j) - LO) / (HI - LO), 0, 1) * 100; }
+    // build static markers once
+    if (!escale.dataset.built) {
+      const ax = document.createElement("div"); ax.className = "axis"; escale.appendChild(ax);
+      refs.forEach(r => {
+        const mk = document.createElement("div");
+        mk.className = "mk" + (r.up ? " up" : "");
+        mk.style.left = xfor(r.j) + "%";
+        mk.innerHTML = '<div class="dot"></div><div class="cap">' + r.cap + '</div>';
+        escale.appendChild(mk);
+      });
+      const you = document.createElement("div");
+      you.className = "mk hi"; you.id = "escale-you";
+      you.innerHTML = '<div class="dot"></div><div class="cap"><b>this impact</b></div>';
+      escale.appendChild(you);
+      escale.dataset.built = "1";
+    }
+    function drawEscale(E) {
+      const you = $("#escale-you");
+      if (you) { you.style.left = xfor(E) + "%"; you.querySelector(".cap").innerHTML = "<b>this impact</b><br>" + fmtEnergy(E / MT_J) + " Mt"; }
+    }
+    window._drawEscale = drawEscale;
+    update();
+  })();
+
+  /* ============ THE DAY — timeline ============ */
+  (function () {
+    const stops = [
+      { when: "T + 0 seconds", title: "Contact", scene: "impact",
+        body: "The asteroid crosses the atmosphere in about a second — too fast to slow down — and strikes the shallow sea and the sulfur-rich rock beneath. It punches a hole tens of kilometres deep. Rock behaves like liquid. A flash brighter than the sun." },
+      { when: "T + 1 minute", title: "The fireball", scene: "fireball",
+        body: "A plume of vaporised rock and asteroid erupts through the atmosphere and into space. The transient crater — a bowl over 80 km wide and 30 km deep — begins to collapse inward, its floor rebounding into a ring of mountains." },
+      { when: "T + 10 minutes", title: "Ejecta and the megatsunami", scene: "tsunami",
+        body: "Molten rock thrown clear of the crater arcs across the continent. A wall of water hundreds of metres high races out across the proto-Gulf of Mexico, scouring the sea floor and surging far inland." },
+      { when: "T + 1 hour", title: "The sky begins to glow", scene: "reentry",
+        body: "Billions of tonnes of ejecta — tiny glass droplets — reach space on ballistic arcs and rain back down across the whole planet. As they re-enter, they heat the upper atmosphere until the sky itself glows red-hot, like the inside of an oven, everywhere on Earth." },
+      { when: "T + a few hours", title: "The world catches fire", scene: "fires",
+        body: "That infrared pulse from the glowing sky ignites dry vegetation across much of the globe. Soot in the boundary clay records continental-scale wildfires. Anything exposed and unable to shelter underground or underwater is broiled." },
+      { when: "T + days", title: "Darkness falls", scene: "dark",
+        body: "Soot from the fires and fine dust and sulfate droplets from the vaporised rock spread through the stratosphere and wrap the planet. Sunlight at the surface collapses toward night-time levels. The fires go out; the cold comes on." },
+      { when: "T + months to years", title: "The impact winter", scene: "winter",
+        body: "For months to a couple of years, too little light reaches the ground for photosynthesis. Food webs collapse from the bottom up — first the plants and plankton, then everything that ate them. This, not the fire, is the great killer." },
+      { when: "T + millennia", title: "A quiet, emptied world", scene: "after",
+        body: "The aerosols finally settle. The sun returns to a scorched, silent planet stripped of three-quarters of its species — and of every dinosaur but the birds. The survivors inherit the Earth." },
+    ];
+    const slider = $("#tl-slider"), stopWrap = $("#tl-stops"), cv = $("#tl-canvas");
+    let idx = 0;
+    const labels = ["0s", "1m", "10m", "1h", "hrs", "days", "yrs", "millennia"];
+    stops.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.className = "tl-stop"; b.textContent = labels[i];
+      b.setAttribute("aria-pressed", i === 0);
+      b.addEventListener("click", () => { idx = i; slider.value = i; render(); });
+      stopWrap.appendChild(b);
+    });
+
+    function drawScene(scene) {
+      const { w, h, ctx } = fit(cv, 300);
+      ctx.clearRect(0, 0, w, h);
+      const gx = w / 2, horizon = h * 0.7;
+      // base sky varies with scene
+      const skies = {
+        impact: ["#2a1608", "#0a0608"], fireball: ["#3a1a0a", "#100808"],
+        tsunami: ["#132436", "#08131f"], reentry: ["#5a1808", "#1a0805"],
+        fires: ["#3a1005", "#100604"], dark: ["#0a0a12", "#040406"],
+        winter: ["#10121c", "#060608"], after: ["#1a2436", "#0a1018"],
+      };
+      const sc = skies[scene] || skies.impact;
+      const sg = ctx.createLinearGradient(0, 0, 0, h); sg.addColorStop(0, sc[0]); sg.addColorStop(1, sc[1]);
+      ctx.fillStyle = sg; ctx.fillRect(0, 0, w, h);
+      // ground
+      ctx.fillStyle = scene === "dark" || scene === "winter" ? "#0b0c10" : "#241811";
+      ctx.fillRect(0, horizon, w, h - horizon);
+
+      const now = performance.now() / 1000;
+      const t = reduceMotion ? 0 : now;
+
+      if (scene === "impact") {
+        // beam of light + flash at horizon
+        const fx = gx, fy = horizon;
+        const fg = ctx.createRadialGradient(fx, fy, 2, fx, fy, w * 0.5);
+        fg.addColorStop(0, "rgba(255,255,240,0.95)"); fg.addColorStop(0.3, "rgba(255,200,110,0.6)"); fg.addColorStop(1, "rgba(255,80,20,0)");
+        ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(fx, fy, w * 0.5, 0, 7); ctx.fill();
+        // incoming streak
+        ctx.strokeStyle = "rgba(255,220,150,0.9)"; ctx.lineWidth = 4; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(gx - w * 0.35, 0); ctx.lineTo(fx, fy); ctx.stroke();
+      } else if (scene === "fireball") {
+        const cx = gx, cy = horizon;
+        const puff = 0.5 + 0.5 * Math.sin(t * 1.5);
+        for (let i = 6; i > 0; i--) {
+          const rr = (w * 0.06) * i + puff * 6;
+          ctx.fillStyle = "rgba(255," + (90 + i * 22) + "," + (20 + i * 8) + ",0.16)";
+          ctx.beginPath(); ctx.arc(cx, cy - i * 8, rr, 0, 7); ctx.fill();
+        }
+        // rising column
+        const cg = ctx.createLinearGradient(0, 0, 0, horizon);
+        cg.addColorStop(0, "rgba(60,30,20,0.6)"); cg.addColorStop(1, "rgba(255,140,50,0.6)");
+        ctx.fillStyle = cg; ctx.beginPath();
+        ctx.moveTo(cx - w * 0.09, horizon); ctx.quadraticCurveTo(cx - w * 0.02, horizon * 0.4, cx - w * 0.12, 0);
+        ctx.lineTo(cx + w * 0.12, 0); ctx.quadraticCurveTo(cx + w * 0.02, horizon * 0.4, cx + w * 0.09, horizon);
+        ctx.closePath(); ctx.fill();
+      } else if (scene === "tsunami") {
+        // wave rolling
+        ctx.fillStyle = "#0a1a2a"; ctx.fillRect(0, horizon - 4, w, h - horizon + 4);
+        for (let k = 0; k < 3; k++) {
+          const wy = horizon - 40 - k * 30, off = ((t * 60 + k * 80) % (w + 200)) - 100;
+          ctx.fillStyle = "rgba(74,163,199," + (0.5 - k * 0.12) + ")";
+          ctx.beginPath(); ctx.moveTo(0, horizon);
+          for (let x = 0; x <= w; x += 8) {
+            const yy = wy + Math.sin((x + off) / 40) * 14;
+            ctx.lineTo(x, Math.min(yy, horizon));
+          }
+          ctx.lineTo(w, horizon); ctx.closePath(); ctx.fill();
+        }
+        // foam crest
+        ctx.strokeStyle = "rgba(200,230,240,0.6)"; ctx.lineWidth = 2;
+        const cw = horizon - 100, off2 = (t * 60) % (w + 200) - 100;
+        ctx.beginPath();
+        for (let x = 0; x <= w; x += 8) ctx.lineTo(x, cw + Math.sin((x + off2) / 40) * 16);
+        ctx.stroke();
+      } else if (scene === "reentry") {
+        // glowing red sky + falling streaks
+        const gg = ctx.createLinearGradient(0, 0, 0, horizon);
+        gg.addColorStop(0, "rgba(255,90,30,0.55)"); gg.addColorStop(1, "rgba(120,20,10,0.2)");
+        ctx.fillStyle = gg; ctx.fillRect(0, 0, w, horizon);
+        for (let i = 0; i < 60; i++) {
+          const seed = i * 97.3;
+          const x = (seed * 13) % w;
+          const y = ((seed * 29 + t * 120) % (horizon + 40)) - 20;
+          ctx.strokeStyle = "rgba(255,210,140," + (0.3 + 0.5 * ((seed % 10) / 10)) + ")";
+          ctx.lineWidth = 1.4; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 3, y - 12); ctx.stroke();
+        }
+      } else if (scene === "fires") {
+        // flame line along horizon
+        for (let x = 0; x < w; x += 6) {
+          const fh = 20 + 30 * Math.abs(Math.sin(x * 0.05 + t * 4)) + 10 * Math.sin(x * 0.2 + t * 7);
+          const fg = ctx.createLinearGradient(0, horizon - fh, 0, horizon);
+          fg.addColorStop(0, "rgba(255,220,120,0.9)"); fg.addColorStop(0.5, "rgba(255,120,40,0.8)"); fg.addColorStop(1, "rgba(180,40,10,0.2)");
+          ctx.fillStyle = fg; ctx.fillRect(x, horizon - fh, 7, fh);
+        }
+        // smoke
+        ctx.fillStyle = "rgba(40,30,26,0.5)"; ctx.fillRect(0, 0, w, horizon - 20);
+      } else if (scene === "dark") {
+        // veil descending
+        ctx.fillStyle = "rgba(6,6,10,0.6)"; ctx.fillRect(0, 0, w, h);
+        // faint dim sun
+        ctx.fillStyle = "rgba(120,110,90,0.25)";
+        ctx.beginPath(); ctx.arc(gx, horizon * 0.42, 26, 0, 7); ctx.fill();
+        // falling ash
+        for (let i = 0; i < 90; i++) {
+          const s = i * 53.1; const x = (s * 17 + t * 8) % w;
+          const y = ((s * 31 + t * 26) % h);
+          ctx.fillStyle = "rgba(150,150,160," + (0.15 + (s % 7) / 30) + ")";
+          ctx.fillRect(x, y, 1.6, 1.6);
+        }
+      } else if (scene === "winter") {
+        ctx.fillStyle = "#0c0e16"; ctx.fillRect(0, 0, w, h);
+        // frozen ground with snow
+        ctx.fillStyle = "#151824"; ctx.fillRect(0, horizon, w, h - horizon);
+        ctx.fillStyle = "rgba(200,210,230,0.85)"; ctx.fillRect(0, horizon, w, 5);
+        // bare tree
+        ctx.strokeStyle = "#2a2620"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(gx, horizon); ctx.lineTo(gx, horizon - 60);
+        ctx.moveTo(gx, horizon - 40); ctx.lineTo(gx - 20, horizon - 62);
+        ctx.moveTo(gx, horizon - 46); ctx.lineTo(gx + 22, horizon - 66); ctx.stroke();
+        // snow
+        for (let i = 0; i < 80; i++) {
+          const s = i * 41.7; const x = (s * 19 + t * 12) % w;
+          const y = ((s * 23 + t * 30) % h);
+          ctx.fillStyle = "rgba(220,228,240,0.7)"; ctx.beginPath(); ctx.arc(x, y, 1.3, 0, 7); ctx.fill();
+        }
+      } else if (scene === "after") {
+        // dawn returns
+        const dg = ctx.createLinearGradient(0, 0, 0, horizon);
+        dg.addColorStop(0, "rgba(70,110,150,0.5)"); dg.addColorStop(1, "rgba(200,150,90,0.4)");
+        ctx.fillStyle = dg; ctx.fillRect(0, 0, w, horizon);
+        ctx.fillStyle = "rgba(255,230,180,0.8)";
+        ctx.beginPath(); ctx.arc(gx, horizon * 0.55, 20, 0, 7); ctx.fill();
+        const rg = ctx.createRadialGradient(gx, horizon * 0.55, 4, gx, horizon * 0.55, w * 0.4);
+        rg.addColorStop(0, "rgba(255,230,180,0.4)"); rg.addColorStop(1, "rgba(255,230,180,0)");
+        ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(gx, horizon * 0.55, w * 0.4, 0, 7); ctx.fill();
+        // a fern shoot (life returns)
+        ctx.strokeStyle = "#4a7a3a"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(gx - 40, horizon); ctx.quadraticCurveTo(gx - 46, horizon - 30, gx - 34, horizon - 44); ctx.stroke();
+      }
+    }
+
+    let raf = null;
+    function loop() { drawScene(stops[idx].scene); raf = requestAnimationFrame(loop); }
+    function render() {
+      const s = stops[idx];
+      $("#tl-when").textContent = s.when;
+      $("#tl-title").textContent = s.title;
+      $("#tl-body").textContent = s.body;
+      $("#tl-index").textContent = (idx + 1) + " / " + stops.length;
+      $("#tl-label").textContent = s.when;
+      $$(".tl-stop", stopWrap).forEach((b, i) => b.setAttribute("aria-pressed", i === idx));
+      if (reduceMotion) drawScene(s.scene);
+    }
+    slider.addEventListener("input", () => { idx = +slider.value; render(); });
+    window.addEventListener("resize", () => drawScene(stops[idx].scene));
+    render();
+    if (!reduceMotion) loop();
+  })();
+
+  /* ============ WHERE ON EARTH — distance rings ============ */
+  (function () {
+    const cv = $("#ring-canvas");
+    const zones = [
+      { r: 0, name: "Ground zero", body: "The impact site, in the shallow sea off the Yucatán. A crater 180 km across opens in minutes. Nothing here survives; the rock itself is vaporised." },
+      { r: 1000, name: "The incineration zone", body: "Within ~1,000–1,500 km, the direct blast, the ejecta and the thermal pulse are simply lethal. Forests flattened and burned; the land sterilised.", km: 1000 },
+      { r: 3000, name: "Fire from the sky", body: "Across North America and beyond, the glowing re-entering ejecta broils the surface from above and touches off wildfires. Shelter underground or underwater, or die.", km: 3000 },
+      { r: 6000, name: "The global reach", body: "Even at 6,000 km, the ejecta rains down and the sky glows. No continent is spared the thermal pulse; the megatsunami crosses whole ocean basins.", km: 6000 },
+      { r: 12000, name: "The far side", body: "On the opposite face of the Earth the immediate blast is unfelt — but within days the darkness and cold arrive here too. There is nowhere on the planet the impact winter does not reach.", km: 12000 },
+    ];
+    const refs = [
+      { name: "Mexico City", km: 1100, bearing: 250 },
+      { name: "New York", km: 2900, bearing: 25 },
+      { name: "Los Angeles", km: 3000, bearing: 315 },
+      { name: "London", km: 8200, bearing: 45 },
+      { name: "Deccan Traps, India", km: 15500, bearing: 30 },
+    ];
+    const maxKm = 13000;
+    let R, cx, cy;
+    let active = -1;
+
+    function draw() {
+      const { w, h, ctx } = fit(cv, 480);
+      ctx.clearRect(0, 0, w, h);
+      cx = w / 2; cy = h / 2; R = Math.min(w, h) / 2 - 30;
+      const kmToPx = R / maxKm;
+      // dark disk (the visible Earth from above)
+      const dg = ctx.createRadialGradient(cx, cy, 4, cx, cy, R);
+      dg.addColorStop(0, "#20160f"); dg.addColorStop(0.7, "#0e1420"); dg.addColorStop(1, "#080a12");
+      ctx.fillStyle = dg; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
+      // graticule
+      ctx.strokeStyle = "rgba(215,180,150,0.08)"; ctx.lineWidth = 1;
+      for (let a = 0; a < 12; a++) {
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + Math.cos(a / 12 * 7) * R, cy + Math.sin(a / 12 * 7) * R); ctx.stroke();
+      }
+      // effect rings (fill bands)
+      const cols = ["rgba(255,80,30,0.30)", "rgba(255,120,40,0.20)", "rgba(255,170,70,0.13)", "rgba(150,140,120,0.09)"];
+      for (let i = zones.length - 1; i >= 1; i--) {
+        const rr = zones[i].km * kmToPx;
+        ctx.beginPath(); ctx.arc(cx, cy, Math.min(rr, R), 0, 7);
+        ctx.fillStyle = i === active ? "rgba(255,207,107,0.28)" : cols[i - 1] || cols[cols.length - 1];
+        ctx.fill();
+        ctx.strokeStyle = i === active ? "var(--gold)" : "rgba(215,180,150,0.25)";
+        ctx.lineWidth = i === active ? 2 : 1; ctx.stroke();
+        // ring label (km)
+        if (zones[i].km <= maxKm) {
+          ctx.fillStyle = "rgba(215,180,150,0.6)"; ctx.font = "10px ui-monospace, monospace"; ctx.textAlign = "center";
+          ctx.fillText(zones[i].km.toLocaleString() + " km", cx, cy - Math.min(rr, R) + 12);
+        }
+      }
+      // ground zero star
+      ctx.fillStyle = "#ffe6a0";
+      ctx.save(); ctx.translate(cx, cy);
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) { const a = i / 10 * 7 - Math.PI / 2, rr = i % 2 ? 3 : 8; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+      ctx.closePath(); ctx.fill(); ctx.restore();
+      // reference cities
+      refs.forEach(rf => {
+        const rr = Math.min(rf.km * kmToPx, R - 6);
+        const a = (rf.bearing - 90) * Math.PI / 180;
+        const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+        ctx.fillStyle = "#d7cbc0"; ctx.beginPath(); ctx.arc(x, y, 3, 0, 7); ctx.fill();
+        ctx.fillStyle = "rgba(215,203,192,0.85)"; ctx.font = "10px ui-monospace, monospace";
+        ctx.textAlign = x > cx ? "left" : "right";
+        ctx.fillText(rf.name, x + (x > cx ? 6 : -6), y + 3);
+      });
+    }
+
+    function pick(px, py) {
+      const kmToPx = R / maxKm;
+      const d = Math.hypot(px - cx, py - cy) / kmToPx;
+      let z = 0;
+      for (let i = 1; i < zones.length; i++) if (d <= zones[i].km) { z = i; break; }
+      if (d > zones[zones.length - 1].km) z = zones.length - 1;
+      if (d < 400) z = 0;
+      return z;
+    }
+    function show(z) {
+      active = z; const zn = zones[z];
+      $("#ring-dist").textContent = z === 0 ? "0 km — ground zero" : "≤ " + zn.km.toLocaleString() + " km from impact";
+      $("#ring-title").textContent = zn.name;
+      $("#ring-body").textContent = zn.body;
+      $("#ring-note").textContent = zn.name;
+      draw();
+    }
+    function evt(e) {
+      const rect = cv.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      show(pick(t.clientX - rect.left, t.clientY - rect.top));
+    }
+    cv.addEventListener("mousemove", evt);
+    cv.addEventListener("click", evt);
+    cv.addEventListener("touchstart", e => { evt(e); }, { passive: true });
+    cv.addEventListener("touchmove", e => { e.preventDefault(); evt(e); }, { passive: false });
+    window.addEventListener("resize", () => { draw(); });
+    // refs list
+    $("#ring-refs").innerHTML = refs.map(r => r.name + " — <b style='color:var(--gold)'>" + r.km.toLocaleString() + " km</b>").join("<br>");
+    draw(); show(2);
+  })();
+
+  /* ============ IMPACT WINTER chart ============ */
+  (function () {
+    const cv = $("#winter-canvas"), slider = $("#winter-slider");
+    let mode = "all";
+    // model curves over years (illustrative, grounded in Toon/Bardeen 2016 & Hull 2020)
+    // sunlight fraction reaching ground (of normal), by year
+    function sunlight(y) {
+      if (y <= 0) return 1;
+      // plunges within days to ~a few % then slowly recovers over ~2-4 years
+      const floor = 0.01;
+      if (y < 0.05) return lerp(1, floor, y / 0.05);
+      if (y < 2) return floor + (0.04 - floor) * (y / 2); // stays very low ~2 yr
+      return clamp(0.05 + (y - 2) / 6 * 0.95, 0, 1);
+    }
+    // land temperature anomaly (°C), grounded ~ -25 to -28 °C peak on land
+    function temp(y) {
+      if (y <= 0) return 0;
+      const peak = -26;
+      if (y < 0.3) return lerp(0, peak, y / 0.3);
+      if (y < 3) return peak + (peak * -0.15) * ((y - 0.3) / 2.7); // slowly easing
+      return clamp(peak * Math.exp(-(y - 3) / 3.5), -30, 0);
+    }
+    function draw() {
+      const { w, h, ctx } = fit(cv, 340);
+      ctx.clearRect(0, 0, w, h);
+      const padL = 46, padR = 46, padT = 24, padB = 34;
+      const x0 = padL, x1 = w - padR, y0 = padT, y1 = h - padB;
+      const maxY = 15;
+      const X = y => x0 + (y / maxY) * (x1 - x0);
+      const Ysun = f => y1 - f * (y1 - y0);       // 0..1
+      const Ytemp = c => y0 + (-c / 30) * (y1 - y0); // 0..-30 mapped downward
+      // grid
+      ctx.strokeStyle = "rgba(215,180,150,0.08)"; ctx.lineWidth = 1;
+      ctx.font = "10px ui-monospace, monospace"; ctx.fillStyle = "var(--muted)"; ctx.textAlign = "center";
+      for (let yr = 0; yr <= 15; yr += 3) {
+        const x = X(yr); ctx.beginPath(); ctx.moveTo(x, y0); ctx.lineTo(x, y1); ctx.stroke();
+        ctx.fillText(yr + " yr", x, y1 + 16);
+      }
+      // axis labels
+      ctx.save(); ctx.translate(14, (y0 + y1) / 2); ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = "var(--sulfur)"; ctx.textAlign = "center"; ctx.fillText("sunlight →", 0, 0); ctx.restore();
+      ctx.save(); ctx.translate(w - 12, (y0 + y1) / 2); ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = "var(--ocean)"; ctx.textAlign = "center"; ctx.fillText("temperature →", 0, 0); ctx.restore();
+
+      // sunlight curve
+      if (mode === "all" || mode === "sun" || mode === "soot") {
+        ctx.beginPath();
+        for (let px = x0; px <= x1; px += 2) { const yr = (px - x0) / (x1 - x0) * maxY; const f = mode === "soot" ? Math.min(1, sunlight(yr) * 1.0) : sunlight(yr); const yy = Ysun(f); if (px === x0) ctx.moveTo(px, yy); else ctx.lineTo(px, yy); }
+        ctx.strokeStyle = "var(--sulfur)"; ctx.lineWidth = 2.4; ctx.stroke();
+        // fill under
+        ctx.lineTo(x1, y1); ctx.lineTo(x0, y1); ctx.closePath();
+        ctx.fillStyle = "rgba(244,224,77,0.10)"; ctx.fill();
+      }
+      // temp curve
+      if (mode === "all" || mode === "sun") {
+        ctx.beginPath();
+        for (let px = x0; px <= x1; px += 2) { const yr = (px - x0) / (x1 - x0) * maxY; const yy = Ytemp(temp(yr)); if (px === x0) ctx.moveTo(px, yy); else ctx.lineTo(px, yy); }
+        ctx.strokeStyle = "var(--ocean)"; ctx.lineWidth = 2.4; ctx.setLineDash([5, 3]); ctx.stroke(); ctx.setLineDash([]);
+      }
+      // photosynthesis threshold line
+      ctx.strokeStyle = "rgba(111,195,107,0.5)"; ctx.lineWidth = 1; ctx.setLineDash([3, 4]);
+      const pth = Ysun(0.10);
+      ctx.beginPath(); ctx.moveTo(x0, pth); ctx.lineTo(x1, pth); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(111,195,107,0.8)"; ctx.textAlign = "left"; ctx.fillText("photosynthesis needs ~this much light", x0 + 6, pth - 5);
+
+      // playhead
+      const yr = +slider.value; const px = X(yr);
+      ctx.strokeStyle = "rgba(255,207,107,0.8)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(px, y0); ctx.lineTo(px, y1); ctx.stroke();
+      ctx.fillStyle = "var(--gold)"; ctx.beginPath(); ctx.arc(px, Ysun(sunlight(yr)), 4, 0, 7); ctx.fill();
+      if (mode === "all" || mode === "sun") { ctx.fillStyle = "var(--ocean)"; ctx.beginPath(); ctx.arc(px, Ytemp(temp(yr)), 4, 0, 7); ctx.fill(); }
+    }
+    function update() {
+      const yr = +slider.value; $("#winter-t").textContent = yr.toFixed(1) + (yr === 1 ? " year" : " years");
+      const s = sunlight(yr), tp = temp(yr);
+      $("#w-sun").textContent = (s * 100).toFixed(s < 0.1 ? 1 : 0) + "%";
+      $("#w-temp").textContent = tp.toFixed(1) + " °C";
+      $("#w-photo").textContent = s < 0.1 ? "stalled" : (s < 0.5 ? "impaired" : "recovering");
+      draw();
+    }
+    slider.addEventListener("input", update);
+    $$("#winter-mode button").forEach(b => b.addEventListener("click", () => {
+      mode = b.dataset.mode; $$("#winter-mode button").forEach(x => x.setAttribute("aria-pressed", x === b)); update();
+    }));
+    window.addEventListener("resize", update);
+    update();
+  })();
+
+  /* ============ K–Pg boundary column ============ */
+  (function () {
+    const cv = $("#kpg-canvas");
+    // depth 0 (top) .. 1 (bottom). boundary at ~0.42
+    const B = 0.42;
+    function iridiumAt(d) {
+      // ppb: background ~0.03, spike at boundary up to ~9
+      const dist = Math.abs(d - B);
+      return 0.03 + 9 * Math.exp(-Math.pow(dist / 0.012, 2));
+    }
+    let hoverD = B;
+    function draw() {
+      const box = cv.parentElement.getBoundingClientRect();
+      const dpr = DPR();
+      const w = box.width, h = box.height;
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      // layered rock, top = Paleocene (after), bottom = Cretaceous (before)
+      // Paleocene mudstone
+      const g1 = ctx.createLinearGradient(0, 0, 0, h * B);
+      g1.addColorStop(0, "#514234"); g1.addColorStop(1, "#3f342a");
+      ctx.fillStyle = g1; ctx.fillRect(0, 0, w, h * B);
+      // thin boundary clay (dark, iridium+soot)
+      const by = h * B; const bh = Math.max(6, h * 0.02);
+      ctx.fillStyle = "#161013"; ctx.fillRect(0, by - bh / 2, w, bh);
+      // spherule/ejecta band just below the clay
+      ctx.fillStyle = "#6b5540"; ctx.fillRect(0, by + bh / 2, w, h * 0.04);
+      // Cretaceous limestone below
+      const g2 = ctx.createLinearGradient(0, by, 0, h);
+      g2.addColorStop(0, "#7a6a52"); g2.addColorStop(1, "#5f523f");
+      ctx.fillStyle = g2; ctx.fillRect(0, by + bh / 2 + h * 0.04, w, h);
+      // strata texture
+      ctx.strokeStyle = "rgba(0,0,0,0.12)"; ctx.lineWidth = 1;
+      for (let y = 8; y < h; y += 11) { ctx.beginPath(); ctx.moveTo(0, y + (y % 22 ? 0 : 2)); ctx.lineTo(w, y); ctx.stroke(); }
+      // little dino silhouettes below, mammal dots above (schematic)
+      ctx.fillStyle = "rgba(20,14,10,0.55)";
+      ctx.fillText("", 0, 0);
+      // iridium curve overlaid on right third
+      const cx0 = w * 0.5;
+      ctx.strokeStyle = "rgba(255,207,107,0.9)"; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let py = 0; py <= h; py += 2) {
+        const d = py / h; const ir = iridiumAt(d);
+        const x = cx0 + (ir / 9) * (w * 0.44);
+        if (py === 0) ctx.moveTo(x, py); else ctx.lineTo(x, py);
+      }
+      ctx.stroke();
+      ctx.fillStyle = "rgba(255,207,107,0.6)"; ctx.font = "9px ui-monospace, monospace"; ctx.textAlign = "right";
+      ctx.fillText("iridium →", w - 4, 12);
+      // boundary label
+      ctx.fillStyle = "#ffcf6b"; ctx.font = "600 10px ui-monospace, monospace"; ctx.textAlign = "left";
+      ctx.fillText("◄ K–Pg boundary", 6, by - bh / 2 - 4);
+      // hover marker
+      const hy = hoverD * h;
+      ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(w, hy); ctx.stroke(); ctx.setLineDash([]);
+    }
+    function describe(d) {
+      let name, age, body;
+      if (Math.abs(d - B) < 0.03) {
+        name = "The boundary clay"; age = "66.0 million years — the instant";
+        body = "A few centimetres of dark clay found worldwide. It holds the iridium spike, shocked quartz, impact spherules and soot — the entire signature of the impact, compressed into a line you can cover with a coin.";
+      } else if (d < B) {
+        name = "Paleocene — after"; age = (Math.round((B - d) / B * 2 + 0.1) * 5 + " ka and rising · the new world");
+        body = "Above the line the fossils are utterly different: no dinosaurs, no ammonites. Fern spores dominate the first layers — the ferns that recolonised scorched ground — then small mammals and birds begin to diversify into the empty world.";
+      } else {
+        name = "Cretaceous — before"; age = "the age of dinosaurs";
+        body = "Below the line lies a rich Mesozoic world: dinosaur bone, ammonite shells, the pollen of a warm and forested planet. Iridium here sits at its faint background level. This is the world the asteroid ended.";
+      }
+      $("#kpg-name").textContent = name; $("#kpg-age").textContent = age; $("#kpg-body").textContent = body;
+      $("#kpg-ir").textContent = iridiumAt(d).toFixed(2);
+      const below = (d - B) / B; // >0 below boundary
+      $("#kpg-depth").textContent = Math.abs(d - B) < 0.02 ? "at boundary" : (d > B ? "below" : "above");
+    }
+    function evt(e) {
+      const rect = cv.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      hoverD = clamp((t.clientY - rect.top) / rect.height, 0, 1);
+      draw(); describe(hoverD);
+    }
+    cv.parentElement.addEventListener("mousemove", evt);
+    cv.parentElement.addEventListener("touchstart", e => evt(e), { passive: true });
+    cv.parentElement.addEventListener("touchmove", e => { e.preventDefault(); evt(e); }, { passive: false });
+    window.addEventListener("resize", () => { draw(); });
+    draw(); describe(B);
+  })();
+
+  /* ============ SURVIVORS grid ============ */
+  (function () {
+    const wrap = $("#taxa");
+    const data = [
+      { nm: "Non-avian dinosaurs", died: true, why: "Every last one — T. rex, Triceratops, the lot. Large, hungry and unable to hide, after 165 million years of dominance.", ic: "dino" },
+      { nm: "Pterosaurs", died: true, why: "The flying reptiles vanished completely. The giant soaring forms had no small, fast-breeding refuge.", ic: "ptero" },
+      { nm: "Ammonites", died: true, why: "The coiled-shell cephalopods that ruled the seas for hundreds of millions of years — gone. Their floating larvae depended on surface plankton that collapsed.", ic: "ammon" },
+      { nm: "Mosasaurs", died: true, why: "The great marine reptiles, apex predators of the Cretaceous oceans, all died out with their prey.", ic: "mosa" },
+      { nm: "Birds", died: false, why: "The one dinosaur lineage to survive. Small, and some ground-dwelling seed-eaters made it through the famine to become today's 11,000 species.", ic: "bird" },
+      { nm: "Mammals", died: false, why: "Small, burrowing and able to eat insects and seeds, many mammals survived — and inherited the empty world. We are here because they were.", ic: "mammal" },
+      { nm: "Crocodiles", died: false, why: "Cold-blooded, able to fast for months, living in rivers on detritus-based food webs less dependent on sunlight. They barely noticed.", ic: "croc" },
+      { nm: "Turtles", died: false, why: "Freshwater turtles rode it out in the same detritus-fed refuges as the crocs. Slow metabolisms and water saved them.", ic: "turtle" },
+      { nm: "Insects", died: false, why: "Most insect lineages survived, though many specialised leaf-eaters suffered as the plants died. Detritivores did especially well.", ic: "insect" },
+      { nm: "Sharks & bony fish", died: false, why: "Mixed. Many open-ocean species died with the plankton, but freshwater and bottom-feeding fish came through.", ic: "fish" },
+      { nm: "Amphibians", died: false, why: "Frogs and salamanders came through relatively unscathed — small, tied to detritus-rich freshwater habitats.", ic: "frog" },
+      { nm: "Flowering plants", died: false, why: "Hit hard — but seeds and roots survived the dark years underground, and the group bounced back to dominate the recovered world.", ic: "plant" },
+    ];
+    const icons = {
+      dino: '<path d="M4 26 C6 14 14 8 22 12 C24 6 30 6 30 12 L28 14 C30 18 24 22 20 20 L18 26 M12 20 L10 30 M20 20 L22 30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      ptero: '<path d="M4 10 C12 18 20 18 28 10 M16 14 L16 24 M12 22 L20 22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      ammon: '<path d="M16 16 m0 0 a6 6 0 1 1 -0.1 0 M16 16 a10 10 0 1 0 6 -9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+      mosa: '<path d="M4 20 C10 14 22 14 28 18 C24 22 12 24 4 20 Z M26 17 L30 14 M26 20 L30 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+      bird: '<path d="M8 22 C10 14 18 12 22 14 L28 10 L24 16 C26 22 18 26 12 24 M22 14 L20 18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      mammal: '<path d="M8 24 C8 18 12 16 16 16 C20 16 24 18 24 24 M12 16 L11 12 M20 16 L21 12 M16 24 L16 28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+      croc: '<path d="M3 18 L29 18 L26 22 L6 22 Z M8 18 L9 15 M14 18 L15 15 M20 18 L21 15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+      turtle: '<path d="M9 22 a7 5 0 0 1 14 0 Z M16 15 L16 12 M9 22 L7 26 M23 22 L25 26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+      insect: '<path d="M16 8 L16 24 M12 12 L20 12 M10 16 L22 16 M10 20 L22 20 M16 24 L16 27" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+      fish: '<path d="M6 18 C12 12 22 12 26 18 C22 24 12 24 6 18 Z M26 18 L30 14 M26 18 L30 22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+      frog: '<path d="M10 22 a6 5 0 0 1 12 0 M11 16 a2 2 0 1 0 0.1 0 M21 16 a2 2 0 1 0 0.1 0 M8 24 L5 27 M24 24 L27 27" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>',
+      plant: '<path d="M16 28 L16 12 M16 16 C12 14 9 16 8 12 M16 18 C20 16 23 18 24 14 M16 12 C15 8 17 6 16 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>',
+    };
+    data.forEach(d => {
+      const b = document.createElement("button");
+      b.className = "taxon " + (d.died ? "died" : "lived");
+      b.setAttribute("aria-expanded", "false");
+      b.innerHTML = '<svg class="ico" viewBox="0 0 32 32" style="color:' + (d.died ? "var(--blood)" : "var(--green)") + '">' + (icons[d.ic] || "") + '</svg>' +
+        '<div class="nm">' + d.nm + '</div>' +
+        '<div class="vd">' + (d.died ? "✕ extinct" : "✓ survived") + '</div>' +
+        '<div class="why">' + d.why + '</div>';
+      b.addEventListener("click", () => b.setAttribute("aria-expanded", b.getAttribute("aria-expanded") === "true" ? "false" : "true"));
+      wrap.appendChild(b);
+    });
+  })();
+
+  onScroll();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
