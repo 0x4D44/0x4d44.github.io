@@ -242,6 +242,33 @@
       <line x1="143" y1="70" x2="165" y2="70"/>
     </symbol>
     <!-- comet on a hyperbolic pass (hyperbolic): simulation -->
+    <!-- impact: asteroid streaking to a planet's curved limb, with a flash -->
+    <symbol id="ill-impact" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- planet limb rising from lower right -->
+      <path d="M8 116 A 150 150 0 0 1 196 74" stroke-width="1.4"/>
+      <path d="M40 116 A 150 150 0 0 1 168 60" stroke-width="0.6" opacity=".45"/>
+      <!-- impact point + radiating shock rings -->
+      <circle cx="128" cy="82" r="3.2" stroke-width="1.6"/>
+      <circle cx="128" cy="82" r="10" stroke-width="0.8" opacity=".7"/>
+      <circle cx="128" cy="82" r="18" stroke-width="0.6" opacity=".4"/>
+      <!-- burst rays at impact -->
+      <g stroke-width="1.1" opacity=".85">
+        <line x1="128" y1="72" x2="128" y2="64"/>
+        <line x1="136" y1="76" x2="143" y2="70"/>
+        <line x1="120" y1="76" x2="113" y2="70"/>
+        <line x1="138" y1="84" x2="147" y2="85"/>
+      </g>
+      <!-- the asteroid, incoming from upper left -->
+      <circle cx="60" cy="30" r="6.5" stroke-width="1.5"/>
+      <circle cx="57" cy="28" r="1.6" stroke-width="0.7" opacity=".6"/>
+      <circle cx="63" cy="33" r="1.2" stroke-width="0.7" opacity=".6"/>
+      <!-- fiery trail behind it -->
+      <line x1="52" y1="23" x2="20" y2="4" stroke-width="1.5"/>
+      <line x1="55" y1="34" x2="26" y2="18" stroke-width="1" opacity=".7"/>
+      <line x1="49" y1="30" x2="18" y2="16" stroke-width="0.7" opacity=".45"/>
+      <!-- motion toward the impact -->
+      <line x1="68" y1="37" x2="120" y2="76" stroke-width="0.6" stroke-dasharray="3 4" opacity=".5"/>
+    </symbol>
     <symbol id="ill-comet" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
       <!-- planetary orbits -->
       <circle cx="100" cy="60" r="20" stroke-width="0.7" stroke-dasharray="2 5"/>
