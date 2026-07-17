@@ -1,0 +1,32 @@
+  const svgNS = "http://www.w3.org/2000/svg";
+  const fmt = n => n < 1 ? n.toFixed(2) : n < 10 ? n.toFixed(2).replace(/0$/, "") : n.toFixed(2).replace(/\.00$/, "");
+  const pkgById = id => PACKAGES.find(p => p.id === id) || PACKAGES[0];
+  const coinById = id => COINS.find(c => c.id === id) || COINS[0];
+  const spanOf = p => Math.max(p.w, p.h);
+
+  function polygonPoints(sides, radius, rotation = -Math.PI / 2) {
+    return Array.from({ length: sides }, (_, i) => {
+      const a = rotation + i * Math.PI * 2 / sides;
+      return `${(Math.cos(a) * radius).toFixed(3)},${(Math.sin(a) * radius).toFixed(3)}`;
+    }).join(" ");
+  }
+
+  function coinMarkup(coin, x = 0, y = 0, opacity = 1, idPrefix = "") {
+    const d = coin.diameter;
+    const r = d / 2;
+    const faceClass = coin.metal === "copper" ? "coin-copper" : coin.metal.startsWith("bimetal") ? "coin-gold" : "coin-silver";
+    const shape = coin.shape === "round"
+      ? `<circle class="coin-face ${faceClass}" r="${r}"/>`
+      : `<polygon class="coin-face ${faceClass}" points="${polygonPoints(coin.shape === "hept" ? 7 : 12, r, coin.shape === "hept" ? -Math.PI/2 : -Math.PI/12)}"/>`;
+    const inner = coin.metal === "bimetal-gold"
+      ? `<circle class="coin-face coin-inner-silver" r="${(r * .64).toFixed(3)}"/>`
+      : coin.metal === "bimetal-silver"
+        ? `<circle class="coin-face coin-inner-silver" r="${(r * .60).toFixed(3)}"/>`
+        : "";
+    const ringR = r * (coin.metal.startsWith("bimetal") ? .76 : .80);
+    const textSize = Math.max(2.1, d * .18);
+    return `<g id="${idPrefix}coin" transform="translate(${x} ${y})" opacity="${opacity}">
+      <ellipse class="coin-shadow" cx="${(r*.09).toFixed(2)}" cy="${(r*.16).toFixed(2)}" rx="${(r*1.02).toFixed(2)}" ry="${(r*.98).toFixed(2)}"/>
+      ${shape}${inner}
+      <circle class="coin-ring" r="${ringR.toFixed(3)}"/>
+      <path class="coin-mark" d="M ${(-r*.42).toFixed(2)} ${(r*.18).toFixed(2)} Q 0 ${(-r*.38).toFixed(2)} ${(r*.42).toFixed(2)} ${(r*.18).toFixed(2)} Q 0 ${(r*.44).toFixed(2)} ${(-r*.42).toFixed(2)} ${(r*.18).toFixed(2)} Z"/>
