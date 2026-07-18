@@ -27,7 +27,7 @@
     { name: "Transport",      children: ["Aviation", "Maritime", "Engineering", "Buses"] },
     { name: "Science & Tech", children: ["Science", "Technology", "Health"] },
     { name: "Business",       children: [] },
-    { name: "Sport",          children: [] },
+    { name: "Sport",          children: ["Football", "Cricket", "Olympics", "Tennis", "Athletics", "Other Sports"] },
     { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
     { name: "Flanging",       children: [] },
     { name: "Opinion",        children: ["Voices", "Letters"] }
@@ -45,8 +45,7 @@
     }
   });
 
-  // A group name that isn't itself a leaf category (World/Business/Sport are;
-  // Machines/Science & Tech/Life/Opinion aren't). Returns the group or null.
+  // Find a named parent desk. Returns the group or null.
   function groupByName(name) {
     var lc = String(name).toLowerCase();
     for (var i = 0; i < GROUPS.length; i++) {
@@ -76,6 +75,9 @@
     Flanging:    { c1: "#7a3b2e", c2: "#4f241b", icon: "gear" },
     Aberdeen:    { c1: "#556270", c2: "#33404a", icon: "granite" }
   };
+  ["Football", "Cricket", "Olympics", "Tennis", "Athletics", "Other Sports"].forEach(function (category) {
+    CAT[category] = CAT.Sport;
+  });
   function catMeta(cat) { return CAT[cat] || { c1: "#555", c2: "#333", icon: "gear" }; }
 
   var ICONS = {
