@@ -615,3 +615,50 @@ window.NEWS_ADS = [
     bg: "linear-gradient(135deg,#3f3f46,#78716c)", fg: "#fff", fx: ["slide"]
   }
 ];
+
+// Keep the cross-promotion inventory complete as the Almanac grows. Hand-written
+// campaigns above win by slug; new documents receive a restrained, catalog-backed
+// advert immediately instead of silently disappearing from the ad rotation.
+(function () {
+  var explicit = {};
+  window.NEWS_ADS.forEach(function (ad) {
+    if (ad.href && /^\.\.\//.test(ad.href)) explicit[ad.href.slice(3, -1)] = true;
+  });
+  var palettes = [
+    ["#17324d", "#527b9d"], ["#3f3f46", "#78716c"], ["#164e63", "#0f766e"],
+    ["#312e81", "#7e22ce"], ["#7f1d1d", "#be123c"], ["#14532d", "#15803d"]
+  ];
+  function iconFor(entry) {
+    var text = (entry.slug + " " + entry.title + " " + (entry.tagline || "")).toLowerCase();
+    if (/train|rail|locomotive|metro|engine|motor|traction|diesel/.test(text)) return "train";
+    if (/ship|cruise|ocean|maritime|sea|harbour|hydro/.test(text)) return "submarine";
+    if (/code|rust|software|compiler|ai|model|token|computer|disk|mcp|network/.test(text)) return "chip";
+    if (/game|card|puzzle|chess|wordle|quixo|pylos|quarto|whist/.test(text)) return "ticket";
+    if (/science|physics|quantum|gene|biology|math|calculus|star|space|population/.test(text)) return "crystalball";
+    if (/music|midi|audio|spectrum/.test(text)) return "bagpipe";
+    if (/map|travel|world|history|barcelona|edinburgh|perth|lothian/.test(text)) return "globe";
+    return "calendar";
+  }
+  function paletteFor(slug) {
+    var n = 0;
+    for (var i = 0; i < slug.length; i++) n = (n + slug.charCodeAt(i) * (i + 3)) % palettes.length;
+    return palettes[n];
+  }
+  (window.ESSAYS || []).forEach(function (entry) {
+    if (!entry || entry.slug === "news" || explicit[entry.slug]) return;
+    var palette = paletteFor(entry.slug);
+    var summary = String(entry.tagline || "A small, carefully made corner of the Almanac.")
+      .replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+    if (summary.length > 180) summary = summary.slice(0, 177).replace(/\s+\S*$/, "") + "…";
+    window.NEWS_ADS.push({
+      headline: entry.title,
+      body: summary,
+      cta: "Open the Almanac",
+      href: "../" + entry.slug + "/",
+      bg: "linear-gradient(135deg," + palette[0] + "," + palette[1] + ")",
+      fg: "#fff",
+      icon: iconFor(entry),
+      fx: ["slide"]
+    });
+  });
+})();
