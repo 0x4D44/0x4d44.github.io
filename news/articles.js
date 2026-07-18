@@ -18492,7 +18492,7 @@ window.NEWS_ARTICLES = [
   };
   var serial = 0;
   books.forEach(function (book) {
-    var bookTitle = book[0], category = book[1];
+    var bookTitle = book[0], desk = book[1], category = "Flanging";
     book[2].forEach(function (chapter, index) {
       serial += 1;
       var part = String(serial).padStart(2, "0");
@@ -18511,7 +18511,7 @@ window.NEWS_ARTICLES = [
         headline: "Master Flanger, Part " + part + ": " + chapter[0],
         standfirst: chapter[1] + ". The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
         byline: "By Mavis Flange, Senior Correspondent for Rims",
-        location: category === "Health" ? "THE WELLNESS ROOM" : category === "Lifestyle" ? "LEITH" : category === "Science" ? "THE SCIENCE DESK" : category === "Engineering" ? "WORKSHOP 3" : "ONLINE",
+        location: desk === "Health" ? "THE WELLNESS ROOM" : desk === "Lifestyle" ? "LEITH" : desk === "Science" ? "THE SCIENCE DESK" : desk === "Engineering" ? "WORKSHOP 3" : "ONLINE",
         published: "2026-07-18T" + String(18 - Math.floor((serial - 1) / 5)).padStart(2, "0") + ":" + String(55 - ((serial - 1) % 5) * 11).padStart(2, "0") + ":00",
         body: body,
         pullQuote: chapter[3].charAt(0).toUpperCase() + chapter[3].slice(1) + ".",
