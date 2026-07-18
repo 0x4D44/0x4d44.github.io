@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "great-dying",
+    title: "The Great Dying",
+    tagline: "The end-Permian extinction — the worst in Earth's history, when the Siberian Traps killed 96% of marine species. Run a calibrated carbon–climate simulator, scrub the crisis across deep time, watch the ocean suffocate, and read the story in the Meishan boundary rock. Vanilla JS on canvas; no build step.",
+    url: "https://0x4d44.github.io/great-dying/",
+    illustration: "ill-trap",
+    date: "2026-07-18T10:00:00",
+    year: -252000000,
+    tags: ["science", "history", "software"],
+    real: true,
+  },
+  {
     slug: "costa-concordia",
     title: "The Wreck of the Costa Concordia",
     tagline: "The full technical anatomy of the 2012 disaster: the salute, the 53-metre wound, the fifty-second blackout, the lucky drift, the broken chain of command and the abandonment. Seven chapters of VDR-timed replays and interactives — flood the compartments, tilt the lifeboats, right the wreck. Vanilla JS on canvas; no build step.",
@@ -1409,7 +1420,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["transistor-packages", "chicxulub", "starforged", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["transistor-packages", "great-dying", "chicxulub", "starforged", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },
