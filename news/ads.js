@@ -517,5 +517,53 @@ window.NEWS_ADS = [
     href: "../broadband-speed-checker/",
     image: "images/ad-broadband-speed-checker.webp",
     bg: "linear-gradient(135deg,#0f3d56,#1d7ca4)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "THE SHIP THAT MADE EVERYONE VERY BUSY",
+    body: "A careful account of the Costa Concordia disaster, the engineering, the decisions and the long aftermath. Serious history, no cruise upgrade required.",
+    cta: "Read the case study",
+    href: "../costa-concordia/",
+    image: "images/ad-costa-concordia.webp",
+    bg: "linear-gradient(135deg,#17324d,#527b9d)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "SILICON ON STERLING",
+    body: "A small package of semiconductor history, British industry and the beautifully stubborn hardware that made modern life possible.",
+    cta: "Inspect the package",
+    href: "../transistor-packages/",
+    image: "images/ad-transistor-packages.webp",
+    bg: "linear-gradient(135deg,#3e2723,#8d6e63)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "THE DAY THE DINOSAURS LOST THE ARGUMENT",
+    body: "Follow the evidence from impact crater to fossil layer in a concise account of Chicxulub and the world's most consequential bad afternoon.",
+    cta: "Visit the crater",
+    href: "../chicxulub/",
+    image: "images/ad-chicxulub.webp",
+    bg: "linear-gradient(135deg,#6b3f1d,#b86b32)", fg: "#fff", fx: ["jitter"]
+  },
+  {
+    headline: "THE STAR-FORGED RING",
+    body: "A compact piece of fiction about metal, destiny and the sort of ring that comes with considerably more paperwork than jewellery.",
+    cta: "Enter the forge",
+    href: "../starforged/",
+    image: "images/ad-starforged.webp",
+    bg: "linear-gradient(135deg,#211536,#7b3f91)", fg: "#fff", fx: ["rainbow"]
+  },
+  {
+    headline: "BRILLIANCY — FIND THE MOVE",
+    body: "A chess puzzle with a clean board, sharp tactics and the faint suspicion that the obvious move is exactly what it wants you to play.",
+    cta: "Solve the position",
+    href: "../brilliancy/",
+    image: "images/ad-brilliancy.webp",
+    bg: "linear-gradient(135deg,#172554,#3730a3)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "ONU — A CARD GAME WITH RULES",
+    body: "A rigorous card game for people who enjoy colour matching, strategic reversals and discovering that the rulebook was right all along.",
+    cta: "Play Onu",
+    href: "../onu/",
+    image: "images/ad-onu.webp",
+    bg: "linear-gradient(135deg,#7f1d1d,#be123c)", fg: "#fff", fx: ["slide", "jitter"]
   }
 ];
