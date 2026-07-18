@@ -565,5 +565,53 @@ window.NEWS_ADS = [
     href: "../onu/",
     image: "images/ad-onu.webp",
     bg: "linear-gradient(135deg,#7f1d1d,#be123c)", fg: "#fff", fx: ["slide", "jitter"]
+  },
+  {
+    headline: "SINTAXIS — BUILD SOMETHING IN SPANISH",
+    body: "A practical Spanish toolchain for turning ideas into working software, with fewer mysterious compiler errors and only moderate accent marks.",
+    cta: "Open Sintaxis",
+    href: "../sintaxis/",
+    image: "images/ad-sintaxis.webp",
+    bg: "linear-gradient(135deg,#7f1d1d,#f59e0b)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "NORTHERN LINE 1987 — MIND THE MEMORY",
+    body: "A photographic journey through an older Underground, where the trains were louder and the station announcements had less to apologise for.",
+    cta: "Ride the line",
+    href: "../northern-line-1987/",
+    image: "images/ad-northern-line-1987.webp",
+    bg: "linear-gradient(135deg,#111827,#4b5563)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "GENE INHERITANCE — TWO COPIES, MANY QUESTIONS",
+    body: "An accessible look at how traits pass through families, with enough biology to be useful and not enough to ruin dinner.",
+    cta: "Trace the pattern",
+    href: "../gene-inheritance/",
+    image: "images/ad-gene-inheritance.webp",
+    bg: "linear-gradient(135deg,#164e63,#0d9488)", fg: "#fff", fx: ["rainbow"]
+  },
+  {
+    headline: "THE ROAD TO CHAOS",
+    body: "Follow a simple rule until it becomes gloriously complicated. Mathematics has been warned, but remains unable to intervene.",
+    cta: "Enter the map",
+    href: "../logistic-map/",
+    image: "images/ad-logistic-map.webp",
+    bg: "linear-gradient(135deg,#312e81,#c026d3)", fg: "#fff", fx: ["jitter"]
+  },
+  {
+    headline: "COWORK — WHILE YOU WERE OUT",
+    body: "A quiet workplace essay about desks, meetings and the suspiciously empty chair that has been holding your calendar together.",
+    cta: "Take a seat",
+    href: "../cowork/",
+    image: "images/ad-cowork.webp",
+    bg: "linear-gradient(135deg,#334155,#0f766e)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "MODEL WELFARE — SOMEONE IS HOME",
+    body: "A thoughtful look at what we owe the systems we build, and whether a machine can be offered a comfortable chair without making it awkward.",
+    cta: "Read the case",
+    href: "../model-welfare/",
+    image: "images/ad-model-welfare.webp",
+    bg: "linear-gradient(135deg,#3f3f46,#78716c)", fg: "#fff", fx: ["slide"]
   }
 ];
