@@ -18490,13 +18490,28 @@ window.NEWS_ARTICLES = [
     30: ["images/flanger-series-fab-flow.png", "A six-step line-art flowchart leads from nervous beginner to ceremonial tea trolley."],
     50: ["images/flanger-series-graduation.png", "A washer receives a graduation medal as the academic goose applauds."]
   };
+  var artCycle = [
+    ["images/flanger-series-ceremony.png", "A solemn gentleman flanges a washer while a brass band applauds."],
+    ["images/flanger-plate-wellness.png", "A clinician presents a wildly overcomplicated wellness chart centred on a washer."],
+    ["images/flanger-plate-testimonials.png", "A railway guard, an aunt and a pigeon hold washers during an interview."],
+    ["images/flanger-series-benefits.png", "An absurd schematic connects a washer to gauges for posture and confidence."],
+    ["images/flanger-plate-rims.png", "A museum taxonomy displays four increasingly serious kinds of rim."],
+    ["images/flanger-plate-quiet.png", "A brass band waits silently while a washer receives ceremonial attention."],
+    ["images/flanger-plate-emergency.png", "A clerk routes an emergency flange between a jar lid, bell and bridge."],
+    ["images/flanger-series-apparatus.png", "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."],
+    ["images/flanger-plate-fab-bench.png", "An apprentice learns a bench vise under the eye of a severe supervisor."],
+    ["images/flanger-series-fab-flow.png", "A line-art flowchart leads from nervous beginner to ceremonial tea trolley."],
+    ["images/flanger-plate-peer-review.png", "Academics and a goose peer-review one washer beneath a giant eyebrow."],
+    ["images/flanger-plate-log.png", "A clerk records washer diagrams, clocks and biscuit tallies in a giant logbook."],
+    ["images/flanger-series-graduation.png", "A washer receives a graduation medal as the academic goose applauds."]
+  ];
   var serial = 0;
   books.forEach(function (book) {
     var bookTitle = book[0], desk = book[1], category = "Flanging";
     book[2].forEach(function (chapter, index) {
       serial += 1;
       var part = String(serial).padStart(2, "0");
-      var image = images[serial];
+      var image = images[serial] || artCycle[(serial - 1) % artCycle.length];
       var body = [
         "The Daily Flange can now confirm that " + chapter[1].toLowerCase() + ". The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
         "The central finding concerns " + chapter[2] + ". Witnesses described the arrangement as " + chapter[3] + ", although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
@@ -18525,8 +18540,8 @@ window.NEWS_ARTICLES = [
         article.imageAlt = image[1];
       }
       // Put the technical plates inside the prose as well as on selected covers.
-      if (serial === 4 || serial === 21 || serial === 30 || serial === 50) {
-        article.images = [{ src: image ? image[0] : images[4][0], alt: image ? image[1] : images[4][1], afterParagraph: 2, caption: "Flange plate " + part + ": evidence remains inconclusive." }];
+      if ([4, 9, 21, 30, 39, 43, 50].indexOf(serial) !== -1) {
+        article.images = [{ src: image[0], alt: image[1], afterParagraph: 2, caption: "Flange plate " + part + ": evidence remains inconclusive." }];
       }
       window.NEWS_ARTICLES.push(article);
     });
