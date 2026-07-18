@@ -21,6 +21,10 @@
 //    pullQuote  optional highlighted quote
 //    tags       array of lowercase tags (used by search + related)
 //    image      optional article image path, relative to the news document
+//    imageAlt   accessible description of the article image
+//    imageCaption optional caption replacing the standard fictional-photo line
+//    images     optional inline images with src, alt, caption and afterParagraph
+//    notice     optional factual/opinion note replacing the standard satire notice
 //
 //  It is all satire. Most of it is invented outright; a run of stories
 //  tagged "based-on-truth" retells things humans genuinely did (real
@@ -18407,6 +18411,74 @@ window.NEWS_ARTICLES = [
       "criticism",
       "poetry",
       "flangelo"
+    ]
+  },
+  {
+    "id": "voices-plan-a-serious-plan-incomplete-proof",
+    "image": "images/voices-plan-a-balance.webp",
+    "imageAlt": "A miniature high-street shop sits on one pan of a balance while farms, factories, lorries and a container ship weigh down the other.",
+    "imageCaption": "A clean shop is the small pan. The supply chain is the heavy one. AI-generated editorial illustration.",
+    "images": [
+      {
+        "src": "images/voices-plan-a-emissions.svg",
+        "alt": "Indexed chart showing M&S direct emissions down 38 per cent while supply-chain emissions rose 14 per cent.",
+        "caption": "Direct operations and the value chain are moving in opposite directions. Source: M&S ESG Report 2026, pages 6 and 38.",
+        "afterParagraph": 5
+      },
+      {
+        "src": "images/voices-plan-a-loading-bay.webp",
+        "alt": "A clean food and clothing shop opens onto a deep loading bay filled with pallets and lorries.",
+        "caption": "The difficult carbon sits beyond the shop floor, across farms, factories and freight. AI-generated editorial illustration.",
+        "afterParagraph": 9
+      },
+      {
+        "src": "images/voices-plan-a-targets.svg",
+        "alt": "Progress chart for seven M&S sustainability targets that were not yet met in 2025/26.",
+        "caption": "The unfinished list matters because a target is a promise with a denominator. Source: M&S ESG Report 2026, pages 40 to 44.",
+        "afterParagraph": 15
+      }
+    ],
+    "category": "Voices",
+    "headline": "Plan A Is a Good Plan. The Trouble Is That 96 Per Cent of It Happens Somewhere Else",
+    "standfirst": "M&S has published one of the better corporate sustainability reports: specific, costed and occasionally awkward. Its own emissions are down. Its supply-chain emissions are up. That is not hypocrisy. It is the actual exam question.",
+    "byline": "By The Daily Flange Editorial Board",
+    "location": "LONDON",
+    "published": "2026-07-18T21:30:00",
+    "body": [
+      "There are two lazy ways to read a corporate sustainability report. The first is the press-office reading, in which every green box is progress, every photograph of a field is strategy and every deadline still has the comforting quality of being later. The second is the prosecutorial reading, in which the whole exercise is dismissed as greenwash before page three. Both save time. Neither tells us whether the company has understood the problem, put money behind it or admitted what it cannot yet do.",
+      "M&S makes this temptation unusually strong because it has given its programme the most confident name in corporate Britain. Plan A comes with the line that there is no plan B. The new 49-page ESG report launches Plan A 2030 and presents sustainability not as a charitable appendix but as part of product quality, margin, resilience and growth. This is sensible. A food retailer exposed to drought, soil loss, heat, commodity shocks and fragile farm incomes does not need to be persuaded that nature is material. It needs to be persuaded to measure the materiality without varnish.",
+      "On that test, this report is materially better than most. It publishes baselines, absolute numbers, target dates and an assessment of progress. It places missed commitments in the same tables as the victories. Verified deforestation- and conversion-free soy is at 89 per cent against 100. Recycled polyester is at 94 per cent against 100. Food plastic packaging that is widely recyclable is at 91 per cent against 100. The table does not send these figures to a mindfulness retreat. It marks them as missed or behind.",
+      "Start with the part that genuinely works. Location-based Scope 1 and 2 emissions — the fuel, refrigerants and purchased power within operational control — have fallen from 536,852 tonnes of carbon dioxide equivalent in the 2016/17 baseline to 335,136 tonnes in 2025/26. That is a 38 per cent absolute reduction. The latest year alone cut a further 26,097 tonnes. Store renewal removes gas, an air-source heat-pump trial has taken one Foodhall's gas use to zero, and the logistics fleet now includes more than 215 bio-CNG vehicles alongside a growing, if still small, battery-electric HGV fleet.",
+      "These are not offsets arranged to flatter a spreadsheet. They are boilers, lights, refrigerants, vehicles, chargers and distribution centres. They cost money, require engineers and survive contact with an electricity bill. M&S invested £7 million in energy-efficiency projects during the year. Its direct footprint is not yet at the 55 per cent reduction required by 2029/30, but the company says it is on track. The numbers support that claim.",
+      "Then comes the large print that corporate reports usually leave in small type. Scope 1 and 2 are only 4 per cent of M&S's reported footprint. The remaining 96 per cent is Scope 3: farms, ingredients, fibres, factories, packaging, freight, product use and disposal. Against a 2022/23 baseline of 6.678 million tonnes, Scope 3 emissions reached 7.615 million tonnes in 2024/25, the latest year available. That is an increase of 14 per cent — 937,000 extra tonnes. The clean shop floor is real. It is also the vestibule.",
+      "The report offers a second number: Scope 3 emissions per million pounds of revenue fell by 1.7 per cent. This is useful management information and poor consolation for the atmosphere. Carbon intensity tells us that each pound of sales is a little cleaner. Absolute emissions tell us that the business as a whole put more greenhouse gas into its value chain. A growing company can improve the first while worsening the second. It has not found a loophole in physics; it has found a ratio.",
+      "To its credit, M&S does not hide this conflict. Its 2030 pathway starts with a 7.2-million-tonne baseline and adds roughly 2 million tonnes for expected business growth. The company has costed reduction measures in Food, Fashion, Home & Beauty and operations which cover 85 per cent of the cuts needed. Those measures bring the projected total to 5.2 million tonnes. The target is 4.5 million. The remaining 700,000 tonnes are labelled, with bracing plainness, 'unidentified reductions'. This may be the most important box in the report.",
+      "A gap with a number is better than a promise with a mist machine. It tells management what innovation must deliver and tells investors where execution risk lives. But it is not progress merely because it has been typeset. Four years from 2030, an unidentified 700,000-tonne reduction is roughly twice the company's entire current Scope 1 and 2 footprint. The next report should not simply repeat the gap in a paler shade of green. It should show which projects have moved into it, who owns them, what capital is committed and what was ruled out.",
+      "Scope 3 is reported one year in arrears because the data are difficult to collect. M&S also says current decarbonisation initiatives are not yet fully reflected as its data improve. Both points are reasonable. They also cut both ways. A lag means management is steering the largest part of its footprint through last year's mirror. Better supplier data may reveal savings; it may also reveal emissions that estimates missed. The honest response is not to choose the comforting possibility. It is to shorten the lag, publish uncertainty and expand independent assurance around the number that matters most.",
+      "Food shows why this work is hard. More than 70 per cent of emissions in the Food business come from primary agriculture, and most of those come from meat. M&S can point to Pathway beef with a footprint around 40 per cent below the UK average, nearly 3,000 tonnes of wheat grown through a lower-carbon cereals project, soil-health training for 200 farmers and a Plan A Accelerator Fund that has supported 37 projects in four years. These are serious interventions. They are not yet a system-wide outcome.",
+      "Plan A for Farming 2030 promises that fresh British products available on shelves will come from farms using regenerative practices. That sounds excellent and remains too elastic. Which practices? Verified by whom? Covering what share of farm area, supplier volume and product sales? Does a farm qualify after one cover crop, or after measured improvements in soil carbon, water, biodiversity and inputs? 'Regenerative' is rapidly becoming the countryside's answer to 'artisan': a warm word carrying more appetite than specification.",
+      "The raw-material tables are clearer. Fashion cotton reached 100 per cent from more responsible sources, Fairtrade tea and coffee stayed at 100 per cent, wool exceeded its interim goal, and supplier environmental-data verification beat target at both Tier 1 and Tier 2. Against that, Home cotton reached 92 per cent, man-made cellulosic fibres 86 per cent, recycled polyester 94 per cent and leather from rated tanneries slipped from 96 to 92 per cent. The fair verdict is neither failure nor transformation. It is a mixed programme with enough measurement to know the difference.",
+      "Waste is less comfortable. M&S has removed 613.4 million individual pieces of plastic packaging since 2017/18 on the way to one billion by the end of 2027/28. That is substantial. Yet only 66.3 million were removed in the latest year, down from 148.1 million the year before. With 386.6 million left and two reporting years remaining, an even path would require about 193 million pieces a year — nearly three times the latest pace. Meanwhile, Food packaging recyclability fell from 93 to 91 per cent when the target was 100. A cumulative triumph can coexist with a current loss of speed.",
+      "Food waste is the red light. The target is a 50 per cent reduction by 2029/30 from a 2017/18 baseline. The previous year was reported at 12,497 tonnes, 31 per cent below baseline. In 2025/26 the total rose to 17,217 tonnes, leaving the reduction at only 5 per cent. That is a year-on-year increase of almost 38 per cent. The report describes operational challenges and work to strengthen redistribution. Fine. A setback honestly recorded is not a scandal. But 5 is not on the way to 50 unless the recovery plan is considerably more specific than 'opportunities for the future'.",
+      "There is a broader lesson in these misses. Corporate reporting is fond of treating a target date as if it were a soft-focus horizon. In reality, a deadline is a slope. Plastic removal now needs a steeper slope. Food waste needs an abrupt one. Ethnic-minority representation among senior managers, at 5.3 per cent against 12 per cent by 2027 and 20 per cent by 2030, needs a cliff. A useful report should show not only today's dot and the destination but the minimum annual rate of change between them.",
+      "Circular fashion provides another case where the activity is admirable and the outcome needs sharpening. Customers collected 934,553 clothing items through Another Life this year, more than double the previous year, and more than 38 million garments have been given a second life through in-store boxes since 2008. Repair through SOJO and resale through eBay and Reskinned are sensible services. The new 2030 ambition is to give 5 million items 'Another Life'. At roughly the current annual collection rate, that is close to five years of standing still. The important measure is not how many garments touch a scheme but how much new production, waste and carbon the scheme displaces.",
+      "The social programme contains achievements worth keeping out of the satire grinder. Marks & Start gave 608 young people placements, and 82 per cent of those completing one were offered paid work. Women hold 51 per cent of senior leadership roles. The mean gender pay gap narrowed from 12.2 to 10.8 per cent. More than £5 million was donated directly by M&S. These are material outcomes, although the fall in placement-to-job conversion from 88 to 82 per cent and the slow movement in ethnic-minority leadership deserve the same candour as the headline successes.",
+      "Plan A for Brighter Futures now promises to help one million people 'realise the magic of their potential' by 2030. This is where the report's language becomes airiest precisely when its audit should become sharpest. What counts as helping? A work placement, a training module, a charity contact, an email, a product campaign? Can one person be counted twice? What outcome shows that potential was realised rather than merely addressed? One million is a large, attractive number. Without a counting rule, it is also a crowd in fog.",
+      "The assurance boundary deserves equal attention. Deloitte provides limited assurance over selected measures: direct emissions, energy, food and operational waste, and funds donated by M&S. It does not assure the reported Scope 3 total, the material-sourcing percentages, most packaging measures or most social outcomes. This is disclosed properly, and limited assurance is normal. Still, the strange result is that the best-checked carbon number covers 4 per cent of the footprint while the consequential 96 per cent rests on the company's own evolving methods and supplier data.",
+      "Plan A 2030 therefore needs three upgrades, none of them glamorous. First, publish an annual carbon bridge from baseline to actual to target, in absolute tonnes, with growth separated from genuine reductions and the 700,000-tonne gap visibly shrinking. Keep intensity as a supporting measure, never the headline escape hatch. Second, add a recovery table for every missed target: cause, accountable executive, next checkpoint, capital committed and the rate now required. A red status without a recovery path is just an honest shrug.",
+      "Third, define the new campaign measures before advertising them. 'Regenerative practices', 'preferred alternatives', 'another life' and 'realise potential' all need boundaries, denominators and evidence. Extend independent assurance first to total Scope 3 and then to the largest agricultural and fibre components. Publish the uncertainty range. If supplier data are not ready, say how unready they are. Precision does not weaken a story. It is the part that lets readers trust it.",
+      "The final judgment is not that Plan A is greenwash. That would be too easy and, on this evidence, wrong. The company has embedded real operational cuts, exposed missed commitments, costed most of its carbon pathway and printed the hole that remains. Nor is the judgment that the plan is working simply because the document is unusually frank. Absolute supply-chain emissions are moving in the wrong direction, several due targets were missed and some of the new promises are more lyrical than measurable.",
+      "Plan A is a serious plan with incomplete proof. Its most credible sentence is not the famous claim that there is no plan B. It is the quiet admission that work is under way to close the remaining gap. Corporate sustainability begins when the gap gets a line of its own. It becomes leadership only when that line reaches zero."
+    ],
+    "pullQuote": "You can make every pound of revenue a little cleaner while making the atmosphere dirtier in absolute terms. Both statements can be true.",
+    "notice": "This column comments on the real M&S ESG Report 2026. The reported figures are genuine; the interpretation is opinion; the editorial photographs are AI-generated.",
+    "tags": [
+      "voices",
+      "opinion",
+      "sustainability",
+      "retail",
+      "climate",
+      "based-on-truth"
     ]
   }
 ];

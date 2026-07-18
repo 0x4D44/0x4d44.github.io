@@ -663,6 +663,14 @@
       related = related.concat(extra.slice(0, 4 - related.length));
     }
     var relatedHtml = related.map(function (x) { return cardHtml(x, 0).replace(/<div class="meta">[^<]*<\/div>/, '<div class="meta">' + esc(x.category) + '</div>'); }).join("");
+    var heroCaption = a.imageCaption || (
+      (a.location ? a.location.charAt(0) + a.location.slice(1).toLowerCase() + ', earlier. ' : '') +
+      "Artist's impression; file photo; entirely made up."
+    );
+    var noticeHtml = a.notice
+      ? '<strong>Opinion note:</strong> ' + esc(a.notice)
+      : '<strong>Satire notice:</strong> The Daily Flange is fiction. ' +
+        'This story never happened, the people quoted do not exist, and the sprockets remain, as ever, unflanged.';
 
     var out = [];
     out.push(headerHtml(a.category));
@@ -677,12 +685,10 @@
       '<span>' + esc(a.location || "") + (a.location ? ' &middot; ' : '') + esc(fmtDate(a.published)) + '</span>' +
       '<span class="share"><span title="Share">f</span><span title="Share">X</span><span title="Share">in</span><span title="Email">&#9993;</span></span></div>');
     out.push('<figure><span class="thumb">' + illustration(a) + '<span class="cat-flag">' + esc(a.category) + '</span></span>' +
-      '<figcaption>' + esc(a.location ? a.location.charAt(0) + a.location.slice(1).toLowerCase() + ', earlier. ' : '') +
-      'Artist&#39;s impression; file photo; entirely made up.</figcaption></figure>');
+      '<figcaption>' + esc(heroCaption) + '</figcaption></figure>');
     out.push(bodyParas);
     out.push('<div class="tags">' + tags + '</div>');
-    out.push('<div class="disclaimer"><strong>Satire notice:</strong> The Daily Flange is fiction. ' +
-      'This story never happened, the people quoted do not exist, and the sprockets remain, as ever, unflanged.</div>');
+    out.push('<div class="disclaimer">' + noticeHtml + '</div>');
     out.push('</div>'); // .body
 
     // sidebar
