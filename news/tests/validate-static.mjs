@@ -124,6 +124,53 @@ for (const headline of saucepanAdHeadlines) {
   assert.ok(ad.body && ad.cta && ad.href, `${headline} advert should be complete`);
 }
 
+const sportSections = {
+  Football: 6,
+  Cricket: 4,
+  Olympics: 7,
+  Tennis: 3,
+  Athletics: 2,
+  "Other Sports": 10,
+};
+for (const [section, expectedCount] of Object.entries(sportSections)) {
+  assert.equal(
+    articles.filter((article) => article.category === section).length,
+    expectedCount,
+    section + " should contain " + expectedCount + " sporting stories",
+  );
+}
+const groupedSportArticles = articles.filter((article) => article.id.startsWith("spt-"));
+assert.equal(groupedSportArticles.length, 32, "all prefixed sports stories should remain in the corpus");
+assert.ok(
+  groupedSportArticles.every((article) => Object.hasOwn(sportSections, article.category)),
+  "every prefixed sports story should belong to a Sport subcategory",
+);
+assert.equal(
+  articles.filter((article) => article.category === "Sport").length,
+  0,
+  "Sport should be a parent desk, not a catch-all article category",
+);
+
+vm.runInNewContext(rendererSource, context, { filename: "news.js" });
+const sportNav = context.window.NEWS.header("Football");
+assert.match(sportNav, />Sport <span class="chev"/);
+assert.match(sportNav, /search\.html\?cat=Sport[^>]*>All Sport<\/a>/);
+for (const section of Object.keys(sportSections)) {
+  assert.match(sportNav, new RegExp("search\\.html\\?cat=" + encodeURIComponent(section)));
+}
+const sportMount = { innerHTML: "" };
+context.location = { search: "?cat=Sport" };
+context.document = {
+  title: "",
+  getElementById: () => sportMount,
+  querySelector: () => null,
+};
+context.window.NEWS.renderSearch("app");
+assert.match(
+  sportMount.innerHTML,
+  /32 stories across Football, Cricket, Olympics, Tennis, Athletics, Other Sports/,
+);
+
 assert.equal(articles.length, 790, "catalog copy and article corpus count should stay in lockstep");
 
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
