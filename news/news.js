@@ -24,11 +24,10 @@
   // "All World" then covers both, while "Aberdeen" filters to just its own.
   var GROUPS = [
     { name: "World",          selfLeaf: true, children: ["Aberdeen"] },
-    { name: "Machines",       children: ["Aviation", "Maritime", "Engineering"] },
+    { name: "Transport",      children: ["Aviation", "Maritime", "Engineering", "Buses"] },
     { name: "Science & Tech", children: ["Science", "Technology", "Health"] },
     { name: "Business",       children: [] },
     { name: "Sport",          children: [] },
-    { name: "Transport",      children: ["Buses"] },
     { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
     { name: "Flanging",       children: [] },
     { name: "Opinion",        children: ["Voices", "Letters"] }
