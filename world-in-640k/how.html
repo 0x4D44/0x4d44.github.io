@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How We Know — A World in 640K</title>
+<meta name="description" content="The evidence behind the site: byte-level analysis of the shipped files, live instrumented runs under the mddosem emulator, and the community reverse-engineering record — with the war stories that made the instrument honest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="w640.css">
+<style>
+  .srcline {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: 40px;
+  }
+  .credits li { margin-bottom: 10px; }
+  .credits li strong { font-weight: 600; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">A WORLD IN 640K</a></div>
+    <div class="strap">how Civilization &amp; Colonization ran a planet in real-mode DOS</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="code.html">1 · Code in Flight</a>
+    <a href="memory.html">2 · The Division Dance</a>
+    <a href="art.html">3 · Art on Demand</a>
+    <a href="world.html">4 · A Hemisphere in 24K</a>
+    <a href="time.html">5 · The Heartbeat</a>
+    <a href="mapgen.html">6 · Growing a World</a>
+    <a href="how.html" aria-current="page">7 · How We Know</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 7 · EVIDENCE &amp; METHOD</p>
+  <h1>How We <span class="amber">Know</span></h1>
+  <p class="standfirst">Everything on this site is checkable. It comes from three
+  instruments: byte-level analysis of the shipped files, live instrumented runs under
+  an emulator we built ourselves, and a community that has spent decades taking these
+  two games apart. This chapter shows the instruments at work — and what building one
+  of them taught us about the games.</p>
+</section>
+
+<div class="statgrid">
+  <div class="stat"><div class="v">3</div><div class="l">evidence lanes: bytes on disk · live runs · community record</div></div>
+  <div class="stat"><div class="v">4</div><div class="l">screenshot pairs MD5-identical across emulator builds 27 days apart</div></div>
+  <div class="stat"><div class="v">≈70</div><div class="l">emulator versions between those identical captures</div></div>
+  <div class="stat"><div class="v">41</div><div class="l">scripted IPC commands in the live world-map run — 0 failures</div></div>
+  <div class="stat"><div class="v">17/1,145</div><div class="l">BIOS chains serviced — the measured smoking gun of MDD-00036</div></div>
+  <div class="stat"><div class="v">608.8 Hz</div><div class="l">Colonization's PIT retune, measured live ~300 ms into boot</div></div>
+</div>
+
+<section class="prose">
+
+<h2>The instrument</h2>
+
+<p><a href="/mddosem/">mddosem</a> is a hardware-accurate PC emulator written in Rust:
+an 8253/8254 timer model, VGA, the 8259 interrupt controller, Sound Blaster, DOS and
+BIOS services, and a fast opcode-switch interpreter at the centre. Both games are
+pure real-mode MZ executables, so every result on this site ran
+<em>interpreter-only</em> — the dynamic recompiler never engages for real-mode code.
+Each live session opens with the same banner:</p>
+
+<pre><code>mddosem v0.148.0  built 2026-07-13 00:27 (9b0a641ef)  pid 41416  interpreter-only</code></pre>
+
+<p>What makes it an instrument rather than a player is the control pipe. A script
+runner, <code>emuscru</code>, drives the live guest over IPC: it injects keystrokes,
+waits for frames, takes screenshots, and issues raw debug commands —
+<code>READ_MEM</code>, <code>DISASM_SEG</code>, <code>REGS</code>,
+<code>STATUS</code> — while the game runs. The July 2026 root-cause work on
+Colonization's timer bug was done entirely over this pipe, disassembling the game's
+interrupt handler inside a running session. On 2026-07-18 we replayed the evidence
+live: the Colonization script ran 41 commands with 0 failures, from title screen
+through the load dialog to the world map, and ended with the guest parked here:</p>
+
+<pre><code>frame=1568 tick=22267 vblank_count=1568 cs:ip=120C:011D running=true halted=false</code></pre>
+
+<p><span class="addr">120C:011D</span> sits inside Colonization's input-polling loop —
+the same <span class="addr">120C:0122</span> region identified in the June 2026
+playthrough campaign. The game is not merely rendering; it is waiting for a player.
+Mid-run, we paused the guest and read its interrupt vector table straight out of
+memory:</p>
+
+<pre><code>IVT[8]   @0x0020  frame   33   A5 FE 00 F0  →  F000:FEA5   BIOS default (still loading)
+IVT[8]   @0x0020  frame  601   10 00 69 11  →  1169:0010   the game's hook (title menu)
+IVT[8]   @0x0020  frame 1568   10 00 69 11  →  1169:0010   hook live (world map)
+IVT[1C]  @0x0070               70 01 00 F0  →  F000:0170   the polite hook — untouched
+CIV.EXE  IVT[8]   frame 1514   99 01 52 07  →  0752:0199   Civ's hook (BIRTH cinematic)</code></pre>
+
+<p>There is a small confession in that exhibit: mddosem logs no event for a real-mode
+IVT write, so we cannot show you a tidy "game hooked INT 08h" log line. The memory
+reads are arguably stronger evidence anyway — not a claim about what the game asked
+for, but the observed state of the machine while it played. The same session captured
+the timer reprogramming as it happened, via the emulator's own PIT debug events:</p>
+
+<pre><code>07:58:27.85 DEBUG mddosem_hw::timer: PIT: mode set        channel=0 mode=3 access=3 bcd=false
+07:58:27.85 DEBUG mddosem_hw::timer: PIT: counter loaded  channel=0 reload=07A8 mode=3</code></pre>
+
+<p>Reload <span class="addr">0x07A8</span> = 1,960, so 1,193,182 ÷ 1,960 ≈
+<strong>608.8 Hz</strong> — fired once, about 300 ms into boot, and the only
+channel-0 reload in either Colonization run. An earlier static-analysis pass had
+recorded ~546 Hz for this retune; the live measurement on this binary is 608.8 Hz,
+and that is the number this site publishes. When measurement and analysis disagree,
+measurement wins — and the disagreement gets reported, not buried.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">One run, read from the inside</span>
+    <span class="hint">hover a marker for the raw bytes</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-ivt" style="aspect-ratio: 2.4 / 1; min-height: 260px;" role="img"
+      aria-label="Timeline of live IPC reads. Colonization: PIT reprogrammed to 0x07A8 about 300 milliseconds into boot; IVT entry 8 reads F000:FEA5 at frame 33, then 1169:0010 at the title (frame 601) and in gameplay (frame 1568); IVT entry 1C stays F000:0170 throughout. Civilization: IVT entry 8 reads 0752:0199 at frame 1514 during the BIRTH cinematic."></canvas>
+  </div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#f0a132"></span>game action (hook installed / PIT retuned)</span>
+    <span class="key"><span class="sw" style="background:#5ad7e6"></span>BIOS state observed</span>
+    <span class="key"><span class="sw" style="background:#7d8794"></span>capture / mode note</span>
+  </div>
+  <div class="fig-note">Live IPC reads (emuscru <code>raw PAUSE</code> + <code>raw READ_MEM</code>),
+  2026-07-18, mddosem v0.148.0. Vectors decoded little-endian offset:segment. Both hook addresses
+  match the 2026-06-21 playthrough journal's static findings, reproduced live 27 days later.</div>
+</figure>
+
+<figure class="shot">
+  <img src="img/civ-birth.png" alt="Civilization's creation cinematic: a swirling galaxy over the caption text, in 256-colour Mode 13h" width="640" height="400" loading="lazy">
+  <figcaption>"In the beginning" — Civ's creation cinematic, the scene that plays after
+  title menu → Start a New Game. Archive capture under <a href="/mddosem/">mddosem</a>,
+  2026-06-21 campaign.</figcaption>
+</figure>
+
+<h2>Determinism as a tool</h2>
+
+<p>The strongest single exhibit is the quietest. Four screenshot pairs — one taken by
+the 2026-06-21 test campaign, one by the 2026-07-18 live session, roughly seventy
+emulator versions and 27 days apart — are MD5-identical:</p>
+
+<pre><code>82090cf84527d04b06b4ac8aaf40f5b8  col_live_title.png           == colonization_title_menu.png
+d0375aace50ada3b698557772c77d72b  col_live_load_dialog.png     == colonization_load_dialog.png
+f452aed9bb37a64bc381b14f2032dadb  col_live_loaded.png          == colonization_loaded_colony09.png
+09a8d92b5e49b103c3073053b99df146  civ_live_graphics_prompt.png == civ_boot_graphics_select.png</code></pre>
+
+<p>Same guest inputs, pixel-for-pixel identical VGA framebuffers, identical PNG bytes,
+across different builds of the emulator a month apart. (The world-map pair differs
+only by mouse-cursor position — 122,834 versus 122,628 bytes.) That reproducibility
+was earned, not free. In April 2026 Colonization's crashes moved around from run to
+run — <span class="addr">2384:F082</span> one time,
+<span class="addr">2384:FA18</span> the next, both inside the game's own
+<code>S$MPSLOG</code> sprite buffer — which makes root-causing nearly impossible. The
+hunt for the entropy source found DOS function INT 21h AH=2Ch (get time) falling back
+to the host's <code>GetLocalTime()</code>, plus CMOS/BDA boot seeding and hash-map
+iteration order. The guest's behaviour was literally timestamp-dependent. An
+eight-change determinism fix made three consecutive Colonization runs byte-identical
+— and every later diagnosis on this site stands on that foundation. When the machine
+is deterministic, a screenshot is a checksum of the whole causal chain that produced
+it.</p>
+
+<figure class="shot">
+  <img src="img/col-map-live.png" alt="Colonization's isometric world map with menu bar, minimap, and the status panel showing Spring 1495, Gold 80, Tax 02, Dutch Merchantman" width="640" height="400" loading="lazy">
+  <figcaption>The live exhibit: Colonization's world map, Spring 1495 — "Dutch Merchantman,
+  Moves: 5 (Ocean)", Gold: 80, Tax: 02 — reached via title → LOAD → COLONY09.SAV.
+  Captured running under mddosem v0.148.0, frame 1568, framehash CRC 0x8A2F4B8E.</figcaption>
+</figure>
+
+<h2>What the games taught the emulator</h2>
+
+<p>Compatibility bugs are emulation truths: every time one of these games misbehaved
+under mddosem, the fault line ran through something real about 1990s hardware that we
+had modelled wrong — or something real about the games that nobody had documented.
+These are our war stories, each with its one-line moral.</p>
+
+<h3>MDD-00036 — the freeze that got worse the faster we emulated</h3>
+
+<p>Colonization's new-game voyage cinematic froze — and froze <em>more often at
+higher emulated speeds</em>, which is the wrong direction for any ordinary timing
+bug. The root cause took two campaigns to find, and it was ours. Colonization's
+timer handler tail-jumps to the saved BIOS vector every 30th tick, reconstructing an
+era-correct BIOS heartbeat — nominally 18.2 Hz — underneath its own fast clock. Our HLE BIOS
+implements that tick service as an address trap: a stub at
+<span class="addr">F000:FEA5</span> whose following byte, <code>0xF1</code>, is a
+marker the interpreter should intercept. But the interpreter checked for F000 traps
+only at instruction-batch boundaries — and a chain landing <em>mid-batch</em> sailed
+straight through, executing <code>0xF1</code> as the obscure x86 instruction ICEBP
+and raising a spurious INT 1 instead of a BIOS tick. The probability of landing on a
+boundary falls as batches grow, so raising cycles/ms starved the BIOS chain harder:
+instrumentation counted ~35,000 game-ISR entries, 1,145 expected chains, and
+<strong>17 serviced</strong> — a BIOS tick limping at 0.1–0.9 per second instead of
+18.2. It even explained a historical mystery: <code>--cycles</code> 20M hung, 23M
+worked, 24M hung. DOSBox-X was immune all along because its BIOS handler is an
+executable callback <em>opcode</em>, not an address trap. The fix recognises an
+INT 1 originating at <span class="addr">F000:FEA7</span> and runs the BIOS tick
+service instead; it was closed two-eyes with a red-side mutation test and a
+regression that deliberately pumps the <em>batched</em> path — the single-step path
+could never reproduce the bug. <strong>Moral: an address trap is not an instruction,
+and batch boundaries are architecture.</strong></p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The chain lottery — why speed made it worse</span>
+    <span class="hint">every 30th ISR tick jumps to the BIOS stub; only boundary landings count</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-batch" style="aspect-ratio: 1.9 / 1; min-height: 350px;" role="img"
+      aria-label="Animated diagram of the MDD-00036 mechanism. A pulse row shows the game's timer interrupt entries with every 30th highlighted; below it, a conveyor of interpreter instruction batches. Chains that land on a batch boundary reach the HLE gate and service the BIOS tick; chains landing mid-batch execute the 0xF1 trap byte as ICEBP and are starved. A slider sets cycles per millisecond; larger batches mean fewer serviced chains."></canvas>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="batch-play">▶ play</button>
+    <button class="btn" id="batch-step">⏭ step one chain</button>
+    <div class="ctl">
+      <label for="batch-cpm">emulated speed (cycles/ms)</label>
+      <input type="range" id="batch-cpm" min="3000" max="25200" step="300" value="25200">
+      <output>25,200</output>
+    </div>
+  </div>
+  <div class="evlog" id="batch-log">▶ play — chains fire every 30th ISR tick; watch how many reach the BIOS. ⏭ step runs one chain at a time.</div>
+  <div class="fig-note">Schematic model of the MDD-00036 mechanism, calibrated so the fixed-Pentium
+  point (25,200 cycles/ms) reproduces the measured counters: 1,145 expected chains, 17 serviced,
+  BIOS tick 0.1–0.9/s against a 18.2/s target. Mechanism and counters from live instrumented runs,
+  mddosem bug ledger MDD-00036, July 2026.</div>
+</figure>
+
+<h3>The voyage that stays frozen — on purpose</h3>
+
+<p>Fixing MDD-00036 cured the speed-dependent freezes, but the new-game voyage
+cinematic ("Year of Our Lord 1492") still sticks on frame 1, spinning at
+<span class="addr">145D:0032</span> on the BIOS floppy-motor byte at
+<span class="addr">0040:0040</span>. In June 2026 we implemented an emulator-side
+fix — decrement that byte on every hardware timer tick — and it worked: the cinematic
+ran. Then we deleted it. DOSBox-X's source decrements
+<span class="addr">0040:0040</span> only inside the vectored BIOS INT 08h handler,
+never behind the game's back, and a write-instrumentation run proved exactly one
+write to that byte in our whole session: the game's own <code>mov</code>. The
+remaining divergence is game-state, and the oracle says the fault is not in the
+emulator — so we declined to patch, and we reach gameplay through LOAD instead,
+as demonstrated live above. (The June campaign's confident misdiagnosis of this
+freeze — later overturned by the July disassembly — is preserved in the repo as one
+of our best-documented wrong turns.) <strong>Moral: obey the oracle, even when the
+patch "works".</strong></p>
+
+<figure class="shot">
+  <img src="img/col-voyage-frozen.png" alt="Colonization's voyage cinematic frozen: a sailing ship scene captioned Year of Our Lord 1492, stuck on its first frame" width="640" height="400" loading="lazy">
+  <figcaption>The one that stays broken: the new-game voyage cinematic frozen on frame 1,
+  spinning on BDA 0040:0040. Archive capture under mddosem, 2026-06-21 campaign.</figcaption>
+</figure>
+
+<h3>The phantom upper memory that never existed</h3>
+
+<p>For a while, Colonization under mddosem took a strange split-memory allocation
+path. The cause: whenever a program called INT 21h
+AH=58h/AL=03h (link upper memory blocks), our DOS conjured 32 KB of UMBs out of
+nothing — a configuration <em>no real 1994 PC ever had</em>, because real UMBs came
+with EMM386's ~25 KB of conventional-memory overhead attached. Colonization probed,
+found the phantom memory, and obediently walked into a buggy corner of its own
+allocator. The fix made link-UMBs a no-op when no UMB provider exists.
+<strong>Moral: emulate configurations that existed, not configurations that
+flatter.</strong></p>
+
+<h3>Too much RAM is a fatal condition</h3>
+
+<p>Give Colonization 629,728 bytes of free conventional memory — more than any real
+1994 system with drivers loaded — and it dies in Microsoft C's
+<code>run-time error R6003</code>, nominally "integer divide by 0", in truth an IDIV
+quotient overflow (the repo measured a quotient of 711,567, far past the 32,767 a
+signed 16-bit register holds). The game's internal layout places its compressed
+cache and a decompression target a fixed 18,752 bytes apart, and in an over-large,
+too-clean memory map the in-place decompression overrun has nothing to stop it.
+Moving the emulator's first memory block to base <span class="addr">0x0800</span> —
+607 KB free, typical 1994 driver overhead — restored the geometry the game was
+designed inside. <strong>Moral: the game only works because the machine is
+small.</strong></p>
+
+<h3>What one 1991 intro flushed out</h3>
+
+<p>Chasing Civ's title sequence fixed four unrelated emulator bugs:</p>
+
+<ul>
+  <li>The VGA vertical-sync pulse was <strong>18× too long</strong> — port
+  <span class="addr">0x3DA</span> bit 3 held for 8% of the frame against real
+  hardware's 0.45% (2 of 449 scanlines) — so Civ's 16-retrace timer calibration read
+  massively inflated values.</li>
+  <li>An I/O-delay exemption meant for one sound card accidentally matched
+  <em>every</em> port from 0x300 to 0x3FF, so guest time never advanced inside
+  polling loops on the VGA status port or the OPL chip.</li>
+  <li>A keyboard-wait stub in the BIOS segment was unreachable dead code: the
+  interpreter's HLE break fired before executing it — 714 million loop iterations
+  with the cycle counter frozen.</li>
+  <li>The BIOS floppy-motor countdown at <span class="addr">0040:0040</span> was
+  never decremented at all; the fix mirrors DOSBox-X's check-before-decrement,
+  saturate-at-zero behaviour.</li>
+</ul>
+
+<p><strong>Moral: a good intro is an audit — one 1991 animation exercised four
+subsystems to destruction.</strong></p>
+
+<h3>MDD-00037 — the intro that ran at 6% speed</h3>
+
+<p>Civ reprograms the system timer to reload <span class="addr">0x4280</span> =
+17,024 — 70.09 Hz, the VGA frame rate — and paces its intro with tick-counted
+busy-waits. Under a fixed "Pentium" budget of 25,200 cycles/ms, each 70 Hz wait
+became roughly 20× more emulated work than on the 386-class machines the game was
+tuned for, and the interpreter sustains only ~5 MIPS on Civ's palette-animation
+scenes (against ~45 MIPS on F1GP): the cinematic crawled at 3.4 fps, about 6% of
+real time. The A/B test was decisive — <code>--speed 386</code> ran it at 70.12 fps
+— and the durable fix adopted DOSBox-X-style adaptive cycles (a 3,000 cycles/ms seed
+plus ramp) as the bare-DOS default: 64–70 fps. <strong>Moral: when software paces
+itself against the machine, emulate the pace, not the spec sheet.</strong></p>
+
+<table class="data">
+  <caption>The ledger, in brief</caption>
+  <thead>
+    <tr><th>Finding</th><th>Symptom</th><th>Root cause</th><th>Moral</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>MDD-00036</td><td>Froze more at higher emulated speed</td><td>BIOS-chain jumps landing mid-batch ran trap byte 0xF1 as ICEBP</td><td>Batch boundaries are architecture</td></tr>
+    <tr><td>Voyage freeze</td><td>New-game cinematic stuck on frame 1</td><td>Game-state divergence; oracle (DOSBox-X source) exonerates the emulator</td><td>Obey the oracle</td></tr>
+    <tr><td>Phantom UMBs</td><td>Bizarre split-memory allocation path</td><td>Emulator conjured 32 KB of UMBs no 1994 PC had</td><td>Emulate machines that existed</td></tr>
+    <tr><td>R6003 crash</td><td>Divide error with 629,728 B free</td><td>Fixed 18,752-B buffer gap; in-place decompression overruns in clean, roomy memory</td><td>The game needs the machine small</td></tr>
+    <tr><td>Civ intro audit</td><td>Stalls, livelocks, frozen cycle counter</td><td>VSync pulse 18× too long; I/O-delay mask; dead stub; BDA 40:40 never ticked</td><td>One intro, four subsystems</td></tr>
+    <tr><td>MDD-00037</td><td>Intro at 3.4 fps (6% of real time)</td><td>70 Hz busy-waits ~20× oversized under fixed-Pentium cycles</td><td>Emulate the pace, not the spec sheet</td></tr>
+  </tbody>
+</table>
+
+<h2>Standing on shoulders</h2>
+
+<p>Our byte-level and live-run lanes lean, at every turn, on people who took these
+games apart first — most of them for love, over decades. Credit where it is
+emphatically due:</p>
+
+<ul class="credits">
+  <li><strong>darkpanda</strong> (CivFanatics) — the <a href="https://forums.civfanatics.com/threads/civ1-map-generation-explained.498630/">"Civ1 … explained"</a> series (map generation, land value, randomness, AI movement), the SVE/MAP/PIC format threads, the CIV+IDA tutorials, and <a href="https://sourceforge.net/p/jcived/wiki/Welcome%20to%20JCivED/">JCivED</a>, the save/EXE editor that anchors Civ 1 internals research.</li>
+  <li><strong>Gowron &amp; Dack</strong> — the <a href="https://forums.civfanatics.com/threads/modding-civilization-i-data-tables.331078/">CIV.EXE data tables</a> and the <a href="https://forums.civfanatics.com/threads/modding-civilization-i-patterns-for-huts-and-special-resources.339049/">hut/special-resource patterns</a> (2009).</li>
+  <li><strong>tupi</strong> — the <a href="https://forums.civfanatics.com/threads/some-notes-about-diplomacy.678722/">diplomacy routine</a>, rendered in C-like notation from disassembly (2022).</li>
+  <li><strong><a href="https://github.com/SWY1985/CivOne">CivOne</a></strong> (SWY1985) — the open-source C# remake that ports darkpanda's algorithms, and <strong><a href="https://github.com/rajko-horvat/OpenCiv1">OpenCiv1</a></strong> (rajko-horvat) — the whole of CIV.EXE disassembled into compilable C#.</li>
+  <li><strong>ScummVM's MADS engine</strong> — whose <a href="https://github.com/scummvm/scummvm/blob/master/engines/mads/madsv2/core/pfab.cpp">pfab.cpp</a> is a C port of MicroProse's <em>own</em> compression source, <code>pFABcomp.asm</code> (David McKibbin, 5 September 1992, "MPS Labs Graphic Library") — the closest thing to reading the original engineers' shoulder notes.</li>
+  <li><strong>Paul "dreammaster" Gilbert</strong> — <a href="https://dm-notes.blogspot.com/2015/11/the-intricacies-of-disassembling.html">rtlink_decode</a> and the definitive write-up of RTLink's overlay formats.</li>
+  <li><strong>The Colonization save-format community</strong> — <a href="https://github.com/nawagers/Colonization-SAV-files/blob/master/Format.md">nawagers/Colonization-SAV-files</a>, against which our byte-exact decomposition of colony09.sav was checked.</li>
+  <li><strong>Jimmy Maher</strong>, The Digital Antiquarian — <a href="https://www.filfre.net/2017/04/the-640-k-barrier/">"The 640 K Barrier"</a>, the definitive narrative of the memory wall.</li>
+  <li><strong><a href="https://quoteinvestigator.com/2011/09/08/640k-enough/">Quote Investigator</a></strong> — the verdict on "640K ought to be enough for anybody": no primary source, and Gates denies it.</li>
+  <li><strong>Sid Meier</strong>, <em>Sid Meier's Memoir!</em> (2020) — first-hand history, including the refutation of Nuclear Gandhi.</li>
+  <li><strong>Johnny L. Wilson &amp; Alan Emrich</strong> — <a href="https://openlibrary.org/books/OL1560871M/Sid_Meier's_Civilization_or_Rome_on_640k_a_day"><em>Sid Meier's Civilization, or Rome on 640K a Day</em></a> (Prima, 1992): the theme of this site, on a bookshelf, thirty-four years early.</li>
+</ul>
+
+<h2>Gallery</h2>
+
+<p>The rest of the evidence reel — archive captures from mddosem's own 2026-06-21
+test campaign, each scene pixel-deterministic under replay.</p>
+
+<div class="shotrow">
+  <figure class="shot">
+    <img src="img/col-difficulty.png" alt="Colonization's choose-difficulty screen with five painted portraits" width="640" height="400" loading="lazy">
+    <figcaption>Choose-difficulty screen, five painted portraits (Discoverer … Viceroy).
+    Archive capture under mddosem, 2026-06-21.</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="img/col-europe.png" alt="Colonization's Select European Power screen showing four flags" width="640" height="400" loading="lazy">
+    <figcaption>Select European Power — England, France, Spain, the Netherlands.
+    Archive capture under mddosem, 2026-06-21.</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="img/col-kings-audience.png" alt="Throne-room scene: An Audience with the King of England, 1492, with scroll text and the king's dog" width="640" height="400" loading="lazy">
+    <figcaption>"An Audience with the King of England, 1492" — throne room, scroll text,
+    the king's dog. Archive capture under mddosem, 2026-06-21.</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="img/col-units.png" alt="Colonization's world map after keyboard unit cycling, panel showing Scout and Pioneers" width="640" height="400" loading="lazy">
+    <figcaption>Keyboard unit cycling (Space): the panel switches to Scout/Pioneers and the
+    map recentres. Archive capture under mddosem, 2026-06-21.</figcaption>
+  </figure>
+</div>
+
+<h2>Keep pulling the thread</h2>
+
+<p>The instrument has its own story — how a Rust interpreter, a deterministic DOS,
+and a trace ring buffer got accurate enough for a 1994 game to trust them — and the
+almanac's <a href="/mddosem/">mddosem write-up</a> tells it. Everything in these
+seven chapters traces back to a file offset, a live memory read, or a named
+community source; where we relied on a model or an unproven hypothesis, the page
+says so. If you find a byte we got wrong, we would genuinely like to know.
+Corrections welcome — errors are ours.</p>
+
+<p class="srcline">Sources for this chapter — Runtime: live instrumented runs of
+2026-07-18 under mddosem v0.148.0 (emuscru IPC READ_MEM/PAUSE, mddosem_hw::timer
+debug events, framehash CRCs, MD5 manifests); Repo: the mddosem bug ledger
+(MDD-00036, MDD-00037) and the 2026-04→07 investigation journals; Community: the
+credits above.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="mapgen.html"><span class="dir">◀ previous</span>6 · Growing a World</a>
+  <a class="next" href="./"><span class="dir">next ▶</span>Overview ↩</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. Evidence: fresh byte-level analysis of the
+  original installs, live instrumented runs under
+  <a href="/mddosem/">mddosem</a> — a hardware-accurate PC emulator built in Rust —
+  and the community reverse-engineering record; full credits in
+  <a href="how.html">How We Know</a>. Screenshots © MicroProse, shown for technical
+  commentary. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w640-lib.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  if (!window.W640) return;
+  var W = window.W640, C = W.C;
+
+  /* shared tooltip painter */
+  function tooltip(ctx, w, h, mx, my, lines) {
+    ctx.font = W.mono(11);
+    var tw = 0, i;
+    for (i = 0; i < lines.length; i++) tw = Math.max(tw, ctx.measureText(lines[i]).width);
+    var bw = tw + 18, bh = lines.length * 15 + 12;
+    var bx = Math.min(Math.max(8, mx + 14), Math.max(8, w - bw - 8));
+    var by = my - bh - 12;
+    if (by < 8) by = Math.min(my + 16, h - bh - 8);
+    ctx.fillStyle = C.surface2;
+    W.rrect(ctx, bx, by, bw, bh, 4); ctx.fill();
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    W.rrect(ctx, bx, by, bw, bh, 4); ctx.stroke();
+    ctx.textAlign = "left"; ctx.textBaseline = "top";
+    for (i = 0; i < lines.length; i++) {
+      ctx.fillStyle = i === 0 ? C.amber : C.ink2;
+      ctx.fillText(lines[i], bx + 9, by + 7 + i * 15);
+    }
+    ctx.textBaseline = "alphabetic";
+  }
+
+  /* ============ FIG: live IVT / PIT evidence strip ============ */
+  (function () {
+    var canvas = document.getElementById("fig-ivt");
+    if (!canvas) return;
+    var AMBER = C.amber, CYAN = C.cyan, MUT = C.muted;
+    var marks = [
+      { lane: 0, f: 20,   c: AMBER, lab: "PIT ← 07A8", above: true,
+        tip: ["PIT retune — ~300 ms into boot",
+              "PIT: counter loaded channel=0 reload=07A8 mode=3",
+              "1,193,182 ÷ 1,960 ≈ 608.8 Hz",
+              "the only channel-0 reload in the whole run"] },
+      { lane: 0, f: 33,   c: CYAN,  lab: "F000:FEA5", above: false,
+        tip: ["IVT[8] read — frame 33, still loading",
+              "raw @0x0020: A5 FE 00 F0",
+              "F000:FEA5 — the BIOS default INT 08h handler",
+              "the game has not hooked the timer yet"] },
+      { lane: 0, f: 601,  c: AMBER, lab: "IVT[8]=1169:0010", above: true,
+        tip: ["IVT[8] read — frame 601, title menu",
+              "raw @0x0020: 10 00 69 11",
+              "1169:0010 — Colonization's own INT 08h handler",
+              "capture CRC 0xF97AFE9C"] },
+      { lane: 0, f: 1568, c: AMBER, lab: "still 1169:0010", above: false,
+        tip: ["IVT[8] read — frame 1568, world map (Spring 1495)",
+              "hook still installed through gameplay",
+              "CS:IP = 120C:011D — the input-polling loop",
+              "capture CRC 0x8A2F4B8E"] },
+      { lane: 2, f: 820,  c: MUT,   lab: "IVT[1C] = F000:0170 throughout", above: false,
+        tip: ["IVT[1C] read — raw @0x0070: 70 01 00 F0",
+              "F000:0170 — the ‘polite’ user tick hook",
+              "left untouched: the game seizes INT 08h directly"] },
+      { lane: 1, f: 122,  c: MUT,   lab: "text mode", above: true,
+        tip: ["frame 122 — 720×400 text mode",
+              "\"CIVILIZATION (TM) - Version 475.01\"",
+              "graphics-mode select (VGA/MCGA/EGA/Tandy)"] },
+      { lane: 1, f: 1212, c: MUT,   lab: "title menu", above: false,
+        tip: ["frame 1212 — title + main menu",
+              "capture CRC 0xC3515A2E"] },
+      { lane: 1, f: 1514, c: AMBER, lab: "IVT[8]=0752:0199", above: true,
+        tip: ["IVT[8] read — frame 1514, BIRTH cinematic",
+              "raw @0x0020: 99 01 52 07",
+              "0752:0199 — Civ's INT 08h hook (chains on to the BIOS)",
+              "capture CRC 0xF6DEA373"] }
+    ];
+    var hover = null, hit = [];
+
+    var fig = W.makeFig(canvas, function (ctx, w, h) {
+      ctx.fillStyle = C.surface; ctx.fillRect(0, 0, w, h);
+      var xa = 104, xb = w - 26;
+      var yCol = Math.round(h * 0.30), yCiv = Math.round(h * 0.74);
+      var y1c = yCol + Math.round(h * 0.14);
+      var fx = function (f) { return xa + f / 1650 * (xb - xa); };
+
+      /* frame axis */
+      ctx.strokeStyle = C.line2; ctx.lineWidth = 1;
+      ctx.font = W.mono(10); ctx.fillStyle = C.muted; ctx.textAlign = "center";
+      for (var f = 0; f <= 1650; f += 250) {
+        var gx = fx(f);
+        ctx.beginPath(); ctx.moveTo(gx, 16); ctx.lineTo(gx, h - 22); ctx.stroke();
+        ctx.fillText(W.fmtInt(f), gx, h - 8);
+      }
+      ctx.textAlign = "left";
+      ctx.fillText("guest frames →", xb - 92, 14);
+
+      /* lanes */
+      ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(xa, yCol); ctx.lineTo(xb, yCol); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xa, yCiv); ctx.lineTo(xb, yCiv); ctx.stroke();
+      /* IVT[1C] dashed sub-lane */
+      ctx.save();
+      ctx.strokeStyle = C.line; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(xa, y1c); ctx.lineTo(xb, y1c); ctx.stroke();
+      ctx.restore();
+
+      ctx.font = W.mono(11); ctx.fillStyle = C.ink2; ctx.textAlign = "left";
+      ctx.fillText("COLONIZATION", 10, yCol - 8);
+      ctx.fillStyle = C.muted; ctx.font = W.mono(10);
+      ctx.fillText("live, 1,568 frames", 10, yCol + 6);
+      ctx.font = W.mono(11); ctx.fillStyle = C.ink2;
+      ctx.fillText("CIVILIZATION", 10, yCiv - 8);
+      ctx.fillStyle = C.muted; ctx.font = W.mono(10);
+      ctx.fillText("live, to BIRTH", 10, yCiv + 6);
+
+      /* markers */
+      hit = [];
+      for (var i = 0; i < marks.length; i++) {
+        var m = marks[i];
+        var my0 = m.lane === 0 ? yCol : (m.lane === 1 ? yCiv : y1c);
+        var mx = fx(m.f);
+        ctx.strokeStyle = m.c; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(mx, my0 - 6); ctx.lineTo(mx, my0 + 6); ctx.stroke();
+        ctx.fillStyle = m.c;
+        ctx.beginPath(); ctx.arc(mx, my0, 4.5, 0, W.TAU); ctx.fill();
+        ctx.font = W.mono(10); ctx.fillStyle = C.ink2; ctx.textAlign = "center";
+        var ly = m.above ? my0 - 14 : my0 + 20;
+        ctx.fillText(m.lab, Math.min(Math.max(mx, xa + 30), xb - 56), ly);
+        hit.push({ x: mx, y: my0, m: m });
+      }
+      ctx.textAlign = "left";
+
+      /* hover tooltip */
+      if (hover) {
+        var best = null, bd = 18 * 18;
+        for (var k = 0; k < hit.length; k++) {
+          var dx = hover.x - hit[k].x, dy = hover.y - hit[k].y, d = dx * dx + dy * dy;
+          if (d < bd) { bd = d; best = hit[k]; }
+        }
+        if (best) tooltip(ctx, w, h, hover.x, hover.y, best.m.tip);
+      }
+    });
+
+    W.onHover(canvas, function (x, y) {
+      hover = x == null ? null : { x: x, y: y };
+      fig.redraw();
+    });
+  })();
+
+  /* ============ FIG: MDD-00036 chain lottery (animated centrepiece) ============ */
+  (function () {
+    var canvas = document.getElementById("fig-batch");
+    if (!canvas) return;
+    var logEl = document.getElementById("batch-log");
+
+    var CYC = 1.7;                    /* seconds per chain attempt while playing */
+    var K = 374.1;                    /* calibration: p(25200) = 17/1145 */
+    var cpm = 25200;
+    var counters = { att: 0, ok: 0, no: 0 };
+    var hist = [];
+    var cur = null, lastIdx = -1, lastU = 1, scroll = 0, lastT = 0, hover = null;
+
+    /* Microsoft C rand() LCG (214013/2531011) — deterministic landings from a fixed seed */
+    var lcgState = 20260718 | 0;
+    function rnd() {
+      lcgState = (Math.imul(lcgState, 214013) + 2531011) | 0;
+      return ((lcgState >>> 16) & 0x7FFF) / 32768;
+    }
+    function pServ() { return Math.min(1, K / cpm); }
+    function cellsPerBatch() { return Math.round(8 + (cpm - 3000) / 22200 * 28); }
+
+    function resolve() {
+      return { serviced: rnd() < pServ(), frac: rnd(), sx: null, counted: false };
+    }
+    function count(c) {
+      c.counted = true;
+      counters.att++;
+      if (c.serviced) counters.ok++; else counters.no++;
+      hist.push(c.serviced);
+      if (hist.length > 26) hist.shift();
+      if (logEl) logEl.textContent = "chain #" + counters.att + (c.serviced
+        ? " · lands on a batch boundary → HLE gate → BIOS tick serviced, BDA 0040:0040 decremented   [" + counters.ok + "/" + counters.att + " serviced]"
+        : " · lands mid-batch → 0xF1 executed as ICEBP → INT 1 — BIOS tick starved   [" + counters.ok + "/" + counters.att + " serviced]");
+    }
+
+    var fig = W.makeFig(canvas, function (ctx, w, h, fg) {
+      /* --- advance simulation state (only while playing) --- */
+      var u = lastU;
+      if (fg.playing) {
+        var dt = Math.max(0, fg.t - lastT); lastT = fg.t;
+        var idx = Math.floor(fg.t / CYC);
+        u = (fg.t % CYC) / CYC; lastU = u;
+        if (idx !== lastIdx) { lastIdx = idx; cur = resolve(); }
+        if (u < 0.55) scroll += dt * 46;      /* conveyor runs, then freezes for the drop */
+        if (cur && !cur.counted && u >= 0.8) count(cur);
+      }
+
+      /* --- geometry --- */
+      var panelW = Math.min(232, Math.max(168, w * 0.3));
+      var px0 = w - panelW - 10;
+      var x0 = 40, x1 = px0 - 16;
+      var tickY = 40, tickH = 22;
+      var convY = Math.round(h * 0.34), convH = 46;
+      var stubW = Math.min(340, x1 - x0), stubY = h - 96, stubH = 76;
+      var cells = cellsPerBatch();
+      var cellW = Math.min(14, (x1 - x0) / (cells * 1.5));
+      var bw = cells * cellW;
+
+      ctx.fillStyle = C.surface; ctx.fillRect(0, 0, w, h);
+
+      /* --- tick row --- */
+      ctx.font = W.mono(10); ctx.fillStyle = C.muted; ctx.textAlign = "left";
+      ctx.fillText("game ISR entries — INT 08h · every 30th tail-jumps to the saved BIOS vector (jmp far cs:[0Ch])", x0, tickY - 12);
+      var nShow = (fg.playing && cur && !cur.counted && u < 0.55) ? Math.max(1, Math.ceil(u / 0.55 * 30)) : 30;
+      var sp = (x1 - x0) / 29;
+      var tick30x = x0 + 29 * sp;
+      for (var i = 0; i < nShow; i++) {
+        var last = (i === 29);
+        ctx.fillStyle = last ? C.amber : C.ink2;
+        ctx.globalAlpha = last ? 1 : 0.55;
+        ctx.fillRect(x0 + i * sp, tickY + (last ? 0 : 6), last ? 3 : 2, last ? tickH : tickH - 6);
+        ctx.globalAlpha = 1;
+      }
+      if (nShow >= 30) {
+        ctx.fillStyle = C.amber; ctx.font = W.mono(10); ctx.textAlign = "right";
+        ctx.fillText("30th → chain", x1, tickY + tickH + 12);
+        ctx.textAlign = "left";
+      }
+
+      /* --- conveyor of instruction batches --- */
+      ctx.fillStyle = C.muted; ctx.font = W.mono(10);
+      ctx.fillText("interpreter conveyor — batches of cycles/ms instructions; F000 traps checked only at boundaries", x0, convY - 8);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(x0, convY, x1 - x0, convH); ctx.clip();
+      var firstCell = Math.floor(scroll / cellW);
+      var boundaries = [];
+      for (var j = -1; ; j++) {
+        var wc = firstCell + j;
+        var sx = x0 + wc * cellW - scroll;
+        if (sx > x1) break;
+        ctx.fillStyle = C.surface2;
+        ctx.fillRect(sx + 1, convY + 6, cellW - 2, convH - 12);
+        if (((wc % cells) + cells) % cells === 0) boundaries.push(sx);
+      }
+      for (var b = 0; b < boundaries.length; b++) {
+        ctx.strokeStyle = C.amber; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(boundaries[b], convY); ctx.lineTo(boundaries[b], convY + convH); ctx.stroke();
+        ctx.fillStyle = C.amber;
+        ctx.beginPath();
+        ctx.moveTo(boundaries[b] - 5, convY - 1);
+        ctx.lineTo(boundaries[b] + 5, convY - 1);
+        ctx.lineTo(boundaries[b], convY + 6);
+        ctx.closePath(); ctx.fill();
+      }
+      ctx.restore();
+      if (boundaries.length) {
+        ctx.fillStyle = C.amberDim; ctx.font = W.mono(10); ctx.textAlign = "center";
+        ctx.fillText("HLE gate", Math.min(Math.max(boundaries[0], x0 + 26), x1 - 26), convY + convH + 13);
+        ctx.textAlign = "left";
+      }
+
+      /* landing position for the current chain */
+      function landingX(c) {
+        var centre = (x0 + x1) / 2 - x0 + scroll;
+        var bnd = Math.round(centre / bw) * bw;
+        var wx = c.serviced ? bnd : bnd + (0.12 + 0.72 * c.frac) * bw;
+        var sxx = x0 + wx - scroll;
+        while (sxx > x1 - 12) sxx -= bw;
+        while (sxx < x0 + 12) sxx += bw;
+        return sxx;
+      }
+
+      /* --- BIOS stub inset --- */
+      ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+      W.rrect(ctx, x0, stubY, stubW, stubH, 5); ctx.stroke();
+      ctx.font = W.mono(10); ctx.fillStyle = C.muted;
+      ctx.fillText("the BIOS tick stub (guest memory)", x0 + 10, stubY + 15);
+      ctx.font = W.mono(11); ctx.fillStyle = C.ink2;
+      ctx.fillText("F000:FEA5   BIOS INT 08h stub entry", x0 + 10, stubY + 34);
+      var f1y = stubY + 52;
+      ctx.fillText("F000:FEA6", x0 + 10, f1y);
+      var f1x = x0 + 10 + ctx.measureText("F000:FEA6   ").width;
+      var showFlash = cur && cur.counted && (!fg.playing || u >= 0.8);
+      if (showFlash && !cur.serviced) {
+        ctx.fillStyle = C.danger;
+        ctx.fillRect(f1x - 3, f1y - 11, 24, 15);
+        ctx.fillStyle = C.bg;
+      } else {
+        ctx.fillStyle = C.amber;
+      }
+      ctx.fillText("F1", f1x, f1y);
+      ctx.fillStyle = C.muted; ctx.font = W.mono(10);
+      ctx.fillText("← tick-trap byte", f1x + 30, f1y);
+      if (showFlash) {
+        ctx.font = W.mono(10);
+        if (cur.serviced) {
+          ctx.fillStyle = C.good;
+          ctx.fillText("HLE gate ran service_bios_timer_tick()", x0 + 10, stubY + 68);
+        } else {
+          ctx.fillStyle = C.danger;
+          ctx.fillText("byte executed as ICEBP → spurious INT 1", x0 + 10, stubY + 68);
+        }
+      }
+
+      /* --- counters panel --- */
+      ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+      W.rrect(ctx, px0, 26, panelW, h - 40, 5); ctx.stroke();
+      var py = 46;
+      ctx.font = W.mono(11); ctx.textAlign = "left";
+      ctx.fillStyle = C.ink2;
+      ctx.fillText("batch ≈ " + W.fmtInt(cpm) + " instr", px0 + 12, py); py += 22;
+      ctx.fillStyle = C.ink2;
+      ctx.fillText("chains attempted  " + W.fmtInt(counters.att), px0 + 12, py); py += 18;
+      ctx.fillStyle = C.good;
+      ctx.fillText("serviced          " + W.fmtInt(counters.ok), px0 + 12, py); py += 18;
+      ctx.fillStyle = C.danger;
+      ctx.fillText("starved           " + W.fmtInt(counters.no), px0 + 12, py); py += 24;
+      ctx.fillStyle = C.ink2;
+      ctx.fillText("model BIOS tick", px0 + 12, py); py += 16;
+      ctx.fillStyle = C.cyan;
+      ctx.fillText("≈ " + (18.2 * pServ()).toFixed(2) + " /s", px0 + 12, py);
+      ctx.fillStyle = C.muted; ctx.font = W.mono(10);
+      ctx.fillText("(target 18.2 /s)", px0 + 108, py); py += 26;
+
+      /* BDA byte box */
+      var bdaZero = cur && cur.counted && cur.serviced && (!fg.playing || u >= 0.8);
+      ctx.font = W.mono(10); ctx.fillStyle = C.muted;
+      ctx.fillText("BDA 0040:0040 (motor count)", px0 + 12, py); py += 8;
+      ctx.strokeStyle = bdaZero ? C.good : C.line;
+      W.rrect(ctx, px0 + 12, py, 26, 22, 3); ctx.stroke();
+      ctx.font = W.mono(13, true);
+      ctx.fillStyle = bdaZero ? C.good : C.warn;
+      ctx.textAlign = "center";
+      ctx.fillText(bdaZero ? "0" : "1", px0 + 25, py + 16);
+      ctx.font = W.mono(10); ctx.textAlign = "left";
+      ctx.fillStyle = bdaZero ? C.good : C.muted;
+      ctx.fillText(bdaZero ? "the galleon sails" : "the galleon waits…", px0 + 46, py + 15);
+      py += 40;
+
+      /* history dots */
+      ctx.fillStyle = C.muted; ctx.font = W.mono(10);
+      ctx.fillText("last chains", px0 + 12, py); py += 12;
+      for (var d = 0; d < hist.length; d++) {
+        ctx.fillStyle = hist[d] ? C.good : C.danger;
+        ctx.beginPath();
+        ctx.arc(px0 + 16 + (d % 13) * 15, py + Math.floor(d / 13) * 14, 3.4, 0, W.TAU);
+        ctx.fill();
+      }
+
+      /* --- the chain arrow + flash --- */
+      if (cur) {
+        if (cur.sx == null && (!fg.playing || u >= 0.55)) cur.sx = landingX(cur);
+        if (cur.sx != null) {
+          var ox = tick30x, oy = tickY + tickH + 4;
+          var txx = cur.sx, tyy = convY + convH / 2;
+          var col = cur.counted ? (cur.serviced ? C.good : C.danger) : C.ink2;
+          if (fg.playing && u >= 0.55 && u < 0.8) {
+            var tt = W.ease((u - 0.55) / 0.25);
+            W.drawArrow(ctx, ox, oy, ox + (txx - ox) * tt, oy + (tyy - oy) * tt, C.ink2);
+          } else if (cur.counted && (!fg.playing || u >= 0.8)) {
+            W.drawArrow(ctx, ox, oy, txx, tyy, col);
+            ctx.globalAlpha = 0.28;
+            ctx.fillStyle = col;
+            ctx.beginPath(); ctx.arc(txx, tyy, 13, 0, W.TAU); ctx.fill();
+            ctx.globalAlpha = 1;
+            /* consequence link: to stub F1 (starved) or BDA box (serviced) */
+            ctx.save();
+            ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.strokeStyle = col;
+            ctx.beginPath(); ctx.moveTo(txx, tyy + 8);
+            if (cur.serviced) ctx.lineTo(px0 + 12, stubY - 6);
+            else ctx.lineTo(f1x + 8, f1y - 14);
+            ctx.stroke();
+            ctx.restore();
+          }
+        }
+      } else {
+        /* idle specimen: annotate the two outcomes on the static frame */
+        var bnd0 = boundaries.length ? boundaries[Math.floor(boundaries.length / 2)] : (x0 + x1) / 2;
+        var mid0 = Math.min(bnd0 + bw * 0.45, x1 - 30);
+        W.drawArrow(ctx, bnd0 - 40, tickY + tickH + 6, bnd0, convY + convH / 2, C.good);
+        W.drawArrow(ctx, mid0 + 40, tickY + tickH + 6, mid0, convY + convH / 2, C.danger);
+        ctx.font = W.mono(10); ctx.textAlign = "center";
+        ctx.fillStyle = C.good;
+        ctx.fillText("on a boundary: HLE gate", bnd0, convY + convH + 28);
+        ctx.fillText("→ BIOS tick runs", bnd0, convY + convH + 41);
+        ctx.fillStyle = C.danger;
+        ctx.fillText("mid-batch: runs 0xF1", mid0, convY + convH + 28);
+        ctx.fillText("→ ICEBP, INT 1", mid0, convY + convH + 41);
+        ctx.textAlign = "left";
+      }
+
+      /* --- hover tooltips over the four regions --- */
+      if (hover) {
+        var regions = [
+          { x: x0, y: tickY - 22, w: x1 - x0, h: tickH + 26,
+            tip: ["the game's timer ISR (1169:0010)",
+                  "fires ~600×/s after the PIT retune;",
+                  "every 30th entry tail-jumps to the saved",
+                  "BIOS vector — an era-correct heartbeat by design"] },
+          { x: x0, y: convY - 18, w: x1 - x0, h: convH + 44,
+            tip: ["the interpreter executes instructions in",
+                  "batches sized by the cycles/ms budget;",
+                  "F000 HLE traps were only checked at",
+                  "batch boundaries — the bug"] },
+          { x: x0, y: stubY, w: stubW, h: stubH,
+            tip: ["F000:FEA6 holds 0xF1 — a trap marker,",
+                  "not code; executed directly it decodes",
+                  "as ICEBP and raises INT 1"] },
+          { x: px0, y: 26, w: panelW, h: h - 40,
+            tip: ["measured at fixed Pentium (25,200 c/ms):",
+                  "~35,000 ISR entries, 1,145 expected",
+                  "chains, 17 serviced — BIOS tick at",
+                  "0.1–0.9/s instead of 18.2/s"] }
+        ];
+        for (var r = 0; r < regions.length; r++) {
+          var rg = regions[r];
+          if (hover.x >= rg.x && hover.x <= rg.x + rg.w && hover.y >= rg.y && hover.y <= rg.y + rg.h) {
+            tooltip(ctx, w, h, hover.x, hover.y, rg.tip);
+            break;
+          }
+        }
+      }
+    });
+
+    /* controls */
+    var playBtn = W.bindPlay("batch-play", fig);
+    if (W.reducedMotion && playBtn) playBtn.style.display = "none";
+    var stepBtn = document.getElementById("batch-step");
+    if (stepBtn) stepBtn.addEventListener("click", function () {
+      if (fig.playing) { fig.stop(); if (playBtn) playBtn.textContent = "▶ play"; }
+      cur = resolve();
+      count(cur);
+      lastU = 1;
+      fig.redraw();
+    });
+    W.bindSlider("batch-cpm", function (v) {
+      cpm = v;
+      if (!fig.playing) fig.redraw();
+    }, function (v) { return W.fmtInt(v); });
+    W.onHover(canvas, function (x, y) {
+      hover = x == null ? null : { x: x, y: y };
+      if (!fig.playing) fig.redraw();
+    });
+  })();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

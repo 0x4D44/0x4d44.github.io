@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Division Dance — A World in 640K</title>
+<meta name="description" content="How Sid Meier's Colonization carved 640 KB with eight measured INT 21h calls — probe, shrink, grow, claim — then ran its own allocator inside memory DOS believed was free.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="w640.css">
+<style>
+.srcline{font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:38px;}
+.srcline a{color:var(--cyan);}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">A WORLD IN 640K</a></div>
+    <div class="strap">how Civilization &amp; Colonization ran a planet in real-mode DOS</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="code.html">1 · Code in Flight</a>
+    <a href="memory.html" aria-current="page">2 · The Division Dance</a>
+    <a href="art.html">3 · Art on Demand</a>
+    <a href="world.html">4 · A Hemisphere in 24K</a>
+    <a href="time.html">5 · The Heartbeat</a>
+    <a href="mapgen.html">6 · Growing a World</a>
+    <a href="how.html">7 · How We Know</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 2 · MEMORY</p>
+  <h1>THE DIVISION <span class="amber">DANCE</span></h1>
+  <p class="standfirst">At every launch, Sid Meier's Colonization performs the same fixed
+  arithmetic ritual against DOS — probe, shrink, grow, claim, shrink back, probe, claim, cut.
+  Eight <code>INT 21h</code> calls later, DOS's ledger records three tidy blocks; the game,
+  meanwhile, is running its own allocator — complete with its own forged block headers —
+  inside the ≈319 KB DOS has just been told is free.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">8</div><div class="l">INT 21h calls in the startup ritual — traced live, in order, every run</div></div>
+  <div class="stat"><div class="v">512 B</div><div class="l">viceroy.exe's MaxAlloc headroom over MinAlloc — the linker asks for exactly what it needs</div></div>
+  <div class="stat"><div class="v">228</div><div class="l">calls to undocumented AH=52h as the game walks DOS's own memory-block chain</div></div>
+  <div class="stat"><div class="v">18,752 B</div><div class="l">the fixed gap between FAB source and destination buffers — a constant of the binary</div></div>
+  <div class="stat"><div class="v">373,184 B</div><div class="l">the middle zone the game claims — then mostly hands back, on paper only</div></div>
+  <div class="stat"><div class="v bad">+8,192 B</div><div class="l">extra free bytes that flip a clean run into an R6003 crash (629,728 vs 621,536)</div></div>
+</section>
+
+<section class="prose">
+
+<h2>The deal DOS offers</h2>
+
+<p>Real-mode DOS manages the 640 KB arena with one of the simplest allocators ever shipped:
+a singly-linked chain of <strong>Memory Control Blocks</strong>. Each MCB is a 16-byte header
+sitting one paragraph (16 bytes) before the block it describes: a signature byte —
+<code>'M'</code> mid-chain, <code>'Z'</code> for the last block — the owner's PSP segment, the
+size in paragraphs, and, from DOS 4, an eight-character owner name. Three calls drive it:
+<code>AH=48h</code> allocate, <code>AH=49h</code> free, <code>AH=4Ah</code> resize. There is
+no "query free memory" call; the idiom is to <em>ask for the impossible</em> —
+resize to, or allocate, 0xFFFF paragraphs — and read the maximum DOS reports back in
+<code>BX</code> when it refuses. Colonization uses that refusal, twice, as a measuring
+instrument.</p>
+
+<p>What a program starts with is negotiated in its MZ header. <code>MinAlloc</code> is the
+extra memory it must have beyond its load image; <code>MaxAlloc</code> is the most it wants.
+Almost every DOS linker stamped MaxAlloc <span class="addr">FFFF</span> — <em>give me
+everything</em> — and left the program to hand back what it didn't need. RTLink/Plus, the
+linker behind <code>viceroy.exe</code> (Chapter 1), does the opposite:</p>
+
+<table class="data">
+  <caption>What four MicroProse executables ask DOS for</caption>
+  <thead>
+    <tr><th>File</th><th class="num">Load image</th><th class="num">MinAlloc</th><th class="num">MaxAlloc</th><th>Headroom</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>viceroy.exe (1994)</td><td class="num">123,073 B</td><td class="num">3,017 paras / 48,272 B</td><td class="num">3,049 paras / 48,784 B</td><td><strong>32 paras = 512 B</strong> — a fixed ask of ~168 KB, total</td></tr>
+    <tr><td>opening.exe (1994)</td><td class="num">64,199 B</td><td class="num">1,007 paras / 16,112 B</td><td class="num">4,095 paras / 65,520 B</td><td>3,088 paras</td></tr>
+    <tr><td>closing.exe (1994)</td><td class="num">60,209 B</td><td class="num">816 paras / 13,056 B</td><td class="num">4,095 paras / 65,520 B</td><td>3,279 paras</td></tr>
+    <tr><td>CIV.EXE (1991)</td><td class="num">177,599 B</td><td class="num">3,773 paras / 60,368 B</td><td class="num"><span class="addr">FFFF</span> — everything</td><td>take it all, shrink later</td></tr>
+  </tbody>
+</table>
+
+<p>Viceroy's MaxAlloc sits exactly 512 bytes above its MinAlloc. Add it up — 123,073-byte
+load image + 48,784-byte allowance + 256-byte PSP — and the whole program asks DOS for
+<strong>172,113 bytes, about 168 KB, and refuses more</strong>. The linker knows to the
+paragraph what the resident root needs, because everything else — the other 361,168 bytes
+of code appended to the EXE — will be paged in through its own virtual-memory machinery
+(Chapter 1). The file on disk is 493,470 bytes; DOS is shown less than a third of it.
+(Executable file sizes lie so routinely that our own emulator's EXEC loader once sized a
+child program from the file length instead of the MZ page count — fatal for overlay EXEs
+with big appended tails, and worth a bug of its own, MDD-00052.)</p>
+
+<h2>Eight calls, three blocks</h2>
+
+<p>Then the dance begins. Traced live under our emulator, <code>viceroy.exe</code> issues
+the same eight-call sequence at every start. First it resizes its own block to 0xFFFF
+paragraphs — impossible, deliberately — and reads DOS's refusal: the block could grow to
+<span class="addr">97BE</span> paragraphs, 621,536 bytes. Then the trick: it shrinks to bare
+code (165,456 bytes), <em>re-grows</em> to precisely <code>total − 143Bh − 1</code>
+paragraphs — a wall covering nearly the whole arena — and allocates 5,179 paragraphs, which
+can now fit in exactly one place: the hole it left at the top. The 82,864-byte staging block
+lands at <span class="addr">8BC5–9FFF</span>, pinned hard against video RAM at
+<span class="addr">A000:0000</span>, at every MCB base we tested, regardless of what else is loaded.
+DOS's first-fit allocator has been used as a placement tool.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE DIVISION DANCE — 640 KB, EIGHT CALLS</span>
+    <span class="hint">▶ play · ⏭ step · hover any region for its size</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="dance" style="aspect-ratio: 2.45 / 1; min-height: 320px; touch-action: pan-y;" role="img"
+      aria-label="Animated map of the 640 KB conventional-memory arena being divided by eight DOS calls into a program block, a middle zone and a staging block pinned under video RAM"></canvas>
+  </div>
+  <div class="evlog" id="dance-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#3a4356"></span>DOS + drivers</span>
+    <span class="key"><span class="sw" style="background:#f0a132"></span>program block (root)</span>
+    <span class="key"><span class="sw" style="background:#4f8fe0"></span>middle zone</span>
+    <span class="key"><span class="sw" style="background:#22916b"></span>top block (staging)</span>
+    <span class="key"><span class="sw" style="background:repeating-linear-gradient(45deg,transparent 0 3px,rgba(230,226,214,.4) 3px 4px)"></span>free — DOS's view</span>
+    <span class="key"><span class="sw" style="background:#7d86ef"></span>game sub-allocations (game view)</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="dance-play">▶ play</button>
+    <button class="btn" id="dance-step">⏭ step</button>
+    <button class="btn" id="dance-reset">⟲ reset</button>
+    <div class="ctl">
+      <label>end state</label>
+      <div class="seg" id="dance-view">
+        <button data-v="dos" aria-pressed="true">DOS's ledger</button>
+        <button data-v="game" aria-pressed="false">the game's ledger</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Every call, size and address measured from live INT 21h traces of
+  viceroy.exe under <a href="/mddosem/">mddosem</a> (MCB base 0800, 2026 campaigns).
+  DOSBox-X reproduces the identical split with its own constants (probe 97ECh, grow 83B3h,
+  top block 1438h) — same choreography, arithmetic recomputed per machine. In the
+  game's-ledger view the sub-block layout is schematic — the S$MPSLOG header bytes are
+  live-captured (§ below), though from the opening cinematic's layout, not this end state.</div>
+</figure>
+
+<table class="data">
+  <caption>The dance, call by call — live INT 21h trace at MCB base 0800</caption>
+  <thead>
+    <tr><th class="num">#</th><th>Call</th><th>DOS answers</th><th>Effect</th></tr>
+  </thead>
+  <tbody>
+    <tr><td class="num">1</td><td><code>AH=4Ah BX=FFFF</code></td><td>refused; BX=<span class="addr">97BE</span></td><td>probe: the block could grow to 621,536 B</td></tr>
+    <tr><td class="num">2</td><td><code>AH=4Ah BX=2865</code></td><td>ok</td><td>program block shrunk to 10,341 paras — 165,456 B of resident code</td></tr>
+    <tr><td class="num">3</td><td><code>AH=4Ah BX=8382</code></td><td>ok</td><td>grow to <code>97BEh − 143Bh − 1</code> = 538,656 B — wall off everything but one hole</td></tr>
+    <tr><td class="num">4</td><td><code>AH=48h BX=143B</code></td><td>block at <span class="addr">8BC5</span></td><td>top block: 82,864 B at <span class="addr">8BC5–9FFF</span>, pinned under A000</td></tr>
+    <tr><td class="num">5</td><td><code>AH=4Ah BX=2865</code></td><td>ok</td><td>shrink back to code — the middle falls free again</td></tr>
+    <tr><td class="num">6</td><td><code>AH=48h BX=FFFF</code></td><td>refused; largest = 23,324 paras</td><td>probe: 373,184 B free between root and staging</td></tr>
+    <tr><td class="num">7</td><td><code>AH=48h BX=5B2A</code></td><td>block at <span class="addr">30A8</span></td><td>middle zone claimed</td></tr>
+    <tr><td class="num">8</td><td><code>AH=4Ah BX=0B4F</code></td><td>ok</td><td>middle block cut to 2,895 paras (46,320 B); the tail returns to DOS — nominally</td></tr>
+  </tbody>
+</table>
+
+<p>The arithmetic is self-consistent almost to the paragraph: the grow argument
+<span class="addr">8382</span> is literally <em>probe result minus 143Bh minus one</em>, and
+the middle zone's span — segment <span class="addr">30A8</span> up to the staging block's
+MCB at <span class="addr">8BC4</span> — is exactly the 23,324 paragraphs the second probe
+reported. (The one wrinkle is call 7's recorded ask — <span class="addr">5B2A</span>h,
+fourteen paragraphs more than the probe had just reported.) Nothing here is hard-coded to a
+memory size; it is a fixed <em>procedure</em>
+evaluated against whatever machine it wakes up on. That will matter later.</p>
+
+<h2>Bring your own allocator</h2>
+
+<p>Why claim 373,184 bytes and immediately cut the block back to 46,320? Because the game
+never intended DOS to manage that memory. The claim-then-cut establishes <em>where</em> the
+arena is; from then on the engine runs its own allocator over the region DOS was told to
+mark free. It is not shy about it, either: it lays down its own MCB-style headers — real
+DOS bookkeeping, forged by a game — inside memory the DOS chain does not cover. We caught
+one live, during the opening cinematic's logo sequence:</p>
+
+<pre>
+2F79:0000  4D 42 08 4D 15 ·· ·· ··    'M'  owner=0842  size=154D paras (87,248 B)
+2F79:0008  53 24 4D 50 53 4C 4F 47    "S$MPSLOG"
+</pre>
+
+<p>An 87,248-byte sub-block, tagged <code>S$MPSLOG</code> — MPS Labs' own house style in
+eight characters — holding the MPSLOGO decompression buffer, sitting on top of what our
+emulator's allocator recorded as one large free block. The engine also refuses to take
+DOS's word for the map: during startup it issues <strong>228 calls</strong> to the
+undocumented <code>AH=52h</code> "List of Lists" service and walks the MCB chain itself,
+byte by byte, through guest memory.</p>
+
+<p>This cost us a lesson in DOS authenticity. When the game eventually hands one of its
+home-made blocks to <code>AH=49h</code> (free), real DOS doesn't check any ownership table —
+it reads the 16-byte header out of RAM, sees a plausible <code>'M'</code> signature and
+size, and obliges. Our emulator originally tracked allocations in a tidy Rust
+<code>Vec</code> and refused to free blocks it had never issued. Wrong model: real DOS's
+allocator state <em>is</em> guest memory. We had to teach <code>DosMem::free()</code> to
+validate the signature in RAM and honour blocks it never handed out — matching the
+signature-driven behaviour Colonization depends on.</p>
+
+<p>The pay-off for bringing your own allocator is control. A DOS call costs an interrupt
+and gives paragraph-granular blocks at addresses of DOS's choosing; the game's private
+arithmetic gives it byte-exact, <em>deterministic</em> placement. Determinism is measurable:
+the engine always places a FAB decompression source and its destination exactly
+<strong>18,752 bytes apart</strong> — we verified the constant at four different MCB bases,
+against machines with different amounts of free memory. The layout is a property of the
+binary, not the machine. Which is a strength, and also the next section.</p>
+
+<h2>Fragile by design</h2>
+
+<aside class="aside danger">
+  <span class="tag">THE 629,728-BYTE CRASH</span>
+  <p>Early in bring-up, our emulator's first MCB sat at segment <span class="addr">0600</span>,
+  so Colonization saw <span class="addr">99BE</span> paragraphs — 629,728 bytes — free.
+  That is <em>more conventional memory than any real 1994 PC with drivers loaded ever
+  showed</em>, and the game's fixed arithmetic, evaluated against it, laid its buffers out
+  somewhere no shipped configuration had ever exercised. Runaway decompression flattened
+  the timer ISR (a <code>PUSH AX</code> at linear <span class="addr">105FA</span> became
+  <code>ED</code>), then ate the decompressor's own code
+  (<span class="addr">16E2:054A</span> → <code>CC</code>, an INT 3 breakpoint), and the run
+  died with Microsoft C's <em>"run-time error R6003: integer divide by 0"</em> — in truth an
+  IDIV <em>quotient overflow</em>: 0xAB0CF745 ÷ 4,033 = 711,567, far past a signed 16-bit
+  result. Our MCB-base sweep mapped the cliff edge: bases 0600–07A0 crash; 0800 —
+  621,536 bytes free, a typical 1994 driver load — runs; 0850–0900 "out of memory".
+  Between death and health: 8,192 bytes of extra freedom. The game only works because the
+  machine is small.</p>
+</aside>
+
+<p>The second machine-shaped assumption is baked into that 18,752-byte constant. The title
+screen, OPENMENU.PIK, carries a 64,000-byte Mode 13h frame FAB-compressed to 45,855 bytes —
+2.4 times the gap — so in the crash-era layout the decompressor ran <em>in place</em>,
+source and destination overlapping in flight. The decompressor (Chapter 3 has the format;
+the disassembly lives at root offset <span class="addr">0466</span>) takes three far
+pointers and <strong>no length argument</strong> — it stops when the stream says stop. We
+watched the write pointer catch the read pointer at output byte 27,400: from there the
+input was being overwritten before it had been read.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">18,752 BYTES OF HEADROOM — DECOMPRESSION IN PLACE</span>
+    <span class="hint">▶ replay the overrun · ⏭ step · hover the regions</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="overlap" style="aspect-ratio: 2.6 / 1; min-height: 260px; touch-action: pan-y;" role="img"
+      aria-label="Animated diagram of FAB in-place decompression: the write pointer overtakes the read pointer positioned 18,752 bytes ahead, corrupting the stream and running 384 kilobytes past the buffer"></canvas>
+  </div>
+  <div class="evlog" id="overlap-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#f0a132"></span>decompressed output (write)</span>
+    <span class="key"><span class="sw" style="background:#4f8fe0"></span>compressed source (read)</span>
+    <span class="key"><span class="sw" style="background:#e05252"></span>corrupt from byte 27,400</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="overlap-play">▶ play</button>
+    <button class="btn" id="overlap-step">⏭ step</button>
+  </div>
+  <div class="fig-note">Buffer geometry, the 18,752-byte constant (verified at four MCB
+  bases), the collision offset (write 27,400 = read 8,648 + gap) and the corrupted bytes
+  are measured — mddosem live runs, April 2026, crash-era layout. The pointer schedule is
+  schematic. How real 1994 machines survived this arithmetic is formally open: the repo's
+  hypothesis — stale boot residue beyond the buffer happening to decode as an end-of-stream
+  marker, an accident our zero-filled RAM lacked — is flagged, not proven, and the repo's
+  own analysis notes that zeroes decode as end-of-stream too.</div>
+</figure>
+
+<p>The third assumption we violated ourselves. Our emulator used to conjure
+<strong>32 KB of phantom UMBs</strong> whenever a program called <code>INT 21h AH=58h/AL=03h</code>
+(link upper memory blocks) — upper memory with none of the ~25 KB of conventional overhead a
+real provider like EMM386 charges. No 1994 PC was ever shaped like that. Colonization
+probed, believed the machine, and obediently took a buggy split-memory allocation path.
+The fix was emulation honesty: link-UMBs is a no-op when no UMB provider exists. The
+flip-side is real: offered upper memory, the game genuinely uses it — under that
+(then-phantom) UMB-linked layout we observed overlay staging at
+<span class="addr">DS=C804</span>, linear <span class="addr">C8040</span>,
+comfortably above the 640 KB line. And the pattern generalises: Ultima VII walks the MCB
+chain itself and got equally confused by our UMB-linked layout ("requires 561144 bytes of
+DOS memory", bug MDD-00046), fixed with the same per-application profile lever built for
+Colonization.</p>
+
+<h2>Civilization's simpler arithmetic</h2>
+
+<p>Three years earlier, Civilization's memory story is plainer — and stingier.
+<code>CIV.EXE</code> declares a 177,599-byte load image plus 60,368 bytes of MinAlloc:
+<strong>237,967 bytes, roughly 232 KB, before DOS, drivers and buffers</strong>. Its
+MaxAlloc is <span class="addr">FFFF</span>: take the whole machine, then trim — and its
+overlay manager's own vocabulary ("Unable to shrink overlay memory allocation") records the
+trimming. Code beyond the root is 23 Microsoft LINK overlays totalling 121,720 bytes, of
+which only the largest — about 10.4 KB — needs to be resident at a time (Chapter 1).</p>
+
+<p>There is no expanded or extended memory in the picture at all. The EMS driver device
+name <code>EMMXXXX0</code> appears nowhere in CIV.EXE (viceroy.exe carries it at file
+offset <span class="addr">1337A</span> — RTLink probes for an EMS page cache); there is no
+XMS install check; the single <code>CD 67</code> byte pair in the file sits inside a data
+table. Every byte of Civilization ran under 640 KB. What it does have is an overlay
+manager with opinions, shipped in the binary as a <code>$</code>-terminated string block:</p>
+
+<pre>
+; CIV.EXE, string block at file offset 29B4Fh
+Allocated 1Mb of space????
+MS-DOS lied to us about how much memory was available
+Not enough memory to load file
+Overlay has overrun allocated memory
+Unable to shrink overlay memory allocation
+Error releasing overlay memory
+</pre>
+
+<p>Someone at MPS Labs had been burned by a memory map before. Notably, CIV.EXE contains no
+"you need NNN K" message of its own — the only memory complaints it can print are the C
+runtime's <em>Not enough core</em> and the manager's paranoia above.</p>
+
+<p>Colonization, fatter in every dimension, moved the fight to the user. Its manual demands
+<strong>"at least 575,000 bytes (approx. 565 Kb) of free conventional memory"</strong> and
+adds: "We strongly recommend that you not have any Terminate-and-Stay-Resident programs
+(TSRs) other than disk caching programs (SMARTDRV, for example) loaded into memory."
+Note the unit: not megabytes of RAM — <em>free conventional bytes</em>. It is a CONFIG.SYS
+test, not a hardware test. An 8 MB machine with a sloppy CONFIG.SYS failed it; a 2 MB
+machine tuned with QEMM passed. This was the era's defining chore: MS-DOS 5's
+<code>DOS=HIGH</code> (1991) parked the kernel in the 65,520-byte High Memory Area to free
+up to 46 KB; Quarterdeck's QEMM-386 (v4.2, launched 11 November 1988) and its OPTIMIZE utility
+computed driver load orders — Jimmy Maher records tuned systems reaching ~634 KB free —
+and Microsoft answered with MemMaker in MS-DOS 6 (1993), two reboots and a SIZER.EXE pass
+to measure each TSR. A mid-range 1994 PC was a 486DX2 with 4 MB of RAM; Colonization still
+budgeted itself against the same 640 KB arena as the 1981 IBM PC, because DOS and the
+installed base had not moved.</p>
+
+<aside class="aside">
+  <span class="tag">THE PERIOD MOOD</span>
+  <p>"That owners of machines which by that point typically contained memories in the
+  multi-megabytes should have to squabble with the operating system over mere handfuls of
+  bytes was made no less vexing by being so comically absurd." — Jimmy Maher,
+  <em>The Digital Antiquarian</em>, on the 640 K barrier.</p>
+</aside>
+
+<h2>The 640 KB ledger</h2>
+
+<p>Put the dance's end state on one page and Colonization's whole memory strategy is
+legible at a glance:</p>
+
+<table class="data">
+  <caption>Colonization at steady state — 655,360 bytes, accounted for</caption>
+  <thead>
+    <tr><th>Region</th><th>Segments</th><th class="num">Bytes</th><th>Steward</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>IVT · BIOS data · DOS 5.0 · drivers</td><td><span class="addr">0000–07FF</span></td><td class="num">32,768</td><td>DOS</td></tr>
+    <tr><td>Root program block — resident code, the 1,031-thunk farm, the VM manager</td><td><span class="addr">0801–3066</span></td><td class="num">165,456</td><td>DOS's ledger</td></tr>
+    <tr><td>Middle block (retained)</td><td><span class="addr">30A8–3BF7</span></td><td class="num">46,320</td><td>DOS's ledger</td></tr>
+    <tr><td>"Free" — actually the game's arena: page pool (≥ 29,520 B, sized for the largest page payload), FAB staging, sprite buffers, S$MPSLOG sub-blocks</td><td><span class="addr">3BF8–8BC3</span></td><td class="num">326,848</td><td>the game's own allocator</td></tr>
+    <tr><td>Top block — overlay &amp; file staging, pinned under video RAM</td><td><span class="addr">8BC5–9FFF</span></td><td class="num">82,864</td><td>DOS's ledger, game-filled</td></tr>
+    <tr class="total"><td>Total conventional memory</td><td><span class="addr">0000–9FFF</span></td><td class="num">655,360</td><td></td></tr>
+  </tbody>
+</table>
+
+<p>(The remaining 1,104 bytes are MCB headers and alignment slivers between blocks.)
+Notice what is <em>not</em> on the list: the world. The entire New World — every tile,
+unit, colony, tribe and market price — needs about 24 KB (Chapter 4), a rounding error in
+this ledger. The 640 KB problem was never the simulation. It was code (Chapter 1) and art
+(Chapter 3), and the division dance is the floor those two systems stand on: a private
+arena, at a deterministic address, carved out of DOS with eight calls and a straight
+face.</p>
+
+<p class="srcline">Sources for this chapter — byte-level: viceroy.exe / opening.exe /
+closing.exe / CIV.EXE MZ headers and string sweeps (fresh 2026-07-18 analysis); runtime:
+live INT 21h traces, MCB-chain captures, MCB-base sweeps and the phantom-UMB / R6003 /
+DosMem::free war stories under <a href="/mddosem/">mddosem</a> (bug ledger MDD-00046,
+MDD-00052); context: the Colonization manual (archive.org), The Digital Antiquarian, and
+Wikipedia's QEMM / MemMaker / HMA histories — full credits in
+<a href="how.html">How We Know</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="code.html"><span class="dir">◀ previous</span>1 · Code in Flight</a>
+  <a class="next" href="art.html"><span class="dir">next ▶</span>3 · Art on Demand</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. Evidence: fresh byte-level analysis of the
+  original installs, live instrumented runs under
+  <a href="/mddosem/">mddosem</a> — a hardware-accurate PC emulator built in Rust —
+  and the community reverse-engineering record; full credits in
+  <a href="how.html">How We Know</a>. Screenshots © MicroProse, shown for technical
+  commentary. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w640-lib.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  if (!window.W640) return;
+  const W = window.W640, C = W.C, F = W.fmtInt;
+
+  /* shared tooltip */
+  function drawTip(ctx, w, h, mx, my, lines) {
+    ctx.font = W.mono(11);
+    let bw = 0;
+    for (const s of lines) bw = Math.max(bw, ctx.measureText(s).width);
+    bw += 20;
+    const bh = lines.length * 15 + 12;
+    const tx = W.clamp(mx + 14, 6, w - bw - 6);
+    const ty = W.clamp(my - bh - 12, 6, h - bh - 6);
+    ctx.save();
+    ctx.fillStyle = "rgba(24,33,54,0.97)";
+    ctx.strokeStyle = C.line;
+    W.rrect(ctx, tx, ty, bw, bh, 5);
+    ctx.fill(); ctx.stroke();
+    ctx.textAlign = "left";
+    lines.forEach((s, i) => {
+      ctx.fillStyle = i === 0 ? C.amberHi : C.ink2;
+      ctx.fillText(s, tx + 10, ty + 18 + i * 15);
+    });
+    ctx.restore();
+  }
+
+  function hatch(ctx, x, y, w, h) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    ctx.clip();
+    ctx.strokeStyle = "rgba(230,226,214,0.13)";
+    ctx.lineWidth = 1;
+    for (let i = -h; i < w; i += 7) {
+      ctx.beginPath();
+      ctx.moveTo(x + i, y + h);
+      ctx.lineTo(x + i + h, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /* ============================================================
+     FIG 1 · the division dance
+     All paragraph values measured (see fig-note); TOT = 0xA000
+     paragraphs = 655,360 B. VGA stub drawn beyond A000 for context.
+     ============================================================ */
+  const TOT = 0xA000, STUB = 0x0700, DOSEND = 0x0800, PROG0 = 0x0801;
+  const MID_S = 0x30A8, TOP_S = 0x8BC5;
+  const KCOL = { dos: "#3a4356", prog: C.amber, mid: C.series[0], top: C.series[2], sub: C.series[3] };
+
+  /* per-stage numeric params: prog end, top alpha, mid alpha, mid end */
+  const STAGES = [
+    { p: { prog: 0x3207, top: 0, mid: 0, midEnd: 0x8BC4 }, hi: 0,
+      log: '<span class="t">EXEC</span> DOS builds the PSP at 0801, loads the 123,073-byte image, grants MaxAlloc — program block 172,128 B; everything above is free' },
+    { p: { prog: 0x3207, top: 0, mid: 0, midEnd: 0x8BC4 }, hi: 1,
+      log: '<span class="t">AH=4Ah BX=FFFF</span> resize to 65,535 paragraphs — refused, as planned. DOS returns BX=97BE: the block could grow to 621,536 bytes' },
+    { p: { prog: 0x3066, top: 0, mid: 0, midEnd: 0x8BC4 }, hi: 0,
+      log: '<span class="t">AH=4Ah BX=2865</span> program block shrunk to 10,341 paragraphs — 165,456 bytes of resident code, nothing spare' },
+    { p: { prog: 0x8B83, top: 0, mid: 0, midEnd: 0x8BC4 }, hi: 0,
+      log: '<span class="t">AH=4Ah BX=8382</span> the block GROWS to 538,656 bytes — probe result minus 143Bh minus one. A wall, leaving one hole at the top' },
+    { p: { prog: 0x8B83, top: 1, mid: 0, midEnd: 0x8BC4 }, hi: 0,
+      log: '<span class="t">AH=48h BX=143B</span> allocate 5,179 paragraphs — the only room left is the hole: 82,864 bytes at 8BC5–9FFF, pinned under video RAM' },
+    { p: { prog: 0x3066, top: 1, mid: 0, midEnd: 0x8BC4 }, hi: 0,
+      log: '<span class="t">AH=4Ah BX=2865</span> shrink back to 165,456 bytes — the middle of the map falls free again' },
+    { p: { prog: 0x3066, top: 1, mid: 0, midEnd: 0x8BC4 }, hi: 2,
+      log: '<span class="t">AH=48h BX=FFFF</span> allocate everything — refused, as planned: largest free block 23,324 paragraphs (373,184 bytes)' },
+    { p: { prog: 0x3066, top: 1, mid: 1, midEnd: 0x8BC4 }, hi: 0,
+      log: '<span class="t">AH=48h BX=5B2A</span> claim the middle zone — DOS returns segment 30A8' },
+    { p: { prog: 0x3066, top: 1, mid: 1, midEnd: 0x3BF7 }, hi: 0,
+      log: '<span class="t">AH=4Ah BX=0B4F</span> middle block cut to 46,320 B — end state: three blocks on DOS’s books, ≈319 KB “free” that isn’t' },
+  ];
+  const SUBS = [ /* schematic sub-blocks in the freed tail (game view) */
+    { paras: 1845, label: "pool", tip: ["page pool (schematic position)", "≥ 29,520 B — sized for the largest RTLink", "page payload; grows with free memory (Ch. 1)"] },
+    { paras: 5453, label: "S$MPSLOG", tip: ["S$MPSLOG · 87,248 B", "sub-MCB live-captured at 2F79:0000:", "'M', owner 0842, size 154D paras —", "the MPSLOGO decompression buffer", "(cinematic-era capture; position schematic)"] },
+    { paras: 5172, label: "FAB", tip: ["FAB staging pair (schematic position)", "compressed source + destination,", "always 18,752 B apart — see next figure"] },
+    { paras: 7958, label: "heap…", tip: ["further game sub-allocations", "layout varies scene to scene (schematic)"] },
+  ];
+
+  const dv = { cur: 8, from: 8, stageStart: null, view: "dos", hover: null, regions: [] };
+  const TWEEN = 0.7, HOLD = 1.25;
+  const dlog = document.getElementById("dance-log");
+  const dPlayBtn = document.getElementById("dance-play");
+
+  function setDanceLog() {
+    if (dv.view === "game" && dv.cur === 8) {
+      dlog.innerHTML = '<span class="t">the game’s ledger</span> the same bytes, the game’s view — its own allocator runs sub-MCBs it forged itself (S$MPSLOG live-captured at 2F79:0000)';
+    } else {
+      dlog.innerHTML = STAGES[dv.cur].log;
+    }
+  }
+
+  function lerpP(a, b, t) {
+    return {
+      prog: W.lerp(a.prog, b.prog, t),
+      top: W.lerp(a.top, b.top, t),
+      mid: W.lerp(a.mid, b.mid, t),
+      midEnd: W.lerp(a.midEnd, b.midEnd, t),
+    };
+  }
+
+  function progTip(bytes) {
+    if (Math.abs(bytes - 172128) < 200) return ["program block · 172,128 B", "the fixed 172,113-byte ask — PSP (256) +", "image (123,073) + MaxAlloc (48,784) —", "rounded up to 10,758 paragraphs"];
+    if (Math.abs(bytes - 165456) < 200) return ["program block · 165,456 B", "10,341 paragraphs — the resident root:", "code, 1,031 thunks, VM manager (Ch. 1)"];
+    if (Math.abs(bytes - 538656) < 200) return ["program block · 538,656 B", "grown to probe − 143Bh − 1 paragraphs —", "a deliberate wall with one hole at the top"];
+    return ["program block · ≈" + F(bytes) + " B", "(resizing…)"];
+  }
+  function midTip(bytes) {
+    if (Math.abs(bytes - 373184) < 200) return ["middle zone · 373,184 B", "23,324 paragraphs claimed at 30A8"];
+    if (Math.abs(bytes - 46320) < 200) return ["middle block · 46,320 B", "2,895 paragraphs kept on DOS’s books"];
+    return ["middle block · ≈" + F(bytes) + " B", "(resizing…)"];
+  }
+
+  const dfig = W.makeFig("dance", function (ctx, w, h, fg) {
+    /* stage engine (runs only while playing) */
+    if (fg.playing) {
+      if (dv.stageStart === null) dv.stageStart = fg.t;
+      const el = fg.t - dv.stageStart;
+      if (el > TWEEN + HOLD) {
+        if (dv.cur >= 8) {
+          fg.stop();
+          dPlayBtn.textContent = "▶ replay";
+        } else {
+          dv.from = dv.cur;
+          dv.cur++;
+          dv.stageStart = fg.t;
+          setDanceLog();
+        }
+      }
+    }
+    const el2 = dv.stageStart === null ? 1 : (fg.t - dv.stageStart);
+    const t = fg.playing ? W.ease(W.clamp(el2 / TWEEN, 0, 1)) : 1;
+    const P = lerpP(STAGES[dv.from].p, STAGES[dv.cur].p, t);
+    const hi = STAGES[dv.cur].hi;
+
+    const L = 14, R = 14, span = TOT + STUB;
+    const X = (para) => L + (para / span) * (w - L - R);
+    const barY = Math.round(h * 0.30);
+    const barH = Math.min(64, Math.max(34, h * 0.24));
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, w, h);
+    dv.regions = [];
+
+    /* free base: hatch across the whole arena above DOS */
+    ctx.fillStyle = C.surface2;
+    ctx.fillRect(X(DOSEND), barY, X(TOT) - X(DOSEND), barH);
+    hatch(ctx, X(DOSEND), barY, X(TOT) - X(DOSEND), barH);
+
+    /* VGA stub */
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = C.danger;
+    W.rrect(ctx, X(TOT) + 1, barY, X(TOT + STUB) - X(TOT) - 2, barH, 3);
+    ctx.fill();
+    ctx.restore();
+    dv.regions.push({ x0: X(TOT), x1: X(TOT + STUB), lines: ["A000:0000 — video RAM", "the 640 KB arena ends here; the top", "block is pinned against this line"] });
+
+    /* blocks */
+    const blocks = [{ s: 0, e: DOSEND, k: "dos", a: 1 }, { s: PROG0, e: P.prog, k: "prog", a: 1 }];
+    if (P.mid > 0.02) blocks.push({ s: MID_S, e: P.midEnd, k: "mid", a: P.mid });
+    if (P.top > 0.02) blocks.push({ s: TOP_S, e: TOT, k: "top", a: P.top });
+    for (const b of blocks) {
+      const x0 = X(b.s), x1 = X(b.e);
+      ctx.save();
+      ctx.globalAlpha = b.a;
+      ctx.fillStyle = KCOL[b.k];
+      W.rrect(ctx, x0 + 1, barY, Math.max(1, x1 - x0 - 2), barH, 3);
+      ctx.fill();
+      ctx.restore();
+      /* size text inside wide blocks */
+      const bw = x1 - x0;
+      if (bw > 112 && barH >= 30 && b.a > 0.6) {
+        const bytes = (b.e - b.s) * 16;
+        ctx.fillStyle = b.k === "prog" ? "#14100a" : (b.k === "dos" ? C.ink2 : "#0d1420");
+        ctx.font = W.mono(11, true);
+        ctx.textAlign = "center";
+        ctx.fillText(F(bytes) + " B", (x0 + x1) / 2, barY + barH / 2 + 4);
+      }
+      /* MCB tick at block start */
+      if (b.k !== "dos" && b.a > 0.6) {
+        ctx.strokeStyle = C.amberHi;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(X(b.s - 1), barY - 4);
+        ctx.lineTo(X(b.s - 1), barY + barH + 4);
+        ctx.stroke();
+      }
+      /* hover region */
+      let lines;
+      const bytes = Math.round((b.e - b.s) * 16);
+      if (b.k === "dos") lines = ["DOS + drivers · 0000–07FF", "32,768 B below the first MCB: IVT, BIOS", "data, DOS 5.0, drivers — a typical 1994", "driver load (emulated MCB base 0800)"];
+      else if (b.k === "prog") lines = progTip(bytes);
+      else if (b.k === "mid") lines = midTip(bytes);
+      else lines = ["top block · 82,864 B", "5,179 paragraphs at 8BC5–9FFF —", "overlay & file staging, pinned under A000"];
+      dv.regions.push({ x0: x0, x1: x1, lines: lines });
+    }
+
+    /* free-gap hover regions (complement of solid blocks) */
+    const solid = blocks.filter((b) => b.a > 0.5).sort((a, b) => a.s - b.s);
+    let cursor = DOSEND;
+    const gaps = [];
+    for (const b of solid) {
+      if (b.s > cursor + 8) gaps.push([cursor, b.s]);
+      cursor = Math.max(cursor, b.e);
+    }
+    if (cursor < TOT - 8) gaps.push([cursor, TOT]);
+    for (const g of gaps) {
+      const bytes = Math.round((g[1] - g[0]) * 16);
+      const isTail = dv.cur === 8 && Math.abs(g[0] - 0x3BF7) < 0x80;
+      const lines = isTail
+        ? ["“free” · 326,848 B", "DOS’s ledger says free; the game’s", "allocator disagrees — toggle the view"]
+        : ["free (DOS’s ledger) · ≈" + F(bytes) + " B"];
+      dv.regions.push({ x0: X(g[0]), x1: X(g[1]), lines: lines });
+    }
+
+    /* game-ledger overlay (end state only) */
+    if (dv.view === "game" && dv.cur === 8 && t === 1) {
+      /* arena outline: middle block + freed tail */
+      const ax0 = X(MID_S), ax1 = X(0x8BC4);
+      ctx.save();
+      ctx.strokeStyle = C.amber;
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1.4;
+      W.rrect(ctx, ax0 - 2, barY - 8, ax1 - ax0 + 4, barH + 16, 5);
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = C.amber;
+      ctx.font = W.dos(15);
+      ctx.textAlign = "left";
+      ctx.fillText("the game’s arena — its own allocator", ax0 + 2, barY - 14);
+      /* schematic sub-blocks in the freed tail */
+      let sp = 0x3BF7 + 1;
+      for (const sb of SUBS) {
+        const x0 = X(sp), x1 = X(sp + sb.paras);
+        ctx.save();
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = KCOL.sub;
+        W.rrect(ctx, x0 + 1, barY + 3, Math.max(1, x1 - x0 - 2), barH - 6, 3);
+        ctx.fill();
+        ctx.restore();
+        /* forged sub-MCB tick */
+        ctx.strokeStyle = C.danger;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x0, barY + 1);
+        ctx.lineTo(x0, barY + barH - 1);
+        ctx.stroke();
+        if (x1 - x0 > 44) {
+          ctx.fillStyle = "#0d1420";
+          ctx.font = W.mono(10, true);
+          ctx.textAlign = "center";
+          ctx.fillText(sb.label, (x0 + x1) / 2, barY + barH / 2 + 3);
+        }
+        dv.regions.push({ x0: x0, x1: x1, lines: sb.tip });
+        sp += sb.paras;
+      }
+    }
+
+    /* probe highlight */
+    if (hi) {
+      const h0 = hi === 1 ? P.prog : 0x3066, h1 = hi === 1 ? TOT : TOP_S;
+      const pulse = W.reducedMotion ? 0.9 : 0.5 + 0.4 * Math.sin(fg.t * 5);
+      ctx.save();
+      ctx.globalAlpha = pulse;
+      ctx.strokeStyle = C.amberHi;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      W.rrect(ctx, X(h0) + 1, barY - 5, X(h1) - X(h0) - 2, barH + 10, 4);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* labels under segments */
+    ctx.font = W.mono(10.5);
+    ctx.fillStyle = C.muted;
+    ctx.textAlign = "center";
+    const lab = (s, e, text) => {
+      if (X(e) - X(s) > 58) ctx.fillText(text, (X(s) + X(e)) / 2, barY + barH + 17);
+    };
+    lab(0, DOSEND, "DOS");
+    lab(PROG0, P.prog, "root program");
+    if (P.mid > 0.5) lab(MID_S, P.midEnd, "middle");
+    if (P.top > 0.5) lab(TOP_S, TOT, "staging");
+    for (const g of gaps) lab(g[0], g[1], dv.cur === 8 ? "“free”" : "free");
+    lab(TOT, TOT + STUB, "VGA");
+
+    /* ruler */
+    ctx.strokeStyle = C.line2;
+    ctx.lineWidth = 1;
+    const RL = ["0", "128K", "256K", "384K", "512K", "640K = A000:0000"];
+    for (let k = 0; k <= 5; k++) {
+      const x = X(k * 0x2000);
+      ctx.beginPath();
+      ctx.moveTo(x, barY - 10);
+      ctx.lineTo(x, h - 26);
+      ctx.stroke();
+      ctx.fillStyle = k === 5 ? C.ink2 : C.muted;
+      ctx.font = W.mono(10);
+      ctx.textAlign = k === 5 ? "right" : (k === 0 ? "left" : "center");
+      ctx.fillText(RL[k], k === 5 ? x + 2 : x, h - 10);
+    }
+
+    /* tooltip */
+    if (dv.hover && dv.hover.y > barY - 22 && dv.hover.y < barY + barH + 24) {
+      for (const r of dv.regions) {
+        if (dv.hover.x >= r.x0 && dv.hover.x <= r.x1) {
+          drawTip(ctx, w, h, dv.hover.x, dv.hover.y, r.lines);
+          break;
+        }
+      }
+    }
+  });
+
+  W.onHover(dfig.canvas, (x, y) => {
+    dv.hover = x == null ? null : { x: x, y: y };
+    if (!dfig.playing) dfig.redraw();
+  });
+
+  const dSegBox = document.getElementById("dance-view");
+  function setView(v) {
+    dv.view = v;
+    dSegBox.querySelectorAll("button").forEach((b) =>
+      b.setAttribute("aria-pressed", b.dataset.v === v ? "true" : "false"));
+  }
+  W.bindSeg("dance-view", (v) => {
+    dv.view = v;
+    if (v === "game") {
+      dfig.stop();
+      dPlayBtn.textContent = "▶ play";
+      dv.cur = 8; dv.from = 8; dv.stageStart = null;
+    }
+    setDanceLog();
+    dfig.redraw();
+  });
+
+  dPlayBtn.addEventListener("click", () => {
+    if (dfig.playing) {
+      dfig.stop();
+      dPlayBtn.textContent = "▶ play";
+      return;
+    }
+    setView("dos");
+    if (dv.cur >= 8) { dv.cur = 0; dv.from = 0; }
+    dv.stageStart = null;
+    setDanceLog();
+    dPlayBtn.textContent = "❘❘ pause";
+    dfig.start();
+  });
+  document.getElementById("dance-step").addEventListener("click", () => {
+    dfig.stop();
+    dPlayBtn.textContent = "▶ play";
+    setView("dos");
+    dv.from = dv.cur;
+    dv.cur = (dv.cur + 1) % 9;
+    dv.stageStart = null;
+    setDanceLog();
+    dfig.redraw();
+  });
+  document.getElementById("dance-reset").addEventListener("click", () => {
+    dfig.stop();
+    dPlayBtn.textContent = "▶ play";
+    setView("dos");
+    dv.cur = 0; dv.from = 0; dv.stageStart = null;
+    setDanceLog();
+    dfig.redraw();
+  });
+  if (W.reducedMotion) dPlayBtn.style.display = "none";
+  setDanceLog();
+
+  /* ============================================================
+     FIG 2 · FAB decompression in place — the 18,752-byte gap
+     Measured: gap 18,752 B; source 45,855 B at dest+18,752;
+     output target 64,000 B; collision at write 27,400 = read 8,648.
+     ============================================================ */
+  const GAP = 18752, SRC = 45855, DST = 64000, COLW = 27400, COLR = 8648;
+  const PH1 = 3.0, PH2 = 2.4, TEND = PH1 + PH2;
+  const ov = { T: TEND, Tbase: 0, playStart: null, hover: null, regions: [] };
+  const olog = document.getElementById("overlap-log");
+  const oPlayBtn = document.getElementById("overlap-play");
+
+  function ovLog(T, Wp, Rp) {
+    if (T <= 0.02) {
+      olog.innerHTML = '<span class="t">call</span> FAB_decompress(dest_check, dest, src) — RETF 12, three far pointers, no length parameter; termination is an in-stream marker (root offset 0466h)';
+    } else if (T < PH1 - 0.05) {
+      olog.innerHTML = '<span class="t">running</span> reading src+' + F(Rp) + " → writing dest+" + F(Wp);
+    } else if (T < PH1 + 0.4) {
+      olog.innerHTML = '<span class="t">⚠ collision</span> dest+27,400 = src+8,648 — the writer has caught the reader; input is overwritten before it is read';
+    } else {
+      olog.innerHTML = '<span class="t">aftermath</span> output corrupt from byte 27,400; with no length check the copier runs ≈384 KB past the buffer — “run-time error R6003” (IDIV: AB0CF745h ÷ 4,033 = 711,567 &gt; 32,767)';
+    }
+  }
+
+  const ofig = W.makeFig("overlap", function (ctx, w, h, fg) {
+    if (fg.playing) {
+      if (ov.playStart === null) ov.playStart = fg.t;
+      ov.T = ov.Tbase + (fg.t - ov.playStart);
+      if (ov.T >= TEND) {
+        ov.T = TEND;
+        fg.stop();
+        oPlayBtn.textContent = "▶ replay";
+      }
+    }
+    const T = ov.T;
+    const q1 = W.clamp(T / PH1, 0, 1);
+    const q2 = W.clamp((T - PH1) / PH2, 0, 1);
+    const Wp = Math.round(q2 > 0 ? COLW + (DST - COLW) * q2 : COLW * q1);
+    const Rp = Math.round(q2 > 0 ? Math.min(SRC, COLR + (SRC - COLR) * q2 * 1.15) : COLR * q1);
+    ovLog(T, Wp, Rp);
+
+    const L = 16, R = 16, MIN = -1500, MAX = 80500;
+    const X = (b) => L + ((b - MIN) / (MAX - MIN)) * (w - L - R);
+    const stripY = Math.round(h * 0.34);
+    const stripH = Math.min(46, Math.max(26, h * 0.17));
+    const srcY = stripY + stripH + 20;
+    const srcH = Math.max(13, stripH * 0.45);
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, w, h);
+    ov.regions = [];
+
+    /* byte-scale ticks */
+    ctx.font = W.mono(10);
+    ctx.textAlign = "center";
+    for (let b = 0; b <= 64000; b += 16000) {
+      ctx.strokeStyle = C.line2;
+      ctx.beginPath();
+      ctx.moveTo(X(b), stripY - 6);
+      ctx.lineTo(X(b), srcY + srcH + 6);
+      ctx.stroke();
+      ctx.fillStyle = C.muted;
+      ctx.fillText(F(b), X(b), stripY - 12);
+    }
+
+    /* destination buffer outline */
+    ctx.fillStyle = C.surface3;
+    W.rrect(ctx, X(0), stripY, X(DST) - X(0), stripH, 3);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.stroke();
+    /* written output */
+    if (Wp > 0) {
+      ctx.fillStyle = C.amber;
+      W.rrect(ctx, X(0) + 1, stripY + 1, Math.max(1, X(Math.min(Wp, DST)) - X(0) - 2), stripH - 2, 3);
+      ctx.fill();
+    }
+    /* corrupt overlay */
+    if (Wp > COLW) {
+      ctx.save();
+      ctx.globalAlpha = 0.85;
+      ctx.fillStyle = C.danger;
+      W.rrect(ctx, X(COLW), stripY + 1, Math.max(1, X(Math.min(Wp, DST)) - X(COLW) - 1), stripH - 2, 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ov.regions.push({ x0: X(0), x1: X(DST), y0: stripY, y1: stripY + stripH, lines: ["destination · 64,000 B target", "one Mode 13h frame (OPENMENU.PIK,", "45,855 B compressed → 64,000 B)"] });
+    if (Wp > COLW) ov.regions.push({ x0: X(COLW), x1: X(Math.min(Wp, DST)), y0: stripY - 4, y1: stripY + stripH + 4, lines: ["corrupt output — from byte 27,400", "first divergent byte, measured (DI=27,400)"] });
+
+    /* source band */
+    ctx.fillStyle = C.surface3;
+    W.rrect(ctx, X(GAP), srcY, X(GAP + SRC) - X(GAP), srcH, 3);
+    ctx.fill();
+    ctx.strokeStyle = C.series[0];
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.save();
+    ctx.globalAlpha = 0.85;
+    ctx.fillStyle = C.series[0];
+    W.rrect(ctx, X(GAP) + 1, srcY + 1, Math.max(1, X(GAP + Rp) - X(GAP) - 2), srcH - 2, 3), ctx.fill();
+    ctx.restore();
+    ov.regions.push({ x0: X(GAP), x1: X(GAP + SRC), y0: srcY, y1: srcY + srcH, lines: ["compressed source · 45,855 B", "placed at dest+18,752 — the constant —", "so the source ends at dest+64,607"] });
+
+    /* the constant gap dimension */
+    const gy = srcY + srcH + 14;
+    ctx.strokeStyle = C.ink2;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(X(0), gy); ctx.lineTo(X(GAP), gy);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(X(0), gy - 4); ctx.lineTo(X(0), gy + 4);
+    ctx.moveTo(X(GAP), gy - 4); ctx.lineTo(X(GAP), gy + 4);
+    ctx.stroke();
+    ctx.fillStyle = C.ink2;
+    ctx.font = W.mono(10, true);
+    ctx.textAlign = "center";
+    ctx.fillText("18,752 B — the constant", (X(0) + X(GAP)) / 2, gy + 14);
+    ov.regions.push({ x0: X(0), x1: X(GAP), y0: gy - 8, y1: gy + 18, lines: ["the 18,752-byte gap", "0x494 paragraphs — identical at every", "MCB base tested (0600/0700/07D1/0800)"] });
+
+    /* labels */
+    ctx.textAlign = "left";
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10.5);
+    ctx.fillText("write → output frame", X(0), stripY + stripH + 13);
+    ctx.fillText("read → compressed stream", X(GAP), srcY - 6);
+
+    /* pointers */
+    const wx = X(Math.min(Wp, DST));
+    ctx.fillStyle = Wp > COLW ? C.danger : C.amber;
+    ctx.beginPath();
+    ctx.moveTo(wx, stripY - 3);
+    ctx.lineTo(wx - 5, stripY - 10);
+    ctx.lineTo(wx + 5, stripY - 10);
+    ctx.closePath(); ctx.fill();
+    const rx = X(GAP + Rp);
+    ctx.fillStyle = C.series[0];
+    ctx.beginPath();
+    ctx.moveTo(rx, srcY + srcH + 3);
+    ctx.lineTo(rx - 5, srcY + srcH + 10);
+    ctx.lineTo(rx + 5, srcY + srcH + 10);
+    ctx.closePath(); ctx.fill();
+
+    /* collision marker */
+    if (T >= PH1 - 0.02) {
+      ctx.strokeStyle = C.danger;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(X(COLW), stripY - 8);
+      ctx.lineTo(X(COLW), srcY + srcH + 8);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = C.danger;
+      ctx.font = W.mono(10, true);
+      ctx.textAlign = "center";
+      ctx.fillText("dest+27,400 = src+8,648", X(COLW), srcY + srcH + 30);
+    }
+
+    /* overrun arrow + casualties */
+    if (q2 > 0.15) {
+      const ax0 = X(DST) + 4, ax1 = W.lerp(ax0, w - 10, W.clamp((q2 - 0.15) / 0.85, 0, 1));
+      ctx.save();
+      ctx.strokeStyle = C.danger;
+      ctx.setLineDash([6, 4]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(ax0, stripY + stripH / 2);
+      ctx.lineTo(ax1, stripY + stripH / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      W.drawArrow(ctx, ax1 - 6, stripY + stripH / 2, ax1 + 2, stripY + stripH / 2, C.danger);
+      ctx.restore();
+      ctx.fillStyle = C.danger;
+      ctx.font = W.mono(10, true);
+      ctx.textAlign = "right";
+      ctx.fillText("≈384 KB overrun →", w - 10, stripY - 8);
+      if (q2 > 0.55) {
+        ctx.textAlign = "left";
+        ctx.fillStyle = C.ink2;
+        ctx.font = W.mono(10);
+        ctx.fillText("† timer ISR @ 105FAh: 50→ED", ax0 + 8, srcY + 4);
+        if (q2 > 0.8) ctx.fillText("† its own code 16E2:054A → CC", ax0 + 8, srcY + 18);
+      }
+      ov.regions.push({ x0: ax0, x1: w - 8, y0: stripY - 16, y1: srcY + 22, lines: ["the overrun — ≈384 KB", "no length check; the copier ran on until", "the R6003 IDIV overflow (marker positions", "schematic; addresses measured)"] });
+    }
+
+    /* tooltip */
+    if (ov.hover) {
+      for (const r of ov.regions) {
+        if (ov.hover.x >= r.x0 && ov.hover.x <= r.x1 && ov.hover.y >= r.y0 && ov.hover.y <= r.y1) {
+          drawTip(ctx, w, h, ov.hover.x, ov.hover.y, r.lines);
+          break;
+        }
+      }
+    }
+  });
+
+  W.onHover(ofig.canvas, (x, y) => {
+    ov.hover = x == null ? null : { x: x, y: y };
+    if (!ofig.playing) ofig.redraw();
+  });
+
+  oPlayBtn.addEventListener("click", () => {
+    if (ofig.playing) {
+      ofig.stop();
+      ov.Tbase = ov.T;
+      ov.playStart = null;
+      oPlayBtn.textContent = "▶ play";
+      return;
+    }
+    if (ov.T >= TEND) { ov.Tbase = 0; ov.T = 0; } else ov.Tbase = ov.T;
+    ov.playStart = null;
+    oPlayBtn.textContent = "❘❘ pause";
+    ofig.start();
+  });
+  document.getElementById("overlap-step").addEventListener("click", () => {
+    ofig.stop();
+    oPlayBtn.textContent = "▶ play";
+    ov.playStart = null;
+    /* cycle: start → collision → aftermath */
+    ov.T = ov.T <= 0.02 ? PH1 : (ov.T < TEND ? TEND : 0);
+    ov.Tbase = ov.T;
+    ofig.redraw();
+  });
+  if (W.reducedMotion) oPlayBtn.style.display = "none";
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
