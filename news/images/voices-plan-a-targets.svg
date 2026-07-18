@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Selected M&amp;S sustainability targets missed in 2025/26</title>
+  <desc id="desc">Horizontal progress bars show actual performance against target for soy, responsible home cotton, recycled polyester, man-made cellulosic fibres, recyclable food packaging, recyclable fashion packaging and healthier food sales. A separate callout shows food waste is only 5 per cent below baseline against a 50 per cent 2030 target.</desc>
+  <rect width="1200" height="675" fill="#f7f4ed"/>
+  <rect x="0" y="0" width="1200" height="14" fill="#b80000"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#171717">
+    <text x="72" y="75" font-size="18" font-weight="700" letter-spacing="2" fill="#b80000">THE UNFINISHED LIST</text>
+    <text x="72" y="119" font-family="Georgia, 'Times New Roman', serif" font-size="36" font-weight="700">Seven targets the report says are not there yet</text>
+    <text x="72" y="151" font-size="17" fill="#555">Actual performance as a share of the stated target · 2025/26</text>
+    <g font-size="15">
+      <text x="72" y="210" font-weight="700">Deforestation-free soy</text>
+      <rect x="370" y="188" width="520" height="25" rx="3" fill="#ddd8ce"/><rect x="370" y="188" width="463" height="25" rx="3" fill="#b80000"/>
+      <text x="910" y="208" font-weight="700">89 / 100%</text>
+      <text x="72" y="260" font-weight="700">Responsible cotton · Home</text>
+      <rect x="370" y="238" width="520" height="25" rx="3" fill="#ddd8ce"/><rect x="370" y="238" width="478" height="25" rx="3" fill="#b80000"/>
+      <text x="910" y="258" font-weight="700">92 / 100%</text>
+      <text x="72" y="310" font-weight="700">Verified recycled polyester</text>
+      <rect x="370" y="288" width="520" height="25" rx="3" fill="#ddd8ce"/><rect x="370" y="288" width="489" height="25" rx="3" fill="#b80000"/>
+      <text x="910" y="308" font-weight="700">94 / 100%</text>
+      <text x="72" y="360" font-weight="700">Responsible MMCF</text>
+      <rect x="370" y="338" width="520" height="25" rx="3" fill="#ddd8ce"/><rect x="370" y="338" width="447" height="25" rx="3" fill="#b80000"/>
+      <text x="910" y="358" font-weight="700">86 / 100%</text>
+      <text x="72" y="410" font-weight="700">Recyclable food plastic</text>
+      <rect x="370" y="388" width="520" height="25" rx="3" fill="#ddd8ce"/><rect x="370" y="388" width="473" height="25" rx="3" fill="#b80000"/>
+      <text x="910" y="408" font-weight="700">91 / 100%</text>
+      <text x="72" y="460" font-weight="700">Recyclable fashion plastic</text>
+      <rect x="370" y="438" width="520" height="25" rx="3" fill="#ddd8ce"/><rect x="370" y="438" width="432" height="25" rx="3" fill="#b80000"/>
+      <text x="910" y="458" font-weight="700">83 / 100%</text>
+      <text x="72" y="510" font-weight="700">Healthier food sales</text>
+      <rect x="370" y="488" width="520" height="25" rx="3" fill="#ddd8ce"/><rect x="370" y="488" width="505" height="25" rx="3" fill="#b80000"/>
+      <text x="910" y="508" font-weight="700">68 / 70%</text>
+    </g>
+    <rect x="72" y="545" width="1056" height="75" rx="5" fill="#171717"/>
+    <text x="95" y="574" font-size="16" font-weight="700" fill="#fff">THE STEEPEST CLIMB</text>
+    <text x="95" y="602" font-size="19" fill="#fff">Food waste is 5% below baseline; the 2029/30 target is 50%.</text>
+    <text x="1102" y="588" text-anchor="end" font-size="32" font-weight="700" fill="#ffcf57">17,217 tonnes</text>
+    <text x="72" y="650" font-size="13" fill="#666">Balance: the report also records targets achieved, including zero operational waste to landfill, Fairtrade tea and coffee, and fashion cotton.</text>
+    <text x="1128" y="667" text-anchor="end" font-size="13" fill="#666">Source: M&amp;S ESG Report 2026, pp. 40–44</text>
+  </g>
+</svg>
