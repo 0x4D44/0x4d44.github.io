@@ -18547,3 +18547,123 @@ window.NEWS_ARTICLES = [
     });
   });
 })();
+
+// ============================================================
+// SERIES: THE BUS DESK — FIFTY REPORTS FROM THE ROAD
+// ------------------------------------------------------------
+// A complete transport section: five books, ten reports each, with a mildly
+// unreasonable concentration on tyres, engines and cooling systems.
+// ============================================================
+(function () {
+  var busBooks = [
+    ["The Tyre Situation", [
+      ["The Tread That Knew Too Much", "A city bus tyre develops an opinion about road surfaces", "the tyre has identified seven grades of municipal asphalt", "it refuses to discuss potholes without a representative"],
+      ["Pressure Group", "Operators discover that tyre pressure is also a political position", "one fleet inflated by feel and another by committee", "both sides claim the road is listening"],
+      ["Retreads Return to the Scene", "Refurbished tyres are welcomed back into service with a small civic ceremony", "a ribbon, four bolts and a suspiciously familiar tread pattern", "the tyre insists it has changed"],
+      ["The Dual-Wheel Debate", "Two rear tyres spend six months disagreeing about who is carrying the axle", "a mediator, a torque wrench and one exhausted wheel nut", "the bus has recommended separate seating"],
+      ["Puncture Declares Itself a Weather Event", "A slow leak is upgraded after refusing to take responsibility", "a pressure gauge, a drizzle and an insurance form", "the inner tube has been placed under observation"],
+      ["Wheel Alignment Summit Ends Without a Straight Line", "Four corners of a bus meet to discuss their differences", "toe-in, camber and an axle that arrived from another department", "the vehicle left pointing slightly towards policy"],
+      ["Tyre Noise Wins the Quiet Carriage", "Passengers mistake tread harmonics for an announcement", "a low hum, a high whine and one beautifully resonant drain cover", "the driver has been asked to turn the volume down"],
+      ["Wet Grip Measured in Applause", "A test track replaces friction instruments with a seated audience", "rain, cones and 312 people clapping when the bus stops", "engineers call the result encouragingly damp"],
+      ["The Spare Wheel Has Been Promoted", "A reserve tyre is given a desk, a title and no immediate duties", "a velvet cover and a calendar of meetings", "the spare says it is ready whenever the main wheels are"],
+      ["Inspection Finds Tyre Full of Character", "A routine check becomes a personality assessment", "tread depth, sidewall scars and a strong preference for roundabouts", "the inspector has passed the tyre with reservations"]
+    ]],
+    ["Under the Bonnet", [
+      ["Cold Start, Warm Reception", "A bus engine receives applause for starting on the first attempt", "frost, glow plugs and a conductor who brought a bouquet", "the engine would prefer not to make a habit of it"],
+      ["Diesel Engine Requests a More Nuanced Reputation", "A veteran power unit asks the public to distinguish between noise and character", "smoke, torque and an interview conducted beside the sump", "it denies ever being ‘agricultural’"],
+      ["Turbocharger Found Living Above Its Means", "A turbo is asked to explain its lifestyle and several sudden noises", "boost pressure, hot bearings and a holiday it cannot account for", "the compressor has retained counsel"],
+      ["Idle Speed Becomes a Philosophy", "A bus spends an afternoon considering whether motion is necessary", "a steady tickover and passengers who have stopped asking when it will leave", "the gearbox believes in action"],
+      ["Gearbox Offers Six Opinions at Once", "An automatic transmission develops a distinct view of every hill", "first, second, third and a neutral position nobody can find", "the driver has requested a quieter debate"],
+      ["Oil Change Treated as a Spa Day", "A fleet of engines is given fresh oil, towels and a little privacy", "filters, drain pans and a mechanic saying ‘you carry tension here’", "the sump emerged glossy but unrepentant"],
+      ["Exhaust Note Wins Local Arts Prize", "A bus engine’s rattle is recognised as an experimental composition", "cylinder timing, loose heat shields and a standing ovation at the terminus", "the judge called it brave, though not pleasant"],
+      ["Hybrid Bus Has Both Opinions", "A hybrid powertrain alternates between efficiency and theatrical silence", "a motor, an engine and a battery refusing to be introduced properly", "the passenger information system has declared a coalition"],
+      ["Electric Motor Misses the Noise", "A silent bus engine hires a brass section for emotional support", "induction, torque and a tuba mounted near the rear axle", "the tuba is consuming more electricity than the motor"],
+      ["Engine Sound Recorded for Posterity", "A depot archives every cough, clatter and dignified hum", "a microphone, a waveform and one mechanic who can identify a bearing by mood", "the archive has run out of shelves"]
+    ]],
+    ["Keeping Cool", [
+      ["Radiator Announces It Is an Organ", "A cooling system demands the respect usually reserved for a cathedral", "tubes, fins and a fan conducting coolant like a grand choir", "the bus has been asked to stop overheating during the sermon"],
+      ["Fan Clutch Engages at Socially Awkward Moment", "A cooling fan starts loudly whenever the conversation becomes personal", "temperature, viscous coupling and a silent upper deck", "the fan says it only does this under pressure"],
+      ["Thermostat Refuses to Open Until It Is Ready", "A small valve adopts a boundary policy and sticks to it", "wax, spring force and a queue of increasingly warm passengers", "the coolant has lodged an appeal"],
+      ["Coolant Leak Leaves a Helpful Trail", "A bus marks its route with green drops and calls it navigation", "a hose clamp, a puddle and three mechanics following the evidence", "the map is accurate but not approved for public use"],
+      ["Heater Turns Winter Route into Tropical Service", "Passengers remove coats as the engine discovers its purpose", "a matrix, a valve and a driver who has opened every window", "the bus is now warm enough to grow a fern"],
+      ["Heatwave Prompts Emergency Ice for Radiators", "The depot orders a lorry of ice and immediately regrets the invoice", "frozen blocks, fan belts and a melting procurement strategy", "the coolant remains professionally unconvinced"],
+      ["Winter Cooling System Feels Unappreciated", "A radiator spends three months being useful in theory", "frost, shutters and an engine that thinks cold is a personal insult", "the thermostat has taken up knitting"],
+      ["Air Conditioning Requests More Engine", "The cabin wants to be cool but the engine wants to climb the hill", "compressors, belts and a negotiation at the traffic lights", "the passengers voted for shade"],
+      ["Overheating Bus Reaches Philosophical Boil", "A temperature gauge climbs past red and begins asking questions", "steam, a roadside pause and the nature of responsibility", "the driver has answered with a bonnet"],
+      ["Cooling Committee Adds a Subcommittee", "The radiator, fan, pump and thermostat divide the work still further", "minutes, terms of reference and a hose waiting for a decision", "the bus cooled down while the meeting continued"]
+    ]],
+    ["Life on the Route", [
+      ["Depot Wakes the Fleet with a Bell", "A dawn ceremony persuades sleeping buses to face the road", "blankets, tyre changes, tea and one goose with a clipboard", "the first bus claims it was already awake"],
+      ["Driver’s Pre-Departure Ritual Expands to Forty-Seven Steps", "A routine mirror check becomes a small religion", "mirrors, tickets, steering wheel, tea and a brush with ceremonial status", "passengers remain patient for nearly three minutes"],
+      ["Route Map Develops a Mountain", "A local service discovers a scenic detour it cannot explain", "a looping line, a tea shop and an anxious road sign", "the timetable calls it an opportunity"],
+      ["Bus Stop Applies for Planning Permission", "A shelter objects to being placed wherever the public needs it", "a consultation, a bench and a pole with strong views", "the bus has agreed to stop nearby"],
+      ["Timetable Admits It Is Aspirational", "A printed schedule clarifies that its times are more of a mood", "traffic, weather and a minute hand with no legal training", "passengers appreciate the honesty but not the interval"],
+      ["Passenger Loads Measured by Vibe", "The operator replaces headcounts with an atmosphere gauge", "standing room, shopping bags and a child holding a balloon", "the upper deck has been described as emotionally full"],
+      ["Farebox Starts Giving Change in Advice", "A ticket machine adds unsolicited guidance to every transaction", "coins, thermal paper and a warning about personal boundaries", "the driver has unplugged its opinions"],
+      ["Traffic Jam Agrees to Let Bus Through", "A queue of cars negotiates a temporary lane for public transport", "a handshake, several hazard lights and a bus carrying 62 people", "the cars will require a commemorative plaque"],
+      ["School Run Reclassified as Mobile Weather System", "Forty children generate their own atmospheric conditions", "coats, steam, noise and a radiator working overtime", "the driver has requested a wind advisory"],
+      ["Night Bus Finds Itself in a Gothic Novel", "The last service becomes atmospheric after passing a closed depot", "streetlamps, fog and a passenger reading the wrong timetable", "the bus insists it is merely on route"]
+    ]],
+    ["The Future of the Bus", [
+      ["Autonomous Bus Still Waiting for Someone to Ask It", "A self-driving vehicle remains stationary out of politeness", "lidar, sensors and a bus that will not interrupt", "the passengers have voted to wave first"],
+      ["Bus Election Produces Coalition of Tyres and Cooling", "Two platforms campaign on traction and lower temperatures", "rosettes, manifestos and a goose counting tickets", "the engine has declined to form a government"],
+      ["Luxury Bus Adds a Quiet Upper Deck", "A premium service offers silence, cushions and one audible suspension bush", "tea service, velvet and a passenger who brought a spanner", "the upgrade has not improved the potholes"],
+      ["Double-Decker Discovers Vertical Ambition", "A bus seeks planning permission for a third deck", "stairs, headroom and an architect who has forgotten the bridge network", "the tyres are cautiously optimistic"],
+      ["Rural Bus Announces It Is Also a Post Office", "A village service expands its duties to letters, parcels and emotional support", "a ticket machine, a sorting shelf and one patient engine", "the route now takes slightly longer, but knows everyone"],
+      ["Airport Shuttle Loses the Airport", "A shuttle reaches a terminal and cannot find the building it serves", "signage, luggage and a driver following a very confident arrow", "passengers have been reunited with the car park"],
+      ["Heritage Bus Refuses to Become Nostalgia", "A preserved vehicle insists it remains a working machine", "polished brass, old tyres and an engine with long memories", "the museum has been asked to stop calling it charming"],
+      ["Tyre Union Demands a Seat at the Axle", "Rubber representatives seek recognition in fleet negotiations", "tread, pressure and a collective refusal to squeak", "the spare wheel has crossed the picket line"],
+      ["Engine Enters Therapy for Cooling Anxiety", "A power unit learns to name its temperatures and share the load", "a counsellor, a radiator and a very long idle", "the engine now says ‘I feel warm’ without alarming anyone"],
+      ["The Bus Desk Publishes Its Final Stop", "After 49 reports, the paper asks what a bus is for", "movement, waiting, carrying people and looking serious at a roundabout", "the answer is probably to keep going"]
+    ]]
+  ];
+  var busImages = [
+    ["images/bus-plate-tyres.png", "Mechanics measure an oversized bus tyre before a solemn committee."],
+    ["images/bus-plate-engine.png", "A bus engine receives a medical examination from mechanics and a goose nurse."],
+    ["images/bus-plate-cooling.png", "A conductor conducts a bus cooling system like a grand organ."],
+    ["images/bus-plate-depot.png", "Mechanics wake a blanket-covered fleet at a bus depot."],
+    ["images/bus-plate-routes.png", "Passengers consult compasses while a bus follows an impossible route."],
+    ["images/bus-plate-driver.png", "A driver performs an elaborate pre-departure ritual in the cab."],
+    ["images/bus-plate-heat.png", "Passengers attempt to cool a double-decker during a heatwave."],
+    ["images/bus-plate-drivetrain.png", "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."],
+    ["images/bus-plate-election.png", "Rival buses campaign for passengers while a goose counts votes."]
+  ];
+  var serial = 0;
+  busBooks.forEach(function (book) {
+    var bookTitle = book[0];
+    book[1].forEach(function (chapter) {
+      serial += 1;
+      var part = String(serial).padStart(2, "0");
+      var image = busImages[(serial - 1) % busImages.length];
+      var body = [
+        "The Daily Flange Bus Desk can report that " + chapter[1].toLowerCase() + ". The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+        "The immediate subject was " + chapter[2] + ". Staff described the process as " + chapter[3] + ", although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+        "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+        "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+        "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+        "The desk’s conclusion is that " + chapter[3] + ". The matter will be revisited in Part " + (serial === 50 ? "01, once everyone has forgotten the route" : String(serial + 1).padStart(2, "0")) + ", when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+      ];
+      var article = {
+        id: "bus-desk-" + part,
+        category: "Buses",
+        headline: "The Bus Desk, Part " + part + ": " + chapter[0],
+        standfirst: chapter[1] + ". A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+        byline: "By Mavis Torque, Transport Correspondent",
+        location: serial < 11 ? "TYRE BAY" : serial < 21 ? "ENGINE ROOM" : serial < 31 ? "COOLING DESK" : serial < 41 ? "CENTRAL DEPOT" : "THE ROAD AHEAD",
+        published: "2026-07-18T" + String(18 - Math.floor((serial - 1) / 5)).padStart(2, "0") + ":" + String(57 - ((serial - 1) % 5) * 11).padStart(2, "0") + ":00",
+        body: body,
+        pullQuote: chapter[3].charAt(0).toUpperCase() + chapter[3].slice(1) + ".",
+        tags: ["buses", "transport", "bus-desk", "tyres", "engines", "cooling", "satire"],
+        series: "The Bus Desk",
+        seriesPart: serial,
+        seriesBook: bookTitle,
+        image: image[0],
+        imageAlt: image[1]
+      };
+      if ([1, 5, 11, 21, 31, 41, 50].indexOf(serial) !== -1) {
+        article.images = [{ src: image[0], alt: image[1], afterParagraph: 2, caption: "Bus Desk plate " + part + ": the evidence remains in service." }];
+      }
+      window.NEWS_ARTICLES.push(article);
+    });
+  });
+})();

@@ -28,6 +28,7 @@
     { name: "Science & Tech", children: ["Science", "Technology", "Health"] },
     { name: "Business",       children: [] },
     { name: "Sport",          children: [] },
+    { name: "Transport",      children: ["Buses"] },
     { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
     { name: "Flanging",       children: [] },
     { name: "Opinion",        children: ["Voices", "Letters"] }
@@ -66,6 +67,7 @@
     Business:    { c1: "#12603a", c2: "#0b3f26", icon: "chart" },
     Health:      { c1: "#a12b46", c2: "#6f1c30", icon: "health" },
     Sport:       { c1: "#155e2b", c2: "#0d3d1c", icon: "trophy" },
+    Buses:       { c1: "#8a5a12", c2: "#5c3a08", icon: "gear" },
     Weather:     { c1: "#3a5a8a", c2: "#243a5c", icon: "cloud" },
     Lifestyle:   { c1: "#b0357e", c2: "#761f54", icon: "sparkle" },
     Obituaries:  { c1: "#434a54", c2: "#23272e", icon: "candle" },
