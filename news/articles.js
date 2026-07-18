@@ -18877,6 +18877,1317 @@ window.NEWS_ARTICLES = [
   });
 })();
 
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1903-paris-madrid-horse-tow",
+    "image": "images/mot-1903-paris-madrid-horse-tow.webp",
+    "imageAlt": "Early racing cars being escorted after the abandoned 1903 Paris-Madrid race",
+    "category": "Motorsport",
+    "headline": "The Race Cars That Left Bordeaux by Horse",
+    "standfirst": "The 1903 Paris-Madrid race ended so abruptly that its fastest machines were forbidden to move under their own power.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BORDEAUX, FRANCE",
+    "published": "2026-07-18T06:00:00Z",
+    "body": "The Paris-Madrid race began at Versailles on 24 May 1903. Organisers planned three stages covering 1,307 kilometres, with Bordeaux marking the end of the first 552-kilometre leg. Cars departed individually from 3:45am while enormous crowds lined public roads. Dust from the early runners badly reduced visibility for those following.\n\nA succession of serious accidents led the French authorities to stop the event at Bordeaux. The decision also ended any prospect of continuing from the Spanish frontier. Fernand Gabriel had completed the opening stage fastest in his Mors, but the abandoned competition produced no journey to Madrid and helped end the era of major French city-to-city road races.\n\nOfficials imposed an unusually literal halt. Drivers could not move their racing cars even one metre under engine power. Police supervised their removal, with horses or ordinary touring cars towing the machines to Bordeaux station. The cars then returned towards Paris by train, turning some of the most advanced vehicles of 1903 into closely guarded, horse-drawn railway luggage.",
+    "pullQuote": "The authorities forbade the competitors from driving their cars even as far as Bordeaux railway station.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented cancellation and supervised removal of cars from the 1903 Paris-Madrid race.",
+    "sources": [
+      "https://mercedes-benz-publicarchive.com/marsClassic/en/instance/ko/Paris--Madrid.xhtml?oid=7427"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1900s",
+      "road-racing",
+      "paris-madrid"
+    ]
+  },
+  {
+    "id": "mot-1907-peking-paris-party-detour",
+    "image": "images/mot-1907-peking-paris-party-detour.webp",
+    "imageAlt": "Prince Scipione Borghese and companions beside their Itala during the 1907 Peking-Paris race",
+    "category": "Motorsport",
+    "headline": "The Rally Leader Who Detoured to a Party",
+    "standfirst": "Prince Scipione Borghese led the 1907 Peking-Paris contest by enough time to add an extraordinary social engagement.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "PEKING, QING CHINA",
+    "published": "2026-07-18T06:15:00Z",
+    "body": "Five cars left Peking on 10 June 1907 for an overland contest to Paris. Much of the route lacked roads, repair facilities or dependable fuel supplies. Organisers and entrants sent petrol ahead using camels and mules, while the competitors generally followed telegraph lines that offered navigation, communication and opportunities for accompanying journalists to file reports.\n\nPrince Scipione Borghese entered a seven-litre Itala with mechanic Ettore Guizzardi and journalist Luigi Barzini. The larger car proved capable across terrain that frequently reduced progress to improvised bridge-building and human assistance. Borghese established such a commanding advantage that he diverted from Moscow to St Petersburg for a social engagement before returning to the competitive route.\n\nThe detour added roughly 2,000 kilometres to an expedition already stretching across Eurasia. It did not threaten the result. Borghese reached Paris on 10 August, 61 days after leaving Peking and approximately three weeks ahead of his nearest rival. The winning route therefore included a voluntary journey to a party that was longer than many conventional motor races.",
+    "pullQuote": "Borghese won by about three weeks despite making a lengthy detour from Moscow to St Petersburg.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Prince Scipione Borghese's documented victory and St Petersburg detour during the 1907 Peking-Paris race.",
+    "sources": [
+      "https://www.pekingtoparis2016.co.uk/history-of-the-rally/",
+      "https://www.scmp.com/article/522726/great-peking-paris-expedition"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1900s",
+      "endurance-racing",
+      "peking-paris"
+    ]
+  },
+  {
+    "id": "mot-1908-new-york-paris-late-winner",
+    "image": "images/mot-1908-new-york-paris-late-winner.webp",
+    "imageAlt": "The Thomas Flyer crossing rough ground during the 1908 New York-Paris race",
+    "category": "Motorsport",
+    "headline": "The Car That Arrived Late and Still Won",
+    "standfirst": "Germany's Protos reached Paris first in 1908, but penalties made the American Thomas Flyer the official victor.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "NEW YORK, UNITED STATES",
+    "published": "2026-07-18T06:30:00Z",
+    "body": "Six cars departed Times Square on 12 February 1908 for a race from New York to Paris. The ambitious route crossed the United States and initially envisaged using the frozen Bering Strait to reach Asia. That passage proved impossible, so the remaining teams crossed the Pacific by ship before continuing through Siberia and Europe.\n\nThe German Protos reached Paris on 26 July, four days before the American Thomas Flyer. Its apparent victory did not survive the stewards' calculations. Officials imposed a 15-day penalty because the Protos had used railway transport in the American West. The Thomas received a 15-day allowance for spending time attempting the abandoned Alaska route.\n\nGeorge Schuster brought the Thomas Flyer into Paris on 30 July after an expedition of approximately 21,933 miles. Once the adjustments were applied, the second car to appear in Paris became the official winner by a substantial corrected margin. The result remains a striking example of an endurance race being decided as much by route compliance as arrival order.",
+    "pullQuote": "The Thomas Flyer reached Paris four days after the Protos but won once the official time adjustments were applied.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented route penalties and official result of the 1908 New York-Paris automobile race.",
+    "sources": [
+      "https://www.smithsonianmag.com/history/paris-or-bust-the-great-new-york-to-paris-auto-race-of-1908-116784616/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1900s",
+      "endurance-racing",
+      "new-york-paris"
+    ]
+  },
+  {
+    "id": "mot-1911-indy-rear-view-mirror",
+    "image": "images/mot-1911-indy-rear-view-mirror.webp",
+    "imageAlt": "Ray Harroun driving the single-seat Marmon Wasp with its rear-view mirror",
+    "category": "Motorsport",
+    "headline": "The Mirror That Replaced an Indianapolis Mechanic",
+    "standfirst": "Ray Harroun answered objections to his single-seat Marmon by fitting a device now found on almost every road car.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T06:45:00Z",
+    "body": "The inaugural Indianapolis 500 took place on 30 May 1911. Most competing cars carried a riding mechanic who monitored instruments, helped with repairs and watched for vehicles approaching from behind. Ray Harroun's streamlined Marmon Wasp had only one seat, prompting rival teams to object that he lacked the customary second pair of eyes.\n\nHarroun responded by mounting a mirror above the Wasp's cowling. Indianapolis Motor Speedway describes it as what is believed to have been the first rear-view mirror used on an automobile. The device provided a practical answer to the protests, although vibration on the brick surface reportedly limited the clarity that any small mirror could offer.\n\nHarroun shared the driving with relief driver Cyrus Patschke and took the Wasp to victory. The winning car therefore combined an unusually narrow single-seat body with an innovation that later became routine on road vehicles. A dispute about race traffic had helped place the rear-view mirror at the centre of one of American motorsport's founding events.",
+    "pullQuote": "Harroun fitted a rear-view mirror because his single-seat Marmon carried no riding mechanic.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article covers Ray Harroun's documented use of a rear-view mirror in the winning car at the 1911 Indianapolis 500.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/history/first-500"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1910s",
+      "indy-500",
+      "innovation"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1912-depalma-pushes-indy-car",
+    "image": "images/mot-1912-depalma-pushes-indy-car.webp",
+    "imageAlt": "Ralph DePalma and Rupert Jeffkins pushing their disabled Mercedes at Indianapolis",
+    "category": "Motorsport",
+    "headline": "The Indianapolis Finish That Did Not Count",
+    "standfirst": "After leading almost the entire 1912 Indianapolis 500, Ralph DePalma tried to push his broken Mercedes towards the line.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T07:00:00Z",
+    "body": "Ralph DePalma dominated the second Indianapolis 500 on 30 May 1912. Driving a Mercedes with Rupert Jeffkins as his riding mechanic, he led 196 of the scheduled 200 laps. His advantage appeared decisive until a connecting rod failed with only two laps remaining, leaving the car without the power required to complete the distance.\n\nDePalma and Jeffkins climbed out and began pushing the Mercedes along the front straight as spectators applauded. Their effort could not preserve the victory. Indianapolis rules required a competing car to travel under its own power, and crossing the nearby line would only have begun the final lap rather than completed the full 500 miles.\n\nJoe Dawson passed the stranded Mercedes and won after leading only the closing two laps. DePalma's long spell at the front became a record of control without the result that usually accompanies it. The image of driver and mechanic pushing together endured because it captured both the scale of the lost advantage and the strict arithmetic of the unfinished race.",
+    "pullQuote": "DePalma led 196 laps, but pushing the Mercedes could neither satisfy the rules nor complete the final lap.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Ralph DePalma and Rupert Jeffkins pushing their disabled Mercedes during the documented 1912 Indianapolis 500.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/news-multimedia/news/2020/07/31/de-palma-set-standard-for-sportsmanship-after-heartbreaking-loss-in-1912",
+      "https://imsmuseum.org/fame_inductee/ralph-depalma/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1910s",
+      "indy-500",
+      "open-wheel"
+    ]
+  },
+  {
+    "id": "mot-1913-indy-champagne-dispute",
+    "image": "images/mot-1913-indy-champagne-dispute.webp",
+    "imageAlt": "Jules Goux in the Peugeot that won the 1913 Indianapolis 500",
+    "category": "Motorsport",
+    "headline": "The Champagne-Powered Indy Victory That May Have Been Water",
+    "standfirst": "Jules Goux unquestionably won in 1913, but the celebrated story of his mid-race champagne remains contradicted by an official investigation.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T07:15:00Z",
+    "body": "Jules Goux won the Indianapolis 500 on 30 May 1913 in a French Peugeot. He became the race's first non-American winner and finished 13 minutes 8 seconds ahead of Spencer Wishart. Contemporary reporting soon added a memorable detail: Goux and riding mechanic Emil Begin had supposedly refreshed themselves with champagne during pit stops.\n\nThe claim was serious because the American Automobile Association's rules prohibited intoxicants during competition. A later-published account of the investigation records that pit official W. L. Esterly said only water was consumed. Race referee A. F. Pardington reportedly inspected open and sealed refreshments in the Peugeot area and likewise found no alcohol.\n\nGoux denied drinking anything except water during the race, and the investigation concluded that the allegations lacked merit. Nevertheless, the champagne version entered racing folklore and continues to appear in reputable histories. The documented oddity is therefore not simply alleged drinking, but the survival of a colourful story despite a contemporary rules inquiry reaching the opposite conclusion.",
+    "pullQuote": "Goux won by more than 13 minutes, while the official inquiry into champagne reports concluded that his pit supplied water.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article identifies the documented 1913 Indianapolis victory and the recorded AAA investigation that disputed contemporary champagne reports.",
+    "sources": [
+      "https://www.motorsportmagazine.com/archive/article/january-2002/8/bursting-the-bubbly/",
+      "https://www.indycar.com/News/2013/05/5-13-About-time-for-another-French-winner"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1910s",
+      "indy-500",
+      "motorsport-myths"
+    ]
+  },
+  {
+    "id": "mot-1924-indy-two-winners-one-car",
+    "image": "images/mot-1924-indy-two-winners-one-car.webp",
+    "imageAlt": "Lora Corum and Joe Boyer with the Duesenberg credited with winning the 1924 Indianapolis 500",
+    "category": "Motorsport",
+    "headline": "The Indianapolis 500 Won by Two Drivers",
+    "standfirst": "Lora Corum started the winning Duesenberg in 1924, but teammate Joe Boyer drove it to the chequered flag.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T07:30:00Z",
+    "body": "Relief driving was an accepted part of early Indianapolis competition. In the 1924 race, Lora L. Corum started Duesenberg number 15 and ran competitively during the opening half. Joe Boyer began the race in another team car, but mechanical trouble removed that machine from contention and left the faster driver without his original entry.\n\nTeam instructions brought Boyer into the pits and placed him in Corum's Duesenberg on lap 109. Boyer advanced the shared car and led it home after 500 miles. The arrangement was legal under the rules then in force, which treated a driver change as assistance to the same continuing entry rather than a replacement car.\n\nThe official Indianapolis record lists L. L. Corum and Joe Boyer together as the 1924 winners. Corum had established the car's position; Boyer completed its successful run. The result looks unusual through modern rules, but accurately reflects an era when a driver could retire one machine, climb into a teammate's car and share victory in the same afternoon.",
+    "pullQuote": "Indianapolis officially credited Lora Corum and Joe Boyer as co-winners in the same Duesenberg.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented driver change and shared official victory in the 1924 Indianapolis 500.",
+    "sources": [
+      "https://www.imscdn.com/pdfs/500/stats/indianapolis_500_race_winners.pdf",
+      "https://static1.squarespace.com/static/5b99bc00266c071ef6a5fc82/t/66c35920cb301960ac9a52d6/1724078373377/2024spring.pdf"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1920s",
+      "indy-500",
+      "open-wheel"
+    ]
+  },
+  {
+    "id": "mot-1927-le-mans-torchlight-bentley",
+    "image": "images/mot-1927-le-mans-torchlight-bentley.webp",
+    "imageAlt": "The damaged Bentley Old Number 7 after winning the 1927 24 Hours of Le Mans",
+    "category": "Motorsport",
+    "headline": "The Bentley That Won Le Mans by Torchlight",
+    "standfirst": "Old Number 7 survived a major pile-up, damaged steering and a night illuminated by a torch strapped to its windscreen.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:45:00Z",
+    "body": "Bentley's 1927 Le Mans campaign changed at about 9:30pm when several cars crashed at White House Corner. The two leading works 4½ Litre Bentleys were eliminated. The older three-litre number 7, shared by Sammy Davis and Dudley Benjafield, was caught in the same incident but remained capable of returning to the pits.\n\nThe surviving Bentley carried a twisted chassis, bent front axle and damaged steering. Its headlamps had also been smashed, presenting an immediate problem in a race continuing through the night. The team made the repairs available to them and strapped a torch to the windscreen, providing enough forward illumination for Davis and Benjafield to continue circulating.\n\nOld Number 7 completed the 24 hours and won. At the subsequent celebration dinner at London's Savoy Hotel, the damaged Bentley was wheeled into the dining room as an honoured guest. The gesture suited a victory in which the machine's visibly battered condition, makeshift lamp and continued movement were as notable as the finishing order.",
+    "pullQuote": "A torch strapped to the windscreen replaced the Bentley's smashed headlamps during the night.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Bentley Old Number 7's documented damage, improvised lighting and victory at the 1927 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.bentleymotors.com/en/about-bentley/history-and-heritage/motorsport.html",
+      "https://www.bentleymotors.com/en/about-bentley/history-and-heritage/bentley-story.html"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1920s",
+      "le-mans",
+      "endurance-racing"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1928-junekhova-targa-florio-lead",
+    "image": "images/mot-1928-junekhova-targa-florio-lead.webp",
+    "imageAlt": "Eliška Junková driving her Bugatti Type 35B in the 1928 Targa Florio",
+    "category": "Motorsport",
+    "headline": "The Privateer Who Led the Targa Florio",
+    "standfirst": "Eliška Junková placed her Bugatti ahead of Europe's leading drivers before a water leak cost time in Sicily.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SICILY, ITALY",
+    "published": "2026-07-18T08:00:00Z",
+    "body": "Eliška Junková, widely known outside Czechoslovakia as Elisabeth Junek, entered the 1928 Targa Florio in a Bugatti Type 35B. The event comprised five demanding laps and roughly 335 miles on Sicily's Madonie roads. Against factory-supported stars, Junková began quickly and moved into the overall lead as the competitors entered the third circuit.\n\nContemporary reporting recorded that she had moved ahead of Albert Divo, one of Bugatti's leading professionals, and led the whole race on elapsed time. Giuseppe Campari later headed the order in his Alfa Romeo, while Junková remained the highest Bugatti runner for part of the contest. A leaking water pump then delayed her challenge.\n\nAlbert Divo ultimately won, with Junková finishing fifth only nine minutes behind after more than seven hours of competition. Her result was remarkable beyond any single demographic milestone: a private entrant had led experienced works drivers outright on one of the period's longest and most difficult road circuits, then remained close enough to finish among the first five.",
+    "pullQuote": "Junková led the 1928 Targa Florio outright before a water-pump leak delayed her Bugatti.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Eliška Junková's documented period in the lead and fifth-place finish at the 1928 Targa Florio.",
+    "sources": [
+      "https://newsroom.bugatti.com/en/press-releases/bugatti-type-35-the-world-s-most-successful-racing-car",
+      "https://www.motorsportmagazine.com/archive/article/may-1928/13/targa-florio/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1920s",
+      "targa-florio",
+      "road-racing"
+    ]
+  },
+  {
+    "id": "mot-1935-nuvolari-impossible-german-gp",
+    "image": "images/mot-1935-nuvolari-impossible-german-gp.webp",
+    "imageAlt": "Tazio Nuvolari driving an Alfa Romeo P3 at the Nürburgring in 1935",
+    "category": "Motorsport",
+    "headline": "Nuvolari's Impossible German Grand Prix",
+    "standfirst": "An older 265-horsepower Alfa Romeo defeated nine more powerful Mercedes and Auto Union machines at the Nürburgring.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "NÜRBURG, GERMANY",
+    "published": "2026-07-18T08:15:00Z",
+    "body": "The 1935 German Grand Prix took place at the Nürburgring on 28 July. Tazio Nuvolari entered an Alfa Romeo P3 run by Scuderia Ferrari. The design was already considered obsolete beside the latest German cars. Its supercharged 3,167 cc engine produced approximately 265 horsepower, leaving a substantial deficit on paper.\n\nThe home opposition consisted of five Mercedes-Benz W25s and four Auto Union Type Bs. Both groups fielded cars producing roughly 375 horsepower, backed by major factory programmes and driven by leading professionals. Nuvolari therefore faced nine newer German machines in their national Grand Prix, on a circuit where power and durability both mattered.\n\nNuvolari nevertheless won. The Tazio Nuvolari Museum calls the result his impossible victory and one of his most emblematic performances. Its enduring oddity lies in the visible imbalance: a single older Alfa, giving away around 110 horsepower to each principal rival, defeated two numerically dominant factory teams at the most politically prominent German race of the period.",
+    "pullQuote": "Nuvolari's 265-horsepower Alfa defeated nine German factory cars producing about 375 horsepower each.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Tazio Nuvolari's documented victory over Mercedes-Benz and Auto Union in the 1935 German Grand Prix.",
+    "sources": [
+      "https://museotazionuvolari.com/en/nuvolari-biografia.php"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1930s",
+      "grand-prix",
+      "nurburgring"
+    ]
+  },
+  {
+    "id": "mot-1939-belgrade-grand-prix-during-war",
+    "image": "images/mot-1939-belgrade-grand-prix-during-war.webp",
+    "imageAlt": "Grand Prix cars racing on cobbled streets around Kalemegdan fortress in 1939",
+    "category": "Motorsport",
+    "headline": "The Grand Prix Held After War Began",
+    "standfirst": "Five drivers raced around Belgrade on the morning Britain and France declared war on Germany.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BELGRADE, YUGOSLAVIA",
+    "published": "2026-07-18T08:30:00Z",
+    "body": "Belgrade staged an international automobile and motorcycle meeting on 3 September 1939, centred on a street circuit around Kalemegdan fortress. The programme honoured the approaching birthday of King Peter II. Germany had invaded Poland two days earlier, but organisers continued with an event expected to attract a substantial portion of the city's population.\n\nBritain and France declared war on Germany that morning. Only five cars started the principal Grand Prix: two Mercedes-Benz entries, two Auto Unions and Boško Milenković's Bugatti. The field completed 50 laps on cobbled public streets, with the race lasting slightly more than 64 minutes despite the extraordinary political circumstances surrounding it.\n\nTazio Nuvolari won for Auto Union, 7.6 seconds ahead of Manfred von Brauchitsch's Mercedes. Milenković finished fourth, 19 laps behind. The result became Nuvolari's final career victory and Auto Union's last win of the era. The Belgrade event stands apart because top-level Grand Prix racing continued after the European war had formally begun.",
+    "pullQuote": "The Belgrade Grand Prix started on the same day Britain and France declared war on Germany.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented Belgrade Grand Prix held on 3 September 1939, two days after Germany invaded Poland.",
+    "sources": [
+      "https://belgradegrandprix.com/en/history/",
+      "https://www.motorsportmagazine.com/archive/article/february-2025/100/the-forgotten-1939-belgrade-grand-prix/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1930s",
+      "grand-prix",
+      "belgrade"
+    ]
+  },
+  {
+    "id": "mot-1949-chinetti-nearly-solo-le-mans",
+    "image": "images/mot-1949-chinetti-nearly-solo-le-mans.webp",
+    "imageAlt": "Luigi Chinetti beside the Ferrari 166 MM that won Le Mans in 1949",
+    "category": "Motorsport",
+    "headline": "The Man Who Drove Almost All of Le Mans",
+    "standfirst": "Luigi Chinetti spent 22 hours and 48 minutes at the wheel to secure Ferrari's first Le Mans victory.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T08:45:00Z",
+    "body": "The 1949 24 Hours of Le Mans was the first running of the race since 1939. Luigi Chinetti entered a Ferrari 166 MM with British owner Peter Mitchell-Thomson, better known as Lord Selsdon. Ferrari itself was only two years old, and Enzo Ferrari had been reluctant about committing the young marque to the endurance contest.\n\nSelsdon went to rest during the night and drove only from 4:26am until 5:38am on Sunday. Chinetti handled every other portion of the race, spending 22 hours and 48 minutes at the wheel. He managed the small Ferrari through changing conditions while preserving enough performance to defeat the pursuing Delahaye at the finish.\n\nThe victory was Ferrari's first at Le Mans and Chinetti's third as a driver. It also made him the only person to win the race both before and after the Second World War. Although the official result correctly names two drivers, the division of labour made this famous team achievement unusually close to a solo 24-hour performance.",
+    "pullQuote": "Chinetti drove for 22 hours and 48 minutes, leaving Lord Selsdon only 72 minutes at the wheel.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article covers Luigi Chinetti's documented driving time and victory in the 1949 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.24h-lemans.com/en/news/a-flurry-of-firsts-at-the-1949-24-hours-of-le-mans-50917",
+      "https://www.24h-lemans.com/en/news/the-24-hours-of-le-mans-in-honour-of-luigi-chinetti-56928"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1940s",
+      "le-mans",
+      "endurance-racing"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1953-nascar-monkey-co-driver",
+    "image": "images/mot-1953-nascar-monkey-co-driver.webp",
+    "imageAlt": "NASCAR driver Tim Flock with rhesus monkey Jocko Flocko in racing uniform",
+    "category": "Motorsport",
+    "headline": "NASCAR's Winning Monkey Co-Driver",
+    "standfirst": "Jocko Flocko rode beside Tim Flock in eight races, won at Hickory and retired after causing an unscheduled pit stop.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "HICKORY, NORTH CAROLINA",
+    "published": "2026-07-18T09:00:00Z",
+    "body": "Tim Flock introduced a rhesus monkey named Jocko Flocko as a publicity attraction during the 1953 NASCAR Grand National season. Jocko wore a tailored racing uniform and occupied a specially designed seat inside Flock's Hudson. According to Flock's official archive, the unusual passenger accompanied him in eight points-paying races that year.\n\nOn 16 May, Flock won at Hickory with Jocko aboard. That result made the monkey the only known animal co-driver to accompany a NASCAR winner. The arrangement continued for another two weeks, despite the obvious complication of carrying an unsecured and unpredictable passenger inside a heavy stock car during genuine competition.\n\nAt Raleigh, Jocko left his seat and approached the floor trap that Flock used to inspect tyre wear. The disturbance forced Flock into the pits so the monkey could be removed. He finished third but estimated the stop had cost second place and substantial prize money. Jocko's racing duties ended immediately after that unscheduled passenger change.",
+    "pullQuote": "Jocko Flocko accompanied Tim Flock to victory at Hickory on 16 May 1953.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented races in which Tim Flock carried the rhesus monkey Jocko Flocko as a NASCAR passenger.",
+    "sources": [
+      "https://www.timflock.com/jocko.htm"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1950s",
+      "nascar",
+      "stock-car-racing"
+    ]
+  },
+  {
+    "id": "mot-1954-porsche-under-railway-barrier",
+    "image": "images/mot-1954-porsche-under-railway-barrier.webp",
+    "imageAlt": "Hans Herrmann and Herbert Linge ducking in a low Porsche 550 Spyder",
+    "category": "Motorsport",
+    "headline": "The Porsche That Duck-Dived a Railway Barrier",
+    "standfirst": "Hans Herrmann and Herbert Linge passed beneath a closing level-crossing gate just ahead of an approaching train.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "CHIETI, ITALY",
+    "published": "2026-07-18T09:15:00Z",
+    "body": "Hans Herrmann and Porsche mechanic Herbert Linge contested the 1954 Mille Miglia in a Porsche 550 Spyder. Their reconnaissance notes used coloured cards to communicate hazards at speed. Approaching a level crossing between Pescara and Chieti, they travelled at roughly 160 to 180 kilometres per hour when a railway barrier descended ahead of them.\n\nHerrmann judged that the lightweight Porsche could not stop in the available distance. He also recognised that its exceptionally low body could fit beneath the barrier. Herrmann struck Linge's helmet to signal that both men should duck, then continued under the gate. A fast train passed immediately behind them, reportedly missing the car by only a few metres.\n\nThe pair continued to Brescia and finished sixth overall in 12 hours, 35 minutes and 44 seconds. They also won their class, delivering an important early Mille Miglia success for Porsche. The level-crossing episode became the defining image of their race because the 550's low profile changed a closed railway barrier from an obstruction into a narrow opening.",
+    "pullQuote": "Herrmann tapped Linge's helmet, and both men ducked as the Porsche passed beneath the lowered barrier.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Hans Herrmann and Herbert Linge's documented level-crossing escape during the 1954 Mille Miglia.",
+    "sources": [
+      "https://www.motorsportmagazine.com/archive/article/april-1998/76/hans-deck/",
+      "https://www.excellence-mag.com/issues/193/articles/hans-im-gluck"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1950s",
+      "mille-miglia",
+      "road-racing"
+    ]
+  },
+  {
+    "id": "mot-1958-fangio-kidnapped-before-cuban-gp",
+    "image": "images/mot-1958-fangio-kidnapped-before-cuban-gp.webp",
+    "imageAlt": "Juan Manuel Fangio in Havana before the 1958 Cuban Grand Prix",
+    "category": "Motorsport",
+    "headline": "The World Champion Kidnapped Before His Race",
+    "standfirst": "Cuban revolutionaries removed Juan Manuel Fangio from the 1958 Grand Prix to embarrass President Batista's government.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "HAVANA, CUBA",
+    "published": "2026-07-18T09:30:00Z",
+    "body": "Five-time Formula One world champion Juan Manuel Fangio travelled to Havana for the 1958 Cuban Grand Prix, a non-championship sports-car race promoted by President Fulgencio Batista's government. On 23 February, the evening before the event, armed members of the revolutionary 26th of July Movement entered the Hotel Lincoln and took Fangio away.\n\nThe operation aimed to deny the government its leading international attraction and generate publicity for the rebellion. Batista ordered the Grand Prix to proceed while police searched Havana and guarded transport routes. Fangio's captors moved him between safe houses but allowed him to follow news of the race by radio and television rather than placing him in complete isolation.\n\nThe revolutionaries released Fangio unharmed after the event, transferring him through the Argentine embassy. Fangio consequently missed a race for which he had been the principal favourite without suffering a racing injury or mechanical failure. It remains an exceptional case of a major driver's participation being prevented through a calculated political abduction conducted for international attention.",
+    "pullQuote": "Fangio followed the Cuban Grand Prix from captivity while the race continued without its leading attraction.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented abduction and release of Juan Manuel Fangio around the 1958 Cuban Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/podcast-listen-to-the-amazing-true-story-of-how-f1s-biggest-star-was.4KsckqEjLAYvlfDw3Via3Y.4KsckqEjLAYvlfDw3Via3Y",
+      "https://www.espn.com/f1/story/_/id/28999493/when-f1-legend-fangio-was-kidnapped-cuba"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1950s",
+      "cuban-grand-prix",
+      "formula-one"
+    ]
+  },
+  {
+    "id": "mot-1965-monaco-lotus-in-harbour",
+    "image": "images/mot-1965-monaco-lotus-in-harbour.webp",
+    "imageAlt": "Paul Hawkins surfacing beside his Lotus after entering Monaco harbour in 1965",
+    "category": "Motorsport",
+    "headline": "The Formula One Car That Finished in the Harbour",
+    "standfirst": "Paul Hawkins left the Monaco circuit at the chicane and landed in the Mediterranean without serious injury.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTE CARLO, MONACO",
+    "published": "2026-07-18T09:45:00Z",
+    "body": "Paul Hawkins started the Monaco Grand Prix on 30 May 1965 in a Lotus-Climax. Monaco's street circuit ran directly beside the working harbour, with limited protection at the waterside chicane. During the race, Hawkins lost control at that section, passed through the trackside defences and sent the Lotus over the edge into the Mediterranean.\n\nThe car entered the harbour, but Hawkins surfaced and escaped without serious injury. His race ended immediately while the Grand Prix continued around the streets above. Graham Hill eventually won for BRM, completing a demanding afternoon in which his own recovery from an earlier excursion was overshadowed visually by a competitor requiring assistance from the water.\n\nHawkins became only the second Formula One driver known to have entered Monaco harbour during a Grand Prix, following Alberto Ascari in 1955. Both survived their respective immersions. The 1965 incident remains unusual because a conventional circuit recovery became a maritime operation, with the boundary between racing surface and harbour proving dramatically literal.",
+    "pullQuote": "Hawkins surfaced unhurt after his Lotus cleared the Monaco chicane and landed in the harbour.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Paul Hawkins's documented plunge into Monaco harbour during the 1965 Monaco Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/the-risk-perspective-how-f1-drivers-engineers-and-strategists-tackle-the-monaco-grand-prix.2GImf5MWJqGNRgUx7ZhNh8",
+      "https://www.fia.com/sites/default/files/auto30_impospreads_v01.pdf"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1960s",
+      "formula-one",
+      "monaco-grand-prix"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+"id": "mot-1969-al-pease-disqualified-too-slow",
+  "image": "images/mot-1969-al-pease-disqualified-too-slow.webp",
+  "imageAlt": "Al Pease driving his Eagle-Climax at the 1969 Canadian Grand Prix",
+  "category": "Motorsport",
+  "headline": "The Formula One Driver Disqualified for Going Too Slowly",
+  "standfirst": "Al Pease remains the only World Championship driver black-flagged during a Grand Prix specifically for insufficient speed.",
+  "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+  "location": "BOWMANVILLE, CANADA",
+  "published": "2026-07-18T10:00:00Z",
+  "body": "Al Pease entered the Canadian Grand Prix at Mosport on 20 September 1969 in a privately run Eagle-Climax. The car was already outdated and significantly slower than the leading Formula One machinery. Pease qualified 17th, approximately 11 seconds from Jacky Ickx's pole time, but still earned a place on the starting grid.\n\nDuring the race, Pease repeatedly encountered faster cars while being lapped. By the time he had completed 22 laps, the leaders had covered 46. Several awkward on-track meetings drew complaints, with Matra team principal Ken Tyrrell approaching officials after Pease impeded front-running cars competing at more than twice his completed distance.\n\nOfficials displayed the black flag and disqualified Pease for driving too slowly. Ickx won the race for Brabham, while the official result recorded Pease as disqualified after 22 laps. No other driver in a Formula One World Championship Grand Prix has received the same race disqualification specifically for insufficient pace, giving an otherwise accomplished Canadian competitor a uniquely inverted record.",
+  "pullQuote": "Pease had completed 22 laps when the Canadian Grand Prix leaders had already covered 46.",
+  "noticeLabel": "Based on a true story",
+  "notice": "This article recounts Al Pease's documented disqualification for insufficient speed in the 1969 Canadian Grand Prix.",
+  "sources": [
+    "https://www.motorsportmagazine.com/archive/article/november-1969/44/the-canadian-grand-prix-2/",
+    "https://www.formula1.com/en/results/1969/races/275/canada/race-result"
+  ],
+  "tags": [
+    "motorsport",
+    "based-on-truth",
+    "1960s",
+    "formula-one",
+    "canadian-grand-prix"
+  ]
+}
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-2005-us-grand-prix-six-cars",
+    "image": "images/mot-2005-us-grand-prix-six-cars.webp",
+    "imageAlt": "Six Formula One cars line up for the unusually small 2005 United States Grand Prix field",
+    "category": "Motorsport",
+    "headline": "Fourteen Cars Excuse Themselves from the United States Grand Prix",
+    "standfirst": "A tyre crisis reduced Formula One's Indianapolis showpiece to six starters, one bewildered crowd and an unavoidable place in racing history.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "INDIANAPOLIS, UNITED STATES",
+    "published": "2026-07-18T06:00:00Z",
+    "body": "Toyota driver Ralf Schumacher suffered a Michelin tyre failure at Indianapolis during practice for the 2005 United States Grand Prix. The problem centred on the circuit's fast, banked Turn 13. Michelin concluded that its available tyres could not safely withstand a normal race distance there and advised its seven partner teams that they should not compete without an effective change to the course.\n\nOne proposed answer was a temporary chicane before Turn 13, but the parties could not agree to alter the circuit. All 20 cars therefore took the formation lap as scheduled. At its end, every Michelin-equipped entry turned into the pit lane and retired. The manoeuvre removed 14 cars at once, leaving only Ferrari, Jordan and Minardi, whose six cars all used Bridgestone tyres.\n\nMichael Schumacher led Ferrari teammate Rubens Barrichello home after 73 laps. Jordan's Tiago Monteiro finished third, earning the only Formula One podium of his career, while Narain Karthikeyan, Christijan Albers and Patrick Friesacher completed the field. The official result records all seven Michelin teams as withdrawals on tyre-related safety grounds, preserving a race in which most entrants appeared but never took the start.",
+    "pullQuote": "All seven Michelin teams withdrew after the formation lap, leaving six Bridgestone-equipped cars to race.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented six-car 2005 Formula One United States Grand Prix at Indianapolis Motor Speedway.",
+    "sources": [
+      "https://www.formula1.com/en/results/2005/races/779/united-states/race-result",
+      "https://www.motorsport.com/f1/news/the-2005-us-gp-farce-the-full-inside-story/4809048/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "formula-one"
+    ]
+  },
+  {
+    "id": "mot-2008-singapore-deliberate-crash",
+    "image": "images/mot-2008-singapore-deliberate-crash.webp",
+    "imageAlt": "Renault Formula One cars competing under the lights at the 2008 Singapore Grand Prix",
+    "category": "Motorsport",
+    "headline": "Renault Finds the Safety Car Button Hidden in Its Other Car",
+    "standfirst": "Fernando Alonso's unlikely Singapore victory became the centre of a conspiracy admitted by his own team a year later.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SINGAPORE",
+    "published": "2026-07-18T06:15:00Z",
+    "body": "Fernando Alonso started only 15th in Formula One's inaugural Singapore night race in 2008. Renault called him in for an early fuel stop, apparently leaving him poorly placed. Soon afterwards, teammate Nelson Piquet Jr crashed at Turn 17 on lap 14. The resulting Safety Car rearranged the field around the era's pit-lane rules and transformed Alonso's early stop into a decisive strategic advantage.\n\nAlonso advanced through the disrupted order and won, while Piquet was recorded as a retirement after completing 13 laps. The crash initially looked like an ordinary error on a demanding street circuit. After Renault dropped Piquet during the following season, however, he told the FIA that senior team figures had instructed him to cause the accident at a chosen point in the race.\n\nAt a September 2009 hearing, Renault admitted that Piquet, team principal Flavio Briatore and engineering director Pat Symonds had conspired to cause a deliberate crash. The World Motor Sport Council found no evidence that Alonso or other Renault employees knew about the plan. The episode became known as Crashgate: a race-winning strategy executed by intentionally removing the team's second car.",
+    "pullQuote": "Renault admitted that team members conspired with Nelson Piquet Jr to cause a deliberate crash.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article is based on the FIA's documented investigation into Renault's conduct at the 2008 Singapore Grand Prix.",
+    "sources": [
+      "https://www.autosport.com/f1/news/the-full-verdict-from-the-fias-wmsc-4433046/4433046/",
+      "https://www.formula1.com/en/results/2008/races/839/singapore/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "formula-one"
+    ]
+  },
+  {
+    "id": "mot-2009-talladega-edwards-runs-finish",
+    "image": "images/mot-2009-talladega-edwards-runs-finish.webp",
+    "imageAlt": "Carl Edwards running towards the Talladega finish after leaving his damaged NASCAR",
+    "category": "Motorsport",
+    "headline": "Carl Edwards Attempts to Finish Talladega on Foot",
+    "standfirst": "A last-lap collision gave Brad Keselowski his first Cup victory and prompted Edwards to borrow a solution from the cinema.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "TALLADEGA, UNITED STATES",
+    "published": "2026-07-18T06:30:00Z",
+    "body": "Carl Edwards led Brad Keselowski towards the finish of the 2009 Aaron's 499 at Talladega Superspeedway. Keselowski moved low on the final lap, Edwards attempted to block, and their cars made contact. Edwards' Ford became airborne and struck the catch fencing before coming to rest short of the line. Keselowski continued through to claim his first NASCAR Cup Series victory.\n\nThe win came in Keselowski's fifth Cup start and delivered an immediate upset for the small James Finch-owned team. Edwards, meanwhile, climbed from his stopped car and began jogging towards the start-finish stripe. The sight closely resembled the deliberately absurd conclusion of the film Talladega Nights, in which incapacitated drivers abandon their cars and race one another on foot.\n\nEdwards crossed the painted line to cheers, but NASCAR scoring follows the car rather than the driver's shoes. He was officially classified 24th, one lap short of the completed distance. The spontaneous run did not alter the result, although it supplied the race with an ending almost too neatly tailored to Talladega's existing place in popular culture.",
+    "pullQuote": "Edwards ran across the finish line, but NASCAR officially classified him 24th.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented final lap of the 2009 Aaron's 499 at Talladega Superspeedway.",
+    "sources": [
+      "https://www.nascar.com/gallery/through-the-years-surprise-talladega-winners/",
+      "https://www.jayski.com/2009/04/26/upset-keselowski-wins-at-talladega/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "nascar"
+    ]
+  },
+  {
+    "id": "mot-2011-canada-button-last-to-first",
+    "image": "images/mot-2011-canada-button-last-to-first.webp",
+    "imageAlt": "Jenson Button driving his McLaren through heavy rain at the 2011 Canadian Grand Prix",
+    "category": "Motorsport",
+    "headline": "Jenson Button Tries Every Method of Losing, Wins Anyway",
+    "standfirst": "Six pit-lane visits, a penalty, two collisions and last place proved insufficient to prevent an extraordinary Canadian Grand Prix victory.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTREAL, CANADA",
+    "published": "2026-07-18T06:45:00Z",
+    "body": "Heavy rain turned the 2011 Canadian Grand Prix into a repeatedly interrupted contest. Six Safety Car deployments punctuated the afternoon, while worsening conditions produced a red flag lasting more than two hours. Jenson Button's McLaren visited the pit lane six times, one visit serving a drive-through penalty. His race also included contact with teammate Lewis Hamilton and later with Fernando Alonso.\n\nThose events pushed Button to the rear of the surviving field during the second half of the race. Once conditions improved and slick tyres became viable, he began recovering positions at a remarkable rate. Further interruptions compressed the field, after which Button passed Mark Webber and Michael Schumacher. With five laps remaining, only leader Sebastian Vettel stood between him and an improbable victory.\n\nButton pressured Vettel throughout the final lap. The Red Bull driver ran wide at Turn 6, allowing the McLaren through to win. Official timing placed the race at four hours, four minutes and 39 seconds, making it Formula One's longest Grand Prix. Button had combined six pit-lane visits, a penalty, collisions and a spell at the back with victory at the final opportunity.",
+    "pullQuote": "Button won Formula One's longest race after visiting the pit lane six times.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Jenson Button's documented victory in the rain-affected 2011 Canadian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/canada-2011-torrential-rain-a-safety-car-record-and-buttons-charge-the.1ZWPateMlCFLZ8U6KQBNXj",
+      "https://www.formula1.com/en/results/2011/races/34/canada/pit-stop-summary"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "formula-one"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-2011-new-hampshire-restart-erased",
+    "image": "images/mot-2011-new-hampshire-restart-erased.webp",
+    "imageAlt": "IndyCars gathered on a wet New Hampshire oval during the disputed 2011 restart",
+    "category": "Motorsport",
+    "headline": "IndyCar Waves Green, Immediately Wishes It Had Not",
+    "standfirst": "A disputed wet-track restart produced a pile-up, an unmistakable gesture and the rare spectacle of race control reversing itself.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LOUDON, UNITED STATES",
+    "published": "2026-07-18T07:00:00Z",
+    "body": "Rain brought out a late caution during IndyCar's 2011 return to New Hampshire Motor Speedway, with Ryan Hunter-Reay leading. Drivers reported that the oval remained too wet for a safe restart. Race control nevertheless prepared the field to go green with only a few laps remaining, creating a final attempt to resume racing on a surface the competitors had already questioned.\n\nDanica Patrick spun as the field accelerated, initiating a chain reaction involving four other lead-lap cars. Championship contender Will Power was among those caught. After leaving his damaged car, Power directed a conspicuous two-handed middle-finger gesture towards race officials. Oriol Servià had also moved ahead of Hunter-Reay during the attempted restart, adding a scoring dispute to the immediate problem of multiple stranded cars.\n\nIndyCar competition chief Brian Barnhart acknowledged that ordering the restart had been a mistake. Officials red-flagged the event and restored the running order from before the aborted attempt, making Hunter-Reay the winner. Newman/Haas and Chip Ganassi Racing protested the result, but IndyCar later upheld it. The championship had briefly restarted a race, watched the decision fail, and then treated that restart as though it had not happened.",
+    "pullQuote": "IndyCar admitted the wet-track restart was a mistake and reverted to the preceding running order.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article is based on the documented finish of the 2011 IndyCar race at New Hampshire Motor Speedway.",
+    "sources": [
+      "https://www.autosport.com/indycar/news/will-power-slams-indycar-officials-decision-to-restart-4449768/4449768/",
+      "https://www.motorsportmagazine.com/articles/us-scene/indycar/hunter-reay-keeps-new-hampshire-win/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "indycar"
+    ]
+  },
+  {
+    "id": "mot-2012-daytona-jet-dryer-fire",
+    "image": "images/mot-2012-daytona-jet-dryer-fire.webp",
+    "imageAlt": "Safety crews attend the jet dryer incident during the 2012 Daytona 500",
+    "category": "Motorsport",
+    "headline": "Daytona's Track-Drying Machine Sets the Track on Fire",
+    "standfirst": "Juan Pablo Montoya's mechanical failure turned a Monday-night Daytona 500 into an extended encounter with fire, detergent and social media.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "DAYTONA BEACH, UNITED STATES",
+    "published": "2026-07-18T07:15:00Z",
+    "body": "Persistent rain forced the 2012 Daytona 500 from its scheduled Sunday slot into Monday, the first postponement in the race's history. On lap 160, while the field circulated under caution, a rear trailing-arm failure affected Juan Pablo Montoya's Chevrolet as he accelerated to catch the pack. The car veered up the banking and struck a jet dryer working near the outside wall.\n\nThe jet dryer carried fuel for its turbine, and the collision produced a major fire on the racing surface. Montoya and dryer driver Duane Barnes escaped injury. Officials stopped the race for roughly two hours while crews extinguished the fire, removed the damaged vehicles and cleaned the track. Laundry detergent was among the materials used during the effort to treat the contaminated asphalt.\n\nBrad Keselowski used the stoppage to post a photograph from inside his race car, attracting widespread attention to a form of live communication NASCAR later restricted. The circuit was eventually declared usable, and the field resumed racing late into the night. Matt Kenseth won, but the abiding image remained a race car colliding under caution with the machine intended to make racing possible.",
+    "pullQuote": "A broken rear trailing arm sent Montoya's car into a fuel-carrying jet dryer under caution.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented jet dryer collision during the postponed 2012 Daytona 500.",
+    "sources": [
+      "https://www.nascar.com/gallery/memorable-daytona-500-great-american-race-moments/",
+      "https://www.nascar.com/news-media/2013/01/07/sprint-cup-year-in-review/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "nascar"
+    ]
+  },
+  {
+    "id": "mot-2014-bathurst-track-breaks-up",
+    "image": "images/mot-2014-bathurst-track-breaks-up.webp",
+    "imageAlt": "Supercars negotiate the repaired Griffins Bend during the 2014 Bathurst 1000",
+    "category": "Motorsport",
+    "headline": "Bathurst Pauses While Someone Repairs the Mountain",
+    "standfirst": "A failing road surface, ten Safety Cars and a last-to-first winner made the 2014 Bathurst 1000 nearly eight hours long.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BATHURST, AUSTRALIA",
+    "published": "2026-07-18T07:30:00Z",
+    "body": "Chaz Mostert and Paul Morris began the 2014 Bathurst 1000 from 26th and last after their Ford was excluded from qualifying. Their challenge grew stranger when the recently resurfaced track began breaking apart at Griffins Bend. Cars struggled over the damaged section, and officials eventually stopped the race on lap 61 so workers could repair the public road that forms part of Mount Panorama.\n\nThe suspension lasted about an hour. By the time competition resumed, the race had already featured crashes and repeated interruptions, including an earlier impact for the eventual winning car at Griffins Bend. Ten Safety Car periods stretched the event to almost eight hours, the longest running of the Bathurst 1000. Mostert nevertheless returned to contention as strategy and attrition repeatedly reshaped the leading order.\n\nJamie Whincup led late but had to conserve fuel. Mostert closed in and passed him at Forrest's Elbow on the final lap, then drove on to victory with Morris. The winning crew had started last, struck a wall, waited while the circuit was physically repaired and completed the decisive pass only kilometres from the finish. Whincup slipped to fifth as his fuel shortage worsened.",
+    "pullQuote": "Mostert and Morris won from last after a one-hour suspension for repairs to the track surface.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented track failure and last-to-first result of the 2014 Bathurst 1000.",
+    "sources": [
+      "https://www.supercars.com/news/mostert-wins-bathurst-on-final-lap",
+      "https://racer.com/2014/10/12/mostert-morris-win-bathurst-from-last"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "supercars"
+    ]
+  },
+  {
+    "id": "mot-2016-toyota-le-mans-last-lap-failure",
+    "image": "images/mot-2016-toyota-le-mans-last-lap-failure.webp",
+    "imageAlt": "The number 5 Toyota TS050 slows near the finish at the 2016 24 Hours of Le Mans",
+    "category": "Motorsport",
+    "headline": "Toyota Wins 23 Hours and 57 Minutes of Le Mans",
+    "standfirst": "The number 5 Toyota led at the end of a day-long race, stopped within sight of the line and was not even classified.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:45:00Z",
+    "body": "Toyota's number 5 TS050 Hybrid, shared by Anthony Davidson, Sébastien Buemi and Kazuki Nakajima, led the 2016 24 Hours of Le Mans as the race entered its final minutes. Nakajima was completing the last stint with Porsche's number 2 car behind. After nearly a full day of competition, Toyota appeared poised to secure the manufacturer's first overall victory at Le Mans.\n\nWith only minutes remaining, the Toyota lost power and slowed on the pit straight. Nakajima stopped near the start-finish line while the team attempted to diagnose the problem. Neel Jani passed in the number 2 Porsche 919 Hybrid, which he shared with Romain Dumas and Marc Lieb, and completed the final lap to take an victory that had seemed unavailable moments earlier.\n\nNakajima eventually restarted and brought the Toyota across the finish, but that did not restore even second place. Its final lap exceeded the event's six-minute maximum and the car was therefore not classified. Toyota's other entry finished second, while Audi took third. The erstwhile leader had survived almost 24 hours, lost first place at the line and then disappeared from the official classification.",
+    "pullQuote": "Toyota's number 5 restarted after losing the lead, but its slow final lap left it unclassified.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented final minutes of the 2016 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.fiawec.com/en/news/porsche-denies-toyota-at-le-mans-in-dramatic-last-lap-win/4180",
+      "https://newsroom.lemans.org/en/press/porsche-clinches-a-last-minute-victory-in-the-24-hours-of-le-mans"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "wec"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-2017-baku-vettel-hamilton-safety-car",
+    "image": "images/mot-2017-baku-vettel-hamilton-safety-car.webp",
+    "imageAlt": "Sebastian Vettel draws alongside Lewis Hamilton behind the Safety Car in Baku",
+    "category": "Motorsport",
+    "headline": "Vettel Turns the Safety Car Period into a Contact Sport",
+    "standfirst": "A perceived brake test led one championship contender to drive deliberately into another while the race was neutralised.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BAKU, AZERBAIJAN",
+    "published": "2026-07-18T08:00:00Z",
+    "body": "Lewis Hamilton led Sebastian Vettel behind the Safety Car during the 2017 Azerbaijan Grand Prix. Approaching a restart, Vettel ran into the rear of Hamilton's Mercedes. Believing that Hamilton had brake-tested him, the Ferrari driver pulled alongside, gestured towards his rival and then steered across. Their wheels made deliberate contact while the field was still circulating under neutralised conditions.\n\nTelemetry reviewed by the stewards did not support the allegation that Hamilton had brake-tested Vettel. Officials imposed a ten-second stop-go penalty on Vettel for dangerous driving. Hamilton later lost time because a loose headrest forced an additional pit stop, allowing Vettel to finish fourth, one position ahead of him. Daniel Ricciardo won an event whose championship argument continued beyond the chequered flag.\n\nThe FIA summoned Vettel to its Paris headquarters for a further review. He accepted full responsibility, apologised to Hamilton and committed to educational work across junior racing categories. The governing body then closed the matter without an additional sporting penalty. An incident that began under the Safety Car had produced intentional contact, an in-race sanction and a separate disciplinary meeting between title rivals.",
+    "pullQuote": "Vettel received a ten-second stop-go penalty for making retaliatory contact with Hamilton behind the Safety Car.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the FIA-documented Vettel-Hamilton incident at the 2017 Azerbaijan Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/baku-incident-closed-after-vettel-apology-fia.5XI64usbAIg2WyG6KaAIOm"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "formula-one"
+    ]
+  },
+  {
+    "id": "mot-2018-detroit-pace-car-crash",
+    "image": "images/mot-2018-detroit-pace-car-crash.webp",
+    "imageAlt": "A damaged Chevrolet Corvette ZR1 pace car beside the wall at the 2018 Detroit Grand Prix",
+    "category": "Motorsport",
+    "headline": "Detroit Pace Car Volunteers to Crash First",
+    "standfirst": "A senior General Motors executive lost the Corvette pace car before IndyCar's second Detroit race had even started.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "DETROIT, UNITED STATES",
+    "published": "2026-07-18T08:15:00Z",
+    "body": "The field for the second 2018 Detroit IndyCar race followed a Chevrolet Corvette ZR1 through its pre-start laps at Belle Isle. Driving the pace car was Mark Reuss, then General Motors' executive vice president for global product development. IndyCar official Mark Sandy occupied the passenger seat. Before the racing cars received the green flag, Reuss lost control and struck the circuit wall.\n\nThe Corvette sustained heavy front-end damage and its airbags deployed. Reuss and Sandy climbed from the vehicle before being taken to the circuit medical centre, where both were examined and cleared. IndyCar sent out a replacement pace car while marshals removed the damaged Corvette and dealt with the scene, delaying the scheduled start by roughly half an hour.\n\nThe race eventually began and Ryan Hunter-Reay won, but its first incident belonged to a vehicle outside the competitive field. Chevrolet acknowledged the crash and cited weather and track conditions among the contributing factors. The episode inverted the pace car's entire purpose: the machine assigned to lead 22 racing cars safely to the start became the first car requiring recovery.",
+    "pullQuote": "Both occupants were cleared after the Corvette pace car crashed before the IndyCar race began.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented pace car crash before Race 2 of the 2018 Detroit Grand Prix.",
+    "sources": [
+      "https://www.autosport.com/indycar/news/chevrolet-describes-indycar-detroit-pace-car-crash-as-unfortunate-5320263/5320263/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "indycar"
+    ]
+  },
+  {
+    "id": "mot-2018-argentina-motogp-solo-grid",
+    "image": "images/mot-2018-argentina-motogp-solo-grid.webp",
+    "imageAlt": "Jack Miller waits alone at the front of the rearranged 2018 Argentine MotoGP grid",
+    "category": "Motorsport",
+    "headline": "Jack Miller Qualifies for a Private Starting Grid",
+    "standfirst": "A drying circuit sent almost every MotoGP rider to the pits and left the pole-sitter briefly facing an empty grid.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "TERMAS DE RÍO HONDO, ARGENTINA",
+    "published": "2026-07-18T08:30:00Z",
+    "body": "The track was wet but drying as riders assembled for the 2018 Argentine MotoGP race. Pole-sitter Jack Miller had selected a bike configured for dry conditions. Every other rider initially chose wet-weather equipment, then left the grid to change bikes as the surface improved. Miller remained in his pole position while the rest of the starting field gathered at the pit-lane exit.\n\nStarting almost everyone from pit lane would have created its own safety problem. Race direction delayed the start and rearranged the returning riders several rows behind Miller, preserving an advantage for the only competitor who had made the correct initial choice but substantially reducing its size. The resulting image showed Miller alone at the front, separated by an expanse of empty grid from every rival.\n\nFurther disorder followed when Marc Márquez stalled, restarted his motorcycle by riding against the normal direction and later received a ride-through penalty. Cal Crutchlow ultimately won, with Miller finishing fourth. MotoGP subsequently revised its grid procedures, explicitly referring to the Argentine circumstances. One rider's correct tyre decision had exposed a situation the existing starting rules handled only awkwardly.",
+    "pullQuote": "Every MotoGP rider except Jack Miller left the grid to change motorcycles as the track dried.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented starting-grid confusion at the 2018 Argentine MotoGP.",
+    "sources": [
+      "https://www.motogp.com/en/news/2018/04/08/crutchlow-on-top-as-the-title-fight-explodes-in-argentina/144227",
+      "https://www.motogp.com/de/news/2018/05/29/official-changes-to-the-grid-procedure-decided/145690"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "motogp"
+    ]
+  },
+  {
+    "id": "mot-2021-valencia-formula-e-energy-crisis",
+    "image": "images/mot-2021-valencia-formula-e-energy-crisis.webp",
+    "imageAlt": "Formula E cars slow with depleted energy near the end of the 2021 Valencia E-Prix",
+    "category": "Motorsport",
+    "headline": "Formula E Discovers the Finish Is One Lap Farther Away",
+    "standfirst": "Repeated Safety Cars upset the field's calculations and turned Valencia's final lap into a mass exercise in energy shortage.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "VALENCIA, SPAIN",
+    "published": "2026-07-18T08:45:00Z",
+    "body": "Formula E's first race at Valencia's permanent Ricardo Tormo circuit took place in wet conditions in April 2021. Incidents brought the Safety Car out five times. Under the regulations, energy allowances were reduced to reflect time spent at slower speed. Teams attempted to calculate what remained while also accounting for the timed race format, which required the leader to complete an additional lap after time expired.\n\nThe final Safety Car period left the race running one lap longer than many teams had expected. Long-time leader António Félix da Costa and much of the pack had insufficient usable energy to complete that distance at racing speed. Cars slowed dramatically during the closing tour, while drivers who had preserved a larger contingency moved through an order that changed almost continuously.\n\nNyck de Vries passed da Costa and won for Mercedes, followed by Nico Müller and Stoffel Vandoorne. Only 12 drivers were classified. Formula E's official report attributed the extraordinary finish to Safety Car interruptions, the extra lap and differing conservation choices. The electric championship had produced a final straight on which reaching the flag with usable power mattered more than conventional overtaking speed.",
+    "pullQuote": "Only 12 drivers were classified after the extended race distance exhausted much of the field's usable energy.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented energy-management finish of the first 2021 Valencia E-Prix.",
+    "sources": [
+      "https://www.fiaformulae.com/en/news/4446/mercedes-eqs-nyck-de-vries-wins-crazy-dhl-valencia-e-prix-round-5"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-e"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-2021-belgian-gp-no-racing-laps",
+    "image": "images/mot-2021-belgian-gp-no-racing-laps.webp",
+    "imageAlt": "Formula One cars follow the Safety Car through heavy spray at Spa in 2021",
+    "category": "Motorsport",
+    "headline": "Belgian Grand Prix Completes a Race Without Going Racing",
+    "standfirst": "Three official laps behind the Safety Car were enough to produce a winner, a podium and half points at rain-soaked Spa.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPA-FRANCORCHAMPS, BELGIUM",
+    "published": "2026-07-18T09:00:00Z",
+    "body": "Heavy rain and poor visibility delayed the 2021 Belgian Grand Prix at Spa-Francorchamps. After an initial wait, the field completed formation laps behind the Safety Car before returning to the pit lane under a red flag. Rain continued while officials worked within the event's regulatory time limits and considered whether conditions might improve enough for competitive running.\n\nMore than three hours after the scheduled start, the cars emerged again behind the Safety Car. Three laps appeared on the official count before another red flag ended the attempt. No green-flag racing took place. Because the rules then awarded half points once more than two laps had been completed, the brief controlled procession was sufficient to create a classified Grand Prix result.\n\nPole-sitter Max Verstappen was declared the winner. George Russell retained second place from qualifying and collected his first Formula One podium, while Lewis Hamilton finished third. Most of the order simply reproduced the grid. Formula One had staged its shortest Grand Prix, awarding trophies and championship points after a race in which overtaking under competitive conditions had never been possible.",
+    "pullQuote": "The 2021 Belgian Grand Prix awarded half points despite completing no laps under green-flag conditions.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the officially classified, rain-shortened 2021 Belgian Grand Prix at Spa-Francorchamps.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/verstappen-takes-victory-in-severely-shortened-rain-affected-belgian-gp-as.4AqGhiKQfFaqr7KZjyDjPZ.4AqGhiKQfFaqr7KZjyDjPZ"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-one"
+    ]
+  },
+  {
+    "id": "mot-2021-hungary-hamilton-solo-start",
+    "image": "images/mot-2021-hungary-hamilton-solo-start.webp",
+    "imageAlt": "Lewis Hamilton waits alone on the grid for the 2021 Hungarian Grand Prix restart",
+    "category": "Motorsport",
+    "headline": "Lewis Hamilton Defeats the Entire Grid by Being the Entire Grid",
+    "standfirst": "Fourteen rivals chose the pit lane as Hungary dried, leaving one Mercedes to perform Formula One's starting ritual alone.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BUDAPEST, HUNGARY",
+    "published": "2026-07-18T09:15:00Z",
+    "body": "A first-lap collision eliminated several cars and brought out a red flag during the wet 2021 Hungarian Grand Prix. When the remaining field left the pit lane for the restart formation lap, every car wore intermediate tyres. The circuit dried rapidly during that lap, making slicks the better choice before the drivers had returned to their designated grid positions.\n\nFourteen drivers entered the pit lane to change tyres. Mercedes kept polesitter Lewis Hamilton on intermediates, so he proceeded alone to the grid. The five starting lights illuminated and went out for a single stationary car, while every rival waited at the pit exit. Hamilton completed the formal standing start without opposition, then pitted at the end of the lap and rejoined at the rear.\n\nEsteban Ocon inherited the lead and went on to take his first Formula One victory. Hamilton recovered through the field, but Mercedes' decision had cost him the advantage created by his solitary restart. Race officials later explained that the normal start procedure remained valid even with one car present. The rules had anticipated many contingencies, including, indirectly, a Grand Prix grid reduced to one.",
+    "pullQuote": "Hamilton took the standing restart alone while all 14 rivals waited at the pit-lane exit.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented solo restart during the 2021 Hungarian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/race-director-michael-masi-explains-how-hungary-restart-would-have-worked-if.7iCcbfEIN1BfFej2P2BTyh",
+      "https://www.formula1.com/en/latest/article/ocon-beats-vettel-to-claim-shock-maiden-victory-in-action-packed-hungarian.4Ewxz6olluqX7Y4E1U8NOq.4Ewxz6olluqX7Y4E1U8NOq"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-one"
+    ]
+  },
+  {
+    "id": "mot-2022-chastain-martinsville-wall-ride",
+    "image": "images/mot-2022-chastain-martinsville-wall-ride.webp",
+    "imageAlt": "Ross Chastain's NASCAR rides the outside wall on the final lap at Martinsville",
+    "category": "Motorsport",
+    "headline": "Ross Chastain Selects the Video-Game Line",
+    "standfirst": "A full-throttle wall ride carried Chastain past five cars, set a track speed record and secured a championship-final place.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MARTINSVILLE, UNITED STATES",
+    "published": "2026-07-18T09:30:00Z",
+    "body": "Ross Chastain entered the final lap of NASCAR's 2022 Martinsville playoff race needing additional positions to overtake Denny Hamlin in the championship standings. Running tenth, he approached the final two corners with conventional passing opportunities almost exhausted. Chastain selected top gear, kept the throttle open and deliberately aimed his Chevrolet against the outside SAFER barrier.\n\nThe wall supported the car while its right side scraped through Turns 3 and 4. Chastain passed five cars and crossed the line fifth, recording a 100.483 mph lap that NASCAR identified as the fastest Cup Series lap in Martinsville Speedway history. The recovered positions changed him from one point below Hamlin to four points ahead, securing the final place in the Championship 4.\n\nChastain said the idea recalled a manoeuvre his brother had used against him in a 2005 NASCAR game on the Nintendo GameCube. He had not practised it in race preparation and did not know whether the real physics would cooperate. The move worked once, became known as the Hail Melon and later prompted NASCAR to prohibit similar wall-riding attempts.",
+    "pullQuote": "Chastain moved from tenth to fifth by riding the wall and secured the final Championship 4 berth.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Ross Chastain's documented final-lap wall ride at Martinsville in October 2022.",
+    "sources": [
+      "https://www.nascar.com/news-media/2022/10/30/nascar-cup-series-2022-playoffs-ross-chastain-martinsville/",
+      "https://www.nascar.com/news-media/2023/03/07/chastain-helps-remove-martinsville-wall-commemorates-hail-melon/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "nascar"
+    ]
+  },
+  {
+    "id": "mot-2023-las-vegas-drain-cover-penalty",
+    "image": "images/mot-2023-las-vegas-drain-cover-penalty.webp",
+    "imageAlt": "Carlos Sainz's Ferrari passes over the Las Vegas Strip circuit before the 2023 drain-cover stoppage",
+    "category": "Motorsport",
+    "headline": "Las Vegas Road Breaks Ferrari, Ferrari Receives Penalty",
+    "standfirst": "A failed water-valve cover destroyed legal components in Carlos Sainz's car, leaving the blameless driver ten grid places poorer.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LAS VEGAS, UNITED STATES",
+    "published": "2026-07-18T09:45:00Z",
+    "body": "The first practice session for Formula One's new Las Vegas Grand Prix lasted only minutes. Carlos Sainz passed over a water-valve cover on the Strip, where the surrounding concrete frame failed. The impact damaged his Ferrari and brought it to a halt. Race control stopped the session, and the FIA cancelled the remaining running while every comparable cover around the street circuit was inspected.\n\nFerrari had to replace the survival cell, energy store, control electronics and other affected components. The stewards accepted that the incident resulted from highly unusual external circumstances and that Ferrari had done nothing wrong. They nevertheless concluded that the regulations gave them no authority to waive the prescribed ten-place grid penalty for fitting components beyond the permitted allocation.\n\nSainz qualified second but started 12th after the sanction. The delayed second practice session then ran without spectators after organisers closed fan areas during the extended overnight schedule. What began as a failure in public-road infrastructure therefore damaged a car, curtailed one session, displaced another and penalised the driver whose principal involvement had been arriving at the defective cover first.",
+    "pullQuote": "Stewards said Ferrari was not at fault but imposed the component-related ten-place grid penalty.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented water-valve-cover incident during practice for the 2023 Las Vegas Grand Prix.",
+    "sources": [
+      "https://www.fia.com/news/f1-first-practice-session-las-vegas-stopped-for-circuit-repairs-following-sainz-incident"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-one"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1982-monaco-nobody-wins",
+    "image": "images/mot-1982-monaco-nobody-wins.webp",
+    "imageAlt": "Riccardo Patrese's Brabham leading through the streets of Monaco during the chaotic 1982 finish",
+    "category": "Motorsport",
+    "headline": "The Monaco Grand Prix Nobody Seemed Able to Win",
+    "standfirst": "Five late changes of fortune left Riccardo Patrese unsure that he had won the 1982 Monaco Grand Prix.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTE CARLO, MONACO",
+    "published": "2026-07-18T09:00:00Z",
+    "body": "Alain Prost led the Monaco Grand Prix on 23 May 1982 until rain began falling near the end. On lap 74 his Renault hit a barrier on the harbour front, handing the lead to Riccardo Patrese. The Brabham driver then spun at the Loews hairpin and stalled, apparently ending his own chance of victory.\n\nDidier Pironi inherited first place but stopped in the tunnel on the final lap, short of fuel and with an electrical problem. Andrea de Cesaris also ran out of fuel before he could pass the stranded Ferrari, while Derek Daly's damaged Williams came to a halt. Patrese, meanwhile, had restarted by rolling downhill and bump-starting his engine.\n\nPatrese completed the final lap and took the chequered flag, although the confusion was so complete that he initially thought he had lost. Pironi and de Cesaris were classified second and third from the distance they had covered. The sequence turned a straightforward lead into a finish remembered as the race that nobody appeared willing, or mechanically able, to win.",
+    "pullQuote": "Patrese spun out of the lead, restarted downhill and still returned to win.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented sequence of late retirements and Riccardo Patrese's victory at the 1982 Monaco Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/were-streaming-the-1982-monaco-grand-prix-heres-why-you-should-watch.2WIrjG5qpc0BoK0ERjab6v.2WIrjG5qpc0BoK0ERjab6v",
+      "https://www.formula1.com/en/results/1982/races/442/monaco/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "formula-one",
+      "monaco-grand-prix"
+    ]
+  },
+  {
+    "id": "mot-1991-adelaide-fourteen-lap-grand-prix",
+    "image": "images/mot-1991-adelaide-fourteen-lap-grand-prix.webp",
+    "imageAlt": "Formula One cars struggling through standing water at the 1991 Australian Grand Prix in Adelaide",
+    "category": "Motorsport",
+    "headline": "The Grand Prix Decided After Fourteen Laps",
+    "standfirst": "Adelaide's torrential 1991 race lasted sixteen laps, but the official result was wound back to lap fourteen.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "ADELAIDE, AUSTRALIA",
+    "published": "2026-07-18T09:15:00Z",
+    "body": "Heavy rain engulfed Adelaide for the Australian Grand Prix on 3 November 1991. Ayrton Senna started from pole and led, but visibility and standing water made the street circuit treacherous. Cars spun or crashed as the downpour worsened, while drivers increasingly signalled that the conditions had become unsafe for racing.\n\nOfficials stopped the event during lap 17. Formula One's countback rule placed the result at the end of lap 14, erasing positions gained during the next two completed tours. Senna was declared the winner ahead of Nigel Mansell and Gerhard Berger, even though Mansell had crashed and required hospital attention before the stoppage.\n\nThe classified distance was 52.92 kilometres and Senna's official winning time was 24 minutes 34.899 seconds. Because less than 75 percent of the scheduled distance had been completed, half points were awarded. The race became the shortest Formula One world championship Grand Prix by distance, a record it retained until the rain-curtailed 2021 Belgian Grand Prix.",
+    "pullQuote": "The cars reached lap sixteen, but the official result returned to the end of lap fourteen.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented stoppage, countback and half-points result of the 1991 Australian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/in-numbers-the-australian-grand-prix.5ESNHWNGx55OK2zceW8np7",
+      "https://www.formula1.com/en/results/1991/races/574/australia/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "australian-grand-prix"
+    ]
+  },
+  {
+    "id": "mot-1996-panis-monaco-three-finishers",
+    "image": "images/mot-1996-panis-monaco-three-finishers.webp",
+    "imageAlt": "Olivier Panis driving the Ligier through wet Monaco streets during the 1996 Grand Prix",
+    "category": "Motorsport",
+    "headline": "The Monaco Grand Prix With Three Cars Still Running",
+    "standfirst": "Olivier Panis started fourteenth and survived a wet afternoon that eliminated almost the entire field.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTE CARLO, MONACO",
+    "published": "2026-07-18T09:30:00Z",
+    "body": "Rain arrived before the Monaco Grand Prix on 19 May 1996, producing a race of changing grip and repeated retirements. Olivier Panis began only 14th in his Ligier-Mugen-Honda. A well-timed switch from wet tyres to slicks helped him advance as faster qualifiers crashed, collided or suffered mechanical failures.\n\nPanis overtook several rivals on the narrow street circuit and took the lead after Jean Alesi's Benetton retired with suspension trouble. He then resisted David Coulthard's McLaren to claim his first Formula One victory. It was also Ligier's first win since 1981 and the final Grand Prix victory in the French team's history.\n\nOnly Panis, Coulthard and Johnny Herbert were still running when the two-hour limit ended the race after 75 of the scheduled 78 laps. Seven drivers appeared in the classification because four retired cars had covered enough distance to be counted. The winner had therefore climbed from the seventh row through a contest with fewer active finishers than podium positions usually require.",
+    "pullQuote": "Only Panis, Coulthard and Herbert remained in motion when the race ended.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Olivier Panis's documented victory and the unusually small number of running finishers at the 1996 Monaco Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/olivier-panis-on-that-monaco-grand-prix-victory.3ssD41qZZk0IiGkCdA6j0Z",
+      "https://www.formula1.com/en/results/1996/races/635/monaco/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "monaco-grand-prix"
+    ]
+  },
+  {
+    "id": "mot-1997-jerez-identical-qualifying-times",
+    "image": "images/mot-1997-jerez-identical-qualifying-times.webp",
+    "imageAlt": "Three Formula One cars on the Jerez circuit during the tightly matched 1997 European Grand Prix weekend",
+    "category": "Motorsport",
+    "headline": "Three Drivers Set Exactly the Same Pole Time",
+    "standfirst": "Formula One's 1997 title decider produced a qualifying tie to the thousandth of a second among three leading drivers.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "JEREZ DE LA FRONTERA, SPAIN",
+    "published": "2026-07-18T09:45:00Z",
+    "body": "Jacques Villeneuve arrived at Jerez for the 1997 European Grand Prix one championship point behind Michael Schumacher. During qualifying on 25 October, the Williams driver recorded a lap of 1 minute 21.072 seconds. It looked like the benchmark for the title-deciding race, but the timing screens soon produced an unprecedented repetition.\n\nSchumacher matched Villeneuve's time exactly, down to the thousandth of a second. Heinz-Harald Frentzen then completed another lap in precisely 1:21.072. The regulations broke the three-way tie by the order in which the times were set, giving Villeneuve pole, Schumacher second and Frentzen third. Damon Hill missed joining them by only 0.058 seconds.\n\nThe numerical dead heat became the prelude to an equally dramatic race. Schumacher led before colliding with Villeneuve during their championship fight and retiring. Villeneuve continued to finish third and secure the title. Yet before that confrontation, qualifying had already created its own rarity: three different cars, from two teams, occupying the first three grid positions with an identical recorded time.",
+    "pullQuote": "Villeneuve, Schumacher and Frentzen each stopped the clock at 1:21.072.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented three-way tie for the fastest qualifying time at the 1997 European Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/revealed-the-classic-f1-race-you-voted-to-watch-this-wednesday.4v787ZuyIcxz4cWQ6EbACV",
+      "https://www.formula1.com/en/latest/article/how-i-beat-schumacher-to-the-title-at-jerez-97-by-jacques-villeneuve.2cerUxDqRaYUsoQi2KGSQW"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "european-grand-prix"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1998-schumacher-wins-in-pit-lane",
+    "image": "images/mot-1998-schumacher-wins-in-pit-lane.webp",
+    "imageAlt": "Michael Schumacher's Ferrari entering the Silverstone pit lane at the end of the 1998 British Grand Prix",
+    "category": "Motorsport",
+    "headline": "The Grand Prix Won on the Way Into the Pits",
+    "standfirst": "Michael Schumacher crossed Silverstone's finish line in the pit lane while arriving to serve a late penalty.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SILVERSTONE, ENGLAND",
+    "published": "2026-07-18T10:00:00Z",
+    "body": "Rain shaped the British Grand Prix at Silverstone on 12 July 1998. Mika Hakkinen built a large lead for McLaren, but an off-track moment and a safety-car period erased his advantage. Michael Schumacher passed him after the restart and moved his Ferrari into first place with the closing laps approaching.\n\nOfficials then issued Schumacher a stop-and-go penalty for passing Alexander Wurz while the safety car was deployed. The notice arrived late and its wording caused a dispute between Ferrari and the stewards. Ferrari kept Schumacher racing long enough to create a lead over Hakkinen, then called him into the pit lane on the final lap.\n\nSilverstone's start-finish line crossed the pit lane before Ferrari's garage. Schumacher therefore completed the race and officially won while driving towards the box where he was supposed to serve the penalty. The stewards later added ten seconds to his race time, but his advantage was about 22 seconds, so the result remained unchanged: victory had been sealed before the car stopped.",
+    "pullQuote": "Schumacher crossed the finish line inside the pit lane before reaching Ferrari's garage.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Michael Schumacher's documented pit-lane finish and victory at the 1998 British Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/moments-in-time-the-british-grand-prix.75fZYfjfQvbAofkfSAOvLe",
+      "https://www.formula1.com/en/latest/article/from-wet-weather-mastery-to-last-lap-shocks-10-of-the-most-memorable-wins-at.3CKqgTx7juBp8nglWBgffT.3CKqgTx7juBp8nglWBgffT"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "british-grand-prix"
+    ]
+  },
+  {
+    "id": "mot-2003-brazil-winner-trophy-exchange",
+    "image": "images/mot-2003-brazil-winner-trophy-exchange.webp",
+    "imageAlt": "Giancarlo Fisichella and Kimi Raikkonen exchanging the Brazilian Grand Prix trophy at Imola in 2003",
+    "category": "Motorsport",
+    "headline": "The Winner Who Received His Trophy Three Weeks Late",
+    "standfirst": "A timing review reversed the 2003 Brazilian Grand Prix result after Kimi Raikkonen had already left with the trophy.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SAO PAULO, BRAZIL",
+    "published": "2026-07-18T10:15:00Z",
+    "body": "The Brazilian Grand Prix on 6 April 2003 unfolded in heavy rain and repeated accidents. Mark Webber crashed his Jaguar on the approach to the final turn, scattering debris across the circuit. Fernando Alonso then struck the wreckage and suffered another major impact, prompting officials to stop the race rather than attempt a restart.\n\nGiancarlo Fisichella had taken the lead shortly before the red flag, but the initial countback placed Kimi Raikkonen first and the Jordan driver second. Raikkonen received the winner's trophy. Fisichella's car, already suffering an engine problem, caught fire in parc ferme and provided an appropriately chaotic final image to the abandoned afternoon.\n\nA later examination of the timing evidence showed Fisichella had begun lap 56 before the stoppage. That meant the required two-lap countback used the order at the end of lap 54, when he led, rather than lap 53. Officials revised the result, giving Fisichella his first Formula One victory. Raikkonen handed over the trophy at Imola about three weeks later.",
+    "pullQuote": "The timing review moved the countback forward one lap and transferred the victory to Fisichella.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented review and delayed trophy handover that followed the 2003 Brazilian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/moments-in-time-the-brazilian-grand-prix.5dr3Egu9lleFLsheSjlkQ0.5dr3Egu9lleFLsheSjlkQ0",
+      "https://www.formula1.com/en/latest/article/from-ayrton-sennas-suspended-ban-to-sebastian-vettels-victory-antics-8-crazy-post-race.2Pssou2f1Rh9Iv99fpfcNR"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "formula-one",
+      "brazilian-grand-prix"
+    ]
+  },
+  {
+    "id": "mot-1981-indy-winner-restored-138-days",
+    "image": "images/mot-1981-indy-winner-restored-138-days.webp",
+    "imageAlt": "Bobby Unser and Mario Andretti beside their Indianapolis cars during the disputed 1981 result",
+    "category": "Motorsport",
+    "headline": "The Indianapolis Winner Restored After 138 Days",
+    "standfirst": "Bobby Unser crossed the line first in 1981, lost the race the next morning and recovered it in October.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T10:30:00Z",
+    "body": "Bobby Unser crossed the finish line first in the Indianapolis 500 on 24 May 1981, with Mario Andretti second. The next morning, officials penalised Unser one lap for passing cars while leaving the pits during a caution period. The decision moved Andretti to the top of the results and appeared to give him a second Indianapolis victory.\n\nRoger Penske's team protested, arguing that Unser's manoeuvres occurred as the field reorganised through pit stops and that the punishment was excessive. The dispute moved through a lengthy appeal and arbitration process. During that interval, the race existed with a declared winner who had not been the first driver to take the chequered flag.\n\nOn 8 October, 138 days after the race, the review panel rescinded the lap penalty and restored Unser to first place, while retaining a monetary fine. The ruling gave him his third Indianapolis 500 victory. Andretti returned to second, completing a result whose final form took more than four months to travel from the speedway to the record book.",
+    "pullQuote": "Unser won in May, lost the result the next morning and officially recovered it in October.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented penalty, appeal and restoration of Bobby Unser's 1981 Indianapolis 500 victory.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/news-multimedia/news/2020/05/27/indy-500-race-recaps-1980s"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "indycar",
+      "indy-500"
+    ]
+  },
+  {
+    "id": "mot-1987-indy-hotel-lobby-car-wins",
+    "image": "images/mot-1987-indy-hotel-lobby-car-wins.webp",
+    "imageAlt": "Al Unser driving the year-old March that had been removed from a hotel lobby for the 1987 Indianapolis 500",
+    "category": "Motorsport",
+    "headline": "The Indianapolis Winner Retrieved From a Hotel Lobby",
+    "standfirst": "A year-old display car was taken from a Pennsylvania hotel and prepared in time to win the 1987 Indianapolis 500.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T10:45:00Z",
+    "body": "Team Penske arrived at Indianapolis in 1987 with its new PC-16, but the car struggled for speed and handling. The team abandoned it for older March chassis. When Danny Ongais was injured in a practice crash, Roger Penske recruited Al Unser, who had come to the speedway without a race drive and expected only to advise his son.\n\nPenske needed another car. A 1986 March-Cosworth owned by the team was serving as a showpiece in the lobby of a Sheraton hotel in Reading, Pennsylvania. It was removed, transported to Indianapolis and rebuilt for competition. Unser qualified the year-old machine 20th in the 33-car field with little preparation time remaining.\n\nUnser drove a measured race while faster contenders encountered trouble. Mario Andretti dominated before an ignition failure, and Roberto Guerrero lost time after stalling in the pits. Unser took the lead and won by nearly five seconds. His fourth Indianapolis 500 victory tied A. J. Foyt's record, delivered by a car that had begun the month as hotel decoration.",
+    "pullQuote": "The March went from a Sheraton lobby to Indianapolis victory in the same month.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented retrieval and victory of Al Unser's hotel-display car at the 1987 Indianapolis 500.",
+    "sources": [
+      "https://www.teampenske.com/news/index.cfm/c/666/53009/Throwback_Thursday_-_1987_Indianapolis_500",
+      "https://www.indianapolismotorspeedway.com/events/indy500/history/historical-stats/race-stats/race-results/1987"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "indycar",
+      "indy-500"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1995-penske-fails-indy-qualifying",
+    "image": "images/mot-1995-penske-fails-indy-qualifying.webp",
+    "imageAlt": "Team Penske mechanics pushing an unqualified Indianapolis car during the troubled 1995 time trials",
+    "category": "Motorsport",
+    "headline": "The Defending Indianapolis Champions Missed the Race",
+    "standfirst": "One year after dominating Indianapolis, Team Penske could not qualify either of its former winners for the 1995 field.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T11:00:00Z",
+    "body": "Team Penske had won the 1993 Indianapolis 500 with Emerson Fittipaldi and the 1994 race with Al Unser Jr. The latter victory featured the specially developed Mercedes-Benz pushrod engine and overwhelming speed. Both former winners returned for 1995, when Penske was already the event's most successful entrant and expected to challenge at the front again.\n\nInstead, the new Penske PC-24 combination lacked the pace required to qualify. The team tried older machinery and borrowed alternative chassis as practice and time trials continued. Fittipaldi briefly put a borrowed Lola into the 33-car field on the final day, but Stefan Johansson later completed a faster run and bumped him out.\n\nUnser made further attempts but could not produce a qualifying average fast enough to enter the race. When time expired, neither Penske driver had a starting place. The reigning winner and his immediate predecessor therefore watched the 1995 Indianapolis 500 from outside the field, giving the team its first complete failure to qualify at Indianapolis since 1968.",
+    "pullQuote": "The drivers who won the previous two Indianapolis 500s both failed to make the 1995 field.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Team Penske's documented failure to qualify Emerson Fittipaldi and Al Unser Jr. for the 1995 Indianapolis 500.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/events/indy500/history/1995-indianapolis-500-review",
+      "https://www.teampenske.com/about/index.cfm?cid=51992"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "indycar",
+      "indy-500"
+    ]
+  },
+  {
+    "id": "mot-1986-richmond-leaders-wreck-petty-wins",
+    "image": "images/mot-1986-richmond-leaders-wreck-petty-wins.webp",
+    "imageAlt": "Kyle Petty's stock car passes the damaged leaders late in the 1986 Richmond race",
+    "category": "Motorsport",
+    "headline": "Richmond's Leaders Settle the Race by Eliminating Each Other",
+    "standfirst": "Dale Earnhardt and Darrell Waltrip reached the final two laps first, then left Kyle Petty an unexpected route to his maiden Cup victory.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "RICHMOND, UNITED STATES",
+    "published": "2026-07-18T06:00:00Z",
+    "body": "Dale Earnhardt led Darrell Waltrip into the closing laps of the 1986 Miller High Life 400 at Richmond Fairgrounds Raceway. Waltrip had the faster car late in the contest and repeatedly challenged for the lead. With two laps remaining, the pair made contact entering Turn 3 while the rest of the field followed at a respectful distance.\n\nBoth leading cars slid into the wall and collected other contenders in the ensuing confusion. Earnhardt and Waltrip had been fighting for victory; neither reached the chequered flag in position to claim it. Kyle Petty, who had been running behind the dispute, found the track opening ahead and drove through to inherit first place.\n\nPetty held the lead for the final circulation and took his first NASCAR Cup Series victory. The finish supplied a neat lesson in race arithmetic: two established champions contested one piece of road, while a 25-year-old without a Cup win collected the result. NASCAR's own archive records the collision as the event that delivered Petty's breakthrough.",
+    "pullQuote": "Kyle Petty inherited the lead with two laps remaining and converted it into his first Cup victory.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented finish of the 1986 Miller High Life 400 at Richmond Fairgrounds Raceway.",
+    "sources": [
+      "https://www.nascar.com/gallery/drivers-with-first-win-at-richmond-raceway/",
+      "https://www.nascar.com/videos/franchise/from-the-vault/earnhardt-waltrip-collide-richmond-1986/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "nascar"
+    ]
+  },
+  {
+    "id": "mot-1992-kulwicki-title-by-one-lap",
+    "image": "images/mot-1992-kulwicki-title-by-one-lap.webp",
+    "imageAlt": "Alan Kulwicki leads Bill Elliott during the 1992 NASCAR season finale at Atlanta",
+    "category": "Motorsport",
+    "headline": "Alan Kulwicki Wins a Championship by Leading One Additional Lap",
+    "standfirst": "Bill Elliott won the Atlanta finale, but Kulwicki's insistence on staying ahead for lap 103 secured the bonus that decided the season.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "HAMPTON, UNITED STATES",
+    "published": "2026-07-18T06:15:00Z",
+    "body": "Six drivers arrived at Atlanta Motor Speedway for the 1992 Hooters 500 with a mathematical chance of winning the NASCAR Cup title. Davey Allison began the race 30 points ahead of Alan Kulwicki, with Bill Elliott a further 10 points back. Allison's challenge ended in a crash on lap 254, leaving Elliott and Kulwicki to settle the championship between them.\n\nElliott was positioned to win the race, so Kulwicki's route to the title depended on finishing second and collecting the five-point bonus for leading the most laps. Kulwicki stayed on track during the final pit-stop sequence long enough to secure that distinction. He led 103 laps in total; Elliott led 102.\n\nElliott took the chequered flag and Kulwicki followed in second. The extra bonus carried the independent owner-driver to the championship by 10 points, then the closest title margin in NASCAR history. One lap did not decide the entire scoring table by itself, but without that single-lap advantage Elliott's race victory would also have delivered the season.",
+    "pullQuote": "Kulwicki led 103 laps to Elliott's 102 and won the championship by 10 points.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Alan Kulwicki's documented title victory in the 1992 Hooters 500 at Atlanta.",
+    "sources": [
+      "https://www.nascar.com/news-media/2023/03/17/best-race-ever-making-the-case-for-the-1992-hooters-500-at-atlanta/",
+      "https://www.nascar.com/gallery/nascar-in-1992-key-story-lines-moments-of-the-season/?mode=list"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "nascar"
+    ]
+  },
+  {
+    "id": "mot-2002-daytona-marlin-repairs-under-red",
+    "image": "images/mot-2002-daytona-marlin-repairs-under-red.webp",
+    "imageAlt": "Sterling Marlin stands beside his stopped stock car during a red flag at the 2002 Daytona 500",
+    "category": "Motorsport",
+    "headline": "Daytona Leader Performs Unauthorized Kerbside Bodywork",
+    "standfirst": "Sterling Marlin left his car during a red flag to pull its damaged fender clear, accomplishing a useful repair and an immediate penalty.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "DAYTONA BEACH, UNITED STATES",
+    "published": "2026-07-18T06:30:00Z",
+    "body": "Sterling Marlin led the 2002 Daytona 500 when contact with Jeff Gordon helped trigger a late multi-car crash. NASCAR stopped the field under a red flag with Marlin's right-front fender pressed towards its tyre. The stationary leader faced a practical concern: if the bodywork cut the tyre after racing resumed, his chance of victory would disappear.\n\nMarlin climbed from the car and tugged the fender away from the tyre with his hands. The intervention was brief, conspicuous and prohibited. NASCAR rules did not allow teams or drivers to work on cars during a red flag, so officials ordered Marlin to the rear of the field for the restart.\n\nThe penalty handed the lead to Ward Burton. Burton controlled the remaining laps and earned his first Daytona 500 victory, while Marlin finished eighth. The repair may have protected Marlin's tyre, but it removed the track position he was trying to preserve. Daytona thus produced the unusual sight of a race leader becoming his own mechanic and being penalized before reaching for a single tool.",
+    "pullQuote": "Marlin pulled his own fender clear during the red flag and was sent to the rear for the restart.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Sterling Marlin's documented red-flag repair and penalty in the 2002 Daytona 500.",
+    "sources": [
+      "https://www.nascar.com/news-media/2020/01/30/ward-burton-sterling-marlin-2002-daytona-500-replay/amp/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "nascar"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1986-sanremo-result-annulled",
+    "image": "images/mot-1986-sanremo-result-annulled.webp",
+    "imageAlt": "Group B rally cars negotiate an Italian mountain stage during the 1986 Sanremo Rally",
+    "category": "Motorsport",
+    "headline": "The Sanremo Rally Completes Every Stage and Produces No Result",
+    "standfirst": "A disputed exclusion handed Markku Alén an apparent win and world title before the governing body annulled the entire event.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SANREMO, ITALY",
+    "published": "2026-07-18T06:45:00Z",
+    "body": "Peugeot's leading cars were excluded during the 1986 Sanremo Rally after officials ruled that their underbody side skirts were illegal. Peugeot disputed that interpretation, but the rally continued without them. Lancia driver Markku Alén won on the road and carried the points into the remaining championship round against Peugeot's Juha Kankkunen.\n\nAlén then won the season-ending Olympus Rally in the United States and was provisionally celebrated as world champion. The title still depended on Peugeot's appeal over Sanremo. FISA later concluded that the Italian exclusions had not been justified, but it could not restore the removed cars to an event whose competitive order had already been altered.\n\nThe governing body therefore annulled the entire Sanremo result in December. Every point from the rally disappeared, including Alén's victory, and Kankkunen became the 1986 drivers' champion. The official WRC archive lists the season with an explicit note that Sanremo was annulled: a completed championship round removed from the standings after it had helped crown the wrong champion.",
+    "pullQuote": "Annulment erased every Sanremo point and made Juha Kankkunen the 1986 world champion.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article is based on the documented annulment of the 1986 Sanremo Rally and its effect on the world championship.",
+    "sources": [
+      "https://www.wrc.com/en/misc/wrc-season-archive/wrc-season-1986",
+      "https://www.wrc.com/en/misc/wrc-history"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "wrc"
+    ]
+  },
+  {
+    "id": "mot-1995-toyota-secret-turbo-restrictor",
+    "image": "images/mot-1995-toyota-secret-turbo-restrictor.webp",
+    "imageAlt": "A 1995 Toyota Celica GT-Four rally car is inspected with its turbocharger intake exposed",
+    "category": "Motorsport",
+    "headline": "Toyota Builds a Turbo Restrictor That Restricts Only During Inspection",
+    "standfirst": "The Celica's concealed bypass preserved the sealed appearance scrutineers expected while admitting extra air when assembled for competition.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "CATALONIA, SPAIN",
+    "published": "2026-07-18T07:00:00Z",
+    "body": "World Rally Championship rules required the turbocharged Toyota Celica GT-Four ST205 to breathe through a regulated air restrictor. At the 1995 Rally Catalunya, scrutineers discovered that Toyota Team Europe's installation did something more elaborate. The restrictor and its official seals could appear compliant when examined, while concealed components allowed additional air to reach the turbocharger when the assembly was fitted to the car.\n\nThe mechanism relied on movement within the intake hardware rather than an obviously enlarged hole. Once removed for ordinary inspection, the parts returned to their expected positions and concealed the bypass. It was an exceptionally sophisticated way to defeat a simple rule: all air feeding the engine was supposed to pass through the prescribed opening.\n\nThe FIA excluded Toyota from the 1995 championship and the works team did not contest the 1996 season. Its drivers also lost their 1995 championship points, although officials did not accuse them of knowing about the device. Toyota had won consecutive manufacturers' titles in 1993 and 1994; the successor Celica's most enduring result was instead a piece of illegal engineering designed to look legal when taken apart.",
+    "pullQuote": "The sealed restrictor looked compliant during inspection while the installed assembly admitted extra air.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the illegal turbocharger bypass discovered on Toyota's Celica GT-Four at the 1995 Rally Catalunya.",
+    "sources": [
+      "https://www.wrc.com/en/misc/toyota-celica-turbo-4wd-gt-four",
+      "https://www.motorsport.com/wrc/news/toyotas-schummelei-1995-so-genial-dass-selbst-der-fia-boss-staunte-25102501/3435933/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "wrc"
+    ]
+  },
+  {
+    "id": "mot-1998-sainz-title-lost-300-metres",
+    "image": "images/mot-1998-sainz-title-lost-300-metres.webp",
+    "imageAlt": "Carlos Sainz's Toyota Corolla WRC stands stopped near the end of the final 1998 Rally GB stage",
+    "category": "Motorsport",
+    "headline": "Carlos Sainz Loses the World Championship 300 Metres from Home",
+    "standfirst": "Fourth place on Rally GB would have secured the crown until the Toyota stopped within sight of the final stage's finish.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MARGAM, WALES",
+    "published": "2026-07-18T07:15:00Z",
+    "body": "Carlos Sainz began the final stage of the 1998 Rally GB running fourth, the position he needed to win a third World Rally Championship. His title rival Tommi Mäkinen had already retired after damaging his Mitsubishi earlier in the event. Mäkinen left Wales believing the championship had gone to Sainz, while the Toyota crew still had only the Margam stage to complete.\n\nSainz and co-driver Luis Moya approached the stage finish with roughly 300 metres remaining when their Toyota Corolla WRC suffered an engine failure and stopped. Moya got out, but the car could not be restarted or brought across the timing line. Without a classified finish, Sainz lost the points that fourth place would have supplied.\n\nThe retirement made Mäkinen world champion for the third consecutive season. Mitsubishi teammate Richard Burns won Rally GB, yet the event's defining result belonged to a car that covered nearly the whole championship distance and failed at the final measurable instant. Sainz had survived 13 rallies of calculation; the decisive margin was the short stretch his Toyota could no longer cross.",
+    "pullQuote": "Sainz's Toyota stopped about 300 metres before the final stage finish, returning the title to Mäkinen.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Carlos Sainz's documented retirement near the finish of the 1998 Rally GB and the resulting title loss.",
+    "sources": [
+      "https://www.mitsubishi-motors.com/en/brand/motorsports/wrc/1998/index.html",
+      "https://www.fia.com/sites/default/files/auto8.pdf"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "wrc"
+    ]
+  },
+  {
+    "id": "mot-1994-dauer-962-gt-loophole-le-mans",
+    "image": "images/mot-1994-dauer-962-gt-loophole-le-mans.webp",
+    "imageAlt": "The road-legal Dauer 962 Le Mans races among prototypes at the 1994 24 Hours of Le Mans",
+    "category": "Motorsport",
+    "headline": "Porsche Converts a Prototype into a Road Car and Back Again",
+    "standfirst": "The 1994 Le Mans rules welcomed production-based GTs, including a Dauer 962 whose production ancestry began as a dominant Group C racer.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:30:00Z",
+    "body": "Porsche's 962 had been built as a Group C prototype, but changing regulations had pushed that category towards history by 1994. Jochen Dauer created a road-legal version called the Dauer 962 Le Mans. When Le Mans reintroduced a class for cars derived from road-going GTs, the conversion gave Porsche a route back into the race through rules that required only one production example.\n\nPorsche and Dauer entered two 962 LMs in the GT category, with Reinhold Joest running them. Beneath the road-car eligibility sat the architecture of a proven endurance prototype. The classification also brought regulatory advantages unavailable to the remaining purpose-built prototypes, making the old design competitive again under a new name and a new route through scrutineering.\n\nThe number 36 Dauer driven by Yannick Dalmas, Mauro Baldi and Hurley Haywood won the 1994 24 Hours overall. Its sister car finished third. The official Le Mans history describes the route plainly as a technical loophole: a prototype became a legal road GT, then returned to the circuit and defeated the prototypes that had remained prototypes throughout.",
+    "pullQuote": "A road-legal derivative of the Porsche 962 returned as a GT and won Le Mans overall.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the Dauer-Porsche 962 LM's documented overall victory at the 1994 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.24h-lemans.com/en/news/24-hours-centenary-1994-1997-dauer-and-twr-the-art-of-recycling-according-to-porsche-56786"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "le-mans"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.push(
+{
+    "id": "mot-1999-mercedes-clr-flight",
+    "image": "images/mot-1999-mercedes-clr-flight.webp",
+    "imageAlt": "A Mercedes CLR prototype crests at high speed during the 1999 Le Mans meeting",
+    "category": "Motorsport",
+    "headline": "Mercedes Conducts Three Unscheduled Flights at Le Mans",
+    "standfirst": "Two airborne incidents before the race did not stop the CLR programme; a third during the race finally did.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:45:00Z",
+    "body": "Mark Webber's Mercedes CLR became airborne during Thursday qualifying for the 1999 24 Hours of Le Mans. Mercedes rebuilt the car, but it took off again during Saturday morning's warm-up. Webber escaped both incidents. The team withdrew his entry and modified the two remaining CLRs before allowing them to start the race.\n\nSeveral hours into the event, Peter Dumbreck's number 5 CLR approached a Toyota on the high-speed section between Mulsanne and Indianapolis. The Mercedes pitched upwards, rose above the track and landed beyond the barriers. Dumbreck survived the third airborne event of the meeting, which demonstrated that the programme's instability had not been resolved by the pre-race changes.\n\nMercedes immediately withdrew its sole remaining CLR from the race. The manufacturer had arrived with three entries and left without a classified finisher, while BMW went on to take its first overall Le Mans victory. Subsequent regulation changes addressed prototype aerodynamics to reduce the risk of similar incidents. The weekend remains an extraordinary sequence: warning, repeated warning, race start, then confirmation.",
+    "pullQuote": "After the third CLR became airborne, Mercedes withdrew its final car from the race.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the three documented Mercedes CLR airborne incidents during the 1999 Le Mans meeting.",
+    "sources": [
+      "https://www.24h-lemans.com/en/news/peter-dumbreck-remembers-1999-7141",
+      "https://www.24h-lemans.com/en/news/24-hours-of-le-mans-bmws-astonishing-1999-v12-lmr-56547"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "le-mans"
+    ]
+  }
+);
+
+window.NEWS_ARTICLES.forEach(function (article) {
+  if (article.id.indexOf("mot-") === 0) {
+    article.imageCaption = "AI-generated editorial illustration of the reported incident.";
+  }
+});
+
 // ============================================================
 // SERIES: THE BUS DESK — FIFTY REPORTS FROM THE ROAD
 // ------------------------------------------------------------

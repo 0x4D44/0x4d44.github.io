@@ -131,6 +131,7 @@ const sportSections = {
   Tennis: 3,
   Athletics: 2,
   "Other Sports": 10,
+  Motorsport: 50,
 };
 for (const [section, expectedCount] of Object.entries(sportSections)) {
   assert.equal(
@@ -145,6 +146,22 @@ assert.ok(
   groupedSportArticles.every((article) => Object.hasOwn(sportSections, article.category)),
   "every prefixed sports story should belong to a Sport subcategory",
 );
+const motorsportArticles = articles.filter((article) => article.id.startsWith("mot-"));
+assert.equal(motorsportArticles.length, 50, "the Motorsport desk should contain 50 real-incident stories");
+for (const article of motorsportArticles) {
+  assert.equal(article.category, "Motorsport", `${article.id} should stay on the Motorsport desk`);
+  const paragraphs = Array.isArray(article.body) ? article.body : String(article.body).split(/\n\n+/);
+  assert.ok(paragraphs.length >= 3, `${article.id} should explain the incident in at least three paragraphs`);
+  assert.equal(article.noticeLabel, "Based on a true story", `${article.id} should identify its factual basis`);
+  assert.ok(Array.isArray(article.sources) && article.sources.length >= 1, `${article.id} should retain source provenance`);
+  for (const source of article.sources) {
+    assert.match(source, /^https:\/\//, `${article.id} source should be an HTTPS URL`);
+  }
+  assert.ok(article.image.startsWith("images/mot-"), `${article.id} should use a dedicated Motorsport image`);
+  assert.ok(article.imageAlt, `${article.id} image needs accessible alt text`);
+  assert.match(article.imageCaption, /AI-generated/, `${article.id} should disclose its generated illustration`);
+  assert.ok(fs.existsSync(path.join(newsDir, article.image)), `${article.image} should exist`);
+}
 assert.equal(
   articles.filter((article) => article.category === "Sport").length,
   0,
@@ -168,9 +185,9 @@ context.document = {
 context.window.NEWS.renderSearch("app");
 assert.match(
   sportMount.innerHTML,
-  /32 stories across Football, Cricket, Olympics, Tennis, Athletics, Other Sports/,
+  /82 stories across Football, Cricket, Olympics, Tennis, Athletics, Other Sports, Motorsport/,
 );
 
-assert.equal(articles.length, 790, "catalog copy and article corpus count should stay in lockstep");
+assert.equal(articles.length, 840, "catalog copy and article corpus count should stay in lockstep");
 
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
