@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Growing a World — A World in 640K</title>
+<meta name="description" content="How Civilization (DOS, 1991) grows an 80×50 world from four menu knobs and a 16-bit seed: drunkard's-walk continents, latitude bands, two rainfall sweeps, an erosion pass and up to 256 river attempts — reimplemented live on this page.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="w640.css">
+<style>
+#seed-in {
+  width: 92px;
+  background: var(--surface);
+  color: var(--cyan);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 4px 8px;
+}
+.btn[aria-pressed="true"] {
+  background: var(--amber);
+  color: #14100a;
+  border-color: var(--amber);
+}
+.srcline {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  margin-top: 40px;
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">A WORLD IN 640K</a></div>
+    <div class="strap">how Civilization &amp; Colonization ran a planet in real-mode DOS</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="code.html">1 · Code in Flight</a>
+    <a href="memory.html">2 · The Division Dance</a>
+    <a href="art.html">3 · Art on Demand</a>
+    <a href="world.html">4 · A Hemisphere in 24K</a>
+    <a href="time.html">5 · The Heartbeat</a>
+    <a href="mapgen.html" aria-current="page">6 · Growing a World</a>
+    <a href="how.html">7 · How We Know</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 6 · PROCEDURAL WORLDS</p>
+  <h1>Growing a <span class="amber">World</span></h1>
+  <p class="standfirst">Every Civilization map is grown, not drawn: a drunkard's-walk
+  blob stamper, a latitude formula, two rainfall sweeps, an erosion pass and up to 256
+  river attempts — four menu knobs and a 16-bit seed away from every Earth that never
+  was. The whole machine is reimplemented on this page. Press grow.</p>
+</section>
+
+<section class="prose">
+
+<h2>Four questions, a flicker of drive light</h2>
+
+<p>Start a new game of Civilization on a random world and the setup menu asks four
+questions — land mass, temperature, climate, age — each with three answers, defaults
+in the middle. Then the drive light flickers and 4,000 tiles of
+planet exist: continents with mountain spines, a desert belt at the waist, jungle near
+the equator, tundra fraying into polar ice, rivers that reliably reach the sea. On an
+80×50 grid, that flicker of work has to manufacture geography that <em>reads</em> as
+geography — and it does it with roughly a dozen constants and the C runtime's stock
+random number generator.</p>
+
+<p>None of this was documented in 1991. What follows is the algorithm as the community
+disassembled it from <code>CIV.EXE</code> over the following decades — chiefly
+darkpanda's "Civ1 map generation explained" thread (2013–2023, in his words "fully
+deciphered … fully ported to JCivED"), cross-checked against CivOne's open-source port
+of the same code. The figure below runs our reimplementation of that record, stage by
+stage, using the same linear congruential generator Civ itself used —
+<code>x·214,013 + 2,531,011</code>, Microsoft C's <code>rand()</code> — so a given
+seed and knob setting always regrows the same world.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">GROW A WORLD — the 1991 algorithm, live</span>
+    <span class="hint">set the knobs, pick a seed, press grow — or freeze the map at any stage; hover any tile</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="worldgen" role="img"
+      aria-label="Interactive 80 by 50 Civilization map generator. Six stages animate from open ocean to a finished world: blob stamping, latitude bands, rainfall sweeps, erosion, rivers and polar caps. Controls set land mass, temperature, climate, age and the 16-bit seed."
+      style="aspect-ratio: 8 / 5; min-height: 340px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="map-log"></div>
+  <div class="legend" id="map-legend"></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>land mass</label>
+      <div class="seg" id="lm-seg">
+        <button data-v="0" aria-pressed="false">small</button><button data-v="1" aria-pressed="true">normal</button><button data-v="2" aria-pressed="false">large</button>
+      </div>
+    </div>
+    <div class="ctl"><label>temperature</label>
+      <div class="seg" id="tp-seg">
+        <button data-v="0" aria-pressed="false">cool</button><button data-v="1" aria-pressed="true">temperate</button><button data-v="2" aria-pressed="false">warm</button>
+      </div>
+    </div>
+    <div class="ctl"><label>climate</label>
+      <div class="seg" id="cl-seg">
+        <button data-v="0" aria-pressed="false">arid</button><button data-v="1" aria-pressed="true">normal</button><button data-v="2" aria-pressed="false">wet</button>
+      </div>
+    </div>
+    <div class="ctl"><label>age</label>
+      <div class="seg" id="ag-seg">
+        <button data-v="0" aria-pressed="false">3 bn</button><button data-v="1" aria-pressed="true">4 bn</button><button data-v="2" aria-pressed="false">5 bn</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="grow-btn">▶ grow</button>
+    <div class="ctl">
+      <label for="seed-in">seed</label>
+      <input type="number" id="seed-in" min="0" max="65535" step="1" value="1991">
+      <button class="btn" id="seed-dice" title="random seed">🎲</button>
+    </div>
+    <div class="ctl"><label>frozen at stage</label>
+      <div class="seg" id="stage-seg">
+        <button data-v="A" aria-pressed="false">A</button><button data-v="B" aria-pressed="false">B</button><button data-v="C" aria-pressed="false">C</button><button data-v="D" aria-pressed="false">D</button><button data-v="E" aria-pressed="false">E</button><button data-v="F" aria-pressed="true">F</button>
+      </div>
+    </div>
+    <div class="ctl"><label>overlay</label>
+      <button class="btn" id="ov-spec" aria-pressed="false">▣ specials</button>
+      <button class="btn" id="ov-hut" aria-pressed="false">▣ huts</button>
+    </div>
+  </div>
+  <div class="fig-note">Our reimplementation of the algorithm the community disassembled
+  from CIV.EXE — darkpanda's "Civ1 map generation explained" (CivFanatics, 2013–2023),
+  cross-checked against CivOne's <code>Map.Generate.cs</code>. Dice: the Microsoft C
+  LCG (×214,013 + 2,531,011) that Civ itself used, so seed + knobs is fully
+  reproducible. Close, not guaranteed byte-exact: the blob start box follows darkpanda
+  ([4,71]×[8,33]; CivOne uses a wider one), and the overlap→mountains/hills reading and
+  the river direction rose are the documented mainline — both flagged "probable" in the
+  record, and the river meander term already carries one community correction (Renergy's
+  ×2). The specials/huts overlays run the Chapter 4 formulas with this seed as the
+  TerrainMasterWord; huts are drawn on land squares only (in-game they are further
+  suppressed at cities and barbarian-visible squares).</div>
+</figure>
+
+<table class="data">
+  <caption>The four knobs — every constant they feed</caption>
+  <tr><th>Knob</th><th>Menu options (0 · 1 · 2)</th><th>Constant it drives</th><th>Where it bites</th></tr>
+  <tr><td>Land mass</td><td>small · normal · large</td><td class="num">target = (n+2)×320 → 640 / 960 / 1,280 squares</td><td>stage A; also the river cap</td></tr>
+  <tr><td>Temperature</td><td>cool · temperate · warm</td><td class="num">1−n added to latitude</td><td>stage B</td></tr>
+  <tr><td>Climate</td><td>arid · normal · wet</td><td class="num">ocean yield +4n / +n; rainfall draw rnd(0..7−2n)</td><td>stage C; also the river cap</td></tr>
+  <tr><td>Age</td><td>3 · 4 · 5 billion years</td><td class="num">passes = 800×(1+n) → 800 / 1,600 / 2,400</td><td>stage D</td></tr>
+</table>
+
+<h2>Stage A — a drunkard with a rubber stamp</h2>
+
+<p>Land is made by stamping. The generator keeps two 80×50 work buffers — the
+geography layer and a temporary stencil — and spawns land in <em>chunks</em>. Each
+chunk clears the stencil, picks a random start inside the box x&nbsp;∈&nbsp;[4,71],
+y&nbsp;∈&nbsp;[8,33], draws a random path length between 1 and 64, and then walks:
+stamp a three-tile L-shape — (x,y), (x+1,y), (x,y+1) — step to a random orthogonal
+neighbour, repeat. The walk ends when the length runs out or the walker leaves the
+cage [3,3]–[76,45], which keeps land clear of the map edge.</p>
+
+<p>The stencil then merges into the geography, and the merge is where relief comes
+from: a stencil cell landing on empty sea becomes land; landing on existing land, it
+<em>increments</em> it. Overlap depth is elevation. In the community's reading of the
+merge counter, a square stamped twice becomes mountains and a square stamped three or
+more times becomes hills — so mountain chains are literally the places where drunken
+walks crossed. Chunks keep spawning until total land reaches
+<code>(landmass+2)×320</code> — 640, 960 or 1,280 squares. On this page's reference
+seed 1991 with default knobs that takes 43 chunks. A final pass squares off any 2×2
+cell whose diagonals alternate land and ocean, removing impossible diagonal straits
+that neither ships nor land units could legally cross.</p>
+
+<h2>Stage B — climate from a subtraction</h2>
+
+<p>Terrain starts as arithmetic on the row number. For every flat land square:</p>
+
+<pre>lat  = |y − 29 + rnd(0..7)|      ; distance from the equator, dithered
+lat += 1 − temperature           ; the knob: shift one band either way
+lat  = lat/6 + 1                 ; integer divide into bands
+0–1 → desert   2–3 → plains   4–5 → tundra   6–7 → arctic</pre>
+
+<p>That is the whole climate model: hot at the middle, cold at the ends, an eight-way
+random dither so the band edges shred instead of ruling straight lines across the map.
+Mountain and hill squares from stage A keep their elevation and skip the formula. One
+genuine oddity, visible below: this stage measures latitude from row 29, but the
+rainfall stage that follows measures it from row 25. The original code carries two
+different equators, and the +rnd(0..7) — which only ever pushes south — appears to
+split the difference. That reading is our observation from the record, not a
+community-stated fact.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Where the bands fall — the latitude dice</span>
+    <span class="hint">hover a row; switch the temperature knob</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="latbands" role="img"
+      aria-label="Chart showing which terrain the latitude formula assigns to each of the 50 map rows, as probabilities blended across the eight possible random dither values, for the selected temperature setting. Desert dominates the middle rows, plains flank it, tundra and arctic take the poles."
+      style="aspect-ratio: 2.2 / 1; min-height: 300px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="legend" id="lat-legend"></div>
+  <div class="fig-controls">
+    <div class="ctl"><label>temperature</label>
+      <div class="seg" id="lat-seg">
+        <button data-v="0" aria-pressed="false">cool</button><button data-v="1" aria-pressed="true">temperate</button><button data-v="2" aria-pressed="false">warm</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Formula verbatim from darkpanda's thread; CivOne implements it
+  identically. Each row's split is the exact enumeration over the eight equally likely
+  rnd(0..7) draws, for flat squares only — stage A's mountains and hills override the
+  band, and stage C's rain then rewrites much of what remains. The two-equator quirk
+  (bands from y=29, rain from y=25) is our analysis, flagged as such.</div>
+</figure>
+
+<h2>Stage C — rain from two directions</h2>
+
+<p>Rain is a per-row budget, swept across the map twice — west→east, then east→west —
+with <code>latitude = |25 − y|</code>. On the westerly sweep, each ocean square raises
+the row's wetness by one, up to a ceiling of <code>|latitude − 12| + 4×climate</code>;
+each land square, while the budget is positive, spends <code>rnd(0..7−2×climate)</code>
+of it and transforms: plains green into grassland, deserts soften into plains, hills
+sprout forest, tundra freezes to arctic. Mountains transform nothing but quietly eat
+three extra points of wetness — a one-line rain shadow. The easterly sweep runs the
+same budget with a different ceiling (<code>latitude/2 + climate</code>) and a warmer
+table: grassland within ten rows of the rain equator becomes jungle, elsewhere swamp;
+even mountains manage forest.</p>
+
+<p>Notice what the climate knob actually does. A wetter setting raises the ocean
+ceilings <em>and shrinks the random spend</em> — the budget fills faster and drains
+slower, so the transforms reach further inland. "Arid" doesn't make deserts directly;
+it makes the wetness budget run out sooner, and the untransformed latitude bands are
+what deserts are. Coastlines facing the sweep get the rain; interiors keep the
+geometry lesson every schoolchild eventually learns about continental climates —
+emergent, here, from about fifteen lines of code.</p>
+
+<h2>Stage D — age, backwards</h2>
+
+<p>The age knob runs the erosion pass: <code>800×(1+age)</code> iterations — 800,
+1,600 or 2,400. Even iterations strike a random square; odd iterations strike a random
+neighbour of the previous one, so the edits arrive in correlated little pairs and
+clump. Each strike advances the square one step through a fixed table:</p>
+
+<pre>grassland → forest      forest → jungle       jungle → swamp
+swamp     → grassland   plains → hills        tundra → hills
+desert    → plains      hills  → mountains    arctic → mountains
+mountains → ocean       ; only if no diagonal neighbour is ocean</pre>
+
+<p>The loop count is solid; what it <em>means</em> is disputed in the source thread
+itself. darkpanda's original write-up read the knob as "young worlds are mountainous",
+but later measurements posted in the same thread (tupi/GPR) found 3 billion years
+gives <em>less</em> mountain than 5 billion — which fits the table: it is net-uphill
+(plains→hills→mountains, with the mountain-sink guarded by its diagonal-ocean test),
+so more passes mean more relief. We implement the loop count as documented and let you
+test the dispute with the knob.</p>
+
+<h2>Stage E — 256 chances at a river</h2>
+
+<p>Rivers are the only stage that is allowed to fail, and it fails safely: before each
+attempt the generator backs up the entire map, lets a river wander, and if the result
+disappoints, restores the backup wholesale. Transactional map editing, in 1991.</p>
+
+<p>Each attempt starts at a random hills square, sets it to river, and meanders with a
+direction accumulator over an eight-point rose:</p>
+
+<pre>A = rnd(0..3) × 2                     ; start on one of four headings
+each step:  C = rnd(0..1)
+            A = ((C − len % 2) × 2 + A) &amp; 7</pre>
+
+<p>The <code>len % 2</code> term alternates the turn's parity, so each step either
+holds course or turns 90° — with the permitted turn direction alternating step by
+step — and the river zig-zags downhill-ish instead of
+ballooning into a random blob. (That ×2 factor is itself a community correction —
+posted by user Renergy against darkpanda's first write-up; the fine arithmetic here is
+the most-corrected part of the record.) The walk ends when it hits ocean, an existing
+river, mountains, or steps beyond a square that touched the sea. The attempt is kept
+only if the river ran at least five squares and ended at water — the sea by adjacency,
+or head-on into an earlier river. Accepted mouths get a 7×7 splash of forest→jungle;
+everything else is rolled back. The generator stops after 256 attempts or when the
+count reaches <code>(climate + landmass)×2 + 6</code> — between 6 and 14 rivers, 10 at
+defaults. It is not an efficient process: our reference seed burns all 256
+attempts and banks only 6 of its permitted 10. It doesn't matter. Failed rivers cost nothing but
+time, and the map that survives is the one where every river reaches the sea.</p>
+
+<h2>Stage F — freezing the poles</h2>
+
+<p>Last, cartographic housekeeping: rows 0 and 49 are set entirely to arctic —
+whatever ocean or terrain was there — and then 20 times over, a random square in the
+four polar rows {0, 1, 48, 49} is flipped to tundra, so the ice edge looks weathered
+rather than machined. That's the whole world: on our reference seed, 1,118 land
+squares and 6 rivers, grown from 6,001 draws of a 16-bit-seeded LCG.</p>
+
+<p>One more pass runs invisibly: the thread records that the generator also
+derives continent and ocean IDs, per-square land values in [8..15] and
+per-continent counts of good city sites — the data the AI uses to choose where
+civilisation starts. The IDs and the land values go into the save's companion .MAP
+file, and <a href="world.html">Chapter 4</a> takes it apart.</p>
+
+<h2>What the generator never stores</h2>
+
+<p>Some of the world's furniture is not generated at all — not here, not anywhere.
+Special resources, goody huts and grassland shields never touch the map buffers and
+are never written to disk. They are pure functions, recomputed on demand — specials
+and huts from the tile coordinates and the 16-bit map seed, shielded grassland from
+the coordinates alone:</p>
+
+<pre>special(x,y) ⇔ 1 &lt; y &lt; 48
+             ∧ (x mod 4)·4 + (y mod 4) = ((x÷4)·13 + (y÷4)·11 + seed) mod 16
+hut(x,y)     ⇔ 1 &lt; y &lt; 48   ∧  no city, not seen by barbarians
+             ∧ (x mod 4)·4 + (y mod 4) = ((x÷4)·13 + (y÷4)·11 + seed + 8) mod 32
+shielded grassland ⇔ (x + y) mod 4 ∈ {0, 3}</pre>
+
+<p>The left-hand side indexes the sixteen cells of the 4×4 block a tile sits in; the
+right-hand side hashes the block's coordinates with the primes 13 and 11 plus the
+seed. Exactly one cell per block matches mod 16 — one special per 4×4 block — and the
+hut variant's mod 32 fires in only half the blocks. The polar exclusion rows {0, 1,
+48, 49} are precisely the rows stage F just froze. Flip the ▣ specials and ▣ huts
+overlays on the figure above and change the seed: the whole world regrows, and the
+riches rearrange on a lattice all their own, because the riches were never part of
+the map. The seed itself —
+the community calls it the TerrainMasterWord — is saved in two bytes at offset
+<span class="addr">0x6</span> of the .SVE file and lives at
+<span class="addr">ds:6E00</span> while the game runs. <a href="world.html">Chapter
+4</a> puts these same formulas under a seed slider and covers what the trick buys:
+4,000 tiles of resource placement for zero bytes of state.</p>
+
+<aside class="aside">
+  <span class="tag">HONESTY</span>
+  <p>Everything on this page is a faithful reimplementation of the community's
+  disassembly record — darkpanda's "Civ1 … explained" series and JCivED, and the
+  CivOne port that credits them — not a byte-for-byte extraction from
+  <code>CIV.EXE</code>. The structure and headline constants are corroborated by two
+  independent sources; the finer details (the river rose, the elevation-merge
+  semantics, the exact blob start box) are single-source and flagged in the figure
+  notes. Where the record disputes itself, we implement the documented mainline and
+  say so. Worlds grown here should be Civ-shaped, not Civ-identical.</p>
+</aside>
+
+<aside class="aside">
+  <span class="tag">DEV HISTORY</span>
+  <p>The 80×50 grid itself was a late decision. Playtesting showed the game dragged on
+  the larger world, and Sid Meier halved the map size less than a month before
+  Civilization shipped in September 1991. Every desert belt and drunkard's-walk
+  continent you just grew fits the halved board — the algorithm's constants are tuned
+  to a grid that barely existed a month before release.</p>
+</aside>
+
+<p>And here is what the real machine grows — same grid, same bands, same logic,
+running in the shipped binary:</p>
+
+<figure class="shot">
+  <img src="img/civ-map.png" alt="Civilization's in-game world map: procedurally generated continents with desert bands, tundra fringes and mountain chains, in the 1991 DOS release." loading="lazy">
+  <figcaption>The production algorithm at work: Civilization's world map in the shipped
+  DOS binary, captured running under <a href="/mddosem/">mddosem</a>. Compare the
+  texture with the figure above — the desert waist, the shredded band edges, mountain
+  chains where blobs overlapped, rivers that all reach the sea.</figcaption>
+</figure>
+
+<p class="srcline">Sources for this chapter — community record: darkpanda's "Civ1 map
+generation explained" and RNG threads (CivFanatics) and JCivED; CivOne's
+<code>Map.Generate.cs</code> (credits JCivED r23); Gowron &amp; Dack's EXE tables for
+the specials/huts arithmetic; LCG constants cross-checked against Microsoft C's
+<code>rand()</code>. Runtime: comparison screenshot captured under mddosem. The
+generator on this page is our reimplementation of that record; disputed details are
+flagged in the figure notes.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="time.html"><span class="dir">◀ previous</span>5 · The Heartbeat</a>
+  <a class="next" href="how.html"><span class="dir">next ▶</span>7 · How We Know</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. Evidence: fresh byte-level analysis of the
+  original installs, live instrumented runs under
+  <a href="/mddosem/">mddosem</a> — a hardware-accurate PC emulator built in Rust —
+  and the community reverse-engineering record; full credits in
+  <a href="how.html">How We Know</a>. Screenshots © MicroProse, shown for technical
+  commentary. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w640-lib.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W640 = window.W640;
+  if (!W640) return;
+
+  /* ================= the generator (validated against a node sweep) ========= */
+
+  var W = 80, H = 50;
+  var OCEAN = 0, GRASS = 1, PLAINS = 2, DESERT = 3, TUNDRA = 4, ARCTIC = 5,
+      HILLS = 6, MTN = 7, FOREST = 8, JUNGLE = 9, SWAMP = 10, RIVER = 11, RAW = 12;
+
+  var TNAME = ["ocean", "grassland", "plains", "desert", "tundra", "arctic",
+               "hills", "mountains", "forest", "jungle", "swamp", "river",
+               "stamped land"];
+  var PALC = ["#0f2f4d", "#4c9440", "#a8a24e", "#d9c07a", "#9aa89a", "#e9edf4",
+              "#987f4e", "#7c8290", "#2c6e3a", "#1d8a5e", "#48695f", "#3aa2e0",
+              "#8f8574"];
+  var COAST_COL = "#1c4a73";
+
+  function LCG(seed) { this.s = seed | 0; this.draws = 0; }
+  LCG.prototype.rnd = function (n) {
+    this.s = (Math.imul(this.s, 214013) + 2531011) | 0;
+    this.draws++;
+    return ((this.s >>> 16) & 0x7fff) % n;
+  };
+
+  /* diagonal-first 8-rose: even ids are the diagonal start headings the record
+     describes; 0=NE,1=E,2=SE,3=S,4=SW,5=W,6=NW,7=N */
+  var DIR8 = [[1, -1], [1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1]];
+
+  var STAGENAME = { A: "landmass", B: "temperature", C: "rainfall",
+                    D: "erosion", E: "rivers", F: "poles" };
+
+  function generate(seed, p) {
+    var rng = new LCG(seed);
+    var elev = new Uint8Array(W * H);
+    var map = new Uint8Array(W * H);
+    var frames = [];
+    var landCount = 0;
+    var i, x, y;
+
+    function snapA(cap) { // stage-A view derived from the overlap counter
+      var m = new Uint8Array(W * H);
+      for (var k = 0; k < W * H; k++)
+        m[k] = elev[k] === 0 ? OCEAN : elev[k] === 1 ? RAW : elev[k] === 2 ? MTN : HILLS;
+      frames.push({ m: m, stage: "A", cap: cap });
+    }
+    function snap(stage, cap) { frames.push({ m: map.slice(), stage: stage, cap: cap }); }
+
+    /* ---- stage A: blob stamping ---- */
+    var target = (p.land + 2) * 320;
+    snapA("open ocean — land target " + W640.fmtInt(target) + " squares");
+    var chunks = 0;
+    while (landCount < target && chunks < 3000) {
+      chunks++;
+      var st = new Uint8Array(W * H);
+      x = 4 + rng.rnd(68); y = 8 + rng.rnd(26);
+      var L = 1 + rng.rnd(64);
+      for (;;) {
+        st[y * W + x] = 1; st[y * W + x + 1] = 1; st[(y + 1) * W + x] = 1;
+        var d = rng.rnd(4);
+        if (d === 0) y--; else if (d === 1) x++; else if (d === 2) y++; else x--;
+        L--;
+        if (L <= 0 || x < 3 || y < 3 || x > 76 || y > 45) break;
+      }
+      for (i = 0; i < W * H; i++) if (st[i]) {
+        if (elev[i] === 0) { elev[i] = 1; landCount++; }
+        else if (elev[i] < 250) elev[i]++;
+      }
+      snapA("chunk " + chunks + " — land " + W640.fmtInt(landCount) + " / " + W640.fmtInt(target));
+    }
+    var straitFix = 0;
+    for (y = 0; y < H - 1; y++) for (x = 0; x < W - 1; x++) {
+      var a = elev[y * W + x] > 0, b = elev[y * W + x + 1] > 0,
+          c = elev[(y + 1) * W + x] > 0, dd = elev[(y + 1) * W + x + 1] > 0;
+      if ((a && dd && !b && !c) || (b && c && !a && !dd)) {
+        var cells = [y * W + x, y * W + x + 1, (y + 1) * W + x, (y + 1) * W + x + 1];
+        for (var ci = 0; ci < 4; ci++) {
+          if (elev[cells[ci]] === 0) { elev[cells[ci]] = 1; landCount++; straitFix++; }
+        }
+      }
+    }
+    snapA("diagonal straits squared off (+" + straitFix + " squares)");
+
+    /* ---- stage B: latitude bands + elevation override ---- */
+    for (y = 0; y < H; y++) {
+      for (x = 0; x < W; x++) {
+        i = y * W + x;
+        if (elev[i] === 0) { map[i] = OCEAN; continue; }
+        if (elev[i] === 2) { map[i] = MTN; continue; }
+        if (elev[i] >= 3) { map[i] = HILLS; continue; }
+        var lat = Math.abs(y - 29 + rng.rnd(8));
+        lat += 1 - p.temp;
+        lat = ((lat / 6) | 0) + 1;
+        map[i] = lat <= 1 ? DESERT : lat <= 3 ? PLAINS : lat <= 5 ? TUNDRA : ARCTIC;
+      }
+      if (y % 2 === 1 || y === H - 1)
+        snap("B", "latitude bands — row " + y + " of 49");
+    }
+
+    /* ---- stage C: two wetness sweeps per row ---- */
+    for (y = 0; y < H; y++) {
+      var latitude = Math.abs(25 - y), wet = 0;
+      for (x = 0; x < W; x++) {
+        i = y * W + x;
+        if (map[i] === OCEAN) {
+          if (Math.abs(latitude - 12) + p.climate * 4 > wet) wet++;
+        } else if (wet > 0) {
+          wet -= rng.rnd(8 - p.climate * 2);
+          switch (map[i]) {
+            case PLAINS: map[i] = GRASS; break;
+            case TUNDRA: map[i] = ARCTIC; break;
+            case HILLS: map[i] = FOREST; break;
+            case DESERT: map[i] = PLAINS; break;
+            case MTN: wet -= 3; break;
+          }
+        }
+      }
+      wet = 0;
+      for (x = W - 1; x >= 0; x--) {
+        i = y * W + x;
+        if (map[i] === OCEAN) {
+          if (((latitude / 2) | 0) + p.climate > wet) wet++;
+        } else if (wet > 0) {
+          wet -= rng.rnd(8 - p.climate * 2);
+          switch (map[i]) {
+            case SWAMP: map[i] = FOREST; break;
+            case PLAINS: map[i] = GRASS; break;
+            case HILLS: map[i] = FOREST; break;
+            case DESERT: map[i] = PLAINS; break;
+            case GRASS: map[i] = latitude < 10 ? JUNGLE : SWAMP; wet -= 2; break;
+            case MTN: map[i] = FOREST; wet -= 3; break;
+          }
+        }
+      }
+      if (y % 2 === 1 || y === H - 1)
+        snap("C", "rainfall sweeps — row " + y + " of 49");
+    }
+
+    /* ---- stage D: erosion ---- */
+    var loops = 800 * (1 + p.age);
+    var every = Math.max(1, Math.ceil(loops / 24));
+    var px = 0, py = 0;
+    var N8 = [[-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1]];
+    for (var n = 0; n < loops; n++) {
+      if (n % 2 === 0) { x = rng.rnd(W); y = rng.rnd(H); }
+      else {
+        var o = N8[rng.rnd(8)];
+        x = px + o[0]; y = py + o[1];
+        if (x < 0) x = 0; if (x > W - 1) x = W - 1;
+        if (y < 0) y = 0; if (y > H - 1) y = H - 1;
+      }
+      px = x; py = y;
+      i = y * W + x;
+      switch (map[i]) {
+        case FOREST: map[i] = JUNGLE; break;
+        case SWAMP: map[i] = GRASS; break;
+        case PLAINS: map[i] = HILLS; break;
+        case TUNDRA: map[i] = HILLS; break;
+        case GRASS: map[i] = FOREST; break;
+        case JUNGLE: map[i] = SWAMP; break;
+        case HILLS: map[i] = MTN; break;
+        case DESERT: map[i] = PLAINS; break;
+        case ARCTIC: map[i] = MTN; break;
+        case MTN:
+          var sink = true;
+          var diag = [[-1, -1], [1, -1], [-1, 1], [1, 1]];
+          for (var di = 0; di < 4; di++) {
+            var nx = x + diag[di][0], ny = y + diag[di][1];
+            if (nx >= 0 && nx < W && ny >= 0 && ny < H && map[ny * W + nx] === OCEAN) { sink = false; break; }
+          }
+          if (sink) map[i] = OCEAN;
+          break;
+      }
+      if ((n + 1) % every === 0 || n === loops - 1)
+        snap("D", "erosion — pass " + W640.fmtInt(n + 1) + " / " + W640.fmtInt(loops));
+    }
+
+    /* ---- stage E: rivers ---- */
+    var cap = (p.climate + p.land) * 2 + 6;
+    var rivers = 0, attempts = 0;
+    function orthOcean(ox, oy) {
+      var o4 = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+      for (var oi = 0; oi < 4; oi++) {
+        var nx = ox + o4[oi][0], ny = oy + o4[oi][1];
+        if (nx >= 0 && nx < W && ny >= 0 && ny < H && map[ny * W + nx] === OCEAN) return true;
+      }
+      return false;
+    }
+    snap("E", "river attempts begin — cap " + cap);
+    for (var at = 0; at < 256 && rivers < cap; at++) {
+      attempts++;
+      var hillsIdx = [];
+      for (i = 0; i < W * H; i++) if (map[i] === HILLS) hillsIdx.push(i);
+      if (!hillsIdx.length) break;
+      var backup = map.slice();
+      var A = rng.rnd(4) * 2, len = 0;
+      var j = hillsIdx[rng.rnd(hillsIdx.length)];
+      x = j % W; y = (j / W) | 0;
+      map[j] = RIVER;
+      var nearOcean = orthOcean(x, y);
+      var ok = false, endX = x, endY = y;
+      for (;;) {
+        var cc = rng.rnd(2);
+        A = ((cc - (len & 1)) * 2 + A) & 7;
+        x += DIR8[A][0]; y += DIR8[A][1]; len++;
+        if (x < 0 || x >= W || y < 0 || y >= H) { ok = false; break; }
+        var cur = map[y * W + x];
+        if (nearOcean || cur === OCEAN || cur === RIVER || cur === MTN) {
+          ok = (nearOcean || cur === RIVER) && len >= 5;
+          endX = x; endY = y;
+          break;
+        }
+        map[y * W + x] = RIVER;
+        nearOcean = orthOcean(x, y);
+      }
+      if (ok) {
+        rivers++;
+        for (var dy = -3; dy <= 3; dy++) for (var dx = -3; dx <= 3; dx++) {
+          var jx = endX + dx, jy = endY + dy;
+          if (jx >= 0 && jx < W && jy >= 0 && jy < H && map[jy * W + jx] === FOREST)
+            map[jy * W + jx] = JUNGLE;
+        }
+        snap("E", "river " + rivers + " accepted — length " + len + ", attempt " + attempts);
+      } else {
+        map.set(backup);
+      }
+    }
+    snap("E", rivers + " rivers kept from " + attempts + " attempts (cap " + cap + ")");
+
+    /* ---- stage F: poles ---- */
+    for (x = 0; x < W; x++) { map[x] = ARCTIC; map[(H - 1) * W + x] = ARCTIC; }
+    snap("F", "polar rows frozen solid");
+    var polarRows = [0, 1, 48, 49];
+    for (var t20 = 0; t20 < 20; t20++)
+      map[polarRows[rng.rnd(4)] * W + rng.rnd(W)] = TUNDRA;
+    var finalLand = 0;
+    for (i = 0; i < W * H; i++) if (map[i] !== OCEAN) finalLand++;
+    snap("F", "world complete — " + W640.fmtInt(finalLand) + " land squares, " +
+      rivers + " rivers, " + W640.fmtInt(rng.draws) + " dice rolls");
+
+    return { frames: frames, rivers: rivers, finalLand: finalLand, draws: rng.draws };
+  }
+
+  /* =================== main figure: state, controls, rendering ============== */
+
+  var params = { land: 1, temp: 1, climate: 1, age: 1 };
+  var seed = 1991;
+  var world = null;          // {frames, ...}
+  var cum = [];              // cumulative start time of each frame (seconds)
+  var stageEnd = {};         // stage letter -> last frame index of that stage
+  var cur = 0;               // frame index currently displayed
+  var anim = { playing: false, t0: null, i: 0 };
+  var showSpec = false, showHut = false;
+  var hov = null;            // {x, y} hovered tile
+  var lastLogged = -1;
+
+  var mapLog = document.getElementById("map-log");
+  var growBtn = document.getElementById("grow-btn");
+  var seedIn = document.getElementById("seed-in");
+
+  function isSpecial(x, y) {
+    return y > 1 && y < 48 &&
+      (x % 4) * 4 + (y % 4) === (((x >> 2) * 13 + (y >> 2) * 11 + seed) % 16);
+  }
+  function isHut(x, y) {
+    return y > 1 && y < 48 &&
+      (x % 4) * 4 + (y % 4) === (((x >> 2) * 13 + (y >> 2) * 11 + seed + 8) % 32);
+  }
+  function isShield(x, y) { var m = (x + y) % 4; return m === 0 || m === 3; }
+
+  function rebuildTimeline() {
+    var frames = world.frames;
+    var nA = 0, k;
+    for (k = 0; k < frames.length; k++) if (frames[k].stage === "A") nA++;
+    var dA = Math.min(0.09, Math.max(0.035, 4.5 / Math.max(1, nA)));
+    cum = []; stageEnd = {};
+    var t = 0;
+    for (k = 0; k < frames.length; k++) {
+      cum.push(t);
+      var s = frames[k].stage;
+      t += s === "A" ? dA : (s === "B" || s === "C") ? 0.045 :
+           s === "D" ? 0.055 : s === "E" ? 0.18 : 0.4;
+      stageEnd[s] = k;
+    }
+  }
+
+  function setLog(idx) {
+    if (idx === lastLogged || !world) return;
+    lastLogged = idx;
+    var f = world.frames[idx];
+    var tail = idx === world.frames.length - 1 ? " · seed " + seed : "";
+    mapLog.innerHTML = '<span class="t">stage ' + f.stage + " · " +
+      STAGENAME[f.stage] + "</span> — " + f.cap + tail;
+  }
+
+  function pressStage(letter) {
+    var box = document.getElementById("stage-seg");
+    var btns = box.querySelectorAll("button");
+    for (var k = 0; k < btns.length; k++)
+      btns[k].setAttribute("aria-pressed", btns[k].dataset.v === letter ? "true" : "false");
+  }
+
+  function stopPlay() {
+    anim.playing = false;
+    if (mapFig) mapFig.stop();
+    growBtn.textContent = "▶ grow";
+  }
+
+  function showFrame(idx) {
+    cur = idx;
+    setLog(idx);
+    if (mapFig) mapFig.redraw();
+  }
+
+  function regen() {
+    stopPlay();
+    world = generate(seed, params);
+    rebuildTimeline();
+    lastLogged = -1;
+    pressStage("F");
+    showFrame(world.frames.length - 1);
+  }
+
+  function coastal(m, x, y) {
+    if (x > 0 && m[y * W + x - 1] !== OCEAN) return true;
+    if (x < W - 1 && m[y * W + x + 1] !== OCEAN) return true;
+    if (y > 0 && m[(y - 1) * W + x] !== OCEAN) return true;
+    if (y < H - 1 && m[(y + 1) * W + x] !== OCEAN) return true;
+    return false;
+  }
+
+  var mapFig = W640.makeFig("worldgen", function (ctx, w, h, fig) {
+    if (!world || !world.frames.length) return;
+    var frames = world.frames;
+
+    if (anim.playing) {
+      if (anim.t0 === null) anim.t0 = fig.t;
+      var el = fig.t - anim.t0;
+      while (anim.i < frames.length - 1 && el >= cum[anim.i + 1]) anim.i++;
+      if (anim.i >= frames.length - 1 && el >= cum[frames.length - 1] + 0.8) {
+        stopPlay();
+        pressStage("F");
+        cur = frames.length - 1;
+      } else {
+        cur = anim.i;
+      }
+      setLog(cur);
+    }
+
+    var f = frames[cur], m = f.m;
+    var tw = w / W, th = h / H;
+    var x, y, i;
+
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      var id = m[y * W + x];
+      ctx.fillStyle = (id === OCEAN && coastal(m, x, y)) ? COAST_COL : PALC[id];
+      ctx.fillRect(x * tw, y * th, tw + 0.5, th + 0.5);
+    }
+
+    /* one-frame flash on tiles that changed since the previous frame */
+    if (anim.playing && cur > 0) {
+      var pm = frames[cur - 1].m;
+      ctx.fillStyle = "rgba(255,235,190,0.38)";
+      for (i = 0; i < W * H; i++) if (m[i] !== pm[i])
+        ctx.fillRect((i % W) * tw, ((i / W) | 0) * th, tw + 0.5, th + 0.5);
+    }
+
+    /* overlays: the Chapter 4 formulas, keyed off the seed */
+    if (showSpec || showHut) {
+      var r = Math.max(2.5, Math.min(tw, th) * 0.28);
+      for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+        var cx = (x + 0.5) * tw, cy = (y + 0.5) * th;
+        if (showSpec && isSpecial(x, y)) {
+          ctx.beginPath();
+          ctx.moveTo(cx, cy - r); ctx.lineTo(cx + r, cy);
+          ctx.lineTo(cx, cy + r); ctx.lineTo(cx - r, cy);
+          ctx.closePath();
+          ctx.fillStyle = W640.C.amber;
+          ctx.fill();
+          ctx.strokeStyle = "#0b0e14"; ctx.lineWidth = 1; ctx.stroke();
+        }
+        if (showHut && m[y * W + x] !== OCEAN && isHut(x, y)) {
+          ctx.fillStyle = W640.C.cyan;
+          ctx.fillRect(cx - r * 0.8, cy - r * 0.8, r * 1.6, r * 1.6);
+          ctx.strokeStyle = "#0b0e14"; ctx.lineWidth = 1;
+          ctx.strokeRect(cx - r * 0.8, cy - r * 0.8, r * 1.6, r * 1.6);
+        }
+      }
+    }
+
+    /* hover: tile outline + tooltip */
+    if (hov) {
+      var hx = hov.x, hy = hov.y;
+      ctx.strokeStyle = W640.C.amberHi;
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(hx * tw + 0.75, hy * th + 0.75, tw - 1.5, th - 1.5);
+      var tid = m[hy * W + hx];
+      var lines = ["(" + hx + "," + hy + ")  " + TNAME[tid]];
+      if (isSpecial(hx, hy)) lines.push("◆ special resource here");
+      if (tid !== OCEAN && isHut(hx, hy)) lines.push("▪ hut site here");
+      if ((tid === GRASS || tid === RIVER) && isShield(hx, hy)) lines.push("shielded (x+y) mod 4 ∈ {0,3}");
+      ctx.font = W640.mono(11);
+      var twd = 0, li;
+      for (li = 0; li < lines.length; li++)
+        twd = Math.max(twd, ctx.measureText(lines[li]).width);
+      var bw = twd + 16, bh = lines.length * 15 + 9;
+      var bx = Math.min(w - bw - 4, hx * tw + tw + 8);
+      var by = Math.max(4, Math.min(h - bh - 4, hy * th - bh / 2));
+      if (bx < hx * tw - 2 && bx + bw > hx * tw) bx = Math.max(4, hx * tw - bw - 8);
+      ctx.fillStyle = "rgba(11,14,20,0.93)";
+      W640.rrect(ctx, bx, by, bw, bh, 4);
+      ctx.fill();
+      ctx.strokeStyle = W640.C.line; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = W640.C.ink;
+      ctx.textAlign = "left";
+      for (li = 0; li < lines.length; li++)
+        ctx.fillText(lines[li], bx + 8, by + 17 + li * 15);
+    }
+  });
+
+  W640.onHover(document.getElementById("worldgen"), function (mx, my) {
+    if (mx == null || !mapFig || !mapFig.w) { hov = null; }
+    else {
+      var tx = Math.floor(mx / (mapFig.w / W)), ty = Math.floor(my / (mapFig.h / H));
+      hov = (tx >= 0 && tx < W && ty >= 0 && ty < H) ? { x: tx, y: ty } : null;
+    }
+    if (!anim.playing && mapFig) mapFig.redraw();
+  });
+
+  /* legend, built from the same palette the canvas uses */
+  (function buildLegend() {
+    var box = document.getElementById("map-legend");
+    var order = [OCEAN, -1, RAW, GRASS, PLAINS, DESERT, TUNDRA, ARCTIC,
+                 HILLS, MTN, FOREST, JUNGLE, SWAMP, RIVER];
+    var html = "";
+    for (var k = 0; k < order.length; k++) {
+      if (order[k] === -1) {
+        html += '<span class="key"><span class="sw" style="background:' + COAST_COL +
+          '"></span>coastal ocean (shading only)</span>';
+      } else {
+        var lbl = order[k] === RAW ? "stamped land (stage A)" : TNAME[order[k]];
+        html += '<span class="key"><span class="sw" style="background:' + PALC[order[k]] +
+          '"></span>' + lbl + "</span>";
+      }
+    }
+    html += '<span class="key"><span class="sw" style="background:' + W640.C.amber +
+      ';transform:rotate(45deg);border-radius:1px"></span>special (overlay)</span>';
+    html += '<span class="key"><span class="sw" style="background:' + W640.C.cyan +
+      '"></span>hut (overlay)</span>';
+    box.innerHTML = html;
+  })();
+
+  /* controls */
+  W640.bindSeg("lm-seg", function (v) { params.land = +v; regen(); });
+  W640.bindSeg("tp-seg", function (v) { params.temp = +v; regen(); });
+  W640.bindSeg("cl-seg", function (v) { params.climate = +v; regen(); });
+  W640.bindSeg("ag-seg", function (v) { params.age = +v; regen(); });
+  W640.bindSeg("stage-seg", function (v) {
+    stopPlay();
+    if (stageEnd[v] != null) showFrame(stageEnd[v]);
+  });
+
+  growBtn.addEventListener("click", function () {
+    if (anim.playing) { stopPlay(); return; }
+    if (W640.reducedMotion) {
+      showFrame(world.frames.length - 1);
+      mapLog.innerHTML = '<span class="t">reduced motion</span> — showing the finished ' +
+        "world; use the stage buttons (A–F) to step through the six stages.";
+      lastLogged = -1;
+      return;
+    }
+    anim.playing = true; anim.t0 = null; anim.i = 0;
+    lastLogged = -1;
+    pressStage(null);
+    growBtn.textContent = "❚❚ growing…";
+    mapFig.start();
+  });
+
+  seedIn.addEventListener("change", function () {
+    var v = Math.max(0, Math.min(65535, Math.round(+seedIn.value || 0)));
+    seedIn.value = v;
+    seed = v;
+    regen();
+  });
+  document.getElementById("seed-dice").addEventListener("click", function () {
+    seed = Math.floor(Math.random() * 65536);
+    seedIn.value = seed;
+    regen();
+  });
+
+  function bindToggle(id, set) {
+    var b = document.getElementById(id);
+    b.addEventListener("click", function () {
+      var on = b.getAttribute("aria-pressed") !== "true";
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      set(on);
+      if (!anim.playing && mapFig) mapFig.redraw();
+    });
+  }
+  bindToggle("ov-spec", function (on) { showSpec = on; });
+  bindToggle("ov-hut", function (on) { showHut = on; });
+
+  regen(); // initial world: meaningful static frame from the first paint
+
+  /* =================== latitude-band figure ================================ */
+
+  var latTemp = 1, latHov = -1;
+  var BANDCOL = [PALC[DESERT], PALC[PLAINS], PALC[TUNDRA], PALC[ARCTIC]];
+  var BANDNAME = ["desert", "plains", "tundra", "arctic"];
+
+  function bandFractions(y, temp) {
+    var c = [0, 0, 0, 0];
+    for (var r = 0; r < 8; r++) {
+      var lat = Math.abs(y - 29 + r) + 1 - temp;
+      lat = ((lat / 6) | 0) + 1;
+      c[lat <= 1 ? 0 : lat <= 3 ? 1 : lat <= 5 ? 2 : 3]++;
+    }
+    return c;
+  }
+
+  var PADL = 54, PADR = 16, PADT = 24, PADB = 10;
+
+  var latFig = W640.makeFig("latbands", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    var iw = w - PADL - PADR, ih = h - PADT - PADB, rh = ih / 50;
+    var y, b;
+
+    ctx.font = W640.mono(10);
+    ctx.fillStyle = W640.C.muted;
+    ctx.textAlign = "left";
+    ctx.fillText("band share across the eight equally likely rnd(0..7) draws — flat land squares only", PADL, 14);
+
+    for (y = 0; y < 50; y++) {
+      var fr = bandFractions(y, latTemp);
+      var cx = PADL;
+      for (b = 0; b < 4; b++) {
+        if (!fr[b]) continue;
+        var sw = iw * fr[b] / 8;
+        ctx.fillStyle = BANDCOL[b];
+        ctx.fillRect(cx, PADT + y * rh, sw, rh + 0.5);
+        cx += sw;
+      }
+    }
+
+    ctx.fillStyle = W640.C.muted;
+    ctx.textAlign = "right";
+    for (y = 0; y <= 40; y += 10) ctx.fillText("y=" + y, PADL - 6, PADT + (y + 0.5) * rh + 3);
+    ctx.fillText("y=49", PADL - 6, PADT + 49.5 * rh + 3);
+
+    function eq(row, col, lab) {
+      var yy = PADT + (row + 0.5) * rh;
+      ctx.strokeStyle = col;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(PADL, yy); ctx.lineTo(PADL + iw, yy); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = col;
+      ctx.textAlign = "right";
+      ctx.fillText(lab, PADL + iw - 6, yy - 4);
+    }
+    eq(29, W640.C.amber, "temperature equator · y=29");
+    eq(25, W640.C.cyan, "rainfall equator · y=25");
+
+    if (latHov >= 0 && latHov < 50) {
+      var hy = PADT + latHov * rh;
+      ctx.strokeStyle = W640.C.amberHi;
+      ctx.lineWidth = 1.25;
+      ctx.strokeRect(PADL + 0.5, hy + 0.5, iw - 1, rh - 1);
+      var fr2 = bandFractions(latHov, latTemp);
+      var parts = [];
+      for (b = 0; b < 4; b++) if (fr2[b])
+        parts.push(BANDNAME[b] + " " + Math.round(fr2[b] * 100 / 8) + "%");
+      var txt = "row y=" + latHov + " · " + parts.join(" · ");
+      ctx.font = W640.mono(11);
+      var tw2 = ctx.measureText(txt).width;
+      var bx = Math.min(w - tw2 - 20, PADL + 12);
+      var by = latHov < 25 ? hy + rh + 8 : hy - 30;
+      ctx.fillStyle = "rgba(11,14,20,0.93)";
+      W640.rrect(ctx, bx, by, tw2 + 16, 22, 4);
+      ctx.fill();
+      ctx.strokeStyle = W640.C.line; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = W640.C.ink;
+      ctx.textAlign = "left";
+      ctx.fillText(txt, bx + 8, by + 15);
+    }
+  });
+
+  W640.onHover(document.getElementById("latbands"), function (mx, my) {
+    if (my == null || !latFig || !latFig.h) latHov = -1;
+    else {
+      var rh = (latFig.h - PADT - PADB) / 50;
+      var row = Math.floor((my - PADT) / rh);
+      latHov = (row >= 0 && row < 50 && mx >= PADL && mx <= latFig.w - PADR) ? row : -1;
+    }
+    if (latFig) latFig.redraw();
+  });
+
+  W640.bindSeg("lat-seg", function (v) { latTemp = +v; if (latFig) latFig.redraw(); });
+
+  (function buildLatLegend() {
+    var box = document.getElementById("lat-legend");
+    var html = "";
+    for (var b = 0; b < 4; b++)
+      html += '<span class="key"><span class="sw" style="background:' + BANDCOL[b] +
+        '"></span>' + BANDNAME[b] + "</span>";
+    box.innerHTML = html;
+  })();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

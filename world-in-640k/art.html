@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Art on Demand — A World in 640K</title>
+<meta name="description" content="How Colonization's MADSPACK/FAB streaming and Civilization's LZW+RLE picture codec pushed 4.3 MB of decompressed art through a 640 KB real-mode machine.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="w640.css">
+<style>
+  .srcline {
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.7;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: 44px;
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">A WORLD IN 640K</a></div>
+    <div class="strap">how Civilization &amp; Colonization ran a planet in real-mode DOS</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="code.html">1 · Code in Flight</a>
+    <a href="memory.html">2 · The Division Dance</a>
+    <a href="art.html" aria-current="page">3 · Art on Demand</a>
+    <a href="world.html">4 · A Hemisphere in 24K</a>
+    <a href="time.html">5 · The Heartbeat</a>
+    <a href="mapgen.html">6 · Growing a World</a>
+    <a href="how.html">7 · How We Know</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 3 · ART ON DEMAND</p>
+  <h1>ART ON <span class="amber">DEMAND</span></h1>
+  <p class="standfirst">Colonization ships 2,307,349 bytes of compressed art that decompresses
+  to 4,344,422 — 6.6 times the machine's entire 655,360-byte conventional arena.
+  The answer is radical: nothing decompressed exists until the frame it is needed, it is
+  inflated into transient buffers the game manages itself, and almost nothing
+  survives afterwards.</p>
+</section>
+
+<div class="statgrid">
+  <div class="stat"><div class="v">4,344,422</div><div class="l">bytes of Colonization art, decompressed</div></div>
+  <div class="stat"><div class="v">2,307,349</div><div class="l">bytes as shipped — FAB compression, 1.88×</div></div>
+  <div class="stat"><div class="v">246</div><div class="l">MADSPACK 2.0 containers of 287 files in our install tree</div></div>
+  <div class="stat"><div class="v">793 / 140</div><div class="l">FAB-compressed vs stored sections</div></div>
+  <div class="stat"><div class="v">106/106</div><div class="l">Civ .PIC files decoded by our from-scratch codec</div></div>
+  <div class="stat"><div class="v">993,755</div><div class="l">bytes of raw PCM in coldig.bin, streamed from disk</div></div>
+</div>
+
+<section class="prose">
+
+<p>Chapter 4 will show that Colonization's whole simulated world — every unit, colony,
+tribe and tile — is about 24 KB. The memory problem was never the simulation. It was the
+<em>presentation</em>: 320×200 screens at 64,000 bytes a frame, sprite sets for eight native
+nations, an 891-frame opening cutscene, four colonial powers' regalia. Laid out flat, the art
+is 4.34 MB against a 640 KB arena that also has to hold DOS, the program, and its buffers.
+So the art pipeline is built on one rule, applied without sentiment: a decompressed asset
+is a transient, not a possession.</p>
+
+<h2>MADSPACK 2.0, anatomised</h2>
+
+<p>Of the 287 files in our Colonization install tree (three are later corpus additions),
+<strong>246</strong> open with the same
+13 bytes: the ASCII string <code>MADSPACK 2.0</code> followed by a DOS end-of-file mark,
+<code>0x1A</code>. That is the container format of MicroProse's in-house MADS engine —
+206 <code>.ss</code> sprite sets, 35 <code>.pik</code> full-and-part-screen pictures, and
+5 <code>.ff</code> fonts. The layout is fixed and frugal:</p>
+
+<pre><code>0x00  "MADSPACK 2.0" 1A 00            14-byte signature
+0x0E  u16   section count              1–4 observed
+0x10  16 × 10-byte slots:              { u16 flags, u32 decompressed, u32 compressed }
+      flags, low byte:  0 = stored · 1 = FAB-compressed
+      flags, high byte: uninitialised packer memory (see below)
+0xB0  section payloads, back to back,  each `compressed` bytes long</code></pre>
+
+<p>We verified the flag semantics across every one of the 933 sections in the install: all
+793 sections flagged <code>1</code> begin with the three-byte magic <code>FAB</code>; all
+140 flagged <code>0</code> have compressed size equal to decompressed size and no magic.
+The totals are exact: <strong>4,344,422 bytes decompressed from 2,307,349 bytes of
+payload</strong> — a 1.88× ratio — carried in 2,350,804 bytes on disk once you add the
+246 fixed 176-byte headers and 159 bytes of trailing rubbish.</p>
+
+<div class="aside">
+  <span class="tag">THE PACKER LEAKED ITS OWN MEMORY</span>
+  <p>The directory always holds 16 slots, but most files use 1–4. The unused slots were
+  never zeroed: they contain whatever happened to be in the packer tool's heap — visible
+  x86 code fragments, including <code>55 8B EC 57 56</code> (<code>push bp / mov bp,sp</code>
+  function prologues) inside <code>clos-bkg.pik</code>'s header. The flags high byte is the
+  same kind of garbage: constant within each file, different across files, in all 246 of
+  246 containers. Every MADSPACK file MicroProse shipped carries a tiny core dump of the
+  1994 build machine.</p>
+</div>
+
+</section>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The MADSPACK census — 246 containers</span>
+    <span class="hint">hover a tile for exact bytes · tiles sized by decompressed bytes</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="cv-census" role="img"
+      aria-label="Treemap of all 246 MADSPACK containers in Colonization, sized by decompressed bytes and coloured by file type; a toggle shows how much of each footprint the shipped compressed payload occupies"
+      style="aspect-ratio: 1.9 / 1; min-height: 380px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#4f8fe0"></span>.ss sprite sets ×206</span>
+    <span class="key"><span class="sw" style="background:#bd8b16"></span>.pik pictures ×35</span>
+    <span class="key"><span class="sw" style="background:#22916b"></span>.ff fonts ×5</span>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>show</label>
+      <div class="seg" id="census-seg">
+        <button data-v="dec" aria-pressed="true">decompressed — 4,344,422 B</button>
+        <button data-v="ship" aria-pressed="false">as shipped — 2,307,349 B</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Every tile is one file; area = decompressed bytes. In "as shipped"
+  mode each tile's fill shrinks to its compressed payload — the empty remainder is the
+  inflation FAB buys back at run time. Thirty-three full-screen <code>.pik</code>s decompress to
+  exactly 64,776 B each; europe.pik does it from 7,011 B on disk (9.2×). Measured from all
+  287 files of the install, 2026-07-18 analysis.</div>
+</figure>
+
+<section class="prose">
+
+<h2>FAB, bit by bit</h2>
+
+<p>FAB is MicroProse's own LZ77 variant, and we know its exact semantics from an unusually
+good source: ScummVM's MADS engine contains a C port of MicroProse's actual assembly —
+<code>pFABcomp.asm</code> by <strong>David McKibbin, dated 5 September 1992</strong>, from
+the "MPS Labs Graphic Library", together with its three decompressor siblings
+<code>pFABexp0/1/2.asm</code>. Those same module names appear in the CodeView debug block
+that Colonization's <code>opening.exe</code> ships (Chapter 1) — the library on disc and
+the library in the binary are one and the same. The stream grammar:</p>
+
+<pre><code>'F' 'A' 'B'  DICT                      4-byte magic; DICT = log2 window (12 → 4,096 B)
+16-bit control words, bits consumed LSB-first; each bit governs one item:
+  1                → literal: copy one byte from the data stream
+  0 0  + 2 bits    → short match: length 2–5, one offset byte, distance 1–255
+  0 1              → long match: two bytes = 12-bit offset into the 4,096-byte
+                     window + 4-bit length field (1–15 → length 3–17);
+                     field 0 → an escape byte follows:
+                       0 = EXIT (end of stream) · 1 = NORMALIZE · N≥2 → length N+1 (≤253)</code></pre>
+
+<p>Matches are copied byte-by-byte, so a match may overlap the bytes it is writing —
+distance −1 with length 5 turns one literal into six identical bytes, which is run-length
+encoding for free. There is no length header anywhere: decompression ends only when the in-stream EXIT
+marker arrives.</p>
+
+<div class="aside">
+  <span class="tag">SEGMENTED ADDRESSING, BAKED INTO A FILE FORMAT</span>
+  <p>The NORMALIZE control code exists for one reason: real mode. The compressor emits it
+  after roughly every 40 KB of output (<code>0xA000</code> bytes in the source) so that a
+  16-bit decompressor can re-normalise its <code>segment:offset</code> destination pointer
+  before the offset half overflows — the compressor even tracks "extra paragraphs for
+  EXPLODE" while packing. A compression format with 8086 segment arithmetic among its
+  control codes: you could carbon-date this stream from the grammar alone.</p>
+</div>
+
+<p>We have also watched the shipped decompressor run. Disassembled live under
+<a href="/mddosem/">mddosem</a>, <code>viceroy.exe</code>'s FAB routine sits at offset
+<span class="addr">0466</span> of the root code segment: a far function taking three far
+pointers and returning with <code>RETF 12</code>, no size argument anywhere. Its bit
+reservoir is kept in <code>BP</code> and refilled with a carry-flag bridge
+(<code>SHR BP,1 / LODSW / RCL / RCR</code>) — the exact 17-bit trick ScummVM reproduces in
+C — and its window shift and masks are <strong>self-modifying code</strong>, written at
+run time into <span class="addr">CS:045E–0464</span>, bytes that are zero in the file on
+disk. The same routine serves double duty: Chapter 1's overlay manager compresses evicted
+<em>code</em> pages with FAB into an in-memory cache and re-inflates them on return.</p>
+
+</section>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The FAB decompressor, one token at a time</span>
+    <span class="hint">▶ run the stream, or ⏭ step · hover any token or output byte</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="cv-fab" role="img"
+      aria-label="Animated diagram of FAB decompression: a token stream of control bits and data bytes at the top produces a 64-byte output tile below, with arrows showing back-reference copies from the sliding window"
+      style="aspect-ratio: 1.7 / 1; min-height: 430px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="evlog" id="fab-log"><span class="t">FAB 0C</span> — header: 4,096-byte window. ▶ play to run the stream, or step token by token.</div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#4f8fe0"></span>literal byte</span>
+    <span class="key"><span class="sw" style="background:#bd8b16"></span>copied by match</span>
+    <span class="key"><span class="sw" style="background:#5ad7e6"></span>copy source / distance arrow</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="fab-play">▶ play</button>
+    <button class="btn" id="fab-step">⏭ step</button>
+    <button class="btn" id="fab-reset">↺ reset</button>
+  </div>
+  <div class="fig-note">A worked example we built by hand — a 64-byte tile encoded in 18
+  data bytes and 35 control bits — illustrating the verified algorithm (the real stream
+  interleaves the control bits as 16-bit little-endian words ahead of their data bytes).
+  Token encodings follow ScummVM's MADS FAB decoders (compression.cpp; pfab.cpp is a
+  C port of MicroProse's own pFAB assembly); the byte values shown decode correctly under
+  that arithmetic.</div>
+</figure>
+
+<section class="prose">
+
+<h2>A screen in 29,746 bytes</h2>
+
+<p>Here is what the container and the codec buy, on one concrete file. The closing-scene
+backdrop <code>clos-bkg.pik</code> is 29,746 bytes on disk and parses to the byte: a
+176-byte MADSPACK header, then three FAB sections — 17 bytes that inflate to 8 bytes of
+metadata, <strong>28,800 bytes that inflate to the 64,000-byte Mode 13h frame</strong>
+(2.22×), and a 753-byte section for the 768-byte VGA palette, which barely compresses
+because a palette is already near-random. Thirty-three of the 35 <code>.pik</code>s carry
+a 64,000-byte section and decompress to exactly 64,776 bytes — frame plus palette plus
+metadata. The near-empty Atlantic chart <code>europe.pik</code> ships the same
+screen in 7,011 bytes; <code>colony.pik</code> gets 23,048 bytes of colony backdrop from
+2,857 (8.1×).</p>
+
+</section>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">clos-bkg.pik — 29,746 B on disk, 64,776 B on screen</span>
+    <span class="hint">hover a segment for exact bytes</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="cv-pik" role="img"
+      aria-label="Byte-scale diagram of clos-bkg.pik: the 29,746-byte on-disk layout of header and three FAB sections above, expanding into the 64,776-byte decompressed metadata, frame and palette below"
+      style="aspect-ratio: 3.2 / 1; min-height: 230px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#7d8794"></span>MADSPACK header</span>
+    <span class="key"><span class="sw" style="background:#7d86ef"></span>metadata</span>
+    <span class="key"><span class="sw" style="background:#4f8fe0"></span>320×200 frame</span>
+    <span class="key"><span class="sw" style="background:#22916b"></span>256-colour palette</span>
+  </div>
+  <div class="fig-note">Both bars share one byte scale. Section sizes parsed from the file,
+  2026-07-18: 176 + (17 + 28,800 + 753) = 29,746 = file size exactly; decompressed
+  8 + 64,000 + 768 = 64,776.</div>
+</figure>
+
+<section class="prose">
+
+<p>Now the part that makes it work in 640 KB: the decompressor itself needs almost no
+room. Of the three shipped variants, <code>pFABexp1</code> (file-to-memory)
+runs in a work buffer of about <strong>2 KB</strong> — it streams the compressed bytes
+through a 2,048-byte read buffer and writes finished pixels straight to their
+destination, so a 45 KB compressed screen can inflate through a two-kilobyte keyhole.
+The path we actually watched run is the memory-to-memory variant: when Colonization
+draws its title, it reads <code>openmenu.pik</code>'s 45,855-byte frame section into one
+game-managed buffer and FAB-inflates it into a second just 18,752 bytes away — so close
+that the output overruns the source while it is still being read, the overlap Chapter 2
+dissects — then blits the finished 64,000-byte frame to the screen. Neither buffer is
+DOS-allocated: both live at raw addresses in the freed arena, under the game's own
+bookkeeping.</p>
+
+<figure class="shot">
+  <img src="img/col-title.png" alt="Colonization title screen" width="640" height="400">
+  <figcaption>The frame from the overlap: Colonization's title, captured
+  running under <a href="/mddosem/">mddosem</a>. This screen was FAB-inflated from
+  openmenu.pik's 45,855-byte frame section, memory to memory, then blitted to the
+  screen.</figcaption>
+</figure>
+
+<h2>Civilization's codec, cracked</h2>
+
+<p>Three years earlier, Civilization solved the same problem with a different in-house
+codec — and this one we re-implemented from scratch. Every Civ image is a
+<code>.PIC</code>: a sequence of tagged blocks, each a two-character ASCII tag plus a
+16-bit length. Walking all 106 <code>.PIC</code> and 38 <code>.PAL</code> files in the
+install, every single file parses to exactly its end-of-file with one of four tag
+patterns:</p>
+
+<table class="data">
+  <caption>.PIC block sequences across the install</caption>
+  <tr><th>Sequence</th><th class="num">Files</th><th>Meaning</th></tr>
+  <tr><td><code>E0 M0 X0</code></td><td class="num">96</td><td>EGA dither table + VGA palette + 8-bpp image</td></tr>
+  <tr><td><code>M0 X0</code></td><td class="num">43</td><td>palette + 8-bpp image (includes all 38 .PALs, whose image is empty)</td></tr>
+  <tr><td><code>M0 X1</code></td><td class="num">4</td><td>palette + 4-bpp image (MAP.PIC, TORCH.PIC, …)</td></tr>
+  <tr><td><code>X1</code> only</td><td class="num">1</td><td>SPRITES.PIC — borrows an external palette (SP257/SP256)</td></tr>
+</table>
+
+<p>The image payload is double-compressed: <strong>LZW, then run-length</strong>. The LZW
+codes are packed LSB-first, starting at 9 bits and growing to a declared maximum — always
+11 bits here, a 2,048-entry dictionary (perhaps 6 KB of table RAM at three bytes an
+entry; the shipped table layout is not recovered). Code 256 is reserved and never used;
+the first dictionary code is 257. There is no clear code: when the dictionary fills, the
+decoder silently resets it and drops back to 9-bit codes — and, a detail we pinned by
+experiment, <em>the reserved code persists after every reset</em>. Decode with base 257
+after reset and all 116 compressed files in the install emerge at exactly the right byte
+count; decode with base 256, as one community write-up suggests, and they fail. After LZW
+comes an RLE pass keyed on escape byte <code>0x90</code>: <code>VV 90 CC</code> expands to
+CC copies of VV, and <code>90 00</code> is a literal <code>0x90</code>.</p>
+
+<p>Proof by construction: our decoder, written from these rules alone, decodes
+<strong>106 of 106 .PIC files and 10 of 10 save-game .MAP files with zero errors</strong>.
+The title screen below is 6,047 bytes on disk for a 64,000-byte frame — 10.6:1, against
+FAB's 2.2:1 on similar art, the reward for spending a dictionary on every image. The
+<code>.MAP</code> files are the punchline this site keeps returning to: Civ compresses its
+<em>world map</em> with the picture codec (Chapter 4).</p>
+
+<div class="shotrow">
+  <figure class="shot">
+    <img src="img/civ-logo-decoded.png" alt="Civilization title screen, decoded" width="320" height="200">
+    <figcaption>LOGO.PIC rendered by our from-scratch decoder — 6,047 bytes on disk,
+    64,000 bytes of pixels (10.6:1).</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="img/civ-ter257-decoded.png" alt="Civilization terrain tile sheet, decoded" width="320" height="200">
+    <figcaption>TER257.PIC, the terrain tile sheet, same decoder — one of the 106/106
+    files that decode to the exact expected byte count.</figcaption>
+  </figure>
+</div>
+
+<p>The oddest block is the cleverest. Civilization's setup menu offers VGA, MCGA, EGA and
+Tandy — no CGA (and, matching that, not one CGA <code>C0</code> block exists in the
+install). But EGA has 16 colours and the art is painted in 256. The bridge is the
+<code>E0</code> block: 258 bytes, one byte per palette index, each byte a <em>pair</em> of
+4-bit EGA colours that the EGA driver renders as an alternating dither. In BIRTH1.PIC the
+16 pure entries read <code>0x00, 0x11, … 0xFF</code>, and entry <code>0x86</code> means "a
+checkerboard of EGA colour 8 and colour 6" — dark grey and brown blending, at 320×200 on
+a period monitor, into something the eye reads as a ninth-and-a-half colour. Every image
+carries its own hand-tuned reduction table: 256-colour art, EGA delivery, zero extra
+assets.</p>
+
+</section>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">The E0 dither table — 256 colours on 16-colour EGA</span>
+    <span class="hint">slide to pick a palette entry's dither byte</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="cv-dither" role="img"
+      aria-label="Interactive dither demonstration: a chosen palette entry byte splits into two 4-bit EGA colours, shown as a magnified checkerboard and at near-pixel scale where the colours visually blend"
+      style="aspect-ratio: 3 / 1; min-height: 220px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl" style="flex:1 1 260px">
+      <label for="dither-i">E0 byte</label>
+      <input type="range" id="dither-i" min="0" max="255" step="1" value="134" style="flex:1">
+      <output>0x86</output>
+    </div>
+  </div>
+  <div class="fig-note">Illustrative, using the canonical EGA palette; in the game each
+  image's own E0 block supplies the byte per palette index. 0x86 is the verified example
+  from BIRTH1.PIC: EGA colours 8 and 6 as a 2×1 checkerboard. Equal nibbles (0x00, 0x11 …
+  0xFF) are the 16 solid colours.
+  </div>
+</figure>
+
+<section class="prose">
+
+<p>Two footnotes complete the family. All 38 <code>.PAL</code> files are 782 bytes with an
+identical layout: a full <code>M0</code> palette block — 256 RGB triplets whose values
+never exceed <code>0x3F</code>, because they are 6-bit VGA DAC values — followed by an
+empty <code>X0</code> stub declaring a 0×0 image. A palette file is just a picture with no
+pixels, so one block-walking loader reads both. And the palettes matter more than the
+pixels: Civ's famous intro animates almost entirely by rewriting the DAC while the
+framebuffer sits still.</p>
+
+<figure class="shot">
+  <img src="img/civ-boot.png" alt="Civilization video mode selection prompt" width="640" height="400">
+  <figcaption>Civilization's setup prompt, captured under <a href="/mddosem/">mddosem</a>:
+  four video modes, one asset base. The per-image E0 tables are what make the EGA line
+  possible.</figcaption>
+</figure>
+
+<h2>Sound the same way</h2>
+
+<p>The streaming philosophy is not only visual. <code>coldig.bin</code>, Colonization's
+digitised speech and effects, is <strong>993,755 bytes of raw, headerless, unsigned 8-bit
+PCM</strong> — we verified the format statistically: byte mean 127.0, the distribution
+peaked at 0x7F/0x80 silence, 94% of samples within 0x60–0xA0. That single file is one and
+a half times the entire conventional-memory arena, so it never loads; it streams. During
+the opening cutscene the front-end moves it through the EMS page frame in 61 chunks of
+16 KB across 207 <code>INT 67h</code> calls, feeding the Sound Blaster DAC from a window
+of bank-switched memory (the Overview's memory map shows the frame).</p>
+
+<p>The players are swappable too. Colonization ships four sound-driver overlays —
+<code>asound/gsound/psound/rsound.col</code>, MZ executables of 46,242–48,651 bytes — and
+loads exactly one, for the configured device, via DOS EXEC subfunction 4B03; we watched
+the game load ASOUND.COL and then shrink its allocation from 31,866 paragraphs to 3,061
+(~498 KB of loader headroom down to ~49 KB resident). Every driver exports its API as a
+numbered vector table in a shared container format: 16 zero bytes, a 26-byte ID string
+with an embedded build date, three size words, then a counted vector list. Sound drivers export 11 vectors, Civ's
+video drivers 52 — and the "no sounds please" driver, NSOUND.CVL, is 720 bytes that fill
+all 11 slots with two-instruction stubs.</p>
+
+<table class="data">
+  <caption>One driver ABI, three years apart — the ID strings in the binaries</caption>
+  <tr><th>Game</th><th>File</th><th>Embedded ID + build date</th><th class="num">Vectors</th></tr>
+  <tr><td>Civ 1991</td><td>ASOUND.CVL</td><td><code>RLND Cvlzatn12-03-91</code> — AdLib/OPL2, sibling build of the Roland driver</td><td class="num">11</td></tr>
+  <tr><td>Civ 1991</td><td>ISOUND.CVL</td><td><code>Civil IBM   11-14-91</code> — PC speaker via PIT channel 2</td><td class="num">11</td></tr>
+  <tr><td>Civ 1991</td><td>NSOUND.CVL</td><td><code>CVLZTN NoSnd10-16-91</code> — 720-byte stub driver</td><td class="num">11</td></tr>
+  <tr><td>Civ 1991</td><td>MGRAPHIC.EXE</td><td><code>MGRAPHIC.EXE09-19-91</code> — MCGA/VGA video driver</td><td class="num">52</td></tr>
+  <tr><td>Civ 1991</td><td>MISC.EXE</td><td><code>MISCOVR.EXE 02-20-89</code> — dated <strong>1989</strong>, two years before the game</td><td class="num">8</td></tr>
+  <tr><td>Col 1994</td><td>asound.col</td><td><code>ColonizatonA09-14-94NO</code> — Sound Blaster, EMS-aware</td><td class="num">11</td></tr>
+  <tr><td>Col 1994</td><td>gsound.col</td><td><code>Coloniz GMID09-12-94NO</code> — General MIDI</td><td class="num">11</td></tr>
+  <tr><td>Col 1994</td><td>rsound.col</td><td><code>RLND Colniz 09/13/94NO</code> — Roland</td><td class="num">11</td></tr>
+</table>
+
+<p>This table is the engine lineage written in bytes. The 1994 drivers use the same
+container — same 512-byte MZ header shape, same <code>0000:0010</code> entry, same
+ID-string offset, same 11-slot table — as the 1991 ones, while the code inside was fully
+rebuilt: beyond the format, the old and new AdLib drivers share two bytes of MZ prefix and
+not one printable string of six characters or more. And MISC.EXE, still on Civ's disk in
+1991, identifies itself as <code>MISCOVR.EXE</code>, built February 1989: MPS Labs
+infrastructure carried forward across at least five years of games. What changed is
+capability: Colonization's asound.col probes for <code>EMMXXXX0</code> and names
+<code>coldig.bin</code> — the 1994 generation grew EMS-streamed digital audio that 1991
+Civilization, which ships no digitised-audio file at all, never had. Civ's music appears to live as
+note tables inside the drivers themselves.</p>
+
+</section>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">What actually ships — bytes by extension</span>
+    <span class="hint">hover a bar for counts and exact bytes · shared byte scale</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="cv-inv" role="img"
+      aria-label="Two bar charts of install bytes by file extension, Colonization above and Civilization below, coloured by category: art dominates both installs, with Colonization adding a megabyte of digitised audio"
+      style="aspect-ratio: 1.55 / 1; min-height: 640px; touch-action: pan-y;"></canvas>
+  </div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#4f8fe0"></span>art &amp; fonts</span>
+    <span class="key"><span class="sw" style="background:#bd8b16"></span>program &amp; drivers</span>
+    <span class="key"><span class="sw" style="background:#22916b"></span>digitised audio</span>
+    <span class="key"><span class="sw" style="background:#7d86ef"></span>game text</span>
+    <span class="key"><span class="sw" style="background:#d466a8"></span>world &amp; data</span>
+  </div>
+  <div class="fig-note">Measured from the installs, 2026-07-18. Colonization panel:
+  corpus additions (a manual scan, an install GIF, an emulator-era save) excluded.
+  Civilization panel: 184,616 B of non-game files in this install excluded; the EXE bar
+  still includes one 2,140-byte non-game stub. Civ's SVE/MAP entries are this install's
+  save games. Neither game ships a single byte of digitised audio for the other's
+  pipeline: coldig.bin has no Civ counterpart.</div>
+</figure>
+
+<section class="prose">
+
+<p>Step back and the two pipelines are one idea at two dates. 1991: a dictionary codec
+with per-image palettes and dither tables, decompressed picture by picture into a machine
+with no memory to spare. 1994: a faster LZ with segment arithmetic in its control codes,
+inflating each frame into transient game-managed buffers, with a megabyte of PCM flowing
+past a 64 KB EMS window. Neither game ever holds its art. The art happens, frame by frame, and
+is gone.</p>
+
+<p class="srcline">Sources for this chapter — byte-level: MADSPACK census of all 287
+Colonization files, clos-bkg.pik section walk, and a from-scratch LZW+RLE decoder run
+over the Civ install's full .PIC/.PAL/.MAP set (106/106, 10/10), fresh 2026-07-18 analysis;
+runtime: live mddosem disassembly of the in-game FAB decompressor and the EMS audio-streaming
+traces; community: ScummVM's MADS engine (pfab.cpp, a C port of MicroProse's pFABcomp.asm),
+with PIC-format leads from canadianavenger.io and darkpanda's CivFanatics work — full
+credits in <a href="how.html">How We Know</a>.</p>
+
+  <nav class="chapnav">
+    <a href="memory.html"><span class="dir">◀ previous</span>2 · The Division Dance</a>
+    <a class="next" href="world.html"><span class="dir">next ▶</span>4 · A Hemisphere in 24K</a>
+  </nav>
+
+</section>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. Evidence: fresh byte-level analysis of the
+  original installs, live instrumented runs under
+  <a href="/mddosem/">mddosem</a> — a hardware-accurate PC emulator built in Rust —
+  and the community reverse-engineering record; full credits in
+  <a href="how.html">How We Know</a>. Screenshots © MicroProse, shown for technical
+  commentary. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w640-lib.js"></script>
+<script src="w640-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  const W = window.W640, C = W.C;
+  const DATA = window.W640_DATA || null;
+
+  /* shared tooltip */
+  function tip(ctx, w, h, mx, my, lines) {
+    ctx.save();
+    ctx.font = W.mono(11);
+    let tw = 0;
+    for (const L of lines) tw = Math.max(tw, ctx.measureText(L).width);
+    const bw = tw + 18, bh = lines.length * 15 + 12;
+    let x = mx + 14, y = my - bh - 8;
+    if (x + bw > w - 4) x = mx - bw - 14;
+    if (x < 4) x = 4;
+    if (y < 4) y = my + 16;
+    if (y + bh > h - 4) y = h - bh - 4;
+    ctx.fillStyle = "rgba(24,33,54,0.96)";
+    W.rrect(ctx, x, y, bw, bh, 4);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.stroke();
+    ctx.fillStyle = C.ink;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    lines.forEach((L, i) => ctx.fillText(L, x + 9, y + 7 + i * 15));
+    ctx.restore();
+  }
+
+  function unavailable(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(12);
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("measured data unavailable (w640-data.js not loaded)", w / 2, h / 2);
+  }
+
+  /* ============================================================
+     FIG 1 — MADSPACK census treemap
+     ============================================================ */
+  (function () {
+    const el = document.getElementById("cv-census");
+    if (!el) return;
+    const items = DATA && DATA.madspack
+      ? DATA.madspack.slice().sort((a, b) => b.dec - a.dec) : null;
+    const EXTC = { ss: C.series[0], pik: C.series[1], ff: C.series[2] };
+    let mode = 0, cur = 0, hover = null;   /* 0 = decompressed, 1 = shipped */
+    let key = "", rects = [];
+    let totDec = 0, totComp = 0, totDisk = 0;
+    if (items) for (const d of items) { totDec += d.dec; totComp += d.comp; totDisk += d.size; }
+
+    /* squarified treemap: vals [{v,d}] sorted desc into rect */
+    function squarify(vals, x, y, w, h) {
+      const total = vals.reduce((s, e) => s + e.v, 0);
+      const scale = (w * h) / total;
+      const out = [];
+      let i = 0;
+      while (i < vals.length && w > 1 && h > 1) {
+        const horiz = w >= h;                 /* strip along the short side */
+        const side = horiz ? h : w;
+        let j = i, rowSum = 0, worst = Infinity;
+        while (j < vals.length) {
+          const test = rowSum + vals[j].v;
+          const t = (test * scale) / side;    /* strip thickness */
+          let wr = 0;
+          for (let k = i; k <= j; k++) {
+            const len = (vals[k].v * scale) / t;
+            wr = Math.max(wr, Math.max(t / len, len / t));
+          }
+          if (wr > worst && j > i) break;
+          worst = wr; rowSum = test; j++;
+        }
+        const t = (rowSum * scale) / side;
+        let off = 0;
+        for (let k = i; k < j; k++) {
+          const len = (vals[k].v * scale) / t;
+          out.push(horiz
+            ? { x: x, y: y + off, w: t, h: len, d: vals[k].d }
+            : { x: x + off, y: y, w: len, h: t, d: vals[k].d });
+          off += len;
+        }
+        if (horiz) { x += t; w -= t; } else { y += t; h -= t; }
+        i = j;
+      }
+      return out;
+    }
+
+    const fig = W.makeFig(el, (ctx, w, h, f) => {
+      if (!items) { unavailable(ctx, w, h); return; }
+      if (f.playing) {
+        cur += (mode - cur) * 0.14;
+        if (Math.abs(mode - cur) < 0.004) { cur = mode; f.stop(); }
+      }
+      const k = w + "x" + h;
+      if (k !== key) {
+        key = k;
+        rects = squarify(items.map(d => ({ v: d.dec, d })), 1, 27, w - 2, h - 28);
+      }
+      ctx.clearRect(0, 0, w, h);
+      /* header readout */
+      ctx.font = W.mono(11);
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      ctx.fillStyle = C.muted;
+      const lbl = mode === 0
+        ? "area = decompressed bytes · total " + W.fmtInt(totDec) + " B in 246 containers"
+        : "fill = shipped payload · " + W.fmtInt(totComp) + " B (" + W.fmtInt(totDisk) + " B on disk with headers)";
+      ctx.fillText(lbl, 10, 17);
+      ctx.textAlign = "right";
+      ctx.fillStyle = C.amber;
+      ctx.fillText("×" + (totDec / totComp).toFixed(2), w - 10, 17);
+
+      let hit = null;
+      for (const r of rects) {
+        const x = r.x + 1, y = r.y + 1, rw = Math.max(1, r.w - 2), rh = Math.max(1, r.h - 2);
+        const frac = 1 + (r.d.comp / r.d.dec - 1) * cur;
+        const col = EXTC[r.d.ext] || C.muted;
+        /* footprint */
+        ctx.fillStyle = col;
+        ctx.globalAlpha = 0.10;
+        ctx.fillRect(x, y, rw, rh);
+        /* filled share, anchored at the bottom */
+        ctx.globalAlpha = 0.92;
+        const fh = rh * frac;
+        ctx.fillRect(x, y + rh - fh, rw, fh);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = C.line2;
+        ctx.strokeRect(x + 0.5, y + 0.5, rw - 1, rh - 1);
+        if (rw >= 72 && rh >= 22) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.rect(x, y, rw, rh);
+          ctx.clip();
+          ctx.fillStyle = "rgba(11,14,20,0.75)";
+          ctx.font = W.mono(10);
+          ctx.textAlign = "left";
+          const tw2 = ctx.measureText(r.d.f).width;
+          ctx.fillRect(x + 2, y + 3, tw2 + 6, 13);
+          ctx.fillStyle = C.ink;
+          ctx.fillText(r.d.f, x + 5, y + 13);
+          ctx.restore();
+        }
+        if (hover && hover.x >= x && hover.x <= x + rw && hover.y >= y && hover.y <= y + rh) hit = { r, x, y, rw, rh };
+      }
+      if (hit) {
+        ctx.strokeStyle = C.amber;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(hit.x + 0.5, hit.y + 0.5, hit.rw - 1, hit.rh - 1);
+        ctx.lineWidth = 1;
+        const d = hit.r.d;
+        tip(ctx, w, h, hover.x, hover.y, [
+          d.f,
+          W.fmtInt(d.comp) + " → " + W.fmtInt(d.dec) + " B  (×" + (d.dec / d.comp).toFixed(2) + ")",
+          d.n + " section" + (d.n === 1 ? "" : "s"),
+        ]);
+      }
+    });
+
+    if (items && fig) {
+      W.bindSeg("census-seg", (v) => {
+        mode = v === "ship" ? 1 : 0;
+        if (W.reducedMotion) { cur = mode; fig.redraw(); } else { fig.start(); }
+      });
+      W.onHover(fig.canvas, (x, y) => {
+        hover = x == null ? null : { x, y };
+        if (!fig.playing) fig.redraw();
+      });
+    }
+  })();
+
+  /* ============================================================
+     FIG 2 — FAB decompressor, animated centrepiece
+     ============================================================ */
+  (function () {
+    const el = document.getElementById("cv-fab");
+    const logEl = document.getElementById("fab-log");
+    const playBtn = document.getElementById("fab-play");
+    const stepBtn = document.getElementById("fab-step");
+    const resetBtn = document.getElementById("fab-reset");
+    if (!el || !logEl || !playBtn || !stepBtn || !resetBtn) return;
+
+    /* hand-assembled token stream (verified against the ScummVM/MADS decode
+       arithmetic: short offset byte = 256−dist; long bytes = two's-complement
+       offset low byte + [offset-high-nibble | len−2]) */
+    const TOKS = [
+      { k: "lit", v: 0, bits: "1", bytes: [0x00], log: "ctrl 1 → literal 0x00" },
+      { k: "lit", v: 1, bits: "1", bytes: [0x01], log: "ctrl 1 → literal 0x01" },
+      { k: "lit", v: 2, bits: "1", bytes: [0x02], log: "ctrl 1 → literal 0x02" },
+      { k: "lit", v: 1, bits: "1", bytes: [0x01], log: "ctrl 1 → literal 0x01 — the 4-byte period is set" },
+      { k: "short", len: 4, dist: 4, bits: "0010", bytes: [0xFC], log: "ctrl 00·10 + FC → short match: len 4, dist −4 — replays the period" },
+      { k: "short", len: 5, dist: 4, bits: "0011", bytes: [0xFC], log: "ctrl 00·11 + FC → short match: len 5, dist −4 — overlaps a byte it just wrote" },
+      { k: "short", len: 3, dist: 4, bits: "0001", bytes: [0xFC], log: "ctrl 00·01 + FC → short match: len 3, dist −4 — row 1 complete" },
+      { k: "long", len: 16, dist: 16, bits: "01", bytes: [0xF0, 0xFE], log: "ctrl 01 + F0 FE → long match: len 16, dist −16 — copies the whole previous row" },
+      { k: "lit", v: 3, bits: "1", bytes: [0x03], log: "ctrl 1 → literal 0x03 — one new byte…" },
+      { k: "short", len: 5, dist: 1, bits: "0011", bytes: [0xFF], log: "ctrl 00·11 + FF → short match: len 5, dist −1 — overlap run: RLE for free" },
+      { k: "short", len: 5, dist: 1, bits: "0011", bytes: [0xFF], log: "ctrl 00·11 + FF → short match: len 5, dist −1" },
+      { k: "short", len: 5, dist: 1, bits: "0011", bytes: [0xFF], log: "ctrl 00·11 + FF → short match: len 5, dist −1 — sixteen bytes from one literal" },
+      { k: "long", len: 16, dist: 32, bits: "01", bytes: [0xE0, 0xFE], log: "ctrl 01 + E0 FE → long match: len 16, dist −32 — row 4 = row 2" },
+      { k: "exit", bits: "01", bytes: [0x00, 0x00, 0x00], log: "ctrl 01 + 00 00 00 → offset 0, escape 0: EXIT — 64 B out from 18 data bytes + 35 control bits" },
+    ];
+    /* expand output */
+    const out = [];
+    TOKS.forEach((t, ti) => {
+      t.outStart = out.length;
+      if (t.k === "lit") out.push({ v: t.v, kind: "lit", tok: ti });
+      else if (t.k === "short" || t.k === "long")
+        for (let i = 0; i < t.len; i++)
+          out.push({ v: out[out.length - t.dist].v, kind: "copy", tok: ti });
+      t.outLen = out.length - t.outStart;
+    });
+    const N = TOKS.length, OUT = out.length;   /* 14 tokens, 64 bytes */
+    const durs = TOKS.map(t => 0.55 + 0.085 * (t.outLen || 0));
+    const cum = [0];
+    durs.forEach(d => cum.push(cum[cum.length - 1] + d));
+    const TOTAL = cum[N];
+
+    let pos = W.reducedMotion ? TOTAL : 0;
+    let lastT = 0, hover = null, lastLog = -2;
+    const HDRLOG = logEl.innerHTML;   /* initial header message */
+
+    function tokAt(p) {
+      if (p >= TOTAL) return [N, 0];
+      let i = 0;
+      while (i < N && cum[i + 1] <= p) i++;
+      return [i, (p - cum[i]) / durs[i]];
+    }
+    function setLog(i) {
+      if (i === lastLog) return;
+      lastLog = i;
+      if (i < 0) { logEl.innerHTML = HDRLOG; return; }
+      const t = TOKS[Math.min(i, N - 1)];
+      logEl.innerHTML = '<span class="t">token ' + (Math.min(i, N - 1) + 1) + "/" + N + "</span> — " + t.log;
+    }
+
+    const LITC = C.series[0], CPYC = C.series[1];
+    const fig = W.makeFig(el, (ctx, w, h, f) => {
+      if (f.playing) {
+        const dt = Math.max(0, f.t - lastT);
+        lastT = f.t;
+        pos = Math.min(TOTAL, pos + dt);
+        if (pos >= TOTAL) { f.stop(); playBtn.textContent = "▶ replay"; }
+      }
+      const [ti, frac] = tokAt(pos);
+      const m = 14;
+      ctx.clearRect(0, 0, w, h);
+      const hits = [];
+
+      /* ---- token chips (wrapping rows) ---- */
+      ctx.font = W.mono(10);
+      ctx.textBaseline = "middle";
+      const bitW = 11, byteW = 24, cellH = 16, chipPad = 4, chipH = cellH + 8, gap = 6;
+      let cx = m, cy = 24;
+      ctx.textAlign = "left";
+      ctx.fillStyle = C.muted;
+      ctx.fillText("compressed stream — control bits · data bytes", m, 12);
+      TOKS.forEach((t, i) => {
+        const cw = chipPad * 2 + t.bits.length * bitW + 3 + t.bytes.length * byteW;
+        if (cx + cw > w - m) { cx = m; cy += chipH + gap; }
+        const done = i < ti || (i === ti && frac >= 1) || pos >= TOTAL;
+        const active = i === ti && pos < TOTAL;
+        ctx.globalAlpha = done ? 0.45 : 1;
+        ctx.fillStyle = C.surface2;
+        W.rrect(ctx, cx, cy, cw, chipH, 4);
+        ctx.fill();
+        ctx.strokeStyle = active ? C.amber : C.line;
+        ctx.lineWidth = active ? 1.5 : 1;
+        ctx.stroke();
+        ctx.lineWidth = 1;
+        let bx = cx + chipPad;
+        for (const b of t.bits) {
+          ctx.fillStyle = C.surface3;
+          ctx.fillRect(bx, cy + 4, bitW - 2, cellH);
+          ctx.fillStyle = b === "1" ? C.amber : C.muted;
+          ctx.textAlign = "center";
+          ctx.fillText(b, bx + (bitW - 2) / 2, cy + 4 + cellH / 2 + 0.5);
+          bx += bitW;
+        }
+        bx += 3;
+        for (const by of t.bytes) {
+          ctx.fillStyle = C.dosblue;
+          ctx.fillRect(bx, cy + 4, byteW - 2, cellH);
+          ctx.fillStyle = "#cfe3ff";
+          ctx.textAlign = "center";
+          ctx.fillText(W.hex(by, 2), bx + (byteW - 2) / 2, cy + 4 + cellH / 2 + 0.5);
+          bx += byteW;
+        }
+        ctx.globalAlpha = 1;
+        const kindName = t.k === "lit" ? "literal" : t.k === "exit" ? "end of stream" :
+          t.k + " match · len " + t.len + " · dist −" + t.dist;
+        hits.push({ x: cx, y: cy, w: cw, h: chipH, lines: ["token " + (i + 1) + ": " + kindName, t.log] });
+        cx += cw + gap;
+      });
+      const streamBottom = cy + chipH;
+
+      /* ---- progress readout ---- */
+      let shown = 0;
+      TOKS.forEach((t, i) => {
+        if (i < ti) shown += t.outLen;
+        else if (i === ti) shown += Math.min(t.outLen, Math.round(frac * t.outLen + 0.35));
+      });
+      if (pos >= TOTAL) shown = OUT;
+      ctx.font = W.mono(11);
+      ctx.textAlign = "left";
+      ctx.fillStyle = C.cyan;
+      ctx.fillText("out: " + shown + " / " + OUT + " B", m, streamBottom + 18);
+      ctx.fillStyle = C.muted;
+      ctx.textAlign = "right";
+      ctx.fillText("stream total: 18 data bytes + 35 control bits", w - m, streamBottom + 18);
+
+      /* ---- output grid 16×4 ---- */
+      const cols = 16, rowsN = 4;
+      const cw2 = W.clamp(Math.floor((w - 2 * m - 30) / cols) - 3, 13, 30);
+      const gapC = 3;
+      const gridW = cols * (cw2 + gapC) - gapC;
+      const gx = (w - gridW) / 2;
+      const gy = streamBottom + 30;
+      const alphas = [0.35, 0.53, 0.71, 0.9];
+      const curTok = ti < N ? TOKS[ti] : null;
+      for (let i = 0; i < OUT; i++) {
+        const col = i % cols, row = (i / cols) | 0;
+        const x = gx + col * (cw2 + gapC), y = gy + row * (cw2 + gapC);
+        if (i < shown) {
+          const o = out[i];
+          ctx.fillStyle = o.kind === "lit" ? LITC : CPYC;
+          ctx.globalAlpha = alphas[o.v] || 0.9;
+          ctx.fillRect(x, y, cw2, cw2);
+          ctx.globalAlpha = 1;
+          if (cw2 >= 15) {
+            ctx.fillStyle = "rgba(11,14,20,0.8)";
+            ctx.font = W.mono(Math.min(11, cw2 - 5));
+            ctx.textAlign = "center";
+            ctx.fillText(String(o.v), x + cw2 / 2, y + cw2 / 2 + 0.5);
+          }
+          const src = TOKS[o.tok];
+          hits.push({
+            x, y, w: cw2, h: cw2, lines: [
+              "byte " + i + " = 0x0" + o.v,
+              o.kind === "lit" ? "literal (token " + (o.tok + 1) + ")"
+                : "copied by token " + (o.tok + 1) + ": len " + src.len + ", dist −" + src.dist,
+            ]
+          });
+        } else {
+          ctx.strokeStyle = C.line2;
+          ctx.strokeRect(x + 0.5, y + 0.5, cw2 - 1, cw2 - 1);
+        }
+        if (i === shown && pos < TOTAL) {   /* write cursor */
+          ctx.strokeStyle = C.amber;
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x + 0.5, y + 0.5, cw2 - 1, cw2 - 1);
+          ctx.lineWidth = 1;
+        }
+      }
+      const gridH = rowsN * (cw2 + gapC) - gapC;
+
+      /* ---- active-match source highlight + arrow ---- */
+      if (curTok && (curTok.k === "short" || curTok.k === "long") && shown > curTok.outStart && pos < TOTAL) {
+        const done = Math.min(shown - curTok.outStart, curTok.outLen);
+        const sIdx = curTok.outStart - curTok.dist + done - 1;
+        const dIdx = curTok.outStart + done - 1;
+        const cc = (i) => {
+          const col = i % cols, row = (i / cols) | 0;
+          return [gx + col * (cw2 + gapC) + cw2 / 2, gy + row * (cw2 + gapC) + cw2 / 2];
+        };
+        /* outline the source range */
+        for (let i = curTok.outStart - curTok.dist; i < curTok.outStart - curTok.dist + Math.min(curTok.len, curTok.dist); i++) {
+          if (i < 0) continue;
+          const col = i % cols, row = (i / cols) | 0;
+          ctx.strokeStyle = C.cyan;
+          ctx.strokeRect(gx + col * (cw2 + gapC) + 0.5, gy + row * (cw2 + gapC) + 0.5, cw2 - 1, cw2 - 1);
+        }
+        if (sIdx >= 0 && dIdx > sIdx) {
+          const [x1, y1] = cc(sIdx), [x2, y2] = cc(dIdx);
+          ctx.globalAlpha = 0.85;
+          W.drawArrow(ctx, x1, y1 - cw2 * 0.1, x2, y2 - cw2 * 0.1, C.cyan);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      /* ---- window bracket ---- */
+      const by2 = gy + gridH + 12;
+      ctx.strokeStyle = C.line;
+      ctx.beginPath();
+      ctx.moveTo(gx, by2 - 4); ctx.lineTo(gx, by2);
+      ctx.lineTo(gx + gridW, by2); ctx.lineTo(gx + gridW, by2 - 4);
+      ctx.stroke();
+      ctx.fillStyle = C.muted;
+      ctx.font = W.mono(10);
+      ctx.textAlign = "center";
+      ctx.fillText("sliding dictionary window — every written byte within 4,096 stays addressable (here: the whole tile)", w / 2, by2 + 12);
+
+      /* ---- log + tooltip ---- */
+      setLog(pos <= 0 ? -1 : ti);
+      if (hover) {
+        for (let i = hits.length - 1; i >= 0; i--) {
+          const r = hits[i];
+          if (hover.x >= r.x && hover.x <= r.x + r.w && hover.y >= r.y && hover.y <= r.y + r.h) {
+            tip(ctx, w, h, hover.x, hover.y, r.lines);
+            break;
+          }
+        }
+      }
+    });
+    if (!fig) return;
+
+    playBtn.addEventListener("click", () => {
+      if (fig.playing) { fig.stop(); playBtn.textContent = "▶ play"; return; }
+      if (pos >= TOTAL) pos = 0;
+      lastT = fig.t;
+      playBtn.textContent = "❚❚ pause";
+      fig.start();
+    });
+    stepBtn.addEventListener("click", () => {
+      if (fig.playing) { fig.stop(); playBtn.textContent = "▶ play"; }
+      const [ti] = tokAt(pos);
+      pos = pos >= TOTAL ? cum[1] : cum[Math.min(ti + 1, N)];
+      if (pos >= TOTAL) playBtn.textContent = "▶ replay";
+      fig.redraw();
+    });
+    resetBtn.addEventListener("click", () => {
+      fig.stop();
+      pos = 0;
+      playBtn.textContent = "▶ play";
+      fig.redraw();
+    });
+    if (W.reducedMotion) {
+      playBtn.disabled = true;
+      playBtn.title = "animation disabled (reduced motion) — use ⏭ step";
+    }
+    W.onHover(fig.canvas, (x, y) => {
+      hover = x == null ? null : { x, y };
+      if (!fig.playing) fig.redraw();
+    });
+  })();
+
+  /* ============================================================
+     FIG 3 — clos-bkg.pik anatomy (disk vs decompressed byte bars)
+     ============================================================ */
+  (function () {
+    const el = document.getElementById("cv-pik");
+    if (!el) return;
+    const DISK = [
+      { label: "header 176 B", bytes: 176, color: C.muted, name: "MADSPACK header", extra: "fixed 176-byte header (16-slot directory)" },
+      { label: "17 B", bytes: 17, color: C.series[3], name: "section 0 — metadata", extra: "FAB 17 → 8 B" },
+      { label: "frame 28,800 B", bytes: 28800, color: C.series[0], name: "section 1 — 320×200 frame", extra: "FAB 28,800 → 64,000 B (×2.22)" },
+      { label: "753 B", bytes: 753, color: C.series[2], name: "section 2 — palette", extra: "FAB 753 → 768 B (×1.02)" },
+    ];
+    const DEC = [
+      { label: "8", bytes: 8, color: C.series[3], name: "metadata — 8 B", extra: "from 17 compressed bytes" },
+      { label: "frame 64,000 B (320×200)", bytes: 64000, color: C.series[0], name: "frame — 64,000 B", extra: "one full Mode 13h screen, from 28,800 B" },
+      { label: "palette 768 B", bytes: 768, color: C.series[2], name: "palette — 768 B", extra: "256 × 3 six-bit DAC values, from 753 B" },
+    ];
+    let hover = null;
+    const fig = W.makeFig(el, (ctx, w, h, f) => {
+      ctx.clearRect(0, 0, w, h);
+      const m = 16, barH = 30;
+      const plotW = w - 2 * m;
+      const diskW = plotW * (29746 / 64776);
+      const y1 = 42, y2 = h - 76;
+      ctx.font = W.mono(11);
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      ctx.fillStyle = C.ink2;
+      ctx.fillText("on disk — 29,746 B", m, y1 - 10);
+      ctx.fillText("decompressed — 64,776 B", m, y2 - 10);
+
+      const segs1 = W.drawByteBar(ctx, m, y1, diskW, barH, DISK, { total: 29746 });
+      const segs2 = W.drawByteBar(ctx, m, y2, plotW, barH, DEC, { total: 64776 });
+
+      /* expansion connectors (skip the header, which has no decompressed twin) */
+      ctx.globalAlpha = 0.12;
+      for (let i = 1; i < segs1.length; i++) {
+        const a = segs1[i], b = segs2[i - 1];
+        ctx.fillStyle = a.color;
+        ctx.beginPath();
+        ctx.moveTo(a._x + 1, y1 + barH);
+        ctx.lineTo(a._x + a._w - 1, y1 + barH);
+        ctx.lineTo(b._x + b._w - 1, y2);
+        ctx.lineTo(b._x + 1, y2);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      for (const s of segs1) W.segLabel(ctx, s, y1 + barH + 14, 52);
+      for (const s of segs2) W.segLabel(ctx, s, y2 + barH + 14, 52);
+
+      /* callouts for slivers */
+      ctx.font = W.mono(10);
+      ctx.fillStyle = C.muted;
+      ctx.textAlign = "left";
+      ctx.fillText("← 176 B header + 17 B metadata", m + segs1[2]._x - m + 6, y1 - 10 + 24);
+      ctx.textAlign = "right";
+      ctx.fillText("768 B palette →  ", m + plotW, y2 - 16 + 12);
+
+      let hit = null;
+      const test = (segs, y) => {
+        if (!hover || hover.y < y || hover.y > y + barH) return;
+        for (const s of segs)
+          if (hover.x >= s._x && hover.x <= s._x + s._w) hit = s;
+      };
+      test(segs1, y1);
+      test(segs2, y2);
+      if (hit) tip(ctx, w, h, hover.x, hover.y, [hit.name, hit.extra]);
+    });
+    if (fig) W.onHover(fig.canvas, (x, y) => { hover = x == null ? null : { x, y }; fig.redraw(); });
+  })();
+
+  /* ============================================================
+     FIG 4 — E0 dither interactive
+     ============================================================ */
+  (function () {
+    const el = document.getElementById("cv-dither");
+    if (!el) return;
+    const EGA = ["#000000", "#0000AA", "#00AA00", "#00AAAA", "#AA0000", "#AA00AA",
+      "#AA5500", "#AAAAAA", "#555555", "#5555FF", "#55FF55", "#55FFFF",
+      "#FF5555", "#FF55FF", "#FFFF55", "#FFFFFF"];
+    const NAMES = ["black", "blue", "green", "cyan", "red", "magenta", "brown",
+      "light grey", "dark grey", "bright blue", "bright green", "bright cyan",
+      "bright red", "bright magenta", "yellow", "white"];
+    let val = 0x86;
+    const fig = W.makeFig(el, (ctx, w, h) => {
+      ctx.clearRect(0, 0, w, h);
+      const hi = (val >> 4) & 0xF, lo = val & 0xF;
+      const m = 16;
+      const patchH = h - 58;
+      const cell = Math.max(10, Math.min(18, Math.floor(patchH / 10)));
+      const gcols = Math.max(8, Math.floor((w * 0.28) / cell));
+      const p1w = gcols * cell;
+      ctx.font = W.mono(11);
+      ctx.textBaseline = "alphabetic";
+      ctx.textAlign = "left";
+      ctx.fillStyle = C.muted;
+      ctx.fillText("the dither pair, magnified", m, 22);
+      const py = 32;
+      for (let ry = 0; ry * cell < patchH - cell; ry++)
+        for (let cx2 = 0; cx2 < gcols; cx2++) {
+          ctx.fillStyle = EGA[((cx2 + ry) & 1) ? lo : hi];
+          ctx.fillRect(m + cx2 * cell, py + ry * cell, cell, cell);
+        }
+      /* fine scale */
+      const p2x = m + p1w + 26;
+      ctx.fillStyle = C.muted;
+      ctx.fillText("at pixel scale — the eye blends it", p2x, 22);
+      const fine = 3, fcols = Math.floor(p1w / fine), frows = Math.floor((patchH - cell) / fine);
+      for (let ry = 0; ry < frows; ry++)
+        for (let cx2 = 0; cx2 < fcols; cx2++) {
+          ctx.fillStyle = EGA[((cx2 + ry) & 1) ? lo : hi];
+          ctx.fillRect(p2x + cx2 * fine, py + ry * fine, fine, fine);
+        }
+      /* info column */
+      const ix = p2x + fcols * fine + 30;
+      if (ix < w - 130) {
+        ctx.font = W.dos(26);
+        ctx.fillStyle = C.amber;
+        ctx.fillText("E0 byte 0x" + W.hex(val, 2), ix, py + 22);
+        ctx.font = W.mono(11);
+        const row = (y, nib, which) => {
+          ctx.fillStyle = EGA[nib];
+          ctx.fillRect(ix, y - 10, 12, 12);
+          ctx.strokeStyle = C.line;
+          ctx.strokeRect(ix + 0.5, y - 9.5, 11, 11);
+          ctx.fillStyle = C.ink2;
+          ctx.fillText(which + " nibble " + nib.toString(16).toUpperCase() + " — EGA " + NAMES[nib], ix + 20, y);
+        };
+        row(py + 52, hi, "high");
+        row(py + 74, lo, "low");
+        ctx.fillStyle = C.muted;
+        ctx.fillText(hi === lo ? "equal nibbles → one of the 16 solid colours"
+          : "unequal nibbles → a 2×1 checkerboard dither", ix, py + 100);
+      }
+    });
+    if (fig) W.bindSlider("dither-i", (v) => { val = v & 0xFF; fig.redraw(); }, (v) => "0x" + W.hex(v, 2));
+  })();
+
+  /* ============================================================
+     FIG 5 — inventory split, Colonization vs Civilization
+     ============================================================ */
+  (function () {
+    const el = document.getElementById("cv-inv");
+    if (!el) return;
+    const CATC = { art: C.series[0], prog: C.series[1], audio: C.series[2], text: C.series[3], world: C.series[4] };
+    const CATN = { art: "art & fonts", prog: "program & drivers", audio: "digitised audio", text: "game text", world: "world & data" };
+    const COL_EXCL = [".pdf", ".gif", ".sav"], CIV_EXCL = ["DOX", "DOC", "COM"];
+    const COL_CAT = {
+      ".ss": "art", ".pik": "art", ".ff": "art", ".pal": "art",
+      ".exe": "prog", ".col": "prog", ".bat": "prog", ".com": "prog",
+      ".bin": "audio", ".txt": "text",
+      ".mp": "world", ".mov": "world", ".dat": "world", ".db": "world",
+    };
+    const CIV_CAT = {
+      PIC: "art", PAL: "art", CV: "art",
+      EXE: "prog", CVL: "prog", BAT: "prog", ARJ: "prog",
+      TXT: "text", ME: "text",
+      SVE: "world", MAP: "world", DTA: "world",
+    };
+    function rowsFrom(byExt, excl, cats) {
+      const rows = [];
+      for (const ext in byExt) {
+        if (excl.includes(ext)) continue;
+        rows.push({ ext, count: byExt[ext].count, bytes: byExt[ext].totalBytes, cat: cats[ext] || "world" });
+      }
+      rows.sort((a, b) => b.bytes - a.bytes);
+      return rows;
+    }
+    const panels = DATA && DATA.colInv && DATA.civInv ? [
+      { title: "COLONIZATION (1994)", rows: rowsFrom(DATA.colInv.byExtension, COL_EXCL, COL_CAT) },
+      { title: "CIVILIZATION (1991)", rows: rowsFrom(DATA.civInv.byExtension, CIV_EXCL, CIV_CAT) },
+    ] : null;
+    let hover = null;
+    const fig = W.makeFig(el, (ctx, w, h) => {
+      if (!panels) { unavailable(ctx, w, h); return; }
+      ctx.clearRect(0, 0, w, h);
+      const totalRows = panels[0].rows.length + panels[1].rows.length;
+      const m = 12, gutter = 76, titleH = 30, panelGap = 22;
+      const rowH = W.clamp((h - 2 * m - 2 * titleH - panelGap) / totalRows, 13, 24);
+      const maxB = Math.max(...panels[0].rows.map(r => r.bytes), ...panels[1].rows.map(r => r.bytes));
+      const barX = m + gutter, barMax = w - barX - 84;
+      let y = m;
+      const hits = [];
+      ctx.textBaseline = "middle";
+      for (const p of panels) {
+        ctx.font = W.dos(17);
+        ctx.fillStyle = C.amber;
+        ctx.textAlign = "left";
+        ctx.fillText(p.title, m, y + titleH / 2 + 2);
+        y += titleH;
+        for (const r of p.rows) {
+          const bw = Math.max(1.5, (r.bytes / maxB) * barMax);
+          const by = y + rowH * 0.15, bh = rowH * 0.7;
+          ctx.font = W.mono(11);
+          ctx.fillStyle = C.ink2;
+          ctx.textAlign = "right";
+          ctx.fillText(r.ext.replace(/^\./, "."), barX - 8, y + rowH / 2);
+          ctx.fillStyle = CATC[r.cat];
+          W.rrect(ctx, barX, by, bw, bh, 2);
+          ctx.fill();
+          ctx.fillStyle = C.muted;
+          ctx.textAlign = "left";
+          ctx.fillText(W.fmtKB(r.bytes, r.bytes < 10240 ? 1 : 0), barX + bw + 7, y + rowH / 2);
+          hits.push({
+            x: m, y, w: w - 2 * m, h: rowH, lines: [
+              r.ext + " — " + r.count + " file" + (r.count === 1 ? "" : "s") + " · " + CATN[r.cat],
+              W.fmtInt(r.bytes) + " B",
+            ]
+          });
+          y += rowH;
+        }
+        y += panelGap;
+      }
+      if (hover) {
+        for (const r of hits)
+          if (hover.y >= r.y && hover.y <= r.y + r.h && hover.x >= r.x && hover.x <= r.x + r.w) {
+            tip(ctx, w, h, hover.x, hover.y, r.lines);
+            break;
+          }
+      }
+    });
+    if (fig && panels) W.onHover(fig.canvas, (x, y) => { hover = x == null ? null : { x, y }; fig.redraw(); });
+  })();
+
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

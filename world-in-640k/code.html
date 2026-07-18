@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Code in Flight — A World in 640K</title>
+<meta name="description" content="How Civilization and Colonization paged their own code from inside their EXE files — Microsoft LINK's INT 3Fh overlays and RTLink/Plus's LRU virtual memory, measured byte by byte.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="w640.css">
+<style>
+.srcline{font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:38px;}
+.srcline a{color:var(--cyan);}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">A WORLD IN 640K</a></div>
+    <div class="strap">how Civilization &amp; Colonization ran a planet in real-mode DOS</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="code.html" aria-current="page">1 · Code in Flight</a>
+    <a href="memory.html">2 · The Division Dance</a>
+    <a href="art.html">3 · Art on Demand</a>
+    <a href="world.html">4 · A Hemisphere in 24K</a>
+    <a href="time.html">5 · The Heartbeat</a>
+    <a href="mapgen.html">6 · Growing a World</a>
+    <a href="how.html">7 · How We Know</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 1 · CODE</p>
+  <h1>CODE IN <span class="amber">FLIGHT</span></h1>
+  <p class="standfirst">Linked flat, Sid Meier's Colonization needs 484,241 bytes of code
+  in memory before it allocates its first game buffer. Instead it asks DOS for about
+  168 KB — and never asks for more. The missing 361,168 bytes stay inside the EXE file on
+  disk, and are paged into RAM at run time, call by call, by a tiny operating system the
+  linker itself put there.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">361,168 B</div><div class="l">of Colonization code paged in from the EXE's own tail at run time — 73% of viceroy.exe</div></div>
+  <div class="stat"><div class="v">1,031</div><div class="l">far-call gates in viceroy.exe — 365 resident · 659 paged · 7 in the VM manager; 1,024 pack its 12,322-byte thunk farm</div></div>
+  <div class="stat"><div class="v">365/365</div><div class="l">root-gate segments patched by DOS at load time; paged gates in the reloc table: 0 of 659</div></div>
+  <div class="stat"><div class="v">31</div><div class="l">RTLink pages chained in the EXE tail — every one reachable; records 752 B to 32,528 B</div></div>
+  <div class="stat"><div class="v">8,452</div><div class="l">page-local fixups viceroy.exe applies itself, at run time — relocation after DOS has left the room</div></div>
+  <div class="stat"><div class="v">23</div><div class="l">overlays embedded in CIV.EXE behind INT 3Fh — 121,720 B; only the largest (10,666 B) resident at once</div></div>
+</section>
+
+<section class="prose">
+
+<h2>Why a far call can fly</h2>
+
+<p>Real mode has no memory-management unit, no page faults, no loader in the loop after
+launch. DOS's <code>EXEC</code> reads an MZ executable's declared pages into one block,
+applies the header's relocation table — a list of every location in the image that holds
+a segment number — and jumps in. From that instant the program owns its bytes; nothing in
+the machine will ever move code on its behalf.</p>
+
+<p>The loophole is the far call itself. <code>CALL FAR</code> is five bytes —
+<code>9A</code>, then a 16-bit offset, then a 16-bit segment — and that destination
+segment is just data sitting in the instruction stream. Anything that can rewrite those
+bytes, or route them through one level of indirection, can move the destination code
+anywhere it likes between calls. Overlays are that observation industrialised: the linker
+gathers functions into units, replaces every cross-unit far call with something it
+controls, and ships a small runtime that loads units over one another on demand.
+Software-defined paging, on a CPU with no paging hardware.</p>
+
+<p>Both games also exploit a second, quieter loophole: DOS loads only what the MZ header
+declares. <code>CIV.EXE</code> is 304,512 bytes on disk but declares 178,111; the
+126,401 bytes beyond that boundary are its overlay store. <code>viceroy.exe</code> is
+493,470 bytes and shows DOS a 123,073-byte load module — 73% of the file is
+invisible to the operating system that launches it.</p>
+
+<h2>1991: the interrupt is the linker</h2>
+
+<p>Civilization uses the scheme Microsoft built into LINK: <strong>INT 3Fh
+overlays</strong>. At link time, every far call into an overlaid unit is replaced by a
+five-byte trap — <code>CD 3F</code>, then an overlay number and an offset. Our scan of
+CIV.EXE finds <strong>168 <code>CD 3F</code> sites</strong>, 147 of them carrying overlay
+numbers 1–23; at file offset <span class="addr">1F8C</span> the bytes read
+<code>CD 3F 07 12 00</code> — <em>interrupt 3Fh, overlay 7, offset 0012h</em>. The
+handler behind vector 3Fh swaps the target overlay into a single resident buffer (loading
+it from the EXE via ordinary DOS file reads) and jumps to the offset. One overlay area,
+one overlay resident at a time, every dispatch through an interrupt.</p>
+
+<p>The overlay store is plainer than you might expect: scanning paragraph boundaries
+finds <strong>23 embedded MZ images</strong> after the root, each 512-aligned, with
+<code>e_ovno</code> numbered 1–23 in order, sized 1,514 to 10,666 bytes — 121,720 bytes
+in all, and the last one ends exactly at end-of-file. The division of labour is visible
+in the relocation tables: the root declares <strong>zero</strong> relocations, while
+every overlay carries its own private table of 34–246 entries, applied when it is
+paged in. Each overlay's header CS:IP field reads the identical
+<span class="addr">2058:2E83</span> — we read that as a fixed pointer into the root's
+overlay manager rather than a real entry point. The resident root itself is a
+177,599-byte image plus 60,368 bytes of MinAlloc: <strong>237,967 bytes, about 232 KB</strong>,
+before drivers and buffers — and beyond it, only the largest overlay's ~10.4 KB
+ever needs to be in memory at once.</p>
+
+<p>The manager Microsoft shipped came with stock error messages. The ones MicroProse
+added to them have more personality:</p>
+
+<pre>
+; CIV.EXE, $-terminated string block at file offset 29B4Fh
+Allocated 1Mb of space????
+MS-DOS lied to us about how much memory was available
+Filename not found
+Not enough memory to load file
+Overlay load failed for some reason
+Overlay has overrun allocated memory
+Unable to shrink overlay memory allocation
+Error releasing overlay memory
+
+; and the stock Microsoft set at 2A076h–2A0EAh
+Overlay not found
+Overlay Manager stack overflow
+Cannot load overlay:  too many open files
+Please enter new program spec:
+</pre>
+
+<p>The quirky lines sit directly alongside the stock ones, which we read — flagged as
+inference, not fact — as MicroProse customising Microsoft's overlay manager rather than
+using it untouched. Next to <code>PATH=</code> and <code>CIV.EXE</code> in the string
+table sits an environment-variable name, <code>CVDEBUG</code>: the manager re-opens its
+own EXE by name to read overlays, and appears to have shipped with a debug switch.</p>
+
+<h2>1994: the linker ships an operating system</h2>
+
+<p>Three years later, Colonization's <code>viceroy.exe</code> was linked with
+<strong>RTLink/Plus</strong>, from Pocket Soft, Inc. of Houston, Texas — a third-party
+DOS linker whose selling point was what it called <em>dynamic overlays</em>: a module's
+code "divided into pages to be brought into and out of memory on a least recently used
+basis". That is not an overlay tree; that is demand paging with LRU replacement —
+virtual memory, implemented in a linker, for real-mode code with no MMU in the loop.
+The same product was bundled with CA-Clipper 5.x, so by 1994 every Clipper 5 business
+application ran on the identical runtime.</p>
+
+<p>The machinery inside viceroy.exe decomposes cleanly under a byte-level walk. After
+the 123,073-byte load module and 15 bytes of padding, a chain of page records starts
+paragraph-aligned at file offset <span class="addr">204D0</span>:</p>
+
+<pre>
+; RTLink page record — 31 of these, chained from file offset 204D0h
++0   u16  total record size, paragraphs   ; next record at +size×16
++2   u16  header size, paragraphs         ; fixup table, paragraph-padded
++4   u32  2BCh = 700                      ; constant in all 31 pages — meaning unknown
++8   u32  fixup count N                   ; Σ across all pages = 8,452
++12  u32  0                               ; in all pages
++16  N × { u16 offset, u16 paragraph }    ; MZ-style fixups, page-relative
+...  code — (size − header) paragraphs    ; Σ = 325,936 bytes of code
+</pre>
+
+<p>The walk yields <strong>31 pages totalling 361,168 bytes</strong> (325,936 of code,
+35,232 of header), and ends at 493,472 — two bytes past end-of-file, the last record's
+paragraph rounding overshooting the truncated tail. Every fixup in every page targets
+its own page's code area: pages are relocated <em>locally</em>, at load time, by the
+runtime — 8,452 acts of relocation DOS never sees.</p>
+
+<p>Calls get into those pages through a <strong>thunk farm</strong>: 1,024 hand-packed
+call gates occupying 12,322 bytes at file offsets
+<span class="addr">1A490</span>–<span class="addr">1D4B2</span> (three padding holes of
+16–20 bytes; seven more gates live inside the VM manager itself, 1,031 in all). Each
+gate is a far call into segment <span class="addr">10F7</span> — which is also the EXE's
+entry segment; the program starts life inside its own pager — followed by a far-jump
+parameter block:</p>
+
+<pre>
+; the two gate shapes (1,024 packed into 12,322 bytes at 1A490h)
+paged (659):  9A AB 0D F7 10   CALL FAR 10F7:0DAB   ; into the VM manager
+              EA oo oo 00 00   JMP FAR  0000:oooo   ; segment 0000 — resolved at run time
+              0D 00            page number (13)     ; 376 of the 659 carry one extra word
+root (365):   9A 91 0D F7 10   CALL FAR 10F7:0D91
+              EA oo oo ss ss   JMP FAR  ssss:oooo   ; segment patched by DOS at load
+</pre>
+
+<p>And here is the proof of the whole design, sitting in the file header. viceroy.exe's
+MZ relocation table has 2,254 entries. Exactly <strong>365 of 365</strong> root-gate
+segment fields appear in it — they point at resident code, so DOS must patch them at
+load. Exactly <strong>0 of 659</strong> paged-gate segment fields do — they are zero
+placeholders, resolved again and again at run time as pages come and go. Load-time
+linking and run-time linking, mechanically separated, visible in a relocation table.
+The 659 paged gates cover all 31 pages; there is no dead page in the file.</p>
+
+<p>The runtime earns the name "VM manager". It probes for an EMS driver
+(<code>EMMXXXX0</code>, at file offset <span class="addr">1337A</span>) and uses
+expanded memory as a page cache when present; its pool of resident pages is sized from
+free conventional memory at startup and grows with it; watched live under our emulator,
+a first load is a plain seek-and-read of raw page bytes from the EXE (staged through the
+top block Chapter 2 describes), while an evicted page's contents are FAB-compressed into
+an in-memory cache so a re-load can decompress from RAM instead of touching the disk.
+Its error table speaks its vocabulary fluently:</p>
+
+<pre>
+; viceroy.exe — the RTLink VM manager's error table (selected; evm0001–evm0022)
+evm0001  Cannot find VM file "
+evm0003  Read error on VM file "
+evm0008  Out of conventional memory.
+evm0009  EMM error: error = xx, function = xxxx.
+evm0010  XMM error: error = xx, function = xx.
+evm0012  Unvectored call to resident symbol calls a Virtual Vector.
+evm0015  Vectoring error: interrupt handler calls a Virtual Page.
+evm0018  Reference to a Virtual Page after $$RTL_TERMINATE.
+evm0020  Illegal alteration of EMS mapping state.
+evm0022  Smart vectoring failed.  BP-chain destroyed.
+
+Vectored call to Page xxxxH (page address xxxx:xxxx)
+    occurs near map address xxxx:xxxx.      ; crash post-mortem, keyed to the linker map
+</pre>
+
+<p>Note what those messages police: interrupt handlers must not live in pages
+(<code>evm0015</code>); nothing may touch a page after shutdown
+(<code>evm0018</code>); nobody may fiddle the EMS mapping behind the manager's back
+(<code>evm0020</code>). And "smart vectoring" (<code>evm0022</code>) is the stack
+surgery that makes eviction safe: the manager pushes an intermediate return address —
+and repairs the BP chain — so that when a paged function returns, control passes back
+through the pager, which can re-load whatever the caller lived in. Structurally, pages
+hold no raw pointers into other pages: every one of their inter-unit calls goes back
+through the root's gate farm, and their fixups are all page-local. Evicting a page can
+therefore never strand a live pointer — the only references to it are gates the manager
+owns.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">ONE FAR CALL, RESOLVED</span>
+    <span class="hint">▶ play · ⏭ step · hover any part for its numbers</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="gate" style="aspect-ratio: 2.15 / 1; min-height: 350px; touch-action: pan-y;" role="img"
+      aria-label="Animated storyboard of an RTLink paged call: game code hits a gate in the thunk farm, the VM manager evicts the least-recently-used page, seeks and reads page 13 from the EXE tail, applies 477 fixups, patches the gate, and the call lands; a second call takes the patched fast path"></canvas>
+  </div>
+  <div class="evlog" id="gate-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#f0a132"></span>control flow</span>
+    <span class="key"><span class="sw" style="background:#4cc26e"></span>page data from disk</span>
+    <span class="key"><span class="sw" style="background:#e05252"></span>eviction</span>
+    <span class="key"><span class="sw" style="background:#5ad7e6"></span>patched hot path</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="gate-play">▶ play</button>
+    <button class="btn" id="gate-step">⏭ step</button>
+    <button class="btn" id="gate-reset">⟲ reset</button>
+  </div>
+  <div class="fig-note">Structure measured from viceroy.exe (gate 10F7:0DAB; page-13
+  record at 4B890h — 31,472 B, 477 fixups; the 0/659 vs 365/365 reloc proof; 2026-07-18
+  analysis) and from live overlay-load traces under <a href="/mddosem/">mddosem</a>
+  (seek+read of raw page bytes via INT 21h AH=42h/3Fh; first loads stage through the
+  82,864-byte top block — Chapter 2). The three-slot pool is schematic: the real pool is
+  sized from free memory at startup; LRU policy per RTLink's documented design and the
+  manager's own error vocabulary.</div>
+</figure>
+
+<h2>Thirty-one pages of a game</h2>
+
+<p>The pages themselves have a shape. Two giants carry the fattest subsystems — page 2
+is the largest raw record at <strong>32,528 bytes</strong>, page 13 the largest code
+payload at <strong>29,520 bytes</strong> (the number that sizes the resident page
+buffer) — while page 24 is a 752-byte sliver. Header overhead tracks the fixup count,
+not the code size; and how <em>callable</em> a page is has little to do with how big it
+is: 15,696-byte page 23 exposes 40 entry gates, while 5,008-byte page 17 exposes exactly
+one.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE PAGE CHAIN — 31 RECORDS, 361,168 BYTES</span>
+    <span class="hint">hover a bar for its record, header, fixups and gates</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pages" style="aspect-ratio: 2.5 / 1; min-height: 300px; touch-action: pan-y;" role="img"
+      aria-label="Bar chart of the 31 RTLink overlay page record sizes in viceroy.exe, from 752 bytes to 32,528 bytes, totalling 361,168 bytes"></canvas>
+  </div>
+  <div class="fig-note">All 31 records from viceroy.exe's appended page chain
+  (paragraph-aligned walk from 204D0h; sum of size fields 361,168 B; the walk ends at
+  EOF+2 by paragraph rounding). Code total 325,936 B · header overhead 35,232 B ·
+  8,452 fixups · 659 entry gates. Measured 2026-07-18.</div>
+</figure>
+
+<h2>Two schemes, side by side</h2>
+
+<p>Set the two mechanisms next to each other and the generational jump is stark.
+Microsoft's scheme dispatches every overlaid call through an interrupt into a single
+overlay area — tree-structured, one unit resident per area, no replacement policy worth
+the name. RTLink dispatches through patchable gates into a pool — page-granular, LRU,
+several pages co-resident, misses paged in and hits jumping direct. One is a clever
+trick; the other is an operating-system service smuggled into a linker.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">INT 3Fh vs RTLINK — THE DISPATCH PATH</span>
+    <span class="hint">hover any box</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="scheme" style="aspect-ratio: 2.3 / 1; min-height: 320px; touch-action: pan-y;" role="img"
+      aria-label="Side-by-side diagram: Civilization's INT 3Fh interrupt dispatch into a single overlay buffer, versus Colonization's RTLink far-call gates dispatching through a VM manager into an LRU page pool, with a self-patching hot path"></canvas>
+  </div>
+  <div class="fig-note">Left: the Microsoft LINK overlay convention (KB Q31994/Q40408;
+  RBIL INT 3F), with CIV.EXE's own numbers — call-site bytes at file offset 1F8Ch.
+  Right: viceroy.exe's measured gate structure. Byte sequences verbatim from the
+  binaries, 2026-07-18 analysis.</div>
+</figure>
+
+<h2>A decade in flight</h2>
+
+<p>MicroProse did not arrive at this by accident; overlays were house culture. In 1989,
+F-15 Strike Eagle II shipped a <em>hand-rolled</em> scheme: driver executables loaded
+with DOS <code>EXEC</code> subfunction <code>4B03</code> — "load into pre-allocated
+memory, but don't execute" — placed by a loader that read the chosen driver names from a
+communication buffer at <span class="addr">0000:04F0</span> (the BIOS inter-application
+communication area) and then patched a table of five-byte far-jump stubs, opcode
+<code>EA</code>, so the game called its drivers through fixed slots. Microsoft C 5.1
+already offered INT 3Fh overlays; MicroProse rolled their own anyway.</p>
+
+<aside class="aside">
+  <span class="tag">THE DISCOVERY</span>
+  <p>"I remember discovering — this is esoteric — but I remember discovering a way to do
+  overlays. At the time, a PC was limited to 640K of memory." — Sid Meier, interviewed
+  for Benj Edwards's <em>The History of Civilization</em> (Gamasutra/Game Developer, 2007).</p>
+</aside>
+
+<p>Civilization, 1991, adopted the Microsoft convention — and its 4B03 sibling lived on:
+Colonization still loads its sound driver, <code>asound.col</code>, with the same
+subfunction, into a block it then shrinks from ~498 KB to ~49 KB. Colonization's main
+executable, 1994, graduated to RTLink/Plus — and joined a crowd. Pocket Soft's runtime
+also carried MicroProse's MADS adventures (Rex Nebular and the Cosmic Gender Bender,
+1992; Return of the Phantom, 1993; Dragonsphere, 1994 — the same engine family whose
+<code>madsdev.lib</code> turns up, named, in the CodeView debug block MicroProse shipped
+inside Colonization's own opening.exe), Darklands (1992, its stub table confirmed by the
+Darklands Restoration Project at <span class="addr">1B465</span>–<span class="addr">1B52D</span>),
+later Legend Entertainment titles, and — via the CA-Clipper 5.x bundle — a vast
+population of DOS business software. The games industry did not wait for hardware
+paging. It linked its own.</p>
+
+<figure class="shot">
+  <img src="img/civ-microprose.png" alt="MicroProse presentation screen from Civilization's introduction, in 256-colour MCGA" loading="lazy">
+  <figcaption>"MicroProse presents" — Civilization's intro, captured running under
+  <a href="/mddosem/">mddosem</a>. The CIV.EXE behind it declares 178,111 bytes to DOS
+  and hides 126,401 more — the overlay store its own manager reads back at run time.</figcaption>
+</figure>
+
+<p class="srcline">Sources for this chapter — byte-level: viceroy.exe page-chain walk,
+thunk census and MZ-reloc proof; CIV.EXE INT 3Fh stub scan, embedded-overlay sweep and
+string blocks (fresh 2026-07-18 analysis). Runtime: live overlay-load and eviction
+traces under <a href="/mddosem/">mddosem</a>. Community: dreammaster's rtlink_decode
+notes, Microsoft KB Q31994/Q40408/Q63269, RBIL INT 3F, the neuviemeporte F-15 SE2
+teardown, the Darklands Restoration Project, and the Viva Clipper linker glossary —
+full credits in <a href="how.html">How We Know</a>.</p>
+
+  <nav class="chapnav">
+    <a href="./"><span class="dir">◀ previous</span>Overview</a>
+    <a class="next" href="memory.html"><span class="dir">next ▶</span>2 · The Division Dance</a>
+  </nav>
+
+</section>
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. Evidence: fresh byte-level analysis of the
+  original installs, live instrumented runs under
+  <a href="/mddosem/">mddosem</a> — a hardware-accurate PC emulator built in Rust —
+  and the community reverse-engineering record; full credits in
+  <a href="how.html">How We Know</a>. Screenshots © MicroProse, shown for technical
+  commentary. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w640-lib.js"></script>
+<script src="w640-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  if (!window.W640) return;
+  const W = window.W640, C = W.C, F = W.fmtInt;
+
+  /* shared tooltip */
+  function drawTip(ctx, w, h, mx, my, lines) {
+    ctx.font = W.mono(11);
+    let bw = 0;
+    for (const s of lines) bw = Math.max(bw, ctx.measureText(s).width);
+    bw += 20;
+    const bh = lines.length * 15 + 12;
+    const tx = W.clamp(mx + 14, 6, w - bw - 6);
+    const ty = W.clamp(my - bh - 12, 6, h - bh - 6);
+    ctx.save();
+    ctx.fillStyle = "rgba(24,33,54,0.97)";
+    ctx.strokeStyle = C.line;
+    W.rrect(ctx, tx, ty, bw, bh, 5);
+    ctx.fill(); ctx.stroke();
+    ctx.textAlign = "left";
+    lines.forEach((s, i) => {
+      ctx.fillStyle = i === 0 ? C.amberHi : C.ink2;
+      ctx.fillText(s, tx + 10, ty + 18 + i * 15);
+    });
+    ctx.restore();
+  }
+
+  /* draw a polyline flow up to fraction f of its length, arrowhead at tip */
+  function drawFlowLine(ctx, poly, color, f) {
+    if (f <= 0.01) return;
+    let total = 0;
+    for (let i = 1; i < poly.length; i++)
+      total += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1]);
+    let rem = f * total;
+    let ex = poly[0][0], ey = poly[0][1], ang = 0;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    for (let i = 1; i < poly.length && rem > 0; i++) {
+      const dx = poly[i][0] - poly[i - 1][0], dy = poly[i][1] - poly[i - 1][1];
+      const l = Math.hypot(dx, dy) || 1;
+      const take = Math.min(l, rem);
+      ex = poly[i - 1][0] + dx * (take / l);
+      ey = poly[i - 1][1] + dy * (take / l);
+      ctx.lineTo(ex, ey);
+      ang = Math.atan2(dy, dx);
+      rem -= take;
+    }
+    ctx.stroke();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - 8 * Math.cos(ang - 0.42), ey - 8 * Math.sin(ang - 0.42));
+    ctx.lineTo(ex - 8 * Math.cos(ang + 0.42), ey - 8 * Math.sin(ang + 0.42));
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const PAGES = (window.W640_DATA && window.W640_DATA.colPages && window.W640_DATA.colPages.length === 31)
+    ? window.W640_DATA.colPages : null;
+  /* per-page entry-gate counts + file offsets (measured; sum of gates = 659) */
+  const GATES = [47,79,15,76,22,32,9,24,9,21,6,19,27,6,15,10,1,24,5,13,33,23,40,9,21,27,8,9,3,11,15];
+  const OFFS = [0x204D0,0x24A50,0x2C960,0x2F950,0x367F0,0x3B1E0,0x3E890,0x3FF20,0x42700,
+    0x44230,0x45A50,0x46430,0x4B890,0x53380,0x560F0,0x5A790,0x5E570,0x5F900,0x61AD0,
+    0x63210,0x66390,0x68690,0x6B810,0x6F560,0x6F850,0x711A0,0x75E30,0x767D0,0x772E0,
+    0x77860,0x78000];
+
+  /* ============================================================
+     FIG 1 · one far call, resolved (storyboard)
+     ============================================================ */
+  const STAGE_N = 9;
+  const gv = { cur: W.reducedMotion ? 8 : 0, stageStart: null, hover: null, regions: [] };
+  const TWEEN = 1.15, HOLD = 1.5;
+  const glog = document.getElementById("gate-log");
+  const gPlay = document.getElementById("gate-play");
+
+  const GLOG = [
+    '<span class="t">call</span> root code reaches CALL FAR 10F7:0DAB — a gate in the thunk farm; the function it names lives in page 13, which is not in memory',
+    '<span class="t">gate</span> the gate’s JMP FAR still carries segment 0000 — DOS never patched it (0 of 659 page-gate segments are in the MZ reloc table); the CALL falls into the VM manager',
+    '<span class="t">lookup</span> the manager checks its page pool: pages 2, 4 and 12 are resident; page 13 is a miss',
+    '<span class="t">evict</span> pool full — page 4, least recently used, is dropped; every gate into it reverts to the cold path. Pages hold no raw pointers into other pages, so nothing dangles',
+    '<span class="t">read</span> INT 21h seek to offset 4B890h of viceroy.exe itself; one read: the 31,472-byte record for page 13 — 1,952-byte header, 29,520 bytes of code',
+    '<span class="t">fix up</span> the header’s 477 fixups are applied against the segment the page landed in — run-time relocation, done by the linker’s runtime instead of DOS',
+    '<span class="t">patch</span> the gate rewrites itself: its JMP FAR now points straight at page 13’s entry point',
+    '<span class="t">land</span> execution continues inside page 13; the manager has pushed an intermediate return address, so it regains control when the function returns',
+    '<span class="t">hot path</span> the next call through this gate never sees the manager: CALL FAR → patched JMP FAR → page 13. Until eviction re-virtualises it, paging costs two jumps',
+  ];
+  function setGateLog() { glog.innerHTML = GLOG[gv.cur]; }
+
+  function poolFor(stage) {
+    if (stage <= 2) return [{ p: 2, b: 29184 }, { p: 4, b: 25664, lru: true }, { p: 12, b: 19584 }];
+    if (stage === 3) return [{ p: 2, b: 29184 }, null, { p: 12, b: 19584 }];
+    return [{ p: 2, b: 29184 }, { p: 13, b: 29520, fresh: true }, { p: 12, b: 19584 }];
+  }
+
+  const gfig = W.makeFig("gate", function (ctx, w, h, fg) {
+    if (fg.playing) {
+      if (gv.stageStart === null) gv.stageStart = fg.t;
+      if (fg.t - gv.stageStart > TWEEN + HOLD) {
+        if (gv.cur >= STAGE_N - 1) {
+          fg.stop();
+          gPlay.textContent = "▶ replay";
+        } else {
+          gv.cur++;
+          gv.stageStart = fg.t;
+          setGateLog();
+        }
+      }
+    }
+    const t = (fg.playing && gv.stageStart !== null)
+      ? W.ease(W.clamp((fg.t - gv.stageStart) / TWEEN, 0, 1)) : 1;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, w, h);
+    gv.regions = [];
+
+    const pad = 12;
+    const iw = w - 2 * pad;
+    const rw = iw * 0.32, pw = iw * 0.16, dw = iw * 0.24;
+    const rx = pad, px = rx + rw + iw * 0.14, dx = px + pw + iw * 0.14;
+    const ry = 34, rh = h - ry - 22;
+    const narrow = rw < 230;
+
+    /* ---- resident root ---- */
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1;
+    W.rrect(ctx, rx, ry, rw, rh, 6);
+    ctx.stroke();
+    ctx.fillStyle = C.amber;
+    ctx.font = W.dos(narrow ? 13 : 15);
+    ctx.textAlign = "left";
+    ctx.fillText(narrow ? "RESIDENT ROOT" : "RESIDENT ROOT · ~168 KB ASK", rx + 2, ry - 8);
+
+    const codeB = { x: rx + 10, y: ry + 12, w: rw - 20, h: rh * 0.17 };
+    const farmB = { x: rx + 10, y: codeB.y + codeB.h + 14, w: rw - 20, h: rh * 0.35 };
+    const vmB = { x: rx + 10, y: farmB.y + farmB.h + 14, w: rw - 20, h: rh * 0.22 };
+
+    ctx.fillStyle = C.surface3;
+    W.rrect(ctx, codeB.x, codeB.y, codeB.w, codeB.h, 4);
+    ctx.fill();
+    ctx.fillStyle = C.ink2;
+    ctx.font = W.mono(10.5);
+    ctx.textAlign = "center";
+    ctx.fillText("root code (always resident)", codeB.x + codeB.w / 2, codeB.y + codeB.h / 2 + 4);
+    gv.regions.push({ x0: codeB.x, x1: codeB.x + codeB.w, y0: codeB.y, y1: codeB.y + codeB.h,
+      lines: ["root code — always resident", "its 365 root gates are patched by DOS at", "load time: 365/365 in the MZ reloc table"] });
+
+    ctx.fillStyle = C.surface2;
+    W.rrect(ctx, farmB.x, farmB.y, farmB.w, farmB.h, 4);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.stroke();
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10);
+    ctx.textAlign = "center";
+    ctx.fillText(narrow ? "THUNK FARM · 1,024" : "THUNK FARM · 1,024 gates · 12,322 B", farmB.x + farmB.w / 2, farmB.y + 14);
+
+    /* featured gate */
+    const patched = gv.cur >= 6;
+    const thk = { x: farmB.x + 8, y: farmB.y + farmB.h * 0.38, w: farmB.w - 16, h: Math.min(38, farmB.h * 0.45) };
+    ctx.fillStyle = C.dosblue;
+    W.rrect(ctx, thk.x, thk.y, thk.w, thk.h, 3);
+    ctx.fill();
+    if (gv.cur === 0 || gv.cur === 1 || patched) {
+      ctx.strokeStyle = patched ? C.cyan : C.amberHi;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#cfe3ff";
+    ctx.font = W.mono(10);
+    ctx.textAlign = "left";
+    if (narrow) {
+      ctx.fillText("CALL FAR 10F7:0DAB", thk.x + 6, thk.y + 14);
+      ctx.fillStyle = patched ? C.cyan : "#8fa8cc";
+      ctx.fillText(patched ? "page 13 · patched ✓" : "page 13 · seg 0000", thk.x + 6, thk.y + 28);
+    } else {
+      ctx.fillText("9A AB 0D F7 10  CALL FAR 10F7:0DAB", thk.x + 6, thk.y + 14);
+      ctx.fillStyle = patched ? C.cyan : "#8fa8cc";
+      ctx.fillText(patched ? "EA ·· ·· → page 13 resident ✓ (self-patched)"
+                           : "EA ·· ·· 00 00   0D 00  (page 13, seg 0000)", thk.x + 6, thk.y + 28);
+    }
+    gv.regions.push({ x0: thk.x, x1: thk.x + thk.w, y0: thk.y, y1: thk.y + thk.h,
+      lines: ["the featured gate · 10F7:0DAB", "CALL FAR + JMP FAR + page word — 12 or", "14 bytes; 659 of these target pages 1–31"] });
+    /* farm region AFTER the gate region: the hit-test breaks on first match,
+       so the more specific rectangle must come first */
+    gv.regions.push({ x0: farmB.x, x1: farmB.x + farmB.w, y0: farmB.y, y1: farmB.y + farmB.h,
+      lines: ["thunk farm · 12,322 B", "file 1A490h–1D4B2h: 1,024 gates packed", "back-to-back (3 holes of 16–20 B), plus", "7 more inside the VM manager itself"] });
+
+    /* VM manager */
+    ctx.save();
+    if (gv.cur === 8) ctx.globalAlpha = 0.45;
+    ctx.fillStyle = C.surface3;
+    W.rrect(ctx, vmB.x, vmB.y, vmB.w, vmB.h, 4);
+    ctx.fill();
+    ctx.strokeStyle = C.amberDim;
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+    ctx.fillStyle = C.amber;
+    ctx.font = W.dos(narrow ? 13 : 15);
+    ctx.textAlign = "center";
+    ctx.fillText("VM MANAGER", vmB.x + vmB.w / 2, vmB.y + vmB.h / 2 - 2);
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10);
+    ctx.fillText("segment 10F7", vmB.x + vmB.w / 2, vmB.y + vmB.h / 2 + 13);
+    ctx.restore();
+    gv.regions.push({ x0: vmB.x, x1: vmB.x + vmB.w, y0: vmB.y, y1: vmB.y + vmB.h,
+      lines: ["the VM manager — segment 10F7", "shares the EXE’s entry segment (CS:IP", "10F7:071D); observed at run-time segment", "1849 under mddosem; probes EMMXXXX0 for", "an EMS page cache; errors evm0001–0022"] });
+
+    /* ---- page pool ---- */
+    const poolY = ry + 24, slotGap = 8;
+    const slotH = Math.min(58, (rh - 60 - 2 * slotGap) / 3);
+    ctx.fillStyle = C.amber;
+    ctx.font = W.dos(narrow ? 13 : 15);
+    ctx.textAlign = "left";
+    ctx.fillText("PAGE POOL · LRU", px, ry - 8);
+    const pool = poolFor(gv.cur);
+    const slotY = (i) => poolY + i * (slotH + slotGap);
+    for (let i = 0; i < 3; i++) {
+      const s = pool[i], sy = slotY(i);
+      if (s) {
+        ctx.fillStyle = C.surface2;
+        W.rrect(ctx, px, sy, pw, slotH, 4);
+        ctx.fill();
+        ctx.strokeStyle = s.fresh ? C.amberHi : C.line;
+        ctx.lineWidth = s.fresh ? 1.8 : 1;
+        ctx.stroke();
+        ctx.fillStyle = s.fresh ? C.amberHi : C.ink;
+        ctx.font = W.mono(11, true);
+        ctx.textAlign = "center";
+        ctx.fillText("page " + s.p, px + pw / 2, sy + slotH / 2 - 2);
+        ctx.fillStyle = C.muted;
+        ctx.font = W.mono(10);
+        ctx.fillText(F(s.b) + " B code", px + pw / 2, sy + slotH / 2 + 13);
+        if (s.lru) {
+          ctx.fillStyle = C.warn;
+          ctx.font = W.mono(9, true);
+          ctx.textAlign = "right";
+          ctx.fillText("LRU", px + pw - 5, sy + 12);
+        }
+        gv.regions.push({ x0: px, x1: px + pw, y0: sy, y1: sy + slotH,
+          lines: ["pool slot — resident page " + s.p, F(s.b) + " B of code", "3 slots shown schematically; the real", "pool is sized from free memory, ≥ 29,520 B", "— the largest single code payload"] });
+      } else {
+        ctx.save();
+        ctx.strokeStyle = C.danger;
+        ctx.setLineDash([4, 3]);
+        W.rrect(ctx, px, sy, pw, slotH, 4);
+        ctx.stroke();
+        ctx.restore();
+        ctx.fillStyle = C.danger;
+        ctx.font = W.mono(10);
+        ctx.textAlign = "center";
+        ctx.fillText("page 4 evicted", px + pw / 2, sy + slotH / 2 + 4);
+        gv.regions.push({ x0: px, x1: px + pw, y0: sy, y1: sy + slotH,
+          lines: ["evicted", "page 4’s gates revert to the cold path;", "its bytes are FAB-compressed into an", "in-RAM cache for cheap re-loads (live", "observation under mddosem)"] });
+      }
+    }
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(9.5);
+    ctx.textAlign = "left";
+    ctx.fillText("grows with free memory", px, slotY(3) + 12);
+
+    /* ---- the EXE on disk ---- */
+    ctx.fillStyle = C.amber;
+    ctx.font = W.dos(narrow ? 13 : 15);
+    ctx.fillText("VICEROY.EXE · DISK", dx, ry - 8);
+    const fy = ry + 10, fh = rh - 24;
+    const TOTB = 493470;
+    const hh = Math.max(7, fh * (9216 / TOTB));
+    const lh = fh * (123073 / TOTB);
+    const ph = fh - hh - lh;
+    /* MZ header */
+    ctx.fillStyle = C.surface3;
+    ctx.fillRect(dx, fy, dw, hh - 1);
+    gv.regions.push({ x0: dx, x1: dx + dw, y0: fy, y1: fy + hh,
+      lines: ["MZ header · 9,216 B", "almost entirely relocation table:", "2,254 relocs × 4 B = 9,016 B"] });
+    /* load module */
+    ctx.fillStyle = C.surface2;
+    ctx.fillRect(dx, fy + hh, dw, lh - 1);
+    ctx.fillStyle = C.ink2;
+    ctx.font = W.mono(10);
+    ctx.textAlign = "center";
+    if (lh > 24) ctx.fillText(narrow ? "load module" : "load module 123,073 B", dx + dw / 2, fy + hh + lh / 2 + 3);
+    gv.regions.push({ x0: dx, x1: dx + dw, y0: fy + hh, y1: fy + hh + lh,
+      lines: ["load module · 123,073 B", "all DOS ever loads — 25% of the file"] });
+    /* page chain */
+    const py0 = fy + hh + lh;
+    const sizes = PAGES ? PAGES.map((p) => p.size) : new Array(31).fill(361168 / 31);
+    const sum = sizes.reduce((a, b) => a + b, 0);
+    let yy = py0;
+    let p13 = null;
+    for (let i = 0; i < 31; i++) {
+      const sh = (sizes[i] / sum) * ph;
+      const hi13 = i === 12;
+      ctx.fillStyle = hi13 ? C.good : "rgba(79,143,224,0.38)";
+      ctx.fillRect(dx, yy + 0.5, dw, Math.max(1, sh - 1));
+      if (hi13) p13 = { y: yy, h: sh };
+      yy += sh;
+    }
+    if (p13) {
+      ctx.fillStyle = C.good;
+      ctx.font = W.mono(10, true);
+      ctx.textAlign = "right";
+      ctx.fillText("page 13", dx - 6, p13.y + p13.h / 2 + 3);
+      gv.regions.push({ x0: dx - 52, x1: dx + dw, y0: p13.y, y1: p13.y + p13.h,
+        lines: ["page 13 · record at 4B890h", "31,472 B: header 1,952 + code 29,520", "477 fixups · 27 entry gates"] });
+    }
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(9.5);
+    ctx.textAlign = "left";
+    ctx.fillText("31 pages · 361,168 B", dx, fy + fh + 14);
+    gv.regions.push({ x0: dx, x1: dx + dw, y0: py0, y1: fy + fh,
+      lines: ["the page chain · 361,168 B", "31 records, paragraph-aligned from", "204D0h — 73% of the file, invisible", "to DOS’s EXEC loader"] });
+
+    /* ---- stage flows ---- */
+    const cbc = [codeB.x + codeB.w / 2, codeB.y + codeB.h];
+    const thTop = [thk.x + thk.w / 2, thk.y];
+    const thBot = [thk.x + thk.w / 2, thk.y + thk.h];
+    const thR = [thk.x + thk.w, thk.y + thk.h / 2];
+    const vmTop = [vmB.x + vmB.w / 2, vmB.y];
+    const vmR = [vmB.x + vmB.w, vmB.y + vmB.h / 2];
+    const m1 = (rx + rw + px) / 2;          /* mid of root→pool gap */
+    const m2 = (px + pw + dx) / 2;          /* mid of pool→disk gap */
+    const s1Mid = slotY(1) + slotH / 2;
+    const poolMid = slotY(1) + slotH / 2;
+    const flows = [];
+    if (gv.cur === 0) flows.push({ p: [cbc, [cbc[0], thTop[1] - 6], thTop], c: C.amber });
+    if (gv.cur === 1) flows.push({ p: [thBot, [thBot[0], vmTop[1] - 6], vmTop], c: C.amber });
+    if (gv.cur === 2) flows.push({ p: [vmR, [m1, vmR[1]], [m1, poolMid], [px - 4, poolMid]], c: C.amber });
+    if (gv.cur === 3) flows.push({ p: [vmR, [m1, vmR[1]], [m1, s1Mid], [px - 4, s1Mid]], c: C.danger });
+    if (gv.cur === 4) flows.push({ p: [[dx, p13 ? p13.y + p13.h / 2 : py0], [m2, p13 ? p13.y + p13.h / 2 : py0], [m2, s1Mid], [px + pw + 4, s1Mid]], c: C.good });
+    if (gv.cur === 6) flows.push({ p: [vmTop, [vmTop[0], thBot[1] + 6], thBot], c: C.cyan });
+    if (gv.cur === 7) flows.push({ p: [thR, [m1, thR[1]], [m1, s1Mid], [px - 4, s1Mid]], c: C.amber });
+    if (gv.cur === 8) {
+      flows.push({ p: [cbc, [cbc[0], thTop[1] - 6], thTop], c: C.amber });
+      flows.push({ p: [thR, [m1, thR[1]], [m1, s1Mid], [px - 4, s1Mid]], c: C.cyan });
+    }
+    for (const fl of flows) drawFlowLine(ctx, fl.p, fl.c, t);
+
+    /* stage-5 fixup ticks inside the fresh slot */
+    if (gv.cur === 5) {
+      const sy = slotY(1);
+      ctx.save();
+      ctx.globalAlpha = W.reducedMotion ? 1 : 0.35 + 0.65 * t;
+      ctx.strokeStyle = C.amberHi;
+      ctx.lineWidth = 2;
+      for (let k = 0; k < 6; k++) {
+        const fx = px + pw * (0.16 + 0.135 * k);
+        ctx.beginPath();
+        ctx.moveTo(fx, sy + slotH * 0.25);
+        ctx.lineTo(fx, sy + slotH * 0.75);
+        ctx.stroke();
+      }
+      ctx.restore();
+      ctx.fillStyle = C.amberHi;
+      ctx.font = W.mono(9.5, true);
+      ctx.textAlign = "center";
+      ctx.fillText("477 fixups", px + pw / 2, slotY(1) - 5);
+    }
+
+    /* stage indicator */
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10);
+    ctx.textAlign = "right";
+    ctx.fillText("stage " + (gv.cur + 1) + " / " + STAGE_N, w - 10, 16);
+
+    /* tooltip */
+    if (gv.hover) {
+      for (const r of gv.regions) {
+        if (gv.hover.x >= r.x0 && gv.hover.x <= r.x1 && gv.hover.y >= r.y0 && gv.hover.y <= r.y1) {
+          drawTip(ctx, w, h, gv.hover.x, gv.hover.y, r.lines);
+          break;
+        }
+      }
+    }
+  });
+
+  W.onHover(gfig.canvas, (x, y) => {
+    gv.hover = x == null ? null : { x: x, y: y };
+    if (!gfig.playing) gfig.redraw();
+  });
+  gPlay.addEventListener("click", () => {
+    if (gfig.playing) {
+      gfig.stop();
+      gPlay.textContent = "▶ play";
+      return;
+    }
+    if (gv.cur >= STAGE_N - 1) gv.cur = 0;
+    gv.stageStart = null;
+    setGateLog();
+    gPlay.textContent = "❘❘ pause";
+    gfig.start();
+  });
+  document.getElementById("gate-step").addEventListener("click", () => {
+    gfig.stop();
+    gPlay.textContent = "▶ play";
+    gv.cur = (gv.cur + 1) % STAGE_N;
+    gv.stageStart = null;
+    setGateLog();
+    gfig.redraw();
+  });
+  document.getElementById("gate-reset").addEventListener("click", () => {
+    gfig.stop();
+    gPlay.textContent = "▶ play";
+    gv.cur = 0;
+    gv.stageStart = null;
+    setGateLog();
+    gfig.redraw();
+  });
+  if (W.reducedMotion) gPlay.style.display = "none";
+  setGateLog();
+
+  /* ============================================================
+     FIG 2 · the 31-page bar chart (W640_DATA.colPages)
+     ============================================================ */
+  const bv = { hover: null, bars: [] };
+  const bfig = W.makeFig("pages", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, w, h);
+    bv.bars = [];
+    if (!PAGES) {
+      ctx.fillStyle = C.muted;
+      ctx.font = W.mono(12);
+      ctx.textAlign = "center";
+      ctx.fillText("page data unavailable (w640-data.js failed to load) — totals: 31 pages, 361,168 B", w / 2, h / 2);
+      return;
+    }
+    const L = 50, R = 14, T = 34, B = 34;
+    const MAXV = 33000;
+    const bw = (w - L - R) / 31;
+    const X = (i) => L + i * bw;
+    const Y = (v) => T + (1 - v / MAXV) * (h - T - B);
+
+    /* gridlines + y labels */
+    ctx.font = W.mono(10);
+    ctx.textAlign = "right";
+    for (let v = 0; v <= 32000; v += 8000) {
+      ctx.strokeStyle = v === 0 ? C.line : C.line2;
+      ctx.beginPath();
+      ctx.moveTo(L, Y(v));
+      ctx.lineTo(w - R, Y(v));
+      ctx.stroke();
+      ctx.fillStyle = C.muted;
+      ctx.fillText(v === 0 ? "0" : (v / 1000) + "K", L - 6, Y(v) + 3);
+    }
+
+    /* bars */
+    for (let i = 0; i < 31; i++) {
+      const p = PAGES[i];
+      const x = X(i) + 1, bwid = Math.max(1, bw - 2);
+      const y = Y(p.size);
+      const hov = bv.hover && bv.hover.x >= X(i) && bv.hover.x < X(i + 1) && bv.hover.y >= T - 8 && bv.hover.y <= h - B + 8;
+      ctx.fillStyle = hov ? C.amberHi : C.amber;
+      W.rrect(ctx, x, y, bwid, Y(0) - y, 2);
+      ctx.fill();
+      bv.bars.push({ x0: X(i), x1: X(i + 1), p: p, hov: hov });
+    }
+
+    /* x labels */
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10);
+    ctx.textAlign = "center";
+    for (const n of [1, 5, 10, 15, 20, 25, 31])
+      ctx.fillText(String(n), X(n - 1) + bw / 2, h - B + 16);
+    ctx.fillText("page", L + (w - L - R) / 2, h - 8);
+
+    /* direct labels */
+    ctx.font = W.mono(10, true);
+    ctx.fillStyle = C.ink;
+    ctx.fillText("32,528", X(1) + bw / 2, Y(PAGES[1].size) - 18);
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(9.5);
+    ctx.fillText("largest record", X(1) + bw / 2, Y(PAGES[1].size) - 7);
+    ctx.font = W.mono(10, true);
+    ctx.fillStyle = C.ink;
+    ctx.fillText("31,472", X(12) + bw / 2, Y(PAGES[12].size) - 18);
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(9.5);
+    ctx.fillText("code 29,520", X(12) + bw / 2, Y(PAGES[12].size) - 7);
+    ctx.fillText("752", X(23) + bw / 2, Y(PAGES[23].size) - 6);
+
+    /* total annotation */
+    ctx.textAlign = "right";
+    ctx.fillStyle = C.ink2;
+    ctx.font = W.mono(10.5);
+    ctx.fillText("Σ 361,168 B · code 325,936 B · headers 35,232 B", w - R, 16);
+
+    /* tooltip */
+    if (bv.hover) {
+      for (const b of bv.bars) {
+        if (b.hov) {
+          const p = b.p, i = p.page - 1;
+          drawTip(ctx, w, h, bv.hover.x, bv.hover.y, [
+            "page " + p.page + " · record " + F(p.size) + " B",
+            "code " + F(p.size - p.header) + " B · header " + F(p.header) + " B",
+            "fixups " + F(p.fixups) + " · entry gates " + GATES[i],
+            "at file offset " + OFFS[i].toString(16).toUpperCase() + "h",
+          ]);
+          break;
+        }
+      }
+    }
+  });
+  W.onHover(bfig.canvas, (x, y) => {
+    bv.hover = x == null ? null : { x: x, y: y };
+    bfig.redraw();
+  });
+
+  /* ============================================================
+     FIG 3 · INT 3Fh vs RTLink dispatch (static + hover)
+     ============================================================ */
+  const sv = { hover: null, regions: [] };
+  function box(ctx, x, y, w2, h2, opts) {
+    ctx.fillStyle = (opts && opts.fill) || C.surface2;
+    W.rrect(ctx, x, y, w2, h2, 4);
+    ctx.fill();
+    ctx.strokeStyle = (opts && opts.stroke) || C.line;
+    ctx.lineWidth = (opts && opts.lw) || 1;
+    ctx.stroke();
+  }
+  const sfig = W.makeFig("scheme", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, w, h);
+    sv.regions = [];
+    const mid = w / 2;
+    const panW = mid - 26;
+    const narrow = panW < 240;
+    const bh = 34;
+
+    /* divider */
+    ctx.save();
+    ctx.strokeStyle = C.line2;
+    ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(mid, 12);
+    ctx.lineTo(mid, h - 12);
+    ctx.stroke();
+    ctx.restore();
+
+    const colY0 = 44;
+    const rowGap = (h - colY0 - 58 - 4 * bh) / 3;
+    const rowY = (i) => colY0 + i * (bh + rowGap);
+
+    function panel(cx, title, sub, rows, footer) {
+      ctx.fillStyle = C.amber;
+      ctx.font = W.dos(narrow ? 14 : 17);
+      ctx.textAlign = "center";
+      ctx.fillText(title, cx, 22);
+      ctx.fillStyle = C.muted;
+      ctx.font = W.mono(10);
+      ctx.fillText(sub, cx, 36);
+      const bx = cx - panW / 2, bwid = panW;
+      const rects = [];
+      for (let i = 0; i < rows.length; i++) {
+        const y = rowY(i);
+        box(ctx, bx, y, bwid, bh, rows[i].o);
+        ctx.fillStyle = rows[i].c1 || C.ink;
+        ctx.font = rows[i].mono ? W.mono(narrow ? 9.5 : 10.5, true) : W.mono(10.5, true);
+        ctx.textAlign = "center";
+        ctx.fillText(rows[i].l1, cx, y + (rows[i].l2 ? 14 : bh / 2 + 4));
+        if (rows[i].l2) {
+          ctx.fillStyle = C.muted;
+          ctx.font = W.mono(narrow ? 9 : 9.5);
+          ctx.fillText(rows[i].l2, cx, y + 27);
+        }
+        sv.regions.push({ x0: bx, x1: bx + bwid, y0: y, y1: y + bh, lines: rows[i].tip });
+        rects.push({ x: bx, y: y, w: bwid, h: bh });
+        if (i < rows.length - 1) {
+          const a = rows[i].up ? -1 : 1;
+          if (rows[i].up) W.drawArrow(ctx, cx, rowY(i + 1) - 2, cx, y + bh + 2, rows[i].ac || C.amber);
+          else W.drawArrow(ctx, cx, y + bh + 2, cx, rowY(i + 1) - 2, rows[i].ac || C.amber);
+          if (rows[i].al) {
+            ctx.fillStyle = C.muted;
+            ctx.font = W.mono(9.5);
+            ctx.textAlign = "left";
+            ctx.fillText(rows[i].al, cx + 8, (y + bh + rowY(i + 1)) / 2 + 3);
+          }
+        }
+      }
+      ctx.fillStyle = C.ink2;
+      ctx.font = W.mono(narrow ? 9 : 10);
+      ctx.textAlign = "center";
+      ctx.fillText(footer, cx, h - 14);
+      return rects;
+    }
+
+    /* left: MS LINK */
+    panel(mid / 2, "MICROSOFT LINK · 1991", "CIV.EXE", [
+      { l1: narrow ? "CD 3F 07 12 00" : "call site:  CD 3F 07 12 00",
+        l2: "INT 3Fh · overlay 7 · offset 0012h", mono: true,
+        o: { fill: C.dosblue }, c1: "#cfe3ff", al: "trap via IVT[3Fh]",
+        tip: ["a Microsoft overlay call — 5 bytes", "verbatim from CIV.EXE offset 1F8Ch;", "168 CD 3F sites, 147 numbered 1–23", "— the interrupt fires on every call"] },
+      { l1: "overlay manager (root)",
+        tip: ["Microsoft’s manager + MicroProse edits", "swap out → load → jump; its strings:", "“MS-DOS lied to us about how much", "memory was available”"] },
+      { l1: "ONE overlay buffer", l2: "sized for the largest · 10,666 B",
+        o: { stroke: C.amberDim, lw: 1.4 }, al: "seek + read", up: true, ac: C.good,
+        tip: ["a single resident overlay area", "one overlay at a time; a call into a", "swapped-out overlay evicts the current", "one — no replacement policy beyond that"] },
+      { l1: "CIV.EXE tail", l2: "23 overlay MZ images · 121,720 B",
+        tip: ["the overlay store", "23 embedded MZ images, 512-aligned,", "e_ovno 1–23, each with its own reloc", "table (34–246 entries); root has zero"] },
+    ], "interrupt on every call · one resident · tree-structured");
+
+    /* right: RTLink */
+    panel(mid + mid / 2, "RTLINK/PLUS · 1994", "viceroy.exe", [
+      { l1: narrow ? "9A AB 0D F7 10 · EA · 0D 00" : "gate:  9A AB 0D F7 10 · EA ···· 0000 · 0D 00",
+        l2: "CALL FAR 10F7:0DAB · page 13", mono: true,
+        o: { fill: C.dosblue }, c1: "#cfe3ff", al: "cold: into the manager",
+        tip: ["an RTLink paged gate — 12/14 bytes", "CALL FAR + JMP FAR (seg 0000) + page", "number; 659 of these, self-patching:", "after first load, hits bypass the CALL"] },
+      { l1: "VM manager · seg 10F7",
+        tip: ["the linker’s runtime", "miss → evict LRU → seek+read → fixups", "→ patch gate; “smart vectoring” repairs", "the stack’s BP chain on eviction"] },
+      { l1: "LRU page pool", l2: "several pages co-resident",
+        o: { stroke: C.amberDim, lw: 1.4 }, al: "seek + read + 477 fixups", up: true, ac: C.good,
+        tip: ["a demand-paged pool", "sized from free memory at startup and", "grows with it; ≥ 29,520 B (the largest", "payload); EMS used as a page cache"] },
+      { l1: "viceroy.exe tail", l2: "31 page records · 361,168 B",
+        tip: ["the page store", "31 chained records from 204D0h with", "8,452 page-local fixups — relocation", "deferred from load time to run time"] },
+    ], "gates patch themselves · LRU pool · virtual memory in the linker");
+
+    /* hot-path arrow, right panel: gate row → pool row, bypassing the manager */
+    const rcx = mid + mid / 2, rbx = rcx + panW / 2;
+    ctx.save();
+    ctx.strokeStyle = C.cyan;
+    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(rbx, rowY(0) + bh / 2);
+    ctx.lineTo(rbx + 12, rowY(0) + bh / 2);
+    ctx.lineTo(rbx + 12, rowY(2) + bh / 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    W.drawArrow(ctx, rbx + 12, rowY(2) + bh / 2, rbx + 1, rowY(2) + bh / 2, C.cyan);
+    ctx.restore();
+    ctx.fillStyle = C.cyan;
+    ctx.font = W.mono(9.5);
+    ctx.textAlign = "left";
+    const hpx = Math.min(rbx + 16, w - 8);
+    ctx.save();
+    ctx.translate(hpx, (rowY(0) + rowY(2)) / 2 + bh / 2);
+    ctx.rotate(Math.PI / 2);
+    ctx.fillText("hot path", -20, -4);
+    ctx.restore();
+
+    /* tooltip */
+    if (sv.hover) {
+      for (const r of sv.regions) {
+        if (sv.hover.x >= r.x0 && sv.hover.x <= r.x1 && sv.hover.y >= r.y0 && sv.hover.y <= r.y1) {
+          drawTip(ctx, w, h, sv.hover.x, sv.hover.y, r.lines);
+          break;
+        }
+      }
+    }
+  });
+  W.onHover(sfig.canvas, (x, y) => {
+    sv.hover = x == null ? null : { x: x, y: y };
+    sfig.redraw();
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

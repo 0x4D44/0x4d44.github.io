@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "world-in-640k",
+    title: "A World in 640K",
+    tagline: "How Civilization and Colonization ran a planet on a 640 KB PC: linker-level virtual memory, a private allocator's division dance, streamed FAB/LZW art, a 25,311-byte world and a 608.8 Hz heartbeat — measured from the shipped binaries and live runs under our own emulator. Seven chapters of animated internals; grows a real Civ map in-browser.",
+    url: "https://0x4d44.github.io/world-in-640k/",
+    illustration: "ill-640k",
+    date: "2026-07-18T12:00:00",
+    year: 1991,
+    readingMin: 90,
+    words: 19400,
+    tags: ["software", "engineering", "history"],
+    real: true,
+  },
+  {
     slug: "great-dying",
     title: "The Great Dying",
     tagline: "The end-Permian extinction — the worst in Earth's history, when the Siberian Traps killed 96% of marine species. Run a calibrated carbon–climate simulator, scrub the crisis across deep time, watch the ocean suffocate, and read the story in the Meishan boundary rock. Vanilla JS on canvas; no build step.",
@@ -1453,7 +1466,7 @@ window.COLLECTIONS = [
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
-    slugs: ["picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+    slugs: ["world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",
