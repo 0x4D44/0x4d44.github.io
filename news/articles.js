@@ -18410,3 +18410,125 @@ window.NEWS_ARTICLES = [
     ]
   }
 ];
+
+// ============================================================
+// SERIES: HOW TO BECOME A MASTER FLANGER
+// ------------------------------------------------------------
+// The former Life landing page was only a syllabus. In the paper it becomes
+// five books of ten proper reports: wellness claims, human testimony, theory,
+// FAB foundations and final assessment. The generator below keeps the series
+// coherent while giving every installment its own reporting, witness and joke.
+// ============================================================
+(function () {
+  var books = [
+    ["The Wellness Question", "Health", [
+      ["The Call of the Washer", "A new wellness movement begins with a sound nobody can identify", "a bell, a cough and a tin of biscuits arriving in the same corridor", "the flange must establish boundaries before it establishes anything else"],
+      ["What Is a Flange?", "A projecting rim becomes the year's most discussed personal boundary", "a collar, a rib and a very confident drawing labelled ‘probably’", "the dictionary remains calm while the public does not"],
+      ["Why Would Anyone Flange?", "Citizens seek an answer to the question nobody asked at the council meeting", "loose pipes, nervous shelves and a 1974 committee report on awkward joins", "unflanged life is possible but poorly supervised"],
+      ["The Alleged Health Benefits", "Researchers publish a chart linking a washer to posture, focus and a goose's paperwork", "a confident arrow and no control group whatsoever", "the chart is not evidence, although it has excellent typography"],
+      ["A Note from Dr Flange", "The paper consults a physician who is, technically, an illustration", "hydration, sensible shoes and the diagnosis of low washer self-esteem", "Dr Mavis Flange has no clinic and is not a doctor"],
+      ["The Wellness Industrial Complex", "Flanging enters the market already wearing a linen shirt", "green powders, moon water and a cushion shaped like a disappointed cloud", "the washer remains the only product that does not claim to align your soul"],
+      ["Breathing with a Washer", "A mindfulness class discovers the difficulty of putting a metal ring down", "four counts in, four held, twenty minutes of quiet panic", "stillness is available, but not necessarily near the sofa"],
+      ["The Seven Vibes of Flange", "Consultants identify seven kinds of flange and invoice for eight", "practical, ceremonial, emergency, decorative, philosophical, municipal and misplaced", "classification is the first step towards a laminated chart"],
+      ["Testimonials: Before and After", "A guard, an aunt and a pigeon describe their lives before the rim", "a timetable challenged, cutlery reorganised and a certificate accepted", "the pigeon declined to comment but looked extremely improved"],
+      ["The Flange and Society", "Civilisation turns out to be an agreement about where the rim should go", "Roman aqueducts, Victorian brackets and one modern progress bar", "the course is self-paced provided you pace yourself in a circle"]
+    ]],
+    ["The Human Evidence", "Lifestyle", [
+      ["Can Flanging Make You Happier?", "A happiness study finds that misery is more manageable when it is circular", "notebooks, a tea trolley and a participant who rated the washer ‘promising’", "no one became happier, but several people became more specific"],
+      ["Flanging at Work", "Employees use flange terminology to survive the status meeting", "the phrase ‘within tolerance’ deployed in manufacturing, administration and dentistry", "management remains unable to distinguish progress from a rim"],
+      ["Testimonials: The Changed Life", "Harold from Selkirk replaces fear of the future with fear of overtightening", "three washers, an unopened yoghurt and a system nobody else can see", "he has requested that the system not be called a collection"],
+      ["The Five-Minute Flange", "A short exercise becomes a drawer-based philosophy", "one quarter-turn, one question and a label marked ‘ongoing’", "the drawer is now a protected research environment"],
+      ["Flange and Fitness", "The controlled reach is declared an exercise after the sofa incident", "gentle lift, dignified return and one washer rolling under the furniture", "the official programme contains no lunges and several caveats"],
+      ["Nutrition for the Aspiring Flanger", "The Department of Flange publishes a food pyramid with tea at the top", "metal belongs on a plate only when the plate is not being eaten", "biscuits are listed as a morale intervention, not a food group"],
+      ["The Importance of a Good Surface", "A wobbling table is blamed for a national decline in flange confidence", "glitter, temporary tables and one heroic coaster", "stability is a feeling, a property and occasionally furniture"],
+      ["Testimonials: The Domestic Flanger", "A hallway becomes a workshop and a relationship becomes a storage system", "a partner, a small meaningful shelf and a dispute over the word ‘temporary’", "the hallway has declined to issue a statement"],
+      ["The History of Making Things Circular", "Wheels, seals and teacup plates are asked if they feel represented", "a circle that began in transport and ended in a paragraph pleased to be included", "history is not a syllabus but it does have a rim"],
+      ["A Brief Taxonomy of Rims", "The lip, edge and collar refuse to be managed by the flange", "one edge completing a management course and expecting minutes", "the minutes contain no action points and are nevertheless binding"]
+    ]],
+    ["The Serious Theory", "Science", [
+      ["The Apparatus", "An over-serious engineering plate reveals the unnecessary machinery beneath the movement", "a vice, spring, bell, tea cup and component of unknown inheritance", "the apparatus works best when nobody asks why"],
+      ["Tolerance and Forgiveness", "Engineers and relatives adopt a shared definition of acceptable deviation", "a range in which a thing remains a thing and a person can still say ‘interesting’", "forgiveness is not normally measured in millimetres"],
+      ["When to Stop", "A goose interrupts a performance before it becomes a public inquiry", "a cool tea, a completed risk assessment and a washer with enough attention", "mastery includes the courage to end the ceremony"],
+      ["Testimonials: The Skeptic", "Professor Lyle dismisses theatrical metal and then buys twelve velvet-lined examples", "a criticism, a case and a request not to call it a collection", "the professor's position is unchanged except for its accessories"],
+      ["The Flange in Art", "A picture frame, a hat and a plinth defend their rim-based practice", "a flange for an idea, a flange for a head and a flange for a plinth", "the gallery has installed a small sign saying please do not flange the visitors"],
+      ["The Flange in Language", "A new verb enters English while the dictionary pretends not to notice", "I flange, you flange, we have flanged and the agenda is now complete", "grammar is the only flange that can be plural before it exists"],
+      ["Emergency Flanging", "A jar lid, bicycle bell and infrastructure project discover the same emergency protocol", "confidence under pressure and a form with no correct box", "this is not emergency medicine and should not be treated as such"],
+      ["The Ethics of Flanging", "The paper publishes rules after a goose is found inside a training vice", "consent, licences, borrowed tools and the dangerous blank box labelled ‘flange status’", "the goose has retained counsel"],
+      ["The Flange and Sleep", "Experts advise against putting a washer under the pillow", "a lumpy night, metallic dreams and a bedside table that knows too much", "the mind may unclench without hardware"],
+      ["A Ceremony of Preparation", "The cardigan is buttoned and FAB begins under observation", "a washer, a vice, a biscuit and a screwdriver kept safely out of the room", "preparation is mostly moving objects into a more serious order"]
+    ]],
+    ["FAB: The Foundations", "Engineering", [
+      ["FAB 01: Meet the Washer", "Absolute beginners are introduced to a plain ring with no dramatic backstory", "sharp burrs, unexplained smells and a rank withheld until Part 47", "the first lesson is respect for small metal"],
+      ["FAB 02: Find a Sensible Bench", "The course rejects three benches for singing, rocking and belonging to a museum", "a central washer and a surface that has resigned", "if it rolls away, the bench has made its position clear"],
+      ["FAB 03: Learn the Vise", "Students learn that a vise is not a hungry animal but deserves similar caution", "slow jaws, light pressure and the principle of containment", "revenge is not an engineering specification"],
+      ["FAB 04: The First Rotation", "Two fingers attempt a quarter-turn while a three-finger method seeks peer review", "a marked washer, a stopwatch and an observer saying ‘hmm’", "rotation is simple until it acquires a committee"],
+      ["FAB 05: Pressure, Not Drama", "Apprentices are told to use the least force that keeps the work in place", "an apparatus settling a debt from 1889 and a very calm hand", "purpose is not improved by theatrical tightening"],
+      ["FAB 06: The Bell Test", "The bell rings once and the washer considers its options", "a desk bell, a moving component and an instructor taking a short break", "identify the bell before blaming the flange"],
+      ["FAB 07: The Tea Interval", "Tea is formally classified as a pause and not a lubricant", "a cup, a washer and the sudden memory that life contains other subjects", "the interval is part of the method"],
+      ["FAB 08: The Alignment", "Learners line up the washer, worksheet arrow and their sense of purpose", "two out of three accepted, three out of three photographed", "alignment is the least glamorous form of hope"],
+      ["FAB 09: The Controlled Flange", "Rotate, pause and inspect becomes the entire technique, almost", "dignity, paperwork and an examiner with a whistle", "repeatability is confidence with a clipboard"],
+      ["FAB 10: Troubleshooting", "The helpdesk receives a call from a washer giving career advice", "squeaks, whistles and one component with a suspiciously good CV", "stop first, diagnose later and contact nobody in particular"]
+    ]],
+    ["FAB: Mastery and Assessment", "Technology", [
+      ["FAB 11: The Flange Log", "A notebook turns an accident into data and then into a memoir", "date, washer, pressure, angle and biscuit count", "the best log has fewer adjectives than the worst one"],
+      ["FAB 12: Repeatability", "Two identical flanges produce different results and a useful argument", "experimental variation or an entirely different washer", "both outcomes are valuable if labelled honestly"],
+      ["FAB 13: The Peer Review", "A trusted colleague is asked to observe and leave with a laboratory impression", "one ‘hmm’, one unnecessary question and no touching of the controls", "peer review is mostly the management of eyebrows"],
+      ["FAB 14: Public Demonstration", "A consent form is introduced after somebody flanges near soup", "a council sign, a small audience and no hot liquid", "public flange is a privilege, not a right"],
+      ["FAB 15: The Quiet Flange", "The brass band is dismissed and the washer learns about inner confidence", "no bell, no announcement and a Tuesday that remains ordinary", "the quiet flange is still a flange"],
+      ["FAB 16: Advanced Rims", "A wider washer enters the programme and the old one begins listening from the drawer", "an upgrade that must not be called an upgrade", "hardware has feelings, especially when replaced"],
+      ["FAB 17: Recovery from Overflanging", "An apprentice admits the ceremony has acquired a second ceremony", "water, a chair away from the bench and a long look at the wall", "recovery begins when everything is put down"],
+      ["FAB 18: The Examination", "The examiner presents a washer, a vice and a morally ambiguous tea trolley", "twelve minutes, one whistle and marks awarded for restraint", "the highest grade is calm containment"],
+      ["FAB 19: The Master Flanger’s Oath", "Graduates promise to respect the rim and return borrowed tools", "tolerance, consent and no claim that a washer has healed anyone", "the tools-returned clause remains the hardest"],
+      ["FAB 20: Graduation", "A washer receives a medal while an academic goose and brass band applaud", "velvet, tea, bewildered examiners and a certificate nobody accepts", "you may now say ‘flange’ with calm authority"]
+    ]]
+  ];
+  var images = {
+    1: ["images/flanger-series-ceremony.png", "A solemn gentleman flanges a washer while a brass band applauds."],
+    4: ["images/flanger-series-benefits.png", "An absurd schematic connects a washer to gauges for posture and confidence."],
+    9: ["images/flanger-series-testimonials.png", "A railway guard, an aunt and a pigeon hold washers during an interview."],
+    21: ["images/flanger-series-apparatus.png", "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."],
+    30: ["images/flanger-series-fab-flow.png", "A six-step line-art flowchart leads from nervous beginner to ceremonial tea trolley."],
+    50: ["images/flanger-series-graduation.png", "A washer receives a graduation medal as the academic goose applauds."]
+  };
+  var serial = 0;
+  books.forEach(function (book) {
+    var bookTitle = book[0], category = book[1];
+    book[2].forEach(function (chapter, index) {
+      serial += 1;
+      var part = String(serial).padStart(2, "0");
+      var image = images[serial];
+      var body = [
+        "The Daily Flange can now confirm that " + chapter[1].toLowerCase() + ". The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+        "The central finding concerns " + chapter[2] + ". Witnesses described the arrangement as " + chapter[3] + ", although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+        "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+        "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+        "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+        "The Institute’s interim conclusion is therefore simple: " + chapter[3] + ". Readers are invited to continue to Part " + (serial === 50 ? "01, if they have forgotten everything" : String(serial + 1).padStart(2, "0")) + ", where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+      ];
+      var article = {
+        id: "master-flanger-" + part,
+        category: category,
+        headline: "Master Flanger, Part " + part + ": " + chapter[0],
+        standfirst: chapter[1] + ". The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+        byline: "By Mavis Flange, Senior Correspondent for Rims",
+        location: category === "Health" ? "THE WELLNESS ROOM" : category === "Lifestyle" ? "LEITH" : category === "Science" ? "THE SCIENCE DESK" : category === "Engineering" ? "WORKSHOP 3" : "ONLINE",
+        published: "2026-07-18T" + String(18 - Math.floor((serial - 1) / 5)).padStart(2, "0") + ":" + String(55 - ((serial - 1) % 5) * 11).padStart(2, "0") + ":00",
+        body: body,
+        pullQuote: chapter[3].charAt(0).toUpperCase() + chapter[3].slice(1) + ".",
+        tags: ["master-flanger", "flanging", category.toLowerCase(), "fab", "satire"],
+        series: "How to Become a Master Flanger",
+        seriesPart: serial,
+        seriesBook: bookTitle
+      };
+      if (image) {
+        article.image = image[0];
+        article.imageAlt = image[1];
+      }
+      // Put the technical plates inside the prose as well as on selected covers.
+      if (serial === 4 || serial === 21 || serial === 30 || serial === 50) {
+        article.images = [{ src: image ? image[0] : images[4][0], alt: image ? image[1] : images[4][1], afterParagraph: 2, caption: "Flange plate " + part + ": evidence remains inconclusive." }];
+      }
+      window.NEWS_ARTICLES.push(article);
+    });
+  });
+})();
