@@ -613,6 +613,46 @@ window.NEWS_ADS = [
     href: "../model-welfare/",
     image: "images/ad-model-welfare.webp",
     bg: "linear-gradient(135deg,#3f3f46,#78716c)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "HAS YOUR BOTTOM GONE?",
+    body: "Copper Bottom Bereavement Assessments while you wait. We inspect the pan, validate the silence and explain why polish is not a metal-deposition process.",
+    cta: "Turn it over gently",
+    href: "#",
+    bg: "linear-gradient(135deg,#7c2d12,#d97706)",
+    fg: "#fff",
+    emoji: "🍲", icon: "spoon", bob: true,
+    fx: ["flicker", "slide"]
+  },
+  {
+    headline: "BOTTOMBACK™ SAUCEPAN COVER",
+    body: "Insurance for flaking, fading and the sudden appearance of steel. Excludes overheating, abrasion, Tuesdays and every pan you currently own.",
+    cta: "Discover the exclusions",
+    href: "#",
+    bg: "linear-gradient(90deg,#92400e,#f59e0b)",
+    fg: "#1c1005",
+    emoji: "🛡️", icon: "shield",
+    fx: ["slide", "jitter"]
+  },
+  {
+    headline: "RE-COPPER IT YOURSELF! (DO NOT)",
+    body: "Our home plating kit has been replaced by a very good leaflet saying 'contact the maker or a qualified restorer'. Now with two staples.",
+    cta: "Send me the leaflet",
+    href: "#",
+    bg: "linear-gradient(135deg,#b91c1c,#fb923c)",
+    fg: "#fff",
+    emoji: "📄", icon: "flange",
+    fx: ["flicker", "rainbow"]
+  },
+  {
+    headline: "THE MEMORIAL TRIVET",
+    body: "For the pan that no longer goes on heat but still deserves somewhere to stand. Engraving reads: IT SIMMERED. WE STIRRED. Terms apply to basil.",
+    cta: "Reserve a quiet corner",
+    href: "#",
+    bg: "linear-gradient(90deg,#4a2c1a,#b87333)",
+    fg: "#fff8ed",
+    emoji: "🕯️", icon: "candle",
+    fx: ["slide"]
   }
 ];
 

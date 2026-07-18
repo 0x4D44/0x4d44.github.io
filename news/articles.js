@@ -18566,6 +18566,177 @@ window.NEWS_ARTICLES = [
       "future",
       "based-on-truth"
     ]
+  },
+  {
+    "id": "life-saucepan-bottom-worn-support",
+    "image": "images/life-saucepan-bottom-worn-support.webp",
+    "imageAlt": "A sad man at a kitchen table studies the patchy, worn copper base of a treasured saucepan.",
+    "imageCaption": "Colin has stopped setting a place for the pan, but admits the empty trivet remains difficult. AI-generated editorial photograph.",
+    "images": [
+      {
+        "src": "images/life-saucepan-support-circle.webp",
+        "alt": "Six adults sit in a community-hall support circle holding saucepans with badly worn copper bottoms.",
+        "caption": "The Tuesday group begins with names, tea and a strictly voluntary turning-over of the pans. AI-generated editorial photograph.",
+        "afterParagraph": 5
+      }
+    ],
+    "category": "Lifestyle",
+    "headline": "Support groups multiply as copper bottoms vanish from nation's saucepans",
+    "standfirst": "Owners describe the slow loss of a familiar red shine, the shock of the first silver patch and the particular loneliness of hearing somebody say it is only a pan",
+    "byline": "By Celia Wren, Domestic Affairs Correspondent",
+    "location": "NUNEATON",
+    "published": "2026-07-18T23:44:00",
+    "body": [
+      "Britain's first support network for people whose copper-bottomed saucepans have lost their copper bottoms has expanded from one draughty church hall to 63 weekly meetings, after organisers discovered that thousands of owners had been inspecting the undersides of their pans in private and pretending to be fine.",
+      "The network, Bottoms Together, was founded by Colin Pargeter, 56, after the saucepan in which he had made custard every Sunday since 1998 developed a small silver crescent near the handle. Within eleven months the crescent had become a continent. Mr Pargeter remembers the evening he finally accepted what was happening. \"I turned it over under the big light,\" he said. \"There was copper round the edge and stainless steel in the middle, like a sunset with a hole punched through it. I sat down without taking my coat off.\"",
+      "His wife, Aileen, initially tried practical reassurance. The saucepan still held water, the handle was firm and the kitchen contained three others. None of this helped. \"I knew there were other pans,\" Mr Pargeter said. \"That was almost the worst part. They were in the cupboard behaving as if a vacancy had opened.\" For several weeks he kept the worn pan on a folded tea towel and avoided recipes containing the words 'bring to a gentle simmer'.",
+      "At the Tuesday meeting, every story begins with the turn. June Darragh noticed her base while polishing it before Christmas lunch. Gavin Mole heard a brittle click after an empty pan was left over a high flame and found a copper-coloured flake on the hob. Priya and Stephen Nair own a milk pan whose bottom has faded so evenly that neither can identify the exact day it ceased to be copper, a lack of ceremony they find especially hard.",
+      "Then there is Alistair Crowe, who inherited a set from his mother and believed the colour would last because it had already lasted through everything else: three house moves, two kitchens, a period when every vegetable was boiled for twenty minutes and the family's brief but intense commitment to blancmange. \"The smallest one did my porridge as a child,\" he said. \"Now I can see my face in the steel patch. I did not need that kind of confrontation before breakfast.\"",
+      "The meetings are chaired by retired catering manager Denise Sallow, who asks new members not to rank losses by pan diameter. A six-inch milk pan can carry more feeling than a stockpot, she says, while a lid may survive in perfect condition and thereby complicate matters. Members are also discouraged from saying 'at least the inside is all right' until the owner has finished speaking.",
+      "What follows is not therapy in any regulated sense. There is tea, a biscuit tin and a table on which pans may be placed upside down without comment. Participants describe phantom flashes of copper in shop windows, the urge to keep polishing after the copper has plainly gone, and the anger provoked by well-meaning relatives who suggest buying a matching replacement online. At the end, everybody checks that nobody has accidentally taken home somebody else's saucepan, an incident in Coventry having set recovery back months.",
+      "The network's practical adviser, fictional metallurgist Dr Felicity Ramm, says the first task is to establish what has worn. A stainless pan with a thin copper layer bonded or plated onto its exterior base is not the same object as a heavy copper-bodied pan with a tin or stainless lining inside. Professional re-tinning can renew a worn interior tin lining on suitable solid-copper cookware; it does not put a vanished exterior copper bottom back onto a stainless saucepan. \"Grief may use one word for both,\" Dr Ramm said. \"Metalwork cannot afford to.\"",
+      "Members are told to stop using a pan if the base is lifting, flaking, sharply edged, badly warped or otherwise structurally doubtful, and to seek the maker's or a cookware specialist's assessment. They are told not to glue, solder, plate, grind or polish their way through the distress. This safety talk is delivered before the biscuits because attendance becomes noticeably less disciplined afterwards.",
+      "Some pans return to quiet service after a professional inspection. Some become planters, although the group remains divided over whether basil is respectful. Others are replaced by carefully chosen vintage examples. A few are cleaned gently, labelled with their history and retired to a shelf, where they perform no thermal function but continue to exert considerable emotional conductivity.",
+      "Mr Pargeter now brings his custard pan to meetings only once a month. He has bought another saucepan, made custard in it twice and admits the results were technically indistinguishable. \"That isn't the point,\" he said, before conceding that it may eventually become part of the point. \"The new one doesn't know Sundays yet. We are introducing them gradually.\""
+    ],
+    "pullQuote": "There was copper round the edge and stainless steel in the middle, like a sunset with a hole punched through it.",
+    "tags": [
+      "lifestyle",
+      "saucepans",
+      "copper",
+      "grief",
+      "domestic-life"
+    ]
+  },
+  {
+    "id": "eng-worn-copper-bottom-repair-guide",
+    "image": "images/eng-copper-bottom-assessment.webp",
+    "imageAlt": "The patchy underside of a worn copper-bottomed saucepan is examined under a workshop lamp.",
+    "imageCaption": "First look at the construction, the wear and the shape. Polishing cannot replace metal that is no longer there. AI-generated editorial photograph.",
+    "images": [
+      {
+        "src": "images/eng-copper-bottom-safe-path.webp",
+        "alt": "Four numbered panels show gentle cleaning, a flatness check, professional assessment and a sound restored or replacement pan.",
+        "caption": "The safe route: clean gently, inspect, document, ask a specialist, then restore only what can actually be restored. AI-generated advice illustration.",
+        "afterParagraph": 4
+      },
+      {
+        "src": "images/eng-professional-retinning.webp",
+        "alt": "A protected craftsperson applies a fresh silver-coloured interior lining to a heavy copper saucepan in a professional workshop.",
+        "caption": "Professional re-tinning renews the interior of suitable copper-bodied cookware. It is not a method for replacing an exterior copper disc. AI-generated editorial photograph.",
+        "afterParagraph": 9
+      }
+    ],
+    "category": "Engineering",
+    "headline": "Your copper bottom has worn off: the calm, unsentimental repair guide",
+    "standfirst": "Before buying polish, solder or a small electroplating works, identify the pan you actually have — because one kind can be re-lined, another may need retirement, and neither benefits from glue",
+    "byline": "By Maud Ellery, Materials and Utensils Editor",
+    "location": "SHEFFIELD",
+    "published": "2026-07-18T23:37:00",
+    "body": [
+      "A copper-coloured bottom can disappear in three ways: slowly through years of abrasion, suddenly after severe overheating, or emotionally the instant its owner notices the first silver patch. The third process is outside engineering. The first two begin with the same instruction: let the pan cool, take it off duty and work out how it was built before attempting to restore anything.",
+      "Start with the distinction most internet advice blurs. A familiar 'copper-bottomed' stainless-steel saucepan often has copper bonded, clad or plated only onto the outside of its base. Its cooking interior is stainless steel. A traditional heavy copper saucepan is copper through most of its body and normally has a separate food-contact lining of tin or stainless steel inside. Exterior bottom wear on the first pan and interior lining wear on the second are different faults in different places. Re-tinning repairs the latter. It does not recreate the former.",
+      "Clean only enough to see the condition. Use warm water, ordinary washing-up liquid and a soft sponge or cloth, then dry the pan thoroughly. Do not attack the remaining copper with wire wool, a grinding disc or an abrasive paste in the hope of revealing fresh copper underneath; fresh copper is not waiting there. Aggressive polishing can remove more of a thin layer and produce a beautifully uniform view of the substrate.",
+      "Examine the cold base in good light. Look for loose flakes, lifting edges, bubbles, cracks, a separated disc, deep pitting or a sharp boundary between copper and exposed metal. Set a straightedge across the base in several directions and look for rocking or daylight beneath it. Inspect the handle, rivets and the inside cooking surface too. A colour change alone is one fact; delamination, distortion and looseness are structural facts and deserve priority.",
+      "Photograph the whole underside, a close view of the worst patch, the inside and any maker's mark. Record what happened before the damage appeared, especially prolonged empty heating, boiling dry, dishwasher use or aggressive scouring. Send that small dossier to the manufacturer or a specialist cookware restorer. It is much more useful than a message reading 'the bottom came off, thoughts?' accompanied by a photograph of the lid.",
+      "If the pan is a stainless-steel vessel with a worn exterior copper layer, do not assume a local plater can simply put it back. Bonded cookware is manufactured with controlled materials, preparation, heat and pressure; an improvised decorative coating may not reproduce the original bond, flatness, heat transfer or suitability for repeated cooking temperatures. Specialists who re-tin copper pans are renewing an interior food-contact lining by a different craft. Many will assess an exterior-base problem, but assessment is not a promise of re-coppering.",
+      "The practical outcomes are therefore less cinematic than restoration television suggests. The maker may confirm that superficial loss on a sound, flat stainless pan is cosmetic; it may offer warranty support; a restorer may judge an older, thickly clad piece serviceable; or the pan may be warped, flaking or too uncertain to keep on heat. If the base is lifting, shedding metal, no longer flat, sharply damaged or of unknown construction, leave it out of service until a competent person has assessed it. When a reliable assessment is unavailable, replacement is the repair to the kitchen rather than to the pan.",
+      "Do not fill a gap with epoxy, braze on a coin, soft-solder a patch, paint it copper, or build a home electroplating bath from a forum post and a power supply last used for model railways. Adhesives and decorative coatings are not automatically designed for burner temperatures. Soldering and brazing add heat that can distort a base or disturb existing bonds. Plating uses surface preparation and chemistry whose safe control is not improved by doing it beside the washing machine.",
+      "Now turn the pan over. If it is a genuine copper-bodied pan with a tin lining, worn reddish copper showing through the silver-coloured interior, flaking, bubbles or extensive bare areas call for a professional re-tinner. A specialist typically removes the failed lining, prepares the copper, deals with suitable dents or handle issues, applies food-safe tin and checks the finished surface. Stainless-lined copper is a different construction again; damage to that bond also needs specialist judgment rather than a tinning tutorial.",
+      "Professional is doing important work in that sentence. Traditional hand-wiped tinning involves heat, flux, careful surface preparation and skilled control of a molten metal coating. The fact that the finished operation can be described in one paragraph does not turn a domestic kitchen into a coppersmith's shop. Ask what lining material is used, what structural repairs are included, how the pan is assessed and what the restorer will decline to repair. A trustworthy refusal can be the most valuable service offered.",
+      "If a pan is accepted for restoration, agree the aim. An heirloom may need dents eased, a handle secured, an interior re-lined and the exterior cleaned while retaining honest marks. A collector may prefer minimal polishing. A working cook may care most about a sound surface and flat base. 'Make it look new' is not a technical specification, particularly when the object is older than the person saying it.",
+      "Prevent the next loss by matching the hob to the base, using moderate heat, never leaving the pan empty over a high setting, avoiding sudden quenching and following the maker's cleaning instructions. Lift rather than drag cookware across rough cast-iron supports. Clean with soft tools. Patina is a colour; dirt is dirt; missing copper is missing metal. Confusing the three has enriched the polishing industry beyond its reasonable deserts.",
+      "Finally, decide what restoration means. Sometimes it is a new interior lining and another generation of use. Sometimes it is a manufacturer replacement. Sometimes it is preserving a pan off the hob because its story is worth more than its thermal performance. The successful repair is the one that leaves dinner safe, the base stable and nobody attempting electrochemistry in a utility room at midnight."
+    ],
+    "pullQuote": "Re-tinning renews a suitable copper pan's interior lining. It does not put a vanished copper bottom back onto stainless steel.",
+    "noticeLabel": "Safety note",
+    "notice": "The repair distinctions and care principles are genuine; the reporter, quotations and institutions are fictional. Damaged cookware should be assessed by its maker or a qualified restorer before further use.",
+    "tags": [
+      "engineering",
+      "saucepans",
+      "copper",
+      "repair",
+      "care",
+      "based-on-truth"
+    ]
+  },
+  {
+    "id": "hea-saucepan-wear-trauma-hotline",
+    "image": "images/hea-saucepan-wear-trauma.webp",
+    "imageAlt": "An older woman is comforted by her daughter as she looks at the worn copper base of a saucepan.",
+    "imageCaption": "Mavis says the family did not know how to tell her the copper had gone, so they all looked at the pan together. AI-generated editorial photograph.",
+    "category": "Health",
+    "headline": "Saucepan-wear helpline asks callers to describe the bottom they remember",
+    "standfirst": "Counsellors report a surge of people distressed by thinning copper, phantom gleams and relatives who keep saying the saucepan still works perfectly well",
+    "byline": "By Dr Una Pell, Household Wellbeing Correspondent",
+    "location": "LEAMINGTON SPA",
+    "published": "2026-07-18T23:29:00",
+    "body": [
+      "A telephone helpline for people traumatised by wear and tear on copper-bottomed saucepans has extended its opening hours after receiving 14,000 calls in a weekend, many from kitchens in which somebody had just turned a pan over for the first time in years.",
+      "The Copper Bottom Listening Line was intended as a modest six-week pilot staffed by two volunteers and a metallurgist on alternate Thursdays. It now occupies an entire floor above a cookware shop, with callers offered separate options for patchiness, complete loss, sudden flaking and the discovery that a relative has been putting the pan through the dishwasher since 2007.",
+      "Mavis Slegg, 72, called after finding the copper on her smallest saucepan reduced to a broken ring. \"That pan made the gravy at my wedding breakfast,\" she said. \"I know people will say I could not possibly remember which pan made the gravy. They are exactly the sort of people the helpline teaches you to mute.\" Her daughter, Ruth, sat with her on the kitchen floor until she was ready to put it on a towel.",
+      "Gary Winthrop of Widnes rang at 2.14am to report a phantom gleam. For weeks he had believed the base was still copper because it caught an orange reflection from the extractor light. Daylight disclosed plain steel. \"The light had been protecting me,\" he said. \"Then the clocks changed.\" He now keeps the bulb in a drawer and has asked his family not to replace it without notice.",
+      "Another caller, Harpreet Dhesi, described polishing her inherited milk pan every month because the copper seemed brighter immediately afterwards. Only when a neighbour asked why the bottom was silver did she understand that she had been polishing the exposed substrate. \"I thought effort could reverse it,\" she told the line. \"Nobody tells you that shine and copper are different things.\" A volunteer stayed with her while she put the polish away.",
+      "The service's lead counsellor, fictional psychologist Dr Beatrice Munt, stresses that 'copper-bottom shock' is not a recognised diagnosis and should not be confused with clinical trauma. It is, she says, the newspaper's deliberately excessive name for a real and ordinary attachment to objects that have accumulated family rituals. \"People are not mourning a heat-spreading layer in isolation,\" she said. \"They are mourning every sauce, porridge, custard and late-night tin of soup that happened above it. The copper merely kept the minutes.\"",
+      "Counsellors have identified five commonly reported stages. Denial involves cooking only in low light. Polishing is self-explanatory and can make matters worse. Bargaining begins with a search for 'copper paint heatproof food safe probably'. Anger is usually directed at a dishwasher, a hob or a family member called Martin. Acceptance arrives when the owner asks what the pan is made from and listens to the answer all the way through.",
+      "Calls do not end with a universal instruction to throw anything away. Volunteers help owners photograph the damage, stop using pans with loose, warped or uncertain bases, find the maker's care information and contact a specialist. They also explain the crucial difference between professional re-tinning of a suitable copper pan's interior and trying to replace a worn exterior copper layer on a stainless-steel base. The line has a short recorded message for callers who say they already have a soldering iron; it consists of the word 'no' followed by forty seconds of calm breathing.",
+      "Brian and Olive Kemp found relief by holding a retirement supper for a saucepan whose base had warped after being boiled dry in 1994. The pan was not placed over heat. Instead it sat in the centre of the table containing wrapped bread rolls, a role chosen because it was useful, dignified and involved no thermal stress. Their grandchildren each told a story about meals they did not in fact remember.",
+      "Not every account ends quietly. One caller bought seven replacement pans and returned all of them because their handles felt 'too optimistic'. Another mailed a copper-coloured rubbing of the missing layer to the original manufacturer. A third has drawn the former bottom from memory and disputes her sister's claim that the stamp was slightly to the left.",
+      "The line's busiest period is Sunday evening, after washing-up and before people can distract themselves with Monday. Volunteers advise families not to stage surprise inspections, use the phrase 'only cosmetic' as an opening remark, or place a new pan in the old pan's cupboard space without discussion. They do recommend tea, patience and keeping the lid, at least until everybody is sure which saucepan it belonged to.",
+      "Mrs Slegg has since sent her pan for an expert assessment. It will not be placed back on the hob unless judged sound, but it remains on the kitchen shelf beside the gravy jug. \"I can look at the bottom now,\" she said. \"Not every day. And not under the big light. But I can look.\" The helpline recorded this as progress and, after checking consent, rang a small ceremonial bell."
+    ],
+    "pullQuote": "People are not mourning a heat-spreading layer in isolation. They are mourning every meal that happened above it.",
+    "tags": [
+      "health",
+      "saucepans",
+      "copper",
+      "helpline",
+      "grief",
+      "domestic-life"
+    ]
+  },
+  {
+    "id": "life-restored-copper-pan-homecoming",
+    "image": "images/life-restored-copper-pan-homecoming.webp",
+    "imageAlt": "A delighted older couple welcome a polished, professionally restored copper saucepan back into their kitchen.",
+    "imageCaption": "The Barlows meet their saucepan's renewed tin lining and agree not to make it do anything strenuous before Tuesday. AI-generated editorial photograph.",
+    "images": [
+      {
+        "src": "images/eng-professional-retinning.webp",
+        "alt": "A protected craftsperson renews the silver-coloured interior lining of a heavy copper saucepan in a professional workshop.",
+        "caption": "Suitable copper-bodied pans were re-tinned by a professional; worn exterior copper-bottom layers received assessment, not wishful plating. AI-generated editorial photograph.",
+        "afterParagraph": 4
+      }
+    ],
+    "category": "Lifestyle",
+    "headline": "Eight scarred saucepans return home after restorative week by the sea",
+    "standfirst": "Some were re-tinned, some were straightened, one was retired with honours and every owner was told firmly that polishing cannot replace a missing bottom",
+    "byline": "By Celia Wren, Domestic Affairs Correspondent",
+    "location": "WHITSTABLE",
+    "published": "2026-07-18T23:21:00",
+    "body": [
+      "Eight much-loved saucepans were reunited with their owners yesterday after a restorative week at a coastal metal workshop, in a homecoming marked by tears, cautious inspection and repeated assurances that nobody had put them in the dishwasher.",
+      "The pans arrived with a range of complaints. Two heavy copper-bodied saucepans had worn interior tin linings. One had a loose handle and a dent acquired during what its owner called 'the pressure-cooker misunderstanding of 1986'. Three stainless pans had patchy or largely vanished exterior copper bottoms. Another was merely tarnished. The eighth had warped so completely that it could spin on a worktop and was admitted chiefly to prevent it demonstrating this at family gatherings.",
+      "Workshop owner Euan Crimp began by disappointing everybody equally. He did not promise that every pan could return to cooking, did not describe missing metal as patina and would not accept the phrase 'just put a bit of copper back on' as a specification. Each piece was cleaned, identified and checked for flatness, loose layers, handle security, lining condition and evidence of overheating before a plan was agreed.",
+      "The two traditional copper pans were suitable for professional re-tinning. Their tired interiors were stripped and prepared, minor dents were addressed and fresh food-safe tin was hand-applied by a trained craftsperson. Their exteriors were cleaned without erasing every mark. \"A working pan can look cared for without pretending it was born last Thursday,\" Mr Crimp said. \"The scratches are where dinner happened.\"",
+      "The patchy stainless pans received a different verdict. Their worn exterior copper layers could not be renewed by the re-tinning process, because re-tinning belongs inside suitable copper cookware and these losses were outside on a different construction. One older, thickly clad pan was judged flat and stable enough for its owner to discuss continued use with the relevant specialist guidance. One qualified for a manufacturer replacement. The third, whose copper layer was lifting at the rim after severe overheating, was retired from heat.",
+      "This distinction produced a difficult afternoon. Owners had arrived expecting a single ceremony in which all copper would be restored. Instead they attended a forty-minute talk called 'Which Side of the Pan Are We Discussing?' and were each handed a diagram. Several later described it as painful but necessary. One admitted that she had spent six months reading interior re-tinning pages while staring at an exterior base.",
+      "Pam and Derek Barlow welcomed home a copper saucepan bought on their honeymoon. Its new tin lining shone silver against the warm copper body. Mrs Barlow touched the handle, checked the familiar dent near the rivet and began crying before the pan had cleared the tissue paper. \"It still has the little knock Derek put in it with the colander,\" she said. Mr Barlow said the historical record remained contested.",
+      "For Dev Malik, the outcome was replacement rather than repair. His stainless milk pan's thin exterior copper had almost entirely gone, although its sentimental importance was unimpaired. He found a sound vintage equivalent after sending photographs and asking detailed questions about flatness. The original now holds recipe cards. \"I wanted the same pan back,\" he said. \"What I have is the old pan safe on a shelf and a good pan safe on the hob. It took me a week to understand that this is two successes, not one compromise.\"",
+      "The warped pan, known to the Webb family as Spinner, will become a herb container after the workshop drilled no holes, added no coating and advised that the family choose an inner plant pot instead. Basil was selected after a ballot. The pan's owner asked whether retirement near a sunny window might accelerate fading of the remaining copper and was gently reminded that the pan no longer has performance objectives.",
+      "Every returning owner received a care card: use moderate heat; do not leave cookware heating empty; avoid thermal shock; follow the maker's instructions; lift pans over rough supports rather than dragging them; and clean with tools appropriate to the surface. The card also states, in unusually large type, that a bright silver patch cannot be polished back into copper. Mr Crimp said this sentence had saved the workshop more time than any machine.",
+      "The group marked the homecoming with tea and a buffet prepared in unrelated cookware. Restored pans were not used immediately because their owners wanted them to settle in, a concept unsupported by metallurgy but accepted by the caterer. At three o'clock, each pan was turned over or opened for a final photograph. Even the retired pieces looked, in the peculiar way of old utensils surrounded by people who know them, pleased to be there.",
+      "Mrs Barlow plans to make custard on Tuesday under moderate heat and close supervision. She has bought a soft sponge, discarded an abrasive scourer and asked her husband to remain within speaking distance of the hob. \"We cannot undo the wear,\" she said. \"But we can stop behaving as though care begins after the damage. Also Derek is no longer allowed near it with the colander.\""
+    ],
+    "pullQuote": "What I have is the old pan safe on a shelf and a good pan safe on the hob. That is two successes, not one compromise.",
+    "tags": [
+      "lifestyle",
+      "saucepans",
+      "copper",
+      "restoration",
+      "repair",
+      "domestic-life"
+    ]
   }
 ];
 
