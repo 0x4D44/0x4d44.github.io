@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">AI 2027's published superhuman coder forecasts were much wider than the scenario title</title>
+  <desc id="desc">Four April 2025 forecasts show medians from 2027 to 2033 and wide uncertainty intervals. Three intervals extend beyond 2050. The 2027 scenario was a concrete path, not a high-confidence appointment.</desc>
+  <rect width="1200" height="675" rx="18" fill="#f4efe5"/>
+  <text x="70" y="72" fill="#151515" font-family="Georgia, serif" font-size="38" font-weight="700">The forecast was always wider than the title</text>
+  <text x="70" y="108" fill="#5d5951" font-family="Arial, sans-serif" font-size="18">Arrival of a superhuman coder · April 2025 median and 80% interval</text>
+  <g font-family="Arial, sans-serif" font-size="14" fill="#706b63" text-anchor="middle">
+    <line x1="360" y1="160" x2="1080" y2="160" stroke="#c8c0b3"/><line x1="360" y1="160" x2="360" y2="530" stroke="#c8c0b3"/>
+    <line x1="504" y1="160" x2="504" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/><line x1="648" y1="160" x2="648" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/>
+    <line x1="792" y1="160" x2="792" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/><line x1="936" y1="160" x2="936" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/><line x1="1080" y1="160" x2="1080" y2="530" stroke="#c8c0b3"/>
+    <text x="360" y="555">2025</text><text x="504" y="555">2030</text><text x="648" y="555">2035</text><text x="792" y="555">2040</text><text x="936" y="555">2045</text><text x="1080" y="555">2050+</text>
+  </g>
+  <g font-family="Arial, sans-serif">
+    <text x="325" y="215" text-anchor="end" fill="#151515" font-size="17" font-weight="700">Time-horizon model</text><text x="325" y="236" text-anchor="end" fill="#706b63" font-size="13">Eli Lifland</text>
+    <line x1="360" y1="220" x2="763" y2="220" stroke="#315f75" stroke-width="7" stroke-linecap="round"/><circle cx="418" cy="220" r="13" fill="#b54136"/><text x="418" y="194" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">2027</text>
+    <text x="325" y="305" text-anchor="end" fill="#151515" font-size="17" font-weight="700">Benchmarks + gaps</text><text x="325" y="326" text-anchor="end" fill="#706b63" font-size="13">Eli Lifland</text>
+    <line x1="360" y1="310" x2="1060" y2="310" stroke="#315f75" stroke-width="7" stroke-linecap="round"/><path d="M1060 301 L1080 310 L1060 319" fill="none" stroke="#315f75" stroke-width="5"/><circle cx="446" cy="310" r="13" fill="#b54136"/><text x="446" y="284" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">2028</text>
+    <text x="325" y="395" text-anchor="end" fill="#151515" font-size="17" font-weight="700">All things considered</text><text x="325" y="416" text-anchor="end" fill="#706b63" font-size="13">Eli Lifland</text>
+    <line x1="389" y1="400" x2="1060" y2="400" stroke="#315f75" stroke-width="7" stroke-linecap="round"/><path d="M1060 391 L1080 400 L1060 409" fill="none" stroke="#315f75" stroke-width="5"/><circle cx="504" cy="400" r="13" fill="#b54136"/><text x="504" y="374" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">2030</text>
+    <text x="325" y="485" text-anchor="end" fill="#151515" font-size="17" font-weight="700">All things considered</text><text x="325" y="506" text-anchor="end" fill="#706b63" font-size="13">FutureSearch aggregate</text>
+    <line x1="418" y1="490" x2="1060" y2="490" stroke="#315f75" stroke-width="7" stroke-linecap="round"/><path d="M1060 481 L1080 490 L1060 499" fill="none" stroke="#315f75" stroke-width="5"/><circle cx="590" cy="490" r="13" fill="#b54136"/><text x="590" y="464" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">2033</text>
+  </g>
+  <g transform="translate(755 600)" font-family="Arial, sans-serif" font-size="14">
+    <line x1="0" y1="0" x2="55" y2="0" stroke="#315f75" stroke-width="7" stroke-linecap="round"/><text x="68" y="5" fill="#5d5951">80% interval</text><circle cx="205" cy="0" r="10" fill="#b54136"/><text x="222" y="5" fill="#5d5951">median</text>
+  </g>
+  <text x="70" y="646" fill="#777168" font-family="Arial, sans-serif" font-size="14">Source: AI Futures Project, Timelines Forecast, April 2025. Arrows denote intervals extending beyond 2050.</text>
+</svg>

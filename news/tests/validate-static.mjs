@@ -57,12 +57,32 @@ const aiWordCount = validateLongForm({
   noticePattern: /real AI Futures Project report AI 2040: Plan A/,
 });
 
+const ai2027WordCount = validateLongForm({
+  id: "voices-ai-2027-fire-drill-not-timetable",
+  minimumWords: 2600,
+  inlineImages: 5,
+  noticePattern: /real AI Futures Project report AI 2027/,
+});
+
+const aiComparisonWordCount = validateLongForm({
+  id: "voices-ai-2027-plan-a-tripwires-playbook",
+  minimumWords: 2600,
+  inlineImages: 5,
+  noticePattern: /real AI Futures Project reports AI 2027/,
+});
+
 const chartSources = new Map([
   ["voices-plan-a-emissions.svg", /M&amp;S ESG Report 2026/],
   ["voices-plan-a-targets.svg", /M&amp;S ESG Report 2026/],
   ["voices-ai-plan-a-compute.svg", /AI Futures Project/],
   ["voices-ai-plan-a-confidence.svg", /AI Futures Project/],
   ["voices-ai-plan-a-work.svg", /AI Futures Project/],
+  ["voices-ai-2027-rd-loop.svg", /AI Futures Project/],
+  ["voices-ai-2027-milestones.svg", /AI Futures Project/],
+  ["voices-ai-2027-forecast-range.svg", /AI Futures Project/],
+  ["voices-ai-scenarios-timelines.svg", /AI Futures Project/],
+  ["voices-ai-scenarios-design.svg", /AI Futures Project/],
+  ["voices-ai-scenarios-tripwires.svg", /AI 2027 forecasts and AI 2040/],
 ]);
 
 for (const [chartName, sourcePattern] of chartSources) {
@@ -202,6 +222,6 @@ assert.match(
   /82 stories across Football, Cricket, Olympics, Tennis, Athletics, Other Sports, Motorsport/,
 );
 
-assert.equal(articles.length, 840, "catalog copy and article corpus count should stay in lockstep");
+assert.equal(articles.length, 842, "catalog copy and article corpus count should stay in lockstep");
 
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);

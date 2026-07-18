@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">AI 2027's automated research feedback loop</title>
+  <desc id="desc">A four-stage loop runs from a more capable AI to more automated AI research, faster algorithmic progress, and then a still more capable AI. The scenario's research multipliers rise from 1.5 times in early 2026 to 3 times in January 2027 and 50 times in September 2027.</desc>
+  <rect width="1200" height="675" rx="18" fill="#f4efe5"/>
+  <text x="70" y="72" fill="#151515" font-family="Georgia, serif" font-size="39" font-weight="700">The engine inside AI 2027 is a feedback loop</text>
+  <text x="70" y="108" fill="#5d5951" font-family="Arial, sans-serif" font-size="18">Scenario mechanism · stronger systems help build their successors</text>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#b54136"/>
+    </marker>
+  </defs>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <rect x="90" y="190" width="235" height="128" rx="16" fill="#fffaf1" stroke="#c8c0b3" stroke-width="2"/>
+    <text x="207" y="236" fill="#315f75" font-size="17" font-weight="700">1 · CAPABILITY</text>
+    <text x="207" y="273" fill="#151515" font-size="24" font-weight="700">A stronger model</text>
+    <text x="207" y="300" fill="#5d5951" font-size="15">codes and reasons better</text>
+    <rect x="380" y="190" width="235" height="128" rx="16" fill="#fffaf1" stroke="#c8c0b3" stroke-width="2"/>
+    <text x="497" y="236" fill="#315f75" font-size="17" font-weight="700">2 · AUTOMATION</text>
+    <text x="497" y="273" fill="#151515" font-size="24" font-weight="700">More AI R&amp;D</text>
+    <text x="497" y="300" fill="#5d5951" font-size="15">is done by copied agents</text>
+    <rect x="670" y="190" width="235" height="128" rx="16" fill="#fffaf1" stroke="#c8c0b3" stroke-width="2"/>
+    <text x="787" y="236" fill="#315f75" font-size="17" font-weight="700">3 · SPEED</text>
+    <text x="787" y="273" fill="#151515" font-size="24" font-weight="700">Algorithms improve</text>
+    <text x="787" y="300" fill="#5d5951" font-size="15">in less calendar time</text>
+    <rect x="960" y="190" width="150" height="128" rx="16" fill="#b54136"/>
+    <text x="1035" y="235" fill="#fffaf1" font-size="17" font-weight="700">4 · REPEAT</text>
+    <text x="1035" y="273" fill="#ffffff" font-size="23" font-weight="700">Build the</text>
+    <text x="1035" y="300" fill="#ffffff" font-size="23" font-weight="700">successor</text>
+  </g>
+  <g fill="none" stroke="#b54136" stroke-width="5" marker-end="url(#arrow)">
+    <path d="M325 254 H370"/><path d="M615 254 H660"/><path d="M905 254 H950"/>
+    <path d="M1035 330 C1035 392 920 418 600 418 C280 418 165 392 165 333"/>
+  </g>
+  <text x="70" y="465" fill="#151515" font-family="Georgia, serif" font-size="27" font-weight="700">AI R&amp;D progress multiplier in the scenario</text>
+  <g font-family="Arial, sans-serif" text-anchor="middle">
+    <line x1="170" y1="548" x2="1030" y2="548" stroke="#c8c0b3" stroke-width="5"/>
+    <circle cx="250" cy="548" r="16" fill="#315f75"/><circle cx="560" cy="548" r="22" fill="#315f75"/><circle cx="940" cy="548" r="31" fill="#b54136"/>
+    <text x="250" y="520" fill="#315f75" font-size="22" font-weight="700">1.5×</text><text x="250" y="585" fill="#5d5951" font-size="15">early 2026</text>
+    <text x="560" y="514" fill="#315f75" font-size="25" font-weight="700">3×</text><text x="560" y="590" fill="#5d5951" font-size="15">January 2027</text>
+    <text x="940" y="505" fill="#9f3028" font-size="31" font-weight="700">50×</text><text x="940" y="599" fill="#5d5951" font-size="15">September 2027</text>
+  </g>
+  <text x="70" y="646" fill="#777168" font-family="Arial, sans-serif" font-size="14">Source: AI Futures Project, AI 2027 scenario and Takeoff Forecast, April 2025. Values are scenario assumptions, not observations.</text>
+</svg>

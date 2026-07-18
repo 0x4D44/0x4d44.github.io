@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">AI 2027 and AI 2040 Plan A use radically different narrative clocks</title>
+  <desc id="desc">The AI 2027 race ending moves from capable agents in 2025 to superhuman coding and artificial superintelligence in 2027, with human extinction in 2030. Plan A moves from early agents in 2026 through a treaty in 2029, top-expert AI in 2035, and a deliberate superintelligence handoff in 2040.</desc>
+  <rect width="1200" height="675" rx="18" fill="#f4efe5"/>
+  <text x="70" y="72" fill="#151515" font-family="Georgia, serif" font-size="38" font-weight="700">Two scenarios, two clocks, two purposes</text>
+  <text x="70" y="108" fill="#5d5951" font-family="Arial, sans-serif" font-size="18">Narrative milestones · each row uses its own printed timescale</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="70" y="155" width="1060" height="196" rx="15" fill="#fffaf1" stroke="#d8d1c6"/>
+    <text x="100" y="198" fill="#9f3028" font-size="22" font-weight="700">AI 2027 · RACE ENDING</text>
+    <text x="100" y="226" fill="#5d5951" font-size="15">Predictive warning · 2025–2030</text>
+    <line x1="300" y1="270" x2="1065" y2="270" stroke="#c8c0b3" stroke-width="6"/>
+    <circle cx="300" cy="270" r="12" fill="#315f75"/><text x="300" y="305" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">2025</text><text x="300" y="326" text-anchor="middle" fill="#5d5951" font-size="13">agents stumble</text>
+    <circle cx="606" cy="270" r="17" fill="#315f75"/><text x="606" y="244" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">MAR 2027</text><text x="606" y="225" text-anchor="middle" fill="#5d5951" font-size="13">superhuman coder</text>
+    <circle cx="744" cy="270" r="24" fill="#b54136"/><text x="744" y="314" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">DEC 2027</text><text x="744" y="334" text-anchor="middle" fill="#5d5951" font-size="13">ASI</text>
+    <circle cx="1065" cy="270" r="25" fill="#151515"/><text x="1065" y="244" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">2030</text><text x="1065" y="225" text-anchor="middle" fill="#5d5951" font-size="13">humanity gone</text>
+
+    <rect x="70" y="380" width="1060" height="196" rx="15" fill="#fffaf1" stroke="#d8d1c6"/>
+    <text x="100" y="423" fill="#315f75" font-size="22" font-weight="700">AI 2040 · PLAN A</text>
+    <text x="100" y="451" fill="#5d5951" font-size="15">Recommended path · 2026–2040</text>
+    <line x1="300" y1="495" x2="1065" y2="495" stroke="#c8c0b3" stroke-width="6"/>
+    <circle cx="300" cy="495" r="12" fill="#315f75"/><text x="300" y="530" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">2026</text><text x="300" y="551" text-anchor="middle" fill="#5d5951" font-size="13">early agents</text>
+    <circle cx="464" cy="495" r="18" fill="#b54136"/><text x="464" y="469" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">2029</text><text x="464" y="450" text-anchor="middle" fill="#5d5951" font-size="13">verified treaty</text>
+    <circle cx="792" cy="495" r="21" fill="#315f75"/><text x="792" y="536" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">2035</text><text x="792" y="556" text-anchor="middle" fill="#5d5951" font-size="13">top-expert AI</text>
+    <circle cx="1065" cy="495" r="28" fill="#315f75"/><text x="1065" y="469" text-anchor="middle" fill="#151515" font-size="15" font-weight="700">2040</text><text x="1065" y="450" text-anchor="middle" fill="#5d5951" font-size="13">deliberate handoff</text>
+  </g>
+  <text x="70" y="646" fill="#777168" font-family="Arial, sans-serif" font-size="14">Sources: AI Futures Project, AI 2027 (race ending), April 2025; AI 2040: Plan A, July 2026.</text>
+</svg>
