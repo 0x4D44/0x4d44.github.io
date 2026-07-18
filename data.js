@@ -217,10 +217,10 @@ window.ESSAYS = [
   {
     slug: "news",
     title: "The Daily Flange",
-    tagline: "A spoof news site in the manner of a serious broadcaster — professional masthead, breaking-news ticker, sections and search — reporting entirely implausible nonsense with a straight face: elastic airliners, cruise-ship submarines, and the urgent need to flange the nation's sprockets. 105 deadpan articles, a time-of-day front page that reshuffles hourly, and gloriously annoying banner ads. Vanilla JS; no build step. Add a story by appending one object.",
+    tagline: "A spoof news site in the manner of a serious broadcaster — professional masthead, breaking-news ticker, sections and search — reporting entirely implausible nonsense with a straight face: elastic airliners, cruise-ship submarines, worn copper saucepan bottoms, and the urgent need to flange the nation's sprockets. 790 deadpan articles, a time-of-day front page that reshuffles hourly, and gloriously annoying banner ads. Vanilla JS; no build step. Add a story by appending one object.",
     url: "https://0x4d44.github.io/news/",
     illustration: "ill-flange",
-    date: "2026-07-13T10:00:00",
+    date: "2026-07-18T23:44:00",
     year: 2026,
     tags: ["software", "fiction"],
     real: true,

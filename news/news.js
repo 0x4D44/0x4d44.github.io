@@ -668,7 +668,7 @@
       "Artist's impression; file photo; entirely made up."
     );
     var noticeHtml = a.notice
-      ? '<strong>Opinion note:</strong> ' + esc(a.notice)
+      ? '<strong>' + esc(a.noticeLabel || "Opinion note") + ':</strong> ' + esc(a.notice)
       : '<strong>Satire notice:</strong> The Daily Flange is fiction. ' +
         'This story never happened, the people quoted do not exist, and the sprockets remain, as ever, unflanged.';
 

@@ -7,10 +7,12 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const newsDir = path.resolve(here, "..");
 const articlesSource = fs.readFileSync(path.join(newsDir, "articles.js"), "utf8");
+const adsSource = fs.readFileSync(path.join(newsDir, "ads.js"), "utf8");
 const rendererSource = fs.readFileSync(path.join(newsDir, "news.js"), "utf8");
 const context = { window: {} };
 
 vm.runInNewContext(articlesSource, context, { filename: "articles.js" });
+vm.runInNewContext(adsSource, context, { filename: "ads.js" });
 
 const articles = context.window.NEWS_ARTICLES;
 assert.ok(Array.isArray(articles) && articles.length > 0, "article corpus should load");
@@ -72,6 +74,56 @@ for (const [chartName, sourcePattern] of chartSources) {
 
 assert.match(rendererSource, /a\.imageCaption/);
 assert.match(rendererSource, /a\.notice/);
-assert.match(rendererSource, /Opinion note:/);
+assert.match(rendererSource, /a\.noticeLabel \|\| "Opinion note"/);
+assert.equal(
+  articles.find((item) => item.id === "voices-plan-a-serious-plan-incomplete-proof").noticeLabel,
+  undefined,
+  "existing opinion articles should use the default notice label",
+);
 
-console.log(`Daily Flange Plan A validation passed (retail ${retailWordCount} words; AI ${aiWordCount} words).`);
+const saucepanIds = [
+  "life-saucepan-bottom-worn-support",
+  "eng-worn-copper-bottom-repair-guide",
+  "hea-saucepan-wear-trauma-hotline",
+  "life-restored-copper-pan-homecoming",
+];
+
+for (const id of saucepanIds) {
+  const saucepanArticle = articles.find((item) => item.id === id);
+  assert.ok(saucepanArticle, `${id} should be present`);
+  assert.ok(saucepanArticle.body.length >= 10, `${id} should retain detailed reporting`);
+  const saucepanWords = saucepanArticle.body.join(" ").trim().split(/\s+/).length;
+  assert.ok(saucepanWords >= 550, `${id} should be detailed, found ${saucepanWords} words`);
+  assert.ok(saucepanArticle.imageAlt && saucepanArticle.imageCaption, `${id} needs accessible hero copy`);
+  assert.ok(fs.existsSync(path.join(newsDir, saucepanArticle.image)), `${saucepanArticle.image} should exist`);
+
+  for (const inlineImage of saucepanArticle.images || []) {
+    assert.ok(inlineImage.alt && inlineImage.caption, `${inlineImage.src} needs accessible copy`);
+    assert.ok(Number.isInteger(inlineImage.afterParagraph), `${inlineImage.src} needs a paragraph position`);
+    assert.ok(inlineImage.afterParagraph >= 0 && inlineImage.afterParagraph < saucepanArticle.body.length);
+    assert.ok(fs.existsSync(path.join(newsDir, inlineImage.src)), `${inlineImage.src} should exist`);
+  }
+}
+
+const repairGuide = articles.find((item) => item.id === "eng-worn-copper-bottom-repair-guide");
+assert.equal(repairGuide.images.length, 2, "repair guide should include the decision guide and professional re-tinning image");
+assert.match(repairGuide.body.join(" "), /Re-tinning repairs the latter\. It does not recreate the former\./);
+assert.match(repairGuide.body.join(" "), /Do not fill a gap with epoxy/);
+assert.equal(repairGuide.noticeLabel, "Safety note");
+assert.match(repairGuide.notice, /qualified restorer/);
+
+const saucepanAdHeadlines = [
+  "HAS YOUR BOTTOM GONE?",
+  "BOTTOMBACK™ SAUCEPAN COVER",
+  "RE-COPPER IT YOURSELF! (DO NOT)",
+  "THE MEMORIAL TRIVET",
+];
+for (const headline of saucepanAdHeadlines) {
+  const ad = context.window.NEWS_ADS.find((item) => item.headline === headline);
+  assert.ok(ad, `${headline} advert should be present`);
+  assert.ok(ad.body && ad.cta && ad.href, `${headline} advert should be complete`);
+}
+
+assert.equal(articles.length, 790, "catalog copy and article corpus count should stay in lockstep");
+
+console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
