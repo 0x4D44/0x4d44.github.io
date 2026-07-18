@@ -449,6 +449,9 @@
     var href = ad.href || "#";
     var target = /^https?:|^\.\.\//.test(href) ? ' rel="nofollow"' : "";
     var shine = fx.indexOf("slide") !== -1 ? '<span class="shine"></span>' : "";
+    var art = ad.image
+      ? '<img class="ad-art" src="' + esc(ad.image) + '" alt="" aria-hidden="true">'
+      : "";
     var head = ad.blink ? '<span class="blink">' + esc(ad.headline) + '</span>' : esc(ad.headline);
     var iconSvg = ad.icon && window.AD_ICONS && window.AD_ICONS[ad.icon];
     var badge = iconSvg
@@ -459,6 +462,7 @@
       '<a class="' + cls.join(" ") + '" href="' + esc(href) + '"' + target + ' style="background:' + esc(bg) + ';color:' + esc(fg) + '">' +
         '<span class="ad-label">Ad</span>' + shine +
         '<span class="ad-inner">' +
+          art +
           (iconSvg ? badge : "") +
           '<span style="flex:1">' +
             '<h5>' + headBadge + head + '</h5>' +
