@@ -215,6 +215,15 @@
 
   // -------- URL helpers --------
   function articleUrl(a) { return "article.html?id=" + encodeURIComponent(a.id); }
+  function seriesNav(a) {
+    if (!a || !a.series) return "";
+    var series = ARTICLES.filter(function (x) { return x.series === a.series; })
+      .sort(function (x, y) { return x.seriesPart - y.seriesPart; });
+    var pos = series.indexOf(a);
+    var previous = pos > 0 ? '<a href="' + articleUrl(series[pos - 1]) + '">&larr; Part ' + String(series[pos - 1].seriesPart).padStart(2, "0") + '</a>' : '<span>&larr; First part</span>';
+    var next = pos >= 0 && pos < series.length - 1 ? '<a href="' + articleUrl(series[pos + 1]) + '">Part ' + String(series[pos + 1].seriesPart).padStart(2, "0") + ' &rarr;</a>' : '<span>Final part &rarr;</span>';
+    return '<div class="series-nav"><div><strong>' + esc(a.series) + '</strong><span>Book ' + esc(a.seriesBook || "") + ' &middot; Part ' + String(a.seriesPart).padStart(2, "0") + ' of ' + series.length + '</span></div><div>' + previous + next + '</div></div>';
+  }
   function catUrl(c) { return "search.html?cat=" + encodeURIComponent(c); }
   function qs(name) {
     var m = new RegExp("[?&]" + name + "=([^&]*)").exec(location.search);
@@ -657,6 +666,7 @@
     out.push('<div class="wrap">');
     out.push('<div style="padding-top:18px">' + adHtml(pickAds("leader", 1, a.id)[0], "leader") + '</div>');
     out.push('<div class="article cat-' + String(a.category).toLowerCase() + '"><div class="body">');
+    out.push(seriesNav(a));
     out.push('<div class="kicker-cat"><a href="' + catUrl(a.category) + '">' + esc(a.category) + '</a></div>');
     out.push('<h1>' + esc(a.headline) + '</h1>');
     out.push('<p class="standfirst">' + esc(a.standfirst) + '</p>');

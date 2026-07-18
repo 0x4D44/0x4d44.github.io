@@ -399,6 +399,13 @@ img { max-width: 100%; }
 .article { display: grid; grid-template-columns: minmax(0,1fr) 320px; gap: 40px; padding: 26px 0 50px; }
 @media (max-width: 900px){ .article { grid-template-columns: 1fr; } }
 .article .body { max-width: 720px; }
+.series-nav { border: 1px solid var(--hair); border-left: 4px solid var(--flange-red); padding: 11px 13px; margin: 0 0 22px; background: var(--bg-soft); font-size: 12px; }
+.series-nav > div:first-child { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.series-nav strong { color: var(--flange-red); text-transform: uppercase; letter-spacing: .06em; font-size: 11px; }
+.series-nav span { color: var(--muted); }
+.series-nav > div:last-child { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; font-family: var(--sans); }
+.series-nav a { font-weight: 700; }
+@media (max-width: 520px){ .series-nav > div:first-child { display: block; } .series-nav > div:first-child span { display: block; margin-top: 3px; } }
 .article .kicker-cat { color: var(--flange-red); font-weight: 700; text-transform: uppercase; letter-spacing: .06em; font-size: 13px; }
 .article h1 {
   font-family: var(--serif); font-size: 40px; line-height: 1.1; margin: 8px 0 12px;
