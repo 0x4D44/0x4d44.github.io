@@ -29,6 +29,7 @@
     { name: "Business",       children: [] },
     { name: "Sport",          children: [] },
     { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
+    { name: "Flanging",       children: [] },
     { name: "Opinion",        children: ["Voices", "Letters"] }
   ];
 
@@ -71,6 +72,7 @@
     Voices:      { c1: "#6b4a1f", c2: "#402a10", icon: "quill" },
     Letters:     { c1: "#7a3b2e", c2: "#4f241b", icon: "envelope" },
     Horoscopes:  { c1: "#3b2f6b", c2: "#241c45", icon: "star" },
+    Flanging:    { c1: "#7a3b2e", c2: "#4f241b", icon: "gear" },
     Aberdeen:    { c1: "#556270", c2: "#33404a", icon: "granite" }
   };
   function catMeta(cat) { return CAT[cat] || { c1: "#555", c2: "#333", icon: "gear" }; }
