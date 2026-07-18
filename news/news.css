@@ -315,6 +315,7 @@ img { max-width: 100%; }
   display: inline-block; margin-top: 8px; font-size: 12px; font-weight: 700;
   padding: 5px 10px; border-radius: 3px; background: #fff; color: #111;
 }
+.ad-art { width: 112px; height: 72px; object-fit: cover; border-radius: 3px; flex: 0 0 auto; box-shadow: 0 2px 8px rgba(0,0,0,.2); }
 
 /* Leaderboard ad (wide) */
 .ad-leader { min-height: 92px; display: flex; align-items: center; margin: 0 0 24px; }
@@ -325,6 +326,7 @@ img { max-width: 100%; }
 /* MPU ad (box) */
 .ad-mpu { min-height: 230px; display: flex; align-items: stretch; }
 .ad-mpu .ad-inner { display: flex; flex-direction: column; justify-content: center; width: 100%; }
+.ad-mpu .ad-art { width: 100%; height: 112px; margin: -2px 0 10px; }
 .ad-mpu h5 { font-size: 21px; }
 .ad-mpu p { font-size: 13.5px; }
 

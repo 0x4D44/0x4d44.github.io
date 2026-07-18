@@ -469,5 +469,53 @@ window.NEWS_ADS = [
     fg: "#1a1a1a",
     emoji: "🖌️", icon: "paintroller",
     fx: ["slide"]
+  },
+  {
+    headline: "RECIPES FOR PEOPLE WHO MEASURE FLOUR",
+    body: "A calm, practical recipe book rescued from emails, handwriting and one suspicious bread-machine manual. The loaf is optional; the weighing is not.",
+    cta: "Open the cookbook",
+    href: "../recipes/",
+    image: "images/ad-recipes.webp",
+    bg: "linear-gradient(135deg,#8f3f2f,#d68b45)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "FOLLOW THE OCEAN — VERY CAREFULLY",
+    body: "An interactive atlas of currents, temperatures and the planet's enormous moving blue machinery. Bring a jumper and a sense of scale.",
+    cta: "Explore the currents",
+    href: "../ocean-currents/",
+    image: "images/ad-ocean-currents.webp",
+    bg: "linear-gradient(135deg,#063b5c,#087f8c)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "QUANTUM PHYSICS, WITH FEWER EQUATIONS",
+    body: "A readable tour through particles, uncertainty and the bit where the cat is both fine and not fine. Probably.",
+    cta: "Open the explainer",
+    href: "../quantum/",
+    image: "images/ad-quantum.webp",
+    bg: "linear-gradient(135deg,#30205f,#6e4bb5)", fg: "#fff", fx: ["rainbow"]
+  },
+  {
+    headline: "TIDECALL — BID WITH CONFIDENCE",
+    body: "A trick-taking card game of calls, tides and the quiet realisation that your partner had a plan all along.",
+    cta: "Play Tidecall",
+    href: "../tidecall/",
+    image: "images/ad-tidecall.webp",
+    bg: "linear-gradient(135deg,#075985,#0e7490)", fg: "#fff", fx: ["slide", "jitter"]
+  },
+  {
+    headline: "SPAN OF CONTROL — NOW WITH MORE BOXES",
+    body: "A management simulation about teams, promotions and the strange mathematics of reporting lines. Every box contains a meeting.",
+    cta: "Draw the org chart",
+    href: "../span-of-control/",
+    image: "images/ad-span-of-control.webp",
+    bg: "linear-gradient(135deg,#164e63,#0f766e)", fg: "#fff", fx: ["slide"]
+  },
+  {
+    headline: "HOW FAST IS YOUR INTERNET, REALLY?",
+    body: "Measure the connection, inspect the numbers and discover which cable is quietly doing all the work. No motivational speech required.",
+    cta: "Run the test",
+    href: "../broadband-speed-checker/",
+    image: "images/ad-broadband-speed-checker.webp",
+    bg: "linear-gradient(135deg,#0f3d56,#1d7ca4)", fg: "#fff", fx: ["slide"]
   }
 ];
