@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Employment in the Plan A scenario falls from 62 per cent to 12 per cent</title>
+  <desc id="desc">A line chart plots the report's annual US employment rate, which stays near 62 per cent through 2032 before falling rapidly to 12 per cent in 2040. Citizen Dividend callouts rise from 45 thousand dollars to 10 million dollars per person.</desc>
+  <defs>
+    <linearGradient id="workArea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#315f75" stop-opacity="0.33"/>
+      <stop offset="1" stop-color="#315f75" stop-opacity="0.04"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="675" rx="18" fill="#f4efe5"/>
+  <text x="70" y="70" fill="#151515" font-family="Georgia, serif" font-size="37" font-weight="700">The dividend rises as employment disappears</text>
+  <text x="70" y="105" fill="#5d5951" font-family="Arial, sans-serif" font-size="18">US employment rate in the Plan A scenario, with annual Citizen Dividend milestones</text>
+
+  <g font-family="Arial, sans-serif" font-size="15" fill="#666158">
+    <line x1="130" y1="500" x2="1080" y2="500" stroke="#c8c0b3"/>
+    <line x1="130" y1="444" x2="1080" y2="444" stroke="#d8d1c6" stroke-dasharray="5 7"/>
+    <line x1="130" y1="333" x2="1080" y2="333" stroke="#d8d1c6" stroke-dasharray="5 7"/>
+    <line x1="130" y1="221" x2="1080" y2="221" stroke="#d8d1c6" stroke-dasharray="5 7"/>
+    <line x1="130" y1="110" x2="1080" y2="110" stroke="#d8d1c6" stroke-dasharray="5 7"/>
+    <text x="110" y="506" text-anchor="end">0%</text>
+    <text x="110" y="450" text-anchor="end">10%</text>
+    <text x="110" y="339" text-anchor="end">30%</text>
+    <text x="110" y="227" text-anchor="end">50%</text>
+    <text x="110" y="116" text-anchor="end">70%</text>
+  </g>
+
+  <path d="M130 155 L203 155 L276 155 L349 160 L422 160 L495 155 L568 211 L641 255 L714 322 L787 355 L860 383 L933 405 L1007 427 L1080 433 L1080 500 L130 500 Z" fill="url(#workArea)"/>
+  <path d="M130 155 L203 155 L276 155 L349 160 L422 160 L495 155 L568 211 L641 255 L714 322 L787 355 L860 383 L933 405 L1007 427 L1080 433" fill="none" stroke="#244d61" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <g fill="#f4efe5" stroke="#244d61" stroke-width="4">
+    <circle cx="130" cy="155" r="8"/><circle cx="203" cy="155" r="6"/><circle cx="276" cy="155" r="6"/>
+    <circle cx="349" cy="160" r="6"/><circle cx="422" cy="160" r="6"/><circle cx="495" cy="155" r="8"/>
+    <circle cx="568" cy="211" r="6"/><circle cx="641" cy="255" r="6"/><circle cx="714" cy="322" r="8"/>
+    <circle cx="787" cy="355" r="6"/><circle cx="860" cy="383" r="6"/><circle cx="933" cy="405" r="6"/>
+    <circle cx="1007" cy="427" r="8"/><circle cx="1080" cy="433" r="9"/>
+  </g>
+
+  <g font-family="Arial, sans-serif">
+    <text x="130" y="139" fill="#151515" font-size="21" font-weight="700" text-anchor="middle">62%</text>
+    <text x="1080" y="418" fill="#151515" font-size="21" font-weight="700" text-anchor="middle">12%</text>
+    <g fill="#5d5951" font-size="15" text-anchor="middle">
+      <text x="130" y="535">2027</text><text x="276" y="535">2029</text><text x="422" y="535">2031</text>
+      <text x="568" y="535">2033</text><text x="714" y="535">2035</text><text x="860" y="535">2037</text>
+      <text x="1007" y="535">2039</text><text x="1080" y="535">2040</text>
+    </g>
+  </g>
+
+  <g font-family="Arial, sans-serif">
+    <line x1="495" y1="155" x2="495" y2="270" stroke="#b54136" stroke-width="2" stroke-dasharray="4 5"/>
+    <rect x="426" y="270" width="138" height="52" rx="9" fill="#b54136"/>
+    <text x="495" y="291" text-anchor="middle" fill="#fff" font-size="13">2032 dividend</text>
+    <text x="495" y="312" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">$45,000</text>
+
+    <line x1="714" y1="156" x2="714" y2="292" stroke="#b54136" stroke-width="2" stroke-dasharray="4 5"/>
+    <rect x="650" y="136" width="128" height="52" rx="9" fill="#b54136"/>
+    <text x="714" y="157" text-anchor="middle" fill="#fff" font-size="13">2035 dividend</text>
+    <text x="714" y="178" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">$1m</text>
+
+    <line x1="1007" y1="160" x2="1007" y2="400" stroke="#b54136" stroke-width="2" stroke-dasharray="4 5"/>
+    <rect x="938" y="136" width="138" height="52" rx="9" fill="#b54136"/>
+    <text x="1007" y="157" text-anchor="middle" fill="#fff" font-size="13">2039 dividend</text>
+    <text x="1007" y="178" text-anchor="middle" fill="#fff" font-size="18" font-weight="700">$10m</text>
+  </g>
+
+  <line x1="70" y1="580" x2="1130" y2="580" stroke="#c8c0b3"/>
+  <text x="70" y="614" fill="#5d5951" font-family="Arial, sans-serif" font-size="15">Source: AI Futures Project, AI 2040: Plan A, annual scenario cards, pp. 2–32.</text>
+  <text x="70" y="639" fill="#777168" font-family="Arial, sans-serif" font-size="14">Dollar figures are the scenario's annual US Citizen Dividend per person, not forecasts by The Daily Flange.</text>
+</svg>
