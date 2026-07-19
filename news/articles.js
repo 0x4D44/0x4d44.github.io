@@ -18812,27 +18812,27 @@ window.NEWS_ARTICLES = [
     ]]
   ];
   var images = {
-    1: ["images/flanger-series-ceremony.png", "A solemn gentleman flanges a washer while a brass band applauds."],
-    4: ["images/flanger-series-benefits.png", "An absurd schematic connects a washer to gauges for posture and confidence."],
-    9: ["images/flanger-series-testimonials.png", "A railway guard, an aunt and a pigeon hold washers during an interview."],
-    21: ["images/flanger-series-apparatus.png", "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."],
-    30: ["images/flanger-series-fab-flow.png", "A six-step line-art flowchart leads from nervous beginner to ceremonial tea trolley."],
-    50: ["images/flanger-series-graduation.png", "A washer receives a graduation medal as the academic goose applauds."]
+    1: ["images/flanger-series-ceremony.webp", "A solemn gentleman flanges a washer while a brass band applauds."],
+    4: ["images/flanger-series-benefits.webp", "An absurd schematic connects a washer to gauges for posture and confidence."],
+    9: ["images/flanger-series-testimonials.webp", "A railway guard, an aunt and a pigeon hold washers during an interview."],
+    21: ["images/flanger-series-apparatus.webp", "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."],
+    30: ["images/flanger-series-fab-flow.webp", "A six-step line-art flowchart leads from nervous beginner to ceremonial tea trolley."],
+    50: ["images/flanger-series-graduation.webp", "A washer receives a graduation medal as the academic goose applauds."]
   };
   var artCycle = [
-    ["images/flanger-series-ceremony.png", "A solemn gentleman flanges a washer while a brass band applauds."],
-    ["images/flanger-plate-wellness.png", "A clinician presents a wildly overcomplicated wellness chart centred on a washer."],
-    ["images/flanger-plate-testimonials.png", "A railway guard, an aunt and a pigeon hold washers during an interview."],
-    ["images/flanger-series-benefits.png", "An absurd schematic connects a washer to gauges for posture and confidence."],
-    ["images/flanger-plate-rims.png", "A museum taxonomy displays four increasingly serious kinds of rim."],
-    ["images/flanger-plate-quiet.png", "A brass band waits silently while a washer receives ceremonial attention."],
-    ["images/flanger-plate-emergency.png", "A clerk routes an emergency flange between a jar lid, bell and bridge."],
-    ["images/flanger-series-apparatus.png", "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."],
-    ["images/flanger-plate-fab-bench.png", "An apprentice learns a bench vise under the eye of a severe supervisor."],
-    ["images/flanger-series-fab-flow.png", "A line-art flowchart leads from nervous beginner to ceremonial tea trolley."],
-    ["images/flanger-plate-peer-review.png", "Academics and a goose peer-review one washer beneath a giant eyebrow."],
-    ["images/flanger-plate-log.png", "A clerk records washer diagrams, clocks and biscuit tallies in a giant logbook."],
-    ["images/flanger-series-graduation.png", "A washer receives a graduation medal as the academic goose applauds."]
+    ["images/flanger-series-ceremony.webp", "A solemn gentleman flanges a washer while a brass band applauds."],
+    ["images/flanger-plate-wellness.webp", "A clinician presents a wildly overcomplicated wellness chart centred on a washer."],
+    ["images/flanger-plate-testimonials.webp", "A railway guard, an aunt and a pigeon hold washers during an interview."],
+    ["images/flanger-series-benefits.webp", "An absurd schematic connects a washer to gauges for posture and confidence."],
+    ["images/flanger-plate-rims.webp", "A museum taxonomy displays four increasingly serious kinds of rim."],
+    ["images/flanger-plate-quiet.webp", "A brass band waits silently while a washer receives ceremonial attention."],
+    ["images/flanger-plate-emergency.webp", "A clerk routes an emergency flange between a jar lid, bell and bridge."],
+    ["images/flanger-series-apparatus.webp", "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."],
+    ["images/flanger-plate-fab-bench.webp", "An apprentice learns a bench vise under the eye of a severe supervisor."],
+    ["images/flanger-series-fab-flow.webp", "A line-art flowchart leads from nervous beginner to ceremonial tea trolley."],
+    ["images/flanger-plate-peer-review.webp", "Academics and a goose peer-review one washer beneath a giant eyebrow."],
+    ["images/flanger-plate-log.webp", "A clerk records washer diagrams, clocks and biscuit tallies in a giant logbook."],
+    ["images/flanger-series-graduation.webp", "A washer receives a graduation medal as the academic goose applauds."]
   ];
   var serial = 0;
   books.forEach(function (book) {
@@ -20259,15 +20259,15 @@ window.NEWS_ARTICLES.forEach(function (article) {
     ]]
   ];
   var busImages = [
-    ["images/bus-plate-tyres.png", "Mechanics measure an oversized bus tyre before a solemn committee."],
-    ["images/bus-plate-engine.png", "A bus engine receives a medical examination from mechanics and a goose nurse."],
-    ["images/bus-plate-cooling.png", "A conductor conducts a bus cooling system like a grand organ."],
-    ["images/bus-plate-depot.png", "Mechanics wake a blanket-covered fleet at a bus depot."],
-    ["images/bus-plate-routes.png", "Passengers consult compasses while a bus follows an impossible route."],
-    ["images/bus-plate-driver.png", "A driver performs an elaborate pre-departure ritual in the cab."],
-    ["images/bus-plate-heat.png", "Passengers attempt to cool a double-decker during a heatwave."],
-    ["images/bus-plate-drivetrain.png", "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."],
-    ["images/bus-plate-election.png", "Rival buses campaign for passengers while a goose counts votes."]
+    ["images/bus-plate-tyres.webp", "Mechanics measure an oversized bus tyre before a solemn committee."],
+    ["images/bus-plate-engine.webp", "A bus engine receives a medical examination from mechanics and a goose nurse."],
+    ["images/bus-plate-cooling.webp", "A conductor conducts a bus cooling system like a grand organ."],
+    ["images/bus-plate-depot.webp", "Mechanics wake a blanket-covered fleet at a bus depot."],
+    ["images/bus-plate-routes.webp", "Passengers consult compasses while a bus follows an impossible route."],
+    ["images/bus-plate-driver.webp", "A driver performs an elaborate pre-departure ritual in the cab."],
+    ["images/bus-plate-heat.webp", "Passengers attempt to cool a double-decker during a heatwave."],
+    ["images/bus-plate-drivetrain.webp", "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."],
+    ["images/bus-plate-election.webp", "Rival buses campaign for passengers while a goose counts votes."]
   ];
   var serial = 0;
   busBooks.forEach(function (book) {
