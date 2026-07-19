@@ -20184,6 +20184,7 @@ window.NEWS_ARTICLES.push(
 
 window.NEWS_ARTICLES.forEach(function (article) {
   if (article.id.indexOf("mot-") === 0) {
+    article.body = article.body.split(/\n\n+/);
     article.imageCaption = "AI-generated editorial illustration of the reported incident.";
   }
 });

@@ -150,8 +150,8 @@ const motorsportArticles = articles.filter((article) => article.id.startsWith("m
 assert.equal(motorsportArticles.length, 50, "the Motorsport desk should contain 50 real-incident stories");
 for (const article of motorsportArticles) {
   assert.equal(article.category, "Motorsport", `${article.id} should stay on the Motorsport desk`);
-  const paragraphs = Array.isArray(article.body) ? article.body : String(article.body).split(/\n\n+/);
-  assert.ok(paragraphs.length >= 3, `${article.id} should explain the incident in at least three paragraphs`);
+  assert.ok(Array.isArray(article.body), `${article.id} body should use the renderer's paragraph-array schema`);
+  assert.ok(article.body.length >= 3, `${article.id} should explain the incident in at least three paragraphs`);
   assert.equal(article.noticeLabel, "Based on a true story", `${article.id} should identify its factual basis`);
   assert.ok(Array.isArray(article.sources) && article.sources.length >= 1, `${article.id} should retain source provenance`);
   for (const source of article.sources) {
@@ -169,6 +169,20 @@ assert.equal(
 );
 
 vm.runInNewContext(rendererSource, context, { filename: "news.js" });
+for (const article of motorsportArticles) {
+  const articleMount = { innerHTML: "" };
+  context.location = { search: `?id=${encodeURIComponent(article.id)}` };
+  context.document = {
+    title: "",
+    getElementById: () => articleMount,
+    querySelector: () => null,
+  };
+  assert.doesNotThrow(
+    () => context.window.NEWS.renderArticle("app"),
+    `${article.id} should render as a complete article page`,
+  );
+  assert.match(articleMount.innerHTML, new RegExp(article.headline.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+}
 const sportNav = context.window.NEWS.header("Football");
 assert.match(sportNav, />Sport <span class="chev"/);
 assert.match(sportNav, /search\.html\?cat=Sport[^>]*>All Sport<\/a>/);
