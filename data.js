@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "win2k",
+    title: "Boot to Desktop",
+    tagline: "How a from-scratch PC emulator learned to boot Windows 2000 — a 53-day hunt through latched interrupt edges, a 128 MiB RAM dump, and a whole-system deadlock that turned out to be an invisible dialog box. Told from the ledgers, journals and preserved runs. Seven chapters of animated internals.",
+    url: "https://0x4d44.github.io/win2k/",
+    illustration: "ill-win2k",
+    date: "2026-07-19T08:30:00",
+    year: 2000,
+    readingMin: 90,
+    words: 19800,
+    tags: ["software", "engineering", "history"],
+    real: true,
+  },
+  {
     slug: "world-in-640k",
     title: "A World in 640K",
     tagline: "How Civilization and Colonization ran a planet on a 640 KB PC: linker-level virtual memory, a private allocator's division dance, streamed FAB/LZW art, a 25,311-byte world and a 608.8 Hz heartbeat — measured from the shipped binaries and live runs under our own emulator. Seven chapters of animated internals; grows a real Civ map in-browser.",
@@ -1466,7 +1479,7 @@ window.COLLECTIONS = [
       "model-railway", "rail-control", "mercury-arc-rectifiers", "perth"] },
   { id: "machine", name: "The Machine Room", icon: "ill-pc",
     blurb: "Emulators, retro hardware and vanished software, brought back.",
-    slugs: ["world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
+    slugs: ["win2k", "world-in-640k", "picoem", "mddskimg", "mdminecraft", "mddosem", "mddosem-win16",
       "mdrll", "lighthouse", "spectrum-analyzer", "netmeeting", "data-logger"] },
   { id: "code", name: "Code", icon: "ill-loc",
     blurb: "Code walkthroughs, Rust and libraries.",
