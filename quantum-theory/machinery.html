@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Machinery — Quanta</title>
+<meta name="description" content="The mathematical machinery of quantum theory: complex amplitudes, Hilbert space, Dirac notation, Hermitian operators, the postulates, commutators and the uncertainty principle, and unitary time evolution.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="origins.html">1 · The Crisis</a>
+    <a href="machinery.html" aria-current="page">2 · The Machinery</a>
+    <a href="wavefunction.html">3 · Wavefunctions</a>
+    <a href="spin.html">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html">5 · Entanglement</a>
+    <a href="fields.html">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 2</p>
+  <h1>The Machinery</h1>
+  <p class="standfirst">Strip away the history and quantum mechanics is a short list of
+  rules about vectors in complex spaces — rules you can write on an index card and
+  spend a lifetime unpacking. This chapter builds the machine piece by piece: amplitudes,
+  state vectors, operators, the Born rule, the commutator that hides the uncertainty
+  principle, and the one equation that turns all of it in time.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="amplitudes"><span class="no">2.1</span>The strange new bookkeeping</h2>
+
+<p>Classical probability adds like common sense. If an event can happen two ways,
+its probability is the sum of the probabilities of each way:
+<i>P</i>&nbsp;=&nbsp;<i>P</i><sub>1</sub>&nbsp;+&nbsp;<i>P</i><sub>2</sub>. Quantum mechanics replaces this
+with a deeper rule, and every quantum phenomenon in this almanac is a corollary of
+it. To each way a process can happen, nature assigns not a probability but a
+<strong>probability amplitude</strong> — a complex number, an arrow in the plane with a
+length and a direction. The rules of the game:</p>
+
+<ol>
+  <li><strong>Alternatives add as amplitudes.</strong> If the ways are indistinguishable
+  in principle — nothing anywhere records which occurred — add the arrows tip-to-tail:
+  ψ&nbsp;=&nbsp;ψ<sub>1</sub>&nbsp;+&nbsp;ψ<sub>2</sub>.</li>
+  <li><strong>Probability is the squared length</strong> of the final arrow:
+  <i>P</i>&nbsp;=&nbsp;|ψ|². This is the <strong>Born rule</strong>.</li>
+  <li><strong>Distinguishable alternatives add as probabilities</strong>, classically:
+  <i>P</i>&nbsp;=&nbsp;|ψ<sub>1</sub>|²&nbsp;+&nbsp;|ψ<sub>2</sub>|². The moment a record of &ldquo;which way&rdquo;
+  exists, rule 1 is off.</li>
+  <li><strong>Sequential steps multiply</strong> amplitudes, as independent probabilities
+  would.</li>
+</ol>
+
+<p>Because arrows have direction, two ways can conspire (aligned: |ψ<sub>1</sub>+ψ<sub>2</sub>|²
+up to four times either alone) or cancel (opposed: exactly zero — a place the
+particle simply cannot land, though either route alone would happily take it there).
+That is interference, and it is why the double slit in the Overview does what it
+does — and why the fringes die when the detector switches on: the which-path record
+converts rule&nbsp;1 into rule&nbsp;3. No force is exerted; a bookkeeping condition
+changes, and the world changes with it.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Two routes, one arrow</span>
+    <span class="hint">turn the relative phase; watch two healthy amplitudes add to nothing</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="ph" style="aspect-ratio: 2.4 / 1; min-height: 260px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="ph-phase">relative phase δ</label>
+      <input type="range" id="ph-phase" min="0" max="360" step="1" value="60">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="ph-r">amplitude ratio |ψ₂|/|ψ₁|</label>
+      <input type="range" id="ph-r" min="0" max="1.5" step="0.01" value="1">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="ph-dist">alternatives are</label>
+      <span class="seg" id="ph-dist">
+        <button data-v="q" class="on">indistinguishable</button>
+        <button data-v="c">recorded</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">quantum |ψ₁+ψ₂|² <b id="ph-q">—</b></span>
+    <span class="ro">classical |ψ₁|²+|ψ₂|² <b id="ph-c">—</b></span>
+    <span class="ro" id="ph-note" style="color:var(--ink-2)"></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<h2 id="states"><span class="no">2.2</span>States are vectors</h2>
+
+<p>The amplitude rules become a theory once you organise the amplitudes. The
+complete catalogue of amplitudes for a system — one for each possible outcome of a
+maximal measurement — is its <strong>state</strong>, and the deep structural fact of quantum
+mechanics is that states behave like <em>vectors</em>: they can be scaled by complex
+numbers and added, and the result is another legal state. This is the
+<strong>superposition principle</strong>, and it is the load-bearing axiom of the theory.</p>
+
+<p>Dirac's notation, universally used, writes a state as a <strong>ket</strong> |ψ⟩. For a
+system with <i>n</i> distinguishable outcomes, kets live in ℂ<sup><i>n</i></sup> — lists of
+<i>n</i> complex numbers; for a particle on a line the list becomes a continuum, the
+wavefunction ψ(<i>x</i>) of Chapter&nbsp;3. In both cases the arena is a
+<strong>Hilbert space</strong> ℋ: a complex vector space equipped with an inner product
+⟨φ|ψ⟩ (and, in infinite dimensions, complete — every Cauchy sequence converges,
+the technical clause that keeps the calculus honest). The inner product is the
+master operation:</p>
+
+<p class="eq"><span class="m">⟨φ|ψ⟩ = <span class="big">∑</span><sub>k</sub> φ<sub>k</sub>*&thinsp;ψ<sub>k</sub>
+&emsp;<span class="up">or</span>&emsp; <span class="big">∫</span> φ(<i>x</i>)*ψ(<i>x</i>)&thinsp;d<i>x</i></span>
+<span class="eqno">INNER PRODUCT</span></p>
+
+<p>It is linear in the ket, conjugate-linear in the bra ⟨φ| (a bra is the
+conjugate-transpose row vector of its ket), and ⟨ψ|ψ⟩&nbsp;=&nbsp;‖ψ‖²&nbsp;≥&nbsp;0. Physical
+states are normalised, ⟨ψ|ψ⟩&nbsp;=&nbsp;1, because the probabilities of a complete set
+of outcomes must total one; and the global phase of a state is unobservable —
+|ψ⟩ and <i>e</i><sup><i>i</i>α</sup>|ψ⟩ describe the same physics, though <em>relative</em>
+phases inside a superposition are the whole point, as the figure above shows.</p>
+
+<p>Choose an orthonormal basis {|<i>k</i>⟩} — physically, the outcomes of some maximal
+measurement, ⟨<i>j</i>|<i>k</i>⟩&nbsp;=&nbsp;δ<sub><i>jk</i></sub> — and any state expands as</p>
+
+<p class="eq"><span class="m">|ψ⟩ = <span class="big">∑</span><sub>k</sub> <i>c</i><sub>k</sub>|<i>k</i>⟩,
+&emsp;<i>c</i><sub>k</sub> = ⟨<i>k</i>|ψ⟩,&emsp;
+<span class="big">∑</span><sub>k</sub> |<i>c</i><sub>k</sub>|² = 1</span>
+<span class="eqno">EXPANSION</span></p>
+
+<p>The component <i>c</i><sub>k</sub>&nbsp;=&nbsp;⟨<i>k</i>|ψ⟩ <em>is</em> the amplitude of
+Section&nbsp;2.1 — the amplitude that a system prepared in |ψ⟩ is found, on
+measurement, in |<i>k</i>⟩ — and |<i>c</i><sub>k</sub>|² is its probability. A superposition is
+not ignorance of which basis state the system is &ldquo;really&rdquo; in: the relative
+phases among the <i>c</i><sub>k</sub> produce interference that no mixture of definite
+alternatives can imitate. That distinction — superposition versus mixture — is made
+precise with density matrices in Chapter&nbsp;5.</p>
+
+<div class="callout">
+  <span class="tag">Notational dividend</span>
+  <p>Dirac's brackets make the bookkeeping self-checking. |<i>k</i>⟩⟨<i>k</i>| is the
+  projector onto basis direction <i>k</i>; summing them gives the resolution of the
+  identity Σ<sub>k</sub>|<i>k</i>⟩⟨<i>k</i>|&nbsp;=&nbsp;𝟙, which you can insert anywhere — the
+  algebraic engine behind &ldquo;change of basis&rdquo;, and the discrete ancestor of the
+  Feynman path sum in Chapter&nbsp;6.</p>
+</div>
+
+<h2 id="operators"><span class="no">2.3</span>Observables are operators</h2>
+
+<p>Measurable quantities — position, momentum, energy, spin along an axis — are
+represented by <strong>linear operators</strong> on ℋ: machines that eat a ket and return a
+ket, respecting superposition. The physically meaningful ones are
+<strong>Hermitian</strong> (self-adjoint): <i>Â</i>&nbsp;=&nbsp;<i>Â</i><sup>†</sup>, equal to their own
+conjugate-transpose. Hermiticity buys, via the spectral theorem, exactly the two
+properties a measurable quantity needs:</p>
+
+<ul>
+  <li>all <strong>eigenvalues are real</strong> — these are the possible measurement
+  results;</li>
+  <li>eigenvectors belonging to different eigenvalues are <strong>orthogonal</strong>, and
+  together the eigenvectors furnish a complete basis — the measurement's outcome
+  states.</li>
+</ul>
+
+<p>The eigenvalue equation <i>Â</i>|<i>a</i>⟩&nbsp;=&nbsp;<i>a</i>|<i>a</i>⟩ thus carries the whole
+physical interpretation: measure <i>A</i> on a system in state |ψ⟩ and you get
+eigenvalue <i>a</i> with probability |⟨<i>a</i>|ψ⟩|². Statistics follow compactly; the
+mean of many runs is the <strong>expectation value</strong></p>
+
+<p class="eq"><span class="m">⟨<i>A</i>⟩ = ⟨ψ|<i>Â</i>|ψ⟩ = <span class="big">∑</span><sub>a</sub> <i>a</i>&thinsp;|⟨<i>a</i>|ψ⟩|²</span>
+<span class="eqno">EXPECTATION</span></p>
+
+<p>and the spread is Δ<i>A</i>&nbsp;=&nbsp;√<span class="ol">⟨<i>A</i>²⟩&nbsp;−&nbsp;⟨<i>A</i>⟩²</span>. An
+eigenstate of <i>Â</i> is precisely a state with Δ<i>A</i>&nbsp;=&nbsp;0 — a state in which the
+quantity <i>A</i> has a definite value. Most states are not eigenstates of most
+observables; that a quantity can simply <em>fail to have a value</em> in a given state
+is quantum mechanics' sharpest break with classical thinking, and Chapter&nbsp;5
+returns to it armed with Bell's theorem.</p>
+
+<h2 id="postulates"><span class="no">2.4</span>The rules on one card</h2>
+
+<div class="axiom">
+  <span class="tag">Postulate I — states</span>
+  <p>An isolated system is completely described by a normalised ket |ψ⟩ in a complex
+  Hilbert space ℋ. Superpositions of states are states.</p>
+</div>
+<div class="axiom">
+  <span class="tag">Postulate II — observables</span>
+  <p>Every measurable quantity corresponds to a Hermitian operator <i>Â</i> on ℋ; the
+  possible results of a measurement are its eigenvalues.</p>
+</div>
+<div class="axiom">
+  <span class="tag">Postulate III — the Born rule</span>
+  <p>Measuring <i>A</i> on |ψ⟩ yields eigenvalue <i>a</i> with probability
+  <i>P</i>(<i>a</i>)&nbsp;=&nbsp;|⟨<i>a</i>|ψ⟩|² (more generally ⟨ψ|<i>P̂</i><sub>a</sub>|ψ⟩ with
+  <i>P̂</i><sub>a</sub> the projector onto the eigenspace).</p>
+</div>
+<div class="axiom">
+  <span class="tag">Postulate IV — collapse</span>
+  <p>Immediately after that result, the state is the (normalised) projection of |ψ⟩
+  onto the eigenspace of <i>a</i>: measurement is repeatable, and it updates the state.
+  Whether this &ldquo;collapse&rdquo; is physics or bookkeeping is the measurement problem —
+  stated honestly in Chapter&nbsp;5.</p>
+</div>
+<div class="axiom">
+  <span class="tag">Postulate V — dynamics</span>
+  <p>Between measurements the state evolves deterministically and linearly under the
+  Schrödinger equation, <i>i</i>ħ&thinsp;∂<sub>t</sub>|ψ⟩&nbsp;=&nbsp;<i>Ĥ</i>|ψ⟩, where <i>Ĥ</i> is the
+  Hamiltonian — the energy observable.</p>
+</div>
+
+<p>Add one clause for composite systems (Chapter&nbsp;4: the joint space is the tensor
+product ℋ<sub>1</sub>&nbsp;⊗&nbsp;ℋ<sub>2</sub>) and one for identical particles, and this card is
+the entire theory. Everything else — wavefunctions, spin, entanglement, quantum
+fields, quantum dots — is these rules applied to particular Hilbert spaces and
+particular Hamiltonians.</p>
+
+<h2 id="uncertainty"><span class="no">2.5</span>Incompatibility, made quantitative</h2>
+
+<p>Two observables can share a full set of eigenvectors — then a state can have
+definite values of both. The test is algebraic: complete compatibility holds
+exactly when the <strong>commutator</strong> vanishes,</p>
+
+<p class="eq"><span class="m">[<i>Â</i>, <i>B̂</i>] ≡ <i>ÂB̂</i> − <i>B̂Â</i></span>
+<span class="eqno">COMMUTATOR</span></p>
+
+<p>When it does not vanish, no state is sharp in both, and the trade-off is exact.
+For any state, a short Cauchy–Schwarz argument (Robertson, 1929) gives</p>
+
+<p class="eq"><span class="m">Δ<i>A</i>&thinsp;Δ<i>B</i> ≥ ½&thinsp;|⟨[<i>Â</i>, <i>B̂</i>]⟩|</span>
+<span class="eqno">ROBERTSON BOUND</span></p>
+
+<p>Feed in the fundamental commutation relation inherited from Born and Jordan,
+[<i>x̂</i>,&thinsp;<i>p̂</i>]&nbsp;=&nbsp;<i>i</i>ħ, and out drops Heisenberg's principle in its exact
+modern form:</p>
+
+<p class="eq"><span class="m">Δ<i>x</i>&thinsp;Δ<i>p</i> ≥ ħ/2</span>
+<span class="eqno">UNCERTAINTY</span></p>
+
+<p>Note what this is <em>not</em>. It is not about clumsy measuring instruments
+disturbing the particle — it is a theorem about the state itself, exactly as a
+sharply localised pulse of sound necessarily contains a broad band of frequencies.
+Position and momentum are Fourier-conjugate descriptions of one wavefunction
+(Chapter&nbsp;3), and the bound is saturated only by Gaussian wave packets. The
+energy–time relation Δ<i>E</i>&thinsp;Δ<i>t</i>&nbsp;≳&nbsp;ħ/2 is subtler — time is a parameter,
+not an operator, so there Δ<i>t</i> means the timescale over which the state
+appreciably changes: sharp energies mean slow change, which is why long-lived
+atomic levels emit narrow spectral lines and short-lived ones emit broad
+&ldquo;natural-linewidth&rdquo; smears.</p>
+
+<div class="callout gold">
+  <span class="tag">Why ħ runs the universe</span>
+  <p>Δ<i>x</i>&thinsp;Δ<i>p</i>&nbsp;≥&nbsp;ħ/2 is a structural law, and it does real load-bearing
+  work: squeeze an electron into an atom-sized Δ<i>x</i>&nbsp;≈&nbsp;0.1&nbsp;nm and it
+  <em>must</em> carry momentum spread — hence kinetic energy of electron-volt scale.
+  That zero-point pressure is what stops the electron spiralling into the nucleus,
+  sets the size of atoms, and (Chapter&nbsp;7) is exactly the effect that a quantum
+  dot's size dials up and down to choose its colour.</p>
+</div>
+
+<h2 id="dynamics"><span class="no">2.6</span>Motion: the state turns</h2>
+
+<p>Postulate V is a first-order, <em>linear</em> differential equation, so its solutions
+superpose and its evolution preserves inner products. Formally, for a
+time-independent Hamiltonian,</p>
+
+<p class="eq"><span class="m">|ψ(<i>t</i>)⟩ = <i>Û</i>(<i>t</i>)|ψ(0)⟩,&emsp;
+<i>Û</i>(<i>t</i>) = <i>e</i><sup>−<i>i</i><i>Ĥ</i><i>t</i>/ħ</sup>,&emsp;
+<i>Û</i><sup>†</sup><i>Û</i> = 𝟙</span>
+<span class="eqno">UNITARY EVOLUTION</span></p>
+
+<p>Evolution is a rigid <em>rotation</em> of the state vector in Hilbert space: lengths
+and angles — hence all probabilities — are shuffled but never leaked. (Unitarity is
+the quantum conservation of probability, and its apparent violation by black holes
+is one of the deepest open arguments in physics.) Expand in energy eigenstates
+<i>Ĥ</i>|<i>E</i><sub>n</sub>⟩&nbsp;=&nbsp;<i>E</i><sub>n</sub>|<i>E</i><sub>n</sub>⟩ and the whole of dynamics
+becomes phases:</p>
+
+<p class="eq"><span class="m">|ψ(<i>t</i>)⟩ = <span class="big">∑</span><sub>n</sub> <i>c</i><sub>n</sub>&thinsp;
+<i>e</i><sup>−<i>i</i><i>E</i><sub>n</sub><i>t</i>/ħ</sup>|<i>E</i><sub>n</sub>⟩</span>
+<span class="eqno">PHASE CLOCKWORK</span></p>
+
+<p>Each energy component spins its own little clock at rate <i>E</i><sub>n</sub>/ħ. An
+energy <em>eigenstate</em> only acquires a global phase — nothing observable moves,
+which is why they are called <strong>stationary states</strong> and why atoms in them do not
+radiate: Bohr's mysterious postulate, now a two-line theorem. All change, anywhere,
+is the drift of <em>relative</em> phase between energy components — the two-level beat
+in Chapter&nbsp;3's box, the Larmor precession of a spin in Chapter&nbsp;4, chemistry
+itself.</p>
+
+<p>Two consequences knit the theory to older physics. <strong>Ehrenfest's theorem</strong>:
+expectation values obey Newton-like equations,
+d⟨<i>x</i>⟩/d<i>t</i>&nbsp;=&nbsp;⟨<i>p</i>⟩/<i>m</i> and d⟨<i>p</i>⟩/d<i>t</i>&nbsp;=&nbsp;−⟨∂<i>V</i>/∂<i>x</i>⟩ — so
+well-localised wave packets ride classical trajectories, and the classical world
+survives as the theory's coarse-grained shadow. And <strong>conservation laws are
+commutators</strong>: any observable with [<i>Ĥ</i>,&thinsp;<i>Â</i>]&nbsp;=&nbsp;0 has frozen statistics,
+d⟨<i>A</i>⟩/d<i>t</i>&nbsp;=&nbsp;(<i>i</i>/ħ)⟨[<i>Ĥ</i>,<i>Â</i>]⟩&nbsp;=&nbsp;0. Symmetries generate the
+conserved quantities — momentum generates translations, angular momentum rotations,
+the Hamiltonian time itself (Noether's insight, wearing quantum clothes; made exact
+by Wigner and Stone). Heisenberg's original formulation stands to Schrödinger's as
+two views of one rotation: states fixed and operators turning,
+d<i>Â</i>/d<i>t</i>&nbsp;=&nbsp;(<i>i</i>/ħ)[<i>Ĥ</i>,&thinsp;<i>Â</i>] — identical predictions, and the form
+that survives into quantum field theory.</p>
+
+<h2 id="qubit"><span class="no">2.7</span>The hydrogen atom of the formalism: the qubit</h2>
+
+<p>The smallest quantum system has a two-dimensional Hilbert space — a
+<strong>qubit</strong>. Its basis kets |0⟩ and |1⟩ might be spin up/down (Chapter&nbsp;4), a
+photon's two polarisations, or the ground and excited states of an atom. The most
+general state, with the useless global phase spent, is</p>
+
+<p class="eq"><span class="m">|ψ⟩ = cos&thinsp;(θ/2)&thinsp;|0⟩ +
+<i>e</i><sup><i>i</i>φ</sup> sin&thinsp;(θ/2)&thinsp;|1⟩</span>
+<span class="eqno">THE QUBIT</span></p>
+
+<p>Two real angles: a point on a sphere (the Bloch sphere — poles are |0⟩ and |1⟩,
+the equator holds the equal superpositions, differing only in phase φ). Every
+statement in this chapter can be tried out here by hand, which is what the
+apparatus below is for: set the dial, predict |⟨0|ψ⟩|²&nbsp;=&nbsp;cos²(θ/2), then let the
+measurements fall where they may — singly random, collectively lawful.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The qubit dial</span>
+    <span class="hint">set θ and φ, then measure — one click is chance, a thousand are law</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="qb" style="aspect-ratio: 2.4 / 1; min-height: 280px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="qb-th">polar angle θ</label>
+      <input type="range" id="qb-th" min="0" max="180" step="1" value="60">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="qb-ph">phase φ</label>
+      <input type="range" id="qb-ph" min="0" max="360" step="1" value="0">
+      <output></output>
+    </div>
+    <div class="ctl"><button class="btn primary" id="qb-m1">measure ×1</button></div>
+    <div class="ctl"><button class="btn" id="qb-m100">measure ×100</button></div>
+    <div class="ctl"><button class="btn" id="qb-clr">clear tally</button></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">P(0) predicted <b id="qb-p0">—</b></span>
+    <span class="ro">tally <b id="qb-tally">0 runs</b></span>
+    <span class="ro">observed frequency of 0 <b id="qb-f0">—</b></span>
+    <span class="ro" id="qb-last"></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p>Notice what the phase slider does <em>not</em> do: φ leaves P(0) and P(1) untouched.
+In the measurement basis, phase is invisible. But it is not idle — rotate the
+measurement (or evolve the state; they are the same rotation seen from opposite
+sides) and φ becomes the difference between constructive and destructive
+interference. A qubit's phase is where quantum computers hide their work, which is
+the subject of this almanac's companion,
+<a href="/quantum/">The Interference Engine</a>.</p>
+
+<p>The machinery is now complete. What remains is to point it at the world: at a
+particle in a potential (next chapter), at the electron's private compass
+(Chapter&nbsp;4), at two particles that share one state (Chapter&nbsp;5), at the
+electromagnetic field itself (Chapter&nbsp;6) — and finally at a crystal small enough
+to make the box's walls a design parameter (Chapter&nbsp;7).</p>
+
+</div>
+
+<nav class="chapnav">
+  <a href="origins.html"><span class="dir">← Chapter 1</span><span class="title">The Crisis</span></a>
+  <a class="next" href="wavefunction.html"><span class="dir">Chapter 3 →</span><span class="title">Wavefunctions at Work</span></a>
+</nav>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, seg, clamp, label, line, fmtNum } = Q;
+
+  /* ============ phasor addition ============ */
+  let delta = 60 * Math.PI / 180, ratio = 1, distMode = "q";
+
+  const ph = canvas("ph", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * 0.32, cy = h * 0.56;
+    const A1 = Math.min(w, h) * 0.30;         // arrow 1 length
+    const A2 = A1 * ratio;
+
+    // unit circle backdrop
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, A1, 0, Q.TAU); ctx.stroke();
+    line(ctx, cx - A1 * 1.25, cy, cx + A1 * 1.35, cy, C.line2);
+    line(ctx, cx, cy - A1 * 1.25, cx, cy + A1 * 1.25, C.line2);
+    label(ctx, "Re", cx + A1 * 1.35 - 14, cy - 6);
+    label(ctx, "Im", cx + 6, cy - A1 * 1.25 + 12);
+
+    function arrow(x0, y0, dx, dy, col, wdt) {
+      const x1 = x0 + dx, y1 = y0 + dy;
+      ctx.strokeStyle = col; ctx.fillStyle = col; ctx.lineWidth = wdt || 2;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      const a = Math.atan2(dy, dx);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x1 - 9 * Math.cos(a - 0.4), y1 - 9 * Math.sin(a - 0.4));
+      ctx.lineTo(x1 - 9 * Math.cos(a + 0.4), y1 - 9 * Math.sin(a + 0.4));
+      ctx.fill();
+    }
+
+    // ψ1 along Re axis; ψ2 at angle δ, tip-to-tail
+    const d1x = A1, d1y = 0;
+    const d2x = A2 * Math.cos(-delta), d2y = A2 * Math.sin(-delta);
+    arrow(cx, cy, d1x, d1y, C.cyan);
+    label(ctx, "ψ₁", cx + d1x * 0.5, cy - 10, { color: C.cyan, font: Q.MONO_B });
+    arrow(cx + d1x, cy + d1y, d2x, d2y, C.photon);
+    label(ctx, "ψ₂", cx + d1x + d2x * 0.5 + 8, cy + d1y + d2y * 0.5, { color: C.photon, font: Q.MONO_B });
+    if (distMode === "q") {
+      arrow(cx, cy, d1x + d2x, d1y + d2y, C.violet, 2.6);
+      label(ctx, "ψ₁+ψ₂", cx + (d1x + d2x) * 0.62, cy + (d1y + d2y) * 0.62 + 16, { color: C.violet, font: Q.MONO_B });
+    }
+
+    // probability bars at right
+    const q = (1 + ratio * ratio + 2 * ratio * Math.cos(delta)); // |1 + r e^{iδ}|²
+    const cl = 1 + ratio * ratio;
+    const maxP = Math.max(4, cl * 1.2);
+    const bx = w * 0.68, bw = w * 0.09, bh = h * 0.62, by = h * 0.82;
+    function bar(x, val, col, name) {
+      const hh = (val / maxP) * bh;
+      ctx.fillStyle = col; ctx.fillRect(x, by - hh, bw, hh);
+      label(ctx, name, x + bw / 2, by + 16, { align: "center" });
+      label(ctx, val.toFixed(2), x + bw / 2, by - hh - 8, { align: "center", color: C.ink, font: Q.MONO_B });
+    }
+    bar(bx, distMode === "q" ? q : cl, distMode === "q" ? C.violet : C.danger,
+      distMode === "q" ? "|ψ₁+ψ₂|²" : "P₁+P₂");
+    bar(bx + bw * 1.6, cl, "rgba(188,183,209,0.35)", "classical ref");
+    label(ctx, "(units of |ψ₁|²)", bx, by + 32, {});
+  });
+
+  function phRead() {
+    const q = (1 + ratio * ratio + 2 * ratio * Math.cos(delta));
+    const cl = 1 + ratio * ratio;
+    document.getElementById("ph-q").textContent = q.toFixed(3);
+    document.getElementById("ph-c").textContent = cl.toFixed(3);
+    const note = document.getElementById("ph-note");
+    if (distMode === "c") note.textContent = "A record of the route exists — arrows no longer add; probabilities do.";
+    else if (Math.abs(delta - Math.PI) < 0.06 && Math.abs(ratio - 1) < 0.03)
+      note.textContent = "Total cancellation: two possible routes, zero arrivals. No classical story does this.";
+    else if (delta < 0.06 || delta > Q.TAU - 0.06)
+      note.textContent = "Fully aligned: up to twice the classical rate — constructive interference.";
+    else note.textContent = "";
+  }
+  slider("ph-phase", (v) => v + "°", (v) => { delta = v * Math.PI / 180; phRead(); ph.redraw(); });
+  slider("ph-r", (v) => v.toFixed(2), (v) => { ratio = v; phRead(); ph.redraw(); });
+  seg("ph-dist", (v) => { distMode = v; phRead(); ph.redraw(); });
+
+  /* ============ qubit dial ============ */
+  let th = 60 * Math.PI / 180, phi = 0, n0 = 0, n1 = 0;
+  const rnd = Q.rng(1927);
+  let flash = null; // {v, t}
+
+  const qb = canvas("qb", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w * 0.26, cy = h * 0.52, R = Math.min(w, h) * 0.36;
+
+    // Bloch meridian (circle), poles labelled
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Q.TAU); ctx.stroke();
+    ctx.setLineDash([2, 4]);
+    ctx.beginPath(); ctx.ellipse(cx, cy, R, R * 0.22, 0, 0, Q.TAU); ctx.stroke();
+    ctx.setLineDash([]);
+    label(ctx, "|0⟩", cx, cy - R - 8, { align: "center", color: C.ink, font: Q.MONO_B });
+    label(ctx, "|1⟩", cx, cy + R + 16, { align: "center", color: C.ink, font: Q.MONO_B });
+
+    // state vector: draw meridian position (θ from top), φ as equatorial hue rotation
+    const sx = cx + R * Math.sin(th) * Math.cos(phi * 0.9);
+    const sy = cy - R * Math.cos(th);
+    ctx.strokeStyle = C.violet; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(sx, sy); ctx.stroke();
+    ctx.fillStyle = C.violet;
+    ctx.beginPath(); ctx.arc(sx, sy, 5, 0, Q.TAU); ctx.fill();
+    label(ctx, "θ=" + Math.round(th * 180 / Math.PI) + "°  φ=" + Math.round(phi * 180 / Math.PI) + "°",
+      cx, cy + R + 34, { align: "center", color: C.ink2 });
+
+    // amplitudes text
+    const a0 = Math.cos(th / 2), a1 = Math.sin(th / 2);
+    label(ctx, "|ψ⟩ = " + a0.toFixed(3) + "|0⟩ + e^(i" + Math.round(phi * 180 / Math.PI) + "°)·" + a1.toFixed(3) + "|1⟩",
+      w * 0.52, h * 0.16, { color: C.ink, font: Q.mono(12.5, true) });
+
+    // histogram
+    const p0 = a0 * a0;
+    const bx = w * 0.55, bw = w * 0.12, by = h * 0.80, bh = h * 0.50;
+    function bar(x, frac, col, name, pred) {
+      ctx.fillStyle = "rgba(236,233,244,0.07)";
+      ctx.fillRect(x, by - bh, bw, bh);
+      ctx.fillStyle = col;
+      ctx.fillRect(x, by - bh * frac, bw, bh * frac);
+      // predicted tick
+      ctx.strokeStyle = C.ink; ctx.lineWidth = 1.4;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(x - 4, by - bh * pred); ctx.lineTo(x + bw + 4, by - bh * pred); ctx.stroke();
+      ctx.setLineDash([]);
+      label(ctx, name, x + bw / 2, by + 16, { align: "center", font: Q.MONO_B, color: C.ink2 });
+    }
+    const N = n0 + n1;
+    bar(bx, N ? n0 / N : 0, C.cyan, "outcome 0", p0);
+    bar(bx + bw * 1.7, N ? n1 / N : 0, C.photon, "outcome 1", 1 - p0);
+    label(ctx, "dashes = Born-rule prediction", bx, by - bh - 10, {});
+
+    // measurement flash
+    if (flash) {
+      ctx.fillStyle = flash.v === 0 ? C.cyan : C.photon;
+      ctx.font = Q.mono(30, true);
+      ctx.textAlign = "center";
+      ctx.fillText(flash.v === 0 ? "→ 0" : "→ 1", w * 0.90, h * 0.5);
+      ctx.textAlign = "left";
+    }
+  });
+
+  function qbRead() {
+    const p0 = Math.pow(Math.cos(th / 2), 2);
+    document.getElementById("qb-p0").textContent = p0.toFixed(3);
+    const N = n0 + n1;
+    document.getElementById("qb-tally").textContent = fmtNum(N) + " runs";
+    document.getElementById("qb-f0").textContent = N ? (n0 / N).toFixed(3) : "—";
+  }
+  function measure(n) {
+    const p0 = Math.pow(Math.cos(th / 2), 2);
+    let last = null;
+    for (let i = 0; i < n; i++) {
+      const v = rnd() < p0 ? 0 : 1;
+      if (v === 0) n0++; else n1++;
+      last = v;
+    }
+    flash = { v: last };
+    document.getElementById("qb-last").textContent = n === 1
+      ? "collapsed to |" + last + "⟩ — repeat-measure now gives " + last + " with certainty"
+      : "";
+    qbRead(); qb.redraw();
+  }
+  slider("qb-th", (v) => v + "°", (v) => { th = v * Math.PI / 180; qbRead(); qb.redraw(); });
+  slider("qb-ph", (v) => v + "°", (v) => { phi = v * Math.PI / 180; qb.redraw(); });
+  document.getElementById("qb-m1").addEventListener("click", () => measure(1));
+  document.getElementById("qb-m100").addEventListener("click", () => measure(100));
+  document.getElementById("qb-clr").addEventListener("click", () => {
+    n0 = n1 = 0; flash = null; document.getElementById("qb-last").textContent = "";
+    qbRead(); qb.redraw();
+  });
+  qbRead();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

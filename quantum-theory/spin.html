@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spin &amp; Identity — Quanta</title>
+<meta name="description" content="Spin-half and the Stern–Gerlach experiment, Pauli matrices and spinors, identical particles, the spin–statistics divide between bosons and fermions, and how the exclusion principle builds the periodic table and holds up dead stars.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="origins.html">1 · The Crisis</a>
+    <a href="machinery.html">2 · The Machinery</a>
+    <a href="wavefunction.html">3 · Wavefunctions</a>
+    <a href="spin.html" aria-current="page">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html">5 · Entanglement</a>
+    <a href="fields.html">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 4</p>
+  <h1>Spin &amp; Identity</h1>
+  <p class="standfirst">The electron carries a property with no classical ancestor: an
+  intrinsic angular momentum that comes in exactly two values along any axis you
+  choose to ask about, and that needs two full turns to come back to itself. Combine
+  spin with the perfect indistinguishability of identical particles and you get the
+  deepest sorting of matter there is — bosons and fermions — and, from one austere
+  rule, the periodic table, the rigidity of your desk, and the fate of dying stars.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="sg"><span class="no">4.1</span>The experiment that split the beam</h2>
+
+<p>In Frankfurt in 1922, Otto Stern and Walther Gerlach fired a beam of silver
+atoms through a strongly non-uniform magnetic field. A magnetic moment in such a
+field feels a net force proportional to its component μ<sub>z</sub> along the gradient.
+Classically the atoms' moments should point every which way, so the beam should
+smear into a continuous band. What appeared on the glass plate — legend says only
+after Stern's sulphurous cigar smoke helped develop the faint silver deposit — was
+<em>two sharp spots</em>. Not a smear; not three or five spots; two.</p>
+
+<p>The measured component came out as ±ħ/2 and nothing else, along whatever axis
+the magnet defined. This is <strong>space quantisation</strong> at its starkest: ask any
+direction, and the answer is one bit. The effect does not come from orbital motion —
+silver's single valence electron sits in an s-state with zero orbital angular
+momentum (§3.5). It took until 1925 for two Dutch students, Goudsmit and
+Uhlenbeck, to name the culprit: the electron possesses an <strong>intrinsic</strong>
+angular momentum, <strong>spin</strong>, of magnitude <i>s</i>&nbsp;=&nbsp;½. The word is a trap and
+everyone falls into it once: nothing rotates. A spinning charged ball of any
+plausible electron size would need its equator moving faster than light to make the
+measured moment; the electron is, as far as every experiment can tell, a point.
+Spin is angular momentum the particle simply <em>has</em>, as it has charge — and in
+Dirac's 1928 relativistic equation it emerges automatically, unasked, with the
+right magnitude.</p>
+
+<h2 id="pauli"><span class="no">4.2</span>Half-integer machinery</h2>
+
+<p>A two-outcome observable needs the two-dimensional Hilbert space of §2.7: the
+electron's spin is nature's own qubit. Write |↑⟩ and |↓⟩ for the ±ħ/2 states along
+<i>z</i>; a general spin state is a two-component complex vector, a <strong>spinor</strong>.
+The spin observables are <i>Ŝ</i><sub>i</sub>&nbsp;=&nbsp;(ħ/2)σ<sub>i</sub>, built from the
+<strong>Pauli matrices</strong>:</p>
+
+<p class="eq"><span class="m">σ<sub>x</sub> =
+<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">0&nbsp;&nbsp;1<br>1&nbsp;&nbsp;0</span><span class="up">)</span>&emsp;
+σ<sub>y</sub> =
+<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">0&nbsp;−<i>i</i><br><i>i</i>&nbsp;&nbsp;&nbsp;0</span><span class="up">)</span>&emsp;
+σ<sub>z</sub> =
+<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;&nbsp;0<br>0&nbsp;−1</span><span class="up">)</span></span>
+<span class="eqno">PAULI, 1927</span></p>
+
+<p>They obey [<i>Ŝ</i><sub>x</sub>,&thinsp;<i>Ŝ</i><sub>y</sub>]&nbsp;=&nbsp;<i>i</i>ħ<i>Ŝ</i><sub>z</sub> and cyclic —
+the algebra of rotations — so no two spin components commute, and the Robertson
+bound (§2.5) forbids any state from having a definite spin direction in the
+classical sense. The eigenstates along <i>x</i> are equal superpositions of up and
+down along <i>z</i>: |±x⟩&nbsp;=&nbsp;(|↑⟩&nbsp;±&nbsp;|↓⟩)/√2. Measure σ<sub>z</sub> on |+x⟩ and you
+get ±1 with even odds — the apparatus below turns this arithmetic into beams you
+can watch.</p>
+
+<p>Two more properties complete the electron's dossier. First, the magnetic moment
+tied to spin is μ&nbsp;=&nbsp;<i>g</i>(<i>e</i>ħ/4<i>m</i><sub>e</sub>) with <i>g</i>&nbsp;≈&nbsp;2 — twice the
+classical gyromagnetic ratio, again delivered free by Dirac's equation (its
+measured excess over 2, one part in 800, is Chapter&nbsp;6's crown jewel). In a
+magnetic field the spin's phases drift (§2.6) and ⟨<b>S</b>⟩ precesses at the Larmor
+frequency — for protons, 42.58&nbsp;MHz per tesla, and that precession, mapped in
+water, is the entire physical basis of MRI. Second, and stranger: rotating a spinor
+by 360° multiplies it by −1; only after 720° does it return. A phase of −1 is
+invisible on one particle but real in interference — neutron interferometers have
+rotated one arm's spin through 360° and watched the fringes flip, exactly as the
+half-integer mathematics demands.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The Stern–Gerlach cascade</span>
+    <span class="hint">three analysers in series — try z → x → z, then let the middle one stop measuring</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-sg" style="aspect-ratio: 2.6 / 1; min-height: 260px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>analyser 1</label>
+      <span class="seg" id="sg-a1">
+        <button data-v="z" class="on">z</button>
+        <button data-v="x">x</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label>analyser 2</label>
+      <span class="seg" id="sg-a2">
+        <button data-v="z">z</button>
+        <button data-v="x" class="on">x</button>
+        <button data-v="off">pass all (no record)</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label>analyser 3</label>
+      <span class="seg" id="sg-a3">
+        <button data-v="z" class="on">z</button>
+        <button data-v="x">x</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">surviving the “+” ports <b id="sg-out">—</b></span>
+    <span class="ro" id="sg-note" style="color:var(--ink-2)"></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p>The cascade teaches the theory's rudest lesson. Filter spins to +<i>z</i>, then to
++<i>x</i>, then ask about <i>z</i> again — and half come out −<i>z</i>. The middle
+measurement did not merely <em>find</em> the <i>x</i>-value; by rendering it definite it
+<em>erased</em> the previously definite <i>z</i>-value, because no state has both (the
+operators do not commute). And if the middle analyser passes both beams
+<em>without recording which</em>, the erasure never happens: recombine the paths
+coherently and the original polarisation marches through untouched. Measurement is
+not peeking. It is participation.</p>
+
+<h2 id="identical"><span class="no">4.3</span>Two of a kind: the exchange rule</h2>
+
+<p>For several particles, Postulate&nbsp;I gains its promised clause: the joint Hilbert
+space is the <strong>tensor product</strong> of the parts, spanned by products like
+|<i>a</i>⟩<sub>1</sub>|<i>b</i>⟩<sub>2</sub>. (Most joint states are <em>not</em> products — they are
+entangled sums of products; that bombshell is Chapter&nbsp;5's.) But when the particles
+are <em>identical</em> — every electron matching every other in mass, charge and spin
+to the last measured decimal — quantum mechanics adds a constraint with no
+classical parallel. Classically, identical twins can still be tracked by their
+trajectories: <em>this</em> one came from the left. Quantum mechanically there are no
+trajectories to track (§3.1); a two-electron state in which &ldquo;electron 1 is here,
+electron 2 is there&rdquo; and its swap are indistinguishable <em>in principle</em>. The
+label swap is unobservable, so exchanging them may change the state by at most a
+phase, and doing it twice must return the original: the phase is ±1. Nature uses
+both options, and never mixes them for a given species:</p>
+
+<div class="axiom">
+  <span class="tag">The symmetrisation postulate</span>
+  <p><strong>Bosons</strong> (integer spin: photons, pions, ⁴He atoms, the Higgs) take the
+  <b>+</b>: the many-particle state is <em>symmetric</em> under any exchange,
+  Ψ(2,1)&nbsp;=&nbsp;+Ψ(1,2).</p>
+  <p><strong>Fermions</strong> (half-integer spin: electrons, protons, neutrons, quarks,
+  ³He) take the <b>−</b>: the state is <em>antisymmetric</em>,
+  Ψ(2,1)&nbsp;=&nbsp;−Ψ(1,2).</p>
+  <p>That spin decides the sign — the <strong>spin–statistics theorem</strong> — is provable
+  only in relativistic quantum field theory (Pauli, 1940), one of the deepest
+  &ldquo;why&rdquo;s the deeper theory answers.</p>
+</div>
+
+<p>The minus sign is the most consequential sign in science. Put two fermions in
+the same single-particle state and antisymmetry demands
+Ψ&nbsp;=&nbsp;−Ψ&nbsp;=&nbsp;0: the configuration does not exist. This is the
+<strong>Pauli exclusion principle</strong> (1925): no two identical fermions may occupy one
+quantum state. Fermions are nature's individualists, stacking one per state up the
+energy ladder. Bosons are the opposite — the symmetric sum actually
+<em>amplifies</em> amplitudes for bunching (a factor √<span class="ol"><i>n</i>+1</span> for
+joining <i>n</i> others), so bosons herd.</p>
+
+<h2 id="table"><span class="no">4.4</span>One rule, one universe of consequences</h2>
+
+<h3>Fermions build structure…</h3>
+
+<ul>
+  <li><strong>The periodic table is exclusion plus hydrogen's ladder.</strong> Each
+  hydrogen-like orbital (<i>n</i>,&thinsp;<i>l</i>,&thinsp;<i>m</i>) takes two electrons — one per spin.
+  Shells hold 2<i>n</i>²: 2, 8, 18, 32. Electrons stack upward, and the outermost,
+  part-filled shell does all the chemistry: the rows and columns of Mendeleev's
+  table are the bookkeeping of exclusion. Without the minus sign every electron
+  would sink into the 1s state; every element would be a slight variation on
+  hydrogen, and there would be no chemistry worth the name.</li>
+  <li><strong>Solidity.</strong> Push two atoms together and their electron clouds are
+  forced toward already-occupied states; exclusion resists with an effective
+  pressure far stronger than electrostatics alone. That your hand does not pass
+  through the table is, at bottom, antisymmetry.</li>
+  <li><strong>Dead stars.</strong> Compress matter until electrons form a degenerate gas
+  and exclusion supplies pressure even at absolute zero. That pressure holds up
+  white dwarfs — to a point: Chandrasekhar (1930) showed relativity caps the trick
+  at 1.4 solar masses. Beyond, collapse squeezes electrons into protons and
+  <em>neutron</em> degeneracy pressure makes a last stand at nuclear density — a
+  city-sized nucleus of a star — before gravity wins outright and a black hole
+  forms. The tombstones of stars are classified by which fermion was holding the
+  roof.</li>
+</ul>
+
+<h3>…bosons build intensity</h3>
+
+<ul>
+  <li><strong>The laser</strong> works because photons are bosons: stimulated emission is
+  the √<span class="ol"><i>n</i>+1</span> herding factor turned into an avalanche of
+  identical, in-phase photons.</li>
+  <li><strong>Bose–Einstein condensation</strong>: cool bosonic atoms below a microkelvin
+  and a macroscopic fraction drops into the single ground state — a wavefunction
+  you can photograph, first achieved with rubidium in 1995, seventy years after
+  Einstein predicted it.</li>
+  <li><strong>Superfluid helium and superconductivity</strong>: ⁴He below 2.17&nbsp;K flows
+  without viscosity; in metals, electrons — fermions — <em>pair up</em> (Cooper pairs,
+  BCS 1957) into composite bosons and condense, conducting without resistance. The
+  fermion/boson divide is so fundamental that ³He (fermion) and ⁴He (boson), which
+  are chemically identical, superflow by completely different mechanisms a thousand
+  times apart in temperature.</li>
+</ul>
+
+<table class="data">
+  <caption>The two families</caption>
+  <thead><tr><th></th><th>fermions</th><th>bosons</th></tr></thead>
+  <tbody>
+    <tr><td class="k">spin</td><td>½, 3/2, …</td><td>0, 1, 2, …</td></tr>
+    <tr><td class="k">exchange</td><td>Ψ → −Ψ (antisymmetric)</td><td>Ψ → +Ψ (symmetric)</td></tr>
+    <tr><td class="k">occupancy</td><td>one per state (exclusion)</td><td>unlimited — and favoured</td></tr>
+    <tr><td class="k">statistics</td><td>Fermi–Dirac</td><td>Bose–Einstein</td></tr>
+    <tr><td class="k">rôle</td><td>matter: structure, volume, chemistry</td><td>forces &amp; radiation: light, glue, condensates</td></tr>
+    <tr><td class="k">examples</td><td>e⁻, p, n, quarks, ν, ³He</td><td>γ, gluons, W/Z, Higgs, phonons, ⁴He</td></tr>
+  </tbody>
+</table>
+
+<div class="callout story">
+  <span class="tag">Composite identity</span>
+  <p>Whether a <em>composite</em> object herds or excludes depends on its total spin:
+  count the half-integer constituents. Hydrogen (p&thinsp;+&thinsp;e⁻: two fermions) is a
+  boson; deuterium (p&thinsp;+&thinsp;n&thinsp;+&thinsp;e⁻: three) is a fermion. Two isotopes of one
+  element can thus obey opposite statistics — and measurably do, in their spectra
+  and their condensates. Identity in quantum mechanics is arithmetic, not
+  philosophy.</p>
+</div>
+
+<p>One loose end. The singlet combination of two spins-½,
+(|↑↓⟩&nbsp;−&nbsp;|↓↑⟩)/√2 — total spin zero, antisymmetric, the state helium's two 1s
+electrons are locked in — has a property Einstein considered a reductio ad
+absurdum of the whole theory: neither spin has any state of its own, while the
+pair's anticorrelation is perfect along <em>every</em> axis at once. Whether that is
+absurdity or the fabric of the world is the next chapter.</p>
+
+</div>
+
+<nav class="chapnav">
+  <a href="wavefunction.html"><span class="dir">← Chapter 3</span><span class="title">Wavefunctions at Work</span></a>
+  <a class="next" href="entanglement.html"><span class="dir">Chapter 5 →</span><span class="title">Measurement &amp; Entanglement</span></a>
+</nav>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, seg, label, line } = Q;
+
+  /* Stern–Gerlach cascade.
+     Beam enters unpolarised. Analyser 1 & 3: z or x, keep "+" port.
+     Analyser 2: z, x, or off (passes everything, no record — coherent). */
+  let a1 = "z", a2 = "x", a3 = "z";
+
+  function fractions() {
+    // returns {f1, f2, f3, note} — fraction of original beam surviving each "+"
+    const f1 = 0.5;                     // unpolarised → half pass
+    let f2, f3;
+    if (a2 === "off") {
+      f2 = f1;                          // everything passes, state |+a1⟩ intact
+      f3 = f1 * (a3 === a1 ? 1 : 0.5);
+    } else {
+      f2 = f1 * (a2 === a1 ? 1 : 0.5);
+      f3 = f2 * (a3 === a2 ? 1 : 0.5);
+    }
+    return { f1, f2, f3 };
+  }
+
+  const NOTE = () => {
+    if (a2 === "off" && a1 === a3)
+      return "No middle measurement — no erasure: the |+" + a1 + "⟩ beam sails through analyser 3 completely. Coherence preserved.";
+    if (a2 !== "off" && a1 !== a2 && a3 === a1)
+      return "Analyser 2 made " + a2 + " definite, destroying the " + a1 + "-polarisation it inherited — so analyser 3 finds 50/50 again. Measuring one erases the other.";
+    if (a1 === a2 && a2 === a3 && a2 !== "off")
+      return "Same axis throughout: the second and third measurements just confirm the first. Repeatability, as Postulate IV promises.";
+    return "";
+  };
+
+  let dots = []; // animated beam particles
+  const rnd = Q.rng(1922);
+
+  const sg = canvas("fig-sg", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const y0 = h * 0.42;
+    const xs = [w * 0.14, w * 0.40, w * 0.66];   // analyser x positions
+    const aw = w * 0.09, ah = h * 0.42;
+    const axes = [a1, a2, a3];
+    const { f1, f2, f3 } = fractions();
+    const fr = [1, f1, f2, f3];
+
+    // oven
+    ctx.fillStyle = C.surface3; ctx.strokeStyle = C.line;
+    ctx.beginPath(); ctx.roundRect(10, y0 - 17, w * 0.07, 34, 5); ctx.fill(); ctx.stroke();
+    label(ctx, "oven", 10 + w * 0.035, y0 + 44, { align: "center", color: C.muted });
+    label(ctx, "unpolarised", 10 + w * 0.035, y0 + 58, { align: "center", color: C.muted });
+
+    // beam segments — width ∝ fraction
+    const segX = [10 + w * 0.07, xs[0], xs[0] + aw, xs[1], xs[1] + aw, xs[2], xs[2] + aw, w - 14];
+    for (let s = 0; s < 4; s++) {
+      const xA = segX[2 * s], xB = segX[2 * s + 1];
+      const th = Math.max(1.2, fr[s] * 16);
+      ctx.fillStyle = "rgba(242,193,78," + (0.25 + 0.5 * fr[s]) + ")";
+      ctx.fillRect(xA, y0 - th / 2, xB - xA, th);
+    }
+
+    // analysers
+    for (let i = 0; i < 3; i++) {
+      const off = axes[i] === "off";
+      ctx.fillStyle = off ? "rgba(35,32,69,0.5)" : C.surface3;
+      ctx.strokeStyle = off ? C.line2 : C.line;
+      ctx.beginPath(); ctx.roundRect(xs[i], y0 - ah / 2, aw, ah, 6); ctx.fill(); ctx.stroke();
+      label(ctx, off ? "open" : "SG-" + axes[i], xs[i] + aw / 2, y0 - ah / 2 - 8,
+        { align: "center", color: off ? C.muted : C.violet, font: Q.MONO_B });
+      if (!off) {
+        // "+" port straight through, "−" port deflected down & dumped
+        label(ctx, "+" + axes[i], xs[i] + aw + 4, y0 - 8, { color: C.ink2 });
+        const fPrev = fr[i], fPass = fr[i + 1];
+        const fDump = fPrev - fPass;
+        if (fDump > 0.001) {
+          ctx.strokeStyle = "rgba(224,96,112,0.55)";
+          ctx.lineWidth = Math.max(1, fDump * 14);
+          ctx.beginPath();
+          ctx.moveTo(xs[i] + aw - 4, y0 + 4);
+          ctx.quadraticCurveTo(xs[i] + aw + 26, y0 + 30, xs[i] + aw + 30, y0 + ah * 0.72);
+          ctx.stroke();
+          label(ctx, "−" + axes[i] + " dumped", xs[i] + aw + 34, y0 + ah * 0.74, { color: C.danger });
+        }
+      } else {
+        label(ctx, "both beams pass — no record kept", xs[i] + aw / 2, y0 + ah / 2 + 16, { align: "center", color: C.muted });
+      }
+    }
+
+    // detector
+    ctx.fillStyle = C.surface2;
+    ctx.fillRect(w - 14, y0 - 22, 6, 44);
+    label(ctx, "detector", w - 12, y0 + 58, { align: "right", color: C.muted });
+    label(ctx, (f3 * 100).toFixed(1) + "%", w - 20, y0 - 30, { align: "right", color: C.photon, font: Q.mono(14, true) });
+
+    // animated dots along the surviving beam
+    if (!Q.reducedMotion) {
+      if (rnd() < 0.5) dots.push({ p: 0 });
+      dots = dots.filter((d) => d.p < 1);
+      ctx.fillStyle = C.photon;
+      for (const d of dots) {
+        d.p += 0.008;
+        // survive cull at each analyser boundary proportionally
+        const x = segX[0] + d.p * (segX[7] - segX[0]);
+        let stage = 0;
+        for (let s = 0; s < 3; s++) if (x > xs[s] + aw) stage = s + 1;
+        if (d.cull === undefined && stage > (d.stage || 0)) {
+          d.stage = stage;
+          const keep = fr[stage] / fr[stage - 1];
+          if (rnd() > keep) { d.cull = true; }
+        }
+        if (d.cull) continue;
+        ctx.beginPath(); ctx.arc(x, y0, 2, 0, Q.TAU); ctx.fill();
+      }
+    }
+
+    // percentages under beam
+    const labels = ["100%", (f1 * 100).toFixed(0) + "%", (f2 * 100).toFixed(1) + "%", (f3 * 100).toFixed(1) + "%"];
+    for (let s = 0; s < 4; s++) {
+      const xA = segX[2 * s], xB = segX[2 * s + 1];
+      label(ctx, labels[s], (xA + xB) / 2, y0 - 20, { align: "center", color: C.ink2 });
+    }
+  }, { animate: true });
+
+  function update() {
+    const { f3 } = fractions();
+    document.getElementById("sg-out").textContent = (f3 * 100).toFixed(1) + " % of the original beam";
+    document.getElementById("sg-note").textContent = NOTE();
+  }
+  seg("sg-a1", (v) => { a1 = v; update(); });
+  seg("sg-a2", (v) => { a2 = v; update(); });
+  seg("sg-a3", (v) => { a3 = v; update(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

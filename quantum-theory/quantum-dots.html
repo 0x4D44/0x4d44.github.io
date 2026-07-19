@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quantum Dots — Quanta</title>
+<meta name="description" content="Quantum dots in full: semiconductor bands, excitons and the Brus equation, hot-injection synthesis, core–shell structures, blinking, QLED televisions, bio-imaging and spin qubits — with a live dot lab where size dials in colour. The physics behind the 2023 Nobel Prize.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="origins.html">1 · The Crisis</a>
+    <a href="machinery.html">2 · The Machinery</a>
+    <a href="wavefunction.html">3 · Wavefunctions</a>
+    <a href="spin.html">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html">5 · Entanglement</a>
+    <a href="fields.html">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html" aria-current="page">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 7</p>
+  <h1>Quantum Dots</h1>
+  <p class="standfirst">A quantum dot is a semiconductor crystal so small — a few
+  thousand atoms, a few nanometres — that the particle-in-a-box of Chapter&nbsp;3 stops
+  being a textbook exercise and becomes a manufacturing specification. Squeeze the
+  crystal and its energy levels spread; its colour is set not by what it is made of
+  but by <em>how big it is</em>. This is quantum mechanics you can hold up to a UV lamp:
+  the same physics from Planck's ovens, now glowing in television screens, surgical
+  theatres and quantum processors — and honoured with the 2023 Nobel Prize.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="bands"><span class="no">7.1</span>From one atom to a crystal: bands</h2>
+
+<p>Start with what Chapters&nbsp;3 and&nbsp;4 built. One atom has sharp levels. Bring two
+atoms together and each level splits in two (the electrons can share symmetrically
+or antisymmetrically); bring together the ~10²² atoms of a real crystal and each
+atomic level fans out into a <strong>band</strong> of that many states, packed so densely
+they form a near-continuum. Filling the bands with electrons — two per state,
+Pauli insisting — decides everything about a material's electrical life:</p>
+
+<ul>
+  <li>In a <strong>metal</strong> the topmost occupied band is part-full: states are
+  available at infinitesimal cost, and charge flows freely.</li>
+  <li>In a <strong>semiconductor</strong> the <strong>valence band</strong> is exactly full and the
+  next — the <strong>conduction band</strong> — exactly empty, separated by a forbidden
+  <strong>band gap</strong> <i>E</i><sub>g</sub>: 1.12&nbsp;eV in silicon, 1.74&nbsp;eV in cadmium selenide,
+  a few electron-volts in insulators (the distinction is only of degree).</li>
+</ul>
+
+<p>Promote an electron across the gap — thermally, electrically, or by absorbing a
+photon with <i>h</i>ν&nbsp;≥&nbsp;<i>E</i><sub>g</sub> — and two mobile characters appear at once:
+the electron in the conduction band, and the bubble it left behind, the
+<strong>hole</strong>, which behaves in every respect like a positive particle (Dirac's
+antimatter logic, domesticated in a crystal). Both move through the periodic
+lattice not with the free electron's mass but with an <strong>effective mass</strong>
+<i>m</i>* set by the band's curvature — in CdSe the electron acts <em>thirteen times
+lighter</em> than a free electron. Remember Chapter&nbsp;3: confinement energy scales as
+1/<i>m</i>. Light effective masses mean quantum effects at sizes an experimentalist
+can actually reach.</p>
+
+<p>One more character. The negative electron and positive hole attract, orbiting
+each other like a fragile, giant hydrogen atom called an <strong>exciton</strong> — but
+hydrogen rescaled by the crystal: the small effective masses and the
+semiconductor's strong dielectric screening (ε&nbsp;≈&nbsp;10) inflate the Bohr radius of
+§3.5 from 0.05&nbsp;nm to</p>
+
+<p class="eq"><span class="m"><i>a</i><sub>B</sub><sup>exc</sup> = ε&thinsp;<span class="frac"><span><i>m</i><sub>e</sub></span><span>μ</span></span>&thinsp;<i>a</i><sub>0</sub>
+&nbsp;≈&nbsp; 5.6 <span class="up">nm in CdSe</span>, ~10 <span class="up">in InP</span>, ~20 <span class="up">in PbS</span></span>
+<span class="eqno">THE EXCITON'S NATURAL SIZE</span></p>
+
+<p>That number is the whole plot. It is the size the electron–hole pair
+<em>wants</em> to be. Make a crystal <em>smaller</em> than it, and the pair is squeezed
+into a box tighter than its natural orbit: welcome to the
+<strong>strong confinement regime</strong>, where the box, not the Coulomb attraction,
+rules the energies — and rules them by Chapter&nbsp;3's formula.</p>
+
+<h2 id="brus"><span class="no">7.2</span>The Brus equation: size becomes colour</h2>
+
+<p>Model the dot as a sphere of radius <i>R</i> with hard walls (the surrounding
+ligands and solvent are a high potential barrier). The particle-in-a-sphere ground
+state has energy π²ħ²/2<i>m</i>*<i>R</i>² — the 1/<i>L</i>² lever of §3.2 — and both carriers
+pay it. Add back the electron–hole attraction as a first-order correction (Brus,
+1984) and the dot's optical gap is</p>
+
+<p class="eq"><span class="m"><i>E</i><sub>g</sub>(<i>R</i>) = <i>E</i><sub>g</sub><sup>bulk</sup> +
+<span class="frac"><span>ħ<sup>2</sup>π<sup>2</sup></span><span>2<i>R</i><sup>2</sup></span></span>
+<span class="up">(</span><span class="frac"><span>1</span><span><i>m</i><sub>e</sub>*</span></span> +
+<span class="frac"><span>1</span><span><i>m</i><sub>h</sub>*</span></span><span class="up">)</span>
+− 1.786&thinsp;<span class="frac"><span><i>e</i><sup>2</sup></span><span>4πε<sub>0</sub>ε<i>R</i></span></span></span>
+<span class="eqno">BRUS, 1984</span></p>
+
+<p>Read it as an engineer reads a datasheet:</p>
+
+<ul>
+  <li><strong>The bulk gap</strong> sets the floor — the colour an infinitely large crystal
+  would have. It chooses the neighbourhood (CdSe: red; InP: near-infrared; PbS: deep
+  infrared).</li>
+  <li><strong>The confinement term grows as 1/R²</strong> — the box term, doubled up
+  because electron <em>and</em> hole are each confined. It is the tuning knob: shrink
+  the dot and the gap opens, sliding the emission from red toward blue.</li>
+  <li><strong>The Coulomb term shrinks only as 1/R</strong>, and enters with a minus sign —
+  at small <i>R</i> the R² term always wins. Confinement beats attraction; the box
+  beats the atom.</li>
+</ul>
+
+<p>Emission runs the film backwards: an excited dot relaxes to its band edge in
+picoseconds (shedding heat), then the electron and hole annihilate — recombine —
+and the energy leaves as one photon at <i>h</i>ν&nbsp;=&nbsp;<i>E</i><sub>g</sub>(<i>R</i>). One size,
+one colour; a distribution of sizes, a distribution of colours — which is why
+synthetic control (§7.4) <em>is</em> optical purity. The hard-wall model
+overestimates confinement a little (real walls are finite, and tunnelling tails
+leak out — §3.4 again), but it captures the law: in the lab as in the equation,
+CdSe marches from deep red at 5&nbsp;nm radius to blue-green under 1.5, exactly the
+1/R² march. Drive it yourself:</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The dot lab</span>
+    <span class="hint">one slider, one equation, every colour — the Brus formula computed live</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="dot" style="aspect-ratio: 2.05 / 1; min-height: 380px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="dot-mat">material</label>
+      <span class="seg" id="dot-mat">
+        <button data-v="cdse" class="on">CdSe</button>
+        <button data-v="inp">InP (Cd-free)</button>
+        <button data-v="pbs">PbS (infrared)</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="dot-r">dot radius R</label>
+      <input type="range" id="dot-r" min="1.0" max="6.0" step="0.05" value="2.5">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">gap E<sub>g</sub>(R) <b id="dot-eg">—</b></span>
+    <span class="ro">emission λ <b id="dot-nm">—</b></span>
+    <span class="ro">confinement term <b id="dot-conf">—</b></span>
+    <span class="ro">Coulomb term <b id="dot-coul">—</b></span>
+    <span class="ro" id="dot-note" style="color:var(--ink-2)"></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<div class="callout gold">
+  <span class="tag">Do the sum yourself</span>
+  <p>CdSe, <i>R</i>&nbsp;=&nbsp;2&nbsp;nm: bulk gap 1.74&nbsp;eV; confinement
+  0.376/<i>R</i>²&thinsp;×&thinsp;(1/0.13&thinsp;+&thinsp;1/0.45)&nbsp;=&nbsp;0.93&nbsp;eV; Coulomb
+  −2.57/(10.2&thinsp;×&thinsp;2)&nbsp;=&nbsp;−0.13&nbsp;eV. Total ≈ 2.55&nbsp;eV →
+  λ&nbsp;=&nbsp;1239.84/2.55&nbsp;≈&nbsp;490&nbsp;nm: a two-nanometre dot of a <em>red</em> material
+  glows <em>blue-green</em>. Every constant is in the Lexicon; the arithmetic is
+  GCSE-level. That a child's television rests on it is the point of this almanac.</p>
+</div>
+
+<h2 id="history"><span class="no">7.3</span>Three discoveries of the same thing</h2>
+
+<p>Like much of quantum theory, the dot was found more than once, on both sides of
+the Iron Curtain, in two different states of matter.</p>
+
+<p><strong>In glass.</strong> Coloured filter glass — the deep reds and yellows of
+darkroom safelights and traffic signals — had been made for a century by growing
+tiny semiconductor crystallites (CdS, CdSe) inside molten glass, with an
+empirical folklore: the colour depended, mysteriously, on the heat treatment. In
+1981 Alexei Ekimov at the Vavilov State Optical Institute in Leningrad, studying
+copper-chloride-doped glasses by X-ray scattering and absorption, proved the
+correlation: the smaller the crystallites (down to ~2&nbsp;nm), the bluer the
+absorption edge — and with the theorist Alexander Efros he identified the cause as
+quantum size confinement. Generations of glassmakers had been tuning a quantum
+box by recipe, without knowing it.</p>
+
+<p><strong>In a flask.</strong> Independently, at Bell Labs in 1983, Louis Brus — studying
+colloidal CdS particles as photocatalysts — noticed that freshly-made small
+crystallites had measurably different spectra from the same material aged and
+grown slightly larger. He worked out the spherical-box theory above, putting the
+effect on a quantitative footing and, crucially, in <em>solution</em> — where
+chemistry could get at it.</p>
+
+<p><strong>Made to order.</strong> The field's third act was synthetic mastery: in 1993
+Murray, Norris and Bawendi at MIT published the <strong>hot-injection</strong> method
+(§7.4) — monodisperse CdSe dots at any chosen size from a repeatable recipe. Size
+control to within a lattice constant turned a laboratory curiosity into a
+material platform; the 2023 Nobel Prize in Chemistry went jointly to Bawendi, Brus
+and Ekimov, the committee noting that they had &ldquo;planted an important seed for
+nanotechnology&rdquo; — and, unusually for a Nobel citation, that the products were
+already glowing in living rooms.</p>
+
+<h2 id="synthesis"><span class="no">7.4</span>Growing a box, three thousand atoms at a time</h2>
+
+<p>The hot-injection synthesis is crystal engineering with kitchen drama. Into a
+flask of high-boiling solvent (octadecene, say) with long-chain
+<strong>ligands</strong> (oleic acid, phosphines) at ~300&nbsp;°C, inject a cold syringe of
+precursors — a cadmium salt and a selenium compound. The physics of the next
+ninety seconds decides everything, and it follows the classic LaMer curve:</p>
+
+<ol>
+  <li><strong>Burst nucleation.</strong> The injection supersaturates the solution
+  instantly; thousands of billions of tiny crystal seeds nucleate at once — and the
+  same burst crashes the supersaturation below the nucleation threshold, so no new
+  seeds form afterwards. One birth cohort, hence one size.</li>
+  <li><strong>Growth.</strong> Remaining precursor feeds the existing seeds. In the
+  diffusion-limited regime small dots grow faster than large ones —
+  <strong>size focusing</strong> — sharpening the distribution as it grows.</li>
+  <li><strong>Quench.</strong> At the target size — seconds to minutes, monitored live by
+  the colour of an aliquot under a UV torch — cool the flask. The ligands' oily
+  tails cap the surface, halting growth and keeping the dots colloidal, a stable
+  &ldquo;solution&rdquo; of crystals that pours like ink.</li>
+</ol>
+
+<p>Best practice adds a jacket. A bare dot's surface is a forest of dangling bonds —
+mid-gap trap states that swallow carriers and kill the glow. Growing a thin shell
+of a wider-gap semiconductor around the core (CdSe core, ZnS shell — a
+<strong>type-I core–shell</strong> heterostructure) walls the exciton away from the
+surface: quantum yields jump from a few percent toward unity, and stability
+improves by orders of magnitude. Commercial dots add graded alloy shells and
+polymer overcoats; the state of the art emits &gt;95% of absorbed photons with a
+spectral width under 25&nbsp;nm.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head"><span class="t">Anatomy of a commercial dot</span></div>
+  <div class="fig-body" style="padding: 16px">
+    <svg class="diagram" viewBox="0 0 640 300" role="img" aria-label="Cutaway of a core-shell quantum dot with ligands">
+      <!-- ligands -->
+      <g stroke="#85809f" stroke-width="1.6" fill="none" opacity="0.85">
+        <path d="M320 60 q 6 -16 -2 -30 q -6 -12 2 -24"/>
+        <path d="M382 78 q 16 -10 18 -26 q 2 -14 14 -20"/>
+        <path d="M424 130 q 18 -2 28 -14 q 8 -10 22 -10"/>
+        <path d="M430 190 q 18 6 32 0 q 12 -6 24 -2"/>
+        <path d="M396 240 q 12 14 28 16 q 14 2 20 12"/>
+        <path d="M330 268 q 4 16 -4 28"/>
+        <path d="M258 252 q -12 12 -28 12 q -14 0 -22 10"/>
+        <path d="M216 196 q -18 6 -32 0 q -12 -6 -24 0"/>
+        <path d="M212 136 q -18 -4 -26 -18 q -8 -12 -22 -14"/>
+        <path d="M248 84 q -12 -12 -12 -28 q 0 -14 -10 -22"/>
+      </g>
+      <!-- shell -->
+      <circle cx="320" cy="164" r="110" fill="#232045" stroke="#7e6bc4" stroke-width="2"/>
+      <!-- core with lattice dots -->
+      <circle cx="320" cy="164" r="70" fill="#2c2352" stroke="#b39dfc" stroke-width="1.5"/>
+      <g fill="#b39dfc" opacity="0.8">
+        <circle cx="300" cy="144" r="3"/><circle cx="322" cy="140" r="3"/><circle cx="344" cy="148" r="3"/>
+        <circle cx="290" cy="166" r="3"/><circle cx="312" cy="162" r="3"/><circle cx="334" cy="168" r="3"/><circle cx="354" cy="170" r="3"/>
+        <circle cx="298" cy="188" r="3"/><circle cx="320" cy="184" r="3"/><circle cx="342" cy="190" r="3"/>
+      </g>
+      <!-- exciton -->
+      <circle cx="312" cy="158" r="6" fill="none" stroke="#5fd0ee" stroke-width="2"/>
+      <text x="284" y="150" fill="#5fd0ee" font-family="ui-monospace,Menlo,monospace" font-size="11">e⁻</text>
+      <circle cx="334" cy="176" r="6" fill="none" stroke="#f2c14e" stroke-width="2"/>
+      <text x="344" y="192" fill="#f2c14e" font-family="ui-monospace,Menlo,monospace" font-size="11">h⁺</text>
+      <!-- labels -->
+      <g font-family="ui-monospace,Menlo,monospace" font-size="13" fill="#bcb7d1">
+        <text x="20" y="60">CdSe core — the box:</text>
+        <text x="20" y="78">radius sets the colour</text>
+        <text x="20" y="230">ZnS shell — wider gap:</text>
+        <text x="20" y="248">walls the exciton off the surface</text>
+        <text x="470" y="60">oleate ligands:</text>
+        <text x="470" y="78">stop growth, keep the</text>
+        <text x="470" y="96">dots dissolved, passivate</text>
+        <text x="470" y="114">dangling bonds</text>
+      </g>
+      <path d="M150 66 L252 118" stroke="#85809f" stroke-width="1"/>
+      <path d="M150 236 L214 210" stroke="#85809f" stroke-width="1"/>
+      <path d="M466 70 L400 92" stroke="#85809f" stroke-width="1"/>
+      <text x="228" y="292" fill="#85809f" font-family="ui-monospace,Menlo,monospace" font-size="12">total diameter ≈ 5–12 nm · ~10³–10⁵ atoms</text>
+    </svg>
+  </div>
+  <div class="fig-note">A type-I structure: both band edges of the shell lie outside the core's,
+  so electron <b>and</b> hole are confined to the core. Reverse the alignment (type-II) and the
+  carriers separate — useful for photovoltaics instead of light emission.</div>
+</figure>
+
+<div class="prose">
+
+<p>Colloids are not the only dots. Strain-driven <strong>epitaxial dots</strong>
+(Stranski–Krastanow growth: InAs islands self-assembling on GaAs) sit inside
+photonic structures as today's best single-photon guns. And
+<strong>electrostatically defined dots</strong> — puddles of a few electrons corralled by
+gate voltages in silicon or GaAs, boxes made of pure voltage — carry single
+electron spins as qubits: several of the leading quantum-computing platforms are,
+literally, quantum dots wired into the machinery of Chapter&nbsp;2.</p>
+
+<h2 id="optics"><span class="no">7.5</span>How a dot behaves under the lamp</h2>
+
+<ul>
+  <li><strong>Absorption is a staircase, emission is a needle.</strong> A dot absorbs
+  <em>everything</em> above its gap (higher levels and continuum pile up), so one UV
+  lamp excites every size of dot at once — but each dot <em>emits</em> only at its own
+  band edge. One excitation source, any output colour: the property displays
+  exploit.</li>
+  <li><strong>The Stokes shift</strong> — emission sits slightly redward of the first
+  absorption peak (band-edge fine structure and phonon shedding) — lets the glow
+  escape without being immediately re-absorbed by neighbouring dots.</li>
+  <li><strong>Blinking.</strong> Watch a single dot and it telegraphs: bright, dark,
+  bright, on timescales from milliseconds to minutes. The dark spells strike when
+  an extra charge strands in the dot: the next exciton then dies by
+  <strong>Auger recombination</strong> — dumping its energy into the spare carrier instead
+  of a photon, a picosecond process that outruns emission. Thick graded shells
+  tame it; understanding blinking was a twenty-year subplot of the field.</li>
+  <li><strong>One photon at a time.</strong> The same Auger effect means a small dot
+  almost never emits two photons together — pump it with pulses and you get
+  antibunched single photons on demand, the raw material of quantum optics and
+  quantum cryptography (§5.5).</li>
+</ul>
+
+<h2 id="uses"><span class="no">7.6</span>Where the boxes went</h2>
+
+<ul>
+  <li><strong>Displays.</strong> The &ldquo;Q&rdquo; in a QLED television is exactly this
+  chapter. A blue LED backlight pumps films of green and red dots whose emission
+  is spectrally narrow (~25&nbsp;nm) and tuned to the eye's primaries: purer
+  primaries, wider gamut (approaching the Rec.&thinsp;2020 standard), at high
+  brightness and without the burn-in of organic emitters. Current sets use
+  cadmium-free InP dots — the reason your remote's physics is also a regulatory
+  story. Next generation: electroluminescent QD-LED pixels, dots driven directly
+  by current, no backlight at all.</li>
+  <li><strong>Biology's torches.</strong> A dot is twenty times brighter than an organic
+  dye, does not photobleach through hours of imaging, and one synthesis yields a
+  full palette excited by one laser. Antibody-tagged dots track single receptors
+  on living cell membranes; near-infrared dots (PbS, InAs — wavelengths where
+  tissue is translucent) map lymph nodes and tumour margins in surgery.</li>
+  <li><strong>Light harvesting.</strong> Luminescent solar concentrators — dot-doped
+  window glass that pipes re-emitted light to photovoltaic edges; PbS dot solar
+  cells whose gap is <em>chosen</em> to harvest the infrared that silicon wastes; and
+  multiple-exciton generation, one hot photon paying out two electron–hole pairs,
+  probing past the Shockley–Queisser limit.</li>
+  <li><strong>Sensors and cameras.</strong> PbS-dot photodiode layers laminate onto
+  ordinary CMOS chips, giving cheap infrared vision — machine inspection, night
+  driving assistance, spectroscopy in a phone.</li>
+  <li><strong>Quantum machines.</strong> Epitaxial dots as single- and entangled-photon
+  sources; gate-defined silicon dots holding spin qubits with coherence times in
+  the seconds after isotopic purification — the exclusion principle, the qubit
+  dial and the Bell bench of earlier chapters, all working in one device family.</li>
+</ul>
+
+<h2 id="arc"><span class="no">7.7</span>The arc, closed</h2>
+
+<p>Follow the thread back. A television's red pixel glows at 630&nbsp;nm because an
+exciton recombined across a gap widened by confinement (this chapter), in a box
+whose levels exist because confined waves resonate (Chapter&nbsp;3), governed by a
+state vector turning unitarily (Chapter&nbsp;2), in a crystal held rigid by the
+exclusion principle (Chapter&nbsp;4), emitting into field modes whose grains Planck
+was forced to hypothesise in a desperate December (Chapter&nbsp;1) — and the photon
+that reaches your eye is detected, like everything else, one whole quantum at a
+time (Overview). One theory, unbroken, from a Berlin oven in 1900 to the screen
+in front of you. It remains strange. It has never yet been wrong.</p>
+
+<div class="callout story">
+  <span class="tag">A last number</span>
+  <p>A 3&nbsp;nm CdSe dot contains roughly four thousand atoms — big enough to pour,
+  ship and print by the tonne, small enough that removing a single monolayer of
+  atoms visibly shifts its colour. It is the largest object in this almanac whose
+  behaviour is set, wholesale, by a formula from Chapter&nbsp;3 — matter's quantum
+  nature, engineered rather than endured.</p>
+</div>
+
+</div>
+
+<nav class="chapnav">
+  <a href="fields.html"><span class="dir">← Chapter 6</span><span class="title">Fields &amp; Light</span></a>
+  <a class="next" href="lexicon.html"><span class="dir">Chapter 8 →</span><span class="title">The Lexicon</span></a>
+</nav>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, seg, clamp, label, line, wavelengthCSS } = Q;
+
+  /* Materials: bulk gap (eV), effective masses (m0), dielectric constant, exciton Bohr radius (nm) */
+  const MATS = {
+    cdse: { name: "CdSe", eg: 1.74, me: 0.13, mh: 0.45, eps: 10.2, ab: 5.6 },
+    inp:  { name: "InP",  eg: 1.35, me: 0.08, mh: 0.60, eps: 12.5, ab: 10 },
+    pbs:  { name: "PbS",  eg: 0.41, me: 0.09, mh: 0.11, eps: 17.2, ab: 20 },
+  };
+  let mat = MATS.cdse, R = 2.5;
+
+  const CONF_K = 0.3760;   // ħ²π²/2m0 in eV·nm²
+  const COUL_K = 2.570;    // 1.786·e²/4πε0 in eV·nm
+
+  function brus(m, r) {
+    const conf = CONF_K / (r * r) * (1 / m.me + 1 / m.mh);
+    const coul = COUL_K / (m.eps * r);
+    return { eg: m.eg + conf - coul, conf, coul };
+  }
+  const lamOf = (eg) => 1239.84 / eg;
+
+  function glowCSS(lam, alpha) {
+    if (lam >= 380 && lam <= 750) return wavelengthCSS(lam, alpha);
+    return "rgba(140,120,120," + (alpha == null ? 1 : alpha * 0.5) + ")"; // IR: dull
+  }
+
+  const dot = canvas("dot", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const { eg, conf, coul } = brus(mat, R);
+    const lam = lamOf(eg);
+    const visible = lam >= 380 && lam <= 750;
+    const col = glowCSS(lam);
+
+    /* ---- left: the dot to scale, with its standing wave ---- */
+    const cxx = w * 0.16, cyy = h * 0.36;
+    const rpx = R / 6 * Math.min(w * 0.12, h * 0.3);
+    // glow halo
+    if (visible) {
+      const g = ctx.createRadialGradient(cxx, cyy, rpx * 0.4, cxx, cyy, rpx * 3);
+      g.addColorStop(0, glowCSS(lam, 0.5));
+      g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g;
+      ctx.fillRect(cxx - rpx * 3, cyy - rpx * 3, rpx * 6, rpx * 6);
+    }
+    ctx.fillStyle = "#2c2352";
+    ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(cxx, cyy, rpx, 0, Q.TAU); ctx.fill(); ctx.stroke();
+    // standing wave inside (1S)
+    ctx.strokeStyle = "rgba(236,233,244,0.7)"; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let i = 0; i <= 60; i++) {
+      const u = i / 60;
+      const x = cxx - rpx + 2 * rpx * u;
+      const y = cyy - Math.sin(Math.PI * u) * rpx * 0.55;
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    label(ctx, "ψ₁ₛ", cxx, cyy - rpx - 10, { align: "center", color: C.ink2 });
+    label(ctx, "R = " + R.toFixed(2) + " nm", cxx, cyy + rpx + 20, { align: "center", color: C.ink, font: Q.MONO_B });
+    label(ctx, "~" + Math.round(4 / 3 * Math.PI * Math.pow(R, 3) * 18).toLocaleString("en-GB") + " atoms", cxx, cyy + rpx + 36, { align: "center", color: C.muted });
+
+    /* ---- middle: level diagram bulk vs dot ---- */
+    const lx = w * 0.335, lw = w * 0.24;
+    const topY = h * 0.10, botY = h * 0.78;
+    const scaleE = (botY - topY) / 4.2; // eV → px
+    const vbY = (E) => botY - E * scaleE;
+    // bulk bands
+    const bx = lx, bw2 = lw * 0.34;
+    ctx.fillStyle = "rgba(95,208,238,0.18)";
+    ctx.fillRect(bx, vbY(0) - 4, bw2, 26);            // valence band top
+    ctx.fillRect(bx, vbY(mat.eg) - 22, bw2, 26);      // conduction band bottom
+    label(ctx, "bulk " + mat.name, bx + bw2 / 2, botY + 18, { align: "center", color: C.muted });
+    label(ctx, "Eg = " + mat.eg.toFixed(2) + " eV", bx + bw2 / 2, vbY(mat.eg / 2), { align: "center", color: C.ink2 });
+    // dot levels
+    const dx = lx + lw * 0.55;
+    const gapTop = vbY(eg - coul * 0 ? eg : eg); // top level y
+    const dcol = visible ? col : C.muted;
+    line(ctx, dx, vbY(-conf * mat.me / (mat.me + mat.mh) * 0), dx + bw2, vbY(0), C.line2, 0); // spacer no-op
+    // hole levels (below 0) and electron levels above gap
+    const hShift = conf * (1 / mat.mh) / (1 / mat.me + 1 / mat.mh);
+    const eShift = conf * (1 / mat.me) / (1 / mat.me + 1 / mat.mh);
+    line(ctx, dx, vbY(-hShift) + 0, dx + bw2, vbY(-hShift), C.cyan, 2);
+    line(ctx, dx, vbY(mat.eg + eShift - coul), dx + bw2, vbY(mat.eg + eShift - coul), dcol, 2);
+    label(ctx, "1S(h)", dx + bw2 + 4, vbY(-hShift) + 4, { color: C.cyan });
+    label(ctx, "1S(e)", dx + bw2 + 4, vbY(mat.eg + eShift - coul) + 4, { color: dcol });
+    // arrow for emission
+    ctx.strokeStyle = dcol; ctx.lineWidth = 1.6;
+    const ax = dx + bw2 / 2;
+    ctx.beginPath(); ctx.moveTo(ax, vbY(mat.eg + eShift - coul) + 3); ctx.lineTo(ax, vbY(-hShift) - 8); ctx.stroke();
+    ctx.fillStyle = dcol;
+    ctx.beginPath(); ctx.moveTo(ax, vbY(-hShift) - 2); ctx.lineTo(ax - 5, vbY(-hShift) - 11); ctx.lineTo(ax + 5, vbY(-hShift) - 11); ctx.fill();
+    label(ctx, "dot (R = " + R.toFixed(1) + ")", dx + bw2 / 2, botY + 18, { align: "center", color: C.muted });
+    label(ctx, eg.toFixed(2) + " eV", ax + 8, vbY(mat.eg / 2) - 12, { color: C.ink, font: Q.MONO_B });
+
+    /* ---- right: emission spectrum ---- */
+    const sx = w * 0.66, sw = w * 0.30, sy = h * 0.10, sh = h * 0.42;
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(sx, sy, sw, sh);
+    // visible band underlay
+    const nm2x = (nm) => sx + (nm - 380) / (1100 - 380) * sw;
+    for (let nm = 380; nm <= 750; nm += 4) {
+      ctx.fillStyle = wavelengthCSS(nm, 0.12);
+      ctx.fillRect(nm2x(nm), sy, nm2x(nm + 4) - nm2x(nm) + 0.5, sh);
+    }
+    label(ctx, "visible", nm2x(560), sy + sh + 14, { align: "center" });
+    label(ctx, "infrared →", nm2x(950), sy + sh + 14, { align: "center" });
+    // emission Gaussian (FWHM 25 nm)
+    if (lam < 1100) {
+      ctx.strokeStyle = visible ? col : C.danger; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= 140; i++) {
+        const nm = 380 + (1100 - 380) * i / 140;
+        const v = Math.exp(-Math.pow((nm - lam) / 12, 2) / 2);
+        const y = sy + sh - v * (sh - 12);
+        i === 0 ? ctx.moveTo(nm2x(nm), y) : ctx.lineTo(nm2x(nm), y);
+      }
+      ctx.stroke();
+      label(ctx, Math.round(lam) + " nm", nm2x(clamp(lam, 400, 1060)), sy - 6, { align: "center", color: visible ? col : C.danger, font: Q.MONO_B });
+    } else {
+      label(ctx, "λ = " + (lam / 1000).toFixed(2) + " µm — off scale (deep IR)", sx + sw / 2, sy + sh / 2, { align: "center", color: C.danger });
+    }
+    for (const nm of [400, 600, 800, 1000]) {
+      label(ctx, nm, nm2x(nm), sy + sh + 28, { align: "center" });
+    }
+
+    /* ---- bottom: the vial row (CdSe reference series under UV) ---- */
+    const vy = h * 0.80, vh = h * 0.16;
+    const sizes = [1.2, 1.6, 2.0, 2.5, 3.2, 4.5];
+    label(ctx, "a CdSe size series under one UV lamp:", w * 0.05, vy - 8, { color: C.muted });
+    for (let i = 0; i < sizes.length; i++) {
+      const vx = w * 0.06 + i * w * 0.075;
+      const e2 = brus(MATS.cdse, sizes[i]);
+      const l2 = lamOf(e2.eg);
+      const c2 = glowCSS(l2);
+      // vial
+      ctx.fillStyle = c2;
+      ctx.globalAlpha = 0.9;
+      ctx.beginPath(); ctx.roundRect(vx, vy, w * 0.045, vh, 4); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "rgba(236,233,244,0.35)";
+      ctx.strokeRect(vx, vy, w * 0.045, vh);
+      label(ctx, sizes[i].toFixed(1), vx + w * 0.0225, vy + vh + 14, { align: "center" });
+      // marker for current selection
+      if (mat === MATS.cdse && Math.abs(sizes[i] - R) < 0.18) {
+        ctx.fillStyle = C.ink;
+        ctx.beginPath(); ctx.moveTo(vx + w * 0.0225, vy - 10); ctx.lineTo(vx + w * 0.0225 - 5, vy - 18); ctx.lineTo(vx + w * 0.0225 + 5, vy - 18); ctx.fill();
+      }
+    }
+    label(ctx, "R (nm)", w * 0.06 + 6 * w * 0.075 + 8, vy + vh + 14, {});
+    // UV lamp icon
+    ctx.fillStyle = "#7d5cff";
+    ctx.fillRect(w * 0.585, vy - 2, w * 0.04, 6);
+    label(ctx, "UV 365 nm", w * 0.605, vy + 16, { align: "center", color: "#9b8cff" });
+  });
+
+  function upd() {
+    const { eg, conf, coul } = brus(mat, R);
+    const lam = lamOf(eg);
+    document.getElementById("dot-eg").textContent = eg.toFixed(2) + " eV";
+    document.getElementById("dot-nm").textContent = lam < 1100 ? Math.round(lam) + " nm" : (lam / 1000).toFixed(2) + " µm";
+    document.getElementById("dot-conf").textContent = "+" + conf.toFixed(2) + " eV";
+    document.getElementById("dot-coul").textContent = "−" + coul.toFixed(2) + " eV";
+    const note = document.getElementById("dot-note");
+    if (R > mat.ab) note.textContent = "R exceeds the exciton Bohr radius (" + mat.ab + " nm for " + mat.name + "): weak confinement — the colour barely moves. The magic lives below that line.";
+    else if (lam < 380) note.textContent = "Gap pushed past the violet — real dots this small are at the edge of what surface chemistry can stabilise.";
+    else if (lam > 750) note.textContent = mat.name + " at this size emits in the infrared — invisible to the eye, ideal for tissue imaging and camera sensors.";
+    else note.textContent = "Strong confinement: the 1/R² box term is in charge. Shave atoms off, watch the glow walk toward blue.";
+    dot.redraw();
+  }
+  seg("dot-mat", (v) => { mat = MATS[v]; upd(); });
+  slider("dot-r", (v) => v.toFixed(2) + " nm", (v) => { R = v; upd(); });
+  upd();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
