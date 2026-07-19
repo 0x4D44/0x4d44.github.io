@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Machine — Boot to Desktop</title>
+<meta name="description" content="The PC that mddosem builds in Rust — real SeaBIOS firmware on emulated hardware, what an NT kernel demands of a machine, the QEMU and DOSBox-X oracles, and the rules the Windows 2000 campaign was fought under.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* page-specific: the boot-chain rail */
+#bootchain { min-width: 720px; }
+#bootchain .bc-node rect { fill: var(--surface-2); stroke: var(--line); }
+#bootchain .bc-node.done rect { stroke: var(--cobalt-dim); }
+#bootchain .bc-node.cur rect { fill: var(--surface-3); stroke: var(--cobalt); stroke-width: 2; }
+#bootchain .bc-t { fill: var(--ink-2); font-weight: 600; }
+#bootchain .bc-node.cur .bc-t { fill: var(--cobalt-hi); }
+#bootchain .bc-s { fill: var(--muted); }
+#bootchain .bc-node.cur .bc-s { fill: var(--ink-2); }
+#bootchain .bc-wire { stroke: rgba(124, 134, 152, 0.5); stroke-width: 2; }
+#bootchain .bc-wire .ah { fill: rgba(124, 134, 152, 0.5); stroke: none; }
+#bootchain .bc-wire.done { stroke: var(--cobalt-dim); }
+#bootchain .bc-wire.done .ah { fill: var(--cobalt-dim); }
+#bootchain .bc-era { fill: var(--danger); opacity: 0.7; letter-spacing: 0.06em; }
+#bc-stage:focus { outline: 1px dotted var(--cobalt-dim); outline-offset: -4px; }
+/* the demands list */
+.demands { list-style: none; padding-left: 0; margin: 0 0 16px; }
+.demands li { position: relative; padding-left: 20px; margin: 0 0 14px; }
+.demands li::before { content: "▸"; position: absolute; left: 0; color: var(--cobalt-dim); }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="machine.html" aria-current="page">1 · The Machine</a>
+    <a href="loop.html">2 · The Restart Loop</a>
+    <a href="wires.html">3 · Edges &amp; Wires</a>
+    <a href="forensics.html">4 · Kernel Forensics</a>
+    <a href="dialog.html">5 · The Invisible Dialog</a>
+    <a href="cpu.html">6 · One Instruction at a Time</a>
+    <a href="desktop.html">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 1 · THE MACHINE</p>
+  <h1>A PC MADE OF <span class="accent">RUST</span></h1>
+  <p class="standfirst">Before Windows 2000 can boot, there has to be a PC. This chapter
+  tours the one <a href="/mddosem/">mddosem</a> builds — a deliberately 1995-shaped
+  machine recreated in Rust — the real firmware it learned to run in April 2026, the
+  demands an NT kernel makes that DOS never did, the two outside oracles that kept the
+  investigation honest, and the rules of engagement under which fifty-three days of
+  debugging were fought.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">27</div><div class="l">crates in the Cargo workspace — CPU, memory, VGA, interrupt and timer chips, DOS, Win16, Win32, a long tail of sound hardware</div></div>
+  <div class="stat"><div class="v">≈31,000</div><div class="l">lines in the opcode-switch interpreter — the correctness engine; all 47 endgame captures and both accepted boots ran interpreter-only</div></div>
+  <div class="stat"><div class="v">22 Apr</div><div class="l">--real-boot ships: SeaBIOS + SeaVGABIOS running as real firmware on the emulated board</div></div>
+  <div class="stat"><div class="v">128 KiB</div><div class="l">the trimmed SeaBIOS image — no ACPI tables, so Windows 2000 selects its Standard PC HAL</div></div>
+  <div class="stat"><div class="v">8086:7010</div><div class="l">the PIIX3 IDE function NT's intelide driver interrogates PCI configuration space to find</div></div>
+  <div class="stat"><div class="v">0 bytes</div><div class="l">setuperr.log on the QEMU reference install — the standing controlled experiment</div></div>
+</section>
+
+<section class="prose">
+
+<h2>An emulator, in earnest</h2>
+
+<p><a href="/mddosem/">mddosem</a> is a hardware-accurate PC emulator written from
+scratch in Rust, begun as an exploration of how far AI-assisted development can take a
+genuinely hard problem. By the summer of 2026 it was a Cargo workspace of twenty-seven
+crates: an x86 CPU, a memory subsystem with paging, VGA and SVGA graphics, the 8259
+interrupt controllers, the 8254 timer, DMA, serial ports, keyboard, a shelf of emulated
+sound hardware, and high-level support for DOS, Windows 3.1 and Win32 applications. Its
+stated philosophy is blunt: emulate real hardware, not specific programs. When software
+misbehaves, the software is treated as a witness reporting that the emulation is wrong.</p>
+
+<p>At the heart of it sits an opcode-switch <strong>interpreter</strong> of roughly
+thirty-one thousand lines — the universal correctness engine, the code path every mode
+of the x86 runs through. A dynamic recompiler exists too, but it is opt-in, only ever
+covers 32-bit protected-mode code, and sat this story out: its own Windows&nbsp;2000 bug
+(MDD-BUG-KILN-00005) remains open, and every endgame capture and both final accepted
+boots in this saga ran interpreter-only. When this site says "the emulator did X", it
+means the interpreter, executing one instruction at a time.</p>
+
+<h2>Two ways to be a BIOS</h2>
+
+<p>On a real PC the firmware is the first software: code in a ROM chip that the CPU
+executes from the moment of reset, which tests the machine, builds the interrupt vector
+table, and only then goes looking for something to boot. An emulator has a choice about
+how much of that to recreate.</p>
+
+<p>mddosem's default is <em>high-level emulation</em> — HLE. There is no firmware at
+all: software interrupts such as <code>INT 10h</code> (video), <code>INT 13h</code>
+(disk), <code>INT 16h</code> (keyboard) and <code>INT 1Ah</code> (clock) vector to tiny
+stubs in the F000 BIOS segment, the emulator recognises the address, and a Rust handler
+does the work directly. For DOS this is ideal — fast, debuggable, and indistinguishable
+from the ROM's answer.</p>
+
+<p>But an NT kernel does not want services; it wants a machine. So through April 2026
+the project built <code>--real-boot</code>: <strong>SeaBIOS</strong> runs as the system
+firmware and <strong>SeaVGABIOS</strong> — the very <code>vgabios-stdvga.bin</code> ROM
+that QEMU ships — is mapped at guest address <span class="addr">0xC0000</span> and
+executed, instruction by instruction, on the emulated hardware, POST and all. Around the
+firmware grew the board it expected to find: a PCI bus with an Intel 440FX host bridge
+at 0:0.0, a floppy controller, an ATA disk state machine — and, crucially, a PIIX3 IDE
+controller on the PCI bus, added in the words of its commit "so SeaBIOS sees the HD".
+The <code>--real-boot</code> flag shipped on 22 April 2026. Five weeks later the first
+Windows 2000 checkpoint appeared in the journals.</p>
+
+<p>One practical detail mattered from day one: Windows 2000 shipped no setup floppies
+(NT&nbsp;3.51 did), but its CD is bootable. So an install starts from a blank raw disk
+image plus <code>--cdrom</code> and the SP4 ISO — SeaBIOS finds no bootable hard disk
+and falls through to the ATAPI CD, exactly as a 1999 PC would have done. Remember that
+arrangement; the harness's failure to keep half of it becomes
+<a href="dialog.html">chapter 5</a>.</p>
+
+<table class="data">
+  <caption>One interrupt, two machines</caption>
+  <thead>
+    <tr><th></th><th>Default (HLE)</th><th>--real-boot</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>What answers INT 10h</td><td>a Rust handler, intercepted at an F000 stub</td><td>SeaVGABIOS ROM code, executed on the emulated VGA</td></tr>
+    <tr><td>Who builds the interrupt vector table</td><td>the emulator, at startup</td><td>the firmware, during POST</td></tr>
+    <tr><td>What sits at C000</td><td>nothing</td><td>SeaVGABIOS, mapped at 0xC0000</td></tr>
+    <tr><td>What it can boot</td><td>DOS, Win16 and Win32 programs via the emulator's own loaders</td><td>anything with a boot sector — FreeDOS from disk, and eventually NT</td></tr>
+  </tbody>
+</table>
+
+<h2>What Windows 2000 demands</h2>
+
+<p>DOS-era software treats the PC as a bag of parts: ask the BIOS for a sector, poke the
+VGA, hook a vector. Windows 2000 treats the PC as a contract — and it reads the small
+print. Four of its demands became, more or less exactly, the chapters of this story:</p>
+
+<ul class="demands">
+  <li><strong>Protected mode and paging, everywhere.</strong> DOS visits protected mode;
+  NT lives there from the loader's first moments and never leaves. Every memory access
+  goes through descriptor tables and page tables; every port access from unprivileged
+  code is checked against an I/O permission bitmap. The CPU-level truths this exposed —
+  an interrupt-shadow subtlety, a four-megabyte page the emulator did not believe in —
+  are <a href="cpu.html">chapter 6</a>.</li>
+  <li><strong>A disk controller it interrogates by name.</strong> DOS asks the BIOS for
+  sectors and never wonders what the controller is. NT loads its own driver stack, scans
+  PCI configuration space, and expects to find the PIIX3 IDE function — vendor
+  <span class="addr">8086</span>, device <span class="addr">7010</span> — with a
+  bus-master window behind BAR4. Until the emulated PIIX3 could pass that interview, an
+  installed kernel died at STOP 0x7B. <a href="wires.html">Chapter 3</a>.</li>
+  <li><strong>Interrupt wiring correct to the edge.</strong> The Standard PC HAL
+  enforces its priority scheme by rewriting the 8259's mask registers on every raise and
+  lower of the interrupt level, so interrupts routinely sit latched-but-masked for
+  milliseconds — a regime DOS never creates, and one that turns tiny latching bugs into
+  lost disk completions. <a href="wires.html">Chapter 3</a> is entirely about this.</li>
+  <li><strong>Virtual-8086 mode for the VGA BIOS.</strong> Even a 1999 kernel still
+  calls 1980s ROM code to switch video modes. It does so in V86 mode — the 386's
+  facility for running real-mode code inside a protected-mode operating system — boxed
+  in by a monitor, a task-state segment and that same I/O permission bitmap.
+  <a href="loop.html">Chapters 2</a> and <a href="cpu.html">6</a> both turn on it.</li>
+</ul>
+
+<p>And one small courtesy DOS never asked for: when NT wants to reboot the machine, it
+pulses the reset line on the 8042 keyboard controller — the same polite, deliberate
+reset that <a href="loop.html">chapter 2</a>'s restart loop rode round and round.</p>
+
+<aside class="aside">
+  <span class="tag">A 1995 MACHINE, ON PURPOSE</span>
+  <p>The machine mddosem presents has no ACPI at all — the trimmed 128&nbsp;KiB SeaBIOS
+  carries no tables — so Windows 2000 selects its <strong>Standard PC HAL</strong>, the
+  hardware-abstraction layer written for pre-ACPI machines. When Arthur proposed
+  implementing ACPI properly, the review said no: the Standard PC HAL never reads an
+  ACPI table, the QEMU reference boots the same shape with <code>acpi=off</code>, and
+  the instinct was historically backwards — PCI shipped in 1993, ACPI in 1997, and every
+  PCI Pentium of the mid-nineties ran exactly this configuration. It is precisely the
+  machine the "Standard PC" HAL exists for.</p>
+</aside>
+
+<h2>Eight handovers, sector to desktop</h2>
+
+<p>Everything in the chapters ahead happens somewhere along one rail: the chain of
+handovers that takes a PC from a 512-byte boot sector to a desktop. Each stage exercises
+different hardware, which is why each era of the campaign stalled at a different stop.
+Step through it — the captions note what each stage demands of the machine, and where
+the story broke down.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE BOOT CHAIN — WHERE EACH ERA STALLED</span>
+    <span class="hint">⏭ step through · keys ← → when focused</span>
+  </div>
+  <div class="fig-body">
+    <div class="stage" id="bc-stage" role="img"
+      aria-label="Diagram of the Windows 2000 boot chain as an eight-stop rail in two rows: master boot record, NTLDR, ntoskrnl with the HAL, boot drivers, then smss, csrss and winlogon, services and lsass, and GUI setup leading to the desktop. Stepping through highlights each stage in turn; captions describe the hardware each stage exercises and which era of the debugging campaign stalled there — the frozen loader at NTLDR, STOP 0x7B at boot drivers, and the set-system-security restart loop and the black-screen wall at GUI setup.">
+      <svg id="bootchain" viewBox="0 0 960 244" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <!-- row 1 wires -->
+        <g id="bc-w1" class="bc-wire"><line x1="218" y1="58" x2="253" y2="58"/><polygon class="ah" points="262,58 254,54 254,62"/></g>
+        <g id="bc-w2" class="bc-wire"><line x1="458" y1="58" x2="493" y2="58"/><polygon class="ah" points="502,58 494,54 494,62"/></g>
+        <g id="bc-w3" class="bc-wire"><line x1="698" y1="58" x2="733" y2="58"/><polygon class="ah" points="742,58 734,54 734,62"/></g>
+        <!-- down connector -->
+        <g id="bc-w4" class="bc-wire"><line x1="880" y1="90" x2="880" y2="141"/><polygon class="ah" points="880,150 875.5,142 884.5,142"/></g>
+        <!-- row 2 wires (right to left) -->
+        <g id="bc-w5" class="bc-wire"><line x1="742" y1="182" x2="707" y2="182"/><polygon class="ah" points="698,182 706,178 706,186"/></g>
+        <g id="bc-w6" class="bc-wire"><line x1="502" y1="182" x2="467" y2="182"/><polygon class="ah" points="458,182 466,178 466,186"/></g>
+        <g id="bc-w7" class="bc-wire"><line x1="262" y1="182" x2="227" y2="182"/><polygon class="ah" points="218,182 226,178 226,186"/></g>
+        <!-- row 1 nodes -->
+        <g id="bc-n1" class="bc-node">
+          <rect x="22" y="26" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="120" y="48" font-size="12.5" text-anchor="middle">1 · MBR</text>
+          <text class="bc-s" x="120" y="64" font-size="9.5" text-anchor="middle">ATA reads · INT 13h</text>
+          <text class="bc-s" x="120" y="78" font-size="9.5" text-anchor="middle">real mode</text>
+        </g>
+        <g id="bc-n2" class="bc-node">
+          <rect x="262" y="26" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="360" y="48" font-size="12.5" text-anchor="middle">2 · NTLDR</text>
+          <text class="bc-s" x="360" y="64" font-size="9.5" text-anchor="middle">A20 · INT 13h · boot.ini</text>
+          <text class="bc-s" x="360" y="78" font-size="9.5" text-anchor="middle">real → protected + paging</text>
+        </g>
+        <g id="bc-n3" class="bc-node">
+          <rect x="502" y="26" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="600" y="48" font-size="12.5" text-anchor="middle">3 · ntoskrnl + HAL</text>
+          <text class="bc-s" x="600" y="64" font-size="9.5" text-anchor="middle">8259 · 8254 · 4 MiB page</text>
+          <text class="bc-s" x="600" y="78" font-size="9.5" text-anchor="middle">protected · ring 0</text>
+        </g>
+        <g id="bc-n4" class="bc-node">
+          <rect x="742" y="26" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="840" y="48" font-size="12.5" text-anchor="middle">4 · boot drivers</text>
+          <text class="bc-s" x="840" y="64" font-size="9.5" text-anchor="middle">PCI config · PIIX3 · ATAPI</text>
+          <text class="bc-s" x="840" y="78" font-size="9.5" text-anchor="middle">protected · ring 0</text>
+        </g>
+        <!-- row 2 nodes -->
+        <g id="bc-n5" class="bc-node">
+          <rect x="742" y="150" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="840" y="172" font-size="12.5" text-anchor="middle">5 · smss.exe</text>
+          <text class="bc-s" x="840" y="188" font-size="9.5" text-anchor="middle">native API · page file</text>
+          <text class="bc-s" x="840" y="202" font-size="9.5" text-anchor="middle">first user-mode process</text>
+        </g>
+        <g id="bc-n6" class="bc-node">
+          <rect x="502" y="150" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="600" y="172" font-size="12.5" text-anchor="middle">6 · csrss + winlogon</text>
+          <text class="bc-s" x="600" y="188" font-size="9.5" text-anchor="middle">Win32 · VGA via V86</text>
+          <text class="bc-s" x="600" y="202" font-size="9.5" text-anchor="middle">user + V86 excursions</text>
+        </g>
+        <g id="bc-n7" class="bc-node">
+          <rect x="262" y="150" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="360" y="172" font-size="12.5" text-anchor="middle">7 · services + lsass</text>
+          <text class="bc-s" x="360" y="188" font-size="9.5" text-anchor="middle">SCM · security database</text>
+          <text class="bc-s" x="360" y="202" font-size="9.5" text-anchor="middle">user mode</text>
+        </g>
+        <g id="bc-n8" class="bc-node">
+          <rect x="22" y="150" width="196" height="64" rx="5"/>
+          <text class="bc-t" x="120" y="172" font-size="12.5" text-anchor="middle">8 · GUI setup → desktop</text>
+          <text class="bc-s" x="120" y="188" font-size="9.5" text-anchor="middle">syssetup wizard · Explorer</text>
+          <text class="bc-s" x="120" y="202" font-size="9.5" text-anchor="middle">user mode</text>
+        </g>
+        <!-- era markers -->
+        <text class="bc-era" x="360" y="110" font-size="9.5" text-anchor="middle">the frozen loader · 13 Jul</text>
+        <text class="bc-era" x="810" y="110" font-size="9.5" text-anchor="middle">STOP 0x7B era</text>
+        <text class="bc-era" x="120" y="234" font-size="9.5" text-anchor="middle">set-system-security era · the wall</text>
+      </svg>
+    </div>
+  </div>
+  <div class="evlog" id="bc-log"></div>
+  <div class="fig-controls">
+    <button class="btn" id="bc-prev">◀ back</button>
+    <button class="btn primary" id="bc-next">step ▶</button>
+    <span class="ctl"><output id="bc-out">1 / 8</output></span>
+  </div>
+  <div class="fig-note">Boot order and stall eras from the bug ledger
+  (MDD-BUG-KILN-00004), the 2026 campaign journals, and the 15 July thread census
+  (counts via W2K_DATA). The rail is a recreation — a schematic of Windows 2000's
+  documented boot sequence on a Standard PC HAL machine, not a screenshot.</div>
+</figure>
+
+</section>
+
+<section class="prose">
+
+<h2>The oracles</h2>
+
+<p>"Compatibility is ground truth" is the project's phrase: when documentation and
+observed behaviour disagree, the behaviour real machines actually exhibited wins. For a
+campaign this long, that principle needed instruments — two of them.</p>
+
+<p>The first is a <strong>controlled experiment</strong>. On 4 June a reference
+installation of the same SP4 ISO, with the same product key and the same unattended
+answer file, was run under QEMU with <code>-machine pc,acpi=off</code> — the same
+Standard PC HAL, the same absent ACPI, the same PIIX3-shaped disk controller. It
+completes. Its <code>setuperr.log</code> is zero bytes long. From that day on, every
+alarming line in mddosem's guest logs could be cross-examined: does the successful
+reference show the same error? Then it is noise, however sinister it reads — an
+access-denied here, an "LSA Policy Open DB Error=2" there; the reference logs eighteen
+of those and recovers. Only a genuine divergence between the two installs counts as
+evidence. <a href="loop.html">Chapter 2</a> shows this technique demolishing an entire
+day's worth of plausible theories.</p>
+
+<p>The second oracle is <strong>DOSBox-X</strong> — the project's standing reference for
+how PC hardware actually behaves, and an emulator on which Windows 2000 also boots.
+mddosem's doctrine treats any discrepancy with DOSBox-X as its own bug until proven
+otherwise, and more than one fix in this story was settled by reading DOSBox-X's source
+to see what a working machine does. The awkward discovery that the two oracles genuinely
+disagree with each other about the 8259 interrupt controller — and what mddosem did
+about it — is <a href="wires.html">chapter 3</a>'s story.</p>
+
+<h2>Rules of engagement</h2>
+
+<p>On 23 June, with setup stuck in a loop nobody yet understood, Arthur issued the goal
+prompt that governed the rest of the campaign. It is deliberately a goal, not a design —
+and its two load-bearing sentences are worth quoting exactly:</p>
+
+<aside class="aside good">
+  <span class="tag">THE GOAL PROMPT · 23 JUNE 2026</span>
+  <p>"Make Windows 2000 complete setup and boot to a usable desktop in mddosem, then
+  launch FreeCell from an unmodified emulator-produced disk image. <strong>Fix
+  underlying emulation behavior only.</strong> Do not patch, bypass, preseed, or fake
+  Windows setup, licensing, security configuration, registry state, setup binaries, INF
+  files, or disk images." And, against the temptation to park the hard part: "Do not
+  stop merely because the next required fix is substantial."</p>
+</aside>
+
+<p>The point of the rules is what success would <em>mean</em>. An install coaxed past
+its own checks proves nothing about the emulation; an install that completes because the
+machine finally behaves proves everything. So the definition of done was pinned in the
+guest's own terms: the <code>RestartSetup</code> and <code>SystemSetupInProgress</code>
+registry flags cleared by setup itself, an interactive desktop, FreeCell visibly usable
+— and the whole run reproduced on a second independent copy of the disk. The rules had
+teeth, too: in July a transplanted QEMU-made install — a tempting end-run that got
+further than any native boot yet had — was rejected as doctrine-violating and set aside.
+<a href="desktop.html">Chapter 7</a> records the finish under exactly these terms: no
+transplanted install, no bypass, no disabled component.</p>
+
+<h2>The cast</h2>
+
+<p>This story is told in the plural because the work was. <strong>Arthur</strong> — the
+human engineer whose emulator this is — set the goals, made the calls the prompts
+reserved for him, fixed a blocking disk-image tool the day it mattered, and personally
+typed the product key (<a href="dialog.html">chapter 5</a>). Three AI colleagues did the
+long-haul engineering: <strong>Claude</strong> built the kernel-debugger transport and
+the RAM census of <a href="forensics.html">chapter 4</a>; <strong>Codex</strong>
+reviewed designs throughout, then drove the endgame branch — all four unlocking fixes
+and the recorded acceptance; <strong>Fable&nbsp;5</strong> served as consulting
+diagnostician, brought in for the expensive reasoning passes — it pinned the
+disk-interrupt bug of <a href="wires.html">chapter 3</a> — with every claim re-verified
+against source before it was believed. The work spread across machines, and the
+repository's branch grammar keeps the provenance: the ledger ID
+<code>MDD-BUG-KILN-00004</code> remembers the KILN box that raised the bug, and branch
+names carry the minting agent's tag (HUM, CDX). Every commit ends with a co-author
+trailer naming the model that wrote it. All of which is colour rather than the point —
+but when a story's evidence is its git history, the bylines are part of the record.</p>
+
+<p class="srcline">Sources for this chapter — the boot-media runbook and real-boot
+commit trail (April–May 2026), the 23 June goal prompt, the QEMU oracle verdicts of
+4–5 June, the bug ledger MDD-BUG-KILN-00004, and the campaign journals; census figures
+via W2K_DATA. The full evidence table is in
+<a href="desktop.html#evidence">chapter 7</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="./"><span class="dir">◀ previous</span>Overview</a>
+  <a class="next" href="loop.html"><span class="dir">next ▶</span>2 · The Restart Loop</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figure — the boot-chain stepper */
+(function () {
+  "use strict";
+  var W = window.W2K;
+  if (!W) return;
+  var D = window.W2K_DATA || {};
+
+  function threadCount(name, fallback) {
+    var ps = D.census && D.census.processes;
+    if (ps) {
+      for (var i = 0; i < ps.length; i++) {
+        if (ps[i] && ps[i].name === name) return ps[i].threads;
+      }
+    }
+    return fallback;
+  }
+  var totalThreads = (D.census && D.census.totals && D.census.totals.threads) || 71;
+  var smssThreads = threadCount("smss.exe", 6);
+
+  var steps = [
+    "<span class=\"t\">01 · master boot record</span> SeaBIOS ends POST by fetching the first sector of the boot disk over the emulated ATA bus — or, when installing, falls through to the bootable SP4 CD (Windows 2000 shipped no setup floppies). Pure real mode, BIOS services only. Until April 2026 there was no firmware here to hand anything over.",
+    "<span class=\"t\">02 · NTLDR</span> The loader flips the CPU into protected mode and switches paging on, yet still drops back towards real mode for every BIOS disk read — exercising the A20 line, INT 13h and both CPU worlds at once. The frozen loader of the July transplant era lived here: on 13 July a HAL-swap experiment first brought a fully installed kernel to the “Starting up…” splash — where it froze at about 40%.",
+    "<span class=\"t\">03 · ntoskrnl + HAL</span> The kernel and the Standard PC HAL take the machine over: the 8259 pair is reprogrammed, the 8254 timer becomes the OS clock, and the kernel maps itself through a single 4 MiB page. From here on IRQL is enforced by rewriting the interrupt mask — the amplifier behind <a href=\"wires.html\">chapter 3</a>; the huge page returns in <a href=\"cpu.html\">chapter 6</a>.",
+    "<span class=\"t\">04 · boot drivers</span> intelide interrogates PCI configuration space for the PIIX3 IDE function (8086:7010) and its bus-master window; atapi claims the CD. A disk stack the kernel cannot trust ends here in STOP 0x7B — INACCESSIBLE_BOOT_DEVICE — as the transplant experiments proved while the PIIX3 was still a bare PIO stub (<a href=\"wires.html\">chapter 3</a>).",
+    "<span class=\"t\">05 · smss.exe</span> The Session Manager: the first user-mode process, speaking only the native API — page file, environment, the subsystems. In <a href=\"forensics.html\">chapter 4</a>’s census of the frozen machine, " + smssThreads + " of its " + totalThreads + " waiting threads belong to smss.",
+    "<span class=\"t\">06 · csrss + winlogon</span> The Win32 subsystem and the logon process — during an install, winlogon’s session hosts GUI setup itself. Video mode changes still call the VGA BIOS in virtual-8086 mode: 1980s ROM code running inside a 1999 kernel (<a href=\"cpu.html\">chapter 6</a>).",
+    "<span class=\"t\">07 · services + lsass</span> The service controller and the Local Security Authority. GUI setup’s “set system security” phase — the phase whose failure defined June — does its work through these processes (<a href=\"loop.html\">chapter 2</a>).",
+    "<span class=\"t\">08 · GUI setup → desktop</span> syssetup’s wizard, and — on a machine that has earned it — Explorer. Every era of the saga ended at this stop: the restart loop (<a href=\"loop.html\">2</a>), the black-screen wall (<a href=\"forensics.html\">4</a>), the invisible dialogs (<a href=\"dialog.html\">5</a>). On 19 July it finally meant a desktop (<a href=\"desktop.html\">7</a>)."
+  ];
+
+  var NODES = 8;
+  function apply(i) {
+    for (var j = 1; j <= NODES; j++) {
+      var n = document.getElementById("bc-n" + j);
+      if (!n) continue;
+      n.classList.remove("cur");
+      n.classList.remove("done");
+      if (j - 1 === i) n.classList.add("cur");
+      else if (j - 1 < i) n.classList.add("done");
+    }
+    for (var k = 1; k < NODES; k++) {
+      var wire = document.getElementById("bc-w" + k);
+      if (!wire) continue;
+      if (i >= k) wire.classList.add("done");
+      else wire.classList.remove("done");
+    }
+  }
+
+  if (document.getElementById("bc-n1") && document.getElementById("bc-log")) {
+    W.makeStepper({
+      prev: "bc-prev",
+      next: "bc-next",
+      out: "bc-out",
+      log: "bc-log",
+      stage: "bc-stage",
+      steps: steps,
+      apply: apply,
+      start: 0
+    });
+  }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

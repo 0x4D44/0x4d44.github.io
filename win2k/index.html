@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Overview — Boot to Desktop</title>
+<meta name="description" content="How mddosem, a from-scratch PC emulator written in Rust, was made to boot Windows 2000 to a usable desktop — a 53-day debugging story told with real numbers.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* ---- boot-splash recreation (illustration chrome, not data) ---- */
+.splashwrap { padding: 24px 18px 22px; display: flex; justify-content: center; }
+.splash {
+  width: 100%; max-width: 540px;
+  background: #f4f1e8;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  font-family: Tahoma, "Segoe UI", sans-serif;
+}
+.splash .field { position: relative; padding: 30px 26px 22px; color: #14161d; }
+.splash .msft {
+  position: absolute; top: 12px; right: 16px;
+  font-family: var(--disp); font-weight: 800; font-size: 13px;
+}
+.splash .flagframe {
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 10px 12px; background: #ece5d2;
+  border: 3px solid #c99a5e; box-shadow: 5px 5px 0 #23407e;
+  margin-bottom: 16px;
+}
+.splash .trail {
+  display: grid; grid-template-rows: repeat(4, 7px);
+  grid-auto-flow: column; grid-auto-columns: 7px; gap: 2px;
+}
+.splash .trail i { border-radius: 1px; }
+.splash .trail i:nth-child(4n+1) { background: var(--flag-red); }
+.splash .trail i:nth-child(4n+2) { background: var(--flag-green); }
+.splash .trail i:nth-child(4n+3) { background: var(--flag-blue); }
+.splash .trail i:nth-child(4n)   { background: var(--flag-yellow); }
+.splash .trail i:nth-child(-n+4) { opacity: 0.3; }
+.splash .trail i:nth-child(n+5):nth-child(-n+8) { opacity: 0.55; }
+.splash .trail i:nth-child(n+9)  { opacity: 0.8; }
+.splash .flag.big { width: 46px; height: 46px; gap: 3px; vertical-align: 0; }
+.splash .name {
+  font-family: var(--disp); font-weight: 800;
+  font-size: clamp(19px, 3.4vw, 26px); line-height: 1.12; letter-spacing: -0.01em;
+}
+.splash .name small { display: block; font-size: 0.6em; font-weight: 600; margin-top: 2px; }
+.splash .nt { font-size: 11px; color: #3a3f4c; margin-top: 7px; }
+.splash .band { height: 9px; background: linear-gradient(90deg, #16295e, #2a4f9e 45%, #6d8fd0); }
+.splash .foot {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 14px 10px; background: #d9d6cb; border-top: 1px solid #b9b5a8;
+  font-size: 11px; color: #23252b;
+}
+.splash .bar {
+  flex: 1; max-width: 300px; height: 13px;
+  background: #fff; border: 1px solid #7f7f7f;
+  box-shadow: inset 1px 1px 0 #6e6e6e; padding: 1px;
+  display: flex; gap: 1px;
+}
+.splash .bar i { flex: 1; }
+.splash .bar i.on { background: #2a4f9e; }
+
+/* ---- timeline figure ---- */
+ol.timeline { list-style: none; }
+.tl-ev[hidden] { display: none; }
+.fig-controls.top { border-top: none; border-bottom: 1px solid var(--line); }
+.fig-controls .sw {
+  width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.tlwrap { padding: 4px 20px 6px; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="machine.html">1 · The Machine</a>
+    <a href="loop.html">2 · The Restart Loop</a>
+    <a href="wires.html">3 · Edges &amp; Wires</a>
+    <a href="forensics.html">4 · Kernel Forensics</a>
+    <a href="dialog.html">5 · The Invisible Dialog</a>
+    <a href="cpu.html">6 · One Instruction at a Time</a>
+    <a href="desktop.html">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">MDDOSEM · WINDOWS 2000 PROFESSIONAL SP4 · 28 MAY – 19 JULY 2026</p>
+  <h1>BOOT TO <span class="accent">DESKTOP</span></h1>
+  <p class="standfirst">At 03:02 on 19 July 2026, a PC that exists only as Rust code
+  settled onto a teal desktop — Start button, taskbar, a clock quietly insisting it was
+  2:04 AM. Windows 2000 had installed and booted, natively, inside an emulator whose
+  setup had spent weeks answering its own wizard in an endless loop. Fifty-three days,
+  sixty-one disk images, one press of the Enter key: this is the whole story.</p>
+</section>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Starting up…</span>
+    <span class="hint">recreation · the bar as it stood at 02:43, 19 July</span>
+  </div>
+  <div class="fig-body">
+    <div class="splashwrap">
+      <div class="splash" role="img"
+        aria-label="Recreation of the Windows 2000 Professional boot splash: a white field with the Microsoft wordmark top right, the four-pane Windows flag trailing coloured pixels inside a tan frame with a blue drop shadow, the words Microsoft Windows 2000 Professional and Built on NT Technology, a royal-blue band, and a grey footer strip reading Starting up, with a segmented blue progress bar about forty per cent full.">
+        <div class="field">
+          <div class="msft">Microsoft</div>
+          <div class="flagframe" aria-hidden="true">
+            <span class="trail"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            <span class="flag big"><i></i><i></i><i></i><i></i></span>
+          </div>
+          <div class="name">Microsoft Windows 2000<small>Professional</small></div>
+          <div class="nt">Built on NT Technology</div>
+        </div>
+        <div class="band"></div>
+        <div class="foot">
+          <span>Starting up . . .</span>
+          <div class="bar" id="splash-bar" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Recreation; the originals are capture-45/screen.png (the bar at
+  roughly 40%, 02:43 on 19 July) and capture-22/boot-002.png (the identical screen with
+  the bar empty, three days earlier) in the run archive.</div>
+</figure>
+
+<div class="statgrid">
+  <div class="stat"><div class="v">53</div><div class="l">days — first Win2K checkpoint (28 May) to settled desktop (19 July)</div></div>
+  <div class="stat"><div class="v">4</div><div class="l">shared emulation fixes, all required at once; the last landed 22 minutes before acceptance</div></div>
+  <div class="stat"><div class="v">47</div><div class="l">numbered captures in the final campaign, 15–19 July</div></div>
+  <div class="stat"><div class="v">128 MiB</div><div class="l">hang.bin — the RAM dump of the “deadlocked” machine, exactly 134,217,728 bytes</div></div>
+  <div class="stat"><div class="v">61</div><div class="l">two-GiB disk images across the two campaigns; the endgame archive alone ≈85 GiB</div></div>
+  <div class="stat"><div class="v good">2,512</div><div class="l">interpreter tests green at acceptance, 0 failed</div></div>
+</div>
+
+<section class="prose">
+
+<h2>Three in the morning</h2>
+
+<p>The last screenshot of the campaign is called <code>desktop-settled.png</code>, and it
+was written at 03:02 on the morning of 19 July 2026. It shows a teal desktop; a Search
+Results window reporting, with perfect honesty, “0&nbsp;object(s)”; and, front and
+centre, the “Getting Started with Windows&nbsp;2000” wizard, patiently explaining that
+to open a file you should “click an icon twice quickly (double-click)”. On the taskbar,
+beside the speaker icon, the clock reads 2:04&nbsp;AM — the guest machine’s own opinion
+of the time, gently adrift of the host’s.</p>
+
+<p>Seventy-three minutes earlier that same night, the same machine had blue-screened —
+a STOP&nbsp;0x7B, <em>INACCESSIBLE_BOOT_DEVICE</em>, later traced to the run’s own
+debugging instrumentation rather than to the emulator
+(<a href="desktop.html">chapter&nbsp;7</a> has the minute-by-minute). That is the kind
+of story this is: for seven weeks, the hardest adversary was usually the evidence.
+The desktop was reached twice that night, from two independent fresh copies of the
+installed disk, each ending in a clean restart — proof by repetition, not luck.</p>
+
+<h2>The machine that did it</h2>
+
+<p><a href="/mddosem/">mddosem</a> is a hardware-accurate PC emulator written from
+scratch in Rust. It builds a complete mid-nineties PC out of code — a 386-class CPU,
+the 8259 interrupt controllers, the 8254 timer, a PIIX3 IDE chipset, VGA — and for this
+campaign it booted real firmware on that emulated board rather than faking the BIOS in
+software. Its natural habitat is DOS and Windows&nbsp;3.1: F1GP, DOOM, Word. Windows
+2000 — protected mode and paging everywhere, a PCI disk controller it interrogates and
+second-guesses, exact interrupt-wire behaviour, V86 mode for video BIOS calls — was by
+several orders of ambition the hardest thing it had ever been asked to do.
+<a href="machine.html">Chapter&nbsp;1</a> tours the machine and NT’s demands of it;
+each demand became a chapter of the debugging story.</p>
+
+<p>Every run in the final campaign executed on the interpreter — the plain,
+one-opcode-at-a-time correctness engine; every version banner in the run archive says
+<code>interpreter-only</code>. The dynamic recompiler, mddosem’s opt-in performance
+engine, sat the campaign out: its own Windows 2000 bug
+(<span class="addr">KILN-00005</span>) is still open.</p>
+
+<h2>The goal and its rules</h2>
+
+<p>The formal goal was set on 23 June: make Windows 2000 Professional SP4 install and
+boot to a usable desktop — FreeCell running — reproduced twice, and do it by fixing the
+emulation, not the symptom. The goal prompt’s first rule: “Fix underlying emulation
+behavior only. Do not patch, bypass, preseed, or fake…” No game-specific hacks is house
+doctrine for mddosem; here it meant no Windows-specific hacks either. When Windows
+misbehaved, the working assumption had to be that the emulated hardware was lying to
+it.</p>
+
+<p>The work was tracked as a single bug, <span class="addr">MDD-BUG-KILN-00004</span>,
+raised on 30 June once the failing shape had a name — GUI setup failing at “set system
+security” and re-running its wizard forever (<a href="loop.html">chapter&nbsp;2</a>).
+It was flipped to <em>Fixed</em> at 03:27 on 19 July. Not <em>Closed</em>: the
+project’s two-eyes rule says the author of a fix may not close it, so the ledger waits
+for an independent verifier. The acceptance record ends with four negatives — “without
+a transplanted install, Windows-specific bypass, disabled component, or omitted
+CD-ROM.”</p>
+
+<aside class="aside">
+  <span class="tag">FORESHADOWING</span>
+  <p>Acceptance records do not normally need to promise that nobody forgot the CD.
+  <a href="dialog.html">Chapter&nbsp;5</a> explains why this one does.</p>
+</aside>
+
+<h2>Fifty-three days, twenty beats</h2>
+
+<p>The whole campaign compresses into twenty recorded beats below. Cobalt dots are
+milestones; green dots are fixes that landed; the red dot is 30 June, the marathon day
+on which five plausible theories died, each killed by a controlled experiment.
+Filter it and notice the shape: refutation after refutation, and a wall that moved
+<em>downstream</em> every time a real fix landed.</p>
+
+<figure class="fig wide" id="fig-timeline">
+  <div class="fig-head">
+    <span class="t">The road to desktop, 22 April → 19 July 2026</span>
+    <span class="hint">filter by kind · all dates 2026</span>
+  </div>
+  <div class="fig-controls top">
+    <div class="seg" id="tl-seg" role="group" aria-label="Filter the timeline by kind of event">
+      <button data-v="all" aria-pressed="true">all</button>
+      <button data-v="milestone" aria-pressed="false">milestones</button>
+      <button data-v="fix" aria-pressed="false">fixes</button>
+      <button data-v="herring" aria-pressed="false">red herrings</button>
+    </div>
+    <span class="ctl"><span class="sw" style="background:var(--cobalt)"></span> milestone</span>
+    <span class="ctl"><span class="sw" style="background:var(--good)"></span> fix landed</span>
+    <span class="ctl"><span class="sw" style="background:var(--danger)"></span> red herring</span>
+    <span class="ctl"><span class="sw" style="background:var(--surface-3)"></span> waypoint</span>
+  </div>
+  <div class="tlwrap">
+    <ol class="timeline" id="tl-list"></ol>
+  </div>
+  <div class="evlog" id="tl-log" aria-live="polite"></div>
+  <div class="fig-note">Every entry is transcribed from the bug ledger
+  (<span class="addr">MDD-BUG-KILN-00004</span>), the engineering journals, and the
+  preserved run artifacts. The dots’ full stories live in the chapters.</div>
+</figure>
+
+</section>
+
+<section class="prose">
+
+<h2>The chapters</h2>
+
+<p>Seven chapters, in story order. The numbers in them are transcribed from the record,
+not remembered.</p>
+
+</section>
+
+<nav class="chapters" aria-label="Chapter cards">
+  <a class="chapcard" href="machine.html">
+    <span class="num">CHAPTER 1</span>
+    <div class="name">The Machine</div>
+    <p class="blurb">The emulator itself — a from-scratch PC in Rust — the real firmware
+    it boots, and what Windows 2000 demands of a computer that DOS never asked for.</p>
+  </a>
+  <a class="chapcard" href="loop.html">
+    <span class="num">CHAPTER 2</span>
+    <div class="name">The Restart Loop</div>
+    <p class="blurb">A setup that answered its own wizard forever, the one-line error
+    behind it, and the red-herring massacre of 30 June — five theories dead in a
+    day.</p>
+  </a>
+  <a class="chapcard" href="wires.html">
+    <span class="num">CHAPTER 3</span>
+    <div class="name">Edges &amp; Wires</div>
+    <p class="blurb">How interrupts really work: latched edges, Status reads that must
+    not forget them, and the controller status bit Windows checks before believing its
+    own interrupt.</p>
+  </a>
+  <a class="chapcard" href="forensics.html">
+    <span class="num">CHAPTER 4</span>
+    <div class="name">Kernel Forensics</div>
+    <p class="blurb">A kernel debugger with no symbols, a 128 MiB RAM dump, and a
+    census of 71 sleeping threads — precise, validated, and perfectly misread.</p>
+  </a>
+  <a class="chapcard" href="dialog.html">
+    <span class="num">CHAPTER 5</span>
+    <div class="name">The Invisible Dialog</div>
+    <p class="blurb">The “deadlock” that woke when someone pressed Enter. Behind a
+    black screen, Windows had been politely asking for a CD nobody had inserted.</p>
+  </a>
+  <a class="chapcard" href="cpu.html">
+    <span class="num">CHAPTER 6</span>
+    <div class="name">One Instruction at a Time</div>
+    <p class="blurb">The STI shadow, a parked timer, and a four-megabyte page: the
+    CPU-level truths that all had to hold at once before boot could happen.</p>
+  </a>
+  <a class="chapcard" href="desktop.html">
+    <span class="num">CHAPTER 7</span>
+    <div class="name">Boot to Desktop</div>
+    <p class="blurb">The final night, minute by minute — a blue screen at 01:49, a
+    settled desktop at 03:02 — and what two clean boots actually prove.</p>
+  </a>
+</nav>
+
+<section class="prose">
+
+<h2>How to read this site</h2>
+
+<p>The chapters build on one another — machine, loop, wires, forensics, twist, fixes,
+desktop — but each stands alone and owns its own part of the mechanism; if you only
+want the twist, <a href="dialog.html">chapter&nbsp;5</a> will seat you without
+homework. Interactive figures are step-through: click ◀&nbsp;▶, or focus a figure and
+use the arrow keys. If your system asks for reduced motion, the figures oblige and
+show their final state.</p>
+
+<p>Everything checkable is checked. Every number, address and filename on this site
+traces to the bug ledger, the engineering journals of 28 May – 19 July 2026, or the
+preserved artifacts — and where the record is honestly uncertain, the site says so
+rather than guessing. The Windows screens you will see are HTML-and-CSS recreations
+built for this essay, captioned as such; no Microsoft screenshot is republished. One
+absence is deliberate: the product key appears in this story only as those three
+words.</p>
+
+<p class="srcline">Sources for this site — the mddosem bug ledger
+(<span class="addr">MDD-BUG-KILN-00004</span> and its sibling
+<span class="addr">KILN-00005</span>); the engineering journals, 28 May – 19 July
+2026; and the preserved run archive: 47 numbered captures, 61 two-GiB disk images, the
+128 MiB <code>hang.bin</code> RAM dump, 6,763 + 114 screenshots, and a 654 MB syscall
+trace. Full evidence table in <a href="desktop.html#evidence">chapter 7</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a class="next" href="machine.html"><span class="dir">next ▶</span>1 · The Machine</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W = window.W2K;
+  var D = window.W2K_DATA;
+  var reduced = !!(W && W.reducedMotion);
+
+  /* ============ boot-splash progress bar ============ */
+  var bar = document.getElementById("splash-bar");
+  if (bar) {
+    var SEGS = 25, FILL = 10, cells = [], i;
+    for (i = 0; i < SEGS; i++) {
+      var cell = document.createElement("i");
+      bar.appendChild(cell);
+      cells.push(cell);
+    }
+    var setFill = function (n) {
+      for (var j = 0; j < SEGS; j++) cells[j].className = j < n ? "on" : "";
+    };
+    if (reduced) {
+      setFill(FILL);
+    } else {
+      setFill(0);
+      var started = false;
+      var run = function () {
+        if (started) return;
+        started = true;
+        var n = 0;
+        var t = setInterval(function () {
+          n++;
+          setFill(n);
+          if (n >= FILL) clearInterval(t);
+        }, 420);
+      };
+      if ("IntersectionObserver" in window) {
+        var io = new IntersectionObserver(function (es) {
+          for (var k = 0; k < es.length; k++) {
+            if (es[k].isIntersecting) { run(); io.disconnect(); break; }
+          }
+        }, { rootMargin: "-20px" });
+        io.observe(bar);
+      } else {
+        run();
+      }
+    }
+  }
+
+  /* ============ the campaign timeline ============ */
+  var list = document.getElementById("tl-list");
+  var log = document.getElementById("tl-log");
+  var data = D && D.timeline;
+  if (!list || !data || !data.length) return;
+
+  var counts = { milestone: 0, fix: 0, herring: 0, event: 0 };
+  var frag = document.createDocumentFragment();
+  for (var e = 0; e < data.length; e++) {
+    var ev = data[e];
+    counts[ev.kind] = (counts[ev.kind] || 0) + 1;
+    var li = document.createElement("li");
+    li.className = "tl-ev " + ev.kind;
+    li.setAttribute("data-kind", ev.kind);
+    var dd = document.createElement("span");
+    dd.className = "d";
+    dd.textContent = ev.d;
+    var hh = document.createElement("div");
+    hh.className = "h";
+    hh.textContent = ev.h;
+    var bb = document.createElement("p");
+    bb.className = "b";
+    bb.textContent = ev.b;
+    li.appendChild(dd);
+    li.appendChild(hh);
+    li.appendChild(bb);
+    frag.appendChild(li);
+  }
+  list.appendChild(frag);
+
+  var messages = {
+    all: '<span class="t">all</span> — ' + data.length +
+      " recorded beats, 22 April → 19 July 2026: " + counts.milestone +
+      " milestones, " + counts.fix + " fix landings, " + counts.herring +
+      " red-herring day, " + counts.event + " waypoints.",
+    milestone: '<span class="t">milestones</span> — ' + counts.milestone +
+      ": from real firmware shipping in April to the settled desktop at 03:02 on 19 July.",
+    fix: '<span class="t">fixes</span> — ' + counts.fix +
+      " landing entries: the V86 storm, the ATA edge latch, then the four boot-unlocking fixes (two of them in one evening) — the last 22 minutes before acceptance.",
+    herring: '<span class="t">red herrings</span> — one dot, five dead theories: the 30 June massacre. Chapter 2 performs the autopsies.'
+  };
+
+  var applyFilter = function (v) {
+    var items = list.children;
+    for (var n = 0; n < items.length; n++) {
+      var show = v === "all" || items[n].getAttribute("data-kind") === v;
+      if (show) items[n].removeAttribute("hidden");
+      else items[n].setAttribute("hidden", "");
+    }
+    if (log) log.innerHTML = messages[v] || "";
+  };
+
+  if (W && W.bindSeg) W.bindSeg("tl-seg", applyFilter);
+  applyFilter("all");
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

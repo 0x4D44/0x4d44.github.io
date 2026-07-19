@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Restart Loop — Boot to Desktop</title>
+<meta name="description" content="How Windows 2000 setup answered its own wizard forever: the restart loop that dressed itself as progress, the red-herring massacre of 30 June, and the fault storm that was real.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* controls strip placed ABOVE a figure body */
+.fig-controls.top { border-top: none; border-bottom: 1px solid var(--line); }
+
+/* the loop circuit */
+#loop-stage svg { min-width: 660px; }
+.lp-st rect { fill: var(--surface-2); stroke: var(--line); }
+.lp-st .name { fill: var(--ink-2); font-size: 12px; letter-spacing: 0.06em; }
+.lp-st .sub  { fill: var(--muted); font-size: 10px; }
+.lp-st.on rect { stroke: var(--cobalt); stroke-width: 2; }
+.lp-st.on .name { fill: var(--cobalt-hi); }
+.lp-st.bad.on rect { stroke: var(--danger); }
+.lp-st.bad.on .name { fill: var(--danger); }
+.lp-ar line    { stroke: var(--cobalt-dim); stroke-opacity: 0.45; stroke-width: 2; }
+.lp-ar polygon { fill: var(--cobalt-dim); fill-opacity: 0.45; }
+.lp-ar.on line    { stroke: var(--cobalt); stroke-opacity: 1; }
+.lp-ar.on polygon { fill: var(--cobalt); fill-opacity: 1; }
+.lp-ar.wrap line { stroke-dasharray: 5 4; }
+.lp-ro rect { fill: var(--surface-3); stroke: var(--line); }
+.lp-ro .k { fill: var(--muted); font-size: 10px; letter-spacing: 0.06em; }
+.lp-ro .v { fill: var(--teal); font-size: 12px; font-weight: 700; }
+.lp-ro .v.hot { fill: var(--danger); }
+
+/* the hypothesis board */
+.hypo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; padding: 14px; }
+.hypo { background: var(--surface-2); border: 1px solid var(--line); border-left: 3px solid var(--muted); border-radius: 5px; padding: 12px 14px 10px; margin: 0; }
+.hypo .hh { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.hypo .ht { font-family: var(--disp); font-weight: 700; font-size: 14.5px; color: var(--ink); line-height: 1.3; }
+.hypo .ev { font-size: 13px; line-height: 1.55; color: var(--ink-2); margin: 0; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="machine.html">1 · The Machine</a>
+    <a href="loop.html" aria-current="page">2 · The Restart Loop</a>
+    <a href="wires.html">3 · Edges &amp; Wires</a>
+    <a href="forensics.html">4 · Kernel Forensics</a>
+    <a href="dialog.html">5 · The Invisible Dialog</a>
+    <a href="cpu.html">6 · One Instruction at a Time</a>
+    <a href="desktop.html">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 2 · THE LOOP</p>
+  <h1>THE RESTART <span class="accent">LOOP</span></h1>
+  <p class="standfirst">The first Windows 2000 checkpoint landed on 28 May. By the end of
+  June the project had a wall with a name — <em>set system security</em> — and a failure
+  that dressed itself as progress: a setup that answered its own wizard, wrote hundreds of
+  thousands of sectors, failed one invisible step, rebooted, and started again. This
+  chapter is about the loop itself, and about the procession of confident diagnoses it
+  dissolved, one controlled experiment at a time.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">47</div><div class="l">reboots accumulated by one install by 31 May — three days into the campaign</div></div>
+  <div class="stat"><div class="v">≈15</div><div class="l">copies of the same error in setuperr.log at the 30 June reframe (4,477 bytes)</div></div>
+  <div class="stat"><div class="v">0 B</div><div class="l">the QEMU oracle's setuperr.log after the identical phase — the divergence marker</div></div>
+  <div class="stat"><div class="v">× 0</div><div class="l">NtWriteFile calls to secedit.sdb across an entire failing pass — the tally that killed a theory</div></div>
+  <div class="stat"><div class="v">182 → 2</div><div class="l">identical #GP faults at 0x80467EC1 in one 512-event ring, before and after the June fix</div></div>
+  <div class="stat"><div class="v">45+ min</div><div class="l">how long the wall retreats when watched under a verbose trace — versus ~2 min lean</div></div>
+</section>
+
+<section class="prose">
+
+<h2>A setup that answered its own wizard</h2>
+
+<p>The campaign opened at pace. The first checkpoint reached git on 28 May 2026 —
+thirteen files, with a boot log of some thirty runs already behind it — and by 31 May one
+install had accumulated 47 reboots. Through June, <a href="/mddosem/">mddosem</a>'s run
+journals read like a machine gathering speed: text-mode setup, then the GUI phase —
+Installing Devices, Regional Settings, the product key, Date and Time, Networking,
+Installing Components — a little further every day, apparently.</p>
+
+<p>The failing shape, once finally seen whole, was this. GUI setup runs all the way to
+<em>Performing Final Tasks</em> and starts a step called <em>set system security</em>, in
+which Windows' Security Configuration Engine stamps access-control descriptors onto
+thousands of registry keys and files. Somewhere inside that step, it fails — and appends
+one line to <code>\WINNT\setuperr.log</code>:</p>
+
+<div class="term">
+<span class="p">\WINNT\setuperr.log</span> <span class="dim">— extracted from the looping disk, 30 June</span>
+
+<span class="bad">Error:</span>  Setup encountered an error while trying to set system security.
+        An extended error has occurred.
+<span class="dim">        …repeated ≈15 times — 4,477 bytes, one more copy after every pass</span>
+</div>
+
+<p>Then it reboots. There is nothing violent about the reboot: the 8042 keyboard
+controller — a tiny microcontroller every PC of the era carried — has an output pin that,
+for reasons rooted in 1984, is wired to the CPU's reset line, and pulsing it is how PC
+software politely asks the machine to start over. The emulator logged exactly that: a
+guest-requested reset through the keyboard controller's output port. Windows was not
+crashing. It was giving up tidily.</p>
+
+<p>And because setup never reached its finish line, it never cleared its own breadcrumbs.
+<code>RestartSetup=1</code> and <code>SystemSetupInProgress=1</code> stay written in the
+registry; the recorded command line stays <code>setup -newsetup</code>. On the next boot
+Windows dutifully runs the entire GUI phase again — wizard included. That re-ask is the
+tell, and the 30 June journal states it in one sentence: <strong>“a real install answers
+the wizard once and never re-asks.”</strong></p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE LOOP — ONE PASS, STEP BY STEP</span>
+    <span class="hint">⏮ ⏭ step · ← → keys when focused</span>
+  </div>
+  <div class="fig-body stage" id="loop-stage">
+    <svg viewBox="0 0 760 332" role="img" aria-label="Diagram of the Windows 2000 setup restart loop as six stations on a circuit: boot with RestartSetup equal to one; the GUI wizard re-asked; component installation writing hundreds of thousands of sectors; Performing Final Tasks reaching set system security; the failure appending one line to setuperr.log; and the 8042 reset pulse leading back to boot. A central readout tracks setuperr.log growing from 4,477 to 4,598 bytes while RestartSetup never clears.">
+      <!-- arrows around the circuit (ar_i leads from station i to station i+1) -->
+      <g class="lp-ar" id="lp-ar0"><line x1="224" y1="51" x2="268" y2="51"/><polygon points="276,51 267,46.5 267,55.5"/></g>
+      <g class="lp-ar" id="lp-ar1"><line x1="484" y1="51" x2="528" y2="51"/><polygon points="536,51 527,46.5 527,55.5"/></g>
+      <g class="lp-ar" id="lp-ar2"><line x1="640" y1="82" x2="640" y2="242"/><polygon points="640,250 635.5,241 644.5,241"/></g>
+      <g class="lp-ar" id="lp-ar3"><line x1="536" y1="279" x2="492" y2="279"/><polygon points="484,279 493,274.5 493,283.5"/></g>
+      <g class="lp-ar" id="lp-ar4"><line x1="276" y1="279" x2="232" y2="279"/><polygon points="224,279 233,274.5 233,283.5"/></g>
+      <g class="lp-ar wrap" id="lp-ar5"><line x1="120" y1="248" x2="120" y2="88"/><polygon points="120,80 115.5,89 124.5,89"/></g>
+      <text class="lp-wrap-lbl" x="132" y="170" style="fill:var(--muted);font-size:10px;">…and round again</text>
+      <!-- stations -->
+      <g class="lp-st" id="lp-st0"><rect x="20" y="24" width="200" height="54" rx="5"/><text class="name" x="120" y="46" text-anchor="middle">1 · BOOT</text><text class="sub" x="120" y="64" text-anchor="middle">RestartSetup = 1</text></g>
+      <g class="lp-st" id="lp-st1"><rect x="280" y="24" width="200" height="54" rx="5"/><text class="name" x="380" y="46" text-anchor="middle">2 · THE WIZARD</text><text class="sub" x="380" y="64" text-anchor="middle">every page re-asked</text></g>
+      <g class="lp-st" id="lp-st2"><rect x="540" y="24" width="200" height="54" rx="5"/><text class="name" x="640" y="46" text-anchor="middle">3 · INSTALLING</text><text class="sub" x="640" y="64" text-anchor="middle">100,000s of sectors written</text></g>
+      <g class="lp-st" id="lp-st3"><rect x="540" y="252" width="200" height="54" rx="5"/><text class="name" x="640" y="274" text-anchor="middle">4 · FINAL TASKS</text><text class="sub" x="640" y="292" text-anchor="middle">set system security</text></g>
+      <g class="lp-st bad" id="lp-st4"><rect x="280" y="252" width="200" height="54" rx="5"/><text class="name" x="380" y="274" text-anchor="middle">5 · THE ERROR</text><text class="sub" x="380" y="292" text-anchor="middle">setuperr.log +1 line</text></g>
+      <g class="lp-st" id="lp-st5"><rect x="20" y="252" width="200" height="54" rx="5"/><text class="name" x="120" y="274" text-anchor="middle">6 · 8042 PULSE</text><text class="sub" x="120" y="292" text-anchor="middle">a deliberate reboot</text></g>
+      <!-- the scoreboard -->
+      <g class="lp-ro">
+        <rect x="252" y="118" width="256" height="92" rx="5"/>
+        <text class="k" x="268" y="144">setuperr.log</text>
+        <text class="v" x="492" y="144" text-anchor="end" id="lp-bytes">4,477 B</text>
+        <text class="k" x="268" y="168">error lines</text>
+        <text class="v" x="492" y="168" text-anchor="end" id="lp-lines">≈ 15</text>
+        <text class="k" x="268" y="192">RestartSetup</text>
+        <text class="v" x="492" y="192" text-anchor="end" id="lp-flag">1 — never clears</text>
+      </g>
+    </svg>
+  </div>
+  <div class="evlog" id="loop-log"></div>
+  <div class="fig-controls">
+    <button class="btn" id="loop-prev">◀ back</button>
+    <button class="btn primary" id="loop-next">step ▶</button>
+    <span class="ctl"><output id="loop-out"></output></span>
+  </div>
+  <div class="fig-note">Loop anatomy and byte counts from the 30 June reframe journal and
+  bug ledger MDD-BUG-KILN-00004: at the reframe setuperr.log held 4,477 bytes (≈15 copies
+  of the error); the interpreter-driven pass appended one more line (+121 B → 4,598). The
+  reset is logged as <code>GuestResetSource::KeyboardControllerPulseOutputPort</code> —
+  the guest's own request, not an emulator fault.</div>
+</figure>
+
+<h2>Why it fooled everyone for weeks</h2>
+
+<p>Seen per pass, the loop is indistinguishable from an install that is nearly done. Each
+iteration genuinely detects devices, genuinely copies components, genuinely writes
+hundreds of thousands of disk sectors, and genuinely advances through every setup screen
+in order. Agents drove the wizard by hand over the emulator's control pipe, watched it
+get “further”, and logged forward progress — about thirty hours of bounded continuation
+runs across 23–25 June alone. The 30 June reframe opened with the sentence that stung:
+the frontier had <em>not moved since 5 June</em>. The only ground truth was the pair of
+completion flags, and they never changed.</p>
+
+<p>The same day produced the reproduction that mattered. Driven end to end on the pure
+interpreter — the emulator's reference engine
+(<a href="machine.html">chapter 1</a>) — the failure reproduced exactly, appending one
+more error line: 4,477 → 4,598 bytes. Whatever this was, it lived in shared emulation
+code, not in the optional recompiler. That evening it got a name:
+bug <code>MDD-BUG-KILN-00004</code>.</p>
+
+<h2>Two tells from the oracle</h2>
+
+<p>The standing controlled experiment behind all of this was the QEMU reference install —
+the same ISO and the same product key on a Standard-PC configuration
+(<a href="machine.html">chapter 1</a>) — which sails through <em>set system security</em>
+and boots to a desktop. Its value was never inspiration; it was discrimination. Two files
+told the story.</p>
+
+<p>The first tell was <code>setuperr.log</code> itself: on the oracle it is empty — zero
+bytes — where ours held 4,477 bytes of the same error. Not a Windows quirk, then; a
+divergence with a cause on our side of the fence. The second tell was sharper.
+<code>scesetup.log</code> records each phase of the security step, and the two logs match
+phase for phase — User Rights, Group Membership, Registry Values, System
+Access — until the Registry Keys phase, where ours simply stops, mid-line, without its
+closing full stop:</p>
+
+<div class="term">
+<span class="p">scesetup.log</span> <span class="dim">— the same phase on two machines</span>
+
+<span class="hl">mddosem</span>   Configure …\time zones\US Mountain Standard Time
+          <span class="bad">⟵ the log ends here, mid-line — the guest was reset during this key</span>
+
+<span class="hl">QEMU</span>      Configure …\time zones\US Mountain Standard Time.
+          Configure …\time zones\Vladivostok… \Yakutsk…  <span class="dim">(+ ~260 more keys)</span>
+          <span class="ok">Registry keys configuration completed successfully.</span>
+</div>
+
+<p>A log that ends mid-line is a process that was killed mid-write: the guest was reset
+while the Security Configuration Engine was stamping a descriptor onto that very key. And
+on the next traced run the cut fell somewhere else entirely — further on, among help-file
+ACLs in the File Security phase — with the storage layer demonstrably healthy at the
+moment of reset (883,012 write-commits, last flush clean). A failure point that wanders
+under identical inputs is the fingerprint of something timing-sensitive: not a wrong
+answer, but a wrong moment. Hold that thought; it takes until
+<a href="wires.html">chapter 3</a> to pay off.</p>
+
+<h2>The hypothesis board</h2>
+
+<p>Every long debugging campaign keeps an informal docket of accusations. This one's is
+worth rendering in full — because the ratio is the story. Fourteen serious hypotheses
+were raised against the loop and its descendants; six died by controlled experiment, three
+were red herrings or went stale, and only five turned out to be real.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE HYPOTHESIS BOARD — EVERYTHING THE LOOP WAS ACCUSED OF</span>
+    <span class="hint">filter by verdict</span>
+  </div>
+  <div class="fig-controls top">
+    <div class="seg" id="hypo-seg" role="group" aria-label="Filter hypotheses by verdict">
+      <button data-v="all" aria-pressed="true">all</button>
+      <button data-v="refuted" aria-pressed="false">refuted</button>
+      <button data-v="herring" aria-pressed="false">red herrings</button>
+      <button data-v="real" aria-pressed="false">real</button>
+    </div>
+  </div>
+  <div class="fig-body">
+    <div class="hypo-grid" id="hypo-grid"></div>
+  </div>
+  <div class="evlog" id="hypo-log"></div>
+  <div class="fig-note">Hypotheses, verdicts and kills as recorded in bug ledger
+  MDD-BUG-KILN-00004 and the campaign journals. “Real” covers the V86 storm below, the
+  interrupt-delivery bug of <a href="wires.html">chapter 3</a>, the reframed deadlock and the two prompts of
+  <a href="dialog.html">chapter 5</a>, and the four fixes of
+  <a href="cpu.html">chapter 6</a>.</div>
+</figure>
+
+<h2>The massacre of 30 June</h2>
+
+<p>With the loop finally named, 30 June became a marathon of controlled experiments — one
+day that raised, tested and killed more theories than the preceding month had managed to
+raise.</p>
+
+<p>It began with database forensics. The security step keeps its working state in
+<code>secedit.sdb</code>, a database in Microsoft's ESE format — the same engine that
+underlies Exchange and Active Directory, with write-ahead transaction logs and a
+checkpoint recording how far the on-disk database has caught up with them. Microsoft
+ships a maintenance tool, <code>esentutl</code>, and pointing it at a copy of the
+database extracted from the looping disk produced a genuinely alarming picture: state
+<em>Dirty Shutdown</em>; checkpoint frozen at log generation 799; and 1,470 one-megabyte
+transaction logs — about 1.47&nbsp;GB of log — behind a tiny database.
+The reading wrote itself: ESE logs forever and never flushes, so the emulator must be
+losing the completion of asynchronous disk writes. Claude and Codex co-signed it as the
+leading hypothesis. Then a syscall trace killed it with one table:</p>
+
+<table class="data">
+  <caption>Every operation ESE issued against secedit.sdb — one full failing pass, object-name-resolved syscall trace, 30 June</caption>
+  <thead>
+    <tr><th>Operation</th><th class="num">Count</th><th>What it says</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>NtReadFile (asynchronous)</td><td class="num">199</td><td>returned STATUS_PENDING — completions arrived later</td></tr>
+    <tr><td>NtReadFile (synchronous)</td><td class="num">12</td><td>STATUS_SUCCESS</td></tr>
+    <tr><td>NtCreateFile</td><td class="num">18</td><td>opens</td></tr>
+    <tr><td>NtClose</td><td class="num">18</td><td>closes</td></tr>
+    <tr><td>NtFlushBuffersFile</td><td class="num">18</td><td>explicit flushes — the engine could flush</td></tr>
+    <tr><td>NtSetInformationFile</td><td class="num">18</td><td>metadata updates</td></tr>
+    <tr><td>NtQueryInformationFile</td><td class="num">3</td><td>metadata reads</td></tr>
+    <tr class="total"><td>NtWriteFile</td><td class="num">0</td><td>the write whose completion was “lost” was never issued</td></tr>
+  </tbody>
+</table>
+
+<p>You cannot lose the completion of a write that never happened. Whatever was wrong sat
+upstream of the disk — and the day's remaining controls took the rest of the docket apart
+in sequence:</p>
+
+<ul>
+<li><strong>The clock.</strong> The database's create-time read 01/01/2113 — a date
+eighty-seven years in the future — and a setup log's clock jumped from 1601 to 2026. A
+clean run whose clock read a perfectly correct 30 June 2026 failed identically.
+Co-symptom, not cause.</li>
+<li><strong>Accumulated corruption.</strong> A fresh, from-blank install failed
+byte-identically at the same step — and on the fresh disk the “frozen” checkpoint
+advanced perfectly normally. The 1.47&nbsp;GB horror show was an artefact of the loop
+itself, killing the same process mid-run over and over.</li>
+<li><strong>Turbo time-starvation.</strong> The repro runs used the emulator's fastest
+pacing; perhaps guest time was too compressed for ESE's background work? A control at
+60,000 cycles per millisecond — 33× more guest time per unit of work than turbo's
+2,000,000 — failed byte-identically.</li>
+<li><strong>Memory pressure.</strong> At 64&nbsp;MiB of guest RAM a wait classifier
+flagged repeated page-fault churn in 23% of samples — an MMU bug? At 128&nbsp;MiB, the
+emulator's hard cap on guest RAM, the churn collapsed to 0.7% and the failure remained.
+Working-set thrashing: a shaper of symptoms, not a cause.</li>
+</ul>
+
+<p>By nightfall the board was mostly red. The one load-bearing discovery of 30 June was
+somewhere else entirely.</p>
+
+<h2>The bug that was real</h2>
+
+<p>To run the VGA BIOS — 16-bit code with a 1980s pedigree — a 32-bit operating system
+uses virtual-8086 mode: the 386's scheme for running real-mode code inside a
+protected-mode world, one reflected interrupt at a time. Setup's security phase does
+exactly this: it issues a V86-mode <code>INT 10h</code> (set text mode 3) into the video
+BIOS. Inside that call the BIOS executes <code>PUSHF</code> and <code>POPF</code> —
+instructions that are privilege-sensitive in V86 mode and fault <em>by design</em>, so
+that the kernel's V86 monitor can emulate them. Routine; it happens constantly.</p>
+
+<p>The fault path is where mddosem was wrong. When the CPU takes an exception out of V86
+mode into ring 0, it loads null selectors into the data segment registers DS, ES, FS and
+GS. But an x86 segment register is two things at once: the visible selector, and a hidden
+descriptor cache holding a base, a limit and access rights. Intel's manual describes the
+automatic null (SDM&nbsp;§20.3.1.2); real silicon leaves the hidden cache
+<em>usable</em> — base zero, four-gigabyte limit — and Windows leans on exactly that. mddosem instead
+marked the registers unusable, the way a software-loaded null selector would be.</p>
+
+<p>Windows 2000 knows what the silicon actually does, and leans on it.
+<span class="addr">KiTrap0D</span> — the kernel's general-protection-fault handler — has a
+hand-optimised fast path for V86 faults that reads kernel memory through DS without
+reloading it first: <code>mov ebx, ds:[0x80481c80]</code> at
+<span class="addr">0x80467EC1</span>. On mddosem, that load itself faulted. So the #GP
+handler raised #GP, whose handler raised #GP — the diagnostic ring captured
+<strong>182 identical faults</strong> at the same address in a single 512-event window,
+and then the 8042 pulse.</p>
+
+<aside class="aside">
+  <span class="tag">READING THE ORACLE'S BINARY</span>
+  <p>Finding that address meant reading Microsoft's code. The team pulled
+  <code>ntoskrnl.exe</code> out of the guest's NTFS disk image with 7-Zip and disassembled
+  it with objdump against the kernel's load base of <span class="addr">0x80400000</span> —
+  debugging Microsoft's kernel binary in order to debug the emulator underneath it. The
+  confirming witness was DOSBox-X, the project's standing hardware-behaviour reference:
+  it nulls those same registers on that same path but leaves the cached base flat and
+  usable — which is precisely why Windows 2000 boots there.</p>
+</aside>
+
+<p>The fix (commit <code>837fc8775</code>, v0.91.0) is small and pointed:
+<code>SegmentCache::null_flat_usable()</code>, applied only to the CPU's automatic null on
+V86 entry — a software <code>mov ds, 0</code> still yields an unusable segment, as it
+must. The storm collapsed from 182 faults to 2, and setup surged: clean through device
+detection, the entire wizard, Installing Components, into Performing Final Tasks — far
+past the old meltdown. Then it looped anyway, with a new terminal signature. A real bug,
+genuinely fixed; a wall, moved rather than removed. Remember the shape of that sentence.
+The campaign was about to live inside it for three weeks.</p>
+
+<h2>The diagnosis that dissolved</h2>
+
+<p>What the post-fix loop pointed at next was, of all things, audio. The terminal state
+was now an idle kernel polling a single process-state query
+(<code>NtQueryInformationProcess</code>, twelve to fifteen times a sample, always from
+the same return address at <span class="addr">0x77F9335C</span>) — setup waiting on a
+child process that never finished. With Codex as consulting analyst, the trail was run
+all the way to a name: the exact command line of the stuck child, predicted from the setup
+logs and then confirmed verbatim in the preserved trace.</p>
+
+<div class="term">
+<span class="dim">the stuck child — recovered from the preserved process trace:</span>
+rundll32.exe streamci.dll,StreamingDeviceSetup {CD171DE3-69E5-11D2-B56D-0000F8754380},{9B365890-165F-11D0-A195-0020AFD156E4},{3E227E76-690D-11D2-8161-0000F8775BF1},C:\WINNT\INF\WDMAUDIO.inf,WDM_WDMAUD.Interface.Install
+</div>
+
+<p>WDMAUD is Windows' software audio plumbing — kernel-streaming machinery installed on
+every Windows 2000 system regardless of soundcard. The <code>SW\</code> prefix in its
+device path means <em>software-enumerated</em>, which is why muting the emulated Sound
+Blaster had been correctly predicted to change nothing. And the damning measurement: the
+installer's <code>IOCTL_SWENUM_INSTALL_INTERFACE</code> came back STATUS_SUCCESS thirteen
+times in four-tenths of a second — yet the audio interface never appeared in the
+registry's DeviceClasses, while four sibling software interfaces sat there, published.
+Accepted, never delivered. A precise, mechanistic, internally coherent diagnosis.</p>
+
+<p>It was flagged <em>architecturally significant — do not attempt blind</em>, and on
+4 July the bug was formally parked to await Arthur's steer on the deep plug-and-play work
+it seemed to require. Then the props went missing: by 10 July not one Windows 2000 disk
+image survived anywhere on the machine, and the repro had to be rebuilt from the retail
+SP4 ISO with an unattended answer floppy — sixteen minutes of text-mode setup, twenty-two
+of GUI, wall duly re-confirmed.</p>
+
+<p>And then, on 13 July, the reconciliation. A fresh wall boot on the current binary,
+traced verbosely for 45 minutes, contained <em>no</em> streamci, <em>no</em> WDMAUD — no
+trace of the audio step whatsoever. Setup was grinding in an earlier device-install phase
+(<code>syssetup</code>) and never reached the code the whole theory was about. The
+diagnosis had been true of an older binary and had gone quietly stale against this one:
+weeks of careful forensic narrowing, dissolved by a single grep.</p>
+
+<aside class="aside danger">
+  <span class="tag">THE HEISENBUG</span>
+  <p>Same disk, same guest, two behaviours. Run it lean and it walls in about two
+  minutes, idle at the kernel's idle loop. Run it under the verbose syscall trace and it
+  grinds through <code>syssetup</code> for 45+ minutes without idling at all — the
+  tracer's own timing perturbation moved the failure point. From here on, every
+  observation of the wall had to be weighed against the possibility that observing it had
+  moved it — a theme <a href="forensics.html">chapter 4</a> inherits at scale.</p>
+</aside>
+
+<h2>What the loop taught</h2>
+
+<p>Three things were now solid. The loop was real — a deliberate, tidy, self-inflicted
+reboot, not an emulator crash. The diagnoses were perishable — six refuted, a stack of
+red herrings, one beautifully-built theory dead of staleness between binary versions. And
+the one fix that was real had not removed the wall but <em>moved it downstream</em> — a
+pattern that promptly repeated. When the ATA completion-edge bug was found and fixed on
+11 July (<a href="wires.html">chapter 3</a> owns that mechanism), the install surged from
+2.03 million disk write-commits to 3.64 million, and one instrumented run then completed
+the entire <em>set system security</em> phase cleanly — and hung further on. This was
+never one bug with one address. It was a class of defect, surfacing wherever Windows
+happened to lean hardest on the machinery underneath.</p>
+
+<p>Which is why the next move was to stop reading Windows' logs and start reading the
+machine's wires: how an interrupt actually travels from a drive to a CPU, and all the
+ways an emulator can silently drop one on the way.
+That is <a href="wires.html">chapter 3</a>.</p>
+
+<p class="srcline">Sources for this chapter — bug ledger MDD-BUG-KILN-00004 (raised
+30 June 2026); the campaign journals for 25 June (the continuation churn), 30 June (the
+set-system-security reframe, the ESE forensics and the V86 fix, commit 837fc8775 /
+v0.91.0) and 13 July (the WDMAUD reconciliation). The QEMU oracle and the rules of
+engagement are <a href="machine.html">chapter 1</a>'s; the full evidence table is in
+<a href="desktop.html#evidence">chapter 7</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="machine.html"><span class="dir">◀ previous</span>1 · The Machine</a>
+  <a class="next" href="wires.html"><span class="dir">next ▶</span>3 · Edges &amp; Wires</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W = window.W2K, D = window.W2K_DATA;
+  if (!W || !D) return;
+
+  /* ============================================================
+     FIG 1 · the restart loop, stepped
+     Facts: setuperr.log 4,477 B (≈15 error lines) at the 30 June
+     reframe; interpreter pass appended one line → 4,598 B (+121);
+     reset source GuestResetSource::KeyboardControllerPulseOutputPort;
+     RestartSetup=1 / SystemSetupInProgress=1 never clear.
+     Manual stepper only — nothing autoplays, so reduced-motion
+     needs no special casing beyond the global CSS rule.
+     ============================================================ */
+  (function () {
+    var stage = document.getElementById("loop-stage");
+    if (!stage) return;
+    var sts = [], ars = [], i;
+    for (i = 0; i < 6; i++) {
+      sts.push(document.getElementById("lp-st" + i));
+      ars.push(document.getElementById("lp-ar" + i));
+    }
+    var roBytes = document.getElementById("lp-bytes");
+    var roLines = document.getElementById("lp-lines");
+
+    var STEPS = [
+      { st: 0, ar: -1, bytes: "4,477 B", lines: "≈ 15", hot: false,
+        cap: '<span class="t">1 · boot</span> RestartSetup=1 and SystemSetupInProgress=1 are still written, so the machine boots straight back into GUI setup — recorded command line: <code>setup -newsetup</code>' },
+      { st: 1, ar: 0, bytes: "4,477 B", lines: "≈ 15", hot: false,
+        cap: '<span class="t">2 · the wizard</span> Regional Settings, the product key, Date and Time, Networking — every page re-asked, every answer re-given' },
+      { st: 2, ar: 1, bytes: "4,477 B", lines: "≈ 15", hot: false,
+        cap: '<span class="t">3 · installing</span> devices detected, components copied — hundreds of thousands of sectors genuinely written. From outside it looks exactly like progress' },
+      { st: 3, ar: 2, bytes: "4,477 B", lines: "≈ 15", hot: false,
+        cap: '<span class="t">4 · final tasks</span> “Performing Final Tasks” reaches <em>set system security</em> — security descriptors start going onto thousands of registry keys and files' },
+      { st: 4, ar: 3, bytes: "4,598 B", lines: "≈ 16", hot: true,
+        cap: '<span class="t">5 · the error</span> the step fails and one more line lands in setuperr.log: 4,477 → 4,598 bytes on the pass that proved the bug lived in shared emulation code' },
+      { st: 5, ar: 4, bytes: "4,598 B", lines: "≈ 16", hot: true,
+        cap: '<span class="t">6 · the pulse</span> setup pulses the 8042 keyboard controller’s reset output — a deliberate, tidy reboot, not a crash' },
+      { st: 0, ar: 5, bytes: "4,598 B", lines: "≈ 16", hot: true,
+        cap: '<span class="t">7 · da capo</span> nothing cleared the flags, so the next boot runs the whole GUI phase again. “A real install answers the wizard once and never re-asks”' }
+    ];
+
+    W.makeStepper({
+      prev: "loop-prev",
+      next: "loop-next",
+      out: "loop-out",
+      log: "loop-log",
+      stage: "loop-stage",
+      steps: STEPS,
+      apply: function (idx, s) {
+        for (var k = 0; k < 6; k++) {
+          if (sts[k]) sts[k].classList.toggle("on", k === s.st);
+          if (ars[k]) ars[k].classList.toggle("on", k === s.ar);
+        }
+        if (roBytes) {
+          roBytes.textContent = s.bytes;
+          roBytes.classList.toggle("hot", !!s.hot);
+        }
+        if (roLines) roLines.textContent = s.lines;
+      }
+    });
+  })();
+
+  /* ============================================================
+     FIG 2 · the hypothesis board
+     Renders W2K_DATA.hypotheses verbatim; verdict → chip class +
+     filter group. Groups: refuted | herring (incl. stale) |
+     real (fixed + reframed + confirmed).
+     ============================================================ */
+  (function () {
+    var grid = document.getElementById("hypo-grid");
+    var log = document.getElementById("hypo-log");
+    if (!grid || !Array.isArray(D.hypotheses)) return;
+
+    var VMETA = {
+      refuted:   { chip: "refuted",   label: "REFUTED",      group: "refuted", edge: "var(--danger)" },
+      herring:   { chip: "suspect",   label: "RED HERRING",  group: "herring", edge: "var(--warn)" },
+      stale:     { chip: "stale",     label: "WENT STALE",   group: "herring", edge: "var(--muted)" },
+      fixed:     { chip: "fixed",     label: "REAL — FIXED", group: "real",    edge: "var(--good)" },
+      reframed:  { chip: "confirmed", label: "REFRAMED",     group: "real",    edge: "var(--cobalt)" },
+      confirmed: { chip: "confirmed", label: "CONFIRMED",    group: "real",    edge: "var(--teal)" }
+    };
+
+    var cards = [];
+    D.hypotheses.forEach(function (h) {
+      var m = VMETA[h.verdict] ||
+        { chip: "stale", label: String(h.verdict || "?").toUpperCase(), group: "other", edge: "var(--muted)" };
+      var el = document.createElement("article");
+      el.className = "hypo";
+      el.style.borderLeftColor = m.edge;
+      var head = document.createElement("div");
+      head.className = "hh";
+      var t = document.createElement("span");
+      t.className = "ht";
+      t.textContent = h.h;
+      var c = document.createElement("span");
+      c.className = "chip " + m.chip;
+      c.textContent = m.label;
+      head.appendChild(t);
+      head.appendChild(c);
+      var ev = document.createElement("p");
+      ev.className = "ev";
+      ev.textContent = h.ev;
+      el.appendChild(head);
+      el.appendChild(ev);
+      grid.appendChild(el);
+      cards.push({ el: el, group: m.group });
+    });
+
+    var counts = { refuted: 0, herring: 0, real: 0 };
+    cards.forEach(function (c) {
+      if (counts[c.group] !== undefined) counts[c.group]++;
+    });
+
+    function setLog(mode, shown) {
+      if (!log) return;
+      if (mode === "all") {
+        log.innerHTML = '<span class="t">' + cards.length + " hypotheses</span> " +
+          counts.refuted + " refuted · " + counts.herring +
+          " red herrings (one a stale diagnosis) · " + counts.real +
+          " real — the ratio is the story";
+      } else {
+        var tail =
+          mode === "refuted" ? "refuted — each killed by a controlled experiment" :
+          mode === "herring" ? "red herrings — plausible, detailed, and wrong" :
+          "that turned out to be real";
+        log.innerHTML = '<span class="t">' + shown + " of " + cards.length + "</span> " + tail;
+      }
+    }
+
+    W.bindSeg("hypo-seg", function (v) {
+      var shown = 0;
+      cards.forEach(function (c) {
+        var vis = v === "all" || c.group === v;
+        c.el.style.display = vis ? "" : "none";
+        if (vis) shown++;
+      });
+      setLog(v, shown);
+    });
+    setLog("all", cards.length);
+  })();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

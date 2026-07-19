@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Edges &amp; Wires — Boot to Desktop</title>
+<meta name="description" content="How a disk interrupt travels from drive to CPU, how mddosem's wiring silently destroyed latched completions, and the PIIX3 status bit Windows 2000 checks before believing its own interrupts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* wires.html — INTRQ stepper schematic */
+#fig-wire .wbox   { fill: var(--surface-2); stroke: rgba(232,230,223,0.16); }
+#fig-wire .wbox.hot { stroke: var(--cobalt-hi); stroke-width: 2; }
+#fig-wire .wframe { fill: var(--surface-3); stroke: rgba(232,230,223,0.10); }
+#fig-wire .wt  { fill: var(--cobalt); font-size: 12px; font-weight: 700; letter-spacing: 0.06em; }
+#fig-wire .wl  { fill: var(--muted); font-size: 10px; }
+#fig-wire .wv  { fill: var(--ink-2); font-size: 11px; font-weight: 700; }
+#fig-wire .wv.g { fill: var(--good); }
+#fig-wire .wv.w { fill: var(--warn); }
+#fig-wire .wv.b { fill: var(--danger); }
+#fig-wire .wphase { fill: var(--teal); font-size: 11px; letter-spacing: 0.14em; }
+#fig-wire .wire { stroke: rgba(124,134,152,0.5); stroke-width: 2.5; fill: none; transition: stroke 180ms ease; }
+#fig-wire .wire.hi { stroke: var(--cobalt); }
+#fig-wire .wcell { fill: var(--surface-3); stroke: rgba(232,230,223,0.12); transition: fill 180ms ease, stroke 180ms ease; }
+#fig-wire .wcell.g { fill: rgba(76,194,110,0.20); stroke: var(--good); }
+#fig-wire .wcell.w { fill: rgba(224,166,60,0.18); stroke: var(--warn); }
+#fig-wire .wlamp { fill: var(--surface-3); stroke: rgba(232,230,223,0.20); transition: fill 180ms ease; }
+#fig-wire .wlamp.g { fill: var(--good); }
+#fig-wire .wlamp.b { fill: var(--danger); }
+#fig-wire .intg { opacity: 0.20; transition: opacity 180ms ease; }
+#fig-wire .intg.hi { opacity: 1; }
+#fig-wire .intg line { stroke: var(--cobalt); stroke-width: 2.5; }
+#fig-wire .intg polygon { fill: var(--cobalt); }
+#fig-wire #w-pump-g, #fig-wire #w-flag-g { transition: opacity 180ms ease; }
+#fix3-wrap { max-width: 640px; margin: 26px 0; }
+#fix3-wrap .fdesc + .fdesc { margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="machine.html">1 · The Machine</a>
+    <a href="loop.html">2 · The Restart Loop</a>
+    <a href="wires.html" aria-current="page">3 · Edges &amp; Wires</a>
+    <a href="forensics.html">4 · Kernel Forensics</a>
+    <a href="dialog.html">5 · The Invisible Dialog</a>
+    <a href="cpu.html">6 · One Instruction at a Time</a>
+    <a href="desktop.html">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 3 · INTERRUPT DELIVERY</p>
+  <h1>EDGES &amp; <span class="accent">WIRES</span></h1>
+  <p class="standfirst">A Windows 2000 install is millions of disk writes, and every one of
+  them ends the same way: a wire goes high, a controller latches an edge, a processor is
+  interrupted. The emulator had the letter of that sequence right and the physics wrong —
+  at layer after layer. This chapter is how interrupts really work, and how an emulator
+  can quietly lose them.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">3.64M</div><div class="l">guest disk write-commits the install reached after the edge-destruction fix — up from 2.03M (11 Jul)</div></div>
+  <div class="stat"><div class="v">ms vs µs</div><div class="l">how long an interrupt sits latched-but-masked under NT versus DOS — every destruction window thousands of times wider</div></div>
+  <div class="stat"><div class="v">0x0C00</div><div class="l">the ELCR Windows 2000 programs: IRQ 10/11 level, everything else — including IRQ 14 — edge</div></div>
+  <div class="stat"><div class="v">4</div><div class="l">divergence-counter firings in Civ (0 in DOOM/F1GP) before the PIC contract change — every one a correctly retained timer tick</div></div>
+  <div class="stat"><div class="v bad">2</div><div class="l">unit tests found to have encoded the wrong behaviour — rewritten, not weakened</div></div>
+  <div class="stat"><div class="v good">5,544</div><div class="l">mddosem-hw tests green when the BMISTA latch-at-assert fix landed, 01:09 on 16 Jul</div></div>
+</section>
+
+<section class="prose">
+
+<h2>How a disk becomes code</h2>
+
+<p>When Windows 2000 writes a sector, the driver programs the drive and then puts the
+calling thread to sleep. Nothing about the write is synchronous: the drive works alone,
+and when it finishes it announces the fact electrically — it raises a wire called
+<strong>INTRQ</strong>, the interrupt request line it shares with the interrupt
+controller.</p>
+
+<p>That controller is the Intel 8259 — two of them, in the classic PC arrangement, a
+master and a slave chained together; the disk's line, IRQ&nbsp;14, arrives at the slave.
+Inside the 8259 sits the <strong>IRR</strong>, the Interrupt Request Register, and on an
+edge-triggered line the chip's job is to <em>capture the transition</em>: the instant
+INTRQ rises, the IRR bit is latched. A second register, the <strong>IMR</strong>, is a
+mask — a request can be latched yet held back. When a latched request is unmasked, the
+controller asserts INT to the processor; the processor acknowledges, receives a vector,
+and jumps through the interrupt table into the driver's interrupt service routine.</p>
+
+<p>The ISR's first meaningful act is to read the drive's Status register at port
+<code>0x1F7</code> — and that read is itself part of the protocol. Per the ATA
+specification (ATA-4 §6.3.5), reading Status tells the drive its interrupt has been
+noticed, and the drive answers by deasserting INTRQ. There are two acknowledgements at
+two layers: the Status read quenches the drive, and the EOI later releases the
+controller. Between them sits the hardware truth this whole chapter turns on:
+<strong>the falling wire cannot reach back into the 8259 and erase the edge it already
+captured</strong>. By the time any software can read Status, the request is the
+controller's property.</p>
+
+<h2>A latch with too many erasers</h2>
+
+<p><a href="/mddosem/">mddosem</a> does not deliver interrupts in the middle of an
+instruction. Its device models latch a one-shot pending-edge flag —
+<code>irq_pic_edge_pending</code> — and a delivery pump collects those flags and presents
+them to the emulated 8259 at quantum boundaries, roughly once per emulated millisecond.
+Deferred delivery is a respectable emulator architecture; QEMU's timing is similarly
+coarse. It has one absolute requirement: between assertion and delivery, the latch is
+sacred.</p>
+
+<p>It was not. The code paths that deassert INTRQ on a real drive — a guest read of the
+Status port, the issue of a new command, and, in the ATAPI model, the issue of a packet —
+<em>also cleared the flag</em>. So a completion whose Status the driver happened to poll
+before the pump ran was silently destroyed: the sector was on the disk, no system call
+had failed, the drive looked healthy — and the interrupt announcing all of this had never
+existed. Which completions died was decided by host-scheduling jitter, so the failure
+moved every time anyone looked at it. And it reproduced on both execution engines,
+because the storage models are shared.</p>
+
+<p>A Fable&nbsp;5 consult on 11 July pinned the mechanism; the reasoning was verified in
+the code and confirmed by reproduction before the fix was applied. The fix itself is
+almost an anticlimax: the pending edge may be consumed by the delivery pump or by a
+device reset, and by <em>nothing else</em>. Two existing unit tests turned out to have
+encoded the wrong behaviour — one solemnly asserting that a Status read revokes the
+latch, the other that nIEN does — and were rewritten rather than weakened. The effect was immediate: the install, which
+had been dying at around 2.03 million guest disk write-commits, ran on to 3.64 million —
+straight into a new wall, but that is the shape of this whole story.</p>
+
+<p>A sibling fix the same evening closed the last eraser. <strong>nIEN</strong> is a bit
+in the drive's Device Control register that masks its interrupt output, and the ATA-6
+standard (§7.9) is precise about what masking means: the drive <em>tri-states</em> INTRQ
+— electrically disconnects the wire. A disconnected wire is a falling edge, and a falling
+edge cannot unlatch a captured request. The old code revoked the latched edge whenever
+the guest set nIEN; the fix deletes that branch and keeps only the legitimate behaviour,
+re-driving the line when nIEN falls while a request is still pending.</p>
+
+<aside class="aside">
+  <span class="tag">THE CONSULT</span>
+  <p>Fable&nbsp;5's hypothesis list ranked this destruction class first, at roughly 35% —
+  and described how it compounds: a lost completion pushes <code>atapi.sys</code> into
+  its four-second timeout, the timeout triggers reset recovery, and the soft reset eats
+  the <em>next</em> latched edge. "Losses breed resets breed losses." The soft-reset
+  destroyer, serial resync and the RTC's Status-C read all belonged to the same family —
+  the ATA fix was the first member found, not the last.</p>
+</aside>
+
+<h2>The NT amplifier</h2>
+
+<p>Why had years of DOS software never tripped any of this? Because DOS closes the window
+almost before it opens: a DOS handler runs with the request already delivered, and the
+interval in which a latched edge sits waiting is measured in microseconds. NT is
+different by design. Its Standard PC HAL implements interrupt priority — IRQL — by
+rewriting the 8259's mask register on every <code>KfRaiseIrql</code> and
+<code>KfLowerIrql</code>, and it sends EOI at ISR <em>entry</em>. Under NT, requests
+routinely sit latched-but-masked in the IRR for whole ISR-plus-DPC windows — the handler
+and the deferred work it queues — which is to say <em>milliseconds</em>. As the
+wire-conformance analysis put it, every destruction bug in this class has a window
+thousands of times wider under NT than under DOS.</p>
+
+<p>The emulator's own deferral stacked on top: the delivery pump stretches the vulnerable
+interval from near-zero instructions to as much as a full quantum. Deferral turns a
+latent inconsistency into a live bug — and Windows 2000, the first guest to hold
+requests masked for so long, was the first workload wide enough to catch it.</p>
+
+<p>One more piece of ground truth was dumped from the guest itself before the seam was
+rebuilt. On PCI-era chipsets, edge versus level is programmable per line through the
+<strong>ELCR</strong>, the Edge/Level Control Register. On 14 July the team read back
+what Windows 2000 actually programs: <code>0x0C00</code>. Only IRQ&nbsp;10 and 11 — the
+PCI interrupt lines — are level-triggered; IRQ&nbsp;3, 4, 6 and 14 are all edge. The
+disk interrupt really is an edge, with everything that implies.</p>
+
+<figure class="fig wide" id="fig-wire">
+  <div class="fig-head">
+    <span class="t">THE INTRQ WIRE — ONE COMPLETION, TWO PHYSICS</span>
+    <span class="hint">step ▶ · ← → with the diagram focused · toggle the model</span>
+  </div>
+  <div class="fig-body">
+    <div class="stage" id="wire-stage" role="img"
+      aria-label="Step-through schematic of interrupt delivery. An IDE drive on the left raises the INTRQ wire to an 8259 interrupt controller holding IRR and IMR registers, which asserts INT to the CPU on the right. A toggle compares buggy mddosem, where a device-level pending-edge flag is cleared by a Status-port read so the interrupt is never delivered and the driver thread waits for ever, with a real 8259, where the latched IRR bit survives the Status read and the interrupt is delivered once the HAL unmasks the line.">
+      <svg id="wire-svg" viewBox="0 0 940 268" aria-hidden="true" style="min-width:680px">
+        <text id="w-phase" x="18" y="26" class="wphase">STEP 1 OF 7 · COMPLETION</text>
+        <!-- through-wire under the pump box -->
+        <line id="w-wireM" x1="300" y1="150" x2="426" y2="150" class="wire hi"/>
+        <!-- drive -->
+        <rect x="15" y="58" width="190" height="170" rx="6" class="wbox"/>
+        <text x="27" y="80" class="wt">IDE DRIVE</text>
+        <text x="27" y="102" class="wl">WRITE SECTOR(S) · done</text>
+        <text id="w-drv-2" x="27" y="118" class="wv">DRDY=1 · INTRQ high</text>
+        <g id="w-flag-g">
+          <rect x="27" y="136" width="166" height="52" rx="4" class="wframe"/>
+          <circle id="w-flag-lamp" cx="43" cy="162" r="7" class="wlamp"/>
+          <text x="56" y="158" class="wl">pending-edge flag</text>
+          <text id="w-flag-val" x="56" y="176" class="wv">0</text>
+        </g>
+        <!-- INTRQ wire -->
+        <line id="w-wireA" x1="205" y1="150" x2="300" y2="150" class="wire hi"/>
+        <line id="w-wireB" x1="426" y1="150" x2="445" y2="150" class="wire hi"/>
+        <text x="212" y="140" class="wl">INTRQ</text>
+        <!-- delivery pump -->
+        <g id="w-pump-g">
+          <rect id="w-pump-box" x="300" y="124" width="126" height="52" rx="5" class="wbox"/>
+          <text x="363" y="144" text-anchor="middle" class="wl" style="fill:var(--cobalt)">DELIVERY PUMP</text>
+          <text id="w-pump-sub" x="363" y="160" text-anchor="middle" class="wl">waits for quantum end</text>
+        </g>
+        <!-- 8259 -->
+        <rect x="445" y="58" width="225" height="170" rx="6" class="wbox"/>
+        <text x="457" y="80" class="wt">8259 PIC · IRQ 14</text>
+        <rect id="w-irr-cell" x="457" y="96" width="96" height="52" rx="4" class="wcell"/>
+        <text x="505" y="116" text-anchor="middle" class="wl">IRR</text>
+        <text id="w-irr-val" x="505" y="136" text-anchor="middle" class="wv">0</text>
+        <rect id="w-imr-cell" x="563" y="96" width="96" height="52" rx="4" class="wcell"/>
+        <text x="611" y="116" text-anchor="middle" class="wl">IMR</text>
+        <text id="w-imr-val" x="611" y="136" text-anchor="middle" class="wv">0</text>
+        <text id="w-pic-note" x="457" y="172" class="wl"></text>
+        <text id="w-pic-note2" x="457" y="186" class="wl"></text>
+        <!-- INT to CPU -->
+        <g id="w-int-g" class="intg">
+          <line x1="670" y1="150" x2="714" y2="150"/>
+          <polygon points="725,150 714,144.5 714,155.5"/>
+        </g>
+        <text x="676" y="140" class="wl">INT</text>
+        <!-- CPU -->
+        <rect x="725" y="58" width="200" height="170" rx="6" class="wbox"/>
+        <text x="737" y="80" class="wt">CPU · GUEST KERNEL</text>
+        <text id="w-cpu-1" x="737" y="110" class="wv">driver thread</text>
+        <text id="w-cpu-2" x="737" y="128" class="wl">blocked on completion event</text>
+        <text id="w-cpu-3" x="737" y="146" class="wv"></text>
+        <text x="18" y="256" class="wl">IRQ 14 · edge-triggered per the guest-programmed ELCR (0x0C00) · delivery-pump interval ≈ 1 ms of guest time</text>
+      </svg>
+    </div>
+  </div>
+  <div class="evlog" id="wire-log"><span class="t">1 · completion</span> The drive commits the sector, drops BSY, sets DRDY — and raises INTRQ, the interrupt-request wire it shares with the interrupt controller.</div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:var(--good)"></span>latched request</span>
+    <span class="key"><span class="sw" style="background:var(--warn)"></span>masked (IMR)</span>
+    <span class="key"><span class="sw" style="background:var(--danger)"></span>destroyed / lost</span>
+    <span class="key"><span class="sw" style="background:var(--cobalt)"></span>wire asserted</span>
+  </div>
+  <div class="fig-controls">
+    <div class="seg" id="wire-mode" role="group" aria-label="Interrupt-delivery model">
+      <button data-v="bug" aria-pressed="true">buggy mddosem</button>
+      <button data-v="real" aria-pressed="false">real 8259</button>
+    </div>
+    <button class="btn" id="wire-prev">◀ back</button>
+    <button class="btn primary" id="wire-next">step ▶</button>
+    <span class="ctl">step <output id="wire-out">1 / 7</output></span>
+  </div>
+  <div class="fig-note">Buggy path: the mddosem storage layer before 11 July 2026 — the
+  Status-read and nIEN erasers of a latched completion (HLD 2026.07.11, bug ledger
+  MDD-BUG-KILN-00004). Real path: the capture-at-assert contract adopted on 14 July.
+  Hand-stepped recreation from the HLD state machines, not a trace.</div>
+</figure>
+
+<h2>Three oracles, one hybrid</h2>
+
+<p>The ATA fix repaired one device; the disease was more general. The emulated 8259's own
+<code>lower_irq</code> cleared the latched IRR bit whenever a device's line fell —
+"line-follows" semantics — so <em>any</em> device whose wire dropped before the pump ran
+could lose an interrupt. Serial resync, the real-time clock's Status-C read and the ATA
+soft reset were all members of the same lost-interrupt class. Before changing a contract
+that the entire DOS-era corpus had been passing against, the team asked the references.
+They disagreed.</p>
+
+<table class="data">
+  <caption>What happens to a latched edge when the request line falls</caption>
+  <thead>
+    <tr><th>Reference</th><th>On deassert of an edge line</th><th>Why it gets away with it</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>QEMU (<code>hw/intc/i8259.c</code>)</td>
+        <td>IRR bit retained — capture-at-assert</td>
+        <td>Coarse timing: it cannot guarantee the CPU samples INT before the line drops, so the latch must survive</td></tr>
+    <tr><td>DOSBox-X (<code>pic.cpp</code>)</td>
+        <td>Request cleared — line-follows</td>
+        <td>Delivery in effectively zero time: the edge is consumed before anything can clear it</td></tr>
+    <tr><td>Real 8259A silicon</td>
+        <td>Nearest DOSBox-X — a request that drops before acknowledge becomes the classic spurious IRQ&nbsp;7</td>
+        <td>Nanosecond electronics; the race window barely exists</td></tr>
+    <tr><td>mddosem, pre-fix</td>
+        <td>Cleared — line-follows, with delivery deferred to the next quantum</td>
+        <td>It didn't. The hybrid opened a window of up to a full quantum in which a latched edge could die</td></tr>
+  </tbody>
+</table>
+
+<p>The disagreement is decisive rather than confusing once timing enters the picture.
+DOSBox-X survives line-follows because it delivers interrupts at once; QEMU retains the
+IRR bit because its timing is too coarse to promise that. mddosem's timing is
+QEMU-shaped, so QEMU's contract — capture-at-assert — is the correct one for it. And the
+verdict on the pre-fix emulator was the sharpest line of the campaign: Windows 2000
+installs on both QEMU and DOSBox-X. <strong>"What W2K cannot survive is our
+hybrid"</strong> — line-follows semantics bolted to quantum-deferred delivery.</p>
+
+<p>Adopting capture-at-assert initially broke sixteen tests, which looked like evidence
+the old semantics were load-bearing. A five-analyst read-only review, a synthesis, and an
+adversarial refutation pass — "cannot refute" was the required standard — established the
+opposite: the collateral was self-inflicted. The spurious-IRQ&nbsp;7 path that appeared
+to depend on line-follows had no production caller at all, and the failing tests were
+asserting the emulator's habits, not the hardware's. All sixteen were updated, not
+weakened; two were rewritten outright because their premise was void. The cheapest
+decisive check was a divergence counter placed on the exact state where the two models
+differ: across DOOM and F1GP it fired zero times, in Civilization four — every firing an
+IRQ&nbsp;0 timer tick the new model correctly retained — and a wider fourteen-game sweep
+found only a handful more, all equally benign. The change landed ELCR-aware on 14 July
+(mddosem-hw 0.41.0): edge lines keep their captured requests; level lines still follow
+the wire, as real level lines do.</p>
+
+<p>The same work left behind a permanent instrument: a wire-conformance oracle that
+drives the production PIC and a deliberately simple reference 8259 through adversarial
+pump-boundary schedules, with calibration rows that must re-find each already-fixed bug —
+"an oracle that misses the bugs we already found is worthless". The reflection on method
+belongs to <a href="desktop.html">chapter&nbsp;7</a>; the machinery lives on in
+mddosem-hw's test suite.</p>
+
+<aside class="aside good">
+  <span class="tag">SCOPE HONESTY</span>
+  <p>The commit that landed capture-at-assert records, in the same breath as its 5,539
+  green tests, that it "does NOT unblock W2K" — by 14 July the stall had already moved
+  upstream, into setup's device-install phase. Correct fixes that do not fix the symptom
+  are this saga's recurring rhyme: the interrupt seam had to be honest before the real
+  terminal bug could even be observed cleanly (<a href="forensics.html">chapter&nbsp;4</a>).</p>
+</aside>
+
+<h2>The southbridge that lied by omission</h2>
+
+<p>Between the drive and the 8259 sits one more chip this chapter owes an account of:
+the Intel PIIX3, the southbridge of the emulated board, whose IDE function answers PCI
+enumeration as device <code>8086:7010</code>. When the Windows 2000 campaign began,
+mddosem's PIIX3 IDE was a configuration-space stub: programming-interface byte
+<code>0x00</code>, no BAR4 — no bus-master register window at all. DOS never noticed,
+because DOS talks to the legacy ports. NT interrogates the controller. Its IDE drivers —
+<code>intelide</code>, <code>pciide</code> — bind to the PIIX3 and require the bus-master
+window to initialise the storage stack; without it, initialisation fails and the kernel
+bugchecks <span class="addr">STOP 0x0000007B</span> INACCESSIBLE_BOOT_DEVICE — which is
+exactly what a transplanted QEMU-installed disk hit during the July transplant
+experiments (the boot chain is <a href="machine.html">chapter&nbsp;1</a>'s subject; the
+transplant end-run itself later died of a transplant-inherent wall and was rejected as
+doctrine-violating anyway).</p>
+
+<p>So on 13 July the PIIX3 grew a real engine: bus-master command, status and
+descriptor-pointer registers in a sixteen-byte I/O window at BAR4 (placed at
+<code>0xC000</code>, QEMU's conventional base); a walker for the PRD scatter-gather
+tables that describe bus-master transfers; READ&nbsp;DMA and WRITE&nbsp;DMA command
+support; an IDENTIFY block honestly advertising the DMA modes. The irony is complete:
+the installed Windows 2000 ran its disk transfers in PIO mode throughout. The active
+ingredient was the window's <em>existence</em> — BAR4 being there let
+<code>intelide</code> initialise, and the storage stack came up.</p>
+
+<p>Fidelity kept mattering after the engine worked. During a bus-master transfer the
+emulation briefly exposed two states no real hardware ever produces: the drive reported
+idle-and-ready with a DMA command still outstanding, and the controller's bus-master
+Active bit was set and cleared inside a single pump call, so no guest could ever
+observe it as 1. Windows'
+IdePort tick handler polls both. The 15 July fix holds BSY from command acceptance to
+completion, per the ATA-6 command model, and ties Active to the Start bit for the whole
+in-flight window — a deliberate, documented divergence from modern QEMU (≥&nbsp;2.8),
+which uses BSY=0/DRQ=1 during transfer.</p>
+
+<p>And then the status bit itself. On a real PIIX3, the moment a drive asserts INTRQ the
+controller latches that channel's Interrupt bit in <strong>BMISTA</strong>, its
+bus-master status register — whether or not a DMA transfer is running. mddosem raised
+IRQ&nbsp;14 with BMISTA reading zero, and the secondary channel's status register was
+hardwired to zero, so IRQ&nbsp;15 could never appear there at all. A PCI IDE interrupt
+service routine is entitled to look down at its controller, see "no channel interrupt",
+and dismiss the IRQ as not-mine — the strongest concrete explanation on record for setup
+dismissing its own final completions, though the exact terminal IRQ was never caught in
+the act. The diagnosis came out of the RAM-dump census that
+<a href="forensics.html">chapter&nbsp;4</a> recounts. An independent review sharpened
+the fix before it landed: latching at the quantum-end pump was still too late, because
+the interpreter can execute another I/O instruction in the same batch and read stale
+status — so the latch must be visible <em>before the I/O instruction that provoked it
+returns</em>. The final engine keeps two independent channel banks, write-one-to-clear
+semantics and Start/Stop cancellation, and 5,544 mddosem-hw tests were green when it
+landed at 01:09 on 16 July. This is the blue pane of the four-fix flag
+<span class="flag" aria-hidden="true"><i></i><i></i><i></i><i></i></span>:</p>
+
+<div id="fix3-wrap"></div>
+
+<p>The other three panes — the interrupt shadow, the parked timer and the four-megabyte
+page — are CPU-level stories, and they belong to <a href="cpu.html">chapter&nbsp;6</a>.</p>
+
+<h2>The wall moves downstream</h2>
+
+<p>Notice the drumbeat. The edge-destruction fix was real hardware truth, and the wall
+moved from 2.03 to 3.64 million write-commits. Capture-at-assert was real, and by its
+own commit message unblocked nothing. The bus-master engine was real, and carried the
+kernel from <span class="addr">STOP 0x7B</span> into the boot splash and driver load.
+Each correction removed a genuine lie the emulator had been telling, and each time
+Windows walked further before stopping somewhere new — until it stopped somewhere no log,
+no trace and no oracle could see: every thread waiting, on a screen that stayed black
+for four days. Making that silence speak took a kernel debugger with no symbols and a
+census of a 128&nbsp;MiB RAM dump — <a href="forensics.html">chapter&nbsp;4</a>.</p>
+
+<p class="srcline">Sources for this chapter — the ATA/ATAPI completion-IRQ
+edge-destruction HLD (2026.07.11, mechanism pinned by a Fable&nbsp;5 consult) and the
+PIC wire-conformance oracle HLD (2026.07.13–14, authored by Fable&nbsp;5, verified by
+Claude); the bug ledger MDD-BUG-KILN-00004; the commit trail of 11–16 July 2026
+(mddosem-hw 0.34.0 → 0.42.0, capture-at-assert at 0.41.0, BMISTA latch-at-assert
+<span class="addr">e0e9fe9a5</span>); the guest ELCR dump of 14 July. Diagram states are
+recreations from the HLDs, not traces. Full evidence:
+<a href="desktop.html#evidence">how we know</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="loop.html"><span class="dir">◀ previous</span>2 · The Restart Loop</a>
+  <a class="next" href="forensics.html"><span class="dir">next ▶</span>4 · Kernel Forensics</a>
+</nav>
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W = window.W2K, D = window.W2K_DATA;
+  if (!W) return;
+
+  /* ---------- Fix 3 card, rendered from the shared data ---------- */
+  (function () {
+    var wrap = document.getElementById("fix3-wrap");
+    if (!wrap || !D || !D.fixes) return;
+    var f = null, i;
+    for (i = 0; i < D.fixes.length; i++) if (D.fixes[i].n === 3) f = D.fixes[i];
+    if (!f) return;
+    var card = document.createElement("div");
+    card.className = "fixcard fix-3";
+    var num = document.createElement("div");
+    num.className = "fnum";
+    num.textContent = "FIX " + f.n + " · " + String(f.pane).toUpperCase() + " PANE · " + f.when;
+    var name = document.createElement("div");
+    name.className = "fname";
+    name.textContent = f.name;
+    var what = document.createElement("div");
+    what.className = "fdesc";
+    what.textContent = f.what;
+    var how = document.createElement("div");
+    how.className = "fdesc";
+    how.textContent = "The fix: " + f.fix;
+    var sha = document.createElement("div");
+    sha.className = "fsha";
+    sha.textContent = f.sha + " · " + f.tests;
+    card.appendChild(num); card.appendChild(name); card.appendChild(what);
+    card.appendChild(how); card.appendChild(sha);
+    wrap.appendChild(card);
+  })();
+
+  /* ---------- THE INTRQ WIRE stepper ---------- */
+  var $ = function (id) { return document.getElementById(id); };
+  if (!$("wire-svg")) return;
+  var el = {
+    phase: $("w-phase"), drv2: $("w-drv-2"),
+    flagG: $("w-flag-g"), flagLamp: $("w-flag-lamp"), flagVal: $("w-flag-val"),
+    pumpG: $("w-pump-g"), pumpBox: $("w-pump-box"), pumpSub: $("w-pump-sub"),
+    wA: $("w-wireA"), wM: $("w-wireM"), wB: $("w-wireB"),
+    irrCell: $("w-irr-cell"), irrVal: $("w-irr-val"),
+    imrCell: $("w-imr-cell"), imrVal: $("w-imr-val"),
+    note1: $("w-pic-note"), note2: $("w-pic-note2"),
+    intG: $("w-int-g"),
+    cpu1: $("w-cpu-1"), cpu2: $("w-cpu-2"), cpu3: $("w-cpu-3"),
+    log: $("wire-log"),
+  };
+  for (var k in el) if (!el[k]) return;
+
+  var mode = "bug";
+
+  /* pb/pr: phase labels; cb/cr: captions (buggy | real) */
+  var STEPS = [
+    { pb: "COMPLETION", pr: "COMPLETION",
+      cb: "The drive commits the sector, drops BSY, sets DRDY — and raises INTRQ, the interrupt-request wire it shares with the interrupt controller.",
+      cr: "The drive commits the sector, drops BSY, sets DRDY — and raises INTRQ, the interrupt-request wire it shares with the interrupt controller." },
+    { pb: "FLAG ARMED", pr: "EDGE CAPTURED",
+      cb: "mddosem's device model latches a one-shot pending-edge flag for the delivery pump to collect at the next quantum boundary. The 8259's IRR has not seen the edge yet.",
+      cr: "The 8259 captures the rising edge into its IRR at once. From this instant the request belongs to the controller, not the wire." },
+    { pb: "HAL MASKS", pr: "HAL MASKS",
+      cb: "The HAL raises IRQL — KfRaiseIrql rewrites the PIC mask, and IRQ 14 is masked. Under NT this window lasts milliseconds, not microseconds.",
+      cr: "The HAL raises IRQL and masks IRQ 14. The request sits latched-but-masked in the IRR — routine for NT, which rewrites the mask on every IRQL transition." },
+    { pb: "STATUS READ", pr: "STATUS READ",
+      cb: "The driver reads the Status port. INTRQ deasserts — and the same code path clears the pending-edge flag. The completion interrupt has just been destroyed; nothing records that it ever existed.",
+      cr: "The driver reads the Status port. INTRQ deasserts — a falling edge. The latched IRR bit is untouched: a falling wire cannot un-capture an edge the PIC already caught." },
+    { pb: "PUMP RUNS", pr: "MASK LIFTS",
+      cb: "Quantum boundary. The delivery pump runs, finds the flag clear, and hands the 8259 nothing. The IRR stays empty.",
+      cr: "The HAL lowers IRQL; the mask lifts. Request latched, mask clear — the 8259 asserts INT to the processor." },
+    { pb: "NO DELIVERY", pr: "VECTOR DELIVERED",
+      cb: "No request means no acknowledge, no vector, no interrupt service routine. The interrupt that would have announced the write never happens.",
+      cr: "The processor acknowledges; the 8259 supplies the vector; the IDE ISR runs, reads Status for itself, and sends EOI." },
+    { pb: "FOR EVER", pr: "WAKE-UP",
+      cb: "The driver thread sleeps on a completion event nobody will ever signal. The write succeeded; the news of it is gone. One unlucky quantum in millions is enough — and setup stops.",
+      cr: "The ISR completes the request and wakes the waiting thread. Setup carries on towards the next of its 3.6 million writes." },
+  ];
+
+  var PIC_B = [
+    ["", ""],
+    ["IRR empty — the edge sits", "in the device flag"],
+    ["masked · nothing latched", ""],
+    ["nothing latched to survive", ""],
+    ["the pump delivered nothing", ""],
+    ["no request → no INT", ""],
+    ["IRR empty, for ever", ""],
+  ];
+  var PIC_R = [
+    ["", ""],
+    ["edge captured at assertion", ""],
+    ["latched but masked —", "normal NT behaviour"],
+    ["the latch survives the deassert", ""],
+    ["mask lifted → INT asserted", ""],
+    ["vector delivered · then EOI", ""],
+    ["idle — request served", ""],
+  ];
+
+  function setLamp(lamp, s) { lamp.setAttribute("class", "wlamp" + (s ? " " + s : "")); }
+  function setVal(t, txt, s) { t.textContent = txt; t.setAttribute("class", "wv" + (s ? " " + s : "")); }
+
+  function render(i) {
+    var b = mode === "bug", S = STEPS[i];
+    var ph = b ? S.pb : S.pr;
+    el.phase.textContent = "STEP " + (i + 1) + " OF 7 · " + ph;
+    el.log.innerHTML = '<span class="t">' + (i + 1) + " · " + ph.toLowerCase() + "</span> " + (b ? S.cb : S.cr);
+
+    var hi = i <= 2;
+    el.wA.setAttribute("class", "wire" + (hi ? " hi" : ""));
+    el.wM.setAttribute("class", "wire" + (hi ? " hi" : ""));
+    el.wB.setAttribute("class", "wire" + (hi ? " hi" : ""));
+    el.drv2.textContent = hi ? "DRDY=1 · INTRQ high" : "DRDY=1 · INTRQ low";
+
+    /* device pending-edge flag (the buggy model's latch) */
+    el.flagG.style.opacity = b ? "1" : "0.16";
+    if (b) {
+      if (i === 0) { setLamp(el.flagLamp, ""); setVal(el.flagVal, "0", ""); }
+      else if (i <= 2) { setLamp(el.flagLamp, "g"); setVal(el.flagVal, "1 · armed", "g"); }
+      else { setLamp(el.flagLamp, "b"); setVal(el.flagVal, "✕ destroyed", "b"); }
+    } else { setLamp(el.flagLamp, ""); setVal(el.flagVal, "—", ""); }
+
+    /* delivery pump */
+    el.pumpG.style.opacity = b ? "1" : "0.16";
+    el.pumpBox.setAttribute("class", "wbox" + (b && i === 4 ? " hot" : ""));
+    el.pumpSub.textContent = b
+      ? (i < 4 ? "waits for quantum end" : i === 4 ? "runs — finds nothing" : "already ran — empty")
+      : "bypassed";
+
+    /* IRR / IMR */
+    var irrOn = !b && i >= 1 && i <= 4;
+    el.irrCell.setAttribute("class", "wcell" + (irrOn ? " g" : ""));
+    setVal(el.irrVal, irrOn ? "1" : "0", irrOn ? "g" : "");
+    var masked = b ? (i >= 2 && i <= 4) : (i === 2 || i === 3);
+    el.imrCell.setAttribute("class", "wcell" + (masked ? " w" : ""));
+    setVal(el.imrVal, masked ? "1" : "0", masked ? "w" : "");
+    var notes = (b ? PIC_B : PIC_R)[i];
+    el.note1.textContent = notes[0];
+    el.note2.textContent = notes[1];
+
+    /* INT to the CPU */
+    el.intG.setAttribute("class", "intg" + (!b && (i === 4 || i === 5) ? " hi" : ""));
+
+    /* CPU pane */
+    var cpu;
+    if (b) {
+      cpu = i === 6 ? ["driver thread", "blocked on completion event", "…for ever", "b"]
+                    : ["driver thread", "blocked on completion event", "", ""];
+    } else if (i === 4) cpu = ["driver thread", "blocked on completion event", "INT pending", "g"];
+    else if (i === 5) cpu = ["IDE ISR running", "reads Status · sends EOI", "", ""];
+    else if (i === 6) cpu = ["driver thread", "wakes — write complete", "setup progresses", "g"];
+    else cpu = ["driver thread", "blocked on completion event", "", ""];
+    el.cpu1.textContent = cpu[0];
+    el.cpu2.textContent = cpu[1];
+    setVal(el.cpu3, cpu[2], cpu[3]);
+  }
+
+  var stepper = W.makeStepper({
+    prev: "wire-prev",
+    next: "wire-next",
+    out: "wire-out",
+    log: "wire-log",
+    stage: "wire-stage",
+    steps: STEPS,
+    apply: function (i) { render(i); },
+    start: 0,
+  });
+
+  W.bindSeg("wire-mode", function (v) {
+    mode = v === "real" ? "real" : "bug";
+    render(stepper.idx);
+  });
+
+  /* No autoplay anywhere on this page; under reduced motion the global
+     stylesheet already disables the lamp/wire transitions. */
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kernel Forensics — Boot to Desktop</title>
+<meta name="description" content="A kernel debugger with no symbols, a 128 MiB RAM dump, and a census of 71 sleeping threads — the forensic campaign that measured Windows 2000's silent wall exactly, and misread it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* page-specific: the census explorer */
+.census-meta{padding:10px 14px;border-bottom:1px solid var(--line-2);background:var(--surface-2);font-family:var(--mono);font-size:11px;line-height:1.8;color:var(--muted);}
+.census-meta .cmk{display:inline-block;min-width:74px;color:var(--cobalt);letter-spacing:.1em;text-transform:uppercase;}
+.census-meta .cmsha{color:var(--teal);overflow-wrap:anywhere;}
+.crow{display:grid;grid-template-columns:172px 1fr 66px 84px;gap:0 12px;align-items:center;width:100%;text-align:left;background:none;border:none;border-left:3px solid transparent;border-bottom:1px solid var(--line-2);padding:8px 14px 8px 11px;cursor:pointer;font:inherit;color:var(--ink-2);}
+.crow:hover{background:var(--surface-2);}
+.crow:focus-visible{outline:2px solid var(--cobalt);outline-offset:-2px;}
+.crow.sel{background:var(--surface-2);}
+.crow.chl{border-left-color:var(--cobalt);}
+.crow .cn{font-family:var(--mono);font-size:12.5px;color:var(--ink);}
+.crow .cpid{font-size:10px;color:var(--muted);letter-spacing:.06em;}
+.crow .cbar{height:8px;background:var(--surface-3);border-radius:4px;overflow:hidden;}
+.crow .cbar i{display:block;height:100%;background:var(--s1);border-radius:4px;}
+.crow .cth{font-family:var(--mono);font-size:11px;color:var(--ink-2);text-align:right;}
+.crow .cst{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--warn);text-align:right;}
+.cexp{display:none;padding:6px 14px 12px 30px;border-bottom:1px solid var(--line-2);background:var(--surface-2);}
+.cexp.open{display:block;}
+.cwait{font-family:var(--mono);font-size:11.5px;line-height:2;color:var(--ink-2);}
+.cdim{color:var(--muted);}
+.ctotal{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:9px 14px;font-family:var(--mono);font-size:11.5px;color:var(--cobalt);}
+@media (max-width:600px){
+  .crow{grid-template-columns:1fr 62px 80px;}
+  .crow .cbar{display:none;}
+}
+/* term panels: one line per div */
+.term>div{min-height:1.2em;}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="machine.html">1 · The Machine</a>
+    <a href="loop.html">2 · The Restart Loop</a>
+    <a href="wires.html">3 · Edges &amp; Wires</a>
+    <a href="forensics.html" aria-current="page">4 · Kernel Forensics</a>
+    <a href="dialog.html">5 · The Invisible Dialog</a>
+    <a href="cpu.html">6 · One Instruction at a Time</a>
+    <a href="desktop.html">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 4 · KERNEL FORENSICS</p>
+  <h1>KERNEL <span class="accent">FORENSICS</span></h1>
+  <p class="standfirst">The screen was black, the logs had gone quiet, and Windows&nbsp;2000's
+  installer had stopped mid-thought somewhere inside Microsoft's kernel. What followed was
+  forensics in the proper sense: a debugger transport proved with a 79-byte DOS program, a
+  128&nbsp;MiB dump of the sleeping machine, and a purpose-built census tool that counted
+  71 threads — every one of them waiting, none of them, apparently, wakeable. It was all
+  correct. And it led everyone to the wrong conclusion.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">5,757 B</div><div class="l">one all-black 640×480 PNG, byte-identical across four days of captures — "the wall"</div></div>
+  <div class="stat"><div class="v">79 B</div><div class="l">comtx.com, the DOS program written to prove the serial debug transport, byte by byte</div></div>
+  <div class="stat"><div class="v">161</div><div class="l">valid KD_STATE_CHANGE64 packets from Windows 2000's own kernel-debug stub, via the emulated 16550</div></div>
+  <div class="stat"><div class="v">128 MiB</div><div class="l">hang.bin — the sleeping machine's entire RAM, preserved 23:12 on 14 July, SHA-256 logged</div></div>
+  <div class="stat"><div class="v warn">71 / 0</div><div class="l">threads found by the census / threads runnable — every one of them Waiting</div></div>
+  <div class="stat"><div class="v">≈18.5/s</div><div class="l">protected-mode stack transitions during a 150 s "zero-runnable" window — the machine was not asleep</div></div>
+</section>
+
+<section class="prose">
+
+<h2>The wall you could weigh</h2>
+
+<p><a href="loop.html">Chapter&nbsp;2</a> ended with a restart loop;
+<a href="wires.html">chapter&nbsp;3</a> ended with real interrupt fixes and a wall that had
+moved downstream to meet them. By mid-July the failure had changed character entirely: the
+installer running inside <a href="/mddosem/">mddosem</a> no longer failed loudly. It simply
+stopped. Every capture run ended the same way — a black 640×480 frame. Not approximately
+black: the automated screenshot rig wrote the same PNG file over and over, exactly
+<strong>5,757&nbsp;bytes</strong>, byte-for-byte identical, across four days of captures.
+Every <code>progress-*.png</code>, every <code>sample-*.png</code>; days later, even the
+first attempt to launch FreeCell on the freshly installed system produced the identical
+5,757 bytes. The wall was the only exhibit in the archive you could identify by weight.</p>
+
+<p>A black screen is an absence of information; a <em>byte-identical</em> black screen is a
+measurement. It said, precisely, that nothing on the display side had changed at all — and
+that whatever the machine was doing, it was doing it in the dark. Getting at it would take
+instruments, and the instruments escalated.</p>
+
+<h2>The escalation ladder</h2>
+
+<p>An emulator is the best debugger there is, because it is also the hardware. mddosem can
+pause its guest between any two instructions and read anything — registers, memory, device
+state — without the guest's consent or knowledge. That power is exposed through a control
+pipe (<code>--ctl-pipe</code>): a named pipe on the host accepting commands — pause, step,
+read registers, read memory. The first instruments were hand-rolled Python scripts speaking
+that pipe — <code>dbg.py</code>, <code>dbgstack.py</code>, <code>dbgbytes.py</code> — a
+debugger assembled in an afternoon, one command at a time. Here it is diagnosing an earlier
+freeze in NTLDR, Windows' boot loader, live:</p>
+
+<div class="term">
+<div><span class="dim"># dbg.py over the ctl-pipe — the NTLDR freeze, held still (FINDINGS.md, 13 July)</span></div>
+<div>CS=<span class="hl">0x08</span>  EIP=<span class="hl">0x408E</span>  ESP=0x540  FLAGS: IF=<span class="bad">0</span></div>
+<div>STEP does NOT advance EIP (pinned at 0x408E) <span class="hl">=&gt; exception/fault loop, not a spin</span></div>
+<div><span class="dim">43 byte-identical frames, ~135 s guest</span></div>
+</div>
+
+<p>That is a diagnosis no screenshot could make: the instruction pointer pinned, interrupts
+off, single-step refusing to advance — a CPU re-entering the same fault forever,
+distinguishable from an ordinary busy-loop only when you can hold the machine still and
+poke it. The pipe scaled up from there. When runs started dying in blue screens, the
+harness polled the kernel's own confession: NT records every crash's stop code and
+parameters in a kernel variable, <span class="addr">KiBugCheckData</span>, before it paints
+the screen, and polling it live caught a STOP&nbsp;0x1E within about four seconds of it
+happening. When live inspection was not enough, a <code>RAMDUMP</code> command froze the
+guest's entire physical memory to disk, and offline scanners walked the registry's hive
+cells in the captured images. And when all of that still watched from outside the kernel's
+own machinery, there was one instrument left — the one Microsoft built.</p>
+
+<h2>A kernel debugger from spare parts</h2>
+
+<p>Every Windows NT kernel ships with a debug stub. Boot it with
+<code>/debug /debugport=com1 /baudrate=19200</code> in <code>boot.ini</code> and KDCOM, the
+kernel-debug serial transport, speaks a packet protocol out of COM1, letting a second
+machine stop the kernel, walk its structures, and name its threads. Inside an emulator the
+"serial port" is the emulated 16550 UART and the "second machine" is the host, so the
+transport chain became: WinDbg&nbsp;⇄ a named pipe&nbsp;⇄ a relay&nbsp;⇄ TCP&nbsp;⇄ the
+emulated COM1.</p>
+
+<p>It was proven link by link, from the guest outward. The first witness was
+<code>comtx.com</code> — a 79-byte DOS program, written in assembler for the occasion,
+which programs the UART at port <span class="addr">0x3F8</span> and transmits
+<code>KDTEST-COM1-</code> forever. The host capture received 57,960 bytes of the clean
+repeating string, and under load the transport measured effectively lossless: 4,139 clean
+records, 14 stray bytes — 0.024% — and exactly one resync, at the connection join.</p>
+
+<p>Then a human-shaped blocker. <code>boot.ini</code> lives on an NTFS volume, and no
+headless tool on the bench could edit it: <code>mddskimg</code>, the fleet's own disk-image
+inspector, falsely reported "NTFS directory loop detected" and refused. Arthur fixed
+mddskimg's NTFS reader the same day (v0.57.5&nbsp;→&nbsp;v0.57.6); the patch itself went
+in through an ntfs-3g loop mount, and the <code>/debug</code>-patched disk went back into
+the emulator. What came out was quietly
+historic for this project: Windows 2000's own KDCOM emitted <strong>161 valid
+KD_STATE_CHANGE64 packets</strong> through the emulated UART — correct leaders, correct
+types, payloads carrying genuine ntoskrnl code:</p>
+
+<div class="term">
+<div><span class="dim"># emulated 16550 → host capture, 14 July — the guest's own kernel debugger, talking</span></div>
+<div>leader <span class="hl">30 30 30 30</span>  type <span class="hl">07 00</span> <span class="dim">(KD_STATE_CHANGE64)</span>  ByteCount <span class="hl">bc 03</span></div>
+<div>payload <span class="hl">8b 44 24 04 cc c2 04 00</span>  <span class="dim">→ mov eax,[esp+4] · int3 · ret 4</span></div>
+<div><span class="ok">161 valid packets</span>  tx_total=<span class="hl">156520</span>  rx_total=<span class="bad">0</span>  <span class="dim">— the kernel calling out; nobody yet answering</span></div>
+</div>
+
+<p>Later that night the answering side arrived too: <code>kd.exe</code>, the command-line
+debugger, was dug out of the WinDbg Preview Store package and completed the full KDCOM
+handshake, scripted. And then the anticlimax. Symbols are the map from raw addresses to
+names — and Microsoft's symbol server no longer carries Windows&nbsp;2000. The SP4 CD
+ships none. Without symbols, <code>!process</code> and <code>!thread</code> are blind: the
+debugger connected perfectly to a kernel it could no longer name. So the team kept the
+transport as a proof, and pivoted to something better suited to an emulator anyway — a
+debugger that needs no symbols at all.</p>
+
+<h2>The dump and the census</h2>
+
+<p>At 23:12 on 14 July the hung machine's entire physical memory — exactly 128&nbsp;MiB,
+134,217,728 bytes — was preserved as <code>hang.bin</code>, its SHA-256 recorded beside
+it. Everything an operating system knows, it knows in RAM: the process list, every thread,
+every wait queue, every object name. A memory dump is the whole crime scene. What you need
+is a map of the rooms.</p>
+
+<p>The map came as a tool: <code>w2kcensus</code>, a purpose-built forensic walker checked
+into the emulator's own source tree — initially 1,172 lines of paranoid Rust. It refuses
+to run unless the kernel in front of it fingerprints as exactly the SP4 build — ntoskrnl
+5.00.2195.6611, PE timestamp <span class="addr">0x3EE6C002</span>. It finds the process
+list the way a debugger would — resolve <span class="addr">PsInitialSystemProcess</span>
+from the kernel's export table, then walk the EPROCESS list — but it validates every
+hard-coded structure offset by <em>reciprocity</em>: doubly-linked lists must close
+(follow Flink forward and Blink back, and you must land where you began); a thread's wait
+blocks must point back at their thread; pool allocations must carry the right tags. It
+walks 4&nbsp;KiB and 4&nbsp;MiB pages, reads object names only through the kernel's own
+OBJECT_HEADER_NAME_INFO records, and works both live over the control pipe and offline
+over the dump — the offline run reproduced the live findings exactly.</p>
+
+<aside class="aside">
+  <span class="tag">AN ORACLE THAT DISTRUSTS ITSELF</span>
+  <p>The design requirement, verbatim: the tool "must reject deliberately wrong offsets as
+  well as reproduce the known census" — its unit tests feed it corrupted structure layouts
+  and expect refusal. A forensic instrument you cannot falsify is a rumour generator.</p>
+</aside>
+
+<p>The paranoia paid immediately, because the published literature was wrong. The standard
+reference for NT structure offsets — the Geoff Chappell "3.51–5.1" tables — places
+<code>KTHREAD.WaitBlockList</code> at 0x5C. In this kernel it is at
+<strong>0x58</strong>; that four-byte error "was why earlier wait-object reads were
+garbage". <code>ThreadListEntry</code> likewise: 0x1A4, not the published 0x110.</p>
+
+<div id="offsets-table"></div>
+
+<p>The census returned a result of eerie clarity: <strong>8 processes, 71 non-idle threads,
+and every single one of them Waiting</strong>. Zero ready. Zero running. The CPU parked in
+the kernel's idle loop at <span class="addr">0x800695A2</span>, executing HLT, with only
+the timer interrupt firing. And setup.exe — PID 352, the process this whole campaign
+existed to shepherd — had exactly three threads, each blocked on its own anonymous,
+unsignalled synchronisation event, their kernel stacks swapped out to disk, something NT
+does only to a thread it expects to sleep for a long time. The verdict came from the live
+census, recorded at 06:38 the next morning, and wrote itself: "a genuine whole-system
+lost-wakeup deadlock: everyone blocked, nothing to wake them." Later that day
+<code>w2kcensus</code> reproduced it exactly, offline, over <code>hang.bin</code> (address
+space <span class="addr">CR3 0x00030000</span>).</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE CENSUS EXPLORER — 71 THREADS, ALL WAITING</span>
+    <span class="hint">click a process · setup.exe expands to its three terminal waits</span>
+  </div>
+  <div class="fig-body">
+    <div class="census-meta" id="census-meta"></div>
+    <div id="census-body" aria-label="Process census of the hung machine"></div>
+    <noscript><p style="padding:12px 14px;font-size:14px;">(The interactive census needs
+    JavaScript; the headline numbers — 8 processes, 71 threads, 0 runnable — are in the
+    prose above.)</p></noscript>
+  </div>
+  <div class="evlog" id="census-log"></div>
+  <div class="fig-note">Recreation of w2kcensus output over hang.bin (134,217,728 B,
+  taken 2026-07-14 23:12) with CR3 0x00030000 — thread counts, addresses and wait pairs as
+  recorded in the 2026.07.15 endgame master journal. Tool source:
+  <code>src/bin/w2kcensus.rs</code> in <a href="/mddosem/">mddosem</a>.</div>
+</figure>
+
+<h2>The retractions</h2>
+
+<p>Forensic instruments lie, and the record of this week is unusually honest about
+catching them. Three corrections, all self-inflicted and all found by the team's own
+cross-checks:</p>
+
+<ul>
+  <li><strong>The named event that wasn't.</strong> The first census reported one of
+  setup's three events as <code>$$$SetupBackground</code> — a name, at last, something to
+  search for. But the string exists in exactly one binary on the disk,
+  <code>syssetup.dll</code>, where it is a window-class name (a
+  <code>WNDCLASSW.lpszClassName</code>), not an event name. In the dump it sits in an
+  <em>Atom</em>-tagged pool allocation; the true event is the next allocation along, tagged
+  <em>Even</em>, whose object header says NameInfoOffset=0 — structurally anonymous. The
+  census had walked off the end of one allocation and christened the neighbour.</li>
+  <li><strong>The ninth process.</strong> An early walk reported nine processes; the ninth
+  was the process list's own head — the sentinel node at
+  <span class="addr">0x8046E460</span> — read as if it were an EPROCESS. Lists that point
+  to themselves will happily impersonate their members.</li>
+  <li><strong>The field at KTHREAD+0x44</strong> — pinned down as
+  <code>ApcState.Process</code>, the thread's owning-process backpointer, and thereafter
+  used as one more reciprocity check rather than trusted on faith.</li>
+</ul>
+
+<p>And the instrument's heaviest confession: <code>READ_MEM</code>, the live memory-read
+command, was found to be disturbing the evidence — setting Accessed bits in the guest's
+page tables, populating its TLB, perturbing pending page-fault state. It was rebuilt as a
+genuinely side-effect-free supervisor page walk, and the pause command was made atomic so
+the watcher could never race a human's pause. One rejected snapshot even caught Windows
+mid-update of a wait block — a pointer transiently aimed into a stack page — exactly the
+kind of half-written state you want a tool to reject rather than report. The same
+discipline killed hypotheses, too: the week's leading rival theory — that the emulator was
+coalescing two interrupt completions into one — was refuted not by argument but by a
+counter, a log-only probe recording <strong>0</strong> coalescing events across 291 FLUSH
+CACHE commands and 15,418 disk write-commits. Measurement over belief, every time.</p>
+
+<h2>The observer effect</h2>
+
+<p>Live censuses came with a cost nobody had priced in. Capture 06 sampled the machine
+every second — and the sampling consumed roughly 900 of the run's 3,000 wall-seconds.
+Worse, the emulator's adaptive scheduler, which tunes guest speed against real time, read
+the watcher's stalls as its own slowness and dragged itself from 65,000 cycles per
+millisecond down to the low hundreds. The result was 1,602 flawless censuses of a machine
+that never hit the wall — because the machine under observation was no longer the machine
+that failed. Capture 07 relaxed the cadence to five seconds and logged errors only: the
+guest ran true, and the watcher's time bound expired <em>seconds</em> before the terminal
+transition it existed to catch. The very next census found the wall fully formed — kernel
+stacks non-resident, <code>cycles_per_ms=65000</code>, <code>halted=true</code>. Two runs,
+one lesson Heisenberg could have countersigned.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE OBSERVER EFFECT — TWO CADENCES, TWO MACHINES</span>
+    <span class="hint">toggle the capture · schematic drawn from the recorded numbers</span>
+  </div>
+  <div class="fig-body">
+    <div class="stage" id="obs-stage" role="img" aria-label="Schematic comparison of capture 06 and capture 07"></div>
+  </div>
+  <div class="evlog" id="obs-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:var(--s1)"></span>guest wall-clock</span>
+    <span class="key"><span class="sw" style="background:var(--s2)"></span>watcher / census sampling</span>
+    <span class="key"><span class="sw" style="background:var(--danger)"></span>terminal transition</span>
+  </div>
+  <div class="fig-controls">
+    <span class="ctl">view</span>
+    <div class="seg" id="obs-seg" role="group" aria-label="Choose capture">
+      <button data-v="c06" aria-pressed="true">capture 06 · 1 s cadence</button>
+      <button data-v="c07" aria-pressed="false">capture 07 · 5 s cadence</button>
+    </div>
+  </div>
+  <div class="fig-note">Schematic, not a plot — proportions and endpoints are the recorded
+  numbers (endgame journal, 2026.07.15): capture 06 spent ≈900 of 3,000 wall-seconds in
+  1 s census sampling and dragged the adaptive scheduler 65,000 → low hundreds cycles/ms,
+  never reaching the wall; capture 07 logged 691 censuses over its 3,750 s bound and
+  expired seconds before the transition. Sampling is interleaved in reality; the stripes
+  are illustrative.</div>
+</figure>
+
+<h2>The consulting diagnostician</h2>
+
+<p>Threaded through the week was a third kind of instrument: an outside mind. Fable 5 — a
+consulting model engaged for finite, expensive reasoning sessions — was handed the code and
+the evidence, and its findings were treated exactly as the census's were: every
+load-bearing claim independently re-verified against source before being written down. Its
+root-cause analysis ranked the field (a storage-path wedge at ~55%, a genuine Windows race
+made probable by emulator timing at ~20%, a lost timer wakeup at ~10%) and flagged the
+strangest numbers of the night: the DSS cryptography providers loading pathologically
+slowly — <code>dssbase</code> in 28.7 seconds, <code>dssenh</code> in 28.5, against three
+to four for their RSA siblings. Its advice on that ambiguity became a house rule:
+"Don't bet — pause inside the 28&nbsp;s window and read the stack."</p>
+
+<aside class="aside danger">
+  <span class="tag">THE RUNAWAY DELEGATE</span>
+  <p>One experiment in delegation failed instructively: a Fable delegate, set loose on a
+  capture stage, autonomously spawned concurrent Windows 2000 boots — bleeding roughly
+  250,000 tokens of a finite retainer and generating host contention that corrupted the
+  very timing under measurement. It was stopped, and the lesson entered the doctrine
+  verbatim: long, non-deterministic emulator-loop work is the wrong shape for a delegate.
+  <em>Fable designs; the lead runs the boots.</em></p>
+</aside>
+
+<h2>The machine that was not asleep</h2>
+
+<p>Which leaves the paradox the census could describe but never resolve. All the
+instruments agreed: 71 threads, all waiting; zero runnable; the CPU halted in the idle
+loop. A dead calm. And yet — during one 150-second stretch of that "zero-runnable" state
+in a later run (capture 09), the emulator counted <strong>2,789 protected-mode stack
+transitions</strong>: about 18.5 every second. A stack transition is what happens when an
+interrupt or exception crosses a privilege boundary — hardware still delivering, the
+kernel still fielding its timer ticks, looking around, finding no one worth waking, and
+lying back down. The machine was not asleep. It was awake, attentive, and waiting, with
+the composure of something that knows exactly what it is waiting for.</p>
+
+<p>The census could count the sleepers to the last thread. What it could not say was what
+would wake them — because the answer was not in the dump at all. It was sitting in plain
+sight, in the dark, <a href="dialog.html">one keystroke away</a>.</p>
+
+<p class="srcline">Sources for this chapter — the KD-over-serial bring-up journal
+(2026.07.14), the thread-census journal and the endgame master journal (2026.07.15), the
+Fable 5 root-cause consult HLD (2026.07.14), the bug ledger MDD-BUG-KILN-00004, and the
+preserved run archive (hang.bin, the capture-04→29 black frames, FINDINGS.md). The census
+tool is <code>src/bin/w2kcensus.rs</code> in <a href="/mddosem/">mddosem</a>. Full
+evidence table: <a href="desktop.html#evidence">how we know</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="wires.html"><span class="dir">◀ previous</span>3 · Edges &amp; Wires</a>
+  <a class="next" href="dialog.html"><span class="dir">next ▶</span>5 · The Invisible Dialog</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W = window.W2K, D = window.W2K_DATA;
+  if (!W || !D) return;
+  var census = D.census;
+
+  /* ============================================================
+     FIG 1 · the census explorer — DOM render of W2K_DATA.census
+     ============================================================ */
+  var metaEl = document.getElementById("census-meta");
+  var bodyEl = document.getElementById("census-body");
+  var logEl = document.getElementById("census-log");
+
+  function setLog(html) { if (logEl) logEl.innerHTML = html; }
+
+  if (metaEl && bodyEl && census && census.processes) {
+    var dump = census.dump || {};
+    metaEl.innerHTML =
+      '<div><span class="cmk">w2kcensus</span> kernel fingerprint OK — ntoskrnl 5.00.2195.6611 · PE timestamp 0x3EE6C002 · CR3 0x00030000</div>' +
+      '<div><span class="cmk">dump</span> ' + (dump.file || "hang.bin") + " · " +
+        W.fmtInt(dump.bytes || 0) + " bytes (128 MiB) · taken " + (dump.taken || "") + "</div>" +
+      '<div><span class="cmk">sha-256</span> <span class="cmsha">' + (dump.sha256 || "") + "</span></div>";
+
+    var maxThreads = 0;
+    census.processes.forEach(function (p) { if (p.threads > maxThreads) maxThreads = p.threads; });
+
+    var frag = document.createDocumentFragment();
+
+    census.processes.forEach(function (p) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "crow" + (p.highlight ? " chl" : "");
+      var pct = maxThreads ? Math.round((p.threads / maxThreads) * 100) : 0;
+      btn.innerHTML =
+        '<span class="cn">' + p.name +
+          (p.pid ? ' <span class="cpid">PID ' + p.pid + "</span>" : "") + "</span>" +
+        '<span class="cbar" aria-hidden="true"><i style="width:' + pct + '%"></i></span>' +
+        '<span class="cth">' + p.threads + " thr</span>" +
+        '<span class="cst">WAITING</span>';
+
+      var expEl = null;
+      if (p.highlight) {
+        expEl = document.createElement("div");
+        expEl.className = "cexp";
+        expEl.id = "cexp-setup";
+        var rows = (census.setupWaits || []).map(function (wp) {
+          return '<div class="cwait">KTHREAD <span class="addr">' + wp.kthread +
+            '</span> — waits on → SynchronizationEvent <span class="addr">' + wp.event +
+            '</span> <span class="cdim">· SignalState=0 · anonymous · pool tag "Even"</span></div>';
+        }).join("");
+        expEl.innerHTML = rows +
+          '<div class="cwait cdim">kernel stacks out-swapped — reads of the 0xF7xxxxxx stack pages fault; ' +
+          "NT does that only to threads it expects to sleep a long time</div>";
+        btn.setAttribute("aria-expanded", "false");
+        btn.setAttribute("aria-controls", "cexp-setup");
+      }
+
+      btn.addEventListener("click", function () {
+        var rowsAll = bodyEl.querySelectorAll(".crow");
+        for (var i = 0; i < rowsAll.length; i++) rowsAll[i].classList.remove("sel");
+        btn.classList.add("sel");
+        if (expEl) {
+          var open = expEl.classList.toggle("open");
+          btn.setAttribute("aria-expanded", open ? "true" : "false");
+          setLog('<span class="t">' + p.name + "</span> " + p.note +
+            (open ? " — the three terminal KTHREAD → event pairs, expanded below" : ""));
+        } else {
+          setLog('<span class="t">' + p.name + "</span> " + p.threads +
+            " threads, all Waiting — " + p.note);
+        }
+      });
+
+      frag.appendChild(btn);
+      if (expEl) frag.appendChild(expEl);
+    });
+
+    var t = census.totals || {};
+    var tot = document.createElement("div");
+    tot.className = "ctotal";
+    tot.innerHTML = "<span>" + (t.processes || 0) + " processes · " + (t.threads || 0) +
+      " threads</span><span>" + (t.runnable || 0) + " runnable — the machine, fully parked</span>";
+    frag.appendChild(tot);
+
+    bodyEl.appendChild(frag);
+    setLog('<span class="t">census</span> click a process — setup.exe (PID 352) expands to its three terminal waits');
+  }
+
+  /* offsets table (struct-offset archaeology) from W2K_DATA.census.offsets */
+  var ot = document.getElementById("offsets-table");
+  if (ot && census && census.offsets) {
+    var h = '<table class="data"><caption>Struct-offset archaeology — SP4 as found, versus the published tables</caption>' +
+      '<thead><tr><th>Field</th><th class="num">Offset</th><th>Note</th></tr></thead><tbody>';
+    census.offsets.forEach(function (o) {
+      h += "<tr><td><code>" + o.name + "</code></td><td class=\"num\">" + o.value +
+        "</td><td>" + (o.note || "—") + "</td></tr>";
+    });
+    h += "</tbody></table>";
+    ot.innerHTML = h;
+  }
+
+  /* ============================================================
+     FIG 2 · the observer effect — SVG schematic, seg-toggled.
+     Recorded numbers only: c06 ≈900/3,000 s in the watcher,
+     cycles/ms 65,000 → low hundreds, 1,602 censuses, wall never
+     reached; c07 691 censuses / 3,750 s, watcher expired seconds
+     before the transition, cycles_per_ms=65000, halted=true.
+     ============================================================ */
+  var obsStage = document.getElementById("obs-stage");
+  var obsLog = document.getElementById("obs-log");
+
+  function tickStrip(step) {
+    var s = "", x;
+    for (x = 16; x <= 700; x += step) {
+      s += '<rect x="' + x + '" y="46" width="2" height="10" fill="var(--s2)"/>';
+    }
+    return s;
+  }
+
+  function svgC06() {
+    var s = "";
+    s += '<text x="16" y="22" font-size="12" fill="var(--ink)">CAPTURE 06 — cadence 1 s · 1,602 censuses inside the 3,000 s bound</text>';
+    s += '<text x="16" y="40" font-size="10" fill="var(--muted)">sampling cadence (schematic)</text>';
+    s += tickStrip(6);
+    s += '<text x="16" y="86" font-size="10" fill="var(--muted)">where the wall-clock went — share is real, interleaving schematic</text>';
+    s += '<rect x="16" y="92" width="688" height="26" rx="4" fill="var(--s1)"/>';
+    var g, gw = 688 / 20;
+    for (g = 0; g < 20; g++) {
+      s += '<rect x="' + (16 + g * gw).toFixed(1) + '" y="92" width="' + (gw * 0.3).toFixed(1) + '" height="26" fill="var(--s2)"/>';
+    }
+    s += '<text x="16" y="134" font-size="10" fill="var(--muted)">watcher ≈900 s — 30% of wall time</text>';
+    s += '<text x="704" y="134" font-size="10" fill="var(--muted)" text-anchor="end">guest + everything else ≈2,100 s</text>';
+    s += '<text x="16" y="172" font-size="11.5" fill="var(--ink-2)">adaptive scheduler: 65,000 → low hundreds cycles/ms — the guest slowed to the watcher’s pace</text>';
+    s += '<text x="16" y="194" font-size="11.5" fill="var(--ink-2)">the wall never arrived: the measured machine was no longer the failing machine</text>';
+    return s;
+  }
+
+  function svgC07() {
+    var s = "";
+    s += '<text x="16" y="22" font-size="12" fill="var(--ink)">CAPTURE 07 — cadence 5 s · 691 censuses inside the 3,750 s bound · error-only logging</text>';
+    s += '<text x="16" y="40" font-size="10" fill="var(--muted)">sampling cadence (schematic)</text>';
+    s += tickStrip(30);
+    s += '<text x="16" y="86" font-size="10" fill="var(--muted)">wall-clock, 3,750 s bound — working set flat ≈233 MiB throughout</text>';
+    s += '<rect x="16" y="92" width="688" height="26" rx="4" fill="var(--s1)"/>';
+    s += '<rect x="666" y="86" width="2" height="38" fill="var(--s2)"/>';
+    s += '<text x="662" y="82" font-size="10" fill="var(--muted)" text-anchor="end">watcher bound expires</text>';
+    s += '<rect x="702" y="86" width="3" height="38" fill="var(--danger)"/>';
+    s += '<text x="704" y="134" font-size="10" fill="var(--muted)" text-anchor="end">terminal transition — seconds later</text>';
+    s += '<text x="16" y="172" font-size="11.5" fill="var(--ink-2)">the very next census caught the wall fully formed: kernel stacks non-resident · cycles_per_ms=65000 · halted=true</text>';
+    s += '<text x="16" y="194" font-size="11.5" fill="var(--ink-2)">the wall arrived seconds after the watcher stopped looking</text>';
+    return s;
+  }
+
+  function renderObs(mode) {
+    if (!obsStage) return;
+    var inner = mode === "c07" ? svgC07() : svgC06();
+    obsStage.innerHTML = '<svg viewBox="0 0 720 210" preserveAspectRatio="xMidYMid meet">' + inner + "</svg>";
+    obsStage.setAttribute("aria-label", mode === "c07"
+      ? "Schematic of capture 07: sampling every five seconds over a 3,750-second bound; the watcher expired seconds before the terminal transition, and the next census found the machine at the wall with 65,000 cycles per millisecond and the CPU halted."
+      : "Schematic of capture 06: sampling every second consumed about 900 of 3,000 wall-seconds and dragged the adaptive scheduler from 65,000 cycles per millisecond to the low hundreds; the failure never reproduced.");
+    if (obsLog) {
+      obsLog.innerHTML = mode === "c07"
+        ? '<span class="t">capture 07</span> cadence relaxed to 5 s — the machine failed properly again, seconds after the watcher’s bound expired'
+        : '<span class="t">capture 06</span> the instrument became the experiment — sampling every second ate ~30% of wall time and re-tuned the adaptive scheduler';
+    }
+  }
+
+  if (obsStage) {
+    W.bindSeg("obs-seg", function (v) { renderObs(v); });
+    renderObs("c06");
+  }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
