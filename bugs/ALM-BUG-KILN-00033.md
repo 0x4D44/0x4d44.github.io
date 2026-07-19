@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00033 — Motorsport article pages fail before rendering their body
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Must
 - **Severity:** High
 - **Area:** news
@@ -19,6 +19,7 @@
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-19, raised by Codex after Arthur's report)
+- **State history:** Fixed (2026-07-19, Codex, commit 836b742; awaiting independent verification)
 
 ## Observation
 
@@ -37,3 +38,10 @@ lines between paragraphs. `news/news.js:renderArticle` requires `body` to be an 
 calls `.some()` and `.map()` directly. The existing static validator checked paragraph
 counts by splitting strings but never invoked `NEWS.renderArticle`, so the incompatible
 shape passed the integration gate.
+
+Fix `836b742` normalises the 50 Motorsport bodies into paragraph arrays at their data
+boundary. The validator now requires that canonical shape and renders every Motorsport
+article page. The new renderer regression failed before the fix with the exact
+`(a.body || []).some is not a function` exception and passes afterward. A representative
+page was also served over HTTP and visually confirmed in headless Chrome with its hero,
+caption and body paragraphs present.
