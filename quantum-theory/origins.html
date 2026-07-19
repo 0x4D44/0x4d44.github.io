@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Crisis, 1859–1927 — Quanta</title>
+<meta name="description" content="How classical physics failed and quantum theory was forced into existence: blackbody radiation, Planck's constant, Einstein's light quanta, the Bohr atom, matter waves, and the five feverish years to 1927.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="origins.html" aria-current="page">1 · The Crisis</a>
+    <a href="machinery.html">2 · The Machinery</a>
+    <a href="wavefunction.html">3 · Wavefunctions</a>
+    <a href="spin.html">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html">5 · Entanglement</a>
+    <a href="fields.html">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 1</p>
+  <h1>The Crisis, 1859–1927</h1>
+  <p class="standfirst">Quantum theory was not an idea anybody wanted. It was forced,
+  concession by concession, out of three stubborn experimental facts that classical
+  physics could not digest: the colour of hot things, the way light knocks electrons
+  off metal, and the barcode of lines in the light of atoms. This chapter follows the
+  retreat from certainty — from a curve-fit made in a single evening in 1900 to the
+  complete, strange, working theory of 1927.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="blackbody"><span class="no">1.1</span>The colour of heat</h2>
+
+<p>Every warm body glows. A poker in the fire goes dull red, then orange, then —
+if the smith is showing off — white. By the mid-nineteenth century this glow was a
+precision industry: the German Bureau of Standards (the PTR in Berlin) wanted a
+rigorous standard for the new electric lamps, and physics wanted to know why the
+glow of <em>everything</em>, iron or clay or platinum, follows the same universal curve
+once you correct for surface emissivity.</p>
+
+<p>Gustav Kirchhoff proved in 1859 that it must. For a perfect absorber — a
+<strong>black body</strong>, realised in the laboratory as a small hole in the wall of a
+heated cavity — the emitted spectrum can depend only on temperature, not on
+material. Finding that universal function became one of the sharpest, cleanest
+problems in physics, precisely because there was nothing material to hide behind:
+any correct theory of heat and light had to produce it.</p>
+
+<p>The thermodynamicists got impressively far without knowing what light was made
+of. Josef Stefan (1879, empirically) and Ludwig Boltzmann (1884, from Maxwell's
+radiation pressure) fixed the total output:</p>
+
+<p class="eq"><span class="m"><i>P</i>/<i>A</i> = σ<i>T</i><sup>4</sup>,&emsp;
+σ = 5.670&thinsp;×&thinsp;10<sup>−8</sup> <span class="up">W&thinsp;m<sup>−2</sup>&thinsp;K<sup>−4</sup></span></span>
+<span class="eqno">STEFAN–BOLTZMANN</span></p>
+
+<p>— double a body's absolute temperature and it radiates sixteen times the power.
+Wilhelm Wien (1893) proved with a thought experiment about slowly compressed
+cavities that the peak of the spectrum slides with temperature:</p>
+
+<p class="eq"><span class="m">λ<sub>max</sub><i>T</i> = 2.898&thinsp;×&thinsp;10<sup>−3</sup> <span class="up">m·K</span></span>
+<span class="eqno">WIEN DISPLACEMENT</span></p>
+
+<p>which is why the 5,772&nbsp;K Sun peaks in the green-yellow around 500&nbsp;nm while a
+300&nbsp;K human peaks at 10&nbsp;μm, in the far infrared. But the <em>shape</em> of the curve
+refused to yield. Wien guessed a distribution (1896) that fitted the blue side
+beautifully and sagged in the infrared. Worse, the honest classical calculation —
+count the electromagnetic standing-wave modes in the cavity, give each the
+equipartition energy <i>k</i><sub>B</sub><i>T</i> — gives the Rayleigh–Jeans law:</p>
+
+<p class="eq"><span class="m"><i>B</i><sub>λ</sub>(<i>T</i>) =
+<span class="frac"><span>2<i>c</i>&thinsp;<i>k</i><sub>B</sub><i>T</i></span><span>λ<sup>4</sup></span></span></span>
+<span class="eqno">RAYLEIGH–JEANS</span></p>
+
+<p>The λ<sup>4</sup> in the denominator is a catastrophe. Ever-shorter wavelengths pack
+ever more modes into the cavity, each demanding its <i>k</i><sub>B</sub><i>T</i>; the predicted
+energy diverges without limit in the ultraviolet. Taken seriously, classical physics
+says a warm oven should be a lethal source of X-rays, and that matter in thermal
+equilibrium with radiation cannot exist at all. Paul Ehrenfest later christened this
+the <strong>ultraviolet catastrophe</strong> — not a fringe puzzle but a proof, from within,
+that classical physics was broken.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The blackbody spectrum — Planck v the catastrophe</span>
+    <span class="hint">drag the temperature; the red curve is what classical physics demanded</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="bb" style="aspect-ratio: 2.2 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="bb-T">temperature</label>
+      <input type="range" id="bb-T" min="1000" max="10000" step="50" value="4500">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="bb-rj">show</label>
+      <span class="seg" id="bb-rj">
+        <button data-v="on" class="on">Rayleigh–Jeans on</button>
+        <button data-v="off">Planck only</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">peak λ <b id="bb-peak">—</b></span>
+    <span class="ro">radiated power <b id="bb-power">—</b></span>
+    <span class="ro">glow <b id="bb-glow" style="padding:0 14px;border-radius:4px">&nbsp;&nbsp;</b></span>
+    <span class="ro" style="color:var(--ink-2)">The shaded band is the visible octave, coloured true to wavelength.
+      Planck's curve (violet) always turns over; the classical curve (red) dives into the ultraviolet abyss.</span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<h2 id="planck"><span class="no">1.2</span>Planck's act of desperation</h2>
+
+<p>Max Planck was forty-two, a thermodynamicist of deep conservatism who had spent
+years trying to derive the blackbody curve from entropy arguments alone. On
+7&nbsp;October 1900 the experimenters Rubens and Kurlbaum told him over Sunday tea that
+his latest formula (and Wien's) failed in the far infrared. That evening, by what he
+called &ldquo;a fortunate guess&rdquo;, he interpolated between the two known limits and
+mailed the result on a postcard. It fitted everything, at every wavelength, to
+within experimental error. It still does:</p>
+
+<p class="eq"><span class="m"><i>B</i><sub>λ</sub>(<i>T</i>) =
+<span class="frac"><span>2<i>hc</i><sup>2</sup></span><span>λ<sup>5</sup></span></span>
+<span class="frac"><span>1</span><span><i>e</i><sup><i>hc</i>/λ<i>k</i><sub>B</sub><i>T</i></sup> − 1</span></span></span>
+<span class="eqno">PLANCK, 19 OCT 1900</span></p>
+
+<p>A formula that fits is not a theory. Planck spent the next eight weeks — &ldquo;the
+most strenuous work of my life&rdquo; — trying to derive it, and found only one route
+through: treat the energy of the charged oscillators in the cavity walls not as a
+continuum but as a stack of discrete parcels, each of size</p>
+
+<p class="eq"><span class="m"><i>E</i> = <i>h</i>ν,&emsp;
+<i>h</i> = 6.626&thinsp;×&thinsp;10<sup>−34</sup> <span class="up">J·s</span></span>
+<span class="eqno">THE QUANTUM, 14 DEC 1900</span></p>
+
+<p>Count the ways of distributing <i>P</i> such parcels among <i>N</i> oscillators
+(Boltzmann's combinatorics, which Planck had distrusted all his life), maximise the
+entropy, and Planck's law falls out. The high-frequency modes are rescued because
+an oscillator whose minimum parcel <i>h</i>ν far exceeds <i>k</i><sub>B</sub><i>T</i> almost never
+gets funded at all: the exponential Boltzmann factor <i>e</i><sup>−<i>h</i>ν/<i>k</i><sub>B</sub><i>T</i></sup>
+freezes the ultraviolet out. Equipartition — each mode an equal share — was the
+broken assumption.</p>
+
+<p>Planck presented the derivation to the German Physical Society on 14&nbsp;December
+1900, the conventional birthday of quantum theory. He regarded the quantisation as
+&ldquo;a purely formal assumption&rdquo; — bookkeeping to be dissolved later — and described
+the whole thing as &ldquo;an act of desperation&rdquo;. He spent years afterwards trying to
+smuggle continuity back in. The constant he had wrung from the data, however, was
+now loose in the world, and it appears in essentially every equation for the rest of
+this almanac. Its small size is the reason the quantum world was hidden for so long:
+<i>h</i> sets the scale at which action comes in grains, and 10<sup>−34</sup>&nbsp;J·s is
+invisible at the scale of pendulums and planets.</p>
+
+<div class="callout story">
+  <span class="tag">Two constants for the price of one</span>
+  <p>Fitting his law to the data gave Planck not just <i>h</i> but <i>k</i><sub>B</sub> — the first
+  accurate value of Boltzmann's constant, hence of Avogadro's number, hence of the
+  charge on the electron (via Faraday's constant), five years before Einstein's
+  Brownian-motion paper made atoms respectable. Planck considered this chain of
+  numbers, not the quantum, the great result of his work.</p>
+</div>
+
+<h2 id="photoelectric"><span class="no">1.3</span>Einstein takes the quantum seriously</h2>
+
+<p>For five years nobody — including Planck — believed energy itself was grainy.
+The revolutionary step came in March 1905, from a 26-year-old examiner at the Bern
+patent office. Einstein's &ldquo;heuristic&rdquo; paper (the one he himself called
+revolutionary, in a year that also produced special relativity) argued from the
+entropy of high-frequency radiation that light in a cavity behaves thermodynamically
+<em>as if</em> it consisted of independent quanta of energy <i>h</i>ν — not as a wave that
+merely exchanges energy in lumps, but grains of light. G.&thinsp;N. Lewis would later
+(1926) name them <strong>photons</strong>.</p>
+
+<p>The test case was the photoelectric effect, discovered by Hertz (1887) and
+mapped by Lenard (1902): ultraviolet light ejects electrons from metal. Classically,
+a brighter wave carries more energy, so brighter light should eject faster
+electrons — and very dim light should need hours to pool enough energy to eject any.
+Neither is true. Einstein's photon picture makes the accounting trivial: one photon
+in, one electron out. The photon pays the metal's exit toll — the
+<strong>work function</strong> <i>W</i> — and the electron keeps the change:</p>
+
+<p class="eq"><span class="m"><i>K</i><sub>max</sub> = <i>h</i>ν − <i>W</i></span>
+<span class="eqno">EINSTEIN, 1905</span></p>
+
+<ul>
+  <li><strong>Below the threshold</strong> ν₀ = <i>W</i>/<i>h</i>, no electrons — however intense
+  the light. The individual photon simply cannot pay the toll.</li>
+  <li><strong>Above it</strong>, the maximum electron energy climbs linearly with
+  <em>frequency</em>, with universal slope <i>h</i> — the same constant from the oven curve,
+  in a completely different experiment.</li>
+  <li><strong>Intensity</strong> buys more photons, hence more electrons — but not faster
+  ones. And emission is immediate, even in near-darkness.</li>
+</ul>
+
+<p>Robert Millikan found the photon idea so &ldquo;reckless&rdquo; that he spent ten years
+building what he described as a machine shop in vacuum to disprove the linear law —
+and in 1916 confirmed it exactly, measuring <i>h</i> to half a percent. (He still
+called the underlying theory untenable; the data did not care.) Einstein's 1921
+Nobel citation names the photoelectric law, not relativity.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The photoelectric bench</span>
+    <span class="hint">tune the lamp across the threshold; intensity changes the count, never the speed</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pe" style="aspect-ratio: 2.3 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pe-metal">cathode</label>
+      <span class="seg" id="pe-metal">
+        <button data-v="cs" class="on">caesium</button>
+        <button data-v="na">sodium</button>
+        <button data-v="zn">zinc</button>
+        <button data-v="pt">platinum</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="pe-nm">wavelength</label>
+      <input type="range" id="pe-nm" min="120" max="700" step="2" value="420">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="pe-int">intensity</label>
+      <input type="range" id="pe-int" min="1" max="10" step="1" value="4">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">photon energy <b id="pe-ev">—</b></span>
+    <span class="ro">work function <b id="pe-w">—</b></span>
+    <span class="ro" id="pe-kmax-wrap">K<sub>max</sub> <b id="pe-kmax">—</b></span>
+    <span class="ro">stopping voltage <b id="pe-stop">—</b></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<h2 id="bohr"><span class="no">1.4</span>The atom gets a ladder</h2>
+
+<p>The second classical scandal was the atom itself. Rutherford's scattering
+experiments (1911) had revealed a miniature solar system: a tiny, dense, positive
+nucleus with electrons somewhere outside. Classically this atom is a death trap. An
+orbiting electron accelerates; accelerating charges radiate; the electron should
+spiral into the nucleus in about 16&nbsp;picoseconds, chirping a continuous smear of
+radiation as it falls. Matter should not exist, and its light should have no lines.</p>
+
+<p>But atomic light is nothing but lines. Heat hydrogen and it emits a precise
+barcode — red at 656.3&nbsp;nm, blue-green at 486.1, violet at 434.0 and 410.2 — whose
+wavelengths a Swiss schoolteacher, Johann Balmer, had fitted in 1885 with a
+formula involving integers. Generalised by Rydberg:</p>
+
+<p class="eq"><span class="m"><span class="frac"><span>1</span><span>λ</span></span> =
+<i>R</i><sub>H</sub><span class="up">&thinsp;</span>(
+<span class="frac"><span>1</span><span><i>n</i><sub>f</sub><sup>2</sup></span></span> −
+<span class="frac"><span>1</span><span><i>n</i><sub>i</sub><sup>2</sup></span></span>),&emsp;
+<i>R</i><sub>H</sub> = 1.0968&thinsp;×&thinsp;10<sup>7</sup> <span class="up">m<sup>−1</sup></span></span>
+<span class="eqno">RYDBERG, 1888</span></p>
+
+<p>Integers, in a spectrum. Niels Bohr, working in Rutherford's Manchester
+department in 1913, made the leap: perhaps the electron may only occupy orbits in
+which its angular momentum is a whole multiple of Planck's grain,
+<i>L</i>&nbsp;=&nbsp;<i>n</i>ħ. In those orbits — postulate, not explanation — it does not
+radiate. Combining the quantisation rule with ordinary Coulomb mechanics gives
+allowed radii <i>r</i><sub>n</sub>&nbsp;=&nbsp;<i>n</i><sup>2</sup><i>a</i><sub>0</sub> (with
+<i>a</i><sub>0</sub>&nbsp;=&nbsp;0.0529&nbsp;nm, the Bohr radius) and allowed energies</p>
+
+<p class="eq"><span class="m"><i>E</i><sub>n</sub> = −
+<span class="frac"><span><i>m</i><sub>e</sub><i>e</i><sup>4</sup></span><span>8ε<sub>0</sub><sup>2</sup><i>h</i><sup>2</sup></span></span>
+<span class="frac"><span>1</span><span><i>n</i><sup>2</sup></span></span>
+= −<span class="frac"><span>13.606 <span class="up">eV</span></span><span><i>n</i><sup>2</sup></span></span></span>
+<span class="eqno">BOHR, 1913</span></p>
+
+<p>Light is emitted only when the electron <em>jumps</em>, and the photon carries
+exactly the difference: <i>h</i>ν&nbsp;=&nbsp;<i>E</i><sub>i</sub>&nbsp;−&nbsp;<i>E</i><sub>f</sub>. Rydberg's
+formula falls out with <i>R</i><sub>H</sub> computed correctly from <i>m</i><sub>e</sub>, <i>e</i>,
+ε<sub>0</sub> and <i>h</i> — no fitting. When Bohr then explained a mystery series in the
+star ζ&nbsp;Puppis as helium ions (with the nuclear charge and reduced mass scaled
+correctly), Einstein called it &ldquo;one of the greatest discoveries&rdquo;. Franck and
+Hertz clinched the discreteness in 1914 by driving electrons through mercury
+vapour: the current dips every 4.9&nbsp;V, the atoms accepting energy only in exact
+level-sized bites, and the vapour glows at precisely the ultraviolet line that a
+4.9&nbsp;eV drop predicts.</p>
+
+<p>Yet the Bohr model is a half-way house — a classical planet with quantum
+bolt-ons. It fails for helium's two electrons, says nothing about why some lines
+are bright and others faint, and its sharp orbits will turn out to violate the very
+theory it midwifed. It earns its place here as the decisive proof that
+<strong>the states of matter are discrete</strong>: atoms have ladders, and spectroscopy is
+the sound of electrons falling down them.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The hydrogen ladder and its barcode</span>
+    <span class="hint">hover a transition arrow to read it; the strip below is the real spectrum</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-bohr" style="aspect-ratio: 2.1 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="bohr-series">series</label>
+      <span class="seg" id="bohr-series">
+        <button data-v="1">Lyman → n=1</button>
+        <button data-v="2" class="on">Balmer → n=2</button>
+        <button data-v="3">Paschen → n=3</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="bohr-read">Hover an arrow. The four visible Balmer lines are the ones Balmer fitted in 1885.</span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<h2 id="matterwaves"><span class="no">1.5</span>Waves of matter</h2>
+
+<p>Two more dominoes fell before the real theory arrived. In 1923 Arthur Compton
+scattered X-rays off electrons in graphite and found the scattered light shifted to
+longer wavelength by exactly the recoil formula for a billiard-ball collision with a
+massless particle of energy <i>h</i>ν and momentum <i>h</i>/λ:</p>
+
+<p class="eq"><span class="m">Δλ = <span class="frac"><span><i>h</i></span><span><i>m</i><sub>e</sub><i>c</i></span></span>(1 − cos&thinsp;θ)</span>
+<span class="eqno">COMPTON, 1923</span></p>
+
+<p>with <i>h</i>/<i>m</i><sub>e</sub><i>c</i>&nbsp;=&nbsp;2.43&nbsp;pm, the Compton wavelength of the
+electron. After this, the photon's momentum was not negotiable.</p>
+
+<p>Then, in his 1924 Paris thesis, Louis de Broglie ran the logic backwards with
+aristocratic audacity: if waves of light are also particles, perhaps particles of
+matter are also waves, with the same dictionary,</p>
+
+<p class="eq"><span class="m">λ = <span class="frac"><span><i>h</i></span><span><i>p</i></span></span></span>
+<span class="eqno">DE BROGLIE, 1924</span></p>
+
+<p>The idea instantly demystifies Bohr's rule: an electron wave wrapped around a
+circular orbit must close on itself, <i>n</i>λ&nbsp;=&nbsp;2π<i>r</i> — which <em>is</em>
+<i>L</i>&nbsp;=&nbsp;<i>n</i>ħ. The examining committee, unsure whether the thesis was genius
+or nonsense, sent it to Einstein, who replied that de Broglie had &ldquo;lifted a corner
+of the great veil&rdquo;. Proof came in 1927 from two directions at once: Davisson and
+Germer in New York diffracted slow electrons off a nickel crystal, and G.&thinsp;P.
+Thomson in Aberdeen diffracted fast ones through metal foil, both finding Bragg
+peaks at exactly <i>h</i>/<i>p</i>. (Physics enjoys the symmetry: J.&thinsp;J. Thomson won the
+Nobel for showing the electron is a particle; his son George for showing it is a
+wave.) A 100&nbsp;eV electron has λ&nbsp;≈&nbsp;0.12&nbsp;nm — atomic spacing — which is why
+electron microscopes resolve what light never can, and why fifty-kilodalton
+molecules have since been interfered through gratings.</p>
+
+<h2 id="1925"><span class="no">1.6</span>Five feverish years</h2>
+
+<p>By 1924 the &ldquo;old quantum theory&rdquo; was a heap of brilliant patches —
+quantisation rules grafted onto classical orbits, each success shadowed by a
+failure. The real theory arrived in a rush between 1925 and 1927, built twice over
+by two different routes that turned out to be the same thing.</p>
+
+<h3>Matrix mechanics — Helgoland, June 1925</h3>
+
+<p>Werner Heisenberg, twenty-three, exiled to the grassless North Sea island of
+Helgoland by hay fever, resolved to expel everything unobservable from atomic
+physics — above all the electron's orbit, which no experiment had ever seen. What
+experiments see are <em>transitions</em>: frequencies and intensities, indexed by two
+states, initial and final. So Heisenberg replaced each classical quantity by an
+array of transition amplitudes — <i>x</i> becomes a table <i>x</i><sub>mn</sub> — and worked
+out how such tables must multiply for the physics to be consistent. Around 3&nbsp;a.m.
+one June morning, with the energy theorem checking out line by line, he was, he
+wrote, too excited to sleep and climbed a rock at the island's tip to wait for
+sunrise. Back in Göttingen, Max Born recognised Heisenberg's rule as matrix
+multiplication, and with Pascual Jordan distilled the theory's entire novelty into
+one line — position and momentum matrices that do not commute:</p>
+
+<p class="eq"><span class="m"><i>x̂</i>&thinsp;<i>p̂</i> − <i>p̂</i>&thinsp;<i>x̂</i> = <i>i</i>ħ</span>
+<span class="eqno">BORN–JORDAN, 1925</span></p>
+
+<p>Order of operations now matters in nature's arithmetic — the mathematical seed
+of the uncertainty principle, and (as the next chapter shows) very nearly the whole
+theory. Wolfgang Pauli proved the machinery real by grinding out the full hydrogen
+spectrum from it within months.</p>
+
+<h3>Wave mechanics — the Alpine Christmas, 1925–26</h3>
+
+<p>Erwin Schrödinger, nearly forty and sceptical of Göttingen's austere matrices,
+took de Broglie's waves seriously instead: if the electron is a wave, there should
+be a wave <em>equation</em>. Over Christmas 1925 in the Alps (and in a legendary burst
+of six papers in six months) he found it. For a particle of mass <i>m</i> in a
+potential <i>V</i>:</p>
+
+<p class="eq"><span class="m"><i>i</i>ħ&thinsp;<span class="frac"><span>∂ψ</span><span>∂<i>t</i></span></span> =
+−&thinsp;<span class="frac"><span>ħ<sup>2</sup></span><span>2<i>m</i></span></span>
+<span class="frac"><span>∂<sup>2</sup>ψ</span><span>∂<i>x</i><sup>2</sup></span></span> + <i>V</i>ψ</span>
+<span class="eqno">SCHRÖDINGER, 1926</span></p>
+
+<p>Solve it for the Coulomb potential and the hydrogen levels
+−13.6&nbsp;eV/<i>n</i><sup>2</sup> emerge not from postulated orbits but as the discrete
+frequencies of a confined wave — quantisation as resonance, integers appearing for
+the same reason a violin string has harmonics. Physicists embraced the familiar
+differential equation with relief; Schrödinger himself hoped ψ was a real physical
+wave, matter smeared smoothly through space, and that the granular &ldquo;jumps&rdquo; would
+dissolve. Then Schrödinger (and Pauli, and Eckart) proved the awkward thing: wave
+mechanics and matrix mechanics are <em>mathematically identical</em> — one theory in two
+costumes. Whatever ψ was, it was not an ordinary wave: for two particles it lives
+in six-dimensional configuration space, and it is irreducibly complex-valued.</p>
+
+<h3>What the wave is — Born, 1926</h3>
+
+<p>The answer that stuck came from Max Born, in a paper on collisions, almost as a
+footnote: ψ is a wave of <em>probability amplitude</em>. Its squared magnitude
+|ψ(<i>x</i>)|² is the probability density of finding the particle at <i>x</i> — the
+particle itself is always found whole, at one place, like the dots on the screen in
+the Overview. Nature, on this reading, is lawful about statistics and silent about
+individuals. Born's rule completed the working theory; it also opened the
+interpretational argument that Chapter&nbsp;5 inherits, and earned Born his Nobel only
+in 1954, twenty-eight years late.</p>
+
+<h3>Uncertainty and Solvay — 1927</h3>
+
+<p>In February 1927 Heisenberg, walking at night in the park behind Bohr's
+institute, saw what the non-commuting matrices meant physically: no state of
+affairs can make both terms of <i>x̂p̂</i>&nbsp;−&nbsp;<i>p̂x̂</i>&nbsp;=&nbsp;<i>i</i>ħ sharp at once.
+Position and momentum are not merely unknowable together; they are not jointly
+<em>defined</em>,</p>
+
+<p class="eq"><span class="m">Δ<i>x</i>&thinsp;Δ<i>p</i> ≥ ħ/2</span>
+<span class="eqno">HEISENBERG, 1927</span></p>
+
+<p>(the modern tight form; the derivation from commutators is in Chapter&nbsp;2). That
+October the new physics assembled at the fifth Solvay Conference in Brussels —
+seventeen of the twenty-nine attendees held or would hold Nobel prizes — and the
+famous duel began over the breakfast table: each morning Einstein produced a
+thought experiment to beat the uncertainty principle; each evening Bohr found the
+flaw. &ldquo;God does not play dice,&rdquo; Einstein grumbled; &ldquo;Einstein, stop telling God
+what to do,&rdquo; Bohr — by most accounts — replied. Einstein never disputed that the
+theory <em>worked</em>; his real objection, sharpened over years into the EPR argument
+of Chapter&nbsp;5, was that it could not be the whole story. The theory shipped
+anyway. By 1928 Dirac had married it to special relativity and predicted
+antimatter; by 1930 the textbooks were being written; and physics began the long
+project — still running — of finding out what it had built.</p>
+
+<div class="callout gold">
+  <span class="tag">The crisis, distilled</span>
+  <p><strong>1900</strong> energy exchanged in grains <i>h</i>ν (Planck) · <strong>1905</strong> light
+  itself is grains (Einstein) · <strong>1913</strong> atomic states are grains (Bohr) ·
+  <strong>1923</strong> light grains carry momentum (Compton) · <strong>1924</strong> matter is waves
+  (de Broglie) · <strong>1925</strong> observables are non-commuting matrices (Heisenberg–Born–Jordan) ·
+  <strong>1926</strong> the wave equation (Schrödinger), and the wave is probability (Born) ·
+  <strong>1927</strong> uncertainty (Heisenberg), electron diffraction (Davisson–Germer),
+  and the theory complete at Solvay.</p>
+</div>
+
+</div>
+
+<nav class="chapnav">
+  <a href="./"><span class="dir">← Overview</span><span class="title">Quanta</span></a>
+  <a class="next" href="machinery.html"><span class="dir">Chapter 2 →</span><span class="title">The Machinery</span></a>
+</nav>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, seg, clamp, label, mono, line, fmtNum, wavelengthCSS } = Q;
+
+  /* ================= blackbody ================= */
+  const h = 6.62607015e-34, c = 2.99792458e8, kB = 1.380649e-23;
+  let T = 4500, showRJ = true;
+
+  function planck(lam, T) { // lam in m -> W sr^-1 m^-3
+    const a = 2 * h * c * c / Math.pow(lam, 5);
+    return a / (Math.expm1(h * c / (lam * kB * T)));
+  }
+  function rj(lam, T) { return 2 * c * kB * T / Math.pow(lam, 4); }
+
+  // rough blackbody glow colour (Tanner Helland fit, clamped)
+  function kelvinRGB(T) {
+    const t = clamp(T, 1000, 40000) / 100;
+    let r, g, b;
+    r = t <= 66 ? 255 : clamp(329.7 * Math.pow(t - 60, -0.1332), 0, 255);
+    g = t <= 66 ? clamp(99.47 * Math.log(t) - 161.1, 0, 255)
+                : clamp(288.1 * Math.pow(t - 60, -0.0755), 0, 255);
+    b = t >= 66 ? 255 : (t <= 19 ? 0 : clamp(138.5 * Math.log(t - 10) - 305.0, 0, 255));
+    return `rgb(${r | 0},${g | 0},${b | 0})`;
+  }
+
+  const bb = canvas("bb", function (ctx, w, h_, t) {
+    ctx.clearRect(0, 0, w, h_);
+    const L = 56, R = 16, Tp = 18, B = 40;
+    const pw = w - L - R, ph = h_ - Tp - B;
+    const lamMax = 3000e-9;
+
+    // visible band, coloured true to wavelength
+    for (let nm = 380; nm <= 750; nm += 4) {
+      const x = L + (nm * 1e-9 / lamMax) * pw;
+      ctx.fillStyle = wavelengthCSS(nm, 0.13);
+      ctx.fillRect(x, Tp, (4e-9 / lamMax) * pw + 0.5, ph);
+    }
+
+    // normalise to Planck peak at this T
+    let peak = 0;
+    for (let i = 1; i <= 400; i++) {
+      const lam = (i / 400) * lamMax;
+      peak = Math.max(peak, planck(lam, T));
+    }
+
+    // axes
+    line(ctx, L, Tp, L, Tp + ph, C.line); line(ctx, L, Tp + ph, L + pw, Tp + ph, C.line);
+    for (let nm = 0; nm <= 3000; nm += 500) {
+      const x = L + (nm / 3000) * pw;
+      line(ctx, x, Tp + ph, x, Tp + ph + 4, C.line);
+      label(ctx, nm ? nm : "0", x, Tp + ph + 16, { align: "center" });
+    }
+    label(ctx, "wavelength (nm)", L + pw / 2, Tp + ph + 30, { align: "center" });
+    label(ctx, "spectral radiance (normalised)", L - 42, Tp + ph / 2, { align: "center", angle: -Math.PI / 2 });
+
+    // Rayleigh–Jeans (clipped)
+    if (showRJ) {
+      ctx.strokeStyle = C.danger; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      let started = false;
+      for (let i = 2; i <= 400; i++) {
+        const lam = (i / 400) * lamMax;
+        const v = rj(lam, T) / peak;
+        const y = Tp + ph - clamp(v, 0, 1.05) * ph;
+        const x = L + (i / 400) * pw;
+        if (v > 1.08 && !started) continue;
+        if (!started) { ctx.moveTo(x, Math.max(Tp - 2, y)); started = true; }
+        else ctx.lineTo(x, Math.max(Tp - 2, y));
+      }
+      ctx.stroke();
+      label(ctx, "Rayleigh–Jeans → ∞", L + pw * 0.10, Tp + 14, { color: C.danger, font: Q.MONO_B });
+    }
+
+    // Planck
+    ctx.strokeStyle = C.violet; ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 1; i <= 400; i++) {
+      const lam = (i / 400) * lamMax;
+      const v = planck(lam, T) / peak;
+      const x = L + (i / 400) * pw, y = Tp + ph - v * ph;
+      i === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Wien peak marker
+    const lamPk = 2.898e-3 / T;
+    if (lamPk < lamMax) {
+      const x = L + (lamPk / lamMax) * pw;
+      line(ctx, x, Tp + 6, x, Tp + ph, C.line, 1, [3, 4]);
+      label(ctx, "λmax", x + 4, Tp + 18, { color: C.ink2 });
+    }
+    label(ctx, "Planck  T = " + fmtNum(T) + " K", L + pw - 8, Tp + 14,
+      { color: C.violet, align: "right", font: Q.MONO_B });
+  });
+
+  function bbReadouts() {
+    const lamPk = 2.898e-3 / T;
+    document.getElementById("bb-peak").textContent =
+      lamPk >= 1e-6 ? (lamPk * 1e6).toFixed(2) + " µm" : Math.round(lamPk * 1e9) + " nm";
+    const relSun = Math.pow(T / 5772, 4);
+    document.getElementById("bb-power").textContent = "σT⁴ = " +
+      (5.670374419e-8 * Math.pow(T, 4) / 1000).toFixed(0) + " kW/m²";
+    document.getElementById("bb-glow").style.background = kelvinRGB(T);
+  }
+  slider("bb-T", (v) => fmtNum(v) + " K", (v) => { T = v; bbReadouts(); bb && bb.redraw(); });
+  seg("bb-rj", (v) => { showRJ = v === "on"; bb && bb.redraw(); });
+  bbReadouts();
+
+  /* ================= photoelectric ================= */
+  const METALS = { cs: { name: "Cs", W: 2.14 }, na: { name: "Na", W: 2.75 },
+                   zn: { name: "Zn", W: 4.33 }, pt: { name: "Pt", W: 5.65 } };
+  let metal = METALS.cs, lamNm = 420, inten = 4;
+  const evOf = (nm) => 1239.84 / nm;
+
+  // little particle systems
+  let photons = [], electrons = [], peAcc = 0;
+  const peRnd = Q.rng(1905);
+
+  const pe = canvas("pe", function (ctx, w, hh, t) {
+    ctx.clearRect(0, 0, w, hh);
+    const cx = w * 0.30;                 // cathode face x
+    const floor = hh - 30;
+    const Ek = Math.max(0, evOf(lamNm) - metal.W);
+
+    // lamp
+    ctx.fillStyle = C.surface3; ctx.strokeStyle = C.line;
+    ctx.beginPath(); ctx.roundRect(w * 0.72, 24, 78, 40, 6); ctx.fill(); ctx.stroke();
+    label(ctx, "lamp", w * 0.72 + 39, 48, { align: "center", color: C.ink2 });
+    label(ctx, lamNm + " nm", w * 0.72 + 39, 76, { align: "center", color: lamNm >= 380 && lamNm <= 750 ? wavelengthCSS(lamNm) : C.violet });
+    if (lamNm < 380) label(ctx, "(ultraviolet)", w * 0.72 + 39, 90, { align: "center" });
+
+    // cathode slab
+    ctx.fillStyle = C.surface2;
+    ctx.fillRect(cx - 46, 40, 46, hh - 80);
+    ctx.fillStyle = C.surface3;
+    ctx.fillRect(cx - 8, 40, 8, hh - 80);
+    label(ctx, metal.name + " cathode", cx - 27, hh - 48, { align: "center", color: C.ink2 });
+    label(ctx, "W = " + metal.W.toFixed(2) + " eV", cx - 27, hh - 34, { align: "center" });
+
+    // spawn photons
+    peAcc += inten * 1.5 / 60;
+    while (peAcc >= 1) {
+      peAcc -= 1;
+      photons.push({ x: w * 0.72 + 20, y: 60 + peRnd() * (hh - 150), p: 0 });
+    }
+    const pcol = lamNm >= 380 && lamNm <= 750 ? wavelengthCSS(lamNm) : "#b39dfc";
+    for (const ph of photons) {
+      ph.p += 1 / 90;
+      const x = ph.x + (cx - ph.x) * ph.p;
+      const y = ph.y + Math.sin(ph.p * 40) * 3;
+      ctx.strokeStyle = pcol; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for (let k = 0; k <= 10; k++) {
+        const xx = x + k * 3, yy = y + Math.sin((ph.p * 40) + k * 0.9) * 3;
+        k === 0 ? ctx.moveTo(xx, yy) : ctx.lineTo(xx, yy);
+      }
+      ctx.stroke();
+    }
+    const absorbed = photons.filter((p) => p.p >= 1);
+    photons = photons.filter((p) => p.p < 1);
+    for (const a of absorbed) {
+      if (Ek > 0) electrons.push({ x: cx + 2, y: a.y, vx: 40 + 90 * Math.sqrt(Ek / 6), vy: (peRnd() - 0.5) * 30, born: t });
+    }
+
+    // electrons
+    ctx.fillStyle = C.cyan;
+    electrons = electrons.filter((e) => e.x < w + 10);
+    for (const e of electrons) {
+      e.x += e.vx / 60; e.y += e.vy / 60;
+      ctx.beginPath(); ctx.arc(e.x, e.y, 2.4, 0, Q.TAU); ctx.fill();
+    }
+    if (Ek <= 0 && absorbed.length) {
+      // flash "no emission"
+    }
+    if (Ek <= 0) label(ctx, "below threshold — no electrons, at any intensity", cx + 16, 30, { color: C.danger, font: Q.MONO_B });
+
+    // inset: Kmax vs frequency line
+    const gx = w * 0.55, gy = hh - 34, gw = w * 0.40, gh = hh * 0.42;
+    ctx.fillStyle = "rgba(0,0,0,0.25)";
+    ctx.fillRect(gx, gy - gh, gw, gh);
+    line(ctx, gx + 26, gy - 8, gx + gw - 8, gy - 8, C.line);
+    line(ctx, gx + 26, gy - 8, gx + 26, gy - gh + 6, C.line);
+    label(ctx, "ν →", gx + gw - 24, gy - 12, {});
+    label(ctx, "Kmax", gx + 4, gy - gh + 16, {});
+    // line: K = hν − W ; x-axis 0..3 PHz
+    const nu0 = metal.W / 4.1357e-15 / 1e15;   // threshold in PHz
+    const nuNow = (c / (lamNm * 1e-9)) / 1e15;
+    const X = (nu) => gx + 26 + (nu / 3) * (gw - 40);
+    const YK = (K) => gy - 8 - (K / 8) * (gh - 20);
+    ctx.strokeStyle = C.violet; ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(X(nu0), YK(0));
+    ctx.lineTo(X(3), YK(4.1357 * 3 - metal.W)); ctx.stroke();
+    line(ctx, X(nu0), YK(0), X(nu0), YK(0) + 5, C.muted);
+    label(ctx, "ν₀", X(nu0), gy + 4, { align: "center" });
+    // current point
+    ctx.fillStyle = nuNow >= nu0 ? C.photon : C.danger;
+    ctx.beginPath(); ctx.arc(X(clamp(nuNow, 0, 3)), YK(Math.max(0, 4.1357 * nuNow - metal.W)), 3.5, 0, Q.TAU); ctx.fill();
+    label(ctx, "slope = h", X(2.2), YK(4.1357 * 2.2 - metal.W) - 8, { color: C.violet });
+  }, { animate: true });
+
+  function peRead() {
+    const E = evOf(lamNm), K = E - metal.W;
+    document.getElementById("pe-ev").textContent = E.toFixed(2) + " eV";
+    document.getElementById("pe-w").textContent = metal.W.toFixed(2) + " eV";
+    document.getElementById("pe-kmax").textContent = K > 0 ? K.toFixed(2) + " eV" : "— (no emission)";
+    document.getElementById("pe-stop").textContent = K > 0 ? K.toFixed(2) + " V" : "—";
+  }
+  seg("pe-metal", (v) => { metal = METALS[v]; electrons.length = 0; peRead(); });
+  slider("pe-nm", (v) => v + " nm", (v) => { lamNm = v; peRead(); });
+  slider("pe-int", (v) => "×" + v, (v) => { inten = v; });
+
+  /* ================= Bohr ladder & spectrum ================= */
+  let nf = 2, hover = null, bohrXs = [];
+  const EofN = (n) => -13.6057 / (n * n);
+  const lamOf = (ni, nf) => 1239.84 / (EofN(ni) - EofN(nf)); // nm (E in eV, positive difference)
+
+  const bohrFig = canvas("fig-bohr", function (ctx, w, hh, t) {
+    ctx.clearRect(0, 0, w, hh);
+    const L = 60, R = 24, Tp = 16;
+    const stripH = 64, gap = 34;
+    const levTop = Tp + 8, levBot = hh - stripH - gap - 8;
+
+    // energy scale: map E in [-13.7, 0] -> y
+    const Y = (E) => levTop + (E - 0) / (-13.7 - 0) * (levBot - levTop);
+
+    // levels n=1..8
+    for (let n = 1; n <= 8; n++) {
+      const y = Y(EofN(n));
+      line(ctx, L, y, w - R, y, n === nf ? C.violet : C.line, n === nf ? 1.6 : 1);
+      label(ctx, "n=" + n, L - 8, y + 4, { align: "right", color: n === nf ? C.violet : C.muted });
+      if (n <= 4) label(ctx, EofN(n).toFixed(2) + " eV", w - R + 2 - 60, y - 4, { color: C.muted });
+    }
+    label(ctx, "E = 0 (ionisation)", L, Y(0) - 6, { color: C.muted });
+
+    // transition arrows for the chosen series
+    const xs = [];
+    let k = 0;
+    for (let ni = nf + 1; ni <= 8; ni++, k++) {
+      const x = L + 70 + k * ((w - L - R - 150) / 6);
+      xs.push({ x, ni });
+      const y1 = Y(EofN(ni)), y2 = Y(EofN(nf));
+      const lam = lamOf(ni, nf);
+      const col = lam >= 380 && lam <= 750 ? wavelengthCSS(lam) : C.violetDim;
+      const isH = hover && hover.ni === ni;
+      ctx.strokeStyle = col; ctx.lineWidth = isH ? 2.6 : 1.4;
+      ctx.beginPath(); ctx.moveTo(x, y1); ctx.lineTo(x, y2 - 6); ctx.stroke();
+      // arrowhead
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.moveTo(x, y2); ctx.lineTo(x - 4, y2 - 8); ctx.lineTo(x + 4, y2 - 8); ctx.fill();
+      if (isH) {
+        label(ctx, "n=" + ni + " → n=" + nf + "   λ = " + lam.toFixed(1) + " nm", x + 8, (y1 + y2) / 2, { color: C.ink, font: Q.MONO_B });
+      }
+    }
+    bohrXs = xs;
+
+    // spectrum strip 300–750 nm
+    const sy = hh - stripH - 6;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(L, sy, w - L - R, stripH * 0.62);
+    const nm2x = (nm) => L + (nm - 300) / (750 - 300) * (w - L - R);
+    for (let nm = 380; nm <= 750; nm += 2) {
+      ctx.fillStyle = wavelengthCSS(nm, 0.10);
+      ctx.fillRect(nm2x(nm), sy, nm2x(nm + 2) - nm2x(nm) + 0.5, stripH * 0.62);
+    }
+    for (let ni = nf + 1; ni <= 12; ni++) {
+      const lam = lamOf(ni, nf);
+      if (lam < 300 || lam > 750) continue;
+      const x = nm2x(lam);
+      ctx.fillStyle = lam >= 380 ? wavelengthCSS(lam) : "#9b8cff";
+      ctx.fillRect(x - 1, sy, 2.2, stripH * 0.62);
+    }
+    for (let nm = 300; nm <= 750; nm += 50) {
+      label(ctx, nm, nm2x(nm), sy + stripH * 0.62 + 14, { align: "center" });
+    }
+    label(ctx, "emission spectrum (nm)", L, sy - 6, { color: C.muted });
+    if (nf === 1) label(ctx, "Lyman series: entirely ultraviolet — off-strip to the left (91–122 nm)", L + 8, sy + stripH * 0.62 - 8, { color: C.ink2 });
+    if (nf === 3) label(ctx, "Paschen series: entirely infrared — off-strip to the right (0.82–1.88 µm)", L + 8, sy + stripH * 0.62 - 8, { color: C.ink2 });
+  });
+
+  const bohrCv = document.getElementById("fig-bohr");
+  bohrCv.addEventListener("mousemove", (ev) => {
+    const r = bohrCv.getBoundingClientRect();
+    const x = ev.clientX - r.left;
+    const xs = bohrXs || [];
+    let best = null, bd = 24;
+    for (const s of xs) { const d = Math.abs(s.x - x); if (d < bd) { bd = d; best = s; } }
+    if ((best && (!hover || hover.ni !== best.ni)) || (!best && hover)) {
+      hover = best;
+      bohrFig.redraw();
+      const el = document.getElementById("bohr-read");
+      if (best) {
+        const lam = lamOf(best.ni, nf);
+        const E = EofN(best.ni) - EofN(nf);
+        el.innerHTML = "n=" + best.ni + " → n=" + nf +
+          " &nbsp; ΔE = <b>" + Math.abs(E).toFixed(3) + " eV</b> &nbsp; λ = <b>" + lam.toFixed(1) + " nm</b>" +
+          (lam < 380 ? " (ultraviolet)" : lam > 750 ? " (infrared)" : " (visible)");
+      } else {
+        el.textContent = "Hover an arrow.";
+      }
+    }
+  });
+  seg("bohr-series", (v) => { nf = +v; hover = null; bohrFig.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

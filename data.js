@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "quantum-theory",
+    title: "Quanta",
+    tagline: "The deep technical almanac of quantum theory — the crisis that forced it, the machinery of states and operators, wavefunctions, spin, entanglement, quantum fields, and quantum dots: the particle-in-a-box on your television. Eight chapters, fourteen live instruments — run a Bell test, tunnel a barrier, dial a nanocrystal's colour by size. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/quantum-theory/",
+    illustration: "ill-quanta",
+    date: "2026-07-19T14:00:00",
+    year: 1900,
+    readingMin: 84,
+    words: 18400,
+    tags: ["science", "math", "history", "software"],
+    real: true,
+  },
+  {
     slug: "win2k",
     title: "Boot to Desktop",
     tagline: "How a from-scratch PC emulator learned to boot Windows 2000 — a 53-day hunt through latched interrupt edges, a 128 MiB RAM dump, and a whole-system deadlock that turned out to be an invisible dialog box. Told from the ledgers, journals and preserved runs. Seven chapters of animated internals.",
@@ -1460,7 +1473,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["transistor-packages", "great-dying", "chicxulub", "starforged", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["transistor-packages", "great-dying", "chicxulub", "starforged", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },

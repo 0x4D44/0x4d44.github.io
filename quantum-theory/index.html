@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quanta — A Technical Almanac of Quantum Theory</title>
+<meta name="description" content="A deep, interactive almanac of quantum theory: the crisis that forced it, the mathematics that runs it, wavefunctions, spin, entanglement, quantum fields — and quantum dots, the nanocrystals that put the particle-in-a-box on your television.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="origins.html">1 · The Crisis</a>
+    <a href="machinery.html">2 · The Machinery</a>
+    <a href="wavefunction.html">3 · Wavefunctions</a>
+    <a href="spin.html">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html">5 · Entanglement</a>
+    <a href="fields.html">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">An interactive almanac of the deepest theory we have</p>
+  <h1>Quanta</h1>
+  <p class="standfirst">Quantum mechanics is the operating system of the physical world —
+  the most precisely tested theory in the history of science, and the strangest. This
+  almanac takes it seriously: the crisis that forced it into existence, the linear
+  algebra that runs it, the equations and their exact solutions, spin, entanglement,
+  the quantum theory of light — and, at the end, the engineered nanocrystals called
+  quantum dots that put a textbook problem on the side of your television.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">The only mystery — one particle at a time</span>
+    <span class="hint">electrons arrive as dots; the pattern arrives as a wave</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="slit" style="aspect-ratio: 2.5 / 1; min-height: 280px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="slit-mode">apparatus</label>
+      <span class="seg" id="slit-mode">
+        <button data-v="both" class="on">both slits</button>
+        <button data-v="one">one slit</button>
+        <button data-v="watched">both + detector</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="slit-rate">rate</label>
+      <input type="range" id="slit-rate" min="1" max="120" step="1" value="30">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <button class="btn" id="slit-reset">reset screen</button>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">detected <b id="slit-count">0</b></span>
+    <span class="ro" id="slit-cap" style="font-size:13px; color:var(--ink-2)">
+      Each electron is fired alone — the previous one has already landed before the next
+      is released. Alone, each arrives as a single dot. Together, they draw interference
+      fringes: each electron interferes with <i>itself</i>. Switch the detector on to learn
+      which slit it used, and the fringes vanish.
+    </span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p>Richard Feynman called the double-slit experiment &ldquo;a phenomenon which is
+impossible, <em>absolutely</em> impossible, to explain in any classical way, and
+which has in it the heart of quantum mechanics. In reality, it contains the
+<em>only</em> mystery.&rdquo; Everything in this almanac is, one way or another, an
+unpacking of the figure above: single particles that arrive whole, at one place,
+like bullets — distributed like waves, in fringes; and a pattern that survives only
+so long as nothing in the universe records which path was taken.</p>
+
+<p>The theory that accounts for this is not a loose set of paradoxes. It is a sharp
+mathematical machine — a handful of postulates about vectors in complex spaces, and
+one differential equation — whose predictions have been verified to twelve
+significant figures. It underwrites roughly a third of the modern economy: every
+transistor, laser, LED, solar cell, MRI scanner and atomic clock is quantum
+machinery. You do not have to like what it says about reality (nobody entirely
+does), but you can understand precisely what it says. That is the aim here.</p>
+
+<p>The chapters are written in the order the subject is best learned: the
+experimental crisis first, then the formalism, then the formalism put to work, then
+its strangest consequences, and finally its most photogenic application. Every
+equation is real, every number is honest, and every chapter carries live apparatus
+you can drive.</p>
+
+<div class="callout story">
+  <span class="tag">The single-electron record</span>
+  <p>The build-up above is not a simulation of a thought experiment. In 1974 Merli,
+  Missiroli and Pozzi, and definitively in 1989 Tonomura's team at Hitachi, sent
+  electrons through a biprism <em>one at a time</em> — at most one electron in flight in
+  the whole apparatus — and filmed the fringes assembling dot by dot over twenty
+  minutes. In a 2002 poll of <i>Physics World</i> readers it was voted the most
+  beautiful experiment in physics.</p>
+</div>
+
+</div>
+
+<div class="cards">
+  <a class="card" href="origins.html">
+    <span class="no">CHAPTER 1</span>
+    <h3>The Crisis, 1859–1927</h3>
+    <p>Blackbody radiation and the ultraviolet catastrophe, Planck's desperate
+    <i>E&nbsp;=&nbsp;hν</i>, Einstein's light quanta, the Bohr atom and its spectra, Compton,
+    de Broglie's matter waves — and the five feverish years that produced the real theory.</p>
+  </a>
+  <a class="card" href="machinery.html">
+    <span class="no">CHAPTER 2</span>
+    <h3>The Machinery</h3>
+    <p>States as vectors, observables as Hermitian operators, Dirac's bra–ket notation,
+    the Born rule, commutators, the Schrödinger equation as unitary rotation, and where
+    the uncertainty principle actually comes from.</p>
+  </a>
+  <a class="card" href="wavefunction.html">
+    <span class="no">CHAPTER 3</span>
+    <h3>Wavefunctions at Work</h3>
+    <p>The equation solved exactly: particle in a box, the harmonic oscillator and its
+    ladder operators, quantum tunnelling from alpha decay to the STM, and the full
+    hydrogen atom with its orbitals drawn live.</p>
+  </a>
+  <a class="card" href="spin.html">
+    <span class="no">CHAPTER 4</span>
+    <h3>Spin &amp; Identity</h3>
+    <p>Stern–Gerlach and the two-valued surprise, Pauli matrices, why a spinor needs
+    720° to come home, and how the indistinguishability of particles — bosons and
+    fermions — builds the periodic table and holds up white dwarfs.</p>
+  </a>
+  <a class="card" href="entanglement.html">
+    <span class="no">CHAPTER 5</span>
+    <h3>Measurement &amp; Entanglement</h3>
+    <p>The measurement problem stated honestly: density matrices, EPR, Bell's theorem
+    with a live CHSH experiment you can run, decoherence, and a fair hearing for the
+    rival interpretations.</p>
+  </a>
+  <a class="card" href="fields.html">
+    <span class="no">CHAPTER 6</span>
+    <h3>Fields &amp; Light</h3>
+    <p>Why relativity forces fields: photons as excitations, Feynman's sum over
+    histories with phasors you can watch cancel, virtual particles, renormalisation,
+    the g−2 triumph and the Standard Model in one table.</p>
+  </a>
+  <a class="card" href="quantum-dots.html">
+    <span class="no">CHAPTER 7</span>
+    <h3>Quantum Dots</h3>
+    <p>The particle-in-a-box you can hold: semiconductor bands, excitons, the Brus
+    equation, hot-injection synthesis, blinking, QLED televisions and the 2023 Nobel —
+    with a dot lab where size dials in colour.</p>
+  </a>
+  <a class="card" href="lexicon.html">
+    <span class="no">CHAPTER 8</span>
+    <h3>The Lexicon</h3>
+    <p>The working vocabulary of the field, A to Z; the constants of nature to full
+    precision; a timeline from Kirchhoff's blackbody to the quantum-dot Nobel; and
+    where to read next.</p>
+  </a>
+</div>
+
+<div class="prose">
+
+<h2>How to read this almanac</h2>
+
+<p>The mathematics is not decoration and it is not hidden. Where a derivation is
+short and beautiful — Planck's law, the ladder-operator solution of the oscillator,
+the Robertson uncertainty bound, the Brus equation — it is given. Where it is long,
+the route is described and the destination stated exactly. You need comfort with
+complex numbers, vectors and calculus; linear algebra is introduced as it is used.
+Chapter&nbsp;2 is the load-bearing wall: everything after it leans on its notation.</p>
+
+<p>A note on honesty. Popular accounts of quantum mechanics tend to fail in one of
+two directions: mysticism (&ldquo;the atom is a fuzzy cloud of maybes&rdquo;) or false
+comfort (&ldquo;it's just waves, nothing strange&rdquo;). The theory is neither vague nor
+tame. It is exact — unreasonably, thrillingly exact — about the probabilities of
+events, and silent, or at least deeply contested, about what is &ldquo;really there&rdquo;
+between them. This almanac keeps the two registers separate: calculation first,
+interpretation clearly labelled as such in Chapter&nbsp;5.</p>
+
+<div class="callout">
+  <span class="tag">Conventions</span>
+  <p>SI units unless stated; energies usually in electron-volts
+  (1&nbsp;eV&nbsp;=&nbsp;1.602&nbsp;×&nbsp;10<sup>−19</sup>&nbsp;J). <i>h</i> is Planck's constant,
+  ħ&nbsp;=&nbsp;<i>h</i>/2π the reduced constant. Kets |ψ⟩ are states; operators wear hats
+  in the text (<i>Ĥ</i>, <i>x̂</i>, <i>p̂</i>) where ambiguity threatens. The imaginary unit
+  is <i>i</i>; complex conjugates are starred (<i>z</i>*). The handy conversion
+  λ&nbsp;=&nbsp;1239.84&nbsp;eV·nm&nbsp;/&nbsp;<i>E</i> turns photon energies into wavelengths and is used
+  throughout — memorise it and you can do quantum optics in your head.</p>
+</div>
+
+<p class="colophon">QUANTA · a technical almanac of quantum theory · written and
+built as a self-contained static site: vanilla JavaScript, canvas and SVG, no
+frameworks, no build step. Physics checked against the standard references —
+Dirac, Griffiths, Sakurai, Cohen-Tannoudji, and the primary papers cited in
+chapter. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, seg, clamp, rng, label, mono } = Q;
+
+  /* ---- double-slit build-up ------------------------------------ */
+  // Geometry (CSS px, laid out per-frame from w/h):
+  //   gun at left, wall with two slits at wx, screen at sx.
+  // Hits are stored as normalised screen positions u in [0,1].
+  const hits = [];          // {u, age}
+  let flying = [];          // {x0,y0,x1,y1,progress,u}
+  let mode = "both";
+  let rate = 30;
+  let count = 0;
+  const rnd = rng(20260719);
+
+  const CAPTIONS = {
+    both: "Each electron is fired alone — the previous one has already landed before the next is released. Alone, each arrives as a single dot. Together, they draw interference fringes: each electron interferes with itself. Switch the detector on to learn which slit it used, and the fringes vanish.",
+    one: "With one slit blocked there is nothing to interfere with: the dots pile into a single broad hump behind the open slit — pure particle behaviour, no fringes.",
+    watched: "A which-path detector at the slits records the route each electron takes. No fringes: the two single-slit humps simply add. The electrons were not disturbed by clumsy kicks — the mere existence of the path record is enough to destroy the interference.",
+  };
+
+  // interference envelope: two-slit pattern with single-slit sinc² envelope
+  function pdf(u) {
+    const x = (u - 0.5) * 10;              // dimensionless screen coordinate
+    const env = Math.pow(sinc(x * 0.55), 2);
+    if (mode === "both") return env * Math.pow(Math.cos(x * 1.9), 2);
+    if (mode === "one") {
+      const xo = (u - 0.42) * 10;          // hump slightly offset behind open slit
+      return Math.pow(sinc(xo * 0.5), 2);
+    }
+    // watched: incoherent sum of two single-slit humps
+    const a = Math.pow(sinc((u - 0.42) * 10 * 0.5), 2);
+    const b = Math.pow(sinc((u - 0.58) * 10 * 0.5), 2);
+    return 0.5 * (a + b);
+  }
+  function sinc(x) { return x === 0 ? 1 : Math.sin(x) / x; }
+
+  function sampleU() {
+    // rejection sampling
+    for (let k = 0; k < 200; k++) {
+      const u = rnd();
+      if (rnd() < pdf(u)) return u;
+    }
+    return 0.5;
+  }
+
+  let emitAcc = 0;
+  const fig = canvas("slit", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const pad = 18, gx = pad + 30, wx = w * 0.38, sx = w - pad - 56;
+    const cy = h / 2;
+    const slitGap = h * 0.17, slitH = h * 0.07;
+
+    // emit
+    if (!Q.reducedMotion) {
+      emitAcc += rate / 60;
+    } else {
+      emitAcc += rate / 12; // reduced motion: no flight animation, still accumulate
+    }
+    while (emitAcc >= 1) {
+      emitAcc -= 1;
+      const u = sampleU();
+      const viaTop = mode === "one" ? true :
+        (mode === "watched" ? u < 0.5 : rnd() < 0.5);
+      flying.push({ u, viaTop, p: Q.reducedMotion ? 1 : 0 });
+    }
+
+    // electron gun
+    ctx.fillStyle = C.surface3;
+    ctx.strokeStyle = C.line;
+    ctx.beginPath(); ctx.roundRect(pad, cy - 16, 34, 32, 5); ctx.fill(); ctx.stroke();
+    label(ctx, "e⁻ gun", pad + 1, cy + 34, { color: C.muted });
+
+    // wall with slits
+    const topSlitY = cy - slitGap / 2, botSlitY = cy + slitGap / 2;
+    ctx.fillStyle = C.surface3;
+    const wallW = 7;
+    const openTop = true, openBot = mode !== "one";
+    // wall segments
+    fillRect(ctx, wx, 0, wallW, topSlitY - slitH / 2);
+    fillRect(ctx, wx, topSlitY + slitH / 2, wallW, (botSlitY - slitH / 2) - (topSlitY + slitH / 2));
+    fillRect(ctx, wx, botSlitY + slitH / 2, wallW, h - (botSlitY + slitH / 2));
+    if (!openBot) { ctx.fillStyle = C.danger; fillRect(ctx, wx, botSlitY - slitH / 2, wallW, slitH); }
+    label(ctx, "slit A", wx + 12, topSlitY - 6, { color: C.muted });
+    label(ctx, mode === "one" ? "slit B (blocked)" : "slit B", wx + 12, botSlitY + 15,
+      { color: mode === "one" ? C.danger : C.muted });
+
+    // which-path detector
+    if (mode === "watched") {
+      ctx.strokeStyle = C.photon; ctx.lineWidth = 1.2;
+      ctx.setLineDash([3, 3]);
+      ctx.strokeRect(wx - 14, topSlitY - slitH, 34, slitGap + 2 * slitH);
+      ctx.setLineDash([]);
+      label(ctx, "detector ON", wx - 14, topSlitY - slitH - 7, { color: C.photon });
+    }
+
+    // screen
+    ctx.fillStyle = C.surface2;
+    fillRect(ctx, sx, 8, 6, h - 16);
+
+    // theoretical curve behind the histogram (only after some data)
+    if (hits.length > 80) {
+      ctx.strokeStyle = "rgba(95,208,238,0.45)"; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for (let i = 0; i <= 120; i++) {
+        const u = i / 120, y = 12 + u * (h - 24);
+        const v = pdf(u);
+        const x = sx - 8 - v * 46;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      label(ctx, "|ψ|²", sx - 46, 16, { color: C.cyan });
+    }
+
+    // flying electrons
+    const speed = 1.6; // fraction of path per second
+    for (const f of flying) {
+      f.p += (Q.reducedMotion ? 1 : speed / 60);
+      const targetY = 12 + f.u * (h - 24);
+      const midY = f.viaTop ? topSlitY : botSlitY;
+      let x, y;
+      if (f.p < 0.5) {
+        const q = f.p / 0.5;
+        x = gx + 8 + (wx - gx - 8) * q; y = cy + (midY - cy) * q;
+      } else {
+        const q = (f.p - 0.5) / 0.5;
+        x = wx + wallW + (sx - wx - wallW) * q; y = midY + (targetY - midY) * q;
+      }
+      if (f.p < 1) {
+        ctx.fillStyle = C.photon;
+        ctx.beginPath(); ctx.arc(x, y, 2.1, 0, Q.TAU); ctx.fill();
+      }
+    }
+    // land finished ones
+    const landed = flying.filter((f) => f.p >= 1);
+    for (const f of landed) { hits.push({ u: f.u }); count++; }
+    if (landed.length) {
+      flying = flying.filter((f) => f.p < 1);
+      document.getElementById("slit-count").textContent = Q.fmtNum(count);
+    }
+    if (hits.length > 6000) hits.splice(0, hits.length - 6000);
+
+    // accumulated hits — jitter x for a phosphor look (deterministic per index)
+    ctx.fillStyle = "rgba(242,193,78,0.75)";
+    for (let i = 0; i < hits.length; i++) {
+      const y = 12 + hits[i].u * (h - 24);
+      const j = (Math.imul(i, 2654435761) >>> 8) % 1000 / 1000;
+      ctx.fillRect(sx - 1 + j * 7, y, 1.6, 1.6);
+    }
+  }, { animate: true });
+
+  seg("slit-mode", (v) => {
+    mode = v;
+    hits.length = 0; flying.length = 0; count = 0;
+    document.getElementById("slit-count").textContent = "0";
+    document.getElementById("slit-cap").textContent = CAPTIONS[v];
+  });
+  slider("slit-rate", (v) => v + " e⁻/s", (v) => { rate = v; });
+  document.getElementById("slit-reset").addEventListener("click", () => {
+    hits.length = 0; flying.length = 0; count = 0;
+    document.getElementById("slit-count").textContent = "0";
+  });
+
+  function fillRect(ctx, x, y, w, h) { ctx.fillRect(x, y, w, h); }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fields &amp; Light — Quanta</title>
+<meta name="description" content="Quantum field theory for the committed reader: why relativity forces fields, the photon recovered, vacuum energy and the Lamb shift, Feynman's sum over histories, renormalisation, g−2, and the Standard Model in one table.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="origins.html">1 · The Crisis</a>
+    <a href="machinery.html">2 · The Machinery</a>
+    <a href="wavefunction.html">3 · Wavefunctions</a>
+    <a href="spin.html">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html">5 · Entanglement</a>
+    <a href="fields.html" aria-current="page">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 6</p>
+  <h1>Fields &amp; Light</h1>
+  <p class="standfirst">Marry quantum mechanics to special relativity and the particle
+  itself dissolves: what remains fundamental are fields filling all of space, with
+  particles as their countable ripples. The resulting theory — quantum field theory,
+  and its flagship, quantum electrodynamics — is the most accurate physical theory
+  ever constructed, and it comes with the best story in physics: Feynman's sum over
+  every history at once.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="why"><span class="no">6.1</span>Why particles had to go</h2>
+
+<p>Non-relativistic quantum mechanics quietly assumes you keep the particles you
+start with. Relativity revokes the assumption. Once <i>E</i>&nbsp;=&nbsp;<i>mc</i>² prices
+matter in energy, a collision energetic enough simply <em>makes</em> new particles —
+photograph any modern accelerator event and count the debris: two protons in,
+dozens of hadrons out. A one-particle Schrödinger equation cannot describe a world
+where &ldquo;how many particles?&rdquo; has a time-dependent answer. Worse, forcing
+relativity onto a single-particle wavefunction breaks causality: amplitudes leak
+outside the light cone unless something profound is added.</p>
+
+<p>The something is the <strong>quantum field</strong>. Promote the field itself — the
+electromagnetic field, an &ldquo;electron field&rdquo;, one field per species — to the
+fundamental object, a quantum operator at every point of spacetime. Fourier-analyse
+a field into its normal modes and each mode is exactly the harmonic oscillator of
+§3.3; quantising it hands every mode the even ladder <i>E</i>&nbsp;=&nbsp;(<i>n</i>&nbsp;+&nbsp;½)ħω,
+and the integer <i>n</i> acquires a magnificent reinterpretation: it <em>counts
+particles</em>. A photon is one quantum of excitation of a mode of the
+electromagnetic field; an electron, one quantum of the electron field. The ladder
+operators <i>â</i><sup>†</sup>, <i>â</i> become <strong>creation and annihilation
+operators</strong>, and processes classical physics could never write — an atom
+<em>creating</em> a photon that did not exist, a photon <em>becoming</em> an
+electron–positron pair — are ordinary matrix elements. Identical particles are
+identical (Chapter&nbsp;4) for the deepest possible reason: every electron is a ripple
+in the same sea, as interchangeable as two ripples on one pond. And spin–statistics
+stops being a postulate: only the boson pairing of integer-spin fields, and the
+fermion pairing of half-integer ones, yields a theory that is local, causal and
+stable — Pauli's 1940 theorem, the &ldquo;why&rdquo; behind the minus sign that builds the
+periodic table.</p>
+
+<h2 id="vacuum"><span class="no">6.2</span>The busy vacuum</h2>
+
+<p>Sum the zero-point halves over the field's infinite modes and the vacuum — the
+state with <em>no</em> particles — seethes with fluctuation. This is not rhetoric; the
+vacuum's activity is measured:</p>
+
+<ul>
+  <li><strong>Spontaneous emission.</strong> Why does an excited atom, alone in the dark,
+  radiate at all? Because &ldquo;the dark&rdquo; is the fluctuating vacuum field, tickling
+  the atom down its ladder. Dirac's 1927 quantisation of radiation derived
+  Einstein's A coefficient from first principles — the founding calculation of QED.
+  (Suppress the modes with a reflective cavity and the atom demonstrably
+  <em>cannot</em> decay: cavity QED does exactly this.)</li>
+  <li><strong>The Casimir effect.</strong> Two neutral conducting plates exclude long-wavelength
+  vacuum modes between them; the imbalance in zero-point pressure pushes them
+  together with a force per unit area of π²ħ<i>c</i>/240<i>d</i>⁴ — about one atmosphere at
+  a 10&nbsp;nm gap — measured to percent precision, and a genuine engineering
+  consideration in nano-mechanical devices.</li>
+  <li><strong>The Lamb shift.</strong> In 1947 Willis Lamb measured a 1,058&nbsp;MHz sliver
+  between two hydrogen levels (2s₁/₂ and 2p₁/₂) that Dirac's equation calls exactly
+  degenerate. The culprit: the electron, jostled by vacuum fluctuations, smears its
+  position and samples the Coulomb well slightly differently in the two states. The
+  race to compute it (Bethe's first estimate was done on the train home from the
+  Shelter Island conference) forged modern QED.</li>
+</ul>
+
+<h2 id="paths"><span class="no">6.3</span>The sum over histories</h2>
+
+<p>Feynman's 1948 reformulation makes Chapter&nbsp;2's amplitude rules breathtakingly
+literal. To find the amplitude for a particle to go from A to B, take
+<em>every</em> path connecting them — straight, wiggly, absurd — and have each
+contribute one arrow of equal length, rotated by the path's classical action in
+units of ħ:</p>
+
+<p class="eq"><span class="m">ψ(A→B) = <span class="big">∑</span><sub><span class="up">all paths</span></sub>
+<i>e</i><sup><i>i&thinsp;S</i>[<span class="up">path</span>]/ħ</sup></span>
+<span class="eqno">FEYNMAN, 1948</span></p>
+
+<p>Nothing selects the classical path; it <em>emerges</em>. Where the action varies
+rapidly from path to path (anything far from the classical route, or any situation
+with <i>S</i>&nbsp;≫&nbsp;ħ), neighbouring arrows point every which way and annihilate. Near
+the path of stationary action — exactly the path classical mechanics decrees — the
+arrows align and reinforce. Classical physics is the stationary-phase approximation
+to a democracy of histories; turn ħ down in the apparatus below and watch Newton
+condense out of the spiral. The formulation is fully equivalent to Schrödinger's
+and Heisenberg's, and it is the working language of modern field theory, where the
+&ldquo;paths&rdquo; are entire field configurations.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Every path at once</span>
+    <span class="hint">left: candidate paths, brightened where they matter. right: their arrows, tip-to-tail</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pi" style="aspect-ratio: 2.4 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pi-hbar">action scale S₀/ħ</label>
+      <input type="range" id="pi-hbar" min="0.5" max="40" step="0.5" value="6">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">|sum|² relative to one path <b id="pi-out">—</b></span>
+    <span class="ro" id="pi-note" style="color:var(--ink-2)">Increase S₀/ħ (heavier particle, longer journey — more classical) and only the near-straight paths survive the cancellation: the spiral tightens onto its stationary point.</span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<h2 id="qed"><span class="no">6.4</span>QED: diagrams, ghosts and twelve decimal places</h2>
+
+<p>Interacting field theories are solved perturbatively: expand in powers of the
+coupling — for electromagnetism the dimensionless
+<strong>fine-structure constant</strong> α&nbsp;=&nbsp;<i>e</i>²/4πε₀ħ<i>c</i>&nbsp;≈&nbsp;1/137.036 — and
+Feynman's diagrams are the bookkeeping that keeps the expansion honest: every way
+the process can happen, drawn. Each line is a propagating quantum, each vertex a
+creation/annihilation event carrying a factor √<span class="ol">α</span>; integrate over
+everything unobserved. Two electrons repel by exchanging a photon; that photon is
+<strong>virtual</strong> — an internal line, never observed, permitted to be
+&ldquo;off-shell&rdquo; because it lives inside an energy–time uncertainty window. Virtual
+pairs dress every charge: the vacuum near an electron polarises like a dielectric,
+so the charge you measure depends on how closely you probe — coupling
+&ldquo;constants&rdquo; run with energy, a measured fact.</p>
+</div>
+
+<figure class="fig">
+  <div class="fig-head"><span class="t">One term in the sum — electron–electron scattering</span></div>
+  <div class="fig-body" style="padding: 18px">
+    <svg class="diagram" viewBox="0 0 640 240" role="img" aria-label="Feynman diagram of electron-electron scattering by photon exchange">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M0 0 L10 5 L0 10 z" fill="#5fd0ee"/>
+        </marker>
+      </defs>
+      <!-- electron lines -->
+      <path d="M60 40 L290 110" stroke="#5fd0ee" stroke-width="2" fill="none" marker-mid="url(#arr)"/>
+      <path d="M60 40 L175 75" stroke="none" fill="none"/>
+      <polygon points="180,72 168,72 176,81" fill="#5fd0ee"/>
+      <path d="M290 110 L60 200" stroke="#5fd0ee" stroke-width="2" fill="none"/>
+      <polygon points="170,158 180,163 172,169" fill="#5fd0ee"/>
+      <path d="M580 40 L350 110" stroke="#5fd0ee" stroke-width="2" fill="none"/>
+      <polygon points="460,72 472,72 464,81" fill="#5fd0ee"/>
+      <path d="M350 110 L580 200" stroke="#5fd0ee" stroke-width="2" fill="none"/>
+      <polygon points="470,158 460,163 468,169" fill="#5fd0ee"/>
+      <!-- photon: wavy line -->
+      <path d="M290 110 q 7 -12 15 0 t 15 0 t 15 0 t 15 0" stroke="#f2c14e" stroke-width="2" fill="none"/>
+      <!-- vertices -->
+      <circle cx="290" cy="110" r="4" fill="#b39dfc"/>
+      <circle cx="350" cy="110" r="4" fill="#b39dfc"/>
+      <!-- labels -->
+      <text x="46" y="34" fill="#bcb7d1" font-family="ui-monospace,Menlo,monospace" font-size="14">e⁻</text>
+      <text x="46" y="216" fill="#bcb7d1" font-family="ui-monospace,Menlo,monospace" font-size="14">e⁻</text>
+      <text x="566" y="34" fill="#bcb7d1" font-family="ui-monospace,Menlo,monospace" font-size="14">e⁻</text>
+      <text x="566" y="216" fill="#bcb7d1" font-family="ui-monospace,Menlo,monospace" font-size="14">e⁻</text>
+      <text x="303" y="92" fill="#f2c14e" font-family="ui-monospace,Menlo,monospace" font-size="14">γ (virtual)</text>
+      <text x="250" y="140" fill="#b39dfc" font-family="ui-monospace,Menlo,monospace" font-size="12">vertex ∝ √α</text>
+      <text x="20" y="120" fill="#85809f" font-family="ui-monospace,Menlo,monospace" font-size="12">time →</text>
+    </svg>
+  </div>
+  <div class="fig-note">Lowest order in the expansion: one photon exchanged. The full amplitude
+  adds diagrams with two photons, vacuum-polarisation loops, self-energy loops — each
+  suppressed by another factor of α ≈ 1/137, which is why the series converges usefully.</div>
+</figure>
+
+<div class="prose">
+
+<p>The loops carry a famous curse: integrated naïvely they diverge. The cure,
+<strong>renormalisation</strong> (Tomonaga, Schwinger, Feynman, Dyson, 1946–49), is not a
+swindle but a recognition: the &ldquo;bare&rdquo; mass and charge in the equations are not
+observable — only the dressed, measured values are. Express predictions in terms
+of measured mass and charge and every infinity cancels, order after order, in any
+renormalisable theory. Modern effective-field-theory language makes it fully
+respectable: low-energy physics is insulated from unknown high-energy detail,
+which is <em>why</em> physics is possible before knowing the final theory.</p>
+
+<p>The payoff is the most precise confrontation between thought and measurement in
+science: the electron's anomalous magnetic moment. Dirac says <i>g</i>&nbsp;=&nbsp;2 exactly;
+the vacuum's dressing adds Schwinger's α/2π and thousands of loop diagrams more.
+As of the 2023 measurements,</p>
+
+<p class="eq"><span class="m"><i>g</i>/2 = 1.001&thinsp;159&thinsp;652&thinsp;180&thinsp;59&thinsp;(13)</span>
+<span class="eqno">EXPERIMENT — AND THEORY AGREES TO ~10⁻¹²</span></p>
+
+<p>— agreement to about one part in a trillion, the equivalent of predicting the
+distance from Edinburgh to Sydney to the width of a bacterium. Whatever quantum
+field theory is, it is not approximately right.</p>
+
+<h2 id="sm"><span class="no">6.5</span>The Standard Model, on one page</h2>
+
+<p>Apply the same machinery — fields, gauge symmetry, renormalisation — to the weak
+and strong forces and you get the Standard Model: three generations of matter
+fermions, four force carriers, and one scalar. Quantum chromodynamics (QCD) binds
+quarks with gluons that carry colour charge themselves, so the force
+<em>strengthens</em> with distance — quarks are confined in hadrons forever, while at
+close range they rattle around nearly free (&ldquo;asymptotic freedom&rdquo;, Nobel 2004).
+The electroweak sector unifies electromagnetism with the weak force above
+~100&nbsp;GeV; the Higgs field's condensate breaks the symmetry and gives the W, Z and
+the fermions their masses — confirmed by the 125&nbsp;GeV boson found at CERN in
+2012.</p>
+
+<table class="data">
+  <caption>The Standard Model inventory (charge in units of e; masses approximate)</caption>
+  <thead><tr><th>sector</th><th>generation 1</th><th>generation 2</th><th>generation 3</th><th>charge</th></tr></thead>
+  <tbody>
+    <tr><td class="k">quarks ↑</td><td>up · 2.2 MeV</td><td>charm · 1.3 GeV</td><td>top · 173 GeV</td><td class="num">+⅔</td></tr>
+    <tr><td class="k">quarks ↓</td><td>down · 4.7 MeV</td><td>strange · 95 MeV</td><td>bottom · 4.2 GeV</td><td class="num">−⅓</td></tr>
+    <tr><td class="k">leptons</td><td>electron · 511 keV</td><td>muon · 106 MeV</td><td>tau · 1.78 GeV</td><td class="num">−1</td></tr>
+    <tr><td class="k">neutrinos</td><td>ν<sub>e</sub></td><td>ν<sub>μ</sub></td><td>ν<sub>τ</sub></td><td class="num">0 &nbsp;(mass &lt; 1 eV, oscillating)</td></tr>
+    <tr><td class="k">forces</td><td colspan="3">photon γ (EM) · gluons ×8 (strong) · W± 80.4 GeV, Z 91.2 GeV (weak)</td><td class="num">—</td></tr>
+    <tr><td class="k">scalar</td><td colspan="3">Higgs boson · 125 GeV — the condensate that prices mass</td><td class="num">0</td></tr>
+  </tbody>
+</table>
+
+<p>Everything in this almanac's earlier chapters lives in the top-left corner of
+that table: ordinary matter is generation&nbsp;1 plus the photon. The rest appears in
+accelerators, cosmic rays and the early universe. And the table is confessedly
+unfinished: it omits gravity (no accepted quantum theory of it yet), says nothing
+about dark matter or dark energy, does not explain why three generations or why
+these masses, and leaves the measurement problem of Chapter&nbsp;5 exactly where it
+found it. The most accurate theory in history is also, by its own lights, an
+effective theory — a low-energy shadow of something not yet seen. Physics remains
+open at the top.</p>
+
+<div class="callout story">
+  <span class="tag">Down from the summit</span>
+  <p>From here the almanac descends from the highest theory to the most touchable
+  application. Take the electron field, put it inside a semiconductor crystal a few
+  nanometres wide, and Chapter&nbsp;3's particle-in-a-box comes back — as a
+  manufactured object you can hold up to the light. That is a quantum dot.</p>
+</div>
+
+</div>
+
+<nav class="chapnav">
+  <a href="entanglement.html"><span class="dir">← Chapter 5</span><span class="title">Measurement &amp; Entanglement</span></a>
+  <a class="next" href="quantum-dots.html"><span class="dir">Chapter 7 →</span><span class="title">Quantum Dots</span></a>
+</nav>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, label, line } = Q;
+
+  /* Path integral: family of arc paths y = 4 b u(1-u) between A and B.
+     Action S(b) = S0 * (1 + b²) (quadratic about straight line, schematic).
+     Phase of each path = S(b)/ħ_eff; slider sets S0/ħ. */
+  let s0 = 6;
+  const NB = 61, BMAX = 1.6;
+
+  const pi = canvas("pi", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const ax = w * 0.06, ay = h * 0.52, bx = w * 0.55, by = h * 0.52;
+
+    // contributions
+    const phases = [], weights = [];
+    for (let i = 0; i < NB; i++) {
+      const b = -BMAX + (2 * BMAX * i) / (NB - 1);
+      const S = s0 * (1 + 2.2 * b * b);
+      phases.push(S * Math.PI);          // radians
+    }
+    // vector sum
+    let sx = 0, sy = 0;
+    const steps = [];
+    for (let i = 0; i < NB; i++) {
+      const dx = Math.cos(phases[i]), dy = Math.sin(phases[i]);
+      steps.push([sx, sy]);
+      sx += dx; sy += dy;
+    }
+    const mag2 = (sx * sx + sy * sy) / (NB * NB);
+
+    // draw paths — brightness by local alignment with neighbours (contribution)
+    for (let i = 0; i < NB; i++) {
+      const b = -BMAX + (2 * BMAX * i) / (NB - 1);
+      // weight: how aligned is this phase with its neighbours (stationarity proxy)
+      const dl = i > 0 ? Math.cos(phases[i] - phases[i - 1]) : 1;
+      const dr = i < NB - 1 ? Math.cos(phases[i + 1] - phases[i]) : 1;
+      const wgt = Math.pow(Math.max(0, (dl + dr) / 2), 2);
+      ctx.strokeStyle = "rgba(95,208,238," + (0.05 + 0.8 * wgt) + ")";
+      ctx.lineWidth = 1 + 1.2 * wgt;
+      ctx.beginPath();
+      for (let k = 0; k <= 40; k++) {
+        const u = k / 40;
+        const x = ax + (bx - ax) * u;
+        const y = ay - 4 * b * u * (1 - u) * h * 0.26;
+        k === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    // endpoints
+    for (const [x, y, name] of [[ax, ay, "A"], [bx, by, "B"]]) {
+      ctx.fillStyle = C.photon;
+      ctx.beginPath(); ctx.arc(x, y, 5, 0, Q.TAU); ctx.fill();
+      label(ctx, name, x, y + 22, { align: "center", color: C.ink, font: Q.MONO_B });
+    }
+
+    // phasor spiral (right)
+    const px0 = w * 0.66, py0 = h * 0.5, pw = w * 0.30;
+    // fit spiral in box
+    let minx = 0, maxx = 0, miny = 0, maxy = 0;
+    for (const [X, Y] of steps) {
+      minx = Math.min(minx, X); maxx = Math.max(maxx, X);
+      miny = Math.min(miny, Y); maxy = Math.max(maxy, Y);
+    }
+    minx = Math.min(minx, sx); maxx = Math.max(maxx, sx);
+    miny = Math.min(miny, sy); maxy = Math.max(maxy, sy);
+    const span = Math.max(maxx - minx, maxy - miny, 4);
+    const sc = (Math.min(pw, h * 0.7) - 20) / span;
+    const ox = px0 + pw / 2 - ((minx + maxx) / 2) * sc;
+    const oy = py0 + ((miny + maxy) / 2) * sc;
+
+    ctx.strokeStyle = C.cyan; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let i = 0; i < NB; i++) {
+      const X = ox + steps[i][0] * sc, Y = oy - steps[i][1] * sc;
+      i === 0 ? ctx.moveTo(X, Y) : ctx.lineTo(X, Y);
+    }
+    ctx.lineTo(ox + sx * sc, oy - sy * sc);
+    ctx.stroke();
+    // resultant
+    ctx.strokeStyle = C.violet; ctx.lineWidth = 2.6;
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ox + sx * sc, oy - sy * sc); ctx.stroke();
+    ctx.fillStyle = C.violet;
+    ctx.beginPath(); ctx.arc(ox + sx * sc, oy - sy * sc, 4, 0, Q.TAU); ctx.fill();
+    label(ctx, "resultant amplitude", px0 + pw / 2, h * 0.94, { align: "center", color: C.violet });
+
+    document.getElementById("pi-out").textContent = (mag2 * NB).toFixed(1) + "× ";
+    const note = document.getElementById("pi-note");
+    if (s0 < 2) note.textContent = "Deep quantum regime: nearly every path contributes — the particle genuinely takes them all.";
+    else if (s0 > 25) note.textContent = "Classical limit: distant paths cancel in the tight coils; only the stationary-action path — Newton's — survives.";
+    else note.textContent = "Increase S₀/ħ (heavier particle, longer journey — more classical) and only the near-straight paths survive the cancellation: the spiral tightens onto its stationary point.";
+  });
+
+  slider("pi-hbar", (v) => v.toFixed(1), (v) => { s0 = v; pi.redraw(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
