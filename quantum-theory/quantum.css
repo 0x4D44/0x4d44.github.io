@@ -271,6 +271,89 @@ sub, sup { line-height: 0; font-size: 0.72em; }
 .axiom p { margin: 8px 0; }
 .axiom p:last-child { margin-bottom: 0; }
 
+/* ---------- layered depth ----------
+   The main flow is the plain-English read. Heavier maths and derivations
+   live inside <details class="deeper"> — one click away, never in the way. */
+
+details.deeper {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--violet-dim);
+  background: rgba(126, 107, 196, 0.06);
+  border-radius: 0 8px 8px 0;
+  margin: 20px 0;
+  padding: 0 18px;
+}
+details.deeper > summary {
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--violet);
+  padding: 13px 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  user-select: none;
+  transition: color 0.15s;
+}
+details.deeper > summary::-webkit-details-marker { display: none; }
+details.deeper > summary::before {
+  content: "▸";
+  font-size: 11px;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+details.deeper[open] > summary::before { transform: rotate(90deg); }
+details.deeper > summary:hover { color: #cbb9ff; }
+details.deeper > summary .lbl { flex: 1; }
+details.deeper > summary .tag2 {
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  text-transform: none;
+}
+details.deeper[open] { padding-bottom: 16px; }
+details.deeper > :not(summary):first-of-type { margin-top: 2px; }
+details.deeper .eq { font-size: 18px; }
+details.deeper p { font-size: 16px; color: var(--ink-2); }
+details.deeper p:last-child { margin-bottom: 0; }
+
+/* guided prompt for an interactive — "Try this →" */
+.tryit {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  background: rgba(95, 208, 238, 0.07);
+  border: 1px solid rgba(95, 208, 238, 0.18);
+  border-radius: 8px;
+  padding: 11px 15px;
+  margin: 18px 0;
+}
+.tryit b { color: var(--cyan); font-weight: 700; }
+.tryit::before {
+  content: "TRY THIS";
+  display: inline-block;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  color: var(--cyan);
+  margin-right: 10px;
+  vertical-align: 1px;
+}
+
+/* a bigger, lighter opening line for a section */
+.prose p.lead {
+  font-size: 19px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+/* friendly "in plain words" analogy box */
+.callout.plain { border-left-color: var(--good); }
+.callout.plain .tag { color: var(--good); }
+
 /* ---------- tables ---------- */
 
 table.data {

@@ -65,30 +65,41 @@ The same 1935 paper coined the word for this chapter's real subject:
 &ldquo;<em>the</em> characteristic trait of quantum mechanics, the one that enforces its
 entire departure from classical lines of thought.&rdquo;</p>
 
-<h2 id="density"><span class="no">5.2</span>Superposition is not ignorance</h2>
+<h2 id="density"><span class="no">5.2</span>&ldquo;Both at once&rdquo; is not &ldquo;one but I forgot which&rdquo;</h2>
 
-<p>To even state these questions cleanly you need the distinction the
-<strong>density matrix</strong> makes precise. A system genuinely <em>in</em> the superposition
-(|0⟩+|1⟩)/√2 and a system that is <em>either</em> |0⟩ <em>or</em> |1⟩ with even odds give
-identical statistics if you only ever measure in the {|0⟩,|1⟩} basis — and
-completely different statistics the moment you measure anything diagonal to it.
-The bookkeeping object ρ&nbsp;=&nbsp;Σ<sub>k</sub><i>p</i><sub>k</sub>|ψ<sub>k</sub>⟩⟨ψ<sub>k</sub>| carries
-exactly this difference in its off-diagonal elements — the <strong>coherences</strong>:</p>
+<p>Before the strangeness, one distinction you must have, because everything hinges on
+it. Compare two situations:</p>
+<ul>
+  <li>A qubit <strong>genuinely in</strong> the superposition (|0⟩+|1⟩)/√2 — really both, at
+  once.</li>
+  <li>A qubit that is secretly <strong>either</strong> |0⟩ <strong>or</strong> |1⟩, a coin already
+  landed, you just haven't looked — a <strong>mixture</strong>.</li>
+</ul>
+<p>Ask the straight &ldquo;0 or 1?&rdquo; question and they're identical: 50/50 either way.
+They part company the instant you ask a <em>sideways</em> question. The true
+superposition still interferes — those relative phases are real and do things; the
+mixture is just a tossed coin and interferes with nothing. Superposition is emphatically
+<strong>not</strong> ignorance of a hidden fact. Keep that blade sharp: half the confusion about
+quantum mechanics is mixing these two up, and the rest of this chapter depends on
+telling them apart.</p>
 
-<p class="eq"><span class="m">ρ<sub>super</sub> = ½
-<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;1<br>1&nbsp;&nbsp;1</span><span class="up">)</span>
-&emsp;<span class="up">v</span>&emsp;
-ρ<sub>mixture</sub> = ½
-<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;0<br>0&nbsp;&nbsp;1</span><span class="up">)</span></span>
-<span class="eqno">COHERENCE IS THE OFF-DIAGONAL</span></p>
-
-<p>The left one interferes; the right one is a classical coin already tossed. Two
-facts about ρ do heavy lifting below. First, a subsystem of an entangled pair,
-described alone (by the <strong>partial trace</strong>), is a mixture — maximally entangled
-pairs have subsystems that are pure static, all correlation and no local content.
-Second, &ldquo;losing the phases to the environment&rdquo; means exactly: the off-diagonals
-of the <em>system's</em> ρ decay. That is decoherence (§5.6), and it will get us
-most — but provably not all — of the way across the seam.</p>
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the density matrix, coherences, partial trace</span></summary>
+  <p>The tool that makes the distinction exact is the <strong>density matrix</strong>
+  ρ&nbsp;=&nbsp;Σ<sub>k</sub><i>p</i><sub>k</sub>|ψ<sub>k</sub>⟩⟨ψ<sub>k</sub>|. Superposition versus
+  mixture lives entirely in its off-diagonal entries, the <strong>coherences</strong>:</p>
+  <p class="eq"><span class="m">ρ<sub>super</sub> = ½
+  <span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;1<br>1&nbsp;&nbsp;1</span><span class="up">)</span>
+  &emsp;<span class="up">vs</span>&emsp;
+  ρ<sub>mixture</sub> = ½
+  <span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;0<br>0&nbsp;&nbsp;1</span><span class="up">)</span></span></p>
+  <p>Same diagonal (same 50/50 odds), different off-diagonal (the left interferes, the
+  right doesn't). Two facts earn their keep below: a subsystem of an entangled pair,
+  described on its own (via the <strong>partial trace</strong>), is a <em>mixture</em> — all
+  correlation, no local content of its own; and &ldquo;losing coherence to the
+  environment&rdquo; means precisely that those off-diagonals decay to zero. That is
+  decoherence (§5.6).</p>
+</details>
 
 <h2 id="epr"><span class="no">5.3</span>EPR: Einstein's best shot</h2>
 
@@ -133,17 +144,29 @@ theory,</p>
 |<i>S</i>| ≤ 2</span>
 <span class="eqno">CHSH BOUND</span></p>
 
-<p>(The proof is two lines: for fixed λ, <i>B</i>&nbsp;+&nbsp;<i>B′</i> and <i>B</i>&nbsp;−&nbsp;<i>B′</i>
-are ±2 and 0 in some order, so <i>A</i>(<i>B</i>+<i>B′</i>)&nbsp;+&nbsp;<i>A′</i>(<i>B</i>−<i>B′</i>)&nbsp;=&nbsp;±2;
-averaging over λ cannot exceed what every term respects.) Quantum mechanics, for
-polarisation-entangled photons, predicts <i>E</i>&nbsp;=&nbsp;cos&thinsp;2(<i>a</i>−<i>b</i>) — and at
-the canny angles 0°, 45°, 22.5°, 67.5° that stacks up to</p>
+<p>Quantum mechanics flatly disagrees. For entangled photons it predicts stronger
+correlations, and at four cannily chosen angles they stack up to</p>
 
 <p class="eq"><span class="m"><i>S</i><sub>QM</sub> = 2√2 ≈ 2.828</span>
-<span class="eqno">TSIRELSON'S MAXIMUM</span></p>
+<span class="eqno">MORE THAN LOCAL REALISM ALLOWS</span></p>
 
-<p>Not a paradox — a fork in the road, decidable by counting coincidences. Run the
-experiment below and watch which way the universe votes.</p>
+<p>2.828 is bigger than 2. So this isn't a philosopher's paradox with no resolution —
+it's a <strong>fork in the road you can settle by counting</strong>. Either the world obeys
+Bell's ≤&nbsp;2 (Einstein wins: hidden pre-set values) or it reaches 2√2 (quantum
+mechanics wins: no such values exist). Run the experiment below and watch which way
+the universe actually votes.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the two-line CHSH proof, and cos 2θ</span></summary>
+  <p>For a fixed hidden variable λ, each station's two possible outcomes are ±1. Then
+  <i>B</i>&nbsp;+&nbsp;<i>B′</i> and <i>B</i>&nbsp;−&nbsp;<i>B′</i> are ±2 and 0 in some order, so
+  <i>A</i>(<i>B</i>+<i>B′</i>)&nbsp;+&nbsp;<i>A′</i>(<i>B</i>−<i>B′</i>)&nbsp;=&nbsp;±2 always; averaging over λ
+  can't exceed what every single case already respects, giving |<i>S</i>|&nbsp;≤&nbsp;2.
+  Quantum mechanics instead gives <i>E</i>&nbsp;=&nbsp;cos&thinsp;2(<i>a</i>−<i>b</i>) for the
+  correlation between analyser angles <i>a</i> and <i>b</i>; feed in
+  0°, 45°, 22.5°, 67.5° and the four terms sum to 2√2 — Tsirelson's maximum, the most
+  any quantum state can manage.</p>
+</details>
 
 </div>
 
@@ -175,6 +198,12 @@ experiment below and watch which way the universe votes.</p>
 </figure>
 
 <div class="prose">
+
+<p class="tryit">With &ldquo;entangled photons&rdquo; selected, hit <b>run 10,000</b>. The needle
+sails past the classical wall at S&nbsp;=&nbsp;2 and parks near <b>2.828</b>. Now switch the
+source to &ldquo;local hidden variables&rdquo; — a pre-agreed cheat sheet, Einstein's gloves —
+and run again: it <b>can't get past 2</b>, no matter how clever the cheat sheet. You've
+just run, in miniature, the experiment that won the 2022 Nobel Prize.</p>
 
 <p>The laboratory verdict is unambiguous and now spans half a century: Freedman
 and Clauser (1972, calcium cascade photons), Aspect and colleagues (1982, settings
