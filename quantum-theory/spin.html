@@ -66,29 +66,39 @@ Spin is angular momentum the particle simply <em>has</em>, as it has charge — 
 Dirac's 1928 relativistic equation it emerges automatically, unasked, with the
 right magnitude.</p>
 
-<h2 id="pauli"><span class="no">4.2</span>Half-integer machinery</h2>
+<h2 id="pauli"><span class="no">4.2</span>Spin is the electron's private qubit</h2>
 
-<p>A two-outcome observable needs the two-dimensional Hilbert space of §2.7: the
-electron's spin is nature's own qubit. Write |↑⟩ and |↓⟩ for the ±ħ/2 states along
-<i>z</i>; a general spin state is a two-component complex vector, a <strong>spinor</strong>.
-The spin observables are <i>Ŝ</i><sub>i</sub>&nbsp;=&nbsp;(ħ/2)σ<sub>i</sub>, built from the
-<strong>Pauli matrices</strong>:</p>
+<p>Two answers, up or down, along any axis you pick — that's exactly the two-answer
+system, the <strong>qubit</strong>, from §2.7. So spin <em>is</em> the electron's built-in
+qubit, and everything you learned at the qubit dial applies. Write |↑⟩ and |↓⟩ for
+up and down along the vertical (<i>z</i>) axis. A general spin state is a blend of the
+two — and here's the twist that makes spin interesting.</p>
 
-<p class="eq"><span class="m">σ<sub>x</sub> =
-<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">0&nbsp;&nbsp;1<br>1&nbsp;&nbsp;0</span><span class="up">)</span>&emsp;
-σ<sub>y</sub> =
-<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">0&nbsp;−<i>i</i><br><i>i</i>&nbsp;&nbsp;&nbsp;0</span><span class="up">)</span>&emsp;
-σ<sub>z</sub> =
-<span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;&nbsp;0<br>0&nbsp;−1</span><span class="up">)</span></span>
-<span class="eqno">PAULI, 1927</span></p>
+<p>The three axes — <i>x</i>, <i>y</i>, <i>z</i> — are <strong>quarrelling questions</strong> in the
+sense of §2.5: no state can have a definite spin along two of them at once. An
+electron that is <em>definitely up</em> along <i>z</i> is a perfect <em>50/50 blur</em>
+along <i>x</i>. In symbols, &ldquo;pointing right&rdquo; is an equal superposition of up and
+down: |→⟩&nbsp;=&nbsp;(|↑⟩&nbsp;+&nbsp;|↓⟩)/√2. Ask such an electron whether it's up or down
+and it's a coin flip. The apparatus below turns that arithmetic into beams of real
+atoms you can split and re-split.</p>
 
-<p>They obey [<i>Ŝ</i><sub>x</sub>,&thinsp;<i>Ŝ</i><sub>y</sub>]&nbsp;=&nbsp;<i>i</i>ħ<i>Ŝ</i><sub>z</sub> and cyclic —
-the algebra of rotations — so no two spin components commute, and the Robertson
-bound (§2.5) forbids any state from having a definite spin direction in the
-classical sense. The eigenstates along <i>x</i> are equal superpositions of up and
-down along <i>z</i>: |±x⟩&nbsp;=&nbsp;(|↑⟩&nbsp;±&nbsp;|↓⟩)/√2. Measure σ<sub>z</sub> on |+x⟩ and you
-get ±1 with even odds — the apparatus below turns this arithmetic into beams you
-can watch.</p>
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">spinors, the Pauli matrices, the rotation algebra</span></summary>
+  <p>The spin state is a two-component complex vector, a <strong>spinor</strong>, and the spin
+  observables are <i>Ŝ</i><sub>i</sub>&nbsp;=&nbsp;(ħ/2)σ<sub>i</sub> built from the
+  <strong>Pauli matrices</strong>:</p>
+  <p class="eq"><span class="m">σ<sub>x</sub> =
+  <span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">0&nbsp;&nbsp;1<br>1&nbsp;&nbsp;0</span><span class="up">)</span>&emsp;
+  σ<sub>y</sub> =
+  <span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">0&nbsp;−<i>i</i><br><i>i</i>&nbsp;&nbsp;&nbsp;0</span><span class="up">)</span>&emsp;
+  σ<sub>z</sub> =
+  <span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;&nbsp;0<br>0&nbsp;−1</span><span class="up">)</span></span></p>
+  <p>They obey [<i>Ŝ</i><sub>x</sub>,&thinsp;<i>Ŝ</i><sub>y</sub>]&nbsp;=&nbsp;<i>i</i>ħ<i>Ŝ</i><sub>z</sub> and
+  cyclic — the algebra of rotations itself — so no two components commute, and the
+  Robertson bound (§2.5) forbids any definite spin direction in the classical sense.
+  The right-pointing states are |±x⟩&nbsp;=&nbsp;(|↑⟩&nbsp;±&nbsp;|↓⟩)/√2, and measuring
+  σ<sub>z</sub> on them gives ±1 with even odds.</p>
+</details>
 
 <p>Two more properties complete the electron's dossier. First, the magnetic moment
 tied to spin is μ&nbsp;=&nbsp;<i>g</i>(<i>e</i>ħ/4<i>m</i><sub>e</sub>) with <i>g</i>&nbsp;≈&nbsp;2 — twice the
@@ -144,6 +154,12 @@ half-integer mathematics demands.</p>
 
 <div class="prose">
 
+<p class="tryit">Set the three magnets to <b>z → x → z</b>. The first filters to spin-up. The
+last asks &ldquo;up or down?&rdquo; again — and <b>half fail</b>. The middle magnet, by pinning
+down the sideways spin, <b>wiped out</b> the up-ness you'd just established. Now set the
+middle one to &ldquo;pass all (no record)&rdquo; and the up-ness <b>survives</b> intact. Measuring
+isn't peeking — it changes the thing.</p>
+
 <p>The cascade teaches the theory's rudest lesson. Filter spins to +<i>z</i>, then to
 +<i>x</i>, then ask about <i>z</i> again — and half come out −<i>z</i>. The middle
 measurement did not merely <em>find</em> the <i>x</i>-value; by rendering it definite it
@@ -155,19 +171,18 @@ not peeking. It is participation.</p>
 
 <h2 id="identical"><span class="no">4.3</span>Two of a kind: the exchange rule</h2>
 
-<p>For several particles, Postulate&nbsp;I gains its promised clause: the joint Hilbert
-space is the <strong>tensor product</strong> of the parts, spanned by products like
-|<i>a</i>⟩<sub>1</sub>|<i>b</i>⟩<sub>2</sub>. (Most joint states are <em>not</em> products — they are
-entangled sums of products; that bombshell is Chapter&nbsp;5's.) But when the particles
-are <em>identical</em> — every electron matching every other in mass, charge and spin
-to the last measured decimal — quantum mechanics adds a constraint with no
-classical parallel. Classically, identical twins can still be tracked by their
-trajectories: <em>this</em> one came from the left. Quantum mechanically there are no
-trajectories to track (§3.1); a two-electron state in which &ldquo;electron 1 is here,
-electron 2 is there&rdquo; and its swap are indistinguishable <em>in principle</em>. The
-label swap is unobservable, so exchanging them may change the state by at most a
-phase, and doing it twice must return the original: the phase is ±1. Nature uses
-both options, and never mixes them for a given species:</p>
+<p class="lead">Now the deepest fact about matter — and it comes from an idea so simple it
+sounds like a technicality: <em>all electrons are exactly alike.</em></p>
+
+<p>Every electron in the universe is identical to every other — same mass, same charge,
+same spin, to the last measured decimal. In everyday life, even &ldquo;identical&rdquo; twins
+can be told apart by watching which is which. But quantum particles have no
+trajectories to follow (§3.1), so there is genuinely <em>no fact</em> about which
+electron is which. Swapping two of them can't change anything you could ever measure.
+That single requirement has a razor-sharp consequence: swapping two identical particles
+may only multiply their shared state by +1 or −1 (swap twice and you must be back where
+you started). Nature uses <em>both</em> options — and sorts every particle in existence
+into two great families by which sign it takes:</p>
 
 <div class="axiom">
   <span class="tag">The symmetrisation postulate</span>

@@ -41,16 +41,20 @@
 
 <div class="prose">
 
-<h2 id="psi"><span class="no">3.1</span>The state as a field of amplitude</h2>
+<h2 id="psi"><span class="no">3.1</span>The wavefunction: a particle smeared into a shape</h2>
 
-<p>For a single particle moving in one dimension, the natural basis is position
-itself: the states |<i>x</i>⟩ of definite location. A general ket's components along
-this continuous basis form a complex-valued function — the <strong>wavefunction</strong>
-ψ(<i>x</i>)&nbsp;=&nbsp;⟨<i>x</i>|ψ⟩ — and the Born rule reads: |ψ(<i>x</i>)|²&thinsp;d<i>x</i> is the
-probability of finding the particle between <i>x</i> and <i>x</i>&nbsp;+&nbsp;d<i>x</i>, with
-∫|ψ|²d<i>x</i>&nbsp;=&nbsp;1. In this representation the momentum operator becomes a
-derivative, <i>p̂</i>&nbsp;=&nbsp;−<i>i</i>ħ&thinsp;∂/∂<i>x</i> (the unique choice reproducing
-[<i>x̂</i>,<i>p̂</i>]&nbsp;=&nbsp;<i>i</i>ħ), and Postulate V becomes the equation Schrödinger found:</p>
+<p class="lead">Chapter&nbsp;2's arrow, for a particle that can be anywhere along a line,
+becomes a <strong>shape</strong> — a curve spread over space called the
+<strong>wavefunction</strong>, written ψ(<i>x</i>).</p>
+
+<p>Think of ψ(<i>x</i>) as the particle's &ldquo;amplitude for being here&rdquo; at every point
+<i>x</i>. It's the same arrow from Chapter&nbsp;2, just with one component for every
+possible position — so it's a whole curve rather than a short list. Square its height
+and you get the odds: |ψ(<i>x</i>)|² tells you how likely the particle is to turn up near
+<i>x</i>, and the probabilities over all positions add to one. (Formally
+ψ(<i>x</i>)&nbsp;=&nbsp;⟨<i>x</i>|ψ⟩ — the overlap of the state with the &ldquo;definitely at
+<i>x</i>&rdquo; state.) Feed this into Postulate&nbsp;V and you get the equation Erwin
+Schrödinger wrote down in 1926, the <i>F</i>&nbsp;=&nbsp;<i>ma</i> of the quantum world:</p>
 
 <p class="eq"><span class="m"><i>i</i>ħ&thinsp;<span class="frac"><span>∂ψ</span><span>∂<i>t</i></span></span> =
 −&thinsp;<span class="frac"><span>ħ<sup>2</sup></span><span>2<i>m</i></span></span>
@@ -76,15 +80,24 @@ potential permits. Three general truths are worth carrying in:</p>
   energy ordering at a glance.</li>
 </ul>
 
-<p>The momentum-space wavefunction φ(<i>p</i>) is the Fourier transform of ψ(<i>x</i>) —
-the same state described in the momentum basis. Fourier analysis says a function
-and its transform cannot both be narrow; that mathematical fact <em>is</em>
-Δ<i>x</i>Δ<i>p</i>&nbsp;≥&nbsp;ħ/2, wearing analysis instead of algebra. A <strong>wave packet</strong> —
-a hump built from a band of momenta — moves at the group velocity
-d<i>ω</i>/d<i>k</i>&nbsp;=&nbsp;<i>p</i>/<i>m</i> (the classical velocity, as Ehrenfest requires) and
-spreads as it goes, because its faster Fourier components outrun the slow ones: a
-free electron localised to an ångström doubles its width in about 10<sup>−16</sup>&nbsp;s,
-which is why &ldquo;the electron is a small ball&rdquo; fails so quickly as a picture.</p>
+<p>These three habits — oscillate where allowed, decay where forbidden, count the
+nodes — let you sketch the answer to almost any one-dimensional problem before
+solving a thing. The rest of this chapter is four cases where you can solve it
+exactly.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">momentum space, and why wave packets spread</span></summary>
+  <p>Momentum has its own wavefunction, φ(<i>p</i>) — the same state written in the
+  momentum basis (the momentum operator is <i>p̂</i>&nbsp;=&nbsp;−<i>i</i>ħ&thinsp;∂/∂<i>x</i>, the unique
+  choice giving [<i>x̂</i>,<i>p̂</i>]&nbsp;=&nbsp;<i>i</i>ħ). It is the <strong>Fourier transform</strong> of
+  ψ(<i>x</i>), and Fourier analysis proves a function and its transform can't both be
+  narrow — which <em>is</em> Δ<i>x</i>Δ<i>p</i>&nbsp;≥&nbsp;ħ/2, the uncertainty principle wearing
+  analysis instead of algebra. A localised bump — a <strong>wave packet</strong> — is built
+  from a band of momenta; it glides at the classical speed but also <em>spreads</em>,
+  because its faster momentum components outrun the slow ones. A free electron pinned
+  to an ångström doubles its width in about 10<sup>−16</sup>&nbsp;s, which is why picturing
+  the electron as a tiny ball fails almost instantly.</p>
+</details>
 
 <h2 id="box"><span class="no">3.2</span>The particle in a box</h2>
 
@@ -158,26 +171,38 @@ three.</p>
 
 <div class="prose">
 
+<p class="tryit">Switch to &ldquo;eigenstate&rdquo; and step <b>n</b> up: each rung adds one more
+bump and one more <b>node</b> (a point of zero chance), and the energy climbs as n². Now
+narrow the box with the width slider — every level <b>leaps</b> higher. That 1/L² kick is
+the exact knob a quantum dot turns to pick its colour (Chapter&nbsp;7). Flip to the
+superposition and watch the blob <b>slosh</b> — that's what &ldquo;motion&rdquo; looks like here.</p>
+
 <h2 id="oscillator"><span class="no">3.3</span>The harmonic oscillator: physics' favourite problem</h2>
 
 <p>Almost any potential looks like a parabola at the bottom of a valley, so the
 harmonic oscillator <i>V</i>&nbsp;=&nbsp;½<i>m</i>ω²<i>x</i>² is the universal small-vibration
 problem: molecular bonds, crystal lattices, and — decisively for Chapter&nbsp;6 — each
-mode of the electromagnetic field. Dirac's solution is the most elegant algebra in
-the subject. Define the <strong>ladder operators</strong></p>
-
-<p class="eq"><span class="m"><i>â</i> = √<span class="ol"><i>m</i>ω/2ħ</span>&thinsp;
-(<i>x̂</i> + <i>i</i><i>p̂</i>/<i>m</i>ω),&emsp;
-[<i>â</i>, <i>â</i><sup>†</sup>] = 1</span>
-<span class="eqno">LADDER OPERATORS</span></p>
-
-<p>Then <i>Ĥ</i>&nbsp;=&nbsp;ħω(<i>â</i><sup>†</sup><i>â</i>&nbsp;+&nbsp;½), and the commutator alone forces
-the spectrum: <i>â</i><sup>†</sup> raises any energy eigenstate by exactly one quantum ħω,
-<i>â</i> lowers it, and the descent must end at a state <i>â</i>|0⟩&nbsp;=&nbsp;0 — the ground
-state. Hence, with no differential equation solved at all,</p>
+mode of the electromagnetic field. Its solution is the prettiest shortcut in physics.
+Instead of grinding through a differential equation, Paul Dirac noticed you can build
+a <strong>ladder</strong>: one operation nudges any state up by exactly one rung, a partner
+operation nudges it down, and there is a bottom rung you cannot fall below. That alone
+— no calculus — forces the energies to be a perfectly even ladder of steps ħω:</p>
 
 <p class="eq"><span class="m"><i>E</i><sub>n</sub> = (<i>n</i> + ½)&thinsp;ħω,&emsp;<i>n</i> = 0, 1, 2…</span>
-<span class="eqno">EVENLY SPACED, FOREVER</span></p>
+<span class="eqno">AN EVENLY SPACED LADDER, FOREVER</span></p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the ladder operators, in symbols</span></summary>
+  <p>The two rungs-movers are the <strong>ladder operators</strong></p>
+  <p class="eq"><span class="m"><i>â</i> = √<span class="ol"><i>m</i>ω/2ħ</span>&thinsp;
+  (<i>x̂</i> + <i>i</i><i>p̂</i>/<i>m</i>ω),&emsp;[<i>â</i>, <i>â</i><sup>†</sup>] = 1</span></p>
+  <p>with <i>Ĥ</i>&nbsp;=&nbsp;ħω(<i>â</i><sup>†</sup><i>â</i>&nbsp;+&nbsp;½). The single commutation relation
+  does all the work: <i>â</i><sup>†</sup> raises any state by one quantum ħω, <i>â</i> lowers
+  it, and the descent must stop at a ground state with <i>â</i>|0⟩&nbsp;=&nbsp;0 — from which
+  <i>E</i><sub>n</sub>&nbsp;=&nbsp;(<i>n</i>+½)ħω follows with no differential equation ever solved.
+  In quantum field theory (Chapter&nbsp;6) these very operators <em>create and destroy
+  particles</em>.</p>
+</details>
 
 <p>A perfectly even ladder — the only potential with that property, which is why
 &ldquo;a quantum of vibration&rdquo; is a well-defined particle-like thing: the
@@ -261,6 +286,12 @@ industries and one Sun:</p>
 
 <div class="prose">
 
+<p class="tryit">Lower the particle's energy or widen the barrier and watch the transmission
+<b>T</b> collapse — not smoothly, but off a cliff, because it falls exponentially. The
+wave doesn't stop dead at the wall; it <b>leaks</b> through as a shrinking tail and comes
+out the far side, smaller but alive. That thin leak lights the Sun, fires alpha decay,
+and reads atoms one at a time in a scanning tunnelling microscope.</p>
+
 <h2 id="hydrogen"><span class="no">3.5</span>The hydrogen atom, solved honestly</h2>
 
 <p>The problem that broke classical physics yields to the Schrödinger equation
@@ -338,6 +369,12 @@ system in science.</p>
 </figure>
 
 <div class="prose">
+
+<p class="tryit">Click through the orbitals — 1s, 2p, 3d. Each glowing cloud is
+<b>|ψ|²</b>: where the electron is likely to be. There are no orbits and nothing circles;
+the electron is a standing <b>shape</b>. Notice the dark gaps (<b>nodes</b>) multiply as you
+climb, and how s, p and d clouds have their own personalities — the shapes that, stacked
+by Chapter&nbsp;4's rules, become the whole periodic table.</p>
 
 <div class="callout">
   <span class="tag">What resisted, and what comes next</span>
