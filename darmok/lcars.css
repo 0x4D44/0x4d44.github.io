@@ -611,6 +611,18 @@ input.type-in::placeholder { color: #4a5568; font-size: 16px; }
 }
 .feedback.good .f-head { color: var(--green); }
 .feedback.bad .f-head { color: var(--red); }
+.feedback .f-you { color: var(--dim); font-size: 14px; }
+/* Why *this* answer was wrong — the specific mistake, in Data's calm register. */
+.feedback .f-wrong {
+  color: var(--amber);
+  font-size: 15.5px;
+  line-height: 1.55;
+  max-width: 72ch;
+  margin: 8px 0 2px;
+  padding-left: 12px;
+  border-left: 3px solid var(--gold);
+}
+.feedback .f-wrong ruby rt { color: var(--dim); }
 .feedback .f-answer { color: #fff; font-size: 19px; line-height: 2.0; margin: 4px 0; }
 .feedback .f-why { color: var(--text); font-size: 15.5px; max-width: 72ch; margin-top: 6px; }
 .feedback .f-why .j { color: var(--ice); }
