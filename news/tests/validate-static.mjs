@@ -222,6 +222,6 @@ assert.match(
   /82 stories across Football, Cricket, Olympics, Tennis, Athletics, Other Sports, Motorsport/,
 );
 
-assert.equal(articles.length, 842, "catalog copy and article corpus count should stay in lockstep");
+assert.equal(articles.length, 843, "catalog copy and article corpus count should stay in lockstep");
 
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
