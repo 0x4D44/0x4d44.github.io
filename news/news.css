@@ -200,6 +200,22 @@ img { max-width: 100%; }
 }
 .catnav-more-menu .catnav-drop-menu a { padding-left: 26px; }
 
+/* Mobile pattern: one section-menu entry point, with a full-width sheet whose
+   own vertical scroll never depends on the page behind it. */
+@media (max-width: 760px) {
+  .catnav .wrap { overflow: visible; }
+  .catnav-more { position: static; flex: 1; }
+  .catnav-more-btn { width: 100%; text-align: left; }
+  .catnav-more-menu.open {
+    position: absolute; top: 100%; left: 0; right: 0;
+    min-width: 0; max-height: var(--mobile-menu-max-height, calc(100vh - 52px));
+    max-height: var(--mobile-menu-max-height, calc(100dvh - 52px));
+    overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+  }
+}
+
 /* ---------- Breaking ticker ---------- */
 .ticker {
   background: #111; color: #fff; display: flex; align-items: stretch;
