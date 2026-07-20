@@ -32,11 +32,13 @@
 <section class="hero">
   <p class="kicker">Chapter 2</p>
   <h1>The Machinery</h1>
-  <p class="standfirst">Strip away the history and quantum mechanics is a short list of
-  rules about vectors in complex spaces — rules you can write on an index card and
-  spend a lifetime unpacking. This chapter builds the machine piece by piece: amplitudes,
-  state vectors, operators, the Born rule, the commutator that hides the uncertainty
-  principle, and the one equation that turns all of it in time.</p>
+  <p class="standfirst">Strip away the history and quantum mechanics is a surprisingly
+  short list of rules — rules you could write on an index card and spend a lifetime
+  unpacking. This chapter builds the machine one plain piece at a time: states pictured
+  as arrows, measurements as questions, the rule for turning arrows into odds, why some
+  questions can't both be answered at once, and the single equation that sets it all
+  turning. (The full mathematics rides along in &ldquo;Go deeper&rdquo; panels whenever you
+  want it.)</p>
 </section>
 
 <div class="prose">
@@ -110,93 +112,149 @@ changes, and the world changes with it.</p>
 
 <div class="prose">
 
-<h2 id="states"><span class="no">2.2</span>States are vectors</h2>
+<p class="tryit">Drag the phase δ to <b>180°</b> with the arrows equal. Two perfectly good
+routes, each likely on its own — and together they add to <b>exactly nothing</b>. That
+impossible-in-everyday-life cancellation is interference. Now switch the alternatives
+to &ldquo;recorded&rdquo;: the moment a which-way record exists, the arrows stop adding and
+you get boring classical odds.</p>
 
-<p>The amplitude rules become a theory once you organise the amplitudes. The
-complete catalogue of amplitudes for a system — one for each possible outcome of a
-maximal measurement — is its <strong>state</strong>, and the deep structural fact of quantum
-mechanics is that states behave like <em>vectors</em>: they can be scaled by complex
-numbers and added, and the result is another legal state. This is the
-<strong>superposition principle</strong>, and it is the load-bearing axiom of the theory.</p>
+<h2 id="states"><span class="no">2.2</span>A state is an arrow</h2>
 
-<p>Dirac's notation, universally used, writes a state as a <strong>ket</strong> |ψ⟩. For a
-system with <i>n</i> distinguishable outcomes, kets live in ℂ<sup><i>n</i></sup> — lists of
-<i>n</i> complex numbers; for a particle on a line the list becomes a continuum, the
-wavefunction ψ(<i>x</i>) of Chapter&nbsp;3. In both cases the arena is a
-<strong>Hilbert space</strong> ℋ: a complex vector space equipped with an inner product
-⟨φ|ψ⟩ (and, in infinite dimensions, complete — every Cauchy sequence converges,
-the technical clause that keeps the calculus honest). The inner product is the
-master operation:</p>
+<p>Here is the single most useful picture in all of quantum mechanics. Take
+everything there is to know about a system — every amplitude, for every possible
+outcome — and bundle it into one object. That object behaves exactly like an
+<strong>arrow</strong> pointing somewhere in an abstract space of possibilities. That arrow
+is the system's <strong>state</strong>. Learn to think in arrows and half the theory becomes
+geometry.</p>
 
-<p class="eq"><span class="m">⟨φ|ψ⟩ = <span class="big">∑</span><sub>k</sub> φ<sub>k</sub>*&thinsp;ψ<sub>k</sub>
-&emsp;<span class="up">or</span>&emsp; <span class="big">∫</span> φ(<i>x</i>)*ψ(<i>x</i>)&thinsp;d<i>x</i></span>
-<span class="eqno">INNER PRODUCT</span></p>
-
-<p>It is linear in the ket, conjugate-linear in the bra ⟨φ| (a bra is the
-conjugate-transpose row vector of its ket), and ⟨ψ|ψ⟩&nbsp;=&nbsp;‖ψ‖²&nbsp;≥&nbsp;0. Physical
-states are normalised, ⟨ψ|ψ⟩&nbsp;=&nbsp;1, because the probabilities of a complete set
-of outcomes must total one; and the global phase of a state is unobservable —
-|ψ⟩ and <i>e</i><sup><i>i</i>α</sup>|ψ⟩ describe the same physics, though <em>relative</em>
-phases inside a superposition are the whole point, as the figure above shows.</p>
-
-<p>Choose an orthonormal basis {|<i>k</i>⟩} — physically, the outcomes of some maximal
-measurement, ⟨<i>j</i>|<i>k</i>⟩&nbsp;=&nbsp;δ<sub><i>jk</i></sub> — and any state expands as</p>
-
-<p class="eq"><span class="m">|ψ⟩ = <span class="big">∑</span><sub>k</sub> <i>c</i><sub>k</sub>|<i>k</i>⟩,
-&emsp;<i>c</i><sub>k</sub> = ⟨<i>k</i>|ψ⟩,&emsp;
-<span class="big">∑</span><sub>k</sub> |<i>c</i><sub>k</sub>|² = 1</span>
-<span class="eqno">EXPANSION</span></p>
-
-<p>The component <i>c</i><sub>k</sub>&nbsp;=&nbsp;⟨<i>k</i>|ψ⟩ <em>is</em> the amplitude of
-Section&nbsp;2.1 — the amplitude that a system prepared in |ψ⟩ is found, on
-measurement, in |<i>k</i>⟩ — and |<i>c</i><sub>k</sub>|² is its probability. A superposition is
-not ignorance of which basis state the system is &ldquo;really&rdquo; in: the relative
-phases among the <i>c</i><sub>k</sub> produce interference that no mixture of definite
-alternatives can imitate. That distinction — superposition versus mixture — is made
-precise with density matrices in Chapter&nbsp;5.</p>
-
-<div class="callout">
-  <span class="tag">Notational dividend</span>
-  <p>Dirac's brackets make the bookkeeping self-checking. |<i>k</i>⟩⟨<i>k</i>| is the
-  projector onto basis direction <i>k</i>; summing them gives the resolution of the
-  identity Σ<sub>k</sub>|<i>k</i>⟩⟨<i>k</i>|&nbsp;=&nbsp;𝟙, which you can insert anywhere — the
-  algebraic engine behind &ldquo;change of basis&rdquo;, and the discrete ancestor of the
-  Feynman path sum in Chapter&nbsp;6.</p>
-</div>
-
-<h2 id="operators"><span class="no">2.3</span>Observables are operators</h2>
-
-<p>Measurable quantities — position, momentum, energy, spin along an axis — are
-represented by <strong>linear operators</strong> on ℋ: machines that eat a ket and return a
-ket, respecting superposition. The physically meaningful ones are
-<strong>Hermitian</strong> (self-adjoint): <i>Â</i>&nbsp;=&nbsp;<i>Â</i><sup>†</sup>, equal to their own
-conjugate-transpose. Hermiticity buys, via the spectral theorem, exactly the two
-properties a measurable quantity needs:</p>
-
+<p>Two things you can do with arrows, you can do with states, and both matter:</p>
 <ul>
-  <li>all <strong>eigenvalues are real</strong> — these are the possible measurement
-  results;</li>
-  <li>eigenvectors belonging to different eigenvalues are <strong>orthogonal</strong>, and
-  together the eigenvectors furnish a complete basis — the measurement's outcome
-  states.</li>
+  <li><strong>Stretch or shrink</strong> an arrow (here, by a complex number — a length
+  <em>and</em> a twist).</li>
+  <li><strong>Add</strong> two arrows tip-to-tail. Add two states and you get another
+  perfectly good state — a <strong>superposition</strong>. This one rule, that states add,
+  is the beating heart of the whole theory.</li>
 </ul>
 
-<p>The eigenvalue equation <i>Â</i>|<i>a</i>⟩&nbsp;=&nbsp;<i>a</i>|<i>a</i>⟩ thus carries the whole
-physical interpretation: measure <i>A</i> on a system in state |ψ⟩ and you get
-eigenvalue <i>a</i> with probability |⟨<i>a</i>|ψ⟩|². Statistics follow compactly; the
-mean of many runs is the <strong>expectation value</strong></p>
+<div class="callout plain">
+  <span class="tag">What's a bra and a ket?</span>
+  <p>Physicists write a state — our arrow — inside this bracket-and-bar:
+  <strong>|ψ⟩</strong>. Read it aloud as &ldquo;the state psi.&rdquo; That's <em>all</em> it means:
+  it is a name for an arrow, dressed in Paul Dirac's 1939 shorthand. The half-bracket
+  is pure notation, no maths hiding in it.</p>
+  <p>The payoff comes when you want to <em>compare</em> two states. Dirac writes the
+  mirror-image half, <strong>⟨φ|</strong>, and calls it a <strong>bra</strong> (so |ψ⟩ is a
+  <strong>ket</strong> — together they spell &ldquo;bra-ket,&rdquo; his little joke). Snap a bra
+  onto a ket and the two halves close into a full bracket, <strong>⟨φ|ψ⟩</strong>, which is
+  a single number. That number answers one question: <em>how much does the arrow ψ
+  point along the arrow φ?</em> — the <strong>overlap</strong> of the two states. If they're
+  the same, it's 1. If they're completely different (&ldquo;at right angles&rdquo;), it's 0.
+  In between, it's the <strong>amplitude</strong> from Section&nbsp;2.1 — the arrow you square
+  to get a probability.</p>
+</div>
 
-<p class="eq"><span class="m">⟨<i>A</i>⟩ = ⟨ψ|<i>Â</i>|ψ⟩ = <span class="big">∑</span><sub>a</sub> <i>a</i>&thinsp;|⟨<i>a</i>|ψ⟩|²</span>
-<span class="eqno">EXPECTATION</span></p>
+<p>That's the entire trick. A <strong>measurement</strong> offers a set of possible answers,
+and each answer is itself a state — a reference direction, like the axes of a graph.
+Ask &ldquo;is the system in answer-state |<i>k</i>⟩?&rdquo; and the amplitude is the overlap
+⟨<i>k</i>|ψ⟩; the probability is that overlap squared. Line up all the answer-directions
+and any state is just a weighted sum of them:</p>
 
-<p>and the spread is Δ<i>A</i>&nbsp;=&nbsp;√<span class="ol">⟨<i>A</i>²⟩&nbsp;−&nbsp;⟨<i>A</i>⟩²</span>. An
-eigenstate of <i>Â</i> is precisely a state with Δ<i>A</i>&nbsp;=&nbsp;0 — a state in which the
-quantity <i>A</i> has a definite value. Most states are not eigenstates of most
-observables; that a quantity can simply <em>fail to have a value</em> in a given state
-is quantum mechanics' sharpest break with classical thinking, and Chapter&nbsp;5
-returns to it armed with Bell's theorem.</p>
+<p class="eq"><span class="m">|ψ⟩ = <span class="big">∑</span><sub>k</sub> <i>c</i><sub>k</sub>|<i>k</i>⟩,
+&emsp;<i>c</i><sub>k</sub> = ⟨<i>k</i>|ψ⟩ = <span class="up">amplitude for answer </span><i>k</i>,&emsp;
+<span class="big">∑</span><sub>k</sub> |<i>c</i><sub>k</sub>|² = 1</span>
+<span class="eqno">A STATE, IN COMPONENTS</span></p>
+
+<p>The weights <i>c</i><sub>k</sub> are the amplitudes; their squares are the probabilities,
+and — since <em>some</em> answer must come up — the squares add to one. Crucially, a
+superposition is <em>not</em> a confession of ignorance (&ldquo;it's really in one answer,
+I just don't know which&rdquo;). The relative twists between the arrows produce genuine
+interference — the cancellation you watched in the figure above — which no
+&ldquo;secretly one definite answer&rdquo; story can fake. Nailing that difference down is a
+job for Chapter&nbsp;5.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">Hilbert space, the inner product, normalisation</span></summary>
+  <p>Made precise: the arrows live in a <strong>Hilbert space</strong> ℋ — a complex vector
+  space with an <strong>inner product</strong> ⟨φ|ψ⟩ (and, in infinite dimensions,
+  &ldquo;complete&rdquo;: every convergent-looking sequence really converges, the fine print
+  that keeps the calculus of Chapter&nbsp;3 honest). For an <i>n</i>-outcome system a
+  ket is a column of <i>n</i> complex numbers in ℂ<sup><i>n</i></sup>; for a particle on a
+  line it becomes the continuous wavefunction ψ(<i>x</i>). The inner product is the
+  master operation:</p>
+  <p class="eq"><span class="m">⟨φ|ψ⟩ = <span class="big">∑</span><sub>k</sub> φ<sub>k</sub>*&thinsp;ψ<sub>k</sub>
+  &emsp;<span class="up">or</span>&emsp; <span class="big">∫</span> φ(<i>x</i>)*ψ(<i>x</i>)&thinsp;d<i>x</i></span></p>
+  <p>A <strong>bra</strong> ⟨φ| is literally the conjugate-transpose (row) of its ket; the
+  product is linear in the ket, conjugate-linear in the bra, and
+  ⟨ψ|ψ⟩&nbsp;=&nbsp;‖ψ‖²&nbsp;≥&nbsp;0. Real states are <strong>normalised</strong>,
+  ⟨ψ|ψ⟩&nbsp;=&nbsp;1, so the probabilities of a complete set of answers total one. An
+  overall phase is invisible — |ψ⟩ and <i>e</i><sup><i>i</i>α</sup>|ψ⟩ are the same physics —
+  but <em>relative</em> phases inside a superposition are everything. A measurement's
+  answer-directions form an <strong>orthonormal basis</strong>,
+  ⟨<i>j</i>|<i>k</i>⟩&nbsp;=&nbsp;δ<sub><i>jk</i></sub>, and the object |<i>k</i>⟩⟨<i>k</i>| is the
+  <strong>projector</strong> onto direction <i>k</i>. Summing them,
+  Σ<sub>k</sub>|<i>k</i>⟩⟨<i>k</i>|&nbsp;=&nbsp;𝟙, gives the <em>resolution of the identity</em> —
+  a &ldquo;1&rdquo; you can slot in anywhere to change basis, and the discrete ancestor of
+  Feynman's path sum in Chapter&nbsp;6.</p>
+</details>
+
+<h2 id="operators"><span class="no">2.3</span>Every measurement is a question with special answers</h2>
+
+<p>Anything you can measure — position, momentum, energy, a spin's direction — comes
+with a menu of allowed answers, and each answer has its own state (its own
+arrow-direction). Physicists package a measurable quantity as an <strong>operator</strong>,
+written with a little hat: <i>Â</i>. Don't be spooked by the word — an operator is
+just a machine that takes a state in and gives a state out. What makes it a
+<em>measurement</em> is a special set of states it leaves pointing the same way, merely
+stretched. Those special states are the <strong>answer-states</strong> (the jargon is
+<strong>eigenstates</strong>), and the amount of stretch is the answer you'd read off the
+dial (the <strong>eigenvalue</strong>):</p>
+
+<p class="eq"><span class="m"><i>Â</i>|<i>a</i>⟩ = <i>a</i>|<i>a</i>⟩&emsp;
+<span class="up">&mdash; &ldquo;on answer-state |a⟩, measuring A gives the number a, guaranteed&rdquo;</span></span>
+<span class="eqno">THE ANSWER EQUATION</span></p>
+
+<p>Now the payoff. Prepare any state |ψ⟩ and measure <i>A</i>. The possible readings are
+the answer-numbers <i>a</i>; the chance of each is the overlap-squared |⟨<i>a</i>|ψ⟩|² — the
+Born rule again, wearing the arrow picture. Two consequences worth pinning up:</p>
+
+<ul>
+  <li>If |ψ⟩ <em>is</em> one of the answer-states, that answer is certain — the quantity
+  has a definite value. This is as classical as it gets.</li>
+  <li>If |ψ⟩ is a mix of answer-states, the quantity <em>has no value at all</em> until
+  you measure — only odds. A property that simply fails to exist until asked for is
+  quantum mechanics' rudest break with common sense, and Chapter&nbsp;5 shows (via
+  Bell) that it's really true, not just ignorance.</li>
+</ul>
+
+<p>Average many runs and you get the <strong>expectation value</strong> ⟨<i>A</i>⟩ — the
+long-run mean reading — with a spread Δ<i>A</i> around it. That spread is exactly zero for
+an answer-state and grows the more mixed the state is; it's the star of the next
+section.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">Hermitian operators, the spectral theorem, ⟨A⟩</span></summary>
+  <p>The operators that qualify as observables are the <strong>Hermitian</strong>
+  (self-adjoint) ones, <i>Â</i>&nbsp;=&nbsp;<i>Â</i><sup>†</sup>. The <strong>spectral theorem</strong>
+  then hands over precisely the two features a measurable quantity needs: its
+  eigenvalues (the answer-numbers) are all <strong>real</strong>, and its eigenstates are
+  mutually orthogonal and form a complete basis — so &ldquo;the answer-directions&rdquo; of
+  §2.2 really do span everything. The statistics compress to</p>
+  <p class="eq"><span class="m">⟨<i>A</i>⟩ = ⟨ψ|<i>Â</i>|ψ⟩ = <span class="big">∑</span><sub>a</sub> <i>a</i>&thinsp;|⟨<i>a</i>|ψ⟩|²,&emsp;
+  Δ<i>A</i> = √<span class="ol">⟨<i>A</i>²⟩ − ⟨<i>A</i>⟩²</span></span></p>
+  <p>An eigenstate is exactly a state with Δ<i>A</i>&nbsp;=&nbsp;0. Most states are eigenstates
+  of no observable in particular — which is why definite values are the exception,
+  not the rule.</p>
+</details>
 
 <h2 id="postulates"><span class="no">2.4</span>The rules on one card</h2>
+
+<p>Everything so far can be written as five short rules. This really is the whole
+theory — memorise the card and the rest of physics is just working out what it
+implies for particular systems. In plain terms: <strong>(I)</strong> a system is an arrow;
+<strong>(II)</strong> each measurement is a question with a menu of answer-states;
+<strong>(III)</strong> the odds of each answer are the overlap-squared; <strong>(IV)</strong> asking
+the question snaps the arrow onto the answer you got; <strong>(V)</strong> left alone, the
+arrow turns smoothly and predictably. The formal versions:</p>
 
 <div class="axiom">
   <span class="tag">Postulate I — states</span>
@@ -234,38 +292,45 @@ the entire theory. Everything else — wavefunctions, spin, entanglement, quantu
 fields, quantum dots — is these rules applied to particular Hilbert spaces and
 particular Hamiltonians.</p>
 
-<h2 id="uncertainty"><span class="no">2.5</span>Incompatibility, made quantitative</h2>
+<h2 id="uncertainty"><span class="no">2.5</span>Why you can't know everything at once</h2>
 
-<p>Two observables can share a full set of eigenvectors — then a state can have
-definite values of both. The test is algebraic: complete compatibility holds
-exactly when the <strong>commutator</strong> vanishes,</p>
-
-<p class="eq"><span class="m">[<i>Â</i>, <i>B̂</i>] ≡ <i>ÂB̂</i> − <i>B̂Â</i></span>
-<span class="eqno">COMMUTATOR</span></p>
-
-<p>When it does not vanish, no state is sharp in both, and the trade-off is exact.
-For any state, a short Cauchy–Schwarz argument (Robertson, 1929) gives</p>
-
-<p class="eq"><span class="m">Δ<i>A</i>&thinsp;Δ<i>B</i> ≥ ½&thinsp;|⟨[<i>Â</i>, <i>B̂</i>]⟩|</span>
-<span class="eqno">ROBERTSON BOUND</span></p>
-
-<p>Feed in the fundamental commutation relation inherited from Born and Jordan,
-[<i>x̂</i>,&thinsp;<i>p̂</i>]&nbsp;=&nbsp;<i>i</i>ħ, and out drops Heisenberg's principle in its exact
-modern form:</p>
+<p>Some pairs of questions get along: they share the same answer-states, so a system
+can have a definite value of both at once. Others don't — and quantum mechanics is
+precise about which. Position and momentum are the famous quarrelling pair. There is
+<em>no</em> state in which a particle has both a sharp position and a sharp momentum;
+pin one down and the other blurs, on a strict budget:</p>
 
 <p class="eq"><span class="m">Δ<i>x</i>&thinsp;Δ<i>p</i> ≥ ħ/2</span>
-<span class="eqno">UNCERTAINTY</span></p>
+<span class="eqno">HEISENBERG'S UNCERTAINTY PRINCIPLE</span></p>
 
-<p>Note what this is <em>not</em>. It is not about clumsy measuring instruments
-disturbing the particle — it is a theorem about the state itself, exactly as a
-sharply localised pulse of sound necessarily contains a broad band of frequencies.
-Position and momentum are Fourier-conjugate descriptions of one wavefunction
-(Chapter&nbsp;3), and the bound is saturated only by Gaussian wave packets. The
-energy–time relation Δ<i>E</i>&thinsp;Δ<i>t</i>&nbsp;≳&nbsp;ħ/2 is subtler — time is a parameter,
-not an operator, so there Δ<i>t</i> means the timescale over which the state
-appreciably changes: sharp energies mean slow change, which is why long-lived
-atomic levels emit narrow spectral lines and short-lived ones emit broad
-&ldquo;natural-linewidth&rdquo; smears.</p>
+<p>Here Δ<i>x</i> is the spread in position and Δ<i>p</i> the spread in momentum; their
+product can never dip below half of ħ. The crucial thing to get right: this is
+<em>not</em> about clumsy instruments knocking the particle as they measure it. It is a
+fact about the state itself — the very same fact that a musical note played for an
+instant has no definite pitch. A pure tone needs time to <em>be</em> a pitch; a
+sharply-located particle simply has no single momentum, in the same way. (Position
+and momentum turn out to be two views of one wavefunction, related by the same maths
+that ties a sound's timing to its pitch — Chapter&nbsp;3.)</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">commutators and the Robertson bound</span></summary>
+  <p>Whether two observables get along is settled by their <strong>commutator</strong> — the
+  amount by which the order of measuring matters:</p>
+  <p class="eq"><span class="m">[<i>Â</i>, <i>B̂</i>] ≡ <i>ÂB̂</i> − <i>B̂Â</i></span></p>
+  <p>If it's zero they share answer-states and can both be sharp; if not, they can't,
+  and a short Cauchy–Schwarz argument (Robertson, 1929) turns the commutator into an
+  exact trade-off for <em>every</em> state:</p>
+  <p class="eq"><span class="m">Δ<i>A</i>&thinsp;Δ<i>B</i> ≥ ½&thinsp;|⟨[<i>Â</i>, <i>B̂</i>]⟩|</span></p>
+  <p>The order of position and momentum matters by exactly
+  [<i>x̂</i>,&thinsp;<i>p̂</i>]&nbsp;=&nbsp;<i>i</i>ħ (the one relation Born and Jordan distilled from
+  Heisenberg's matrices in 1925), and dropping that in gives Δ<i>x</i>Δ<i>p</i>&nbsp;≥&nbsp;ħ/2,
+  saturated only by Gaussian wave packets. The energy–time version
+  Δ<i>E</i>Δ<i>t</i>&nbsp;≳&nbsp;ħ/2 is subtler — time is a parameter, not an operator, so Δ<i>t</i>
+  means the timescale over which the state actually changes: sharp energies mean slow
+  change, which is why long-lived atomic levels emit razor-thin spectral lines and
+  fleeting ones emit broad smears.</p>
+</details>
+
 
 <div class="callout gold">
   <span class="tag">Why ħ runs the universe</span>
@@ -277,23 +342,31 @@ atomic levels emit narrow spectral lines and short-lived ones emit broad
   dot's size dials up and down to choose its colour.</p>
 </div>
 
-<h2 id="dynamics"><span class="no">2.6</span>Motion: the state turns</h2>
+<h2 id="dynamics"><span class="no">2.6</span>Motion: the arrow turns</h2>
 
-<p>Postulate V is a first-order, <em>linear</em> differential equation, so its solutions
-superpose and its evolution preserves inner products. Formally, for a
-time-independent Hamiltonian,</p>
+<p>Leave a system alone and its arrow doesn't sit still — it <strong>turns</strong>, smoothly
+and predictably, like the hand of a clock. There's no randomness here <em>at all</em>:
+between measurements, quantum mechanics is perfectly deterministic (all the chance is
+in Postulate&nbsp;IV, the measurement step). And the turning never changes the arrow's
+length, so the probabilities always keep adding to one — the theory can neither leak
+certainty away nor conjure it from nowhere.</p>
 
-<p class="eq"><span class="m">|ψ(<i>t</i>)⟩ = <i>Û</i>(<i>t</i>)|ψ(0)⟩,&emsp;
-<i>Û</i>(<i>t</i>) = <i>e</i><sup>−<i>i</i><i>Ĥ</i><i>t</i>/ħ</sup>,&emsp;
-<i>Û</i><sup>†</sup><i>Û</i> = 𝟙</span>
-<span class="eqno">UNITARY EVOLUTION</span></p>
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">unitary evolution, and why probability is conserved</span></summary>
+  <p>Postulate&nbsp;V is a first-order, linear equation, so for a constant Hamiltonian
+  the solution is a single &ldquo;turn&rdquo; operator applied to the starting state:</p>
+  <p class="eq"><span class="m">|ψ(<i>t</i>)⟩ = <i>Û</i>(<i>t</i>)|ψ(0)⟩,&emsp;
+  <i>Û</i>(<i>t</i>) = <i>e</i><sup>−<i>i</i><i>Ĥ</i><i>t</i>/ħ</sup>,&emsp;
+  <i>Û</i><sup>†</sup><i>Û</i> = 𝟙</span></p>
+  <p><i>Û</i> is <strong>unitary</strong> — a rigid rotation of the arrow that preserves all
+  lengths and angles, hence all probabilities. This is quantum mechanics' law of
+  conservation of probability; whether black holes secretly break it is one of the
+  deepest open questions in physics.</p>
+</details>
 
-<p>Evolution is a rigid <em>rotation</em> of the state vector in Hilbert space: lengths
-and angles — hence all probabilities — are shuffled but never leaked. (Unitarity is
-the quantum conservation of probability, and its apparent violation by black holes
-is one of the deepest open arguments in physics.) Expand in energy eigenstates
-<i>Ĥ</i>|<i>E</i><sub>n</sub>⟩&nbsp;=&nbsp;<i>E</i><sub>n</sub>|<i>E</i><sub>n</sub>⟩ and the whole of dynamics
-becomes phases:</p>
+<p>The easiest way to <em>see</em> the turning: sort the state into its pure-energy
+pieces — states of one definite energy <i>E</i><sub>n</sub>. Each piece simply spins in
+place, at a rate set by its energy:</p>
 
 <p class="eq"><span class="m">|ψ(<i>t</i>)⟩ = <span class="big">∑</span><sub>n</sub> <i>c</i><sub>n</sub>&thinsp;
 <i>e</i><sup>−<i>i</i><i>E</i><sub>n</sub><i>t</i>/ħ</sup>|<i>E</i><sub>n</sub>⟩</span>
@@ -307,26 +380,34 @@ is the drift of <em>relative</em> phase between energy components — the two-le
 in Chapter&nbsp;3's box, the Larmor precession of a spin in Chapter&nbsp;4, chemistry
 itself.</p>
 
-<p>Two consequences knit the theory to older physics. <strong>Ehrenfest's theorem</strong>:
-expectation values obey Newton-like equations,
-d⟨<i>x</i>⟩/d<i>t</i>&nbsp;=&nbsp;⟨<i>p</i>⟩/<i>m</i> and d⟨<i>p</i>⟩/d<i>t</i>&nbsp;=&nbsp;−⟨∂<i>V</i>/∂<i>x</i>⟩ — so
-well-localised wave packets ride classical trajectories, and the classical world
-survives as the theory's coarse-grained shadow. And <strong>conservation laws are
-commutators</strong>: any observable with [<i>Ĥ</i>,&thinsp;<i>Â</i>]&nbsp;=&nbsp;0 has frozen statistics,
-d⟨<i>A</i>⟩/d<i>t</i>&nbsp;=&nbsp;(<i>i</i>/ħ)⟨[<i>Ĥ</i>,<i>Â</i>]⟩&nbsp;=&nbsp;0. Symmetries generate the
-conserved quantities — momentum generates translations, angular momentum rotations,
-the Hamiltonian time itself (Noether's insight, wearing quantum clothes; made exact
-by Wigner and Stone). Heisenberg's original formulation stands to Schrödinger's as
-two views of one rotation: states fixed and operators turning,
-d<i>Â</i>/d<i>t</i>&nbsp;=&nbsp;(<i>i</i>/ħ)[<i>Ĥ</i>,&thinsp;<i>Â</i>] — identical predictions, and the form
-that survives into quantum field theory.</p>
+<p>This same turning is the hidden bridge back to ordinary physics — and it's where
+symmetries turn into conservation laws.</p>
 
-<h2 id="qubit"><span class="no">2.7</span>The hydrogen atom of the formalism: the qubit</h2>
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">Ehrenfest, conservation laws, the Heisenberg picture</span></summary>
+  <p>Two results knit quantum mechanics to older physics. <strong>Ehrenfest's theorem</strong>:
+  the average position and momentum obey Newton-like equations,
+  d⟨<i>x</i>⟩/d<i>t</i>&nbsp;=&nbsp;⟨<i>p</i>⟩/<i>m</i> and d⟨<i>p</i>⟩/d<i>t</i>&nbsp;=&nbsp;−⟨∂<i>V</i>/∂<i>x</i>⟩ — so a
+  well-localised wave packet rides a classical trajectory, and the everyday world
+  survives as the theory's coarse-grained shadow. And <strong>conservation laws are
+  commutators</strong>: any observable that commutes with the Hamiltonian,
+  [<i>Ĥ</i>,&thinsp;<i>Â</i>]&nbsp;=&nbsp;0, has statistics frozen in time. Symmetries generate the
+  conserved quantities — translations give momentum, rotations give angular momentum,
+  time-shifts give energy (Noether's insight in quantum dress). Finally, Heisenberg's
+  original matrix mechanics is just the same rotation seen from the other side: hold
+  the state still and turn the operators instead,
+  d<i>Â</i>/d<i>t</i>&nbsp;=&nbsp;(<i>i</i>/ħ)[<i>Ĥ</i>,&thinsp;<i>Â</i>] — identical predictions, and the form
+  that carries into quantum field theory.</p>
+</details>
 
-<p>The smallest quantum system has a two-dimensional Hilbert space — a
-<strong>qubit</strong>. Its basis kets |0⟩ and |1⟩ might be spin up/down (Chapter&nbsp;4), a
-photon's two polarisations, or the ground and excited states of an atom. The most
-general state, with the useless global phase spent, is</p>
+<h2 id="qubit"><span class="no">2.7</span>The simplest quantum system: the qubit</h2>
+
+<p>The smallest quantum system of all has just <em>two</em> answer-states. Call them
+|0⟩ and |1⟩ — they could be a spin pointing up or down (Chapter&nbsp;4), a photon
+polarised two ways, or an atom in its ground or excited state. It's called a
+<strong>qubit</strong>, and it's the fruit fly of quantum mechanics: simple enough to hold in
+your head, rich enough to show off everything in this chapter. Its most general state
+is a blend of the two, with a size for each and a relative phase between them:</p>
 
 <p class="eq"><span class="m">|ψ⟩ = cos&thinsp;(θ/2)&thinsp;|0⟩ +
 <i>e</i><sup><i>i</i>φ</sup> sin&thinsp;(θ/2)&thinsp;|1⟩</span>
@@ -372,6 +453,12 @@ measurements fall where they may — singly random, collectively lawful.</p>
 </figure>
 
 <div class="prose">
+
+<p class="tryit">Set the angle θ, then hit <b>measure ×1</b> a few times — pure coin-flip,
+you can't predict any single click. Now hit <b>measure ×100</b> and watch the tally
+lock onto the predicted odds. Single events are lawless; crowds of them are exact.
+Then drag the phase φ: the odds <b>don't budge</b> — phase hides from this measurement,
+biding its time until interference calls on it.</p>
 
 <p>Notice what the phase slider does <em>not</em> do: φ leaves P(0) and P(1) untouched.
 In the measurement basis, phase is invisible. But it is not idle — rotate the
