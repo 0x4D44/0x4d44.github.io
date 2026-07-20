@@ -537,12 +537,36 @@
     return `<div class="ex-card"><div class="ex-kind">${kind}</div>${body}${dataAssistHtml(ex)}<div id="feedback"></div></div>`;
   }
 
+  // Why *this* answer was wrong — the specific mistake, not just the right answer.
+  // Authored `whyWrong` (keyed by the chosen option) wins; otherwise the
+  // generated exercise names the word the wrong option actually was; for typed
+  // answers, a slip that is itself a real word gets named back.
+  function wrongExplain(ex, userWrongText) {
+    if (userWrongText == null || userWrongText === "") return "";
+    if (ex.whyWrong) {
+      if (ex.whyWrong[userWrongText] != null) return ex.whyWrong[userWrongText];
+      const plain = DK.plain(userWrongText);
+      if (ex.whyWrong[plain] != null) return ex.whyWrong[plain];
+    }
+    if (ex.wrongGloss && ex.wrongGloss[userWrongText]) return ex.wrongGloss[userWrongText];
+    if (ex.t === "type" && DK.identifyAnswer) {
+      const hit = DK.identifyAnswer(userWrongText);
+      const isAccepted = hit && (ex.accept || []).some(
+        (a) => DK.normalizeAnswer(a) === DK.normalizeAnswer(DK.plain(hit[0]))
+      );
+      if (hit && !isAccepted) return "You wrote " + hit[0] + " — that means “" + hit[3] + "”.";
+    }
+    return "";
+  }
+
   function feedbackHtml(ok, ex, userWrongText) {
     const answerLine = answerText(ex);
+    const contrast = ok ? "" : wrongExplain(ex, userWrongText);
     return `
       <div class="feedback ${ok ? "good" : "bad"}">
         <div class="f-head">${ok ? "CONFIRMED ✓" : "REVISION REQUIRED"}</div>
-        ${!ok && userWrongText ? `<div style="color:var(--dim);font-size:14px">You answered: ${DK.esc(userWrongText)}</div>` : ""}
+        ${!ok && userWrongText ? `<div class="f-you">You answered: ${DK.esc(userWrongText)}</div>` : ""}
+        ${contrast ? `<div class="f-wrong">${DK.md(contrast)}</div>` : ""}
         <div class="f-answer">${answerLine}</div>
         ${ex.why ? `<div class="f-why">${DK.md(ex.why)}</div>` : ""}
         <div class="btnrow"><button class="btn ${ok ? "" : "salmon"}" data-act="next-ex">CONTINUE ▸</button></div>

@@ -288,56 +288,93 @@
   };
   DK.sample = function (arr, n) { return DK.shuffle(arr).slice(0, n); };
 
-  function distractors(v, field, n) {
+  // Pick n distractor *entries* (whole vocab tuples), unique by the given field,
+  // same word-type where possible. Returning the entries — not just the field
+  // string — lets the exercise explain what a wrong option actually was.
+  function distractorEntries(v, field, n) {
     const pool = DK.allVocab().map((e) => e.v).filter((x) => x !== v && x[field] !== v[field]);
     const sameType = pool.filter((x) => x[4] === v[4]);
     const chosen = [];
     const seen = new Set([v[field]]);
     for (const x of DK.shuffle(sameType.length >= n ? sameType : pool)) {
-      if (!seen.has(x[field])) { chosen.push(x[field]); seen.add(x[field]); }
+      if (!seen.has(x[field])) { chosen.push(x); seen.add(x[field]); }
       if (chosen.length === n) break;
     }
     return chosen;
   }
+  function distractors(v, field, n) { return distractorEntries(v, field, n).map((x) => x[field]); }
+
+  // A vocab entry rendered as furigana markup ("猫[ねこ]"); DK.md/DK.ruby turn it
+  // into ruby. Used to name a wrong option by its Japanese form + reading.
+  function jpForm(x) { return x[0]; }
+
+  // Reverse index: normalized reading/word -> the vocab entry it belongs to.
+  // Lets a typed answer that is *a different real word* be named back to the
+  // learner ("you wrote 猫 — that means cat"), not just marked wrong.
+  DK.vocabByReading = function () {
+    if (DK._byReading) return DK._byReading;
+    const m = {};
+    for (const e of DK.allVocab()) {
+      const v = e.v;
+      for (const form of [DK.plain(v[0]), v[1]]) {
+        const k = DK.normalizeAnswer(form || "");
+        if (k && !m[k]) m[k] = v;
+      }
+    }
+    DK._byReading = m;
+    return m;
+  };
+  DK.identifyAnswer = function (text) {
+    const k = DK.normalizeAnswer(text || "");
+    return k ? DK.vocabByReading()[k] || null : null;
+  };
 
   // Build one auto exercise for a vocab entry. kind: meaning|reverse|listen|typeback
   DK.genExercise = function (v, kind) {
     const key = DK.vocabKey(v);
     if (kind === "meaning") {
-      const wrong = distractors(v, 3, 3);
-      const choices = DK.shuffle([v[3]].concat(wrong));
+      const wrongE = distractorEntries(v, 3, 3);
+      const choices = DK.shuffle([v[3]].concat(wrongE.map((x) => x[3])));
+      // Each wrong option is a real word's meaning — name that word back.
+      const wrongGloss = {};
+      wrongE.forEach((x) => { wrongGloss[x[3]] = "“" + x[3] + "” is " + jpForm(x) + " — a different word."; });
       return {
         t: "mc", gen: key,
         kind: "DATABASE QUERY",
         q: "What does this mean?",
         jp: v[0],
-        choices, a: choices.indexOf(v[3]),
+        choices, a: choices.indexOf(v[3]), wrongGloss,
         why: DK.plain(v[0]) + (v[1] && v[1] !== DK.plain(v[0]) ? " (" + v[1] + ")" : "") + " — " + v[3] + ".",
         speak: v[1] || DK.plain(v[0]),
       };
     }
     if (kind === "reverse") {
-      const wrong = distractors(v, 0, 3).map(DK.plain);
-      const choices = DK.shuffle([DK.plain(v[0])].concat(wrong));
+      const wrongE = distractorEntries(v, 0, 3);
+      const choices = DK.shuffle([DK.plain(v[0])].concat(wrongE.map((x) => DK.plain(x[0]))));
+      // Each wrong option is a Japanese word — say what it actually means.
+      const wrongGloss = {};
+      wrongE.forEach((x) => { wrongGloss[DK.plain(x[0])] = jpForm(x) + " means “" + x[3] + "”, not “" + v[3] + "”."; });
       return {
         t: "mc", gen: key,
         kind: "TRANSLATION MATRIX",
         q: "Which is “" + v[3] + "”?",
-        choices, a: choices.indexOf(DK.plain(v[0])),
+        choices, a: choices.indexOf(DK.plain(v[0])), wrongGloss,
         choicesJp: true,
         why: DK.plain(v[0]) + (v[1] && v[1] !== DK.plain(v[0]) ? " (" + v[1] + ")" : "") + " = " + v[3] + ".",
       };
     }
     if (kind === "listen") {
-      const wrong = distractors(v, 3, 3);
-      const choices = DK.shuffle([v[3]].concat(wrong));
+      const wrongE = distractorEntries(v, 3, 3);
+      const choices = DK.shuffle([v[3]].concat(wrongE.map((x) => x[3])));
+      const wrongGloss = {};
+      wrongE.forEach((x) => { wrongGloss[x[3]] = "“" + x[3] + "” is " + jpForm(x) + " — a different word."; });
       return {
         t: "listen", gen: key,
         kind: "AUDIO INTERCEPT",
         q: "Listen. What was said?",
         speak: v[1] || DK.plain(v[0]),
         reveal: v[0],
-        choices, a: choices.indexOf(v[3]),
+        choices, a: choices.indexOf(v[3]), wrongGloss,
         why: DK.plain(v[0]) + " (" + (v[1] || "") + ") — " + v[3] + ".",
       };
     }
