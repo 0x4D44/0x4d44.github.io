@@ -9,6 +9,7 @@ const newsDir = path.resolve(here, "..");
 const articlesSource = fs.readFileSync(path.join(newsDir, "articles.js"), "utf8");
 const adsSource = fs.readFileSync(path.join(newsDir, "ads.js"), "utf8");
 const rendererSource = fs.readFileSync(path.join(newsDir, "news.js"), "utf8");
+const stylesheetSource = fs.readFileSync(path.join(newsDir, "news.css"), "utf8");
 const context = { window: {} };
 
 vm.runInNewContext(articlesSource, context, { filename: "articles.js" });
@@ -189,6 +190,9 @@ assert.equal(
 );
 
 vm.runInNewContext(rendererSource, context, { filename: "news.js" });
+assert.match(rendererSource, /function isMobileNav\(\)/, "navigation should have a mobile layout branch");
+assert.match(rendererSource, /Open sections menu/, "mobile navigation should expose an accessible menu label");
+assert.match(stylesheetSource, /\.catnav-more-menu\.open[\s\S]*overflow-y:\s*auto/, "mobile menu should own vertical scrolling");
 for (const article of motorsportArticles) {
   const articleMount = { innerHTML: "" };
   context.location = { search: `?id=${encodeURIComponent(article.id)}` };

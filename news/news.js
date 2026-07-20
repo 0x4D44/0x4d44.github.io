@@ -283,19 +283,25 @@
       '<nav class="catnav" aria-label="Sections"><div class="wrap">' +
         '<a href="index.html"' + (activeCat ? '' : ' class="active"') + '>Home</a>' + nav + '<a href="puzzles.html"' + (activeCat === 'Puzzles' ? ' class="active"' : '') + '>Puzzles</a>' +
         '<div class="catnav-more" hidden>' +
-          '<button type="button" class="catnav-more-btn" aria-haspopup="true" aria-expanded="false">' +
-            'More <span class="chev" aria-hidden="true">&#9662;</span></button>' +
-          '<div class="catnav-more-menu" role="menu"></div>' +
+          '<button type="button" class="catnav-more-btn" aria-haspopup="true" aria-expanded="false" aria-controls="catnav-more-menu" aria-label="Open more sections">' +
+            '<span class="catnav-more-label">More</span> <span class="chev" aria-hidden="true">&#9662;</span></button>' +
+          '<div id="catnav-more-menu" class="catnav-more-menu" role="menu"></div>' +
         '</div>' +
       '</div></nav>';
   }
 
-  // -------- priority+ nav: fit what fits, overflow the rest into "More" --------
+  // -------- responsive section navigation --------
   // Real newspaper sites (BBC, Guardian, NYT) don't scroll their section bar on
   // desktop; they show as many sections as the width allows and tuck the rest
   // behind a "More" menu. This measures the bar and does exactly that, re-running
   // on resize. With JS off, the bar degrades to the horizontal-scroll fallback.
-  var catnavState = { onResize: null, onDocClick: null, onKey: null, ro: null };
+  var catnavState = { onResize: null, onDocClick: null, onKey: null, onScroll: null, ro: null };
+
+  function isMobileNav() {
+    return window.matchMedia
+      ? window.matchMedia("(max-width: 760px)").matches
+      : window.innerWidth <= 760;
+  }
 
   function enhanceCatnav() {
     var wrap = document.querySelector(".catnav .wrap");
@@ -303,12 +309,22 @@
     wrap.parentNode.classList.add("enhanced");   // swap scroll fallback for fitted mode
     var more = wrap.querySelector(".catnav-more");
     var moreBtn = more.querySelector(".catnav-more-btn");
+    var moreLabel = moreBtn.querySelector(".catnav-more-label");
     var moreMenu = more.querySelector(".catnav-more-menu");
 
     // Direct children of the bar, minus the "More" container: plain links plus
     // group dropdowns — each an atomic, measurable item.
     function barItems() {
       return [].slice.call(wrap.children).filter(function (el) { return el !== more; });
+    }
+    function sizeMobileMenu() {
+      if (!isMobileNav()) {
+        moreMenu.style.removeProperty("--mobile-menu-max-height");
+        return;
+      }
+      var navBottom = wrap.parentNode.getBoundingClientRect().bottom;
+      var available = Math.max(160, window.innerHeight - navBottom);
+      moreMenu.style.setProperty("--mobile-menu-max-height", Math.floor(available) + "px");
     }
     // Every toggleable menu on the bar (group dropdowns + the overflow menu).
     function menus() {
@@ -329,6 +345,20 @@
       more.hidden = true;
 
       var items = barItems();
+      var mobile = isMobileNav();
+      moreLabel.textContent = mobile ? "Menu" : "More";
+      moreBtn.setAttribute("aria-label", mobile ? "Open sections menu" : "Open more sections");
+      if (mobile) {
+        // Mobile uses the established drawer/sheet pattern: keep one stable
+        // entry point and make the complete section list vertically scrollable.
+        more.hidden = false;
+        for (i = 1; i < items.length; i++) moreMenu.appendChild(items[i]);
+        sizeMobileMenu();
+        syncMore();
+        return;
+      }
+      sizeMobileMenu();
+
       var cs = getComputedStyle(wrap);
       var avail = wrap.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
       var total = 0, i;
@@ -375,6 +405,7 @@
     if (catnavState.onResize) window.removeEventListener("resize", catnavState.onResize);
     if (catnavState.onDocClick) document.removeEventListener("click", catnavState.onDocClick);
     if (catnavState.onKey) document.removeEventListener("keydown", catnavState.onKey);
+    if (catnavState.onScroll) window.removeEventListener("scroll", catnavState.onScroll);
     if (catnavState.ro) catnavState.ro.disconnect();
 
     var raf = 0;
@@ -384,9 +415,11 @@
     };
     catnavState.onDocClick = function () { closeAll(); };
     catnavState.onKey = function (e) { if (e.key === "Escape") closeAll(); };
+    catnavState.onScroll = function () { if (isMobileNav()) sizeMobileMenu(); };
     window.addEventListener("resize", catnavState.onResize);
     document.addEventListener("click", catnavState.onDocClick);
     document.addEventListener("keydown", catnavState.onKey);
+    window.addEventListener("scroll", catnavState.onScroll, { passive: true });
     if (typeof ResizeObserver === "function") {
       catnavState.ro = new ResizeObserver(catnavState.onResize);
       catnavState.ro.observe(wrap);
