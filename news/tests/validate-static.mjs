@@ -327,4 +327,34 @@ for (const a of articles) {
   }
 }
 
+// ALM-BUG-KILN-00026: no story in the homepage MAIN column (hero/lead/more-top/feature
+// bands/Around) may appear twice — the category bands must exclude ids already placed. The
+// ticker and "Most read" sidebar are intentionally separate, so we scope to <main>…</main>.
+{
+  const RealDate = Date;
+  const fake = (ms) => class {
+    getTime() { return ms; }
+    getFullYear() { return new RealDate(ms).getUTCFullYear(); }
+    getMonth() { return new RealDate(ms).getUTCMonth(); }
+    getDate() { return new RealDate(ms).getUTCDate(); }
+    getDay() { return new RealDate(ms).getUTCDay(); }
+    toISOString() { return new RealDate(ms).toISOString(); }
+  };
+  for (let s = 0; s < 24; s++) {
+    const mount = { innerHTML: "" };
+    context.Date = fake(1_000_000 * 3600000 + s * 3600000); // distinct hour seeds
+    context.location = { search: "" };
+    context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    context.window.NEWS.renderHome("app");
+    const main = mount.innerHTML.slice(mount.innerHTML.indexOf("<main>"), mount.innerHTML.indexOf("</main>"));
+    // Each card links its story twice (image + headline), adjacent — collapse those runs so
+    // we only flag a story that reappears in a DIFFERENT section.
+    const ids = [...main.matchAll(/article\.html\?id=([^"&]+)/g)].map((m) => m[1])
+      .filter((id, i, arr) => id !== arr[i - 1]);
+    const dup = ids.find((id, i) => ids.indexOf(id) !== i);
+    assert.equal(dup, undefined, `homepage main column repeats story ${dup} at hour-seed offset ${s}`);
+  }
+  context.Date = RealDate;
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
