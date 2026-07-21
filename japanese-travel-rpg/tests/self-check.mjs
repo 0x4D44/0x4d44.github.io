@@ -21,6 +21,17 @@ assert.ok(searchPhrasebook("allergy",phrases).some(p=>p.id==="food-allergy"));as
 assert.equal(shouldShowRomaji({romajiMode:"fade"},1,false),true);assert.equal(shouldShowRomaji({romajiMode:"fade"},9,false),false);assert.equal(shouldShowRomaji({romajiMode:"mostly-off"},1,true),true);
 assert.equal(aiModeStatus({aiMode:false,apiKey:""}).enabled,false);assert.equal(aiModeStatus({aiMode:true,apiKey:"sk-local-test-key-123"}).enabled,true);
 const lookup=new Map(phrases.map(p=>[p.id,p]));assert.equal(scriptedFeedback("こんにちは",chapters[0].roleplay.steps[0],lookup).quality,"understood");
+// ALM-BUG-FLUXHOMEARPA-00004: the review "All caught up!" empty state must gate on the
+// NEGATION of "a card is due" — it previously reused revHasCard, so it showed when a card
+// existed and hid when the queue was empty. The view sets v.revEmpty=!card; the empty-state
+// sc-if must bind revEmpty, not revHasCard.
+{
+  const idx=read("index.html");
+  assert.ok(/v\.revEmpty\s*=\s*!card/.test(idx),"review view must compute revEmpty=!card");
+  const empty=idx.match(/<sc-if value="\{\{ (\w+) \}\}"[^>]*>\s*<div[^>]*>\s*<div[^>]*>済<\/div>/);
+  assert.ok(empty,"the 'All caught up!' (済) empty-state sc-if should be found");
+  assert.equal(empty[1],"revEmpty","the empty-state must gate on revEmpty, not revHasCard");
+}
 // ALM-BUG-FLUXHOMEARPA-00003: roleplay safe answers / feedback look up
 // step.expectedPhraseIds in the OVERLAID phrase map. content-extra.js remaps each
 // overlaid phrase to a new id, so the overlay MUST re-point the roleplay steps too,
