@@ -492,6 +492,7 @@
   }
   function adHtml(ad, kind) {
     // kind: "leader" | "mpu"
+    if (!ad) return ""; // no ad to show (e.g. empty/failed ads.js) — render nothing, don't throw
     var fx = ad.fx || [];
     var cls = ["ad", kind === "leader" ? "ad-leader" : "ad-mpu"];
     fx.forEach(function (f) {
@@ -570,6 +571,18 @@
     document.title = "The Daily Flange — All the news that's unfit to be true";
 
     var seq = rotated();
+    // If the article data failed to load (coerced to []), degrade to a friendly notice
+    // rather than throwing on the unguarded seq[0..8] / pickAds()[0] head reads below and
+    // leaving #app blank — every almanac doc shares this origin, so be robust.
+    if (!seq.length) {
+      mount.innerHTML = headerHtml(null) +
+        '<div class="wrap"><div class="layout"><main><div class="band">' +
+        '<h3 class="section-title">Nothing to show</h3>' +
+        '<p style="padding:0 16px 20px">The newsroom is briefly empty — please refresh in a moment.</p>' +
+        '</div></main></div></div>' + footerHtml();
+      startClock();
+      return;
+    }
     var seed = hourSeed();
     // assign each rotated story a plausible freshness (fresher near the top)
     var rnd = mulberry32(seed ^ 0x9e3779b9);

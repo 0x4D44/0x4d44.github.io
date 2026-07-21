@@ -291,4 +291,16 @@ for (const search of ["?id=%", "?q=100%", "?id=%E0%A4%A", "?cat=%"]) {
   assert.equal(m[1], weekday, `masthead weekday ${m[1]} must match its date ${m[2]} ${m[3]} ${m[4]} (${weekday})`);
 }
 
+// ALM-BUG-KILN-00019: if articles.js/ads.js fail to load (coerced to []), the page must
+// degrade to a friendly notice, not throw on the unguarded head reads and blank #app.
+{
+  const emptyCtx = { window: { NEWS_ARTICLES: [], NEWS_ADS: [] } };
+  vm.runInNewContext(rendererSource, emptyCtx, { filename: "news.js" });
+  const mount = { innerHTML: "" };
+  emptyCtx.location = { search: "" };
+  emptyCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
+  assert.doesNotThrow(() => emptyCtx.window.NEWS.renderHome("app"), "renderHome should survive an empty corpus");
+  assert.match(mount.innerHTML, /Nothing to show/, "an empty corpus should degrade to a friendly notice");
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
