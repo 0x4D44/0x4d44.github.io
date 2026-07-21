@@ -11,7 +11,15 @@
 (function () {
   "use strict";
 
-  var ARTICLES = (window.NEWS_ARTICLES || []).slice();
+  // Drop shape-invalid articles once, at the trust boundary: the About page invites
+  // contributors to append an object to articles.js "with no editorial oversight", and the
+  // search scorer / sort key dereference a.category/headline/standfirst directly, so one
+  // fat-fingered append (missing or non-string field) would throw and blank whole pages.
+  // Skipping the bad entry keeps every other story rendering.
+  var ARTICLES = (window.NEWS_ARTICLES || []).filter(function (a) {
+    return a && typeof a.id === "string" && typeof a.category === "string" &&
+      typeof a.headline === "string" && typeof a.standfirst === "string";
+  });
   var ADS = window.NEWS_ADS || [];
 
   // Two-level section taxonomy. Each article still carries a single leaf

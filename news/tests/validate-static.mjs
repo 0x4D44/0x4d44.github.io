@@ -303,4 +303,28 @@ for (const search of ["?id=%", "?q=100%", "?id=%E0%A4%A", "?cat=%"]) {
   assert.match(mount.innerHTML, /Nothing to show/, "an empty corpus should degrade to a friendly notice");
 }
 
+// ALM-BUG-KILN-00027: a shape-invalid article must be skipped, not blank whole pages.
+// (a) corpus-shape oracle: every shipped article is well-formed.
+for (const a of articles) {
+  for (const field of ["id", "category", "headline", "standfirst"]) {
+    assert.ok(typeof a[field] === "string" && a[field].length > 0,
+      `article ${a.id || "(no id)"} needs a non-empty string ${field}`);
+  }
+  assert.ok(Array.isArray(a.body) && a.body.length > 0, `article ${a.id} needs a non-empty body`);
+}
+// (b) a fat-fingered append (missing category/headline/standfirst) is skipped at load and
+// the search/about pages still render.
+{
+  const badArticles = articles.concat([{ id: "x-malformed", body: ["only a body, no category/headline/standfirst"] }]);
+  const badCtx = { window: { NEWS_ARTICLES: badArticles, NEWS_ADS: context.window.NEWS_ADS } };
+  vm.runInNewContext(rendererSource, badCtx, { filename: "news.js" });
+  assert.equal(badCtx.window.NEWS.count(), articles.length, "the malformed article should be dropped at load");
+  for (const [search, fn] of [["?q=anything", "renderSearch"], ["?cat=Science", "renderSearch"], ["", "renderAbout"]]) {
+    const mount = { innerHTML: "" };
+    badCtx.location = { search };
+    badCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    assert.doesNotThrow(() => badCtx.window.NEWS[fn]("app"), `${fn} should survive a malformed article at ${search || "(about)"}`);
+  }
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
