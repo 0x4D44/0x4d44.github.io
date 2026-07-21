@@ -584,7 +584,7 @@ DK.week({
         ["困[こま]ります", "こまります", "komarimasu", "to be in trouble", "verb・godan"],
         ["遅[おく]れます", "おくれます", "okuremasu", "to be late", "verb・ichidan"],
         ["連絡[れんらく]", "れんらく", "renraku", "contact, getting in touch", "noun"],
-        ["問[と]題[だい]ありません", "もんだいありません", "mondai arimasen", "no problem", "expression"],
+        ["問題[もんだい]ありません", "もんだいありません", "mondai arimasen", "no problem", "expression"],
       ],
       exercises: [
         { t: "build", en: "When you arrive in Kyoto, please contact me.", tokens: ["京都", "に", "着いたら", "連絡", "して", "ください"], extra: ["着くと", "着いて"],
