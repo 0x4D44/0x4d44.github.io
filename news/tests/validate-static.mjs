@@ -260,4 +260,14 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
 
 assert.equal(articles.length, 903, "catalog copy and article corpus count should stay in lockstep");
 
+// ALM-BUG-KILN-00020: a stray/truncated percent-escape in ?id= or ?q= must degrade to
+// the graceful path, not throw URIError and blank the page.
+for (const search of ["?id=%", "?q=100%", "?id=%E0%A4%A", "?cat=%"]) {
+  const mount = { innerHTML: "" };
+  context.location = { search };
+  context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+  assert.doesNotThrow(() => context.window.NEWS.renderArticle("app"), `renderArticle should survive ${search}`);
+  assert.doesNotThrow(() => context.window.NEWS.renderSearch("app"), `renderSearch should survive ${search}`);
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);

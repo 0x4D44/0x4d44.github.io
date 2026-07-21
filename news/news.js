@@ -233,7 +233,10 @@
   function catUrl(c) { return "search.html?cat=" + encodeURIComponent(c); }
   function qs(name) {
     var m = new RegExp("[?&]" + name + "=([^&]*)").exec(location.search);
-    return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    if (!m) return "";
+    // A stray '%' or truncated escape (?id=%, ?q=100%) makes decodeURIComponent throw
+    // URIError; uncaught it aborts the mount and blanks the page. Degrade to "" instead.
+    try { return decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { return ""; }
   }
 
   // -------- shared chrome --------
