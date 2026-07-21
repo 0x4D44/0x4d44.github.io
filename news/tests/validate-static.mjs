@@ -418,4 +418,26 @@ for (const a of articles) {
   assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} body paragraph(s) carry LLM-guardrail phrasing: ${offenders.slice(0, 10).join(", ")}`);
 }
 
+// ALM-BUG-KILN-00023: these seven based-on-truth reports quoted their own bylined
+// correspondent as the independent expert source. The expert must be a distinct person, so
+// the byline correspondent's surname must no longer appear in the body / pull-quote.
+{
+  const selfQuote = {
+    "biz-gerald-ratner-total-crap-speech-1991": "Cornish",
+    "biz-leonard-pepsi-harrier-jet-lawsuit": "Cornish",
+    "hea-radithor-radium-tonic-eben-byers": "Aldous",
+    "hea-tobacco-smoke-enema-resuscitation": "Aldous",
+    "sci-mars-climate-orbiter-metric-mixup-1999": "Vance",
+    "sci-piltdown-man-hoax-1912": "Vance",
+    "wea-great-smog-of-london-1952": "Fernsby",
+  };
+  for (const [id, surname] of Object.entries(selfQuote)) {
+    const a = articles.find((x) => x.id === id);
+    assert.ok(a, `${id} should be present`);
+    assert.match(a.byline, new RegExp(surname), `${id} byline should still be the correspondent`);
+    const text = (a.body || []).join(" ") + " " + (a.pullQuote || "");
+    assert.ok(!text.includes(surname), `${id} must not quote its byline correspondent (${surname}) as the expert`);
+  }
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
