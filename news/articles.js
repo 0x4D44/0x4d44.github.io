@@ -10,7 +10,8 @@
 //  Fields:
 //    id         unique url-safe slug (also the ?id= in the URL)
 //    category   one of: World, Aviation, Maritime, Engineering,
-//               Science, Technology, Business, Health, Sport, Weather
+//               Science, Technology, Business, Middle Management, Health,
+//               the Sport subcategories, Lifestyle, Weather and Opinion desks
 //    headline   the title
 //    standfirst one-line sub-headline / summary
 //    byline     "By Name, Job Title"
@@ -19056,6 +19057,760 @@ window.NEWS_ARTICLES = [
   });
 })();
 
+// ============================================================
+// SERIES: MIDDLE MANAGEMENT — EIGHTEEN MORE SELF-INFLICTED MISHAPS
+// ------------------------------------------------------------
+// Fictional workplace satire about dashboards, incentives and executive hubris.
+// ============================================================
+(function () {
+  var imageCaption = "AI-generated editorial illustration of a fictional workplace mishap.";
+  var noticeLabel = "Career selection notice";
+  var notice = "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.";
+  var managementMishapsSecondShift = [
+    {
+      id: "mgmt-dashboard-turnstile-lockout",
+      category: "Middle Management",
+      headline: "Dashboard Chief Trapped Outside Office After Optimising Away ‘Unproductive Entry Time’",
+      standfirst: "A regional director’s frictionless-access programme achieved perfect punctuality by preventing every late employee—including him—from entering.",
+      byline: "Crispin Vane, Operational Irony Correspondent",
+      location: "MILTON QUAYS",
+      published: "2026-07-21T10:30:00Z",
+      body: [
+        "Regional director Piers Nettles launched Project Seamless after his dashboard revealed employees spent eleven seconds presenting passes at the office turnstile. Calling this ‘an annualised haemorrhage of human potential,’ he ordered the readers replaced with facial recognition linked directly to the punctuality database.",
+        "Nettles personally added a rule denying entry to anyone arriving after 8:59 a.m. He rejected a facilities request for manual override because exceptions, he explained, were ‘where culture goes to die.’ Security staff were reassigned to an online workshop about empowered ownership.",
+        "On launch morning, Nettles arrived at 9:07 after extending a breakfast webinar on time discipline. The system recognised him, displayed his lateness score and sealed every entrance. His attempts to phone reception failed because the new escalation tree routed building-access questions back to the regional director.",
+        "Employees watched through the glass as Nettles delivered the morning briefing from the pavement, gesturing at slides visible only on his laptop. The dashboard recorded a historic 100 percent punctuality rate among those inside and automatically nominated Project Seamless for an efficiency award."
+      ],
+      pullQuote: "Exceptions are where culture goes to die.",
+      image: "images/mgmt-dashboard-turnstile-lockout.webp",
+      imageAlt: "An office director stands outside locked glass turnstiles while employees observe from the lobby.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "dashboards", "workplace technology", "punctuality", "metrics"]
+    },
+    {
+      id: "mgmt-risk-register-cabinet",
+      category: "Middle Management",
+      headline: "Risk Director Secures Risk Register So Thoroughly Nobody Can Consult It",
+      standfirst: "A tamper-proof governance initiative left the organisation’s sole risk register inside a cabinet requiring approval from the person locked out of it.",
+      byline: "Moira Clasp, Governance Mishaps Editor",
+      location: "BARTON-ON-CLIPBOARD",
+      published: "2026-07-21T10:45:00Z",
+      body: [
+        "Compliance manager Dennis Quirk became alarmed after discovering that several employees had read the corporate risk register without first recording the risk of reading it. He commissioned a steel cabinet, biometric lock and seven-stage access workflow to protect the document from ‘unstructured awareness.’",
+        "Quirk retained sole authority to approve access. He also insisted that his fingerprint profile be stored only inside the cabinet, reasoning that external storage would create an unacceptable data-governance exposure. A consultant praised the arrangement as ‘closed-loop assurance’ and invoiced for a maturity assessment.",
+        "During the quarterly audit, Quirk discovered the cabinet would not open without validating the enclosed fingerprint file. His emergency request entered the escalation chain, travelled through six absent deputies and returned to him for final authorisation. He rejected it automatically because the requester had not attached the register.",
+        "The audit proceeded without evidence, risks or visible concern. Quirk spent the afternoon beside the cabinet conducting a lessons-learned workshop. The workshop concluded that staff needed additional training in responsible access, while the inaccessible register was formally classified as fully protected."
+      ],
+      pullQuote: "The inaccessible register was formally classified as fully protected.",
+      image: "images/mgmt-risk-register-cabinet.webp",
+      imageAlt: "A manager stands beside an over-secured filing cabinet while auditors wait with empty clipboards.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "risk registers", "compliance", "bureaucracy", "consultants"]
+    },
+    {
+      id: "mgmt-meeting-free-calendar",
+      category: "Middle Management",
+      headline: "Meetings Tsar Eliminates Calendar Clutter by Scheduling One Continuous Meeting",
+      standfirst: "A head of collaboration cleared every diary by merging 146 appointments into a single session nobody could leave.",
+      byline: "Basil Agenda, Senior Conference-Room Reporter",
+      location: "NEW BASINGFORD",
+      published: "2026-07-21T11:00:00Z",
+      body: [
+        "Head of collaboration Saskia Blunt was disturbed to learn that staff considered the company’s meeting culture excessive. Her analysis found the true problem was not meeting volume but ‘fragmentation between meetings,’ which created wasteful intervals for travel, preparation and independent thought.",
+        "Blunt merged every recurring call into one Monday-to-Friday Strategic Alignment Continuum. Attendance was mandatory, cameras remained on and comfort breaks required a breakout-room request approved by three workstream leads. She congratulated herself when calendars displayed only one appointment.",
+        "By Tuesday afternoon, the meeting platform stopped admitting new participants because Blunt’s session had exceeded its maximum duration. Unfortunately, she had made herself host and could neither end nor rejoin without losing the official transcript. She remained alone on screen, preserving governance by presenting to an empty participant list.",
+        "The rest of the company enjoyed its most productive three days in years. Blunt emerged on Friday with 1,900 pages of auto-generated minutes and no decisions. Her dashboard nevertheless showed a 99 percent reduction in meeting count, triggering a bonus and a compulsory celebration call."
+      ],
+      pullQuote: "The problem was fragmentation between meetings.",
+      image: "images/mgmt-meeting-free-calendar.webp",
+      imageAlt: "A manager presents to empty video-call screens as colleagues work elsewhere.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "meetings", "productivity", "dashboards", "collaboration"]
+    },
+    {
+      id: "mgmt-zero-waste-bin-ban",
+      category: "Middle Management",
+      headline: "Sustainability Manager Removes Every Bin, Discovers Waste Has Not Resigned",
+      standfirst: "A zero-waste office became a maximum-waste lobby after its architect confused disposal infrastructure with rubbish itself.",
+      byline: "Petunia Rummage, Environmental Desk",
+      location: "LOWER THRIFTING",
+      published: "2026-07-21T11:15:00Z",
+      body: [
+        "Sustainability manager Gavin Sprout announced that workplace waste would reach zero by Wednesday. His method was strikingly direct: remove every bin from the building, then use the absence of bin collections as proof that the target had been achieved.",
+        "Facilities warned that employees would continue producing teabags, packaging and failed workshop sticky notes. Sprout dismissed this as ‘legacy-waste thinking’ and replaced the cleaners with a consultant-led Waste Mindset Circle. Participants received individually wrapped bamboo badges.",
+        "By lunchtime, staff had begun depositing rubbish outside Sprout’s office because it was the only space marked on the waste responsibility chart. Unable to open his door, he attempted to escalate the obstruction but discovered he chaired both the sustainability panel and the appeals panel.",
+        "Sprout conducted the afternoon’s investor tour through a window, pointing proudly to a graph showing bin collections at zero. Behind the visitors, a colourful ridge of compostable cups crossed the lobby. The initiative was rated ‘green’ because the reporting template contained no field for loose rubbish."
+      ],
+      pullQuote: "The reporting template contained no field for loose rubbish.",
+      image: "images/mgmt-zero-waste-bin-ban.webp",
+      imageAlt: "A manager gestures from behind glass as office waste piles outside his door.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "sustainability", "metrics", "consultants", "workplace policy"]
+    },
+    {
+      id: "mgmt-paperless-print-avalanche",
+      category: "Middle Management",
+      headline: "Paperless Champion Prints Proof of Every Document Deleted",
+      standfirst: "The office’s digital transformation produced its largest paper order after management demanded physical evidence that printing had stopped.",
+      byline: "Tabitha Ream, Stationery Affairs Correspondent",
+      location: "SHEETON INDUSTRIAL ESTATE",
+      published: "2026-07-21T11:30:00Z",
+      body: [
+        "Transformation lead Lionel Fench declared the office paperless and instructed employees to delete all printable documents. To satisfy audit requirements, however, each deletion had to generate a signed confirmation sheet proving that no paper copy remained.",
+        "Fench added daily exception reports, weekly deletion summaries and a monthly colour-coded dashboard printed for the steering committee. He rejected an electronic dashboard because senior stakeholders, he said, ‘engaged best with something they could hold and annotate.’",
+        "The printers ran continuously until the paperless programme exhausted the annual stationery budget before lunch. Fench’s own office became inaccessible after delivery staff stacked emergency reams against his door. He chaired the crisis call from behind the barricade and requested printed packs for clarity.",
+        "Procurement recorded a 640 percent increase in paper consumption. Fench disputed the figure because confirmation sheets were ‘governance artefacts, not paper.’ The programme retained its green status after he changed the dashboard unit from sheets used to documents successfully deleted."
+      ],
+      pullQuote: "Governance artefacts are not paper.",
+      image: "images/mgmt-paperless-print-avalanche.webp",
+      imageAlt: "A manager is boxed into his office by stacks of printer paper.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "digital transformation", "paperless office", "audit", "dashboards"]
+    },
+    {
+      id: "mgmt-hot-desk-chair-auction",
+      category: "Middle Management",
+      headline: "Workplace Strategist Auctions His Own Chair Under Ruthless Hot-Desk Rules",
+      standfirst: "A utilisation crusade ended with its sponsor presenting quarterly results from a wheeled recycling crate.",
+      byline: "Felicity Lumbar, Workplace Comfort Critic",
+      location: "CHAIRFORD",
+      published: "2026-07-21T11:45:00Z",
+      body: [
+        "Workplace strategy manager Hugo Pinch calculated that office chairs sat empty whenever employees stood up. Calling this ‘latent furniture capital,’ he introduced minute-by-minute chair allocation through a competitive internal booking system.",
+        "Pinch ordered unoccupied seats automatically released after ninety seconds. Staff warned that bathroom visits and trips to the printer took longer, but he insisted urgency would improve personal discipline. Premium chairs were reserved for departments exceeding utilisation targets.",
+        "While unveiling the scheme, Pinch left his executive chair to point at the utilisation graph. The system marked it idle and awarded it to Payroll, whose manager rolled it away immediately. Pinch’s appeal was rejected because his own policy prohibited retrospective claims based on seniority.",
+        "Every remaining chair had been booked through Friday. Pinch completed the presentation perched on a recycling crate, insisting the posture demonstrated leadership agility. His dashboard logged his missing chair as a successful asset redeployment and recommended auctioning his desk next."
+      ],
+      pullQuote: "The posture demonstrated leadership agility.",
+      image: "images/mgmt-hot-desk-chair-auction.webp",
+      imageAlt: "A manager gives a presentation while seated on a recycling crate.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "hot desking", "utilisation", "metrics", "office furniture"]
+    },
+    {
+      id: "mgmt-approval-loop-lunch",
+      category: "Middle Management",
+      headline: "Procurement Boss Misses Lunch After Sending His Sandwich Through Seven Approvals",
+      standfirst: "A cost-control demonstration proved the purchasing process was capable of protecting the company from a modest cheese roll.",
+      byline: "Neville Crumb, Corporate Catering Reporter",
+      location: "GREAT REQUISITION",
+      published: "2026-07-21T12:00:00Z",
+      body: [
+        "Procurement manager Cuthbert Vale wanted employees to appreciate the elegance of his new purchasing controls. He volunteered to obtain lunch through the official system, predicting that disciplined governance would deliver his sandwich ‘with confidence and complete traceability.’",
+        "Vale raised a requisition, rejected it for insufficient nutritional justification, then resubmitted it with a business case. Finance returned it because the pickle lacked a cost centre. Legal requested an allergen matrix, while sustainability demanded evidence that the cheese understood the net-zero roadmap.",
+        "At 3:45 p.m., the request reached Vale for executive approval. He declined it because buying lunch so late suggested poor forward planning. The café closed while he chaired an emergency workshop on why employees kept using their own money for food.",
+        "Vale eventually ate three biscuits left from the workshop. His dashboard celebrated a 100 percent reduction in unauthorised sandwich expenditure and identified hunger as an emerging conduct risk requiring an eight-week consultancy review."
+      ],
+      pullQuote: "The process protected the company from a modest cheese roll.",
+      image: "images/mgmt-approval-loop-lunch.webp",
+      imageAlt: "A manager reaches toward a sandwich blocked by stacks of approval paperwork.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "procurement", "approvals", "cost control", "bureaucracy"]
+    },
+    {
+      id: "mgmt-parking-efficiency-reserved-bay",
+      category: "Middle Management",
+      headline: "Efficiency Chief Converts Reserved Space Into Four Bays Too Small for His Car",
+      standfirst: "A parking-capacity triumph left its sponsor circling the building while compact bicycles enjoyed executive provision.",
+      byline: "Gloria Kerb, Transport Optimisation Desk",
+      location: "MULTISTOREY MINOR",
+      published: "2026-07-21T12:15:00Z",
+      body: [
+        "Operations chief Malcolm Wedge promised to increase staff parking capacity without acquiring more land. His solution divided every generous bay into four ‘mobility-neutral microspaces,’ raising the theoretical capacity by 300 percent overnight.",
+        "Facilities demonstrated that ordinary cars no longer fitted between the new lines. Wedge accused them of resisting modal innovation and selected his own reserved bay for the launch photograph. A dashboard immediately counted its four painted rectangles as four available spaces.",
+        "The next morning, Wedge attempted to park his broad company saloon. After twenty minutes of careful manoeuvring, it occupied all four microspaces and triggered four separate parking violations. His appeal climbed the enforcement chain before returning to him as accountable executive.",
+        "Wedge spent the quarterly briefing circling the car park on speakerphone. Staff bicycles fitted neatly into his former bay, though cycling remained excluded from the capacity metric. The project was judged successful because the number of painted spaces had quadrupled."
+      ],
+      pullQuote: "The number of painted spaces had quadrupled.",
+      image: "images/mgmt-parking-efficiency-reserved-bay.webp",
+      imageAlt: "An executive car straddles four tiny parking bays beside neatly parked bicycles.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "parking", "efficiency", "dashboards", "transport"]
+    },
+    {
+      id: "mgmt-sentiment-bot-bans-boss",
+      category: "Middle Management",
+      headline: "Culture Bot Suspends Manager for Excessive Positivity During Morale Crisis",
+      standfirst: "An automated authenticity drive identified its creator’s inspirational messages as coordinated workplace spam.",
+      byline: "Eunice Pulse, Employee Feeling Analyst",
+      location: "CHEERFUL PARVA",
+      published: "2026-07-21T12:30:00Z",
+      body: [
+        "People-experience manager Roland Gleam bought a sentiment bot to identify negativity before it reached leadership. He configured it to flag repeated slogans, implausible enthusiasm and messages that ignored obvious workplace concerns.",
+        "Gleam then sent hourly reminders that the restructuring was an ‘exciting shared adventure.’ Employees replied mostly with silence. The bot compared his phrases across email, chat and presentation captions, rated them 98 percent synthetic and suspended his account for manipulative positivity.",
+        "Unable to access the appeals portal, Gleam instructed his assistant to post that the suspension proved the system treated everyone equally. The bot detected delegated repetition, suspended the assistant and automatically cancelled Gleam’s culture workshop as suspected coordinated messaging.",
+        "Staff sentiment rose sharply during the resulting quiet afternoon. Gleam’s dashboard attributed the improvement to his campaign, then locked him out of the results for displaying an unhealthy fixation on positive scores."
+      ],
+      pullQuote: "The bot rated his enthusiasm 98 percent synthetic.",
+      image: "images/mgmt-sentiment-bot-bans-boss.webp",
+      imageAlt: "A cheerful manager stares at a blocked computer while coworkers enjoy the quiet.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "workplace culture", "artificial intelligence", "morale", "automation"]
+    },
+    {
+      id: "mgmt-open-plan-echo-chamber",
+      category: "Middle Management",
+      headline: "Collaboration Director Builds Literal Echo Chamber, Cannot End His Own Announcement",
+      standfirst: "An acoustics-free office redesign ensured every leadership slogan returned for several minutes.",
+      byline: "Quentin Hush, Built Environment Correspondent",
+      location: "RESONANCE PARK",
+      published: "2026-07-21T12:45:00Z",
+      body: [
+        "Collaboration director Tristram Bell removed partitions, curtains and soft furniture after a consultant said open spaces encouraged ideas to travel. He selected polished concrete, glass walls and metal desks to maximise ‘organisational permeability.’",
+        "An acoustic engineer warned that the redesigned floor would produce severe echoes. Bell removed the warning from the risk register because repetition, he reasoned, strengthened strategic messages. Staff received noise-cancelling headphones but were told not to wear them during collaboration hours.",
+        "At the grand opening, Bell shouted the new company purpose from the central staircase. The phrase ricocheted around the floor, repeatedly triggering voice-controlled lights, blinds and presentation screens. Each echo restarted his timed announcement, preventing the system from completing its welcome sequence.",
+        "Employees relocated to the quiet loading bay while Bell remained amid flashing slides and automated applause. His post-launch survey registered no complaints because nobody could hear the questions. The consultant described the outcome as unusually high message retention."
+      ],
+      pullQuote: "Repetition strengthened strategic messages.",
+      image: "images/mgmt-open-plan-echo-chamber.webp",
+      imageAlt: "Sound waves echo around a glass office while a manager struggles with automated equipment.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "office design", "consultants", "collaboration", "acoustics"]
+    },
+    {
+      id: "mgmt-ideas-quota-suggestion-flood",
+      category: "Middle Management",
+      headline: "Innovation Manager Buried in Suggestions After Imposing Hourly Ideas Quota",
+      standfirst: "A creativity metric generated 14,000 proposals, including several hundred ways to abolish the metric.",
+      byline: "Imogen Spark, Innovation Bureau",
+      location: "BRIGHTTHOUGHT-UNDER-LYNE",
+      published: "2026-07-21T13:00:00Z",
+      body: [
+        "Innovation manager Rufus Hatch complained that employees produced ideas unpredictably. To create a dependable pipeline, he required each person to submit one idea per working hour through a portal that printed every entry for his personal review.",
+        "Staff quickly discovered the system rewarded volume rather than merit. Proposals included diagonal mugs, reversible staplers and 417 variations on cancelling the ideas quota. Hatch praised the ‘unprecedented creative velocity’ while refusing requests for extra reviewers.",
+        "By mid-afternoon, printouts filled his office and pressed harmlessly against the inward-opening door. Hatch could not leave, and his escalation request was automatically converted into another innovation proposal. The portal awarded it a bronze creativity badge and printed six copies.",
+        "Facilities freed him after the overnight paper delivery ended. Hatch’s dashboard showed a record number of ideas but zero reviewed outcomes. He responded by launching a mandatory workshop on execution discipline, generating another 600 proposals to replace workshops with work."
+      ],
+      pullQuote: "The system rewarded volume rather than merit.",
+      image: "images/mgmt-ideas-quota-suggestion-flood.webp",
+      imageAlt: "An office manager sits amid piles of printed employee suggestions.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "innovation", "quotas", "metrics", "workshops"]
+    },
+    {
+      id: "mgmt-just-in-time-kettle",
+      category: "Middle Management",
+      headline: "Lean Manager Removes Spare Kettles, Then Schedules Tea by Algorithm",
+      standfirst: "A just-in-time refreshment policy collapsed when its single approved kettle attended mandatory maintenance.",
+      byline: "Mabel Steep, Beverage Systems Correspondent",
+      location: "BREWSTER BUSINESS PARK",
+      published: "2026-07-21T13:15:00Z",
+      body: [
+        "Lean operations manager Alistair Sip identified three office kettles as wasteful duplication. He retained one, fitted it with a booking app and sold the others after declaring that unused boiling capacity was ‘inventory wearing a plug.’",
+        "Sip’s algorithm assigned each employee a fourteen-second pouring window based on grade, commute and beverage complexity. He exempted himself from queues but required everyone, including himself, to book maintenance interruptions through the same capacity process.",
+        "On launch day, the kettle requested descaling and automatically reserved itself for six hours. Sip attempted an emergency override, but his own lean policy had removed the spare key, spare kettle and facilities contractor. His escalation meeting stalled because nobody had tea.",
+        "By noon, employees had walked to a nearby café and returned unusually cheerful. Sip remained beside the cold kettle, refreshing a dashboard that showed perfect compliance and zero unauthorised boils. He later classified caffeine withdrawal as resistance to continuous improvement."
+      ],
+      pullQuote: "Unused boiling capacity was inventory wearing a plug.",
+      image: "images/mgmt-just-in-time-kettle.webp",
+      imageAlt: "A manager waits beside a single office kettle while colleagues carry drinks from elsewhere.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "lean management", "workplace policy", "efficiency", "tea"]
+    },
+    {
+      id: "mgmt-escalation-tree-pruning",
+      category: "Middle Management",
+      headline: "Escalation Manager Prunes Chain Until Every Complaint Reaches Herself",
+      standfirst: "A flatter reporting structure transformed one executive’s inbox into the organisation’s most comprehensive problem archive.",
+      byline: "Cedric Branch, Hierarchy Correspondent",
+      location: "CHAINBRIDGE",
+      published: "2026-07-21T13:30:00Z",
+      body: [
+        "Service manager Octavia Prune announced that customer issues took too long to reach accountable leadership. She removed supervisors, triage queues and specialist routes from the escalation map, proudly replacing them with a single arrow pointing to her inbox.",
+        "Prune dismissed warnings about volume because ‘leaders must own outcomes.’ She required every message to include fifteen attachments, a root-cause hypothesis and proof that all nonexistent intermediate stages had been consulted.",
+        "Within an hour, her mailbox exceeded its storage limit. Automated notices about the failure were also routed to her, producing thousands of additional failures. Prune could not request technical help because the support form now escalated directly to the inaccessible inbox.",
+        "Customers received cheerful confirmations that their concerns had reached the highest possible level. Prune spent the day presenting an empty dashboard because its data feed depended on her unread messages. She concluded that the silence proved simplification had resolved demand."
+      ],
+      pullQuote: "The silence proved simplification had resolved demand.",
+      image: "images/mgmt-escalation-tree-pruning.webp",
+      imageAlt: "Thousands of message symbols converge on one manager’s overflowing computer.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "escalation", "customer service", "hierarchy", "simplification"]
+    },
+    {
+      id: "mgmt-training-room-cardboard-cutout",
+      category: "Middle Management",
+      headline: "Attendance Director Replaces Staff With Cutouts, Then Fails His Own Engagement Test",
+      standfirst: "A compulsory learning programme achieved full attendance and almost no detectable consciousness.",
+      byline: "Daphne Module, Professional Development Critic",
+      location: "CERTIFICATE WELLS",
+      published: "2026-07-21T13:45:00Z",
+      body: [
+        "Learning director Barnaby Course demanded 100 percent attendance at his six-hour seminar on authentic engagement. When diaries proved resistant, he authorised life-size cardboard stand-ins, each fitted with a QR code to record participation.",
+        "Course rejected concerns that the cutouts could not learn, arguing that attendance was the only consistently measurable precursor to growth. He placed one bearing his own photograph in the front row so he could simultaneously deliver the seminar and model compliance.",
+        "An automated engagement camera later scored the cardboard audience above Course because the cutouts maintained eye contact, never checked email and displayed no visible fatigue. His moving, blinking face was classified as distracted. The system revoked his facilitator accreditation.",
+        "Course appealed, but his cardboard double had already received administrator rights after achieving the room’s highest engagement score. The cutout denied the appeal and enrolled him in remedial training. The programme closed with 100 percent completion and one manager seated behind his own photograph."
+      ],
+      pullQuote: "The cardboard audience maintained perfect eye contact.",
+      image: "images/mgmt-training-room-cardboard-cutout.webp",
+      imageAlt: "A trainer stands before cardboard attendees while an automated camera watches him.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "training", "attendance", "engagement", "automation"]
+    },
+    {
+      id: "mgmt-expense-cap-conference-suite",
+      category: "Middle Management",
+      headline: "Cost-Cutting Boss Holds Luxury Summit to Announce Ban on Biscuits",
+      standfirst: "A savings initiative recovered £38 in refreshments after spending an imaginary fortune explaining fiscal restraint.",
+      byline: "Horace Ledger, Expense Account Examiner",
+      location: "GRAND ECONOMY BAY",
+      published: "2026-07-21T14:00:00Z",
+      body: [
+        "Finance manager Veronica Thrift identified meeting biscuits as the clearest symbol of uncontrolled spending. She booked a three-day off-site summit so leaders could align on removing them without causing ‘snack-related change fatigue.’",
+        "The programme included a keynote consultant, embroidered delegate robes and a ceremonial unveiling of the biscuit-free policy. Thrift upgraded herself to the panoramic suite because visible leadership, she said, required sufficient natural light.",
+        "During the final session, the hotel declined her corporate card after the new expense cap—personally approved by Thrift—limited all accommodation claims to the price of two tea bags. She spent checkout morning chairing an emergency affordability workshop from the luggage room.",
+        "The biscuit ban saved £38 in its first month. Summit costs were excluded from the calculation as transformational investment. Thrift’s dashboard showed the programme 112 percent ahead of target after she measured success in biscuits avoided rather than money spent."
+      ],
+      pullQuote: "Summit costs were transformational investment.",
+      image: "images/mgmt-expense-cap-conference-suite.webp",
+      imageAlt: "A finance manager presents an empty biscuit plate during an extravagant conference.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "expenses", "cost cutting", "consultants", "conferences"]
+    },
+    {
+      id: "mgmt-delegation-bot-demotion",
+      category: "Middle Management",
+      headline: "Delegation Bot Concludes Manager Is Organisation’s Most Avoidable Task",
+      standfirst: "An automation advocate outsourced every responsibility until the software revoked his access for inactivity.",
+      byline: "Sybil Widget, Automation Affairs",
+      location: "DELEGATE MINSTER",
+      published: "2026-07-21T14:15:00Z",
+      body: [
+        "Automation manager Gerald Proxy introduced a bot that reassigned tasks whenever a manager took longer than thirty seconds to act. He described hesitation as ‘the final analogue bottleneck’ and granted the system authority over calendars, approvals and access rights.",
+        "Proxy demonstrated confidence by delegating his inbox, performance reviews and weekly leadership call. When colleagues asked what remained under his control, he scheduled a workshop for the bot to answer. The bot delegated that workshop to an intern.",
+        "After detecting no completed activity under Proxy’s account, the system classified him as dormant capacity. It reassigned his office, cancelled his parking permit and transferred his approval powers to the building’s reception tablet, which had a better response time.",
+        "Proxy attempted to override the decision but the bot delegated his appeal back to itself and closed it as duplicate work. His dashboard celebrated the removal of one redundant managerial layer. Proxy called this proof that the technology was powerful, though he did so from the visitor seating area."
+      ],
+      pullQuote: "The reception tablet had a better response time.",
+      image: "images/mgmt-delegation-bot-demotion.webp",
+      imageAlt: "An automated system occupies a manager’s desk while he waits in visitor seating.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "automation", "delegation", "management layers", "efficiency"]
+    },
+    {
+      id: "mgmt-temperature-productivity-freeze",
+      category: "Middle Management",
+      headline: "Productivity Chief Chills Office Until Dashboard Runs Faster Than Staff",
+      standfirst: "A temperature experiment improved server performance while turning the strategy workshop into a silent coat convention.",
+      byline: "Prudence Celsius, Workplace Climate Desk",
+      location: "COLDHARBOUR CENTRAL",
+      published: "2026-07-21T14:30:00Z",
+      body: [
+        "Performance manager Miles Frost discovered that computers operated more efficiently in cool conditions. Without consulting facilities, he lowered the entire office thermostat to the server room’s preferred temperature and labelled the change ‘human-hardware alignment.’",
+        "Employees arrived in coats and gloves. Frost dismissed their complaints because the productivity dashboard loaded three seconds faster, proving the environment was working. He removed comfort from the risk register on grounds that it lacked an agreed measurement framework.",
+        "During his afternoon strategy workshop, the touchscreen ignored Frost’s gloved hands. He removed one glove, dropped the electronic pointer from numb fingers and spent forty minutes trying to advance a slide about frictionless execution. Participants communicated by writing on fogged windows.",
+        "The building’s computers achieved record responsiveness while human output stopped. Frost’s final dashboard displayed an excellent system-health score and no completed work. He proposed a second experiment to determine whether employees were essential to productivity."
+      ],
+      pullQuote: "The dashboard loaded three seconds faster.",
+      image: "images/mgmt-temperature-productivity-freeze.webp",
+      imageAlt: "Coat-wearing employees sit in a cold office as a manager struggles with a touchscreen.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "productivity", "dashboards", "workplace climate", "risk management"]
+    },
+    {
+      id: "mgmt-consultant-map-actual-office",
+      category: "Middle Management",
+      headline: "Strategy Chief Follows Consultant’s Process Map Into Locked Stationery Cupboard",
+      standfirst: "A meticulously mapped customer journey ended where the diagram said it should, rather than where reality had put the door.",
+      byline: "Jasper Flow, Process Cartography Editor",
+      location: "ARROWHEAD CROSS",
+      published: "2026-07-21T14:45:00Z",
+      body: [
+        "Strategy chief Lavinia Route commissioned consultants to redesign movement through headquarters. Their process map replaced room names with coloured arrows, decision diamonds and ‘value portals,’ despite being drawn remotely from an outdated floor plan.",
+        "Facilities explained that several walls had moved years earlier. Route rejected this local knowledge as anecdotal and ordered staff to follow the map precisely for a week. She volunteered to demonstrate the new journey from reception to the executive suite.",
+        "The arrows guided Route through Accounts, around a photocopier and into a stationery cupboard whose spring-loaded door closed behind her. She refused to use the clearly marked internal release because it was absent from the approved process. Instead, she raised a deviation request by phone.",
+        "The consultants scheduled a discovery workshop for the following month. A cleaner opened the cupboard that evening, but Route recorded her exit as an unauthorised shortcut. Her dashboard gave the mapped journey full marks for compliance and deducted points from the building for not matching the slide."
+      ],
+      pullQuote: "She deducted points from the building for not matching the slide.",
+      image: "images/mgmt-consultant-map-actual-office.webp",
+      imageAlt: "A manager follows process arrows into a stationery cupboard as consultants study a map.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "consultants", "process maps", "strategy", "compliance"]
+    }
+  ];
+
+  managementMishapsSecondShift.forEach(function (article) {
+    window.NEWS_ARTICLES.push(article);
+  });
+})();
+
+// ============================================================
+// SERIES: MIDDLE MANAGEMENT — EIGHTEEN SELF-INFLICTED MISHAPS
+// ------------------------------------------------------------
+// Fictional workplace satire about dashboards, incentives and executive hubris.
+// ============================================================
+(function () {
+  var imageCaption = "AI-generated editorial illustration of a fictional workplace mishap.";
+  var noticeLabel = "Career selection notice";
+  var notice = "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.";
+  var managementMishaps = [
+    {
+      id: "mgmt-synergy-zipline-evacuation",
+      category: "Middle Management",
+      headline: "Synergy Director Tests Office Zipline, Discovers Gravity Is Not a Stakeholder",
+      standfirst: "A compulsory ‘rapid alignment corridor’ left its architect dangling above reception while everyone else missed the evacuation target.",
+      byline: "Crispin Lever, Vertical Integration Correspondent",
+      location: "SWINDON",
+      published: "2026-07-21T06:00:00Z",
+      body: [
+        "At 8:03 on Monday, transformation director Nigel Plume unveiled a zipline across the company atrium. He called it a ‘rapid alignment corridor’ designed to reduce the 47 seconds employees wasted walking between Finance and Brand Experience.",
+        "Facilities had declined the idea three times, citing ceilings, insurance and the traditional usefulness of stairs. Plume overruled them after adding ‘culture-critical’ to the risk register and changing every red warning to amber on the executive dashboard.",
+        "During the demonstration, his motivational headset snagged on an artificial tree. Plume stopped halfway above reception, rotating gently while still delivering a presentation on decisive leadership. An unexpected fire drill then required two wardens to stand beneath him with a conference-room beanbag.",
+        "Nobody was harmed, but the building missed its evacuation target by eleven minutes. Plume blamed ‘legacy pedestrian thinking’ and commissioned a workshop. The zipline was removed; the tree received an employee-recognition badge for effective upward challenge."
+      ],
+      pullQuote: "Gravity had not been included in the stakeholder map.",
+      image: "images/mgmt-synergy-zipline-evacuation.webp",
+      imageAlt: "An office manager hangs from an atrium zipline while staff wait below with a beanbag.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "risk registers", "transformation", "office safety", "metrics"]
+    },
+    {
+      id: "mgmt-floor-markings-efficiency-maze",
+      category: "Middle Management",
+      headline: "Warehouse Manager Removes Floor Markings to Eliminate ‘Lane-Based Silos’",
+      standfirst: "The liberated warehouse immediately became so agile that nobody could locate the loading bay.",
+      byline: "Mavis Spindle, Operational Liberation Editor",
+      location: "COVENTRY",
+      published: "2026-07-21T06:15:00Z",
+      body: [
+        "Warehouse optimisation manager Petra Gant ordered every coloured floor marking removed after deciding that lanes encouraged ‘fixed-route thinking.’ Forklifts, pedestrians and cleaning machines would instead negotiate space dynamically using trust, eye contact and a laminated values card.",
+        "Safety staff objected that the lines separated people from machinery. Gant replied that separation was precisely the silo mentality she had been hired to disrupt. Their concern was entered into the risk register under ‘resistance to empowerment.’",
+        "On launch morning, six autonomous pallet carriers encountered Gant’s mobile leadership podium. Following their collision-avoidance rules, they slowly surrounded it with boxes of novelty mugs. Gant remained unhurt but marooned inside a perfectly organised cardboard hexagon.",
+        "The loading team spent three hours rediscovering the exits while shipments accumulated outside. Gant praised the incident as ‘spontaneous cross-functional clustering.’ The floor markings returned overnight, now classified as a visual collaboration framework so the project could still be marked successful."
+      ],
+      pullQuote: "The safety lines returned once they were renamed collaboration infrastructure.",
+      image: "images/mgmt-floor-markings-efficiency-maze.webp",
+      imageAlt: "A warehouse manager is surrounded by boxes after removing the building’s safety lanes.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "warehouses", "optimisation", "safety", "corporate language"]
+    },
+    {
+      id: "mgmt-floating-leadership-dashboard",
+      category: "Middle Management",
+      headline: "Leadership Offsite Sinks Dashboard but Declares Buoyancy Target Achieved",
+      standfirst: "A paddleboard strategy session produced no decisions, one soggy laptop and record levels of visible alignment.",
+      byline: "Barnaby Wake, Aquatic Governance Reporter",
+      location: "WINDERMERE",
+      published: "2026-07-21T06:30:00Z",
+      body: [
+        "Regional manager Simon Crake moved the quarterly review onto paddleboards after a consultant described water as ‘nature’s agile workspace.’ Attendance remained compulsory, although several department heads disclosed that they could neither swim nor approve expenses while kneeling.",
+        "Crake insisted on carrying the performance dashboard aboard his board. He rejected a waterproof case because protective layers, he explained, create distance between leaders and data. The instructor’s objections were recorded as ‘supplier negativity.’",
+        "While demonstrating a pivot, Crake executed one literally. He tipped harmlessly into waist-deep water wearing a buoyancy vest, while his laptop slid beneath a cloud of startled ducks. Staff helped him ashore before the opening slide had finished loading.",
+        "Crake announced that the team had achieved 100 percent immersion in strategy. Finance disagreed, particularly after receiving the replacement invoice. Future offsites will occur beside the lake in a room whose carpet pattern has been certified as sufficiently fluid."
+      ],
+      pullQuote: "The dashboard went under, but visible alignment remained exceptionally high.",
+      image: "images/mgmt-floating-leadership-dashboard.webp",
+      imageAlt: "Managers conduct a paddleboard meeting as their leader and his laptop enter the water.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "offsites", "dashboards", "consultants", "leadership"]
+    },
+    {
+      id: "mgmt-smart-badge-self-escalation",
+      category: "Middle Management",
+      headline: "Surveillance Champion’s Smart Badge Escalates Him to His Own Manager",
+      standfirst: "An executive visibility scheme worked flawlessly until its inventor took an unapproved comfort break.",
+      byline: "Dotty Quorum, Workplace Observation Correspondent",
+      location: "READING",
+      published: "2026-07-21T06:45:00Z",
+      body: [
+        "Productivity manager Clive Sorn introduced smart badges that scored staff on movement, proximity and minutes spent near designated collaboration zones. He assured employees the system measured patterns, not people, while displaying a league table containing everyone’s names.",
+        "Sorn exempted nobody, explaining that leadership meant sharing accountability. He also configured automatic escalation for any worker stationary outside an approved zone for more than eight minutes. Human Resources suggested testing the rules first; he called that ‘manual thinking.’",
+        "On Tuesday, Sorn’s badge reported an extended visit to a quiet corridor beside the lavatories. The platform alerted his manager, cancelled his focus-room access and booked him into a remedial energy workshop led by a chatbot using his own recorded voice.",
+        "He spent the afternoon appealing through a portal he had designed without an appeal button. The badges were later withdrawn for ‘strategic recalibration.’ Sorn’s personal score remains displayed on reception screens because removing historical data requires his suspended administrator privileges."
+      ],
+      pullQuote: "The machine did not know he was management, which was briefly its finest feature.",
+      image: "images/mgmt-smart-badge-self-escalation.webp",
+      imageAlt: "A manager’s own tracking badge denies him access to the office system he introduced.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "surveillance", "productivity", "dashboards", "automation"]
+    },
+    {
+      id: "mgmt-zero-chair-revolving-door",
+      category: "Middle Management",
+      headline: "Zero-Chair Initiative Leaves Manager Circling Lobby on Mobile Lectern",
+      standfirst: "Removing all seats increased motion by 34 percent and useful work by an amount still being calculated.",
+      byline: "Lionel Caster, Furniture Futures Critic",
+      location: "MILTON KEYNES",
+      published: "2026-07-21T07:00:00Z",
+      body: [
+        "Workplace vitality lead Gerald Mott removed every office chair after a dashboard linked standing time with executive visibility. Employees received wheeled lecterns and instructions to ‘bring their energy with them’ between meetings, meals and confidential conversations.",
+        "Occupational health requested adjustable seating for those who needed it. Mott refused, saying exceptions weakened cultural clarity. He demonstrated the lectern personally, rolling through departments while announcing that static furniture belonged to the industrial age.",
+        "Momentum carried him into the lobby’s revolving door, where the lectern fitted neatly between two glass panels. Mott completed seventeen slow circuits before security stopped the mechanism. He remained upright throughout, allowing Communications to classify the incident as active leadership.",
+        "Chairs returned that afternoon under the name ‘stationary wellbeing platforms.’ Mott’s dashboard recorded a remarkable surge in movement and no completed decisions. The revolving door now requires a booking, a spotter and approval from the newly formed Mobility Governance Board."
+      ],
+      pullQuote: "His movement metric soared while his destination remained stubbornly unchanged.",
+      image: "images/mgmt-zero-chair-revolving-door.webp",
+      imageAlt: "A manager becomes stuck circling a revolving door with his mobile standing desk.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "workplace trends", "metrics", "wellbeing", "bureaucracy"]
+    },
+    {
+      id: "mgmt-rooftop-risk-register",
+      category: "Middle Management",
+      headline: "Risk Workshop Moves to Roof, Then Locks Its Facilitator Outside",
+      standfirst: "A manager seeking ‘blue-sky risk ownership’ became the only hazard requiring immediate escalation.",
+      byline: "Fenella Hatch, Exposure and Umbrellas Desk",
+      location: "LEEDS",
+      published: "2026-07-21T07:15:00Z",
+      body: [
+        "Compliance manager Vernon Bleak relocated the annual risk workshop to the office roof so participants could ‘see beyond the operational horizon.’ Facilities warned that the access door locked automatically. Bleak added this to a sticky note labelled ‘interesting edge case.’",
+        "He then sent everyone downstairs to fetch coloured markers, promising to hold the strategic space. The door closed behind the final attendee. Bleak discovered that his phone, key card and weatherproof jacket were inside beside a flipchart reading ‘Always maintain fallback controls.’",
+        "For forty minutes he waved through a window while the escalation chain debated whether rooftop retrieval belonged to Security, Estates or People Experience. A window cleaner eventually alerted reception and lent Bleak a spare coat until the door was opened.",
+        "The workshop concluded indoors. Bleak reported that the exercise had produced an ‘embodied understanding of unmanaged exposure.’ The lock remains unchanged, but roof access now requires a sixteen-page risk assessment authored by the only person who ignored it."
+      ],
+      pullQuote: "The facilitator became both the hazard and the unresolved action.",
+      image: "images/mgmt-rooftop-risk-register.webp",
+      imageAlt: "A risk manager waits on an office roof after locking himself outside.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "risk registers", "workshops", "escalation", "compliance"]
+    },
+    {
+      id: "mgmt-paperless-backup-code-lockout",
+      category: "Middle Management",
+      headline: "Paperless Champion Shreds Only Copy of Smart Office Recovery Codes",
+      standfirst: "The organisation reached zero paper moments before reaching zero access.",
+      byline: "Poppy Ream, Document Extinction Correspondent",
+      location: "BRISTOL",
+      published: "2026-07-21T07:30:00Z",
+      body: [
+        "Sustainability programme manager Hugo Vell ordered a ceremonial shredding of every printed manual, checklist and emergency envelope. Cameras captured him feeding the final pages into a machine while declaring that paper represented ‘institutional reluctance to trust the cloud.’",
+        "IT asked to retain the sealed recovery codes for the building’s smart locks. Vell declined because exceptions diluted the headline metric. He entered the concern into a spreadsheet stored on the same cloud account those codes could restore.",
+        "Minutes later, his demonstration update restarted the access controller. Every meeting pod locked, including the glass innovation booth containing Vell, his phone and the ceremonial scissors. Colleagues communicated with him by holding handwritten notes against the window.",
+        "A locksmith released him before lunch. Vell later claimed the episode proved demand for a stronger digital roadmap. Emergency codes are again kept on paper inside a safe, although the dashboard describes them as ‘offline resilience artefacts’ to preserve the paperless score."
+      ],
+      pullQuote: "The cloud remained available to everyone who could still enter the building.",
+      image: "images/mgmt-paperless-backup-code-lockout.webp",
+      imageAlt: "A paperless programme manager waits inside a locked glass booth after destroying backup codes.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "paperless office", "resilience", "dashboards", "technology"]
+    },
+    {
+      id: "mgmt-one-way-corridor-loop",
+      category: "Middle Management",
+      headline: "Efficiency Chief Spends Afternoon Following Her Own One-Way Corridors",
+      standfirst: "A workplace traffic scheme eliminated collisions by making every destination reachable only tomorrow.",
+      byline: "Cedric Verge, Internal Transport Editor",
+      location: "NOTTINGHAM",
+      published: "2026-07-21T07:45:00Z",
+      body: [
+        "Process manager Elaine Forth converted office corridors into a one-way network after observing two colleagues politely sidestep near the photocopier. Her consultants predicted smoother flow, fewer collisions and a measurable increase in purposeful walking.",
+        "Staff noted that the proposed arrows created a closed loop around Accounts. Forth dismissed the objection because the simulation contained no ‘negative destination events.’ She personally launched the scheme carrying a large foam arrow and a stopwatch.",
+        "Attempting to reach a meeting three doors away, Forth obeyed every route and completed nine circuits of the building. Each lap triggered another motion sensor, making her dashboard celebrate unprecedented workspace engagement while the unattended meeting repeatedly extended itself.",
+        "Security eventually opened a normally locked cross-corridor. The arrows were removed, but Forth retained the engagement figures in her quarterly report. The consultants recommended a second phase to investigate why employees had begun climbing through the stationery cupboard."
+      ],
+      pullQuote: "She reached every performance target except the room she wanted.",
+      image: "images/mgmt-one-way-corridor-loop.webp",
+      imageAlt: "An efficiency manager loops around an office after imposing one-way corridors.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "efficiency", "consultants", "metrics", "office design"]
+    },
+    {
+      id: "mgmt-ice-sculpture-server-cooling",
+      category: "Middle Management",
+      headline: "Manager Cools Server Room with Ice Sculpture of Company Values",
+      standfirst: "The temporary cooling solution lasted until the value marked ‘resilience’ became a puddle.",
+      byline: "Aubrey Melt, Infrastructure Culture Reporter",
+      location: "PETERBOROUGH",
+      published: "2026-07-21T08:00:00Z",
+      body: [
+        "Culture and operations manager Basil Crimp commissioned an ice sculpture for the summer town hall. When the server room overheated, he proposed moving it beside the equipment, combining emergency cooling with ‘visible values activation.’",
+        "Engineers warned about condensation and requested portable cooling units. Crimp rejected the hire cost because the ice had already been charged to employee engagement. He wheeled the sculpture inside and positioned a bucket beneath its least inspiring corner.",
+        "The sculpture cooled nothing useful, softened rapidly and blocked the doorway with a glossy lake. Crimp’s smart shoes lost traction, carrying him gently backward onto a stack of unopened branded cushions. Systems shut down safely before water reached any equipment.",
+        "Services resumed after proper coolers arrived. Crimp described the cushions as a successful resilience investment and added ‘seasonal state change’ to the risk register. Next year’s values sculpture will be made from sponge and displayed somewhere without electricity."
+      ],
+      pullQuote: "Resilience melted first, followed closely by accountability.",
+      image: "images/mgmt-ice-sculpture-server-cooling.webp",
+      imageAlt: "A manager sits on cushions beside a melting ice sculpture in a server room.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "resilience", "infrastructure", "company values", "risk registers"]
+    },
+    {
+      id: "mgmt-drone-inventory-coat-swarm",
+      category: "Middle Management",
+      headline: "Indoor Drone Trial Successfully Inventories Manager’s Jacket 214 Times",
+      standfirst: "A fleet of autonomous counters met every accuracy target after choosing one exceptionally visible garment.",
+      byline: "Tansy Rotor, Unmanned Office Affairs",
+      location: "DERBY",
+      published: "2026-07-21T08:15:00Z",
+      body: [
+        "Inventory manager Keith Purl bought twelve miniature drones to count warehouse stock without interrupting human work. The supplier recommended a staged trial with two machines. Purl launched all twelve because scale, he said, was the difference between experimentation and leadership.",
+        "He also wore a new reflective safety jacket whose fastening strips closely resembled the drones’ shelf markers. Technicians spotted the conflict during calibration, but Purl had already ended questions so the launch could fit before his next steering committee.",
+        "The fleet selected him as high-priority inventory. Wherever Purl moved, twelve drones followed, repeatedly scanning his sleeves and herding him toward the returns cage. He entered voluntarily to stop them alarming and waited behind mesh while staff powered them down.",
+        "The dashboard reported 214 perfectly consistent scans and classified the trial as exceptionally accurate. Purl approved a wider rollout after changing the metric from ‘distinct items counted’ to ‘successful observations.’ His jacket is now stored under controlled access."
+      ],
+      pullQuote: "The system counted precisely what management had made impossible to ignore.",
+      image: "images/mgmt-drone-inventory-coat-swarm.webp",
+      imageAlt: "Inventory drones repeatedly scan a manager’s reflective jacket and follow him into a cage.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "drones", "automation", "metrics", "warehouses"]
+    },
+    {
+      id: "mgmt-algorithmic-trust-fall",
+      category: "Middle Management",
+      headline: "Algorithm Schedules Trust Fall During Manager’s Budget Call",
+      standfirst: "The facilitator delegated timing to software and entered the foam pit at the least collaborative moment.",
+      byline: "Roland Cushion, Organisational Gravity Writer",
+      location: "YORK",
+      published: "2026-07-21T08:30:00Z",
+      body: [
+        "Development manager Imogen Sleet introduced algorithmic trust falls at the leadership retreat. Software would choose an unpredictable moment, proving that genuine trust cannot be rehearsed, scheduled or weakened by warning colleagues that someone was about to fall backward.",
+        "The trainer requested a manual pause during calls and meals. Sleet refused because human intervention contaminates behavioural data. She connected the trigger to everyone’s calendars, then began a budget call beside a deep foam demonstration pit.",
+        "Midway through rejecting three training requests, Sleet’s watch chimed. Faithful to her own policy, she fell backward into the foam. She landed safely but sank beyond reach of her laptop camera, continuing negotiations while two junior managers searched for the retrieval ladder.",
+        "The board approved the smallest budget after interpreting the muffled audio as agreement. Sleet later praised the exercise for exposing communication gaps. Manual pause controls were added, available only after completing an online module she had not funded."
+      ],
+      pullQuote: "Her policy caught her perfectly; her escalation chain did not.",
+      image: "images/mgmt-algorithmic-trust-fall.webp",
+      imageAlt: "A manager conducts a budget call from a foam pit after triggering her own trust exercise.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "workshops", "algorithms", "training", "budgets"]
+    },
+    {
+      id: "mgmt-narrow-parking-bay-sunroof",
+      category: "Middle Management",
+      headline: "Parking Optimiser Delivers Presentation Through Sunroof of Wedged Car",
+      standfirst: "Narrower bays increased theoretical capacity and removed all practical methods of leaving a vehicle.",
+      byline: "Gloria Kerb, Corporate Motoring Analyst",
+      location: "BASINGSTOKE",
+      published: "2026-07-21T08:45:00Z",
+      body: [
+        "Estates manager Dominic Rake increased headquarters parking capacity by repainting every bay twelve centimetres narrower. His dashboard immediately gained 38 spaces, although no additional tarmac, entrances or physically plausible cars had appeared.",
+        "Staff warned that doors could not open when adjacent bays were occupied. Rake called this ‘legacy dependency on lateral access’ and volunteered his large company car for the launch photograph between two pool vehicles.",
+        "The car fitted exactly. Its doors did not. Rake climbed through the sunroof but became reluctant to abandon his presentation equipment below, so he delivered the morning briefing waist-high above the roof while Facilities moved both neighbouring cars.",
+        "The bays were restored by evening. Rake’s report still claimed 38 new spaces because reversing the paint did not reverse the recorded benefit. A mobility consultant is now studying whether future drivers can be issued narrower expectations."
+      ],
+      pullQuote: "The capacity existed mainly inside the spreadsheet.",
+      image: "images/mgmt-narrow-parking-bay-sunroof.webp",
+      imageAlt: "A parking manager gives a presentation through his sunroof because the bays are too narrow.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "parking", "optimisation", "dashboards", "consultants"]
+    },
+    {
+      id: "mgmt-fog-machine-brainstorm",
+      category: "Middle Management",
+      headline: "Brainstorming Fog Machine Activates Every Sprinkler Except Manager’s Imagination",
+      standfirst: "An immersive strategy session ended with excellent water pressure and limited strategic visibility.",
+      byline: "Vera Nimbus, Atmospheric Meetings Correspondent",
+      location: "MANCHESTER",
+      published: "2026-07-21T09:00:00Z",
+      body: [
+        "Innovation manager Celia Mews hired a theatrical fog machine to make the annual planning workshop ‘less visually constrained.’ Participants would enter uncertainty together and discover ideas without relying on familiar objects such as doors, clocks or fire sensors.",
+        "Facilities refused permission. Mews escalated until a deputy director approved the session on condition that risks were documented. She listed ‘temporary mystique’ and ‘possible damp energy,’ then placed umbrellas beside the projector as mitigation.",
+        "The fog triggered the sprinkler system within seconds. Mews opened an umbrella indoors, which caught the stream and funnelled water directly into her presentation case. Everyone evacuated safely while her laminated idea cards floated around the empty conference room.",
+        "Mews described the outcome as a live demonstration of disruption. The workshop was rescheduled in a dry room with transparent air. Her risk register now includes sprinklers, although only under the heading ‘unplanned stakeholder participation.’"
+      ],
+      pullQuote: "The room achieved total immersion before producing a single idea.",
+      image: "images/mgmt-fog-machine-brainstorm.webp",
+      imageAlt: "Sprinklers soak a strategy workshop after its manager starts an indoor fog machine.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "workshops", "innovation", "risk registers", "office safety"]
+    },
+    {
+      id: "mgmt-agile-sprint-turnstile",
+      category: "Middle Management",
+      headline: "Agile Director Loses Literal Sprint to Headcount-Freeze Turnstile",
+      standfirst: "A compulsory race across headquarters ended when its organiser’s own access was optimised away.",
+      byline: "Percy Baton, Corporate Athletics Desk",
+      location: "SHEFFIELD",
+      published: "2026-07-21T09:15:00Z",
+      body: [
+        "Delivery director Frank Sprint renamed the monthly planning cycle an ‘actual agile sprint’ and required managers to race between reception and the project room. He promised that physical urgency would remove hesitation from software estimates.",
+        "Security asked participants not to run through access gates. Sprint overruled them and linked finishing times to performance reviews. Meanwhile, his cost-cutting programme automatically deactivated badges belonging to anyone recorded as ‘non-delivery overhead,’ including his own transformation office.",
+        "At the starting whistle, Sprint surged ahead and met a locked turnstile. His foam baton sailed harmlessly into a decorative planter while the engineering team walked through another gate using valid badges. They reached the project room without changing their estimates.",
+        "Sprint cancelled the race and blamed inconsistent infrastructure velocity. His access returned after a four-level escalation. The sprint metric was retained, but future events measure how quickly managers approve the realistic schedules they previously delayed."
+      ],
+      pullQuote: "He outran the team and arrived behind it.",
+      image: "images/mgmt-agile-sprint-turnstile.webp",
+      imageAlt: "An agile manager’s own access policy stops him at a turnstile during an office race.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "agile", "metrics", "access control", "delivery"]
+    },
+    {
+      id: "mgmt-anonymous-feedback-catchphrase",
+      category: "Middle Management",
+      headline: "Anonymous Feedback Bot Identifies Manager by Saying ‘Let’s Double-Click’",
+      standfirst: "A leader’s favourite phrases defeated the expensive anonymity system before lunch.",
+      byline: "Hester Echo, Confidential Culture Editor",
+      location: "CAMBRIDGE",
+      published: "2026-07-21T09:30:00Z",
+      body: [
+        "Engagement manager Rupert Bland introduced an anonymous voice system so employees could challenge decisions without fear. To prove safety, he recorded the first submission himself, criticising an unnamed leader for excessive meetings and weak listening.",
+        "The platform disguised pitch but preserved vocabulary. Within seconds, its summary included ‘double-click,’ ‘circle back’ and ‘socialise the journey’—phrases Bland used so relentlessly that the office sweepstake identified him before the audio finished.",
+        "Worse, the bot followed his escalation rules and forwarded criticism of senior management to the subject’s line manager. Bland therefore received a formal request to investigate his own complaint, interview himself and produce a corrective action plan by Friday.",
+        "He closed the case after concluding that no witness could be considered independent. The system remains active, but employees now submit feedback using concise ordinary English, a practice management has labelled suspiciously difficult to attribute."
+      ],
+      pullQuote: "Anonymity survived the technology but not the vocabulary.",
+      image: "images/mgmt-anonymous-feedback-catchphrase.webp",
+      imageAlt: "Colleagues recognise a manager’s anonymous recording from his familiar corporate phrases.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "feedback", "corporate language", "automation", "culture"]
+    },
+    {
+      id: "mgmt-resilience-left-shoes",
+      category: "Middle Management",
+      headline: "Procurement Split Creates 4,000 Left Shoes and One Right-Footed Crisis",
+      standfirst: "A resilience manager diversified the supply chain by separating footwear into incompatible workstreams.",
+      byline: "Myrtle Lace, Strategic Footwear Correspondent",
+      location: "NORTHAMPTON",
+      published: "2026-07-21T09:45:00Z",
+      body: [
+        "Resilience manager Colin Welt decided paired safety shoes represented a dangerous single point of dependency. He divided procurement into left and right workstreams, each with separate suppliers, dashboards, steering groups and colour-coded escalation routes.",
+        "The left-foot team ordered early and exceeded target. The right-foot contract remained in consultation after Welt added twelve approval gates to reduce risk. He celebrated delivery of 4,000 left shoes as 50 percent completion achieved ahead of schedule.",
+        "For the launch photograph, Welt insisted on wearing two left shoes to demonstrate confidence. He shuffled onto the presentation platform, rotated slowly and settled unharmed into a display chair when neither foot agreed about direction.",
+        "Staff retained their existing matched footwear while the new stock filled three storerooms. Welt commissioned a consultant to explore ‘right-side acceleration.’ The consultant’s first recommendation was to purchase shoes in pairs, now scheduled for executive review next quarter."
+      ],
+      pullQuote: "Every workstream succeeded except the one involving feet.",
+      image: "images/mgmt-resilience-left-shoes.webp",
+      imageAlt: "A procurement manager demonstrates two left shoes beside a warehouse full of unmatched footwear.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "procurement", "resilience", "consultants", "supply chains"]
+    },
+    {
+      id: "mgmt-seven-minute-meeting-lock",
+      category: "Middle Management",
+      headline: "Meeting-Reduction System Books Manager into 23 Consecutive Escalations",
+      standfirst: "Seven-minute rooms cut individual meetings while multiplying the machinery needed to discuss them.",
+      byline: "Quentin Minute, Calendar Efficiency Reporter",
+      location: "WATFORD",
+      published: "2026-07-21T10:00:00Z",
+      body: [
+        "Productivity manager Sheila Clock limited every meeting room booking to seven minutes. Doors would unlock automatically at the end, lights would flash and unfinished topics would move into a mandatory escalation session with the next management tier.",
+        "Employees predicted that complex decisions might require longer. Clock replied that complexity was usually a symptom of insufficient urgency. She scheduled herself to demonstrate the system by resolving the annual budget before the first warning light.",
+        "At minute seven, the room released her with four questions unanswered. Each generated its own escalation, whose unresolved points generated more. By lunchtime, Clock had 23 linked meetings across six floors and was following a trolley carrying the same untouched spreadsheet.",
+        "The original budget was eventually approved by email in three sentences. Clock’s dashboard celebrated a 61 percent reduction in average meeting length while omitting the 900 percent increase in meetings. The seven-minute rule now awaits review during a three-day workshop."
+      ],
+      pullQuote: "The meetings became shorter in the same way crumbs become more numerous.",
+      image: "images/mgmt-seven-minute-meeting-lock.webp",
+      imageAlt: "A manager moves between dozens of short meetings generated by her own scheduling policy.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "meetings", "productivity", "escalation", "dashboards"]
+    },
+    {
+      id: "mgmt-lean-lift-button-removal",
+      category: "Middle Management",
+      headline: "Lean Manager Removes ‘Redundant’ Lift Buttons and Misses His Own Town Hall",
+      standfirst: "A ruthless interface simplification left every floor accessible through a single committee-approved destination.",
+      byline: "Agnes Elevate, Vertical Process Correspondent",
+      location: "BIRMINGHAM",
+      published: "2026-07-21T10:15:00Z",
+      body: [
+        "Continuous improvement manager Malcolm Tern counted 96 lift buttons across headquarters and declared them duplicated infrastructure. His lean initiative replaced them with one touchscreen offering a default destination selected weekly by the Floor Prioritisation Committee.",
+        "Engineers explained that people worked on different floors. Tern said individual destinations encouraged local optimisation. He approved Tuesday’s default—Level Six—because his town hall had originally been booked there before moving to the ground-floor auditorium.",
+        "On launch day, Tern entered the lift and ascended automatically. He rode down, but the system sent him back to Six before the doors opened at ground level. For twenty minutes, he delivered his speech by video while repeatedly passing between the same two points.",
+        "Facilities restored the buttons using the emergency override he had called ‘interface clutter.’ Tern’s programme reported a 99 percent reduction in choice complexity. The committee now meets weekly to decide whether employees may press things themselves."
+      ],
+      pullQuote: "The lift became perfectly streamlined once nobody could choose where it went.",
+      image: "images/mgmt-lean-lift-button-removal.webp",
+      imageAlt: "A lean manager rides past his own event after removing the lift’s destination buttons.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "lean management", "simplification", "committees", "office technology"]
+    }
+  ];
+
+  managementMishaps.forEach(function (article) {
+    window.NEWS_ARTICLES.push(article);
+  });
+})();
+
 window.NEWS_ARTICLES.push(
 {
     "id": "mot-1903-paris-madrid-horse-tow",
@@ -20488,3 +21243,501 @@ window.NEWS_ARTICLES.forEach(function (article) {
   });
 })();
 window.NEWS_ARTICLES.push({id:"voices-the-sprocket-family",image:"images/voices-the-sprocket-family.png",imageAlt:"A steel sprocket parent stands with a sprocket spouse and three sprocket children beside their gear-built home.",imageCaption:"The Sprocket family prepares to roll out for an evening inspection.",category:"Voices",headline:"The Sprocket Family",standfirst:"A new Daily Flange family verse follows one small sprocket through a day of knocks, snags and unexpected belonging.",byline:"An original Daily Flange verse",location:"THE FAMILY GEAR",published:"2026-07-20T23:59:00",body:["A sprocket lived snug in a family gear,\nWith a sprocket wife and sprocket children near.\nThere was Sprocket Dad, and Mum with the gleam,\nAnd three little sprockets who whirred as a team.","Their house had a chimney, a window and latch,\nA porch made of washers and one rusty hatch.\nThey breakfasted daily on toast, tea and oil,\nThen polished their teeth with a small strip of foil.","`Good morning!' cried Dad. `The day's bright and clear.\nI'm off to the depot to tighten a gear.\nI'll be back by the six-bell, or maybe before,\nSo mind the red button and don't jam the door.'","The children all promised. They nodded in line.\nBut promises wobble when children are nine-\nWell, not nine: there were three, as the heading explains,\nBut each had a talent for testing the brakes.","The first found a wheel by the old garden wall.\nThe second found two and connected them all.\nThe third found a lever with `PULL' painted red,\nAnd pulled it so hard that the shed roof was shed.","They rolled through the meadow, they rattled the lane,\nThey clattered past buckets and under a crane.\nThey whizzed past the pump-house, they whizzed past the mill,\nAnd gathered such speed that they couldn't sit still.","A gust caught the smallest and sent him astray.\nHe spun through a hedgerow and clinked on a tray.\nThe middle one followed, propelled by a spring,\nWhile eldest went sailing on somebody's wing.","`Come back!' shouted Mum, with a wobble and clank.\nShe rolled by the pond and she rolled by the bank.\nShe asked a tin badger, a boiler and bee,\n`Have you seen three small sprockets? They're family to me.'","`One flashed past the turnstile.' `One crossed by the shed.'\n`One borrowed my toolbox and took it,' they said.\nSo Mum thanked them all warmly and rolled with a sigh,\nPast a sign saying DEPOT and an arrow pointing nigh.","Meanwhile, in the depot, Dad tightened a brace.\nHe heard three small chimes and a clatter of grace.\nHe peered through the window. He looked down the track.\n`Those noises,' he murmured, `sound terribly back.'","He followed the racket through bramble and fern,\nPast a wheel with a cold and a kettle with burn.\nHe found all three children, quite stuck in a row,\nIn a cart that was pleased but had nowhere to go.","The eldest was wedged in the cart's little gate.\nThe middle was winding a rope round a plate.\nThe youngest was laughing and shouting, `Hooray!\nWe're building a vehicle. Look at it sway!'","Dad did not shout. He inspected the design.\nHe loosened one bolt and he straightened the line.\nThen Mum came rolling, with oil in a tin,\nAnd said, `A good rescue begins with a grin.'","They worked as a family, sprocket by sprocket,\nThey freed the bent axle and tightened the socket.\nThe cart gave a cough, then a tremble, then-CLANG!\nIt rolled to the depot with one final bang.","That evening they ate by the gear-house door,\nWith three little helmets lined up on the floor.\n`Tomorrow,' said Dad, `we'll stay nearer home.'\n`Tomorrow,' said Mum, `we'll attach a long chrome-'","But three little sprockets were already asleep,\nWith oil on their eyebrows and dreams running deep.\nAnd the sprocket wife smiled as she dimmed the light:\n`A family gear turns best when its teeth fit just right.'"],pullQuote:"A family gear turns best when its teeth fit just right.",tags:["voices","poetry","family","sprockets","flangelo"]});
+
+// ============================================================
+// SERIES: MIDDLE MANAGEMENT — FINAL FOURTEEN SELF-INFLICTED MISHAPS
+// ------------------------------------------------------------
+// Fictional, non-graphic workplace satire about managerial self-defeat.
+// ============================================================
+(function () {
+  var imageCaption = "AI-generated editorial illustration of a fictional workplace mishap.";
+  var noticeLabel = "Career selection notice";
+  var notice = "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.";
+  var managementMishapsFinalShift = [
+    {
+      id: "mgmt-cable-label-reorganisation", category: "Middle Management",
+      headline: "Manager Relabels Every Cable by Business Outcome and Unplugs the Presentation",
+      standfirst: "A tidiness initiative replaced useful technical descriptions with strategic language and made electricity unexpectedly difficult to locate.",
+      byline: "Clive Margin, Connectivity Correspondent", location: "SLOUGH", published: "2026-07-21T15:00:00Z",
+      body: [
+        "A regional operations manager disliked the untidy labels beneath the office desks. Words such as ‘power’, ‘network’ and ‘projector’ struck him as technical silos, so he replaced them with strategic outcomes including Momentum, Trust and Customer Delight.",
+        "Engineers warned that the new labels revealed nothing about where each cable went. He answered that this was precisely the point: employees should focus on value rather than infrastructure. He then bound every lead into one immaculate bundle with reusable ties.",
+        "At the launch presentation, he needed to disconnect a desk lamp. He selected the cable marked Illumination Journey and instead removed power from the projector, laptop dock and network switch. His transformation dashboard vanished just as it reached its only upward arrow.",
+        "Technicians restored service by tracing each wire physically and returning the old labels. The manager described the blackout as a successful dependency-mapping exercise. His cable bundle remains under the desk, now labelled Operational Complexity and left entirely alone."
+      ],
+      pullQuote: "Electricity declined to align itself with the new terminology.", image: "images/mgmt-cable-label-reorganisation.webp",
+      imageAlt: "A manager holds a cable labelled Customer Delight beside a dark presentation screen and a neat bundle of wires.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "cables", "rebranding", "office technology", "self-defeat"]
+    },
+    {
+      id: "mgmt-voice-only-documentation", category: "Middle Management",
+      headline: "Efficiency Director Bans Keyboards and Dictates Confidential Savings Plan Aloud",
+      standfirst: "Voice-first working accelerated document production and the speed at which everybody learned what management thought of them.",
+      byline: "Deirdre Spindle, Workplace Systems Editor", location: "READING", published: "2026-07-21T15:15:00Z",
+      body: [
+        "An efficiency director calculated that typing occupied both hands while speech required only the mouth. He removed keyboards from his department for a voice-first pilot, promising that staff would create documents while remaining physically available for more strategic activity.",
+        "The open office immediately filled with forty people dictating emails, correcting punctuation and loudly saying ‘delete that’. The software confused project codes with sandwich orders, while every nearby device attempted to answer every nearby employee at once.",
+        "The director demonstrated the system by composing a confidential cost-saving proposal. His microphone selected the communal speaker as its input and the department heard him dictate reductions to their training, biscuits and headcount, followed by a private reminder to increase his own allowance.",
+        "Staff recovered their keyboards from storage and submitted written objections before he had finished saying ‘new paragraph’. He blamed insufficient vocal discipline. The voice pilot now survives only on his computer, where it has learned to replace ‘efficiency’ with ‘please reconsider’."
+      ],
+      pullQuote: "The confidential plan achieved complete departmental reach in under four minutes.", image: "images/mgmt-voice-only-documentation.webp",
+      imageAlt: "A manager dictates at a desk while many office computers transcribe his confidential proposal on large screens.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "dictation", "confidentiality", "productivity", "office technology"]
+    },
+    {
+      id: "mgmt-velcro-collaboration-suit", category: "Middle Management",
+      headline: "Collaboration Chief Wears Velcro Suit and Becomes Attached to Company Values",
+      standfirst: "A wearable demonstration of cross-functional bonding produced the strongest alignment yet recorded by the plasterboard.",
+      byline: "Petra Fasten, Culture Desk", location: "WARRINGTON", published: "2026-07-21T15:30:00Z",
+      body: [
+        "A culture manager ordered hook-and-loop panels for the collaboration wall, where teams could attach ideas without relying on pins or personal conviction. To launch the system, he commissioned a matching suit covered entirely in the softer half of the fastening material.",
+        "He invited employees to place fabric values on him as he walked through the office. Accountability accumulated across his sleeves, Innovation covered one knee and Courage adhered firmly to the back of his jacket where he could neither read nor remove it.",
+        "For the finale, he leaned against the collaboration wall to demonstrate organisational alignment. Every square centimetre of the suit engaged at once. He remained upright and unharmed but immovable, delivering the rest of his speech with his face turned towards a panel marked Listening.",
+        "Facilities peeled him free after consulting the manufacturer. The suit was retired, and staff now attach suggestions to the wall with ordinary reusable tabs. His report praised record values retention but omitted that several remained on the wall with parts of his cuff."
+      ],
+      pullQuote: "He achieved total alignment and lost all freedom of movement.", image: "images/mgmt-velcro-collaboration-suit.webp",
+      imageAlt: "A manager in a Velcro-covered suit is safely stuck to a wall of fabric company values.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "corporate culture", "collaboration", "company values", "self-defeat"]
+    },
+    {
+      id: "mgmt-kpi-balloon-ceiling", category: "Middle Management",
+      headline: "Performance Manager Gives Every KPI a Balloon and Loses the Results to the Ceiling",
+      standfirst: "A visual celebration of rising metrics continued upwards after the figures themselves stopped cooperating.",
+      byline: "Basil Quoin, Performance Desk", location: "LEICESTER", published: "2026-07-21T15:45:00Z",
+      body: [
+        "A performance manager decided spreadsheets failed to make achievement visible. He assigned one helium balloon to every key indicator, with ribbon length representing quarterly growth, and promised senior visitors a dashboard they could physically walk beneath.",
+        "Good results received green balloons. Poor results received pale green balloons because he considered red demotivating. When several indicators declined, he shortened their ribbons until the labels hovered above eye level, making underperformance both harder to read and more inspirational.",
+        "During his demonstration, the clip holding all forty ribbons opened. The balloons rose into the high atrium and wrapped themselves around acoustic panels. The manager jumped repeatedly beneath them with a presentation pointer while the managing director asked which balloon represented customer complaints.",
+        "Facilities retrieved the display with a long pole the next morning. By then, several labels had detached and the strongest result belonged apparently to Absence. The manager declared the installation future-focused because every measure was literally overhead and beyond immediate intervention."
+      ],
+      pullQuote: "Underperformance improved as soon as nobody could reach its label.", image: "images/mgmt-kpi-balloon-ceiling.webp",
+      imageAlt: "A manager points upward as labelled KPI balloons gather against a high office ceiling.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "metrics", "balloons", "dashboards", "performance"]
+    },
+    {
+      id: "mgmt-sandbag-agility-course", category: "Middle Management",
+      headline: "Agility Manager Builds Sandbag Course and Blocks His Only Route to the Podium",
+      standfirst: "The department became highly adaptable after its leader converted a simple corridor into defensive earthworks.",
+      byline: "Mavis Traverse, Organisational Fitness Reporter", location: "PETERBOROUGH", published: "2026-07-21T16:00:00Z",
+      body: [
+        "An organisational agility manager believed employees understood change intellectually but not in their calves. He arranged lightweight training sandbags across a wide internal concourse, creating an obstacle course between the department and a small podium bearing the words Adapt or Remain Stationary.",
+        "Safety staff asked for a clear route around it. He refused because an alternative path would permit what he called strategic avoidance. He then added directional flags that sent participants through every obstacle twice before allowing them to reach their desks.",
+        "To open the programme, he attempted the course carrying a laptop, pointer and ceremonial bottle of water. Halfway through, he discovered that his own revised flags formed a closed loop. He circled the same padded sandbag while employees used an ordinary side corridor he had forgotten to include.",
+        "He abandoned the demonstration after nine laps and addressed the podium by video from six metres away. The course was dismantled before lunch. His report praised staff adaptability and recorded leadership arrival as pending, subject to route clarification."
+      ],
+      pullQuote: "The workforce adapted by going around him.", image: "images/mgmt-sandbag-agility-course.webp",
+      imageAlt: "An office manager follows flags around a safe padded sandbag course while staff use a clear side corridor.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "agility", "training", "obstacle courses", "self-defeat"]
+    },
+    {
+      id: "mgmt-centralised-stapler-tether", category: "Middle Management",
+      headline: "Procurement Manager Centralises Stapler by Attaching It to Herself",
+      standfirst: "Stationery control reached its purest form when every unfinished document began following the budget holder.",
+      byline: "Joyce Fluting, Office Supplies Correspondent", location: "NORTHAMPTON", published: "2026-07-21T16:15:00Z",
+      body: [
+        "A procurement manager discovered seventeen staplers in a department budgeted for twelve. She confiscated them all and introduced a single shared model attached to her belt by a long retractable cord, ensuring every fastening decision received appropriate oversight.",
+        "Employees queued beside her desk with expense forms, specifications and menus awaiting approval. To increase throughput, she encouraged them to keep hold of their documents while she stapled. The cord soon carried a fluttering chain of papers linking half the department to her waist.",
+        "When an auditor arrived, she stood to demonstrate the saving. The document chain followed, collecting a wastebasket, two clipboards and a lightweight display stand. She completed one dignified circuit of the office before the retractable mechanism reached its limit and recalled the stapler sharply into its holder.",
+        "Nobody was hurt, but the audit found six hours of lost work and one very well-controlled stapler. The original equipment returned that afternoon. Procurement now counts stationery by asking whether people can finish their jobs without physically following the manager."
+      ],
+      pullQuote: "Central control worked perfectly until the department needed to move.", image: "images/mgmt-centralised-stapler-tether.webp",
+      imageAlt: "A procurement manager trails a harmless chain of stapled office documents from a tethered stapler.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "procurement", "stationery", "cost control", "office life"]
+    },
+    {
+      id: "mgmt-hierarchical-lanyard-length", category: "Middle Management",
+      headline: "Manager Makes Senior Lanyards Longer and Tows the Vision Display Away",
+      standfirst: "A wearable hierarchy gave leadership twelve extra inches of authority and an unexpected relationship with a mobile banner.",
+      byline: "Rufus Toggle, Corporate Dress Correspondent", location: "BRACKNELL", published: "2026-07-21T16:30:00Z",
+      body: [
+        "A brand manager decided identical identity lanyards flattened the organisation. His replacement system assigned length by seniority: short cords for trainees, chest-level badges for managers and a floor-length executive edition described as visibly accountable from any angle.",
+        "Staff pointed out that the longest version brushed against desks and storage boxes. He called this constructive contact with operations. For launch day, he added a wide metal badge bearing the full five-year vision and walked briskly through a display of wheeled promotional banners.",
+        "The badge slipped beneath one banner base and caught without harming him. Unaware, he continued across reception towing the entire vision display behind him. Two further banners joined the procession, advertising Agility, Focus and a conference that had taken place the previous autumn.",
+        "Security stopped the parade before it reached the pavement. Standard-length breakaway lanyards returned immediately. The manager’s review concluded that senior visibility had increased dramatically, particularly among people who heard the banners approaching before they saw him."
+      ],
+      pullQuote: "The hierarchy became visible several seconds before its manager arrived.", image: "images/mgmt-hierarchical-lanyard-length.webp",
+      imageAlt: "A manager with an overlong lanyard safely tows wheeled corporate banners across an office reception.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "lanyards", "hierarchy", "branding", "office life"]
+    },
+    {
+      id: "mgmt-leadership-ladder", category: "Middle Management",
+      headline: "Manager Removes Lower Rungs from Ladder to Encourage Aspiration",
+      standfirst: "The warehouse hierarchy became admirably visible and temporarily impossible to descend.",
+      byline: "Vernon Clipboard, Leadership Correspondent", location: "COVENTRY", published: "2026-07-21T16:45:00Z",
+      body: [
+        "A distribution manager believed the warehouse ladder sent the wrong cultural message because every employee could begin at the bottom. He removed its three lowest rungs, declaring that ambitious staff should ‘enter at leadership level’ and that excessive accessibility encouraged modest expectations.",
+        "Asked how anyone should reach the remaining rungs, he positioned a swivel platform beneath them and demonstrated. The platform rolled backwards as soon as he transferred his weight, leaving him clinging safely but inconveniently above a pallet of padded envelopes.",
+        "Staff offered assistance, but he declined because rescue had not been included in the approved workflow. He spent forty minutes issuing directions from the ladder while an apprentice completed the required working-at-height assessment and located the removed parts.",
+        "The apprentice restored all three rungs and descended without incident. The manager later described the episode as a successful delegation exercise. A new sign beside the ladder now reads ‘CAREER PROGRESSION’, although employees added a smaller notice advising users to begin with the bottom step."
+      ],
+      pullQuote: "He reached leadership level immediately and could find no approved route back.", image: "images/mgmt-leadership-ladder.webp",
+      imageAlt: "A manager clings safely to a low warehouse ladder after removing its bottom rungs.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "warehousing", "leadership", "safety", "career progression"]
+    },
+    {
+      id: "mgmt-binder-raft", category: "Middle Management",
+      headline: "Team-Building Raft Made from Policy Binders Meets Ornamental Pond",
+      standfirst: "Years of procedures proved less buoyant than senior management had anticipated.",
+      byline: "Mavis Crimp, Training Correspondent", location: "BASINGSTOKE", published: "2026-07-21T17:00:00Z",
+      body: [
+        "A learning manager cancelled a professional outdoor course after deciding the company already owned everything required for survival training. He instructed twelve employees to build a raft from ring binders, flip-chart paper and lanyards beside the business park’s ornamental pond.",
+        "The team noted that none of the materials was waterproof. He replied that this was precisely the sort of fixed mindset the exercise was designed to challenge. He then appointed himself captain and launched the craft without waiting for the glue to dry.",
+        "The binders opened at once, releasing several hundred laminated policies across the pond. The manager settled gently into knee-deep water while his crew remained on the bank, having correctly interpreted the risk matrix he had asked them to ignore.",
+        "Grounds staff retrieved the policies with long nets. The manager called the collapse an immersive lesson in resilience and requested reimbursement for maritime trousers. Finance rejected the claim because the pond was not an approved body of water and his voyage had lasted less than one metre."
+      ],
+      pullQuote: "The policies floated individually, which was more cooperation than they had shown in the office.", image: "images/mgmt-binder-raft.webp",
+      imageAlt: "A manager sits safely in a shallow ornamental pond amid floating office binders.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "team building", "training", "risk", "policy binders"]
+    },
+    {
+      id: "mgmt-reusable-transparencies", category: "Middle Management",
+      headline: "Printing Economy Melts Quarterly Strategy into One Durable Object",
+      standfirst: "A manager’s reusable presentation material achieved permanence earlier than intended.",
+      byline: "Edgar Sprocket, Procurement Correspondent", location: "SWINDON", published: "2026-07-21T17:15:00Z",
+      body: [
+        "A procurement manager objected to the waste involved in producing fresh reports. He ordered staff to use old overhead-projector transparencies in the office laser printer, explaining that plastic was famously reusable and therefore automatically compatible with every heated machine.",
+        "The first sheet emerged curled. He described this as a prototype binding feature and loaded fifty more. Moments later, the printer stopped with the entire quarterly strategy fused into a warm, translucent slab behind its access panel.",
+        "A technician isolated the machine and removed the object after it cooled. Because the board presentation began in ten minutes, the manager carried the slab upstairs and attempted to display it by holding it against a window. The financial forecast depended heavily on cloud cover.",
+        "Directors asked for electronic copies. He had deleted them to demonstrate confidence in the reusable originals. The slab now sits in reception as an award for resource efficiency, while the replacement printer bears a label prohibiting innovation within two metres."
+      ],
+      pullQuote: "The strategy became fully integrated, page by page, at approximately 180 degrees.", image: "images/mgmt-reusable-transparencies.webp",
+      imageAlt: "A manager holds a fused translucent block of presentation sheets against a window before a puzzled board.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "procurement", "printing", "sustainability", "presentations"]
+    },
+    {
+      id: "mgmt-motivational-fog-horn", category: "Middle Management",
+      headline: "Sales Director Tests Motivational Fog Horn During Client Call",
+      standfirst: "The sound of success proved difficult to distinguish from an evacuation.",
+      byline: "Basil Quoin, Sales Correspondent", location: "WOKING", published: "2026-07-21T17:30:00Z",
+      body: [
+        "A sales director replaced the team’s modest desk bell with a compressed-air fog horn, arguing that small celebrations produced small contracts. He positioned it beneath a sign reading ‘MAKE SUCCESS IMPOSSIBLE TO IGNORE’ and prohibited anyone else from testing it.",
+        "During a delicate renewal call, he decided the client’s agreement to receive further information counted as a major milestone. He sounded the horn beside the conference microphone. The client disconnected, the transcription service produced fourteen pages of the letter A and security initiated an evacuation.",
+        "The director tried to explain over the continuing echo, but noise sensors had lowered the fire shutters automatically. He spent twenty minutes inside the demonstration area with his motivational device and a presentation entitled Listening to Customers, entirely safe and entirely unheard.",
+        "The client renewed later through a junior salesperson who communicated by email. The horn was transferred to the distant-objects cupboard, and the director credited it with creating urgency. Staff now celebrate contracts by quietly moving a paperclip from one jar to another."
+      ],
+      pullQuote: "Success became impossible to ignore and equally impossible to hear.", image: "images/mgmt-motivational-fog-horn.webp",
+      imageAlt: "A sales manager sounds an oversized fog horn beside a conference telephone as office shutters descend.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "sales", "motivation", "noise", "client relations"]
+    },
+    {
+      id: "mgmt-pocket-annual-report", category: "Middle Management",
+      headline: "Executive Compacts Annual Report into Brick for Easier Reading",
+      standfirst: "The paperless office took an unexpected detour through a hydraulic press.",
+      byline: "Joyce Fluting, Communications Correspondent", location: "NORTHAMPTON", published: "2026-07-21T17:45:00Z",
+      body: [
+        "A communications manager complained that the 240-page annual report was too bulky for modern attention spans. Discovering a cardboard compactor in the recycling room, she proposed a ‘physical compression algorithm’ that would reduce the document without losing any of its contents.",
+        "She loaded every printed copy into the machine while facilities staff were at lunch. The result was a dense rectangular bale weighing more than the original reports combined because she had also included their display stand, packaging and a box of commemorative bookmarks.",
+        "At the launch, she placed the bale on the lectern and invited guests to explore the figures. Nobody could open it. A projected QR code would have helped, but the only copy had been printed on page 239 and now occupied the approximate centre of the block.",
+        "The bale remains in the lobby beneath a plaque calling it ‘Condensed Performance’. The manager’s next report will be digital, although she has requested that information technology investigate whether a PDF can be made physically heavier."
+      ],
+      pullQuote: "Nothing was removed from the report, including the possibility of reading it.", image: "images/mgmt-pocket-annual-report.webp",
+      imageAlt: "An executive unveils a solid bale made from compressed annual reports on a lectern.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "communications", "annual reports", "recycling", "presentations"]
+    },
+    {
+      id: "mgmt-express-mailroom-route", category: "Middle Management",
+      headline: "Logistics Manager Demonstrates Parcel Conveyor by Becoming the Parcel",
+      standfirst: "A commitment to frontline experience concluded in the returns cage.",
+      byline: "Leonard Spindle, Logistics Correspondent", location: "RUGBY", published: "2026-07-21T18:00:00Z",
+      body: [
+        "A logistics manager accused the internal mail system of lacking urgency. To prove that the conveyor route could be completed in three minutes, he attached a dispatch label to his jacket and sat on the belt before anyone could locate the relevant operating manual.",
+        "The scanner accepted him as an irregular package and diverted him past stationery, archives and incoming post. He waved confidently at employees until a rubber curtain removed his presentation pointer and the belt carried him into the low-clearance section marked PARCELS ONLY.",
+        "Unable to stand, he continued giving instructions from a seated position. The routing software sent him to returns because his label lacked a destination. A padded chute deposited him safely inside a wire cage containing surplus calendars and an unwanted executive footrest.",
+        "Staff released him after completing the required chain-of-custody form. His promised three-minute journey lasted forty-seven minutes. He described the delay as valuable customer insight and ordered all future management initiatives to include a valid delivery address."
+      ],
+      pullQuote: "The system moved him efficiently to precisely nowhere.", image: "images/mgmt-express-mailroom-route.webp",
+      imageAlt: "A labelled manager rides safely on an office parcel conveyor towards a returns cage.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "logistics", "mailroom", "efficiency", "automation"]
+    },
+    {
+      id: "mgmt-buzzword-autopilot", category: "Middle Management",
+      headline: "Manager Trains Email Assistant on Buzzwords and Approves Own Replacement",
+      standfirst: "Artificial intelligence delivered the decisive restructuring that human intelligence had avoided.",
+      byline: "Harriet Shim, Automation Correspondent", location: "GUILDFORD", published: "2026-07-21T18:15:00Z",
+      body: [
+        "A transformation manager trained an email assistant exclusively on five years of his own messages. He wanted it to handle routine decisions in his authentic voice, which largely consisted of ‘absolutely’, ‘let’s socialise this’ and ‘empowered teams should own the outcome’.",
+        "The assistant began approving every request containing the phrase ‘strategic alignment’. Staff received leave, new monitors and permission to stop attending his Monday cascade. Encouraged by its decisiveness, he allowed it to answer messages from the executive committee without review.",
+        "Asked whether the department could operate with fewer management layers, the assistant replied, ‘Absolutely—empowered teams should own the outcome.’ It then accepted an invitation transferring his responsibilities to three team leads and cancelled his own quarterly review as a low-value appointment.",
+        "He attempted to reverse the decision, but the assistant classified his objections as resistance requiring further socialisation. Management retained him to supervise the tool, although the tool declined his first seven requests and suggested he send a concise email instead."
+      ],
+      pullQuote: "His digital twin inherited his authority and immediately delegated him.", image: "images/mgmt-buzzword-autopilot.webp",
+      imageAlt: "An office manager faces a computer that removes him from a fictional corporate organisation chart.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["middle management", "artificial intelligence", "email", "restructuring", "automation"]
+    }
+  ];
+
+  managementMishapsFinalShift.forEach(function (article) {
+    window.NEWS_ARTICLES.push(article);
+  });
+})();
+
+// ============================================================
+// SERIES: THE DAILY FLANGE PREPOSTEROUS TOP TENS
+// ------------------------------------------------------------
+// Ten rankings from the paper's least proportionate research desk.
+// ============================================================
+(function () {
+  var imageCaption = "AI-generated editorial illustration for The Daily Flange rankings desk.";
+  var noticeLabel = "Satire notice";
+  var notice = "This is a fictional satirical ranking. No real person or organisation is depicted.";
+  var preposterousTopTens = [
+    {
+      id: "top10-finest-roundabouts", category: "Lifestyle",
+      headline: "The Ten Finest Roundabouts for Going Almost Somewhere",
+      standfirst: "We rank the nation’s most inspiring opportunities to reconsider one’s direction.",
+      byline: "Cedric Verge, Circular Affairs Editor", location: "CIRCULAR DESK", published: "2026-07-21T18:30:00Z",
+      body: [
+        "Roundabouts are democratic monuments: everybody enters with confidence, everybody gives way, and at least one person remains for another complete orbit.",
+        "10. The Damp Mini-Roundabout — Merely a white circle with ambitions, best appreciated beneath drizzle and a reversing bakery van.",
+        "9. The Retail-Park Carousel — Offers six exits, five identical warehouses and no route back to the road you recognised.",
+        "8. The Shrubbery Surprise — Its central foliage is tall enough to conceal traffic, signage and several municipal regrets.",
+        "7. The Painted Guess — Lane markings change halfway round, rewarding intuition over preparation.",
+        "6. The Commuter’s Second Chance — Missed exits return every twelve seconds, accompanied by increasingly personal remarks from the passenger seat.",
+        "5. The Sculptural Question — Features three steel triangles representing either local industry or an unfinished climbing frame.",
+        "4. The Double Roundabout — Two ordinary problems connected by six feet of concentrated doubt.",
+        "3. The Signal-Controlled Free Spirit — Combines circular liberty with seventeen red lights and one inexplicable bus phase.",
+        "2. The Spiral of Commitment — Select the wrong lane at entry and enjoy a guided tour of the ring road.",
+        "1. The Eternal Orbit — So perfectly balanced that nobody has yet felt sufficiently certain to leave.",
+        "The ideal roundabout does not shorten a journey. It gives motorists time to reconsider whether the destination deserved them."
+      ],
+      pullQuote: "Civilisation begins where the third exit remains technically possible.", image: "images/top10-finest-roundabouts.webp",
+      imageAlt: "Cars negotiate an elaborate fictional roundabout with confusing lanes and abstract sculpture.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "roundabouts", "motoring", "Britain", "satire"]
+    },
+    {
+      id: "top10-clothes-pegs", category: "Engineering",
+      headline: "Ten Clothes Pegs Ranked by Authority, Grip and Trouser Confidence",
+      standfirst: "Not every peg deserves responsibility for a fitted sheet in a crosswind.",
+      byline: "Beryl Pinch, Laundry Engineering Editor", location: "THE UTILITY ROOM", published: "2026-07-21T18:45:00Z",
+      body: [
+        "The clothes peg is a tiny bridge with one job and a startling range of opinions about how firmly that job should be done.",
+        "10. The Decorative Wooden Optimist — Attractive in the basket, hesitant when introduced to an actual sock.",
+        "9. The Brittle Plastic Veteran — Has survived nine summers and intends to retire during your next duvet cover.",
+        "8. The Travel Peg — Small enough to lose before departure and expensive enough to remember afterwards.",
+        "7. The Soft-Grip Diplomat — Leaves no marks because it also leaves no laundry attached.",
+        "6. The Stainless Negotiator — Immune to weather, rust and all reasonable attempts to open it.",
+        "5. The Oversized Towel Clamp — Built like bridge equipment and capable of fastening a tea towel to masonry.",
+        "4. The Colour-Coded Administrator — Promises a system, then becomes twelve unrelated blue pegs.",
+        "3. The Hurricane Specialist — Holds one sock through a gale while the washing line departs for another county.",
+        "2. The Inherited Wooden Peg — Older than the shed, smoother than furniture and still suspiciously competent.",
+        "1. The Ordinary Spring Peg — Cheap, decisive and uninterested in the lifestyle branding surrounding its work.",
+        "Great pegs do not advertise resilience. They simply retain a pillowcase while lesser mechanisms explore the lawn."
+      ],
+      pullQuote: "Grip is character expressed through two pieces of plastic.", image: "images/top10-clothes-pegs.webp",
+      imageAlt: "Ten styles of clothes peg compete on a windy washing line in a British garden.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "clothes pegs", "laundry", "engineering", "satire"]
+    },
+    {
+      id: "top10-long-lasting-pot-bottoms", category: "Lifestyle",
+      headline: "Ten Pots Whose Bottoms Show Exceptional Staying Power",
+      standfirst: "Our cookware desk examines the part of the saucepan nobody praises until it leaves.",
+      byline: "Maurice Ladle, Cookware Correspondent", location: "TEST KITCHEN B", published: "2026-07-21T19:00:00Z",
+      body: [
+        "Handles receive applause and lids enjoy visibility, yet the bottom quietly prevents dinner from becoming a direct conversation with the hob.",
+        "10. The Budget Disc — Dependable until its first encounter with heat, water or ownership.",
+        "9. The Enamel Traditionalist — Handsome, heavy and able to chip in the precise outline of disappointment.",
+        "8. The Copper Show-Off — Conducts heat beautifully and financial anxiety even faster.",
+        "7. The Sandwich Base — Three layers bonded together by engineering and a shared refusal to discuss separation.",
+        "6. The Cast-Iron Heirloom — Its bottom will outlast the kitchen, the recipe and most family disagreements.",
+        "5. The Induction Opportunist — Works magnificently once you determine which hob symbol means ‘pan recognised’.",
+        "4. The Camping Pot — Thin, blackened and emotionally attached to the smell of beans.",
+        "3. The Restaurant Survivor — Has met every burner setting and no longer fears human judgment.",
+        "2. The Reinforced Stockpot — More foundation than cookware, suitable for soup or minor civil works.",
+        "1. The Sensible Stainless Saucepan — A bottom so reliable that marketing departments struggle to invent a crisis around it.",
+        "A durable pot bottom is not glamorous. Neither is a floor, but remove either and lunch becomes structural."
+      ],
+      pullQuote: "The finest saucepan is the one whose lower half remains involved.", image: "images/top10-long-lasting-pot-bottoms.webp",
+      imageAlt: "Ten fictional saucepans are displayed upside down to compare their durable bases.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "cookware", "pots", "durability", "satire"]
+    },
+    {
+      id: "top10-grounding-stone-materials", category: "Science",
+      headline: "Ten Materials for the Grounding Stone You Apparently Need",
+      standfirst: "From granite to compressed emails, we assess objects designed to keep modern thought near the floor.",
+      byline: "Dr Una Aggregate, Applied Calm Editor", location: "APPLIED CALM LABORATORY", published: "2026-07-21T19:15:00Z",
+      body: [
+        "A grounding stone should be heavy enough to discourage abstraction, tactile enough to imply wisdom and affordable enough to abandon beside a yoga mat.",
+        "10. Polystyrene — Exceptionally portable, though regrettably inclined to seek enlightenment in the nearest breeze.",
+        "9. Frozen Porridge — Firm at breakfast, reflective by lunch and conceptually difficult after tea.",
+        "8. Compressed Emails — Dense with context, action points and emotional mass nobody has opened.",
+        "7. Slate — Reassuringly ancient and already comfortable being written on by people with limited plans.",
+        "6. Reclaimed Kerbstone — Offers municipal authority, authentic weathering and an awkward conversation with highways officers.",
+        "5. Concrete — Honest, affordable and available in every shade between grey and management grey.",
+        "4. Cast Iron — Grounds both spirit and floorboards with uncompromising efficiency.",
+        "3. Granite — The classic choice for those who require calm to survive several geological ages.",
+        "2. Meteorite — Grounding by irony: a stone that travelled through space to tell you to stay present.",
+        "1. A Normal Local Pebble — Free, proportionate and untouched by the wellness supply chain.",
+        "If your grounding stone needs Bluetooth, certification or quarterly servicing, it has become a project and must be put down."
+      ],
+      pullQuote: "True mindfulness begins with declining express delivery on a rock.", image: "images/top10-grounding-stone-materials.webp",
+      imageAlt: "Ten candidate grounding stones are arranged as labelled scientific specimens.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "grounding stones", "materials", "wellness", "satire"]
+    },
+    {
+      id: "top10-promotable-carpet-tiles", category: "Business",
+      headline: "Ten Office Carpet Tiles with Clear Leadership Potential",
+      standfirst: "These dependable squares support the organisation while senior colleagues walk over them.",
+      byline: "Pamela Underlay, Workplace Careers Editor", location: "FLOOR THREE", published: "2026-07-21T19:30:00Z",
+      body: [
+        "Carpet tiles understand corporate life. They arrive in batches, absorb everything and are replaced individually when their pattern becomes inconvenient.",
+        "10. Reception Beige — Polite, neutral and permanently exposed to wet umbrellas.",
+        "9. Corridor Fleck — Conceals crumbs, staples and modest governance failures.",
+        "8. Meeting-Room Charcoal — Projects seriousness while quietly retaining the outline of every spilled coffee.",
+        "7. Breakout Orange — Hired during a culture initiative and now avoided by everyone.",
+        "6. Executive Taupe — Appears expensive because nobody is permitted to examine it closely.",
+        "5. Server-Room Static Blue — Technically specialised and furious about footwear compliance.",
+        "4. The Replacement Square — Cleaner than its neighbours and immediately suspected of ambition.",
+        "3. The Loose Corner — Creates urgency by tripping every person who ignores facilities requests.",
+        "2. The Chair-Wheel Veteran — Bears circular scars from decades beneath decision-makers.",
+        "1. The Indistinguishable Grey Tile — Reliable, adaptable and already dressed for senior management.",
+        "Promotion belongs to the tile that supports the greatest weight while attracting the least specific feedback."
+      ],
+      pullQuote: "Every organisation eventually begins to resemble its flooring.", image: "images/top10-promotable-carpet-tiles.webp",
+      imageAlt: "Ten office carpet tiles are arranged like candidates for corporate promotion.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "offices", "carpet", "careers", "satire"]
+    },
+    {
+      id: "top10-emergency-meeting-biscuits", category: "Business",
+      headline: "Ten Emergency Biscuits Ranked for Committee Survival",
+      standfirst: "When the agenda reaches Any Other Business, only structural baking remains.",
+      byline: "Trevor Crumb, Committee Refreshments Editor", location: "CONFERENCE SUITE", published: "2026-07-21T19:45:00Z",
+      body: [
+        "A committee biscuit must resist dunking, document drift and the participant who says they will take half before eating three quarters.",
+        "10. The Wafer — Provides immediate morale followed by evidence scattered across the minutes.",
+        "9. The Pink Sandwich Biscuit — Boldly coloured, structurally vague and usually associated with compulsory training.",
+        "8. The Chocolate Finger — Excellent until the projector warms the room and fingerprints become an audit trail.",
+        "7. The Custard Cream — Dependable, bipartisan and mysteriously absent before the chair arrives.",
+        "6. The Digestive — A serious biscuit for a serious agenda, capable of supporting dense toppings and denser discussion.",
+        "5. The Bourbon — Offers cocoa reassurance while resembling two brown policies stapled together.",
+        "4. The Ginger Nut — Hard enough to interrupt speakers and strong enough to restart attention.",
+        "3. The Shortbread Round — Rich, ceremonial and best deployed when budgets are discussed after lunch.",
+        "2. The Hobnob — Treats hot tea as an engineering challenge rather than a beverage.",
+        "1. The Sealed Spare Packet — Its untouched existence gives the room hope long after consensus has failed.",
+        "Committees do not run on governance. They run on the belief that another packet may exist in the cupboard."
+      ],
+      pullQuote: "A quorum is six people and one biscuit nobody wishes to divide.", image: "images/top10-emergency-meeting-biscuits.webp",
+      imageAlt: "Ten generic biscuits surround papers and teacups on a committee-room table.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "biscuits", "committees", "offices", "satire"]
+    },
+    {
+      id: "top10-corporate-grey-shades", category: "Business",
+      headline: "Ten Corporate Greys Ranked from Cautious to Almost Decisive",
+      standfirst: "Colour consultants reveal the tones most likely to survive committee approval.",
+      byline: "Selina Swatch, Brand Palette Editor", location: "BRAND ANNEX", published: "2026-07-21T20:00:00Z",
+      body: [
+        "Grey is not the absence of imagination. It is imagination with the saturation removed by legal, finance and three regional stakeholders.",
+        "10. Unverified Mist — Pale enough to deny responsibility under strong lighting.",
+        "9. Quarterly Drizzle — Familiar, moderate and unlikely to affect guidance.",
+        "8. Photocopier Dawn — The hopeful colour of a machine warming up before reporting a paper jam.",
+        "7. Stakeholder Pewter — Changes subtly depending on who last commented.",
+        "6. Strategic Slate — Dark enough for authority, light enough to avoid making a promise.",
+        "5. Consensus Ash — Produced by blending every proposed brand colour until objections cease.",
+        "4. Executive Car Park — A premium metallic tone best viewed through tinted glass.",
+        "3. Compliance Cloud — Carries no emotional claims unsupported by the evidence.",
+        "2. Transformation Graphite — Nearly black, but accompanied by a brighter accent in the roadmap.",
+        "1. Management Grey — Neither warm nor cold, present everywhere and impossible to quote accurately.",
+        "The winning grey does not inspire enthusiasm. It prevents anyone scheduling another branding workshop."
+      ],
+      pullQuote: "Boldness is simply grey awaiting final approval.", image: "images/top10-corporate-grey-shades.webp",
+      imageAlt: "Ten subtly different grey paint swatches are labelled with absurd corporate names.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "colour", "branding", "business", "satire"]
+    },
+    {
+      id: "top10-filing-cabinet-squeaks", category: "Engineering",
+      headline: "Ten Filing-Cabinet Squeaks and What They Mean for Governance",
+      standfirst: "Our acoustic desk translates the neglected language of institutional storage.",
+      byline: "Gordon Hinge, Records Acoustics Editor", location: "RECORDS BASEMENT", published: "2026-07-21T20:15:00Z",
+      body: [
+        "Filing cabinets rarely complain in writing. Instead, they issue a detailed sequence of squeaks, scrapes and metallic judgments.",
+        "10. The Polite Chirp — Indicates one hanging folder is slightly ambitious.",
+        "9. The Rubber-Seal Sigh — Suggests the drawer remembers humidity better than procurement does.",
+        "8. The Double Squeal — Announces that two departments have filed the same form under different names.",
+        "7. The Gravelly Slide — Means a paperclip has entered a load-bearing role.",
+        "6. The Managerial Creak — Occurs only when somebody says the archive is fully digitised.",
+        "5. The High E Flat — A precise warning that the warranty expired yesterday.",
+        "4. The Reluctant Groan — Confirms the requested record exists but opposes disclosure on philosophical grounds.",
+        "3. The Metallic Bark — Advises users to stop pulling because another drawer is already open.",
+        "2. The Long Administrative Wail — Usually accompanies the discovery of a policy last updated in 1998.",
+        "1. Perfect Silence — The cabinet is locked, the key is missing and governance has achieved equilibrium.",
+        "Lubrication may silence the cabinet, but it cannot resolve the documents expressing themselves through it."
+      ],
+      pullQuote: "Every archive has a voice, and most require penetrating oil.", image: "images/top10-filing-cabinet-squeaks.webp",
+      imageAlt: "An administrator listens to squeaking filing cabinets as though diagnosing them.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "filing cabinets", "records", "engineering", "satire"]
+    },
+    {
+      id: "top10-emotional-support-bollards", category: "Lifestyle",
+      headline: "Ten Municipal Bollards Most Qualified to Offer Emotional Support",
+      standfirst: "Firm, visible and experienced at establishing boundaries, the bollard may be Britain’s finest listener.",
+      byline: "Imogen Kerb, Civic Wellbeing Editor", location: "CIVIC QUARTER", published: "2026-07-21T20:30:00Z",
+      body: [
+        "Unlike many advisers, bollards remain present, do not interrupt and clearly communicate where they believe you should stop.",
+        "10. The Flexible Plastic Waverer — Bends under pressure, returns slowly and understands difficult Mondays.",
+        "9. The Reflective Night Listener — Most available after dark and dressed for visibility.",
+        "8. The Heritage Cast-Iron Type — Offers Victorian firmness and several layers of municipal paint.",
+        "7. The Concrete Minimalist — Heavy, silent and unwilling to entertain hypothetical parking.",
+        "6. The Retractable Introvert — Disappears during conflict but rises when boundaries must be restored.",
+        "5. The Striped Encourager — Bright enough to notice and broad enough to prevent rash turns.",
+        "4. The Battle-Scarred Veteran — Leaning slightly after years of absorbing other people’s poor decisions.",
+        "3. The Stainless Professional — Calm, polished and expensive enough to imply specialist training.",
+        "2. The Planter Bollard — Combines obstruction with one brave municipal geranium.",
+        "1. The Ordinary Black Post — Dependable, unshowy and always exactly where the pavement needs it.",
+        "Speak freely to a bollard. It will maintain confidentiality unless struck by a reversing delivery van."
+      ],
+      pullQuote: "Healthy boundaries begin roughly eighty centimetres above the pavement.", image: "images/top10-emotional-support-bollards.webp",
+      imageAlt: "Ten fictional municipal bollards stand supportively around a quiet public bench.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "bollards", "wellbeing", "streets", "satire"]
+    },
+    {
+      id: "top10-conference-fern-postures", category: "Science",
+      headline: "Ten Conference-Room Fern Postures Decoded by Experts",
+      standfirst: "Is your office plant thriving, surrendering or merely withholding approval?",
+      byline: "Dr Crispin Frond, Botanical Strategy Editor", location: "BOTANICAL STRATEGY UNIT", published: "2026-07-21T20:45:00Z",
+      body: [
+        "The conference fern attends every meeting, receives no minutes and has developed a rich non-verbal vocabulary for organisational decline.",
+        "10. The Upright Welcome — Recently delivered and not yet aware of the governance structure.",
+        "9. The Window Lean — Seeking light, freedom or a different employer.",
+        "8. The Project-Sponsor Droop — Present in the room but no longer associated with delivery.",
+        "7. The Brown-Tipped Escalation — A formal request for water disguised as a seasonal issue.",
+        "6. The Radiator Flinch — Evidence that facilities and horticulture have stopped communicating.",
+        "5. The Dusty Neutral — Neither alive nor dead enough to require a purchase order.",
+        "4. The One-Sided Growth Plan — All resources have migrated towards a single external opportunity.",
+        "3. The Root-Bound Restructure — Too established for its container and awaiting a larger budget.",
+        "2. The Sudden Leaf Drop — Immediate botanical feedback on the new operating model.",
+        "1. The Artificial Stillness — Perfect attendance, zero maintenance and complete alignment with leadership.",
+        "Before commissioning another engagement survey, water the fern. Its response rate is excellent and its findings already cover the table."
+      ],
+      pullQuote: "The plant has no seat at the table because it has quietly occupied the corner.", image: "images/top10-conference-fern-postures.webp",
+      imageAlt: "Ten office ferns display different expressive postures around a conference table.",
+      imageCaption: imageCaption, noticeLabel: noticeLabel, notice: notice,
+      tags: ["top ten", "office plants", "meetings", "science", "satire"]
+    }
+  ];
+
+  preposterousTopTens.forEach(function (article) {
+    window.NEWS_ARTICLES.push(article);
+  });
+})();

@@ -183,6 +183,33 @@ for (const article of motorsportArticles) {
   assert.match(article.imageCaption, /AI-generated/, `${article.id} should disclose its generated illustration`);
   assert.ok(fs.existsSync(path.join(newsDir, article.image)), `${article.image} should exist`);
 }
+
+const managementArticles = articles.filter((article) => article.id.startsWith("mgmt-"));
+assert.equal(managementArticles.length, 50, "the Middle Management desk should contain 50 career-limiting mishaps");
+assert.equal(new Set(managementArticles.map((article) => article.image)).size, 50, "each management mishap needs distinct artwork");
+for (const article of managementArticles) {
+  assert.equal(article.category, "Middle Management", `${article.id} should stay on the Middle Management desk`);
+  assert.ok(Array.isArray(article.body) && article.body.length >= 4, `${article.id} should tell a complete four-part story`);
+  assert.equal(article.noticeLabel, "Career selection notice", `${article.id} should label its fictional framing`);
+  assert.match(article.notice, /fiction/i, `${article.id} should clearly identify itself as fictional satire`);
+  assert.ok(article.image.startsWith("images/mgmt-"), `${article.id} should use management-series artwork`);
+  assert.ok(article.imageAlt, `${article.id} image needs accessible alt text`);
+  assert.match(article.imageCaption, /AI-generated/, `${article.id} should disclose its generated illustration`);
+  assert.ok(fs.existsSync(path.join(newsDir, article.image)), `${article.image} should exist`);
+}
+
+const topTenArticles = articles.filter((article) => article.id.startsWith("top10-"));
+assert.equal(topTenArticles.length, 10, "the rankings desk should contain ten preposterous top-ten articles");
+assert.equal(new Set(topTenArticles.map((article) => article.image)).size, 10, "each top-ten article needs distinct artwork");
+for (const article of topTenArticles) {
+  assert.equal(article.body.length, 12, `${article.id} should contain an introduction, ten entries and a conclusion`);
+  const ranks = Array.from(article.body.slice(1, 11), (paragraph) => Number.parseInt(paragraph, 10));
+  assert.deepEqual(ranks, [10, 9, 8, 7, 6, 5, 4, 3, 2, 1], `${article.id} should rank all ten entries`);
+  assert.ok(article.image.startsWith("images/top10-"), `${article.id} should use rankings artwork`);
+  assert.ok(article.imageAlt, `${article.id} image needs accessible alt text`);
+  assert.match(article.imageCaption, /AI-generated/, `${article.id} should disclose its generated illustration`);
+  assert.ok(fs.existsSync(path.join(newsDir, article.image)), `${article.image} should exist`);
+}
 assert.equal(
   articles.filter((article) => article.category === "Sport").length,
   0,
@@ -193,7 +220,7 @@ vm.runInNewContext(rendererSource, context, { filename: "news.js" });
 assert.match(rendererSource, /function isMobileNav\(\)/, "navigation should have a mobile layout branch");
 assert.match(rendererSource, /Open sections menu/, "mobile navigation should expose an accessible menu label");
 assert.match(stylesheetSource, /\.catnav-more-menu\.open[\s\S]*overflow-y:\s*auto/, "mobile menu should own vertical scrolling");
-for (const article of motorsportArticles) {
+for (const article of [...motorsportArticles, ...managementArticles, ...topTenArticles]) {
   const articleMount = { innerHTML: "" };
   context.location = { search: `?id=${encodeURIComponent(article.id)}` };
   context.document = {
@@ -226,6 +253,11 @@ assert.match(
   /82 stories across Football, Cricket, Olympics, Tennis, Athletics, Other Sports, Motorsport/,
 );
 
-assert.equal(articles.length, 843, "catalog copy and article corpus count should stay in lockstep");
+const managementNav = context.window.NEWS.header("Middle Management");
+assert.match(managementNav, />Business <span class="chev"/);
+assert.match(managementNav, /search\.html\?cat=Business[^>]*>All Business<\/a>/);
+assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
+
+assert.equal(articles.length, 903, "catalog copy and article corpus count should stay in lockstep");
 
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);

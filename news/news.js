@@ -26,7 +26,7 @@
     { name: "World",          selfLeaf: true, children: ["Aberdeen"] },
     { name: "Transport",      children: ["Aviation", "Maritime", "Engineering", "Buses"] },
     { name: "Science & Tech", children: ["Science", "Technology", "Health"] },
-    { name: "Business",       children: [] },
+    { name: "Business",       selfLeaf: true, children: ["Middle Management"] },
     { name: "Sport",          children: ["Football", "Cricket", "Olympics", "Tennis", "Athletics", "Other Sports", "Motorsport"] },
     { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
     { name: "Flanging",       children: [] },
@@ -78,6 +78,7 @@
   ["Football", "Cricket", "Olympics", "Tennis", "Athletics", "Other Sports", "Motorsport"].forEach(function (category) {
     CAT[category] = CAT.Sport;
   });
+  CAT["Middle Management"] = CAT.Business;
   function catMeta(cat) { return CAT[cat] || { c1: "#555", c2: "#333", icon: "gear" }; }
 
   var ICONS = {
