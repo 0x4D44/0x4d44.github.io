@@ -219,9 +219,17 @@ export function calculateStats(state, today = isoDate()) {
     currentStreak += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
+  // Compare CALENDAR days, not a fixed 86,400,000 ms delta: a local noon-to-noon gap across
+  // a DST transition is 23 h (spring) or 25 h, never exactly a day, which split genuinely
+  // consecutive streaks. Derive prev's next calendar date the DST-safe way currentStreak does.
+  const isConsecutive = (a, b) => {
+    const d = new Date(`${a}T12:00:00`);
+    d.setDate(d.getDate() + 1);
+    return isoDate(d) === b;
+  };
   let longestStreak = 0, run = 0, prev = null;
   for (const date of maintainedDates) {
-    if (!prev || (new Date(`${date}T12:00:00`) - new Date(`${prev}T12:00:00`)) === 86400000) run += 1;
+    if (!prev || isConsecutive(prev, date)) run += 1;
     else run = 1;
     longestStreak = Math.max(longestStreak, run);
     prev = date;
