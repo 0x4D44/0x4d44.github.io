@@ -185,6 +185,18 @@ check(
 // The browser drive gets a narrow, explicit observation/control seam.
 check(/window\.__onu\s*=/.test(browserSource), "window.__onu browser-test hook is present");
 
+// ALM-BUG-KILN-00030: storage access must be guarded so a blocked-storage context (all
+// cookies blocked, sandboxed iframe) doesn't throw at module load and blank the page.
+check(!/^\s*let soundOn = localStorage\./m.test(app), "top-level soundOn must not read localStorage unguarded");
+const readStoredSrc = app.match(/function readStored\(key\) \{[\s\S]*?\n\}/);
+check(Boolean(readStoredSrc), "app.mjs defines a guarded readStored helper");
+if (readStoredSrc) {
+  const readStored = new Function("localStorage", `${readStoredSrc[0]}; return readStored;`)({
+    getItem() { throw new Error("storage blocked"); },
+  });
+  check(readStored("onu.sound") === null, "readStored returns null (default) when storage access throws, instead of propagating");
+}
+
 if (failures.length) {
   console.error(`Onu static validation failed (${failures.length} of ${checks} checks):`);
   for (const failure of failures) console.error(`- ${failure}`);
