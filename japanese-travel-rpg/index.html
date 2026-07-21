@@ -34,6 +34,10 @@ html[data-nq-rm="true"] *{animation:none!important;transition:none!important}
 <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
 <div style="height:100%;display:flex;flex-direction:column;background:#f4eee2;font-family:'Zen Maru Gothic',sans-serif;box-sizing:border-box;padding-top:62px;overflow:hidden">
 
+<!-- save-failure banner (FLUXHOMEARPA-00007): progress writes can fail in private/quota
+     -restricted storage; surface it instead of losing progress silently -->
+<sc-if value="{{ saveError }}" hint-placeholder-val="{{ false }}"><div style="flex:none;margin:0 12px 6px;background:#fbe3da;border:1.5px solid #e0a99a;border-radius:12px;padding:8px 12px;font:700 11.5px 'Zen Maru Gothic',sans-serif;color:#a63c1e">⚠ Progress couldn't be saved — storage may be full or blocked (e.g. private browsing). Recent changes may be lost if you reload.</div></sc-if>
+
 <!-- ═══════════ HOME (tabbed) ═══════════ -->
 <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
 <div style="display:flex;flex-direction:column;height:100%;min-height:0">
@@ -536,7 +540,7 @@ class Component extends DCLogic {
     });
     if(window.speechSynthesis){ speechSynthesis.getVoices(); }
   }
-  save(){ try{ localStorage.setItem(this.KEY, JSON.stringify({progress:this.P, settings:this.settings, game:this.game})); }catch(e){} }
+  save(){ try{ localStorage.setItem(this.KEY, JSON.stringify({progress:this.P, settings:this.settings, game:this.game})); if(this._saveError){ this._saveError=false; this.forceUpdate(); } return true; }catch(e){ if(!this._saveError){ this._saveError=true; this.forceUpdate(); } return false; } }
   speak(text){ if(!window.speechSynthesis||!text) return; const u=new SpeechSynthesisUtterance(text); u.lang='ja-JP'; u.rate=this.props.speechRate ?? 0.92; speechSynthesis.cancel(); speechSynthesis.speak(u); }
 
   // ---- subtle sound effects (WebAudio, synthesized, no assets) ----
@@ -677,7 +681,7 @@ class Component extends DCLogic {
     const dailyPct=Math.min(100,Math.round((game.dailyXp/goal)*100));
 
     const v={
-      ready, isHome, isLesson, isRoleplay,
+      ready, isHome, isLesson, isRoleplay, saveError:!!this._saveError,
       tabLearn:S.tab==='learn', tabReview:S.tab==='review', tabBook:S.tab==='book', tabKana:S.tab==='kana', tabPass:S.tab==='pass', tabProfile:S.tab==='profile',
       streak:game.streak, xp:game.xp, level, dailyPct, dailyPctCss:dailyPct+'%',
       dailyLine: game.dailyXp>=goal ? 'Goal complete! '+game.dailyXp+' XP today' : game.dailyXp+' / '+goal+' XP today',
