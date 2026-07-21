@@ -36,3 +36,23 @@ test('ALM-BUG-KILN-00009: each session gets its own authored-exercise instances'
   assert.equal(s2[0]._matchMistakes, undefined);
   assert.ok(a1);
 });
+
+test('ALM-BUG-KILN-00011: srsDue drops keys orphaned by a gloss edit (badge == drillable)', () => {
+  const realKey = DK.vocabKey(DK.allVocab()[0].v);
+  assert.ok(DK.vocabByKey(realKey), 'a real vocab key resolves');
+  const now = Date.now();
+  const progress = {
+    srs: {
+      [realKey]: { s: 0, due: now - 1000, seen: 1, lapses: 0 },
+      // an orphaned key: same shape but its gloss no longer exists in the curriculum
+      'たべる|to eat (OLD GLOSS)': { s: 0, due: now - 1000, seen: 1, lapses: 0 },
+    },
+  };
+  const due = DK.srsDue(progress);
+  assert.ok(due.includes(realKey), 'the resolvable key is still due');
+  assert.ok(!due.some((k) => !DK.vocabByKey(k)), 'no orphaned key is reported due');
+  // The count must equal what a drill can actually be built from.
+  const drill = DK.buildDrill(progress, 15);
+  assert.equal(due.length, 1, 'only the one resolvable key is counted');
+  assert.equal(drill.length, due.length, 'every counted key yields a drillable exercise');
+});
