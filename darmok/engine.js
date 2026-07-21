@@ -427,7 +427,11 @@
 
   // Exercises for a lesson session: authored first, then vocab drills.
   DK.buildSession = function (week, lesson) {
-    const authored = (lesson.exercises || []).slice();
+    // Per-session COPIES of the authored exercises: app.js writes transient play-state
+    // (_bank/_placed/_hidden/_hints/_assisted/_matchMistakes/_typed) directly onto the
+    // exercise object, and .slice() would copy only the array, leaving the elements the
+    // live DK.CURRICULUM objects — so that state would leak into the next replay.
+    const authored = (lesson.exercises || []).map((e) => Object.assign({}, e));
     const vocab = lesson.vocab || [];
     const auto = [];
     if (lesson.review) {
