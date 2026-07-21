@@ -88,12 +88,10 @@ test('the game board min-height subtracts the real chrome at every tier', () => 
   assert.doesNotMatch(styles, /100dvh - 90px/, 'stale ≤820 constant (also lacked safe insets)');
 });
 
-test('the confetti animation cancels a live burst before starting a new one', () => {
-  // celebrate() drives one shared canvas; without cancelling the prior rAF loop, two
-  // overlapping bursts clearRect each other every frame — the earlier burst is erased
-  // and a zombie loop keeps running. (Regression guard for the single-owner fix.)
-  assert.match(app, /if \(celebrateRaf\) cancelAnimationFrame\(celebrateRaf\)/, 'celebrate must cancel the live loop');
-});
+// The confetti single-owner invariant is now guarded BEHAVIOURALLY by celebrate.test.js
+// (ALM-BUG-KILN-00029): it drives the real celebrate() with a fake rAF scheduler and asserts
+// one live loop survives an overlapping call. A source-regex for the cancel line stayed green
+// even with the celebrateRaf assignments reverted — the exact vacuous guard that bug flagged.
 
 test('round/match modals cannot be dismissed by the close control or scrim', () => {
   // Closing a round/match modal lets drive() immediately re-open it (the phase is still
