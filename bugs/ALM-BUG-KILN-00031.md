@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00031 — Shipshape difficulty adjusts after a single feedback log instead of the intended run of 3 (or 2)
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** shipshape
@@ -17,8 +17,9 @@
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
+- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
 
 ## Observation
 A single session's feedback moves an exercise's difficulty level: one "too_easy" bumps the level up (targets get harder), one "too_hard" drops it down (targets get easier) — even though the code intends a sustained run before adjusting. The effect is user-visible via the next day's target reps/seconds/weight.
@@ -33,3 +34,13 @@ Two root causes in `shipshape/engine.js` `updateProgression` (lines 153-160):
 Impact: difficulty (level 0-8, which drives `targetFromExercise` reps/seconds/weight) swings on one session's feedback rather than a trend — contradicting the design. Low severity: self-correcting, no data loss, and a fitness app adapting a touch fast is a soft failure.
 
 Fix: (a) require the window to be full before adjusting — e.g. `recentFeedback.length >= 3 && recentFeedback.slice(-3).every(...)`; (b) keep feedback and status aligned by recording combined entries (one array of `{feedback, status}`) and slicing that, so the run check reasons over the same events. Add a test for the empty-history and status-only-log cases.
+
+## Fix (2026-07-21)
+`updateProgression` now (a) requires the full window before adjusting
+(`recentLog.length >= 3 && last(3).every(...)`, `>= 2` for the hard run), closing the
+vacuous-`every()` short-history hole, and (b) reasons over a single aligned `recentLog` of
+`{feedback, status}` per duty (migrating from the legacy `recentFeedback`/`recentStatuses`
+columns), so a status-only 'skipped' duty can no longer shift feedback and status out of
+step. Difficulty now moves on a genuine run, not one session. Regression:
+shipshape/tests/engine.test.mjs adds the empty-history single-feedback cases and a
+status-only alignment check, and keeps the three-easy-completions progression test.
