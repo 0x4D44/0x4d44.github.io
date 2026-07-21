@@ -606,24 +606,31 @@
 
     out.push('<div class="layout"><main>');
 
+    // Track every story already placed on the page so the category feature bands and the
+    // "Around The Flange" list don't reprint one that's already in the top block.
+    var used = {};
+    function markUsed(a) { if (a) used[a.id] = true; }
+
     // Hero + lead row (top story)
     out.push(heroHtml(seq[0], mins(0)));
+    markUsed(seq[0]);
     out.push('<div class="lead-row">' + cardHtml(seq[1], mins(1)) + cardHtml(seq[2], mins(2)) + '</div>');
+    markUsed(seq[1]); markUsed(seq[2]);
 
     // "More top stories" list
     out.push('<h3 class="section-title">More top stories</h3>');
     out.push('<ul class="storylist">');
-    for (var i = 3; i < 9; i++) out.push(listItemHtml(seq[i], mins(i)));
+    for (var i = 3; i < 9; i++) { out.push(listItemHtml(seq[i], mins(i))); markUsed(seq[i]); }
     out.push('</ul>');
 
     // A category feature block (rotates which category leads)
     var featCat = CATEGORY_ORDER[seed % CATEGORY_ORDER.length];
-    var featItems = seq.filter(function (a) { return a.category === featCat; }).slice(0, 4);
+    var featItems = seq.filter(function (a) { return a.category === featCat && !used[a.id]; }).slice(0, 4);
     if (featItems.length >= 3) {
       out.push('<div class="band"><h3 class="section-title">' + esc(featCat) +
         '<a class="more" href="' + catUrl(featCat) + '">More ' + esc(featCat) + ' &rsaquo;</a></h3>');
       out.push('<div class="cardgrid">');
-      featItems.slice(0, 3).forEach(function (a, k) { out.push(cardHtml(a, mins(10 + k))); });
+      featItems.slice(0, 3).forEach(function (a, k) { out.push(cardHtml(a, mins(10 + k))); markUsed(a); });
       out.push('</div></div>');
     }
 
@@ -633,18 +640,21 @@
     // Second feature block (a different category)
     var featCat2 = CATEGORY_ORDER[(seed + 4) % CATEGORY_ORDER.length];
     if (featCat2 === featCat) featCat2 = CATEGORY_ORDER[(seed + 5) % CATEGORY_ORDER.length];
-    var feat2 = seq.filter(function (a) { return a.category === featCat2; }).slice(0, 3);
+    var feat2 = seq.filter(function (a) { return a.category === featCat2 && !used[a.id]; }).slice(0, 3);
     if (feat2.length >= 3) {
       out.push('<div class="band"><h3 class="section-title">' + esc(featCat2) +
         '<a class="more" href="' + catUrl(featCat2) + '">More ' + esc(featCat2) + ' &rsaquo;</a></h3>');
       out.push('<div class="cardgrid">');
-      feat2.forEach(function (a, k) { out.push(cardHtml(a, mins(14 + k))); });
+      feat2.forEach(function (a, k) { out.push(cardHtml(a, mins(14 + k))); markUsed(a); });
       out.push('</div></div>');
     }
 
-    // "Around The Flange" — a longer list
+    // "Around The Flange" — a longer list, skipping anything already placed above.
     out.push('<div class="band"><h3 class="section-title">Around The Flange</h3><ul class="storylist">');
-    for (var j = 9; j < 17 && j < seq.length; j++) out.push(listItemHtml(seq[j], mins(j)));
+    for (var j = 9, arCount = 0; j < seq.length && arCount < 8; j++) {
+      if (used[seq[j].id]) continue;
+      out.push(listItemHtml(seq[j], mins(j))); markUsed(seq[j]); arCount++;
+    }
     out.push('</ul></div>');
 
     out.push('</main>');
