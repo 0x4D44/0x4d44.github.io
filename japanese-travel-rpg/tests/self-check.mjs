@@ -61,11 +61,11 @@ const lookup=new Map(phrases.map(p=>[p.id,p]));assert.equal(scriptedFeedback("�
 }
 const memory=createMemoryStore();await memory.set("progress",afterUk);assert.ok(mergeProgress(await memory.get("progress"),chapters,2000).completedLessons.includes("uk-home"));
 for(const asset of["index.html","support.js","GuideFace.dc.html","ios-frame.jsx","content.js","content-extra.js","engines.js","manifest.webmanifest","sw.js","icons/icon.svg"]){assert.ok(fs.existsSync(path.join(root,asset)),`${asset} exists`)}
-const html=read("index.html");assert.equal(JSON.parse(read("manifest.webmanifest")).display,"standalone");assert.ok(read("sw.js").includes("nihon-quest-v3"));assert.ok(read("sw.js").includes("cache.addAll"));
+const html=read("index.html");assert.equal(JSON.parse(read("manifest.webmanifest")).display,"standalone");assert.ok(read("sw.js").includes("nihon-quest-v4"));assert.ok(read("sw.js").includes("cache.addAll"));
 // ALM-BUG-FLUXHOMEARPA-00002: CacheStorage is origin-wide and this origin hosts many
 // independent PWAs, so SW activation must delete ONLY this app's own caches — scoped by
 // a PREFIX, never "every key that isn't the current cache".
-{const sw=read("sw.js");assert.ok(/const PREFIX\s*=\s*"nihon-quest-"/.test(sw),"SW must namespace its caches with a PREFIX");assert.ok(/\.startsWith\(PREFIX\)/.test(sw),"SW activation cleanup must be scoped to PREFIX so it never evicts sibling apps' caches");assert.ok(/url\.origin\s*!==\s*location\.origin/.test(sw),"SW fetch handler must ignore cross-origin requests");}assert.ok(html.includes("support.js"));assert.ok(html.includes("ios-frame.jsx"));assert.ok(html.includes("content-extra.js"));assert.ok(html.includes("GuideFace"));assert.ok(read("engines.js").includes("createBrowserStore"));assert.ok(html.includes("speechSynthesis"));assert.ok(!/sk-[A-Za-z0-9]{20,}/.test(html+read("README.md")),"no hard-coded API key");assert.ok(!/\b(?:TODO|FIXME)\b/i.test(html+read("content.js")+read("content-extra.js")),"no TODO/FIXME markers");
+{const sw=read("sw.js");assert.ok(/const PREFIX\s*=\s*"nihon-quest-"/.test(sw),"SW must namespace its caches with a PREFIX");assert.ok(/\.startsWith\(PREFIX\)/.test(sw),"SW activation cleanup must be scoped to PREFIX so it never evicts sibling apps' caches");assert.ok(/url\.origin\s*!==\s*location\.origin/.test(sw),"SW fetch handler must ignore cross-origin requests");}assert.ok(html.includes("support.js"));assert.ok(html.includes("ios-frame.js"));assert.ok(html.includes("content-extra.js"));assert.ok(html.includes("GuideFace"));assert.ok(read("engines.js").includes("createBrowserStore"));assert.ok(html.includes("speechSynthesis"));assert.ok(!/sk-[A-Za-z0-9]{20,}/.test(html+read("README.md")),"no hard-coded API key");assert.ok(!/\b(?:TODO|FIXME)\b/i.test(html+read("content.js")+read("content-extra.js")),"no TODO/FIXME markers");
 // ALM-BUG-FLUXHOMEARPA-00007: a save() write can fail (private mode / quota / blocked
 // storage). It must not swallow the error silently — the app has to surface it so a
 // lesson can't appear complete while progress is quietly lost on reload.
@@ -91,4 +91,26 @@ const html=read("index.html");assert.equal(JSON.parse(read("manifest.webmanifest
   }
 }
 
+// ALM-BUG-FLUXHOMEARPA-00001: the PWA must boot from same-origin assets — no CDN runtime
+// dependency. React/ReactDOM are vendored; the JSX is precompiled to ./ios-frame.js so the
+// runtime never needs Babel. (Google Fonts stay a cosmetic enhancement that degrades to
+// sans-serif offline — not required to boot.)
+{
+  const { createHash } = await import("node:crypto");
+  const support = read("support.js");
+  const sw = read("sw.js");
+  assert.match(support, /var REACT_URL = "\.\/vendor\/react\.production\.min\.js"/, "React must be vendored same-origin, not unpkg");
+  assert.match(support, /var REACT_DOM_URL = "\.\/vendor\/react-dom\.production\.min\.js"/, "ReactDOM must be vendored same-origin");
+  assert.ok(!/from="[^"]*\.(jsx|tsx)"/.test(html), "no .jsx/.tsx x-import may remain — that would make the runtime fetch Babel from the CDN");
+  assert.ok(html.includes('from="./ios-frame.js"'), "the iOS frame must load as precompiled ./ios-frame.js");
+  assert.ok(sw.includes("./ios-frame.js"), "the precompiled iOS frame must be precached for offline");
+  for (const [file, sriName] of [["react.production.min.js", "REACT_SRI"], ["react-dom.production.min.js", "REACT_DOM_SRI"]]) {
+    const p = path.join(root, "vendor", file);
+    assert.ok(fs.existsSync(p), `vendor/${file} must exist`);
+    assert.ok(sw.includes(`./vendor/${file}`), `vendor/${file} must be precached for offline`);
+    const sri = support.match(new RegExp(`var ${sriName} = "(sha384-[^"]+)"`))[1];
+    const actual = "sha384-" + createHash("sha384").update(fs.readFileSync(p)).digest("base64");
+    assert.equal(actual, sri, `vendor/${file} must be byte-identical to the pinned ${sriName} (so the local <script integrity> still validates)`);
+  }
+}
 console.log("PASS self-checks: content, route unlocking, SRS, persistence, phrasebook search, romaji settings, AI gating, PWA assets.");
