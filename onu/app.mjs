@@ -43,7 +43,12 @@ let generation = 0;
 let phase = "splash";
 let fast = false;
 let rng = Math.random;
-let soundOn = localStorage.getItem("onu.sound") !== "off";
+// Storage access can throw when the browser blocks it (all-cookies-blocked, sandboxed
+// iframe). Guard it so the game still loads with sound simply defaulting on, rather than
+// throwing at module top level and rendering a blank page.
+function readStored(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+function writeStored(key, value) { try { localStorage.setItem(key, value); } catch (e) { /* storage blocked */ } }
+let soundOn = readStored("onu.sound") !== "off";
 let humanOnuIntent = false;
 let uiResolve = null;
 let reactionResolve = null;
@@ -634,7 +639,7 @@ $("playDrawnBtn").addEventListener("click", () => humanAction({ type: "playDrawn
 $("keepBtn").addEventListener("click", () => humanAction({ type: "keepDrawn" }));
 $("rulesBtn").addEventListener("click", () => askDialog({ title: `${game ? MODES[game.mode].name : "Onu"} rules`, body: rulesBody(), buttons: [{ label: "Understood", value: true }] }));
 $("sndBtn").addEventListener("click", () => {
-  soundOn = !soundOn; localStorage.setItem("onu.sound", soundOn ? "on" : "off");
+  soundOn = !soundOn; writeStored("onu.sound", soundOn ? "on" : "off");
   $("sndBtn").textContent = soundOn ? "🔊" : "🔇"; if (soundOn) sound("pop");
 });
 $("newBtn").addEventListener("click", async () => {

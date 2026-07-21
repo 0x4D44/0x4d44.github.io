@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00030 — Onu: unguarded top-level localStorage read can blank the whole game on load
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** onu
@@ -17,8 +17,9 @@
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
+- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
 
 ## Observation
 If the browser denies storage access, Onu fails to initialise and renders a blank
@@ -61,3 +62,11 @@ Found in the deliberate onu/ review pass. The engine itself is robust — a 9000
 full-game fuzz (3000 each of classic/flip/chaos, resolving every request branch)
 completed with zero crashes, hangs, or invariant/card-conservation violations, on top
 of the 29 existing passing unit + property + browser tests.
+
+## Fix (2026-07-21)
+Wrapped both localStorage accesses in guarded helpers (`readStored`/`writeStored`, each
+try/catch), and the module-scope `soundOn` now uses `readStored("onu.sound")`. In a
+blocked-storage context the read returns null so sound simply defaults on and the game still
+loads, instead of throwing at module top level and blanking the page. Regression:
+onu/tests/validate-static.mjs executes the extracted `readStored` against a throwing
+localStorage and asserts it returns null (plus that no unguarded top-level read remains).
