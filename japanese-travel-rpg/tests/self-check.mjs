@@ -66,4 +66,15 @@ const html=read("index.html");assert.equal(JSON.parse(read("manifest.webmanifest
 // independent PWAs, so SW activation must delete ONLY this app's own caches — scoped by
 // a PREFIX, never "every key that isn't the current cache".
 {const sw=read("sw.js");assert.ok(/const PREFIX\s*=\s*"nihon-quest-"/.test(sw),"SW must namespace its caches with a PREFIX");assert.ok(/\.startsWith\(PREFIX\)/.test(sw),"SW activation cleanup must be scoped to PREFIX so it never evicts sibling apps' caches");assert.ok(/url\.origin\s*!==\s*location\.origin/.test(sw),"SW fetch handler must ignore cross-origin requests");}assert.ok(html.includes("support.js"));assert.ok(html.includes("ios-frame.jsx"));assert.ok(html.includes("content-extra.js"));assert.ok(html.includes("GuideFace"));assert.ok(read("engines.js").includes("createBrowserStore"));assert.ok(html.includes("speechSynthesis"));assert.ok(!/sk-[A-Za-z0-9]{20,}/.test(html+read("README.md")),"no hard-coded API key");assert.ok(!/\b(?:TODO|FIXME)\b/i.test(html+read("content.js")+read("content-extra.js")),"no TODO/FIXME markers");
+// ALM-BUG-FLUXHOMEARPA-00007: a save() write can fail (private mode / quota / blocked
+// storage). It must not swallow the error silently — the app has to surface it so a
+// lesson can't appear complete while progress is quietly lost on reload.
+{
+  const idx=read("index.html");
+  const save=idx.match(/\n\s*save\(\)\{[\s\S]*?\n\s*\}/);
+  assert.ok(save,"save() method should be found");
+  assert.ok(/catch\(e\)\{[^}]*this\._saveError\s*=\s*true/.test(save[0]),"save() must record the failure in its catch, not swallow it");
+  assert.ok(/saveError:\s*!!this\._saveError/.test(idx),"the view must expose saveError");
+  assert.ok(/value="\{\{ saveError \}\}"/.test(idx),"a save-failure banner must be shown when saveError is set");
+}
 console.log("PASS self-checks: content, route unlocking, SRS, persistence, phrasebook search, romaji settings, AI gating, PWA assets.");
