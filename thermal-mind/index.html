@@ -1,0 +1,1032 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Thermal Mind — how temperature moves human cognition</title>
+<meta name="description" content="Is it true that human cognition drops 2% for every degree above 25°C? An interactive, technical explainer on temperature and the mind — the real performance curve, the thermoregulatory set point, the mechanisms of heat and cold, and the evidence from the field. Vanilla JS on canvas + SVG; no build step.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%A1%EF%B8%8F%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg:      #0a0910;
+    --bg2:     #100a16;
+    --panel:   rgba(26,20,32,0.72);
+    --panel-2: rgba(34,24,40,0.55);
+    --panel-solid: #170f1e;
+    --ink:     #e4d9d0;
+    --bright:  #fbf3ec;
+    --muted:   #a394a0;
+    --faint:   #6f6070;
+    --hair:    rgba(225,190,175,0.14);
+    --hair-2:  rgba(225,190,175,0.30);
+
+    /* thermal scale */
+    --cold-2:  #2f6fe0;  /* deep cold  */
+    --cold:    #5db4ff;  /* cool       */
+    --opt:     #57d98a;  /* optimal    */
+    --warm:    #ffce5c;  /* warm       */
+    --hot:     #ff8a4d;  /* hot        */
+    --hot-2:   #ff4d4d;  /* dangerous  */
+
+    --gold:    #ffce5c;
+    --rose:    #ff6f8b;
+    --sky:     #6cc5ff;
+    --green:   #57d98a;
+
+    --accent:  var(--hot);
+
+    --font-display: "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --font-body: system-ui, "Segoe UI", Roboto, -apple-system, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+    --maxw: 1180px;
+    --prose: 64ch;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17.5px;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  #cosmos {
+    position: fixed; inset: 0; z-index: -2;
+    background:
+      radial-gradient(1200px 900px at 84% -8%, rgba(255,110,70,0.16), transparent 60%),
+      radial-gradient(1050px 820px at 6% 108%, rgba(50,110,224,0.15), transparent 62%),
+      radial-gradient(900px 700px at 50% 42%, rgba(40,26,52,0.34), transparent 72%),
+      var(--bg);
+  }
+  #grain { position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: 0.5; }
+
+  a { color: var(--warm); text-decoration: none; }
+  a:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+  #progress {
+    position: fixed; top: 0; left: 0; height: 3px; width: 0%;
+    background: linear-gradient(90deg, var(--cold-2), var(--opt), var(--warm), var(--hot-2));
+    z-index: 60; box-shadow: 0 0 14px rgba(255,140,80,0.55);
+    transition: width .08s linear;
+  }
+  .topbar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; padding: 12px 18px;
+    background: linear-gradient(var(--bg), rgba(10,9,16,0));
+    pointer-events: none;
+  }
+  .topbar .home {
+    pointer-events: auto;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .topbar .home:hover { color: var(--warm); text-decoration: none; }
+  .topbar .now {
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em;
+    color: var(--faint); text-align: right;
+  }
+
+  /* chapter rail */
+  .rail {
+    position: fixed; right: 22px; top: 50%; transform: translateY(-50%);
+    z-index: 40; display: flex; flex-direction: column; gap: 13px;
+  }
+  .rail a { position: relative; width: 11px; height: 11px; display: block; }
+  .rail a::after {
+    content: ""; position: absolute; inset: 2px; border-radius: 50%;
+    background: var(--faint); transition: background .25s, transform .25s;
+  }
+  .rail a:hover::after, .rail a.on::after { background: var(--warm); transform: scale(1.6); }
+  .rail a .lbl {
+    position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
+    white-space: nowrap; font-family: var(--font-mono); font-size: 10.5px;
+    letter-spacing: 0.08em; color: var(--ink); background: var(--panel-solid);
+    border: 1px solid var(--hair); border-radius: 6px; padding: 3px 9px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .rail a:hover .lbl { opacity: 1; }
+  @media (max-width: 900px) { .rail { display: none; } }
+
+  /* layout */
+  main { max-width: var(--maxw); margin: 0 auto; padding: 0 22px 120px; }
+  section { padding: 72px 0 8px; scroll-margin-top: 48px; }
+  .prose { max-width: var(--prose); }
+  p { margin: 0 0 1.05em; }
+
+  h1, h2, h3 { font-family: var(--font-display); color: var(--bright); font-weight: 600; line-height: 1.14; }
+  .kicker {
+    font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.22em;
+    text-transform: uppercase; color: var(--hot); margin: 0 0 14px;
+  }
+  h2 { font-size: clamp(28px, 4.4vw, 40px); margin: 6px 0 18px; }
+  h3 { font-size: 20px; margin: 30px 0 10px; color: var(--warm); }
+  .lede { font-size: 20.5px; color: var(--bright); line-height: 1.58; }
+  strong { color: var(--bright); font-weight: 600; }
+  em.term { color: var(--sky); font-style: normal; border-bottom: 1px dotted rgba(108,197,255,.5); }
+  .num { font-family: var(--font-mono); color: var(--warm); font-variant-numeric: tabular-nums; }
+
+  /* hero */
+  .hero { min-height: 92vh; display: flex; flex-direction: column; justify-content: center; padding: 90px 0 40px; }
+  .hero h1 { font-size: clamp(40px, 8.5vw, 88px); letter-spacing: -0.01em; margin: 0 0 8px; }
+  .hero .sub { font-size: clamp(18px, 2.4vw, 23px); color: var(--muted); max-width: 40ch; margin: 8px 0 0; }
+  .hero .byline { margin-top: 30px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; color: var(--faint); text-transform: uppercase; }
+  .heatword { background: linear-gradient(92deg, var(--cold), var(--opt) 34%, var(--warm) 64%, var(--hot-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  /* hero live strip */
+  #heroStrip { margin: 40px 0 8px; }
+  .cscale { position: relative; height: 30px; border-radius: 8px; overflow: hidden;
+    background: linear-gradient(90deg,#1d3f8c 0%, #2f6fe0 14%, #5db4ff 30%, #57d98a 46%, #ffce5c 66%, #ff8a4d 82%, #ff4d4d 100%);
+    border: 1px solid var(--hair); }
+  .cscale .tick { position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(0,0,0,.5); }
+  #heroReadout { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 16px; font-family: var(--font-mono); }
+  #heroReadout .r { }
+  #heroReadout .r b { display: block; font-size: 26px; color: var(--bright); font-weight: 600; letter-spacing: .01em; }
+  #heroReadout .r span { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+
+  /* figure / interactive frame */
+  figure.fig { margin: 30px 0; max-width: 100%; }
+  .panel {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--hair); border-radius: 14px;
+    padding: 20px; box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+  }
+  .panel h4 { margin: 0 0 4px; font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .panel .cap { font-size: 13.5px; color: var(--muted); margin: 12px 2px 0; line-height: 1.5; }
+  canvas { display: block; width: 100%; height: auto; }
+
+  /* controls */
+  .ctl { display: flex; flex-wrap: wrap; gap: 16px 22px; align-items: center; margin: 14px 2px 4px; }
+  .ctl label { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  input[type=range] { -webkit-appearance: none; appearance: none; height: 5px; border-radius: 4px; background: linear-gradient(90deg,var(--cold-2),var(--opt),var(--warm),var(--hot-2)); outline: none; width: 220px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #241a20; box-shadow: 0 2px 8px rgba(0,0,0,.5); cursor: pointer; }
+  input[type=range]::-moz-range-thumb { width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #241a20; cursor: pointer; }
+  .chip { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.04em; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--hair-2); background: transparent; color: var(--muted); cursor: pointer; transition: all .15s; }
+  .chip:hover { color: var(--bright); border-color: var(--warm); }
+  .chip.on { background: var(--warm); color: #201206; border-color: var(--warm); font-weight: 600; }
+  .seg { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+
+  /* readout tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px,1fr)); gap: 12px; margin: 16px 0 2px; }
+  .tile { background: var(--panel-solid); border: 1px solid var(--hair); border-radius: 10px; padding: 12px 14px; }
+  .tile b { display: block; font-family: var(--font-mono); font-size: 23px; color: var(--bright); font-variant-numeric: tabular-nums; }
+  .tile span { font-size: 10.5px; letter-spacing: 0.11em; text-transform: uppercase; color: var(--faint); }
+
+  .verdict { font-family: var(--font-body); font-size: 15px; line-height: 1.5; margin-top: 14px; padding: 12px 14px; border-left: 3px solid var(--warm); background: rgba(255,206,92,0.06); border-radius: 0 8px 8px 0; color: var(--ink); }
+
+  /* callout */
+  .callout { border: 1px solid var(--hair-2); border-radius: 12px; padding: 18px 20px; margin: 26px 0; background: rgba(40,26,52,0.4); }
+  .callout .lab { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--hot); margin-bottom: 6px; }
+
+  table.data { width: 100%; border-collapse: collapse; font-size: 14.5px; margin: 8px 0; }
+  table.data th, table.data td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--hair); }
+  table.data th { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  table.data td.n { font-family: var(--font-mono); color: var(--warm); text-align: right; font-variant-numeric: tabular-nums; }
+
+  .footnote-src { font-size: 13.5px; color: var(--muted); }
+  .footnote-src li { margin-bottom: 7px; }
+
+  hr.rule { border: 0; height: 1px; background: var(--hair); margin: 40px 0; }
+
+  .end { text-align: center; padding: 60px 0 10px; color: var(--faint); font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.14em; }
+
+  @media (max-width: 640px) {
+    body { font-size: 16.5px; }
+    .tile b { font-size: 20px; }
+    input[type=range] { width: 160px; }
+  }
+</style>
+</head>
+<body>
+<div id="cosmos"></div>
+<canvas id="grain"></canvas>
+<div id="progress"></div>
+
+<div class="topbar">
+  <a class="home" href="/">0x4D44 · Almanac</a>
+  <div class="now" id="clock"></div>
+</div>
+
+<nav class="rail" id="rail"></nav>
+
+<main>
+
+  <!-- ============ HERO ============ -->
+  <section id="top" class="hero">
+    <p class="kicker">Physiology · Cognition · Interactive</p>
+    <h1>The&nbsp;<span class="heatword">Thermal</span>&nbsp;Mind</h1>
+    <p class="sub">Human thought runs inside a startlingly narrow band of temperature. Cross it — either way — and the machinery slows. Here are the real numbers, and why.</p>
+
+    <figure class="fig" id="heroStrip" aria-hidden="true">
+      <div class="cscale" id="heroScale"><div class="tick" id="heroTick"></div></div>
+      <div id="heroReadout">
+        <div class="r"><b id="heroT">24.0°C</b><span>Ambient</span></div>
+        <div class="r"><b id="heroP">99%</b><span>Rel. performance</span></div>
+        <div class="r"><b id="heroS">0.9%/°C</b><span>Local penalty</span></div>
+        <div class="r"><b id="heroZone">Comfortable</b><span>Zone</span></div>
+      </div>
+    </figure>
+
+    <p class="byline">An interactive explainer · vanilla JS, canvas + SVG · fact-checked against the primary literature</p>
+  </section>
+
+  <!-- ============ 1. THE CLAIM ============ -->
+  <section id="claim" data-rail="The claim">
+    <p class="kicker">01 · The claim</p>
+    <h2>“Two percent a degree.”</h2>
+    <div class="prose">
+      <p class="lede">You read it somewhere, and it stuck: <em>human cognition drops about 2% for every degree above 25&nbsp;°C.</em> It sounds too tidy to be real. It is — mostly — real. But the tidy version hides the interesting part.</p>
+      <p>The number traces back to a 2006 Lawrence Berkeley National Laboratory synthesis by Olli Seppänen, William Fisk and Q.H. Lei, who pooled dozens of office and laboratory studies into a single curve of <strong>relative work performance versus air temperature</strong>. That curve peaks near <span class="num">21–22&nbsp;°C</span>, sits almost flat through the low-to-mid twenties, and then bends downward. In the warm zone above 25&nbsp;°C its slope steepens toward — yes — roughly two percent of performance lost per additional degree.</p>
+      <p>But a slope is not a constant. The penalty for the <em class="term">first</em> degree over 25 is not the penalty for the <em class="term">fifth</em>. Drag the temperature below and watch the local slope change: the “2% a degree” rule is the tangent to a curve, true only near one part of it.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="panel">
+        <h4>The performance–temperature curve</h4>
+        <canvas id="curve" width="1120" height="520" role="img" aria-label="Relative cognitive performance versus air temperature"></canvas>
+        <div class="ctl">
+          <label>Air temperature
+            <input id="curveT" type="range" min="12" max="42" step="0.1" value="24">
+          </label>
+          <div class="seg">
+            <button class="chip on" id="tglBand" type="button">Uncertainty band</button>
+            <button class="chip" id="tglField" type="button">Field data points</button>
+          </div>
+        </div>
+        <div class="tiles">
+          <div class="tile"><b id="cT">24.0 °C</b><span>Ambient</span></div>
+          <div class="tile"><b id="cP">98.9%</b><span>Rel. performance</span></div>
+          <div class="tile"><b id="cS">0.9 %/°C</b><span>Local slope</span></div>
+          <div class="tile"><b id="cD">−1.1%</b><span>vs. the peak</span></div>
+        </div>
+        <div class="verdict" id="cVerdict">…</div>
+        <p class="cap">A reconstruction of the Seppänen–Fisk–Lei (2006) office-work relation, calibrated to its published anchors: a maximum near 21.6&nbsp;°C, an almost-flat plateau to ~24&nbsp;°C, ≈9% below peak by 30&nbsp;°C. The <b>local slope</b> is the derivative — the true meaning of “X% per degree.” Field points are separate empirical results (see §6). The shaded band is the study-to-study scatter; a 2024 meta-analysis argues the real relationship is noisier still.</p>
+      </div>
+    </figure>
+
+    <div class="prose">
+      <p>So: is “2% per degree above 25&nbsp;°C” true? As a headline, near enough. As physics, it’s the slope of the curve in its <strong>moderately-warm</strong> stretch — about <span class="num">1%/°C</span> just past 25, crossing <span class="num">2%/°C</span> around 29–30&nbsp;°C, and near <em>zero</em> inside the 21–24&nbsp;°C plateau. The honest one-liner is longer: <em>there is a broad comfortable plateau, and performance falls away faster the further past it you push — roughly one to two percent per degree through the warm zone.</em></p>
+    </div>
+  </section>
+
+  <!-- ============ 2. THE SET POINT ============ -->
+  <section id="setpoint" data-rail="The set point">
+    <p class="kicker">02 · The set point</p>
+    <h2>A furnace that defends 37&nbsp;degrees</h2>
+    <div class="prose">
+      <p>To understand why a few degrees of <em>room</em> air matter so much, start with the degrees that <em>can’t</em> move. You are a chemical reactor tuned to run at a deep-body temperature of about <span class="num">37&nbsp;°C</span> — enzymes, membranes and nerve conduction are all optimised for it. The hypothalamus behaves like a thermostat with a set point, and it will spend almost any resource to hold the core there: it will open the skin’s blood vessels, flood you with sweat, or set your muscles shivering.</p>
+      <p>The catch is that the core is defended by <em class="term">throwing heat at, or pulling heat from, the shell</em> — the skin and the blood that services it. Every one of those defences has a cognitive price tag, which we’ll itemise next. First, watch the thermostat work. Slide the ambient temperature and see where the body sits: the wide, cheap <em class="term">thermoneutral zone</em>, then the escalating machinery on either side.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="panel">
+        <h4>The thermoregulatory response</h4>
+        <div style="display:grid; grid-template-columns: 220px 1fr; gap: 18px; align-items:center;" id="bodyWrap">
+          <svg id="bodyFig" viewBox="0 0 200 300" role="img" aria-label="Body core and skin temperature diagram"></svg>
+          <div>
+            <canvas id="thermoBars" width="720" height="300"></canvas>
+          </div>
+        </div>
+        <div class="ctl">
+          <label>Ambient air (still, resting, lightly clothed)
+            <input id="bodyT" type="range" min="-5" max="48" step="0.5" value="24">
+          </label>
+        </div>
+        <div class="tiles">
+          <div class="tile"><b id="bCore">37.0 °C</b><span>Core temp</span></div>
+          <div class="tile"><b id="bSkin">33.0 °C</b><span>Mean skin temp</span></div>
+          <div class="tile"><b id="bSweat">0 g/h</b><span>Sweat rate</span></div>
+          <div class="tile"><b id="bState">Thermoneutral</b><span>Defence engaged</span></div>
+        </div>
+        <p class="cap">A schematic of the resting body’s heat balance. Inside the thermoneutral zone (~<b>26–30&nbsp;°C</b> air for a nude resting adult; nearer <b>~22&nbsp;°C</b> dressed for an office) the core holds effortlessly by dilating or constricting skin vessels. Beyond it, the body recruits <b>evaporative</b> cooling (sweat) or <b>metabolic</b> heat (shivering), and eventually the core itself begins to drift — the point at which cognition is truly in trouble.</p>
+      </div>
+    </figure>
+
+    <div class="callout">
+      <div class="lab">The narrow band</div>
+      <p style="margin:0">Core temperature is survivable only from roughly <span class="num">35&nbsp;°C</span> (hypothermia sets in) to <span class="num">40&nbsp;°C</span> (heat stroke). That is a working span of about <strong>five degrees</strong> for the one number your biochemistry cares most about. Everything the body does to the skin, the blood and the breath is in service of protecting those five degrees — and the brain pays part of the bill.</p>
+    </div>
+  </section>
+
+  <!-- ============ 3. THE HEAT CASCADE ============ -->
+  <section id="heat" data-rail="Why heat costs">
+    <p class="kicker">03 · Why heat costs you</p>
+    <h2>Four ways a warm room taxes the brain</h2>
+    <div class="prose">
+      <p>Heat doesn’t reach into your skull and switch off neurons — not until it’s dangerous. Below that, the cost is <em class="term">indirect</em>: the brain is collateral damage from the body’s cooling effort. There are four main channels, and they switch on in sequence as the room warms. Drag the temperature and watch the cascade light up, each pathway adding to a running <strong>cognitive tax</strong>.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="panel">
+        <h4>The heat cascade — mechanism explorer</h4>
+        <canvas id="cascade" width="1120" height="470" role="img" aria-label="Diagram of the physiological pathways by which heat impairs cognition"></canvas>
+        <div class="ctl">
+          <label>Ambient air
+            <input id="cascadeT" type="range" min="18" max="44" step="0.5" value="24">
+          </label>
+          <div class="tile" style="margin-left:auto"><b id="cascadeTax">0%</b><span>Modelled cognitive tax</span></div>
+        </div>
+        <p class="cap">Illustrative model: each pathway contributes to a combined performance penalty as it activates. The magnitudes are calibrated to the literature, but the split between channels is a teaching abstraction, not a measured decomposition.</p>
+      </div>
+    </figure>
+
+    <div class="prose">
+      <h3>1 · Blood is pulled to the skin</h3>
+      <p>The first and cheapest defence is <em class="term">cutaneous vasodilation</em>: the skin’s vessels open, and cardiac output is redirected outward so warm blood can dump heat at the surface. Skin blood flow can rise from a resting ~250&nbsp;mL/min toward <span class="num">6–8&nbsp;L/min</span> in severe heat. That blood is borrowed from somewhere — and under strain, cerebral perfusion is not sacred.</p>
+      <h3>2 · You breathe off your own CO₂</h3>
+      <p>As you heat, you hyperventilate. Blowing off carbon dioxide lowers arterial CO₂ (<em class="term">hypocapnia</em>), and CO₂ is the master dial for cerebral blood vessels: less of it makes them constrict. The result is a measurable drop in <strong>cerebral blood flow</strong> — by some accounts 15–20% under moderate hyperthermia — quietly starving the cortex of oxygen and glucose.</p>
+      <h3>3 · You sweat yourself dry</h3>
+      <p>Evaporation is the body’s best cooler and its most expensive. Sweat rates reach <span class="num">1–2&nbsp;L/h</span>; lose about <strong>2% of body mass</strong> in water and cognition degrades measurably — attention, working memory and vigilance first. Dehydration shrinks blood volume, compounding the perfusion problem from channels 1 and 2.</p>
+      <h3>4 · The neurons themselves warm</h3>
+      <p>Push the core past about <span class="num">38.5&nbsp;°C</span> and the impairment stops being indirect. Synaptic transmission loses efficiency, and the <strong>prefrontal cortex</strong> — the seat of working memory, planning and impulse control — is among the most heat-sensitive regions. This is the executive-function collapse seen in genuine hyperthermia, and it is the steep right-hand fall of every curve in this piece.</p>
+    </div>
+  </section>
+
+  <!-- ============ 4. BOTH SIDES ============ -->
+  <section id="cold" data-rail="Both sides">
+    <p class="kicker">04 · Both sides of the peak</p>
+    <h2>Cold is the mirror, not the exception</h2>
+    <div class="prose">
+      <p>Performance versus temperature is an <em class="term">inverted U</em>, and the cold side has its own machinery. Mild cold can actually sharpen simple alertness — a cool room keeps you awake — which is why the plateau extends a little further down than up. But push past it and cognition falls again: attention is pulled to the discomfort, <strong>manual dexterity</strong> collapses as fingers cool and nerve conduction slows, and shivering hijacks the same attentional resources a hard problem needs.</p>
+      <p>Crucially, <strong>not all tasks ride the same curve.</strong> In Pilcher and colleagues’ 2002 meta-analysis of thermal stress, reasoning and memory tasks were relatively robust — even nudged upward by mild heat — while <em>psychomotor</em> and <em>perceptual</em> tasks (reaction time, tracking, dexterity) degraded first and worst. Choose a task family below and see how its curve differs.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="panel">
+        <h4>Inverted-U, by task family</h4>
+        <canvas id="invu" width="1120" height="500" role="img" aria-label="Performance versus temperature for different task families"></canvas>
+        <div class="ctl">
+          <div class="seg" id="taskSeg">
+            <button class="chip on" data-task="react" type="button">Reaction &amp; attention</button>
+            <button class="chip" data-task="reason" type="button">Reasoning &amp; memory</button>
+            <button class="chip" data-task="dext" type="button">Dexterity &amp; tracking</button>
+            <button class="chip" data-task="all" type="button">Compare all</button>
+          </div>
+        </div>
+        <p class="cap">Schematic curves in the spirit of Pilcher et&nbsp;al. (2002), which found very little effect between roughly <b>21–27&nbsp;°C WBGT</b>, sharp degradation below ~<b>10&nbsp;°C</b> and above ~<b>32&nbsp;°C WBGT</b>, and that cognitive (reasoning/memory) tasks were the <em>least</em> affected while psychomotor and perceptual tasks suffered most. WBGT folds humidity into a single stress index, so its numbers sit a little below dry-air temperature.</p>
+      </div>
+    </figure>
+
+    <div class="callout">
+      <div class="lab">Why humidity belongs in the story</div>
+      <p style="margin:0">Evaporation only works if the sweat can leave. In humid air it can’t, so the body’s best cooler is throttled and heat stress arrives at a lower thermometer reading. That’s why heat research often uses <em class="term">WBGT</em> (wet-bulb globe temperature) rather than plain air temperature: <strong>30&nbsp;°C in a dry office and 30&nbsp;°C in a wet one are not the same problem.</strong></p>
+    </div>
+  </section>
+
+  <!-- ============ 5. THE OPTIMAL ============ -->
+  <section id="optimal" data-rail="The optimal">
+    <p class="kicker">05 · The optimal — and its caveats</p>
+    <h2>Where the mind runs best</h2>
+    <div class="prose">
+      <p>If there is a single answer, it is this: <strong>peak cognitive and office-work performance sits around 21–22&nbsp;°C, with a comfortable plateau from about 21 to 24&nbsp;°C.</strong> The comfort standards agree from the other direction — ISO&nbsp;7730 and ASHRAE&nbsp;55 put the acceptable office band at roughly <span class="num">21–25.5&nbsp;°C</span>, adjusted for clothing, activity and humidity.</p>
+      <p>But “optimal” is a distribution, not a point. Individuals differ by metabolic rate, body composition, clothing, acclimatisation and sex — the classic finding is that thermal-comfort models built on a 70&nbsp;kg male over-cool rooms for many women, whose lower resting metabolic rate shifts their comfort a degree or two warmer. Set one office temperature and you make almost nobody optimal. Drag the thermostat and watch what share of a mixed workforce it actually suits.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="panel">
+        <h4>One thermostat, many optima</h4>
+        <canvas id="pop" width="1120" height="420" role="img" aria-label="Distribution of individual comfort optima across a population"></canvas>
+        <div class="ctl">
+          <label>Thermostat setpoint
+            <input id="popT" type="range" min="17" max="28" step="0.1" value="21.5">
+          </label>
+        </div>
+        <div class="tiles">
+          <div class="tile"><b id="popPct">—</b><span>Within 1°C of their own optimum</span></div>
+          <div class="tile"><b id="popCold">—</b><span>Feel too cold</span></div>
+          <div class="tile"><b id="popHot">—</b><span>Feel too warm</span></div>
+        </div>
+        <p class="cap">Illustrative population of individual thermal optima (mean ≈ 22.5&nbsp;°C, spread reflecting metabolic and clothing variation). The point is structural, not the exact percentages: comfort is heterogeneous, so any single setpoint is a compromise — which is exactly why the performance plateau, not the peak, is the useful target.</p>
+      </div>
+    </figure>
+
+    <div class="callout">
+      <div class="lab">A necessary caveat</div>
+      <p style="margin:0">The clean curve has critics. A 2024 meta-analysis in <em>Building and Environment</em> re-examined 35 studies (1946–2020) and found that no regression or machine-learning model predicted office performance from temperature with much accuracy — the real relationship is noisier and more task- and context-dependent than a single tidy curve suggests. The <strong>direction</strong> is not in doubt (past the mid-twenties, warmer is worse for most cognitive work); the <strong>precision</strong> of any “X% per degree” figure is.</p>
+    </div>
+  </section>
+
+  <!-- ============ 6. FIELD EVIDENCE ============ -->
+  <section id="field" data-rail="From the field">
+    <p class="kicker">06 · Evidence from the field</p>
+    <h2>What heat does to real minds doing real work</h2>
+    <div class="prose">
+      <p>Laboratory curves are one thing; consequences are another. The strongest real-world evidence comes from education, where millions of standardised scores can be matched against the weather on test day and across the school year.</p>
+      <p>Goodman, Park and colleagues’ <em>Heat and Learning</em> matched the PSAT scores of ten million US students to the temperatures of their prior school years. The finding: <strong>a school year 1&nbsp;°F hotter reduced that year’s learning by about 1%</strong> — and <strong>air conditioning eliminated roughly 70–75% of the damage.</strong> The harm fell hardest on low-income and minority students, whose schools were least likely to be cooled, accounting for a measurable slice of the racial achievement gap.</p>
+    </div>
+
+    <figure class="fig">
+      <div class="panel">
+        <h4>Heat &amp; learning — with and without cooling</h4>
+        <canvas id="fieldCanvas" width="1120" height="380" role="img" aria-label="Effect of a hotter school year on learning, with and without air conditioning"></canvas>
+        <div class="ctl">
+          <label>Extra hot days across the school year
+            <input id="fieldD" type="range" min="0" max="30" step="1" value="10">
+          </label>
+          <div class="seg">
+            <button class="chip on" id="fAC" type="button">Air conditioning: ON</button>
+          </div>
+        </div>
+        <p class="cap">Modelled from the effect sizes in Goodman et&nbsp;al., <em>Heat and Learning</em> (2018/2020): each additional ~90&nbsp;°F day costs a fraction of a year’s learning, days above 100&nbsp;°F cost ~50% more, and school air conditioning removes the great majority of the effect. Bars are illustrative of the published magnitudes, not a re-analysis of the data.</p>
+      </div>
+    </figure>
+
+    <div class="prose">
+      <p>The effect isn’t confined to children. In a 2018 study of young adults during a Boston heat wave, students sleeping in <strong>un-air-conditioned dorms</strong> (indoor temperatures ~26.3&nbsp;°C vs 21.4&nbsp;°C) were about <span class="num">13%</span> slower on reaction-time tests and completed arithmetic ~13% more slowly than peers in cooled rooms — a reminder that even “only warm, not dangerous” carries a toll. Similar patterns show up in exam-day scores, workplace output, and even the error rates of chess players and the leniency of tired, hot decision-makers.</p>
+    </div>
+  </section>
+
+  <hr class="rule">
+
+  <!-- ============ TAKEAWAYS ============ -->
+  <section id="takeaways" data-rail="Takeaways">
+    <p class="kicker">07 · The numbers to keep</p>
+    <h2>What to remember</h2>
+    <table class="data">
+      <thead><tr><th>Quantity</th><th style="text-align:right">Value</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Peak performance temperature</td><td class="n">~21.6 °C</td><td>Office / cognitive work</td></tr>
+        <tr><td>Comfortable plateau</td><td class="n">21–24 °C</td><td>Near-flat; standards allow 21–25.5 °C</td></tr>
+        <tr><td>Warm-zone penalty</td><td class="n">≈1–2 %/°C</td><td>Rising past 25 °C; ~2%/°C by ~30 °C</td></tr>
+        <tr><td>Performance at 30 °C</td><td class="n">~91%</td><td>≈9% below the peak</td></tr>
+        <tr><td>Defended core temperature</td><td class="n">~37 °C</td><td>Survivable core span ≈ 35–40 °C</td></tr>
+        <tr><td>Dehydration threshold for impairment</td><td class="n">~2% body mass</td><td>Attention &amp; working memory first</td></tr>
+        <tr><td>Core temp where neurons falter</td><td class="n">&gt;38.5 °C</td><td>Direct executive-function loss</td></tr>
+        <tr><td>Heat &amp; learning</td><td class="n">~1% / °F-year</td><td>AC removes ~70–75%</td></tr>
+      </tbody>
+    </table>
+    <div class="prose" style="margin-top:26px">
+      <p><strong>The practical version.</strong> For hard thinking, aim for the low twenties, keep humidity moderate, and drink before you’re thirsty. The single biggest lever isn’t heroics — it’s not letting the room drift into the high twenties in the first place. And treat any confident “2% per degree” as a useful rule of thumb, not a law: the truth is a plateau with a steepening slope, and the slope is what the tidy number is quietly pointing at.</p>
+    </div>
+
+    <h3>Sources &amp; notes</h3>
+    <ul class="footnote-src">
+      <li>Seppänen, Fisk &amp; Lei (2006), <em>Effect of temperature on task performance in office environment</em>, Lawrence Berkeley National Laboratory — the origin of the peak-near-22&nbsp;°C curve and the ~2%/°C warm-zone rule.</li>
+      <li>Pilcher, Nadler &amp; Busch (2002), <em>Effects of hot and cold temperature exposure on performance: a meta-analytic review</em>, <em>Ergonomics</em> — the inverted-U and task-family differences.</li>
+      <li>Wang et&nbsp;al. (2024), <em>The effects of temperature on work performance in the typical office environment: a meta-analysis</em>, <em>Building and Environment</em> — the caution that the relationship is noisier than a single curve.</li>
+      <li>Goodman, Hurwitz, Park &amp; Smith (2018/2020), <em>Heat and Learning</em>, NBER / <em>AEJ: Economic Policy</em> — 1&nbsp;°F-year ≈ 1% learning, AC removes ~70%.</li>
+      <li>Cedeño Laurent et&nbsp;al. (2018), <em>PLOS Medicine</em> — reduced cognition in un-air-conditioned dorms during a heat wave.</li>
+      <li>Mechanistic detail on cerebral blood flow, hypocapnia and hyperthermia draws on reviews in <em>J. Applied Physiology</em>, <em>Scientific Reports</em> (2017) and <em>Journal of Sport and Health Science</em> (2023).</li>
+    </ul>
+    <p class="footnote-src" style="margin-top:14px">The interactive curves are calibrated reconstructions of the published relationships, built to make the shape and slope legible; they are teaching instruments, not the source datasets. Where a figure is exact it is cited above; where a model is illustrative, the caption says so.</p>
+  </section>
+
+  <div class="end">0x4D44 · The Thermal Mind · <span id="endyear"></span></div>
+
+</main>
+
+<script>
+(function(){
+  "use strict";
+  var TAU = Math.PI*2;
+  var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // ---------- theme ----------
+  var C = {
+    cold2:"#2f6fe0", cold:"#5db4ff", opt:"#57d98a", warm:"#ffce5c", hot:"#ff8a4d", hot2:"#ff4d4d",
+    ink:"#e4d9d0", bright:"#fbf3ec", muted:"#a394a0", faint:"#6f6070",
+    hair:"rgba(225,190,175,0.16)", panel:"#170f1e", grid:"rgba(225,190,175,0.09)"
+  };
+
+  // ---------- core performance model ----------
+  // Relative performance vs air temp (°C). Calibrated to Seppänen–Fisk–Lei anchors.
+  var TOPT = 21.6;
+  function perf(T){
+    if (T <= TOPT){ var d=TOPT-T; return 1 - 0.0035*d - 0.00060*d*d; }
+    var e=T-TOPT; return 1 - 0.001276*e*e;
+  }
+  // local slope in %/°C (positive number = penalty magnitude)
+  function slope(T){
+    var h=0.05; var s=(perf(T+h)-perf(T-h))/(2*h); return Math.abs(s)*100;
+  }
+  // temperature -> thermal colour
+  function tcol(T){
+    // stops: -5 deepcold, 12 cold, 21.6 opt, 27 warm, 33 hot, 42 danger
+    var stops=[[-5,"#1d3f8c"],[12,C.cold],[19,C.opt],[24,C.opt],[28,C.warm],[33,C.hot],[42,C.hot2]];
+    for(var i=0;i<stops.length-1;i++){
+      var a=stops[i],b=stops[i+1];
+      if(T<=b[0]){ var t=(T-a[0])/(b[0]-a[0]); t=Math.max(0,Math.min(1,t)); return mix(a[1],b[1],t); }
+    }
+    return stops[stops.length-1][1];
+  }
+  function hex(c){ c=c.replace('#',''); return [parseInt(c.substr(0,2),16),parseInt(c.substr(2,2),16),parseInt(c.substr(4,2),16)]; }
+  function mix(c1,c2,t){ var a=hex(c1),b=hex(c2); return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')'; }
+
+  // ---------- HiDPI canvas helper ----------
+  function fit(cv){
+    var dpr=Math.min(window.devicePixelRatio||1,2);
+    var w=cv.clientWidth||cv.width, h=cv.height/(cv.width/(cv.clientWidth||cv.width));
+    // use the declared attribute aspect
+    var cssW=cv.clientWidth; if(!cssW) return null;
+    var aspect=cv.getAttribute('height')/cv.getAttribute('width');
+    var cssH=cssW*aspect;
+    cv.style.height=cssH+'px';
+    cv.width=Math.round(cssW*dpr); cv.height=Math.round(cssH*dpr);
+    var ctx=cv.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+    return {ctx:ctx,w:cssW,h:cssH};
+  }
+
+  function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  // =====================================================================
+  // GRAIN background
+  // =====================================================================
+  (function(){
+    var cv=document.getElementById('grain'); if(!cv) return;
+    function draw(){
+      var dpr=1; cv.width=Math.floor(window.innerWidth); cv.height=Math.floor(window.innerHeight);
+      var ctx=cv.getContext('2d'); var img=ctx.createImageData(cv.width,cv.height); var d=img.data;
+      for(var i=0;i<d.length;i+=4){ var v=Math.random()*255; d[i]=d[i+1]=d[i+2]=v; d[i+3]=7; }
+      ctx.putImageData(img,0,0);
+    }
+    draw(); var to; window.addEventListener('resize',function(){ clearTimeout(to); to=setTimeout(draw,200); });
+  })();
+
+  // =====================================================================
+  // TOPBAR clock + progress + rail
+  // =====================================================================
+  (function(){
+    var clock=document.getElementById('clock');
+    function tick(){ if(clock){ var d=new Date(); clock.textContent=d.toTimeString().slice(0,5)+' · '+Math.round( (Math.sin(Date.now()/6e5)*3+22.5)*10)/10+'°C ambient'; } }
+    tick(); setInterval(tick,1000*20);
+    document.getElementById('endyear').textContent=new Date().getFullYear();
+
+    var prog=document.getElementById('progress');
+    var secs=[].slice.call(document.querySelectorAll('section[data-rail]'));
+    var rail=document.getElementById('rail');
+    secs.forEach(function(s){
+      var a=document.createElement('a'); a.href='#'+s.id;
+      a.innerHTML='<span class="lbl">'+s.getAttribute('data-rail')+'</span>'; rail.appendChild(a);
+    });
+    var links=[].slice.call(rail.children);
+    function onScroll(){
+      var h=document.documentElement; var sc=h.scrollTop||document.body.scrollTop;
+      var max=h.scrollHeight-h.clientHeight; prog.style.width=(max>0?(sc/max*100):0)+'%';
+      var mid=sc+window.innerHeight*0.4, best=0;
+      secs.forEach(function(s,i){ if(s.offsetTop<=mid) best=i; });
+      links.forEach(function(l,i){ l.classList.toggle('on',i===best); });
+    }
+    window.addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  })();
+
+  // =====================================================================
+  // HERO strip
+  // =====================================================================
+  (function(){
+    var scale=document.getElementById('heroScale'), tick=document.getElementById('heroTick');
+    var eT=document.getElementById('heroT'),eP=document.getElementById('heroP'),eS=document.getElementById('heroS'),eZ=document.getElementById('heroZone');
+    var htEl=document.getElementById('heroT');
+    var lo=8, hi=44;
+    function zoneName(T){ if(T<16) return 'Too cold'; if(T<21) return 'Cool'; if(T<=24) return 'Comfortable'; if(T<=28) return 'Warm'; if(T<=34) return 'Hot'; return 'Dangerous'; }
+    function set(T){
+      var f=(T-lo)/(hi-lo); tick.style.left=(f*100)+'%';
+      var p=perf(T);
+      eT.textContent=T.toFixed(1)+'°C';
+      eP.textContent=Math.round(p*100)+'%';
+      eS.textContent=slope(T).toFixed(1)+'%/°C';
+      eZ.textContent=zoneName(T);
+      var c=tcol(T); eT.style.color=c;
+    }
+    // interactive on hover/drag along the scale
+    function fromEvent(e){ var r=scale.getBoundingClientRect(); var x=(e.touches?e.touches[0].clientX:e.clientX)-r.left; var f=Math.max(0,Math.min(1,x/r.width)); return lo+f*(hi-lo); }
+    var dragging=false;
+    scale.addEventListener('mousedown',function(e){ dragging=true; set(fromEvent(e)); auto=false; });
+    window.addEventListener('mousemove',function(e){ if(dragging) set(fromEvent(e)); });
+    window.addEventListener('mouseup',function(){ dragging=false; });
+    scale.addEventListener('mousemove',function(e){ if(!dragging){ set(fromEvent(e)); auto=false; } });
+    scale.addEventListener('mouseleave',function(){ auto=true; });
+    scale.addEventListener('touchstart',function(e){ auto=false; set(fromEvent(e)); },{passive:true});
+    scale.addEventListener('touchmove',function(e){ set(fromEvent(e)); },{passive:true});
+    scale.style.cursor='ew-resize';
+    // gentle auto sweep when idle
+    var auto=true, t=0;
+    function loop(){ if(auto && !reduceMotion){ t+=0.006; var T=22.5+9*Math.sin(t); set(T); } requestAnimationFrame(loop); }
+    set(24); if(!reduceMotion) loop();
+  })();
+
+  // =====================================================================
+  // 1. THE CURVE
+  // =====================================================================
+  (function(){
+    var cv=document.getElementById('curve'); if(!cv) return;
+    var Tlo=12,Thi=42,Plo=0.60,Phi=1.02;
+    var showBand=true, showField=false;
+    var slider=document.getElementById('curveT');
+    var elT=document.getElementById('cT'),elP=document.getElementById('cP'),elS=document.getElementById('cS'),elD=document.getElementById('cD'),elV=document.getElementById('cVerdict');
+    // field points [T, relative perf, label]
+    var field=[[24.5,0.99,'~25°C'],[27,0.965,'27°C'],[30,0.91,'30°C'],[33,0.86,'33°C'],[35,0.83,'35°C'],[18,0.985,'18°C']];
+
+    function verdict(T){
+      var s=slope(T).toFixed(1);
+      if(T<TOPT-6) return 'Cold zone. The mind is dulled by discomfort and slowed nerve conduction; simple alertness may hold, but dexterity and reaction times suffer. Local penalty ≈ '+s+'%/°C.';
+      if(T<=24) return 'The plateau. You are at or near peak — the slope here is a near-flat ≈'+s+'%/°C, which is exactly why the “2% a degree” rule does NOT apply inside the comfortable band.';
+      if(T<=28) return 'Warm zone. Now the rule starts to bite: the slope has climbed to ≈'+s+'%/°C. Every degree costs real, measurable performance.';
+      if(T<=34) return 'Hot zone. Slope ≈'+s+'%/°C — the “2% a degree” figure is met and exceeded here. Cerebral blood flow is falling and sweat losses are mounting.';
+      return 'Danger zone. Slope ≈'+s+'%/°C. Core temperature is drifting up; this is executive-function collapse, not mere discomfort.';
+    }
+
+    function X(w,T){ var pad=68; return pad+(T-Tlo)/(Thi-Tlo)*(w-pad-24); }
+    function Y(h,P){ var pt=26,pb=54; return pt+(1-(P-Plo)/(Phi-Plo))*(h-pt-pb); }
+
+    function draw(){
+      var f=fit(cv); if(!f) return; var ctx=f.ctx,w=f.w,h=f.h;
+      var Tsel=parseFloat(slider.value);
+      ctx.clearRect(0,0,w,h);
+
+      // plateau band 21-24
+      ctx.fillStyle='rgba(87,217,138,0.07)';
+      ctx.fillRect(X(w,21),Y(h,Phi),X(w,24)-X(w,21),Y(h,Plo)-Y(h,Phi));
+
+      // gridlines
+      ctx.font='11px ui-monospace,monospace'; ctx.textAlign='center';
+      for(var T=15;T<=40;T+=5){ var x=X(w,T);
+        ctx.strokeStyle=C.grid; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x,Y(h,Phi)); ctx.lineTo(x,Y(h,Plo)); ctx.stroke();
+        ctx.fillStyle=C.faint; ctx.fillText(T+'°',x,Y(h,Plo)+18);
+      }
+      ctx.textAlign='right';
+      for(var P=0.6;P<=1.0;P+=0.1){ var y=Y(h,P);
+        ctx.strokeStyle=C.grid; ctx.beginPath(); ctx.moveTo(X(w,Tlo),y); ctx.lineTo(X(w,Thi),y); ctx.stroke();
+        ctx.fillStyle=C.faint; ctx.fillText(Math.round(P*100)+'%',X(w,Tlo)-8,y+4);
+      }
+      ctx.fillStyle=C.muted; ctx.textAlign='center'; ctx.font='12px ui-monospace,monospace';
+      ctx.fillText('AIR TEMPERATURE  (°C)',w/2,h-14);
+      ctx.save(); ctx.translate(16,h/2); ctx.rotate(-Math.PI/2); ctx.fillText('RELATIVE PERFORMANCE',0,0); ctx.restore();
+
+      // uncertainty band
+      if(showBand){
+        ctx.beginPath();
+        for(var i=0;i<=200;i++){ var t=Tlo+(Thi-Tlo)*i/200; var band=0.015+0.005*Math.abs(t-TOPT); var yv=Math.min(Phi-0.001,perf(t)+band); ctx.lineTo(X(w,t),Y(h,yv)); }
+        for(var j=200;j>=0;j--){ var t2=Tlo+(Thi-Tlo)*j/200; var band2=0.015+0.005*Math.abs(t2-TOPT); ctx.lineTo(X(w,t2),Y(h,perf(t2)-band2)); }
+        ctx.closePath(); ctx.fillStyle='rgba(255,138,77,0.10)'; ctx.fill();
+      }
+
+      // the curve, thermally coloured
+      ctx.lineWidth=3.2; ctx.lineJoin='round';
+      var prevX=null,prevY=null;
+      for(var k=0;k<=300;k++){ var tt=Tlo+(Thi-Tlo)*k/300; var xx=X(w,tt), yy=Y(h,perf(tt));
+        if(prevX!==null){ ctx.strokeStyle=tcol(tt); ctx.beginPath(); ctx.moveTo(prevX,prevY); ctx.lineTo(xx,yy); ctx.stroke(); }
+        prevX=xx; prevY=yy;
+      }
+
+      // peak marker
+      ctx.fillStyle=C.opt; ctx.beginPath(); ctx.arc(X(w,TOPT),Y(h,perf(TOPT)),4,0,TAU); ctx.fill();
+      ctx.fillStyle=C.opt; ctx.font='11px ui-monospace,monospace'; ctx.textAlign='center';
+      ctx.fillText('peak ~21.6°',X(w,TOPT),Y(h,perf(TOPT))-12);
+
+      // field points
+      if(showField){
+        field.forEach(function(pt){ var x=X(w,pt[0]),y=Y(h,pt[1]);
+          ctx.strokeStyle='rgba(108,197,255,0.9)'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.arc(x,y,5,0,TAU); ctx.stroke();
+          ctx.fillStyle=C.sky!==undefined?'#6cc5ff':'#6cc5ff'; ctx.beginPath(); ctx.arc(x,y,2,0,TAU); ctx.fill();
+        });
+        ctx.fillStyle='#6cc5ff'; ctx.textAlign='left'; ctx.font='10px ui-monospace,monospace';
+        ctx.fillText('field / lab points',X(w,34),Y(h,0.99));
+      }
+
+      // 25°C reference line
+      ctx.strokeStyle='rgba(255,206,92,0.35)'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(X(w,25),Y(h,Phi)); ctx.lineTo(X(w,25),Y(h,Plo)); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle=C.warm; ctx.textAlign='left'; ctx.font='10px ui-monospace,monospace';
+      ctx.fillText('25°C',X(w,25)+4,Y(h,Phi)+12);
+
+      // selected marker + tangent
+      var ps=perf(Tsel), xs=X(w,Tsel), ys=Y(h,ps);
+      // tangent line
+      var m=(perf(Tsel+0.5)-perf(Tsel-0.5)); // per °C
+      var dx=2.4;
+      ctx.strokeStyle='rgba(251,243,236,0.55)'; ctx.lineWidth=1.4; ctx.beginPath();
+      ctx.moveTo(X(w,Tsel-dx),Y(h,ps-m*dx)); ctx.lineTo(X(w,Tsel+dx),Y(h,ps+m*dx)); ctx.stroke();
+      // drop line
+      ctx.strokeStyle=tcol(Tsel); ctx.globalAlpha=0.5; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(xs,ys); ctx.lineTo(xs,Y(h,Plo)); ctx.stroke(); ctx.globalAlpha=1;
+      ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(xs,ys,6,0,TAU); ctx.fill();
+      ctx.fillStyle=tcol(Tsel); ctx.beginPath(); ctx.arc(xs,ys,3.4,0,TAU); ctx.fill();
+
+      // readouts
+      elT.textContent=Tsel.toFixed(1)+' °C';
+      elP.textContent=(ps*100).toFixed(1)+'%';
+      elS.textContent=slope(Tsel).toFixed(1)+' %/°C';
+      elD.textContent=((ps-1)*100).toFixed(1)+'%';
+      elT.style.color=tcol(Tsel);
+      elV.textContent=verdict(Tsel);
+    }
+    slider.addEventListener('input',draw);
+    document.getElementById('tglBand').addEventListener('click',function(){ showBand=!showBand; this.classList.toggle('on',showBand); draw(); });
+    document.getElementById('tglField').addEventListener('click',function(){ showField=!showField; this.classList.toggle('on',showField); draw(); });
+    window.addEventListener('resize',function(){ clearTimeout(cv._t); cv._t=setTimeout(draw,150); });
+    draw();
+  })();
+
+  // =====================================================================
+  // 2. BODY / THERMOREGULATION
+  // =====================================================================
+  (function(){
+    var fig=document.getElementById('bodyFig'); var bars=document.getElementById('thermoBars');
+    if(!fig||!bars) return;
+    var slider=document.getElementById('bodyT');
+    var bCore=document.getElementById('bCore'),bSkin=document.getElementById('bSkin'),bSweat=document.getElementById('bSweat'),bState=document.getElementById('bState');
+
+    function model(Ta){
+      // mean skin temp roughly tracks ambient but clamped; core defended.
+      var skin = 0.62*Ta + 12.5; skin=Math.max(20,Math.min(38.5,skin));
+      // core defended 37; drifts if extreme
+      var core=37.0, sweat=0, shiver=0, vaso;
+      if(Ta<14){ shiver=Math.min(1,(14-Ta)/16); core=37.0-Math.max(0,(6-Ta))*0.06; vaso=0.05; }
+      else if(Ta>30){ sweat=Math.min(2000,(Ta-30)*180); core=37.0+Math.max(0,(Ta-36))*0.09; vaso=1; }
+      else { vaso=(Ta-14)/16; }
+      core=Math.max(34.5,Math.min(40.5,core));
+      var state='Thermoneutral';
+      if(Ta<14) state='Shivering'; else if(Ta<20) state='Vasoconstricting'; else if(Ta<=27) state='Thermoneutral'; else if(Ta<=34) state='Sweating'; else state='Heat strain';
+      return {skin:skin,core:core,sweat:sweat,shiver:shiver,vaso:vaso,state:state,Ta:Ta};
+    }
+
+    function drawBody(m){
+      var c=tcol(m.Ta);
+      var sweatDots='';
+      if(m.sweat>0){ for(var i=0;i<Math.min(10,Math.round(m.sweat/200));i++){ var x=55+Math.random()*90, y=90+Math.random()*150; sweatDots+='<circle cx="'+x.toFixed(0)+'" cy="'+y.toFixed(0)+'" r="1.8" fill="#6cc5ff" opacity="0.8"/>'; } }
+      var shiverX = m.shiver>0? (Math.random()*2-1)*m.shiver*2 : 0;
+      // skin colour warmth
+      var skinCol = m.vaso>0.6 ? mix('#b98a80','#ff7a6b',(m.vaso-0.6)/0.4) : mix('#7c8aa8','#b98a80',m.vaso/0.6);
+      fig.innerHTML=''+
+        '<defs><linearGradient id="coreg" x1="0" y1="0" x2="0" y2="1">'+
+        '<stop offset="0" stop-color="'+mix('#ffce5c','#ff4d4d',Math.max(0,(m.core-37)/3))+'"/>'+
+        '<stop offset="1" stop-color="'+mix('#ff8a4d','#ff4d4d',Math.max(0,(m.core-37)/3))+'"/></linearGradient></defs>'+
+        '<g transform="translate('+shiverX.toFixed(2)+',0)">'+
+        // body silhouette (shell)
+        '<path d="M100 28 q16 0 16 16 q0 12 -6 16 q22 6 24 40 l6 66 q1 12 -8 12 q-8 0 -9 -10 l-5 -40 -2 70 q0 8 -7 8 -6 0 -7 -8 l-2 -46 -2 46 q-1 8 -7 8 -7 0 -7 -8 l-2 -70 -5 40 q-1 10 -9 10 -9 0 -8 -12 l6 -66 q2 -34 24 -40 q-6 -4 -6 -16 q0 -16 16 -16 z" fill="'+skinCol+'" opacity="0.9"/>'+
+        // core
+        '<ellipse cx="100" cy="120" rx="20" ry="34" fill="url(#coreg)" opacity="0.92"/>'+
+        '<text x="100" y="122" font-family="ui-monospace,monospace" font-size="12" fill="#20140c" text-anchor="middle" font-weight="700">'+m.core.toFixed(1)+'°</text>'+
+        '<text x="100" y="135" font-family="ui-monospace,monospace" font-size="7" fill="#3a2412" text-anchor="middle">CORE</text>'+
+        sweatDots+
+        '</g>'+
+        '<text x="100" y="292" font-family="ui-monospace,monospace" font-size="9" fill="'+c+'" text-anchor="middle">SKIN '+m.skin.toFixed(1)+'°C</text>';
+    }
+
+    function drawBars(m){
+      var f=fit(bars); if(!f) return; var ctx=f.ctx,w=f.w,h=f.h;
+      ctx.clearRect(0,0,w,h);
+      var rows=[
+        ['Skin blood flow (vasodilation)', m.vaso, C.hot],
+        ['Sweating (evaporative loss)', Math.min(1,m.sweat/2000), C.cold],
+        ['Shivering (metabolic heat)', m.shiver, C.warm]
+      ];
+      var pad=14, bw=w-190, x0=176, rh=(h-pad*2)/rows.length;
+      ctx.textBaseline='middle'; ctx.font='12px ui-monospace,monospace';
+      rows.forEach(function(r,i){
+        var y=pad+i*rh+rh/2;
+        ctx.fillStyle=C.muted; ctx.textAlign='right'; ctx.fillText(r[0].split('(')[0].trim(),x0-14,y-8);
+        ctx.fillStyle=C.faint; ctx.font='10px ui-monospace,monospace'; ctx.fillText('('+r[0].split('(')[1],x0-14,y+8); ctx.font='12px ui-monospace,monospace';
+        ctx.fillStyle=C.grid; roundRect(ctx,x0,y-9,bw,18,9); ctx.fill();
+        ctx.fillStyle=r[2]; roundRect(ctx,x0,y-9,Math.max(4,bw*r[1]),18,9); ctx.fill();
+      });
+    }
+
+    function update(){
+      var Ta=parseFloat(slider.value); var m=model(Ta);
+      drawBody(m); drawBars(m);
+      bCore.textContent=m.core.toFixed(1)+' °C'; bCore.style.color=m.core>37.6?C.hot2:(m.core<36.5?C.cold:C.bright);
+      bSkin.textContent=m.skin.toFixed(1)+' °C';
+      bSweat.textContent=Math.round(m.sweat)+' g/h';
+      bState.textContent=m.state;
+      bState.style.color = (m.state==='Heat strain'||m.state==='Shivering')?C.hot2:(m.state==='Thermoneutral'?C.opt:C.warm);
+    }
+    slider.addEventListener('input',update);
+    window.addEventListener('resize',function(){ clearTimeout(bars._t); bars._t=setTimeout(update,150); });
+    update();
+  })();
+
+  // =====================================================================
+  // 3. HEAT CASCADE
+  // =====================================================================
+  (function(){
+    var cv=document.getElementById('cascade'); if(!cv) return;
+    var slider=document.getElementById('cascadeT');
+    var taxEl=document.getElementById('cascadeTax');
+
+    // pathway activation & contribution as f(Ta)
+    function paths(Ta){
+      var vaso = clamp((Ta-24)/8,0,1);                 // shunt to skin
+      var hypo = clamp((Ta-27)/9,0,1);                 // hyperventilation -> low CO2 -> CBF down
+      var dehy = clamp((Ta-29)/10,0,1);                // sweat -> dehydration
+      var neuro= clamp((Ta-33)/7,0,1);                 // core rises -> direct
+      // contributions to performance penalty (%)
+      var cVaso=vaso*2.5, cHypo=hypo*3.5, cDehy=dehy*3.0, cNeuro=neuro*8.0;
+      return {vaso:vaso,hypo:hypo,dehy:dehy,neuro:neuro,c:[cVaso,cHypo,cDehy,cNeuro],tax:cVaso+cHypo+cDehy+cNeuro};
+    }
+    function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+    var nodes=[
+      {id:'amb', x:0.09, y:0.5, t:'Warm room', sub:'ambient ↑'},
+      {id:'vaso',x:0.34, y:0.18, t:'Skin vasodilation', sub:'blood → skin'},
+      {id:'hypo',x:0.34, y:0.5, t:'Hyperventilation', sub:'PaCO₂ ↓'},
+      {id:'dehy',x:0.34, y:0.82, t:'Sweating', sub:'−2% body water'},
+      {id:'cbf', x:0.63, y:0.34, t:'Cerebral blood flow ↓', sub:'less O₂ / glucose'},
+      {id:'neuro',x:0.63,y:0.72, t:'Neural / PFC', sub:'core > 38.5 °C'},
+      {id:'cog', x:0.88, y:0.5, t:'Cognition ↓', sub:'the tax'}
+    ];
+    var edges=[['amb','vaso','vaso'],['amb','hypo','hypo'],['amb','dehy','dehy'],['vaso','cbf','vaso'],['hypo','cbf','hypo'],['dehy','cbf','dehy'],['amb','neuro','neuro'],['cbf','cog',null],['neuro','cog','neuro']];
+
+    function nodeById(id){ for(var i=0;i<nodes.length;i++) if(nodes[i].id===id) return nodes[i]; }
+
+    function draw(){
+      var f=fit(cv); if(!f) return; var ctx=f.ctx,w=f.w,h=f.h;
+      var Ta=parseFloat(slider.value); var p=paths(Ta);
+      var act={vaso:p.vaso,hypo:p.hypo,dehy:p.dehy,neuro:p.neuro};
+      ctx.clearRect(0,0,w,h);
+      function px(n){ return {x:n.x*w, y:n.y*h}; }
+
+      // edges
+      edges.forEach(function(e){
+        var a=px(nodeById(e[0])), b=px(nodeById(e[1]));
+        var a2=e[2]?act[e[2]]:1;
+        var strength = e[2]?act[e[2]]:Math.min(1,(p.tax/12));
+        ctx.strokeStyle = strength>0.02 ? mix('#403040', e[2]==='neuro'?'#ff4d4d':'#ff8a4d', strength) : 'rgba(120,100,120,0.22)';
+        ctx.lineWidth=1.2+strength*4;
+        ctx.beginPath(); ctx.moveTo(a.x+34,a.y);
+        var mx=(a.x+b.x)/2; ctx.bezierCurveTo(mx,a.y,mx,b.y,b.x-34,b.y); ctx.stroke();
+        // flowing pulse
+        if(strength>0.05 && !reduceMotion){
+          var tt=((Date.now()/900)%1);
+          var t=tt; var q=bez(a.x+34,a.y,mx,a.y,mx,b.y,b.x-34,b.y,t);
+          ctx.fillStyle= e[2]==='neuro'?'#ff4d4d':'#ffce5c'; ctx.beginPath(); ctx.arc(q.x,q.y,2+strength*2,0,TAU); ctx.fill();
+        }
+      });
+      // nodes
+      nodes.forEach(function(n){
+        var pnt=px(n); var a=(n.id==='amb')?1:(n.id==='cbf'?Math.max(act.vaso,act.hypo,act.dehy):(n.id==='cog'?Math.min(1,p.tax/12):act[n.id]!==undefined?act[n.id]:0.4));
+        var col = n.id==='amb'?tcol(Ta):(n.id==='neuro'?'#ff4d4d':(n.id==='cog'?'#ff8a4d':'#ffce5c'));
+        var base='rgba(30,22,36,0.95)';
+        ctx.save();
+        ctx.shadowColor=col; ctx.shadowBlur=a*16;
+        roundRect(ctx,pnt.x-58,pnt.y-24,116,48,10); ctx.fillStyle=base; ctx.fill();
+        ctx.shadowBlur=0;
+        ctx.lineWidth=1.4; ctx.strokeStyle= a>0.03? col : 'rgba(150,130,150,0.35)'; ctx.stroke();
+        ctx.restore();
+        ctx.textAlign='center'; ctx.fillStyle=a>0.03?C.bright:C.muted; ctx.font='600 12px system-ui,sans-serif';
+        ctx.fillText(n.t,pnt.x,pnt.y-3);
+        ctx.fillStyle=a>0.03?col:C.faint; ctx.font='10px ui-monospace,monospace';
+        ctx.fillText(n.sub,pnt.x,pnt.y+13);
+      });
+      taxEl.textContent=Math.round(p.tax)+'%'; taxEl.style.color=tcol(Ta);
+    }
+    function bez(x1,y1,x2,y2,x3,y3,x4,y4,t){ var u=1-t; var a=u*u*u,b=3*u*u*t,c=3*u*t*t,d=t*t*t; return {x:a*x1+b*x2+c*x3+d*x4,y:a*y1+b*y2+c*y3+d*y4}; }
+    slider.addEventListener('input',draw);
+    window.addEventListener('resize',function(){ clearTimeout(cv._t); cv._t=setTimeout(draw,150); });
+    if(!reduceMotion){ (function anim(){ draw(); requestAnimationFrame(anim); })(); } else draw();
+  })();
+
+  // =====================================================================
+  // 4. INVERTED-U BY TASK
+  // =====================================================================
+  (function(){
+    var cv=document.getElementById('invu'); if(!cv) return;
+    var task='react';
+    var Tlo=0,Thi=45;
+    // schematic performance curves; each returns 0..1
+    function react(T){ // reaction/attention: broad plateau 18-27, falls both sides
+      return bell(T,22,7.5,0.55) ;
+    }
+    function reason(T){ // reasoning/memory: robust, slight hump toward mild heat
+      return 0.72 + 0.24*Math.exp(-Math.pow((T-24)/12,2)) - 0.10*clamp((T-33)/10,0,1) - 0.10*clamp((14-T)/14,0,1);
+    }
+    function dext(T){ // dexterity/tracking: narrow, cold-sensitive
+      return bell(T,24,6.0,0.62) - 0.18*clamp((14-T)/12,0,1);
+    }
+    function bell(T,mu,sig,floor){ return floor + (1-floor)*Math.exp(-Math.pow((T-mu)/sig,2)); }
+    function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+    var curves={react:{f:react,c:C.cold,n:'Reaction & attention'},reason:{f:reason,c:C.opt,n:'Reasoning & memory'},dext:{f:dext,c:C.hot,n:'Dexterity & tracking'}};
+
+    function X(w,T){ var pad=58; return pad+(T-Tlo)/(Thi-Tlo)*(w-pad-20); }
+    function Y(h,P){ var pt=24,pb=52; return pt+(1-P)*(h-pt-pb); }
+
+    function draw(){
+      var f=fit(cv); if(!f) return; var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+      // comfortable band 21-27
+      ctx.fillStyle='rgba(87,217,138,0.07)'; ctx.fillRect(X(w,21),Y(h,1.02),X(w,27)-X(w,21),Y(h,0)-Y(h,1.02));
+      // axes labels
+      ctx.font='11px ui-monospace,monospace'; ctx.textAlign='center';
+      for(var T=5;T<=45;T+=5){ var x=X(w,T); ctx.strokeStyle=C.grid; ctx.beginPath(); ctx.moveTo(x,Y(h,1.02)); ctx.lineTo(x,Y(h,0)); ctx.stroke(); ctx.fillStyle=C.faint; ctx.fillText(T+'°',x,Y(h,0)+18); }
+      ctx.fillStyle=C.muted; ctx.font='12px ui-monospace,monospace'; ctx.fillText('TEMPERATURE  ~WBGT (°C)',w/2,h-14);
+      ctx.save(); ctx.translate(15,h/2); ctx.rotate(-Math.PI/2); ctx.fillText('RELATIVE PERFORMANCE',0,0); ctx.restore();
+      // cold/hot collapse markers
+      [['cold zone',8,C.cold],['hot zone',34,C.hot2]].forEach(function(m){ var x=X(w,m[1]); ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.setLineDash([3,4]); ctx.beginPath(); ctx.moveTo(x,Y(h,1.02)); ctx.lineTo(x,Y(h,0)); ctx.stroke(); ctx.setLineDash([]); });
+
+      var toDraw = task==='all'?['react','reason','dext']:[task];
+      toDraw.forEach(function(key){ var cu=curves[key]; ctx.lineWidth= (task==='all'?2.4:3.2); ctx.strokeStyle=cu.c; ctx.beginPath();
+        for(var i=0;i<=300;i++){ var t=Tlo+(Thi-Tlo)*i/300; var y=Y(h,clamp(cu.f(t),0,1)); if(i===0)ctx.moveTo(X(w,t),y); else ctx.lineTo(X(w,t),y); } ctx.stroke();
+      });
+      // legend
+      ctx.textAlign='left'; ctx.font='12px ui-monospace,monospace';
+      var ly=Y(h,1.02)+6;
+      toDraw.forEach(function(key,i){ var cu=curves[key]; ctx.fillStyle=cu.c; ctx.fillRect(X(w,29),ly+i*20-9,14,4); ctx.fillStyle=C.ink; ctx.fillText(cu.n,X(w,29)+20,ly+i*20-4); });
+      // plateau label
+      ctx.fillStyle=C.opt; ctx.textAlign='center'; ctx.font='10px ui-monospace,monospace'; ctx.fillText('comfort plateau',X(w,24),Y(h,1.02)-2);
+    }
+    document.getElementById('taskSeg').addEventListener('click',function(e){ var b=e.target.closest('.chip'); if(!b)return; task=b.getAttribute('data-task'); [].forEach.call(this.querySelectorAll('.chip'),function(c){c.classList.toggle('on',c===b);}); draw(); });
+    window.addEventListener('resize',function(){ clearTimeout(cv._t); cv._t=setTimeout(draw,150); });
+    draw();
+  })();
+
+  // =====================================================================
+  // 5. POPULATION OF OPTIMA
+  // =====================================================================
+  (function(){
+    var cv=document.getElementById('pop'); if(!cv) return;
+    var slider=document.getElementById('popT');
+    var pPct=document.getElementById('popPct'),pCold=document.getElementById('popCold'),pHot=document.getElementById('popHot');
+    // generate a fixed population of individual optima ~ N(22.5, 1.9), clipped
+    var N=600, pop=[];
+    (function(){ var seed=1234567; function rnd(){ seed=(seed*1103515245+12345)&0x7fffffff; return seed/0x7fffffff; }
+      for(var i=0;i<N;i++){ var g=(rnd()+rnd()+rnd()+rnd()-2)/2; pop.push(22.5+g*1.9); }
+    })();
+    var Tlo=16,Thi=29;
+    function X(w,T){ var pad=30; return pad+(T-Tlo)/(Thi-Tlo)*(w-pad-20); }
+    // histogram
+    var bins=[]; var nb=52;
+    for(var i=0;i<nb;i++)bins[i]=0;
+    pop.forEach(function(o){ var idx=Math.floor((o-Tlo)/(Thi-Tlo)*nb); if(idx>=0&&idx<nb)bins[idx]++; });
+    var maxBin=Math.max.apply(null,bins);
+
+    function draw(){
+      var f=fit(cv); if(!f) return; var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+      var set=parseFloat(slider.value);
+      var top=30, bot=h-42, bh=bot-top;
+      // bars
+      for(var i=0;i<nb;i++){ var t=Tlo+(i+0.5)/nb*(Thi-Tlo); var x=X(w,t); var bw=(w-50)/nb;
+        var bhh=bins[i]/maxBin*bh; var suited=Math.abs(t-set)<=1;
+        ctx.fillStyle= suited? tcol(t) : 'rgba(150,130,150,0.28)';
+        ctx.fillRect(x-bw/2+1, bot-bhh, bw-2, bhh);
+      }
+      // setpoint line
+      var xs=X(w,set); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(xs,top-6); ctx.lineTo(xs,bot); ctx.stroke();
+      ctx.fillStyle='#fff'; ctx.textAlign='center'; ctx.font='600 12px ui-monospace,monospace'; ctx.fillText('setpoint '+set.toFixed(1)+'°',xs,top-10);
+      // ±1° band
+      ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.setLineDash([3,3]);
+      [set-1,set+1].forEach(function(v){ var x=X(w,v); ctx.beginPath(); ctx.moveTo(x,top); ctx.lineTo(x,bot); ctx.stroke(); }); ctx.setLineDash([]);
+      // axis
+      ctx.font='11px ui-monospace,monospace'; ctx.textAlign='center'; ctx.fillStyle=C.faint;
+      for(var T=16;T<=29;T+=2){ ctx.fillText(T+'°',X(w,T),bot+18); }
+      ctx.fillStyle=C.muted; ctx.font='12px ui-monospace,monospace'; ctx.fillText('EACH PERSON’S OWN COMFORT OPTIMUM  (°C)',w/2,h-8);
+      // stats
+      var within=0,cold=0,hot=0;
+      pop.forEach(function(o){ if(o>set+1)cold++; else if(o<set-1)hot++; if(Math.abs(o-set)<=1)within++; });
+      pPct.textContent=Math.round(within/N*100)+'%';
+      pCold.textContent=Math.round(cold/N*100)+'%'; pCold.style.color=C.cold;
+      pHot.textContent=Math.round(hot/N*100)+'%'; pHot.style.color=C.hot;
+    }
+    slider.addEventListener('input',draw);
+    window.addEventListener('resize',function(){ clearTimeout(cv._t); cv._t=setTimeout(draw,150); });
+    draw();
+  })();
+
+  // =====================================================================
+  // 6. FIELD / HEAT & LEARNING
+  // =====================================================================
+  (function(){
+    var cv=document.getElementById('fieldCanvas'); if(!cv) return;
+    var slider=document.getElementById('fieldD');
+    var acBtn=document.getElementById('fAC'); var ac=true;
+    function draw(){
+      var f=fit(cv); if(!f) return; var ctx=f.ctx,w=f.w,h=f.h; ctx.clearRect(0,0,w,h);
+      var days=parseInt(slider.value,10);
+      // learning loss %: ~0.055% per extra 90F day (scaled to illustrate ~1%/°F-year headline);
+      var lossNoAC = days*0.09 + (days>18?(days-18)*0.05:0);   // extra bite past ~18 hot days
+      var lossAC = lossNoAC*0.27;                              // AC removes ~73%
+      var maxL=4.2;
+      var base=h-56, top=40, x1=w*0.30, x2=w*0.62, bw=w*0.16;
+      function bar(x,loss,col,label){ var bh=Math.min(1,loss/maxL)*(base-top);
+        ctx.fillStyle='rgba(120,100,120,0.16)'; ctx.fillRect(x-bw/2,top,bw,base-top);
+        ctx.fillStyle=col; ctx.fillRect(x-bw/2, base-bh, bw, bh);
+        ctx.fillStyle=C.bright; ctx.textAlign='center'; ctx.font='600 20px ui-monospace,monospace'; ctx.fillText('−'+loss.toFixed(2)+'%',x,base-bh-10);
+        ctx.fillStyle=C.muted; ctx.font='12px ui-monospace,monospace'; ctx.fillText(label,x,base+20);
+        ctx.fillStyle=C.faint; ctx.font='10px ui-monospace,monospace'; ctx.fillText('of a year’s learning',x,base+36);
+      }
+      bar(x1,lossNoAC,C.hot2,'No air conditioning');
+      bar(x2, ac?lossAC:lossNoAC, ac?C.opt:C.hot,'With air conditioning');
+      // title
+      ctx.textAlign='left'; ctx.fillStyle=C.muted; ctx.font='12px ui-monospace,monospace';
+      ctx.fillText(days+' extra hot days across the school year',w*0.30-bw/2,top-14);
+      if(ac){ var saved=(lossNoAC-lossAC); ctx.fillStyle=C.opt; ctx.textAlign='center'; ctx.font='11px ui-monospace,monospace'; ctx.fillText('AC recovers ~'+Math.round(saved/lossNoAC*100||0)+'% of the loss',x2, top+2); }
+    }
+    slider.addEventListener('input',draw);
+    acBtn.addEventListener('click',function(){ ac=!ac; this.textContent='Air conditioning: '+(ac?'ON':'OFF'); this.classList.toggle('on',ac); draw(); });
+    window.addEventListener('resize',function(){ clearTimeout(cv._t); cv._t=setTimeout(draw,150); });
+    draw();
+  })();
+
+})();
+</script>
+
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
