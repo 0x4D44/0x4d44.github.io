@@ -21,6 +21,30 @@ assert.ok(searchPhrasebook("allergy",phrases).some(p=>p.id==="food-allergy"));as
 assert.equal(shouldShowRomaji({romajiMode:"fade"},1,false),true);assert.equal(shouldShowRomaji({romajiMode:"fade"},9,false),false);assert.equal(shouldShowRomaji({romajiMode:"mostly-off"},1,true),true);
 assert.equal(aiModeStatus({aiMode:false,apiKey:""}).enabled,false);assert.equal(aiModeStatus({aiMode:true,apiKey:"sk-local-test-key-123"}).enabled,true);
 const lookup=new Map(phrases.map(p=>[p.id,p]));assert.equal(scriptedFeedback("こんにちは",chapters[0].roleplay.steps[0],lookup).quality,"understood");
+// ALM-BUG-FLUXHOMEARPA-00003: roleplay safe answers / feedback look up
+// step.expectedPhraseIds in the OVERLAID phrase map. content-extra.js remaps each
+// overlaid phrase to a new id, so the overlay MUST re-point the roleplay steps too,
+// or every safe-answer suggestion silently filters out. Guard both: (a) index.html
+// still carries the re-point, and (b) after applying the same overlay every roleplay
+// expectedPhraseId resolves and scriptedFeedback yields suggestions.
+{
+  const {EXTRA}=await import("../content-extra.js");
+  assert.ok(/st\.expectedPhraseIds\s*=\s*\[\s*np\.id\s*\]/.test(read("index.html")),
+    "index.html overlay must re-point roleplay steps to the overlaid phrase ids");
+  // Apply the exact overlay index.html runs (componentDidMount), on fresh chapters.
+  const {chapters:ov,allPhrases:ovAll}=await import("../content.js?overlay");
+  ov.forEach(ch=>{const x=EXTRA[ch.id];if(!x)return;
+    if(x.phrases){ch.phrases=x.phrases.map((p,i)=>({id:ch.id+"-p"+i,japanese:p.j,kana:p.j,romaji:p.r,english:p.e,politeness:p.pol||"safe polite",usage:p.u||"Traveller phrase",seg:p.seg||null,variants:[]}));
+      if(ch.roleplay&&ch.roleplay.steps)ch.roleplay.steps.forEach((st,i)=>{const np=ch.phrases[i];if(!np)return;st.expectedPhraseIds=[np.id];st.acceptKeywords=[np.japanese,np.japanese.replace("。",""),(np.english||"").split(" ")[0],np.id.split("-")[0]];});}
+  });
+  const ovLookup=new Map(ovAll().map(p=>[p.id,p]));
+  const missing=[];
+  for(const ch of ov)for(let i=0;i<ch.roleplay.steps.length;i++)for(const id of ch.roleplay.steps[i].expectedPhraseIds)if(!ovLookup.get(id))missing.push(`${ch.id}#${i}:${id}`);
+  assert.deepEqual(missing,[],`every roleplay expectedPhraseId must resolve after overlay; missing: ${missing.join(", ")}`);
+  const uk=ov.find(c=>c.id==="uk-home");
+  assert.ok(scriptedFeedback("",uk.roleplay.steps[0],ovLookup).suggestions.length>0,
+    "overlaid roleplay must still offer safe-answer suggestions");
+}
 const memory=createMemoryStore();await memory.set("progress",afterUk);assert.ok(mergeProgress(await memory.get("progress"),chapters,2000).completedLessons.includes("uk-home"));
 for(const asset of["index.html","support.js","GuideFace.dc.html","ios-frame.jsx","content.js","content-extra.js","engines.js","manifest.webmanifest","sw.js","icons/icon.svg"]){assert.ok(fs.existsSync(path.join(root,asset)),`${asset} exists`)}
 const html=read("index.html");assert.equal(JSON.parse(read("manifest.webmanifest")).display,"standalone");assert.ok(read("sw.js").includes("nihon-quest-v3"));assert.ok(read("sw.js").includes("cache.addAll"));assert.ok(html.includes("support.js"));assert.ok(html.includes("ios-frame.jsx"));assert.ok(html.includes("content-extra.js"));assert.ok(html.includes("GuideFace"));assert.ok(read("engines.js").includes("createBrowserStore"));assert.ok(html.includes("speechSynthesis"));assert.ok(!/sk-[A-Za-z0-9]{20,}/.test(html+read("README.md")),"no hard-coded API key");assert.ok(!/\b(?:TODO|FIXME)\b/i.test(html+read("content.js")+read("content-extra.js")),"no TODO/FIXME markers");
