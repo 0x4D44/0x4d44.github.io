@@ -405,4 +405,17 @@ for (const a of articles) {
   assert.match(plainHtml, /Nothing here is true/, `${plain.id} footer should keep the fiction disclaimer`);
 }
 
+// ALM-BUG-KILN-00022: article bodies must not carry model-guardrail phrasing that reads as
+// a generation artifact rather than editorial voice.
+{
+  const guardrail = /\ba fictitious\b|\bas an AI\b|\bas a language model\b|\bI'm sorry,? but I (?:can|cannot|won't)\b/i;
+  const offenders = [];
+  for (const a of articles) {
+    for (const [i, p] of (a.body || []).entries()) {
+      if (typeof p === "string" && guardrail.test(p)) offenders.push(`${a.id} para ${i}`);
+    }
+  }
+  assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} body paragraph(s) carry LLM-guardrail phrasing: ${offenders.slice(0, 10).join(", ")}`);
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
