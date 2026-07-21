@@ -16,7 +16,10 @@ assert.equal(new Set(phrases.map(p=>p.id)).size,phrases.length,"phrase ids uniqu
 let progress=createInitialProgress(chapters,0);assert.equal(progress.reviewCards.length,144,"review cards generated from content");assert.equal(routeUnlockState(chapters[0],progress,chapters).unlocked,true);assert.equal(routeUnlockState(chapters[1],progress,chapters).unlocked,false);
 const afterUk=completeLesson(progress,chapters[0],1000);assert.equal(routeUnlockState(chapters[1],afterUk,chapters).unlocked,true,"route unlocks");assert.ok(afterUk.stamps.includes("uk-home"));assert.ok(afterUk.learnedPhraseIds.includes("uk-hello"));
 const scheduled=scheduleCard(progress.reviewCards[0],"good",0);assert.ok(scheduled.due>0,"SRS schedules");const afterGrade=gradeReview(progress,progress.reviewCards[0].id,"again",0);assert.equal(afterGrade.reviewLog.length,1);assert.equal(afterGrade.reviewCards.find(c=>c.id===progress.reviewCards[0].id).lapses,1);
-assert.ok(dueCards(progress,0,"daily").length<=12);assert.ok(dueCards(progress,0,"deep").length<=40);
+// ALM-BUG-FLUXHOMEARPA-00005: a new learner's review queue must contain only learned/
+// unlocked material, not every phrase/sign of every (locked) chapter due at once.
+assert.equal(dueCards(progress,0,"daily").length,0,"a new learner has no due review cards until material is learned");
+{const due5=dueCards(afterUk,0,"deep");assert.ok(due5.length>0,"completing a lesson makes its cards due");assert.ok(due5.length<=40);assert.ok(due5.every(c=>c.chapterId==="uk-home"),"only learned/unlocked material appears in review");}
 assert.ok(searchPhrasebook("allergy",phrases).some(p=>p.id==="food-allergy"));assert.ok(searchPhrasebook("運休",phrases).some(p=>p.id==="fuji-closed"));
 assert.equal(shouldShowRomaji({romajiMode:"fade"},1,false),true);assert.equal(shouldShowRomaji({romajiMode:"fade"},9,false),false);assert.equal(shouldShowRomaji({romajiMode:"mostly-off"},1,true),true);
 assert.equal(aiModeStatus({aiMode:false,apiKey:""}).enabled,false);assert.equal(aiModeStatus({aiMode:true,apiKey:"sk-local-test-key-123"}).enabled,true);
