@@ -663,9 +663,14 @@
       // promotes, and the Long Tour medal (30 days) must be reachable by drilling alone.
       const today = new Date().toISOString().slice(0, 10);
       if (!P.days.includes(today)) P.days.push(today);
-      checkMedals(null, null);
+      // Collect medals crossed during the drill so they can be shown + chimed, not
+      // recorded silently (Universal Translator is earnable ONLY in a drill).
+      const pops = [];
+      checkMedals(null, pops);
+      S.drill.pops = pops;
       DK.save(P);
       snd("done");
+      if (pops.length) setTimeout(() => snd("medal"), 500);
       render();
       return;
     }
@@ -743,6 +748,7 @@
           <div class="kicker">DRILL SESSION COMPLETE</div>
           <div class="d-big">${right} / ${D.total}</div>
           <div class="d-line">Each answer reschedules the word — misses come back sooner, hits drift further out. ${due ? due + " still due." : "Queue clear."}</div>
+          ${(D.pops || []).map((m) => `<div class="medal-pop"><span style="font-size:26px">${m.ic}</span><span><b style="color:var(--gold);font-family:var(--font-ui);letter-spacing:.06em">COMMENDATION: ${m.name}</b><br><small style="color:var(--dim)">${m.desc}</small></span></div>`).join("")}
           <div class="btnrow" style="justify-content:center">
             ${due ? '<button class="btn salmon big" data-act="start-drill">ANOTHER ROUND</button>' : ""}
             <button class="btn ghost" data-nav="bridge">BRIDGE</button>
