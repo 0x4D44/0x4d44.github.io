@@ -98,14 +98,50 @@
     return s.replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
   };
 
+  // Vowel each hiragana mora carries, so a long-vowel mark (ー) can be folded to
+  // the same canonical form the rōmaji IME produces (doubled vowel kana). Small
+  // kana ゃゅょ take the vowel of their glide.
+  const KANA_VOWEL = {};
+  (function () {
+    const rows = {
+      a: "あかさたなはまやらわがざだばぱゃ",
+      i: "いきしちにひみりぎじぢびぴ",
+      u: "うくすつぬふむゆるぐずづぶぷゅゔっ",
+      e: "えけせてねへめれげぜでべぺ",
+      o: "おこそとのほもよろをごぞどぼぽょ",
+    };
+    for (const [vw, chars] of Object.entries(rows))
+      for (const ch of chars) KANA_VOWEL[ch] = vw;
+  })();
+  const VOWEL_KANA = { a: "あ", i: "い", u: "う", e: "え", o: "お" };
+
+  // Canonicalise long vowels: expand every ー (and stray "-") to the vowel kana of
+  // the preceding mora, so こーひー and rōmaji "koohii" (→こおひい) meet. Folding
+  // (not deleting) also keeps distinct taught words apart — かれー→かれえ ≠ かれ.
+  function foldLongVowels(str) {
+    let out = "";
+    for (const ch of str) {
+      if (ch === "ー" || ch === "-") {
+        const vw = KANA_VOWEL[out[out.length - 1]];
+        out += vw ? VOWEL_KANA[vw] : ""; // drop a dangling mark with no vowel to lengthen
+      } else out += ch;
+    }
+    return out;
+  }
+
   // Normalize an answer for comparison: NFKC, lowercase, strip spaces
   // and punctuation, katakana->hiragana, romaji->hiragana.
   DK.normalizeAnswer = function (s) {
     let t = (s || "").normalize("NFKC").toLowerCase().trim();
-    t = t.replace(/[\s、。．，,.!?！？「」『』・〜~'’"]/g, "");
+    // Keep the apostrophe (syllabic-n disambiguator: ten'in) and the long-vowel
+    // ー through rōmaji conversion; both are handled canonically below. Deleting
+    // them here is what made the grader reject the romaji it prints on the card.
+    t = t.replace(/[\s、。．，,.!?！？「」『』・〜~"“”]/g, "");
     t = DK.kataToHira(t);
-    if (/[a-z-]/.test(t)) t = DK.romajiToHiragana(t, true);
-    t = t.replace(/ー/g, ""); // fold long-vowel mark for lenient checking
+    if (/[a-z'’ー-]/.test(t)) t = DK.romajiToHiragana(t, true);
+    t = t.replace(/['’]/g, ""); // drop any apostrophe the IME didn't consume
+    t = t.replace(/づ/g, "ず").replace(/ぢ/g, "じ"); // yotsugana fold (Hepburn zu/ji)
+    t = foldLongVowels(t); // canonical long vowels (not deleted)
     return t;
   };
 
