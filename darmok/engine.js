@@ -223,14 +223,34 @@
       settings: { sound: true, speech: true, rate: 0.9, romaji: true, furigana: true, booted: false, onboarded: false },
     };
   };
+  const isPlainObj = (x) => x && typeof x === "object" && !Array.isArray(x);
   DK.load = function () {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return DK.defaultProgress();
       const p = JSON.parse(raw);
-      return Object.assign(DK.defaultProgress(), p, {
-        settings: Object.assign(DK.defaultProgress().settings, p.settings || {}),
+      const d = DK.defaultProgress();
+      const merged = Object.assign(d, isPlainObj(p) ? p : {}, {
+        settings: Object.assign(d.settings, isPlainObj(p) && isPlainObj(p.settings) ? p.settings : {}),
       });
+      // Sanitize at the trust boundary. The payload can be hand-crafted (IMPORT) or
+      // written by any sibling page on this shared origin, so coerce every field the UI
+      // reads to its declared type: a null container must not brick the next render, and
+      // a string where a number is expected must not survive to be interpolated as HTML.
+      merged.xp = Number(merged.xp) || 0;
+      merged.reviews = Number(merged.reviews) || 0;
+      merged.name = typeof merged.name === "string" ? merged.name : "";
+      if (!isPlainObj(merged.done)) merged.done = {};
+      if (!isPlainObj(merged.srs)) merged.srs = {};
+      if (!Array.isArray(merged.medals)) merged.medals = [];
+      if (Array.isArray(merged.days)) merged.days = merged.days.filter((x) => typeof x === "string");
+      else if (merged.days != null) merged.days = [];
+      const defs = DK.defaultProgress().settings;
+      for (const k of Object.keys(defs)) {
+        if (typeof defs[k] === "boolean") merged.settings[k] = Boolean(merged.settings[k]);
+        else if (typeof defs[k] === "number") merged.settings[k] = Number(merged.settings[k]) || defs[k];
+      }
+      return merged;
     } catch (e) {
       return DK.defaultProgress();
     }

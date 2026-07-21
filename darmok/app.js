@@ -280,7 +280,7 @@
             return `<button class="shift-row ${rec ? "done" : ""} ${l.review ? "review-shift" : ""}" data-act="start-lesson" data-wi="${wi}" data-li="${li}">
               <span class="s-day">${l.review ? "REVIEW" : "DAY " + (li + 1)}</span>
               <span class="s-title">${DK.esc(l.title)}<small>${DK.md(l.sub || "")}</small></span>
-              <span class="s-score">${rec ? rec.best + "%" : ""}</span>
+              <span class="s-score">${rec ? DK.esc(rec.best) + "%" : ""}</span>
             </button>`;
           }).join("")}
         </div>` : ""}
