@@ -457,7 +457,7 @@
       '<div class="track-wrap"><div class="track">' + items + items + '</div></div></div>';
   }
 
-  function footerHtml() {
+  function footerHtml(basedOnTruth) {
     var cols = [
       ["Sections", CATEGORY_ORDER.slice(0, 6).map(function (c) { return ['<a href="' + catUrl(c) + '">' + esc(c) + '</a>']; })],
       ["More", CATEGORY_ORDER.slice(6).map(function (c) { return ['<a href="' + catUrl(c) + '">' + esc(c) + '</a>']; })],
@@ -482,10 +482,15 @@
         '<div class="brandline">The Daily Flange</div>' +
         '<div class="cols">' + colsHtml + '</div>' +
         '<div class="legal">' +
-          '<p>The Daily Flange is a work of satire. Every article, byline, quotation, statistic, ' +
-          'expert, institution and advertisement on this site is entirely fictional and invented for ' +
-          'comic effect. Any resemblance to real events, persons or working sprockets is coincidental. ' +
-          'Nothing here is true, and none of it is advice.</p>' +
+          (basedOnTruth
+            ? '<p>The Daily Flange is a satirical newspaper. This story carries the ' +
+              '<strong>based-on-truth</strong> tag: the underlying event really happened, but the ' +
+              'reporting, correspondents, quotations and images here are invented for comic effect. ' +
+              'Everything else on the site is entirely fictional, and none of it is advice.</p>'
+            : '<p>The Daily Flange is a work of satire. Every article, byline, quotation, statistic, ' +
+              'expert, institution and advertisement on this site is entirely fictional and invented for ' +
+              'comic effect. Any resemblance to real events, persons or working sprockets is coincidental. ' +
+              'Nothing here is true, and none of it is advice.</p>') +
           '<p>Part of the <a href="../">0x4D44 Almanac</a>. No sprockets were harmed. Remember to flange regularly.</p>' +
         '</div>' +
       '</div></footer>';
@@ -738,14 +743,20 @@
       related = related.concat(extra.slice(0, 4 - related.length));
     }
     var relatedHtml = related.map(function (x) { return cardHtml(x, 0).replace(/<div class="meta">[^<]*<\/div>/, '<div class="meta">' + esc(x.category) + '</div>'); }).join("");
+    // A based-on-truth story retells a real event: the point-of-consumption disclaimers must
+    // not tell the reader it "never happened" — the About page says these events are real.
+    var basedOnTruth = (a.tags || []).indexOf("based-on-truth") !== -1;
     var heroCaption = a.imageCaption || (
       (a.location ? a.location.charAt(0) + a.location.slice(1).toLowerCase() + ', earlier. ' : '') +
-      "Artist's impression; file photo; entirely made up."
+      (basedOnTruth ? "Artist's impression of real events; illustration invented." : "Artist's impression; file photo; entirely made up.")
     );
     var noticeHtml = a.notice
       ? '<strong>' + esc(a.noticeLabel || "Opinion note") + ':</strong> ' + esc(a.notice)
-      : '<strong>Satire notice:</strong> The Daily Flange is fiction. ' +
-        'This story never happened, the people quoted do not exist, and the sprockets remain, as ever, unflanged.';
+      : basedOnTruth
+        ? '<strong>Based on a true story:</strong> the underlying event really happened. ' +
+          'The reporting, correspondents and quotations here are invented for comic effect.'
+        : '<strong>Satire notice:</strong> The Daily Flange is fiction. ' +
+          'This story never happened, the people quoted do not exist, and the sprockets remain, as ever, unflanged.';
 
     var out = [];
     out.push(headerHtml(a.category));
@@ -785,7 +796,7 @@
     out.push('<div style="margin:26px 0 10px">' + adHtml(pickAds("leader", 1, a.id + "b")[0], "leader") + '</div>');
 
     out.push('</div>'); // .wrap
-    out.push(footerHtml());
+    out.push(footerHtml(basedOnTruth));
 
     mount.innerHTML = out.join("");
     startClock();

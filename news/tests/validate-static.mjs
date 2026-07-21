@@ -382,4 +382,27 @@ for (const a of articles) {
     "every <mark> must have a matching </mark>");
 }
 
+// ALM-BUG-KILN-00018: a based-on-truth article must NOT tell the reader it "never happened".
+// The notice and footer must acknowledge the real event; a plain satire story is unchanged.
+{
+  const renderArticleHtml = (id) => {
+    const mount = { innerHTML: "" };
+    context.location = { search: `?id=${encodeURIComponent(id)}` };
+    context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    context.window.NEWS.renderArticle("app");
+    return mount.innerHTML;
+  };
+  const bot = articles.find((a) => (a.tags || []).includes("based-on-truth") && !a.notice);
+  assert.ok(bot, "corpus should contain a based-on-truth article without a custom notice");
+  const botHtml = renderArticleHtml(bot.id);
+  assert.doesNotMatch(botHtml, /never happened/, `${bot.id} must not claim the real event never happened`);
+  assert.doesNotMatch(botHtml, /Nothing here is true/, `${bot.id} footer must not assert total fiction`);
+  assert.match(botHtml, /underlying event really happened/, `${bot.id} should acknowledge the real event`);
+
+  const plain = articles.find((a) => !(a.tags || []).includes("based-on-truth") && !a.notice);
+  const plainHtml = renderArticleHtml(plain.id);
+  assert.match(plainHtml, /never happened/, `${plain.id} (pure satire) should keep the satire notice`);
+  assert.match(plainHtml, /Nothing here is true/, `${plain.id} footer should keep the fiction disclaimer`);
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);
