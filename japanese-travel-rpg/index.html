@@ -133,7 +133,7 @@ html[data-nq-rm="true"] *{animation:none!important;transition:none!important}
           </sc-if>
         </sc-if>
       </div>
-      <sc-if value="{{ revHasCard }}" hint-placeholder-val="{{ false }}">
+      <sc-if value="{{ revEmpty }}" hint-placeholder-val="{{ false }}">
         <div style="margin:0 18px;background:#eef1e4;border-radius:18px;padding:22px 18px;text-align:center"><div style="font:900 40px 'Zen Kaku Gothic New',sans-serif;color:#566f3e">済</div><div style="font:900 16px 'Zen Maru Gothic',sans-serif;color:#455038;margin-top:6px">All caught up!</div><div style="font:700 12px 'Zen Maru Gothic',sans-serif;color:#8a7d64;margin-top:2px">No cards due right now. Complete lessons to add more, or come back later.</div></div>
       </sc-if>
     </sc-if>
@@ -803,7 +803,7 @@ class Component extends DCLogic {
       v.onRevDaily=()=>this.setState({reviewMode:'daily',revealed:false});
       v.onRevDeep=()=>this.setState({reviewMode:'deep',revealed:false});
       v.revCount=game.revCount||0; v.revDueN=due.length;
-      const card=due[0]; v.revHasCard=!!card;
+      const card=due[0]; v.revHasCard=!!card; v.revEmpty=!card;
       if(card){
         v.revTypeTag= card.type==='sign'?'SIGN · かんじ':'PHRASE · フレーズ';
         v.revFront=card.front; v.revBack=card.back; v.revPrompt=card.prompt||'';
@@ -817,7 +817,7 @@ class Component extends DCLogic {
           {t:'Easy', bg:'#e6eef4', fg:'#23415d', onTap:()=>this.gradeCard(card,'easy')},
         ];
       }
-    } else { v.revHasCard=false; v.grades=[]; }
+    } else { v.revHasCard=false; v.revEmpty=false; v.grades=[]; }
 
     // ---- PHRASEBOOK (folded in) ----
     if(ready){
