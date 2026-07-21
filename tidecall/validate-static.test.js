@@ -129,4 +129,13 @@ test('the page has no external runtime dependency', () => {
   assert.deepEqual(externalStyles, []);
 });
 
+test('the game board chrome constants fit the viewport at every tier (KILN-00004)', () => {
+  // The board fills the screen with min-height: calc(100dvh - <chrome>); an understated
+  // <chrome> makes the board taller than the viewport and the page scrolls. Pin the
+  // corrected per-tier constants (and the safe-inset subtraction the app-shell padding adds).
+  assert.match(styles, /\.table-column \{ gap: 6px; min-height: calc\(100dvh - 73px - var\(--safe-top\) - var\(--safe-bottom\)\)/, '<=560 board uses the corrected 73px chrome + safe insets');
+  assert.match(styles, /\.table-column \{ min-height: calc\(100dvh - 101px - var\(--safe-top\) - var\(--safe-bottom\)\)/, '<=820 board uses 101px + safe insets');
+  assert.match(styles, /min-height: calc\(100dvh - 106px - var\(--safe-top\) - var\(--safe-bottom\)\)/, 'desktop game-layout uses 106px + safe insets');
+});
+
 if (!process.exitCode) process.stdout.write('\nAll Tidecall static checks passed.\n');
