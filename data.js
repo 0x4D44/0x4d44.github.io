@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "thermal-mind",
+    title: "The Thermal Mind",
+    tagline: "Is it true that human cognition drops 2% per degree above 25°C? The real answer, made interactive: the performance–temperature curve and its steepening slope, the body's defence of a 37°C core, the four mechanisms by which heat taxes the brain, the cold mirror, and the field evidence from ten million exam scores. Vanilla JS on canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/thermal-mind/",
+    illustration: "ill-thermal",
+    date: "2026-07-21T13:00:00",
+    year: 2006,
+    readingMin: 22,
+    words: 4600,
+    tags: ["science", "software"],
+    real: true,
+  },
+  {
     slug: "quantum-theory",
     title: "Quanta",
     tagline: "The deep technical almanac of quantum theory — the crisis that forced it, the machinery of states and operators, wavefunctions, spin, entanglement, quantum fields, and quantum dots: the particle-in-a-box on your television. Eight chapters, fourteen live instruments — run a Bell test, tunnel a barrier, dial a nanocrystal's colour by size. Vanilla JS, canvas + SVG; no build step.",
@@ -1484,7 +1497,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },
