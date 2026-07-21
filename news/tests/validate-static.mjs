@@ -357,4 +357,29 @@ for (const a of articles) {
   context.Date = RealDate;
 }
 
+// ALM-BUG-KILN-00021: search highlighting must not corrupt escaped entities or its own
+// <mark> tags. Highlighting on the raw text (escaping each span) fixes both.
+{
+  const probeArticles = [
+    { id: "t-amp", category: "Science", headline: "Fish & Chips amp-hour", standfirst: "n", body: ["b"], published: "2026-01-01" },
+    { id: "t-mark", category: "Science", headline: "a market opens", standfirst: "n", body: ["b"], published: "2026-01-01" },
+  ];
+  const probeCtx = { window: { NEWS_ARTICLES: probeArticles, NEWS_ADS: [] } };
+  vm.runInNewContext(rendererSource, probeCtx, { filename: "news.js" });
+  const render = (q) => {
+    const mount = { innerHTML: "" };
+    probeCtx.location = { search: "?q=" + encodeURIComponent(q) };
+    probeCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    probeCtx.window.NEWS.renderSearch("app");
+    return mount.innerHTML;
+  };
+  const ampOut = render("amp");
+  assert.doesNotMatch(ampOut, /&<mark>amp<\/mark>;/, "highlight must not tear open the &amp; entity");
+  assert.match(ampOut, /Fish &amp; Chips/, "the & entity must stay intact");
+  const markOut = render("a mar");
+  assert.doesNotMatch(markOut, /<<mark>|<\/mark>k>/, "highlight must not re-match inside/around an inserted <mark> tag");
+  assert.equal((markOut.match(/<mark>/g) || []).length, (markOut.match(/<\/mark>/g) || []).length,
+    "every <mark> must have a matching </mark>");
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);

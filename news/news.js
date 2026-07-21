@@ -839,13 +839,22 @@
     }
 
     function highlight(text) {
-      if (!q) return esc(text);
-      var out = esc(text);
-      q.split(/\s+/).filter(Boolean).forEach(function (t) {
-        var re = new RegExp("(" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
-        out = out.replace(re, "<mark>$1</mark>");
-      });
-      return out;
+      var s = String(text == null ? "" : text);
+      var terms = q ? q.split(/\s+/).filter(Boolean) : [];
+      if (!terms.length) return esc(s);
+      // Match on the RAW text and escape each span separately — escaping first and then
+      // replacing over the result corrupted the entities esc() produced (q="amp" hit the
+      // &amp; entity) and nested marks (q="a mar" reran over an inserted <mark>).
+      var re = new RegExp("(" + terms.map(function (t) {
+        return t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }).join("|") + ")", "ig");
+      var out = "", last = 0, m;
+      while ((m = re.exec(s)) !== null) {
+        out += esc(s.slice(last, m.index)) + "<mark>" + esc(m[0]) + "</mark>";
+        last = m.index + m[0].length;
+        if (m.index === re.lastIndex) re.lastIndex++; // guard against a zero-length match loop
+      }
+      return out + esc(s.slice(last));
     }
 
     var out = [];
