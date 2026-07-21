@@ -1,4 +1,4 @@
-const CACHE = "nihon-quest-v3";
+const CACHE = "nihon-quest-v4";
 // Cache Storage is per-origin — scope cleanup to this app's own keys so activating
 // this SW never wipes sibling almanac PWAs' offline caches.
 const PREFIX = "nihon-quest-";
@@ -7,7 +7,9 @@ const ASSETS = [
   "./index.html",
   "./support.js",
   "./GuideFace.dc.html",
-  "./ios-frame.jsx",
+  "./ios-frame.js",
+  "./vendor/react.production.min.js",
+  "./vendor/react-dom.production.min.js",
   "./content.js",
   "./content-extra.js",
   "./engines.js",

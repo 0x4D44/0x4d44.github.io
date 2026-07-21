@@ -280,7 +280,7 @@
             return `<button class="shift-row ${rec ? "done" : ""} ${l.review ? "review-shift" : ""}" data-act="start-lesson" data-wi="${wi}" data-li="${li}">
               <span class="s-day">${l.review ? "REVIEW" : "DAY " + (li + 1)}</span>
               <span class="s-title">${DK.esc(l.title)}<small>${DK.md(l.sub || "")}</small></span>
-              <span class="s-score">${rec ? rec.best + "%" : ""}</span>
+              <span class="s-score">${rec ? DK.esc(rec.best) + "%" : ""}</span>
             </button>`;
           }).join("")}
         </div>` : ""}
@@ -416,8 +416,15 @@
       if (ex.show) out.push(`In writing: ${DK.ruby(ex.show)}`);
     } else if (ex.t === "mc" || ex.t === "listen") {
       out.push("I have eliminated two incorrect options for you.");
-      const rd = DK.plain(DK.readingForm(ex.choices[ex.a]));
-      if (rd) out.push(`The correct entry reads 「${DK.esc(rd)}」.`);
+      const ans = ex.choices[ex.a] || "";
+      // Only the "reverse" MC has a Japanese answer that has a reading; "meaning" and
+      // "listen" answers are the English gloss, so don't mislabel English as a reading.
+      if (JP_RE.test(ans)) {
+        const rd = DK.plain(DK.readingForm(ans));
+        if (rd) out.push(`The correct entry reads 「${DK.esc(rd)}」.`);
+      } else if (ans) {
+        out.push(`The correct answer is 「${DK.esc(ans)}」.`);
+      }
     } else if (ex.t === "build") {
       if (ex.tokens && ex.tokens[0]) out.push(`Begin with 「${DK.esc(ex.tokens[0])}」.`);
       if (ex.tokens && ex.tokens[1]) out.push(`Then 「${DK.esc(ex.tokens[1])}」 comes next.`);
@@ -507,7 +514,7 @@
         <div class="ex-q">${DK.md(ex.q)}</div>
         ${ex.jp ? `<div class="ex-jp"><button class="say" data-say="${DK.esc(DK.plain(ex.jp))}">▶</button><span>${DK.ruby(ex.jp)}</span></div>` : ""}
         <div class="type-row">
-          <input class="type-in" id="type-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type rōmaji → かな" ${S.imeOff ? "data-ime-off" : ""}>
+          <input class="type-in" id="type-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type rōmaji → かな" value="${DK.esc(ex._typed || "")}" ${S.imeOff ? "data-ime-off" : ""}>
           <button class="btn" data-act="submit-type">SUBMIT</button>
           <button class="btn ghost" data-act="toggle-ime" title="Turn the built-in rōmaji converter on/off">${S.imeOff ? "あ→A OFF" : "A→あ ON"}</button>
           <div class="ime-hint">Type in rōmaji and it becomes kana as you type (<b>ko-n-ni-chi-ha → こんにちは</b>). Kanji also accepted. Toggle the converter off if you use your own Japanese keyboard.</div>
@@ -605,10 +612,13 @@
       // requeue once at the end; if the officer is struggling, Data pre-offers help
       // on the retry (fresh hint state + a proactive nudge in the comm panel).
       if (!ex._retry) {
-        const copy = Object.assign({}, ex, {
-          _retry: true, _bank: null, _placed: null, _left: null, _right: null, _done: null,
-          _hints: 0, _hidden: null, _assisted: false, _dataNudge: L.streakWrong >= 2,
-        });
+        // Build the retry from the exercise definition only: strip EVERY transient
+        // _-prefixed field (so _matchMistakes, _placed, _hints, ... all reset by
+        // construction — an omitted field is how a flawless match retry was still
+        // graded wrong), then set just the two the retry needs.
+        const copy = Object.fromEntries(Object.entries(ex).filter(([k]) => !k.startsWith("_")));
+        copy._retry = true;
+        copy._dataNudge = L.streakWrong >= 2;
         L.queue.push(copy);
         L.total = L.queue.length;
       }
@@ -656,9 +666,18 @@
   function finishSession() {
     if (S.drill) {
       S.drill.finished = true;
-      checkMedals(null, null);
+      // A completed drill counts as a training day too — it is the everyday habit the app
+      // promotes, and the Long Tour medal (30 days) must be reachable by drilling alone.
+      const today = new Date().toISOString().slice(0, 10);
+      if (!P.days.includes(today)) P.days.push(today);
+      // Collect medals crossed during the drill so they can be shown + chimed, not
+      // recorded silently (Universal Translator is earnable ONLY in a drill).
+      const pops = [];
+      checkMedals(null, pops);
+      S.drill.pops = pops;
       DK.save(P);
       snd("done");
+      if (pops.length) setTimeout(() => snd("medal"), 500);
       render();
       return;
     }
@@ -736,6 +755,7 @@
           <div class="kicker">DRILL SESSION COMPLETE</div>
           <div class="d-big">${right} / ${D.total}</div>
           <div class="d-line">Each answer reschedules the word — misses come back sooner, hits drift further out. ${due ? due + " still due." : "Queue clear."}</div>
+          ${(D.pops || []).map((m) => `<div class="medal-pop"><span style="font-size:26px">${m.ic}</span><span><b style="color:var(--gold);font-family:var(--font-ui);letter-spacing:.06em">COMMENDATION: ${m.name}</b><br><small style="color:var(--dim)">${m.desc}</small></span></div>`).join("")}
           <div class="btnrow" style="justify-content:center">
             ${due ? '<button class="btn salmon big" data-act="start-drill">ANOTHER ROUND</button>' : ""}
             <button class="btn ghost" data-nav="bridge">BRIDGE</button>
@@ -1151,7 +1171,9 @@
     if (!act) return;
     snd(act === "next-ex" || act === "hint" ? "tap" : "nav");
 
-    if (act === "toggle-mission") {
+    if (act === "close-kanji") {
+      closeKanji();
+    } else if (act === "toggle-mission") {
       const wi = parseInt(t.dataset.wi, 10);
       S.missionOpen = S.missionOpen === wi ? null : wi;
       render();
@@ -1229,6 +1251,11 @@
     const L = S.lesson || S.drill;
     const holder = document.getElementById("excard");
     if (holder && L) {
+      // Preserve the in-progress typed answer across a re-render: ASK DATA (hint) and the
+      // A→かな toggle both rebuild #excard, which would otherwise discard the input node
+      // and wipe what the learner has typed. Stash it so exerciseHtml can render it back.
+      const cur = document.getElementById("type-in");
+      if (cur) L.queue[L.idx]._typed = cur.value;
       holder.innerHTML = exerciseHtml(L.queue[L.idx]);
       const ti = document.getElementById("type-in");
       if (ti) wireTypeInput(ti);
@@ -1238,6 +1265,9 @@
   // keyboard shortcuts: 1-4 pick choices, Enter continues
   document.addEventListener("keydown", (e) => {
     if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+    // Escape closes the kanji breakdown modal — it can open outside a lesson/drill,
+    // so this must run before the queue guard below.
+    if (S.kanjiOpen && e.key === "Escape") { e.preventDefault(); closeKanji(); return; }
     const L = S.lesson || S.drill;
     if (!L || !L.queue) return;
     if (e.key === "Enter") {

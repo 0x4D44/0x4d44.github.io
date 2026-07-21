@@ -150,18 +150,29 @@ function isMaintainingDuty(duty) {
 
 export function updateProgression(progress = {}, exercise, previousDuty = {}, entry = {}, completedAt = new Date().toISOString()) {
   const current = { exerciseId: exercise.id, currentLevel: 0, recentFeedback: [], recentStatuses: [], ...progress };
-  const recentFeedback = [...(current.recentFeedback || []), entry.feedback].filter(Boolean).slice(-5);
-  const recentStatuses = [...(current.recentStatuses || []), entry.status].filter(Boolean).slice(-5);
+  // Keep feedback and status ALIGNED per duty in one log, so the run checks reason over the
+  // same events (an independent .filter(Boolean) on each column let a status-only 'skipped'
+  // duty shift them out of step). Migrate from any legacy columns by zipping positionally.
+  const priorLog = Array.isArray(current.recentLog)
+    ? current.recentLog
+    : (current.recentFeedback || []).map((f, i) => ({ feedback: f, status: (current.recentStatuses || [])[i] }));
+  const recentLog = [...priorLog, ...((entry.feedback || entry.status) ? [{ feedback: entry.feedback, status: entry.status }] : [])].slice(-5);
+  const recentFeedback = recentLog.map((e) => e.feedback).filter(Boolean).slice(-5);
+  const recentStatuses = recentLog.map((e) => e.status).filter(Boolean).slice(-5);
   let level = current.currentLevel || 0;
-  const easyRun = recentFeedback.slice(-3).every((f) => f === 'too_easy') && recentStatuses.slice(-3).every((s) => s === 'done');
-  const hardRun = recentFeedback.slice(-2).every((f) => f === 'too_hard') || recentStatuses.slice(-3).every((s) => s === 'skipped');
+  // Require the FULL window before adjusting: every() is vacuously true on a short slice, so
+  // a single matching log would otherwise trip the "run" with only 1-2 entries of history.
+  const last = (n) => recentLog.slice(-n);
+  const easyRun = recentLog.length >= 3 && last(3).every((e) => e.feedback === 'too_easy' && e.status === 'done');
+  const hardRun = (recentLog.length >= 2 && last(2).every((e) => e.feedback === 'too_hard')) ||
+    (recentLog.length >= 3 && last(3).every((e) => e.status === 'skipped'));
   if (entry.feedback === 'pain_or_discomfort') level = Math.max(0, level - 1);
   else if (hardRun) level = Math.max(0, level - 1);
   else if (easyRun) level = Math.min(8, level + 1);
   const bestSeconds = Math.max(current.bestSeconds || 0, entry.actualSeconds || previousDuty.actualSeconds || 0) || undefined;
   const bestReps = Math.max(current.bestReps || 0, entry.actualReps || previousDuty.actualReps || 0) || undefined;
   const bestWeightKg = Math.max(current.bestWeightKg || 0, entry.actualWeightKg || previousDuty.actualWeightKg || 0) || undefined;
-  return { ...current, currentLevel: level, recentFeedback, recentStatuses, bestSeconds, bestReps, bestWeightKg, lastChangedAt: level !== current.currentLevel ? completedAt : current.lastChangedAt };
+  return { ...current, currentLevel: level, recentLog, recentFeedback, recentStatuses, bestSeconds, bestReps, bestWeightKg, lastChangedAt: level !== current.currentLevel ? completedAt : current.lastChangedAt };
 }
 
 export function logDuty(state, date, dutyId, entry, now = new Date()) {
@@ -208,9 +219,17 @@ export function calculateStats(state, today = isoDate()) {
     currentStreak += 1;
     cursor.setDate(cursor.getDate() - 1);
   }
+  // Compare CALENDAR days, not a fixed 86,400,000 ms delta: a local noon-to-noon gap across
+  // a DST transition is 23 h (spring) or 25 h, never exactly a day, which split genuinely
+  // consecutive streaks. Derive prev's next calendar date the DST-safe way currentStreak does.
+  const isConsecutive = (a, b) => {
+    const d = new Date(`${a}T12:00:00`);
+    d.setDate(d.getDate() + 1);
+    return isoDate(d) === b;
+  };
   let longestStreak = 0, run = 0, prev = null;
   for (const date of maintainedDates) {
-    if (!prev || (new Date(`${date}T12:00:00`) - new Date(`${prev}T12:00:00`)) === 86400000) run += 1;
+    if (!prev || isConsecutive(prev, date)) run += 1;
     else run = 1;
     longestStreak = Math.max(longestStreak, run);
     prev = date;

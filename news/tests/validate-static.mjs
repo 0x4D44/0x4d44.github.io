@@ -260,4 +260,184 @@ assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
 
 assert.equal(articles.length, 903, "catalog copy and article corpus count should stay in lockstep");
 
+// ALM-BUG-KILN-00020: a stray/truncated percent-escape in ?id= or ?q= must degrade to
+// the graceful path, not throw URIError and blank the page.
+for (const search of ["?id=%", "?q=100%", "?id=%E0%A4%A", "?cat=%"]) {
+  const mount = { innerHTML: "" };
+  context.location = { search };
+  context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+  assert.doesNotThrow(() => context.window.NEWS.renderArticle("app"), `renderArticle should survive ${search}`);
+  assert.doesNotThrow(() => context.window.NEWS.renderSearch("app"), `renderSearch should survive ${search}`);
+}
+
+// ALM-BUG-KILN-00024: the masthead weekday and date must come from one clock. Simulate a
+// moment where the local day is ahead of the UTC calendar date (local Tue 14 Jul 23:30,
+// UTC still Mon 13 Jul) and assert the printed weekday matches the printed date.
+{
+  const RealDate = Date;
+  class FakeDate {
+    getFullYear() { return 2026; } getMonth() { return 6; } getDate() { return 14; }
+    getDay() { return 2; } getTime() { return RealDate.UTC(2026, 6, 13, 22, 30); }
+    toISOString() { return "2026-07-13T22:30:00.000Z"; }
+  }
+  context.Date = FakeDate;
+  const head = context.window.NEWS.header("");
+  context.Date = RealDate;
+  const m = head.match(/(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), (\d{2}) (\w{3}) (\d{4})/);
+  assert.ok(m, "masthead should print a weekday and date");
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const printed = new RealDate(RealDate.UTC(+m[4], MON.indexOf(m[3]), +m[2]));
+  const weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][printed.getUTCDay()];
+  assert.equal(m[1], weekday, `masthead weekday ${m[1]} must match its date ${m[2]} ${m[3]} ${m[4]} (${weekday})`);
+}
+
+// ALM-BUG-KILN-00019: if articles.js/ads.js fail to load (coerced to []), the page must
+// degrade to a friendly notice, not throw on the unguarded head reads and blank #app.
+{
+  const emptyCtx = { window: { NEWS_ARTICLES: [], NEWS_ADS: [] } };
+  vm.runInNewContext(rendererSource, emptyCtx, { filename: "news.js" });
+  const mount = { innerHTML: "" };
+  emptyCtx.location = { search: "" };
+  emptyCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
+  assert.doesNotThrow(() => emptyCtx.window.NEWS.renderHome("app"), "renderHome should survive an empty corpus");
+  assert.match(mount.innerHTML, /Nothing to show/, "an empty corpus should degrade to a friendly notice");
+}
+
+// ALM-BUG-KILN-00027: a shape-invalid article must be skipped, not blank whole pages.
+// (a) corpus-shape oracle: every shipped article is well-formed.
+for (const a of articles) {
+  for (const field of ["id", "category", "headline", "standfirst"]) {
+    assert.ok(typeof a[field] === "string" && a[field].length > 0,
+      `article ${a.id || "(no id)"} needs a non-empty string ${field}`);
+  }
+  assert.ok(Array.isArray(a.body) && a.body.length > 0, `article ${a.id} needs a non-empty body`);
+}
+// (b) a fat-fingered append (missing category/headline/standfirst) is skipped at load and
+// the search/about pages still render.
+{
+  const badArticles = articles.concat([{ id: "x-malformed", body: ["only a body, no category/headline/standfirst"] }]);
+  const badCtx = { window: { NEWS_ARTICLES: badArticles, NEWS_ADS: context.window.NEWS_ADS } };
+  vm.runInNewContext(rendererSource, badCtx, { filename: "news.js" });
+  assert.equal(badCtx.window.NEWS.count(), articles.length, "the malformed article should be dropped at load");
+  for (const [search, fn] of [["?q=anything", "renderSearch"], ["?cat=Science", "renderSearch"], ["", "renderAbout"]]) {
+    const mount = { innerHTML: "" };
+    badCtx.location = { search };
+    badCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    assert.doesNotThrow(() => badCtx.window.NEWS[fn]("app"), `${fn} should survive a malformed article at ${search || "(about)"}`);
+  }
+}
+
+// ALM-BUG-KILN-00026: no story in the homepage MAIN column (hero/lead/more-top/feature
+// bands/Around) may appear twice — the category bands must exclude ids already placed. The
+// ticker and "Most read" sidebar are intentionally separate, so we scope to <main>…</main>.
+{
+  const RealDate = Date;
+  const fake = (ms) => class {
+    getTime() { return ms; }
+    getFullYear() { return new RealDate(ms).getUTCFullYear(); }
+    getMonth() { return new RealDate(ms).getUTCMonth(); }
+    getDate() { return new RealDate(ms).getUTCDate(); }
+    getDay() { return new RealDate(ms).getUTCDay(); }
+    toISOString() { return new RealDate(ms).toISOString(); }
+  };
+  for (let s = 0; s < 24; s++) {
+    const mount = { innerHTML: "" };
+    context.Date = fake(1_000_000 * 3600000 + s * 3600000); // distinct hour seeds
+    context.location = { search: "" };
+    context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    context.window.NEWS.renderHome("app");
+    const main = mount.innerHTML.slice(mount.innerHTML.indexOf("<main>"), mount.innerHTML.indexOf("</main>"));
+    // Each card links its story twice (image + headline), adjacent — collapse those runs so
+    // we only flag a story that reappears in a DIFFERENT section.
+    const ids = [...main.matchAll(/article\.html\?id=([^"&]+)/g)].map((m) => m[1])
+      .filter((id, i, arr) => id !== arr[i - 1]);
+    const dup = ids.find((id, i) => ids.indexOf(id) !== i);
+    assert.equal(dup, undefined, `homepage main column repeats story ${dup} at hour-seed offset ${s}`);
+  }
+  context.Date = RealDate;
+}
+
+// ALM-BUG-KILN-00021: search highlighting must not corrupt escaped entities or its own
+// <mark> tags. Highlighting on the raw text (escaping each span) fixes both.
+{
+  const probeArticles = [
+    { id: "t-amp", category: "Science", headline: "Fish & Chips amp-hour", standfirst: "n", body: ["b"], published: "2026-01-01" },
+    { id: "t-mark", category: "Science", headline: "a market opens", standfirst: "n", body: ["b"], published: "2026-01-01" },
+  ];
+  const probeCtx = { window: { NEWS_ARTICLES: probeArticles, NEWS_ADS: [] } };
+  vm.runInNewContext(rendererSource, probeCtx, { filename: "news.js" });
+  const render = (q) => {
+    const mount = { innerHTML: "" };
+    probeCtx.location = { search: "?q=" + encodeURIComponent(q) };
+    probeCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    probeCtx.window.NEWS.renderSearch("app");
+    return mount.innerHTML;
+  };
+  const ampOut = render("amp");
+  assert.doesNotMatch(ampOut, /&<mark>amp<\/mark>;/, "highlight must not tear open the &amp; entity");
+  assert.match(ampOut, /Fish &amp; Chips/, "the & entity must stay intact");
+  const markOut = render("a mar");
+  assert.doesNotMatch(markOut, /<<mark>|<\/mark>k>/, "highlight must not re-match inside/around an inserted <mark> tag");
+  assert.equal((markOut.match(/<mark>/g) || []).length, (markOut.match(/<\/mark>/g) || []).length,
+    "every <mark> must have a matching </mark>");
+}
+
+// ALM-BUG-KILN-00018: a based-on-truth article must NOT tell the reader it "never happened".
+// The notice and footer must acknowledge the real event; a plain satire story is unchanged.
+{
+  const renderArticleHtml = (id) => {
+    const mount = { innerHTML: "" };
+    context.location = { search: `?id=${encodeURIComponent(id)}` };
+    context.document = { title: "", getElementById: () => mount, querySelector: () => null };
+    context.window.NEWS.renderArticle("app");
+    return mount.innerHTML;
+  };
+  const bot = articles.find((a) => (a.tags || []).includes("based-on-truth") && !a.notice);
+  assert.ok(bot, "corpus should contain a based-on-truth article without a custom notice");
+  const botHtml = renderArticleHtml(bot.id);
+  assert.doesNotMatch(botHtml, /never happened/, `${bot.id} must not claim the real event never happened`);
+  assert.doesNotMatch(botHtml, /Nothing here is true/, `${bot.id} footer must not assert total fiction`);
+  assert.match(botHtml, /underlying event really happened/, `${bot.id} should acknowledge the real event`);
+
+  const plain = articles.find((a) => !(a.tags || []).includes("based-on-truth") && !a.notice);
+  const plainHtml = renderArticleHtml(plain.id);
+  assert.match(plainHtml, /never happened/, `${plain.id} (pure satire) should keep the satire notice`);
+  assert.match(plainHtml, /Nothing here is true/, `${plain.id} footer should keep the fiction disclaimer`);
+}
+
+// ALM-BUG-KILN-00022: article bodies must not carry model-guardrail phrasing that reads as
+// a generation artifact rather than editorial voice.
+{
+  const guardrail = /\ba fictitious\b|\bas an AI\b|\bas a language model\b|\bI'm sorry,? but I (?:can|cannot|won't)\b/i;
+  const offenders = [];
+  for (const a of articles) {
+    for (const [i, p] of (a.body || []).entries()) {
+      if (typeof p === "string" && guardrail.test(p)) offenders.push(`${a.id} para ${i}`);
+    }
+  }
+  assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} body paragraph(s) carry LLM-guardrail phrasing: ${offenders.slice(0, 10).join(", ")}`);
+}
+
+// ALM-BUG-KILN-00023: these seven based-on-truth reports quoted their own bylined
+// correspondent as the independent expert source. The expert must be a distinct person, so
+// the byline correspondent's surname must no longer appear in the body / pull-quote.
+{
+  const selfQuote = {
+    "biz-gerald-ratner-total-crap-speech-1991": "Cornish",
+    "biz-leonard-pepsi-harrier-jet-lawsuit": "Cornish",
+    "hea-radithor-radium-tonic-eben-byers": "Aldous",
+    "hea-tobacco-smoke-enema-resuscitation": "Aldous",
+    "sci-mars-climate-orbiter-metric-mixup-1999": "Vance",
+    "sci-piltdown-man-hoax-1912": "Vance",
+    "wea-great-smog-of-london-1952": "Fernsby",
+  };
+  for (const [id, surname] of Object.entries(selfQuote)) {
+    const a = articles.find((x) => x.id === id);
+    assert.ok(a, `${id} should be present`);
+    assert.match(a.byline, new RegExp(surname), `${id} byline should still be the correspondent`);
+    const text = (a.body || []).join(" ") + " " + (a.pullQuote || "");
+    assert.ok(!text.includes(surname), `${id} must not quote its byline correspondent (${surname}) as the expert`);
+  }
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);

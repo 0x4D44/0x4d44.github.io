@@ -98,14 +98,50 @@
     return s.replace(/[ぁ-ゖ]/g, (c) => String.fromCharCode(c.charCodeAt(0) + 0x60));
   };
 
+  // Vowel each hiragana mora carries, so a long-vowel mark (ー) can be folded to
+  // the same canonical form the rōmaji IME produces (doubled vowel kana). Small
+  // kana ゃゅょ take the vowel of their glide.
+  const KANA_VOWEL = {};
+  (function () {
+    const rows = {
+      a: "あかさたなはまやらわがざだばぱゃ",
+      i: "いきしちにひみりぎじぢびぴ",
+      u: "うくすつぬふむゆるぐずづぶぷゅゔっ",
+      e: "えけせてねへめれげぜでべぺ",
+      o: "おこそとのほもよろをごぞどぼぽょ",
+    };
+    for (const [vw, chars] of Object.entries(rows))
+      for (const ch of chars) KANA_VOWEL[ch] = vw;
+  })();
+  const VOWEL_KANA = { a: "あ", i: "い", u: "う", e: "え", o: "お" };
+
+  // Canonicalise long vowels: expand every ー (and stray "-") to the vowel kana of
+  // the preceding mora, so こーひー and rōmaji "koohii" (→こおひい) meet. Folding
+  // (not deleting) also keeps distinct taught words apart — かれー→かれえ ≠ かれ.
+  function foldLongVowels(str) {
+    let out = "";
+    for (const ch of str) {
+      if (ch === "ー" || ch === "-") {
+        const vw = KANA_VOWEL[out[out.length - 1]];
+        out += vw ? VOWEL_KANA[vw] : ""; // drop a dangling mark with no vowel to lengthen
+      } else out += ch;
+    }
+    return out;
+  }
+
   // Normalize an answer for comparison: NFKC, lowercase, strip spaces
   // and punctuation, katakana->hiragana, romaji->hiragana.
   DK.normalizeAnswer = function (s) {
     let t = (s || "").normalize("NFKC").toLowerCase().trim();
-    t = t.replace(/[\s、。．，,.!?！？「」『』・〜~'’"]/g, "");
+    // Keep the apostrophe (syllabic-n disambiguator: ten'in) and the long-vowel
+    // ー through rōmaji conversion; both are handled canonically below. Deleting
+    // them here is what made the grader reject the romaji it prints on the card.
+    t = t.replace(/[\s、。．，,.!?！？「」『』・〜~"“”]/g, "");
     t = DK.kataToHira(t);
-    if (/[a-z-]/.test(t)) t = DK.romajiToHiragana(t, true);
-    t = t.replace(/ー/g, ""); // fold long-vowel mark for lenient checking
+    if (/[a-z'’ー-]/.test(t)) t = DK.romajiToHiragana(t, true);
+    t = t.replace(/['’]/g, ""); // drop any apostrophe the IME didn't consume
+    t = t.replace(/づ/g, "ず").replace(/ぢ/g, "じ"); // yotsugana fold (Hepburn zu/ji)
+    t = foldLongVowels(t); // canonical long vowels (not deleted)
     return t;
   };
 
@@ -187,14 +223,34 @@
       settings: { sound: true, speech: true, rate: 0.9, romaji: true, furigana: true, booted: false, onboarded: false },
     };
   };
+  const isPlainObj = (x) => x && typeof x === "object" && !Array.isArray(x);
   DK.load = function () {
     try {
       const raw = localStorage.getItem(KEY);
       if (!raw) return DK.defaultProgress();
       const p = JSON.parse(raw);
-      return Object.assign(DK.defaultProgress(), p, {
-        settings: Object.assign(DK.defaultProgress().settings, p.settings || {}),
+      const d = DK.defaultProgress();
+      const merged = Object.assign(d, isPlainObj(p) ? p : {}, {
+        settings: Object.assign(d.settings, isPlainObj(p) && isPlainObj(p.settings) ? p.settings : {}),
       });
+      // Sanitize at the trust boundary. The payload can be hand-crafted (IMPORT) or
+      // written by any sibling page on this shared origin, so coerce every field the UI
+      // reads to its declared type: a null container must not brick the next render, and
+      // a string where a number is expected must not survive to be interpolated as HTML.
+      merged.xp = Number(merged.xp) || 0;
+      merged.reviews = Number(merged.reviews) || 0;
+      merged.name = typeof merged.name === "string" ? merged.name : "";
+      if (!isPlainObj(merged.done)) merged.done = {};
+      if (!isPlainObj(merged.srs)) merged.srs = {};
+      if (!Array.isArray(merged.medals)) merged.medals = [];
+      if (Array.isArray(merged.days)) merged.days = merged.days.filter((x) => typeof x === "string");
+      else if (merged.days != null) merged.days = [];
+      const defs = DK.defaultProgress().settings;
+      for (const k of Object.keys(defs)) {
+        if (typeof defs[k] === "boolean") merged.settings[k] = Boolean(merged.settings[k]);
+        else if (typeof defs[k] === "number") merged.settings[k] = Number(merged.settings[k]) || defs[k];
+      }
+      return merged;
     } catch (e) {
       return DK.defaultProgress();
     }
@@ -250,7 +306,12 @@
   };
   DK.srsDue = function (progress) {
     const now = Date.now();
-    return Object.keys(progress.srs).filter((k) => progress.srs[k].due <= now);
+    // Only surface keys that still resolve to a vocab entry. vocabKey embeds the
+    // (mutable) English gloss, so editing a gloss orphans that word's stored SRS key;
+    // an orphaned key can never be drilled (buildDrill/vocabByKey drop it), so counting
+    // it inflates the "Drills Due" badge and can leave BEGIN DRILL inert. Filtering here
+    // fixes the badge, the tile, and drill sampling at once.
+    return Object.keys(progress.srs).filter((k) => progress.srs[k].due <= now && DK.vocabByKey(k));
   };
 
   /* ----------------------------------------------------------
@@ -391,7 +452,11 @@
 
   // Exercises for a lesson session: authored first, then vocab drills.
   DK.buildSession = function (week, lesson) {
-    const authored = (lesson.exercises || []).slice();
+    // Per-session COPIES of the authored exercises: app.js writes transient play-state
+    // (_bank/_placed/_hidden/_hints/_assisted/_matchMistakes/_typed) directly onto the
+    // exercise object, and .slice() would copy only the array, leaving the elements the
+    // live DK.CURRICULUM objects — so that state would leak into the next replay.
+    const authored = (lesson.exercises || []).map((e) => Object.assign({}, e));
     const vocab = lesson.vocab || [];
     const auto = [];
     if (lesson.review) {

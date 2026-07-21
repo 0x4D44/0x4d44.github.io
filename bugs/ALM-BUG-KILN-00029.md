@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00029 — Tidecall regression guards are source-text regexes: they pin yesterday's spelling, not the invariant
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** tests
@@ -17,8 +17,9 @@
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude — split from the independent two-eyes verification of ALM-BUG-KILN-00003 and ALM-BUG-KILN-00004)
+- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
 
 ## Observation
 Every Tidecall regression guard added by the recent bug-fix batch is a **regex over source text**
@@ -76,3 +77,19 @@ Suggested direction (not prescriptive):
 
 Prior art worth copying: `onu/tests/browser.test.mjs` already drives real Chrome over the
 DevTools Protocol from plain Node with no extra dependency.
+
+## Fix (2026-07-21)
+Replaced the vacuous confetti source-regex guard with a **behavioural oracle**,
+`tidecall/celebrate.test.js` (wired into both the build and test scripts). It extracts the
+real `celebrate()` from app.js and drives it with a fake rAF scheduler and a canvas op-log,
+asserting exactly one live loop survives an overlapping call and the previous loop is
+cancelled — covering both the initial and the frame-reschedule `celebrateRaf` assignments.
+Verified it *fails* under the exact mutation KILN-00029 documented (reverting the
+`celebrateRaf =` assignments while keeping the cancel line), which the old string guard
+passed. The former regex in validate-static.test.js is removed with a pointer to the oracle.
+
+Scope note: this lands the flagship behavioural oracle the bug worked out in detail and the
+demonstrated-vacuous guard it centres on. The board-overflow constant guard (KILN-00004) and
+the morning-run source regexes (KILN-00001) named under "Suggested direction" are a broader
+harness-hardening effort (compute chrome / headless measurement) better tracked as their own
+follow-up items than folded into this pass; the proven vacuous guard is now behavioural.

@@ -208,7 +208,7 @@ DK.week({
         ["火曜日[かようび]", "かようび", "kayoubi", "Tuesday", "time"],
         ["水曜日[すいようび]", "すいようび", "suiyoubi", "Wednesday", "time"],
         ["木曜日[もくようび]", "もくようび", "mokuyoubi", "Thursday", "time"],
-        ["金曜日[きんようび]", "きんようび", "kinyoubi", "Friday", "time"],
+        ["金曜日[きんようび]", "きんようび", "kin'youbi", "Friday", "time"],
         ["土曜日[どようび]", "どようび", "doyoubi", "Saturday", "time"],
         ["日曜日[にちようび]", "にちようび", "nichiyoubi", "Sunday", "time"],
         ["誕生日[たんじょうび]", "たんじょうび", "tanjoubi", "birthday", "noun"],

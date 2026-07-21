@@ -782,7 +782,11 @@
     // rather than leave a control that does nothing.
     $('.modal-close', dom.modalLayer).hidden = type === 'round' || type === 'match';
     requestAnimationFrame(() => {
-      const focusable = $('button:not([disabled]), [href], input:not([disabled])', dom.modalLayer);
+      // First VISIBLE focusable — mirror the Tab trap's offsetParent filter. On the
+      // round/match modals the ✕ is hidden (dropped above), and an unfiltered query would
+      // pick that hidden button and leave focus stranded on <body>.
+      const focusable = $$('button:not([disabled]), [href], input:not([disabled])', dom.modalLayer)
+        .filter((el) => el.offsetParent !== null)[0];
       if (focusable) focusable.focus({ preventScroll: true });
     });
   }
