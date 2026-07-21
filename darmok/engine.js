@@ -286,7 +286,12 @@
   };
   DK.srsDue = function (progress) {
     const now = Date.now();
-    return Object.keys(progress.srs).filter((k) => progress.srs[k].due <= now);
+    // Only surface keys that still resolve to a vocab entry. vocabKey embeds the
+    // (mutable) English gloss, so editing a gloss orphans that word's stored SRS key;
+    // an orphaned key can never be drilled (buildDrill/vocabByKey drop it), so counting
+    // it inflates the "Drills Due" badge and can leave BEGIN DRILL inert. Filtering here
+    // fixes the badge, the tile, and drill sampling at once.
+    return Object.keys(progress.srs).filter((k) => progress.srs[k].due <= now && DK.vocabByKey(k));
   };
 
   /* ----------------------------------------------------------
