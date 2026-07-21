@@ -129,6 +129,17 @@ test('the page has no external runtime dependency', () => {
   assert.deepEqual(externalStyles, []);
 });
 
+test('a modal moves focus to its first VISIBLE control, not a hidden one (KILN-00028)', () => {
+  // On the round/match recaps the ✕ is hidden; the initial-focus query must filter to
+  // visible controls (offsetParent), mirroring the Tab trap — otherwise focus is stranded
+  // on <body>. Pin that the openModal focus selection uses the visibility filter, not an
+  // unfiltered single-element query.
+  const openModal = app.match(/function openModal[\s\S]*?\n  \}\n/);
+  assert.ok(openModal, 'openModal function should be found');
+  assert.match(openModal[0], /requestAnimationFrame[\s\S]*?offsetParent !== null[\s\S]*?\.focus\(/,
+    'initial modal focus must filter to visible controls (offsetParent) before focusing');
+});
+
 test('the game board chrome constants fit the viewport at every tier (KILN-00004)', () => {
   // The board fills the screen with min-height: calc(100dvh - <chrome>); an understated
   // <chrome> makes the board taller than the viewport and the page scrolls. Pin the

@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00028 — Tidecall round/match recap modals open with focus on `<body>`, never inside the dialog
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** tidecall
@@ -17,8 +17,9 @@
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude — split from ALM-BUG-KILN-00002 during its independent two-eyes verification; this is a regression *introduced* by that bug's fix, `b2c47f0`)
+- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage and play a round out to its recap
@@ -64,3 +65,11 @@ ALM-BUG-KILN-00029 for why the source-regex guards in this document are weak.
 Secondary nit, same area: the "round/match are non-dismissable" rule is now duplicated at
 `app.js:1058` and `app.js:1076` with different spellings. The next modal type added is easy to get
 wrong; consider hoisting one `NON_DISMISSABLE` set.
+
+## Fix (2026-07-21)
+`openModal`'s initial-focus query now filters to the first VISIBLE control
+(`$$(...).filter(el => el.offsetParent !== null)[0]`), mirroring the Tab trap. On the
+round/match recaps the ✕ is hidden, and the old unfiltered `$(...)` picked that hidden button
+so focus fell back to `<body>`; the fix moves focus inside the dialog. Regression:
+tidecall/validate-static.test.js pins that openModal's focus selection uses the offsetParent
+visibility filter.
