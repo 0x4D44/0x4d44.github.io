@@ -77,4 +77,18 @@ const html=read("index.html");assert.equal(JSON.parse(read("manifest.webmanifest
   assert.ok(/saveError:\s*!!this\._saveError/.test(idx),"the view must expose saveError");
   assert.ok(/value="\{\{ saveError \}\}"/.test(idx),"a save-failure banner must be shown when saveError is set");
 }
+// ALM-BUG-FLUXHOMEARPA-00006: DC interpolations must be closed. The bug shipped
+// `background:{{ nav3 "` (missing `}}`), leaving invalid literal CSS in the style attribute so
+// the Phrases/Passport/Profile icon fills never took their active/inactive state. Guard the
+// malformed signature — an interpolation token immediately followed by a quote — and the
+// three specific nav bindings.
+{
+  const idx = read("index.html");
+  const malformed = idx.match(/\{\{\s*\w+\s*"/g);
+  assert.equal(malformed, null, `unclosed DC interpolation(s) (token followed by a quote): ${malformed && malformed.join(", ")}`);
+  for (const nav of ["nav3", "nav4", "nav5"]) {
+    assert.ok(new RegExp(`background:\\{\\{ ${nav} \\}\\}`).test(idx), `${nav} icon background must be a closed {{ ${nav} }} interpolation`);
+  }
+}
+
 console.log("PASS self-checks: content, route unlocking, SRS, persistence, phrasebook search, romaji settings, AI gating, PWA assets.");
