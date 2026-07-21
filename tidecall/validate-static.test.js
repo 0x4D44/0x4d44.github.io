@@ -88,12 +88,10 @@ test('the game board min-height subtracts the real chrome at every tier', () => 
   assert.doesNotMatch(styles, /100dvh - 90px/, 'stale ≤820 constant (also lacked safe insets)');
 });
 
-test('the confetti animation cancels a live burst before starting a new one', () => {
-  // celebrate() drives one shared canvas; without cancelling the prior rAF loop, two
-  // overlapping bursts clearRect each other every frame — the earlier burst is erased
-  // and a zombie loop keeps running. (Regression guard for the single-owner fix.)
-  assert.match(app, /if \(celebrateRaf\) cancelAnimationFrame\(celebrateRaf\)/, 'celebrate must cancel the live loop');
-});
+// The confetti single-owner invariant is now guarded BEHAVIOURALLY by celebrate.test.js
+// (ALM-BUG-KILN-00029): it drives the real celebrate() with a fake rAF scheduler and asserts
+// one live loop survives an overlapping call. A source-regex for the cancel line stayed green
+// even with the celebrateRaf assignments reverted — the exact vacuous guard that bug flagged.
 
 test('round/match modals cannot be dismissed by the close control or scrim', () => {
   // Closing a round/match modal lets drive() immediately re-open it (the phase is still
@@ -127,6 +125,26 @@ test('the page has no external runtime dependency', () => {
   const externalStyles = matches(html, /<link[^>]+href=["'](https?:\/\/[^"']+)["'][^>]*rel=["']stylesheet["']/g);
   assert.deepEqual(externalScripts, []);
   assert.deepEqual(externalStyles, []);
+});
+
+test('a modal moves focus to its first VISIBLE control, not a hidden one (KILN-00028)', () => {
+  // On the round/match recaps the ✕ is hidden; the initial-focus query must filter to
+  // visible controls (offsetParent), mirroring the Tab trap — otherwise focus is stranded
+  // on <body>. Pin that the openModal focus selection uses the visibility filter, not an
+  // unfiltered single-element query.
+  const openModal = app.match(/function openModal[\s\S]*?\n  \}\n/);
+  assert.ok(openModal, 'openModal function should be found');
+  assert.match(openModal[0], /requestAnimationFrame[\s\S]*?offsetParent !== null[\s\S]*?\.focus\(/,
+    'initial modal focus must filter to visible controls (offsetParent) before focusing');
+});
+
+test('the game board chrome constants fit the viewport at every tier (KILN-00004)', () => {
+  // The board fills the screen with min-height: calc(100dvh - <chrome>); an understated
+  // <chrome> makes the board taller than the viewport and the page scrolls. Pin the
+  // corrected per-tier constants (and the safe-inset subtraction the app-shell padding adds).
+  assert.match(styles, /\.table-column \{ gap: 6px; min-height: calc\(100dvh - 73px - var\(--safe-top\) - var\(--safe-bottom\)\)/, '<=560 board uses the corrected 73px chrome + safe insets');
+  assert.match(styles, /\.table-column \{ min-height: calc\(100dvh - 101px - var\(--safe-top\) - var\(--safe-bottom\)\)/, '<=820 board uses 101px + safe insets');
+  assert.match(styles, /min-height: calc\(100dvh - 106px - var\(--safe-top\) - var\(--safe-bottom\)\)/, 'desktop game-layout uses 106px + safe insets');
 });
 
 if (!process.exitCode) process.stdout.write('\nAll Tidecall static checks passed.\n');

@@ -11,7 +11,15 @@
 (function () {
   "use strict";
 
-  var ARTICLES = (window.NEWS_ARTICLES || []).slice();
+  // Drop shape-invalid articles once, at the trust boundary: the About page invites
+  // contributors to append an object to articles.js "with no editorial oversight", and the
+  // search scorer / sort key dereference a.category/headline/standfirst directly, so one
+  // fat-fingered append (missing or non-string field) would throw and blank whole pages.
+  // Skipping the bad entry keeps every other story rendering.
+  var ARTICLES = (window.NEWS_ARTICLES || []).filter(function (a) {
+    return a && typeof a.id === "string" && typeof a.category === "string" &&
+      typeof a.headline === "string" && typeof a.standfirst === "string";
+  });
   var ADS = window.NEWS_ADS || [];
 
   // Two-level section taxonomy. Each article still carries a single leaf
@@ -233,14 +241,22 @@
   function catUrl(c) { return "search.html?cat=" + encodeURIComponent(c); }
   function qs(name) {
     var m = new RegExp("[?&]" + name + "=([^&]*)").exec(location.search);
-    return m ? decodeURIComponent(m[1].replace(/\+/g, " ")) : "";
+    if (!m) return "";
+    // A stray '%' or truncated escape (?id=%, ?q=100%) makes decodeURIComponent throw
+    // URIError; uncaught it aborts the mount and blanks the page. Degrade to "" instead.
+    try { return decodeURIComponent(m[1].replace(/\+/g, " ")); } catch (e) { return ""; }
   }
 
   // -------- shared chrome --------
   function headerHtml(activeCat) {
     var now = new Date();
+    // Weekday and printed date must come from ONE clock. getDay() is local, so build the
+    // date from local Y/M/D too — mixing in fmtDate(now.toISOString()) (UTC) made the
+    // masthead show a weekday that disagreed with its date for the sub-UTC hour each night.
+    var localDate = now.getFullYear() + "-" +
+      String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
     var dayStr = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][now.getDay()] +
-      ", " + fmtDate(now.toISOString());
+      ", " + fmtDate(localDate);
     var nav = GROUPS.map(function (g) {
       // Leaf group → plain top-level link.
       if (!g.children.length) {
@@ -441,7 +457,7 @@
       '<div class="track-wrap"><div class="track">' + items + items + '</div></div></div>';
   }
 
-  function footerHtml() {
+  function footerHtml(basedOnTruth) {
     var cols = [
       ["Sections", CATEGORY_ORDER.slice(0, 6).map(function (c) { return ['<a href="' + catUrl(c) + '">' + esc(c) + '</a>']; })],
       ["More", CATEGORY_ORDER.slice(6).map(function (c) { return ['<a href="' + catUrl(c) + '">' + esc(c) + '</a>']; })],
@@ -466,10 +482,15 @@
         '<div class="brandline">The Daily Flange</div>' +
         '<div class="cols">' + colsHtml + '</div>' +
         '<div class="legal">' +
-          '<p>The Daily Flange is a work of satire. Every article, byline, quotation, statistic, ' +
-          'expert, institution and advertisement on this site is entirely fictional and invented for ' +
-          'comic effect. Any resemblance to real events, persons or working sprockets is coincidental. ' +
-          'Nothing here is true, and none of it is advice.</p>' +
+          (basedOnTruth
+            ? '<p>The Daily Flange is a satirical newspaper. This story carries the ' +
+              '<strong>based-on-truth</strong> tag: the underlying event really happened, but the ' +
+              'reporting, correspondents, quotations and images here are invented for comic effect. ' +
+              'Everything else on the site is entirely fictional, and none of it is advice.</p>'
+            : '<p>The Daily Flange is a work of satire. Every article, byline, quotation, statistic, ' +
+              'expert, institution and advertisement on this site is entirely fictional and invented for ' +
+              'comic effect. Any resemblance to real events, persons or working sprockets is coincidental. ' +
+              'Nothing here is true, and none of it is advice.</p>') +
           '<p>Part of the <a href="../">0x4D44 Almanac</a>. No sprockets were harmed. Remember to flange regularly.</p>' +
         '</div>' +
       '</div></footer>';
@@ -484,6 +505,7 @@
   }
   function adHtml(ad, kind) {
     // kind: "leader" | "mpu"
+    if (!ad) return ""; // no ad to show (e.g. empty/failed ads.js) — render nothing, don't throw
     var fx = ad.fx || [];
     var cls = ["ad", kind === "leader" ? "ad-leader" : "ad-mpu"];
     fx.forEach(function (f) {
@@ -562,6 +584,18 @@
     document.title = "The Daily Flange — All the news that's unfit to be true";
 
     var seq = rotated();
+    // If the article data failed to load (coerced to []), degrade to a friendly notice
+    // rather than throwing on the unguarded seq[0..8] / pickAds()[0] head reads below and
+    // leaving #app blank — every almanac doc shares this origin, so be robust.
+    if (!seq.length) {
+      mount.innerHTML = headerHtml(null) +
+        '<div class="wrap"><div class="layout"><main><div class="band">' +
+        '<h3 class="section-title">Nothing to show</h3>' +
+        '<p style="padding:0 16px 20px">The newsroom is briefly empty — please refresh in a moment.</p>' +
+        '</div></main></div></div>' + footerHtml();
+      startClock();
+      return;
+    }
     var seed = hourSeed();
     // assign each rotated story a plausible freshness (fresher near the top)
     var rnd = mulberry32(seed ^ 0x9e3779b9);
@@ -577,24 +611,31 @@
 
     out.push('<div class="layout"><main>');
 
+    // Track every story already placed on the page so the category feature bands and the
+    // "Around The Flange" list don't reprint one that's already in the top block.
+    var used = {};
+    function markUsed(a) { if (a) used[a.id] = true; }
+
     // Hero + lead row (top story)
     out.push(heroHtml(seq[0], mins(0)));
+    markUsed(seq[0]);
     out.push('<div class="lead-row">' + cardHtml(seq[1], mins(1)) + cardHtml(seq[2], mins(2)) + '</div>');
+    markUsed(seq[1]); markUsed(seq[2]);
 
     // "More top stories" list
     out.push('<h3 class="section-title">More top stories</h3>');
     out.push('<ul class="storylist">');
-    for (var i = 3; i < 9; i++) out.push(listItemHtml(seq[i], mins(i)));
+    for (var i = 3; i < 9; i++) { out.push(listItemHtml(seq[i], mins(i))); markUsed(seq[i]); }
     out.push('</ul>');
 
     // A category feature block (rotates which category leads)
     var featCat = CATEGORY_ORDER[seed % CATEGORY_ORDER.length];
-    var featItems = seq.filter(function (a) { return a.category === featCat; }).slice(0, 4);
+    var featItems = seq.filter(function (a) { return a.category === featCat && !used[a.id]; }).slice(0, 4);
     if (featItems.length >= 3) {
       out.push('<div class="band"><h3 class="section-title">' + esc(featCat) +
         '<a class="more" href="' + catUrl(featCat) + '">More ' + esc(featCat) + ' &rsaquo;</a></h3>');
       out.push('<div class="cardgrid">');
-      featItems.slice(0, 3).forEach(function (a, k) { out.push(cardHtml(a, mins(10 + k))); });
+      featItems.slice(0, 3).forEach(function (a, k) { out.push(cardHtml(a, mins(10 + k))); markUsed(a); });
       out.push('</div></div>');
     }
 
@@ -604,18 +645,21 @@
     // Second feature block (a different category)
     var featCat2 = CATEGORY_ORDER[(seed + 4) % CATEGORY_ORDER.length];
     if (featCat2 === featCat) featCat2 = CATEGORY_ORDER[(seed + 5) % CATEGORY_ORDER.length];
-    var feat2 = seq.filter(function (a) { return a.category === featCat2; }).slice(0, 3);
+    var feat2 = seq.filter(function (a) { return a.category === featCat2 && !used[a.id]; }).slice(0, 3);
     if (feat2.length >= 3) {
       out.push('<div class="band"><h3 class="section-title">' + esc(featCat2) +
         '<a class="more" href="' + catUrl(featCat2) + '">More ' + esc(featCat2) + ' &rsaquo;</a></h3>');
       out.push('<div class="cardgrid">');
-      feat2.forEach(function (a, k) { out.push(cardHtml(a, mins(14 + k))); });
+      feat2.forEach(function (a, k) { out.push(cardHtml(a, mins(14 + k))); markUsed(a); });
       out.push('</div></div>');
     }
 
-    // "Around The Flange" — a longer list
+    // "Around The Flange" — a longer list, skipping anything already placed above.
     out.push('<div class="band"><h3 class="section-title">Around The Flange</h3><ul class="storylist">');
-    for (var j = 9; j < 17 && j < seq.length; j++) out.push(listItemHtml(seq[j], mins(j)));
+    for (var j = 9, arCount = 0; j < seq.length && arCount < 8; j++) {
+      if (used[seq[j].id]) continue;
+      out.push(listItemHtml(seq[j], mins(j))); markUsed(seq[j]); arCount++;
+    }
     out.push('</ul></div>');
 
     out.push('</main>');
@@ -699,14 +743,20 @@
       related = related.concat(extra.slice(0, 4 - related.length));
     }
     var relatedHtml = related.map(function (x) { return cardHtml(x, 0).replace(/<div class="meta">[^<]*<\/div>/, '<div class="meta">' + esc(x.category) + '</div>'); }).join("");
+    // A based-on-truth story retells a real event: the point-of-consumption disclaimers must
+    // not tell the reader it "never happened" — the About page says these events are real.
+    var basedOnTruth = (a.tags || []).indexOf("based-on-truth") !== -1;
     var heroCaption = a.imageCaption || (
       (a.location ? a.location.charAt(0) + a.location.slice(1).toLowerCase() + ', earlier. ' : '') +
-      "Artist's impression; file photo; entirely made up."
+      (basedOnTruth ? "Artist's impression of real events; illustration invented." : "Artist's impression; file photo; entirely made up.")
     );
     var noticeHtml = a.notice
       ? '<strong>' + esc(a.noticeLabel || "Opinion note") + ':</strong> ' + esc(a.notice)
-      : '<strong>Satire notice:</strong> The Daily Flange is fiction. ' +
-        'This story never happened, the people quoted do not exist, and the sprockets remain, as ever, unflanged.';
+      : basedOnTruth
+        ? '<strong>Based on a true story:</strong> the underlying event really happened. ' +
+          'The reporting, correspondents and quotations here are invented for comic effect.'
+        : '<strong>Satire notice:</strong> The Daily Flange is fiction. ' +
+          'This story never happened, the people quoted do not exist, and the sprockets remain, as ever, unflanged.';
 
     var out = [];
     out.push(headerHtml(a.category));
@@ -746,7 +796,7 @@
     out.push('<div style="margin:26px 0 10px">' + adHtml(pickAds("leader", 1, a.id + "b")[0], "leader") + '</div>');
 
     out.push('</div>'); // .wrap
-    out.push(footerHtml());
+    out.push(footerHtml(basedOnTruth));
 
     mount.innerHTML = out.join("");
     startClock();
@@ -800,13 +850,22 @@
     }
 
     function highlight(text) {
-      if (!q) return esc(text);
-      var out = esc(text);
-      q.split(/\s+/).filter(Boolean).forEach(function (t) {
-        var re = new RegExp("(" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")", "ig");
-        out = out.replace(re, "<mark>$1</mark>");
-      });
-      return out;
+      var s = String(text == null ? "" : text);
+      var terms = q ? q.split(/\s+/).filter(Boolean) : [];
+      if (!terms.length) return esc(s);
+      // Match on the RAW text and escape each span separately — escaping first and then
+      // replacing over the result corrupted the entities esc() produced (q="amp" hit the
+      // &amp; entity) and nested marks (q="a mar" reran over an inserted <mark>).
+      var re = new RegExp("(" + terms.map(function (t) {
+        return t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      }).join("|") + ")", "ig");
+      var out = "", last = 0, m;
+      while ((m = re.exec(s)) !== null) {
+        out += esc(s.slice(last, m.index)) + "<mark>" + esc(m[0]) + "</mark>";
+        last = m.index + m[0].length;
+        if (m.index === re.lastIndex) re.lastIndex++; // guard against a zero-length match loop
+      }
+      return out + esc(s.slice(last));
     }
 
     var out = [];

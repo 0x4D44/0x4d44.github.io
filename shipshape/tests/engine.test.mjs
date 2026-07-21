@@ -48,6 +48,20 @@ const gymPlan = generateDailyPlan("2026-07-07", { ...state.settings, locationMod
 assert.ok(gymPlan.duties.length >= 4, "hotel plan generates a full set of duties");
 assert.ok(gymPlan.duties.every((d) => findExercise(d.exerciseId).locationModes.includes("hotel_gym")), "hotel plan uses gym-compatible duties");
 
+// ALM-BUG-KILN-00031: difficulty must move on a sustained RUN, not a single session.
+// every() is vacuously true on a short slice, so with empty history one feedback must not
+// adjust the level; and feedback/status must stay aligned per duty.
+let p31 = updateProgression({ exerciseId: easier.id, currentLevel: 0, recentLog: [] }, easier, {}, { status: "done", feedback: "too_easy" }, `${date}T10:00:00`);
+assert.equal(p31.currentLevel, 0, "a single too_easy on empty history must not bump the level (KILN-31)");
+let p31b = updateProgression({ exerciseId: easier.id, currentLevel: 3, recentLog: [] }, easier, {}, { status: "done", feedback: "too_hard" }, `${date}T10:00:00`);
+assert.equal(p31b.currentLevel, 3, "a single too_hard on empty history must not drop the level (KILN-31)");
+const p31align = updateProgression({ exerciseId: easier.id, currentLevel: 0, recentLog: [] }, easier, {}, { status: "skipped" }, `${date}T10:00:00`);
+assert.deepEqual(p31align.recentLog, [{ feedback: undefined, status: "skipped" }], "a status-only duty is recorded aligned in recentLog (KILN-31)");
+// three genuine easy completions still progress (regression of the intended behaviour).
+let p31run = { exerciseId: easier.id, currentLevel: 0, recentLog: [] };
+for (let i = 0; i < 3; i += 1) p31run = updateProgression(p31run, easier, {}, { status: "done", feedback: "too_easy" }, `${date}T1${i}:00:00`);
+assert.equal(p31run.currentLevel, 1, "three easy completions still nudge progression up (KILN-31)");
+
 const exported = serialiseState(state);
 const imported = validateImportData(exported);
 assert.equal(imported.ok, true, "exported state validates for import");

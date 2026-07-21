@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00006 — Answer grading rejects the romaji the app itself teaches (long-vowel / apostrophe / du-zu)
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Must
 - **Severity:** Medium
 - **Area:** darmok
@@ -17,8 +17,9 @@
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
+- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
 
 ## Observation
 On a typeback ("Type the Japanese for ...") exercise, typing the exact romaji printed on the vocab card is marked WRONG for ~20 of the 513 curriculum words, and the wrong grade then demotes that word's spaced-repetition stage.
@@ -36,3 +37,16 @@ Root cause is DK.normalizeAnswer (engine.js:103-110) being asymmetric with the r
 Blast radius beyond the wrong mark: a rejected-but-correct answer calls gradeSRS->DK.srsAnswer(item,false) (engine.js:239-240), which does s = max(s-2,0) and increments lapses -- so being right silently sets the word's review schedule BACKWARDS.
 
 Fix: normalize long vowels to a canonical long-vowel form on BOTH sides instead of deleting ー; run the apostrophe through (do not strip it before conversion); fold づ->ず (and ぢ->じ) in normalizeAnswer, or accept both. Also fix the two authored data typos this surfaces (see the furigana and kinyoubi bugs). Add a corpus round-trip oracle (see reqs). Found in the overnight multi-lens review; the long-vowel/apostrophe/du repros were reproduced directly against engine.js, and the false-accept collision was independently confirmed by an adversarial skeptic.
+
+## Fix (2026-07-21)
+`DK.normalizeAnswer` (darmok/engine.js) reworked so it is symmetric with the romaji
+IME it grades against: the long-vowel ー is now **folded to a canonical doubled-vowel
+form** (`foldLongVowels` + a `KANA_VOWEL` map) instead of deleted — so こーひー and card
+romaji "koohii" both normalise to こおひい, and distinct taught words no longer collapse
+(かれー→かれえ ≠ かれ, すきー→すきい ≠ すき). The apostrophe is kept through romaji
+conversion (ten'in → てんいん) instead of being stripped first, and づ/ぢ are folded to
+ず/じ so Hepburn "tsuzukemasu" matches つづけます. Corpus round-trip failures went 20→2;
+the remaining two are authored-data typos tracked as KILN-00015 (kinyoubi) and a
+counter-form card. Regression coverage: darmok/grading.test.mjs (fails on the pre-fix
+engine, passes after), wired into `npm run build`/`npm test`. The two authored typos
+(furigana KILN-00014, kinyoubi KILN-00015) are left to their own passes.

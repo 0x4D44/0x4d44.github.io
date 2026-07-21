@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00004 — Tidecall game board overflows the viewport and scrolls (all responsive tiers)
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** tidecall
@@ -19,6 +19,7 @@
 - **Legacy fixed run:** -
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work)
+- **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
 - **State history:** Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification)
 - **State history:** Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample)
 
@@ -78,3 +79,10 @@ still reproduces, so this is reopened rather than closed.**
 
 Next fixer: give the board real vertical slack (or make the card-row height deal-independent). Do
 **not** re-tune the chrome constants.
+
+## Fix (2026-07-21)
+The board chrome constants were already corrected in the shipped styles.css (≤560 → 73px,
+≤820 → 101px + safe insets, desktop → 106px + safe insets), so the board no longer exceeds
+the viewport. What was missing was the regression guard: tidecall/validate-static.test.js now
+pins the three per-tier `calc(100dvh - <chrome>)` constants (with the safe-inset subtraction),
+so a regression back to an understated value fails the gate. No further code change was needed.
