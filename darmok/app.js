@@ -659,6 +659,10 @@
   function finishSession() {
     if (S.drill) {
       S.drill.finished = true;
+      // A completed drill counts as a training day too — it is the everyday habit the app
+      // promotes, and the Long Tour medal (30 days) must be reachable by drilling alone.
+      const today = new Date().toISOString().slice(0, 10);
+      if (!P.days.includes(today)) P.days.push(today);
       checkMedals(null, null);
       DK.save(P);
       snd("done");
