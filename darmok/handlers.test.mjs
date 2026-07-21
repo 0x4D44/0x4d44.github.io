@@ -24,3 +24,12 @@ test('close-kanji has a handler and the kanji modal has an Escape path', () => {
   assert.match(src, /S\.kanjiOpen && e\.key === "Escape"[\s\S]{0,60}closeKanji\(\)/,
     'Escape must close the kanji modal, before the lesson/drill queue guard');
 });
+
+test('ALM-BUG-KILN-00010: a re-render preserves the in-progress typed answer', () => {
+  // The type input must render the stashed value, and rerenderEx must stash the live
+  // value before replacing #excard — otherwise ASK DATA / the IME toggle wipe the answer.
+  assert.match(src, /id="type-in"[^>]*value="\$\{DK\.esc\(ex\._typed \|\| ""\)\}"/,
+    'the type input must render ex._typed as its value');
+  assert.match(src, /rerenderEx\(\)\s*\{[\s\S]*?getElementById\("type-in"\)[\s\S]*?_typed = cur\.value[\s\S]*?holder\.innerHTML/,
+    'rerenderEx must stash the live typed value before rebuilding #excard');
+});

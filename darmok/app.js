@@ -507,7 +507,7 @@
         <div class="ex-q">${DK.md(ex.q)}</div>
         ${ex.jp ? `<div class="ex-jp"><button class="say" data-say="${DK.esc(DK.plain(ex.jp))}">▶</button><span>${DK.ruby(ex.jp)}</span></div>` : ""}
         <div class="type-row">
-          <input class="type-in" id="type-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type rōmaji → かな" ${S.imeOff ? "data-ime-off" : ""}>
+          <input class="type-in" id="type-in" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="type rōmaji → かな" value="${DK.esc(ex._typed || "")}" ${S.imeOff ? "data-ime-off" : ""}>
           <button class="btn" data-act="submit-type">SUBMIT</button>
           <button class="btn ghost" data-act="toggle-ime" title="Turn the built-in rōmaji converter on/off">${S.imeOff ? "あ→A OFF" : "A→あ ON"}</button>
           <div class="ime-hint">Type in rōmaji and it becomes kana as you type (<b>ko-n-ni-chi-ha → こんにちは</b>). Kanji also accepted. Toggle the converter off if you use your own Japanese keyboard.</div>
@@ -1234,6 +1234,11 @@
     const L = S.lesson || S.drill;
     const holder = document.getElementById("excard");
     if (holder && L) {
+      // Preserve the in-progress typed answer across a re-render: ASK DATA (hint) and the
+      // A→かな toggle both rebuild #excard, which would otherwise discard the input node
+      // and wipe what the learner has typed. Stash it so exerciseHtml can render it back.
+      const cur = document.getElementById("type-in");
+      if (cur) L.queue[L.idx]._typed = cur.value;
       holder.innerHTML = exerciseHtml(L.queue[L.idx]);
       const ti = document.getElementById("type-in");
       if (ti) wireTypeInput(ti);
