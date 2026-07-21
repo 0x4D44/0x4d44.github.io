@@ -67,9 +67,10 @@ test('ALM-BUG-KILN-00014: every entry\'s furigana folds to its kana reading', ()
 });
 
 test('corpus round-trip: typing a card rōmaji is accepted (bar known authored-data typos)', () => {
-  // KILN-00015 (kinyoubi) and the "-fun/-pun" counter card carry authored-rōmaji
-  // quirks tracked separately; every other vocab entry must round-trip.
-  const known = new Set(['kinyoubi', '-fun/-pun']);
+  // The "-fun/-pun" counter card carries a slash-alternated rōmaji form that is not a
+  // single typeable answer; every other vocab entry must round-trip. (kinyoubi was fixed
+  // to kin'youbi in KILN-00015 and now round-trips.)
+  const known = new Set(['-fun/-pun']);
   const fails = [];
   for (const v of DK.allVocab().map((e) => e.v)) {
     if (!v[1] || !v[2] || known.has(v[2])) continue;
