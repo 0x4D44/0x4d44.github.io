@@ -270,4 +270,25 @@ for (const search of ["?id=%", "?q=100%", "?id=%E0%A4%A", "?cat=%"]) {
   assert.doesNotThrow(() => context.window.NEWS.renderSearch("app"), `renderSearch should survive ${search}`);
 }
 
+// ALM-BUG-KILN-00024: the masthead weekday and date must come from one clock. Simulate a
+// moment where the local day is ahead of the UTC calendar date (local Tue 14 Jul 23:30,
+// UTC still Mon 13 Jul) and assert the printed weekday matches the printed date.
+{
+  const RealDate = Date;
+  class FakeDate {
+    getFullYear() { return 2026; } getMonth() { return 6; } getDate() { return 14; }
+    getDay() { return 2; } getTime() { return RealDate.UTC(2026, 6, 13, 22, 30); }
+    toISOString() { return "2026-07-13T22:30:00.000Z"; }
+  }
+  context.Date = FakeDate;
+  const head = context.window.NEWS.header("");
+  context.Date = RealDate;
+  const m = head.match(/(Sunday|Monday|Tuesday|Wednesday|Thursday|Friday|Saturday), (\d{2}) (\w{3}) (\d{4})/);
+  assert.ok(m, "masthead should print a weekday and date");
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const printed = new RealDate(RealDate.UTC(+m[4], MON.indexOf(m[3]), +m[2]));
+  const weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][printed.getUTCDay()];
+  assert.equal(m[1], weekday, `masthead weekday ${m[1]} must match its date ${m[2]} ${m[3]} ${m[4]} (${weekday})`);
+}
+
 console.log(`Daily Flange static validation passed (${articles.length} articles; four saucepan features).`);

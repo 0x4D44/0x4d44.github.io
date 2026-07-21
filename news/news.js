@@ -242,8 +242,13 @@
   // -------- shared chrome --------
   function headerHtml(activeCat) {
     var now = new Date();
+    // Weekday and printed date must come from ONE clock. getDay() is local, so build the
+    // date from local Y/M/D too — mixing in fmtDate(now.toISOString()) (UTC) made the
+    // masthead show a weekday that disagreed with its date for the sub-UTC hour each night.
+    var localDate = now.getFullYear() + "-" +
+      String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
     var dayStr = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][now.getDay()] +
-      ", " + fmtDate(now.toISOString());
+      ", " + fmtDate(localDate);
     var nav = GROUPS.map(function (g) {
       // Leaf group → plain top-level link.
       if (!g.children.length) {
