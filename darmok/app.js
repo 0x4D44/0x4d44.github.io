@@ -605,10 +605,13 @@
       // requeue once at the end; if the officer is struggling, Data pre-offers help
       // on the retry (fresh hint state + a proactive nudge in the comm panel).
       if (!ex._retry) {
-        const copy = Object.assign({}, ex, {
-          _retry: true, _bank: null, _placed: null, _left: null, _right: null, _done: null,
-          _hints: 0, _hidden: null, _assisted: false, _dataNudge: L.streakWrong >= 2,
-        });
+        // Build the retry from the exercise definition only: strip EVERY transient
+        // _-prefixed field (so _matchMistakes, _placed, _hints, ... all reset by
+        // construction — an omitted field is how a flawless match retry was still
+        // graded wrong), then set just the two the retry needs.
+        const copy = Object.fromEntries(Object.entries(ex).filter(([k]) => !k.startsWith("_")));
+        copy._retry = true;
+        copy._dataNudge = L.streakWrong >= 2;
         L.queue.push(copy);
         L.total = L.queue.length;
       }
