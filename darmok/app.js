@@ -1151,7 +1151,9 @@
     if (!act) return;
     snd(act === "next-ex" || act === "hint" ? "tap" : "nav");
 
-    if (act === "toggle-mission") {
+    if (act === "close-kanji") {
+      closeKanji();
+    } else if (act === "toggle-mission") {
       const wi = parseInt(t.dataset.wi, 10);
       S.missionOpen = S.missionOpen === wi ? null : wi;
       render();
@@ -1238,6 +1240,9 @@
   // keyboard shortcuts: 1-4 pick choices, Enter continues
   document.addEventListener("keydown", (e) => {
     if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+    // Escape closes the kanji breakdown modal — it can open outside a lesson/drill,
+    // so this must run before the queue guard below.
+    if (S.kanjiOpen && e.key === "Escape") { e.preventDefault(); closeKanji(); return; }
     const L = S.lesson || S.drill;
     if (!L || !L.queue) return;
     if (e.key === "Enter") {
