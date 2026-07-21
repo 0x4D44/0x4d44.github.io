@@ -32,6 +32,14 @@ test('ALM-BUG-KILN-00012: finishing a drill records a training day', () => {
     'the drill branch (before its return) must push today into P.days');
 });
 
+test('ALM-BUG-KILN-00017: the mc/listen hint does not call an English gloss a reading', () => {
+  // meaning/listen answers are the English gloss; only a Japanese answer (reverse) has a
+  // "reading". The hint branch must gate the "reads" framing on JP_RE and state a
+  // non-Japanese answer plainly.
+  assert.match(src, /ex\.t === "mc" \|\| ex\.t === "listen"[\s\S]{0,320}JP_RE\.test\(ans\)[\s\S]{0,200}The correct answer is/,
+    'the mc/listen hint must gate "reads" on JP_RE and state an English answer plainly');
+});
+
 test('ALM-BUG-KILN-00016: a medal crossed during a drill is shown, not recorded silently', () => {
   // The drill branch must collect pops (not checkMedals(null, null)) and the drill-complete
   // view must render them, or Universal Translator (drill-only) is never celebrated.
