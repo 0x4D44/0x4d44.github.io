@@ -25,6 +25,13 @@ test('close-kanji has a handler and the kanji modal has an Escape path', () => {
     'Escape must close the kanji modal, before the lesson/drill queue guard');
 });
 
+test('ALM-BUG-KILN-00012: finishing a drill records a training day', () => {
+  // The drill branch of finishSession must add today to P.days, or drilling — the habit
+  // the app promotes — never advances "Training days" and the 30-day Long Tour medal.
+  assert.match(src, /if \(S\.drill\) \{(?:(?!return)[\s\S])*?P\.days\.push\(today\)(?:(?!return)[\s\S])*?checkMedals\(null, null\)/,
+    'the drill branch (before its return) must push today into P.days');
+});
+
 test('ALM-BUG-KILN-00010: a re-render preserves the in-progress typed answer', () => {
   // The type input must render the stashed value, and rerenderEx must stash the live
   // value before replacing #excard — otherwise ASK DATA / the IME toggle wipe the answer.
