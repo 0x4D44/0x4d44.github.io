@@ -42,7 +42,7 @@ DK.week({
         ["艦長[かんちょう]", "かんちょう", "kanchou", "(ship's) captain", "noun"],
         ["日本語[にほんご]", "にほんご", "nihongo", "Japanese (language)", "noun"],
         ["英語[えいご]", "えいご", "eigo", "English (language)", "noun"],
-        ["お茶[おちゃ]", "おちゃ", "ocha", "(green) tea", "noun"],
+        ["お茶[ちゃ]", "おちゃ", "ocha", "(green) tea", "noun"],
         ["水[みず]", "みず", "mizu", "water", "noun"],
         ["はい", "はい", "hai", "yes", "expression"],
         ["いいえ", "いいえ", "iie", "no", "expression"],

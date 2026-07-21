@@ -51,6 +51,21 @@ test('yotsugana: Hepburn zu/ji accept the づ/ぢ spelling', () => {
   assert.equal(DK.normalizeAnswer('ぢ'), DK.normalizeAnswer('じ'));
 });
 
+test('ALM-BUG-KILN-00014: every entry\'s furigana folds to its kana reading', () => {
+  // readingForm strips furigana brackets to the reading; katakana folds to hiragana. That
+  // must equal the card's kana (v[1]) — a mis-split like お茶[おちゃ] (→おおちゃ) or
+  // 問[と]題[だい] (→とだい) both breaks the ruby and, via typeback accept, the grader.
+  // The only sanctioned difference is a leading 〜 counter placeholder, absent from v[1].
+  const strip = (s) => s.replace(/^〜/, '');
+  const fails = [];
+  for (const { v } of DK.allVocab()) {
+    if (!v[0] || !v[1]) continue;
+    const fold = strip(DK.kataToHira(DK.readingForm(v[0])));
+    if (fold !== strip(v[1])) fails.push(`${v[0]} folds to ${fold}, not ${v[1]} (${v[3]})`);
+  }
+  assert.deepEqual(fails, [], `${fails.length} furigana/kana mismatch(es): ${fails.join(' | ')}`);
+});
+
 test('corpus round-trip: typing a card rōmaji is accepted (bar known authored-data typos)', () => {
   // KILN-00015 (kinyoubi) and the "-fun/-pun" counter card carry authored-rōmaji
   // quirks tracked separately; every other vocab entry must round-trip.
