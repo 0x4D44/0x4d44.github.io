@@ -28,8 +28,19 @@ test('close-kanji has a handler and the kanji modal has an Escape path', () => {
 test('ALM-BUG-KILN-00012: finishing a drill records a training day', () => {
   // The drill branch of finishSession must add today to P.days, or drilling — the habit
   // the app promotes — never advances "Training days" and the 30-day Long Tour medal.
-  assert.match(src, /if \(S\.drill\) \{(?:(?!return)[\s\S])*?P\.days\.push\(today\)(?:(?!return)[\s\S])*?checkMedals\(null, null\)/,
+  assert.match(src, /if \(S\.drill\) \{(?:(?!return)[\s\S])*?P\.days\.push\(today\)(?:(?!return)[\s\S])*?checkMedals\(null,/,
     'the drill branch (before its return) must push today into P.days');
+});
+
+test('ALM-BUG-KILN-00016: a medal crossed during a drill is shown, not recorded silently', () => {
+  // The drill branch must collect pops (not checkMedals(null, null)) and the drill-complete
+  // view must render them, or Universal Translator (drill-only) is never celebrated.
+  assert.match(src, /if \(S\.drill\) \{(?:(?!return)[\s\S])*?checkMedals\(null, pops\)/,
+    'the drill branch must pass a real pops array to checkMedals');
+  assert.doesNotMatch(src, /if \(S\.drill\) \{(?:(?!return)[\s\S])*?checkMedals\(null, null\)/,
+    'the drill branch must not discard medal pops');
+  assert.match(src, /\(D\.pops \|\| \[\]\)\.map/,
+    'the drill-complete view must render D.pops commendations');
 });
 
 test('ALM-BUG-KILN-00010: a re-render preserves the in-progress typed answer', () => {
