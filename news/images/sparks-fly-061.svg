@@ -1,0 +1,20 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='675' viewBox='0 0 1200 675' role='img'>
+  <title>Sparks fly illustration 061</title>
+  <defs>
+    <linearGradient id='g061' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='hsl(341,65%,82%)'/>
+      <stop offset='100%' stop-color='hsl(29,60%,34%)'/>
+    </linearGradient>
+  </defs>
+  <rect width='1200' height='675' fill="url(#g061)"/>
+  <g stroke='#ffffffcc' stroke-width='4' fill='none'>
+    <path d='M90 130 C240 86 390 82 540 118 C700 156 840 124 990 170 C1050 190 1110 240 1110 240'/>
+    <path d='M80 560 C220 500 340 530 470 552 C620 578 760 560 930 532 C1060 506 1120 530 1120 530'/>
+  </g>
+  <g fill='#fff' transform='translate(130 190)'>
+    <text x='0' y='0' font-size='72' font-family='Georgia, "Times New Roman", serif' font-weight='700'>Opinion</text>
+    <text x='0' y='88' font-size='80' font-family='Georgia, "Times New Roman", serif' font-weight='700'>Spark 061</text>
+    <text x='0' y='158' font-size='32' font-family='Arial, sans-serif'>Daily Flange · Sparks fly</text>
+    <text x='0' y='198' font-size='28' font-family='Arial, sans-serif'>BRISTOL · architecture · rain gauges</text>
+  </g>
+</svg>
