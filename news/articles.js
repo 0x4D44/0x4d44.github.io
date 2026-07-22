@@ -19304,6 +19304,506 @@ window.NEWS_ARTICLES = [
 ]
 
 // ============================================================
+{
+  "id": "sf-021",
+  "category": "Sparks fly",
+  "headline": "In PLYMOUTH, officials renames the bushes after a committee review",
+  "standfirst": "The city's civic etiquette office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By S. Bell, Opinion Correspondent",
+  "location": "PLYMOUTH",
+  "published": "2026-07-22T07:39:00",
+  "image": "images/sparks-fly-021.svg",
+  "imageAlt": "A satirical sketch about bushes in PLYMOUTH.",
+  "body": [
+    "In PLYMOUTH, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+    "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "municipal-ethics",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-022",
+  "category": "Sparks fly",
+  "headline": "In LONDON, officials quarantines the ferry whistles after a desk review",
+  "standfirst": "The city's bureaucratic dignity office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+  "byline": "By Noor Patel, Opinion Correspondent",
+  "location": "LONDON",
+  "published": "2026-07-22T07:38:00",
+  "image": "images/sparks-fly-022.svg",
+  "imageAlt": "A satirical sketch about ferry whistles in LONDON.",
+  "body": [
+    "In LONDON, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+    "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "public-mood",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-023",
+  "category": "Sparks fly",
+  "headline": "In GLASGOW, officials subcontracts the neighbourhood swans after a auditor review",
+  "standfirst": "The city's transport office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+  "byline": "By Eli Cartwright, Opinion Correspondent",
+  "location": "GLASGOW",
+  "published": "2026-07-22T07:37:00",
+  "image": "images/sparks-fly-023.svg",
+  "imageAlt": "A satirical sketch about neighbourhood swans in GLASGOW.",
+  "body": [
+    "In GLASGOW, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+    "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "architecture",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-024",
+  "category": "Sparks fly",
+  "headline": "In LONDON, officials catalogues the bushes after a garden review",
+  "standfirst": "The city's governance office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By June Argo, Opinion Correspondent",
+  "location": "LONDON",
+  "published": "2026-07-22T07:36:00",
+  "image": "images/sparks-fly-024.svg",
+  "imageAlt": "A satirical sketch about bushes in LONDON.",
+  "body": [
+    "In LONDON, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+    "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "governance",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-025",
+  "category": "Sparks fly",
+  "headline": "In GLASGOW, officials upcycles the ferry whistles after a noticeboard review",
+  "standfirst": "The city's architecture office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+  "byline": "By Felix Wren, Opinion Correspondent",
+  "location": "GLASGOW",
+  "published": "2026-07-22T07:35:00",
+  "image": "images/sparks-fly-025.svg",
+  "imageAlt": "A satirical sketch about ferry whistles in GLASGOW.",
+  "body": [
+    "In GLASGOW, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+    "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "transport",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-026",
+  "category": "Sparks fly",
+  "headline": "In MANCHESTER, officials maps the neighbourhood swans after a budget review",
+  "standfirst": "The city's public mood office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+  "byline": "By June Vale, Opinion Correspondent",
+  "location": "MANCHESTER",
+  "published": "2026-07-22T07:34:00",
+  "image": "images/sparks-fly-026.svg",
+  "imageAlt": "A satirical sketch about neighbourhood swans in MANCHESTER.",
+  "body": [
+    "In MANCHESTER, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+    "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "bureaucratic-dignity",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-027",
+  "category": "Sparks fly",
+  "headline": "In BIRMINGHAM, officials suspends the bushes after a sieve review",
+  "standfirst": "The city's municipal ethics office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By Priyanka Ives, Opinion Correspondent",
+  "location": "BIRMINGHAM",
+  "published": "2026-07-22T07:33:00",
+  "image": "images/sparks-fly-027.svg",
+  "imageAlt": "A satirical sketch about bushes in BIRMINGHAM.",
+  "body": [
+    "In BIRMINGHAM, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+    "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "civic-etiquette",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-028",
+  "category": "Sparks fly",
+  "headline": "In LIVERPOOL, officials interrogates the ferry whistles after a archive review",
+  "standfirst": "The city's weather office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+  "byline": "By Owen Pike, Opinion Correspondent",
+  "location": "LIVERPOOL",
+  "published": "2026-07-22T07:32:00",
+  "image": "images/sparks-fly-028.svg",
+  "imageAlt": "A satirical sketch about ferry whistles in LIVERPOOL.",
+  "body": [
+    "In LIVERPOOL, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+    "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "music-policy",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-029",
+  "category": "Sparks fly",
+  "headline": "In BATH, officials licenses the neighbourhood swans after a label review",
+  "standfirst": "The city's queue science office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+  "byline": "By Tamsin Quill, Opinion Correspondent",
+  "location": "BATH",
+  "published": "2026-07-22T07:31:00",
+  "image": "images/sparks-fly-029.svg",
+  "imageAlt": "A satirical sketch about neighbourhood swans in BATH.",
+  "body": [
+    "In BATH, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+    "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "urban-planning",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-030",
+  "category": "Sparks fly",
+  "headline": "In CARDIFF, officials releases the bushes after a statute review",
+  "standfirst": "The city's office order office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By Mira Vale, Opinion Correspondent",
+  "location": "CARDIFF",
+  "published": "2026-07-22T07:30:00",
+  "image": "images/sparks-fly-030.svg",
+  "imageAlt": "A satirical sketch about bushes in CARDIFF.",
+  "body": [
+    "In CARDIFF, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+    "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "office-order",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-031",
+  "category": "Sparks fly",
+  "headline": "In EDINBURGH, officials calibrates the ferry whistles after a policy review",
+  "standfirst": "The city's urban planning office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+  "byline": "By Rafe Nettle, Opinion Correspondent",
+  "location": "EDINBURGH",
+  "published": "2026-07-22T07:29:00",
+  "image": "images/sparks-fly-031.svg",
+  "imageAlt": "A satirical sketch about ferry whistles in EDINBURGH.",
+  "body": [
+    "In EDINBURGH, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+    "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "queue-science",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-032",
+  "category": "Sparks fly",
+  "headline": "In BRIGHTON, officials reopens the neighbourhood swans after a canteen review",
+  "standfirst": "The city's music policy office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+  "byline": "By Jodie Sprocket, Opinion Correspondent",
+  "location": "BRIGHTON",
+  "published": "2026-07-22T07:28:00",
+  "image": "images/sparks-fly-032.svg",
+  "imageAlt": "A satirical sketch about neighbourhood swans in BRIGHTON.",
+  "body": [
+    "In BRIGHTON, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+    "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "weather",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-033",
+  "category": "Sparks fly",
+  "headline": "In NORWICH, officials appoints the bushes after a timetable review",
+  "standfirst": "The city's civic etiquette office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By Leona Briggs, Opinion Correspondent",
+  "location": "NORWICH",
+  "published": "2026-07-22T07:27:00",
+  "image": "images/sparks-fly-033.svg",
+  "imageAlt": "A satirical sketch about bushes in NORWICH.",
+  "body": [
+    "In NORWICH, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+    "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "municipal-ethics",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-034",
+  "category": "Sparks fly",
+  "headline": "In NEWCASTLE, officials resurrects the ferry whistles after a manifesto review",
+  "standfirst": "The city's bureaucratic dignity office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+  "byline": "By Poppy Vane, Opinion Correspondent",
+  "location": "NEWCASTLE",
+  "published": "2026-07-22T07:26:00",
+  "image": "images/sparks-fly-034.svg",
+  "imageAlt": "A satirical sketch about ferry whistles in NEWCASTLE.",
+  "body": [
+    "In NEWCASTLE, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+    "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "public-mood",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-035",
+  "category": "Sparks fly",
+  "headline": "In PLYMOUTH, officials digitizes the neighbourhood swans after a wardrobe review",
+  "standfirst": "The city's transport office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+  "byline": "By Dorian Hale, Opinion Correspondent",
+  "location": "PLYMOUTH",
+  "published": "2026-07-22T07:25:00",
+  "image": "images/sparks-fly-035.svg",
+  "imageAlt": "A satirical sketch about neighbourhood swans in PLYMOUTH.",
+  "body": [
+    "In PLYMOUTH, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+    "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "architecture",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-036",
+  "category": "Sparks fly",
+  "headline": "In DUBLIN, officials archives the bushes after a pilot review",
+  "standfirst": "The city's governance office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By Rhea Finch, Opinion Correspondent",
+  "location": "DUBLIN",
+  "published": "2026-07-22T07:24:00",
+  "image": "images/sparks-fly-036.svg",
+  "imageAlt": "A satirical sketch about bushes in DUBLIN.",
+  "body": [
+    "In DUBLIN, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+    "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "governance",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-037",
+  "category": "Sparks fly",
+  "headline": "In BRISTOL, officials hosts the ferry whistles after a office review",
+  "standfirst": "The city's architecture office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+  "byline": "By M. K. Rowe, Opinion Correspondent",
+  "location": "BRISTOL",
+  "published": "2026-07-22T07:23:00",
+  "image": "images/sparks-fly-037.svg",
+  "imageAlt": "A satirical sketch about ferry whistles in BRISTOL.",
+  "body": [
+    "In BRISTOL, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+    "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "transport",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-038",
+  "category": "Sparks fly",
+  "headline": "In LEEDS, officials reforms the neighbourhood swans after a queue review",
+  "standfirst": "The city's public mood office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+  "byline": "By S. Bell, Opinion Correspondent",
+  "location": "LEEDS",
+  "published": "2026-07-22T07:22:00",
+  "image": "images/sparks-fly-038.svg",
+  "imageAlt": "A satirical sketch about neighbourhood swans in LEEDS.",
+  "body": [
+    "In LEEDS, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+    "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "bureaucratic-dignity",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-039",
+  "category": "Sparks fly",
+  "headline": "In SHEFFIELD, officials declassifies the bushes after a protocol review",
+  "standfirst": "The city's municipal ethics office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By Noor Patel, Opinion Correspondent",
+  "location": "SHEFFIELD",
+  "published": "2026-07-22T07:21:00",
+  "image": "images/sparks-fly-039.svg",
+  "imageAlt": "A satirical sketch about bushes in SHEFFIELD.",
+  "body": [
+    "In SHEFFIELD, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+    "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "civic-etiquette",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-040",
+  "category": "Sparks fly",
+  "headline": "In PORTSMOUTH, officials rehearses the ferry whistles after a bridge review",
+  "standfirst": "The city's weather office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+  "byline": "By Eli Cartwright, Opinion Correspondent",
+  "location": "PORTSMOUTH",
+  "published": "2026-07-22T07:20:00",
+  "image": "images/sparks-fly-040.svg",
+  "imageAlt": "A satirical sketch about ferry whistles in PORTSMOUTH.",
+  "body": [
+    "In PORTSMOUTH, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+    "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "music-policy",
+    "urban-oddity"
+  ]
+},
 // SERIES: HOW TO BECOME A MASTER FLANGER
 // ------------------------------------------------------------
 // The former Life landing page was only a syllabus. In the paper it becomes
@@ -22124,6 +22624,7 @@ window.NEWS_ARTICLES.push({id:"voices-the-sprocket-family",image:"images/voices-
     window.NEWS_ARTICLES.push(article);
   });
 })();
+
 
 
 
