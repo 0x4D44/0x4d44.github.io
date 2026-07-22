@@ -19101,7 +19101,7 @@ window.NEWS_ARTICLES = [
     "imageAlt": "A map with several streets blocked behind question marks and a magnifying glass.",
     "body": [
       "A pilot mapping project has gone from predictive to literal, leaving all streets that have not been personally walked this year as dotted hypotheticals.",
-      "Users reported entering a destination then being informed they had chosen an "unverified line" that still feels real if you believe in it hard enough.",
+      "Users reported entering a destination then being informed they had chosen an \"unverified line\" that still feels real if you believe in it hard enough.",
       "Officials defend the protocol as 'evidence for everyday navigation', saying that roads without witnesses now need fresh documentation and a short motivational letter.",
       "Local taxi drivers support the trial, saying it helps customers pay more attention to the city and less to their phone maps."
     ],
@@ -19138,8 +19138,7 @@ window.NEWS_ARTICLES = [
     "image": "images/sparks-fly-12.svg",
     "imageAlt": "A traffic light showing a tiny quiz icon between amber and red.",
     "body": [
-      "The city has installed ethical prompts on selected crossings to reduce abrupt braking: 'Would you overtake someone carrying groceries?'
-    'Does your lane choice respect the bicycle?'",
+      "The city has installed ethical prompts on selected crossings to reduce abrupt braking: 'Would you overtake someone carrying groceries?' 'Does your lane choice respect the bicycle?'",
       "Pedestrians may now take precedence over speed, unless they answer no to at least one question, in which case the light pauses for community reflection.",
       "Civil liberties groups say this is either innovative or deeply bureaucratic; both camps agree it is certainly different.",
       "Transport officers reported fewer collisions and one dramatic rise in public philosophy debates at major junctions."
@@ -19304,6 +19303,7 @@ window.NEWS_ARTICLES = [
 ]
 
 // ============================================================
+window.NEWS_ARTICLES.push(
 {
   "id": "sf-021",
   "category": "Sparks fly",
@@ -23803,7 +23803,8 @@ window.NEWS_ARTICLES = [
     "weather",
     "urban-oddity"
   ]
-},
+}
+);
 // SERIES: HOW TO BECOME A MASTER FLANGER
 // ------------------------------------------------------------
 // The former Life landing page was only a syllabus. In the paper it becomes
