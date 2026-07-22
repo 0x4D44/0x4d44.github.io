@@ -23304,6 +23304,506 @@ window.NEWS_ARTICLES = [
     "urban-oddity"
   ]
 },
+{
+  "id": "sf-181",
+  "category": "Sparks fly",
+  "headline": "In BRISTOL, officials maps the canteen kettles after a protocol review",
+  "standfirst": "The city's architecture office has asked staff to treat the canteen kettles as civic furniture until the audit can finish.",
+  "byline": "By Owen Pike, Opinion Correspondent",
+  "location": "BRISTOL",
+  "published": "2026-07-22T04:57:00",
+  "image": "images/sparks-fly-181.svg",
+  "imageAlt": "A satirical sketch about canteen kettles in BRISTOL.",
+  "body": [
+    "In BRISTOL, a temporary team began a review after residents noticed that the canteen kettles had become politically difficult to classify.",
+    "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "transport",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-182",
+  "category": "Sparks fly",
+  "headline": "In LEEDS, officials subcontracts the signal boxes after a bridge review",
+  "standfirst": "The city's public mood office has asked staff to treat the signal boxes as civic furniture until the audit can finish.",
+  "byline": "By Tamsin Quill, Opinion Correspondent",
+  "location": "LEEDS",
+  "published": "2026-07-22T04:56:00",
+  "image": "images/sparks-fly-182.svg",
+  "imageAlt": "A satirical sketch about signal boxes in LEEDS.",
+  "body": [
+    "In LEEDS, a temporary team began a review after residents noticed that the signal boxes had become politically difficult to classify.",
+    "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "bureaucratic-dignity",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-183",
+  "category": "Sparks fly",
+  "headline": "In SHEFFIELD, officials catalogues the luggage tags after a policy review",
+  "standfirst": "The city's municipal ethics office has asked staff to treat the luggage tags as civic furniture until the audit can finish.",
+  "byline": "By Mira Vale, Opinion Correspondent",
+  "location": "SHEFFIELD",
+  "published": "2026-07-22T04:55:00",
+  "image": "images/sparks-fly-183.svg",
+  "imageAlt": "A satirical sketch about luggage tags in SHEFFIELD.",
+  "body": [
+    "In SHEFFIELD, a temporary team began a review after residents noticed that the luggage tags had become politically difficult to classify.",
+    "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "civic-etiquette",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-184",
+  "category": "Sparks fly",
+  "headline": "In PORTSMOUTH, officials renames the train platforms after a canteen review",
+  "standfirst": "The city's weather office has asked staff to treat the train platforms as civic furniture until the audit can finish.",
+  "byline": "By Rafe Nettle, Opinion Correspondent",
+  "location": "PORTSMOUTH",
+  "published": "2026-07-22T04:54:00",
+  "image": "images/sparks-fly-184.svg",
+  "imageAlt": "A satirical sketch about train platforms in PORTSMOUTH.",
+  "body": [
+    "In PORTSMOUTH, a temporary team began a review after residents noticed that the train platforms had become politically difficult to classify.",
+    "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "music-policy",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-185",
+  "category": "Sparks fly",
+  "headline": "In READING, officials quarantines the hydrant covers after a auditor review",
+  "standfirst": "The city's queue science office has asked staff to treat the hydrant covers as civic furniture until the audit can finish.",
+  "byline": "By Jodie Sprocket, Opinion Correspondent",
+  "location": "READING",
+  "published": "2026-07-22T04:53:00",
+  "image": "images/sparks-fly-185.svg",
+  "imageAlt": "A satirical sketch about hydrant covers in READING.",
+  "body": [
+    "In READING, a temporary team began a review after residents noticed that the hydrant covers had become politically difficult to classify.",
+    "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "urban-planning",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-186",
+  "category": "Sparks fly",
+  "headline": "In OXFORD, officials sponsors the rain gauges after a garden review",
+  "standfirst": "The city's office order office has asked staff to treat the rain gauges as civic furniture until the audit can finish.",
+  "byline": "By Leona Briggs, Opinion Correspondent",
+  "location": "OXFORD",
+  "published": "2026-07-22T04:52:00",
+  "image": "images/sparks-fly-186.svg",
+  "imageAlt": "A satirical sketch about rain gauges in OXFORD.",
+  "body": [
+    "In OXFORD, a temporary team began a review after residents noticed that the rain gauges had become politically difficult to classify.",
+    "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "office-order",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-187",
+  "category": "Sparks fly",
+  "headline": "In CAMBRIDGE, officials commissions the elevator buttons after a pilot review",
+  "standfirst": "The city's urban planning office has asked staff to treat the elevator buttons as civic furniture until the audit can finish.",
+  "byline": "By Poppy Vane, Opinion Correspondent",
+  "location": "CAMBRIDGE",
+  "published": "2026-07-22T04:51:00",
+  "image": "images/sparks-fly-187.svg",
+  "imageAlt": "A satirical sketch about elevator buttons in CAMBRIDGE.",
+  "body": [
+    "In CAMBRIDGE, a temporary team began a review after residents noticed that the elevator buttons had become politically difficult to classify.",
+    "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "queue-science",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-188",
+  "category": "Sparks fly",
+  "headline": "In ABERDEEN, officials calibrates the district banners after a office review",
+  "standfirst": "The city's music policy office has asked staff to treat the district banners as civic furniture until the audit can finish.",
+  "byline": "By Dorian Hale, Opinion Correspondent",
+  "location": "ABERDEEN",
+  "published": "2026-07-22T04:50:00",
+  "image": "images/sparks-fly-188.svg",
+  "imageAlt": "A satirical sketch about district banners in ABERDEEN.",
+  "body": [
+    "In ABERDEEN, a temporary team began a review after residents noticed that the district banners had become politically difficult to classify.",
+    "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "weather",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-189",
+  "category": "Sparks fly",
+  "headline": "In PLYMOUTH, officials declassifies the queue signs after a archive review",
+  "standfirst": "The city's civic etiquette office has asked staff to treat the queue signs as civic furniture until the audit can finish.",
+  "byline": "By Rhea Finch, Opinion Correspondent",
+  "location": "PLYMOUTH",
+  "published": "2026-07-22T04:49:00",
+  "image": "images/sparks-fly-189.svg",
+  "imageAlt": "A satirical sketch about queue signs in PLYMOUTH.",
+  "body": [
+    "In PLYMOUTH, a temporary team began a review after residents noticed that the queue signs had become politically difficult to classify.",
+    "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "municipal-ethics",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-190",
+  "category": "Sparks fly",
+  "headline": "In LONDON, officials rehearses the office chairs after a label review",
+  "standfirst": "The city's bureaucratic dignity office has asked staff to treat the office chairs as civic furniture until the audit can finish.",
+  "byline": "By M. K. Rowe, Opinion Correspondent",
+  "location": "LONDON",
+  "published": "2026-07-22T04:48:00",
+  "image": "images/sparks-fly-190.svg",
+  "imageAlt": "A satirical sketch about office chairs in LONDON.",
+  "body": [
+    "In LONDON, a temporary team began a review after residents noticed that the office chairs had become politically difficult to classify.",
+    "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "public-mood",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-191",
+  "category": "Sparks fly",
+  "headline": "In GLASGOW, officials hosts the community radios after a platform review",
+  "standfirst": "The city's transport office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+  "byline": "By S. Bell, Opinion Correspondent",
+  "location": "GLASGOW",
+  "published": "2026-07-22T04:47:00",
+  "image": "images/sparks-fly-191.svg",
+  "imageAlt": "A satirical sketch about community radios in GLASGOW.",
+  "body": [
+    "In GLASGOW, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+    "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "architecture",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-192",
+  "category": "Sparks fly",
+  "headline": "In LONDON, officials reforms the museum lifts after a roof review",
+  "standfirst": "The city's governance office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+  "byline": "By Noor Patel, Opinion Correspondent",
+  "location": "LONDON",
+  "published": "2026-07-22T04:46:00",
+  "image": "images/sparks-fly-192.svg",
+  "imageAlt": "A satirical sketch about museum lifts in LONDON.",
+  "body": [
+    "In LONDON, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+    "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "governance",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-193",
+  "category": "Sparks fly",
+  "headline": "In GLASGOW, officials digitizes the pigeons after a timetable review",
+  "standfirst": "The city's architecture office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+  "byline": "By Eli Cartwright, Opinion Correspondent",
+  "location": "GLASGOW",
+  "published": "2026-07-22T04:45:00",
+  "image": "images/sparks-fly-193.svg",
+  "imageAlt": "A satirical sketch about pigeons in GLASGOW.",
+  "body": [
+    "In GLASGOW, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+    "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "transport",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-194",
+  "category": "Sparks fly",
+  "headline": "In MANCHESTER, officials archives the library card booths after a tramline review",
+  "standfirst": "The city's public mood office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+  "byline": "By June Argo, Opinion Correspondent",
+  "location": "MANCHESTER",
+  "published": "2026-07-22T04:44:00",
+  "image": "images/sparks-fly-194.svg",
+  "imageAlt": "A satirical sketch about library card booths in MANCHESTER.",
+  "body": [
+    "In MANCHESTER, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+    "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "bureaucratic-dignity",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-195",
+  "category": "Sparks fly",
+  "headline": "In BIRMINGHAM, officials appoints the bike sheds after a noticeboard review",
+  "standfirst": "The city's municipal ethics office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+  "byline": "By Felix Wren, Opinion Correspondent",
+  "location": "BIRMINGHAM",
+  "published": "2026-07-22T04:43:00",
+  "image": "images/sparks-fly-195.svg",
+  "imageAlt": "A satirical sketch about bike sheds in BIRMINGHAM.",
+  "body": [
+    "In BIRMINGHAM, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+    "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "civic-etiquette",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-196",
+  "category": "Sparks fly",
+  "headline": "In LIVERPOOL, officials resurrects the trolley lanes after a bench review",
+  "standfirst": "The city's weather office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+  "byline": "By June Vale, Opinion Correspondent",
+  "location": "LIVERPOOL",
+  "published": "2026-07-22T04:42:00",
+  "image": "images/sparks-fly-196.svg",
+  "imageAlt": "A satirical sketch about trolley lanes in LIVERPOOL.",
+  "body": [
+    "In LIVERPOOL, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+    "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "music-policy",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-197",
+  "category": "Sparks fly",
+  "headline": "In BATH, officials calibrates the bus shelters after a queue review",
+  "standfirst": "The city's queue science office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+  "byline": "By Priyanka Ives, Opinion Correspondent",
+  "location": "BATH",
+  "published": "2026-07-22T04:41:00",
+  "image": "images/sparks-fly-197.svg",
+  "imageAlt": "A satirical sketch about bus shelters in BATH.",
+  "body": [
+    "In BATH, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+    "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "urban-planning",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-198",
+  "category": "Sparks fly",
+  "headline": "In CARDIFF, officials reopens the fountain statues after a ticket review",
+  "standfirst": "The city's office order office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+  "byline": "By Owen Pike, Opinion Correspondent",
+  "location": "CARDIFF",
+  "published": "2026-07-22T04:40:00",
+  "image": "images/sparks-fly-198.svg",
+  "imageAlt": "A satirical sketch about fountain statues in CARDIFF.",
+  "body": [
+    "In CARDIFF, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+    "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "office-order",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-199",
+  "category": "Sparks fly",
+  "headline": "In EDINBURGH, officials licenses the park fountains after a statute review",
+  "standfirst": "The city's urban planning office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+  "byline": "By Tamsin Quill, Opinion Correspondent",
+  "location": "EDINBURGH",
+  "published": "2026-07-22T04:39:00",
+  "image": "images/sparks-fly-199.svg",
+  "imageAlt": "A satirical sketch about park fountains in EDINBURGH.",
+  "body": [
+    "In EDINBURGH, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+    "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "queue-science",
+    "urban-oddity"
+  ]
+},
+{
+  "id": "sf-200",
+  "category": "Sparks fly",
+  "headline": "In BRIGHTON, officials releases the bushes after a committee review",
+  "standfirst": "The city's music policy office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+  "byline": "By Mira Vale, Opinion Correspondent",
+  "location": "BRIGHTON",
+  "published": "2026-07-22T04:38:00",
+  "image": "images/sparks-fly-200.svg",
+  "imageAlt": "A satirical sketch about bushes in BRIGHTON.",
+  "body": [
+    "In BRIGHTON, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+    "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+    "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+    "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+  ],
+  "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+  "tags": [
+    "satire",
+    "opinion",
+    "sparks-fly",
+    "weather",
+    "urban-oddity"
+  ]
+},
 // SERIES: HOW TO BECOME A MASTER FLANGER
 // ------------------------------------------------------------
 // The former Life landing page was only a syllabus. In the paper it becomes
