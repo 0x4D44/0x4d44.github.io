@@ -18917,8 +18917,391 @@ window.NEWS_ARTICLES = [
       "repair",
       "domestic-life"
     ]
+  },
+  {
+    "id": "sf-late-cloud-complaints",
+    "category": "Sparks fly",
+    "headline": "Council creates Department for Complaining About Clouds",
+    "standfirst": "A standing complaints desk has been opened for delayed moonrise, delayed sunsets and one allegedly underperforming cumulus.",
+    "byline": "By Mira Vale, Opinion Curator",
+    "location": "LONDON",
+    "published": "2026-07-22T09:00:00",
+    "image": "images/sparks-fly-01.svg",
+    "imageAlt": "An office desk with a filing cabinet labelled Complaints Bureau: Clouds and Atmospheric Objects.",
+    "body": [
+      "After a public consultation on punctuality, the borough launched a Department for Complaining About Clouds, an office of two climatologists, three note-takers and a receptionist with a very long coffee mug.",
+      "Residents can now file an immediate Form-C for late sunsets, a monthly Form-D for suspiciously early dawn, and a one-page witness statement for the moon not appearing on schedule. ",
+      "The first formal complaint arrived an hour after open days began. A resident in Croydon wrote that the moon was three minutes early and therefore not 'mentally prepared' for a romantic walk. The report accepted the claim, then asked for two photographs and a witness signature, which the complainant provided by shouting into the night.",
+      "Officials insist nothing has changed in the sky, only in governance. The mayor called the initiative 'a practical response to atmospheric stress' and added, 'If everyone has a grievance, there is a workflow.'"
+    ],
+    "pullQuote": "If everything is delayed, perhaps it deserves an inbox.",
+    "tags": ["satire", "opinion", "sparks-fly", "governance", "weather"]
+  },
+  {
+    "id": "sf-bench-union-strike",
+    "category": "Sparks fly",
+    "headline": "Bus-stop Bench forms union, serves notice on city council",
+    "standfirst": "A wooden bench near Piccadilly says it has suffered enough and is demanding a shorter queue and better companionship policy.",
+    "byline": "By Rafe Nettle, Civic Affairs Columnist",
+    "location": "LONDON",
+    "published": "2026-07-22T08:54:00",
+    "image": "images/sparks-fly-02.svg",
+    "imageAlt": "An illustrated bus-stop bench with an improvised picket sign reading We Need Respect.",
+    "body": [
+      "At 6:13 a.m., commuters watched as a bus-stop bench in Piccadilly released a statement demanding hazard pay for sitting next to commuters with hot coffee.",
+      "The new Bench Employees Union claims all benches across central routes have shared the same complaints: cracked varnish, uninvited pigeon occupation and a daily diet of rain.",
+      "Its first collective action is a two-minute silence every afternoon between bus arrivals, described by spokesperson #2 as 'a structural pause for long-term stability.'",
+      "Transport officials have opened talks with the union, though one negotiator admitted they had to ask three times whether timber can be represented by counsel."
+    ],
+    "pullQuote": "Wood can endure weather, but not repeated emotional loadings from commuters who read the bus timetable backward.",
+    "tags": ["satire", "opinion", "sparks-fly", "transport", "labor"]
+  },
+  {
+    "id": "sf-coffee-machine-election",
+    "category": "Sparks fly",
+    "headline": "Municipal coffee machine wins office election on a single espresso",
+    "standfirst": "Candidates withdrew after one of them ran out of milk and another refused to answer the security question.",
+    "byline": "By Jodie Sprocket, Political Roast Reporter",
+    "location": "GLASGOW",
+    "published": "2026-07-22T08:48:00",
+    "image": "images/sparks-fly-03.svg",
+    "imageAlt": "A cheerful office coffee machine with campaign posters and a tiny podium.",
+    "body": [
+      "In an unexpected first, a hospital canteen coffee machine was elected to chair the local workplace wellness committee after running the highest-scoring campaign run on one machine-stable slogan: Keep It Hot.",
+      "The machine promised punctuality, low sugar policy and mandatory bean rotation, then announced that every second meeting would include a no-crumbs clause.",
+      "Two candidates withdrew after failing a background check requiring a source of water. The incumbent candidate said this was a 'very practical filter'.",
+      "The election authority said the result was valid because the machine had submitted receipts, answered all three debate questions, and outlasted the microphone on two separate occasions."
+    ],
+    "pullQuote": "A vote for better espresso is a vote for administrative rhythm.",
+    "tags": ["satire", "opinion", "sparks-fly", "workplace", "politics"]
+  },
+  {
+    "id": "sf-open-stair-policy",
+    "category": "Sparks fly",
+    "headline": "Council classifies staircase as a strategic planning department",
+    "standfirst": "Architects asked to submit quarterly reports on who stands, who rests and who is climbing on principle.",
+    "byline": "By Priya Morrow, Infrastructure Satirist",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T08:42:00",
+    "image": "images/sparks-fly-04.svg",
+    "imageAlt": "A staircase labeled Strategic Ascent Office with tiny filing bins on each landing.",
+    "body": [
+      "A city planner in Manchester announced that staircases now qualify as planning departments because no one tracks their daily throughput except themselves.",
+      "Every landing must now carry a mini-whiteboard listing anticipated momentum, emotional load and expected sigh frequency. The initiative has reduced arguments with elevator maintenance staff, at least for six hours each morning.",
+      "Residents have started submitting 'step-level impact statements' for deep turns and decorative treads. One letter says the carpet pattern on Landings B and C feels too ambitious during wet weather.",
+      "Officials insist the department is temporary. The stair committee said, this is all for one phase and all phases start at ground level anyway."
+    ],
+    "pullQuote": "They asked for data, and we finally counted every pause between steps.",
+    "tags": ["satire", "opinion", "sparks-fly", "planning", "transport"]
+  },
+  {
+    "id": "sf-train-mood-update",
+    "category": "Sparks fly",
+    "headline": "Train dispatch desk adds mood update before departure boards",
+    "standfirst": "Passengers now receive emotional forecasts that are usually more accurate than the timetable itself.",
+    "byline": "By Simon Fleet, Rail Psychology Desk",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T08:36:00",
+    "image": "images/sparks-fly-05.svg",
+    "imageAlt": "A departure board showing both times and emotional states for commuter trains.",
+    "body": [
+      "BritRail has rolled out a Mood Update channel on all morning departures, beginning with: 'This service feels unenthusiastic and is likely to hesitate.'",
+      "The initiative came after repeated complaints from regular commuters who felt the existing delay notices sounded impersonal and insufficiently existential.",
+      "Stations now display a rolling series of adjectives, from mild impatience to dramatic melancholy, in the same font as arrival information. Rail staff report fewer arguments and more poetic commentary in the waiting area.",
+      "A late train was delayed by two minutes and 37 seconds while the sign revised from 'frustrated' to 'regretfully on fire of determination'."
+    ],
+    "pullQuote": "For once, the timetable admitted emotion before the delay.",
+    "tags": ["satire", "opinion", "sparks-fly", "rail", "bureaucracy"]
+  },
+  {
+    "id": "sf-pigeon-housing-appeal",
+    "category": "Sparks fly",
+    "headline": "Pigeon housing appeal reaches final hearing with full legal representation",
+    "standfirst": "The city has granted the birds a planning lawyer after three pigeons appeared with a mapped argument in the civic courtyard.",
+    "byline": "By Tamsin Quill, Urban Wild Reports",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T08:30:00",
+    "image": "images/sparks-fly-06.svg",
+    "imageAlt": "Two pigeons in formal attire sharing a blueprint at a planning hearing.",
+    "body": [
+      "A flock of municipal pigeons appeared in public court on Tuesday with what appeared to be a land-use petition.",
+      "A city clerk initially insisted birds do not have legal standing under the current planning schedule, but the hearing adjourned after a volunteer argued for species-neutral access rights.",
+      "The pigeons requested larger ledges, anti-shade ramps, and a ban on over-enthusiastic pigeon-feeding that they called 'unpredictable pressure'.",
+      "The court has granted provisional standing for a one-day review, with a reminder that all feathered representatives must bring signed seed receipts.",
+      "The mayor called it an 'interesting experiment in urban empathy', then added that the pigeons had used better font than the last quarter-hour public notice."] ,
+    "pullQuote": "Our request is simple: if humans can file appeals, so can those who survive on our windowsills.",
+    "tags": ["satire", "opinion", "sparks-fly", "urban", "animals"]
+  },
+  {
+    "id": "sf-zipline-cabinet",
+    "category": "Sparks fly",
+    "headline": "Corporate archive builds zipline to move its own red tape faster",
+    "standfirst": "A logistics pilot used cargo netting and legal language to move files across departments without ever opening a single one.",
+    "byline": "By Felix Pritch, Administrative Geometry Reporter",
+    "location": "LONDON",
+    "published": "2026-07-22T08:24:00",
+    "image": "images/sparks-fly-07.svg",
+    "imageAlt": "An absurd office red-tape zipline carrying legal folders across two departments.",
+    "body": [
+      "A municipal office has installed a low-cost zipline system for moving file bundles between legal, planning and archives, arguing that red tape itself is now a recognised category of transport.",
+      "The pilot was designed after workers complained they had lost a day finding where to send paperwork that was already in the building. The system moves folders from desk to desk without requiring interpretation.",
+      "One intern reported that a document can now traverse three departments in under four minutes, but admitted they still do not know what any department wants it for.",
+      "The department chair said efficiency is not speed but visible velocity, and described the zipline as 'a policy decision with momentum'."
+    ],
+    "pullQuote": "No one asks where this is going, only where the return tag lands.",
+    "tags": ["satire", "opinion", "sparks-fly", "bureaucracy", "logistics"]
+  },
+  {
+    "id": "sf-weather-radio-choir",
+    "category": "Sparks fly",
+    "headline": "Weather office unveils emergency choir in place of sirens",
+    "standfirst": "A team of civil-volunteer vocalists now sings advisories at dawn, though only the calm has improved.",
+    "byline": "By Alia Finch, Public Communication Desk",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T08:18:00",
+    "image": "images/sparks-fly-08.svg",
+    "imageAlt": "A community choir singing beside a weather station mast.",
+    "body": [
+      "The Met Office announced that atmospheric advisories in Edinburgh will now be sung by a volunteer choir from 6:30 a.m. to reduce panic and improve rhyme density.",
+      "The weather warning for high winds now sounds like a madrigal, while heavy rain is delivered in long, dramatic vowels. Some residents reported better mood if not necessarily better exits.",
+      "Forecasters said the switch lowers emergency call volume by five percent and raises social media engagement, particularly for a new line describing sleet as 'familiar and damply affectionate.'",
+      "Meteorologists remain divided on whether a minor key is suitable for severe weather, but the office said this is not about taste. It is about audibility and civic memory."
+    ],
+    "pullQuote": "Rain is more tolerable when sung in thirds.",
+    "tags": ["satire", "opinion", "sparks-fly", "weather", "culture"]
+  },
+  {
+    "id": "sf-streetlamp-autonomy",
+    "category": "Sparks fly",
+    "headline": "Street lights apply to be paid by hour, not lumen",
+    "standfirst": "Municipal lamps argue they have no obligation to remain on during periods of public contentment.",
+    "byline": "By Owen Pike, Municipal Infrastructure Commentator",
+    "location": "CARDIFF",
+    "published": "2026-07-22T08:12:00",
+    "image": "images/sparks-fly-09.svg",
+    "imageAlt": "A street lamp with a timesheet and a tiny desk lamp badge.",
+    "body": [
+      "A unionised model for street lighting has entered the city's contract negotiations, with lamps requesting hourly compensation and a minimum brightness entitlement during social media peaks.",
+      "The movement began after a popular boulevard installed motion-sensitive dimming. In the new regime, lamps claim they are 'working harder on the dark, not merely standing' and should be paid for the strain.",
+      "One negotiator reported repeated phraseology from lamp spokespoints: we glow, therefore we labour. The council countered with existing policy, then asked why the lamps had legal representation at all.",
+      "A compromise includes a pilot on four junctions, with one lamp each side of the river and a review panel chaired by a former electrician and a poet."
+    ],
+    "pullQuote": "We do not ask for applause, only for invoice cycles.",
+    "tags": ["satire", "opinion", "sparks-fly", "energy", "labor"]
+  },
+  {
+    "id": "sf-map-west-denial",
+    "category": "Sparks fly",
+    "headline": "National map refuses to show streets labelled by accident",
+    "standfirst": "Residents are petitioning for a route where every road is drawn only after two witnesses agree it exists.",
+    "byline": "By Leona Briggs, Spatial Satire Column",
+    "location": "BATH",
+    "published": "2026-07-22T08:06:00",
+    "image": "images/sparks-fly-10.svg",
+    "imageAlt": "A map with several streets blocked behind question marks and a magnifying glass.",
+    "body": [
+      "A pilot mapping project has gone from predictive to literal, leaving all streets that have not been personally walked this year as dotted hypotheticals.",
+      "Users reported entering a destination then being informed they had chosen an "unverified line" that still feels real if you believe in it hard enough.",
+      "Officials defend the protocol as 'evidence for everyday navigation', saying that roads without witnesses now need fresh documentation and a short motivational letter.",
+      "Local taxi drivers support the trial, saying it helps customers pay more attention to the city and less to their phone maps."
+    ],
+    "pullQuote": "Some roads are now memories waiting for confirmation.",
+    "tags": ["satire", "opinion", "sparks-fly", "maps", "municipal"]
+  },
+  {
+    "id": "sf-subway-poetry-program",
+    "category": "Sparks fly",
+    "headline": "Subway platform announces resident poet for every station in rotation",
+    "standfirst": "The transport authority says verse is safer than silence when a train is two minutes late, but less useful than the timetable.",
+    "byline": "By Delphine Armitage, Transit Culture Desk",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T08:00:00",
+    "image": "images/sparks-fly-11.svg",
+    "imageAlt": "A subway platform displaying a poem instead of train times.",
+    "body": [
+      "A small transport experiment has assigned one poet to each station to deliver delay updates as stanzas.",
+      "Commuters praised the initiative, saying the line 'The line is delayed but destiny is punctual' helped them survive the extra five minutes between tunnels and daylight.",
+      "The poets must submit work on time, include two alliterations and avoid repeating the phrase 'as you can see'. Late poets incur overtime tea charges.",
+      "The rail board reports improved mood and slightly worse crowd flow, as riders pause for the final couplet before boarding."
+    ],
+    "pullQuote": "If we must wait, we can at least rhyme about it.",
+    "tags": ["satire", "opinion", "sparks-fly", "transit", "arts"]
+  },
+  {
+    "id": "sf-traffic-light-philosophy",
+    "category": "Sparks fly",
+    "headline": "Traffic lights begin asking ethical questions before changing",
+    "standfirst": "A green phase now appears only after drivers answer a short civics challenge delivered in amber light.",
+    "byline": "By Gideon Holt, Road Behaviour Reporter",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T07:54:00",
+    "image": "images/sparks-fly-12.svg",
+    "imageAlt": "A traffic light showing a tiny quiz icon between amber and red.",
+    "body": [
+      "The city has installed ethical prompts on selected crossings to reduce abrupt braking: 'Would you overtake someone carrying groceries?'
+    'Does your lane choice respect the bicycle?'",
+      "Pedestrians may now take precedence over speed, unless they answer no to at least one question, in which case the light pauses for community reflection.",
+      "Civil liberties groups say this is either innovative or deeply bureaucratic; both camps agree it is certainly different.",
+      "Transport officers reported fewer collisions and one dramatic rise in public philosophy debates at major junctions."
+    ],
+    "pullQuote": "A few seconds of conscience have now replaced many minutes of horns.",
+    "tags": ["satire", "opinion", "sparks-fly", "traffic", "ethics"]
+  },
+  {
+    "id": "sf-coat-rack-policy",
+    "category": "Sparks fly",
+    "headline": "Foreign office delegates add coat rack to strategic treaty glossary",
+    "standfirst": "Analysts argue whether jackets can be considered a non-binding but emotionally binding institution.",
+    "byline": "By Ewan Prowse, Diplomacy & Interiors Writer",
+    "location": "BRUSSELS",
+    "published": "2026-07-22T07:48:00",
+    "image": "images/sparks-fly-13.svg",
+    "imageAlt": "A conference coat rack with flags and a ceremonial scarf.",
+    "body": [
+      "A cabinet minister in Brussels announced that a treaty annex will now include 'objects of temporary authority', starting with the coat rack used during closed-door talks.",
+      "Officials said the rack had become a symbolic checkpoint for trust, and that no one could reach a calm draft while leaving raincoats in unresolved piles.",
+      "Delegates now agree to a short debrief each evening to reassign coats by priority: practical, ideological and sentimental.",
+      "One senior diplomat called the rule 'triumphant nonsense', adding that it helped everyone remember who arrived with umbrellas and who did not."
+    ],
+    "pullQuote": "When everyone checks their coat, they check their temperature toward compromise.",
+    "tags": ["satire", "opinion", "sparks-fly", "diplomacy", "humour"]
+  },
+  {
+    "id": "sf-museum-ticket-loop",
+    "category": "Sparks fly",
+    "headline": "Museum ticket keeps arriving at the same queue every hour",
+    "standfirst": "A digital gate has begun issuing duplicate tickets in protest of the museum's uneven concept of time.",
+    "byline": "By Celeste O'Hara, Cultural Time Desk",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T07:42:00",
+    "image": "images/sparks-fly-14.svg",
+    "imageAlt": "A looped museum ticket machine printing endless slips.",
+    "body": [
+      "Visitors to the city museum now receive a fresh ticket every two minutes while entering the same permanent-collection gallery, regardless of whether they already entered.",
+      "Technicians blamed the behaviour on a test for recurring curiosity, where every entry creates a tiny loop in the queue and teaches everyone to queue differently each week.",
+      "The museum curator says the process encourages repeated encounters with one portrait and has reduced casual exits by 8.2 percent, though two guests reported seeing themselves twice and disagreeing with prior impressions.",
+      "A provisional policy now asks each guest to carry the current copy at all times and surrender the previous one to the gift shop for ceremonial folding."
+    ],
+    "pullQuote": "The same ticket has become a practical exercise in patient modern art.",
+    "tags": ["satire", "opinion", "sparks-fly", "culture", "technology"]
+  },
+  {
+    "id": "sf-chair-rights-summit",
+    "category": "Sparks fly",
+    "headline": "Office chair files human-rights style grievance against swivel fatigue",
+    "standfirst": "Furniture committee recommends five-minute pauses between desk rotations to protect dignity and dignity-related furniture.",
+    "byline": "By Imogen Rook, Workplace Rights Desk",
+    "location": "LONDON",
+    "published": "2026-07-22T07:36:00",
+    "image": "images/sparks-fly-15.svg",
+    "imageAlt": "An office chair on a soapbox delivering a rights statement to a boardroom.",
+    "body": [
+      "A meeting room chair at a telecom company has filed a formal grievance claiming repeated over-rotation during late-afternoon calls.",
+      "The chair's advocate argued that no seat should be treated as a 'disposable ergonomic platform' and called for a daily maintenance charter.",
+      "Management has agreed to lower swivel speed and introduce a voluntary dignity audit before every major presentation.",
+      "Staff note the case has improved posture and reduced meetings that end with the same sentence: let's table this and carry on rotating."
+    ],
+    "pullQuote": "The chair did not demand victory, only a less dizzy Tuesday.",
+    "tags": ["satire", "opinion", "sparks-fly", "workplace", "safety"]
+  },
+  {
+    "id": "sf-pothole-poetry-app",
+    "category": "Sparks fly",
+    "headline": "City launches pothole poetry app after residents prefer metaphor to maps",
+    "standfirst": "Users can now tag every crater with a couplet, but the pothole remains inconveniently literal.",
+    "byline": "By Noah P. Vale, Civic Tech Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T07:30:00",
+    "image": "images/sparks-fly-16.svg",
+    "imageAlt": "A phone app interface with a cartoon pothole and a line of poetry.",
+    "body": [
+      "After thousands of unstructured complaints, the city replaced its pothole tracker with an app that asks users to write a short poem describing the hole before it can be logged.",
+      "The first submitted piece, 'You opened beneath my boot and my certainty,' was voted most urgent and sent a repair order with a standing ovation.",
+      "Civil engineers say the app does capture location data, but no one can prove it while teams are deciding whether the line breaks violate maintenance protocol.",
+      "The department says sentiment and roadwork are not alternatives, just different data structures."
+    ],
+    "pullQuote": "Some craters need a stanza before they get a contractor.",
+    "tags": ["satire", "opinion", "sparks-fly", "civic-tech", "roads"]
+  },
+  {
+    "id": "sf-canteen-negotiates-chef",
+    "category": "Sparks fly",
+    "headline": "Rail canteen negotiates chef rota with a formal strike ballot",
+    "standfirst": "Staff want to include a Friday gravy review panel and a clear policy on emotional overcooking.",
+    "byline": "By Felicity Grant, Workplace Satire Bureau",
+    "location": "LONDON",
+    "published": "2026-07-22T07:24:00",
+    "image": "images/sparks-fly-17.svg",
+    "imageAlt": "A canteen chef in a tiny office reading a contract with soup ladle at hand.",
+    "body": [
+      "A catering kitchen serving shift workers has introduced formal talks after staff said gravy has become a governance issue because it changes texture without prior consultation.",
+      "The cooks submitted a one-page draft agreement including rotating recipe rights, shared spice inventory and three minutes of silence before all soup is tasted in public.",
+      "Management accepted the process and asked for one concession: all ballots must be submitted before the first tea break to avoid delays.",
+      "Officials predict calmer lines, fewer mysterious sauces and a future where food returns to its own department, complete with minutes."
+    ],
+    "pullQuote": "A spoon is political when everyone depends on it at one in the afternoon.",
+    "tags": ["satire", "opinion", "sparks-fly", "labour", "food-service"]
+  },
+  {
+    "id": "sf-raincoat-season-rewrite",
+    "category": "Sparks fly",
+    "headline": "Retailer releases raincoat calendar with mandatory emotional forecast",
+    "standfirst": "Customers are advised whether to wear waterproof optimism or reflective joy before buying any shell.",
+    "byline": "By Nora Penn, Weather Consumption Reporter",
+    "location": "LONDON",
+    "published": "2026-07-22T07:18:00",
+    "image": "images/sparks-fly-18.svg",
+    "imageAlt": "A rack of raincoats beside a wall chart of emotional weather states.",
+    "body": [
+      "A national retailer now sends shoppers a rain-coat calendar that includes an emotional index, from 'hopeful drizzle' to 'tragic deluge' and everything in between.",
+      "Marketing said the idea came from customer research showing that people purchase different shells when they expect a gloomy afternoon versus a cheerful thunderstorm.",
+      "Each product card now includes a weather haiku in exchange for one of the usual technical spec boxes, creating lively debate among commuters at checkout.",
+      "Meteorologists declined to endorse the system but praised the attempt to give rain a personality.",
+      "The company says a happy shopper is less likely to buy a second umbrella before noon."
+    ],
+    "pullQuote": "Cloth still fails in the rain, but at least it tells you how it feels first.",
+    "tags": ["satire", "opinion", "sparks-fly", "retail", "weather"]
+  },
+  {
+    "id": "sf-sat-nav-morale-officer",
+    "category": "Sparks fly",
+    "headline": "Sat-nav introduces morale officer after repeated panic reroutes",
+    "standfirst": "Drivers now receive compliments before directions, and some report reaching destinations less aggressively.",
+    "byline": "By Idris Lane, Navigation Safety Reporter",
+    "location": "DUBLIN",
+    "published": "2026-07-22T07:12:00",
+    "image": "images/sparks-fly-19.svg",
+    "imageAlt": "A navigation dashboard showing a small morale badge beside route instructions.",
+    "body": [
+      "A software update has added a morale officer to the sat-nav experience, who now asks drivers if they feel capable before announcing the third left.",
+      "The officer speaks only in calm tones and has been trained to avoid road-surface panic phrases such as 'massive queue' until after the driver has already braked.",
+      "Beta users report that the extra reassurance reduces lane changes by 13 percent and causes several motorists to apologise to the car in front.",
+      "The company insists it is not a replacement for concentration, just a companion to be ignored only if necessary.",
+      "A road safety group said the update has made driving simultaneously kinder and slightly slower, which is not necessarily a bad outcome."
+    ],
+    "pullQuote": "Before turn two, maybe offer yourself the kindness of a small compliment.",
+    "tags": ["satire", "opinion", "sparks-fly", "technology", "road-safety"]
+  },
+  {
+    "id": "sf-flyer-of-souls",
+    "category": "Sparks fly",
+    "headline": "Festival volunteers send out loyalty flyers that arrive before invitations",
+    "standfirst": "A city event has introduced a two-stage outreach where flyers arrive with a greeting card and a legal explanation.",
+    "byline": "By Tessa Crowe, Civic Events Reporter",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T07:06:00",
+    "image": "images/sparks-fly-20.svg",
+    "imageAlt": "A stack of loyalty flyers with confetti and small print legal notes.",
+    "body": [
+      "Organisers for a summer literature festival mailed welcome packets to residents they had not invited, arguing that surprise increases attendance and reduces disappointment.",
+      "Each flyer includes a map, a quote and an optional loyalty card that cannot be used until the recipient declares at least one genuine reason to attend.",
+      "The campaign has produced unusual outcomes, including four residents attending for the free coffee despite having no interest in the event and one group arriving to apologise for the invitation.",
+      "The organisers said engagement has improved because everyone now has a reason to discuss whether attendance is a right, a choice or a weather-patterned obligation."
+    ],
+    "pullQuote": "When invitation arrives late, surprise arrives first.",
+    "tags": ["satire", "opinion", "sparks-fly", "events", "community"]
   }
-];
+]
 
 // ============================================================
 // SERIES: HOW TO BECOME A MASTER FLANGER
@@ -21741,3 +22124,6 @@ window.NEWS_ARTICLES.push({id:"voices-the-sprocket-family",image:"images/voices-
     window.NEWS_ARTICLES.push(article);
   });
 })();
+
+
+
