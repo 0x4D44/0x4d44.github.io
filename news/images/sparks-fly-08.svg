@@ -1,0 +1,21 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='1200' height='675' viewBox='0 0 1200 675' role='img'>
+  <title>Sparks fly illustration 08</title>
+  <defs>
+    <linearGradient id='g08' x1='0' y1='0' x2='1' y2='1'>
+      <stop offset='0%' stop-color='hsl(184,60%,85%)'/>
+      <stop offset='100%' stop-color='hsl(281,75%,30%)'/>
+    </linearGradient>
+  </defs>
+  <rect width='1200' height='675' fill="url(#g08)"/>
+  <g stroke='#ffffffcc' stroke-width='4' fill='none'>
+    <path d='M120 120 C180 80 260 80 320 140 C420 220 520 200 620 160 C700 130 780 60 860 110 C930 150 1000 270 1080 230' />
+    <path d='M200 560 C260 500 340 520 420 540 C500 560 560 470 640 450 C730 426 820 470 900 430 C980 390 1060 420 1120 380' />
+    <circle cx='1200' cy='90' r='2' fill='#fff'/>
+  </g>
+  <g transform='translate(260 210)'>
+    <text x='0' y='0' fill='#fff' font-size='96' font-family='Georgia, "Times New Roman", serif' font-weight='700'>Opinion</text>
+    <text x='0' y='112' fill='#f4f4f4' font-size='72' font-family='Georgia, "Times New Roman", serif'>Spark 08</text>
+    <text x='0' y='188' fill='#e8f7ff' font-size='36' font-family='Arial, sans-serif'>Daily Flange · Sparks fly</text>
+    <text x='0' y='254' fill='#e8f7ff' font-size='28' font-family='Arial, sans-serif'>A short, surreal editorial from the flanged side.</text>
+  </g>
+</svg>

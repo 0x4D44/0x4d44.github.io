@@ -38,7 +38,7 @@
     { name: "Sport",          children: ["Football", "Cricket", "Olympics", "Tennis", "Athletics", "Other Sports", "Motorsport"] },
     { name: "Life",           children: ["Lifestyle", "Weather", "Horoscopes", "Obituaries"] },
     { name: "Flanging",       children: [] },
-    { name: "Opinion",        children: ["Voices", "Letters"] }
+    { name: "Opinion",        children: ["Voices", "Letters", "Sparks fly"] }
   ];
 
   // Flat leaf order, derived from the groups. Used by the footer, the section
@@ -79,6 +79,8 @@
     Obituaries:  { c1: "#434a54", c2: "#23272e", icon: "candle" },
     Voices:      { c1: "#6b4a1f", c2: "#402a10", icon: "quill" },
     Letters:     { c1: "#7a3b2e", c2: "#4f241b", icon: "envelope" },
+    "Sparks fly":{ c1: "#2f4f9a", c2: "#172f6b", icon: "quill" },
+
     Horoscopes:  { c1: "#3b2f6b", c2: "#241c45", icon: "star" },
     Flanging:    { c1: "#7a3b2e", c2: "#4f241b", icon: "gear" },
     Aberdeen:    { c1: "#556270", c2: "#33404a", icon: "granite" }
@@ -972,3 +974,5 @@
     count: function () { return ARTICLES.length; }
   };
 })();
+
+
