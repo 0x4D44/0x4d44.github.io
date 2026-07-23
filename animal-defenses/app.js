@@ -228,6 +228,7 @@
         '<p>Plain HTML, CSS and vanilla JavaScript &mdash; no framework, no build step. Every creature is one object in <code>data.js</code>; the gallery, dossiers, chart and quiz are all generated from it. The nine interactives are hand-written on <code>&lt;canvas&gt;</code>. Add a creature by appending one object.</p>' +
         '<h2>On the facts</h2>' +
         '<p>These are real, documented behaviours, not tall tales &mdash; the blood-squirting lizard, the bone-clawed frog, the self-detonating ant and the rest are all genuine. Figures (temperatures, voltages, toxicity) are drawn from the scientific literature and rounded for readability. If you want to go deeper, every animal here is worth a search by its scientific name.</p>' +
+        '<p>Two residents are impostors, and deliberately so: <b>The Teenage Son</b> and <b>The Escaped AI Model</b> are jokes wearing lab coats. If you catch yourself reaching for a citation, you&rsquo;ve found one of them &mdash; everything else is the honest, horrifying truth.</p>' +
         '<p style="margin-top:26px"><a class="btn primary" href="#/bestiary">Enter the bestiary →</a></p>' +
       '</div>'
     ));
