@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Event Horizon — A Field Guide to Black Holes &amp; Singularities</title>
+<meta name="description" content="A deep, interactive field guide to black holes: how gravity makes them, the curved spacetime that runs them, their anatomy from photon ring to singularity, what happens when you fall in, Hawking radiation, and how we photograph the invisible — with live diagrams and a cast of cartoon guides.">
+<link rel="stylesheet" href="bh.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">EVENT&nbsp;HORIZON</a></div>
+    <div class="strap">a field guide to black holes &amp; singularities</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="gravity.html">1 · Escape &amp; Collapse</a>
+    <a href="spacetime.html">2 · Curved Spacetime</a>
+    <a href="anatomy.html">3 · Anatomy</a>
+    <a href="singularity.html">4 · The Singularity</a>
+    <a href="falling.html">5 · Falling In</a>
+    <a href="hawking.html">6 · Hawking Radiation</a>
+    <a href="observing.html">7 · Seeing the Unseeable</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">An interactive field guide to the darkest objects in the universe</p>
+  <h1>Event Horizon</h1>
+  <p class="standfirst">A black hole is a place where gravity has folded spacetime so
+  steeply that nothing — not even light — can climb back out. This guide builds one
+  from scratch, in plain English, with the real physics one click away: the collapse
+  that makes it, the curved spacetime that runs it, its anatomy from the glowing photon
+  ring down to the singularity, what you would actually see falling in, why black holes
+  glow and slowly evaporate, and how we managed to photograph a shadow 55&nbsp;million
+  light-years away.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">A black hole, dressed in light</span>
+    <span class="hint">accretion disk · photon ring · gravitational lensing · Doppler beaming</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="hero" style="aspect-ratio: 2.4 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="hero-view">show</label>
+      <span class="seg" id="hero-view">
+        <button data-v="full" class="on">everything</button>
+        <button data-v="doppler">Doppler only</button>
+        <button data-v="plain">no lensing</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="hero-spin">disk spin</label>
+      <input type="range" id="hero-spin" min="0" max="200" step="1" value="100">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="hero-cap" style="font-size:13px; color:var(--ink-2)">
+      The black disk is the <b>shadow</b> — the region of sky the hole has swallowed. The
+      thin bright circle hugging it is the <b>photon ring</b>, light that looped around the
+      hole one or more times before escaping. The glowing band is superheated gas spiralling
+      in; its far side is bent <i>up and over</i> the shadow by the hole's gravity, and the
+      side rotating toward us is beamed brighter and bluer. This is, in essence, the picture
+      the Event Horizon Telescope made real in 2019.
+    </span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p class="lead">Everything you have heard about black holes is true, and stranger than
+you have heard. This guide is built so you can go exactly as deep as you like.</p>
+
+<p>The main text tells the story in plain English — no physics assumed, every symbol
+explained the first time it appears. Whenever the honest mathematics is worth seeing,
+it is folded into a panel like the one just below; open it or skip it, the story reads
+either way. And every chapter carries live apparatus you can drive: shrink a star until
+it winks out, bend starlight into a ring, stretch an unlucky astronaut, drop a clock
+past the point of no return, watch a black hole evaporate.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the full maths, on demand</span></summary>
+  <p>In panels like this live the real derivations — the ones that need a little algebra,
+  a metric, sometimes a modest integral. Nothing in the main narrative depends on opening
+  them. They are here because the mathematics is beautiful and, for the reader who wants
+  it, the whole point. Try it now — click the &ldquo;Go deeper&rdquo; bar again to fold this
+  away.</p>
+  <p>Units are SI unless noted; we lean on two constants throughout: Newton's
+  <span class="m">G</span> = 6.674×10<sup>−11</sup> (the strength of gravity) and the speed
+  of light <span class="m">c</span> = 2.998×10<sup>8</sup>&nbsp;m/s (the cosmic speed
+  limit). Almost every black-hole formula is some combination of those two.</p>
+</details>
+
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-pip"/></svg>
+    <svg class="char sm"><use href="#char-photon"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Your guides</p>
+    <p class="say"><b>Pip</b> asks the questions you're thinking. <b>Zip</b> the photon
+    shows what light does. <b>Professor Nova</b> brings the equations, and <b>Bob</b> the
+    astronaut — well, somebody has to volunteer to fall in.</p>
+    <p class="say">Ready? Meet them properly on the way down.</p>
+  </div>
+</div>
+
+<div class="cards">
+  <a class="card" href="gravity.html">
+    <span class="no">CHAPTER 1</span>
+    <h3>Escape &amp; Collapse</h3>
+    <p>Escape velocity and the idea that goes back to 1783; why a heavy-enough, small-enough
+    object traps its own light; the Schwarzschild radius; and how a dying star collapses past
+    the point of no return. Compress the Sun with a slider.</p>
+  </a>
+  <a class="card" href="spacetime.html">
+    <span class="no">CHAPTER 2</span>
+    <h3>Curved Spacetime</h3>
+    <p>Why gravity isn't a force but the shape of spacetime; the equivalence principle;
+    geodesics and why planets orbit; and light bending — bend a beam into an Einstein ring
+    and watch photons captured by the hole.</p>
+  </a>
+  <a class="card" href="anatomy.html">
+    <span class="no">CHAPTER 3</span>
+    <h3>Anatomy of a Black Hole</h3>
+    <p>A guided cross-section: the event horizon, the photon sphere, the innermost stable
+    orbit, the ergosphere of a spinning hole — and a calculator that sizes any black hole
+    from a grain of dust to a galactic monster.</p>
+  </a>
+  <a class="card" href="singularity.html">
+    <span class="no">CHAPTER 4</span>
+    <h3>The Singularity</h3>
+    <p>What "infinite density" really means and why it signals broken physics; tidal forces
+    and spaghettification, with a stretch-o-meter; light cones tipping over; Penrose diagrams
+    and cosmic censorship.</p>
+  </a>
+  <a class="card" href="falling.html">
+    <span class="no">CHAPTER 5</span>
+    <h3>Falling In</h3>
+    <p>The most famous thought experiment in physics, run live: two clocks, one falling and
+    one watching. Time dilation, gravitational redshift, and why you cross the horizon without
+    noticing while the outside world sees you freeze.</p>
+  </a>
+  <a class="card" href="hawking.html">
+    <span class="no">CHAPTER 6</span>
+    <h3>Hawking Radiation</h3>
+    <p>Black holes are not quite black. The quantum vacuum, the four laws of black-hole
+    thermodynamics, a temperature that rises as the hole shrinks, evaporation, and the
+    information paradox that still isn't settled.</p>
+  </a>
+  <a class="card" href="observing.html">
+    <span class="no">CHAPTER 7</span>
+    <h3>Seeing the Unseeable</h3>
+    <p>How we find the invisible: X-rays from accretion, relativistic jets, stars orbiting an
+    empty point at the galaxy's heart, the gravitational-wave chirp of two holes merging —
+    play the LIGO signal — and the first photograph of a shadow.</p>
+  </a>
+  <a class="card" href="lexicon.html">
+    <span class="no">CHAPTER 8</span>
+    <h3>The Lexicon</h3>
+    <p>The working vocabulary A–Z; the constants of nature to full precision; a scale table of
+    real black holes from stellar to ultramassive; and a timeline from Michell's 1783
+    "dark star" to the 2019 image.</p>
+  </a>
+</div>
+
+<div class="prose">
+
+<h2>What actually is a black hole?</h2>
+
+<p>Here is the shortest honest definition. A <strong>black hole is a region of spacetime
+where gravity is so strong that nothing can escape</strong> — not matter, not light, not
+information. Its edge is a one-way surface called the <em>event horizon</em>: cross it
+travelling inward and you can never send anything back out, because doing so would mean
+travelling faster than light, which nothing can. A black hole is not a thing so much as a
+<em>place</em>, defined entirely by the way it bends the paths available to everything
+around it.</p>
+
+<p>Astonishingly, you need almost no ingredients to make one. You do not need exotic matter
+or unknown physics. You need only to take an ordinary amount of mass and squeeze it small
+enough. Every object has a critical size — its Schwarzschild radius — below which its own
+gravity wins and no light can leave. For the Earth that size is about a centimetre; for the
+Sun, about three kilometres; for you, far smaller than a proton. Nothing squeezes an
+everyday object that hard — but a dying star's core has no such luxury, and gravity finishes
+the job (that's <a href="gravity.html">Chapter&nbsp;1</a>).</p>
+
+<div class="callout gold">
+  <span class="tag">The one number to remember</span>
+  <p>A black hole's size is set almost entirely by its mass, through one clean formula, the
+  <strong>Schwarzschild radius</strong>:</p>
+  <div class="eq"><span class="m"><b>r</b><sub>s</sub> = 2<b>G</b><b>M</b> / <b>c</b>²</span></div>
+  <p>Double the mass, double the size. In friendly units, a black hole is about
+  <strong>3&nbsp;km across for every Sun's worth of mass</strong> — so a 10-solar-mass hole
+  is a 30-km ball of pure "no", and the four-million-Sun monster at our galaxy's centre is
+  about the width of Mercury's orbit.</p>
+</div>
+
+<p>Once you accept that squeezing is possible, everything else in this guide follows from a
+single deeper idea, due to Einstein: <strong>gravity is not a force pulling on things — it is
+the curvature of spacetime, and things simply follow the straightest available paths through
+that curved geometry</strong> (<a href="spacetime.html">Chapter&nbsp;2</a>). A black hole is
+just the most extreme curvature there is: a funnel so steep that every path, even a light
+ray's, leads inward.</p>
+
+<h2>Three sizes of hole</h2>
+
+<p>Nature builds black holes in (at least) three wildly different weight classes, and they
+are made in different ways:</p>
+
+<table class="data">
+  <caption>The black-hole weight classes</caption>
+  <tr><th>Class</th><th>Mass</th><th>Size (horizon)</th><th>Made by</th></tr>
+  <tr><td class="k">Stellar</td><td>~5–100 Suns</td><td class="num">15–300 km</td>
+    <td>The collapse of a massive star's core in a supernova.</td></tr>
+  <tr><td class="k">Intermediate</td><td>~10²–10⁵ Suns</td><td class="num">10³–10⁵ km</td>
+    <td>Uncertain — runaway mergers in dense star clusters? A long-missing link, now being
+    caught by gravitational waves.</td></tr>
+  <tr><td class="k">Supermassive</td><td>10⁵–10¹⁰ Suns</td><td class="num">up to ~ a solar system</td>
+    <td>Sitting at the centre of nearly every large galaxy; grown over billions of years by
+    swallowing gas and merging. Their origin is an active mystery.</td></tr>
+</table>
+
+<p>The same physics governs all three: a one-kilogram black hole (if one existed) and the
+6.5-billion-Sun giant in galaxy M87 obey the identical equations, scaled by mass. That
+universality is what makes the subject so satisfying — learn the rules once and they apply
+from the quantum to the cosmic.</p>
+
+<div class="callout story">
+  <span class="tag">A very short history</span>
+  <p>The idea is older than you'd think. In 1783 the English clergyman John Michell reasoned
+  that a star 500 times the Sun's diameter would have an escape velocity exceeding light's,
+  making it a "dark star." The modern version arrived in 1915, weeks after Einstein published
+  general relativity, when Karl Schwarzschild — computing on the Russian front in the First
+  World War — found the exact solution that now bears his name. For decades most physicists,
+  Einstein included, thought such objects were mathematical curiosities that nature would
+  never actually build. They were wrong.</p>
+</div>
+
+<h2>How to read this guide</h2>
+
+<p>Start here and go in order — each chapter leans on the one before — or jump straight to
+whatever pulled you in. Play with every interactive; they do the explaining that words can't.
+And a promise about honesty: popular accounts of black holes tend to drift into either mysticism
+("a tunnel to another universe!") or false cosiness ("just a very heavy star"). Black holes are
+neither. They are ferociously precise objects that general relativity describes to many decimal
+places — and they also mark the exact spot where that same theory admits it breaks down. This
+guide keeps those two things apart: it calculates first, and flags clearly where it steps into
+the genuinely unknown.</p>
+
+<p class="colophon">EVENT HORIZON · a field guide to black holes &amp; singularities · written
+and built as a self-contained static site: vanilla JavaScript, canvas and SVG, no frameworks,
+no build step. Physics checked against the standard references — Misner–Thorne–Wheeler,
+Wald, Hartle, Schutz, and the primary literature cited in-chapter. Part of the
+<a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="bh-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, seg, slider, clamp, lerp, blackbodyRGB, rng } = BH;
+
+  let view = "full";
+  let spin = 1.0;
+
+  // rotating clumps that ride the disk to convey motion
+  const N = 150;
+  const clumps = [];
+  const rr = rng(424242);
+  for (let i = 0; i < N; i++) {
+    clumps.push({
+      a: rr() * BH.TAU,           // angle around disk
+      r: Math.pow(rr(), 0.6),     // 0..1 radial fraction (biased inner)
+      s: 0.5 + rr(),              // brightness
+      w: 0.3 + rr() * 0.9,        // angular width
+    });
+  }
+
+  const CAPS = {
+    full: "The black disk is the shadow — the region of sky the hole has swallowed. The thin bright circle hugging it is the photon ring, light that looped around the hole before escaping. The glowing band is superheated gas spiralling in; its far side is bent up and over the shadow by the hole's gravity, and the side rotating toward us is beamed brighter and bluer. This is, in essence, the picture the Event Horizon Telescope made real in 2019.",
+    doppler: "Doppler beaming alone: the gas orbits at a fair fraction of light speed, so the side sweeping toward us is boosted brighter and shifted bluer, while the receding side dims and reddens. In the real M87* image one side is about ten times brighter than the other — that asymmetry is how we know which way the disk spins.",
+    plain: "With lensing switched off you see the disk as it 'really' lies: a thin, tilted, glowing ring, its far side hidden behind the shadow. Switch lensing back on and the hole's gravity lifts that hidden far side up over the top — the signature look of a black hole dressed in light.",
+  };
+
+  function bbCSS(temp, mult, alpha) {
+    let [r, g, b] = blackbodyRGB(temp);
+    r = clamp(r * mult, 0, 255); g = clamp(g * mult, 0, 255); b = clamp(b * mult, 0, 255);
+    return `rgba(${r|0},${g|0},${b|0},${alpha})`;
+  }
+
+  BH.canvas("hero", function (ctx, w, h, t) {
+    // background
+    ctx.fillStyle = "#04040a"; ctx.fillRect(0, 0, w, h);
+    BH.stars(ctx, w, h, Math.round(w * h / 1600), 99);
+
+    const cx = w / 2, cy = h * 0.54;
+    const R = Math.min(w, h);
+    const Rs = R * 0.13;           // shadow radius
+    const Ri = Rs * 1.35;          // inner disk edge
+    const Ro = Math.min(w * 0.46, R * 0.5); // outer edge
+    const incl = 0.26;             // vertical foreshortening (thin disk)
+    const lens = (view === "plain") ? 0 : 1;
+
+    // Doppler gradient (left = approaching → brighter/bluer, right = receding)
+    function dopplerAt(x) {
+      const u = (x - cx) / Ro;                 // -1 (left) .. +1 (right)
+      return clamp(1 - u, 0.18, 1.9);          // brightness multiplier
+    }
+
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+
+    // ---- lensed far side: arc lifted OVER the top of the shadow ----
+    if (lens) {
+      const layers = 46;
+      for (let k = layers; k >= 0; k--) {
+        const f = k / layers;
+        const rad = lerp(Ri, Ro, f);
+        const temp = lerp(11000, 2400, f);
+        const ryTop = Rs * 0.55 + rad * incl * 2.1;   // taller → arcs above shadow
+        ctx.lineWidth = (Ro - Ri) / layers * 1.7 + 0.6;
+        const grad = ctx.createLinearGradient(cx - rad, 0, cx + rad, 0);
+        const dl = dopplerAt(cx - rad), dr = dopplerAt(cx + rad);
+        grad.addColorStop(0, bbCSS(temp * (1 + 0.18 * (dl - 1)), dl * 0.5, 0.5));
+        grad.addColorStop(0.5, bbCSS(temp, 0.5, 0.5));
+        grad.addColorStop(1, bbCSS(temp * (1 - 0.10 * (1 - dr)), dr * 0.5, 0.32));
+        ctx.strokeStyle = grad;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rad, ryTop, 0, Math.PI, BH.TAU);  // upper half
+        ctx.stroke();
+      }
+    }
+
+    // ---- shadow (occludes middle) + photon ring ----
+    ctx.globalCompositeOperation = "source-over";
+    const halo = ctx.createRadialGradient(cx, cy, Rs * 0.6, cx, cy, Rs * 1.5);
+    halo.addColorStop(0, "#000"); halo.addColorStop(0.72, "#000");
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = halo;
+    ctx.beginPath(); ctx.arc(cx, cy, Rs * 1.5, 0, BH.TAU); ctx.fill();
+    ctx.fillStyle = "#000";
+    ctx.beginPath(); ctx.arc(cx, cy, Rs, 0, BH.TAU); ctx.fill();
+
+    ctx.globalCompositeOperation = "lighter";
+    // photon ring — bright, thin, slightly Doppler-asymmetric
+    for (let i = 0; i < 220; i++) {
+      const a = i / 220 * BH.TAU;
+      const x = cx + Math.cos(a) * Rs * 1.045;
+      const y = cy + Math.sin(a) * Rs * 1.045;
+      const d = clamp(1 - Math.cos(a) * 0.6, 0.4, 1.7);
+      ctx.fillStyle = bbCSS(9000, d * 0.55, 0.9);
+      ctx.beginPath(); ctx.arc(x, y, 1.3, 0, BH.TAU); ctx.fill();
+    }
+
+    // ---- front (near) side of disk, in front of shadow ----
+    const layers = 46;
+    for (let k = 0; k <= layers; k++) {
+      const f = k / layers;
+      const rad = lerp(Ri, Ro, f);
+      const temp = lerp(11000, 2400, f);
+      const ry = rad * incl;
+      ctx.lineWidth = (Ro - Ri) / layers * 1.7 + 0.6;
+      const grad = ctx.createLinearGradient(cx - rad, 0, cx + rad, 0);
+      const dl = dopplerAt(cx - rad), dr = dopplerAt(cx + rad);
+      grad.addColorStop(0, bbCSS(temp * (1 + 0.18 * (dl - 1)), dl * 0.5, 0.6));
+      grad.addColorStop(0.5, bbCSS(temp, 0.5, 0.55));
+      grad.addColorStop(1, bbCSS(temp, dr * 0.5, 0.34));
+      ctx.strokeStyle = grad;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rad, ry, 0, 0, Math.PI);   // lower half (front)
+      ctx.stroke();
+    }
+
+    // ---- rotating clumps (motion) ----
+    if (view !== "plain" || true) {
+      for (const cl of clumps) {
+        const rad = lerp(Ri, Ro, cl.r);
+        // Keplerian: inner faster
+        const omega = spin * 0.5 * Math.pow(Ri / rad, 1.5);
+        const a = cl.a + t * omega;
+        const ca = Math.cos(a), sa = Math.sin(a);
+        // front half only for the direct image (sa>0), else it's behind
+        const doppler = clamp(1 - ca * 0.9, 0.2, 1.9);
+        let x, y, alpha;
+        if (sa >= 0) {                     // near side, in front
+          x = cx + ca * rad; y = cy + sa * rad * incl; alpha = 0.5;
+        } else if (lens) {                 // far side lifted over top
+          const ryTop = Rs * 0.55 + rad * incl * 2.1;
+          x = cx + ca * rad; y = cy + sa * ryTop; alpha = 0.42;
+        } else { continue; }
+        // hide clumps that would sit on the shadow when behind
+        const temp = lerp(11000, 2600, cl.r);
+        ctx.fillStyle = bbCSS(temp, doppler * cl.s * 0.5, alpha);
+        ctx.beginPath(); ctx.arc(x, y, 1.6 + cl.s, 0, BH.TAU); ctx.fill();
+      }
+    }
+    ctx.restore();
+  }, { animate: true });
+
+  seg("hero-view", (v) => { view = v; BH.set("hero-cap", ""); document.getElementById("hero-cap").innerHTML = CAPS[v]; });
+  slider("hero-spin", (v) => (v / 100).toFixed(2) + "×", (v) => { spin = v / 100; });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

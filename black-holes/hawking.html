@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hawking Radiation — Event Horizon</title>
+<meta name="description" content="Black holes are not quite black. The quantum vacuum, black-hole thermodynamics and entropy, a temperature that rises as the hole shrinks, evaporation over unimaginable timescales, and the information paradox. Interactive: take a black hole's temperature.">
+<link rel="stylesheet" href="bh.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">EVENT&nbsp;HORIZON</a></div>
+    <div class="strap">a field guide to black holes &amp; singularities</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="gravity.html">1 · Escape &amp; Collapse</a>
+    <a href="spacetime.html">2 · Curved Spacetime</a>
+    <a href="anatomy.html">3 · Anatomy</a>
+    <a href="singularity.html">4 · The Singularity</a>
+    <a href="falling.html">5 · Falling In</a>
+    <a href="hawking.html" aria-current="page">6 · Hawking Radiation</a>
+    <a href="observing.html">7 · Seeing the Unseeable</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 6</p>
+  <h1>Hawking Radiation</h1>
+  <p class="standfirst">In 1974 a 32-year-old Stephen Hawking proved something nobody expected
+  and Hawking himself initially disbelieved: black holes are <em>not</em> perfectly black. They
+  glow, faintly, with a temperature set by their mass — and glowing means losing energy, and
+  losing energy means shrinking. Given enough time, every black hole evaporates. The result
+  tied gravity, quantum theory and thermodynamics into a single knot that physics is still
+  trying to untangle.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">The trick is that empty space is not empty. At the smallest scales the vacuum
+seethes.</p>
+
+<p>Quantum theory forbids perfect stillness. Even in the emptiest vacuum, fields flicker with
+irreducible "zero-point" jitter, constantly producing fleeting <strong>virtual particle
+pairs</strong> — a particle and its antiparticle — that appear, exist for a borrowed instant,
+and annihilate back to nothing before the universe can notice. This is not speculation; the
+tiny forces these virtual pairs exert (the Casimir effect, the Lamb shift) are measured to
+exquisite precision. Now bring this restless vacuum right up to the edge of a black hole, and
+something can go wrong with the usual disappearing act.</p>
+
+<div class="callout gold">
+  <span class="tag">The heuristic picture (handle with care)</span>
+  <p>Imagine a virtual pair flickering into being straddling the horizon. One partner falls in;
+  the other, now with no partner to annihilate, is stranded in the real world and flies off as a
+  genuine particle — <strong>Hawking radiation</strong>. To balance the books, the partner that
+  fell in must carry <em>negative</em> energy inward, so the black hole's mass ticks down by
+  exactly the escaping particle's worth. Hawking used this cartoon himself, but warned it is only
+  a mnemonic. The rigorous version is subtler: the hole's intense gravity mixes the quantum
+  vacuum's notions of "positive" and "negative" frequency, so that what one observer calls empty
+  space, a distant observer sees as a warm thermal glow.</p>
+</div>
+
+<h2><span class="no">§6.1</span> A temperature, and everything that follows</h2>
+
+<p>Hawking's calculation delivered a shockingly clean result. A black hole radiates like a warm
+body — a perfect thermal spectrum — at a temperature that depends only on its mass:</p>
+
+<div class="callout gold">
+  <span class="tag">The Hawking temperature</span>
+  <div class="eq"><span class="m"><b>T</b><sub>H</sub> = <frac><span>ħ<b>c</b>³</span><span>8π<b>G</b><b>M</b>k<sub>B</sub></span></frac></span>
+    <span class="eqno">(6.1)</span></div>
+  <p>Look at where <span class="m">M</span> sits: on the <em>bottom</em>. The temperature is
+  <strong>inversely</strong> proportional to mass. A <em>bigger</em> black hole is
+  <em>colder</em>; a smaller one is hotter. This single fact drives the entire strange story of
+  evaporation below. Notice, too, that this one little formula contains
+  <span class="m">ħ</span> (quantum mechanics), <span class="m">c</span> and
+  <span class="m">G</span> (relativity and gravity), and <span class="m">k<sub>B</sub></span>
+  (thermodynamics) — four pillars of physics that meet nowhere else.</p>
+</div>
+
+<p>Take a black hole's temperature yourself. The result for any ordinary hole is almost
+comically cold — far colder than the 2.7-kelvin afterglow of the Big Bang that fills all of
+space. That matters: because real black holes are colder than their surroundings, they
+currently <em>absorb</em> more than they emit, and grow. Evaporation only wins once the
+universe itself cools further, or for holes born tiny.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Take a black hole's temperature</span>
+    <span class="hint">smaller means hotter, brighter, and shorter-lived</span>
+  </div>
+  <div class="fig-body" style="background:var(--surface); padding: 18px 16px;">
+    <div class="fig-controls" style="border:none; background:none; padding:0 0 8px;">
+      <div class="ctl" style="flex:1 1 100%">
+        <label for="hk-m">mass</label>
+        <input type="range" id="hk-m" min="0" max="1000" step="1" value="640" style="flex:1 1 240px; max-width:420px;">
+        <output style="min-width:130px"></output>
+      </div>
+    </div>
+    <div class="ctl" style="flex-wrap:wrap; gap:6px;">
+      <span class="seg" id="hk-preset">
+        <button data-v="planck">Planck-mass</button>
+        <button data-v="prim">evaporating now</button>
+        <button data-v="asteroid">asteroid-mass</button>
+        <button data-v="stellar" class="on">10 M☉</button>
+        <button data-v="sgr">Sgr A*</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts" style="gap:12px 26px; padding:14px 16px;">
+    <span class="ro amber">temperature <b id="hk-t">—</b></span>
+    <span class="ro">vs. the CMB (2.7 K) <b id="hk-cmb">—</b></span>
+    <span class="ro">radiates like <b id="hk-peak">—</b></span>
+    <span class="ro">power output <b id="hk-l">—</b></span>
+    <span class="ro">lifetime <b id="hk-life">—</b></span>
+  </div>
+  <div class="fig-note" id="hk-note">A 10-solar-mass black hole is one of the coldest objects
+    in the universe — 6 billionths of a kelvin — and would take 10⁶⁸ years to evaporate, if the
+    universe ever cooled enough to let it start.</div>
+</figure>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char sm"><use href="#char-photon"/></svg>
+    <svg class="char float"><use href="#char-pip"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Pip</p>
+    <p class="say">Wait, so a black hole the mass of the Sun is <i>colder</i> than deep space?
+    Then how does anything ever evaporate?</p>
+    <p class="say" style="color:var(--amber)">It mostly doesn't — yet. Big holes grow for now.
+    But run the clock forward far enough, past when the last stars die and the cosmic background
+    fades below the holes' own temperature, and even the giants begin to shrink.</p>
+  </div>
+</div>
+
+<h2><span class="no">§6.2</span> The runaway end, and the longest wait</h2>
+
+<p>Here is the twist hidden in equation&nbsp;(6.1). As a black hole radiates, it loses mass; as
+it loses mass, it gets <em>hotter</em>; hotter means it radiates <em>faster</em>; which makes it
+lose mass faster still. This is a runaway with a strange name — <strong>negative heat
+capacity</strong> — the opposite of a normal object, which cools as it loses heat. So
+evaporation starts as an imperceptible trickle over eons and ends in a fraction of a second: the
+final moments are a blinding flash as the last of the mass converts to a burst of high-energy
+radiation. The lifetime scales as the <em>cube</em> of the mass:</p>
+
+<div class="eq"><span class="m"><b>t</b><sub>evap</sub> ≈ <frac><span>5120 π <b>G</b>²<b>M</b>³</span><span>ħ<b>c</b>⁴</span></frac></span>
+  <span class="eqno">(6.2)</span></div>
+
+<p>For a stellar black hole this is around 10<sup>67</sup> years — so far beyond the current age
+of the universe (1.4×10<sup>10</sup> years) that the number is essentially meaningless on any
+human or cosmic scale. A supermassive hole takes 10<sup>90</sup>&nbsp;years or more. These are
+the last objects that will exist in the universe, presiding over an all-but-empty cosmos long
+after the last star has died, before finally winking out. A black hole formed in the Big Bang
+with the mass of an asteroid, on the other hand, would be finishing its evaporation right about
+<em>now</em> — which is why astronomers hunt for the tell-tale gamma-ray flashes of primordial
+black holes.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The vacuum leaks at the edge</span>
+    <span class="hint">pairs straddle the horizon — one escapes, one falls in</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pairs" style="aspect-ratio: 2.6 / 1; min-height: 240px;"></canvas>
+  </div>
+  <div class="fig-note">A schematic of the heuristic picture: quantum pairs (gold + violet)
+    flicker into being near the <b>horizon</b>. Most annihilate. Occasionally one partner
+    escapes as real <b>Hawking radiation</b> while the other falls in carrying negative energy —
+    and the hole loses a sliver of mass.</div>
+</figure>
+
+<h2><span class="no">§6.3</span> Black holes have entropy — and a paradox</h2>
+
+<p>If a black hole has a temperature, thermodynamics insists it must also have
+<strong>entropy</strong> — a measure of hidden disorder, of how many ways its interior could be
+arranged. Jacob Bekenstein guessed this before Hawking's proof, and the answer is one of the
+most beautiful equations in physics:</p>
+
+<div class="eq"><span class="m"><b>S</b> = <frac><span>k<sub>B</sub><b>c</b>³<b>A</b></span><span>4<b>G</b>ħ</span></frac></span>
+  <span class="eqno">(6.3)</span></div>
+
+<p>The entropy is proportional to the <em>area</em> <span class="m">A</span> of the horizon —
+not its volume. This is staggering: it says the maximum information that can be stored in any
+region of space is set by the area of its boundary, as if the three-dimensional interior were a
+projection of data written on a two-dimensional surface. That insight grew into the
+<strong>holographic principle</strong>, now a central idea in quantum gravity. A black hole the
+size of the one in M87 has an entropy so vast it dwarfs the entropy of all the ordinary matter
+in the observable universe combined.</p>
+
+<div class="axiom">
+  <span class="tag">The information paradox</span>
+  <p>Here is the unsolved knot. Quantum mechanics is built on a rule that information is never
+  truly destroyed — the present always encodes a recoverable past. But Hawking radiation, in his
+  original calculation, is <em>perfectly thermal</em>: random, featureless, carrying no trace of
+  what fell in. So when a black hole evaporates completely, what happens to the information about
+  everything it swallowed? If it is gone, quantum mechanics is broken. If it is somehow
+  imprinted on the outgoing radiation, then Hawking's own calculation is incomplete. This is the
+  <strong>black hole information paradox</strong>, and after fifty years it is only
+  <em>partly</em> resolved — recent work on "islands" and entanglement entropy strongly suggests
+  information does escape, but exactly <em>how</em> the bits get out remains one of the deepest
+  open problems in physics.</p>
+</div>
+
+<p>Hawking radiation remains, for now, entirely theoretical — no black hole is hot enough for us
+to detect its glow against the cosmic background. Yet almost no physicist doubts it is real: it
+falls out of the mathematics too cleanly, and laboratory "analogue" black holes made of flowing
+fluids and light have shown the same effect on tabletop scales. To actually <em>find</em> black
+holes, though, we rely not on their whisper of radiation but on the violence of the matter
+falling in — which is where we turn next.</p>
+
+<div class="chapnav">
+  <a class="prev" href="falling.html"><span class="dir">← Previous</span><span class="title">5 · Falling In</span></a>
+  <a class="next" href="observing.html"><span class="dir">Next →</span><span class="title">7 · Seeing the Unseeable</span></a>
+</div>
+
+<p class="colophon">EVENT HORIZON · Chapter 6 · Hawking (1974–75); temperature T = ħc³/8πGMk,
+lifetime t ∝ M³, Bekenstein–Hawking entropy S = k c³A/4Għ; the information paradox and the
+holographic principle. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="bh-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp, TAU } = BH;
+  const { G, c, hbar, kB, Msun } = BH.PHYS;
+  const sigma = 5.670e-8;
+
+  /* ---------- Hawking calculator ---------- */
+  (function () {
+    // log slider 0..1000 → mass 1e8 kg .. 1e42 kg
+    const LO = 8, HI = 42;
+    function massKg(v) { return Math.pow(10, lerp(LO, HI, v / 1000)); }
+    function sliderFor(m) { return clamp((Math.log10(m) - LO) / (HI - LO) * 1000, 0, 1000); }
+    const PRESETS = {
+      planck: 2.18e-8, prim: 1.7e11, asteroid: 1e15, stellar: 10 * Msun, sgr: 4.297e6 * Msun,
+    };
+    const NAMES = {
+      planck: "the Planck mass — where our physics gives out",
+      prim: "a primordial hole finishing its evaporation about now",
+      asteroid: "an asteroid-mass primordial black hole",
+      stellar: "a 10-solar-mass stellar black hole",
+      sgr: "Sgr A*, our galaxy's central hole",
+    };
+
+    function update(m, key) {
+      const rs = 2 * G * m / (c * c);
+      const T = BH.hawkingT(m);
+      const A = 4 * Math.PI * rs * rs;
+      const L = A * sigma * Math.pow(T, 4);       // W
+      const life = BH.evapLife(m);
+      const lamPeak = 2.898e-3 / T;               // Wien, m
+      BH.set("hk-t", T < 1e-3 ? T.toExponential(2) + " K" : T > 1e6 ? T.toExponential(2) + " K" : T.toFixed(3) + " K");
+      const cmb = T / 2.725;
+      BH.set("hk-cmb", cmb < 1 ? cmb.toExponential(1) + "× (colder → grows)" : cmb.toExponential(1) + "× (hotter → shrinks)");
+      let band;
+      if (lamPeak > 1) band = "radio waves";
+      else if (lamPeak > 1e-3) band = "microwaves";
+      else if (lamPeak > 7e-7) band = "infrared";
+      else if (lamPeak > 4e-7) band = "visible light";
+      else if (lamPeak > 1e-8) band = "ultraviolet";
+      else if (lamPeak > 1e-11) band = "X-rays";
+      else band = "gamma rays";
+      BH.set("hk-peak", band);
+      BH.set("hk-l", L < 1e-3 ? L.toExponential(2) + " W" : L.toExponential(2) + " W");
+      BH.set("hk-life", BH.fmtTime(life));
+      const note = document.getElementById("hk-note");
+      let extra;
+      if (m < 1e-6) extra = "At the Planck scale, quantum gravity — which we don't have — takes over; the formulae here are extrapolations.";
+      else if (life < 4.3e17) extra = "Its lifetime is shorter than the current age of the universe — a hole this small, if born early, has already evaporated.";
+      else extra = "Its lifetime vastly exceeds the age of the universe; it will outlast the stars.";
+      note.textContent = (key ? NAMES[key] + ". " : "") + extra;
+    }
+
+    const s = BH.slider("hk-m", (v) => massKg(v).toExponential(1) + " kg", (v) => update(massKg(v), null));
+    BH.seg("hk-preset", (v) => { const m = PRESETS[v]; s.set(sliderFor(m)); update(m, v); });
+    update(PRESETS.stellar, "stellar");
+  })();
+
+  /* ---------- pair-creation vignette ---------- */
+  (function () {
+    const pairs = [];
+    let acc = 0;
+    BH.canvas("pairs", function (ctx, w, h, t) {
+      ctx.fillStyle = "#06060d"; ctx.fillRect(0, 0, w, h);
+      const horY = h * 0.62;
+      // black hole region below horizon
+      const gg = ctx.createLinearGradient(0, horY, 0, h);
+      gg.addColorStop(0, "rgba(0,0,0,0.2)"); gg.addColorStop(1, "rgba(0,0,0,0.85)");
+      ctx.fillStyle = gg; ctx.fillRect(0, horY, w, h - horY);
+      ctx.fillStyle = "#000";
+      ctx.beginPath(); ctx.ellipse(w / 2, h + h * 0.25, w * 0.6, h * 0.55, 0, 0, TAU); ctx.fill();
+      // horizon line
+      ctx.strokeStyle = "rgba(255,80,80,0.8)"; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(0, horY); ctx.lineTo(w, horY); ctx.stroke(); ctx.setLineDash([]);
+      BH.label(ctx, "EVENT HORIZON", 12, horY - 8, { color: "#ff8a8a" });
+      BH.label(ctx, "↑ escaping as Hawking radiation", w - 12, 20, { color: C.gold, align: "right" });
+
+      // spawn pairs near horizon
+      if (!BH.reducedMotion) {
+        acc += 1 / 60;
+        if (acc > 0.22 && pairs.length < 26) {
+          acc = 0;
+          const x = 30 + Math.random() * (w - 60);
+          pairs.push({ x, y: horY, age: 0, escape: Math.random() < 0.5, life: 1.6 + Math.random() });
+        }
+        for (const p of pairs) p.age += 1 / 60;
+        for (let i = pairs.length - 1; i >= 0; i--) if (pairs[i].age > pairs[i].life) pairs.splice(i, 1);
+      }
+      // draw pairs
+      ctx.globalCompositeOperation = "lighter";
+      for (const p of pairs) {
+        const f = p.age / p.life;
+        const sep = f * 26;
+        const up = { x: p.x, y: horY - sep - 4 };      // escapes upward
+        const dn = { x: p.x, y: horY + sep + 4 };      // falls in
+        // escaping partner (gold)
+        ctx.fillStyle = `rgba(255,209,102,${clamp(1 - f, 0, 1) * 0.9})`;
+        ctx.beginPath(); ctx.arc(up.x, up.y - (p.escape ? f * 40 : 0), 3, 0, TAU); ctx.fill();
+        // infalling partner (violet)
+        ctx.fillStyle = `rgba(179,157,252,${clamp(1 - f, 0, 1) * 0.9})`;
+        ctx.beginPath(); ctx.arc(dn.x, dn.y + (p.escape ? f * 20 : 0), 3, 0, TAU); ctx.fill();
+        // connecting flicker for non-escaping (annihilate)
+        if (!p.escape && f < 0.6) {
+          ctx.strokeStyle = `rgba(200,200,255,${(0.6 - f)})`; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(up.x, up.y); ctx.lineTo(dn.x, dn.y); ctx.stroke();
+        }
+      }
+      ctx.globalCompositeOperation = "source-over";
+    }, { animate: true });
+  })();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
