@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "black-holes",
+    title: "Event Horizon",
+    tagline: "A deep, interactive field guide to black holes and singularities: escape velocity and stellar collapse, curved spacetime and light-bending, the anatomy from photon ring to singularity, spaghettification, the fall past the horizon, Hawking radiation, and how we photographed a shadow. Eight chapters, a dozen live instruments, and a cast of cartoon guides. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/black-holes/",
+    illustration: "ill-blackhole",
+    date: "2026-07-23T12:00:00",
+    year: 1915,
+    readingMin: 68,
+    words: 14200,
+    tags: ["science", "software", "math", "history"],
+    real: true,
+  },
+  {
     slug: "thermal-mind",
     title: "The Thermal Mind",
     tagline: "Is it true that human cognition drops 2% per degree above 25°C? The real answer, made interactive: the performance–temperature curve and its steepening slope, the body's defence of a 37°C core, the four mechanisms by which heat taxes the brain, the cold mirror, and the field evidence from ten million exam scores. Vanilla JS on canvas + SVG; no build step.",
@@ -1497,7 +1510,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Falling In — Event Horizon</title>
+<meta name="description" content="The most famous thought experiment in physics, run live: two clocks, one falling into a black hole and one watching from afar. Time dilation, gravitational redshift, and why you cross the horizon unaware while the outside sees you freeze forever.">
+<link rel="stylesheet" href="bh.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">EVENT&nbsp;HORIZON</a></div>
+    <div class="strap">a field guide to black holes &amp; singularities</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="gravity.html">1 · Escape &amp; Collapse</a>
+    <a href="spacetime.html">2 · Curved Spacetime</a>
+    <a href="anatomy.html">3 · Anatomy</a>
+    <a href="singularity.html">4 · The Singularity</a>
+    <a href="falling.html" aria-current="page">5 · Falling In</a>
+    <a href="hawking.html">6 · Hawking Radiation</a>
+    <a href="observing.html">7 · Seeing the Unseeable</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 5</p>
+  <h1>Falling In</h1>
+  <p class="standfirst">Two people, one black hole. Bob straps in and falls; you stay behind with
+  a telescope. You are both right about what happens — and you will disagree completely. Bob
+  sails across the horizon in seconds and notices nothing. You watch him slow, redden, dim, and
+  freeze at the edge forever, never quite arriving. This is not an illusion or a paradox. It is
+  what it means for time itself to bend.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">The disagreement comes from one fact you can measure on Earth today: clocks
+run slower where gravity is stronger.</p>
+
+<p>This is <strong>gravitational time dilation</strong>, and it is not science fiction — your
+phone's GPS corrects for it every second. Clocks on the satellites, higher in Earth's weak
+gravity, tick faster than clocks on the ground by about 38 microseconds a day; ignore it and
+GPS would drift kilometres off within hours. Near a black hole the same effect goes from a
+rounding error to the whole story. The deeper into the gravity well a clock sits, the slower it
+runs <em>as seen from outside</em> — and at the event horizon, seen from outside, it stops
+altogether.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Drop Bob — and watch two clocks disagree</span>
+    <span class="hint">radial free-fall in the Schwarzschild geometry</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fall" style="aspect-ratio: 2.3 / 1; min-height: 340px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl"><button class="btn primary" id="fl-drop">▶ drop Bob</button></div>
+    <div class="ctl"><button class="btn" id="fl-reset">reset</button></div>
+    <div class="ctl">
+      <label for="fl-speed">time rate</label>
+      <input type="range" id="fl-speed" min="20" max="200" step="1" value="100">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro good">Bob's own clock <b id="fl-tau">0.0 s</b></span>
+    <span class="ro">what we see of Bob <b id="fl-see">0.0 s</b></span>
+    <span class="ro amber">redshift 1+z <b id="fl-z">1.0</b></span>
+    <span class="ro" id="fl-status"><b>waiting on the launch pad</b></span>
+  </div>
+  <div class="fig-note"><b class="chip" style="background:#5ad1ff"></b> Bob's true position &nbsp;
+    <b class="chip" style="background:#ff9d3c"></b> the image we see (light-delayed, redshifting).
+    The two separate as Bob nears the horizon: he crosses; his image never does.</div>
+</figure>
+
+<p class="tryit">Hit <b>drop Bob</b>. Watch his <b>own clock</b> (cyan) tick steadily all the way
+across the horizon and down — a few seconds, start to finish, and he feels fine the whole way.
+Now watch the <b>amber image</b>, which is what your telescope actually receives: it slows,
+piles up against the horizon, reddens toward infinity, and fades to black. <b>You will wait
+literally forever to see Bob cross.</b></p>
+
+<h2><span class="no">§5.1</span> Bob's story: a quick, unremarkable trip</h2>
+
+<p>From Bob's point of view, almost nothing dramatic happens. He is in free fall, so — by the
+equivalence principle (<a href="spacetime.html">Chapter&nbsp;2</a>) — he feels weightless the
+entire way. His own clock ticks one second per second, as everyone's always does. He crosses
+the event horizon <strong>without any local sign at all</strong>: no wall, no barrier, no jolt,
+no flash. For a supermassive hole the tides are gentle (<a href="singularity.html">Chapter&nbsp;4</a>),
+so he could cross the most important surface in the universe and not notice the moment it
+happened. Only afterwards does the trap spring shut: now every direction leads inward, and a
+short, fixed span of proper time later — measured in <em>seconds</em> for a stellar hole, hours
+for a giant one — he reaches the singularity. Nothing he does can slow that arrival.</p>
+
+<div class="toon">
+  <div class="cast"><svg class="char float"><use href="#char-bob"/></svg></div>
+  <div class="lines">
+    <p class="who">Bob, crossing the horizon</p>
+    <p class="say">…huh. Was that it? My clock says nine seconds. I didn't feel a thing. Are you
+    still getting my signal out there?</p>
+    <p class="say" style="color:var(--amber)">We are — sort of. Your last "hello" is going to
+    take the rest of eternity to finish arriving.</p>
+  </div>
+</div>
+
+<h2><span class="no">§5.2</span> Your story: Bob freezes at the edge</h2>
+
+<p>From your telescope, the same trip looks utterly different. As Bob falls, each light signal
+he sends has to climb out of a deeper part of the gravity well, so each one takes longer to
+reach you than the last, and each is stretched to longer, redder wavelengths. His movements
+appear to slow. His colours slide from white to orange to deep red to infrared to radio to
+nothing. His image dims exponentially. As he approaches the horizon, the light he emitted right
+at the edge takes an <em>infinite</em> time to crawl out to you — so you see him slow
+asymptotically and <strong>freeze</strong>, hovering just above the horizon, fading forever but
+never quite crossing.</p>
+
+<div class="callout story">
+  <span class="tag">Why the Soviets called them "frozen stars"</span>
+  <p>For exactly this reason, Soviet physicists led by Yakov Zel'dovich originally called these
+  objects <em>frozen stars</em> (<i>zamyorzshiye zvyozdy</i>): from outside, the collapsing star
+  appears to freeze at its horizon, its surface hanging motionless and reddening for eternity.
+  The American name "black hole," popularised by John Wheeler in 1967, won out — but the Russian
+  one captured the outside view perfectly. Both descriptions are correct; they are simply told
+  by clocks that no longer agree.</p>
+</div>
+
+<div class="callout warn">
+  <span class="tag">The resolution — there is no paradox</span>
+  <p>So does Bob cross the horizon or not? <strong>Yes.</strong> He does, in finite time, on his
+  own perfectly good clock. The "freezing" is not what <em>happens</em> to Bob; it is what the
+  outside <em>sees</em>, distorted by the ever-growing climb his light must make. There is no
+  contradiction because the two observers can never compare notes again: once Bob is inside, no
+  signal of his can reach you, and once you have waited "forever," Bob is long since gone. Each
+  is right within their own slice of spacetime. Relativity does not promise everyone the same
+  story — only that each story is self-consistent.</p>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper — the redshift factor</span><span class="tag2">where "freezes and reddens" comes from</span></summary>
+  <p>For a clock at rest at radius <span class="m">r</span> outside a non-spinning hole, the
+  ratio of its tick rate to a faraway clock's is the square root of the metric's time
+  coefficient:</p>
+  <div class="eq"><span class="m"><frac><span>dτ</span><span>dt</span></frac> = √<span class="ol">1 − r<sub>s</sub>/r</span></span>
+    <span class="eqno">(5.1)</span></div>
+  <p>As <span class="m">r → r<sub>s</sub></span>, this ratio → 0: the local clock's ticks arrive
+  arbitrarily far apart. The wavelength of light stretches by the reciprocal factor, so the
+  redshift is</p>
+  <div class="eq"><span class="m">1 + z = <frac><span>1</span><span>√<span class="ol">1 − r<sub>s</sub>/r</span></span></frac></span>
+    <span class="eqno">(5.2)</span></div>
+  <p>which diverges at the horizon. A falling emitter like Bob adds an ordinary Doppler
+  redshift on top (he is moving away as he falls), making the dimming even faster — the received
+  brightness of an infalling object drops off exponentially with a time constant of only a few
+  times <span class="m">r<sub>s</sub>/c</span>, which for a stellar hole is well under a
+  millisecond. In practice Bob doesn't linger visibly; he simply winks out.</p>
+</details>
+
+<p>Bob's fate raises an uncomfortable question we have so far dodged. If nothing ever truly
+escapes, and infalling things freeze at the edge, is a black hole utterly, permanently
+<em>black</em> — a perfect one-way trap for all eternity? For sixty years the answer was
+assumed to be yes. Then a young Stephen Hawking did a calculation that changed everything.</p>
+
+<div class="chapnav">
+  <a class="prev" href="singularity.html"><span class="dir">← Previous</span><span class="title">4 · The Singularity</span></a>
+  <a class="next" href="hawking.html"><span class="dir">Next →</span><span class="title">6 · Hawking Radiation</span></a>
+</div>
+
+<p class="colophon">EVENT HORIZON · Chapter 5 · Gravitational time dilation and GPS; radial
+free-fall with finite proper time and divergent coordinate time; redshift 1+z = (1−rₛ/r)<sup>−1/2</sup>;
+"frozen star" (Zel'dovich); "black hole" (Wheeler 1967). Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="bh-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp, TAU } = BH;
+
+  let rate = 1.0;
+  let running = false, done = false;
+  let clock = 0;           // animation seconds since drop
+  const r0rs = 6.0;        // start at 6 r_s
+  const T_CROSS = 4.5;     // Bob's proper seconds to reach horizon (display)
+  const T_HIT = 6.2;       // Bob's proper seconds to reach singularity
+  const IMG_TAU = 1.05;    // image freeze time constant
+
+  // Bob's true radial fraction (in r_s) as a function of his proper time τ.
+  // Free-fall from rest at r0: use a smooth monotone curve reaching horizon at T_CROSS.
+  function rTrue(tau) {
+    if (tau <= T_CROSS) {
+      // ease-in acceleration toward horizon
+      const f = tau / T_CROSS;
+      return r0rs - (r0rs - 1) * (f * f * (3 - 2 * f)); // smoothstep-ish, ends at 1 (=rs)
+    }
+    // inside: from horizon (1) to singularity (0)
+    const f = clamp((tau - T_CROSS) / (T_HIT - T_CROSS), 0, 1);
+    return 1 - f;
+  }
+  // Apparent image radius (in r_s) — asymptotes to horizon, never crosses.
+  function rImage(tau) {
+    return 1 + (r0rs - 1) * Math.exp(-tau / IMG_TAU);
+  }
+
+  const fig = BH.canvas("fall", function (ctx, w, h, t) {
+    ctx.fillStyle = "#05050a"; ctx.fillRect(0, 0, w, h);
+    BH.stars(ctx, w, h, Math.round(w * h / 2600), 88);
+
+    if (running && !BH.reducedMotion) clock += (1 / 60) * rate;
+    if (running && clock >= T_HIT) { running = false; done = true; }
+
+    // vertical radial track: top = far (r0), bottom-ish = horizon, then interior below
+    const cx = w * 0.5;
+    const topY = h * 0.10, horY = h * 0.66, singY = h * 0.92;
+    // map r (in r_s): r0rs -> topY, 1 -> horY, 0 -> singY
+    function yOf(rrs) {
+      if (rrs >= 1) return lerp(horY, topY, clamp((rrs - 1) / (r0rs - 1), 0, 1));
+      return lerp(horY, singY, clamp(1 - rrs, 0, 1));
+    }
+
+    // interior shading below horizon
+    ctx.fillStyle = "rgba(255,93,108,0.05)";
+    ctx.fillRect(0, horY, w, h - horY);
+
+    // horizon band
+    ctx.strokeStyle = "rgba(255,80,80,0.85)"; ctx.lineWidth = 2; ctx.setLineDash([6, 5]);
+    ctx.beginPath(); ctx.moveTo(0, horY); ctx.lineTo(w, horY); ctx.stroke(); ctx.setLineDash([]);
+    BH.label(ctx, "EVENT HORIZON  (r = rₛ)", 12, horY - 8, { color: "#ff8a8a" });
+    // singularity
+    ctx.strokeStyle = "rgba(179,157,252,0.8)"; ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(0, singY); ctx.lineTo(w, singY); ctx.stroke(); ctx.setLineDash([]);
+    BH.label(ctx, "singularity  (r = 0)", 12, singY + 16, { color: C.violet });
+    BH.label(ctx, "far away  (r = 6 rₛ)", 12, topY - 2, { color: C.muted });
+
+    // black hole glow at bottom
+    const gg = ctx.createLinearGradient(0, horY, 0, h);
+    gg.addColorStop(0, "rgba(0,0,0,0)"); gg.addColorStop(1, "rgba(0,0,0,0.7)");
+    ctx.fillStyle = gg; ctx.fillRect(0, horY, w, h - horY);
+
+    const tau = clock;
+    const rt = rTrue(tau), ri = rImage(tau);
+    const z = 1 / Math.sqrt(Math.max(1e-4, 1 - 1 / ri));   // redshift of image
+
+    // image marker (amber, reddening + fading)
+    const imgY = yOf(ri);
+    const fade = clamp(Math.exp(-tau / (IMG_TAU * 2.4)), 0.08, 1);
+    // colour reddens with z
+    const rc = 255, gc = clamp(200 - (z - 1) * 60, 20, 200), bc = clamp(120 - (z - 1) * 60, 10, 120);
+    ctx.globalAlpha = fade;
+    ctx.fillStyle = `rgb(${rc|0},${gc|0},${bc|0})`;
+    ctx.beginPath(); ctx.arc(cx + 26, imgY, 8, 0, TAU); ctx.fill();
+    ctx.globalAlpha = 1;
+    BH.label(ctx, "image we see", cx + 40, imgY + 4, { color: C.amber });
+
+    // true Bob marker (cyan) — only while he still exists
+    if (running || (!done)) {
+      const by = yOf(rt);
+      ctx.fillStyle = C.cyan;
+      ctx.beginPath(); ctx.arc(cx - 26, by, 9, 0, TAU); ctx.fill();
+      // little Bob face dot
+      ctx.fillStyle = "#06202f"; ctx.beginPath(); ctx.arc(cx - 29, by - 2, 2, 0, TAU); ctx.arc(cx - 23, by - 2, 2, 0, TAU); ctx.fill();
+      BH.label(ctx, "Bob (really here)", cx - 40, by + 4, { color: C.cyan, align: "right" });
+    } else if (done) {
+      const by = yOf(0);
+      BH.label(ctx, "Bob reached the singularity", cx - 40, by - 6, { color: C.violet, align: "right" });
+    }
+
+    // readouts
+    BH.set("fl-tau", tau.toFixed(1) + " s");
+    const seen = T_CROSS * (1 - Math.exp(-tau / IMG_TAU));   // image's frozen clock
+    BH.set("fl-see", seen.toFixed(2) + " s");
+    BH.set("fl-z", z > 99 ? "→ ∞" : z.toFixed(2));
+    const st = document.getElementById("fl-status");
+    if (!running && tau === 0) { st.innerHTML = "<b>waiting on the launch pad</b>"; st.className = "ro"; }
+    else if (rt > 1) { st.innerHTML = "<b>Bob is falling, feeling fine</b>"; st.className = "ro good"; }
+    else if (rt > 0 && running) { st.innerHTML = "<b>Bob has crossed — image frozen outside</b>"; st.className = "ro amber"; }
+    else if (done) { st.innerHTML = "<b>Bob: gone. His image: still fading at the edge.</b>"; st.className = "ro alert"; }
+  }, { animate: true });
+
+  BH.on("fl-drop", "click", () => { if (done) { clock = 0; done = false; } running = true; });
+  BH.on("fl-reset", "click", () => { running = false; done = false; clock = 0; });
+  BH.slider("fl-speed", (v) => (v / 100).toFixed(2) + "×", (v) => { rate = v / 100; });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

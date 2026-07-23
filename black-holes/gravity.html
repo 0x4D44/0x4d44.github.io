@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escape &amp; Collapse — Event Horizon</title>
+<meta name="description" content="Escape velocity, the Schwarzschild radius, and how a dying star collapses past the point of no return to make a black hole. Interactive: compress a star until its own light can't escape.">
+<link rel="stylesheet" href="bh.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">EVENT&nbsp;HORIZON</a></div>
+    <div class="strap">a field guide to black holes &amp; singularities</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="gravity.html" aria-current="page">1 · Escape &amp; Collapse</a>
+    <a href="spacetime.html">2 · Curved Spacetime</a>
+    <a href="anatomy.html">3 · Anatomy</a>
+    <a href="singularity.html">4 · The Singularity</a>
+    <a href="falling.html">5 · Falling In</a>
+    <a href="hawking.html">6 · Hawking Radiation</a>
+    <a href="observing.html">7 · Seeing the Unseeable</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 1</p>
+  <h1>Escape &amp; Collapse</h1>
+  <p class="standfirst">Throw a ball hard enough and it never comes back. That single
+  everyday idea — <em>escape velocity</em> — contains the whole seed of a black hole. Push
+  it to its limit and you find that any object, squeezed small enough, will trap even its own
+  light. Then we ask the real question: what could possibly squeeze that hard? A dying star,
+  it turns out, with nothing left to hold gravity off.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Start with something you already know in your bones: to leave, you have to
+be going fast enough.</p>
+
+<p>Throw a ball upward and Earth's gravity slows it, stops it, and pulls it back. Throw it
+faster and it goes higher before returning. Throw it fast enough — about
+<strong>11.2&nbsp;km/s</strong>, or 40,000&nbsp;km/h — and it never returns at all: it has
+enough speed to climb out of Earth's gravity forever. That threshold is the
+<strong>escape velocity</strong>, and it depends on just two things: how much mass is pulling
+you back, and how close you start to it.</p>
+
+<div class="callout gold">
+  <span class="tag">Escape velocity</span>
+  <p>To escape an object of mass <span class="m">M</span> starting at distance
+  <span class="m">R</span> from its centre, you need a speed of at least</p>
+  <div class="eq"><span class="m"><b>v</b><sub>esc</sub> = √<span class="ol">2<b>G</b><b>M</b> / <b>R</b></span></span></div>
+  <p>Notice what happens as you shrink <span class="m">R</span>: the same mass, packed into a
+  smaller ball, has a higher escape velocity at its surface. Compress it enough and
+  <span class="m">v</span><sub>esc</sub> climbs all the way to the speed of light,
+  <span class="m">c</span>. At that point nothing at all can leave — because nothing can
+  travel faster than light.</p>
+</div>
+
+<div class="callout story">
+  <span class="tag">1783 · the first black hole</span>
+  <p>This is exactly the reasoning of the Reverend <strong>John Michell</strong>, a Yorkshire
+  clergyman and geologist, in a paper read to the Royal Society in 1783. Setting escape
+  velocity equal to the speed of light, he concluded that a body with the Sun's density but
+  500 times its diameter would be invisible: "all light emitted from such a body would be made
+  to return towards it." He called them <em>dark stars</em>. He even suggested we might detect
+  one by the motion of a companion star orbiting it — which is very nearly how we found the
+  first real black hole two centuries later. Pierre-Simon Laplace reached the same conclusion
+  independently in 1796.</p>
+</div>
+
+<h2><span class="no">§1.1</span> Make a black hole with a slider</h2>
+
+<p>Below is a star with a fixed mass. The only thing you control is how tightly it is packed:
+drag the <b>compression</b> slider and watch its own light try to leave. When the star is
+large, photons fly off into the night unimpeded. As you squeeze it, escape velocity climbs;
+light leaves more and more steeply until, at a critical radius, it can no longer get away at
+all. The star turns black. You have just made an <em>event horizon</em>.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Squeeze until the light can't leave</span>
+    <span class="hint">the critical size is the Schwarzschild radius</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="squeeze" style="aspect-ratio: 2.3 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="sq-comp">compression</label>
+      <input type="range" id="sq-comp" min="0" max="1000" step="1" value="120">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="sq-mass">mass</label>
+      <span class="seg" id="sq-mass">
+        <button data-v="1" class="on">1 Sun</button>
+        <button data-v="10">10 Suns</button>
+        <button data-v="earth">1 Earth</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">radius <b id="sq-r">—</b></span>
+    <span class="ro amber">v<sub>esc</sub> / c <b id="sq-v">—</b></span>
+    <span class="ro">Schwarzschild radius <b id="sq-rs">—</b></span>
+    <span class="ro" id="sq-state"><b>escaping</b></span>
+  </div>
+</figure>
+
+<p class="tryit">Push <b>compression</b> all the way up. Watch the escape-velocity gauge cross
+<b>1.00 × c</b> — the instant it does, every photon curves back and the disk goes black. Now
+switch the mass to <b>1 Earth</b>: the black hole is still there, but its horizon is the size
+of a marble. <b>Mass sets the size; anything can become a black hole if you squeeze it hard
+enough.</b></p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-star"/></svg>
+    <svg class="char sm"><use href="#char-photon"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Zip the photon</p>
+    <p class="say">Hey — I was leaving! Why does it get harder the smaller you make it? I'm
+    going the same speed either way.</p>
+    <p class="say" style="color:var(--amber)"><b>Because you start deeper in the gravity
+    well.</b> The mass didn't change, but the surface moved closer to it. Same climb, taller
+    cliff.</p>
+  </div>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper — where <span class="m">r</span><sub>s</sub> comes from</span><span class="tag2">a one-line "derivation" that gets the right answer</span></summary>
+  <p>Set the escape velocity equal to the speed of light and solve for the radius. Starting
+  from <span class="m">v</span><sub>esc</sub> = √(2<span class="m">GM</span>/<span class="m">R</span>),
+  put <span class="m">v</span><sub>esc</sub> = <span class="m">c</span>:</p>
+  <div class="eq"><span class="m"><b>c</b>² = 2<b>G</b><b>M</b> / <b>r</b><sub>s</sub></span>
+    <span class="m">⟹</span>
+    <span class="m"><b>r</b><sub>s</sub> = 2<b>G</b><b>M</b> / <b>c</b>²</span>
+    <span class="eqno">(1.1)</span></div>
+  <p>This is the <strong>Schwarzschild radius</strong>. The delicious part: this Newtonian
+  hand-wave gives <em>exactly</em> the same answer as Schwarzschild's full solution of
+  Einstein's equations in 1915 — the factor of 2 and all. That is a coincidence of the
+  non-rotating case (two errors cancelling), but a very useful one. Plugging in the constants,
+  a clean rule of thumb falls out:</p>
+  <div class="eq"><span class="m"><b>r</b><sub>s</sub> ≈ 2.95 km × (<b>M</b> / <b>M</b><sub>☉</sub>)</span></div>
+  <p>About <strong>3 kilometres of horizon per solar mass</strong>. The Sun: 3&nbsp;km. The
+  Earth: 9&nbsp;mm. A human: 10<sup>−25</sup>&nbsp;m, a hundred-millionth the width of a proton
+  — which is why you are not, at this moment, a black hole.</p>
+</details>
+
+<h2><span class="no">§1.2</span> What could ever squeeze that hard?</h2>
+
+<p>The catch, of course, is that <em>nothing in everyday life squeezes matter anywhere near
+this hard</em>. Atoms resist. Push on a rock and its electrons push back; that resistance —
+electromagnetic, and later something subtler — holds up everything from a table to a planet.
+To make a black hole you need to defeat every form of resistance matter can offer. There is
+exactly one thing in the universe strong enough to try: <strong>gravity itself</strong>, given
+enough mass and taken away from anything that might hold it off.</p>
+
+<p>That is why black holes are born from <strong>dying stars</strong>. For its whole life a
+star is a standoff between two titanic forces in near-perfect balance:</p>
+
+<ul>
+  <li><strong>Gravity</strong> pulls every gram of the star inward, trying to crush it to a
+  point.</li>
+  <li><strong>Pressure</strong> from nuclear fusion in the core pushes outward. Fusing
+  hydrogen into helium releases energy, the core stays hot, and the outward push exactly
+  balances the inward pull.</li>
+</ul>
+
+<p>A star is a controlled bomb held together by its own weight — for millions or billions of
+years, a draw. But fusion needs fuel, and fuel runs out. When the core has fused its way up to
+iron, the game is over: fusing iron <em>absorbs</em> energy rather than releasing it, so the
+outward push vanishes in seconds. Gravity, which never tires, wins.</p>
+
+<div class="strip">
+  <div class="panel"><div class="art"><span class="n">1</span><svg class="char"><use href="#char-star"/></svg></div>
+    <div class="cap">A massive <b>star</b> burns for millions of years, fusion holding gravity at bay.</div></div>
+  <div class="panel"><div class="art"><span class="n">2</span><svg class="char"><use href="#char-star"/></svg></div>
+    <div class="cap">The core fuses up to <b>iron</b> — and iron won't burn. The furnace goes out.</div></div>
+  <div class="panel"><div class="art"><span class="n">3</span><svg class="char"><use href="#char-star"/></svg></div>
+    <div class="cap">In under a second the core <b>collapses</b> and rebounds: a <b>supernova</b>.</div></div>
+  <div class="panel"><div class="art"><span class="n">4</span><svg class="char"><use href="#char-bob"/></svg></div>
+    <div class="cap">What's left behind is crushed past every limit — a <b>black hole</b>.</div></div>
+</div>
+
+<h2><span class="no">§1.3</span> The last stands of matter</h2>
+
+<p>When fusion stops, gravity doesn't win instantly — matter makes two more desperate stands,
+each using a strange quantum rule called the <em>Pauli exclusion principle</em> (no two
+identical particles may share the same state; crowd them and they push back ferociously).
+Which stand — if any — succeeds is decided entirely by <strong>mass</strong>:</p>
+
+<table class="data">
+  <caption>What a dying stellar core becomes</caption>
+  <tr><th>Core mass left</th><th>What holds it up</th><th>Result</th><th>Density</th></tr>
+  <tr><td class="k">below ~1.4 M☉</td><td>Electron degeneracy pressure</td>
+    <td><strong>White dwarf</strong> — Earth-sized ember</td><td class="num">~10⁹ kg/m³</td></tr>
+  <tr><td class="k">~1.4 – ~2.3 M☉</td><td>Neutron degeneracy pressure</td>
+    <td><strong>Neutron star</strong> — a city-sized nucleus</td><td class="num">~10¹⁷ kg/m³</td></tr>
+  <tr><td class="k">above ~2.3 M☉</td><td>Nothing known</td>
+    <td><strong>Black hole</strong></td><td class="num">→ ∞</td></tr>
+</table>
+
+<p>The first threshold is the celebrated <strong>Chandrasekhar limit</strong>, ≈&nbsp;1.4
+solar masses — computed by a 19-year-old Subrahmanyan Chandrasekhar in 1930 on the boat from
+India to England. Above it, electrons can no longer hold the core up and it collapses until
+the electrons are crushed <em>into</em> the protons, making a ball of almost pure neutrons: a
+neutron star, so dense a sugar-cube of it would weigh as much as a mountain. The second
+threshold — the <strong>Tolman–Oppenheimer–Volkoff limit</strong>, around 2 to 2.3 solar
+masses — is where even neutron pressure fails. Past it, physics knows of <em>nothing</em> that
+can stop the fall. The core collapses without limit, and an event horizon closes over it.</p>
+
+<div class="callout warn">
+  <span class="tag">The point of no return, literally</span>
+  <p>Once the collapsing core shrinks inside its own Schwarzschild radius, the escape velocity
+  at the surface exceeds <span class="m">c</span>, and the outcome is sealed. No force, no
+  pressure, no cleverness can now halt the collapse — not because we haven't found the right
+  material, but because <em>stopping would require signalling faster than light</em>. The
+  matter continues inward toward a singularity (<a href="singularity.html">Chapter&nbsp;4</a>),
+  but the horizon — the black hole as the outside universe knows it — is already complete.</p>
+</div>
+
+<p>So a black hole is not made of any special stuff. It is ordinary matter — the same protons
+and neutrons that make you — that lost its lifelong argument with gravity. The horizon is not a
+surface you could touch; it is a <em>boundary in spacetime</em>, the last sphere from which
+light can still, just barely, escape. To understand what that boundary really is, we have to
+stop thinking of gravity as a force at all. That is the next chapter.</p>
+
+<div class="chapnav">
+  <a class="prev" href="./"><span class="dir">← Previous</span><span class="title">Overview</span></a>
+  <a class="next" href="spacetime.html"><span class="dir">Next →</span><span class="title">2 · Curved Spacetime</span></a>
+</div>
+
+<p class="colophon">EVENT HORIZON · Chapter 1 · Escape velocity from Newton; the Schwarzschild
+radius; degeneracy pressure and the Chandrasekhar &amp; TOV limits per Chandrasekhar (1931) and
+Oppenheimer–Volkoff (1939). Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="bh-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp, rng } = BH;
+  const { G, c, Msun, Rsun, Mearth, Rearth } = BH.PHYS;
+
+  let massKg = Msun;      // selected mass
+  let physR = Rsun;       // physical radius (m) from compression
+  const photons = [];     // {a, r, alive, escaped}
+  const rr = rng(31415);
+
+  // compression slider 0..1000 maps to a physical radius on a log scale, per mass.
+  // At comp=0 → a "normal" size; at 1000 → well below r_s.
+  function radiusFor(comp, m) {
+    const rs = 2 * G * m / (c * c);
+    const rBig = (m >= 5 * Msun) ? 12 * Rsun : (m < 0.1 * Msun ? Rearth : Rsun);
+    // log-interpolate from rBig down to 0.4*rs
+    const f = comp / 1000;
+    const lo = Math.log(rBig), hi = Math.log(rs * 0.4);
+    return Math.exp(lerp(lo, hi, f));
+  }
+
+  function refresh() {
+    const rs = 2 * G * massKg / (c * c);
+    const vesc = Math.sqrt(2 * G * massKg / physR); // m/s
+    const ratio = vesc / c;
+    BH.set("sq-r", BH.fmtSci(physR, "m"));
+    BH.set("sq-rs", BH.fmtSci(rs, "m"));
+    const vEl = document.getElementById("sq-v");
+    vEl.textContent = ratio >= 1 ? "≥ 1.00" : ratio.toFixed(3);
+    const st = document.getElementById("sq-state");
+    if (physR <= rs) { st.innerHTML = "<b>BLACK HOLE — light trapped</b>"; st.className = "ro alert"; }
+    else if (physR <= 1.5 * rs) { st.innerHTML = "<b>light barely escaping</b>"; st.className = "ro amber"; }
+    else { st.innerHTML = "<b>escaping freely</b>"; st.className = "ro good"; }
+  }
+
+  BH.canvas("squeeze", function (ctx, w, h, t) {
+    ctx.fillStyle = "#05050a"; ctx.fillRect(0, 0, w, h);
+    BH.stars(ctx, w, h, Math.round(w * h / 2200), 51);
+    const cx = w / 2, cy = h / 2;
+    const rs = 2 * G * massKg / (c * c);
+    const ratio = Math.sqrt(2 * G * massKg / physR) / c;
+
+    // map star to screen radius: keep visually sensible, tie to ratio so it shrinks
+    const maxPx = Math.min(w, h) * 0.34;
+    const px = clamp(maxPx / Math.max(ratio, 0.25), 10, maxPx);
+    const trapped = physR <= rs;
+
+    // emit photons from the surface
+    if (!BH.reducedMotion && photons.length < 90 && Math.random() < 0.5) {
+      const a = rr() * BH.TAU;
+      photons.push({ a, r: px, vx: Math.cos(a), vy: Math.sin(a), life: 0 });
+    }
+    // integrate photons with a heuristic inward pull ∝ ratio²
+    const pull = clamp(ratio * ratio, 0, 4);
+    for (const p of photons) {
+      p.life += 1;
+      const dx = (cx + p.x0) , dy = 0;
+      // position stored relative
+      p.px = (p.px == null ? cx + Math.cos(p.a) * px : p.px);
+      p.py = (p.py == null ? cy + Math.sin(p.a) * px : p.py);
+      // vector from centre
+      let ox = p.px - cx, oy = p.py - cy;
+      const d = Math.hypot(ox, oy) || 1;
+      // acceleration toward centre, stronger when compressed
+      const acc = pull * 6 * (px / d) * (px / d);
+      p.vx -= (ox / d) * acc * 0.02;
+      p.vy -= (oy / d) * acc * 0.02;
+      const sp = Math.hypot(p.vx, p.vy) || 1;
+      p.vx /= sp; p.vy /= sp;                 // photons keep constant speed c
+      p.px += p.vx * 3.2; p.py += p.vy * 3.2;
+    }
+    // cull
+    for (let i = photons.length - 1; i >= 0; i--) {
+      const p = photons[i];
+      const d = Math.hypot(p.px - cx, p.py - cy);
+      if (d < px * 0.5 && trapped) photons.splice(i, 1);
+      else if (d > Math.max(w, h)) photons.splice(i, 1);
+      else if (p.life > 400) photons.splice(i, 1);
+    }
+    // draw photon trails
+    ctx.globalCompositeOperation = "lighter";
+    for (const p of photons) {
+      ctx.strokeStyle = "rgba(255,209,102,0.5)";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.moveTo(p.px - p.vx * 7, p.py - p.vy * 7); ctx.lineTo(p.px, p.py); ctx.stroke();
+      ctx.fillStyle = "#ffe9a8";
+      ctx.beginPath(); ctx.arc(p.px, p.py, 1.5, 0, BH.TAU); ctx.fill();
+    }
+    ctx.globalCompositeOperation = "source-over";
+
+    // draw the star / hole
+    if (trapped) {
+      const glow = ctx.createRadialGradient(cx, cy, px, cx, cy, px * 1.8);
+      glow.addColorStop(0, "rgba(255,157,60,0.35)"); glow.addColorStop(1, "rgba(255,157,60,0)");
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(cx, cy, px * 1.8, 0, BH.TAU); ctx.fill();
+      ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(cx, cy, px, 0, BH.TAU); ctx.fill();
+      ctx.strokeStyle = "rgba(255,209,102,0.9)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(cx, cy, px * 1.02, 0, BH.TAU); ctx.stroke();
+      BH.label(ctx, "event horizon", cx, cy - px - 12, { color: C.amber, align: "center" });
+    } else {
+      const temp = lerp(4200, 22000, clamp(ratio, 0, 1));
+      const col = BH.blackbodyCSS(temp);
+      const g = ctx.createRadialGradient(cx - px * 0.3, cy - px * 0.3, px * 0.1, cx, cy, px);
+      g.addColorStop(0, "#fff"); g.addColorStop(0.5, col); g.addColorStop(1, BH.blackbodyCSS(temp * 0.7));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, px, 0, BH.TAU); ctx.fill();
+    }
+  }, { animate: true });
+
+  BH.slider("sq-comp", (v) => (v / 10).toFixed(0) + "%", (v) => {
+    physR = radiusFor(v, massKg); photons.length = 0; refresh();
+  });
+  BH.seg("sq-mass", (v) => {
+    massKg = v === "10" ? 10 * Msun : v === "earth" ? Mearth : Msun;
+    const comp = document.getElementById("sq-comp").value;
+    physR = radiusFor(parseFloat(comp), massKg); photons.length = 0; refresh();
+  });
+  refresh();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
