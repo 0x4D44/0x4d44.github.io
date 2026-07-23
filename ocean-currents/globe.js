@@ -84,7 +84,12 @@
         c.style.width = "100%"; c.style.height = "100%";
         this.el.appendChild(c);
       }
-      this.ui.style.touchAction = "none";
+      // pan-y: a vertical-first swipe scrolls the page (so the full-height hero
+      // never traps the reader), while a horizontal-first drag is handed to the
+      // globe in full — including any later vertical component — so latitude
+      // control survives. Pinch-zoom and tap still reach us. Mouse/wheel on
+      // desktop is unaffected (touch-action only governs touch/pen input).
+      this.ui.style.touchAction = "pan-y";
     }
 
     _resize() {
@@ -177,8 +182,10 @@
           lastX = e.clientX; lastY = e.clientY;
           const k = 0.22 / this.zoom;
           this.lam += dx * k;
-          this.phi = clamp(this.phi + dy * k, -85, 85);
-          this.vlam = dx * k; this.vphi = dy * k;
+          // drag down tilts the globe to bring northern latitudes toward centre
+          // (direct-manipulation "grab", matching the horizontal axis)
+          this.phi = clamp(this.phi - dy * k, -85, 85);
+          this.vlam = dx * k; this.vphi = -dy * k;
           this._dirtyBase = true;
           this.lastInteract = performance.now();
         } else {
