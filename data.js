@@ -18,7 +18,7 @@ window.ESSAYS = [
   {
     slug: "teenage-brain",
     title: "The Teenage Brain",
-    tagline: "A deep, interactive field guide to the adolescent brain: the great rewiring of pruning and myelination, the two clocks behind teenage risk, the social brain and its storms of hormones and feeling, the dopamine peak, the second window of heightened learning, and what can go wrong. Seven chapters, live diagrams, a cast of cartoon guides, and the primary neuroscience. Vanilla JS, canvas + SVG; no build step.",
+    tagline: "A deep, interactive field guide to the adolescent brain: the great rewiring of pruning and myelination, the two clocks behind teenage risk, the social brain, the dopamine peak, a second window of heightened learning, and what can go wrong. Seven chapters, ten live instruments and a cast of cartoon guides, built on the primary neuroscience. Vanilla JS, canvas + SVG; no build step.",
     url: "https://0x4d44.github.io/teenage-brain/",
     illustration: "ill-teenbrain",
     date: "2026-07-24T12:00:00",
