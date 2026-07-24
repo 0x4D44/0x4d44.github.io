@@ -4,3 +4,7 @@
 # only if committed, so keep it out of the repo.
 .impl-work/
 .impl-work$1.png
+
+# local tooling (never commit)
+node_modules/
+package-lock.json
