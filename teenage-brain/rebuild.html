@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Great Rewiring — The Teenage Brain</title>
+<meta name="description" content="How the adolescent brain rebuilds itself: grey-matter overproduction and synaptic pruning, myelination of the survivors, and the back-to-front maturation wave. Interactive: prune a forest of synapses and watch the survivors speed up.">
+<link rel="stylesheet" href="brain.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;TEENAGE&nbsp;BRAIN</a></div>
+    <div class="strap">the great rewiring · a field guide</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="rebuild.html" aria-current="page">1 · The Great Rewiring</a>
+    <a href="two-systems.html">2 · Two Clocks</a>
+    <a href="social.html">3 · The Social Brain</a>
+    <a href="risk.html">4 · Risk &amp; Reward</a>
+    <a href="learning.html">5 · The Learning Window</a>
+    <a href="storms.html">6 · When Storms Hit</a>
+    <a href="lexicon.html">7 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 1</p>
+  <h1>The Great Rewiring</h1>
+  <p class="standfirst">A sculptor does not make a statue by piling on marble. She removes
+  everything that isn't the statue. The teenage brain is sculpted the same way: it spends
+  childhood over-building connections, then spends adolescence cutting the ones it doesn't use
+  and insulating the ones it keeps. What looks from outside like moodiness and muddle is, on
+  the inside, one of the most precise engineering projects in nature.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">The teenage brain is barely bigger than a two-year-old's. Almost nothing that
+matters about it is about size. It is about <em>wiring</em>.</p>
+
+<p>By age six the brain has reached about 95% of its adult volume. So the enormous leap in
+capability from a six-year-old to a twenty-year-old cannot be growth. It is reorganisation —
+and it runs on three processes working together: <strong>pruning</strong> throws away spare
+connections, <strong>myelination</strong> insulates and speeds up the survivors, and the whole
+thing happens <strong>region by region</strong>, on a schedule that leaves judgement for last.</p>
+
+</div>
+
+<div class="prose">
+<h2><span class="no">§1.1</span> Two lines that explain a decade</h2>
+
+<p>Track two things across the teenage years and the rebuild becomes visible. <strong>Grey
+matter</strong> — the neurons and their connections, the "computers" — rises through childhood,
+peaks, and then <em>falls</em> as unused connections are pruned. <strong>White matter</strong>
+— the insulated cables between regions, the "network" — rises steadily and keeps rising into
+adulthood. Drag the age; switch lobes to see that grey matter peaks at different times in
+different places.</p>
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Grey vs white matter across development</span>
+    <span class="hint">longitudinal MRI, schematic · Giedd 1999 · Gogtay 2004</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="traj" style="aspect-ratio: 2.5 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="traj-lobe">grey-matter region</label>
+      <span class="seg" id="traj-lobe">
+        <button data-v="frontal" class="on">frontal</button>
+        <button data-v="parietal">parietal</button>
+        <button data-v="temporal">temporal</button>
+        <button data-v="occipital">occipital</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="traj-age">age</label>
+      <input type="range" id="traj-age" min="5" max="24" step="0.1" value="14">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro good"><span class="chip" style="background:var(--teal)"></span>grey matter: <b id="traj-g">—</b></span>
+    <span class="ro"><span class="chip" style="background:var(--purple)"></span>white matter: <b id="traj-w">—</b></span>
+    <span class="ro yellow" id="traj-peak">grey peaks at: <b>—</b></span>
+  </div>
+  <div class="fig-note">Grey-matter volume follows an inverted-U: frontal and parietal cortex
+  peak around <b>age 11–12</b>, temporal around <b>16</b>, while white matter climbs almost
+  linearly as axons are myelinated. Curves are schematic composites of the NIH longitudinal
+  MRI findings, normalised to each measure's own peak.</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout gold">
+  <span class="tag">The counter-intuitive bit</span>
+  <p>Losing grey matter sounds like decline. It is the opposite. A young child's cortex is
+  <em>over-connected</em> — noisy, redundant, wired for every possible future. Pruning the
+  unused connections sharpens the signal, like clearing static off a radio. Studies even find
+  that this grey-matter <em>thinning</em> in the teenage years tracks <em>rising</em> ability.
+  The brain gets smarter by getting leaner.</p>
+</div>
+
+<h2><span class="no">§1.2</span> Use it or lose it: prune the forest</h2>
+
+<p>Zoom in and "pruning" becomes concrete. Peter Huttenlocher, counting synapses under a
+microscope through the 1980s and 90s, found that the prefrontal cortex over-produces
+connections in early life — dendritic spine density runs <strong>two to three times</strong>
+the adult level — and then removes them steadily through childhood and adolescence, cutting
+up to <strong>40%</strong>. The rule that decides which survive is beautifully simple, and it
+goes back to Donald Hebb in 1949: <em>neurons that fire together, wire together.</em> A
+connection you use is reinforced. One you don't is marked for deletion — physically eaten by
+the brain's resident immune cells, the microglia.</p>
+
+<p>Below is a forest of neurons wired with far more connections than it needs. Advance the age
+and watch adolescence do its work: unused links (thin, grey) are pruned away, while the ones
+carrying real traffic are kept and <em>myelinated</em> — wrapped in insulation that turns them
+gold and lets their signals fly.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The synaptic forest, pruned &amp; wired</span>
+    <span class="hint">Hebbian survival · Huttenlocher 1997</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="forest" style="aspect-ratio: 2.2 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="forest-age">age</label>
+      <input type="range" id="forest-age" min="3" max="25" step="0.1" value="3">
+      <output></output>
+    </div>
+    <button class="btn" id="forest-play">▶ watch it grow up</button>
+  </div>
+  <div class="readouts">
+    <span class="ro good">synapses kept: <b id="forest-keep">—</b></span>
+    <span class="ro alert">pruned: <b id="forest-cut">—</b></span>
+    <span class="ro yellow">myelinated (fast) links: <b id="forest-mye">—</b></span>
+  </div>
+  <div class="fig-note">Pruning is not random loss — it is <b>selection</b>. Connections
+  carrying traffic survive and get faster; idle ones are removed. The same forest, fewer and
+  better wires: this is why experience in adolescence is quite literally built into the adult
+  brain.</div>
+</figure>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">what myelin buys you</span></summary>
+  <p>Myelin is a fatty sheath that oligodendrocytes wrap around an axon in segments, leaving
+  tiny gaps (the nodes of Ranvier). The nerve signal then <em>jumps</em> from gap to gap —
+  "saltatory conduction" — instead of crawling along the whole membrane. The payoff is large:
+  conduction speed rises from around <span class="u">1 m/s</span> on a bare axon to as much as
+  <span class="u">100 m/s</span> on a well-myelinated one, and the axon can also fire again
+  sooner. Faster, more synchronised, more reliable long-range communication is exactly what a
+  brain needs to coordinate distant regions — which is what higher cognition <em>is</em>.
+  White-matter volume rises through the teens and into the thirties as this insulation is laid
+  down.</p>
+</details>
+
+<h2><span class="no">§1.3</span> Back to front — and why it matters</h2>
+
+<p>The rebuild does not sweep across the brain evenly. In 2004 Nitin Gogtay and colleagues
+turned years of repeat scans into a time-lapse film of a maturing cortex, and the pattern was
+unmistakable: the brain matures <strong>from the back forwards</strong>. The primary sensory
+and visual areas at the rear finish first. The <strong>prefrontal cortex</strong> — right
+behind the forehead, the seat of planning, impulse control, weighing consequences and
+resisting temptation — finishes <em>last</em>, not fully mature until the mid-twenties.</p>
+
+<div class="stat">
+  <span class="big">~25</span>
+  <span class="cap">the age at which the <b>prefrontal cortex</b> — judgement, planning,
+  self-control — reaches structural maturity, years after the emotion and reward systems it is
+  meant to regulate (Casey et al., 2008).</span>
+</div>
+
+<p>Hold that fact, because it is the hinge of this whole guide. For much of adolescence the
+brain's most sophisticated control system is a building site — walls up, wiring exposed, not
+yet signed off — while the systems it is supposed to keep in check are already fully staffed
+and running hot. That mismatch is not a flaw in a particular teenager. It is the standard
+build order of <em>every</em> human brain, and it is the subject of the next chapter.</p>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float"><use href="#char-cortex"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Cortex, prefrontal cortex</p>
+    <p class="say">"Don't mind the scaffolding. I'm the last part of the whole brain to get
+    finished — planning, second-guessing, <em>are-you-sure-about-this</em>. Come back when
+    they're twenty-five and I'll have the brakes fully installed. Until then… good luck."</p>
+  </div>
+</div>
+
+</div>
+
+<div class="prose">
+<div class="chapnav">
+  <a class="prev" href="./"><span class="dir">← Previous</span><span class="title">Overview</span></a>
+  <a class="next" href="two-systems.html"><span class="dir">Next →</span><span class="title">2 · Two Clocks</span></a>
+</div>
+<p class="colophon">THE TEENAGE BRAIN · Chapter 1 · Grey/white-matter trajectories per Giedd et
+al. (1999) and Gogtay et al. (2004); synapse overproduction and ~40% pruning per Huttenlocher
+&amp; Dabholkar (1997); Hebbian selection per Hebb (1949). Part of the
+<a href="/">0x4D44 almanac</a>.</p>
+</div>
+
+</main>
+
+<script src="brain-lib.js"></script>
+<script>
+/* ---- §1.1 grey vs white matter trajectories ---- */
+(function () {
+  "use strict";
+  const { C, clamp, lerp, line, label } = TB;
+  const PEAK = { frontal: 11.5, parietal: 12, temporal: 16, occipital: 20 };
+  let lobe = "frontal", age = 14;
+
+  // grey: rise to 1.0 at peak, gentle asymmetric decline; normalised to own peak
+  function grey(a, p) {
+    if (a <= p) { const d = (p - a); return clamp(1 - 0.010 * d * d, 0.62, 1); }
+    const d = (a - p); return clamp(1 - 0.0016 * d * d, 0.72, 1);
+  }
+  // white: near-linear rise with slight saturation
+  function white(a) { const u = clamp((a - 4) / 21, 0, 1); return 0.55 + 0.45 * (1 - Math.pow(1 - u, 1.4)); }
+
+  TB.canvas("traj", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#0c0722"; ctx.fillRect(0, 0, w, h);
+    const P = TB.plot(ctx, w, h, {
+      left: 40, right: 18, top: 16, bottom: 34, xr: [4, 24], yr: [0.5, 1.04],
+      xticks: [5, 10, 15, 20, { v: 24, label: "24" }],
+      yticks: [{ v: 0.6, label: "60%" }, { v: 0.8, label: "80%" }, { v: 1.0, label: "100%" }],
+    });
+    label(ctx, "age (years)", (P.L + P.R) / 2, P.B + 24, { align: "center", color: C.muted });
+    label(ctx, "volume (% of that measure's peak)", P.L - 30, P.T - 4, { align: "left", color: C.muted, font: TB.mono(10) });
+
+    const p = PEAK[lobe];
+    // white line
+    ctx.strokeStyle = C.purple; ctx.lineWidth = 2.6; ctx.beginPath();
+    const wp = []; for (let a = 4; a <= 24; a += 0.5) wp.push({ x: P.X(a), y: P.Y(white(a)) });
+    TB.smooth(ctx, wp); ctx.stroke();
+    // grey line
+    ctx.strokeStyle = C.teal; ctx.lineWidth = 2.6; ctx.beginPath();
+    const gp = []; for (let a = 4; a <= 24; a += 0.5) gp.push({ x: P.X(a), y: P.Y(grey(a, p)) });
+    TB.smooth(ctx, gp); ctx.stroke();
+
+    // peak marker
+    const px = P.X(p), py = P.Y(grey(p, p));
+    line(ctx, px, py, px, P.B, C.line, 1, [3, 4]);
+    ctx.beginPath(); ctx.arc(px, py, 4, 0, TB.TAU); ctx.fillStyle = C.yellow; ctx.fill();
+
+    // adolescence band
+    ctx.fillStyle = "rgba(255,93,162,0.06)";
+    ctx.fillRect(P.X(10), P.T, P.X(19) - P.X(10), P.B - P.T);
+    label(ctx, "adolescence", (P.X(10) + P.X(19)) / 2, P.T + 12, { align: "center", color: "rgba(255,93,162,0.7)", font: TB.mono(10) });
+
+    // age marker
+    const ax = P.X(age);
+    line(ctx, ax, P.T, ax, P.B, "rgba(255,217,61,0.5)", 1.4);
+    const gy = P.Y(grey(age, p)), wy = P.Y(white(age));
+    for (const [yy, col] of [[gy, C.teal], [wy, C.purple]]) {
+      ctx.beginPath(); ctx.arc(ax, yy, 4.5, 0, TB.TAU); ctx.fillStyle = col; ctx.fill();
+      ctx.strokeStyle = "#0c0722"; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    document.getElementById("traj-g").textContent = (grey(age, p) * 100).toFixed(0) + "% of peak";
+    document.getElementById("traj-w").textContent = (white(age) * 100).toFixed(0) + "% of peak";
+    document.querySelector("#traj-peak b").textContent = "age " + (p % 1 ? p.toFixed(1) : p.toFixed(0)) + " (" + lobe + ")";
+  });
+  TB.seg("traj-lobe", (v) => { lobe = v; });
+  TB.slider("traj-age", (v) => v.toFixed(0) + " yr", (v) => { age = v; });
+})();
+
+/* ---- §1.2 the synaptic forest ---- */
+(function () {
+  "use strict";
+  const { C, clamp, lerp, rng } = TB;
+  const R = rng(90210);
+  const N = 34;
+  const nodes = [];
+  for (let i = 0; i < N; i++) nodes.push({ fx: 0.06 + R() * 0.88, fy: 0.1 + R() * 0.8, ph: R() * 6.28 });
+  // candidate synapses between nearby nodes, each with a "usage" weight
+  const syn = [];
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+    const dx = nodes[i].fx - nodes[j].fx, dy = nodes[i].fy - nodes[j].fy;
+    const d = Math.hypot(dx, dy);
+    if (d < 0.26 && R() < 0.72) syn.push({ a: i, b: j, use: R(), d });
+  }
+  syn.sort((s1, s2) => s2.use - s1.use);
+  const total = syn.length;
+
+  let age = 3, playing = false;
+  // pruning threshold rises with age: age 3 → keep all; age 25 → keep ~60%
+  function kept(a) {
+    const t = clamp((a - 5) / 18, 0, 1);             // 0 at 5, 1 at 23
+    const thr = 0.42 * TB.smoothstep(t);              // remove up to lowest 42%
+    return thr;
+  }
+  function mye(a) { return clamp((a - 11) / 12, 0, 1); } // myelination ramps through teens
+
+  TB.canvas("forest", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#0c0722"; ctx.fillRect(0, 0, w, h);
+    TB.sparkle(ctx, w, h, 40, 5);
+    const X = (fx) => 14 + fx * (w - 28), Y = (fy) => 14 + fy * (h - 28);
+    const thr = kept(age), m = mye(age);
+    let keep = 0, cut = 0, myel = 0;
+
+    for (const s of syn) {
+      const pruned = s.use < thr;
+      const A = nodes[s.a], B = nodes[s.b];
+      const x1 = X(A.fx), y1 = Y(A.fy), x2 = X(B.fx), y2 = Y(B.fy);
+      if (pruned) {
+        cut++;
+        // fading stub as it's removed near full prune
+        const fade = clamp(1 - (thr - s.use) * 6, 0, 1) * 0.5;
+        if (fade > 0.02) { ctx.strokeStyle = `rgba(143,134,196,${fade})`; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+        continue;
+      }
+      keep++;
+      // survivors: strong ones myelinate first (gold), rest teal
+      const strong = s.use > 0.62;
+      const myelinated = strong && m > 0.35;
+      if (myelinated) myel++;
+      ctx.strokeStyle = myelinated ? `rgba(255,217,61,${0.5 + 0.4 * m})` : "rgba(52,225,196,0.55)";
+      ctx.lineWidth = myelinated ? 1.4 + 2.4 * m : 1.4;
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      // travelling pulse on fast links
+      if (myelinated) {
+        const speed = 0.6 + m;
+        const u = ((t * speed + s.use * 3) % 1);
+        const px = lerp(x1, x2, u), py = lerp(y1, y2, u);
+        ctx.beginPath(); ctx.arc(px, py, 2.4, 0, TB.TAU); ctx.fillStyle = "#fff3b0"; ctx.fill();
+      }
+    }
+    // nodes
+    for (const nd of nodes) {
+      const x = X(nd.fx), y = Y(nd.fy);
+      const pulse = 0.5 + 0.5 * Math.sin(t * 1.6 + nd.ph);
+      ctx.beginPath(); ctx.arc(x, y, 4.6, 0, TB.TAU);
+      ctx.fillStyle = C.teal; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
+      ctx.beginPath(); ctx.arc(x, y, 2.2 + pulse * 1.2, 0, TB.TAU); ctx.fillStyle = "#c9fff3"; ctx.fill();
+    }
+
+    document.getElementById("forest-keep").textContent = keep + " / " + total + " (" + (100 * keep / total).toFixed(0) + "%)";
+    document.getElementById("forest-cut").textContent = cut + " (" + (100 * cut / total).toFixed(0) + "%)";
+    document.getElementById("forest-mye").textContent = myel + "";
+
+    if (playing) {
+      age += 0.05;
+      if (age >= 25) { age = 25; playing = false; document.getElementById("forest-play").textContent = "▶ watch again"; }
+      ageSlider.set(age);
+    }
+  }, { animate: true });
+
+  const ageSlider = TB.slider("forest-age", (v) => v.toFixed(0) + " yr", (v) => { age = v; });
+  TB.on("forest-play", "click", () => {
+    if (playing) { playing = false; document.getElementById("forest-play").textContent = "▶ resume"; return; }
+    if (age >= 25) age = 3;
+    playing = true; document.getElementById("forest-play").textContent = "⏸ pause";
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

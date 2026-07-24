@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two Clocks — The Teenage Brain</title>
+<meta name="description" content="The dual-systems (maturational imbalance) model of adolescence: a reward system that peaks in mid-adolescence while cognitive control climbs slowly into the mid-twenties. Interactive: race the two developmental clocks and watch the risk gap open.">
+<link rel="stylesheet" href="brain.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;TEENAGE&nbsp;BRAIN</a></div>
+    <div class="strap">the great rewiring · a field guide</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="rebuild.html">1 · The Great Rewiring</a>
+    <a href="two-systems.html" aria-current="page">2 · Two Clocks</a>
+    <a href="social.html">3 · The Social Brain</a>
+    <a href="risk.html">4 · Risk &amp; Reward</a>
+    <a href="learning.html">5 · The Learning Window</a>
+    <a href="storms.html">6 · When Storms Hit</a>
+    <a href="lexicon.html">7 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 2</p>
+  <h1>Two Clocks</h1>
+  <p class="standfirst">Here is the puzzle at the heart of adolescence. Teenagers are not stupid.
+  On a written test of risks they score as well as adults; ask them, calmly, whether it's a
+  good idea to get in a car with a drunk driver and they'll give you the right answer. And yet
+  they take risks adults don't. The resolution isn't a single broken part. It's <em>two</em>
+  systems maturing on two different clocks — and the years when the clocks disagree.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Imagine a car with a powerful accelerator, wired up years before anyone got
+round to installing the brakes.</p>
+
+<p>That is the picture at the centre of modern adolescent neuroscience — the <strong>dual-systems
+model</strong>, developed by Laurence Steinberg, B.J. Casey, Ronald Dahl and others in the
+2000s (also called the <em>maturational imbalance</em> model). It says teenage behaviour is
+driven by the interaction of two brain systems that both change dramatically in adolescence
+but on <em>different timetables</em>:</p>
+
+<ul>
+  <li>A <strong>socio-emotional / reward system</strong> — deep structures like the ventral
+  striatum and amygdala — that becomes <em>hypersensitive</em> in early adolescence, spiking
+  reward-seeking and sensation-seeking to a lifetime peak around age 15.</li>
+  <li>A <strong>cognitive-control system</strong> — the prefrontal cortex and its connections —
+  that provides judgement, planning and impulse control, and matures <em>slowly and steadily</em>
+  into the mid-twenties.</li>
+</ul>
+
+<p>Neither system is broken. The risk lives in the <em>gap</em> between them: a window,
+roughly ages 13–17, when the accelerator is flat to the floor and the brakes are still being
+bolted on.</p>
+
+<h2><span class="no">§2.1</span> Race the two clocks</h2>
+
+<p>Drag the age. The <span style="color:var(--pink)">reward curve</span> rises fast, peaks in
+mid-adolescence, then eases off. The <span style="color:var(--blue)">control curve</span> just
+keeps climbing. The shaded distance between them is the <strong>imbalance</strong> — a rough
+index of how likely feeling is to outrun judgement at that age.</p>
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Reward-seeking vs cognitive control</span>
+    <span class="hint">the maturational imbalance · Steinberg 2008 · Casey 2008</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="clocks" style="aspect-ratio: 2.5 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="clocks-age">age</label>
+      <input type="range" id="clocks-age" min="8" max="28" step="0.1" value="15">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro pink"><span class="chip" style="background:var(--pink)"></span>reward drive: <b id="cl-r">—</b></span>
+    <span class="ro"><span class="chip" style="background:var(--blue)"></span>self-control: <b id="cl-c">—</b></span>
+    <span class="ro alert">imbalance (risk window): <b id="cl-gap">—</b></span>
+  </div>
+  <div class="fig-note">Reward-seeking follows an inverted-U that peaks around <b>age 15</b>;
+  impulse control rises roughly linearly and does not plateau until the <b>early-to-mid
+  twenties</b>. The widest gap — the peak of the risk window — sits in <b>mid-adolescence</b>,
+  which is exactly where real-world risk-taking (accidents, experimentation) peaks too.</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout">
+  <span class="tag">Why the peak is in the middle, not the start</span>
+  <p>A common misreading: "teenagers have no self-control." But 13-year-olds have <em>more</em>
+  self-control than 10-year-olds — control rises the whole way through. The problem is that
+  reward-seeking rises <em>faster and earlier</em>, so it laps self-control in the middle
+  teens before self-control finally catches up. Risk peaks in mid-adolescence not because the
+  brakes fail, but because the accelerator temporarily wins the race.</p>
+</div>
+
+<h2><span class="no">§2.2</span> The evidence: 5,000 miles of it</h2>
+
+<p>The model isn't armchair theory. Steinberg's group tested it on more than
+<strong>5,000 people aged 10–30 across eleven countries</strong> — from the United States to
+China, Colombia to Kenya. The same two curves showed up everywhere: a mid-adolescent spike in
+sensation-seeking, and a slow, later rise in self-regulation. The universality matters. It
+means this is human neurodevelopment, not the product of any one culture's parenting or
+schools.</p>
+
+<div class="stat">
+  <span class="big">~15</span>
+  <span class="cap">the age at which <b>sensation-seeking</b> peaks worldwide — while
+  self-regulation keeps climbing for another <b>decade</b>. The gap between them predicts
+  risk-taking across cultures (Steinberg et al., 2018).</span>
+</div>
+
+<h2><span class="no">§2.3</span> Hot and cold</h2>
+
+<p>There's a crucial refinement. Whether the gap actually <em>bites</em> depends on the
+teenager's emotional state at that moment. Researchers distinguish <strong>"cold" cognition</strong>
+— calm, deliberate, plenty of time — from <strong>"hot" cognition</strong>, made under
+emotional arousal, excitement, or the gaze of peers. In cold conditions, teenagers reason
+almost exactly like adults. It is under <em>hot</em> conditions that the reward system hijacks
+the wheel and the still-maturing control system can't quite grab it back.</p>
+
+<p>This is why the same young person can write a flawless essay on the dangers of drink-driving
+on Monday and do something reckless at a party on Saturday. It isn't hypocrisy or stupidity.
+The Monday brain and the Saturday brain are, functionally, running the reward and control
+systems at very different volumes. We'll meet the loudest amplifier of "hot" cognition —
+other teenagers — in the next chapter.</p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-dash"/></svg>
+    <svg class="char sm float slow"><use href="#char-cortex"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Dash &amp; Cortex</p>
+    <p class="say"><b>Dash:</b> "GO. Do it. It'll be amazing, I can feel it, GO —"</p>
+    <p class="say"><b>Cortex:</b> "Give me one second, I'm still installing the part that
+    checks whether — and he's gone. Every time."</p>
+  </div>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">is the dual-systems model settled?</span></summary>
+  <p>Not entirely, and it's worth being honest about that. The dual-systems / imbalance model
+  is the dominant framework, but critics (including some of its own architects, in later
+  papers) note it can over-simplify — the "two systems" are really distributed networks that
+  overlap, and a strict "immature prefrontal cortex" story under-credits how <em>adaptive</em>
+  and context-sensitive teenage risk-taking actually is. Newer "lifespan" and "developmental
+  mismatch" accounts refine rather than replace it. What survives all the critiques is the core
+  observation the interactive shows: reward-seeking and impulse control mature on genuinely
+  different timescales, and the offset is real.</p>
+</details>
+
+</div>
+
+<div class="prose">
+<div class="chapnav">
+  <a class="prev" href="rebuild.html"><span class="dir">← Previous</span><span class="title">1 · The Great Rewiring</span></a>
+  <a class="next" href="social.html"><span class="dir">Next →</span><span class="title">3 · The Social Brain</span></a>
+</div>
+<p class="colophon">THE TEENAGE BRAIN · Chapter 2 · Dual-systems / maturational-imbalance model
+per Steinberg (2008) and Casey, Getz &amp; Galván (2008); cross-national evidence per Steinberg
+et al. (2018), <span style="font-style:italic">Developmental Science</span>. Curves are
+schematic. Part of the <a href="/">0x4D44 almanac</a>.</p>
+</div>
+
+</main>
+
+<script src="brain-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp, line, label } = TB;
+  let age = 15;
+
+  // reward: inverted-U, peak ~15, normalised 0..1
+  function reward(a) {
+    const p = 15, d = a - p;
+    const base = 0.28 + 0.72 * Math.exp(-(d * d) / (d < 0 ? 26 : 54));
+    return clamp(base, 0, 1);
+  }
+  // control: slow sigmoid rising to ~1 by mid-20s
+  function control(a) {
+    return clamp(1 / (1 + Math.exp(-(a - 16.5) / 2.9)), 0, 1) * 0.98 + 0.02;
+  }
+
+  TB.canvas("clocks", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#0c0722"; ctx.fillRect(0, 0, w, h);
+    const P = TB.plot(ctx, w, h, {
+      left: 42, right: 18, top: 18, bottom: 34, xr: [8, 28], yr: [0, 1.05],
+      xticks: [10, 15, 20, 25, { v: 28, label: "28" }],
+      yticks: [{ v: 0, label: "low" }, { v: 0.5, label: "mid" }, { v: 1, label: "high" }],
+    });
+    label(ctx, "age (years)", (P.L + P.R) / 2, P.B + 24, { align: "center", color: C.muted });
+
+    // adolescence band
+    ctx.fillStyle = "rgba(255,93,162,0.05)";
+    ctx.fillRect(P.X(13), P.T, P.X(18) - P.X(13), P.B - P.T);
+
+    // gap fill between curves
+    ctx.beginPath();
+    for (let a = 8; a <= 28; a += 0.4) ctx.lineTo(P.X(a), P.Y(reward(a)));
+    for (let a = 28; a >= 8; a -= 0.4) ctx.lineTo(P.X(a), P.Y(control(a)));
+    ctx.closePath();
+    ctx.fillStyle = "rgba(255,107,107,0.10)"; ctx.fill();
+
+    // control line
+    ctx.strokeStyle = C.blue; ctx.lineWidth = 2.6; ctx.beginPath();
+    const cp = []; for (let a = 8; a <= 28; a += 0.5) cp.push({ x: P.X(a), y: P.Y(control(a)) });
+    TB.smooth(ctx, cp); ctx.stroke();
+    // reward line
+    ctx.strokeStyle = C.pink; ctx.lineWidth = 2.6; ctx.beginPath();
+    const rp = []; for (let a = 8; a <= 28; a += 0.5) rp.push({ x: P.X(a), y: P.Y(reward(a)) });
+    TB.smooth(ctx, rp); ctx.stroke();
+
+    // inline labels
+    label(ctx, "reward-seeking", P.X(15), P.Y(reward(15)) - 12, { align: "center", color: C.pink, font: TB.mono(11, true) });
+    label(ctx, "self-control", P.X(25.5), P.Y(control(25.5)) - 10, { align: "right", color: C.blue, font: TB.mono(11, true) });
+
+    // age marker + gap bar
+    const ax = P.X(age), ry = P.Y(reward(age)), cy = P.Y(control(age));
+    line(ctx, ax, P.T, ax, P.B, "rgba(255,217,61,0.5)", 1.4);
+    // vertical gap connector
+    line(ctx, ax, ry, ax, cy, "rgba(255,107,107,0.9)", 3);
+    for (const [yy, col] of [[ry, C.pink], [cy, C.blue]]) {
+      ctx.beginPath(); ctx.arc(ax, yy, 5, 0, TB.TAU); ctx.fillStyle = col; ctx.fill();
+      ctx.strokeStyle = "#0c0722"; ctx.lineWidth = 1.6; ctx.stroke();
+    }
+
+    const r = reward(age), c = control(age), gap = Math.max(0, r - c);
+    document.querySelector("#cl-r").textContent = (r * 100).toFixed(0) + "%";
+    document.querySelector("#cl-c").textContent = (c * 100).toFixed(0) + "%";
+    const gEl = document.querySelector("#cl-gap");
+    gEl.textContent = gap <= 0.02 ? "closed" : "+" + (gap * 100).toFixed(0) + " pts (reward ahead)";
+  });
+
+  TB.slider("clocks-age", (v) => v.toFixed(0) + " yr", (v) => { age = v; });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
