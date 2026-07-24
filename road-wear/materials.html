@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ageing — The Road to Ruin</title>
+<meta name="description" content="Bitumen is a living, oxidising material: it stiffens and embrittles year on year until it cracks under loads it once shrugged off, while the stone polishes smooth and skid resistance falls. Oxidation, volatilisation and UV; block cracking and ravelling; aggregate polishing and PSV; the viscoelastic nature of asphalt — with a live bitumen ageing test.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="loads.html">2 · The Weight of Traffic</a>
+    <a href="water.html">3 · Water &amp; Frost</a>
+    <a href="materials.html" aria-current="page">4 · Ageing</a>
+    <a href="distress.html">5 · The Distress Catalogue</a>
+    <a href="repair.html">6 · Repair</a>
+    <a href="roadworks.html">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 4 — Ageing</p>
+  <h1>The tar grows old</h1>
+  <p class="standfirst">Even a road that never saw a heavy lorry would eventually fail, because
+  the 5% of it that matters — the bitumen binder — is chemically alive. In sunlight and air it
+  slowly oxidises, stiffening and losing its stretch, until one cold day it cracks under a load
+  it would once have flexed around. Meanwhile the stone polishes smooth beneath the tyres. Age
+  alone can ruin a road; it just takes its time.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Bitumen is the strangest material in civil engineering: solid, liquid and glue at
+once, and never quite the same from one year to the next.</p>
+
+<p>Recall from <a href="anatomy.html">Chapter&nbsp;1</a> that asphalt is ~95% stone and ~5%
+bitumen, and that the bitumen is the glue holding the stone skeleton together. Fresh from the
+refinery it is <strong>ductile</strong> — pull it and it stretches like toffee, which is exactly
+what a road needs when a wheel bends it or the cold shrinks it. But bitumen does not stay young.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Age a binder — the ductility test</span>
+    <span class="hint">pull a thread of bitumen · fresh stretches, aged snaps</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="duct" style="aspect-ratio: 4 / 1; min-height: 230px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="duct-age">years in service</label>
+      <input type="range" id="duct-age" min="0" max="25" step="0.5" value="0">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">penetration <b id="ro-pen">—</b></span>
+    <span class="ro">softening point <b id="ro-soft">—</b></span>
+    <span class="ro" id="ro-duc-wrap">ductility <b id="ro-duc">—</b></span>
+    <span class="ro" id="ro-brit-wrap">behaviour <b id="ro-brit">—</b></span>
+  </div>
+  <div class="fig-note">Two grips pull a thread of binder apart, over and over. When the binder
+  is young it draws out into a long, thin ductile thread before it necks and breaks; as it ages
+  it stiffens and its <b>penetration</b> (how far a standard needle sinks in) falls, its
+  <b>softening point</b> rises, and the thread snaps early and cleanly — brittle. A brittle binder
+  can no longer flex around a wheel or a cold snap, so the road cracks. Values are illustrative of
+  a typical paving-grade bitumen ageing in service.</div>
+</figure>
+
+<div class="prose">
+
+<h2>What "ageing" actually is</h2>
+
+<p>Bitumen ages in two phases, driven mostly by reaction with atmospheric oxygen:</p>
+
+<ul>
+  <li><strong>Short-term ageing</strong> happens fast, in the few hours during mixing and
+  laying, when the binder is hot (~150–180&nbsp;°C) and thinly coated over hot stone with lots of
+  air. The lightest oil fractions boil off (<em>volatilisation</em>) and rapid oxidation stiffens
+  it before it even reaches the road. Laboratories simulate this with the "rolling thin-film oven"
+  test.</li>
+  <li><strong>Long-term ageing</strong> is the slow work of years in service: continued
+  oxidation deep in the mat, accelerated at the surface by ultraviolet light and heat. The
+  chemistry shifts the binder toward larger, stiffer molecules (asphaltenes), so it grows harder,
+  more viscous and less able to stretch — exactly the properties you don't want.</li>
+</ul>
+
+<div class="callout warn">
+  <span class="tag">Why old roads craze</span>
+  <p>An aged, brittle binder is why a road that is otherwise structurally fine can still fail
+  from the <strong>top down</strong>. With too little stretch left, the surface cracks under
+  ordinary thermal movement and traffic flexing, appearing first as a mosaic of interconnected
+  cracks over large areas — <strong>block cracking</strong> — unrelated to the wheelpaths. And as
+  the binder loses its grip on the stone, individual aggregate particles work loose and are
+  flung out by tyres: the surface roughens, greys and sheds grit — <strong>ravelling</strong> —
+  which is both a cause of that greyed look of an old road and a feeder of loose stone and open
+  texture for water to exploit.</p>
+</div>
+
+<h2>Meanwhile, the stone polishes</h2>
+
+<p>The other half of ageing happens to the aggregate, and it matters for a reason that has
+nothing to do with strength: <strong>skid resistance</strong>. A new surface is microscopically
+rough — sharp stone edges and fine texture that grip a tyre, especially in the wet. But every
+tyre that passes polishes those stones a little smoother, exactly as a pebble is rounded by a
+stream. Over years the surface can become dangerously slick even while it looks perfectly sound.
+Engineers fight this by choosing hard, angular aggregates with a high <strong>Polished Stone
+Value (PSV)</strong> for busy or high-risk sites, and by restoring texture with a surface
+dressing (<a href="repair.html">Chapter&nbsp;6</a>) — one reason a road may be resurfaced for
+grip long before it is structurally worn out.</p>
+
+<div class="strip">
+  <div class="panel"><div class="art"><span class="n">1</span><svg class="char float"><use href="#char-tarmac"/></svg></div>
+    <div class="cap"><b>Year 0.</b> Fresh and ductile — the binder stretches around every load and cold snap.</div></div>
+  <div class="panel"><div class="art"><span class="n">2</span><svg class="char"><use href="#char-drip"/></svg></div>
+    <div class="cap"><b>Oxidising.</b> Sun, air and UV slowly stiffen the tar. It hardens; its stretch quietly disappears.</div></div>
+  <div class="panel"><div class="art"><span class="n">3</span><svg class="char"><use href="#char-pot"/></svg></div>
+    <div class="cap"><b>Brittle.</b> Now it can't flex. Thermal movement and traffic craze the surface into <b>block cracking</b>.</div></div>
+  <div class="panel"><div class="art"><span class="n">4</span><svg class="char"><use href="#char-prof"/></svg></div>
+    <div class="cap"><b>Ravelling.</b> The binder loses its grip; stones fly out, texture opens, and water gets its invitation.</div></div>
+</div>
+
+<h2>The redeeming trick: asphalt heals</h2>
+
+<p>There is one piece of good news in the bitumen story. Because the binder is viscoelastic and
+can still flow a little when warm, asphalt has a modest capacity to <strong>self-heal</strong>:
+microcracks can knit back together during warm rest periods when the road isn't being loaded. It
+is a real, measurable effect that engineers are learning to exploit (even trialling induction
+heating and encapsulated rejuvenators to boost it). It is also why fatigue life depends not just
+on how many loads a road sees but on how they are spaced — a road allowed to rest and warm
+recovers a little between batterings. Age steals that capacity too: the stiffer and more
+oxidised the binder, the less it heals.</p>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float"><use href="#char-prof"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Professor Camber</p>
+    <p class="say">"We spend a fortune choosing a bitumen with the right stiffness for the local
+    climate — soft enough not to crack in the winter cold, stiff enough not to rut in the summer
+    heat. The trouble is the road won't hold still: it keeps ageing toward the brittle end,
+    whatever we picked. Half of maintenance is really about slowing that clock."</p>
+  </div>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">viscoelasticity and why we grade binders</span></summary>
+  <p>Bitumen's behaviour depends on both <strong>temperature</strong> and <strong>loading
+  time</strong>, because it is viscoelastic. Under a fast load (a car at speed) or in the cold it
+  responds elastically — stiff and springy; under a slow load (a parked lorry) or in the heat it
+  responds viscously — it flows. This is why the same road ruts in a summer heatwave and cracks
+  in a winter freeze, and why axle <em>speed</em> matters as much as axle <em>weight</em>. Modern
+  practice grades binders by <strong>performance</strong> across the temperature range a site will
+  see — the American <em>Superpave</em> "PG" grades, e.g. PG 64-22, name the high and low pavement
+  temperatures the binder must survive. Ageing shifts a binder's real behaviour away from its
+  design grade toward stiffer, more brittle territory, which is why long-term-ageing tests (the
+  pressure-ageing vessel) are part of qualifying a binder at all. The interactive's numbers —
+  penetration falling from roughly 50 to under 20 tenths-of-a-mm, softening point climbing past
+  60&nbsp;°C, ductility collapsing — track the direction of a real paving-grade binder's decline,
+  if not any one exact product.</p>
+</details>
+
+</div>
+
+<nav class="chapnav">
+  <a class="prev" href="water.html"><span class="dir">← Previous</span><span class="title">3 · Water &amp; Frost</span></a>
+  <a class="next" href="distress.html"><span class="dir">Next →</span><span class="title">5 · The Distress Catalogue</span></a>
+</nav>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, lerp, mix, C } = RW;
+
+  let age = 0;
+  // property models (illustrative of a paving-grade bitumen ageing in service)
+  const pen = (a) => lerp(52, 14, clamp(a / 25, 0, 1));        // dmm, falls
+  const soft = (a) => lerp(48, 64, clamp(a / 25, 0, 1));       // °C, rises
+  const duct = (a) => lerp(100, 4, Math.pow(clamp(a / 25, 0, 1), 0.7)); // cm, collapses
+
+  function update() {
+    RW.set("ro-pen", pen(age).toFixed(0) + " dmm");
+    RW.set("ro-soft", soft(age).toFixed(0) + " °C");
+    RW.set("ro-duc", duct(age).toFixed(0) + " cm");
+    const brittle = age > 16;
+    RW.set("ro-brit", age < 8 ? "ductile" : age < 16 ? "stiffening" : "brittle");
+    document.getElementById("ro-brit-wrap").classList.toggle("alert", brittle);
+    document.getElementById("ro-brit-wrap").classList.toggle("good", age < 8);
+    const dw = document.getElementById("ro-duc-wrap");
+    dw.classList.toggle("alert", duct(age) < 20);
+  }
+
+  RW.canvas("duct", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
+
+    const cy = h * 0.46;
+    const gripW = 22, gripH = 66;
+    const af = clamp(age / 25, 0, 1);
+    // how far the thread can be drawn out before it parts: ductile stretches
+    // far, brittle snaps almost at once
+    const maxStretch = lerp(1.0, 0.06, Math.pow(af, 0.7));
+    const restGap = w * 0.13;
+    const maxTravel = w * 0.31;
+
+    // pull cycle 0..1..0; a brittle thread parts partway through
+    const cyc = RW.reducedMotion ? Math.min(0.85, maxStretch)
+      : (Math.sin(t * 0.85) * 0.5 + 0.5);
+    const broken = cyc > maxStretch;
+    const eff = broken ? maxStretch : cyc;
+    const travel = eff * maxTravel;
+
+    const leftX = w * 0.5 - restGap / 2 - travel;
+    const rightX = w * 0.5 + restGap / 2 + travel;
+    const innerL = leftX + gripW, innerR = rightX;
+
+    // ---- bench and travel scale -------------------------------------
+    const benchY = cy + gripH * 0.5 + 26;
+    ctx.fillStyle = "#15151b"; ctx.fillRect(0, benchY, w, h - benchY);
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, benchY); ctx.lineTo(w, benchY); ctx.stroke();
+    // ticks every 10% of max travel, labelled as ductility in cm
+    const zeroX = w * 0.5 - restGap / 2, fullX = w * 0.5 - restGap / 2 - maxTravel;
+    for (let f = 0; f <= 1.0001; f += 0.25) {
+      const x = lerp(zeroX, fullX, f);
+      ctx.strokeStyle = "rgba(241,240,236,0.25)";
+      ctx.beginPath(); ctx.moveTo(x, benchY); ctx.lineTo(x, benchY + 7); ctx.stroke();
+      RW.label(ctx, (f * 100).toFixed(0) + " cm", x, benchY + 20, { align: "center", color: C.muted });
+    }
+    RW.label(ctx, "distance drawn before the thread parts", 12, h - 10,
+      { color: C.muted, font: RW.mono(10.5) });
+
+    // ---- the binder thread ------------------------------------------
+    // warm, glossy bitumen so it reads against the dark bench
+    const cold = mix("#8a5a1e", "#6b6257", af);   // aged binder greys as it hardens
+    const hot = mix("#d99a3c", "#9a8f7e", af);
+    if (!broken) {
+      const stretchFrac = eff / Math.max(maxStretch, 0.001);
+      const endH = gripH * 0.40;
+      const midH = lerp(endH, Math.max(1.6, endH * 0.06), stretchFrac); // necks down
+      ctx.beginPath();
+      ctx.moveTo(innerL, cy - endH);
+      ctx.quadraticCurveTo(w * 0.5, cy - midH, innerR, cy - endH);
+      ctx.lineTo(innerR, cy + endH);
+      ctx.quadraticCurveTo(w * 0.5, cy + midH, innerL, cy + endH);
+      ctx.closePath();
+      const g = ctx.createLinearGradient(0, cy - endH, 0, cy + endH);
+      g.addColorStop(0, cold); g.addColorStop(0.42, hot); g.addColorStop(1, cold);
+      ctx.fillStyle = g; ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 1; ctx.stroke();
+      // specular highlight along the top of the thread
+      ctx.beginPath();
+      ctx.moveTo(innerL, cy - endH * 0.55);
+      ctx.quadraticCurveTo(w * 0.5, cy - midH * 0.55, innerR, cy - endH * 0.55);
+      ctx.strokeStyle = "rgba(255,225,170,0.35)"; ctx.lineWidth = 1.5; ctx.stroke();
+    } else {
+      // parted: two blunt stubs that recoil back toward their grips
+      const stub = (innerR - innerL) * (af > 0.6 ? 0.16 : 0.34);
+      const endH = gripH * 0.40;
+      ctx.fillStyle = hot;
+      for (const [x0, dir] of [[innerL, 1], [innerR, -1]]) {
+        ctx.beginPath();
+        ctx.moveTo(x0, cy - endH);
+        ctx.quadraticCurveTo(x0 + dir * stub * 0.7, cy - endH * 0.5, x0 + dir * stub, cy - endH * 0.18);
+        ctx.lineTo(x0 + dir * stub, cy + endH * 0.18);
+        ctx.quadraticCurveTo(x0 + dir * stub * 0.7, cy + endH * 0.5, x0, cy + endH);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 1; ctx.stroke();
+      }
+      // the break, marked between the stubs
+      const bx = (innerL + stub + innerR - stub) / 2;
+      ctx.strokeStyle = C.red; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(bx - 9, cy - 11); ctx.lineTo(bx + 5, cy - 2);
+      ctx.lineTo(bx - 5, cy + 2); ctx.lineTo(bx + 9, cy + 11);
+      ctx.stroke();
+      RW.label(ctx, "SNAP", bx, cy - 24, { align: "center", color: C.red, font: RW.mono(12, true) });
+    }
+
+    // ---- grips --------------------------------------------------------
+    for (const [gx, accentRight] of [[leftX, false], [rightX, true]]) {
+      ctx.fillStyle = "#2a2a35";
+      RW.roundRect(ctx, gx, cy - gripH / 2, gripW, gripH, 4); ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = C.amber;
+      RW.roundRect(ctx, accentRight ? gx + gripW - 4 : gx, cy - gripH / 2, 4, gripH, 2); ctx.fill();
+      // stem down to the bench
+      ctx.fillStyle = "#22222a";
+      ctx.fillRect(gx + gripW / 2 - 3, cy + gripH / 2, 6, benchY - (cy + gripH / 2));
+    }
+
+    // pull arrows
+    ctx.strokeStyle = C.muted; ctx.fillStyle = C.muted; ctx.lineWidth = 1.5;
+    const ay = cy + gripH * 0.5 + 12;
+    for (const [x, dir] of [[leftX - 6, -1], [rightX + gripW + 6, 1]]) {
+      ctx.beginPath(); ctx.moveTo(x, ay); ctx.lineTo(x + dir * 20, ay); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x + dir * 20, ay);
+      ctx.lineTo(x + dir * 14, ay - 4); ctx.lineTo(x + dir * 14, ay + 4); ctx.closePath(); ctx.fill();
+    }
+
+    // ---- state caption --------------------------------------------------
+    const state = age < 8 ? "ductile" : age < 16 ? "stiffening" : "brittle";
+    const col = age < 8 ? C.good : age < 16 ? C.amber : C.red;
+    RW.label(ctx, "year " + age.toFixed(0) + " · " + state, 14, 22,
+      { color: col, font: RW.mono(12.5, true) });
+    RW.label(ctx, "ductility " + duct(age).toFixed(0) + " cm", 14, 40,
+      { color: C.ink2, font: RW.mono(11) });
+  }, { animate: true });
+
+
+  RW.slider("duct-age", (v) => "year " + v.toFixed(0), (v) => { age = v; update(); });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

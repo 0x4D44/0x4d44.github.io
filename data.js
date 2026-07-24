@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "road-wear",
+    title: "The Road to Ruin",
+    tagline: "A deep, interactive field guide to why roads fall apart and how we keep them alive: the layer sandwich that spreads a wheel load, the fourth-power law that makes one lorry outweigh ten thousand cars, and how frost prises a crack into a pothole. Eight chapters, a cartoon cast, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/road-wear/",
+    illustration: "ill-road",
+    date: "2026-07-24T12:00:00",
+    year: 1958,
+    readingMin: 52,
+    words: 10800,
+    tags: ["software", "engineering", "transport"],
+    real: true,
+  },
+  {
     slug: "black-holes",
     title: "Event Horizon",
     tagline: "A deep, interactive field guide to black holes and singularities: escape velocity and stellar collapse, curved spacetime and light-bending, the anatomy from photon ring to singularity, spaghettification, the fall past the horizon, Hawking radiation, and how we photographed a shadow. Eight chapters, a dozen live instruments, and a cast of cartoon guides. Vanilla JS, canvas + SVG; no build step.",
@@ -1522,6 +1535,9 @@ window.COLLECTIONS = [
     blurb: "Engines, motors, turbines and the power plants behind them.",
     slugs: ["the-grid", "ic-engine", "cruise-propulsion", "traction-motors",
       "mercury-arc-rectifiers", "hydro", "fifty-hertz", "chief-engineer"] },
+  { id: "built", name: "The Built World", icon: "ill-road",
+    blurb: "The engineering of the everyday infrastructure underfoot — roads, and how they wear.",
+    slugs: ["road-wear"] },
   { id: "rails", name: "On Rails", icon: "ill-class55",
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
     slugs: ["class-55", "class-47", "azuma", "ecml", "ecml-timeline", "br1955",

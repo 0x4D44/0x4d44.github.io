@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Looking After Roads — The Road to Ruin</title>
+<meta name="description" content="The deterioration curve and the golden rule of pavement management: a pound of prevention beats six of cure. Crack sealing, surface dressing, patching, mill-and-overlay and reconstruction — the maintenance ladder, whole-life cost, and a live model where you place a treatment and watch it buy years of road life.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="loads.html">2 · The Weight of Traffic</a>
+    <a href="water.html">3 · Water &amp; Frost</a>
+    <a href="materials.html">4 · Ageing</a>
+    <a href="distress.html">5 · The Distress Catalogue</a>
+    <a href="repair.html" aria-current="page">6 · Repair</a>
+    <a href="roadworks.html">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 6 — Looking After Roads</p>
+  <h1>A pound of prevention</h1>
+  <p class="standfirst">Here is the counter-intuitive heart of road maintenance: the cheapest
+  time to treat a road is while it still looks fine. A road declines slowly for years and then
+  falls off a cliff, and money spent before the cliff buys many times what the same money buys
+  after it. Understand the deterioration curve and you understand why your council seals a road
+  that "didn't need doing" — and why the one that clearly did will cost ten times as much.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">A road does not wear out at a steady rate. It holds up well for most of its life,
+then collapses quickly at the end — and that shape changes everything about how we look after it.</p>
+
+<p>Plot a road's condition against time and you get the famous <strong>deterioration curve</strong>:
+a long, gentle decline, then a sharp knee where distress accelerates and the road unravels. The
+single most important idea in pavement management is <em>where on that curve you intervene</em>.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The deterioration curve — buy back some road</span>
+    <span class="hint">place a treatment on the curve · watch it cost, and buy years</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="curve" style="aspect-ratio: 2 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="cv-when">treat at year</label>
+      <input type="range" id="cv-when" min="4" max="26" step="0.5" value="10">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="cv-what">treatment</label>
+      <span class="seg" id="cv-what">
+        <button data-v="seal" class="on">crack seal</button>
+        <button data-v="dress">surface dressing</button>
+        <button data-v="overlay">mill &amp; overlay</button>
+        <button data-v="recon">reconstruct</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">condition now <b id="cv-pci">—</b></span>
+    <span class="ro" id="cv-cost-wrap">cost <b id="cv-cost">—</b></span>
+    <span class="ro" id="cv-life-wrap">life added <b id="cv-life">—</b></span>
+    <span class="ro">value <b id="cv-value">—</b></span>
+    <span class="ro" id="cv-verdict-wrap"><b id="cv-verdict">—</b></span>
+  </div>
+  <div class="fig-note" id="cv-note">Slide the treatment along the curve. The dashed grey line is
+  the untreated road; the amber line is what you get for your money, and <b>life added</b> is
+  measured as how much later it crosses the "needs major work" threshold. Note what a cheap seal
+  buys early on: not a road made new — a seal renews the surface, not the structure — but a
+  <b>plateau</b>, years of ageing held at bay for a fraction of the cost. Drag it past the knee and
+  watch the same seal do almost nothing: the structure is already failing and only a costly overlay
+  or full reconstruction will help. Compare the <b>value</b> figures and the "£1 now or £6 later"
+  rule appears on its own.</div>
+</figure>
+
+<div class="prose">
+
+<div class="callout gold">
+  <span class="tag">The rule that runs a highways budget</span>
+  <p>A widely-cited finding from US pavement studies (and the intuition behind maintenance policy
+  everywhere) is that <strong>every £1 spent on preventive maintenance at the right time can save
+  £6–£10 of future reconstruction</strong>. The reason is the curve: a road typically drops the
+  first 40% of its quality over ~75% of its life, then the <em>next</em> 40% in a small fraction
+  of the time. Treat it in the gentle zone and you slide back up cheaply; miss the window and you
+  are buying a rebuild. Deferring maintenance to "save money" is one of the most expensive things
+  a road authority can do.</p>
+</div>
+
+<h2>The maintenance ladder</h2>
+
+<p>Treatments form a ladder from cheap-and-preventive to dear-and-corrective. You climb it as the
+road declines — and the whole art is to stay as low on the ladder as possible for as long as
+possible.</p>
+
+<table class="data">
+  <caption>Treatments, cheapest first</caption>
+  <tr><th>Treatment</th><th>What it does</th><th>When</th><th>Relative cost</th></tr>
+  <tr><td class="k">Crack sealing</td><td>Fills individual cracks to keep water out before it can
+    do structural harm</td><td>Early, few cracks</td><td class="num">£</td></tr>
+  <tr><td class="k">Surface dressing<br>(chip seal)</td><td>Sprays binder and rolls in a layer of
+    stone chippings — reseals the surface and restores grip, without adding strength</td>
+    <td>Sound structure, worn/greying surface</td><td class="num">££</td></tr>
+  <tr><td class="k">Slurry / micro-surfacing</td><td>A thin bituminous slurry to seal and re-texture
+    a surface</td><td>Minor surface wear</td><td class="num">££</td></tr>
+  <tr><td class="k">Patching</td><td>Cuts out and replaces failed areas and potholes — localised
+    first aid, not a cure</td><td>Isolated failures</td><td class="num">££</td></tr>
+  <tr><td class="k">Mill &amp; overlay</td><td>Grinds off the worn surface and lays fresh asphalt —
+    restores ride, grip and some strength</td><td>After the knee, structure still sound</td>
+    <td class="num">££££</td></tr>
+  <tr><td class="k">Reconstruction</td><td>Digs out and rebuilds the layers — the only fix once the
+    structure has failed</td><td>Structural failure</td><td class="num">££££££</td></tr>
+</table>
+
+<p><strong>Surface dressing</strong> deserves a special mention because it is the workhorse of
+cost-effective road care and the one people most often misunderstand. It looks slapdash — spray
+tar, throw down chippings, roll, let the traffic bed them in, sweep up the loose stone a few days
+later — and it briefly makes a fine road look like a building site. But it does two vital jobs for
+a fraction of the cost of resurfacing: it <em>seals</em> the surface against water (the enemy of
+<a href="water.html">Chapter&nbsp;3</a>) and it <em>restores skid resistance</em> lost to
+polishing (<a href="materials.html">Chapter&nbsp;4</a>). It adds no structural strength — but a
+sound road doesn't need strength, it needs to be kept sound. That is prevention, working.</p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-roller"/></svg>
+    <svg class="char sm"><use href="#char-tarmac"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Rolla &amp; Tarmac</p>
+    <p class="say"><b>Tarmac:</b> "People grumble when you dress me — 'that road was fine!'"</p>
+    <p class="say"><b>Rolla:</b> "That's the whole point. Seal you while you're fine and you stay
+    fine for another decade. Wait till you're full of holes and it's not me you'll need — it's the
+    diggers, and a road closure, and a bill with a lot more noughts."</p>
+  </div>
+</div>
+
+<h2>Patching, and why the patch never matches</h2>
+
+<p>The pothole gets filled, and everyone has an opinion about the result. A proper permanent patch
+is real work: saw-cut a clean rectangle around the failure, dig out the loose and failed material
+down to something sound, tack the edges with binder, fill with fresh hot asphalt in compacted
+layers, and roll it. Done well it lasts. The ubiquitous <em>quick</em> patch — cold-mix shovelled
+into a wet hole and tamped by a passing boot — is triage: it keeps the road usable and stops water
+getting deeper, but it is expected to fail, because the hole's cause (a failing structure, a live
+crack, standing water) is still there. That is why patches look different (new material, different
+age and binder), why they often sink or ravel at the edges, and why a road full of patches is a
+road that has climbed too high up the ladder and is really asking to be resurfaced.</p>
+
+<h2>Managing a whole network</h2>
+
+<p>Scale all this up to thousands of miles and you get a <strong>Pavement Management System</strong>:
+survey the network's condition (the PCI and IRI of <a href="distress.html">Chapter&nbsp;5</a>),
+predict each road's path down its deterioration curve, and then optimise — with a limited budget —
+which roads to treat, when, and with what, to keep the <em>whole network's</em> average condition
+as high as possible for the money. Counter-intuitively, that often means spending on good roads to
+keep them good rather than pouring it all into the worst ones, because a pound holds a good road
+near the top far more effectively than it lifts a failed one off the bottom. The politics of that
+— fixing roads that "look fine" while a visibly terrible one waits — is the permanent tension of
+every highways department.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">whole-life cost and the timing of treatments</span></summary>
+  <p>The formal version of "prevention beats cure" is <strong>whole-life costing</strong>: instead
+  of minimising the cost of the next treatment, you minimise the total discounted cost of keeping a
+  road serviceable over decades. Because the deterioration curve steepens, the maths almost always
+  favours a series of cheap, well-timed preventive treatments over a single expensive
+  reconstruction — provided each is applied in the window where the road is still structurally
+  sound. The model in the interactive is a deliberately simple version of this: a sigmoid-shaped
+  condition curve, a set of treatments that each reset condition by different amounts at different
+  costs, and a "value" that rewards buying the most road-life per pound. Real systems add traffic
+  growth, seasonal effects, the fourth-power damage of <a href="loads.html">Chapter&nbsp;2</a>, and
+  the risk that deferring a treatment drops the road past the point where the cheap option still
+  works. But the shape of the answer — treat early, treat cheaply, never let a sound road fail — is
+  exactly what the curve here shows.</p>
+</details>
+
+</div>
+
+<nav class="chapnav">
+  <a class="prev" href="distress.html"><span class="dir">← Previous</span><span class="title">5 · The Distress Catalogue</span></a>
+  <a class="next" href="roadworks.html"><span class="dir">Next →</span><span class="title">7 · Roadworks</span></a>
+</nav>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, lerp, mix, C } = RW;
+
+  let when = 10, what = "seal";
+
+  // Baseline condition curve (PCI 100→0), untreated. A power law with an
+  // exponent above 1 reproduces the classic shape quoted in the text: the road
+  // sheds its first ~40% of quality over ~75% of its life, then the next ~40%
+  // in a small fraction of the time. Life to failure ≈ 26 years.
+  const LIFE = 26, CURVE = 3;
+  function baseline(yr) {
+    return clamp(100 - 100 * Math.pow(clamp(yr, 0, LIFE) / LIFE, CURVE), 0, 100);
+  }
+  // treatment properties: cost (relative), the max "boost" it can restore,
+  // and whether it needs sound structure to work
+  // `ceiling` is the best condition each treatment can leave behind: a seal or a
+  // dressing renews the *surface*, so neither can hand back a structurally
+  // as-new road however early you apply it. Only reconstruction reaches 100.
+  // `hold` is the plateau a treatment buys before decline resumes — the years of
+  // ageing a seal or dressing keeps at bay by shutting water out of the structure.
+  const TREAT = {
+    seal:    { label: "crack seal",       cost: 1,  boost: 8,   ceiling: 92,  needsSound: 90, hold: 3 },
+    dress:   { label: "surface dressing", cost: 3,  boost: 26,  ceiling: 90,  needsSound: 65, hold: 4 },
+    overlay: { label: "mill & overlay",   cost: 14, boost: 70,  ceiling: 97,  needsSound: 40, hold: 2 },
+    recon:   { label: "reconstruct",      cost: 40, boost: 100, ceiling: 100, needsSound: 0,  hold: 0 },
+  };
+  // The condition at which a road is judged to need major work. Life bought by a
+  // treatment is measured as how much later the road reaches it.
+  const FAIL_PCI = 50;
+
+  // A treatment never makes a road worse: if it is already above the treatment's
+  // ceiling, condition holds and the benefit shows up purely as life added.
+  function treatedPci(pciNow, tr, eff) {
+    return clamp(Math.max(pciNow, Math.min(pciNow + tr.boost * eff, tr.ceiling)), 0, 100);
+  }
+
+  function effectiveness(pciNow, tr) {
+    // a treatment only delivers its boost if the structure is sound enough;
+    // below its threshold it degrades sharply (wasted money)
+    if (pciNow >= tr.needsSound) return 1;
+    const short = (tr.needsSound - pciNow) / Math.max(tr.needsSound, 1);
+    return clamp(1 - short * 1.6, 0.08, 1);
+  }
+
+  // The year on the baseline curve that has a given condition — where a treated
+  // road effectively rejoins the ageing process.
+  function equivalentYear(pci) {
+    return LIFE * Math.pow(clamp(1 - pci / 100, 0, 1), 1 / CURVE);
+  }
+
+  // The treated road's condition over time: it jumps to newPci at `when`, holds
+  // for the plateau the treatment buys, then declines at the normal rate.
+  function treatedCurve(yr, when, newPci, hold) {
+    if (yr <= when) return baseline(yr);
+    const eqYr = equivalentYear(newPci);
+    return baseline(eqYr + Math.max(0, (yr - when) - hold));
+  }
+
+  // Year at which a curve falls to the failure threshold (bisection is overkill;
+  // step finely and return the first crossing).
+  function yearOfFailure(fn) {
+    for (let yr = 0; yr <= 80; yr += 0.1) if (fn(yr) <= FAIL_PCI) return yr;
+    return 80;
+  }
+
+  let fig;
+  function update() {
+    const pciNow = baseline(when);
+    const tr = TREAT[what];
+    const eff = effectiveness(pciNow, tr);
+    const newPci = treatedPci(pciNow, tr, eff);
+    const hold = tr.hold * eff;
+    // life bought is derived from the curves, not asserted
+    const failBase = yearOfFailure(baseline);
+    const failTreated = yearOfFailure((yr) => treatedCurve(yr, when, newPci, hold));
+    const lifeAdded = Math.max(0, failTreated - failBase);
+
+    RW.set("cv-pci", pciNow.toFixed(0) + " / 100");
+    RW.set("cv-cost", "×" + tr.cost);
+    RW.set("cv-life", "+" + lifeAdded.toFixed(1) + " yr");
+    RW.set("cv-value", (lifeAdded / tr.cost).toFixed(2) + " yr per £");
+
+    // The verdict judges whether this treatment SUITS this road's condition —
+    // a seal on a failed road is wasted; a rebuild on a failed road is necessary.
+    let verdict, vc;
+    if (eff > 0.85) { verdict = "well matched"; vc = "good"; }
+    else if (eff > 0.5) { verdict = "marginal — acting late"; vc = "amber"; }
+    else { verdict = "wrong treatment — money wasted"; vc = "alert"; }
+    RW.set("cv-verdict", verdict);
+    const vw = document.getElementById("cv-verdict-wrap");
+    vw.classList.remove("good", "amber", "alert"); vw.classList.add(vc);
+    document.getElementById("cv-life-wrap").classList.toggle("alert", eff < 0.4);
+    document.getElementById("cv-life-wrap").classList.toggle("good", eff > 0.9);
+    if (fig) fig.redraw();
+  }
+
+  fig = RW.canvas("curve", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
+    const L = 44, Rp = 14, T = 28, B = h - 34;
+    const X = (yr) => L + yr / 30 * (w - L - Rp);
+    const Y = (pci) => T + (100 - pci) / 100 * (B - T);
+
+    // condition bands
+    const bands = [[85, 100, "rgba(70,192,122,0.10)"], [55, 85, "rgba(255,212,59,0.08)"],
+      [25, 55, "rgba(255,157,60,0.08)"], [0, 25, "rgba(255,93,108,0.10)"]];
+    for (const [a, b, col] of bands) { ctx.fillStyle = col; ctx.fillRect(L, Y(b), w - L - Rp, Y(a) - Y(b)); }
+
+    // grid + axes
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    for (let p = 0; p <= 100; p += 25) { const y = Y(p); ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - Rp, y); ctx.stroke();
+      RW.label(ctx, p + "", L - 6, y, { align: "right", baseline: "middle", color: C.muted }); }
+    for (let yr = 0; yr <= 30; yr += 5) { const x = X(yr); ctx.strokeStyle = C.line2; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, B); ctx.stroke();
+      RW.label(ctx, yr + "", x, B + 14, { align: "center", color: C.muted }); }
+    RW.label(ctx, "years", (L + w - Rp) / 2, h - 6, { align: "center", color: C.ink2, font: RW.mono(11, true) });
+    RW.label(ctx, "condition (PCI)", L - 34, T - 12, { align: "left", color: C.ink2, font: RW.mono(11, true) });
+
+    // baseline "do nothing" curve
+    ctx.strokeStyle = "rgba(180,180,200,0.45)"; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6;
+    ctx.beginPath(); for (let yr = 0; yr <= 30; yr += 0.5) { const x = X(yr), y = Y(baseline(yr)); yr === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke();
+    ctx.setLineDash([]);
+    RW.label(ctx, "do nothing", X(28), Y(baseline(28)) - 8, { align: "right", color: "rgba(180,180,200,0.7)" });
+
+    // treated curve: jump up at `when`, then decline again
+    const pciNow = baseline(when);
+    const tr = TREAT[what];
+    const eff = effectiveness(pciNow, tr);
+    const newPci = treatedPci(pciNow, tr, eff);
+    const hold = tr.hold * eff;
+
+    // failure threshold — the line the "life added" is measured against
+    ctx.strokeStyle = "rgba(255,93,108,0.35)"; ctx.setLineDash([2, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(L, Y(FAIL_PCI)); ctx.lineTo(w - Rp, Y(FAIL_PCI)); ctx.stroke(); ctx.setLineDash([]);
+    RW.label(ctx, "needs major work", w - Rp - 4, Y(FAIL_PCI) - 7, { align: "right", color: "rgba(255,150,158,0.75)" });
+
+    // solid green portion up to treatment, then the jump, then the treated decline
+    ctx.strokeStyle = C.good; ctx.lineWidth = 2.4;
+    ctx.beginPath(); for (let yr = 0; yr <= when; yr += 0.5) { const x = X(yr), y = Y(baseline(yr)); yr === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke();
+    // vertical jump (only visible when the treatment actually lifts condition)
+    if (newPci > pciNow + 0.5) {
+      ctx.strokeStyle = C.cyan; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(X(when), Y(pciNow)); ctx.lineTo(X(when), Y(newPci)); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // the treated road from here on: plateau, then decline at the normal rate
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.2; ctx.beginPath();
+    let started = false;
+    for (let yr = when; yr <= 30; yr += 0.25) {
+      const x = X(yr), y = Y(treatedCurve(yr, when, newPci, hold));
+      started ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), started = true);
+    }
+    ctx.stroke();
+
+    // treatment marker
+    ctx.fillStyle = eff > 0.6 ? C.good : eff > 0.35 ? C.amber : C.red;
+    ctx.beginPath(); ctx.arc(X(when), Y(pciNow), 6, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
+    RW.label(ctx, tr.label, X(when), Y(newPci) - 10, { align: "center", color: C.cyan, font: RW.mono(11, true) });
+
+    // "knee" annotation
+    RW.label(ctx, "the knee ↓", X(20), Y(baseline(20)) - 30, { align: "center", color: C.muted });
+  }, { animate: false });
+
+  RW.slider("cv-when", (v) => "year " + v.toFixed(1), (v) => { when = v; update(); });
+  RW.seg("cv-what", (v) => { what = v; update(); });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

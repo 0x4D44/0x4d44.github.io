@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Distress Catalogue — The Road to Ruin</title>
+<meta name="description" content="Every road failure has a name and a cause: fatigue crocodile cracking, longitudinal and transverse cracks, block cracking, rutting, shoving, ravelling, bleeding and potholes. A field guide to reading a road, with severity levels and the pavement condition index engineers score — and a live distress identifier.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="loads.html">2 · The Weight of Traffic</a>
+    <a href="water.html">3 · Water &amp; Frost</a>
+    <a href="materials.html">4 · Ageing</a>
+    <a href="distress.html" aria-current="page">5 · The Distress Catalogue</a>
+    <a href="repair.html">6 · Repair</a>
+    <a href="roadworks.html">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 5 — The Distress Catalogue</p>
+  <h1>Reading a broken road</h1>
+  <p class="standfirst">Every mark on a failing road is a clue. To the trained eye the pattern of
+  cracks and deformations names the cause — a fatigue failure from below, a thermal crack from the
+  cold, a rut from heavy slow wheels, a brittle mosaic from an aged binder. Learn the vocabulary
+  of distress and a stretch of road tells you its whole history, and what it needs next.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Highway engineers catalogue road distress the way a doctor catalogues symptoms:
+by type, by severity, and by extent. Get the diagnosis right and the treatment (next chapter)
+follows.</p>
+
+<p>Use the identifier below to walk through the main distresses of a flexible pavement. Each has
+a characteristic look, a specific cause traceable to the earlier chapters, and a severity that
+decides whether it wants a cheap seal or a dig-out.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Distress identifier</span>
+    <span class="hint">pick a distress · set the severity · read the cause</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="dz" style="aspect-ratio: 2.1 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="dz-type">distress</label>
+      <span class="seg" id="dz-type">
+        <button data-v="alligator" class="on">fatigue</button>
+        <button data-v="long">longitudinal</button>
+        <button data-v="trans">transverse</button>
+        <button data-v="block">block</button>
+        <button data-v="rut">rutting</button>
+        <button data-v="ravel">ravelling</button>
+        <button data-v="bleed">bleeding</button>
+        <button data-v="pothole">pothole</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="dz-sev">severity</label>
+      <input type="range" id="dz-sev" min="1" max="3" step="1" value="2">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="dz-name-wrap">name <b id="dz-name">—</b></span>
+    <span class="ro">cause <b id="dz-cause" style="color:var(--ink-2);font-weight:400">—</b></span>
+  </div>
+  <div class="fig-note" id="dz-note">—</div>
+</figure>
+
+<div class="prose">
+
+<h2>The main distresses, and what they tell you</h2>
+
+<h3>Cracking — the biggest family</h3>
+<ul>
+  <li><strong>Fatigue ("crocodile" / "alligator") cracking.</strong> Interconnected cracks
+  breaking the surface into small many-sided pieces, concentrated in the wheelpaths. The
+  signature of structural fatigue: too many <a href="loads.html">heavy loads</a> flexing the
+  asphalt until it cracks from the bottom up. A structural failure — it usually means the
+  pavement is under-strength or the layers below have weakened (often from
+  <a href="water.html">water</a>).</li>
+  <li><strong>Longitudinal cracking.</strong> Cracks running <em>along</em> the road. In the
+  wheelpath they can be early fatigue; at a lane joint or the paving-mat seam they are a
+  construction weakness opening up; at the edge they are the unsupported edge breaking away.</li>
+  <li><strong>Transverse cracking.</strong> Cracks running <em>across</em> the road, roughly
+  evenly spaced. Usually <em>thermal</em>: the surface shrinks as it cools and, restrained by the
+  material around it, tears itself apart — worsened by an aged, brittle
+  <a href="materials.html">binder</a>. Little to do with traffic.</li>
+  <li><strong>Block cracking.</strong> A mosaic of interconnected cracks dividing the surface
+  into large rectangular blocks, over the whole area rather than just the wheelpaths. The mark of
+  an <em>aged, shrunken, brittle binder</em> — an ageing failure, not a load one.</li>
+  <li><strong>Reflection cracking.</strong> Cracks that copy a pattern from an underlying layer
+  — most often the joints of an old concrete slab showing through a new asphalt overlay laid on
+  top of it, "reflecting" upward as the slab beneath moves.</li>
+</ul>
+
+<h3>Deformation — the road changes shape</h3>
+<ul>
+  <li><strong>Rutting.</strong> Longitudinal depressions in the wheelpaths. Either the asphalt
+  itself creeping sideways under hot, heavy, slow loads (a mix or binder too soft), or the layers
+  below being pushed down (a structural rut). Dangerous because ruts pond water — hydroplaning and
+  spray.</li>
+  <li><strong>Shoving &amp; corrugation.</strong> Ripples or a bow-wave of displaced asphalt,
+  where braking, accelerating or turning traffic shoves an unstable, too-soft mix — classic at
+  bus stops, junctions and approaches to traffic lights.</li>
+  <li><strong>Depressions &amp; settlement.</strong> Localised low spots where the foundation
+  has consolidated or a trench reinstatement (a utility dig) has settled unevenly.</li>
+</ul>
+
+<h3>Surface &amp; disintegration — the road comes apart</h3>
+<ul>
+  <li><strong>Ravelling.</strong> Progressive loss of aggregate from the surface — it roughens,
+  greys and sheds grit. An <a href="materials.html">ageing</a>/binder failure or poor compaction,
+  and a gateway for water.</li>
+  <li><strong>Bleeding (flushing).</strong> A shiny, black film of excess bitumen risen to the
+  surface in the wheelpaths, from too much binder or too little air-void space; slick when hot and
+  wet.</li>
+  <li><strong>Potholes.</strong> The bowl-shaped cavity — the end state of neglected fatigue
+  cracking plus <a href="water.html">water and frost</a>, once traffic has ejected the loosened
+  pieces (Chapter&nbsp;3).</li>
+</ul>
+
+<div class="callout gold">
+  <span class="tag">Type × severity × extent</span>
+  <p>A single crack is not an emergency; a wheelpath of high-severity crocodile cracking over
+  half a mile is. Engineers therefore score every distress on three axes — <strong>type</strong>
+  (what it is), <strong>severity</strong> (low / medium / high, by crack width, rut depth,
+  spalling) and <strong>extent</strong> (how much of the area it covers) — because the right
+  treatment depends on all three. A low-severity crack wants a cheap seal; the same crack at high
+  severity, spalled and interconnected, wants the surface milled off and replaced.</p>
+</div>
+
+<h2>Putting a number on it: condition indices</h2>
+
+<p>To manage thousands of miles of road you need to reduce all this to comparable numbers.
+Several indices do it. The <strong>Pavement Condition Index (PCI)</strong> surveys the distresses
+on a section and combines their type, severity and extent into a single score from
+<strong>100 (perfect)</strong> down to <strong>0 (failed)</strong>. Ride-quality indices like the
+<strong>IRI</strong> (International Roughness Index) instead measure how rough the road feels to a
+vehicle — the bumps you can hear in your coffee. These scores are what feed the deterioration
+curves and budgets of <a href="repair.html">Chapter&nbsp;6</a>: a network is triaged by condition
+so the limited money goes where it does the most good.</p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-prof"/></svg>
+    <svg class="char sm"><use href="#char-tarmac"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Professor Camber</p>
+    <p class="say">"Show me the cracks and I'll tell you the cause. Along the wheelpath and
+    interlaced? You've overloaded me. Neat lines across the road? That's the cold. A crazy-paving
+    mosaic everywhere? My binder's just old. The road writes its own case notes — you only have to
+    read them."</p>
+  </div>
+</div>
+
+</div>
+
+<nav class="chapnav">
+  <a class="prev" href="materials.html"><span class="dir">← Previous</span><span class="title">4 · Ageing</span></a>
+  <a class="next" href="repair.html"><span class="dir">Next →</span><span class="title">6 · Looking After Roads</span></a>
+</nav>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, lerp, mix, rng, C } = RW;
+
+  let type = "alligator", sev = 2;
+
+  const INFO = {
+    alligator: { name: "Fatigue (crocodile) cracking", cause: "structural fatigue — heavy loads flexing the asphalt",
+      note: "Interconnected cracks in the wheelpaths, breaking the surface into small polygons. Cracks began at the bottom of the asphalt and grew up. A structural warning: the pavement is tiring, often with weakened, wet layers below." },
+    long: { name: "Longitudinal cracking", cause: "paving joint, early fatigue, or edge failure",
+      note: "Cracks running along the road. At the lane joint they mark a cold paving seam; in the wheelpath, early fatigue; at the edge, an unsupported edge breaking away." },
+    trans: { name: "Transverse (thermal) cracking", cause: "thermal shrinkage of a cooling, brittle surface",
+      note: "Regularly-spaced cracks across the road. The surface shrank as it cooled and tore, restrained by the material around it — worse with an aged, brittle binder. Largely independent of traffic." },
+    block: { name: "Block cracking", cause: "aged, shrunken, brittle binder",
+      note: "A mosaic of cracks dividing the whole surface into large rectangular blocks — not just the wheelpaths. An ageing failure: the binder has hardened and shrunk until it cracks under ordinary thermal movement." },
+    rut: { name: "Rutting", cause: "plastic flow of a soft mix, or structural deformation below",
+      note: "Longitudinal troughs worn into each wheelpath. Either the asphalt creeping sideways under hot, heavy, slow loads, or the layers beneath pushed down. Ruts pond water — spray and aquaplaning." },
+    ravel: { name: "Ravelling", cause: "binder ageing / poor compaction — loss of aggregate",
+      note: "The surface loses stone from the top down: it roughens, greys and sheds grit. The binder has lost its grip on the aggregate. Opens texture and lets water in." },
+    bleed: { name: "Bleeding (flushing)", cause: "excess bitumen / too few air voids",
+      note: "A shiny black film of binder risen to the surface in the wheelpaths, from too much bitumen or too little void space. Slick and dangerous when hot and wet." },
+    pothole: { name: "Pothole", cause: "fatigue + water/frost + traffic ejection",
+      note: "The bowl-shaped cavity: the end state of neglected fatigue cracking once water, frost and traffic have prised and ejected the loosened surface (Chapter 3)." },
+  };
+  const SEVTXT = ["", "low", "medium", "high"];
+
+  function update() {
+    const i = INFO[type];
+    RW.set("dz-name", i.name);
+    RW.set("dz-cause", i.cause);
+    document.getElementById("dz-note").textContent = i.note;
+    if (fig) fig.redraw();
+  }
+
+  let fig = RW.canvas("dz", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    // road plan-view base
+    ctx.fillStyle = type === "bleed" ? "#1a1a1f" : mix("#1a1a1f", "#3a3a42", 0.5);
+    ctx.fillRect(0, 0, w, h);
+    RW.speckle(ctx, 0, 0, w, h, Math.round(w * h / 1400), 7, "#8d897f");
+    // edge + centre markings
+    ctx.strokeStyle = "rgba(238,236,224,0.5)"; ctx.lineWidth = Math.max(2, h * 0.008);
+    stroke(0, h * 0.07, w, h * 0.07); stroke(0, h * 0.93, w, h * 0.93);
+    ctx.strokeStyle = "rgba(255,212,59,0.7)"; ctx.lineWidth = Math.max(2, h * 0.009);
+    ctx.setLineDash([w * 0.05, w * 0.05]);
+    stroke(0, h * 0.5, w, h * 0.5); ctx.setLineDash([]);
+
+    const S = sev; // 1..3
+    const wp = [h * 0.3, h * 0.72]; // wheelpath centres
+    const R = rng(1234 + S * 7);
+
+    ctx.lineCap = "round";
+    if (type === "alligator") {
+      // higher severity → smaller cells (more broken up) and wider cracks
+      for (const yc of wp) {
+        const bw = w * 0.5, bh = h * (0.14 + S * 0.05);
+        const cell = S === 1 ? 30 : S === 2 ? 20 : 13;
+        drawCrackNet(ctx, w * 0.25, yc - bh / 2, bw, bh, cell, "rgba(6,6,10,0.9)", 0.7 + S * 0.4, R);
+      }
+    } else if (type === "long") {
+      for (let k = 0; k < S; k++) {
+        const yc = wp[k % 2] + (R() - 0.5) * 20;
+        jag(ctx, 0, yc, w, yc, 26, 1 + S * 0.7, R);
+      }
+    } else if (type === "trans") {
+      const n = 2 + S;
+      for (let k = 0; k < n; k++) {
+        const x = w * (0.12 + 0.76 * (k + 0.5) / n) + (R() - 0.5) * 20;
+        jagV(ctx, x, h * 0.06, x, h * 0.94, 18, 1 + S * 0.7, R);
+      }
+    } else if (type === "block") {
+      const cols = 3 + S, rows = 2 + S;
+      ctx.strokeStyle = "rgba(6,6,10,0.85)"; ctx.lineWidth = 0.8 + S * 0.4;
+      for (let c = 1; c < cols; c++) { const x = w * c / cols; jagV(ctx, x, 0, x, h, 16, 0.8 + S * 0.4, R); }
+      for (let r = 1; r < rows; r++) { const y = h * r / rows; jag(ctx, 0, y, w, y, 16, 0.8 + S * 0.4, R); }
+    } else if (type === "rut") {
+      for (const yc of wp) {
+        const rd = h * (0.03 + S * 0.03);
+        const grad = ctx.createLinearGradient(0, yc - rd, 0, yc + rd);
+        grad.addColorStop(0, "rgba(0,0,0,0.05)"); grad.addColorStop(0.5, "rgba(0,0,0,0.55)");
+        grad.addColorStop(1, "rgba(0,0,0,0.05)");
+        ctx.fillStyle = grad; ctx.fillRect(0, yc - rd, w, rd * 2);
+        ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 2;
+        stroke(0, yc - rd, w, yc - rd);
+      }
+      // cross-section inset
+      inset(ctx, w, h, (ix, iy, iw, ih) => {
+        ctx.strokeStyle = C.amber; ctx.lineWidth = 2; ctx.beginPath();
+        const rd = ih * (0.12 + S * 0.12);
+        ctx.moveTo(ix, iy + ih * 0.4);
+        ctx.lineTo(ix + iw * 0.2, iy + ih * 0.4);
+        ctx.quadraticCurveTo(ix + iw * 0.32, iy + ih * 0.4 + rd, ix + iw * 0.44, iy + ih * 0.4);
+        ctx.lineTo(ix + iw * 0.56, iy + ih * 0.4);
+        ctx.quadraticCurveTo(ix + iw * 0.68, iy + ih * 0.4 + rd, ix + iw * 0.8, iy + ih * 0.4);
+        ctx.lineTo(ix + iw, iy + ih * 0.4); ctx.stroke();
+        RW.label(ctx, "section", ix, iy + 10, { color: C.muted });
+      });
+    } else if (type === "ravel") {
+      // pockmarks where stones have gone
+      const n = 60 + S * 120;
+      for (let i = 0; i < n; i++) {
+        const x = R() * w, y = R() * h, r = 1 + R() * (1 + S);
+        ctx.fillStyle = "rgba(8,8,12,0.6)";
+        ctx.beginPath(); ctx.arc(x, y, r, 0, 6.28); ctx.fill();
+        if (R() > 0.6) { ctx.fillStyle = "rgba(150,146,136,0.4)"; ctx.beginPath(); ctx.arc(x + 1, y + 1, r * 0.5, 0, 6.28); ctx.fill(); }
+      }
+    } else if (type === "bleed") {
+      for (const yc of wp) {
+        const bh = h * (0.08 + S * 0.04);
+        const grad = ctx.createLinearGradient(0, yc - bh, 0, yc + bh);
+        grad.addColorStop(0, "rgba(0,0,0,0)"); grad.addColorStop(0.5, "rgba(10,10,14,0.95)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad; ctx.fillRect(0, yc - bh, w, bh * 2);
+        // sheen
+        ctx.fillStyle = "rgba(120,160,200," + (0.05 + S * 0.05) + ")";
+        ctx.fillRect(0, yc - bh * 0.5, w, bh);
+      }
+    } else if (type === "pothole") {
+      const yc = wp[0];
+      const rad = Math.min(w, h) * (0.08 + S * 0.05);
+      ctx.fillStyle = "#08080c"; ctx.beginPath();
+      const N = 18;
+      for (let i = 0; i <= N; i++) { const a = i / N * 6.28; const rr = rad * (0.75 + R() * 0.5);
+        const x = w * 0.5 + Math.cos(a) * rr, y = yc + Math.sin(a) * rr;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = "rgba(150,146,136,0.5)"; ctx.lineWidth = 1.5; ctx.stroke();
+      if (S >= 2) { ctx.fillStyle = "rgba(70,160,220,0.4)"; ctx.beginPath(); ctx.ellipse(w * 0.5, yc + rad * 0.2, rad * 0.6, rad * 0.25, 0, 0, 6.28); ctx.fill(); }
+    }
+
+    // severity badge — sized to its text so it never clips
+    const col = S === 1 ? C.good : S === 2 ? C.amber : C.red;
+    const badge = SEVTXT[S] + " severity";
+    ctx.font = RW.mono(10.5, true);
+    const bw2 = ctx.measureText(badge).width + 20;
+    ctx.fillStyle = col;
+    RW.roundRect(ctx, w - bw2 - 12, 12, bw2, 22, 5); ctx.fill();
+    RW.label(ctx, badge, w - bw2 / 2 - 12, 23, { align: "center", baseline: "middle", color: "#1a1206", font: RW.mono(10.5, true) });
+
+    function stroke(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
+  }, { animate: false });
+
+  function jag(ctx, x1, y1, x2, y2, steps, lw, R) {
+    ctx.strokeStyle = "rgba(6,6,10,0.9)"; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(x1, y1);
+    for (let i = 1; i <= steps; i++) { const f = i / steps; ctx.lineTo(lerp(x1, x2, f), lerp(y1, y2, f) + (R() - 0.5) * 8); }
+    ctx.stroke();
+  }
+  function jagV(ctx, x1, y1, x2, y2, steps, lw, R) {
+    ctx.strokeStyle = "rgba(6,6,10,0.9)"; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(x1, y1);
+    for (let i = 1; i <= steps; i++) { const f = i / steps; ctx.lineTo(lerp(x1, x2, f) + (R() - 0.5) * 8, lerp(y1, y2, f)); }
+    ctx.stroke();
+  }
+  // Crocodile cracking is a dense mesh of small many-sided cells, not a spider's
+  // web. A jittered lattice, stroked cell-edge by cell-edge and masked to an
+  // ellipse so it fades out at the edges of the patch, reproduces it closely.
+  function drawCrackNet(ctx, x, y, w, h, cell, col, lw, R) {
+    ctx.strokeStyle = col; ctx.lineWidth = lw;
+    const cols = Math.max(2, Math.ceil(w / cell)), rows = Math.max(2, Math.ceil(h / cell));
+    const cxp = x + w / 2, cyp = y + h / 2, rx = w / 2, ry = h / 2;
+    const P = [];
+    for (let j = 0; j <= rows; j++) {
+      P[j] = [];
+      for (let i = 0; i <= cols; i++) {
+        P[j][i] = {
+          x: x + (i / cols) * w + (R() - 0.5) * cell * 0.75,
+          y: y + (j / rows) * h + (R() - 0.5) * cell * 0.75,
+        };
+      }
+    }
+    const inside = (p) => {
+      const u = (p.x - cxp) / rx, v = (p.y - cyp) / ry;
+      return u * u + v * v <= 1;
+    };
+    const seg = (a, b) => {
+      if (!inside(a) && !inside(b)) return;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    };
+    for (let j = 0; j <= rows; j++) {
+      for (let i = 0; i <= cols; i++) {
+        if (i < cols) seg(P[j][i], P[j][i + 1]);
+        if (j < rows) seg(P[j][i], P[j + 1][i]);
+      }
+    }
+  }
+  function inset(ctx, w, h, fn) {
+    const iw = w * 0.28, ih = h * 0.22, ix = w - iw - 14, iy = h - ih - 14;
+    ctx.fillStyle = "rgba(10,10,14,0.85)"; RW.roundRect(ctx, ix - 8, iy - 8, iw + 16, ih + 16, 6); ctx.fill();
+    ctx.strokeStyle = C.line; ctx.stroke();
+    fn(ix, iy, iw, ih);
+  }
+
+  RW.seg("dz-type", (v) => { type = v; update(); });
+  RW.slider("dz-sev", (v) => SEVTXT[v], (v) => { sev = v; update(); });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
