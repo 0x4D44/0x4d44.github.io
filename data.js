@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "teenage-brain",
+    title: "The Teenage Brain",
+    tagline: "A deep, interactive field guide to the adolescent brain: the great rewiring of pruning and myelination, the two clocks behind teenage risk, the social brain and its storms of hormones and feeling, the dopamine peak, the second window of heightened learning, and what can go wrong. Seven chapters, live diagrams, a cast of cartoon guides, and the primary neuroscience. Vanilla JS, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/teenage-brain/",
+    illustration: "ill-teenbrain",
+    date: "2026-07-24T12:00:00",
+    year: 1999,
+    readingMin: 36,
+    words: 7400,
+    tags: ["science", "software", "history"],
+    real: true,
+  },
+  {
     slug: "black-holes",
     title: "Event Horizon",
     tagline: "A deep, interactive field guide to black holes and singularities: escape velocity and stellar collapse, curved spacetime and light-bending, the anatomy from photon ring to singularity, spaghettification, the fall past the horizon, Hawking radiation, and how we photographed a shadow. Eight chapters, a dozen live instruments, and a cast of cartoon guides. Vanilla JS, canvas + SVG; no build step.",
@@ -1510,7 +1523,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },
