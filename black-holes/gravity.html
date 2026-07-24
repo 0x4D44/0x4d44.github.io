@@ -259,11 +259,15 @@ Oppenheimer–Volkoff (1939). Part of the <a href="/">0x4D44 almanac</a>.</p>
   const photons = [];     // {a, r, alive, escaped}
   const rr = rng(31415);
 
+  // the "uncompressed" starting radius for a given mass
+  function bigRadius(m) {
+    return (m >= 5 * Msun) ? 12 * Rsun : (m < 0.1 * Msun ? Rearth : Rsun);
+  }
   // compression slider 0..1000 maps to a physical radius on a log scale, per mass.
   // At comp=0 → a "normal" size; at 1000 → well below r_s.
   function radiusFor(comp, m) {
     const rs = 2 * G * m / (c * c);
-    const rBig = (m >= 5 * Msun) ? 12 * Rsun : (m < 0.1 * Msun ? Rearth : Rsun);
+    const rBig = bigRadius(m);
     // log-interpolate from rBig down to 0.4*rs
     const f = comp / 1000;
     const lo = Math.log(rBig), hi = Math.log(rs * 0.4);
@@ -291,9 +295,13 @@ Oppenheimer–Volkoff (1939). Part of the <a href="/">0x4D44 almanac</a>.</p>
     const rs = 2 * G * massKg / (c * c);
     const ratio = Math.sqrt(2 * G * massKg / physR) / c;
 
-    // map star to screen radius: keep visually sensible, tie to ratio so it shrinks
+    // map star to screen radius: track the PHYSICAL radius (log scale) so the
+    // disk visibly shrinks as you compress — from full size at rBig down to a
+    // small remnant at the horizon.
     const maxPx = Math.min(w, h) * 0.34;
-    const px = clamp(maxPx / Math.max(ratio, 0.25), 10, maxPx);
+    const rBig = bigRadius(massKg);
+    const fComp = clamp((Math.log(rBig) - Math.log(physR)) / (Math.log(rBig) - Math.log(rs)), 0, 1);
+    const px = clamp(lerp(maxPx, maxPx * 0.22, fComp), maxPx * 0.16, maxPx);
     const trapped = physR <= rs;
 
     // emit photons from the surface
