@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Water &amp; Frost — The Road to Ruin</title>
+<meta name="description" content="Water is the real enemy of roads: it weakens the layers, strips bitumen off the stone, and — freezing about 9% larger inside a crack — levers the surface apart. How a pothole is really born, freeze–thaw cycling, pumping and stripping, and why drainage is everything. With a live freeze–thaw pothole simulator.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="loads.html">2 · The Weight of Traffic</a>
+    <a href="water.html" aria-current="page">3 · Water &amp; Frost</a>
+    <a href="materials.html">4 · Ageing</a>
+    <a href="distress.html">5 · The Distress Catalogue</a>
+    <a href="repair.html">6 · Repair</a>
+    <a href="roadworks.html">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 3 — Water &amp; Frost</p>
+  <h1>How a pothole is born</h1>
+  <p class="standfirst">Traffic cracks a road; water kills it. A dry, well-drained pavement can
+  outlast its design life. Let water into the structure and everything accelerates — the layers
+  soften, the tar lets go of the stone, and where it freezes, the water levers the surface apart
+  from inside a hairline crack. The pothole that swallows your wheel every spring is the
+  signature of that partnership between weight, water and frost.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Ask a highways engineer for the three biggest threats to a road and the answer
+is often "drainage, drainage and drainage."</p>
+
+<p>Everything else — heavy axles, ageing tar, hot summers — is made dramatically worse by the
+presence of water, and dramatically better by its absence. Here is the chain of destruction,
+and it starts with a crack that traffic and time have already made.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The freeze–thaw pothole machine</span>
+    <span class="hint">a crack, a winter of frost, and traffic · run the cycles</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pot" style="aspect-ratio: 2 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pot-cyc">freeze–thaw cycles</label>
+      <input type="range" id="pot-cyc" min="0" max="24" step="1" value="0">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="pot-traf">traffic</label>
+      <span class="seg" id="pot-traf">
+        <button data-v="on" class="on">lorries running</button>
+        <button data-v="off">closed road</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">crack width <b id="ro-w">—</b></span>
+    <span class="ro" id="ro-stage-wrap">stage <b id="ro-stage">—</b></span>
+    <span class="ro">pothole <b id="ro-size">none</b></span>
+  </div>
+  <div class="fig-note">Watch the crack pulse: when it freezes (blue) the ice expands about
+  <b>9%</b> and prises the crack wider; when it thaws (cyan) the meltwater sinks deeper, ready
+  for the next freeze. With <b>traffic running</b>, passing wheels pump the water and eject the
+  loosened fragments, opening a pothole; on a <b>closed road</b> the frost still damages the
+  surface but the pieces stay put — it takes frost <em>and</em> wheels to make a real pothole.</div>
+</figure>
+
+<div class="prose">
+
+<h2>Step one: water gets in</h2>
+
+<p>A sound asphalt surface is nearly waterproof. But once traffic and ageing have opened even a
+hairline crack, rain finds it, and capillary action and the pressure of passing tyres drive the
+water down into the pavement. There it does three separate kinds of harm before frost is even
+involved:</p>
+
+<ul>
+  <li><strong>It weakens the unbound layers.</strong> The granular sub-base and the soil
+  subgrade lose much of their strength when saturated — think how a gravel path turns to a rutted
+  mess in the wet. A load that the dry structure spread safely now overloads a softened layer.</li>
+  <li><strong>Stripping.</strong> Water attacks the bond between the bitumen and the stone,
+  literally <em>stripping</em> the tar off the aggregate. Once a stone is no longer glued in, it
+  is plucked out by the next tyre — the surface starts shedding grains (ravelling) and losing its
+  integrity from within.</li>
+  <li><strong>Pumping.</strong> A wheel passing over a water-filled crack acts like a piston,
+  driving pressurised water down and then sucking it back up — eroding the layers, washing out
+  fines, and (on concrete roads) undermining the slabs. You can often see the grey slurry it
+  ejects streaking a failing joint.</li>
+</ul>
+
+<h2>Step two: the frost lever</h2>
+
+<p>Now add a freezing night. Water has a rare and, for roads, catastrophic property: it
+<strong>expands as it freezes</strong>, by about <strong>9% in volume</strong>. Trapped in a
+crack with nowhere to go, freezing water pushes outward with enormous force — far more than
+enough to overcome asphalt's feeble tensile strength. Each freeze widens the crack and breaks
+the bond a little more; each thaw lets the meltwater trickle deeper into the freshly opened gap.
+Repeat this <strong>freeze–thaw cycling</strong> a few dozen times over a winter and a hairline
+crack becomes a network of loosened, debonded fragments of surface.</p>
+
+<div class="callout gold">
+  <span class="tag">The 9% that breaks roads</span>
+  <p>When water freezes, its molecules lock into an open crystal lattice that takes up more room
+  than the liquid — so ice is less dense than water (which is why it floats), and a given volume
+  of water becomes about 9% larger as ice. Confined in a crack, that expansion generates
+  pressures of tens of megapascals, comfortably exceeding the roughly 1–3&nbsp;MPa tensile
+  strength of cold asphalt. The road cannot win: either it gives way, or the ice finds room. It
+  gives way. Countries with many crossings of 0&nbsp;°C each winter — not the coldest countries,
+  but the ones that hover around freezing — suffer the worst pothole seasons for exactly this
+  reason.</p>
+</div>
+
+<h2>Step three: traffic ejects the pieces</h2>
+
+<p>Frost loosens the surface, but a pothole is not a hole until something removes the loosened
+material — and that something is <strong>traffic</strong>. A wheel striking the debonded patch
+punches down on the fragments; the trapped water, unable to compress, blasts sideways and pops
+the pieces out; and once a shallow depression exists it holds a puddle, so the next wheel
+delivers a pressurised water hammer to its floor and walls. The hole now grows itself: deeper,
+wider, faster, edges crumbling with every axle. This is why potholes appear so suddenly in late
+winter — the frost did its quiet work in December and January, and the first busy, wet,
+thawing week reaps the whole crop at once.</p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-drip"/></svg>
+    <svg class="char sm"><use href="#char-pot"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Drip &amp; Percy</p>
+    <p class="say"><b>Drip:</b> "All I did was trickle into a little crack and wait for a cold
+    night. I expand nine per cent, you know. Nine!"</p>
+    <p class="say"><b>Percy the Pothole:</b> "And I take it from there. A few lorries, a puddle
+    to sit in, and I'll have your front wheel by March. Lovely."</p>
+  </div>
+</div>
+
+<h2>The cure is drainage</h2>
+
+<p>Because water is the accelerant behind almost every failure in this chapter, the single most
+cost-effective thing a road can have is <strong>good drainage</strong>: a cambered (crowned)
+surface that sheds rain to the sides, clear gullies and channels, permeable sub-bases that let
+trapped water escape, and edges that don't pond. A great deal of expensive road failure is
+really a blocked drain or a missing camber. Keep the water out and moving, and the fourth-power
+loads of <a href="loads.html">Chapter&nbsp;2</a> take far longer to do their worst.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">frost heave and the spring thaw</span></summary>
+  <p>Beyond cracking the surface, frost attacks the structure in two deeper ways. In
+  frost-susceptible (silty) soils, freezing draws up liquid water from below to feed growing
+  <strong>ice lenses</strong>, which swell the ground and lift the road unevenly — "frost heave."
+  Then, during the <strong>spring thaw</strong>, all that ice melts at once and the trapped
+  meltwater cannot drain through the still-frozen soil beneath, leaving the subgrade briefly
+  saturated and extraordinarily weak — its stiffness can fall by half or more. This is why some
+  regions impose <em>spring load restrictions</em>, banning heavy lorries for a few weeks each
+  thaw: the roads are temporarily too soft to carry them, and a fourth-power axle on a
+  thaw-weakened subgrade does years of damage in days. Water, weight and temperature are not
+  three separate problems — they are one problem with three variables.</p>
+</details>
+
+</div>
+
+<nav class="chapnav">
+  <a class="prev" href="loads.html"><span class="dir">← Previous</span><span class="title">2 · The Weight of Traffic</span></a>
+  <a class="next" href="materials.html"><span class="dir">Next →</span><span class="title">4 · Ageing</span></a>
+</nav>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, lerp, mix, rng, C } = RW;
+
+  let cycles = 0, traffic = "on";
+  const CAP_STAGE = ["sound", "hairline crack", "crack widening", "debonding", "fragmenting", "pothole", "pothole growing"];
+
+  function stageIndex(p) {
+    if (p <= 0.01) return 0;
+    if (p < 0.18) return 1;
+    if (p < 0.35) return 2;
+    if (p < 0.5) return 3;
+    if (traffic === "off") return 4;           // frost damages but no hole without traffic
+    if (p < 0.7) return 4;
+    if (p < 0.9) return 5;
+    return 6;
+  }
+
+  function update() {
+    const p = clamp(cycles / 24, 0, 1);
+    const w = lerp(0.2, 14, p);                // crack width mm (illustrative)
+    RW.set("ro-w", w.toFixed(1) + " mm");
+    const si = stageIndex(p);
+    RW.set("ro-stage", CAP_STAGE[si]);
+    const sw = document.getElementById("ro-stage-wrap");
+    sw.classList.toggle("alert", si >= 5);
+    sw.classList.toggle("amber", si >= 2 && si < 5);
+    if (traffic === "on" && p >= 0.55) {
+      const d = lerp(80, 520, clamp((p - 0.55) / 0.45, 0, 1));
+      RW.set("ro-size", "~" + d.toFixed(0) + " mm across");
+    } else {
+      RW.set("ro-size", traffic === "off" ? "held together" : "none yet");
+    }
+  }
+
+  const stones = [];
+  const SR = rng(31337);
+  for (let i = 0; i < 40; i++) stones.push({ x: SR(), y: SR(), r: 1 + SR() * 2.4 });
+
+  RW.canvas("pot", function (ctx, w, h, t) {
+    const p = clamp(cycles / 24, 0, 1);
+    // freeze-thaw phase: 0 thawed(water) .. 1 frozen(ice)
+    const phase = RW.reducedMotion ? 0.5 : (Math.sin(t * 1.1) * 0.5 + 0.5);
+    const frozen = phase > 0.5;
+
+    ctx.clearRect(0, 0, w, h);
+    // sky
+    ctx.fillStyle = mix("#0d0d10", "#0e1420", phase * 0.6); ctx.fillRect(0, 0, w, h);
+
+    const ySurf = h * 0.30, yBaseTop = h * 0.52, yBase = h;
+    // surface course (asphalt)
+    ctx.fillStyle = mix(C.surf, "#2b2b32", 0.2); ctx.fillRect(0, ySurf, w, yBaseTop - ySurf);
+    RW.speckle(ctx, 0, ySurf, w, yBaseTop - ySurf, 220, 5, "#9a968c");
+    // base course
+    ctx.fillStyle = C.base; ctx.fillRect(0, yBaseTop, w, yBase - yBaseTop);
+    RW.speckle(ctx, 0, yBaseTop, w, yBase - yBaseTop, 320, 9, "#c9bd9a");
+    // surface top highlight
+    ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fillRect(0, ySurf, w, 3);
+
+    const cx = w * 0.5;
+    // crack geometry
+    const cw = lerp(1.2, 26, p) * (frozen ? 1.09 : 1.0);  // px width, +9% when frozen
+    const crackDepth = lerp(ySurf + 8, yBaseTop + (yBase - yBaseTop) * 0.4, clamp(p * 1.2, 0, 1));
+
+    if (p < 0.5 || traffic === "off") {
+      // ---- crack stage: jagged widening fissure with water/ice ----
+      const jr = rng(4242);
+      function edge(sign) {
+        ctx.beginPath();
+        ctx.moveTo(cx + sign * cw * 0.5, ySurf);
+        let y = ySurf, x = cx + sign * cw * 0.5;
+        const steps = 9;
+        for (let i = 1; i <= steps; i++) {
+          y = lerp(ySurf, crackDepth, i / steps);
+          const taper = (1 - i / steps);
+          x = cx + sign * (cw * 0.5 * taper) + (jr() - 0.5) * 5;
+          ctx.lineTo(x, y);
+        }
+        return { x, y };
+      }
+      // fill crack interior (water or ice)
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cx - cw * 0.5, ySurf);
+      const jr2 = rng(4242);
+      for (let i = 1; i <= 9; i++) { const y = lerp(ySurf, crackDepth, i / 9); ctx.lineTo(cx - (cw * 0.5) * (1 - i / 9) - (jr2() - 0.5) * 5, y); }
+      ctx.lineTo(cx, crackDepth);
+      const jr3 = rng(4242);
+      for (let i = 9; i >= 1; i--) { const y = lerp(ySurf, crackDepth, i / 9); ctx.lineTo(cx + (cw * 0.5) * (1 - i / 9) + (jr3() - 0.5) * 5, y); }
+      ctx.closePath();
+      ctx.fillStyle = frozen ? "rgba(150,205,255,0.85)" : "rgba(70,160,220,0.7)";
+      ctx.fill();
+      if (frozen) { ctx.strokeStyle = "rgba(220,240,255,0.6)"; ctx.lineWidth = 1; ctx.stroke(); }
+      ctx.restore();
+      // crack walls
+      ctx.strokeStyle = "rgba(6,6,10,0.85)"; ctx.lineWidth = 1.5;
+      edge(-1); ctx.stroke(); edge(1); ctx.stroke();
+      // frost expansion arrows when frozen and damaged
+      if (frozen && p > 0.2) {
+        ctx.strokeStyle = C.blue; ctx.lineWidth = 1.6;
+        for (const yy of [ySurf + 18, ySurf + 40]) {
+          arrow(ctx, cx - cw * 0.5 - 12, yy, cx - cw * 0.5 - 2, yy);
+          arrow(ctx, cx + cw * 0.5 + 12, yy, cx + cw * 0.5 + 2, yy);
+        }
+      }
+    } else {
+      // ---- pothole stage ----
+      const grow = clamp((p - 0.5) / 0.5, 0, 1);
+      const rad = lerp(w * 0.05, w * 0.16, grow);              // half-width at the rim
+      const maxDepth = lerp(10, (yBaseTop - ySurf) * 0.9 + (yBase - yBaseTop) * 0.25, grow);
+      const gr = rng(9999);
+
+      // cavity: a ragged bowl hanging below the surface. Walk the rim left→right
+      // and take the depth from a half-sine so the floor is deepest in the middle.
+      // A pothole is not a funnel: steep ragged walls and a broad, roughly flat
+      // floor. Raising the half-sine to a low power gives exactly that profile.
+      const N = 26;
+      const floor = [];
+      for (let i = 0; i <= N; i++) {
+        const f = i / N;                                        // 0..1 across the hole
+        const x = cx - rad + f * rad * 2;
+        const prof = Math.pow(Math.sin(f * Math.PI), 0.32);      // flat-bottomed bowl
+        const y = ySurf + prof * maxDepth * (0.88 + gr() * 0.12);
+        floor.push({ x, y });
+      }
+      ctx.fillStyle = "#08080c";
+      ctx.beginPath();
+      ctx.moveTo(cx - rad, ySurf);
+      for (const pt of floor) ctx.lineTo(pt.x, pt.y);
+      ctx.lineTo(cx + rad, ySurf);
+      ctx.closePath(); ctx.fill();
+
+      // pooled water sitting ON the cavity floor
+      const poolY = ySurf + maxDepth * 0.86;
+      const poolRx = rad * 0.72, poolRy = Math.max(3, maxDepth * 0.08);
+      ctx.fillStyle = frozen ? "rgba(150,205,255,0.85)" : "rgba(70,160,220,0.7)";
+      ctx.beginPath(); ctx.ellipse(cx, poolY, poolRx, poolRy, 0, 0, 6.28); ctx.fill();
+
+      // ragged rim highlight
+      ctx.strokeStyle = "rgba(150,146,136,0.55)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(cx - rad * 1.12, ySurf - 2); ctx.lineTo(cx - rad, ySurf); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx + rad, ySurf); ctx.lineTo(cx + rad * 1.12, ySurf - 2); ctx.stroke();
+
+      // ejected debris scattered on the surface either side of the hole
+      ctx.fillStyle = "#4a473f";
+      for (const s of stones) {
+        const side = s.x > 0.5 ? 1 : -1;
+        const dx = side * (rad * 1.12 + s.y * 70 * grow);
+        ctx.beginPath(); ctx.arc(cx + dx, ySurf - s.r, s.r, 0, 6.28); ctx.fill();
+      }
+
+      // a wheel hammering the hole
+      if (!RW.reducedMotion && traffic === "on") {
+        const swing = Math.sin(t * 1.7);
+        const wheelR = Math.min(rad * 0.85, (ySurf - 12) * 0.42);
+        const wx = cx + swing * rad * 0.55;
+        const wy = ySurf - wheelR;
+        ctx.fillStyle = "#1c1c22";
+        ctx.beginPath(); ctx.arc(wx, wy, wheelR, 0, 6.28); ctx.fill();
+        ctx.fillStyle = "#3a3a44";
+        ctx.beginPath(); ctx.arc(wx, wy, wheelR * 0.42, 0, 6.28); ctx.fill();
+        ctx.strokeStyle = "#55555f"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(t * 5) * wheelR * 0.7, wy + Math.sin(t * 5) * wheelR * 0.7); ctx.stroke();
+        // splash of pressurised water as the wheel strikes
+        if (!frozen && swing > 0.7) {
+          ctx.strokeStyle = "rgba(120,200,240,0.8)"; ctx.fillStyle = "rgba(120,200,240,0.8)"; ctx.lineWidth = 2;
+          for (let i = 0; i < 4; i++) {
+            const a = -0.5 - i * 0.4;
+            arrow(ctx, cx, ySurf + 2, cx + Math.cos(a) * rad * 1.1, ySurf + 2 + Math.sin(a) * rad * 0.8);
+          }
+        }
+      }
+    }
+
+    function arrow(c, x1, y1, x2, y2) {
+      c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+      const a = Math.atan2(y2 - y1, x2 - x1);
+      c.beginPath(); c.moveTo(x2, y2);
+      c.lineTo(x2 - Math.cos(a - 0.4) * 5, y2 - Math.sin(a - 0.4) * 5);
+      c.lineTo(x2 - Math.cos(a + 0.4) * 5, y2 - Math.sin(a + 0.4) * 5);
+      c.closePath(); c.fill();
+    }
+
+    // phase label
+    RW.label(ctx, frozen ? "❄ FROZEN — ice expanding" : "≈ THAWED — water sinking", 12, 20,
+      { color: frozen ? C.blue : C.cyan, font: RW.mono(11, true) });
+  }, { animate: true });
+
+  RW.slider("pot-cyc", (v) => v.toFixed(0) + " cycles", (v) => { cycles = v; update(); });
+  RW.seg("pot-traf", (v) => { traffic = v; update(); });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
