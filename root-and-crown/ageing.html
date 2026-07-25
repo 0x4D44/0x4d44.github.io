@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="tooth.css">
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -28,7 +29,7 @@
   </nav>
 </header>
 
-<main class="page">
+<main class="page" id="main">
 
 <section class="hero">
   <p class="kicker">CHAPTER 4</p>
@@ -158,6 +159,8 @@ vomiting leave a pattern clinicians recognise on sight.</p>
 feature — usually not the wear itself but <b>where it is</b> or <b>what happened to the
 fillings</b>.</div>
 
+</div>
+
 <figure class="fig">
   <div class="fig-head">
     <span class="t">Which mechanism made this?</span>
@@ -192,6 +195,8 @@ fillings</b>.</div>
   the cheek surface is drawn on the side of the tooth where you can see it. The reasoning is
   not schematic: every discriminator used here is one clinicians actually rely on.</div>
 </figure>
+
+<div class="prose">
 
 <p>The mechanisms also compound, and one pairing matters most. Acid does not remove enamel
 cleanly; it first <em>softens</em> a surface layer a few micrometres deep, and that softened
@@ -299,6 +304,8 @@ the tubules bridging the crack fires the nerve.</p>
   neighbouring teeth. You cannot.</p>
 </div>
 
+</div>
+
 <figure class="fig wide">
   <div class="fig-head">
     <span class="t">The same crack, twice</span>
@@ -331,6 +338,8 @@ the tubules bridging the crack fires the nerve.</p>
   classification, not a measured axis. The point it makes is not: across the whole clinically
   useful range, the projection you can actually take in a mouth shows you nothing.</div>
 </figure>
+
+<div class="prose">
 
 <p>So diagnosis is physical rather than photographic. A bite test loads one cusp at a time
 until the offending one reproduces the pain. Transillumination puts a fibre-optic light
@@ -449,7 +458,7 @@ turns out to be exactly the wrong shape for what happens next. That is
 
 <div class="toon right">
   <div class="cast">
-    <svg class="char float"><use href="#char-molar"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-molar"/></svg>
   </div>
   <div class="lines">
     <p class="who">Molar, at seventy</p>
@@ -458,7 +467,7 @@ turns out to be exactly the wrong shape for what happens next. That is
   </div>
 </div>
 
-<nav class="chapnav">
+<nav class="chapnav" aria-label="Previous and next chapter">
   <a href="decay.html"><span class="dir">Previous</span><span class="title">3 · Decay</span></a>
   <a class="next" href="pulpitis.html"><span class="dir">Next</span><span class="title">5 · Death of a Pulp</span></a>
 </nav>
@@ -490,6 +499,19 @@ turns out to be exactly the wrong shape for what happens next. That is
     ctx.closePath();
     ctx.fill();
     ctx.restore();
+  }
+
+  /* TC.leader anchors its caption at the start of the dashed line, so a line
+     that climbs to its target is drawn straight through its own text. Start the
+     dashes clear of the caption instead, and sit the caption on the same line. */
+  function gutterLeader(ctx, x, y, x2, y2, txt, opts) {
+    const font = mono(11, true);
+    ctx.save();
+    ctx.font = font;
+    const tw = ctx.measureText(txt).width;
+    ctx.restore();
+    TC.leader(ctx, x + tw + 9, y, x2, y2, null, opts);
+    TC.label(ctx, txt, x, y + 4, { color: opts.color || C.muted, font: font });
   }
 
   function setRo(spanId, cls) {
@@ -524,6 +546,9 @@ turns out to be exactly the wrong shape for what happens next. That is
   const figLife = TC.canvas("ag-life", function (ctx, w, h) {
     bg(ctx, w, h);
     const s = f1state();
+    /* On a phone there is no left gutter to caption into and no room for the
+       full-length readout strings, so both are shortened or dropped. */
+    const narrow = w < 620;
 
     const th = Math.min(h * 0.86, w * 0.36);
     const tw = th * 0.78;
@@ -537,16 +562,19 @@ turns out to be exactly the wrong shape for what happens next. That is
       seed: 4242,
     });
 
-    /* leaders into the left gutter */
-    const lx = w * 0.035;
-    TC.leader(ctx, lx, ty + th * 0.10, g.cx - tw * 0.22, g.crownTop + th * 0.02,
-      s.through ? "dentine exposed" : "enamel cap",
-      { color: s.through ? C.dentineAcc : C.mint, dash: [3, 3] });
-    TC.leader(ctx, lx, ty + th * 0.34, g.cx - tw * 0.13, ty + th * 0.20,
-      "pulp chamber", { color: C.pulpAcc, dash: [3, 3] });
-    if (s.recMm > 0.2) {
-      TC.leader(ctx, lx, ty + th * 0.62, g.cx - tw * 0.28, g.gumLine + th * 0.03,
-        "root exposed", { color: C.ice, dash: [3, 3] });
+    /* leaders into the left gutter (the readout column names the same three
+       things in words, so on a phone they simply go) */
+    if (!narrow) {
+      const lx = w * 0.035;
+      gutterLeader(ctx, lx, ty + th * 0.10, g.cx - tw * 0.22, g.crownTop + th * 0.02,
+        s.through ? "dentine exposed" : "enamel cap",
+        { color: s.through ? C.dentineAcc : C.mint, dash: [3, 3] });
+      gutterLeader(ctx, lx, ty + th * 0.34, g.cx - tw * 0.13, ty + th * 0.20,
+        "pulp chamber", { color: C.pulpAcc, dash: [3, 3] });
+      if (s.recMm > 0.2) {
+        gutterLeader(ctx, lx, ty + th * 0.62, g.cx - tw * 0.28, g.gumLine + th * 0.03,
+          "root exposed", { color: C.ice, dash: [3, 3] });
+      }
     }
 
     /* ---- readout column ---- */
@@ -555,7 +583,8 @@ turns out to be exactly the wrong shape for what happens next. That is
     TC.label(ctx, "AGE " + F1.age, rx, ry, { color: C.mint, font: mono(26, true) });
     ry += 30;
     TC.label(ctx,
-      s.through ? "WORN THROUGH TO DENTINE" : s.wearFrac > 0.6 ? "ENAMEL RUNNING LOW" : "ENAMEL INTACT",
+      s.through ? (narrow ? "DENTINE EXPOSED" : "WORN THROUGH TO DENTINE")
+        : s.wearFrac > 0.6 ? (narrow ? "ENAMEL LOW" : "ENAMEL RUNNING LOW") : "ENAMEL INTACT",
       rx, ry, { color: s.through ? C.dentineAcc : C.ink, font: mono(14, true) });
     ry += 36;
 
@@ -579,12 +608,16 @@ turns out to be exactly the wrong shape for what happens next. That is
     ctx.fillStyle = used >= 1 ? C.pulpAcc : C.dentineAcc;
     TC.roundRect(ctx, bx, byy, Math.max(2, bw * used), bh, 3);
     ctx.fill();
-    TC.label(ctx, "the enamel budget over one cusp — 2.5 mm, spent once", bx, byy - 7,
-      { color: C.muted, font: mono(10) });
-    TC.label(ctx, Math.round(used * 100) + "% gone", bx + bw, byy + bh + 13,
-      { color: used >= 1 ? C.pulpAcc : C.ink2, align: "right", font: mono(11, true) });
+    TC.label(ctx,
+      narrow ? "enamel budget — 2.5 mm" : "the enamel budget over one cusp — 2.5 mm, spent once",
+      narrow ? bx + bw : bx, byy - 7,
+      { color: C.muted, align: narrow ? "right" : "left", font: mono(10) });
     TC.label(ctx, F1.rate + " µm/yr × " + s.years + " yr", bx, byy + bh + 13,
       { color: C.muted, font: mono(11) });
+    /* narrow: the two captions do not fit on one row, so stack them */
+    TC.label(ctx, Math.round(used * 100) + "% gone",
+      narrow ? bx : bx + bw, byy + bh + (narrow ? 28 : 13),
+      { color: used >= 1 ? C.pulpAcc : C.ink2, align: narrow ? "left" : "right", font: mono(11, true) });
   });
 
   function f1update() {
@@ -691,6 +724,27 @@ turns out to be exactly the wrong shape for what happens next. That is
     return { cx, neck: y + h * 0.55, tip: y + h };
   }
 
+  /* A caption naming a feature, with an arrow to it. A phone-width canvas has
+     no flank to caption into, so there the caption takes its own row above or
+     below the drawing and the arrow runs down (or up) from the caption. */
+  function qNote(ctx, w, h, narrow, o) {
+    const font = mono(narrow ? 10 : 11, true);
+    if (!narrow) {
+      TC.label(ctx, o.txt, o.lx, o.ly, { color: o.col, align: o.align || "left", font: font });
+      arrow(ctx, o.ax, o.ay, o.tx, o.ty, o.col);
+      return;
+    }
+    const top = o.row !== "bottom";
+    const txt = o.txtN || o.txt;
+    const x = w * 0.04, y = h * (top ? (o.y2 || 0.15) : 0.955);
+    ctx.save();
+    ctx.font = font;
+    const tw = ctx.measureText(txt).width;
+    ctx.restore();
+    TC.label(ctx, txt, x, y, { color: o.col, font: font });
+    arrow(ctx, x + tw * 0.5, y + (top ? 7 : -15), o.tx, o.ty, o.col);
+  }
+
   /* a wedge-shaped cervical defect on the right flank of the neck */
   function wedge(ctx, x, y, depth, height, sharp) {
     ctx.save();
@@ -712,18 +766,23 @@ turns out to be exactly the wrong shape for what happens next. That is
       answer: "attrition",
       brief: "Flat, glossy facets across the cusps of an upper and a lower molar. Articulate the models and the facets on the two teeth interlock exactly. The amalgam in the lower tooth has been worn down to precisely the level of the enamel beside it.",
       why: "<b>Attrition.</b> Two features settle it. The facets <i>match</i> — they were cut by each other, so they mate perfectly in the jaw position that made them. And the restoration is worn flush with the tooth: the abrasive here is another tooth, and it does not care whether it is grinding enamel or metal. Acid would have picked one and spared the other.",
-      draw: function (ctx, w, h, rev) {
+      draw: function (ctx, w, h, rev, narrow) {
         const p = pair(ctx, w, h, {
           wear: 0.88, filling: 0.42, fillMat: "amalgam", secondary: 0.5,
           showBone: false, seed: 4242,
         });
         TC.line(ctx, w * 0.16, p.mid, w * 0.84, p.mid, "rgba(74,216,196,0.35)", 1, [4, 4]);
         if (rev) {
-          arrow(ctx, w * 0.20, p.mid - p.th * 0.42, p.lower.cx - p.tw * 0.30, p.mid - 6, C.mint);
-          TC.label(ctx, "facets match", w * 0.20, p.mid - p.th * 0.46, { color: C.mint, font: mono(11, true) });
-          arrow(ctx, w * 0.80, p.mid + p.th * 0.42, p.lower.cx + p.tw * 0.06, p.mid + 10, C.dentineAcc);
-          TC.label(ctx, "amalgam worn flush", w * 0.80, p.mid + p.th * 0.46,
-            { color: C.dentineAcc, align: "right", font: mono(11, true) });
+          qNote(ctx, w, h, narrow, {
+            txt: "facets match", col: C.mint, row: "top",
+            lx: w * 0.20, ly: p.mid - p.th * 0.46, ax: w * 0.20, ay: p.mid - p.th * 0.42,
+            tx: p.lower.cx - p.tw * 0.30, ty: p.mid - 6,
+          });
+          qNote(ctx, w, h, narrow, {
+            txt: "amalgam worn flush", col: C.dentineAcc, align: "right", row: "bottom",
+            lx: w * 0.80, ly: p.mid + p.th * 0.46, ax: w * 0.80, ay: p.mid + p.th * 0.42,
+            tx: p.lower.cx + p.tw * 0.06, ty: p.mid + 10,
+          });
         }
       },
     },
@@ -731,7 +790,7 @@ turns out to be exactly the wrong shape for what happens next. That is
       answer: "erosion",
       brief: "The cusps of a lower molar are hollowed into smooth, shiny, rounded cups with no sharp edge anywhere on the surface. The amalgam in the middle of the tooth stands proud of everything around it, like a plateau on an eroded landscape.",
       why: "<b>Erosion.</b> The restoration is the tell. Amalgam does not dissolve in dietary or gastric acid; enamel and dentine do — so the tooth has retreated around a filling that never moved. Add the contours: mechanical wear leaves flat facets with sharp margins, chemical dissolution leaves smooth, glossy hollows.",
-      draw: function (ctx, w, h, rev) {
+      draw: function (ctx, w, h, rev, narrow) {
         const s = solo(ctx, w, h, {
           wear: 0.5, filling: 0.4, fillMat: "amalgam", secondary: 0.45,
           showBone: false, seed: 4242,
@@ -764,12 +823,16 @@ turns out to be exactly the wrong shape for what happens next. That is
         ctx.stroke();
         ctx.restore();
         if (rev) {
-          arrow(ctx, w * 0.78, g.crownTop - s.th * 0.20, g.cx + fw * 0.6, g.crownTop - s.th * 0.030, C.mint);
-          TC.label(ctx, "filling left standing proud", w * 0.80, g.crownTop - s.th * 0.23,
-            { color: C.mint, align: "right", font: mono(11, true) });
-          arrow(ctx, w * 0.20, g.crownTop + s.th * 0.22, g.cx - g.halfW * 0.56, g.crownTop + s.th * 0.06, C.dentineAcc);
-          TC.label(ctx, "cupped, glossy, no sharp edge", w * 0.19, g.crownTop + s.th * 0.26,
-            { color: C.dentineAcc, font: mono(11, true) });
+          qNote(ctx, w, h, narrow, {
+            txt: "filling left standing proud", col: C.mint, align: "right", row: "top",
+            lx: w * 0.80, ly: g.crownTop - s.th * 0.23, ax: w * 0.78, ay: g.crownTop - s.th * 0.20,
+            tx: g.cx + fw * 0.6, ty: g.crownTop - s.th * 0.030,
+          });
+          qNote(ctx, w, h, narrow, {
+            txt: "cupped, glossy, no sharp edge", col: C.dentineAcc, row: "bottom",
+            lx: w * 0.19, ly: g.crownTop + s.th * 0.26, ax: w * 0.20, ay: g.crownTop + s.th * 0.22,
+            tx: g.cx - g.halfW * 0.56, ty: g.crownTop + s.th * 0.06,
+          });
         }
       },
     },
@@ -777,7 +840,7 @@ turns out to be exactly the wrong shape for what happens next. That is
       answer: "abrasion",
       brief: "A hard, sharp-edged notch at the gum line on the cheek side of an upper canine and first premolar. The lesions are on one side of the mouth only — the side opposite the patient's writing hand — and the patient describes brushing hard, horizontally, with a firm brush.",
       why: "<b>Abrasion.</b> The distribution is the whole argument: one side only, on the two teeth that stand furthest out in the arch, in exactly the sweep a hand makes. Note the nuance — a brush alone barely marks enamel. It is the paste's abrasive and, above all, exposed root dentine (Knoop hardness about 60 against enamel's 300) that lets brushing cut.",
-      draw: function (ctx, w, h, rev) {
+      draw: function (ctx, w, h, rev, narrow) {
         const s = solo(ctx, w, h, {
           wear: 0.3, secondary: 0.5, recession: 0.6, showBone: true, seed: 4242,
         });
@@ -785,12 +848,17 @@ turns out to be exactly the wrong shape for what happens next. That is
         const nx = g.cx + s.tw * 0.30, ny = g.neck + s.th * 0.055;
         wedge(ctx, nx, ny, s.tw * 0.13, s.th * 0.085, false);
         if (rev) {
-          arrow(ctx, w * 0.80, ny - s.th * 0.20, nx + 4, ny, C.mint);
-          TC.label(ctx, "notch at the gum line", w * 0.82, ny - s.th * 0.23,
-            { color: C.mint, align: "right", font: mono(11, true) });
-          TC.label(ctx, "(drawn on the side — the real lesion is on the cheek surface)",
-            w * 0.82, ny - s.th * 0.23 + 15,
-            { color: C.muted, align: "right", font: mono(10) });
+          qNote(ctx, w, h, narrow, {
+            txt: "notch at the gum line", col: C.mint, align: "right", row: "top",
+            lx: w * 0.82, ly: ny - s.th * 0.23, ax: w * 0.80, ay: ny - s.th * 0.20,
+            tx: nx + 4, ty: ny,
+          });
+          TC.label(ctx,
+            narrow ? "(really on the cheek surface)"
+              : "(drawn on the side — the real lesion is on the cheek surface)",
+            narrow ? w * 0.04 : w * 0.82,
+            narrow ? h * 0.955 : ny - s.th * 0.23 + 15,
+            { color: C.muted, align: narrow ? "left" : "right", font: mono(10) });
         }
       },
     },
@@ -798,7 +866,7 @@ turns out to be exactly the wrong shape for what happens next. That is
       answer: "abfraction",
       brief: "A single premolar carrying a heavy sideways load has a deep, narrow, wedge-shaped defect at its neck with sharp internal angles. Its neighbours are untouched. There is no history of dietary acid or reflux, and the brushing technique is gentle.",
       why: "<b>Abfraction</b> is the textbook answer — and it is the one answer in this set that a large part of the research community would dispute. The proposed mechanism is real enough: sideways load flexes the tooth and concentrates tensile stress at the neck, where enamel is thinnest, and finite-element models show that stress. What has never been established is that these lesions actually track occlusal loading in real mouths. Every one of them is equally compatible with erosion, abrasion, or both together.",
-      draw: function (ctx, w, h, rev) {
+      draw: function (ctx, w, h, rev, narrow) {
         const s = solo(ctx, w, h, {
           wear: 0.28, secondary: 0.45, recession: 0.22, showBone: true, seed: 4242,
         });
@@ -811,9 +879,11 @@ turns out to be exactly the wrong shape for what happens next. That is
         TC.label(ctx, "lateral load", g.cx - s.tw * 0.86, g.crownTop + s.th * 0.02,
           { color: C.violet, align: "right", font: mono(11, true) });
         if (rev) {
-          arrow(ctx, w * 0.82, ny - s.th * 0.18, nx + 4, ny, C.dentineAcc);
-          TC.label(ctx, "deep, narrow, sharp angles", w * 0.84, ny - s.th * 0.21,
-            { color: C.dentineAcc, align: "right", font: mono(11, true) });
+          qNote(ctx, w, h, narrow, {
+            txt: "deep, narrow, sharp angles", col: C.dentineAcc, align: "right", row: "bottom",
+            lx: w * 0.84, ly: ny - s.th * 0.21, ax: w * 0.82, ay: ny - s.th * 0.18,
+            tx: nx + 4, ty: ny,
+          });
         }
       },
     },
@@ -821,7 +891,7 @@ turns out to be exactly the wrong shape for what happens next. That is
       answer: "erosion",
       brief: "The tongue-side surfaces of the upper front teeth are thinned to a glassy translucency and the biting edges have started to chip and look grey. The lip-side surfaces are almost untouched, and so are the lower front teeth.",
       why: "<b>Erosion</b> — and the location names the source. Nothing mechanical acts on the tongue side of the upper incisors: no opposing tooth grinds there and no brush stroke reaches it hard. But it is exactly where gastric contents pool when they come up, and gastric acid at roughly pH 1 to 3 sits far below anything enamel can survive. This asymmetric pattern is one of the few dental signs that points to a problem outside the mouth.",
-      draw: function (ctx, w, h, rev) {
+      draw: function (ctx, w, h, rev, narrow) {
         const ih = h * 0.44, iw = ih * 0.42;
         const ih2 = ih * 0.85, iw2 = ih2 * 0.42;
         const cx0 = w * 0.5;
@@ -835,12 +905,17 @@ turns out to be exactly the wrong shape for what happens next. That is
         TC.label(ctx, "TONGUE SIDE →", cx0 + iw * 1.4, h * 0.12,
           { color: C.muted, align: "right", font: mono(11, true) });
         if (rev) {
-          arrow(ctx, cx0 + iw * 1.5, h * 0.34, cx0 + iw * 0.16, h * 0.36, C.mint);
-          TC.label(ctx, "dissolved from the tongue side only", cx0 + iw * 1.6, h * 0.31,
-            { color: C.mint, align: "right", font: mono(11, true) });
-          arrow(ctx, cx0 - iw * 1.5, h * 0.44, cx0 - iw * 0.30, h * 0.46, C.ice);
-          TC.label(ctx, "lip side intact", cx0 - iw * 1.6, h * 0.41,
-            { color: C.ice, font: mono(11, true) });
+          qNote(ctx, w, h, narrow, {
+            txt: "dissolved from the tongue side only", txtN: "dissolved from the tongue side",
+            col: C.mint, align: "right", row: "bottom",
+            lx: cx0 + iw * 1.6, ly: h * 0.31, ax: cx0 + iw * 1.5, ay: h * 0.34,
+            tx: cx0 + iw * 0.16, ty: h * 0.36,
+          });
+          qNote(ctx, w, h, narrow, {
+            txt: "lip side intact", col: C.ice, row: "top", y2: 0.20,
+            lx: cx0 - iw * 1.6, ly: h * 0.41, ax: cx0 - iw * 1.5, ay: h * 0.44,
+            tx: cx0 - iw * 0.30, ty: h * 0.46,
+          });
         }
       },
     },
@@ -854,7 +929,7 @@ turns out to be exactly the wrong shape for what happens next. That is
 
   const figQuiz = TC.canvas("ag-quiz", function (ctx, w, h) {
     bg(ctx, w, h);
-    CASES[Q.i].draw(ctx, w, h, Q.answered);
+    CASES[Q.i].draw(ctx, w, h, Q.answered, w < 620);
     TC.label(ctx, "CASE " + (Q.i + 1) + " OF " + CASES.length, 16, 24,
       { color: C.mint, font: mono(12, true) });
   });
@@ -987,7 +1062,7 @@ turns out to be exactly the wrong shape for what happens next. That is
     }
   }
 
-  function beamInset(ctx, bx, by, bw, bh, along) {
+  function beamInset(ctx, bx, by, bw, bh, along, narrow) {
     ctx.save();
     ctx.fillStyle = C.surface2;
     TC.roundRect(ctx, bx, by, bw, bh, 8);
@@ -995,16 +1070,19 @@ turns out to be exactly the wrong shape for what happens next. That is
     ctx.strokeStyle = C.line;
     ctx.lineWidth = 1;
     ctx.stroke();
-    const s = Math.min(bw * 0.52, bh * 0.42);
-    const cx = bx + bw / 2, cy = by + bh * 0.46;
+    /* wide page: a tall column. phone: a short strip, diagram left, words right. */
+    const s = narrow ? Math.min(bh * 0.42, bw * 0.20) : Math.min(bw * 0.52, bh * 0.42);
+    const cx = narrow ? bx + 26 + s / 2 : bx + bw / 2;
+    const cy = narrow ? by + bh * 0.57 : by + bh * 0.46;
     ctx.fillStyle = "rgba(234,230,216,0.85)";
     TC.roundRect(ctx, cx - s / 2, cy - s / 2, s, s, s * 0.22);
     ctx.fill();
-    TC.label(ctx, "the tooth from above", cx, by + 16,
+    TC.label(ctx, narrow ? "from above" : "the tooth from above", cx, by + (narrow ? 14 : 16),
       { align: "center", color: C.muted, font: mono(10) });
     /* the crack, running front-to-back along the arch */
     TC.line(ctx, cx - s * 0.56, cy, cx + s * 0.56, cy, "#101315", 2);
-    TC.label(ctx, "crack", cx + s * 0.60, cy + 4, { color: C.ink2, font: mono(10) });
+    TC.label(ctx, "crack", narrow ? cx : cx + s * 0.60, narrow ? cy + s * 0.5 + 13 : cy + 4,
+      { align: narrow ? "center" : "left", color: C.ink2, font: mono(10) });
     /* the beam */
     const col = along ? C.pulpAcc : C.mint;
     if (along) {
@@ -1016,14 +1094,21 @@ turns out to be exactly the wrong shape for what happens next. That is
         arrow(ctx, cx + dx, cy - s * 0.92, cx + dx, cy - s * 0.60, col);
       }
     }
-    const cap = along
-      ? ["beam IN the plane of", "the crack — a long path", "through the gap, so a", "shadow appears.",
-        "", "Unobtainable in a mouth:", "it would have to pass", "down the arch through", "the neighbouring teeth."]
-      : ["beam ACROSS the crack —", "it passes through a few", "micrometres of nothing,", "so nothing is recorded.",
-        "", "This is the projection", "you can actually take."];
-    let ty = by + bh * 0.70;
+    const cap = narrow
+      ? (along
+        ? ["beam IN the plane of the crack —", "a long path through the gap, so a", "shadow appears.",
+          "", "Unobtainable in a mouth: it would", "have to pass down the arch,", "through the neighbouring teeth."]
+        : ["beam ACROSS the crack — it passes", "through a few micrometres of",
+          "nothing, so nothing is recorded.", "", "This is the projection you can", "actually take."])
+      : (along
+        ? ["beam IN the plane of", "the crack — a long path", "through the gap, so a", "shadow appears.",
+          "", "Unobtainable in a mouth:", "it would have to pass", "down the arch through", "the neighbouring teeth."]
+        : ["beam ACROSS the crack —", "it passes through a few", "micrometres of nothing,", "so nothing is recorded.",
+          "", "This is the projection", "you can actually take."]);
+    const capX = narrow ? bx + s + 48 : bx + 12;
+    let ty = by + (narrow ? 22 : bh * 0.70);
     for (const ln of cap) {
-      TC.label(ctx, ln, bx + 12, ty, { color: ln.indexOf("Unobtainable") === 0 ? C.pulpAcc : C.muted, font: mono(10) });
+      TC.label(ctx, ln, capX, ty, { color: ln.indexOf("Unobtainable") === 0 ? C.pulpAcc : C.muted, font: mono(10) });
       ty += 12;
     }
     ctx.restore();
@@ -1032,22 +1117,30 @@ turns out to be exactly the wrong shape for what happens next. That is
   const figCrack = TC.canvas("ag-crack", function (ctx, w, hh) {
     bg(ctx, w, hh);
     const s = crackState();
+    /* Three columns side by side need a wide canvas. On a phone the two views
+       sit on the top band and the "why" panel becomes a strip beneath them. */
+    const narrow = w < 620;
+    const topH = narrow ? hh * 0.585 : hh;
 
     /* ---- left: the tooth, sectioned ---- */
-    const th = Math.min(hh * 0.76, w * 0.26);
+    const th = narrow ? Math.min(topH * 0.78, w * 0.27) : Math.min(hh * 0.76, w * 0.26);
     const tw = th * 0.78;
-    const tx = w * 0.21 - tw / 2;
-    const ty = hh * 0.16;
-    TC.label(ctx, "THE TOOTH, SECTIONED", w * 0.03, hh * 0.10, { color: C.mint, font: mono(11, true) });
+    const tx = (narrow ? w * 0.34 : w * 0.21) - tw / 2;
+    const ty = narrow ? hh * 0.115 : hh * 0.16;
+    TC.label(ctx, "THE TOOTH, SECTIONED", w * 0.03, hh * (narrow ? 0.07 : 0.10),
+      { color: C.mint, font: mono(11, true) });
     const g = TC.drawTooth(ctx, tx, ty, tw, th, {
       wear: CR_WEAR, secondary: CR_SEC, filling: 0.45, fillMat: "amalgam", seed: 4242,
     });
     /* reference levels */
     const roofY = ty + th * 0.145, crestY = ty + th * 0.51;
-    TC.line(ctx, w * 0.035, roofY, tx + tw * 1.06, roofY, "rgba(255,107,125,0.45)", 1, [4, 4]);
-    TC.label(ctx, "pulp roof", w * 0.035, roofY - 4, { color: C.pulpAcc, font: mono(10) });
-    TC.line(ctx, w * 0.035, crestY, tx + tw * 1.06, crestY, "rgba(111,208,255,0.45)", 1, [4, 4]);
-    TC.label(ctx, "crest of the bone", w * 0.035, crestY - 4, { color: C.ice, font: mono(10) });
+    const levX = narrow ? w * 0.155 : w * 0.035, levFont = mono(narrow ? 9 : 10);
+    const levTx = narrow ? w * 0.01 : w * 0.035;
+    TC.line(ctx, levX, roofY, tx + tw * 1.06, roofY, "rgba(255,107,125,0.45)", 1, [4, 4]);
+    TC.label(ctx, "pulp roof", levTx, roofY - 4, { color: C.pulpAcc, font: levFont });
+    TC.line(ctx, levX, crestY, tx + tw * 1.06, crestY, "rgba(111,208,255,0.45)", 1, [4, 4]);
+    TC.label(ctx, narrow ? "bone crest" : "crest of the bone", levTx, crestY - 4,
+      { color: C.ice, font: levFont });
     ctx.save();
     ctx.strokeStyle = s.split ? "#0a0a0e" : "rgba(20,16,12,0.9)";
     ctx.lineWidth = s.split ? 4.5 : 2;
@@ -1056,8 +1149,12 @@ turns out to be exactly the wrong shape for what happens next. That is
     ctx.restore();
 
     /* ---- middle: the radiograph ---- */
-    const fx = w * 0.42, fy = hh * 0.08, fw = w * 0.30, fh = hh * 0.84;
-    TC.label(ctx, "THE RADIOGRAPH", fx, hh * 0.045, { color: C.mint, font: mono(11, true) });
+    const fx = narrow ? w * 0.53 : w * 0.42;
+    const fy = narrow ? hh * 0.115 : hh * 0.08;
+    const fw = narrow ? w * 0.42 : w * 0.30;
+    const fh = narrow ? topH - hh * 0.155 : hh * 0.84;
+    TC.label(ctx, "THE RADIOGRAPH", fx, hh * (narrow ? 0.07 : 0.045),
+      { color: C.mint, font: mono(11, true) });
     ctx.save();
     ctx.fillStyle = "#0d1012";
     ctx.fillRect(fx, fy, fw, fh);
@@ -1102,10 +1199,15 @@ turns out to be exactly the wrong shape for what happens next. That is
     ctx.restore();
     TC.label(ctx,
       CR.beam === "along" ? "projection: along the crack (impossible)" : "projection: as taken in the mouth",
-      fx, fy + fh + 15, { color: CR.beam === "along" ? C.pulpAcc : C.muted, font: mono(10) });
+      narrow ? fx + fw : fx, fy + fh + 15,
+      { color: CR.beam === "along" ? C.pulpAcc : C.muted, align: narrow ? "right" : "left", font: mono(10) });
 
-    /* ---- right: why ---- */
-    beamInset(ctx, w * 0.745, hh * 0.08, w * 0.235, hh * 0.84, CR.beam === "along");
+    /* ---- why: a column beside the views, or a strip beneath them ---- */
+    if (narrow) {
+      beamInset(ctx, w * 0.02, hh * 0.635, w * 0.96, hh * 0.345, CR.beam === "along", true);
+    } else {
+      beamInset(ctx, w * 0.745, hh * 0.08, w * 0.235, hh * 0.84, CR.beam === "along", false);
+    }
   });
 
   function crackUpdate() {

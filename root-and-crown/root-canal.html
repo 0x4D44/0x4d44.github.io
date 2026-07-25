@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="tooth.css">
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -545,6 +546,12 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
     "Cuspal coverage",
   ];
 
+  /* the same nine stages, short enough for the ladder to fit a phone canvas */
+  const STEPS_SHORT = [
+    "Diagnosis", "Rubber dam", "Access", "Working length", "Shaping",
+    "Irrigation", "Obturation", "Coronal seal", "Cuspal coverage",
+  ];
+
   const LOAD = ["heavy", "heavy", "heavy", "heavy", "falling", "low", "low", "low", "low"];
   const BARRIER = ["none", "dam (during treatment only)", "none", "none", "none",
     "none", "root filling", "root filling + coronal seal", "root filling + coronal seal"];
@@ -627,16 +634,21 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
 
-    const th = Math.min(h * 0.86, w * 0.42);
+    /* On a phone the ladder column has to start further left and carry
+       shorter labels, or its text runs off the right edge of the canvas. */
+    const narrow = w < 620;
+
+    const th = Math.min(h * (narrow ? 0.62 : 0.86), w * (narrow ? 0.36 : 0.42));
     const tw = th * 0.78;
-    const tx = w * 0.26 - tw / 2;
+    const tx = (narrow ? w * 0.22 : w * 0.26) - tw / 2;
     const ty = (h - th) / 2;
 
     const o = toothOpts(step);
     const g = TC.drawTooth(ctx, tx, ty, tw, th, o);
     const cs = [canalGeom(tx, ty, tw, th, -1, o), canalGeom(tx, ty, tw, th, 1, o)];
     const cw = cs[0].canalW;
-    const rx = Math.max(w * 0.52, tx + tw * 1.30);
+    const rx = narrow ? Math.max(w * 0.44, tx + tw * 1.08)
+      : Math.max(w * 0.52, tx + tw * 1.30);
 
     /* ---- everything inside the tooth, clipped to its outline ---- */
     ctx.save();
@@ -719,8 +731,9 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
 
     /* ---- the ladder of stages, right-hand column ---- */
     let ry = h * 0.13;
-    TC.label(ctx, kase === "necrotic" ? "DEAD PULP, LESION AT THE ROOT TIP"
-      : "LIVING PULP, IRREVERSIBLY INFLAMED", rx, ry,
+    TC.label(ctx, kase === "necrotic"
+      ? (narrow ? "DEAD PULP + LESION" : "DEAD PULP, LESION AT THE ROOT TIP")
+      : (narrow ? "LIVING PULP, INFLAMED" : "LIVING PULP, IRREVERSIBLY INFLAMED"), rx, ry,
       { color: kase === "necrotic" ? C.pulpAcc : C.dentineAcc, font: M(11, true) });
     ry += 24;
     const lh = Math.min(26, (h * 0.74) / 9);
@@ -728,8 +741,9 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
       const on = (i + 1) === step, done = (i + 1) < step;
       ctx.fillStyle = on ? C.mint : done ? C.mintDim : C.line;
       ctx.beginPath(); ctx.arc(rx + 4, ry - 4, on ? 4.5 : 3, 0, TC.TAU); ctx.fill();
-      TC.label(ctx, (i + 1) + " · " + STEPS[i], rx + 16, ry,
-        { color: on ? C.ink : done ? C.ink2 : C.muted, font: M(on ? 13 : 12, on) });
+      TC.label(ctx, (i + 1) + " · " + (narrow ? STEPS_SHORT[i] : STEPS[i]), rx + 16, ry,
+        { color: on ? C.ink : done ? C.ink2 : C.muted,
+          font: M(on ? (narrow ? 12 : 13) : (narrow ? 11 : 12), on) });
       ry += lh;
     }
   }, { animate: !TC.reducedMotion });
@@ -852,7 +866,11 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
     const m = wallMetrics(wallShape + ":" + wallSize);
     const R = m.R;
 
-    const panelW = w * 0.60;
+    /* On a phone the readout column has to be given more of the width, and
+       its headings shortened, or they run off the right edge. */
+    const narrow = w < 620;
+
+    const panelW = w * (narrow ? 0.52 : 0.60);
     const cx = panelW * 0.52, cy = h * 0.50;
     const scale = Math.min(panelW / 1.75, h / 1.10);
 
@@ -942,7 +960,8 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
     /* ---- readout column ---- */
     const rx = panelW + w * 0.045;
     const rw = w - rx - 14;
-    let ry = h * 0.16;
+    /* the shape name wraps to more lines in a narrow column, so start higher */
+    let ry = h * (narrow ? 0.10 : 0.16);
     ry = wrap(ctx, sh.name, rx, ry, rw, 16, { color: C.ink, font: M(12, true) });
     ry += 14;
 
@@ -953,15 +972,18 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
     TC.label(ctx, Math.round((1 - m.hit) * 100) + "%", rx, ry + 26,
       { color: C.pulpAcc, font: M(26, true) });
     ry += 54;
-    TC.label(ctx, "SPACE CUT, VS THE CANAL", rx, ry, { color: C.muted, font: M(10) });
+    TC.label(ctx, narrow ? "SPACE CUT VS CANAL" : "SPACE CUT, VS THE CANAL", rx, ry,
+      { color: C.muted, font: M(10) });
     TC.label(ctx, "×" + m.ratio.toFixed(1), rx, ry + 22, { color: C.dentineAcc, font: M(20, true) });
     ry += 46;
     ctx.fillStyle = C.mint;
     ctx.fillRect(rx, ry - 8, 10, 3);
-    TC.label(ctx, "cut by the instrument", rx + 16, ry - 4, { color: C.ink2, font: M(11) });
+    TC.label(ctx, narrow ? "cut by the file" : "cut by the instrument", rx + 16, ry - 4,
+      { color: C.ink2, font: M(11) });
     ctx.fillStyle = C.pulpAcc;
     ctx.fillRect(rx, ry + 10, 10, 3);
-    TC.label(ctx, "untouched wall, biofilm intact", rx + 16, ry + 14, { color: C.ink2, font: M(11) });
+    TC.label(ctx, narrow ? "untouched — biofilm" : "untouched wall, biofilm intact",
+      rx + 16, ry + 14, { color: C.ink2, font: M(11) });
   }, { animate: !TC.reducedMotion });
 
   function syncWall() {
@@ -1062,7 +1084,7 @@ around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp
     const bw = narrow ? (w - 28) * 0.76 : w * 0.40;
     const barH = narrow ? 12 : 16;
     const pitch = narrow ? 30 : 46;
-    let by = narrow ? ty + th + 50 : h * 0.20;
+    let by = narrow ? ty + th + 56 : h * 0.20;
     TC.label(ctx, "PERIAPICAL TISSUES HEALTHY", bx, by - 22, { color: C.muted, font: M(10) });
     for (const k of SEAL_ORDER) {
       const g2 = SEAL[k];

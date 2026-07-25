@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="tooth.css">
 </head>
 <body>
+<a class="skip" href="#main">Skip to content</a>
 
 <header class="masthead">
   <div class="masthead-inner">
@@ -508,8 +509,9 @@ receding gums and a pulp that walls itself in.</p>
         { align: "right", color: C.muted, font: mono(10) });
     }
     /* The left gutter is sized so this right-aligned title clears the canvas
-       edge at every width — at 46px the leading characters were cut off. */
-    TC.label(ctx, "PLAQUE pH", L - 8, T - 12, { align: "right", color: C.muted, font: mono(9) });
+       edge at every width — at 46px the leading characters were cut off. It
+       sits a row above the plot top, clear of the sugar markers. */
+    TC.label(ctx, "PLAQUE pH", L - 8, T - 24, { align: "right", color: C.muted, font: mono(9) });
     TC.line(ctx, L, B, R, B, C.line, 1);
     return { L, R, T, B, Y };
   }
@@ -753,9 +755,13 @@ receding gums and a pulp that walls itself in.</p>
     const { d, acid, drift } = depthAt(lesYrs, lesN, lesF);
     const st = stageOf(d);
 
+    /* On a phone the annotation column has to start much further left and set
+       smaller type, or the longest stage names run off the canvas edge. */
+    const narrow = w < 620;
+
     const th = Math.min(h * 0.84, w * 0.36);
     const tw = th * 0.78;
-    const tx = w * 0.26 - tw / 2;
+    const tx = narrow ? w * 0.02 : w * 0.26 - tw / 2;
     const ty = (h - th) / 2;
     TC.drawTooth(ctx, tx, ty, tw, th, {
       caries: 0.38 * d,
@@ -765,31 +771,49 @@ receding gums and a pulp that walls itself in.</p>
       seed: 4242,
     });
 
-    // right-hand column
-    const rx = w * 0.55;
+    /* Right-hand column. TC.drawTooth paints the bone slab from x - 0.34w to
+       x + 1.34w, so on a phone the column has to clear that, not just the
+       tooth box, or the annotations land on the bone. */
+    const rx = narrow ? Math.max(w * 0.30, tx + tw * 1.34 + 10) : w * 0.55;
+    const colW = w - rx - 10;
+
+    /* Pick the largest size at which a line still fits the column, so no
+       annotation can run off the canvas edge however narrow the screen. */
+    function fitted(txt, px, bold) {
+      ctx.save();
+      let p = px;
+      ctx.font = mono(p, bold);
+      while (p > 8 && ctx.measureText(txt).width > colW) { p -= 1; ctx.font = mono(p, bold); }
+      ctx.restore();
+      return mono(p, bold);
+    }
+
     let ry = h * 0.20;
     TC.label(ctx, "YEAR " + yrTxt(lesYrs), rx, ry,
-      { color: C.mint, font: mono(24, true) });
-    ry += 28;
-    TC.label(ctx, st[1].toUpperCase(), rx, ry,
-      { color: d >= CAVITATION ? C.pulpAcc : d < 0.05 ? C.good : C.ink, font: mono(14, true) });
-    ry += 30;
-    TC.label(ctx, drift > 0 ? "the lesion is advancing"
+      { color: C.mint, font: mono(narrow ? 20 : 24, true) });
+    ry += narrow ? 24 : 28;
+    const stTxt = st[1].toUpperCase();
+    TC.label(ctx, stTxt, rx, ry,
+      { color: d >= CAVITATION ? C.pulpAcc : d < 0.05 ? C.good : C.ink,
+        font: fitted(stTxt, narrow ? 12 : 14, true) });
+    ry += narrow ? 26 : 30;
+    const subTxt = drift > 0 ? "the lesion is advancing"
       : d >= CAVITATION ? "arrested — but the cavity stays"
       : d <= 0 ? "gone — the mineral went back in"
-      : "the lesion is remineralising",
-      rx, ry, { color: C.ink2, font: mono(12) });
+      : "the lesion is remineralising";
+    TC.label(ctx, subTxt, rx, ry, { color: C.ink2, font: fitted(subTxt, narrow ? 11 : 12) });
     ry += 26;
 
-    // depth bar through the layers
+    /* Depth bar through the layers. The enamel/dentine split is the DEJ, not
+       cavitation — cavitation happens part-way through the enamel. */
     const bw = Math.min(w - rx - 26, w * 0.36), bh = 16;
-    const marks = [[0, "surface"], [CAVITATION, "DEJ"], [0.92, "pulp"]];
+    const marks = [[0, "surface"], [DEJ, "DEJ"], [PULP, "pulp"]];
     ctx.fillStyle = C.enamel;
-    ctx.fillRect(rx, ry, bw * CAVITATION, bh);
+    ctx.fillRect(rx, ry, bw * DEJ, bh);
     ctx.fillStyle = C.dentine;
-    ctx.fillRect(rx + bw * CAVITATION, ry, bw * (0.92 - CAVITATION), bh);
+    ctx.fillRect(rx + bw * DEJ, ry, bw * (PULP - DEJ), bh);
     ctx.fillStyle = C.pulp;
-    ctx.fillRect(rx + bw * 0.92, ry, bw * 0.08, bh);
+    ctx.fillRect(rx + bw * PULP, ry, bw * (1 - PULP), bh);
     ctx.fillStyle = "rgba(74,50,32,0.85)";
     ctx.fillRect(rx, ry, bw * clamp(d, 0, 1), bh);
     ctx.strokeStyle = C.line;
@@ -802,10 +826,12 @@ receding gums and a pulp that walls itself in.</p>
     TC.label(ctx, "LESION FRONT", rx, ry - 7, { color: C.muted, font: mono(9) });
     ry += bh + 34;
 
-    TC.label(ctx, "acid exposure  " + mins(acid) + " / day", rx, ry,
-      { color: acid > (lesF === "yes" ? 75 : 30) ? C.dentineAcc : C.good, font: mono(11) });
-    TC.label(ctx, "repair capacity  " + (lesF === "yes" ? "75 min (fluoride)" : "30 min"), rx, ry + 16,
-      { color: C.muted, font: mono(11) });
+    const acidTxt = "acid exposure  " + mins(acid) + " / day";
+    const repTxt = "repair capacity  " + (lesF === "yes" ? "75 min (fluoride)" : "30 min");
+    TC.label(ctx, acidTxt, rx, ry,
+      { color: acid > (lesF === "yes" ? 75 : 30) ? C.dentineAcc : C.good,
+        font: fitted(acidTxt, 11) });
+    TC.label(ctx, repTxt, rx, ry + 16, { color: C.muted, font: fitted(repTxt, 11) });
 
     // the twelve-year track, with the cavitation crossing marked
     const ax0 = w * 0.06, ax1 = w * 0.94, ay = h - 20;
