@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "road-wear",
+    title: "The Road to Ruin",
+    tagline: "A deep, interactive field guide to why roads fall apart and how we keep them alive: the layer sandwich that spreads a wheel load, the fourth-power law that makes one lorry outweigh tens of thousands of cars, and how frost prises a crack into a pothole. Eight chapters, a cartoon cast, canvas + SVG; no build step.",
+    url: "https://0x4d44.github.io/road-wear/",
+    illustration: "ill-road",
+    date: "2026-07-24T16:00:00",
+    year: 1958,
+    readingMin: 54,
+    words: 12500,
+    tags: ["software", "engineering", "transport"],
+    real: true,
+  },
+  {
     slug: "teenage-brain",
     title: "The Teenage Brain",
     tagline: "A deep, interactive field guide to the adolescent brain: the great rewiring of pruning and myelination, the two clocks behind teenage risk, the social brain, the dopamine peak, a second window of heightened learning, and what can go wrong. Seven chapters, ten live instruments and a cast of cartoon guides, built on the primary neuroscience. Vanilla JS, canvas + SVG; no build step.",
@@ -1535,6 +1548,9 @@ window.COLLECTIONS = [
     blurb: "Engines, motors, turbines and the power plants behind them.",
     slugs: ["the-grid", "ic-engine", "cruise-propulsion", "traction-motors",
       "mercury-arc-rectifiers", "hydro", "fifty-hertz", "chief-engineer"] },
+  { id: "built", name: "The Built World", icon: "ill-road",
+    blurb: "The civil engineering underfoot and overhead — how the everyday built environment is made, loaded and worn out.",
+    slugs: ["road-wear"] },
   { id: "rails", name: "On Rails", icon: "ill-class55",
     blurb: "Britain's railways — the locomotives, the lines and the signalling.",
     slugs: ["class-55", "class-47", "azuma", "ecml", "ecml-timeline", "br1955",
