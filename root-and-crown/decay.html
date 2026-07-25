@@ -28,7 +28,7 @@
   </nav>
 </header>
 
-<main class="page">
+<main class="page" id="main">
 
 <section class="hero">
   <p class="kicker">CHAPTER 3</p>
@@ -91,8 +91,8 @@ units more acidic. Which is why swilling water around is not a fix.</p>
 
 <div class="toon">
   <div class="cast">
-    <svg class="char float"><use href="#char-strep"/></svg>
-    <svg class="char sm"><use href="#char-molar"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-strep"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-molar"/></svg>
   </div>
   <div class="lines">
     <p class="who">The villain, demoted</p>
@@ -193,14 +193,14 @@ six times.</p>
       <output></output>
     </div>
     <div class="ctl">
-      <label for="dk-clock-surf">surface</label>
-      <span class="seg" id="dk-clock-surf">
+      <span class="ctl-lbl" id="dk-clock-surf-lbl">surface</span>
+      <span class="seg" id="dk-clock-surf" role="group" aria-labelledby="dk-clock-surf-lbl">
         <button data-v="enamel" class="on">enamel · pH 5.5</button><button data-v="root">exposed root · pH 6.2</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="dk-clock-cmp">overlay</label>
-      <span class="seg" id="dk-clock-cmp">
+      <span class="ctl-lbl" id="dk-clock-cmp-lbl">overlay</span>
+      <span class="seg" id="dk-clock-cmp" role="group" aria-labelledby="dk-clock-cmp-lbl">
         <button data-v="off" class="on">off</button><button data-v="on">three meals</button>
       </span>
     </div>
@@ -274,8 +274,8 @@ the only repair system the tooth has.</p>
       <output></output>
     </div>
     <div class="ctl">
-      <label for="dk-saliva-thr">threshold</label>
-      <span class="seg" id="dk-saliva-thr">
+      <span class="ctl-lbl" id="dk-saliva-thr-lbl">threshold</span>
+      <span class="seg" id="dk-saliva-thr" role="group" aria-labelledby="dk-saliva-thr-lbl">
         <button data-v="enamel" class="on">enamel 5.5</button><button data-v="root">root 6.2</button><button data-v="fluor">fluorapatite 4.5</button>
       </span>
     </div>
@@ -406,8 +406,8 @@ missing structure. An arrested cavity is achievable; a healed one is not.</p>
       <output></output>
     </div>
     <div class="ctl">
-      <label for="dk-lesion-f">fluoride</label>
-      <span class="seg" id="dk-lesion-f">
+      <span class="ctl-lbl" id="dk-lesion-f-lbl">fluoride</span>
+      <span class="seg" id="dk-lesion-f" role="group" aria-labelledby="dk-lesion-f-lbl">
         <button data-v="none" class="on">none</button><button data-v="yes">fluoride toothpaste</button>
       </span>
     </div>
@@ -459,7 +459,7 @@ receding gums and a pulp that walls itself in.</p>
 
 </div>
 
-<nav class="chapnav">
+<nav class="chapnav" aria-label="Previous and next chapter">
   <a href="nerve.html"><span class="dir">Previous</span><span class="title">2 · The Nerve</span></a>
   <a class="next" href="ageing.html"><span class="dir">Next</span><span class="title">4 · Ageing</span></a>
 </nav>
@@ -507,6 +507,8 @@ receding gums and a pulp that walls itself in.</p>
       TC.label(ctx, p.toFixed(1), L - 8, Y(p) + 4,
         { align: "right", color: C.muted, font: mono(10) });
     }
+    /* The left gutter is sized so this right-aligned title clears the canvas
+       edge at every width — at 46px the leading characters were cut off. */
     TC.label(ctx, "PLAQUE pH", L - 8, T - 12, { align: "right", color: C.muted, font: mono(9) });
     TC.line(ctx, L, B, R, B, C.line, 1);
     return { L, R, T, B, Y };
@@ -545,7 +547,7 @@ receding gums and a pulp that walls itself in.</p>
 
   const clockFig = TC.canvas("dk-clock", function (ctx, w, h) {
     ctx.clearRect(0, 0, w, h);
-    const { L, R, T, B, Y } = frame(ctx, w, h, { left: 46, top: 48 });
+    const { L, R, T, B, Y } = frame(ctx, w, h, { left: 60, top: 56 });
     const X = (t) => L + (R - L) * (t / DAY);
     const tOf = (px) => (px - L) / (R - L) * DAY;
     const crit = clockSurf === "root" ? DENT.rootCriticalPH : DENT.criticalPH;
@@ -589,13 +591,13 @@ receding gums and a pulp that walls itself in.</p>
       ctx.moveTo(px, T - 10); ctx.lineTo(px - 4, T - 18); ctx.lineTo(px + 4, T - 18);
       ctx.closePath(); ctx.fill();
     }
-    TC.label(ctx, "▲ sugar", L, 24, { color: C.dentineAcc, font: mono(10, true) });
+    TC.label(ctx, "▼ sugar", L, 22, { color: C.dentineAcc, font: mono(10, true) });
 
-    // headline number, top right
+    // headline number, top right, with its own unit caption directly beneath
     const below = minutesBelowCritical(ev, crit, DAY);
-    TC.label(ctx, mins(below), R, 26,
+    TC.label(ctx, mins(below), R, 22,
       { align: "right", color: C.pulpAcc, font: mono(20, true) });
-    TC.label(ctx, "BELOW pH " + crit.toFixed(1), R, B + 30,
+    TC.label(ctx, "BELOW pH " + crit.toFixed(1), R, 35,
       { align: "right", color: C.muted, font: mono(10) });
     TC.label(ctx, clockN + " sugar moment" + (clockN === 1 ? "" : "s") + " · 16-hour day", L, B + 30,
       { color: C.muted, font: mono(10) });
@@ -634,7 +636,7 @@ receding gums and a pulp that walls itself in.</p>
 
   const salFig = TC.canvas("dk-saliva", function (ctx, w, h) {
     ctx.clearRect(0, 0, w, h);
-    const { L, R, T, B, Y } = frame(ctx, w, h, { left: 46, top: 48 });
+    const { L, R, T, B, Y } = frame(ctx, w, h, { left: 60, top: 56 });
     const X = (t) => L + (R - L) * (t / WIN);
     const tOf = (px) => (px - L) / (R - L) * WIN;
     const thr = THR[salThr];
@@ -668,7 +670,7 @@ receding gums and a pulp that walls itself in.</p>
     ctx.beginPath();
     ctx.moveTo(X(0) + 1, T - 10); ctx.lineTo(X(0) - 3, T - 18); ctx.lineTo(X(0) + 5, T - 18);
     ctx.closePath(); ctx.fill();
-    TC.label(ctx, "▲ one sugar moment", L + 10, 24, { color: C.dentineAcc, font: mono(10, true) });
+    TC.label(ctx, "▼ one sugar moment", L + 10, 22, { color: C.dentineAcc, font: mono(10, true) });
 
     // integrate the exposure and find the recovery point
     let below = 0, rec = null;
@@ -677,9 +679,9 @@ receding gums and a pulp that walls itself in.</p>
       if (p < thr) below += 0.25;
       if (rec === null && t > 12 && p > DENT.restingPH - 0.3) rec = t;
     }
-    TC.label(ctx, mins(below), R, 26,
+    TC.label(ctx, mins(below), R, 22,
       { align: "right", color: C.pulpAcc, font: mono(20, true) });
-    TC.label(ctx, "BELOW pH " + thr.toFixed(1), R, B + 30,
+    TC.label(ctx, "BELOW pH " + thr.toFixed(1), R, 35,
       { align: "right", color: C.muted, font: mono(10) });
     TC.label(ctx, salFlow.toFixed(2) + " mL/min · " + flowCategory(salFlow), L, B + 30,
       { color: flowCategory(salFlow) === "typical resting" ? C.good : C.dentineAcc, font: mono(10, true) });
@@ -704,7 +706,11 @@ receding gums and a pulp that walls itself in.</p>
      difference drives the lesion forward or back. Above cavitation a
      lesion may arrest but never reverses — no scaffold is left.
      ================================================================ */
-  const D0 = 0.18, CAVITATION = 0.5;
+  /* CAVITATION is where the surface layer collapses — still inside enamel, and
+     the point past which the lesion can arrest but never reverse. DEJ is where
+     the front crosses into dentine, which happens later; the depth bar and the
+     stage table below both read off these two, so they cannot disagree. */
+  const D0 = 0.18, CAVITATION = 0.5, DEJ = 0.62, PULP = 0.92;
   let lesYrs = 4, lesN = 6, lesF = "none";
 
   const STAGES = [
@@ -712,9 +718,9 @@ receding gums and a pulp that walls itself in.</p>
     [0.22, "subsurface demineralisation", "yes"],
     [0.45, "white spot lesion", "yes"],
     [CAVITATION, "surface breaking down", "borderline"],
-    [0.62, "cavitated into enamel", "no"],
+    [DEJ, "cavitated into enamel", "no"],
     [0.78, "across the DEJ, into dentine", "no"],
-    [0.92, "undermining the enamel", "no"],
+    [PULP, "undermining the enamel", "no"],
     [1.01, "approaching the pulp", "no"],
   ];
   function stageOf(d) {

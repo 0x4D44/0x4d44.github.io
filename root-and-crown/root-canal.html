@@ -28,7 +28,7 @@
   </nav>
 </header>
 
-<main class="page">
+<main class="page" id="main">
 
 <section class="hero">
   <p class="kicker">CHAPTER 7</p>
@@ -66,6 +66,8 @@ tooth as infected as before. The bacteria have to be evicted by hand.</p>
 
 <p>Notice what is <em>not</em> on that list: sterility.</p>
 
+</div>
+
 <figure class="fig wide">
   <div class="fig-head">
     <span class="t">The sequence, step by step</span>
@@ -82,8 +84,8 @@ tooth as infected as before. The bacteria have to be evicted by hand.</p>
       <output></output>
     </div>
     <div class="ctl">
-      <label for="rc-proc-case">starting state</label>
-      <span class="seg" id="rc-proc-case">
+      <span class="ctl-lbl" id="rc-proc-case-lbl">starting state</span>
+      <span class="seg" id="rc-proc-case" role="group" aria-labelledby="rc-proc-case-lbl">
         <button data-v="necrotic" class="on">dead pulp, abscess</button>
         <button data-v="vital">living pulp, inflamed</button>
       </span>
@@ -97,10 +99,13 @@ tooth as infected as before. The bacteria have to be evicted by hand.</p>
   <div class="readouts">
     <span class="ro" id="rc-proc-cap" style="font-size:13px; color:var(--ink-2)"></span>
   </div>
-  <div class="fig-note">Watch the two readouts rather than the picture. Nothing meaningful
-  happens to the bacterial load until stage&nbsp;6, and nothing is safe from the mouth until
-  stage&nbsp;8. The middle of the procedure is preparation for those two events.</div>
+  <div class="fig-note">Watch the two readouts rather than the picture. The bacterial load does
+  not begin to fall until stage&nbsp;5 and does not bottom out until stage&nbsp;6, and nothing is
+  safe from the mouth until stage&nbsp;8. The middle of the procedure is preparation for those two
+  events.</div>
 </figure>
+
+<div class="prose">
 
 <h2>Three stages that carry the weight</h2>
 
@@ -137,6 +142,8 @@ ribbon leaves fins.</p>
 
 <p>So the instruments shape and the <strong>irrigant cleans</strong>.</p>
 
+</div>
+
 <figure class="fig">
   <div class="fig-head">
     <span class="t">What a file can reach</span>
@@ -148,8 +155,8 @@ ribbon leaves fins.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="rc-wall-shape">canal cross-section</label>
-      <span class="seg" id="rc-wall-shape">
+      <span class="ctl-lbl" id="rc-wall-shape-lbl">canal cross-section</span>
+      <span class="seg" id="rc-wall-shape" role="group" aria-labelledby="rc-wall-shape-lbl">
         <button data-v="round" class="on">round</button>
         <button data-v="oval">oval</button>
         <button data-v="ribbon">ribbon</button>
@@ -173,6 +180,8 @@ ribbon leaves fins.</p>
   preparation to chase the fins reaches a little more wall and destroys a great deal more
   dentine, in a root that is only a few millimetres thick.</div>
 </figure>
+
+<div class="prose">
 
 <p><strong>Sodium hypochlorite</strong> is the workhorse, used clinically at concentrations
 between roughly 0.5% and 6%. It is the only common irrigant that <em>dissolves organic
@@ -209,6 +218,8 @@ of the root filling before a 1995 study by Ray and Trope pointed at the other on
 root filling and the restoration of a thousand teeth separately, then counted how often the bone
 around the root tip was healthy.</p>
 
+</div>
+
 <figure class="fig">
   <div class="fig-head">
     <span class="t">Two seals, four combinations</span>
@@ -220,15 +231,15 @@ around the root tip was healthy.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="rc-seal-root">root filling</label>
-      <span class="seg" id="rc-seal-root">
+      <span class="ctl-lbl" id="rc-seal-root-lbl">root filling</span>
+      <span class="seg" id="rc-seal-root" role="group" aria-labelledby="rc-seal-root-lbl">
         <button data-v="good" class="on">adequate</button>
         <button data-v="poor">inadequate</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="rc-seal-cor">coronal restoration</label>
-      <span class="seg" id="rc-seal-cor">
+      <span class="ctl-lbl" id="rc-seal-cor-lbl">coronal restoration</span>
+      <span class="seg" id="rc-seal-cor" role="group" aria-labelledby="rc-seal-cor-lbl">
         <button data-v="good" class="on">adequate</button>
         <button data-v="poor">inadequate</button>
       </span>
@@ -243,6 +254,8 @@ around the root tip was healthy.</p>
   than the tooth with the poor filling and a sound top. This was a cross-sectional survey, so it
   shows association rather than cause, and later work disagreed — see the panel below.</div>
 </figure>
+
+<div class="prose">
 
 <p>The order of those four numbers is the finding. A poor root filling under a good restoration
 did better than a good root filling under a poor one, because a leaking crown lets the mouth back
@@ -319,10 +332,19 @@ afterwards matters, as the figure above shows. And the same review programme fou
 free of voids, reaching within about 2&nbsp;mm of the radiographic apex, to be an independent
 predictor.</p>
 
+<div class="callout warn">
+  <span class="tag">A reminder</span>
+  <p>This chapter describes how the procedure works, not what anybody should do about a
+  particular tooth. Every figure quoted is a population range from published studies, and none of
+  them predicts an individual outcome.</p>
+</div>
+
+</div>
+
 <div class="toon">
   <div class="cast">
-    <svg class="char float"><use href="#char-dentist"/></svg>
-    <svg class="char sm"><use href="#char-strep"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-dentist"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-strep"/></svg>
   </div>
   <div class="lines">
     <p class="who">Miss Molaris, on the actual job</p>
@@ -332,6 +354,8 @@ predictor.</p>
     <p class="say">"The files are the plumbing. The irrigant is the eviction notice."</p>
   </div>
 </div>
+
+<div class="prose">
 
 <h2>The brittleness myth</h2>
 
@@ -346,12 +370,12 @@ dentine.</p>
 
 <p>What has changed is how much of it is left. The decisive experiment is Reeh, Messer and
 Douglas (1989), who measured cuspal stiffness as structure was removed step by step. An
-endodontic access cavity cost about <strong>5%</strong> of it. A two-surface cavity that removed
-both marginal ridges cost about <strong>63%</strong>. The procedure is nearly irrelevant; the
-carpentry around it is everything.</p>
+endodontic access cavity cost about <strong>5%</strong> of it. An MOD cavity — a three-surface
+slot that removes both marginal ridges — cost about <strong>63%</strong>. The procedure is nearly
+irrelevant; the carpentry around it is everything.</p>
 
 <div class="callout gold">
-  <span class="tag">The real mechanism</span>
+  <span class="tag">Why it actually splits</span>
   <p>A molar resists splitting because its walls are joined all the way round, and the marginal
   ridges — the raised rims front and back — are the tie-beams. Decay took some, the old filling
   took more, the access cavity took the roof. What is left is two unsupported cusps hinged at the
@@ -392,19 +416,17 @@ associated with root canal treatment is the pain that brought the person in, and
 afterwards. Among dental treatments it is unusual: more often than not it takes somebody out of
 severe pain rather than putting them into it.</p>
 
-<div class="callout warn">
-  <span class="tag">A reminder</span>
-  <p>This chapter describes how the procedure works, not what anybody should do about a
-  particular tooth. Every figure quoted is a population range from published studies, and none of
-  them predicts an individual outcome.</p>
+<p>What it does not do is finish the job. At the end of a good root canal treatment the habitat
+has been emptied, disinfected and sealed — inside a shell whose roof has been cut away and whose
+tie-beams have gone, waiting for the bite that splits it. The space has been made safe; the tooth
+around it has not. Protecting what is left is <a href="crowns.html">Chapter&nbsp;8</a>.</p>
+
 </div>
 
-<nav class="chapnav">
+<nav class="chapnav" aria-label="Chapter">
   <a href="fillings.html"><span class="dir">Previous</span><span class="title">6 · Fillings</span></a>
   <a class="next" href="crowns.html"><span class="dir">Next</span><span class="title">8 · Crowns &amp; After</span></a>
 </nav>
-
-</div>
 
 </main>
 
@@ -413,6 +435,10 @@ severe pain rather than putting them into it.</p>
 (function () {
   "use strict";
   const C = TC.C, clamp = TC.clamp, lerp = TC.lerp, M = TC.mono;
+
+  /* A near-black ink for annotations that land on light tissue — the
+     dark-background palette (C.ink2, C.muted) disappears on dentine. */
+  const TISSUE_INK = "#2a2318";
 
   /* =====================================================================
      shared helpers
@@ -720,7 +746,14 @@ severe pain rather than putting them into it.</p>
     if (figProc) figProc.redraw();
   }
 
-  TC.slider("rc-proc-step", (v) => STEPS[v - 1], (v) => { step = v; syncProc(); });
+  /* The visible readout is a stage name, so give assistive technology the same
+     word rather than the bare index. */
+  TC.slider("rc-proc-step", (v) => STEPS[v - 1], (v) => {
+    step = v;
+    const el = document.getElementById("rc-proc-step");
+    if (el) el.setAttribute("aria-valuetext", STEPS[v - 1]);
+    syncProc();
+  });
   TC.seg("rc-proc-case", (v) => { kase = v; syncProc(); });
 
   /* =====================================================================
@@ -899,12 +932,12 @@ severe pain rather than putting them into it.</p>
     }
     ctx.restore();
 
-    // scale bar
+    // scale bar — drawn in a dark ink, because it lies on the tan dentine field
     const sbx = 16, sby = h - 18, sbw = 0.5 * scale;
-    TC.line(ctx, sbx, sby, sbx + sbw, sby, C.ink2, 2);
-    TC.line(ctx, sbx, sby - 4, sbx, sby + 4, C.ink2, 2);
-    TC.line(ctx, sbx + sbw, sby - 4, sbx + sbw, sby + 4, C.ink2, 2);
-    TC.label(ctx, "0.5 mm", sbx + sbw + 8, sby + 4, { color: C.ink2, font: M(11, true) });
+    TC.line(ctx, sbx, sby, sbx + sbw, sby, TISSUE_INK, 2);
+    TC.line(ctx, sbx, sby - 4, sbx, sby + 4, TISSUE_INK, 2);
+    TC.line(ctx, sbx + sbw, sby - 4, sbx + sbw, sby + 4, TISSUE_INK, 2);
+    TC.label(ctx, "0.5 mm", sbx + sbw + 8, sby + 4, { color: TISSUE_INK, font: M(11, true) });
 
     /* ---- readout column ---- */
     const rx = panelW + w * 0.045;
@@ -952,10 +985,14 @@ severe pain rather than putting them into it.</p>
   /* Reported proportion of teeth with healthy periapical tissues, by group.
      Ray HA & Trope M, Int Endod J 1995;28:12-18, n = 1,010. */
   const SEAL = {
-    "good|good": { pct: 91.4, lab: "adequate root filling · adequate restoration" },
-    "poor|good": { pct: 67.6, lab: "inadequate root filling · adequate restoration" },
-    "good|poor": { pct: 44.1, lab: "adequate root filling · inadequate restoration" },
-    "poor|poor": { pct: 18.1, lab: "inadequate root filling · inadequate restoration" },
+    "good|good": { pct: 91.4, lab: "adequate root filling · adequate restoration",
+      short: "both adequate" },
+    "poor|good": { pct: 67.6, lab: "inadequate root filling · adequate restoration",
+      short: "root filling inadequate" },
+    "good|poor": { pct: 44.1, lab: "adequate root filling · inadequate restoration",
+      short: "restoration inadequate" },
+    "poor|poor": { pct: 18.1, lab: "inadequate root filling · inadequate restoration",
+      short: "both inadequate" },
   };
   const SEAL_ORDER = ["good|good", "poor|good", "good|poor", "poor|poor"];
 
@@ -966,10 +1003,15 @@ severe pain rather than putting them into it.</p>
     const key = sealRoot + "|" + sealCor;
     const d = SEAL[key];
 
-    const th = Math.min(h * 0.84, w * 0.34);
+    /* On a phone the diagram and the bar chart cannot sit side by side: the
+       tooth goes on top, the bars run the full width beneath it, and the group
+       labels use their short forms. */
+    const narrow = w < 620;
+
+    const th = Math.min(h * (narrow ? 0.30 : 0.84), w * (narrow ? 0.40 : 0.34));
     const tw = th * 0.78;
-    const tx = w * 0.19 - tw / 2;
-    const ty = (h - th) / 2;
+    const tx = (narrow ? w * 0.50 : w * 0.19) - tw / 2;
+    const ty = narrow ? h * 0.055 : (h - th) / 2;
 
     const o = {
       wear: 0.10, secondary: 0.20, seed: 4242, pulpState: "removed",
@@ -1016,21 +1058,26 @@ severe pain rather than putting them into it.</p>
       { align: "center", color: sealRoot === "good" ? C.good : C.pulpAcc, font: M(11, true) });
 
     /* ---- the four groups as bars ---- */
-    const bx = w * 0.42, bw = w * 0.40;
-    let by = h * 0.20;
+    const bx = narrow ? 14 : w * 0.42;
+    const bw = narrow ? (w - 28) * 0.76 : w * 0.40;
+    const barH = narrow ? 12 : 16;
+    const pitch = narrow ? 30 : 46;
+    let by = narrow ? ty + th + 50 : h * 0.20;
     TC.label(ctx, "PERIAPICAL TISSUES HEALTHY", bx, by - 22, { color: C.muted, font: M(10) });
     for (const k of SEAL_ORDER) {
       const g2 = SEAL[k];
       const on = k === key;
       ctx.fillStyle = on ? C.mint : "rgba(243,241,233,0.13)";
-      TC.roundRect(ctx, bx, by, bw * (g2.pct / 100), 16, 3);
+      TC.roundRect(ctx, bx, by, bw * (g2.pct / 100), barH, 3);
       ctx.fill();
-      TC.label(ctx, g2.pct.toFixed(1) + "%", bx + bw * (g2.pct / 100) + 8, by + 13,
+      TC.label(ctx, g2.pct.toFixed(1) + "%", bx + bw * (g2.pct / 100) + 8, by + barH - 3,
         { color: on ? C.ink : C.muted, font: M(13, on) });
-      TC.label(ctx, g2.lab, bx, by - 5, { color: on ? C.ink2 : C.muted, font: M(10) });
-      by += 46;
+      TC.label(ctx, narrow ? g2.short : g2.lab, bx, by - 5,
+        { color: on ? C.ink2 : C.muted, font: M(10) });
+      by += pitch;
     }
-    TC.label(ctx, "Ray & Trope 1995 · 1,010 root-filled teeth · cross-sectional survey",
+    TC.label(ctx, narrow ? "Ray & Trope 1995 · n = 1,010"
+      : "Ray & Trope 1995 · 1,010 root-filled teeth · cross-sectional survey",
       bx, h - 14, { color: C.muted, font: M(10) });
   });
 

@@ -505,8 +505,15 @@ table.data td {
   color: var(--ink-2);
 }
 table.data td:first-child, table.data th:first-child { padding-left: 2px; }
-table.data td.k { color: var(--ink); font-weight: 700; white-space: nowrap; }
-table.data td.num { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+/* Key and value cells wrap by default. Several tables here (the Lexicon's
+   numbers table above all) carry cell text long enough that `nowrap` pushed
+   the min-content width past the 1080px container and shoved the last column
+   off the page entirely. Opt back into nowrap per-cell with .nw where a short
+   value genuinely must stay on one line. */
+table.data td.k { color: var(--ink); font-weight: 700; }
+table.data td.num { font-family: var(--mono); font-size: 13px; }
+table.data td.nw { white-space: nowrap; }
+table.data { max-width: 100%; }
 
 /* ---------- glossary ---------- */
 
@@ -602,7 +609,11 @@ dl.gloss dd { margin: 4px 0 0 0; color: var(--ink-2); font-size: 15.5px; }
   gap: 10px;
   min-width: 0;
 }
-.ctl label {
+/* A segmented control is a group of buttons, not a labelable element, so its
+   caption is a plain span and the group is named with aria-labelledby instead
+   of a <label for> that would associate with nothing. Styled identically. */
+.ctl label,
+.ctl .ctl-lbl {
   font-family: var(--mono);
   font-size: 11.5px;
   letter-spacing: 0.05em;
@@ -778,8 +789,10 @@ input[type="range"]:focus-visible { outline: 2px solid var(--ice); outline-offse
   .hero { padding-top: 34px; }
   .prose h2 { margin-top: 48px; }
   input[type="range"] { width: 130px; flex: 1 1 110px; }
-  .ctl { flex: 1 1 100%; }
-  .ctl output { margin-left: auto; }
+  .ctl { flex: 1 1 100%; flex-wrap: wrap; }
+  /* .fig clips its overflow, so a readout that cannot shrink is silently cut
+     off rather than wrapped — the reader then cannot see the value they set. */
+  .ctl output { margin-left: auto; min-width: 0; flex: 0 1 auto; }
   .fig-controls { gap: 8px 14px; }
   .eq { font-size: 17.5px; justify-content: flex-start; }
   .toon { flex-direction: column; align-items: flex-start; }

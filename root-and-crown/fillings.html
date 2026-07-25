@@ -28,12 +28,12 @@
   </nav>
 </header>
 
-<main class="page">
+<main class="page" id="main">
 
 <section class="hero">
   <p class="kicker">CHAPTER 6</p>
   <h1>The Restoration Cycle</h1>
-  <p class="standfirst">Nothing in a tooth is ever repaired. Enamel cannot regrow, so the only
+  <p class="standfirst">Nothing a tooth has lost is ever rebuilt. Enamel cannot regrow, so the only
   available move is to cut the hole <em>bigger</em>, then pack it. That buys a decade or two,
   until the plug fails at its edge — and the next one must be larger than the last. Here are the
   materials, how each dies, and the one-way ratchet that follows.</p>
@@ -41,7 +41,7 @@
 
 <figure class="fig">
   <div class="fig-head">
-    <span class="t">Figure 6.1 · Cut wider than the disease</span>
+    <span class="t">Cut wider than the disease</span>
     <span class="hint">lesion size · preparation philosophy · before and after</span>
   </div>
   <div class="fig-body">
@@ -55,14 +55,14 @@
       <output></output>
     </div>
     <div class="ctl">
-      <label for="fl-prep-approach">approach</label>
-      <span class="seg" id="fl-prep-approach">
+      <span class="ctl-lbl" id="fl-prep-approach-lbl">approach</span>
+      <span class="seg" id="fl-prep-approach" role="group" aria-labelledby="fl-prep-approach-lbl">
         <button data-v="min" class="on">selective</button><button data-v="bond">bonded</button><button data-v="amal">retentive</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="fl-prep-stage">stage</label>
-      <span class="seg" id="fl-prep-stage">
+      <span class="ctl-lbl" id="fl-prep-stage-lbl">stage</span>
+      <span class="seg" id="fl-prep-stage" role="group" aria-labelledby="fl-prep-stage-lbl">
         <button data-v="lesion" class="on">the lesion</button><button data-v="prepared">prepared</button><button data-v="restored">restored</button>
       </span>
     </div>
@@ -188,8 +188,8 @@ tooth biting against it; ceramic is harder than enamel, so it wears that tooth i
 
 <div class="toon">
   <div class="cast">
-    <svg class="char float"><use href="#char-dentist"/></svg>
-    <svg class="char sm"><use href="#char-crown"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-dentist"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-crown"/></svg>
   </div>
   <div class="lines">
     <p class="who">Miss Molaris, on material choice</p>
@@ -238,7 +238,7 @@ uncertainty — and it triggers everything that follows.</p>
 
 <figure class="fig wide">
   <div class="fig-head">
-    <span class="t">Figure 6.2 · Thirty years of survival</span>
+    <span class="t">Thirty years of survival</span>
     <span class="hint">restoration size · patient caries risk · read off any year</span>
   </div>
   <div class="fig-body">
@@ -252,8 +252,8 @@ uncertainty — and it triggers everything that follows.</p>
       <output></output>
     </div>
     <div class="ctl">
-      <label for="fl-surv-risk">caries risk</label>
-      <span class="seg" id="fl-surv-risk">
+      <span class="ctl-lbl" id="fl-surv-risk-lbl">caries risk</span>
+      <span class="seg" id="fl-surv-risk" role="group" aria-labelledby="fl-surv-risk-lbl">
         <button data-v="low">low</button><button data-v="mod" class="on">moderate</button><button data-v="high">high</button>
       </span>
     </div>
@@ -320,13 +320,14 @@ and <b>high</b>. That gap dwarfs the gap between any two materials.</div>
 from tooth at their shared boundary, so removing the one takes a rim of the other. And the reason
 for replacing it — decay at a margin, a chipped edge — sits <em>outside</em> the old outline by
 definition, so the new outline must enclose it. Robert Elderton named this the
-<strong>restorative cycle</strong>; Brantley and colleagues measured it in the <em>Journal of the
-American Dental Association</em> in 1995, and re-restoration does enlarge restorations.</p>
+<strong>restorative cycle</strong>; Brantley and colleagues found the same one-way widening in the
+<em>Journal of the American Dental Association</em> in 1995. How much larger the next one is
+varies with the tooth and the reason for redoing it. That it is larger does not.</p>
 
 <p>The consequence is structural. Reeh, Messer and Douglas measured the stiffness of extracted
 teeth as they cut them (<em>Journal of Endodontics</em>, 1989): a conservative occlusal cavity
 cost roughly a fifth of the tooth's cuspal stiffness, while extending it into an MOD — a slot
-running right across the tooth — cost about <strong>60%</strong>. The access cavity for a root
+running right across the tooth — cost about <strong>63%</strong>. The access cavity for a root
 canal, which patients dread, cost around 5%. It is the <em>width</em> of the preparation, not the
 depth of treatment, that turns a tooth into two cantilevered cusps.</p>
 
@@ -344,7 +345,7 @@ depth of treatment, that turns a tooth into two cantilevered cusps.</p>
 
 <figure class="fig wide">
   <div class="fig-head">
-    <span class="t">Figure 6.3 · The cycle</span>
+    <span class="t">The cycle</span>
     <span class="hint">press replace, and keep pressing</span>
   </div>
   <div class="fig-body">
@@ -353,7 +354,7 @@ depth of treatment, that turns a tooth into two cantilevered cusps.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="fl-cyc-next">the cycle</label>
+      <span class="ctl-lbl">the cycle</span>
       <button class="btn primary" type="button" id="fl-cyc-next">replace it</button>
       <button class="btn" type="button" id="fl-cyc-reset">start again</button>
     </div>
@@ -405,7 +406,7 @@ down arrives where the pulp is breached and the whole calculation changes — wh
 
 </div>
 
-<nav class="chapnav">
+<nav class="chapnav" aria-label="Previous and next chapter">
   <a href="pulpitis.html"><span class="dir">Previous</span><span class="title">5 · Death of a Pulp</span></a>
   <a class="next" href="root-canal.html"><span class="dir">Next</span><span class="title">7 · Root Canal</span></a>
 </nav>
@@ -612,6 +613,7 @@ down arrives where the pulp is breached and the whole calculation changes — wh
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, w, h);
 
+    const narrow = w < 620;
     const m = { l: 52, r: 20, t: 26, b: 38 };
     const pw = w - m.l - m.r, ph = h - m.t - m.b;
     const X = (yr) => m.l + (yr / 30) * pw;
@@ -630,8 +632,10 @@ down arrives where the pulp is breached and the whole calculation changes — wh
     }
     TC.label(ctx, "YEARS IN SERVICE", m.l + pw / 2, m.t + ph + 33,
       { align: "center", color: C.muted, font: TC.mono(10, true) });
-    TC.label(ctx, "STILL IN SERVICE", m.l - 8, m.t - 10,
-      { align: "right", color: C.muted, font: TC.mono(10, true) });
+    /* left-aligned at the plot's left edge: right-aligning it ran the first
+       characters off the canvas, leaving a bare "SERVICE" */
+    TC.label(ctx, narrow ? "IN SERVICE" : "STILL IN SERVICE", m.l - 8, m.t - 10,
+      { align: "left", color: C.muted, font: TC.mono(10, true) });
 
     /* curves */
     for (const s of SURV) {
@@ -664,7 +668,6 @@ down arrives where the pulp is breached and the whole calculation changes — wh
       { align: "center", color: C.ink2, font: TC.mono(11, true) });
 
     /* legend — right-aligned against the plot edge so it can never overflow */
-    const narrow = w < 620;
     const lfont = TC.mono(narrow ? 10 : 11);
     let ly = m.t + 16;
     for (const s of SURV) {
@@ -715,7 +718,7 @@ down arrives where the pulp is breached and the whole calculation changes — wh
       short: "replaced — three surfaces",
       ladder: "larger still",
       filling: 0.60, mat: "amalgam", sound: 0.66,
-      cap: "<b>Now a three-surface restoration.</b> The slot runs across the tooth between both contact points. Reeh and colleagues measured this shape as costing roughly 60% of a tooth's cuspal stiffness: the cusps have become cantilevers, with filling material where their support used to be.",
+      cap: "<b>Now a three-surface restoration.</b> The slot runs across the tooth between both contact points. Reeh and colleagues measured this shape as costing roughly 63% of a tooth's cuspal stiffness: the cusps have become cantilevers, with filling material where their support used to be.",
     },
     {
       short: "cuspal coverage",

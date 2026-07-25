@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Root and Crown — How Teeth Work, How They Fail, and How They Are Repaired</title>
-<meta name="description" content="A deep, interactive field guide to the tooth: the layered anatomy of enamel, dentine and pulp; why a tooth is the only organ that cannot heal itself; the acid clock of decay; eighty years of wear; what happens when the nerve inflames and dies; and the full repertoire of repair — fillings, root canal treatment, crowns, extraction and implants — with how long each actually lasts. Nine chapters, live diagrams and a real annotated radiograph.">
+<meta name="description" content="A deep, interactive field guide to the tooth: the layered anatomy of enamel, dentine and pulp; why enamel is the one tissue in the body with no cells left to rebuild it; the acid clock of decay; eighty years of wear; what happens when the nerve inflames and dies; and the full repertoire of repair — fillings, root canal treatment, crowns, extraction and implants — with how long each actually lasts. Nine chapters, live diagrams and a real annotated radiograph.">
 <link rel="stylesheet" href="tooth.css">
 </head>
 <body>
@@ -33,9 +33,10 @@
 <section class="hero">
   <p class="kicker">An interactive field guide to the tooth</p>
   <h1>Root and Crown</h1>
-  <p class="standfirst">A tooth is the hardest thing your body builds and the only organ it
-  cannot repair. Break a bone and it knits; cut skin and it closes; dissolve a millimetre of
-  enamel and it is gone for good. Everything that follows — the filling, the bigger filling,
+  <p class="standfirst">A tooth is the hardest thing your body builds, and its outer shell is
+  the one tissue you own with no cells left to rebuild it. Break a bone and it knits; cut skin
+  and it closes; dissolve a millimetre of enamel and it is gone for good — enamel cannot
+  regenerate at all. Everything that follows — the filling, the bigger filling,
   the crown, the root canal, the gap — is a consequence of that one asymmetry. This guide
   follows a tooth from the inside out and from birth to extraction: how it is built, why it
   hurts, how acid takes it apart a few micrometres at a time, what actually happens when the
@@ -48,7 +49,8 @@
     <span class="hint">wear · decay · the restoration cycle · what maintenance buys</span>
   </div>
   <div class="fig-body">
-    <canvas id="hero" style="aspect-ratio: 2.5 / 1; min-height: 300px;"></canvas>
+    <canvas id="hero" style="aspect-ratio: 2.5 / 1; min-height: 300px;"
+            role="img" aria-label="A sectioned molar aged from six to eighty years under two regimes, with a readout of enamel remaining, pulp state and how much natural tooth is left. Left alone, it picks up a lesion in its twenties, the pulp inflames and then dies in its forties, an abscess forms at the root tip and the tooth is extracted around sixty, leaving a ridge that resorbs. Looked after, the same lesion is filled at twenty-four, the filling is replaced larger in middle age, the weakened tooth is crowned at fifty-eight, and it is still in service at eighty."></canvas>
   </div>
   <div class="fig-controls">
     <div class="ctl">
@@ -57,8 +59,8 @@
       <output></output>
     </div>
     <div class="ctl">
-      <label for="hero-mode">regime</label>
-      <span class="seg" id="hero-mode">
+      <span class="ctl-lbl" id="hero-mode-lbl">regime</span>
+      <span class="seg" id="hero-mode" role="group" aria-labelledby="hero-mode-lbl">
         <button data-v="neglect" class="on">left alone</button>
         <button data-v="maintain">looked after</button>
       </span>
@@ -73,6 +75,10 @@
       entirely in when someone intervened.
     </span>
   </div>
+  <div class="fig-note">Two <b>illustrative life-histories</b>, not measured averages. The
+  stages are typical in order rather than in timing — a lesion can start at twelve or never,
+  and plenty of teeth do neither of these things. What the figure is for is the shape of the
+  two curves, not the ages on the ruler.</div>
 </figure>
 
 <div class="prose">
@@ -89,9 +95,9 @@ make toothache uniquely awful, the survival statistics behind "how long will thi
 is folded into a panel like the one below. Open it or skip it; the story reads either way. And
 every chapter but the closing lexicon carries live apparatus you can drive: push a probe
 through the layers, trigger a nerve and watch two different pain fibres respond, run an acid
-attack in a mouth you control, age a tooth eighty years, pressurise an inflamed pulp until it
-dies, compare restorations over thirty years, work through a root canal step by step, and
-price up the endgame.</p>
+attack in a mouth you control, age a tooth from twenty to eighty-five, pressurise an inflamed
+pulp until it dies, race a painkiller against a mouthful of cold water, compare restorations
+over thirty years, work through a root canal step by step, and price up the endgame.</p>
 
 <details class="deeper">
   <summary><span class="lbl">Go deeper</span><span class="tag2">the real biology, on demand</span></summary>
@@ -121,8 +127,8 @@ price up the endgame.</p>
 
 <div class="toon">
   <div class="cast">
-    <svg class="char float"><use href="#char-molar"/></svg>
-    <svg class="char sm"><use href="#char-nerve"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-molar"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-nerve"/></svg>
   </div>
   <div class="lines">
     <p class="who">Your guides</p>
@@ -133,6 +139,10 @@ price up the endgame.</p>
     are the repair crew.</p>
     <p class="say">Meet them properly on the way in.</p>
   </div>
+</div>
+
+<div class="prose">
+<h2>The nine chapters</h2>
 </div>
 
 <div class="cards">
@@ -162,16 +172,17 @@ price up the endgame.</p>
     <span class="no">CHAPTER 4</span>
     <h3>Eighty Years of Wear</h3>
     <p>Attrition, erosion, abrasion and cracks; gums receding to expose soft root; the pulp
-    slowly walling itself in with secondary dentine until an old tooth is nearly hollow-proof
-    and nearly nerveless. Age a tooth eight decades and watch it change.</p>
+    slowly walling itself in with secondary dentine until an old tooth is nearly solid and
+    nearly nerveless. Age a tooth from twenty to eighty-five and watch it change.</p>
   </a>
   <a class="card" href="pulpitis.html">
     <span class="no">CHAPTER 5</span>
     <h3>Death of a Pulp</h3>
     <p>The heart of the guide: reversible pulpitis, irreversible pulpitis, necrosis and
     abscess. Why a rigid chamber turns swelling into agony, why cold sometimes <em>relieves</em>
-    the pain of a dying nerve, and why anaesthetic fails on a hot pulp. With a real annotated
-    radiograph.</p>
+    the pain of a dying nerve, why anaesthetic fails on a hot pulp, and why a mouthful of cold
+    water beats a full dose of painkillers. Race the tablets against the tap water. With a real
+    annotated radiograph.</p>
   </a>
   <a class="card" href="fillings.html">
     <span class="no">CHAPTER 6</span>
@@ -261,7 +272,7 @@ a box that cannot expand — is where the emergencies come from.</p>
 structural reason rather than a poetic one. Inflame almost any tissue and it swells: the
 swelling is uncomfortable but it relieves pressure by expanding into the space around it.
 The pulp cannot. It is enclosed on all sides by rigid dentine, with one exit — a hole at the
-root tip roughly the width of a human hair.</p>
+root tip a few tenths of a millimetre across.</p>
 
 <div class="callout">
   <span class="tag">A low-compliance compartment</span>
@@ -367,7 +378,7 @@ Part of the <a href="/">0x4D44 almanac</a>.</p>
     return out;
   }
 
-  TC.canvas("hero", function (ctx, w, h, t) {
+  const heroFig = TC.canvas("hero", function (ctx, w, h, t) {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = "#0a0d0f";
     ctx.fillRect(0, 0, w, h);
@@ -406,7 +417,7 @@ Part of the <a href="/">0x4D44 almanac</a>.</p>
       });
       // a pulse of pain when the pulp is inflamed
       if (s.pulpState === "inflamed") {
-        const pulse = 0.5 + 0.5 * Math.sin(t * 4);
+        const pulse = TC.reducedMotion ? 0.7 : 0.5 + 0.5 * Math.sin(t * 4);
         ctx.save();
         ctx.globalAlpha = 0.18 + 0.30 * pulse;
         const g2 = ctx.createRadialGradient(
@@ -465,13 +476,17 @@ Part of the <a href="/">0x4D44 almanac</a>.</p>
     ctx.beginPath();
     ctx.moveTo(cursor, ay - 9); ctx.lineTo(cursor - 4, ay - 16); ctx.lineTo(cursor + 4, ay - 16);
     ctx.closePath(); ctx.fill();
-  }, { animate: true });
+  }, { animate: !TC.reducedMotion });
 
-  TC.slider("hero-age", (v) => "age " + v.toFixed(0), (v) => { age = v; });
+  TC.slider("hero-age", (v) => "age " + v.toFixed(0), (v) => {
+    age = v;
+    if (heroFig) heroFig.redraw();
+  });
   TC.seg("hero-mode", (v) => {
     mode = v;
     const el = document.getElementById("hero-cap");
     if (el) el.innerHTML = CAPS[v];
+    if (heroFig) heroFig.redraw();
   });
 })();
 </script>
