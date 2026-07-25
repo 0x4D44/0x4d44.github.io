@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Risk &amp; Reward — The Teenage Brain</title>
+<meta name="description" content="The adolescent dopamine peak: why the teenage reward system responds harder than a child's or an adult's, why that is adaptive, and how sensation-seeking drives exploration. Interactive: sweep an age across the ventral-striatum reward response.">
+<link rel="stylesheet" href="brain.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;TEENAGE&nbsp;BRAIN</a></div>
+    <div class="strap">the great rewiring · a field guide</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="rebuild.html">1 · The Great Rewiring</a>
+    <a href="two-systems.html">2 · Two Clocks</a>
+    <a href="social.html">3 · The Social Brain</a>
+    <a href="risk.html" aria-current="page">4 · Risk &amp; Reward</a>
+    <a href="learning.html">5 · The Learning Window</a>
+    <a href="storms.html">6 · When Storms Hit</a>
+    <a href="lexicon.html">7 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 4</p>
+  <h1>Risk &amp; Reward</h1>
+  <p class="standfirst">Ask why teenagers do dangerous things and the honest first answer is:
+  because it feels <em>fantastic</em>. The teenage brain's reward system doesn't just work — it
+  works harder than it ever will again, before or after. That extra intensity is not a defect
+  to be medicated away. It is the engine of everything a young person is supposed to do at that
+  age: explore, seek novelty, take the leap, and leave the nest.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">The neurochemical at the centre of this is <strong>dopamine</strong> — not the
+"pleasure molecule" of pop science, but the brain's signal for <em>wanting</em>, motivation,
+and "that was better than expected, do it again."</p>
+
+<p>In 2006 Adriana Galván and colleagues put children, teenagers and adults in a scanner and
+gave them rewards. When a reward arrived, one region lit up far brighter in the teenagers than
+in either the children or the adults: the <strong>ventral striatum</strong> (its core is the
+<em>nucleus accumbens</em>), the hub of the brain's reward circuit. The adolescent reward
+response was, quite literally, turned up — an inverted-U across the lifespan that peaks in the
+teenage years.</p>
+
+<p>Put that beside Chapter 1 and the picture sharpens. The reward hub matures <em>early</em>;
+the prefrontal cortex that would temper it matures <em>late</em>. So for a few years the
+brain feels rewards with an adult's intensity — arguably <em>more</em> than an adult's — while
+weighing consequences with a system that isn't finished. Sweep the age below and watch the
+reward response rise and fall.</p>
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The reward-o-meter: ventral-striatum response by age</span>
+    <span class="hint">reward-anticipation fMRI, schematic · Galván 2006, 2013</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="reward" role="img" aria-label="Brain schematic with the ventral striatum glowing, beside a curve of reward response by age that peaks in the mid-teens." style="aspect-ratio: 2.4 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="reward-age">age</label>
+      <input type="range" id="reward-age" min="6" max="34" step="0.1" value="15">
+      <output></output>
+    </div>
+    <button class="btn primary" id="reward-give">🎁 deliver a reward</button>
+  </div>
+  <div class="readouts">
+    <span class="ro pink">reward response: <b id="rw-mag">—</b></span>
+    <span class="ro" id="rw-stage">life stage: <b>—</b></span>
+    <span class="ro yellow" id="rw-cmp">vs an adult: <b>—</b></span>
+  </div>
+  <div class="fig-note">The teenage ventral striatum responds to reward more strongly than a
+  child's or an adult's — the neural signature of heightened <b>reward sensitivity</b>. Press
+  "deliver a reward" at different ages to feel the difference in the dopamine burst.</div>
+</figure>
+
+<div class="prose">
+
+<h2><span class="no">§4.1</span> Why evolution built it this way</h2>
+
+<p>It's tempting to see all this as a design fault. It isn't — and the clearest way to see why
+is to ask what adolescence is <em>for</em>. Across social species, adolescence is when the young
+must leave the safety of home, find their own food, territory and mates, and learn to survive
+without their parents. That is a fundamentally <strong>risky</strong> assignment, and a brain
+optimised for caution would fail it. Heightened reward-sensitivity and novelty-seeking are the
+push that gets a young animal out of the den and into the world.</p>
+
+<div class="stat">
+  <span class="big">~200%</span>
+  <span class="cap">the often-cited rise in <b>morbidity and mortality</b> from childhood to late
+  adolescence — despite these being physically the healthiest years of life. Almost none of it
+  is disease; the danger is overwhelmingly behavioural, the price of the same drive to explore
+  that makes the years so formative (Dahl, 2004).</span>
+</div>
+
+<p>This reframes "risk-taking" itself. We notice the reckless version — the speeding, the
+substances — but the same reward drive powers the <em>good</em> risks that define a life:
+auditioning, asking someone out, moving to a new city, standing up in class, trying the thing
+you might fail at. A teenager willing to risk humiliation for reward is not malfunctioning.
+They are running exactly the program that turns a dependent child into an independent adult.</p>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float"><use href="#char-dash"/></svg>
+    <svg class="char sm float slow"><use href="#char-teen"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Dash, a spark of dopamine</p>
+    <p class="say">"People call me trouble. Rude. I'm the reason you'll ever try anything new —
+    the first song, the first stage, the first time you left home. I burn brightest in the
+    teenage years because that's when you most need a reason to be brave. Aim me well."</p>
+  </div>
+</div>
+
+<h2><span class="no">§4.2</span> The catch: a system this plastic is easy to hijack</h2>
+
+<p>There is a shadow side, and it deserves plain statement. A reward system this responsive and
+this <em>plastic</em> is also unusually easy to capture. Drugs, alcohol, nicotine and the
+engineered rewards of gambling and some apps all work by hijacking exactly this dopamine
+circuitry — and they get a bigger grip on a system that is both more reactive and still being
+wired. That is why a substance sampled at fifteen can hook far harder than the same substance
+sampled at twenty-five, a fact we return to in <a href="storms.html">Chapter 6</a>.</p>
+
+<div class="callout warn">
+  <span class="tag">Two true things at once</span>
+  <p>The teenage reward system is both the source of adolescence's glorious appetite for life
+  <em>and</em> its greatest vulnerability. The same sensitivity that makes a first success feel
+  incandescent makes a first hit of an addictive drug bite deeper. You cannot keep one without
+  the other; they are the same circuit. The task of the adults around a teenager is not to dull
+  the engine but to steer it toward rewards worth having.</p>
+</div>
+
+</div>
+
+<div class="prose">
+<div class="chapnav">
+  <a class="prev" href="social.html"><span class="dir">← Previous</span><span class="title">3 · The Social Brain</span></a>
+  <a class="next" href="learning.html"><span class="dir">Next →</span><span class="title">5 · The Learning Window</span></a>
+</div>
+<p class="colophon">THE TEENAGE BRAIN · Chapter 4 · Ventral-striatum reward response per Galván et
+al. (2006) and Galván (2013); adaptive-adolescence framing per Spear (2000), Dahl (2004) and
+Steinberg (2014). Reward curve is schematic. Part of the <a href="/">0x4D44 almanac</a>.</p>
+</div>
+
+</main>
+
+<script src="brain-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp, line, label, rng } = TB;
+  let age = 15, burst = 0;
+  const R = rng(77);
+
+  // ventral-striatum reward response: inverted-U, peak ~15-16
+  function response(a) {
+    const p = 15.5, d = a - p;
+    return clamp(0.30 + 0.70 * Math.exp(-(d * d) / (d < 0 ? 30 : 60)), 0, 1);
+  }
+  const adultResp = response(28);
+
+  // floating dopamine sparks when a reward is delivered
+  let sparks = [];
+  function fire() {
+    const mag = response(age);
+    const n = Math.round(6 + mag * 26);
+    for (let i = 0; i < n; i++) sparks.push({ a: R() * 6.28, sp: 20 + R() * 90 * mag, life: 1, r: 1.5 + R() * 2.5 });
+    burst = 1;
+  }
+
+  TB.canvas("reward", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h); ctx.fillStyle = "#0c0722"; ctx.fillRect(0, 0, w, h);
+    TB.sparkle(ctx, w, h, 34, 9);
+    const mag = response(age);
+    burst *= 0.94;
+
+    // --- left: brain cross-section with ventral striatum glowing ---
+    const cx = w * 0.24, cy = h * 0.5, br = Math.min(w * 0.19, h * 0.42);
+    ctx.save();
+    ctx.beginPath(); ctx.ellipse(cx, cy, br, br * 1.05, 0, 0, TB.TAU);
+    ctx.fillStyle = "rgba(255,255,255,0.03)"; ctx.strokeStyle = "rgba(243,239,255,0.16)"; ctx.lineWidth = 1.5;
+    ctx.fill(); ctx.stroke();
+    ctx.restore();
+
+    // ventral striatum blobs (two, near centre-bottom)
+    const glow = mag * (1 + burst * 0.7);
+    for (const dx of [-0.34, 0.34]) {
+      const vx = cx + dx * br, vy = cy + br * 0.28;
+      const g = ctx.createRadialGradient(vx, vy, 1, vx, vy, br * 0.55);
+      g.addColorStop(0, `rgba(255,217,61,${0.5 + 0.5 * glow})`);
+      g.addColorStop(0.5, `rgba(255,159,69,${0.3 * glow})`);
+      g.addColorStop(1, "rgba(255,159,69,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(vx, vy, br * 0.55, 0, TB.TAU); ctx.fill();
+      ctx.beginPath(); ctx.arc(vx, vy, br * 0.14, 0, TB.TAU);
+      ctx.fillStyle = `rgba(255,217,61,${0.7 + 0.3 * glow})`; ctx.fill();
+    }
+    // prefrontal region (front-top) — dim, to contrast
+    label(ctx, "ventral striatum", cx, cy + br * 1.05 + 16, { align: "center", color: C.yellow, font: TB.mono(10.5) });
+    label(ctx, "(reward hub)", cx, cy + br * 1.05 + 30, { align: "center", color: C.muted, font: TB.mono(9.5) });
+
+    // sparks
+    sparks = sparks.filter(s => s.life > 0.02);
+    for (const s of sparks) {
+      s.life *= 0.95; s.sp *= 0.98;
+      const rad = (1 - s.life) * s.sp;
+      const sx = cx + Math.cos(s.a) * rad, sy = cy + br * 0.28 + Math.sin(s.a) * rad;
+      ctx.globalAlpha = s.life; ctx.fillStyle = "#fff3b0";
+      ctx.beginPath(); ctx.arc(sx, sy, s.r, 0, TB.TAU); ctx.fill(); ctx.globalAlpha = 1;
+    }
+
+    // --- right: age curve ---
+    const P = TB.plot(ctx, w, h, {
+      left: w * 0.52, right: 20, top: 22, bottom: 34, xr: [6, 34], yr: [0, 1.08],
+      xticks: [10, 15, 20, 25, 30], yticks: [{ v: 0, label: "low" }, { v: 0.5, label: "" }, { v: 1, label: "high" }],
+    });
+    label(ctx, "reward response by age", P.L, P.T - 8, { color: C.muted, font: TB.mono(10.5) });
+    label(ctx, "age", (P.L + P.R) / 2, P.B + 24, { align: "center", color: C.muted });
+    ctx.fillStyle = "rgba(255,93,162,0.06)"; ctx.fillRect(P.X(13), P.T, P.X(18) - P.X(13), P.B - P.T);
+    label(ctx, "teens", (P.X(13) + P.X(18)) / 2, P.T + 12, { align: "center", color: "rgba(255,93,162,0.7)", font: TB.mono(10) });
+
+    ctx.strokeStyle = C.pink; ctx.lineWidth = 2.6; ctx.beginPath();
+    const pts = []; for (let a = 6; a <= 34; a += 0.5) pts.push({ x: P.X(a), y: P.Y(response(a)) });
+    TB.smooth(ctx, pts); ctx.stroke();
+
+    const ax = P.X(age), ay = P.Y(mag);
+    line(ctx, ax, P.T, ax, P.B, "rgba(255,217,61,0.5)", 1.4);
+    ctx.beginPath(); ctx.arc(ax, ay, 5 + burst * 4, 0, TB.TAU); ctx.fillStyle = C.yellow; ctx.fill();
+    ctx.strokeStyle = "#0c0722"; ctx.lineWidth = 1.6; ctx.stroke();
+
+    document.querySelector("#rw-mag").textContent = (mag * 100).toFixed(0) + "%";
+    const stage = age < 13 ? "child" : age < 18 ? "teenager" : age < 25 ? "young adult" : "adult";
+    document.querySelector("#rw-stage b").textContent = stage;
+    const rel = mag / adultResp;
+    document.querySelector("#rw-cmp b").textContent = rel >= 1.03 ? "+" + Math.round((rel - 1) * 100) + "% stronger" : rel <= 0.97 ? Math.round((1 - rel) * 100) + "% weaker" : "about the same";
+  }, { animate: true });
+
+  TB.slider("reward-age", (v) => v.toFixed(0) + " yr", (v) => { age = v; });
+  TB.on("reward-give", "click", fire);
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
