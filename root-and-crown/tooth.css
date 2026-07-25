@@ -64,6 +64,25 @@ body {
 a { color: var(--ice); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* Skip link — off-screen until focused, then pinned above the sticky masthead.
+   Without it a keyboard user must tab through ten chapter tabs on every page
+   before reaching the content. */
+.skip {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 60;
+  background: var(--mint);
+  color: #04211d;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 10px 16px;
+  border-radius: 0 0 8px 0;
+}
+.skip:focus { left: 0; text-decoration: none; }
+
 /* ---------- masthead & nav ---------- */
 
 .masthead {
