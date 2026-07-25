@@ -21,7 +21,7 @@
     <a href="water.html">3 · Water &amp; Frost</a>
     <a href="materials.html">4 · Ageing</a>
     <a href="distress.html">5 · The Distress Catalogue</a>
-    <a href="repair.html">6 · Repair</a>
+    <a href="repair.html">6 · Looking After Roads</a>
     <a href="roadworks.html">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -83,13 +83,15 @@ with <a href="materials.html">age</a>.</p>
     <span class="ro" id="ro-sub-wrap">stress on subgrade <b id="ro-sub">—</b></span>
     <span class="ro" id="ro-verdict-wrap">verdict <b id="ro-verdict">—</b></span>
   </div>
-  <div class="fig-note">The bright bulb is the region of soil that feels the load — the
-  classic Boussinesq "pressure bulb". Notice two things. First, heavier wheels barely raise the
-  <b>surface</b> pressure (that is set by tyre inflation, not weight) — they spread it over a
-  bigger contact patch. Second, that bigger patch drives the bulb far <b>deeper</b>, so the
-  stress reaching the subgrade climbs steeply with load. A thicker build keeps that deep stress
-  low. On-axis stresses use the Boussinesq solution for a uniform circular load; the shading is
-  a schematic of the full field.</div>
+  <div class="fig-note">The bright region is the classic Boussinesq "pressure bulb" — how far down
+  the load is still meaningfully felt. Notice two things. First, heavier wheels barely raise the
+  <b>surface</b> pressure at all (that is set by tyre inflation, not weight) — they spread it over
+  a bigger contact patch. Second, that bigger patch pushes the bulb <b>deeper</b>, so the stress
+  arriving at the subgrade rises roughly <b>in proportion</b> to wheel load, and a thicker build
+  cuts it sharply. Note what this does <em>not</em> say: the fourth-power law of
+  <a href="loads.html">Chapter&nbsp;2</a> does not come from this stress field — it comes from
+  <em>fatigue</em> under repeated bending, which is a different mechanism. On-axis stresses use the
+  Boussinesq solution for a uniform circular load; the shading is a schematic of the full field.</div>
 </figure>
 
 <div class="prose">
@@ -124,6 +126,21 @@ costly, thin layers on top; weak, cheap, thick layers below. Each layer only has
 enough for the (already spread-out) stress that reaches it, so the dear asphalt can be thin and
 the cheap stone can do the bulk of the spreading. It is the most economical way yet found to
 carry a wheel over soft ground.</p>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float"><use href="#char-prof"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Professor Camber</p>
+    <p class="say">"Run the numbers on the figure above and you'll see the trick. A lorry tyre
+    presses at about 800&nbsp;kilopascals — eight atmospheres, concentrated on a patch the size of
+    a dinner plate. Ordinary clay subgrade starts rutting somewhere around a tenth of that."</p>
+    <p class="say">"So the entire job of half a metre of stone is to take that eight-atmosphere
+    stamp and hand the ground below a gentle push it can live with. Every layer is just a device
+    for spreading a number until it stops being dangerous."</p>
+  </div>
+</div>
 
 <div class="callout gold">
   <span class="tag">Where roads crack from</span>
@@ -195,10 +212,16 @@ flexible asphalt. Concrete's failure modes get their own entries in the
   area <span class="m">Q/p</span>, so <span class="m">a = √(Q/πp)</span>. Because
   <span class="m">σ<sub>z</sub></span> depends on the ratio <span class="m">a/z</span>, a
   bigger contact patch (heavier wheel) pushes the same fraction of pressure to a greater depth
-  — that is why the deep, subgrade-level stress climbs steeply with axle load while the surface
-  pressure hardly moves. Real pavements are layered, not a uniform half-space, so engineers use
-  multi-layer elastic theory (Burmister) or finite elements; but the single-bulb picture
-  captures the essential economics of why we build in layers at all.</p>
+  — which is why the surface pressure hardly moves with load while the deep, subgrade-level
+  stress keeps rising. Deep enough that <span class="m">z ≫ a</span>, the expression collapses to
+  <span class="m">σ<sub>z</sub> ≈ 1.5 Q / (π z²)</span>: at depth the stress depends only on the
+  <em>total</em> load <span class="m">Q</span>, not on how it is spread — so it grows
+  <strong>linearly</strong> with wheel load, and no faster. Keep that firmly separate from the
+  fourth-power law: <em>stress</em> is linear in load; <em>damage</em> goes as the fourth power,
+  because fatigue life falls very steeply with the strain each pass imposes. Real pavements are
+  layered, not a uniform half-space, so engineers use multi-layer elastic theory (Burmister) or
+  finite elements; but the single-bulb picture captures the essential economics of why we build in
+  layers at all.</p>
 </details>
 
 </div>
@@ -261,8 +284,10 @@ flexible asphalt. Concrete's failure modes get their own entries in the
     const a_mm = contactRadius_mm(load);
     const zs_mm = DEPTH[build];
 
-    // vertical scale: show down to 1000 mm
-    const maxDepth = 1000;
+    // Vertical scale follows the build, showing the layers plus a useful depth
+    // of subgrade below them. A fixed 1000 mm scale would leave the thin build
+    // as a sliver of road above half a frame of undifferentiated soil.
+    const maxDepth = Math.round(zs_mm * 1.7);
     const y0 = surfaceY, y1 = h;
     const mm2y = (mm) => y0 + (mm / maxDepth) * (y1 - y0);
     const cx = w * 0.5;
@@ -325,19 +350,24 @@ flexible asphalt. Concrete's failure modes get their own entries in the
     // ---- the wheel / tyre ----
     const aPx = a_mm * pxPerMm;
     ctx.fillStyle = "#e7e7ee";
-    ctx.fillRect(cx - aPx, y0 - 4, aPx * 2, 4);         // contact patch
+    ctx.fillRect(cx - aPx, y0 - 4, aPx * 2, 4);         // contact patch (true to scale)
+    // The tyre above it keeps a constant, tyre-like proportion: only the contact
+    // patch is to scale, so a heavier wheel widens its footprint without the
+    // tyre itself morphing from a sliver into a slab.
+    // Capped to the sky available above the road, so a wide contact patch can
+    // never push the tyre (and its load arrow) off the top of the frame.
+    const tyreH = Math.min(Math.max(aPx * 1.8, 34) * 1.15, y0 - 46);
+    const tyreW = tyreH / 1.15;
     ctx.fillStyle = "#1c1c22";
-    RW.roundRect(ctx, cx - aPx * 0.9, y0 - 46, aPx * 1.8, 44, 8); ctx.fill();
+    RW.roundRect(ctx, cx - tyreW / 2, y0 - tyreH - 2, tyreW, tyreH, tyreW * 0.22); ctx.fill();
     ctx.fillStyle = "#3a3a44";
-    RW.roundRect(ctx, cx - aPx * 0.55, y0 - 38, aPx * 1.1, 28, 6); ctx.fill();
-    // load arrow
-    ctx.strokeStyle = C.amber; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(cx, y0 - 74); ctx.lineTo(cx, y0 - 50); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(cx - 5, y0 - 58); ctx.lineTo(cx, y0 - 50); ctx.lineTo(cx + 5, y0 - 58); ctx.fill();
-    RW.label(ctx, load.toFixed(0) + " kN", cx + 10, y0 - 62, { color: C.amber, font: RW.mono(12, true) });
-
-    // sky above surface
-    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, y0 - 46 > 0 ? 0 : 0);
+    RW.roundRect(ctx, cx - tyreW * 0.28, y0 - tyreH * 0.78, tyreW * 0.56, tyreH * 0.5, tyreW * 0.12); ctx.fill();
+    // load arrow, sitting just above whatever height the tyre reached
+    const arrTip = y0 - tyreH - 6, arrTail = arrTip - 24;
+    ctx.strokeStyle = C.amber; ctx.fillStyle = C.amber; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, arrTail); ctx.lineTo(cx, arrTip); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 5, arrTip - 8); ctx.lineTo(cx, arrTip); ctx.lineTo(cx + 5, arrTip - 8); ctx.fill();
+    RW.label(ctx, load.toFixed(0) + " kN", cx + 10, arrTail + 10, { color: C.amber, font: RW.mono(12, true) });
   }, { animate: false });
 
   RW.slider("bulb-load", (v) => v.toFixed(0) + " kN", (v) => { load = v; update(); });

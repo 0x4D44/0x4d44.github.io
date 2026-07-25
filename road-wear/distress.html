@@ -21,7 +21,7 @@
     <a href="water.html">3 · Water &amp; Frost</a>
     <a href="materials.html">4 · Ageing</a>
     <a href="distress.html" aria-current="page">5 · The Distress Catalogue</a>
-    <a href="repair.html">6 · Repair</a>
+    <a href="repair.html">6 · Looking After Roads</a>
     <a href="roadworks.html">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -116,7 +116,7 @@ decides whether it wants a cheap seal or a dig-out.</p>
 <ul>
   <li><strong>Rutting.</strong> Longitudinal depressions in the wheelpaths. Either the asphalt
   itself creeping sideways under hot, heavy, slow loads (a mix or binder too soft), or the layers
-  below being pushed down (a structural rut). Dangerous because ruts pond water — hydroplaning and
+  below being pushed down (a structural rut). Dangerous because ruts pond water — aquaplaning and
   spray.</li>
   <li><strong>Shoving &amp; corrugation.</strong> Ripples or a bow-wave of displaced asphalt,
   where braking, accelerating or turning traffic shoves an unstable, too-soft mix — classic at
@@ -165,13 +165,36 @@ so the limited money goes where it does the most good.</p>
     <svg class="char sm"><use href="#char-tarmac"/></svg>
   </div>
   <div class="lines">
-    <p class="who">Professor Camber</p>
+    <p class="who">Professor Camber, with Tarmac as the patient</p>
     <p class="say">"Show me the cracks and I'll tell you the cause. Along the wheelpath and
-    interlaced? You've overloaded me. Neat lines across the road? That's the cold. A crazy-paving
-    mosaic everywhere? My binder's just old. The road writes its own case notes — you only have to
-    read them."</p>
+    interlaced? He's been overloaded. Neat lines straight across? That's the cold. A crazy-paving
+    mosaic over the whole lane? His binder is simply old. The road writes its own case notes — you
+    only have to read them."</p>
+    <p class="say"><b>Tarmac:</b> "It's all very well being diagnosed. I'd quite like some
+    treatment."</p>
   </div>
 </div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">how a PCI score is actually built</span></summary>
+  <p>The <strong>Pavement Condition Index</strong> (ASTM D6433) is not a judgement call — it is a
+  procedure. A section is divided into sample units; a surveyor walks each one and records, for
+  every distress present, its <em>type</em>, its <em>severity</em> (low/medium/high, against
+  published thresholds — crack width, rut depth, degree of spalling) and its <em>density</em>: the
+  percentage of the sample unit's area it affects.</p>
+  <p>Each (type, severity, density) triple is then looked up in a set of curves to give a
+  <strong>deduct value</strong> — how many points that particular problem costs. Deducts are
+  <em>not</em> simply added: several distresses on one section overlap in what they signify, so a
+  correction is applied to the total to avoid double-counting, and the corrected total is
+  subtracted from 100:</p>
+  <div class="eq"><span class="m">PCI = 100 − CDV</span></div>
+  <p>where CDV is the corrected deduct value. The weighting is deliberately not even-handed: a
+  small area of high-severity fatigue cracking costs far more than a large area of low-severity
+  ravelling, because the first says the <em>structure</em> is failing and the second says only the
+  <em>surface</em> is. That is the whole reason to score type and severity separately rather than
+  just measuring how bad a road looks — the index is trying to predict what the road will need, not
+  to describe how it photographs.</p>
+</details>
 
 </div>
 
@@ -186,7 +209,7 @@ so the limited money goes where it does the most good.</p>
 <script>
 (function () {
   "use strict";
-  const { clamp, lerp, mix, rng, C } = RW;
+  const { lerp, mix, rng, C } = RW;
 
   let type = "alligator", sev = 2;
 
@@ -260,14 +283,30 @@ so the limited money goes where it does the most good.</p>
       for (let c = 1; c < cols; c++) { const x = w * c / cols; jagV(ctx, x, 0, x, h, 16, 0.8 + S * 0.4, R); }
       for (let r = 1; r < rows; r++) { const y = h * r / rows; jag(ctx, 0, y, w, y, 16, 0.8 + S * 0.4, R); }
     } else if (type === "rut") {
+      // Dark-on-dark shading alone is invisible here, so the ruts are shown the
+      // way you actually spot them on a road: as troughs holding standing water,
+      // with a lit shoulder along each upper edge.
       for (const yc of wp) {
         const rd = h * (0.03 + S * 0.03);
         const grad = ctx.createLinearGradient(0, yc - rd, 0, yc + rd);
-        grad.addColorStop(0, "rgba(0,0,0,0.05)"); grad.addColorStop(0.5, "rgba(0,0,0,0.55)");
-        grad.addColorStop(1, "rgba(0,0,0,0.05)");
+        grad.addColorStop(0, "rgba(0,0,0,0.10)");
+        grad.addColorStop(0.5, "rgba(0,0,0,0.60)");
+        grad.addColorStop(1, "rgba(0,0,0,0.10)");
         ctx.fillStyle = grad; ctx.fillRect(0, yc - rd, w, rd * 2);
-        ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 2;
+        // ponded water in the trough
+        const wg = ctx.createLinearGradient(0, yc - rd * 0.42, 0, yc + rd * 0.42);
+        wg.addColorStop(0, "rgba(90,180,225,0)");
+        wg.addColorStop(0.5, "rgba(100,175,215," + (0.09 + S * 0.05) + ")");
+        wg.addColorStop(1, "rgba(90,180,225,0)");
+        ctx.fillStyle = wg; ctx.fillRect(0, yc - rd * 0.42, w, rd * 0.84);
+        // broken specular glints, so it reads as wet rather than painted
+        ctx.fillStyle = "rgba(200,230,250," + (0.07 + S * 0.04) + ")";
+        for (let gx = 0; gx < w; gx += 74) ctx.fillRect(gx, yc - 1, 20 + (gx % 15), 1.5);
+        // lit upper shoulder
+        ctx.strokeStyle = "rgba(255,255,255,0.16)"; ctx.lineWidth = 2;
         stroke(0, yc - rd, w, yc - rd);
+        ctx.strokeStyle = "rgba(0,0,0,0.45)"; ctx.lineWidth = 1.5;
+        stroke(0, yc + rd, w, yc + rd);
       }
       // cross-section inset
       inset(ctx, w, h, (ix, iy, iw, ih) => {
@@ -291,15 +330,25 @@ so the limited money goes where it does the most good.</p>
         if (R() > 0.6) { ctx.fillStyle = "rgba(150,146,136,0.4)"; ctx.beginPath(); ctx.arc(x + 1, y + 1, r * 0.5, 0, 6.28); ctx.fill(); }
       }
     } else if (type === "bleed") {
+      // The description promises "a shiny black film", so the giveaway has to be
+      // the SHINE: a glossy band that has swallowed the surface texture, with a
+      // hard specular highlight running down the middle of each wheelpath.
       for (const yc of wp) {
         const bh = h * (0.08 + S * 0.04);
         const grad = ctx.createLinearGradient(0, yc - bh, 0, yc + bh);
-        grad.addColorStop(0, "rgba(0,0,0,0)"); grad.addColorStop(0.5, "rgba(10,10,14,0.95)");
+        grad.addColorStop(0, "rgba(0,0,0,0)");
+        grad.addColorStop(0.5, "rgba(6,6,9,0.97)");      // texture drowned in binder
         grad.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = grad; ctx.fillRect(0, yc - bh, w, bh * 2);
-        // sheen
-        ctx.fillStyle = "rgba(120,160,200," + (0.05 + S * 0.05) + ")";
-        ctx.fillRect(0, yc - bh * 0.5, w, bh);
+        // specular sheen — bright, narrow, and brighter with severity
+        const sh = ctx.createLinearGradient(0, yc - bh * 0.45, 0, yc + bh * 0.45);
+        sh.addColorStop(0, "rgba(190,215,240,0)");
+        sh.addColorStop(0.5, "rgba(205,225,245," + (0.16 + S * 0.13) + ")");
+        sh.addColorStop(1, "rgba(190,215,240,0)");
+        ctx.fillStyle = sh; ctx.fillRect(0, yc - bh * 0.45, w, bh * 0.9);
+        // broken glints, as a wet-looking gloss reflects the sky unevenly
+        ctx.fillStyle = "rgba(235,245,255," + (0.12 + S * 0.10) + ")";
+        for (let gx = 6; gx < w; gx += 58) ctx.fillRect(gx, yc - 2, 30 + (gx % 23), 3.5);
       }
     } else if (type === "pothole") {
       const yc = wp[0];
@@ -319,9 +368,10 @@ so the limited money goes where it does the most good.</p>
     const badge = SEVTXT[S] + " severity";
     ctx.font = RW.mono(10.5, true);
     const bw2 = ctx.measureText(badge).width + 20;
+    // sits clear of the top edge so the sticky masthead can never cover it
     ctx.fillStyle = col;
-    RW.roundRect(ctx, w - bw2 - 12, 12, bw2, 22, 5); ctx.fill();
-    RW.label(ctx, badge, w - bw2 / 2 - 12, 23, { align: "center", baseline: "middle", color: "#1a1206", font: RW.mono(10.5, true) });
+    RW.roundRect(ctx, w - bw2 - 12, 44, bw2, 22, 5); ctx.fill();
+    RW.label(ctx, badge, w - bw2 / 2 - 12, 55, { align: "center", baseline: "middle", color: "#1a1206", font: RW.mono(10.5, true) });
 
     function stroke(x1, y1, x2, y2) { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); }
   }, { animate: false });

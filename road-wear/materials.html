@@ -21,7 +21,7 @@
     <a href="water.html">3 · Water &amp; Frost</a>
     <a href="materials.html" aria-current="page">4 · Ageing</a>
     <a href="distress.html">5 · The Distress Catalogue</a>
-    <a href="repair.html">6 · Repair</a>
+    <a href="repair.html">6 · Looking After Roads</a>
     <a href="roadworks.html">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -125,12 +125,12 @@ grip long before it is structurally worn out.</p>
 <div class="strip">
   <div class="panel"><div class="art"><span class="n">1</span><svg class="char float"><use href="#char-tarmac"/></svg></div>
     <div class="cap"><b>Year 0.</b> Fresh and ductile — the binder stretches around every load and cold snap.</div></div>
-  <div class="panel"><div class="art"><span class="n">2</span><svg class="char"><use href="#char-drip"/></svg></div>
-    <div class="cap"><b>Oxidising.</b> Sun, air and UV slowly stiffen the tar. It hardens; its stretch quietly disappears.</div></div>
-  <div class="panel"><div class="art"><span class="n">3</span><svg class="char"><use href="#char-pot"/></svg></div>
-    <div class="cap"><b>Brittle.</b> Now it can't flex. Thermal movement and traffic craze the surface into <b>block cracking</b>.</div></div>
-  <div class="panel"><div class="art"><span class="n">4</span><svg class="char"><use href="#char-prof"/></svg></div>
-    <div class="cap"><b>Ravelling.</b> The binder loses its grip; stones fly out, texture opens, and water gets its invitation.</div></div>
+  <div class="panel"><div class="art"><span class="n">2</span><svg class="char"><use href="#char-prof"/></svg></div>
+    <div class="cap"><b>Oxidising.</b> Camber: "Sun, air and UV are slowly rebuilding his chemistry. He hardens; the stretch quietly goes."</div></div>
+  <div class="panel"><div class="art"><span class="n">3</span><svg class="char"><use href="#char-tarmac"/></svg></div>
+    <div class="cap"><b>Brittle.</b> Now he can't flex. Thermal movement and traffic craze the surface into <b>block cracking</b>.</div></div>
+  <div class="panel"><div class="art"><span class="n">4</span><svg class="char"><use href="#char-pot"/></svg></div>
+    <div class="cap"><b>Ravelling — then Percy.</b> The binder loses its grip, stones fly out, and water has its invitation.</div></div>
 </div>
 
 <h2>The redeeming trick: asphalt heals</h2>
@@ -192,15 +192,15 @@ oxidised the binder, the less it heals.</p>
   let age = 0;
   // property models (illustrative of a paving-grade bitumen ageing in service)
   const pen = (a) => lerp(52, 14, clamp(a / 25, 0, 1));        // dmm, falls
-  const soft = (a) => lerp(48, 64, clamp(a / 25, 0, 1));       // °C, rises
+  const soft = (a) => lerp(52, 66, clamp(a / 25, 0, 1));       // °C, rises
   const duct = (a) => lerp(100, 4, Math.pow(clamp(a / 25, 0, 1), 0.7)); // cm, collapses
 
   function update() {
     RW.set("ro-pen", pen(age).toFixed(0) + " dmm");
     RW.set("ro-soft", soft(age).toFixed(0) + " °C");
     RW.set("ro-duc", duct(age).toFixed(0) + " cm");
-    const brittle = age > 16;
-    RW.set("ro-brit", age < 8 ? "ductile" : age < 16 ? "stiffening" : "brittle");
+    const brittle = age >= 16;
+    RW.set("ro-brit", age < 8 ? "ductile" : brittle ? "brittle" : "stiffening");
     document.getElementById("ro-brit-wrap").classList.toggle("alert", brittle);
     document.getElementById("ro-brit-wrap").classList.toggle("good", age < 8);
     const dw = document.getElementById("ro-duc-wrap");
@@ -214,17 +214,23 @@ oxidised the binder, the less it heals.</p>
     const cy = h * 0.46;
     const gripW = 22, gripH = 66;
     const af = clamp(age / 25, 0, 1);
-    // how far the thread can be drawn out before it parts: ductile stretches
-    // far, brittle snaps almost at once
-    const maxStretch = lerp(1.0, 0.06, Math.pow(af, 0.7));
+    // How far the thread can be drawn before it parts. This IS the ductility
+    // readout, as a fraction of the rig's 100 cm scale — one number, so the
+    // figure and the readouts can never disagree.
+    const maxStretch = clamp(duct(age) / 100, 0.02, 1);
     const restGap = w * 0.13;
     const maxTravel = w * 0.31;
 
-    // pull cycle 0..1..0; a brittle thread parts partway through
-    const cyc = RW.reducedMotion ? Math.min(0.85, maxStretch)
-      : (Math.sin(t * 0.85) * 0.5 + 0.5);
+    // The grips draw out at a steady rate and always pull slightly past breaking
+    // point, so every age shows the same gesture — pull, neck, snap, reset — and
+    // it is the distance reached that tells you how aged the binder is. (A cycle
+    // scaled to the full rig would leave a brittle binder snapped and motionless
+    // for almost the whole loop.)
+    const period = 5;
+    const ph = RW.reducedMotion ? (af > 0.6 ? 0.95 : 0.8) : (t % period) / period;
+    const cyc = ph * maxStretch * 1.15;
     const broken = cyc > maxStretch;
-    const eff = broken ? maxStretch : cyc;
+    const eff = Math.min(cyc, maxStretch);
     const travel = eff * maxTravel;
 
     const leftX = w * 0.5 - restGap / 2 - travel;
@@ -236,7 +242,9 @@ oxidised the binder, the less it heals.</p>
     ctx.fillStyle = "#15151b"; ctx.fillRect(0, benchY, w, h - benchY);
     ctx.strokeStyle = C.line; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, benchY); ctx.lineTo(w, benchY); ctx.stroke();
-    // ticks every 10% of max travel, labelled as ductility in cm
+    // Quarter ticks along the left grip's travel, labelled in cm. The scale is
+    // calibrated so the mark the grip reaches at breaking point IS the ductility
+    // readout — 100 cm at the far end for a fresh binder.
     const zeroX = w * 0.5 - restGap / 2, fullX = w * 0.5 - restGap / 2 - maxTravel;
     for (let f = 0; f <= 1.0001; f += 0.25) {
       const x = lerp(zeroX, fullX, f);
@@ -244,13 +252,15 @@ oxidised the binder, the less it heals.</p>
       ctx.beginPath(); ctx.moveTo(x, benchY); ctx.lineTo(x, benchY + 7); ctx.stroke();
       RW.label(ctx, (f * 100).toFixed(0) + " cm", x, benchY + 20, { align: "center", color: C.muted });
     }
-    RW.label(ctx, "distance drawn before the thread parts", 12, h - 10,
+    RW.label(ctx, "thread drawn before it parts (read at the left grip)", 12, h - 10,
       { color: C.muted, font: RW.mono(10.5) });
 
     // ---- the binder thread ------------------------------------------
-    // warm, glossy bitumen so it reads against the dark bench
-    const cold = mix("#8a5a1e", "#6b6257", af);   // aged binder greys as it hardens
-    const hot = mix("#d99a3c", "#9a8f7e", af);
+    // Bitumen is black — but pure black would vanish against the bench, so the
+    // body stays near-black and the form is carried by a warm gloss highlight,
+    // which dulls and greys as the binder oxidises.
+    const cold = mix("#0f0c09", "#14131a", af);   // near-black carcass
+    const hot = mix("#6b4718", "#544f47", af);    // glossy sheen, greying with age
     if (!broken) {
       const stretchFrac = eff / Math.max(maxStretch, 0.001);
       const endH = gripH * 0.40;
@@ -262,7 +272,7 @@ oxidised the binder, the less it heals.</p>
       ctx.quadraticCurveTo(w * 0.5, cy + midH, innerL, cy + endH);
       ctx.closePath();
       const g = ctx.createLinearGradient(0, cy - endH, 0, cy + endH);
-      g.addColorStop(0, cold); g.addColorStop(0.42, hot); g.addColorStop(1, cold);
+      g.addColorStop(0, cold); g.addColorStop(0.30, hot); g.addColorStop(0.62, cold); g.addColorStop(1, cold);
       ctx.fillStyle = g; ctx.fill();
       ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 1; ctx.stroke();
       // specular highlight along the top of the thread
@@ -274,14 +284,16 @@ oxidised the binder, the less it heals.</p>
       // parted: two blunt stubs that recoil back toward their grips
       const stub = (innerR - innerL) * (af > 0.6 ? 0.16 : 0.34);
       const endH = gripH * 0.40;
-      ctx.fillStyle = hot;
       for (const [x0, dir] of [[innerL, 1], [innerR, -1]]) {
         ctx.beginPath();
         ctx.moveTo(x0, cy - endH);
         ctx.quadraticCurveTo(x0 + dir * stub * 0.7, cy - endH * 0.5, x0 + dir * stub, cy - endH * 0.18);
         ctx.lineTo(x0 + dir * stub, cy + endH * 0.18);
         ctx.quadraticCurveTo(x0 + dir * stub * 0.7, cy + endH * 0.5, x0, cy + endH);
-        ctx.closePath(); ctx.fill();
+        ctx.closePath();
+        const sg = ctx.createLinearGradient(0, cy - endH, 0, cy + endH);
+        sg.addColorStop(0, cold); sg.addColorStop(0.30, hot); sg.addColorStop(0.62, cold); sg.addColorStop(1, cold);
+        ctx.fillStyle = sg; ctx.fill();
         ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 1; ctx.stroke();
       }
       // the break, marked between the stubs
