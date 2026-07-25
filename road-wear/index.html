@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Road to Ruin — Why Road Surfaces Fail, and How We Keep Them Alive</title>
+<meta name="description" content="A deep, interactive field guide to road wear and tear: how a road is built in layers, why heavy lorries do almost all the damage (the fourth-power law), how water and frost prise a road apart into potholes, how bitumen ages, a full catalogue of cracks and distress, and how surface dressing, patching and resurfacing keep a road alive — with live diagrams and a cast of cartoon guides.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="loads.html">2 · The Weight of Traffic</a>
+    <a href="water.html">3 · Water &amp; Frost</a>
+    <a href="materials.html">4 · Ageing</a>
+    <a href="distress.html">5 · The Distress Catalogue</a>
+    <a href="repair.html">6 · Looking After Roads</a>
+    <a href="roadworks.html">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">An interactive field guide to the pavement under your wheels</p>
+  <h1>The Road to Ruin</h1>
+  <p class="standfirst">A road looks permanent. It isn't. It is a carefully engineered
+  stack of stone and tar, loaded a thousand times a day, soaked, frozen, baked and slowly
+  oxidised, and every road on Earth is quietly on its way back to gravel. This guide follows
+  that decline from the inside out — how a road is built to spread a load, why one lorry does
+  the damage of tens of thousands of cars, how a hairline crack becomes a pothole in a single frosty
+  week, and the unglamorous, beautifully cost-effective business of keeping the whole network
+  from falling apart.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">One lane, twenty-five years</span>
+    <span class="hint">oxidation · cracking · potholes · the effect of maintenance</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="hero" style="aspect-ratio: 2.5 / 1; min-height: 260px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="hero-age">age</label>
+      <input type="range" id="hero-age" min="0" max="25" step="0.5" value="4">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="hero-mode">regime</label>
+      <span class="seg" id="hero-mode">
+        <button data-v="neglect" class="on">left to rot</button>
+        <button data-v="maintain">maintained</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="hero-cap" style="font-size:13px; color:var(--ink-2)">
+      Drag the <b>age</b> slider forward. Left to rot, a fresh black surface greys as its tar
+      oxidises, hairline cracks spread into interlaced "crocodile" cracking, water gets in, and
+      by year&nbsp;15 the frost has punched out potholes. Switch to <b>maintained</b> and the
+      same road is dressed and patched on a cycle — it never looks new, but it never collapses
+      either. That gap is what a highways budget buys.
+    </span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p class="lead">Everything you dislike about the road outside your door — the rumble, the
+patch that never quite matches, the pothole that eats a wheel every March — is the visible
+end of a long, understood chain of physics. This guide walks the whole chain.</p>
+
+<p>The main text tells the story in plain English: what a road actually is, what breaks it,
+and what we do about it. Where the honest engineering is worth seeing — a stress formula, the
+notorious fourth-power damage law, the arithmetic of a maintenance budget — it is folded into
+a panel like the one below. Open it or skip it; the story reads either way. And every chapter
+but the closing lexicon carries live apparatus you can drive: spread a wheel load through the
+layers, load a road to destruction with different axles, freeze water in a crack until it
+spalls, age a bitumen binder until it snaps, identify a distress from its pattern, place a
+repair on a deteriorating road to watch it buy back years, and run a paving train against the
+clock.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the real engineering, on demand</span></summary>
+  <p>Panels like this hold the quantitative version — the load equivalency factors, the
+  stress-and-strain of a flexible pavement, the freeze–thaw volumetrics, the whole-life cost
+  sums. Nothing in the main narrative depends on opening them.</p>
+  <p>Units are SI with the everyday equivalents alongside. Two numbers recur: the
+  <b>standard axle</b> — an 80&nbsp;kN (about 8.16-tonne) single axle, the yardstick against
+  which all traffic damage is measured — and the fact that water <b>expands about 9%</b> when
+  it freezes. Between them they explain most of what you see on a British road in March.</p>
+</details>
+
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-tarmac"/></svg>
+    <svg class="char sm"><use href="#char-prof"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Your guides</p>
+    <p class="say"><b>Tarmac</b> is the road itself — long-suffering, cracked, and happy to
+    explain what's happening under the surface. <b>Professor&nbsp;Camber</b>, the highways
+    engineer, brings the numbers. <b>Hauler</b> the lorry, <b>Drip</b> the raindrop and
+    <b>Percy</b> the pothole are the trouble; <b>Rolla</b> the roller helps put it right.</p>
+    <p class="say">Meet them properly on the way down.</p>
+  </div>
+</div>
+
+<div class="cards">
+  <a class="card" href="anatomy.html">
+    <span class="no">CHAPTER 1</span>
+    <h3>Anatomy of a Road</h3>
+    <p>A road is a load-spreading sandwich: surface course, binder, base, sub-base and the
+    soil beneath. What each layer does, flexible asphalt versus rigid concrete, and what
+    "tarmac" and "bitumen" really are. Push a wheel load through the stack.</p>
+  </a>
+  <a class="card" href="loads.html">
+    <span class="no">CHAPTER 2</span>
+    <h3>The Weight of Traffic</h3>
+    <p>The single most important fact about roads: damage rises with roughly the <em>fourth
+    power</em> of axle load, so a loaded lorry does the work of thousands of cars and cars
+    barely count at all. Load a pavement to failure and count the ESALs.</p>
+  </a>
+  <a class="card" href="water.html">
+    <span class="no">CHAPTER 3</span>
+    <h3>Water &amp; Frost</h3>
+    <p>Water is the road's real enemy: it weakens the layers, strips the tar off the stone,
+    and — freezing 9% larger inside a crack — levers the surface apart. Watch a pothole
+    grow, one freeze–thaw cycle at a time.</p>
+  </a>
+  <a class="card" href="materials.html">
+    <span class="no">CHAPTER 4</span>
+    <h3>Ageing</h3>
+    <p>Bitumen is a living, oxidising material. It stiffens and embrittles year on year until
+    it cracks under loads it once shrugged off; the stone polishes smooth and skid resistance
+    falls. Age a binder and feel it go brittle.</p>
+  </a>
+  <a class="card" href="distress.html">
+    <span class="no">CHAPTER 5</span>
+    <h3>The Distress Catalogue</h3>
+    <p>Every failure has a name and a cause. Fatigue "crocodile" cracking, longitudinal and
+    transverse cracks, rutting, shoving, ravelling, bleeding, potholes — a field guide to
+    reading a road, with severity levels and the condition index engineers score.</p>
+  </a>
+  <a class="card" href="repair.html">
+    <span class="no">CHAPTER 6</span>
+    <h3>Looking After Roads</h3>
+    <p>The deterioration curve and the golden rule of pavement management: a pound of
+    prevention beats six of cure. Crack sealing, surface dressing, patching, mill-and-overlay
+    and reconstruction — place a treatment and watch it buy years.</p>
+  </a>
+  <a class="card" href="roadworks.html">
+    <span class="no">CHAPTER 7</span>
+    <h3>Roadworks</h3>
+    <p>How a road is actually rebuilt: the milling machine that grinds off the old surface,
+    the paver that lays the new, and the rollers that must compact it inside a closing
+    temperature window. Run the paving train.</p>
+  </a>
+  <a class="card" href="lexicon.html">
+    <span class="no">CHAPTER 8</span>
+    <h3>The Lexicon</h3>
+    <p>The working vocabulary A–Z; the key numbers to full precision; a table of layer
+    materials and thicknesses; and a timeline from the Roman <em>via</em> through Telford and
+    McAdam to hot-mix asphalt and Superpave.</p>
+  </a>
+</div>
+
+<div class="prose">
+
+<h2>What actually wears a road out?</h2>
+
+<p>Ask why a road fails and most people say "the weather" or "too much traffic." Both are
+right, but neither is the whole story, and the balance between them is surprising. A road
+surface is destroyed by four processes working together, and this guide devotes a chapter to
+each:</p>
+
+<ul>
+  <li><strong>Load.</strong> Every axle that passes flexes the pavement a little, like bending
+  a paperclip. Do it enough times and the material fatigues and cracks from the bottom up.
+  Crucially, the damage is wildly unequal between vehicles — see below.</li>
+  <li><strong>Water.</strong> A dry, well-drained road can last decades. Let water into the
+  structure and everything accelerates: the layers soften, the bond between tar and stone
+  fails, and in a freezing climate the water levers the surface apart from within.</li>
+  <li><strong>Time and weather.</strong> The bitumen binder oxidises in air and ultraviolet
+  light, growing stiff and brittle; hot summers and cold winters expand and contract the
+  slab; the stone polishes smooth under tyres.</li>
+  <li><strong>Construction and drainage.</strong> A weak spot, a thin patch, a blocked gully,
+  a poorly compacted joint — most early failures trace back to how the road was built and
+  drained, not to abuse.</li>
+</ul>
+
+<div class="callout gold">
+  <span class="tag">The one law to remember</span>
+  <p>Road damage does not rise in proportion to weight — it rises with roughly the
+  <strong>fourth power</strong> of axle load. Relative to a "standard" 8-tonne axle, the
+  damage of any other axle is:</p>
+  <div class="eq"><span class="m">damage ≈ ( <b>L</b> / <b>L</b><sub>std</sub> )<sup>4</sup></span></div>
+  <p>So doubling the axle load does <strong>2⁴ = 16 times</strong> the damage. Axle for axle, one
+  loaded lorry axle does the structural harm of about <strong>sixty-five thousand car axles</strong>.
+  A typical family car contributes under a sixty-thousandth of a standard axle — for pavement wear,
+  cars are very nearly irrelevant. This single fact reshapes how you think about every road you
+  drive on (that's <a href="loads.html">Chapter&nbsp;2</a>).</p>
+</div>
+
+<h2>Two ways to build a road</h2>
+
+<p>Almost every paved road on Earth is one of two kinds, and they fail in completely different
+ways:</p>
+
+<table class="data">
+  <caption>Flexible versus rigid pavement</caption>
+  <tr><th>&nbsp;</th><th>Flexible (asphalt)</th><th>Rigid (concrete)</th></tr>
+  <tr><td class="k">Surface</td><td>Bitumen-bound stone ("asphalt", "blacktop", "tarmac")</td>
+    <td>Portland-cement concrete slabs</td></tr>
+  <tr><td class="k">How it carries load</td><td>Bends slightly and spreads the load down
+    through the layers to the soil</td><td>Acts as a stiff beam, bridging over the ground
+    beneath</td></tr>
+  <tr><td class="k">Typical life</td><td class="num">~20 yr surface, longer structure</td>
+    <td class="num">30–40+ yr</td></tr>
+  <tr><td class="k">Fails by</td><td>Rutting, fatigue cracking, potholes, ravelling</td>
+    <td>Cracked/faulted slabs, joint failures, blow-ups</td></tr>
+  <tr><td class="k">Repair</td><td>Cheap and quick: patch, dress, mill &amp; overlay</td>
+    <td>Slower and dearer, but less frequent</td></tr>
+</table>
+
+<p>The vast majority of roads — and essentially everything in this guide's cartoons — are
+<strong>flexible asphalt pavements</strong>, because they are cheaper, quieter, quick to lay
+and easy to repair. They are also the more interesting patient: asphalt is a material that is
+solid, liquid and glue all at once, and most of the drama of road decay is really the drama of
+what happens to the tar. Concrete gets its due in the <a href="lexicon.html">Lexicon</a> and
+where it matters.</p>
+
+<div class="callout story">
+  <span class="tag">A very short history</span>
+  <p>Road-building is one of civilisation's oldest technologies and it kept being reinvented.
+  The Romans laid deep, multi-layered stone roads, some still traceable today. The modern
+  method is barely two centuries old: around 1820 the Scot John Loudon McAdam realised you did
+  not need Roman depth — a well-drained, compacted layer of small, angular, <em>clean</em>
+  broken stone would carry traffic and shed water. "Macadam" roads were later sprayed with tar
+  to lay the dust, giving <em>tarmacadam</em> — "tarmac." Running alongside it was the idea that
+  actually won: mixing the bitumen and stone together, hot, <em>before</em> laying — first done in
+  the 1870s and industrialised through the twentieth century as hot-mix asphalt, still how most of
+  the world's roads are surfaced today.</p>
+</div>
+
+<h2>How to read this guide</h2>
+
+<p>Start here and go in order — the chapters build on one another — or jump straight to
+whatever pulled you in (potholes are <a href="water.html">Chapter&nbsp;3</a>; the pothole
+you can't stop swerving round is <a href="distress.html">Chapter&nbsp;5</a>). Play with every
+interactive; a slider does the explaining that a paragraph can't. And a promise about honesty:
+the figures here use standard engineering models — the fourth-power law, elastic layer theory,
+condition indices — and where those models are rough approximations of a messy real material,
+the text says so. Roads are not mysterious. They are just under-appreciated, and losing a
+slow, expensive war with water and weight.</p>
+
+<p class="colophon">THE ROAD TO RUIN · a field guide to road wear, decay and repair · written
+and built as a self-contained static site: vanilla JavaScript, canvas and SVG, no frameworks,
+no build step. Engineering checked against standard references — the AASHO Road Test, the
+Highways Agency / National Highways <em>DMRB</em>, Asphalt Institute and TRL materials, and
+the ASTM/US-Army <em>PAVER</em> distress manuals. Part of the
+<a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, lerp, mix, rng, roundRect, C } = RW;
+
+  let age = 4;
+  let mode = "neglect";
+
+  const CAPS = {
+    neglect: "Left to rot: a fresh black surface greys as its tar oxidises, hairline cracks spread into interlaced “crocodile” cracking, water gets into the structure, and by year 15 the frost has punched out potholes. The decline is slow, then sudden — the last few years of neglect undo the road.",
+    maintain: "Maintained: the same road gets a preventive surface dressing every few years and its cracks are sealed and potholes patched before they spread. It never looks factory-new — the patches show — but the structure stays sound and the expensive rebuild is pushed decades away. This is what a highways budget quietly buys.",
+  };
+
+  // deterministic distress layout, revealed as a function of age
+  const cracks = [];
+  const R = rng(90210);
+  for (let i = 0; i < 26; i++) {
+    cracks.push({
+      x: R(), y: R(), ang: R() * 6.28, len: 0.03 + R() * 0.06,
+      born: 6 + R() * 12, kinks: 3 + (R() * 4 | 0), seed: (R() * 1e6) | 0,
+    });
+  }
+  const pots = [];
+  for (let i = 0; i < 8; i++) {
+    pots.push({ x: 0.1 + R() * 0.8, y: 0.15 + R() * 0.7, r: 0.02 + R() * 0.03,
+      born: 13 + R() * 9, seed: (R() * 1e6) | 0 });
+  }
+  const cars = [
+    { lane: 0, x: 0.2, sp: 0.14, col: "#5ad1ff" },
+    { lane: 1, x: 0.7, sp: 0.10, col: "#ff9d3c" },
+    { lane: 0, x: 0.9, sp: 0.17, col: "#e7e7ee" },
+  ];
+
+  function effAge() {
+    // maintained: distress is capped and periodically "reset" by dressing
+    if (mode === "maintain") {
+      const sinceDress = age % 7;          // dressed every 7 years
+      return Math.min(age, 7) * 0.35 + sinceDress * 0.5;
+    }
+    return age;
+  }
+
+  // A jittered lattice, clipped to an ellipse — the geometry of fatigue
+  // ("crocodile") cracking: a mesh of small many-sided cells.
+  function crackLattice(ctx, x, y, w, h, cell, R) {
+    const cols = Math.max(2, Math.ceil(w / cell)), rows = Math.max(2, Math.ceil(h / cell));
+    const cxp = x + w / 2, cyp = y + h / 2, rx = w / 2, ry = h / 2;
+    const P = [];
+    for (let j = 0; j <= rows; j++) {
+      P[j] = [];
+      for (let i = 0; i <= cols; i++) {
+        P[j][i] = { x: x + (i / cols) * w + (R() - 0.5) * cell * 0.75,
+                    y: y + (j / rows) * h + (R() - 0.5) * cell * 0.75 };
+      }
+    }
+    const inside = (p) => {
+      const u = (p.x - cxp) / rx, v = (p.y - cyp) / ry;
+      return u * u + v * v <= 1;
+    };
+    const seg = (a, b) => {
+      if (!inside(a) && !inside(b)) return;
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    };
+    for (let j = 0; j <= rows; j++) {
+      for (let i = 0; i <= cols; i++) {
+        if (i < cols) seg(P[j][i], P[j][i + 1]);
+        if (j < rows) seg(P[j][i], P[j + 1][i]);
+      }
+    }
+  }
+
+  function jagged(ctx, x0, y0, ang, len, kinks, seed, wpx) {
+    const r = rng(seed);
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    let x = x0, y = y0, a = ang;
+    const step = len / kinks;
+    for (let k = 0; k < kinks; k++) {
+      // small angular drift: cracks jag, they don't meander like stray hairs
+      a += (r() - 0.5) * 0.5;
+      x += Math.cos(a) * step; y += Math.sin(a) * step;
+      ctx.lineTo(x, y);
+    }
+    ctx.lineWidth = wpx; ctx.stroke();
+    return { x, y };
+  }
+
+  RW.canvas("hero", function (ctx, w, h, t) {
+    const a = effAge();
+    const ox = clamp(a / 16, 0, 1);                 // oxidation 0..1
+    const crackF = clamp((a - 6) / 12, 0, 1);       // crack progression
+    const gator = clamp((a - 12) / 10, 0, 1);       // alligator severity
+    const potF = clamp((a - 13) / 9, 0, 1);
+
+    // asphalt surface, greying with oxidation (an old road greys, but stays dark)
+    const base = mix("#111116", "#383840", ox);
+    ctx.fillStyle = base; ctx.fillRect(0, 0, w, h);
+    RW.speckle(ctx, 0, 0, w, h, Math.round(w * h / 900), 7, mix("#5a5750", "#9a968c", ox));
+
+    // faded edge + centre lane markings (UK: white solid edges, white centre dashes)
+    const m = age > 10 && mode === "neglect" ? clamp(1 - (age - 10) / 20, 0.35, 1) : 1;
+    const lw = Math.max(2, h * 0.009);
+    ctx.setLineDash([]);
+    line(ctx, 0, h * 0.06, w, h * 0.06, `rgba(238,236,224,${0.5 * m})`, lw);
+    line(ctx, 0, h * 0.94, w, h * 0.94, `rgba(238,236,224,${0.5 * m})`, lw);
+    ctx.setLineDash([w * 0.05, w * 0.05]);
+    line(ctx, 0, h * 0.5, w, h * 0.5, `rgba(238,236,224,${0.62 * m})`, lw);
+    ctx.setLineDash([]);
+
+    function line(c, x1, y1, x2, y2, col, lw) {
+      c.strokeStyle = col; c.lineWidth = lw;
+      c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+    }
+
+    // cracks
+    ctx.strokeStyle = "rgba(8,8,12,0.85)"; ctx.lineCap = "round";
+    for (const cr of cracks) {
+      if (a < cr.born) continue;
+      const grow = clamp((a - cr.born) / 5, 0, 1) * (0.4 + 0.6 * crackF);
+      jagged(ctx, cr.x * w, cr.y * h, cr.ang, cr.len * w * (0.6 + grow), cr.kinks, cr.seed, 1.6);
+      // branch for older cracks
+      if (grow > 0.5) jagged(ctx, cr.x * w, cr.y * h, cr.ang + 2.2, cr.len * w * 0.5 * grow, cr.kinks, cr.seed + 1, 1.2);
+    }
+
+    // crocodile cracking in the wheelpaths — a jittered lattice masked to an
+    // ellipse, so it reads as a mesh of small cells rather than loose dashes
+    if (gator > 0) {
+      ctx.strokeStyle = `rgba(6,6,10,${0.55 + 0.4 * gator})`;
+      ctx.lineWidth = 0.9 + gator * 0.5;
+      for (const yc of [0.3, 0.72]) {
+        const gw = w * 0.30 * gator, gh = h * 0.18;
+        const gx = w * 0.40, gy = h * yc - gh / 2;
+        crackLattice(ctx, gx, gy, gw, gh, 20 - gator * 6, rng(yc === 0.3 ? 555 : 777));
+      }
+    }
+
+    // potholes
+    if (mode === "neglect") {
+      for (const p of pots) {
+        if (a < p.born) continue;
+        const grow = clamp((a - p.born) / 4, 0, 1);
+        const pr = p.r * Math.min(w, h) * (0.6 + grow * 1.6);
+        const gr = rng(p.seed);
+        // ragged rim
+        ctx.fillStyle = "#0a0a0e";
+        ctx.beginPath();
+        const N = 12;
+        for (let i = 0; i <= N; i++) {
+          const an = i / N * 6.28;
+          const rr = pr * (0.75 + gr() * 0.5);
+          const px = p.x * w + Math.cos(an) * rr, py = p.y * h + Math.sin(an) * rr;
+          if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "rgba(120,116,106,0.5)"; ctx.lineWidth = 1.5; ctx.stroke();
+      }
+    } else {
+      // Maintenance patches — neat saw-cut rectangles of fresh asphalt where a
+      // failure was cut out and replaced. They must read as *repairs*, not as
+      // holes: modest, slightly bluer than the aged surface around them, and
+      // edged with the clean cut line that gives a proper patch away.
+      for (const p of pots) {
+        if (age < p.born) continue;
+        const pw = p.r * Math.min(w, h) * 1.5, ph = pw * 0.6;
+        const x = p.x * w - pw / 2, y = p.y * h - ph / 2;
+        ctx.fillStyle = "#232329";                       // fresher than the greyed surface
+        roundRect(ctx, x, y, pw, ph, 2); ctx.fill();
+        RW.speckle(ctx, x, y, pw, ph, 40, p.seed, "#77736a");
+        ctx.strokeStyle = "rgba(10,10,14,0.9)"; ctx.lineWidth = 1.6; ctx.stroke();
+        // the clean saw-cut edge that gives a proper patch away
+        ctx.strokeStyle = "rgba(255,255,255,0.13)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + pw, y); ctx.stroke();
+      }
+    }
+
+    // moving traffic (life) — plan view, so a car is longer than it is wide and
+    // runs along the lane; these travel right-to-left, nose at the left
+    for (const car of cars) {
+      car.x -= car.sp * 0.004;
+      if (car.x < -0.1) car.x = 1.1;
+      const cy = car.lane === 0 ? h * 0.28 : h * 0.72;
+      const len = w * 0.085, wid = Math.min(h * 0.13, len * 0.46);
+      const x0 = car.x * w - len / 2, y0 = cy - wid / 2;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      roundRect(ctx, x0 + 2, y0 + 3, len, wid, wid * 0.28); ctx.fill();
+      ctx.fillStyle = car.col;
+      roundRect(ctx, x0, y0, len, wid, wid * 0.28); ctx.fill();
+      // cabin glass, set back from the nose
+      ctx.fillStyle = "rgba(20,20,28,0.6)";
+      roundRect(ctx, x0 + len * 0.30, y0 + wid * 0.16, len * 0.34, wid * 0.68, wid * 0.14); ctx.fill();
+      // headlights at the nose
+      ctx.fillStyle = "#fff6cc";
+      ctx.beginPath(); ctx.arc(x0 + 3, y0 + wid * 0.24, 1.8, 0, 6.28); ctx.fill();
+      ctx.beginPath(); ctx.arc(x0 + 3, y0 + wid * 0.76, 1.8, 0, 6.28); ctx.fill();
+    }
+  }, { animate: true });
+
+  RW.slider("hero-age", (v) => "year " + v.toFixed(0), (v) => { age = v; });
+  RW.seg("hero-mode", (v) => { mode = v; RW.set("hero-cap", ""); document.getElementById("hero-cap").innerHTML = CAPS[v]; });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
