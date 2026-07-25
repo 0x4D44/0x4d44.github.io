@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Nerve — Root and Crown</title>
+<meta name="description" content="Why a tooth can only feel pain: the hydrodynamic theory of dentine sensitivity, the two nerve fibre types behind sharp versus dull toothache, and why nobody can tell which tooth it is.">
+<link rel="stylesheet" href="tooth.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">ROOT&nbsp;AND&nbsp;CROWN</a></div>
+    <div class="strap">how teeth work, how they fail, and how they are repaired</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="nerve.html" aria-current="page">2 · The Nerve</a>
+    <a href="decay.html">3 · Decay</a>
+    <a href="ageing.html">4 · Ageing</a>
+    <a href="pulpitis.html">5 · Death of a Pulp</a>
+    <a href="fillings.html">6 · Fillings</a>
+    <a href="root-canal.html">7 · Root Canal</a>
+    <a href="crowns.html">8 · Crowns &amp; After</a>
+    <a href="lexicon.html">9 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 2</p>
+  <h1>The Nerve</h1>
+  <p class="standfirst">Ice on a tooth hurts. Sugar on exposed dentine hurts. A puff of air hurts,
+  and a drill hurts most of all. Four unrelated stimuli, one sensation — because a tooth has
+  essentially one sense, and that sense is pain. Here is how that single channel works, why cold
+  beats heat to it, and why it is so vague about where the trouble is.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Your fingertip reports in several dimensions at once: pressure, texture, vibration,
+warmth, cool and — separately — damage. A tooth reports in one. Whatever you do to it, if it
+registers at all, it arrives as pain. No tooth has ever felt pleasantly chilled.</p>
+
+<p>That is not a quirk but a consequence of how the tooth is wired, and the mechanism explains most
+of what follows.</p>
+
+<h2>What is actually inside</h2>
+
+<p>The pulp is the tooth's only soft tissue: loose connective tissue in a chamber at the heart of
+the crown, running down a canal in each root and out through a hole at the tip called the
+<strong>apical foramen</strong>. An artery, a vein or two, lymphatics and the nerve bundle all pass
+through that hole, and it is roughly the calibre of a coarse hair. That narrow entrance drives all of
+<a href="pulpitis.html">Chapter&nbsp;5</a>.</p>
+
+<p>Lining the chamber wall is a palisade of tall cells, the <strong>odontoblasts</strong> — the
+tooth's only builders. Each sits with its body in the pulp and sends a long thin process into a tube
+in the dentine it made: one cell, one tube, for life. Those tubes are the <strong>dentinal
+tubules</strong>, roughly <strong>45,000 per square millimetre</strong> near the pulp and thinning to
+about 20,000 out at the junction with enamel. Every one is full of fluid.</p>
+
+<p>Just beneath them lies a fine mesh of nerve endings, the subodontoblastic plexus. Some endings
+poke into the tubules, but only the innermost tenth of a millimetre or so, and only in a minority of
+tubules, concentrated under the pulp horns. The bulk of dentine — the part a drill spends most of its
+time in — has no nerve supply at all.</p>
+
+<div class="axiom">
+  <span class="tag">The problem</span>
+  <p>Dentine is exquisitely sensitive along its whole thickness. Dentine has almost no nerves along
+  its whole thickness. Both statements are true, and reconciling them is the central puzzle of this
+  chapter.</p>
+</div>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The hydrodynamic engine</span>
+    <span class="hint">pick a stimulus · move the cavity floor toward the pulp · block the tubules</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="nrv-tub" style="aspect-ratio: 2.3 / 1; min-height: 330px;"
+      role="img" aria-label="Cross-section through dentine showing fluid-filled tubules running from an exposed outer surface inward to the odontoblast layer and the nerve endings at the pulp. Choosing cold, an air blast, sugar or heat drives fluid along the tubules and makes the nerve fire."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="nrv-tub-stim">stimulus at the surface</label>
+      <span class="seg" id="nrv-tub-stim">
+        <button data-v="none">none</button><button data-v="cold" class="on">cold</button><button data-v="air">air</button><button data-v="sweet">sugar</button><button data-v="hot">heat</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="nrv-tub-depth">dentine left over the pulp</label>
+      <input type="range" id="nrv-tub-depth" min="0.2" max="3" step="0.05" value="2">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="nrv-tub-open">tubules open</label>
+      <input type="range" id="nrv-tub-open" min="0" max="100" step="1" value="100">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">flow <b id="nrv-tub-dir">outward</b></span>
+    <span class="ro">tubule width here <b id="nrv-tub-dia">1.4 µm</b></span>
+    <span class="ro">fluid conductance <b id="nrv-tub-cond">×9</b></span>
+    <span class="ro" id="nrv-tub-firewrap">nerve <b id="nrv-tub-fire">firing</b></span>
+  </div>
+  <div class="fig-note">Watch the direction, not just the speed. Cold, air and sugar all pull fluid
+  <b>outward</b>, away from the pulp — heat pushes it slowly <b>inward</b>. Now drag the cavity floor
+  closer to the pulp: the tubules widen from about 0.9&nbsp;µm to 2.5&nbsp;µm and crowd together, and
+  because flow through a pipe scales with the fourth power of its radius, conductance climbs by
+  roughly two orders of magnitude. That is the whole reason a deep cavity is agony and a shallow one
+  is nothing.</div>
+</figure>
+
+<div class="prose">
+
+<h2>Brännström's answer: it is plumbing</h2>
+
+<p>In the 1960s the Swedish researcher Martin Brännström proposed that dentine senses nothing
+directly. It transmits. A stimulus at the surface makes the fluid inside the tubules move; that
+movement tugs the mechanically sensitive nerve endings waiting at the far, pulpal end; and they fire.
+The nerve never meets the cold or the sugar. It only ever feels a shove.</p>
+
+<p>This is the <strong>hydrodynamic theory</strong>, still the working model sixty years on. It
+dissolves the puzzle — you do not need nerves along a tubule if the tubule is a hydraulic line — and
+it explains why four stimuli with nothing in common produce one identical sensation. They all do the
+same physical thing.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the evidence, and the fourth-power rule</span></summary>
+  <p>Brännström's case rested on experiments hard to explain any other way. Local anaesthetic
+  dripped onto exposed dentine does not stop it hurting — the drug cannot reach endings buried at the
+  pulpal end — yet anaesthetising the pulp abolishes the sensation. Concentrated sugar or salt on
+  exposed dentine causes sharp pain; the same solutions made isotonic do not, and the only difference
+  is the osmotic pull on the tubule fluid. And an air jet is agony though it barely changes the
+  temperature. (Brännström &amp; Åström, <em>The hydrodynamics of the dentine</em>, International
+  Dental Journal, 1972.)</p>
+  <p>The fourth-power rule is Poiseuille's law: flow down a pipe goes as the fourth power of the
+  radius. Tubules run about 2.5&nbsp;µm across near the pulp and about 0.9&nbsp;µm at the
+  dentino-enamel junction, at densities of roughly 45,000 and 20,000 per square millimetre
+  (Garberoglio &amp; Brännström, Archives of Oral Biology, 1976). Combine calibre and density and
+  deep dentine should conduct fluid a hundred-odd times better — broadly what David Pashley's
+  permeability measurements found. Hydrodynamics remains the dominant model rather than a closed
+  case: odontoblasts carry temperature- and stretch-sensitive ion channels of their own, and whether
+  the cell is itself a sensor is open.</p>
+</details>
+
+<h2>Why cold wins</h2>
+
+<p>Cool a tooth and the tubule fluid contracts. It is drawn <em>outward</em>, away from the pulp,
+and fast, because the shrinkage starts at the surface where the cold is. Warm a tooth and the fluid
+expands and creeps <em>inward</em> — slowly, because dentine is a poor conductor and the thermal
+front takes seconds to arrive.</p>
+
+<p>Outward flow is the more provocative direction and the faster one. That asymmetry is why cold is
+the reflex test at the chairside, why a sensitive tooth flinches at iced water long before it objects
+to tea, and why heat pain has a slow-burning quality quite unlike the electric jolt of cold. Hold the
+thought: in <a href="pulpitis.html">Chapter&nbsp;5</a> the asymmetry inverts, and a dying tooth can
+be <em>soothed</em> by cold and set off by heat.</p>
+
+<div class="tryit">Set the stimulus to <b>air</b> and drag the cavity floor to <b>0.2&nbsp;mm</b> —
+a tooth mid-treatment, pulp a hair's breadth away. Then drag <b>tubules open</b> to zero: same
+insult, nothing happens. Sealing tubules is what a desensitising toothpaste, a varnish or a layer of
+sclerotic dentine is for.</div>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Two fibres, one stimulus</span>
+    <span class="hint">hold a cold stimulus on the tooth · change the state of the pulp</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="nrv-fib" style="aspect-ratio: 2.2 / 1; min-height: 320px;"
+      role="img" aria-label="Two stacked response traces over sixty seconds. The fast A-delta fibre spikes the instant a cold stimulus starts and stops when it stops; the slow C fibre lags by seconds, peaks after the stimulus has ended and decays slowly. Changing the state of the pulp alters both."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="nrv-fib-pulp">state of the pulp</label>
+      <span class="seg" id="nrv-fib-pulp">
+        <button data-v="healthy" class="on">healthy</button><button data-v="inflamed">inflamed</button><button data-v="dying">losing its blood supply</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="nrv-fib-dur">how long the cold is held on</label>
+      <input type="range" id="nrv-fib-dur" min="1" max="20" step="0.5" value="5">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">A-δ quiet again after <b id="nrv-fib-ad">1.0 s</b></span>
+    <span class="ro">C fibre peaks <b id="nrv-fib-cpk">never really wakes</b></span>
+    <span class="ro" id="nrv-fib-feelwrap">feels like <b id="nrv-fib-feel">a sharp twinge that stops with the cold</b></span>
+  </div>
+  <div class="fig-note">The shapes are the point. A-δ tracks the stimulus almost exactly: on when it
+  is on, off within a second of it stopping. The C fibre ignores a brief poke in a healthy pulp, but
+  in an inflamed one it climbs for seconds, peaks <b>after</b> the cold has gone and takes half a
+  minute to fade. A response to cold that lingers well beyond the stimulus is the classic chairside
+  sign that a pulp has crossed a line. These are schematic response envelopes, not recorded data.</div>
+</figure>
+
+<div class="prose">
+
+<h2>Two fibres, two kinds of suffering</h2>
+
+<p>The nerve bundle entering the apex is not one wire. It carries two functionally different fibre
+types, and every confusing thing about toothache comes from the difference between them.</p>
+
+<p><strong>A-delta fibres</strong> are myelinated — insulated — and fast, conducting a few to about
+thirty metres per second. They terminate mostly at the pulp-dentine border,
+respond to exactly the fluid movement Brännström described, and behave like a well-mannered sensor:
+they fire when the stimulus starts and stop when it stops. Their product is the sharp, stabbing,
+electric sensation everyone calls "sensitive teeth". Unpleasant, but honest.</p>
+
+<p><strong>C fibres</strong> are unmyelinated and slow — on the order of half a metre to two metres
+per second — and lie deeper in the body of the pulp. They are polymodal: their business is chemistry
+as much as mechanics. They answer to the inflammatory mediators released by damaged tissue, have a
+high threshold in a healthy pulp and a much lower one in an inflamed pulp, and once going they keep
+going. Their product is the deep, throbbing, badly localised ache that arrives late and outstays its
+cause. Axon counts put them in the clear majority of a mature tooth's nerve supply.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">why the slow fibre is not slow because it is slow</span></summary>
+  <p>It is tempting to assume the C fibre's lag is transmission time. The arithmetic says otherwise.
+  The path from a molar to the brainstem is on the order of fifteen centimetres: about
+  150&nbsp;milliseconds at 1&nbsp;m/s, about ten at 15&nbsp;m/s. A tenth of a second — nothing like
+  the several seconds the ache takes to build.</p>
+  <p>The delay is at the front end. A-δ endings transduce a mechanical event that happens the instant
+  fluid moves. C fibres wait on chemistry: mediators must accumulate, diffuse and bind. That takes
+  seconds, and it does not stop when the stimulus does, because the mediators are still there.</p>
+  <p>One asymmetry matters later. C fibres tolerate low oxygen better than myelinated fibres do, so
+  as a pulp's blood supply fails the A-δ population goes quiet first. A tooth can stop responding to
+  cold while still aching relentlessly — select <b>losing its blood supply</b> above to see that
+  shape. It is the hinge of <a href="pulpitis.html">Chapter&nbsp;5</a>.</p>
+</details>
+
+<div class="callout gold">
+  <span class="tag">The one-modality tooth</span>
+  <p>Both fibre types are nociceptors — damage reporters. There is no touch fibre, no warmth fibre,
+  no vibration fibre worth speaking of. The tooth's entire vocabulary is one word spoken in two
+  accents: <em>sharp and brief</em>, or <em>dull and lasting</em>. Every symptom in this guide
+  combines the two.</p>
+  <p>The honest caveat: under very weak electrical stimulation some people report a faint pre-pain
+  tingle, so "purely nociceptive" may be a simplification. Nobody has ever described a tooth as
+  feeling pleasantly cool.</p>
+</div>
+
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-nerve"/></svg>
+    <svg class="char sm"><use href="#char-chill"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Nerv meets Chill</p>
+    <p class="say"><b>Chill</b> never touches <b>Nerv</b>. He sits outside a millimetre of solid
+    dentine, cools it, and the fluid in forty-five thousand little pipes flinches backwards. Nerv, at
+    the far end, feels the tug and screams. He has no idea what happened. He has no vocabulary for
+    <em>cold</em>. All he can say is <em>ow</em>.</p>
+    <p class="say">Not a bad design so much as an old one. A tooth's job is to survive eighty years
+    of grinding. Fine discrimination was never on the specification. One loud alarm was.</p>
+  </div>
+</div>
+
+<div class="prose">
+
+<h2>Which tooth is it? Nobody knows</h2>
+
+<p>Ask someone in the middle of pulpal toothache which tooth hurts and there is a fair chance they
+will get it wrong. Usually right about the side of the face; often wrong about the tooth; not rarely
+wrong about whether it is an upper or a lower. That is anatomy, not inattention, with two causes.</p>
+
+<p>The first is that <strong>the pulp has no position sense</strong>. Skin and muscle carry
+receptors reporting where they are and what is being done to them. The pulp carries almost nothing
+but nociceptors. There is no spatial map to consult.</p>
+
+<p>The second is <strong>convergence</strong>. Tooth sensation travels in the trigeminal nerve, the
+fifth cranial nerve: its <strong>maxillary division (V2)</strong> supplies every upper tooth, its
+<strong>mandibular division (V3)</strong> every lower one. All of it funnels through the trigeminal
+ganglion into a column of grey matter in the brainstem, the trigeminal spinal nucleus, where many
+peripheral fibres converge onto far fewer second-order neurons — teeth, gum, sinus, jaw joint, ear
+and skin sharing wiring. Downstream, the brain can only guess which input opened the gate.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Where the pain says it is</span>
+    <span class="hint">choose a tooth · then involve the ligament and watch it become findable</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="nrv-loc" style="aspect-ratio: 2.2 / 1; min-height: 360px;"
+      role="img" aria-label="A head in profile with typical referred-pain zones for the selected tooth lit up, alongside a diagram of the nerve pathway from the tooth through its named branch and trigeminal division into the convergent trigeminal nucleus."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="nrv-loc-arch">arch</label>
+      <span class="seg" id="nrv-loc-arch">
+        <button data-v="upper" class="on">upper</button><button data-v="lower">lower</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="nrv-loc-tooth">tooth, front to back</label>
+      <input type="range" id="nrv-loc-tooth" min="1" max="8" step="1" value="7">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="nrv-loc-src">what is inflamed</label>
+      <span class="seg" id="nrv-loc-src">
+        <button data-v="pulp" class="on">pulp only</button><button data-v="pdl">pulp and ligament</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">division <b id="nrv-loc-div">V2 · maxillary</b></span>
+    <span class="ro">branch <b id="nrv-loc-br">posterior superior alveolar nerve</b></span>
+    <span class="ro" id="nrv-loc-locwrap">localisable <b id="nrv-loc-loc">poorly</b></span>
+  </div>
+  <div class="fig-note">The lit zones are typical referral patterns from published maps of
+  odontogenic referred pain (Okeson, <b>Bell's Orofacial Pains</b>; Falace and colleagues, Journal of
+  Orofacial Pain, 1996, who also found referral more likely when the pain is more intense and longer
+  lasting). They are population tendencies, not a diagnostic key, and referral almost never crosses
+  the midline. Switch to <b>pulp and ligament</b> and the fog clears.</div>
+</figure>
+
+<div class="prose">
+
+<p>So pulpal pain refers — a lower molar to the ear, an upper molar to the temple — and it crosses
+arches: an upper tooth convincingly aching in the lower jaw is routine. It essentially never crosses
+the midline, one of the few reliable rules in the business.</p>
+
+<p>Then something changes and the tooth becomes findable. The reason is the <strong>periodontal
+ligament</strong>, the suspension holding it in its socket
+(<a href="anatomy.html">Chapter&nbsp;1</a>). Unlike the pulp it is packed with mechanoreceptors and
+does have position sense — enough to detect a foil a few tens of micrometres thick between the teeth.
+Once inflammation spreads out of the apical foramen into the ligament, that system is recruited: the
+tooth becomes tender to bite on, and the patient who was waving at half their face points straight at
+it.</p>
+
+<div class="callout">
+  <span class="tag">A diagnostic irony</span>
+  <p>The moment the pain becomes precisely locatable is the moment the disease has left the tooth and
+  entered the tissue around it. Vague pain means the trouble is still contained. Sharply localised
+  tenderness on biting means it is not.</p>
+</div>
+
+<h2>Testing a nerve you cannot see</h2>
+
+<p>Clinicians must decide whether the pulp inside a tooth is alive, and they cannot look. The two
+standard instruments are a <strong>cold test</strong> — a refrigerant-soaked pellet held against the
+tooth — and the <strong>electric pulp test</strong>, a probe passing a small current until the
+patient feels a tingle. Both ask the nerve a question and see whether it answers.</p>
+
+<p>That framing contains the flaw. What keeps a tooth healthy is its <em>blood supply</em>, and these
+tests measure the nerve. The two come apart. After a knock to a front tooth the endings may be
+stunned for months while circulation is intact, so the tooth reads dead and is not. A molar can have
+one necrotic canal and one live one and answer normally. A thick crown insulates. And the tests
+report only present or absent — never <em>how</em> inflamed.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">how good are the tests, really</span></summary>
+  <p>The most-cited comparison is Petersson and colleagues (Endodontics &amp; Dental Traumatology,
+  1999), who tested teeth and then opened them to see what was inside. On the cold test, roughly 8 in
+  10 genuinely necrotic pulps correctly failed to respond (sensitivity 0.83) and roughly 9 in 10
+  vital ones correctly did (specificity 0.93). The electric pulp test was weaker at catching dead
+  pulps (0.72) and the same at confirming live ones (0.93); a heat test was far worse at confirming
+  vitality (0.41). Respectable for a two-second bedside test — but one to three teeth in ten are
+  still misread.</p>
+  <p>A systematic review by Mejàre and colleagues (International Endodontic Journal, 2012) was
+  blunter: the evidence base for judging a pulp's condition is limited, and the studies behind those
+  figures carry real risk of bias. Instruments that measure blood flow directly — laser Doppler
+  flowmetry, pulse oximetry — are more logical, but have not displaced a cotton pellet and a can of
+  refrigerant.</p>
+</details>
+
+<p>Which leaves diagnosis where medicine usually sits: a story, imperfect signs and a working
+hypothesis. The character of the pain does much of the work, and by now you can read it. A
+jolt on cold that vanishes with the stimulus is an A-δ report — a tooth complaining. An ache that
+builds by itself, throbs with the pulse, wakes you at night and answers to no stimulus is a C-fibre
+report, and something in the pulp has begun to fail.</p>
+
+<p>Which is <a href="pulpitis.html">Chapter&nbsp;5</a>. But before a pulp can fail something has to
+reach it, and almost always that something is acid, made by bacteria a few hundred micrometres away.
+<a href="decay.html">Chapter&nbsp;3</a> is the clock they run on.</p>
+
+</div>
+
+<nav class="chapnav">
+  <a href="anatomy.html"><span class="dir">Previous</span><span class="title">1 · Anatomy</span></a>
+  <a class="next" href="decay.html"><span class="dir">Next</span><span class="title">3 · Decay</span></a>
+</nav>
+
+</main>
+
+<script src="tooth-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp, mono, TAU } = TC;
+
+  /* ---- small text helpers: everything must survive a 340px canvas ---- */
+  function wrap(ctx, txt, maxW, font) {
+    ctx.save();
+    ctx.font = font;
+    const words = String(txt).split(" ");
+    const lines = [];
+    let cur = "";
+    for (const wd of words) {
+      const test = cur ? cur + " " + wd : wd;
+      if (cur && ctx.measureText(test).width > maxW) { lines.push(cur); cur = wd; }
+      else cur = test;
+    }
+    if (cur) lines.push(cur);
+    ctx.restore();
+    return lines;
+  }
+  /* multi-line label; returns the number of lines drawn */
+  function mline(ctx, txt, x, y, maxW, o) {
+    o = o || {};
+    const font = o.font || mono(11);
+    const lh = o.lh || 13;
+    const lines = wrap(ctx, txt, maxW, font);
+    const y0 = o.vcenter ? y - (lines.length - 1) * lh / 2 : y;
+    for (let i = 0; i < lines.length; i++) {
+      TC.label(ctx, lines[i], x, y0 + i * lh, o);
+    }
+    return lines.length;
+  }
+
+  /* =================================================================
+     FIGURE 1 — the hydrodynamic engine
+     A longitudinal section through dentine: pulp at the left, the cut
+     outer surface at the right, tubules running between them. Flow is
+     modelled as (drive) x (patency) x (conductance), with conductance
+     from tubule calibre and density via Poiseuille's fourth power.
+     ================================================================= */
+
+  const STIM = {
+    none:  { drive:  0.04, tau: 1.0,  col: C.muted,      dir: "barely moving",
+             what: "at rest a trace of fluid seeps outward, driven by pulp pressure" },
+    cold:  { drive:  1.00, tau: 0.35, col: C.ice,        dir: "outward",
+             what: "cooling contracts the fluid — it is pulled away from the pulp, fast" },
+    air:   { drive:  1.35, tau: 0.18, col: C.mint,       dir: "outward",
+             what: "evaporation at the open tubule mouths — the fastest flow of all" },
+    sweet: { drive:  0.60, tau: 2.40, col: C.dentineAcc, dir: "outward",
+             what: "concentrated sugar pulls fluid out osmotically, over seconds" },
+    hot:   { drive: -0.45, tau: 4.50, col: C.pulpAcc,    dir: "inward",
+             what: "heat expands the fluid and pushes it inward — slowly, dentine insulates" },
+  };
+
+  let tubStim = "cold", tubDepth = 2.0, tubOpen = 1.0;
+  let tubFlow = 0, tubLast = 0, tubFig = null;
+  const tubParts = [];
+  {
+    const r = TC.rng(1717);
+    for (let i = 0; i < 190; i++) tubParts.push({ lane: i % 6, u: r(), j: r() * 2 - 1 });
+  }
+
+  // tubule calibre (µm) and density (per mm²) at a given remaining dentine thickness
+  const tubDia = (d) => lerp(2.5, 0.9, clamp(d / 3, 0, 1));
+  const tubDens = (d) => Math.round(lerp(45000, 20000, clamp(d / 3, 0, 1)) / 500) * 500;
+  const conduct = (d) => lerp(45000, 20000, clamp(d / 3, 0, 1)) * Math.pow(tubDia(d) / 2, 4);
+  const condRatio = (d) => conduct(d) / conduct(3);
+
+  function tubIndex() {
+    return Math.abs(STIM[tubStim].drive) * condRatio(tubDepth) * tubOpen;
+  }
+
+  function tubReadouts() {
+    const rel = condRatio(tubDepth) * tubOpen;
+    const s = STIM[tubStim];
+    const idx = tubIndex();
+    TC.set("nrv-tub-dia", tubDia(tubDepth).toFixed(1) + " µm");
+    TC.set("nrv-tub-cond", "×" + (rel < 1 ? rel.toFixed(2) : Math.round(rel)));
+    TC.set("nrv-tub-dir", tubOpen < 0.02 ? "blocked" : tubStim === "none" ? "a trace, outward" : s.dir);
+    const firing = idx > 6 && tubOpen > 0.02;
+    TC.set("nrv-tub-fire", firing ? (idx > 45 ? "firing hard" : "firing") : "quiet");
+    const el = document.getElementById("nrv-tub-firewrap");
+    if (el) el.className = "ro" + (firing ? " alert" : " good");
+  }
+
+  tubFig = TC.canvas("nrv-tub", function (ctx, w, h, t) {
+    const dt = clamp(t - tubLast, 0, 0.1); tubLast = t;
+    const k = clamp(w / 760, 0.76, 1);
+    const F = (px, b) => mono(Math.max(9, +(px * k).toFixed(1)), b);
+    const s = STIM[tubStim];
+    const rel = condRatio(tubDepth) * tubOpen;
+    const target = s.drive * Math.pow(rel, 0.42);
+    tubFlow = TC.reducedMotion ? target
+      : tubFlow + (target - tubFlow) * clamp(dt / s.tau, 0, 1);
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
+
+    const top = h * 0.15, bot = h * 0.72, mid = (top + bot) / 2;
+    const pulpX = w * 0.055, pulpW = w * 0.115;
+    const dx0 = pulpX + pulpW;
+    const dw = w * (0.20 + 0.40 * clamp(tubDepth / 3, 0, 1));
+    const dx1 = dx0 + dw;
+
+    /* ---- pulp ---- */
+    const pg = ctx.createLinearGradient(pulpX, 0, dx0, 0);
+    pg.addColorStop(0, C.pulpDark); pg.addColorStop(1, C.pulp);
+    ctx.fillStyle = pg; ctx.fillRect(pulpX, top, pulpW, bot - top);
+    TC.grain(ctx, pulpX, top, pulpW, bot - top, 120, 31, "#ffd6dd", 0.16);
+    TC.label(ctx, "PULP", pulpX + pulpW / 2, top - 9,
+      { align: "center", color: C.pulpAcc, font: F(11, true) });
+
+    /* ---- dentine ---- */
+    ctx.fillStyle = C.dentine; ctx.fillRect(dx0, top, dw, bot - top);
+    TC.grain(ctx, dx0, top, dw, bot - top, 300, 42, "#fff6dd", 0.11);
+    TC.label(ctx, "DENTINE", dx0 + dw / 2, top - 9,
+      { align: "center", color: C.dentineAcc, font: F(11, true) });
+
+    /* ---- the exposed outer surface ---- */
+    ctx.fillStyle = C.enamelDeep; ctx.fillRect(dx1, top, Math.max(4, w * 0.012), bot - top);
+    TC.label(ctx, "CUT SURFACE", dx1 + w * 0.022, top - 9, { color: C.ink2, font: F(11, true) });
+
+    /* ---- tubules ---- */
+    const lanes = 6, laneH = (bot - top) / lanes;
+    const pxPerUm = Math.max(2.2, (laneH * 0.42) / 2.5);
+    const hpu = 2.5 * pxPerUm / 2;                 // half-height at the pulp end
+    const hsu = tubDia(tubDepth) * pxPerUm / 2;    // half-height at the cut surface
+    const laneY = (i) => top + laneH * (i + 0.5);
+
+    for (let i = 0; i < lanes; i++) {
+      const y = laneY(i);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(dx0, y - hpu); ctx.lineTo(dx1, y - hsu);
+      ctx.lineTo(dx1, y + hsu); ctx.lineTo(dx0, y + hpu);
+      ctx.closePath();
+      ctx.fillStyle = tubOpen > 0.02 ? "rgba(18,26,30,0.92)" : "rgba(128,118,92,0.96)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(40,32,20,0.55)"; ctx.lineWidth = 1; ctx.stroke();
+      ctx.clip();
+      // the odontoblast process, occupying the inner part of the tubule
+      ctx.fillStyle = "rgba(216,85,106,0.45)";
+      ctx.fillRect(dx0, y - hpu, dw * 0.34, hpu * 2);
+      ctx.restore();
+    }
+
+    /* ---- fluid: particles when animating, direction arrows always ---- */
+    const moving = Math.abs(tubFlow) > 0.02 && tubOpen > 0.02;
+    if (moving && !TC.reducedMotion) {
+      const v = clamp(tubFlow * 0.055, -0.9, 0.9);
+      ctx.fillStyle = s.col;
+      for (const p of tubParts) {
+        p.u += v * dt;
+        if (p.u > 1) p.u -= 1;
+        if (p.u < 0) p.u += 1;
+        const y = laneY(p.lane);
+        const hh = lerp(hpu, hsu, p.u);
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.arc(dx0 + p.u * dw, y + p.j * hh * 0.5, Math.max(0.9, hh * 0.30), 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    if (moving) {
+      const sgn = tubFlow > 0 ? 1 : -1;
+      const aw = clamp(Math.abs(tubFlow) * 3.4, 8, dw * 0.24);
+      for (let i = 0; i < lanes; i += 2) {
+        const y = laneY(i) - laneH * 0.40, ax = dx0 + dw * 0.5;
+        TC.line(ctx, ax - sgn * aw, y, ax + sgn * aw, y, s.col, 2);
+        ctx.fillStyle = s.col;
+        ctx.beginPath();
+        ctx.moveTo(ax + sgn * aw, y);
+        ctx.lineTo(ax + sgn * (aw - 6), y - 4);
+        ctx.lineTo(ax + sgn * (aw - 6), y + 4);
+        ctx.closePath(); ctx.fill();
+      }
+    }
+
+    /* ---- odontoblast bodies and the nerve plexus in the pulp ---- */
+    for (let i = 0; i < lanes; i++) {
+      const y = laneY(i);
+      ctx.fillStyle = "#e4909f";
+      TC.roundRect(ctx, dx0 - w * 0.030, y - laneH * 0.20, w * 0.030, laneH * 0.40, 3);
+      ctx.fill();
+      ctx.strokeStyle = "rgba(60,20,28,0.5)"; ctx.lineWidth = 0.8; ctx.stroke();
+    }
+    const nx = dx0 - w * 0.050;
+    TC.line(ctx, nx, top + laneH * 0.3, nx, bot - laneH * 0.3, C.violet, 2.2);
+    for (let i = 0; i < lanes; i++) {
+      TC.line(ctx, nx, laneY(i), dx0 - w * 0.006, laneY(i), C.violet, 1.2);
+      ctx.fillStyle = C.violet;
+      ctx.beginPath(); ctx.arc(dx0 - w * 0.004, laneY(i), 2.2, 0, TAU); ctx.fill();
+    }
+
+    const idx = tubIndex();
+    const firing = idx > 6 && tubOpen > 0.02;
+    if (firing) {
+      const rate = clamp(1.6 + Math.log10(idx) * 2.6, 1.6, 9);
+      for (let n = 0; n < 4; n++) {
+        const ph = (t * rate + n * 0.25) % 1;
+        ctx.globalAlpha = 1 - ph;
+        ctx.fillStyle = C.violet;
+        ctx.beginPath();
+        ctx.arc(nx, lerp(mid, top - h * 0.055, ph), 3.6 * (1 - ph * 0.5), 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      TC.label(ctx, "↑ to the brain", 6, 15, { color: C.violet, font: F(11.5, true) });
+    }
+
+    /* ---- the stimulus, sitting on the cut surface ---- */
+    const sx = dx1 + w * 0.030;
+    if (tubStim === "cold") {
+      ctx.fillStyle = s.col; ctx.globalAlpha = 0.85;
+      TC.roundRect(ctx, sx, mid - 26, 28, 52, 6); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = "#eaf7ff"; ctx.lineWidth = 1.6;
+      for (let i = 0; i < 3; i++) {
+        const yy = mid - 16 + i * 16;
+        ctx.beginPath();
+        ctx.moveTo(sx + 36, yy); ctx.lineTo(sx + 48, yy);
+        ctx.moveTo(sx + 42, yy - 6); ctx.lineTo(sx + 42, yy + 6);
+        ctx.stroke();
+      }
+    } else if (tubStim === "air") {
+      ctx.strokeStyle = s.col; ctx.lineWidth = 2;
+      for (let i = 0; i < 5; i++) {
+        const yy = mid - 32 + i * 16;
+        ctx.beginPath();
+        ctx.moveTo(sx + 48, yy);
+        ctx.quadraticCurveTo(sx + 24, yy + (i % 2 ? 5 : -5), sx + 4, yy);
+        ctx.stroke();
+      }
+    } else if (tubStim === "sweet") {
+      ctx.fillStyle = s.col;
+      const r = TC.rng(88);
+      for (let i = 0; i < 22; i++) {
+        ctx.globalAlpha = 0.4 + r() * 0.5;
+        ctx.beginPath();
+        ctx.arc(sx + 5 + r() * 40, mid - 34 + r() * 68, 1.6 + r() * 2.6, 0, TAU);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    } else if (tubStim === "hot") {
+      const g = ctx.createRadialGradient(sx + 20, mid, 2, sx + 20, mid, 42);
+      g.addColorStop(0, "rgba(255,107,125,0.75)");
+      g.addColorStop(1, "rgba(255,107,125,0)");
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(sx + 20, mid, 42, 0, TAU); ctx.fill();
+    }
+
+    /* ---- annotations inside the dentine block ---- */
+    TC.label(ctx, tubDens(tubDepth).toLocaleString("en-GB") + " tubules / mm²",
+      dx0 + 5, bot - 6, { color: "rgba(58,42,16,0.9)", font: F(10.5, true) });
+    if (tubOpen < 0.5) {
+      TC.label(ctx, Math.round((1 - tubOpen) * 100) + "% of tubules plugged",
+        dx0 + dw / 2, top + 14, { align: "center", color: "rgba(46,64,44,0.95)", font: F(11, true) });
+    }
+
+    /* ---- depth ruler and stimulus caption, below the section ---- */
+    TC.line(ctx, dx0, bot + 14, dx1, bot + 14, C.muted, 1);
+    TC.line(ctx, dx0, bot + 10, dx0, bot + 18, C.muted, 1);
+    TC.line(ctx, dx1, bot + 10, dx1, bot + 18, C.muted, 1);
+    TC.label(ctx, tubDepth.toFixed(2) + " mm of dentine left over the pulp",
+      (dx0 + dx1) / 2, bot + 32, { align: "center", color: C.ink2, font: F(11, true) });
+    mline(ctx, s.what, pulpX, bot + 54, w - pulpX - 14,
+      { color: s.col, font: F(12), lh: 15 });
+  }, { animate: !TC.reducedMotion });
+
+  TC.seg("nrv-tub-stim", function (v) { tubStim = v; tubReadouts(); if (tubFig) tubFig.redraw(); });
+  TC.slider("nrv-tub-depth", (v) => v.toFixed(2) + " mm",
+    function (v) { tubDepth = v; tubReadouts(); if (tubFig) tubFig.redraw(); });
+  TC.slider("nrv-tub-open", (v) => Math.round(v) + "%",
+    function (v) { tubOpen = v / 100; tubReadouts(); if (tubFig) tubFig.redraw(); });
+
+  /* =================================================================
+     FIGURE 2 — A-delta versus C fibre
+     Each fibre is an asymmetric leaky integrator driven by the same
+     stimulus window. Schematic response envelopes, not recorded data.
+     ================================================================= */
+
+  const PULP = {
+    healthy:  { aAmp: 1.00, aOff: 0.40, cSens: 0.12, cSpont: 0.00, cOn: 4.0, cOff: 12,
+                feel: "a sharp twinge that stops with the cold" },
+    inflamed: { aAmp: 1.00, aOff: 9.00, cSens: 0.75, cSpont: 0.42, cOn: 2.6, cOff: 26,
+                feel: "a jolt, then a throb that outlasts it and never quite settles" },
+    dying:    { aAmp: 0.14, aOff: 2.20, cSens: 0.48, cSpont: 0.70, cOn: 3.2, cOff: 30,
+                feel: "little response to cold, but a deep ache that will not stop" },
+  };
+  const FIB_T = 60, FIB_N = 601, FIB_DT = FIB_T / (FIB_N - 1), FIB_START = 5;
+
+  let fibPulp = "healthy", fibDur = 5, fibFig = null;
+
+  /* A-δ is a single fast lag on the stimulus itself. C fibres get a second
+     stage: the stimulus drives a pool of inflammatory mediator, and the fibre
+     chases the mediator. Two cascaded lags are what make the C response peak
+     seconds AFTER the stimulus has stopped. */
+  function fibSim() {
+    const p = PULP[fibPulp];
+    const a = new Float64Array(FIB_N), c = new Float64Array(FIB_N);
+    let av = 0, med = p.cSpont, cv = p.cSpont;
+    for (let i = 0; i < FIB_N; i++) {
+      const tt = i * FIB_DT;
+      const on = tt >= FIB_START && tt < FIB_START + fibDur ? 1 : 0;
+      const aTgt = on * p.aAmp;
+      const mTgt = p.cSpont + on * p.cSens;
+      av += (aTgt - av) * clamp(FIB_DT / (aTgt > av ? 0.06 : p.aOff), 0, 1);
+      med += (mTgt - med) * clamp(FIB_DT / (mTgt > med ? p.cOn : p.cOff), 0, 1);
+      cv += (med - cv) * clamp(FIB_DT / (med > cv ? p.cOn * 0.8 : p.cOff * 0.9), 0, 1);
+      a[i] = av; c[i] = cv;
+    }
+    return { a, c, p };
+  }
+
+  function arrMax(arr) { let m = 0; for (let i = 0; i < arr.length; i++) if (arr[i] > m) m = arr[i]; return m; }
+
+  function fibReadouts(sim) {
+    const end = FIB_START + fibDur;
+    const ei = Math.round(end / FIB_DT);
+    const aPeak = arrMax(sim.a);
+    let quiet = null;
+    for (let i = ei; i < FIB_N; i++) {
+      if (sim.a[i] < Math.max(0.05, aPeak * 0.05)) { quiet = i * FIB_DT - end; break; }
+    }
+    TC.set("nrv-fib-ad", aPeak < 0.2 ? "it barely responds"
+      : quiet == null ? "still going at 60 s" : quiet.toFixed(1) + " s");
+    let ci = 0;
+    for (let i = 1; i < FIB_N; i++) if (sim.c[i] > sim.c[ci]) ci = i;
+    const lag = ci * FIB_DT - end;
+    TC.set("nrv-fib-cpk", arrMax(sim.c) < 0.13 ? "never really wakes"
+      : lag > 0.2 ? lag.toFixed(1) + " s after the cold stops"
+      : "while the cold is still on");
+    TC.set("nrv-fib-feel", sim.p.feel);
+    const el = document.getElementById("nrv-fib-feelwrap");
+    if (el) el.className = "ro" + (fibPulp === "healthy" ? " good" : " alert");
+  }
+
+  fibFig = TC.canvas("nrv-fib", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
+
+    const k = clamp(w / 760, 0.76, 1);
+    const F = (px, b) => mono(Math.max(9, +(px * k).toFixed(1)), b);
+    const sim = fibSim();
+    const L = Math.max(30, w * 0.10), R = w - 18;
+    const X = (tt) => L + (tt / FIB_T) * (R - L);
+    const panels = [
+      { key: "a", y0: h * 0.13, y1: h * 0.45, col: C.ice, cf: "#6fd0ff",
+        name: "A-δ  myelinated, fast", sub: "sharp · tracks the stimulus" },
+      { key: "c", y0: h * 0.54, y1: h * 0.86, col: C.pulpAcc, cf: "#ff6b7d",
+        name: "C  unmyelinated, slow", sub: "dull · lags, then lingers" },
+    ];
+
+    // the stimulus window, drawn through both panels
+    const sx0 = X(FIB_START), sx1 = X(FIB_START + fibDur);
+    ctx.fillStyle = "rgba(111,208,255,0.09)";
+    ctx.fillRect(sx0, h * 0.09, sx1 - sx0, h * 0.77);
+    TC.line(ctx, sx0, h * 0.09, sx0, h * 0.87, "rgba(111,208,255,0.5)", 1, [3, 3]);
+    TC.line(ctx, sx1, h * 0.09, sx1, h * 0.87, "rgba(111,208,255,0.5)", 1, [3, 3]);
+    TC.label(ctx, "cold held on for " + fibDur.toFixed(1) + " s", (sx0 + sx1) / 2, h * 0.065,
+      { align: "center", color: C.ice, font: F(11, true) });
+
+    for (const p of panels) {
+      const arr = sim[p.key];
+      TC.line(ctx, L, p.y1, R, p.y1, C.line, 1);
+      TC.label(ctx, p.name, L, p.y0 - 5, { color: p.col, font: F(12, true) });
+      if (w > 500) {
+        TC.label(ctx, p.sub, R, p.y0 - 5, { align: "right", color: C.muted, font: F(11) });
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(L, p.y1);
+      for (let i = 0; i < FIB_N; i++) {
+        ctx.lineTo(X(i * FIB_DT), p.y1 - clamp(arr[i], 0, 1.2) * (p.y1 - p.y0));
+      }
+      ctx.lineTo(R, p.y1); ctx.closePath();
+      ctx.fillStyle = TC.mix(p.cf, "#0a0d0f", 0.62, 0.75);
+      ctx.fill();
+
+      ctx.beginPath();
+      for (let i = 0; i < FIB_N; i++) {
+        const xx = X(i * FIB_DT), yy = p.y1 - clamp(arr[i], 0, 1.2) * (p.y1 - p.y0);
+        if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+      }
+      ctx.strokeStyle = p.col; ctx.lineWidth = 2; ctx.stroke();
+
+      TC.label(ctx, "firing", L - 9, (p.y0 + p.y1) / 2,
+        { align: "center", color: C.muted, font: F(10), angle: -Math.PI / 2 });
+    }
+
+    // time axis
+    for (let sec = 0; sec <= FIB_T; sec += 10) {
+      TC.line(ctx, X(sec), h * 0.87, X(sec), h * 0.895, C.muted, 1);
+      TC.label(ctx, sec + (sec === FIB_T ? " s" : ""), X(sec), h * 0.955,
+        { align: "center", color: C.muted, font: F(11) });
+    }
+
+    // a sweeping playhead — only where motion is welcome
+    if (!TC.reducedMotion) {
+      const ph = (t * 6) % FIB_T;
+      TC.line(ctx, X(ph), h * 0.09, X(ph), h * 0.87, "rgba(243,241,233,0.35)", 1);
+      const i = clamp(Math.round(ph / FIB_DT), 0, FIB_N - 1);
+      for (const p of panels) {
+        const yy = p.y1 - clamp(sim[p.key][i], 0, 1.2) * (p.y1 - p.y0);
+        ctx.fillStyle = p.col;
+        ctx.beginPath(); ctx.arc(X(ph), yy, 3.4, 0, TAU); ctx.fill();
+      }
+      const now = sim.a[i] > 0.35 ? "sharp"
+        : sim.c[i] > 0.35 ? "aching"
+        : sim.a[i] + sim.c[i] > 0.1 ? "grumbling" : "quiet";
+      TC.label(ctx, now, clamp(X(ph) + 6, L, w - 60), h * 0.125, { color: C.ink, font: F(12, true) });
+    }
+  }, { animate: !TC.reducedMotion });
+
+  function fibUpdate() { fibReadouts(fibSim()); if (fibFig) fibFig.redraw(); }
+  TC.seg("nrv-fib-pulp", function (v) { fibPulp = v; fibUpdate(); });
+  TC.slider("nrv-fib-dur", (v) => v.toFixed(1) + " s", function (v) { fibDur = v; fibUpdate(); });
+
+  /* =================================================================
+     FIGURE 3 — referral and convergence
+     Left: a head in profile with typical referral zones lit. Right:
+     the pathway from tooth to named branch to trigeminal division to
+     the convergent nucleus, and what comes out the other end.
+     ================================================================= */
+
+  const ZONES = {
+    forehead: { x: 0.660, y: 0.170, r: 0.105, t: "forehead" },
+    temple:   { x: 0.480, y: 0.190, r: 0.115, t: "temple" },
+    cheek:    { x: 0.640, y: 0.335, r: 0.100, t: "cheekbone" },
+    ear:      { x: 0.315, y: 0.400, r: 0.100, t: "ear" },
+    angle:    { x: 0.300, y: 0.660, r: 0.100, t: "angle of the jaw" },
+    chin:     { x: 0.720, y: 0.640, r: 0.095, t: "chin, lower lip" },
+  };
+  const ORD = ["central incisor", "lateral incisor", "canine", "first premolar",
+    "second premolar", "first molar", "second molar", "third molar"];
+
+  function locInfo(arch, n) {
+    const name = ORD[clamp(Math.round(n), 1, 8) - 1];
+    if (arch === "upper") {
+      if (n <= 3) return { div: "V2", br: "anterior superior alveolar nerve",
+        zones: ["forehead", "cheek"], name: name };
+      if (n <= 5) return { div: "V2", br: "middle superior alveolar nerve, where a person has one",
+        zones: ["cheek", "temple"], name: name };
+      return { div: "V2", br: "posterior superior alveolar nerve",
+        zones: ["temple", "ear", "cheek"], name: name };
+    }
+    if (n <= 3) return { div: "V3", br: "incisive branch of the inferior alveolar nerve",
+      zones: ["chin"], name: name };
+    if (n <= 5) return { div: "V3", br: "inferior alveolar nerve, near the mental foramen",
+      zones: ["chin", "angle"], name: name };
+    return { div: "V3", br: "inferior alveolar nerve, sometimes with accessory mylohyoid supply",
+      zones: ["ear", "angle", "temple"], name: name };
+  }
+
+  let locArch = "upper", locTooth = 7, locSrc = "pulp", locFig = null;
+
+  function locReadouts() {
+    const inf = locInfo(locArch, locTooth);
+    TC.set("nrv-loc-div", inf.div + (inf.div === "V2" ? " · maxillary" : " · mandibular"));
+    TC.set("nrv-loc-br", inf.br);
+    TC.set("nrv-loc-loc", locSrc === "pdl" ? "yes — tender to bite on" : "poorly");
+    const el = document.getElementById("nrv-loc-locwrap");
+    if (el) el.className = "ro" + (locSrc === "pdl" ? " good" : " alert");
+  }
+
+  locFig = TC.canvas("nrv-loc", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
+
+    const k = clamp(w / 760, 0.74, 1);
+    const F = (px, b) => mono(Math.max(9, +(px * k).toFixed(1)), b);
+    const inf = locInfo(locArch, locTooth);
+    const pulse = TC.reducedMotion ? 0.8 : 0.55 + 0.45 * (0.5 + 0.5 * Math.sin(t * 2.4));
+
+    /* ---------------- the head, in profile, facing right -------------- */
+    const hs = Math.min(h * 0.88, w * 0.44);
+    const hx = w * 0.02, hy = h * 0.04;
+    const P = (px, py) => [hx + px * hs, hy + py * hs];
+
+    ctx.beginPath();
+    let p0 = P(0.45, 0.03); ctx.moveTo(p0[0], p0[1]);
+    let a1 = P(0.68, 0.06), b1 = P(0.745, 0.235);
+    ctx.bezierCurveTo(a1[0], a1[1], b1[0], b1[1], ...P(0.745, 0.265));
+    a1 = P(0.700, 0.290); b1 = P(0.845, 0.395);
+    ctx.bezierCurveTo(a1[0], a1[1], b1[0], b1[1], ...P(0.865, 0.410));
+    a1 = P(0.790, 0.435); ctx.quadraticCurveTo(a1[0], a1[1], ...P(0.750, 0.455));
+    a1 = P(0.800, 0.500); ctx.quadraticCurveTo(a1[0], a1[1], ...P(0.760, 0.535));
+    a1 = P(0.805, 0.575); ctx.quadraticCurveTo(a1[0], a1[1], ...P(0.755, 0.620));
+    a1 = P(0.755, 0.700); b1 = P(0.560, 0.775);
+    ctx.bezierCurveTo(a1[0], a1[1], b1[0], b1[1], ...P(0.400, 0.790));
+    a1 = P(0.230, 0.795); b1 = P(0.145, 0.640);
+    ctx.bezierCurveTo(a1[0], a1[1], b1[0], b1[1], ...P(0.112, 0.430));
+    a1 = P(0.092, 0.215); b1 = P(0.235, 0.030);
+    ctx.bezierCurveTo(a1[0], a1[1], b1[0], b1[1], ...P(0.450, 0.030));
+    ctx.closePath();
+    ctx.fillStyle = "#171d21"; ctx.fill();
+    ctx.strokeStyle = "rgba(243,241,233,0.20)"; ctx.lineWidth = 1.4; ctx.stroke();
+
+    // ear
+    ctx.strokeStyle = "rgba(243,241,233,0.26)"; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.ellipse(...P(0.300, 0.400), hs * 0.050, hs * 0.068, 0, 0, TAU);
+    ctx.stroke();
+
+    // two rows of teeth: molars at the back (left), incisors at the front (right)
+    for (const arch of ["upper", "lower"]) {
+      const yy = arch === "upper" ? 0.500 : 0.556;
+      for (let n = 8; n >= 1; n--) {
+        const fx = lerp(0.425, 0.700, (8 - n) / 7);
+        const pt = P(fx, yy);
+        const sel = arch === locArch && n === locTooth;
+        ctx.fillStyle = sel ? C.pulpAcc : "rgba(234,230,216,0.5)";
+        ctx.globalAlpha = sel ? pulse : 1;
+        TC.roundRect(ctx, pt[0] - hs * 0.013, pt[1] - hs * 0.016, hs * 0.026, hs * 0.032, 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    // referral zones
+    for (const key of Object.keys(ZONES)) {
+      const z = ZONES[key];
+      const lit = inf.zones.indexOf(key) >= 0;
+      const pt = P(z.x, z.y), rr = z.r * hs;
+      if (lit) {
+        const g = ctx.createRadialGradient(pt[0], pt[1], 1, pt[0], pt[1], rr);
+        g.addColorStop(0, "rgba(255,107,125," + (0.55 * pulse).toFixed(3) + ")");
+        g.addColorStop(1, "rgba(255,107,125,0)");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(pt[0], pt[1], rr, 0, TAU); ctx.fill();
+      }
+      ctx.strokeStyle = lit ? "rgba(255,107,125,0.75)" : "rgba(243,241,233,0.09)";
+      ctx.setLineDash([3, 3]); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(pt[0], pt[1], rr * 0.60, 0, TAU); ctx.stroke();
+      ctx.setLineDash([]);
+      if (lit) {
+        mline(ctx, z.t, pt[0], pt[1] + 3, rr * 1.5,
+          { align: "center", color: "#ffc3cb", font: F(10, true), lh: 12, vcenter: true });
+      }
+    }
+    TC.label(ctx, "TYPICAL REFERRAL ZONES", hx + 2, hy + hs * 0.98,
+      { color: C.muted, font: F(10.5, true) });
+    TC.label(ctx, "the inflamed tooth", ...P(0.560, 0.462),
+      { align: "center", color: C.pulpAcc, font: F(10, true) });
+
+    /* ---------------- the pathway, right-hand side -------------------- */
+    const cx0 = Math.max(hx + hs + 12, w * 0.50), cw = w - cx0 - 14;
+    const innerW = cw - 22;
+    const tf = F(12, true), sf = F(10.5);
+    const rows = [
+      { t: (locArch === "upper" ? "upper " : "lower ") + inf.name,
+        s: "the pulp that is actually inflamed", col: C.pulpAcc },
+      { t: inf.br, s: "the named branch that carries it", col: C.dentineAcc },
+      { t: inf.div === "V2" ? "V2 — maxillary division" : "V3 — mandibular division",
+        s: "of the trigeminal nerve, via its ganglion", col: C.violet },
+      { t: "trigeminal spinal nucleus", s: "where many inputs share few neurons", col: C.ice },
+    ];
+    const pdl = locSrc === "pdl";
+    const verdict = {
+      head: pdl ? "WHERE THE PATIENT POINTS — ligament involved"
+        : "WHERE THE PATIENT POINTS — pulp only",
+      big: pdl ? "straight at the tooth" : "“somewhere back there”",
+      sub: pdl ? "the periodontal ligament has position sense"
+        : "the pulp has none, so the brain guesses",
+    };
+
+    const lhT = 14 * k, lhS = 12 * k;
+    const blocks = rows.map(function (r) {
+      const tl = wrap(ctx, r.t, innerW, tf);
+      const sl = wrap(ctx, r.s, innerW, sf);
+      return { r: r, tl: tl, sl: sl, h: 12 + tl.length * lhT + sl.length * lhS + 8 };
+    });
+    const vHead = wrap(ctx, verdict.head, innerW, F(10.5, true));
+    const vSub = wrap(ctx, verdict.sub, innerW, F(10));
+    const vH = 12 + vHead.length * lhS + 20 * k + vSub.length * lhS + 10;
+
+    const availTop = h * 0.045, availBot = h * 0.975;
+    let sumH = vH;
+    for (const bl of blocks) sumH += bl.h;
+    const gap = clamp((availBot - availTop - sumH) / blocks.length, 10, 30);
+
+    let ry = availTop;
+    for (let i = 0; i < blocks.length; i++) {
+      const bl = blocks[i];
+      ctx.fillStyle = C.surface;
+      TC.roundRect(ctx, cx0, ry, cw, bl.h, 7); ctx.fill();
+      ctx.strokeStyle = "rgba(243,241,233,0.10)"; ctx.lineWidth = 1; ctx.stroke();
+      ctx.fillStyle = bl.r.col;
+      TC.roundRect(ctx, cx0, ry, 3.5, bl.h, 2); ctx.fill();
+      let ty = ry + 12 + lhT * 0.72;
+      for (const ln of bl.tl) { TC.label(ctx, ln, cx0 + 14, ty, { color: C.ink, font: tf }); ty += lhT; }
+      ty += 1;
+      for (const ln of bl.sl) { TC.label(ctx, ln, cx0 + 14, ty, { color: C.muted, font: sf }); ty += lhS; }
+
+      const my = ry + bl.h;
+      if (i === blocks.length - 2) {
+        for (let q = -5; q <= 5; q++) {
+          if (q === 0) continue;
+          TC.line(ctx, cx0 + cw / 2 + q * cw * 0.075, my + 2,
+            cx0 + cw / 2, my + gap - 4, "rgba(243,241,233,0.13)", 1);
+        }
+      }
+      TC.line(ctx, cx0 + cw / 2, my + 2, cx0 + cw / 2, my + gap - 5, C.line, 1.4);
+      ctx.fillStyle = C.muted;
+      ctx.beginPath();
+      ctx.moveTo(cx0 + cw / 2, my + gap - 1);
+      ctx.lineTo(cx0 + cw / 2 - 4, my + gap - 7);
+      ctx.lineTo(cx0 + cw / 2 + 4, my + gap - 7);
+      ctx.closePath(); ctx.fill();
+      ry += bl.h + gap;
+    }
+
+    // the verdict box
+    ctx.fillStyle = pdl ? "rgba(87,201,138,0.10)" : "rgba(255,107,125,0.09)";
+    TC.roundRect(ctx, cx0, ry, cw, vH, 7); ctx.fill();
+    ctx.strokeStyle = pdl ? "rgba(87,201,138,0.45)" : "rgba(255,107,125,0.40)";
+    ctx.lineWidth = 1.2; ctx.stroke();
+    let vy = ry + 12 + lhS * 0.7;
+    for (const ln of vHead) {
+      TC.label(ctx, ln, cx0 + 14, vy, { color: pdl ? C.good : C.pulpAcc, font: F(10.5, true) });
+      vy += lhS;
+    }
+    vy += 18 * k;
+    TC.label(ctx, verdict.big, cx0 + 14, vy, { color: C.ink, font: F(15, true) });
+    vy += lhS + 2;
+    for (const ln of vSub) {
+      TC.label(ctx, ln, cx0 + 14, vy, { color: C.muted, font: F(10) });
+      vy += lhS;
+    }
+  }, { animate: !TC.reducedMotion });
+
+  function locSliderOut() {
+    const el = document.getElementById("nrv-loc-tooth");
+    const out = el && el.parentElement.querySelector("output");
+    if (out) out.textContent = locInfo(locArch, locTooth).name;
+  }
+  function locUpdate() { locReadouts(); locSliderOut(); if (locFig) locFig.redraw(); }
+
+  TC.seg("nrv-loc-arch", function (v) { locArch = v; locUpdate(); });
+  TC.slider("nrv-loc-tooth", (v) => locInfo(locArch, v).name,
+    function (v) { locTooth = Math.round(v); locUpdate(); });
+  TC.seg("nrv-loc-src", function (v) { locSrc = v; locUpdate(); });
+
+  tubReadouts();
+  fibUpdate();
+  locUpdate();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

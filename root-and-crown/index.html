@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Root and Crown — How Teeth Work, How They Fail, and How They Are Repaired</title>
+<meta name="description" content="A deep, interactive field guide to the tooth: the layered anatomy of enamel, dentine and pulp; why a tooth is the only organ that cannot heal itself; the acid clock of decay; eighty years of wear; what happens when the nerve inflames and dies; and the full repertoire of repair — fillings, root canal treatment, crowns, extraction and implants — with how long each actually lasts. Nine chapters, live diagrams and a real annotated radiograph.">
+<link rel="stylesheet" href="tooth.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">ROOT&nbsp;AND&nbsp;CROWN</a></div>
+    <div class="strap">how teeth work, how they fail, and how they are repaired</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="nerve.html">2 · The Nerve</a>
+    <a href="decay.html">3 · Decay</a>
+    <a href="ageing.html">4 · Ageing</a>
+    <a href="pulpitis.html">5 · Death of a Pulp</a>
+    <a href="fillings.html">6 · Fillings</a>
+    <a href="root-canal.html">7 · Root Canal</a>
+    <a href="crowns.html">8 · Crowns &amp; After</a>
+    <a href="lexicon.html">9 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">An interactive field guide to the tooth</p>
+  <h1>Root and Crown</h1>
+  <p class="standfirst">A tooth is the hardest thing your body builds and the only organ it
+  cannot repair. Break a bone and it knits; cut skin and it closes; dissolve a millimetre of
+  enamel and it is gone for good. Everything that follows — the filling, the bigger filling,
+  the crown, the root canal, the gap — is a consequence of that one asymmetry. This guide
+  follows a tooth from the inside out and from birth to extraction: how it is built, why it
+  hurts, how acid takes it apart a few micrometres at a time, what actually happens when the
+  nerve inside dies, and what dentistry can and cannot buy back.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">One tooth, eighty years</span>
+    <span class="hint">wear · decay · the restoration cycle · what maintenance buys</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="hero" style="aspect-ratio: 2.5 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="hero-age">age</label>
+      <input type="range" id="hero-age" min="6" max="80" step="1" value="18">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="hero-mode">regime</label>
+      <span class="seg" id="hero-mode">
+        <button data-v="neglect" class="on">left alone</button>
+        <button data-v="maintain">looked after</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="hero-cap" style="font-size:13px; color:var(--ink-2)">
+      Drag the <b>age</b> slider forward. Left alone, a sound molar picks up a lesion in its
+      twenties, loses its nerve in its forties and is gone by sixty. Switch to
+      <b>looked&nbsp;after</b> and the same tooth takes the same insults but each one is caught
+      small — and it is still chewing at eighty. Neither tooth is lucky. The difference is
+      entirely in when someone intervened.
+    </span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p class="lead">Almost everyone reading this has had a filling, and almost nobody has been told
+what a filling actually <em>is</em> — a hole cut deliberately larger than the disease, packed with
+a material that will fail on a schedule, in a tooth that has already lost the ability to heal.
+This guide explains the whole system.</p>
+
+<p>The main text tells the story in plain English: what a tooth is made of, what destroys it,
+what hurts and why, and what each repair really costs in years. Where the honest biology or
+engineering is worth seeing — the chemistry of dissolving enamel, the pressure physics that
+make toothache uniquely awful, the survival statistics behind "how long will this last?" — it
+is folded into a panel like the one below. Open it or skip it; the story reads either way. And
+every chapter but the closing lexicon carries live apparatus you can drive: push a probe
+through the layers, trigger a nerve and watch two different pain fibres respond, run an acid
+attack in a mouth you control, age a tooth eighty years, pressurise an inflamed pulp until it
+dies, compare restorations over thirty years, work through a root canal step by step, and
+price up the endgame.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the real biology, on demand</span></summary>
+  <p>Panels like this hold the quantitative version — the solubility chemistry of
+  hydroxyapatite, the hydrodynamic theory of dentine sensitivity, annual failure rates and
+  survival curves, the low-compliance pressure argument for why pulpitis hurts the way it
+  does. Nothing in the main narrative depends on opening them.</p>
+  <p>Three numbers recur. Enamel begins to dissolve below <b>pH&nbsp;5.5</b> — the "critical
+  pH", and the reason the <i>frequency</i> of sugar matters far more than the amount. A tooth
+  contains roughly <b>45,000 dentinal tubules per square millimetre</b> near the pulp, each a
+  fluid-filled pipe running to the nerve, which is why a tooth can feel cold at all. And the
+  pulp sits in a <b>rigid chamber that cannot expand</b>, which is the single fact behind
+  every story of toothache in this guide.</p>
+</details>
+
+<div class="callout warn">
+  <span class="tag">This is not medical advice</span>
+  <p>This is a science explainer written for curiosity, not a clinical resource. It describes
+  how teeth and treatments work in general; it cannot tell you what is happening in
+  <em>your</em> mouth, and the ranges quoted for treatment survival are population averages
+  that say nothing about an individual tooth. If something hurts, see a dentist — and if you
+  have facial swelling, fever, or difficulty swallowing or breathing, treat that as an
+  emergency and seek urgent care.</p>
+</div>
+
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-molar"/></svg>
+    <svg class="char sm"><use href="#char-nerve"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Your guides</p>
+    <p class="say"><b>Molar</b> is the tooth — patient, hard-wearing, and quietly running out
+    of enamel. <b>Nerv</b> is the pulp: tiny, buried, and responsible for every bad night
+    anyone has ever had. <b>Strep</b> the bacterium makes the acid, <b>Chill</b> the ice cube
+    triggers the trouble, and <b>Miss&nbsp;Molaris</b> the dentist and <b>Crownie</b> the crown
+    are the repair crew.</p>
+    <p class="say">Meet them properly on the way in.</p>
+  </div>
+</div>
+
+<div class="cards">
+  <a class="card" href="anatomy.html">
+    <span class="no">CHAPTER 1</span>
+    <h3>The Hardest Thing You Own</h3>
+    <p>A tooth is three tissues and a nerve: a glassy enamel cap over a living, tubular
+    dentine body, wrapped around a soft pulp, anchored by a ligament that suspends it in bone.
+    What each layer does, and why only one of them can repair itself. Push a probe through the
+    layers.</p>
+  </a>
+  <a class="card" href="nerve.html">
+    <span class="no">CHAPTER 2</span>
+    <h3>The Nerve</h3>
+    <p>Why a tooth can only really feel one thing — pain — and why cold, sweet and pressure all
+    arrive as the same sensation. The hydrodynamic theory, the two fibre types behind sharp
+    versus deep ache, and why you cannot tell your dentist which tooth it is.</p>
+  </a>
+  <a class="card" href="decay.html">
+    <span class="no">CHAPTER 3</span>
+    <h3>The Acid Clock</h3>
+    <p>Decay is not rot; it is a chemical equilibrium you tip several times a day. The plaque
+    biofilm, the critical pH, and the counter-intuitive rule that follows: <em>how often</em>
+    you eat sugar matters far more than how much. Run an acid attack on a mouth you control.</p>
+  </a>
+  <a class="card" href="ageing.html">
+    <span class="no">CHAPTER 4</span>
+    <h3>Eighty Years of Wear</h3>
+    <p>Attrition, erosion, abrasion and cracks; gums receding to expose soft root; the pulp
+    slowly walling itself in with secondary dentine until an old tooth is nearly hollow-proof
+    and nearly nerveless. Age a tooth eight decades and watch it change.</p>
+  </a>
+  <a class="card" href="pulpitis.html">
+    <span class="no">CHAPTER 5</span>
+    <h3>Death of a Pulp</h3>
+    <p>The heart of the guide: reversible pulpitis, irreversible pulpitis, necrosis and
+    abscess. Why a rigid chamber turns swelling into agony, why cold sometimes <em>relieves</em>
+    the pain of a dying nerve, and why anaesthetic fails on a hot pulp. With a real annotated
+    radiograph.</p>
+  </a>
+  <a class="card" href="fillings.html">
+    <span class="no">CHAPTER 6</span>
+    <h3>The Restoration Cycle</h3>
+    <p>Amalgam, composite and glass ionomer: what they are, how each fails, and the
+    uncomfortable arithmetic of replacement — every new filling is bigger than the last, and a
+    tooth only has so much substance to give. Thirty years of survival curves.</p>
+  </a>
+  <a class="card" href="root-canal.html">
+    <span class="no">CHAPTER 7</span>
+    <h3>Root Canal</h3>
+    <p>What actually happens: access, working length, shaping, irrigation, obturation — and why
+    the whole procedure is really an exercise in disinfecting a branching space you cannot see.
+    Success rates, the canal that gets missed, and why it needs a crown afterwards.</p>
+  </a>
+  <a class="card" href="crowns.html">
+    <span class="no">CHAPTER 8</span>
+    <h3>Crowns, Gaps and Implants</h3>
+    <p>The endgame. Why a root-treated molar splits without cuspal coverage, what crowns are
+    made of and how long they last, and the honest comparison nobody lays out properly:
+    crown versus extraction versus implant versus bridge versus leaving the gap.</p>
+  </a>
+  <a class="card" href="lexicon.html">
+    <span class="no">CHAPTER 9</span>
+    <h3>The Lexicon</h3>
+    <p>The working vocabulary A–Z; how to read a tooth chart and what "upper left seven"
+    means; the survival numbers in one table with their sources; and a timeline from Etruscan
+    gold bands through Pierre Fauchard to the adhesive era.</p>
+  </a>
+</div>
+
+<div class="prose">
+
+<h2>The one asymmetry that explains everything</h2>
+
+<p>Start here, because every chapter is a consequence of it. Your body maintains itself
+continuously: bone remodels, skin turns over, liver regenerates. A tooth does almost none of
+this. Once it has erupted, the cell layer that built the enamel is <strong>gone</strong> —
+shed as the tooth comes through the gum. There is no enamel factory left. Enamel is not even
+really alive: it is about 96% mineral by weight, a dense weave of hydroxyapatite crystals with
+almost no protein and no cells at all.</p>
+
+<p>So enamel is a strictly finite resource. You are issued a fixed quantity at eruption, and
+from that moment the account only goes one way.</p>
+
+<div class="callout gold">
+  <span class="tag">The asymmetry</span>
+  <p>Enamel can <strong>remineralise</strong> — lost mineral ions can be redeposited into a
+  crystal lattice that is still standing, which is what fluoride and saliva do, and why an early
+  "white spot" lesion can be arrested. But enamel cannot <strong>regenerate</strong>: once the
+  lattice itself has collapsed and a cavity has formed, no biological process rebuilds it.
+  There is no scaffold left to rebuild onto.</p>
+  <p>That is the whole of restorative dentistry in one sentence. Every filling, inlay, crown and
+  implant exists because this one tissue crossed a threshold from which biology has no route
+  back.</p>
+</div>
+
+<p>The other tissues do a little better, and the differences matter:</p>
+
+<table class="data">
+  <caption>What each tissue can do about damage</caption>
+  <tr><th>Tissue</th><th>Living?</th><th>Response to damage</th><th>Consequence</th></tr>
+  <tr><td class="k">Enamel</td><td>No — no cells</td>
+    <td>Remineralises early lesions only; cannot rebuild lost structure</td>
+    <td>Cavities are permanent; they get filled, not healed</td></tr>
+  <tr><td class="k">Dentine</td><td>Yes — via the pulp</td>
+    <td>Lays down <em>tertiary</em> dentine beneath a threat, walling off the pulp</td>
+    <td>Slow decay may be outrun; fast decay is not</td></tr>
+  <tr><td class="k">Pulp</td><td>Yes</td>
+    <td>Inflames — but is trapped in a rigid chamber and cannot swell</td>
+    <td>Inflammation strangles it; pulpitis is often a one-way door</td></tr>
+  <tr><td class="k">Cementum &amp; ligament</td><td>Yes</td>
+    <td>Remodels and can partly reattach</td>
+    <td>Gum disease is treatable; lost bone rarely comes fully back</td></tr>
+  <tr><td class="k">Alveolar bone</td><td>Yes</td>
+    <td>Remodels constantly — but resorbs when the tooth goes</td>
+    <td>An empty socket shrinks; implants have a time window</td></tr>
+</table>
+
+<p>Read down that table and the clinical world reorganises itself. Gum disease is a chronic
+condition you manage. Decay is damage you repair. And the pulp — the one living part locked in
+a box that cannot expand — is where the emergencies come from.</p>
+
+<h2>Why toothache is its own category of pain</h2>
+
+<p>People who have had both will tell you a bad tooth beats a broken bone, and there is a
+structural reason rather than a poetic one. Inflame almost any tissue and it swells: the
+swelling is uncomfortable but it relieves pressure by expanding into the space around it.
+The pulp cannot. It is enclosed on all sides by rigid dentine, with one exit — a hole at the
+root tip roughly the width of a human hair.</p>
+
+<div class="callout">
+  <span class="tag">A low-compliance compartment</span>
+  <p>Inflammation raises tissue pressure. In a chamber with rigid walls, that pressure has
+  nowhere to go, so it compresses the very blood vessels supplying the tissue. Reduced blood
+  flow causes more inflammation, which raises the pressure further. It is a compartment
+  syndrome the size of a grain of rice, and it explains the whole clinical picture: the
+  severity, the throbbing that tracks your pulse, why it is worse lying down, and why the
+  process tends to run to completion rather than settling.</p>
+</div>
+
+<p>It also explains the strangest symptom in dentistry, the one that sends people to bed with
+a glass of iced water: as a pulp dies, <strong>cold can start to relieve the pain instead of
+provoking it</strong>. That reversal is worth a chapter of its own, and it gets
+<a href="pulpitis.html">Chapter&nbsp;5</a>.</p>
+
+<h2>How to read this guide</h2>
+
+<p>Start here and go in order — the chapters build — or jump to whatever pulled you in.
+If you are here because something hurts right now, go straight to
+<a href="pulpitis.html">Chapter&nbsp;5</a>. If you want to know whether to save or pull a
+tooth, that argument is laid out in <a href="crowns.html">Chapter&nbsp;8</a>. If you have ever
+wondered why dentists nag about snacking rather than sugar, it is
+<a href="decay.html">Chapter&nbsp;3</a>, and the answer is genuinely surprising.</p>
+
+<p>Play with every interactive; a slider does the explaining a paragraph cannot. And a promise
+about honesty: where the evidence is strong the text says so plainly, where clinicians
+genuinely disagree it says that too, and every survival figure is a range from published
+follow-up studies rather than a number invented to sound authoritative. Teeth are not
+mysterious. They are just the one part of you that keeps a permanent, unforgiving record of
+everything that has ever happened to it.</p>
+
+<p class="colophon">ROOT AND CROWN · a field guide to the tooth, its decay and its repair ·
+written and built as a self-contained static site: vanilla JavaScript, canvas and SVG, no
+frameworks, no build step. Biology and clinical detail checked against standard references —
+Orban's <em>Oral Histology and Embryology</em>, Ten Cate's <em>Oral Histology</em>,
+<em>Cohen's Pathways of the Pulp</em>, the European Society of Endodontology quality
+guidelines, NICE and SDCEP guidance, and published longevity meta-analyses cited in the
+<a href="lexicon.html">Lexicon</a>. Not medical advice. The radiograph in
+<a href="pulpitis.html">Chapter&nbsp;5</a> is the author's own, published with permission.
+Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="tooth-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, C } = TC;
+
+  let age = 18;
+  let mode = "neglect";
+
+  const CAPS = {
+    neglect: "Left alone: a sound molar picks up an occlusal lesion in its twenties that nobody catches. It reaches dentine, then the pulp; the nerve dies in the forties; infection drains into the bone at the root tip; and with nothing done, the tooth is unrestorable and extracted around sixty. Every stage here is slow and silent until the last one, which is not.",
+    maintain: "Looked after: the same tooth meets the same insults, but each is caught while it is small. The lesion is filled before it reaches the pulp; the filling is replaced once, larger, in middle age; the weakened tooth is crowned rather than left to split. It is not pristine — it is patched, and the patches show — but it is still doing its job at eighty. That is what routine dentistry actually buys.",
+  };
+
+  // Life-history of one molar under each regime. Stages are keyed to age.
+  function state(a, regime) {
+    const s = {
+      wear: clamp((a - 6) / 90, 0, 0.55),
+      recession: clamp((a - 30) / 90, 0, 0.5),
+      secondary: clamp((a - 15) / 80, 0, 0.85),
+      caries: 0, filling: 0, fillMat: "amalgam",
+      crown: false, rootFilled: false, pulpState: "healthy", lesion: 0,
+      gone: false,
+    };
+    if (regime === "neglect") {
+      // a lesion starts ~22, reaches the pulp ~38, necrosis ~42, abscess after
+      s.caries = clamp((a - 22) / 18, 0, 1);
+      if (a >= 34) s.pulpState = "inflamed";
+      if (a >= 42) { s.pulpState = "necrotic"; s.lesion = clamp((a - 42) / 16, 0, 1); }
+      if (a >= 60) s.gone = true;
+      return s;
+    }
+    // maintained
+    if (a < 24) { s.caries = clamp((a - 22) / 14, 0, 1); }
+    else if (a < 46) { s.filling = 0.34; }                       // first filling ~24
+    else if (a < 58) { s.filling = 0.62; s.fillMat = "composite"; } // replaced, larger
+    else { s.crown = true; s.filling = 0.62; }                    // crowned ~58
+    if (a >= 46 && a < 58) s.pulpState = "healthy";
+    return s;
+  }
+
+  const STAGE = {
+    neglect: [
+      [6, "sound"], [22, "enamel lesion begins"], [30, "into dentine"],
+      [38, "reaches the pulp"], [42, "pulp necrotic"], [48, "abscess at the root tip"],
+      [60, "extracted"],
+    ],
+    maintain: [
+      [6, "sound"], [22, "lesion caught early"], [24, "first filling"],
+      [46, "filling replaced, larger"], [58, "crowned"], [70, "still in service"],
+    ],
+  };
+  function stageLabel(a, regime) {
+    const list = STAGE[regime];
+    let out = list[0][1];
+    for (const [at, txt] of list) if (a >= at) out = txt;
+    return out;
+  }
+
+  TC.canvas("hero", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0a0d0f";
+    ctx.fillRect(0, 0, w, h);
+
+    const s = state(age, mode);
+
+    // layout: the tooth, generously sized, centre-left; text column at right
+    const th = Math.min(h * 0.82, w * 0.34);
+    const tw = th * 0.78;
+    const tx = w * 0.30 - tw / 2;
+    const ty = (h - th) / 2;
+
+    if (s.gone) {
+      // an empty, resorbing socket where the tooth used to be
+      const gumY = ty + th * 0.50;
+      ctx.fillStyle = C.bone;
+      ctx.fillRect(tx - tw * 0.6, gumY + th * 0.06, tw * 2.2, th * 0.55);
+      TC.grain(ctx, tx - tw * 0.6, gumY + th * 0.06, tw * 2.2, th * 0.55, 260, 77, "#efe8d0", 0.10);
+      ctx.fillStyle = C.gum;
+      ctx.beginPath();
+      ctx.moveTo(tx - tw * 0.6, gumY + th * 0.12);
+      ctx.quadraticCurveTo(tx + tw * 0.5, gumY - th * 0.02, tx + tw * 1.6, gumY + th * 0.12);
+      ctx.lineTo(tx + tw * 1.6, gumY + th * 0.2);
+      ctx.lineTo(tx - tw * 0.6, gumY + th * 0.2);
+      ctx.closePath(); ctx.fill();
+      TC.label(ctx, "the tooth is gone — the ridge beneath it", tx + tw * 0.5, gumY + th * 0.36,
+        { align: "center", color: C.muted, font: TC.mono(12) });
+      TC.label(ctx, "resorbs and never fully returns", tx + tw * 0.5, gumY + th * 0.36 + 16,
+        { align: "center", color: C.muted, font: TC.mono(12) });
+    } else {
+      TC.drawTooth(ctx, tx, ty, tw, th, {
+        wear: s.wear, caries: s.caries, filling: s.filling, fillMat: s.fillMat,
+        crown: s.crown, pulpState: s.pulpState, secondary: s.secondary,
+        recession: s.recession, rootFilled: s.rootFilled, lesion: s.lesion,
+        seed: 4242,
+      });
+      // a pulse of pain when the pulp is inflamed
+      if (s.pulpState === "inflamed") {
+        const pulse = 0.5 + 0.5 * Math.sin(t * 4);
+        ctx.save();
+        ctx.globalAlpha = 0.18 + 0.30 * pulse;
+        const g2 = ctx.createRadialGradient(
+          tx + tw / 2, ty + th * 0.22, 2, tx + tw / 2, ty + th * 0.22, tw * 0.62);
+        g2.addColorStop(0, C.pulpAcc);
+        g2.addColorStop(1, "rgba(255,107,125,0)");
+        ctx.fillStyle = g2;
+        ctx.beginPath(); ctx.arc(tx + tw / 2, ty + th * 0.22, tw * 0.62, 0, TC.TAU); ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    /* ---- right-hand readout column ---- */
+    const rx = w * 0.58;
+    let ry = h * 0.20;
+    TC.label(ctx, "AGE " + age, rx, ry, { color: C.mint, font: TC.mono(26, true) });
+    ry += 30;
+    TC.label(ctx, stageLabel(age, mode).toUpperCase(), rx, ry,
+      { color: s.gone ? C.pulpAcc : C.ink, font: TC.mono(14, true) });
+    ry += 34;
+
+    const rows = [
+      ["enamel remaining", Math.round((1 - s.wear / 0.55 * 0.35) * 100) + "%",
+        s.wear > 0.35 ? C.dentineAcc : C.good],
+      ["pulp", s.gone ? "—" :
+        s.pulpState === "necrotic" ? "dead" :
+        s.pulpState === "inflamed" ? "inflamed" : "alive",
+        s.gone ? C.muted : s.pulpState === "necrotic" ? C.pulpAcc :
+        s.pulpState === "inflamed" ? C.dentineAcc : C.good],
+      ["natural tooth left", s.gone ? "none" :
+        s.crown ? "reduced — crowned" :
+        s.filling > 0.5 ? "well over half gone" :
+        s.filling > 0 ? "mostly intact" :
+        s.caries > 0.5 ? "being lost to decay" : "intact",
+        s.gone ? C.pulpAcc : s.crown || s.filling > 0.5 ? C.dentineAcc : C.good],
+    ];
+    for (const [k, v, col] of rows) {
+      TC.label(ctx, k, rx, ry, { color: C.muted, font: TC.mono(11) });
+      TC.label(ctx, v, rx, ry + 17, { color: col, font: TC.mono(15, true) });
+      ry += 42;
+    }
+
+    // an age ruler along the bottom, with the stage marks for this regime
+    const ax0 = w * 0.06, ax1 = w * 0.94, ay = h - 22;
+    TC.line(ctx, ax0, ay, ax1, ay, C.line, 1);
+    for (const [at, txt] of STAGE[mode]) {
+      const px = ax0 + (at - 6) / 74 * (ax1 - ax0);
+      const hit = age >= at;
+      TC.line(ctx, px, ay - 5, px, ay + 5, hit ? C.mint : C.line, hit ? 2 : 1);
+      TC.label(ctx, String(at), px, ay + 17, {
+        align: "center", color: hit ? C.ink2 : C.muted, font: TC.mono(10),
+      });
+    }
+    const cursor = ax0 + (age - 6) / 74 * (ax1 - ax0);
+    ctx.fillStyle = C.mint;
+    ctx.beginPath();
+    ctx.moveTo(cursor, ay - 9); ctx.lineTo(cursor - 4, ay - 16); ctx.lineTo(cursor + 4, ay - 16);
+    ctx.closePath(); ctx.fill();
+  }, { animate: true });
+
+  TC.slider("hero-age", (v) => "age " + v.toFixed(0), (v) => { age = v; });
+  TC.seg("hero-mode", (v) => {
+    mode = v;
+    const el = document.getElementById("hero-cap");
+    if (el) el.innerHTML = CAPS[v];
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

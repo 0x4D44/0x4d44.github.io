@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eighty Years of Wear — Root and Crown</title>
+<meta name="description" content="How a tooth ages without a single bacterium: attrition, abrasion, erosion and the contested business of abfraction; bruxism; cracks that no radiograph can show; receding gums; and a pulp that walls itself in.">
+<link rel="stylesheet" href="tooth.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">ROOT&nbsp;AND&nbsp;CROWN</a></div>
+    <div class="strap">how teeth work, how they fail, and how they are repaired</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="nerve.html">2 · The Nerve</a>
+    <a href="decay.html">3 · Decay</a>
+    <a href="ageing.html" aria-current="page">4 · Ageing</a>
+    <a href="pulpitis.html">5 · Death of a Pulp</a>
+    <a href="fillings.html">6 · Fillings</a>
+    <a href="root-canal.html">7 · Root Canal</a>
+    <a href="crowns.html">8 · Crowns &amp; After</a>
+    <a href="lexicon.html">9 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 4</p>
+  <h1>Eighty Years of Wear</h1>
+  <p class="standfirst">Not one bacterium appears in this chapter. A tooth that never gets a
+  single cavity still ends its life shorter, flatter, darker, tender at the neck and numb at
+  the tip, wrapped around a pulp chamber a fraction of the size it started with. None of that
+  is disease. It is the arithmetic of eight decades of contact, chemistry and habit — and it
+  makes a seventy-year-old tooth a fundamentally different object from a twenty-year-old
+  one.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">One tooth, sixty-five years of contact</span>
+    <span class="hint">age · wear rate · how far the gum retreats</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="ag-life" style="aspect-ratio: 2.4 / 1; min-height: 320px;"
+            role="img" aria-label="A sectioned molar that changes as you drag the age slider: the cusps flatten as enamel is worn away, the pulp chamber shrinks inward as secondary dentine is laid down, and the gum margin drops to expose root. A readout column gives the enamel left over the cusp, the size of the pulp chamber and the length of root exposed."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="ag-life-age">age</label>
+      <input type="range" id="ag-life-age" min="20" max="85" step="1" value="20">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="ag-life-rate">wear rate</label>
+      <input type="range" id="ag-life-rate" min="8" max="120" step="1" value="29">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="ag-life-gum">gum</label>
+      <span class="seg" id="ag-life-gum">
+        <button data-v="none">stable</button><button data-v="slow" class="on">gradual</button><button data-v="marked">marked</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="ag-life-ro-ew">enamel over the cusp <b id="ag-life-ro-en">2.5 mm</b></span>
+    <span class="ro">pulp chamber <b id="ag-life-ro-pulp">100%</b></span>
+    <span class="ro">root exposed <b id="ag-life-ro-rec">0.0 mm</b></span>
+    <span class="ro" id="ag-life-ro-sw">chewing surface <b id="ag-life-ro-state">enamel intact</b></span>
+  </div>
+  <div class="fig-note">The wear rate starts at <b>29 µm a year</b>, the figure Lambrechts and
+  colleagues measured at molar contact areas in 1989. Push it to 90 and you have a heavy
+  grinder. The recession settings are illustrative trajectories, not measured averages —
+  recession varies enormously between people and cannot be predicted from age. The shrinking
+  pulp chamber is schematic in scale, though the trend itself is real, measurable and
+  monotonic.</div>
+</figure>
+
+<div class="prose">
+
+<p class="lead">The contact areas of your molars lose enamel at roughly <strong>29 micrometres
+a year</strong>. Lambrechts and colleagues measured it directly in 1989, from replicas of real
+teeth over real time; premolars came in at about 15. These are absurd little numbers. A human
+hair is around 70 µm across, so a molar sheds less than half a hair's width of enamel per
+year.</p>
+
+<p>Then run the multiplication. Sixty years at 29 µm is <strong>1.7 millimetres</strong>, and
+the enamel over a molar cusp is at most about 2.5 mm thick to begin with. Perfectly ordinary
+chewing consumes most of the enamel on the parts of the tooth that do the chewing. That is why
+an old molar has flat, glossy, yellow-brown islands where its cusp tips used to be. Those
+islands are not decay. That is dentine, showing through a hole worn in the cap.</p>
+
+<h2>Four ways to lose a tooth without a single bacterium</h2>
+
+<p>Tooth surface loss is not one process but four. They look different, they have different
+causes, and telling them apart is the whole diagnostic job — the treatment of a grinding habit
+has nothing in common with the treatment of an acid habit.</p>
+
+<table class="data">
+  <caption>The four mechanisms of tooth surface loss</caption>
+  <tr><th>Mechanism</th><th>Agent</th><th>Where</th><th>What it looks like</th></tr>
+  <tr><td class="k">Attrition</td><td>Another tooth</td>
+    <td>Biting surfaces and edges</td>
+    <td>Flat facets with sharp margins, matching exactly on the opposing tooth; fillings worn
+    flush</td></tr>
+  <tr><td class="k">Abrasion</td><td>A foreign object</td>
+    <td>Wherever the object goes — classically the gum line</td>
+    <td>Hard-edged notches; a pattern that follows a habit, not the bite</td></tr>
+  <tr><td class="k">Erosion</td><td>Acid, no bacteria</td>
+    <td>Wherever the acid pools</td>
+    <td>Smooth, glossy, rounded; cupped hollows; fillings left standing proud</td></tr>
+  <tr><td class="k">Abfraction</td><td>Proposed: bending under load</td>
+    <td>The neck of the tooth</td>
+    <td>Deep, narrow wedges with sharp internal angles — and a contested cause</td></tr>
+</table>
+
+<p><strong>Attrition</strong> is tooth against tooth. It produces flat facets with sharp
+boundaries, and its signature is that the facets <em>match</em>: they were cut by each other,
+so they mate perfectly when the jaw returns to the position that made them. It also ignores
+materials — an amalgam in an attrition facet is worn to precisely the level of the enamel
+beside it, because another tooth does not care what it is grinding.</p>
+
+<p><strong>Abrasion</strong> is a foreign object, and its pattern follows the habit rather
+than the bite. The classic is a notch at the gum line, worst on the canines and first
+premolars because they stand furthest out in the arch, and often worse on the side opposite
+the dominant hand. Historically it was pipe stems, hairgrips and dressmakers' thread; now it
+is mostly brushing. The honest nuance is that a brush alone barely marks enamel. It is the
+paste's abrasive, and above all exposed dentine, that lets brushing cut: dentine's Knoop
+hardness is about 60 against enamel's 300.</p>
+
+<p><strong>Erosion</strong> is chemistry. No bacteria, no plaque — the acid arrives ready-made
+and dissolves mineral straight off the surface. Enamel starts dissolving below about pH 5.5,
+root surfaces below about 6.2. Measure what people drink and the exposure is obvious: cola
+sits around pH 2.4, wine around 3.0 to 3.8, orange juice around 3.3 to 4.0. When Reddy and
+colleagues measured 379 commercial beverages in 2016, roughly 93% came in below pH 4. Gastric
+contents are more aggressive still, at roughly pH 1 to 3, which is why reflux and self-induced
+vomiting leave a pattern clinicians recognise on sight.</p>
+
+<div class="callout gold">
+  <span class="tag">The single best tell</span>
+  <p>If a filling stands <em>proud</em> of the tooth around it, the cause is acid. Amalgam and
+  composite do not dissolve in dietary or gastric acid; enamel and dentine do, so the tooth has
+  retreated around a restoration that never moved. Mechanical wear does the opposite — it
+  grinds tooth and filling down together, leaving them flush.</p>
+</div>
+
+<div class="tryit">Work through the five cases below. In each one the giveaway is a single
+feature — usually not the wear itself but <b>where it is</b> or <b>what happened to the
+fillings</b>.</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Which mechanism made this?</span>
+    <span class="hint">five patterns · pick a cause · the reason is in the reply</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="ag-quiz" style="aspect-ratio: 2 / 1; min-height: 300px;"
+            role="img" aria-label="A schematic drawing of one clinical wear pattern at a time: matching flat facets on a pair of molars, cupped hollows with a filling standing proud, a notch at the neck of a tooth, a deep cervical wedge under sideways load, and an upper incisor thinned from its tongue side. The written brief for each case appears below the picture."></canvas>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="ag-quiz-brief" style="font-size:13.5px; color:var(--ink-2); line-height:1.6"></span>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="ag-quiz-ans">your answer</label>
+      <span class="seg" id="ag-quiz-ans">
+        <button data-v="attrition">attrition</button><button data-v="abrasion">abrasion</button><button data-v="erosion">erosion</button><button data-v="abfraction">abfraction</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <button class="btn" id="ag-quiz-next">next case →</button>
+    </div>
+    <div class="ctl">
+      <label for="ag-quiz-score">score</label>
+      <output id="ag-quiz-score">0 of 0</output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="ag-quiz-verdict" style="font-size:13.5px; color:var(--ink-2); line-height:1.6">Pick a mechanism. The explanation matters more than the score.</span>
+  </div>
+  <div class="fig-note">The drawings are schematic sections, so a lesion that really sits on
+  the cheek surface is drawn on the side of the tooth where you can see it. The reasoning is
+  not schematic: every discriminator used here is one clinicians actually rely on.</div>
+</figure>
+
+<p>The mechanisms also compound, and one pairing matters most. Acid does not remove enamel
+cleanly; it first <em>softens</em> a surface layer a few micrometres deep, and that softened
+layer brushes away far more readily than sound enamel. Erosion and abrasion together therefore
+destroy more than either alone — the mechanistic reason clinicians care about the interval
+between an acidic drink and a toothbrush.</p>
+
+<div class="callout warn">
+  <span class="tag">Abfraction: genuinely contested</span>
+  <p>Abfraction is the one entry in that table whose existence is disputed. Grippo named it in
+  1991 for a specific idea: sideways occlusal load bends the tooth, concentrating tensile
+  stress at the neck where enamel is thinnest, and the surface breaks away in a sharp wedge.
+  Finite-element models do show that stress concentration, so the physics is not fanciful.</p>
+  <p>What has never been shown is that the lesions track occlusal loading in real mouths.
+  Bartlett and Shah (<em>Journal of Dental Research</em>, 2006) and Senna and colleagues (2012)
+  both found the evidence weak, and every such lesion is equally compatible with erosion,
+  abrasion or both. A plausible mechanism with an unproven clinical case — not an established
+  diagnosis.</p>
+</div>
+
+<h2>The grinding you cannot feel</h2>
+
+<p>Bruxism is the ordinary word for grinding and clenching, and the striking thing is how many
+people do it without knowing. Sleep bruxism happens while you are unconscious and is silent to
+the person doing it; unless someone else is in the room to hear it, the only evidence is what
+it leaves on the teeth. Definitive diagnosis needs an overnight sleep study with audio and
+video. Almost nobody gets one, so nearly every diagnosis in practice is a <em>probable</em>
+one, assembled from self-report plus clinical signs.</p>
+
+<p>Its signature is a set of findings rather than any single one: broad flat facets that
+interdigitate with the opposing arch, cusps and restorations that fracture more often than
+they should, bulky masseter muscles, a raised white line along the inside of the cheek at the
+level of the bite, and scalloped indentations along the tongue's border where it is pressed
+against the teeth. Each is suggestive. None is specific.</p>
+
+<div class="callout">
+  <span class="tag">Facets are a record, not a rate</span>
+  <p>This is the part that gets missed. Wear facets tell you a tooth <em>has been</em> ground.
+  They cannot tell you whether it is <em>being</em> ground now. A sixty-year-old with
+  spectacularly flat teeth may have stopped grinding thirty years ago — a historical scar
+  rather than an active process, and a completely different clinical problem. It is why
+  monitoring over time settles the question and a single dramatic photograph does not.</p>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">how common, and what it even is</span></summary>
+  <p>Manfredini and colleagues' systematic review of adult bruxism epidemiology (2013) put
+  <b>awake bruxism at roughly 22–31% of adults</b> and <b>sleep bruxism at roughly 8–16%</b>,
+  with sleep bruxism declining with age. The wide ranges are honest: they reflect how much the
+  answer depends on whether you ask people, examine them, or record them overnight.</p>
+  <p>An international consensus published in 2018 (Lobbezoo and colleagues) went further and
+  redefined the term. Bruxism, it proposed, is best described as masticatory muscle activity
+  rather than a disorder, and in otherwise healthy people it should not be regarded as
+  pathological at all — it may even be protective in some contexts. The same paper introduced
+  the grading now in general use: <i>possible</i> bruxism from self-report, <i>probable</i>
+  from self-report plus examination, <i>definite</i> only with an instrumental recording.</p>
+  <p>For wear more broadly, van't Spijker and colleagues (2009) pooled the prevalence
+  literature and found the proportion of adults with <b>severe</b> tooth wear rising from
+  about <b>3% at age 20 to about 17% at age 70</b> — the clearest single statement of the fact
+  that wear accumulates and does not reverse.</p>
+</details>
+
+<h2>The crack you cannot photograph</h2>
+
+<p>Cracks are the other mechanical story, and they run on a ladder from trivial to terminal.
+The American Association of Endodontists' five-way classification is the standard map, and the
+rungs matter because the prognosis changes completely between them.</p>
+
+<table class="data">
+  <caption>The crack ladder</caption>
+  <tr><th>Type</th><th>Extent</th><th>What it means</th></tr>
+  <tr><td class="k">Craze line</td><td>Enamel only</td>
+    <td>Essentially universal in adult teeth. No symptoms, no consequence, no treatment.</td></tr>
+  <tr><td class="k">Fractured cusp</td><td>A cusp shears off, usually beside a filling</td>
+    <td>Often the lucky outcome: the crack finds its way out to the surface and the fragment
+    leaves.</td></tr>
+  <tr><td class="k">Cracked tooth</td><td>A crack running from the biting surface downward,
+    still in one piece</td>
+    <td>The problematic one. Symptoms depend on how deep it has gone.</td></tr>
+  <tr><td class="k">Split tooth</td><td>The crack has separated the segments</td>
+    <td>The tooth is in two pieces; at best one segment can be kept.</td></tr>
+  <tr><td class="k">Vertical root fracture</td><td>A crack originating in the root</td>
+    <td>Usually the end of that root, and often of the tooth.</td></tr>
+</table>
+
+<p>The classic presentation, described by Cameron in 1964 and unchanged since, is one of the
+strangest complaints in medicine: sharp pain on <em>releasing</em> a bite rather than on
+making it, in a tooth that looks entirely normal. The mechanism is the hydrodynamic one from
+<a href="nerve.html">Chapter&nbsp;2</a>, driven mechanically instead of thermally. Biting
+wedges the segments apart; releasing lets them snap back, and the sudden movement of fluid in
+the tubules bridging the crack fires the nerve.</p>
+
+<p>Now the part that surprises almost everyone told their radiograph is clear.</p>
+
+<div class="axiom">
+  <span class="tag">Why the film shows nothing</span>
+  <p>A radiograph is a shadow. A feature appears only if it attenuates the beam differently
+  from what sits beside it, <em>along the beam's path</em>. A crack is a gap of essentially no
+  width, so to cast a shadow the beam must travel <em>within</em> its plane, making the path
+  through the gap long.</p>
+  <p>In the mouth the beam runs from cheek to tongue, across the tooth. A cracked tooth's crack
+  almost always runs the other way, front to back along the arch. The beam therefore crosses it
+  at right angles, through a few micrometres of nothing, and the film records exactly that.
+  To shoot along the plane of the crack you would have to fire down the arch, through the
+  neighbouring teeth. You cannot.</p>
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The same crack, twice</span>
+    <span class="hint">drag it deeper · switch the beam direction · watch the film stay blank</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="ag-crack" style="aspect-ratio: 2.2 / 1; min-height: 330px;"
+            role="img" aria-label="Two views side by side. On the left, a sectioned molar with a crack you can drive deeper, marked against the level of the pulp roof and the crest of the bone. On the right, a simulated radiograph of the same tooth in which the crack is invisible, with a small inset showing why: the X-ray beam crosses the plane of the crack at right angles."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="ag-crack-depth">crack depth</label>
+      <input type="range" id="ag-crack-depth" min="0" max="100" step="1" value="30">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="ag-crack-beam">beam</label>
+      <span class="seg" id="ag-crack-beam">
+        <button data-v="across" class="on">as taken in the mouth</button><button data-v="along">along the crack</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">stage <b id="ag-crack-ro-type">cracked tooth</b></span>
+    <span class="ro" id="ag-crack-ro-pw">pulp <b id="ag-crack-ro-pulp">not reached</b></span>
+    <span class="ro" id="ag-crack-ro-bw">bone crest <b id="ag-crack-ro-bone">crack stays above it</b></span>
+    <span class="ro" id="ag-crack-ro-fw">on the film <b id="ag-crack-ro-film">invisible</b></span>
+  </div>
+  <div class="fig-note">The depth scale is a teaching schematic keyed to the standard
+  classification, not a measured axis. The point it makes is not: across the whole clinically
+  useful range, the projection you can actually take in a mouth shows you nothing.</div>
+</figure>
+
+<p>So diagnosis is physical rather than photographic. A bite test loads one cusp at a time
+until the offending one reproduces the pain. Transillumination puts a fibre-optic light
+against the tooth: it travels happily through sound enamel and dentine and stops dead at the
+crack, so the far segment goes black — very sensitive, and so poorly specific that harmless
+craze lines light up just as brightly. Dye, magnification and, finally, taking the filling out
+and looking, do the rest. Cone-beam CT resolves better, but its voxels are still tens to
+hundreds of micrometres across and metal restorations throw artefacts precisely where the
+crack is.</p>
+
+<p>What changes everything is whether the crack has passed the crest of the bone. Above it, a
+crack can be enclosed: a cuspal-coverage restoration binds the segments and the tooth may run
+for years. Below it, the crack opens a channel between mouth and periodontal ligament that
+cannot be cleaned, cannot be sealed and has no accessible margin to restore to. The classic
+finding is a single deep, narrow probing defect beside an otherwise healthy tooth, and it
+moves the tooth from "restorable" to a conversation about which segment, if any, stays.</p>
+
+<h2>The gum retreats</h2>
+
+<p>Meanwhile the soft tissue is moving. Gingival recession is extremely common with age: in
+NHANES III, Albandar and Kingman (1999) found at least one site with a millimetre or more of
+recession in about <strong>58% of American adults aged 30 and over</strong>, and in the great
+majority of those over 65. Periodontal inflammation, thin tissue and mechanical trauma all
+contribute, but the consequence is uniform.</p>
+
+<p>What gets exposed is not enamel. There is no enamel below the neck of the tooth and there
+never will be. The root is covered by cementum, a layer only tens of micrometres thick at the
+neck and about 45–50% mineral by weight against enamel's roughly 96%. It wears through
+quickly. Underneath is dentine, tubules running straight to the pulp — which is the whole
+reason receding gums and cold sensitivity arrive together.</p>
+
+<div class="callout plain">
+  <span class="tag">A small number with large consequences</span>
+  <p>Enamel dissolves below pH 5.5; root surfaces below about 6.2. That looks like a trivial
+  gap until you remember pH is logarithmic: attacking enamel takes about <b>five times</b> the
+  hydrogen-ion concentration that attacking a root does. Since plaque sits at 6.8 at rest, a
+  dip reaching only 6.0 is a non-event for the crown and a full acid attack on the root. An
+  exposed root is not merely softer — it is dissolved by episodes the crown never registers.</p>
+</div>
+
+<h2>The pulp walls itself in</h2>
+
+<p>The last change is the one you cannot see from outside, and it runs from the day the root
+finishes forming until the tooth is lost. The odontoblasts lining the pulp never stop working.
+They lay down <strong>secondary dentine</strong> throughout life, from the inside, so the
+chamber shrinks year on year — and in molars the deposition is heaviest on roof and floor, so
+it flattens as much as it narrows. Under a specific threat the pulp adds
+<strong>tertiary</strong> dentine locally: faster, less organised, exactly where needed.</p>
+
+<p>Four consequences follow, and together they describe what an old tooth is.</p>
+
+<p><strong>It is less sensitive.</strong> There is more dentine between the surface and the
+nerve, and the tubules themselves narrow and occlude as peritubular dentine fills them in —
+sclerotic dentine. Fewer patent tubules means less fluid movement and so less signal, and the
+nerve supply thins too. An old tooth can lose a great deal of substance quietly.</p>
+
+<p><strong>It is darker.</strong> The dentine core thickens and yellows while the enamel over
+it thins and grows more translucent, so more dentine shows through less enamel. Accumulated
+surface stain finishes the job.</p>
+
+<p><strong>It cracks more readily.</strong> Laboratory work on extracted teeth — Arola and
+Reprogel (2005), Koester, Ager and Ritchie (2008) — shows dentine's fracture toughness and its
+resistance to fatigue crack growth both falling with age. A crack a young tooth would arrest,
+an old one propagates.</p>
+
+<p><strong>It is harder to treat.</strong> A shrunken chamber and sclerosed canals are the
+practical curse of endodontics in older patients: roof and floor converge, the orifices become
+hard to find, and the risk of perforating the tooth while hunting for them rises. Add
+<em>pulp stones</em>, calcified masses sitting directly in the path of access — radiographic
+surveys find them in a minority of teeth, histological sections in far more, because most are
+too small to cast a shadow. And an ageing pulp is more fibrous, less cellular and less well
+supplied with blood, so it can repair less.</p>
+
+<div class="callout story">
+  <span class="tag">The tooth as a clock</span>
+  <p>These changes are so orderly that forensic scientists read age off them. Gustafson (1950)
+  scored six age changes in a sectioned tooth, of which root dentine translucency — the
+  sclerosis described above — proved the most reliable single indicator. Kvaal and colleagues
+  (1995) estimated adult age from the ratio of pulp to tooth on an ordinary radiograph,
+  typically to within about a decade.</p>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">where these numbers come from</span></summary>
+  <p><b>Wear rate:</b> Lambrechts, Braem, Vuylsteke-Wauters &amp; Vanherle, "Quantitative in
+  vivo wear of human enamel", <i>Journal of Dental Research</i> (1989). <b>Enamel
+  thickness:</b> standard histology (Ten Cate's <i>Oral Histology</i>). <b>Prevalence of
+  wear:</b> van't Spijker and colleagues, <i>International Journal of Prosthodontics</i>
+  (2009). <b>Bruxism:</b> Manfredini and colleagues, <i>Journal of Orofacial Pain</i> (2013);
+  grading from Lobbezoo and colleagues, <i>Journal of Oral Rehabilitation</i> (2018).
+  <b>Beverage acidity:</b> Reddy and colleagues, <i>Journal of the American Dental
+  Association</i> (2016). <b>Abfraction:</b> Grippo, <i>Journal of Esthetic Dentistry</i>
+  (1991); Bartlett &amp; Shah, <i>Journal of Dental Research</i> (2006); Senna, Del Bel Cury
+  &amp; Rösing, <i>Journal of Oral Rehabilitation</i> (2012). <b>Recession:</b> Albandar &amp;
+  Kingman, <i>Journal of Periodontology</i> (1999), from NHANES III. <b>Ageing dentine:</b>
+  Arola &amp; Reprogel, <i>Biomaterials</i> (2005); Koester, Ager &amp; Ritchie,
+  <i>Biomaterials</i> (2008). <b>Cracks:</b> Cameron, <i>JADA</i> (1964); classification from
+  the American Association of Endodontists. <b>Forensic ageing:</b> Gustafson (1950); Kvaal
+  and colleagues, <i>Forensic Science International</i> (1995).</p>
+  <p>One figure is not quoted in the text above. <b>Reflux:</b> Pace and colleagues'
+  systematic review (<i>Alimentary Pharmacology &amp; Therapeutics</i>, 2008) found dental
+  erosion in roughly a quarter of adults with gastro-oesophageal reflux disease, across studies
+  ranging from about 5% to nearly 50%. Remember that spread whenever a single erosion
+  prevalence figure is quoted at you.</p>
+</details>
+
+<p>Put it together and the ageing tooth is doing something quietly remarkable: losing structure
+from the outside at a few tens of micrometres a year while rebuilding inward, thickening its
+walls, sealing its tubules and withdrawing its nerve. It is not repairing itself — nothing
+here restores what was lost. It is conceding ground in good order. Which works right up until
+something reaches the pulp anyway, and a chamber that has spent seventy years getting smaller
+turns out to be exactly the wrong shape for what happens next. That is
+<a href="pulpitis.html">Chapter&nbsp;5</a>.</p>
+
+</div>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float"><use href="#char-molar"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Molar, at seventy</p>
+    <p class="say">"Shorter, flatter, browner, and I can barely feel the cold any more. People
+    say that like it is a loss. It is a truce."</p>
+  </div>
+</div>
+
+<nav class="chapnav">
+  <a href="decay.html"><span class="dir">Previous</span><span class="title">3 · Decay</span></a>
+  <a class="next" href="pulpitis.html"><span class="dir">Next</span><span class="title">5 · Death of a Pulp</span></a>
+</nav>
+
+</main>
+
+<script src="tooth-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, mono } = TC;
+  /* ---------- small shared helpers ---------- */
+
+  function bg(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0a0a0e";
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  function arrow(ctx, x1, y1, x2, y2, col) {
+    TC.line(ctx, x1, y1, x2, y2, col, 1.6);
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    ctx.save();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - 9 * Math.cos(a - 0.42), y2 - 9 * Math.sin(a - 0.42));
+    ctx.lineTo(x2 - 9 * Math.cos(a + 0.42), y2 - 9 * Math.sin(a + 0.42));
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function setRo(spanId, cls) {
+    const el = document.getElementById(spanId);
+    if (!el) return;
+    el.classList.remove("alert", "good", "amber");
+    if (cls) el.classList.add(cls);
+  }
+
+  /* ================================================================
+     FIGURE 1 — age one tooth from 20 to 85
+     ================================================================ */
+
+  const ENAMEL_UM = TC.DENT.enamelThick_mm * 1000;   // 2500 µm over a molar cusp
+  const REC_RATE = { none: 0, slow: 0.045, marked: 0.09 };  // mm per year, illustrative
+  const F1 = { age: 20, rate: 29, gum: "slow" };
+
+  function f1state() {
+    const years = Math.max(0, F1.age - 20);
+    const lostUm = F1.rate * years;
+    const enamelLeft = Math.max(0, ENAMEL_UM - lostUm) / 1000;   // mm
+    const wearFrac = clamp(lostUm / ENAMEL_UM, 0, 1);
+    const sec = clamp(years / 65, 0, 1) * 0.9;
+    const shrink = 1 - sec * 0.62;
+    const recMm = REC_RATE[F1.gum] * years;
+    return {
+      years, lostUm, enamelLeft, wearFrac, sec, shrink, recMm,
+      through: enamelLeft <= 0,
+    };
+  }
+
+  const figLife = TC.canvas("ag-life", function (ctx, w, h) {
+    bg(ctx, w, h);
+    const s = f1state();
+
+    const th = Math.min(h * 0.86, w * 0.36);
+    const tw = th * 0.78;
+    const tx = w * 0.30 - tw / 2;
+    const ty = (h - th) / 2;
+
+    const g = TC.drawTooth(ctx, tx, ty, tw, th, {
+      wear: s.wearFrac * 0.95,
+      secondary: s.sec,
+      recession: clamp(s.recMm / 6, 0, 1),
+      seed: 4242,
+    });
+
+    /* leaders into the left gutter */
+    const lx = w * 0.035;
+    TC.leader(ctx, lx, ty + th * 0.10, g.cx - tw * 0.22, g.crownTop + th * 0.02,
+      s.through ? "dentine exposed" : "enamel cap",
+      { color: s.through ? C.dentineAcc : C.mint, dash: [3, 3] });
+    TC.leader(ctx, lx, ty + th * 0.34, g.cx - tw * 0.13, ty + th * 0.20,
+      "pulp chamber", { color: C.pulpAcc, dash: [3, 3] });
+    if (s.recMm > 0.2) {
+      TC.leader(ctx, lx, ty + th * 0.62, g.cx - tw * 0.28, g.gumLine + th * 0.03,
+        "root exposed", { color: C.ice, dash: [3, 3] });
+    }
+
+    /* ---- readout column ---- */
+    const rx = w * 0.58;
+    let ry = h * 0.20;
+    TC.label(ctx, "AGE " + F1.age, rx, ry, { color: C.mint, font: mono(26, true) });
+    ry += 30;
+    TC.label(ctx,
+      s.through ? "WORN THROUGH TO DENTINE" : s.wearFrac > 0.6 ? "ENAMEL RUNNING LOW" : "ENAMEL INTACT",
+      rx, ry, { color: s.through ? C.dentineAcc : C.ink, font: mono(14, true) });
+    ry += 36;
+
+    const rows = [
+      ["enamel worn away", TC.fmtNum(s.lostUm, 0) + " µm", s.through ? C.dentineAcc : C.ink],
+      ["chamber, vs age 20", Math.round(s.shrink * 100) + "%", C.pulpAcc],
+      ["root exposed", s.recMm.toFixed(1) + " mm", s.recMm > 2 ? C.ice : C.ink2],
+    ];
+    for (const [k, v, col] of rows) {
+      TC.label(ctx, k, rx, ry, { color: C.muted, font: mono(11) });
+      TC.label(ctx, v, rx, ry + 17, { color: col, font: mono(15, true) });
+      ry += 40;
+    }
+
+    /* ---- the enamel budget bar ---- */
+    const bx = rx, bw = Math.min(w * 0.36, w - rx - w * 0.05), byy = ry + 6, bh = 13;
+    ctx.fillStyle = C.surface3;
+    TC.roundRect(ctx, bx, byy, bw, bh, 3);
+    ctx.fill();
+    const used = clamp(s.lostUm / ENAMEL_UM, 0, 1);
+    ctx.fillStyle = used >= 1 ? C.pulpAcc : C.dentineAcc;
+    TC.roundRect(ctx, bx, byy, Math.max(2, bw * used), bh, 3);
+    ctx.fill();
+    TC.label(ctx, "the enamel budget over one cusp — 2.5 mm, spent once", bx, byy - 7,
+      { color: C.muted, font: mono(10) });
+    TC.label(ctx, Math.round(used * 100) + "% gone", bx + bw, byy + bh + 13,
+      { color: used >= 1 ? C.pulpAcc : C.ink2, align: "right", font: mono(11, true) });
+    TC.label(ctx, F1.rate + " µm/yr × " + s.years + " yr", bx, byy + bh + 13,
+      { color: C.muted, font: mono(11) });
+  });
+
+  function f1update() {
+    const s = f1state();
+    TC.set("ag-life-ro-en", s.through ? "gone at the contacts" : s.enamelLeft.toFixed(2) + " mm");
+    setRo("ag-life-ro-ew", s.through ? "alert" : s.enamelLeft < 1 ? "amber" : "good");
+    TC.set("ag-life-ro-pulp", Math.round(s.shrink * 100) + "% of age 20");
+    TC.set("ag-life-ro-rec", s.recMm.toFixed(1) + " mm");
+    TC.set("ag-life-ro-state",
+      s.through ? "dentine islands, cupping, sensitive"
+        : s.wearFrac > 0.6 ? "flattening, enamel thin"
+        : s.wearFrac > 0.25 ? "facets forming" : "enamel intact");
+    setRo("ag-life-ro-sw", s.through ? "alert" : s.wearFrac > 0.6 ? "amber" : "good");
+    if (figLife) figLife.redraw();
+  }
+
+  TC.slider("ag-life-age", (v) => "age " + v.toFixed(0), (v) => { F1.age = v; f1update(); });
+  TC.slider("ag-life-rate", (v) => v.toFixed(0) + " µm/yr", (v) => { F1.rate = v; f1update(); });
+  TC.seg("ag-life-gum", (v) => { F1.gum = v; f1update(); });
+
+  /* ================================================================
+     FIGURE 2 — the wear-pattern identifier
+     ================================================================ */
+
+  /* an opposing pair: lower tooth upright, upper mirrored above it */
+  function pair(ctx, w, h, opts) {
+    const th = Math.min(h * 0.44, w * 0.26);
+    const tw = th * 0.78;
+    const mid = h * 0.53;
+    const ctOff = th * (0.02 + 0.06 * (opts.wear || 0));
+    const y0 = mid + 4 - ctOff;
+    const x0 = w * 0.5 - tw / 2;
+    const lower = TC.drawTooth(ctx, x0, y0, tw, th, opts);
+    ctx.save();
+    ctx.translate(0, 2 * mid);
+    ctx.scale(1, -1);
+    TC.drawTooth(ctx, x0, y0, tw, th, Object.assign({}, opts, { filling: 0, seed: 9111 }));
+    ctx.restore();
+    return { lower, tw, th, mid, x0, y0 };
+  }
+
+  /* a single lower tooth, generously sized */
+  function solo(ctx, w, h, opts) {
+    const th = Math.min(h * 0.84, w * 0.34);
+    const tw = th * 0.78;
+    const x0 = w * 0.5 - tw / 2;
+    const y0 = (h - th) / 2;
+    return { g: TC.drawTooth(ctx, x0, y0, tw, th, opts), tw, th, x0, y0 };
+  }
+
+  /* an incisor in bucco-palatal section; crown points down (an upper tooth).
+     `loss` hollows the palatal surface and thins the incisal edge. */
+  function incisor(ctx, x, y, w, h, loss) {
+    const cx = x + w / 2;
+    const edge = (0.10 - 0.055 * loss) * w;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx, y + h * 0.02);
+    ctx.bezierCurveTo(cx + w * 0.10, y + h * 0.18, cx + w * 0.19, y + h * 0.38, cx + w * 0.22, y + h * 0.55);
+    ctx.bezierCurveTo(
+      cx + (0.27 - 0.15 * loss) * w, y + h * 0.68,
+      cx + (0.23 - 0.19 * loss) * w, y + h * 0.84,
+      cx + edge, y + h * 0.985);
+    ctx.lineTo(cx - edge - w * 0.02, y + h);
+    ctx.bezierCurveTo(cx - w * 0.28, y + h * 0.84, cx - w * 0.30, y + h * 0.68, cx - w * 0.22, y + h * 0.55);
+    ctx.bezierCurveTo(cx - w * 0.19, y + h * 0.38, cx - w * 0.10, y + h * 0.18, cx, y + h * 0.02);
+    ctx.closePath();
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = C.dentine;
+    ctx.fillRect(x - w, y - h, w * 3, h * 3);
+    TC.grain(ctx, x, y, w, h, 180, 4242, "#fff6dd", 0.13);
+    /* enamel: a shell over the crown, thinner on the palatal side as it dissolves */
+    ctx.fillStyle = C.enamel;
+    ctx.beginPath();
+    ctx.moveTo(cx - w * 0.34, y + h * 0.55);
+    ctx.bezierCurveTo(cx - w * 0.30, y + h * 0.70, cx - w * 0.32, y + h * 0.88, cx - w * 0.20, y + h * 1.06);
+    ctx.lineTo(cx + w * 0.20, y + h * 1.06);
+    ctx.bezierCurveTo(cx + (0.22 - 0.17 * loss) * w, y + h * 0.86,
+      cx + (0.20 - 0.13 * loss) * w, y + h * 0.70,
+      cx + (0.17 - 0.10 * loss) * w, y + h * 0.55);
+    ctx.closePath();
+    ctx.fill();
+    TC.grain(ctx, cx - w * 0.34, y + h * 0.55, w * 0.68, h * 0.5, 110, 51, "#ffffff", 0.16);
+    /* a translucent, grey-blue incisal edge where the enamel has thinned */
+    if (loss > 0.4) {
+      ctx.fillStyle = "rgba(120,150,175,0.42)";
+      ctx.fillRect(cx - w * 0.34, y + h * (0.965 - 0.05 * loss), w * 0.68, h * 0.09);
+    }
+    /* pulp: a fine taper up the middle */
+    ctx.fillStyle = C.pulp;
+    ctx.beginPath();
+    ctx.moveTo(cx - w * 0.035, y + h * 0.72);
+    ctx.lineTo(cx + w * 0.035, y + h * 0.72);
+    ctx.lineTo(cx + w * 0.012, y + h * 0.10);
+    ctx.lineTo(cx - w * 0.012, y + h * 0.10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = "rgba(30,26,20,0.55)";
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+    ctx.restore();
+    return { cx, neck: y + h * 0.55, tip: y + h };
+  }
+
+  /* a wedge-shaped cervical defect on the right flank of the neck */
+  function wedge(ctx, x, y, depth, height, sharp) {
+    ctx.save();
+    ctx.fillStyle = sharp ? "#2b241a" : "#3a3025";
+    ctx.beginPath();
+    ctx.moveTo(x, y - height / 2);
+    ctx.lineTo(x - depth, y + (sharp ? 0 : height * 0.06));
+    ctx.lineTo(x, y + height / 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,0.20)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const CASES = [
+    {
+      answer: "attrition",
+      brief: "Flat, glossy facets across the cusps of an upper and a lower molar. Articulate the models and the facets on the two teeth interlock exactly. The amalgam in the lower tooth has been worn down to precisely the level of the enamel beside it.",
+      why: "<b>Attrition.</b> Two features settle it. The facets <i>match</i> — they were cut by each other, so they mate perfectly in the jaw position that made them. And the restoration is worn flush with the tooth: the abrasive here is another tooth, and it does not care whether it is grinding enamel or metal. Acid would have picked one and spared the other.",
+      draw: function (ctx, w, h, rev) {
+        const p = pair(ctx, w, h, {
+          wear: 0.88, filling: 0.42, fillMat: "amalgam", secondary: 0.5,
+          showBone: false, seed: 4242,
+        });
+        TC.line(ctx, w * 0.16, p.mid, w * 0.84, p.mid, "rgba(74,216,196,0.35)", 1, [4, 4]);
+        if (rev) {
+          arrow(ctx, w * 0.20, p.mid - p.th * 0.42, p.lower.cx - p.tw * 0.30, p.mid - 6, C.mint);
+          TC.label(ctx, "facets match", w * 0.20, p.mid - p.th * 0.46, { color: C.mint, font: mono(11, true) });
+          arrow(ctx, w * 0.80, p.mid + p.th * 0.42, p.lower.cx + p.tw * 0.06, p.mid + 10, C.dentineAcc);
+          TC.label(ctx, "amalgam worn flush", w * 0.80, p.mid + p.th * 0.46,
+            { color: C.dentineAcc, align: "right", font: mono(11, true) });
+        }
+      },
+    },
+    {
+      answer: "erosion",
+      brief: "The cusps of a lower molar are hollowed into smooth, shiny, rounded cups with no sharp edge anywhere on the surface. The amalgam in the middle of the tooth stands proud of everything around it, like a plateau on an eroded landscape.",
+      why: "<b>Erosion.</b> The restoration is the tell. Amalgam does not dissolve in dietary or gastric acid; enamel and dentine do — so the tooth has retreated around a filling that never moved. Add the contours: mechanical wear leaves flat facets with sharp margins, chemical dissolution leaves smooth, glossy hollows.",
+      draw: function (ctx, w, h, rev) {
+        const s = solo(ctx, w, h, {
+          wear: 0.5, filling: 0.4, fillMat: "amalgam", secondary: 0.45,
+          showBone: false, seed: 4242,
+        });
+        const g = s.g;
+        /* cupped hollows in the exposed dentine at each cusp */
+        for (const sgn of [-1, 1]) {
+          const cxp = g.cx + sgn * g.halfW * 0.56, cyp = g.crownTop + s.th * 0.028;
+          ctx.save();
+          ctx.fillStyle = C.dentineDeep;
+          ctx.beginPath();
+          ctx.ellipse(cxp, cyp, s.tw * 0.11, s.th * 0.024, 0, 0, TC.TAU);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(255,255,255,0.35)";
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.ellipse(cxp, cyp - s.th * 0.006, s.tw * 0.085, s.th * 0.015, 0, Math.PI, TC.TAU);
+          ctx.stroke();
+          ctx.restore();
+        }
+        /* the filling, standing proud of the dissolving surface */
+        const fw = s.tw * 0.234;
+        ctx.save();
+        ctx.fillStyle = C.amalgam;
+        TC.roundRect(ctx, g.cx - fw / 2, g.crownTop - s.th * 0.038, fw, s.th * 0.055, 2);
+        ctx.fill();
+        TC.grain(ctx, g.cx - fw / 2, g.crownTop - s.th * 0.038, fw, s.th * 0.055, 40, 71, "#ffffff", 0.22);
+        ctx.strokeStyle = "rgba(255,255,255,0.35)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+        if (rev) {
+          arrow(ctx, w * 0.78, g.crownTop - s.th * 0.20, g.cx + fw * 0.6, g.crownTop - s.th * 0.030, C.mint);
+          TC.label(ctx, "filling left standing proud", w * 0.80, g.crownTop - s.th * 0.23,
+            { color: C.mint, align: "right", font: mono(11, true) });
+          arrow(ctx, w * 0.20, g.crownTop + s.th * 0.22, g.cx - g.halfW * 0.56, g.crownTop + s.th * 0.06, C.dentineAcc);
+          TC.label(ctx, "cupped, glossy, no sharp edge", w * 0.19, g.crownTop + s.th * 0.26,
+            { color: C.dentineAcc, font: mono(11, true) });
+        }
+      },
+    },
+    {
+      answer: "abrasion",
+      brief: "A hard, sharp-edged notch at the gum line on the cheek side of an upper canine and first premolar. The lesions are on one side of the mouth only — the side opposite the patient's writing hand — and the patient describes brushing hard, horizontally, with a firm brush.",
+      why: "<b>Abrasion.</b> The distribution is the whole argument: one side only, on the two teeth that stand furthest out in the arch, in exactly the sweep a hand makes. Note the nuance — a brush alone barely marks enamel. It is the paste's abrasive and, above all, exposed root dentine (Knoop hardness about 60 against enamel's 300) that lets brushing cut.",
+      draw: function (ctx, w, h, rev) {
+        const s = solo(ctx, w, h, {
+          wear: 0.3, secondary: 0.5, recession: 0.6, showBone: true, seed: 4242,
+        });
+        const g = s.g;
+        const nx = g.cx + s.tw * 0.30, ny = g.neck + s.th * 0.055;
+        wedge(ctx, nx, ny, s.tw * 0.13, s.th * 0.085, false);
+        if (rev) {
+          arrow(ctx, w * 0.80, ny - s.th * 0.20, nx + 4, ny, C.mint);
+          TC.label(ctx, "notch at the gum line", w * 0.82, ny - s.th * 0.23,
+            { color: C.mint, align: "right", font: mono(11, true) });
+          TC.label(ctx, "(drawn on the side — the real lesion is on the cheek surface)",
+            w * 0.82, ny - s.th * 0.23 + 15,
+            { color: C.muted, align: "right", font: mono(10) });
+        }
+      },
+    },
+    {
+      answer: "abfraction",
+      brief: "A single premolar carrying a heavy sideways load has a deep, narrow, wedge-shaped defect at its neck with sharp internal angles. Its neighbours are untouched. There is no history of dietary acid or reflux, and the brushing technique is gentle.",
+      why: "<b>Abfraction</b> is the textbook answer — and it is the one answer in this set that a large part of the research community would dispute. The proposed mechanism is real enough: sideways load flexes the tooth and concentrates tensile stress at the neck, where enamel is thinnest, and finite-element models show that stress. What has never been established is that these lesions actually track occlusal loading in real mouths. Every one of them is equally compatible with erosion, abrasion, or both together.",
+      draw: function (ctx, w, h, rev) {
+        const s = solo(ctx, w, h, {
+          wear: 0.28, secondary: 0.45, recession: 0.22, showBone: true, seed: 4242,
+        });
+        const g = s.g;
+        const nx = g.cx + s.tw * 0.30, ny = g.neck + s.th * 0.045;
+        wedge(ctx, nx, ny, s.tw * 0.20, s.th * 0.055, true);
+        /* the lateral load said to cause it */
+        arrow(ctx, g.cx - s.tw * 0.85, g.crownTop + s.th * 0.05,
+          g.cx - s.tw * 0.44, g.crownTop + s.th * 0.05, C.violet);
+        TC.label(ctx, "lateral load", g.cx - s.tw * 0.86, g.crownTop + s.th * 0.02,
+          { color: C.violet, align: "right", font: mono(11, true) });
+        if (rev) {
+          arrow(ctx, w * 0.82, ny - s.th * 0.18, nx + 4, ny, C.dentineAcc);
+          TC.label(ctx, "deep, narrow, sharp angles", w * 0.84, ny - s.th * 0.21,
+            { color: C.dentineAcc, align: "right", font: mono(11, true) });
+        }
+      },
+    },
+    {
+      answer: "erosion",
+      brief: "The tongue-side surfaces of the upper front teeth are thinned to a glassy translucency and the biting edges have started to chip and look grey. The lip-side surfaces are almost untouched, and so are the lower front teeth.",
+      why: "<b>Erosion</b> — and the location names the source. Nothing mechanical acts on the tongue side of the upper incisors: no opposing tooth grinds there and no brush stroke reaches it hard. But it is exactly where gastric contents pool when they come up, and gastric acid at roughly pH 1 to 3 sits far below the pH 5.5 at which enamel begins to dissolve. This asymmetric pattern is one of the few dental signs that points to a problem outside the mouth.",
+      draw: function (ctx, w, h, rev) {
+        const ih = h * 0.44, iw = ih * 0.42;
+        const ih2 = ih * 0.85, iw2 = ih2 * 0.42;
+        const cx0 = w * 0.5;
+        const up = incisor(ctx, cx0 - iw / 2, h * 0.05, iw, ih, 0.85);
+        ctx.save();
+        ctx.translate(0, 2 * h * 0.51);
+        ctx.scale(1, -1);
+        incisor(ctx, cx0 - iw2 / 2, 0.49 * h - ih2, iw2, ih2, 0.08);
+        ctx.restore();
+        TC.label(ctx, "← LIP SIDE", cx0 - iw * 1.4, h * 0.12, { color: C.muted, font: mono(11, true) });
+        TC.label(ctx, "TONGUE SIDE →", cx0 + iw * 1.4, h * 0.12,
+          { color: C.muted, align: "right", font: mono(11, true) });
+        if (rev) {
+          arrow(ctx, cx0 + iw * 1.5, h * 0.34, cx0 + iw * 0.16, h * 0.36, C.mint);
+          TC.label(ctx, "dissolved from the tongue side only", cx0 + iw * 1.6, h * 0.31,
+            { color: C.mint, align: "right", font: mono(11, true) });
+          arrow(ctx, cx0 - iw * 1.5, h * 0.44, cx0 - iw * 0.30, h * 0.46, C.ice);
+          TC.label(ctx, "lip side intact", cx0 - iw * 1.6, h * 0.41,
+            { color: C.ice, font: mono(11, true) });
+        }
+      },
+    },
+  ];
+
+  const NAMES = {
+    attrition: "attrition", abrasion: "abrasion",
+    erosion: "erosion", abfraction: "abfraction",
+  };
+  const Q = { i: 0, answered: false, correct: 0, done: 0, ready: false };
+
+  const figQuiz = TC.canvas("ag-quiz", function (ctx, w, h) {
+    bg(ctx, w, h);
+    CASES[Q.i].draw(ctx, w, h, Q.answered);
+    TC.label(ctx, "CASE " + (Q.i + 1) + " OF " + CASES.length, 16, 24,
+      { color: C.mint, font: mono(12, true) });
+  });
+
+  function qRender() {
+    TC.set("ag-quiz-brief", CASES[Q.i].brief);
+    TC.set("ag-quiz-score", Q.correct + " of " + Q.done);
+    if (figQuiz) figQuiz.redraw();
+  }
+
+  function qAnswer(v) {
+    if (Q.answered) return;
+    Q.answered = true;
+    Q.done += 1;
+    const c = CASES[Q.i];
+    const right = v === c.answer;
+    if (right) Q.correct += 1;
+    TC.html("ag-quiz-verdict",
+      '<b style="color:' + (right ? "var(--good)" : "var(--pulp)") + '">' +
+      (right ? "Correct." : "Not this time — you said " + NAMES[v] + ".") + "</b> " + c.why);
+    qRender();
+  }
+
+  TC.seg("ag-quiz-ans", (v) => { if (Q.ready) qAnswer(v); });
+  Q.ready = true;
+  Array.from(document.querySelectorAll("#ag-quiz-ans button"))
+    .forEach((b) => b.classList.remove("on"));
+
+  TC.on("ag-quiz-next", "click", function () {
+    Q.i = (Q.i + 1) % CASES.length;
+    Q.answered = false;
+    Array.from(document.querySelectorAll("#ag-quiz-ans button"))
+      .forEach((b) => b.classList.remove("on"));
+    TC.set("ag-quiz-verdict", "Pick a mechanism. The explanation matters more than the score.");
+    qRender();
+  });
+  qRender();
+
+  /* ================================================================
+     FIGURE 3 — the same crack, sectioned and radiographed
+     ================================================================ */
+
+  const CR_WEAR = 0.25, CR_SEC = 0.4;
+  /* piecewise stops, as a fraction of tooth height from the top of the box.
+     They are placed so the slider spends equal travel in each clinical band. */
+  const STOPS = [0.035, 0.11, 0.145, 0.32, 0.51, 0.68, 0.80];
+  const CR = { depth: 30, beam: "across" };
+
+  function tipFrac(d) {
+    const seg = STOPS.length - 1;
+    const u = clamp(d, 0, 100) / 100 * seg;
+    const i = Math.min(seg - 1, Math.floor(u));
+    return TC.lerp(STOPS[i], STOPS[i + 1], u - i);
+  }
+
+  function crackState() {
+    const F = tipFrac(CR.depth);
+    if (F < 0.11) {
+      return { F, type: "craze line — enamel only", pulp: "not reached",
+        bone: "far above it", film: "invisible", pAl: "good", bAl: "good", split: false };
+    }
+    if (F < 0.145) {
+      return { F, type: "crack into dentine", pulp: "not reached, but close",
+        bone: "well above it", film: "invisible", pAl: "amber", bAl: "good", split: false };
+    }
+    if (F < 0.51) {
+      return { F, type: "cracked tooth — through the pulp chamber", pulp: "involved",
+        bone: "still above it", film: "invisible", pAl: "alert", bAl: "amber", split: false };
+    }
+    if (F < 0.68) {
+      return { F, type: "cracked tooth — below the bone crest", pulp: "involved",
+        bone: "crossed — a channel that cannot be sealed", film: "invisible",
+        pAl: "alert", bAl: "alert", split: false };
+    }
+    return { F, type: "split tooth — the segments have parted", pulp: "involved",
+      bone: "crossed", film: "visible at last — the gap has opened",
+      pAl: "alert", bAl: "alert", split: true };
+  }
+
+  function crackLine(ctx, y, hh, g, F, wide) {
+    const y0 = g.crownTop + hh * 0.004;
+    const y1 = y + hh * F;
+    const r = TC.rng(31);
+    ctx.beginPath();
+    ctx.moveTo(g.cx, y0);
+    const n = 8;
+    for (let i = 1; i <= n; i++) {
+      const t = i / n;
+      ctx.lineTo(g.cx + (r() - 0.5) * hh * 0.035 * (1 - t * 0.5), TC.lerp(y0, y1, t));
+    }
+    ctx.stroke();
+    if (wide) {
+      ctx.save();
+      ctx.globalAlpha = 0.5;
+      ctx.stroke();
+      ctx.restore();
+    }
+    return { y0, y1 };
+  }
+
+  function pulpShadow(ctx, x, y, w, hh, g, sec) {
+    const shrink = 1 - sec * 0.62;
+    const chTop = y + hh * 0.16;
+    const chH = hh * 0.105 * shrink, chW = w * 0.34 * shrink;
+    TC.roundRect(ctx, g.cx - chW / 2, chTop, chW, chH, chW * 0.2);
+    ctx.fill();
+    const cw = w * 0.05 * shrink;
+    for (const s of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(g.cx + s * chW * 0.34 - cw / 2, chTop + chH * 0.9);
+      ctx.bezierCurveTo(g.cx + s * w * 0.10, y + hh * 0.66, g.cx + s * w * 0.17, y + hh * 0.80,
+        g.cx + s * w * 0.185 - cw * 0.18, g.apex - hh * 0.03);
+      ctx.lineTo(g.cx + s * w * 0.185 + cw * 0.18, g.apex - hh * 0.03);
+      ctx.bezierCurveTo(g.cx + s * w * 0.17 + s * cw, y + hh * 0.80,
+        g.cx + s * w * 0.10 + s * cw, y + hh * 0.66, g.cx + s * chW * 0.34 + cw / 2, chTop + chH * 0.9);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  function beamInset(ctx, bx, by, bw, bh, along) {
+    ctx.save();
+    ctx.fillStyle = C.surface2;
+    TC.roundRect(ctx, bx, by, bw, bh, 8);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    const s = Math.min(bw * 0.52, bh * 0.42);
+    const cx = bx + bw / 2, cy = by + bh * 0.46;
+    ctx.fillStyle = "rgba(234,230,216,0.85)";
+    TC.roundRect(ctx, cx - s / 2, cy - s / 2, s, s, s * 0.22);
+    ctx.fill();
+    TC.label(ctx, "the tooth from above", cx, by + 16,
+      { align: "center", color: C.muted, font: mono(10) });
+    /* the crack, running front-to-back along the arch */
+    TC.line(ctx, cx - s * 0.56, cy, cx + s * 0.56, cy, "#101315", 2);
+    TC.label(ctx, "crack", cx + s * 0.60, cy + 4, { color: C.ink2, font: mono(10) });
+    /* the beam */
+    const col = along ? C.pulpAcc : C.mint;
+    if (along) {
+      for (const dy of [-s * 0.22, 0, s * 0.22]) {
+        arrow(ctx, cx - s * 0.95, cy + dy, cx - s * 0.60, cy + dy, col);
+      }
+    } else {
+      for (const dx of [-s * 0.28, 0, s * 0.28]) {
+        arrow(ctx, cx + dx, cy - s * 0.92, cx + dx, cy - s * 0.60, col);
+      }
+    }
+    const cap = along
+      ? ["beam IN the plane of", "the crack — a long path", "through the gap, so a", "shadow appears.",
+        "", "Unobtainable in a mouth:", "it would have to pass", "down the arch through", "the neighbouring teeth."]
+      : ["beam ACROSS the crack —", "it passes through a few", "micrometres of nothing,", "so nothing is recorded.",
+        "", "This is the projection", "you can actually take."];
+    let ty = by + bh * 0.70;
+    for (const ln of cap) {
+      TC.label(ctx, ln, bx + 12, ty, { color: ln.indexOf("Unobtainable") === 0 ? C.pulpAcc : C.muted, font: mono(10) });
+      ty += 12;
+    }
+    ctx.restore();
+  }
+
+  const figCrack = TC.canvas("ag-crack", function (ctx, w, hh) {
+    bg(ctx, w, hh);
+    const s = crackState();
+
+    /* ---- left: the tooth, sectioned ---- */
+    const th = Math.min(hh * 0.76, w * 0.26);
+    const tw = th * 0.78;
+    const tx = w * 0.21 - tw / 2;
+    const ty = hh * 0.16;
+    TC.label(ctx, "THE TOOTH, SECTIONED", w * 0.03, hh * 0.10, { color: C.mint, font: mono(11, true) });
+    const g = TC.drawTooth(ctx, tx, ty, tw, th, {
+      wear: CR_WEAR, secondary: CR_SEC, filling: 0.45, fillMat: "amalgam", seed: 4242,
+    });
+    /* reference levels */
+    const roofY = ty + th * 0.145, crestY = ty + th * 0.51;
+    TC.line(ctx, w * 0.035, roofY, tx + tw * 1.06, roofY, "rgba(255,107,125,0.45)", 1, [4, 4]);
+    TC.label(ctx, "pulp roof", w * 0.035, roofY - 4, { color: C.pulpAcc, font: mono(10) });
+    TC.line(ctx, w * 0.035, crestY, tx + tw * 1.06, crestY, "rgba(111,208,255,0.45)", 1, [4, 4]);
+    TC.label(ctx, "crest of the bone", w * 0.035, crestY - 4, { color: C.ice, font: mono(10) });
+    ctx.save();
+    ctx.strokeStyle = s.split ? "#0a0a0e" : "rgba(20,16,12,0.9)";
+    ctx.lineWidth = s.split ? 4.5 : 2;
+    ctx.lineJoin = "round";
+    crackLine(ctx, ty, th, g, s.F, s.split);
+    ctx.restore();
+
+    /* ---- middle: the radiograph ---- */
+    const fx = w * 0.42, fy = hh * 0.08, fw = w * 0.30, fh = hh * 0.84;
+    TC.label(ctx, "THE RADIOGRAPH", fx, hh * 0.045, { color: C.mint, font: mono(11, true) });
+    ctx.save();
+    ctx.fillStyle = "#0d1012";
+    ctx.fillRect(fx, fy, fw, fh);
+    ctx.beginPath();
+    ctx.rect(fx, fy, fw, fh);
+    ctx.clip();
+    const rth = Math.min(fh * 0.90, fw * 1.18), rtw = rth * 0.78;
+    const rtx = fx + fw / 2 - rtw / 2, rty = fy + (fh - rth) / 2;
+    const rg = TC.toothPath(ctx, rtx, rty, rtw, rth, CR_WEAR);
+    ctx.beginPath();
+    /* alveolar bone */
+    const boneTop = rty + rth * 0.51;
+    ctx.fillStyle = "#5d646a";
+    ctx.fillRect(fx, boneTop, fw, fy + fh - boneTop);
+    TC.grain(ctx, fx, boneTop, fw, fy + fh - boneTop, 420, 17, "#c9d2d6", 0.14);
+    /* the tooth: radiopaque */
+    TC.toothPath(ctx, rtx, rty, rtw, rth, CR_WEAR);
+    ctx.fillStyle = "#ccd1d4";
+    ctx.fill();
+    ctx.strokeStyle = "rgba(10,13,15,0.75)";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.save();
+    TC.toothPath(ctx, rtx, rty, rtw, rth, CR_WEAR);
+    ctx.clip();
+    ctx.fillStyle = "#41484d";
+    pulpShadow(ctx, rtx, rty, rtw, rth, rg, CR_SEC);
+    /* the amalgam: the brightest thing on any film */
+    ctx.fillStyle = "#fbfdfd";
+    const fwd = rtw * (0.13 + 0.26 * 0.45);
+    TC.roundRect(ctx, rg.cx - fwd / 2, rg.crownTop, fwd, rth * 0.078, 2);
+    ctx.fill();
+    ctx.restore();
+    /* the crack — only when the beam runs in its plane, or once it has opened */
+    if (CR.beam === "along" || s.split) {
+      ctx.save();
+      ctx.strokeStyle = "rgba(30,36,40,0.85)";
+      ctx.lineWidth = s.split ? 3 : 1.6;
+      crackLine(ctx, rty, rth, rg, s.F, false);
+      ctx.restore();
+    }
+    ctx.restore();
+    TC.label(ctx,
+      CR.beam === "along" ? "projection: along the crack (impossible)" : "projection: as taken in the mouth",
+      fx, fy + fh + 15, { color: CR.beam === "along" ? C.pulpAcc : C.muted, font: mono(10) });
+
+    /* ---- right: why ---- */
+    beamInset(ctx, w * 0.745, hh * 0.08, w * 0.235, hh * 0.84, CR.beam === "along");
+  });
+
+  function crackUpdate() {
+    const s = crackState();
+    TC.set("ag-crack-ro-type", s.type);
+    TC.set("ag-crack-ro-pulp", s.pulp);
+    setRo("ag-crack-ro-pw", s.pAl);
+    TC.set("ag-crack-ro-bone", s.bone);
+    setRo("ag-crack-ro-bw", s.bAl);
+    const visible = CR.beam === "along" || s.split;
+    TC.set("ag-crack-ro-film",
+      CR.beam === "along" ? "visible — but this projection cannot be taken"
+        : s.split ? "visible at last — the gap has opened" : "invisible");
+    setRo("ag-crack-ro-fw", visible ? "amber" : "alert");
+    if (figCrack) figCrack.redraw();
+  }
+
+  TC.slider("ag-crack-depth", (v) => v.toFixed(0) + " / 100", (v) => { CR.depth = v; crackUpdate(); });
+  TC.seg("ag-crack-beam", (v) => { CR.beam = v; crackUpdate(); });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

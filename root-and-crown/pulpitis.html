@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Death of a Pulp — Root and Crown</title>
+<meta name="description" content="Why toothache is its own category of pain: a compartment syndrome the size of a grain of rice, the reversible-to-necrotic ladder, the cold paradox, why anaesthetic and antibiotics disappoint, and a real annotated radiograph.">
+<link rel="stylesheet" href="tooth.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">ROOT&nbsp;AND&nbsp;CROWN</a></div>
+    <div class="strap">how teeth work, how they fail, and how they are repaired</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="nerve.html">2 · The Nerve</a>
+    <a href="decay.html">3 · Decay</a>
+    <a href="ageing.html">4 · Ageing</a>
+    <a href="pulpitis.html" aria-current="page">5 · Death of a Pulp</a>
+    <a href="fillings.html">6 · Fillings</a>
+    <a href="root-canal.html">7 · Root Canal</a>
+    <a href="crowns.html">8 · Crowns &amp; After</a>
+    <a href="lexicon.html">9 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 5</p>
+  <h1>Death of a Pulp</h1>
+  <p class="standfirst">A tooth can hurt more than a broken bone, and the reason is
+  architectural rather than poetic. This chapter follows an inflamed pulp from the first
+  twinge to the abscess: why a rigid chamber turns ordinary swelling into agony, how
+  clinicians sort the stages, why cold sometimes <em>stops</em> the pain of a dying nerve, and
+  why anaesthetic and antibiotics both disappoint. It ends with a real radiograph — and with
+  the honest limits of what a radiograph can show.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Inside a tooth the size of your little fingernail sits a chamber of soft
+tissue about the volume of a grain of rice. Inflame it and it tries to do what inflamed
+tissue everywhere does: swell. It cannot. It is walled in on every side by dentine, and the
+pressure that follows is the whole story of this chapter.</p>
+
+<p>Everywhere else, swelling is the relief valve. Sprain an ankle and the tissue puffs outward
+into loose connective space; the pressure inside stays near normal because the container
+gives. The pulp has no give. Its walls are mineralised dentine and its only exit is a hole at
+the root tip a fraction of a millimetre across. Engineers call that
+<strong>low-compliance</strong>: add volume and the pressure climbs at once.</p>
+
+</div>
+
+<figure class="fig wide" id="pu-fig-loop">
+  <div class="fig-head">
+    <span class="t">THE PRESSURE LOOP</span>
+    <span class="hint">drive the inflammation · watch the feedback close</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pu-loop" style="aspect-ratio: 2.3 / 1; min-height: 320px;"
+            role="img" aria-label="A schematic feedback loop: rising inflammation raises pressure inside the rigid pulp chamber, which compresses the blood vessels supplying it, which starves the tissue of oxygen, which causes more inflammation. A tooth alongside shows the pulp changing from healthy to inflamed to necrotic as the loop closes."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pu-loop-drive">inflammatory drive</label>
+      <input type="range" id="pu-loop-drive" min="0" max="100" step="1" value="6">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="pu-loop-posture">posture</label>
+      <span class="seg" id="pu-loop-posture">
+        <button data-v="up" class="on">upright</button><button data-v="flat">lying down</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">pressure <b id="pu-loop-p">—</b></span>
+    <span class="ro">pulpal blood flow <b id="pu-loop-f">—</b></span>
+    <span class="ro">feedback gain <b id="pu-loop-g">—</b></span>
+    <span class="ro">state <b id="pu-loop-v">—</b></span>
+  </div>
+  <div class="fig-note">Push the drive past about a third and the loop starts feeding
+  itself: pressure squeezes the vessels, the tissue goes short of oxygen, the shortage
+  releases more inflammatory mediators, and the pressure climbs again. The two anchor
+  pressures are real — about <b>10&nbsp;mmHg</b> at rest and around <b>35&nbsp;mmHg</b>
+  recorded locally in acutely inflamed pulp — but the curve between them is a schematic
+  model, not measured data.</div>
+</figure>
+
+<div class="prose">
+
+<p>That feedback is the mechanism. Inflammation raises tissue pressure; the pressure squeezes
+the very venules feeding the tissue; the starved tissue releases more mediators; the pressure
+climbs again. It is a compartment syndrome running inside a space you could balance on a
+fingertip.</p>
+
+<div class="callout">
+  <span class="tag">Everything follows from the box</span>
+  <p>The severity: pressure has nowhere to go, so the nerve endings are loaded directly. The
+  <strong>throbbing in time with your pulse</strong>: every heartbeat delivers another bolus
+  of blood the chamber cannot take. Why it is <strong>worse lying down</strong>: going flat
+  raises blood pressure at the head, and with it the pressure inside the pulp. And the
+  tendency to <strong>run to completion</strong>: past a point, removing the original
+  irritation no longer stops it.</p>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the measured pressures, and where the classic story overstates itself</span></summary>
+  <p>Resting pulpal tissue pressure is usually quoted around <b>10&nbsp;mmHg</b>, with
+  published values spanning roughly <b>5–20&nbsp;mmHg</b>; Van Hassel's 1971 measurements in
+  human pulp (<i>Oral Surgery, Oral Medicine, Oral Pathology</i>) are the classic source.
+  Localised rises of the order of <b>35&nbsp;mmHg</b> have been recorded in acutely inflamed
+  pulp. The exit is correspondingly tight: the apical constriction is commonly reported at
+  about <b>0.2–0.4&nbsp;mm</b> across, after Kuttler's 1955 study of root apices.</p>
+  <p>Now the caveat, because the textbook cartoon is too tidy. Heyeraas and Berggreen's review
+  of pulpal interstitial pressure (<i>Critical Reviews in Oral Biology and Medicine</i>, 1999)
+  showed the rise is <b>regional, not global</b>: it stays local to the inflamed segment, and
+  the pulp has partial defences, including increased lymphatic drainage. A pulp does not
+  strangle itself all at once. It dies in patches — which is why <i>partial</i> necrosis is
+  real. The compartment argument has the direction right; it overstates the speed.</p>
+</details>
+
+<h2>Reversible, irreversible, and the words in between</h2>
+
+<p>Clinicians do not grade toothache by how much it hurts. They grade it by
+<em>behaviour</em>, because behaviour tracks the biology, and two questions do most of the
+work: did something set it off, and how long did it last afterwards?</p>
+
+<p><strong>Reversible pulpitis</strong> is provoked and brief: cold or sweet triggers a sharp
+jolt that stops a second or two after the stimulus goes. The pulp is irritated but its
+circulation is intact, so removing the cause can let it settle. <strong>Irreversible
+pulpitis</strong> is spontaneous and lingering. It arrives unprovoked, keeps going for minutes
+after the trigger has gone, worsens lying down, and wakes people at three in the morning. The
+name is a promise about the future rather than a description of the present: this pulp will
+not recover on its own.</p>
+
+<p>Then comes <strong>necrosis</strong>, first partial and then total, and it can be
+deceptively peaceful — a dying pulp often stops hurting, and patients understandably read that
+as recovery. It is not. Bacteria work down the canal and out of the apical foramen into the
+ligament and bone beyond, which is <strong>apical periodontitis</strong>. From there the routes
+diverge: contained pus is an <strong>abscess</strong>; pus that finds a way out through the gum
+becomes a <strong>sinus tract</strong>, which relieves the pressure and, alarmingly, the pain;
+infection spreading through the soft tissue planes of the face is
+<strong>cellulitis</strong>, and that is the dangerous one.</p>
+
+</div>
+
+<figure class="fig wide" id="pu-fig-cls">
+  <div class="fig-head">
+    <span class="t">HOW CLINICIANS SORT IT</span>
+    <span class="hint">pick the pattern · see which category it lands in</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pu-cls" style="aspect-ratio: 2.3 / 1; min-height: 330px;"
+            role="img" aria-label="A classification explorer. Choosing whether pain is provoked or spontaneous, brief or lingering, how it responds to cold and heat, and whether the tooth is tender to bite, places the picture on a ladder running from reversible pulpitis through irreversible pulpitis and necrosis to apical periodontitis. A tooth alongside shows the matching pulp state."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pu-cls-onset">onset</label>
+      <span class="seg" id="pu-cls-onset">
+        <button data-v="prov" class="on">provoked</button><button data-v="spont">spontaneous</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="pu-cls-dur">duration</label>
+      <span class="seg" id="pu-cls-dur">
+        <button data-v="brief" class="on">stops in seconds</button><button data-v="linger">lingers</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="pu-cls-therm">thermal</label>
+      <span class="seg" id="pu-cls-therm">
+        <button data-v="cold" class="on">cold provokes</button><button data-v="relief">cold eases, heat provokes</button><button data-v="none">no response</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="pu-cls-bite">biting</label>
+      <span class="seg" id="pu-cls-bite">
+        <button data-v="ok" class="on">not tender</button><button data-v="tender">tender to bite</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">the picture fits <b id="pu-cls-v">—</b></span>
+  </div>
+  <div class="fig-note">This shows <b>how the classification works</b> — it is a diagram of
+  clinical reasoning, not a self-diagnosis tool. A real diagnosis needs pulp tests, a
+  radiograph, a look inside the tooth and a clinician; symptoms alone are the beginning of
+  the argument, never the end of it.</div>
+</figure>
+
+<div class="prose">
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">how well do the labels match the tissue?</span></summary>
+  <p>The names describe symptoms; the treatment decision depends on the histology; the two do
+  not correspond perfectly. Seltzer and Bender's 1963 work compared clinical diagnoses with
+  what the pulp looked like down a microscope and found the agreement poor. Ricucci and
+  colleagues repeated it with modern criteria (<i>Journal of Endodontics</i>, 2014) and did
+  much better: diagnosis matched histology in the region of <b>85% or more</b> of teeth.
+  Better — but a minority of pulps are not in the state their symptoms advertise.</p>
+  <p>The threshold is moving too. Trials of <i>vital pulp therapy</i> — removing only the
+  diseased coronal pulp and dressing what remains — report encouraging medium-term results in
+  mature teeth diagnosed as irreversibly inflamed. "Irreversible" describes untreated natural
+  history, not a verdict on what can be rescued.</p>
+</details>
+
+<h2>The cold paradox</h2>
+
+<p>Here is the strangest sign in dentistry, and the one that most often convinces a patient
+their tooth is not merely sore but seriously wrong. In a vital, inflamed pulp, cold provokes:
+the classic ice-water jolt that lingers. In a pulp that is <em>necrosing</em>, that can
+reverse. Cold begins to <strong>relieve</strong> the pain, sometimes dramatically, and heat
+sets it off. People arrive at surgeries holding a cup of iced water, sipping continuously and
+looking faintly embarrassed. It is not a quirk. It is a sign.</p>
+
+</div>
+
+<figure class="fig wide" id="pu-fig-cold">
+  <div class="fig-head">
+    <span class="t">THE COLD PARADOX</span>
+    <span class="hint">pick the pulp and the stimulus · scrub through the seconds</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pu-cold" style="aspect-ratio: 2.3 / 1; min-height: 320px;"
+            role="img" aria-label="Pain against time after a thermal stimulus. A healthy pulp gives a brief spike to cold that vanishes in seconds; an inflamed pulp gives a large spike that lingers for minutes; a necrosing pulp has a high baseline ache that falls while cold is applied and climbs sharply with heat."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pu-cold-state">pulp</label>
+      <span class="seg" id="pu-cold-state">
+        <button data-v="healthy" class="on">healthy</button><button data-v="inflamed">inflamed, alive</button><button data-v="necrosing">necrosing</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="pu-cold-stim">stimulus</label>
+      <span class="seg" id="pu-cold-stim">
+        <button data-v="cold" class="on">cold</button><button data-v="heat">heat</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="pu-cold-t">seconds</label>
+      <input type="range" id="pu-cold-t" min="0" max="60" step="0.5" value="10">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">response <b id="pu-cold-v">—</b></span>
+    <span class="ro">chamber pressure <b id="pu-cold-pr">—</b></span>
+  </div>
+  <div class="fig-note">The shapes are schematic — pain is not measured in units — but the
+  <b>pattern</b> is the diagnostic signal: brief versus lingering separates reversible from
+  irreversible, and relief-with-cold points at a pulp that is already dying.</div>
+</figure>
+
+<div class="prose">
+
+<p>The usual explanation is mechanical rather than neurological. A partly necrotic pulp
+generates gas and inflammatory fluid inside a chamber that is now effectively sealed. Gases
+expand when warmed and contract when cooled, so heat raises the pressure in the chamber and
+cold lowers it — and pressure, in a low-compliance box, is what the surviving nerve endings
+report. Be precise about the status of that account: it is a long-standing, plausible
+explanation set out in the standard endodontic texts, not something proven in patients. The
+clinical association is not in doubt. Relief with cold is a recognised sign of a dying or
+partly dead pulp.</p>
+
+<h2>Why the tooth gets a name only at the end</h2>
+
+<p>Ask someone with early toothache which tooth it is and they are usually wrong, often by
+several teeth, sometimes by the wrong jaw. The pulp holds nociceptive fibres and essentially
+no proprioceptors, and many teeth funnel into shared branches of the trigeminal nerve — so the
+brain receives a loud signal with no return address. Chapter&nbsp;2 covers the wiring.</p>
+
+<p>The <strong>periodontal ligament</strong> is different. It is packed with mechanoreceptors,
+because its day job is telling you how hard you are biting and on what. So the moment
+inflammation crosses the apex into the ligament, the pain acquires an address: the tooth
+becomes tender to bite, tender to tap, and suddenly obvious. That transition is diagnostically
+enormous and clinically ironic. The tooth becomes identifiable at precisely the point the pulp
+inside it is beyond saving.</p>
+
+<div class="callout warn">
+  <span class="tag">Why dentists ask about swelling and swallowing</span>
+  <p>Most dental infection stays local. A minority spreads through the fascial planes of the
+  face and neck, and that is a different category of problem. <strong>Spreading facial
+  swelling, fever, swelling in the floor of the mouth, difficulty swallowing, difficulty
+  opening the mouth or any difficulty breathing are medical emergencies</strong>, not
+  toothache. The worst has a name: <strong>Ludwig's angina</strong>, a rapidly spreading
+  cellulitis of the floor of the mouth that lifts the tongue and can close the airway. Hence
+  the triage questions that look disproportionate. They are not about the tooth.</p>
+</div>
+
+<h2>Why the injection often fails</h2>
+
+<p>A "hot" pulp — an acutely inflamed one — is notoriously hard to numb. This is well
+documented; it is not the patient imagining things or the clinician missing the nerve. In
+mandibular molars with symptomatic irreversible pulpitis, a standard inferior alveolar nerve
+block alone achieves profound pulpal anaesthesia in only a minority of cases in published
+trials — figures cluster broadly in the <strong>15–50%</strong> range, against roughly 80–90%
+in uninflamed teeth. Supplementary intraosseous and intraligamentary injections raise it
+substantially, which is why they exist.</p>
+
+<p>Two mechanisms are offered. The first is chemical: local anaesthetics cross the nerve
+membrane in their uncharged base form, and inflamed tissue is acidic, so less of each dose is
+in the form that can get in. The second, probably the more important, is neuronal: inflamed
+nociceptors sit at altered resting potentials and up-regulate
+<strong>tetrodotoxin-resistant sodium channels</strong>, markedly less sensitive to lidocaine
+than the ordinary sort. Hargreaves and Keiser's review of anaesthetic failure in endodontics
+sets out both, and flags the flaw in the pH story: a nerve block is deposited well away from
+the inflamed tooth, in tissue of normal pH. Acidity alone cannot explain the failure. The
+changed nerve can.</p>
+
+<h2>Why antibiotics do not cure it</h2>
+
+<p>This follows from a single fact. A necrotic pulp has no blood supply. Systemic drugs travel
+in blood; no circulation means no delivery, and the dead, infected tissue in the canal is
+beyond the reach of any dose. Antibiotics act on infection that has spread <em>beyond</em> the
+tooth, into tissue that is still perfused. They do nothing to the reservoir inside it.</p>
+
+<div class="axiom">
+  <span class="tag">The load-bearing sentence</span>
+  <p>Pulpitis and necrosis are treated by removing the diseased tissue — through the tooth, or
+  with the tooth. No drug reaches a dead pulp, and a Cochrane review of antibiotics for
+  irreversible pulpitis (Agnihotry and colleagues, 2019) found no evidence they reduce pain.
+  The definitive treatment is mechanical.</p>
+</div>
+
+<h2>Why the tablets fail and cold water does not</h2>
+
+<p>That argument has a consequence people meet at four in the morning and find genuinely
+baffling. A full dose of paracetamol, a full dose of ibuprofen and a couple of co-codamol on
+top can barely touch a dying pulp — while a mouthful of cold tap water, swilled round the
+tooth, works within seconds. It feels like the wrong way round. It is not. Both halves have
+the same explanation, and it is the one from the last section: <strong>nothing gets in.</strong></p>
+
+<h3>Why the tablets lose</h3>
+
+<p>Three problems, in descending order of importance.</p>
+
+<p><strong>Delivery.</strong> This is nearly the whole story. An oral analgesic is carried to
+its site of action in blood. But the pressure that is causing the pain has already squeezed
+the pulp's own microcirculation shut, and once tissue is frankly necrotic there is no
+circulation at all. The drug is in the bloodstream, the bloodstream no longer reaches the
+tooth, and the tablet may as well have been swallowed by somebody else. It is precisely the
+argument that explains the antibiotics, applied to analgesia.</p>
+
+<p><strong>The wrong mechanism.</strong> Ibuprofen works by suppressing prostaglandin
+synthesis, which damps the chemical sensitisation of inflamed tissue. That is a real and
+powerful effect — it is why ibuprofen is genuinely excellent after an extraction. But the
+dominant driver here is not chemical sensitisation, it is <em>mechanical</em>: a rigid box
+whose contents have nowhere to go, pressing directly on nerve endings. No COX inhibitor
+decompresses a box.</p>
+
+<p><strong>Codeine, specifically.</strong> It is the drug people reach for when the first two
+fail, and it is close to the worst choice available. A Canadian drug-agency review of codeine
+in dental pain concluded that codeine alone performs poorly, and — more pointedly — that
+<em>adding</em> codeine to paracetamol or ibuprofen did not add benefit in dental pain. There
+is a pharmacogenetic sting as well: codeine is a prodrug that must be converted to morphine by
+the liver enzyme CYP2D6, and a few per cent of people of northern European ancestry carry
+variants that make them poor converters. For them it does almost nothing at any dose.</p>
+
+<div class="callout gold">
+  <span class="tag">The trials are not about this pain</span>
+  <p>Almost the entire analgesic evidence base in dentistry rests on one experimental model:
+  pain after surgical removal of third molars. It is a good model — reproducible, and severe
+  enough to show differences between drugs. The Oxford league table of analgesic efficacy,
+  the source of most of the familiar numbers, is built largely on it.</p>
+  <p>But it is post-<em>surgical</em> pain, in soft tissue, with an intact blood supply. It is
+  not a pulp in a sealed chamber with its circulation collapsing. The drugs that look strong
+  in that model are being asked, at four in the morning, to do a completely different job in a
+  compartment they cannot reach. Their reputation is earned; it is just earned somewhere else.</p>
+</div>
+
+<p>On top of all this sits sensitisation. Hours of intense nociceptive traffic lowers
+thresholds both at the nerve endings and at the second-order neurons in the trigeminal nucleus,
+so the system amplifies whatever signal survives. A standard dose is fighting an amplified
+system through a closed door.</p>
+
+<h3>Why cold water wins</h3>
+
+<p><strong>It does not need the bloodstream.</strong> Cold arrives by conduction, through
+enamel and dentine, from the outside. That single fact is why it beats the tablets: it is the
+one intervention available at four in the morning that reaches a tissue with no blood supply.</p>
+
+<p><strong>Cooling contracts what heating expanded.</strong> The gas and fluid generated inside
+a partly necrotic chamber shrink as they cool, and intrapulpal pressure falls with them. This
+is the same mechanism as the cold paradox above, viewed from the other end: heat makes it
+worse because expansion raises the pressure, cold makes it better because contraction lowers
+it.</p>
+
+<p><strong>It blocks the nerve directly — and the numbers are unexpectedly apt.</strong>
+Cooling slows conduction in peripheral nerve, and in unmyelinated C fibres the threshold for a
+partial, reversible conduction block sits around 15&nbsp;°C, with complete block below about
+5&nbsp;°C. Those are cold enough to sound irrelevant to tap water. But there is a twist:
+experimental work has shown that <em>after a nerve has been warmed</em>, that threshold rises
+markedly — partial block from about 25&nbsp;°C rather than 15&nbsp;°C. An acutely inflamed
+pulp is a warmed, sensitised nerve. It has moved into the range where quite modest cooling
+starts to shut conduction down. And C fibres are exactly the population carrying the deep,
+throbbing, lingering pain of pulpitis.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the cold-block numbers</span></summary>
+  <p>The thermal-block figures come from work on mammalian peripheral nerve
+  (Zhang and colleagues, <i>Journal of Neurophysiology</i>, 2020: "Thermal block of mammalian
+  unmyelinated C fibers by local cooling to 15–25&nbsp;°C after a brief heating at 45&nbsp;°C").
+  Before heating, partial cold block of C fibres appeared at about 15&nbsp;°C and complete
+  block at or below 5&nbsp;°C; after the nerve was warmed, the partial-block threshold rose to
+  about 25&nbsp;°C and complete block to about 15&nbsp;°C.</p>
+  <p>Two caveats worth stating plainly. That is isolated nerve, not a human pulp, and the pulp
+  never reaches the temperature of the water — enamel and dentine insulate, so a mouthful of
+  water at 14&nbsp;°C cools the pulp to somewhere well above 14&nbsp;°C. The mechanism is a
+  reasonable explanation for a real and repeatable clinical observation, not a measured
+  quantity in a patient.</p>
+</details>
+
+<p><strong>And there is counter-irritation on top.</strong> Cold thermoreceptor traffic
+inhibits nociceptive transmission centrally — the same reason rubbing a banged shin helps.
+It is a modest effect next to the other two, but it is free.</p>
+
+<h3>Why it only lasts a minute</h3>
+
+<p>Here is the cruel part, and the reason anybody in this situation ends up sipping
+continuously rather than once. Enamel and dentine are poor conductors of heat. That is
+excellent design — it is what stops a hot drink cooking the pulp — but insulation works in
+both directions. The tooth cools quickly under a mouthful of water and then, as soon as the
+water is gone, drifts back toward 37&nbsp;°C over something like a minute. Every mechanism
+above runs in reverse: the gas re-expands, the pressure climbs, the C fibres come back on
+line. So the relief is real, immediate, and almost immediately spent.</p>
+
+<div class="callout">
+  <span class="tag">How cold is a cold tap?</span>
+  <p>Colder than you would guess, and it varies by geography and season. Measured domestic
+  mains water in southern England runs to 18–26&nbsp;°C in July but sits nearer 9–12&nbsp;°C in
+  winter, and UK regulations require cold water to be stored and distributed below
+  20&nbsp;°C. Scotland runs colder than the south — cooler climate, cooler sources — so a
+  summer figure in the low-to-mid teens is a fair <em>estimate</em> for an Edinburgh tap,
+  though we could find no published measurements of Scottish mains temperature to confirm it.</p>
+  <p>The number that matters is not the absolute temperature but the gap. Water at about
+  14&nbsp;°C is roughly 23&nbsp;°C below body temperature — a large gradient, and enough to
+  drag a warmed nerve down into the band where conduction begins to fail. It has a practical
+  advantage over iced water too: you can hold it against the gum indefinitely without
+  damaging the soft tissue.</p>
+</div>
+
+</div>
+
+<figure class="fig wide" id="pu-fig-relief">
+  <div class="fig-head">
+    <span class="t">TWO ROUTES TO A NERVE</span>
+    <span class="hint">drag the perfusion down as the pulp dies · watch which one still works</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pu-relief" style="aspect-ratio: 2.3 / 1; min-height: 330px;"
+      role="img" aria-label="Two panels. The left plots pain relief against pulp blood flow: relief from an oral analgesic falls in proportion to blood flow and reaches zero when the pulp has none, while relief from local cooling is a flat line, unchanged, because it needs no circulation to arrive. The right panel plots pulp temperature against seconds since the water was spat out; the tooth starts in the shaded band where a warmed C fibre stops conducting and rewarms exponentially toward body heat, with a marker showing the point, roughly half a minute to a minute later, at which the relief is spent."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pu-relief-perf">pulp blood flow</label>
+      <input type="range" id="pu-relief-perf" min="0" max="100" step="1" value="12">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="pu-relief-temp">water temperature</label>
+      <input type="range" id="pu-relief-temp" min="4" max="24" step="1" value="14">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">drug reaching the pulp <b id="pu-relief-ro1">—</b></span>
+    <span class="ro alert">relief from tablets <b id="pu-relief-ro2">—</b></span>
+    <span class="ro good">relief from cold <b id="pu-relief-ro3">—</b></span>
+    <span class="ro amber">pain back after <b id="pu-relief-ro4">—</b></span>
+  </div>
+  <div class="fig-note">Drag <b>pulp blood flow</b> toward zero — the state of a necrosing pulp.
+  The tablets' curve collapses with it, because a drug carried in blood cannot reach tissue
+  blood no longer reaches. The cold curve barely moves, because conduction through dentine does
+  not care whether anything is still circulating. <b>The shapes here are schematic</b> — the
+  contrast between the two routes is the evidence-based point, not the exact percentages.</div>
+</figure>
+
+<div class="prose">
+
+<h2>What the film can and cannot show</h2>
+
+<p>Below is a real intraoral periapical radiograph. Get your bearings: the crowns are at the
+<em>bottom</em> and the roots point <em>up</em>, so these are upper teeth. Brighter means
+denser — that is all an X-ray image is, a map of how much radiation each path absorbed. Dense
+restorations stop nearly everything and burn out white; enamel is denser than dentine and
+reads a shade brighter; the canal inside a root is soft tissue, so it reads as a thin dark
+line; bone shows its trabecular scaffolding as a fine mottle.</p>
+
+</div>
+
+<figure class="fig wide" id="pu-fig-xray">
+  <div class="fig-head">
+    <span class="t">A REAL PERIAPICAL RADIOGRAPH</span>
+    <span class="hint">toggle the annotations · roots point up, crowns at the bottom</span>
+  </div>
+  <div class="fig-body">
+    <div style="position:relative; line-height:0; background:#000;">
+      <img src="xray.jpg" width="1500" height="939"
+           alt="An intraoral periapical radiograph of upper teeth, crowns at the bottom and roots pointing up. At the left, a tooth whose canals contain bright thin lines of root filling material and a large bright restoration in its crown. In the centre, another large bright restoration. Between and around them, mottled alveolar bone, a fine dark line marking a root canal, and a sensor orientation letter C at the bottom right."
+           style="width:100%; height:auto; display:block;">
+      <svg id="pu-xray-svg" viewBox="0 0 1500 939" preserveAspectRatio="xMidYMid meet"
+           aria-hidden="true"
+           style="position:absolute; inset:0; width:100%; height:100%;">
+        <g fill="none" stroke="#4ad8c4" stroke-width="2.6" stroke-dasharray="9 7" stroke-opacity="0.92" stroke-linecap="round">
+          <line x1="268" y1="76" x2="106" y2="288"/>
+          <line x1="352" y1="76" x2="190" y2="240"/>
+          <line x1="560" y1="76" x2="401" y2="204"/>
+          <line x1="915" y1="76" x2="702" y2="358"/>
+          <line x1="352" y1="474" x2="258" y2="416"/>
+          <line x1="470" y1="620" x2="346" y2="666"/>
+          <line x1="302" y1="876" x2="330" y2="808"/>
+          <line x1="110" y1="846" x2="118" y2="702"/>
+          <line x1="980" y1="880" x2="770" y2="770"/>
+          <line x1="1300" y1="800" x2="1404" y2="876"/>
+        </g>
+        <g fill="none" stroke="#4ad8c4" stroke-width="3">
+          <circle cx="103" cy="292" r="10"/>
+          <circle cx="186" cy="244" r="10"/>
+          <circle cx="398" cy="208" r="10"/>
+          <circle cx="698" cy="372" r="10"/>
+          <circle cx="253" cy="404" r="10"/>
+          <circle cx="338" cy="672" r="10"/>
+          <circle cx="330" cy="800" r="10"/>
+          <circle cx="118" cy="682" r="10"/>
+          <circle cx="762" cy="762" r="10"/>
+          <circle cx="1416" cy="886" r="14"/>
+        </g>
+        <g fill="#0a0d0f" fill-opacity="0.86" stroke="#4ad8c4" stroke-opacity="0.55" stroke-width="1.6">
+          <rect x="250" y="28" width="226" height="46" rx="6"/>
+          <rect x="545" y="28" width="273" height="46" rx="6"/>
+          <rect x="900" y="28" width="190" height="46" rx="6"/>
+          <rect x="350" y="452" width="256" height="46" rx="6"/>
+          <rect x="470" y="592" width="140" height="46" rx="6"/>
+          <rect x="240" y="878" width="124" height="46" rx="6"/>
+          <rect x="20" y="848" width="207" height="46" rx="6"/>
+          <rect x="980" y="858" width="207" height="46" rx="6"/>
+          <rect x="1120" y="756" width="240" height="46" rx="6"/>
+        </g>
+        <g fill="#4ad8c4" font-family="ui-monospace, Menlo, Consolas, monospace"
+           font-size="26" font-weight="700" letter-spacing="1">
+          <text x="261" y="61">ROOT FILLING</text>
+          <text x="556" y="61">TRABECULAR BONE</text>
+          <text x="911" y="61">ROOT CANAL</text>
+          <text x="361" y="485">LIGAMENT SPACE</text>
+          <text x="481" y="625">DENTINE</text>
+          <text x="251" y="911">ENAMEL</text>
+          <text x="31" y="881">RESTORATION</text>
+          <text x="991" y="891">RESTORATION</text>
+          <text x="1131" y="789">SENSOR MARKER</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pu-xray-toggle">annotations</label>
+      <button class="btn primary" id="pu-xray-toggle" aria-pressed="true">hide labels</button>
+    </div>
+  </div>
+  <div class="fig-note">Only features that are confidently visible are marked, and
+  deliberately in generic anatomical terms — nothing here identifies which numbered tooth is
+  which. The author's own film, published with permission.</div>
+</figure>
+
+<div class="prose">
+
+<table class="data">
+  <caption>What each label marks</caption>
+  <tr><th>Label</th><th>What you are looking at</th></tr>
+  <tr><td class="k">Root filling</td>
+    <td>Two bright thin lines running up into the roots of the left-hand tooth. Root filling
+    material is deliberately radiopaque, so it can be checked on a film</td></tr>
+  <tr><td class="k">Restoration</td>
+    <td>The two blazing-white masses. Dense restorative material absorbs almost the whole
+    beam</td></tr>
+  <tr><td class="k">Enamel / dentine</td>
+    <td>The crown's outer cap reads brighter than the body beneath: enamel is around 96%
+    mineral, dentine roughly 70%</td></tr>
+  <tr><td class="k">Root canal</td>
+    <td>A fine dark line up the centre of a root: soft tissue in a mineral tube</td></tr>
+  <tr><td class="k">Ligament space</td>
+    <td>The thin dark line hugging a root outline. The ligament suspends the tooth rather than
+    fusing it to bone, and that shows as a gap</td></tr>
+  <tr><td class="k">Trabecular bone</td>
+    <td>The fine mottle behind everything: the strut-and-space scaffolding of cancellous
+    bone</td></tr>
+  <tr><td class="k">Sensor marker</td>
+    <td>The letter C at bottom right — an orientation mark in the sensor, not
+    anatomy</td></tr>
+</table>
+
+<div class="callout gold">
+  <span class="tag">The honest teaching point</span>
+  <p>A radiograph records mineral density and nothing else. It <strong>cannot show whether a
+  pulp is alive or dead</strong> — necrotic and healthy tissue have the same density. It
+  <strong>cannot reliably show a crack</strong>, because a crack is a gap of essentially zero
+  width. And it is slow to show infection: Bender and Seltzer's 1961 experiments showed that
+  lesions confined to cancellous bone often cast no shadow until the destruction reaches the
+  cortical plate — one reason cone-beam CT finds lesions a periapical film misses.</p>
+  <p>That is why the diagnosis here is made from the symptoms and the pulp tests, not the
+  film. The film rules things out and shows the anatomy. The story comes from the patient.</p>
+</div>
+
+<p>The pulp tests have limits too, because "vitality test" is a misnomer. A cold or electric
+test measures whether nerve fibres respond, not whether the tissue still has a blood supply.
+The most-cited evaluation of them (Petersson and colleagues, <i>Endodontics and Dental
+Traumatology</i>, 1999) put the cold test's sensitivity at around 0.8 and its specificity
+around 0.9, with the electric pulp test broadly similar. Good, then, and nowhere near
+infallible. Methods that read blood flow directly, such as pulse oximetry, remain largely
+research tools.</p>
+
+<p>One last thing about this film, said without identifying anyone. It was taken because of a
+tooth that hurt, at the point where the pain had finally acquired an address. The questions it
+raised — why the anaesthetic struggled, why cold helped, why nothing on the image could
+confirm what was already obvious in the chair — are the reason this guide exists.</p>
+
+<p>Chapter&nbsp;6 turns to what gets done about it, beginning with the least dramatic
+intervention in dentistry and the one that quietly sets up everything here: the filling.</p>
+
+</div>
+
+  <nav class="chapnav">
+    <a href="ageing.html"><span class="dir">Previous</span><span class="title">4 · Ageing</span></a>
+    <a class="next" href="fillings.html"><span class="dir">Next</span><span class="title">6 · Fillings</span></a>
+  </nav>
+
+</main>
+
+<script src="tooth-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = TC.C, clamp = TC.clamp, mono = TC.mono, TAU = TC.TAU;
+
+  /* wrap a paragraph of canvas text; returns the y after the last line */
+  function wrapText(ctx, txt, x, y, maxW, lh, font, col) {
+    const words = String(txt).split(" ");
+    let line = "", yy = y;
+    ctx.save();
+    ctx.font = font;
+    ctx.fillStyle = col;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    for (let i = 0; i < words.length; i++) {
+      const test = line ? line + " " + words[i] : words[i];
+      if (ctx.measureText(test).width > maxW && line) {
+        ctx.fillText(line, x, yy); yy += lh; line = words[i];
+      } else {
+        line = test;
+      }
+    }
+    if (line) { ctx.fillText(line, x, yy); yy += lh; }
+    ctx.restore();
+    return yy;
+  }
+
+  function bg(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0a0a0e";
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  /* ================================================================
+     FIGURE 1 — THE PRESSURE LOOP
+     A low-compliance chamber turns inflammation into a positive
+     feedback loop. Anchored on two published pressures (about
+     10 mmHg at rest, about 35 mmHg locally when acutely inflamed);
+     everything between them is a schematic model.
+     ================================================================ */
+  const P0 = TC.DENT.pulpPressure_mmHg;   // 10 mmHg resting pulpal tissue pressure
+  const PSTOP = 55;                        // modelled pressure at which perfusion ceases
+  const KP = 24;                           // mmHg per unit of inflammatory load
+  const KG = 2.2;                          // how strongly ischaemia feeds inflammation
+
+  let drive = 0.06, supine = false;
+
+  function pulpModel(d, sup) {
+    const slope = KP / (PSTOP - P0);
+    const gain = slope * KG * d;                       // dimensionless loop gain
+    const denom = 1 - gain;
+    const load = denom <= 0.02 ? 1.9 : Math.min(d / denom, 1.9);
+    const P = P0 + KP * load + (sup ? 4 : 0);
+    const F = clamp(1 - (P - P0) / (PSTOP - P0), 0, 1);
+    return { gain: gain, load: load, P: P, F: F };
+  }
+
+  function loopVerdict(m, d) {
+    if (d < 0.15) return { t: "SETTLING", c: C.good, s: "healthy" };
+    if (m.F > 0.55) return { t: "INFLAMED — COMPENSATING", c: C.dentineAcc, s: "inflamed" };
+    if (m.F > 0.12) return { t: "STRANGLING ITSELF", c: C.pulpAcc, s: "inflamed" };
+    return { t: "NO WAY BACK", c: C.pulpAcc, s: "necrotic" };
+  }
+
+  function arcArrow(ctx, cx, cy, r, a0, a1, col, lw) {
+    ctx.save();
+    ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1); ctx.stroke();
+    const ax = cx + Math.cos(a1) * r, ay = cy + Math.sin(a1) * r;
+    const tan = a1 + Math.PI / 2, hl = lw * 1.9 + 5;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(ax + Math.cos(tan) * hl, ay + Math.sin(tan) * hl);
+    ctx.lineTo(ax + Math.cos(tan + 2.5) * hl * 0.8, ay + Math.sin(tan + 2.5) * hl * 0.8);
+    ctx.lineTo(ax + Math.cos(tan - 2.5) * hl * 0.8, ay + Math.sin(tan - 2.5) * hl * 0.8);
+    ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+
+  const loopFig = TC.canvas("pu-loop", function (ctx, w, h, t) {
+    bg(ctx, w, h);
+    const k = clamp(w / 900, 0.62, 1.12);
+    const fs = 11 * k, fb = 13 * k;
+    const m = pulpModel(drive, supine);
+    const v = loopVerdict(m, drive);
+
+    /* --- the tooth --- */
+    const th = Math.min(h * 0.86, w * 0.30);
+    const tw = th * 0.78;
+    const tx = w * 0.055, ty = (h - th) / 2;
+    TC.drawTooth(ctx, tx, ty, tw, th, {
+      pulpState: v.s, secondary: 0.15, seed: 4242,
+      lesion: v.s === "necrotic" ? 0.55 : 0,
+    });
+    if (v.s === "inflamed" || v.s === "necrotic") {
+      const pulse = TC.reducedMotion ? 0.7 : 0.5 + 0.5 * Math.sin(t * 5.2);
+      const heat = clamp(1 - m.F, 0, 1);
+      ctx.save();
+      ctx.globalAlpha = 0.14 + 0.34 * pulse * heat;
+      const gr = ctx.createRadialGradient(tx + tw / 2, ty + th * 0.22, 2,
+                                          tx + tw / 2, ty + th * 0.22, tw * 0.66);
+      gr.addColorStop(0, C.pulpAcc);
+      gr.addColorStop(1, "rgba(255,107,125,0)");
+      ctx.fillStyle = gr;
+      ctx.beginPath(); ctx.arc(tx + tw / 2, ty + th * 0.22, tw * 0.66, 0, TAU); ctx.fill();
+      ctx.restore();
+    }
+    TC.label(ctx, "THE PULP", tx + tw / 2, ty + th + 16 * k, {
+      align: "center", color: C.muted, font: mono(fs),
+    });
+
+    /* --- the feedback ring --- */
+    const cx = w * 0.50, cy = h * 0.47;
+    const r = Math.min(w * 0.135, h * 0.29);
+    const g = clamp(m.gain, 0, 1);
+    const col = TC.mix("#2d9384", "#ff6b7d", clamp(g * 1.5, 0, 1));
+    const lw = 1.6 + 6.4 * g;
+    const pad = 0.34;
+    const arcs = [
+      [-Math.PI / 2 + pad, -pad],
+      [pad, Math.PI / 2 - pad],
+      [Math.PI / 2 + pad, Math.PI - pad],
+      [Math.PI + pad, 1.5 * Math.PI - pad],
+    ];
+    for (const a of arcs) arcArrow(ctx, cx, cy, r, a[0], a[1], col, lw);
+
+    const nodes = [
+      ["INFLAMMATION", 0, -1, "center", "bottom"],
+      ["PRESSURE ↑", 1, 0, "left", "middle"],
+      ["BLOOD FLOW ↓", 0, 1, "center", "top"],
+      ["ISCHAEMIA", -1, 0, "right", "middle"],
+    ];
+    for (const n of nodes) {
+      const nx = cx + n[1] * r, ny = cy + n[2] * r;
+      ctx.save();
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(nx, ny, 4.2 * k, 0, TAU); ctx.fill();
+      ctx.restore();
+      const off = 13 * k;
+      let lx = nx + n[1] * off, ly = ny + n[2] * off;
+      if (n[4] === "bottom") ly -= 3 * k;
+      if (n[4] === "top") ly += 12 * k;
+      if (n[4] === "middle") ly += 4 * k;
+      TC.label(ctx, n[0], lx, ly, { align: n[3], color: C.ink2, font: mono(fs, true) });
+    }
+    TC.label(ctx, "gain " + m.gain.toFixed(2), cx, cy + 4 * k, {
+      align: "center", color: col, font: mono(fb, true),
+    });
+
+    /* --- the bars --- */
+    const bx = w * 0.735, bw = w * 0.215;
+    let by = h * 0.17;
+    const bh = 13 * k;
+
+    // pressure, 0..60 mmHg, with the two published anchors marked
+    TC.label(ctx, "MODELLED INTRAPULPAL PRESSURE", bx, by - 7 * k,
+      { color: C.muted, font: mono(fs) });
+    ctx.fillStyle = C.surface3;
+    TC.roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
+    ctx.fillStyle = TC.mix("#4ad8c4", "#ff6b7d", clamp((m.P - 10) / 40, 0, 1));
+    TC.roundRect(ctx, bx, by, bw * clamp(m.P / 60, 0, 1), bh, 3); ctx.fill();
+    for (const a of [[10, "rest"], [35, "inflamed"]]) {
+      const ax = bx + bw * (a[0] / 60);
+      TC.line(ctx, ax, by - 3, ax, by + bh + 3, "rgba(243,241,233,0.55)", 1);
+      TC.label(ctx, a[1], ax, by + bh + 13 * k, { align: "center", color: C.muted, font: mono(fs * 0.92) });
+    }
+    TC.label(ctx, m.P.toFixed(0) + " mmHg", bx + bw, by - 7 * k,
+      { align: "right", color: C.ink, font: mono(fb, true) });
+
+    // blood flow
+    by += bh + 34 * k;
+    TC.label(ctx, "PULPAL BLOOD FLOW", bx, by - 7 * k, { color: C.muted, font: mono(fs) });
+    ctx.fillStyle = C.surface3;
+    TC.roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
+    ctx.fillStyle = m.F > 0.5 ? C.good : m.F > 0.15 ? C.dentineAcc : C.pulpAcc;
+    TC.roundRect(ctx, bx, by, Math.max(1, bw * m.F), bh, 3); ctx.fill();
+    TC.label(ctx, Math.round(m.F * 100) + "%", bx + bw, by - 7 * k,
+      { align: "right", color: C.ink, font: mono(fb, true) });
+
+    // verdict
+    by += bh + 40 * k;
+    TC.label(ctx, v.t, bx, by, { color: v.c, font: mono(15 * k, true) });
+    const NOTE = {
+      "SETTLING": "Irritation is low. Flow is intact, mediators clear, and the pulp can recover if the cause goes.",
+      "INFLAMED — COMPENSATING": "Pressure is up and flow is down, but the loop gain is still under one. Remove the cause and this can still resolve.",
+      "STRANGLING ITSELF": "Perfusion is collapsing. From here the ischaemia is generating the inflammation that is generating the ischaemia.",
+      "NO WAY BACK": "Flow has stopped in this region. The tissue dies here first, then spreads — partial necrosis before total.",
+    };
+    wrapText(ctx, NOTE[v.t], bx, by + 20 * k, bw, 15 * k, mono(fs), C.muted);
+
+    if (supine) {
+      TC.label(ctx, "+ lying flat: higher pressure at the head", bx, h - 12 * k,
+        { color: C.cold, font: mono(fs) });
+    }
+  }, { animate: !TC.reducedMotion });
+
+  function loopSync() {
+    const m = pulpModel(drive, supine);
+    const v = loopVerdict(m, drive);
+    TC.set("pu-loop-p", m.P.toFixed(0) + " mmHg");
+    TC.set("pu-loop-f", Math.round(m.F * 100) + "%");
+    TC.set("pu-loop-g", m.gain.toFixed(2));
+    TC.set("pu-loop-v", v.t.toLowerCase());
+    if (loopFig) loopFig.redraw();
+  }
+  TC.slider("pu-loop-drive", function (v) { return v.toFixed(0) + "%"; },
+    function (v) { drive = v / 100; loopSync(); });
+  TC.seg("pu-loop-posture", function (v) { supine = v === "flat"; loopSync(); });
+
+  /* ================================================================
+     FIGURE 2 — HOW CLINICIANS SORT IT
+     A diagram of clinical reasoning. Not a diagnostic instrument.
+     ================================================================ */
+  let cOnset = "prov", cDur = "brief", cTherm = "cold", cBite = "ok";
+
+  const LADDER = [
+    "reversible pulpitis",
+    "irreversible pulpitis",
+    "partial necrosis",
+    "total necrosis",
+    "apical periodontitis",
+  ];
+
+  function classify() {
+    const apical = cBite === "tender";
+    if (cTherm === "none") {
+      return {
+        name: apical ? "NECROSIS + APICAL PERIODONTITIS" : "PULP NECROSIS",
+        rung: apical ? 4 : 3,
+        state: "necrotic", lesion: apical ? 0.6 : 0.15,
+        why: apical
+          ? "No response to any thermal test, and now tender to bite. The pulp is dead and the infection has passed the apex into the ligament and bone. That tenderness is the ligament reporting, and it is why the tooth is finally identifiable."
+          : "No response to hot, cold or electric testing, and no tenderness to bite. A quiet dead pulp — often completely painless, and frequently found on a routine film rather than by the patient.",
+      };
+    }
+    if (cTherm === "relief") {
+      return {
+        name: apical ? "NECROSING + APICAL PERIODONTITIS" : "PULP NECROSING",
+        rung: apical ? 4 : 2,
+        state: "necrotic", lesion: apical ? 0.5 : 0,
+        why: "Cold relieves and heat provokes. That reversal is the signature of a chamber that is partly necrotic and effectively sealed: gas and fluid inside it expand with heat and contract with cold, and the pressure is what the surviving nerve endings are reporting."
+          + (apical ? " Bite tenderness says the inflammation has already reached the ligament." : ""),
+      };
+    }
+    if (cOnset === "prov" && cDur === "brief") {
+      return {
+        name: apical ? "PULP LOOKS REVERSIBLE — BUT SOMETHING ELSE BITES"
+                     : "REVERSIBLE PULPITIS",
+        rung: apical ? 4 : 0,
+        state: "inflamed", lesion: apical ? 0.45 : 0,
+        why: apical
+          ? "A short provoked jolt suggests an irritated but recoverable pulp — yet the tooth is tender to bite, which the pulp cannot cause. Something beyond the pulp is involved, and the two findings have to be reconciled rather than averaged."
+          : "Provoked, sharp, and over within a second or two of removing the stimulus. Circulation is intact and the pulp can settle if the cause — a leaking margin, a deep lesion, exposed dentine — is dealt with.",
+      };
+    }
+    return {
+      name: apical ? "IRREVERSIBLE PULPITIS + APICAL PERIODONTITIS"
+                   : "SYMPTOMATIC IRREVERSIBLE PULPITIS",
+      rung: apical ? 4 : 1,
+      state: "inflamed", lesion: apical ? 0.5 : 0,
+      why: (cOnset === "spont"
+        ? "Pain arriving unprovoked is the giveaway: nothing external is triggering it, so the drive is coming from inside the chamber. "
+        : "Pain that outlasts its trigger by minutes means the inflammation, not the stimulus, is now doing the work. ")
+        + "This pulp is not expected to recover on its own."
+        + (apical ? " The bite tenderness says inflammation has already crossed the apex." : ""),
+    };
+  }
+
+  const clsFig = TC.canvas("pu-cls", function (ctx, w, h) {
+    bg(ctx, w, h);
+    const k = clamp(w / 900, 0.62, 1.12);
+    const fs = 11 * k;
+    const r = classify();
+
+    const th = Math.min(h * 0.84, w * 0.28);
+    const tw = th * 0.78;
+    const tx = w * 0.05, ty = (h - th) / 2;
+    TC.drawTooth(ctx, tx, ty, tw, th, {
+      pulpState: r.state, lesion: r.lesion, secondary: 0.2, seed: 4242,
+    });
+
+    /* the ladder */
+    const lx = w * 0.365;
+    let ly = h * 0.20;
+    const step = h * 0.135;
+    TC.label(ctx, "THE LADDER", lx, ly - 20 * k, { color: C.muted, font: mono(fs) });
+    for (let i = 0; i < LADDER.length; i++) {
+      const here = i === r.rung, past = i < r.rung;
+      const col = here ? C.pulpAcc : past ? C.dentineAcc : C.muted;
+      ctx.save();
+      ctx.fillStyle = here ? C.pulpAcc : past ? C.dentineAcc : C.surface3;
+      ctx.beginPath(); ctx.arc(lx + 5, ly - 4 * k, here ? 6 * k : 4 * k, 0, TAU); ctx.fill();
+      ctx.restore();
+      if (i < LADDER.length - 1) {
+        TC.line(ctx, lx + 5, ly + 2 * k, lx + 5, ly + step - 10 * k,
+          past ? "rgba(232,185,98,0.5)" : C.line, 1.4);
+      }
+      TC.label(ctx, LADDER[i], lx + 18 * k, ly, {
+        color: col, font: mono(here ? 12.5 * k : 11.5 * k, here),
+      });
+      ly += step;
+    }
+
+    /* the verdict panel */
+    const vx = w * 0.615, vw = w * 0.34;
+    let vy = h * 0.20;
+    vy = wrapText(ctx, r.name, vx, vy, vw, 19 * k, mono(14.5 * k, true), C.mint);
+    wrapText(ctx, r.why, vx, vy + 12 * k, vw, 15.5 * k, mono(fs), C.ink2);
+  }, { animate: false });
+
+  function clsSync() {
+    const r = classify();
+    TC.html("pu-cls-v", r.name.toLowerCase());
+    if (clsFig) clsFig.redraw();
+  }
+  TC.seg("pu-cls-onset", function (v) { cOnset = v; clsSync(); });
+  TC.seg("pu-cls-dur", function (v) { cDur = v; clsSync(); });
+  TC.seg("pu-cls-therm", function (v) { cTherm = v; clsSync(); });
+  TC.seg("pu-cls-bite", function (v) { cBite = v; clsSync(); });
+
+  /* ================================================================
+     FIGURE 3 — THE COLD PARADOX
+     Schematic pain-against-time curves. The shapes carry the
+     teaching; the units are deliberately arbitrary.
+     ================================================================ */
+  const ON = 4, OFF = 8;   // stimulus applied from 4 s to 8 s
+  const RESP = {
+    healthy:   { cold: { d:  0.46, tau: 1.4,  v: "brief and sharp — gone in a second or two", p: "unchanged" },
+                 heat: { d:  0.06, tau: 1.2,  v: "barely registers", p: "unchanged" } },
+    inflamed:  { cold: { d:  0.60, tau: 14,   v: "sharp, then it lingers for minutes", p: "already raised" },
+                 heat: { d:  0.45, tau: 16,   v: "provokes, and it lingers", p: "already raised" } },
+    necrosing: { cold: { d: -0.44, tau: 18,   v: "the ache eases while the cold is held", p: "falls ↓" },
+                 heat: { d:  0.42, tau: 45,   v: "sets it off, and it does not settle", p: "rises ↑" } },
+  };
+  const BASE = { healthy: 0, inflamed: 0.35, necrosing: 0.58 };
+
+  let coldState = "healthy", coldStim = "cold", coldT = 10;
+
+  function painAt(state, stim, t) {
+    const sp = RESP[state][stim];
+    let x;
+    if (t < ON) x = 0;
+    else if (t <= OFF) x = (t - ON) / (OFF - ON);
+    else x = Math.exp(-(t - OFF) / sp.tau);
+    return clamp(BASE[state] + sp.d * x, 0, 1);
+  }
+
+  const coldFig = TC.canvas("pu-cold", function (ctx, w, h) {
+    bg(ctx, w, h);
+    const k = clamp(w / 900, 0.62, 1.12);
+    const fs = 11 * k;
+    const sp = RESP[coldState][coldStim];
+
+    const th = Math.min(h * 0.80, w * 0.26);
+    const tw = th * 0.78;
+    const tx = w * 0.045, ty = (h - th) / 2;
+    TC.drawTooth(ctx, tx, ty, tw, th, {
+      pulpState: coldState === "healthy" ? "healthy"
+        : coldState === "inflamed" ? "inflamed" : "necrotic",
+      secondary: 0.2, seed: 4242,
+    });
+
+    /* the trace */
+    const px0 = w * 0.34, px1 = w * 0.955;
+    const py0 = h * 0.20, py1 = h * 0.76;
+    const X = function (t) { return px0 + (t / 60) * (px1 - px0); };
+    const Y = function (p) { return py1 - p * (py1 - py0); };
+
+    // frame
+    TC.line(ctx, px0, py1, px1, py1, C.line, 1);
+    TC.line(ctx, px0, py0, px0, py1, C.line, 1);
+    for (let s = 0; s <= 60; s += 10) {
+      TC.line(ctx, X(s), py1, X(s), py1 + 4, C.line, 1);
+      TC.label(ctx, s + "s", X(s), py1 + 16 * k, { align: "center", color: C.muted, font: mono(fs * 0.95) });
+    }
+    TC.label(ctx, "PAIN (SCHEMATIC)", px0, py0 - 10 * k, { color: C.muted, font: mono(fs) });
+
+    // the window in which the stimulus is applied
+    ctx.save();
+    ctx.fillStyle = coldStim === "cold" ? "rgba(122,140,255,0.16)" : "rgba(232,185,98,0.16)";
+    ctx.fillRect(X(ON), py0, X(OFF) - X(ON), py1 - py0);
+    ctx.restore();
+    TC.label(ctx, coldStim === "cold" ? "cold applied" : "heat applied",
+      X(OFF) + 6 * k, py0 + 12 * k,
+      { color: coldStim === "cold" ? C.cold : C.dentineAcc, font: mono(fs, true) });
+
+    // baseline (the spontaneous ache, if any)
+    if (BASE[coldState] > 0) {
+      TC.line(ctx, px0, Y(BASE[coldState]), px1, Y(BASE[coldState]),
+        "rgba(243,241,233,0.20)", 1, [4, 5]);
+      TC.label(ctx, "spontaneous ache", px1, Y(BASE[coldState]) - 6 * k,
+        { align: "right", color: C.muted, font: mono(fs * 0.95) });
+    }
+
+    // the curve
+    ctx.save();
+    ctx.strokeStyle = sp.d < 0 ? C.ice : C.pulpAcc;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    for (let s = 0; s <= 60; s += 0.25) {
+      const xx = X(s), yy = Y(painAt(coldState, coldStim, s));
+      if (s === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // playhead
+    const pv = painAt(coldState, coldStim, coldT);
+    TC.line(ctx, X(coldT), py0, X(coldT), py1, "rgba(74,216,196,0.5)", 1.4, [3, 4]);
+    ctx.save();
+    ctx.fillStyle = C.mint;
+    ctx.beginPath(); ctx.arc(X(coldT), Y(pv), 4.6 * k, 0, TAU); ctx.fill();
+    ctx.restore();
+    TC.label(ctx, "t = " + coldT.toFixed(1) + " s", X(coldT), py0 - 10 * k,
+      { align: "center", color: C.mint, font: mono(fs, true) });
+
+    // verdict under the axis
+    wrapText(ctx, sp.v, px0, py1 + 38 * k, (px1 - px0) * 0.82, 16 * k,
+      mono(13 * k, true), sp.d < 0 ? C.ice : C.ink);
+  }, { animate: false });
+
+  function coldSync() {
+    const sp = RESP[coldState][coldStim];
+    TC.set("pu-cold-v", sp.v);
+    TC.set("pu-cold-pr", sp.p);
+    if (coldFig) coldFig.redraw();
+  }
+  TC.seg("pu-cold-state", function (v) { coldState = v; coldSync(); });
+  TC.seg("pu-cold-stim", function (v) { coldStim = v; coldSync(); });
+  TC.slider("pu-cold-t", function (v) { return v.toFixed(1) + " s"; },
+    function (v) { coldT = v; coldSync(); });
+
+  /* ================================================================
+     FIGURE 4 — the radiograph annotation toggle
+     ================================================================ */
+  (function () {
+    const svg = document.getElementById("pu-xray-svg");
+    const btn = document.getElementById("pu-xray-toggle");
+    if (!svg || !btn) return;
+    let shown = true;
+    btn.addEventListener("click", function () {
+      shown = !shown;
+      svg.style.display = shown ? "" : "none";
+      btn.textContent = shown ? "hide labels" : "show labels";
+      btn.setAttribute("aria-pressed", shown ? "true" : "false");
+    });
+  })();
+})();
+</script>
+<script>
+/* "Two routes to a nerve" — why systemic analgesia fails against a necrosing
+   pulp while local cooling does not. Kept in its own IIFE so it stays isolated
+   from the chapter's other three figures. */
+(function () {
+  "use strict";
+  const { clamp, C } = TC;
+
+  let perf = 0.12;      // pulp blood flow, 0..1
+  let waterT = 14;      // degrees C
+
+  const BODY = 37;
+  // The pulp never reaches the water's temperature: enamel and dentine insulate,
+  // so sustained bathing settles it part of the way down, not all of it.
+  const pulpFloor = (wt) => wt + (BODY - wt) * 0.42;
+
+  // Schematic relief models. The SHAPES are the evidence-based claim:
+  // a blood-borne drug's effect scales with perfusion and vanishes without it;
+  // conduction-delivered cooling is independent of perfusion.
+  const drugRelief = (p) => 0.68 * p;
+  // Cooling relieves by two routes, so the curve has two terms: contraction of
+  // the chamber contents, which begins with any cooling at all, and conduction
+  // block of the C fibres, which only starts once the pulp is under about 25 °C.
+  const coldRelief = (T) =>
+    clamp(0.55 * (BODY - T) / 22, 0, 0.55) + 0.40 * clamp((25 - T) / 10, 0, 1);
+
+  // Rewarming after the water is spat out: exponential approach to body heat.
+  // Enamel and dentine are poor conductors, so this is slow — of the order of a
+  // minute or two, which is why the relief is brief but not instantaneous.
+  const TAU = 70;
+  const tempAt = (t, T0) => BODY - (BODY - T0) * Math.exp(-t / TAU);
+
+  function fmtPct(v) { return Math.round(v * 100) + "%"; }
+
+  const fig = TC.canvas("pu-relief", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0a0d0f";
+    ctx.fillRect(0, 0, w, h);
+
+    const pad = 46;
+    const gap = 62;          // room for the right panel's own axis labels
+    const panelW = (w - pad * 2 - gap) / 2;
+    const top = 34;
+    const botY = h - 40;
+    const plotH = botY - top;
+
+    /* ================= LEFT PANEL: relief vs perfusion ================= */
+    const lx = pad;
+    TC.label(ctx, "RELIEF vs BLOOD FLOW", lx, top - 14, { color: C.mint, font: TC.mono(11, true) });
+
+    // axes
+    TC.line(ctx, lx, botY, lx + panelW, botY, C.line, 1);
+    TC.line(ctx, lx, top, lx, botY, C.line, 1);
+    TC.label(ctx, "none", lx, botY + 15, { color: C.muted, font: TC.mono(10) });
+    TC.label(ctx, "normal", lx + panelW, botY + 15, { color: C.muted, font: TC.mono(10), align: "right" });
+    TC.label(ctx, "pulp blood flow →", lx + panelW / 2, botY + 29,
+      { color: C.muted, font: TC.mono(10), align: "center" });
+
+    const px = (p) => lx + p * panelW;
+    const py = (r) => botY - r * plotH;
+
+    // gridlines at 25% intervals
+    for (let r = 0.25; r <= 1.001; r += 0.25) {
+      TC.line(ctx, lx, py(r), lx + panelW, py(r), C.line2, 1);
+      TC.label(ctx, Math.round(r * 100) + "%", lx - 8, py(r) + 3,
+        { color: C.muted, font: TC.mono(9), align: "right" });
+    }
+
+    // cold curve — flat, because it does not depend on perfusion at all
+    const cr = coldRelief(pulpFloor(waterT));
+    ctx.strokeStyle = C.ice; ctx.lineWidth = 2.4;
+    ctx.beginPath(); ctx.moveTo(px(0), py(cr)); ctx.lineTo(px(1), py(cr)); ctx.stroke();
+
+    // drug curve — proportional to perfusion, zero when there is none
+    ctx.strokeStyle = C.pulpAcc; ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    for (let i = 0; i <= 60; i++) {
+      const p = i / 60;
+      if (i === 0) ctx.moveTo(px(p), py(drugRelief(p)));
+      else ctx.lineTo(px(p), py(drugRelief(p)));
+    }
+    ctx.stroke();
+
+    // the reader's current position
+    const cursorX = px(perf);
+    TC.line(ctx, cursorX, top, cursorX, botY, "rgba(243,241,233,0.28)", 1, [3, 3]);
+    for (const [val, col] of [[drugRelief(perf), C.pulpAcc], [cr, C.ice]]) {
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(cursorX, py(val), 4.5, 0, TC.TAU); ctx.fill();
+      ctx.strokeStyle = "#0a0d0f"; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+
+    // inline series labels, placed clear of the curves
+    TC.label(ctx, "cold water", px(0.04), py(cr) - 9, { color: C.ice, font: TC.mono(11, true) });
+    // placed high on the drug line, clear of wherever the flat cold line sits
+    TC.label(ctx, "tablets", px(0.88), py(drugRelief(0.88)) + 18,
+      { color: C.pulpAcc, font: TC.mono(11, true), align: "right" });
+
+    /* ================= RIGHT PANEL: why it does not last ================= */
+    const rx = pad + panelW + gap;
+    TC.label(ctx, "AFTER YOU SPIT IT OUT", rx, top - 14, { color: C.mint, font: TC.mono(11, true) });
+
+    const SPAN = 180;                    // seconds shown
+    const tx = (t) => rx + (t / SPAN) * panelW;
+    const T0 = pulpFloor(waterT);
+    const T_LO = 12, T_HI = 40;
+    const tempY = (T) => botY - ((T - T_LO) / (T_HI - T_LO)) * plotH;
+
+    TC.line(ctx, rx, botY, rx + panelW, botY, C.line, 1);
+    TC.line(ctx, rx, top, rx, botY, C.line, 1);
+    for (let t = 0; t <= SPAN; t += 60) {
+      TC.label(ctx, t + "s", tx(t), botY + 15, { color: C.muted, font: TC.mono(9), align: "center" });
+    }
+    TC.label(ctx, "seconds since the water left →", rx + panelW / 2, botY + 29,
+      { color: C.muted, font: TC.mono(10), align: "center" });
+
+    // temperature scale on this panel's own axis
+    for (const T of [15, 25, 37]) {
+      TC.label(ctx, T + "°", rx - 7, tempY(T) + 3, { color: C.muted, font: TC.mono(9), align: "right" });
+    }
+
+    // the band in which a warmed C fibre starts to fail — the useful zone
+    const bandTop = tempY(25), bandBot = tempY(15);
+    ctx.fillStyle = "rgba(111,208,255,0.12)";
+    ctx.fillRect(rx, bandTop, panelW, bandBot - bandTop);
+    TC.line(ctx, rx, bandTop, rx + panelW, bandTop, "rgba(111,208,255,0.40)", 1, [4, 4]);
+    TC.label(ctx, "C-FIBRE BLOCK BAND", rx + 8, (bandTop + bandBot) / 2 + 4,
+      { color: C.ice, font: TC.mono(10, true) });
+
+    // body temperature reference
+    TC.line(ctx, rx, tempY(BODY), rx + panelW, tempY(BODY), "rgba(255,107,125,0.32)", 1, [4, 4]);
+    TC.label(ctx, "body heat", rx + panelW - 4, tempY(BODY) - 7,
+      { color: C.pulpAcc, font: TC.mono(9.5), align: "right" });
+
+    // relief counts as spent once it has decayed to a quarter of what the first
+    // mouthful bought — by then the tooth is talking again
+    const r0 = coldRelief(T0);
+    let backAt = null;
+    for (let i = 0; i <= 400 && backAt === null; i++) {
+      const t = (i / 400) * SPAN;
+      if (coldRelief(tempAt(t, T0)) < 0.25 * r0) backAt = t;
+    }
+
+    // shade the window during which the block is still holding
+    if (backAt !== null && backAt > 0) {
+      ctx.fillStyle = "rgba(87,201,138,0.10)";
+      ctx.fillRect(rx, top, tx(backAt) - rx, botY - top);
+      TC.line(ctx, tx(backAt), top, tx(backAt), botY, "rgba(87,201,138,0.55)", 1.5, [5, 4]);
+      TC.label(ctx, "relief gone", tx(backAt) + 7, top + 14, { color: C.good, font: TC.mono(10, true) });
+      TC.label(ctx, "≈" + Math.round(backAt) + " s", tx(backAt) + 7, top + 28,
+        { color: C.good, font: TC.mono(10) });
+    }
+
+    // pulp temperature rewarming
+    ctx.strokeStyle = C.ice; ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    for (let i = 0; i <= 160; i++) {
+      const t = (i / 160) * SPAN;
+      const X = tx(t), Y = tempY(tempAt(t, T0));
+      if (i === 0) ctx.moveTo(X, Y); else ctx.lineTo(X, Y);
+    }
+    ctx.stroke();
+    TC.label(ctx, "pulp temperature", tx(SPAN) - 4, tempY(BODY) + 38,
+      { color: C.ice, font: TC.mono(11, true), align: "right" });
+
+    /* readouts */
+    TC.set("pu-relief-ro1", fmtPct(perf));
+    TC.set("pu-relief-ro2", fmtPct(drugRelief(perf)));
+    TC.set("pu-relief-ro3", fmtPct(cr));
+    TC.set("pu-relief-ro4",
+      cr < 0.05 ? "n/a" : backAt === null ? "over " + SPAN + " s" : Math.round(backAt) + " s");
+  });
+
+  // This figure is static, so every control must ask for a repaint itself.
+  TC.slider("pu-relief-perf", (v) => v.toFixed(0) + "% of normal", (v) => {
+    perf = v / 100;
+    if (fig) fig.redraw();
+  });
+  TC.slider("pu-relief-temp", (v) => v.toFixed(0) + " °C", (v) => {
+    waterT = v;
+    if (fig) fig.redraw();
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
