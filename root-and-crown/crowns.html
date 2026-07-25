@@ -42,15 +42,16 @@
 
 <div class="prose">
 
-<p class="lead">A molar is not a solid lump. It is a ring of enamel and dentine, braced across the
-top by two raised rims — the marginal ridges — and floored by the roof of the pulp chamber. Those
-are the tie-beams. Take them away and the cusps stop being parts of a box and start being
-cantilevers, levered outwards a few micrometres every time you bite.</p>
+<p class="lead"><a href="root-canal.html">Chapter&nbsp;7</a> left a molar disinfected and sealed,
+and still not safe. What threatens it now is its shape. A molar is not a solid lump: it is a ring
+of enamel and dentine, braced across the top by two raised rims — the marginal ridges — and
+floored by the roof of the pulp chamber. Those are the tie-beams. Take them away and the cusps
+stop being parts of a box and start being cantilevers, levered outwards a few micrometres every
+time you bite.</p>
 
-<p>That is the argument for crowning a root-treated back tooth, and worth stating plainly, because
-the usual explanation — "the tooth is dead, so it goes brittle" — is mostly wrong. The measured
-change in root-filled dentine's mechanical properties is small. The tooth is not weakened by
-dying. It is weakened by the carpentry.</p>
+<p>That is the argument for crowning a root-treated back tooth. It has nothing to do with the
+tooth being dead, and everything to do with how much of the tooth the decay and the drill took
+first.</p>
 
 <h2>The keystone problem</h2>
 
@@ -64,7 +65,7 @@ tooth's resistance to being splayed apart, lost not to the root canal but to the
 it necessary.</p>
 
 <div class="axiom">
-  <span class="tag">The real mechanism</span>
+  <span class="tag">Why the root canal takes the blame</span>
   <p>A root canal does not weaken a tooth in any way that matters. Losing the marginal ridges
   does. By the time a molar needs root treatment it has usually already lost them — which is why
   the two things travel together and why the root canal takes the blame.</p>
@@ -94,20 +95,20 @@ biting compresses the tooth instead of prising it apart.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="crn-flex-tooth">tooth</label>
-      <span class="seg" id="crn-flex-tooth">
+      <span class="ctl-lbl" id="crn-flex-tooth-lbl">tooth</span>
+      <span class="seg" id="crn-flex-tooth" role="group" aria-labelledby="crn-flex-tooth-lbl">
         <button data-v="molar" class="on">back tooth</button><button data-v="front">front tooth</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="crn-flex-cav">how much is left</label>
-      <span class="seg" id="crn-flex-cav">
+      <span class="ctl-lbl" id="crn-flex-cav-lbl">how much is left</span>
+      <span class="seg" id="crn-flex-cav" role="group" aria-labelledby="crn-flex-cav-lbl">
         <button data-v="sound">sound</button><button data-v="access">access only</button><button data-v="occ">occlusal</button><button data-v="mod" class="on">MOD</button><button data-v="moda">MOD + access</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="crn-flex-cover">restored with</label>
-      <span class="seg" id="crn-flex-cover">
+      <span class="ctl-lbl" id="crn-flex-cover-lbl">restored with</span>
+      <span class="seg" id="crn-flex-cover" role="group" aria-labelledby="crn-flex-cover-lbl">
         <button data-v="direct" class="on">direct filling</button><button data-v="cover">cuspal coverage</button>
       </span>
     </div>
@@ -233,8 +234,8 @@ bonded surface in a way a cemented crown does not.</p>
 
 <div class="toon">
   <div class="cast">
-    <svg class="char float"><use href="#char-crown"/></svg>
-    <svg class="char sm"><use href="#char-molar"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-crown"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-molar"/></svg>
   </div>
   <div class="lines">
     <p class="who">Crownie explains himself</p>
@@ -264,14 +265,14 @@ one at a time, by whoever is offering that route.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="crn-opt-pos">which tooth</label>
-      <span class="seg" id="crn-opt-pos">
+      <span class="ctl-lbl" id="crn-opt-pos-lbl">which tooth</span>
+      <span class="seg" id="crn-opt-pos" role="group" aria-labelledby="crn-opt-pos-lbl">
         <button data-v="front">front tooth</button><button data-v="premol">premolar</button><button data-v="mol1" class="on">first molar</button><button data-v="mol2">last molar</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="crn-opt-route">route</label>
-      <span class="seg" id="crn-opt-route">
+      <span class="ctl-lbl" id="crn-opt-route-lbl">route</span>
+      <span class="seg" id="crn-opt-route" role="group" aria-labelledby="crn-opt-route-lbl">
         <button data-v="save" class="on">save it</button><button data-v="imp">implant</button><button data-v="brg">bridge</button><button data-v="rbb">bonded bridge</button><button data-v="rpd">denture</button><button data-v="gap">leave the gap</button>
       </span>
     </div>
@@ -331,14 +332,14 @@ bookshelf is not what the measurements show.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="crn-gap-site">which tooth went</label>
-      <span class="seg" id="crn-gap-site">
+      <span class="ctl-lbl" id="crn-gap-site-lbl">which tooth went</span>
+      <span class="seg" id="crn-gap-site" role="group" aria-labelledby="crn-gap-site-lbl">
         <button data-v="mid" class="on">one with neighbours both sides</button><button data-v="term">the last molar</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="crn-gap-act">and then</label>
-      <span class="seg" id="crn-gap-act">
+      <span class="ctl-lbl" id="crn-gap-act-lbl">and then</span>
+      <span class="seg" id="crn-gap-act" role="group" aria-labelledby="crn-gap-act-lbl">
         <button data-v="leave" class="on">left alone</button><button data-v="keep">space maintained</button>
       </span>
     </div>
@@ -390,9 +391,9 @@ Position is not a detail here. It is most of the answer.</p>
 <h2>Replacing it: four routes and what each really costs</h2>
 
 <p><strong>The implant</strong> is a titanium screw placed in the ridge and left while bone grows
-into direct contact with its surface — osseointegration, which Brånemark stumbled on in the 1960s
-when he could not get his titanium chambers back out of rabbit bone. The tooth is built on top
-weeks or months later. Reviews with at least ten years of follow-up put survival around
+into direct contact with its surface — osseointegration, which Brånemark stumbled on in 1952, when
+he could not get his titanium chambers back out of rabbit bone; the first titanium implant in a
+patient followed in 1965. The tooth is built on top weeks or months later. Reviews with at least ten years of follow-up put survival around
 <strong>93–97%</strong>, and its central advantage is that it does nothing at all to the
 neighbouring teeth. The costs are real: surgery, the highest price by a distance, and enough bone
 in the right place. Smoking roughly doubles the failure rate in meta-analyses. The long-term
@@ -486,7 +487,7 @@ from published studies, named above. Not advice about a particular tooth. Part o
 
 </div>
 
-<nav class="chapnav">
+<nav class="chapnav" aria-label="Previous and next chapter">
   <a href="root-canal.html"><span class="dir">Previous</span><span class="title">7 · Root Canal</span></a>
   <a class="next" href="lexicon.html"><span class="dir">Next</span><span class="title">9 · The Lexicon</span></a>
 </nav>
@@ -499,6 +500,10 @@ from published studies, named above. Not advice about a particular tooth. Part o
 (function () {
   "use strict";
   const C = TC.C, clamp = TC.clamp, mono = TC.mono, lab = TC.label;
+  /* dark ink for the few labels that have to sit on the tan bone fill:
+     the page's muted grey is chosen for the near-black background and
+     disappears completely against bone */
+  const onBone = "#2b2620";
 
   /* ---------- shared local helpers ---------- */
   function bg(ctx, w, h) {
@@ -650,11 +655,19 @@ from published studies, named above. Not advice about a particular tooth. Part o
       ctx.fill();
       ctx.save();
       ctx.clip();
+      ctx.save();
       ctx.translate(0, H * 0.13);
       ctx.scale(0.80, 0.88);
       halfCrown(ctx, H, hw, nw, gap, d);
       ctx.fillStyle = C.dentine;
       ctx.fill();
+      ctx.restore();
+      /* carry the dentine up to the cavity floor: a cut this deep is floored
+         in dentine, so no enamel colour should show at the base of it */
+      if (d > H * 0.12) {
+        ctx.fillStyle = C.dentine;
+        ctx.fillRect(0, -H + d, gap * 1.04, H * 0.30);
+      }
       ctx.restore();
       halfCrown(ctx, H, hw, nw, gap, d);
       ctx.strokeStyle = "rgba(30,26,20,0.55)";
@@ -684,12 +697,24 @@ from published studies, named above. Not advice about a particular tooth. Part o
       lab(ctx, "cusps tied together", cx, cy - H * 1.44,
         { align: "center", color: C.mint, font: mono(11, true) });
     } else if (F1.cav !== "sound") {
+      /* the filling sits in the notch, so it must follow the walls as they tilt */
+      const ct = Math.cos(theta), st = Math.sin(theta);
+      const wall = (sgn, x, y) => [cx + sgn * (x * ct - y * st), cy + (x * st + y * ct)];
+      const yTop = -H + H * 0.02, yFloor = -H + d;
+      const bl = wall(-1, gap, yFloor), br = wall(1, gap, yFloor);
+      const tr = wall(1, gap, yTop), tl = wall(-1, gap, yTop);
       ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(bl[0], bl[1]);
+      ctx.lineTo(br[0], br[1]);
+      ctx.lineTo(tr[0], tr[1]);
+      ctx.lineTo(tl[0], tl[1]);
+      ctx.closePath();
       ctx.fillStyle = C.composite;
-      ctx.fillRect(cx - gap * 1.02, cy - H, gap * 2.04, d * 0.94);
-      ctx.strokeStyle = "rgba(40,30,18,0.5)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(40,30,18,0.35)";
       ctx.lineWidth = 1;
-      ctx.strokeRect(cx - gap * 1.02, cy - H, gap * 2.04, d * 0.94);
+      ctx.stroke();
       ctx.restore();
     }
 
@@ -1120,7 +1145,9 @@ from published studies, named above. Not advice about a particular tooth. Part o
     const gapIdx = F3.site === "mid" ? 2 : 4;
     const narrow = w < 700;
 
-    const aX = w * 0.035, aW = w * 0.715;
+    /* the arch (and the bone block behind it) has to stop short of the
+       cross-section inset, so the inset's caption lands on the background */
+    const aX = w * 0.035, aW = w * 0.66;
     const step = aW / 5, hw = step * 0.36;
     const Hc = h * 0.135, Hr = h * 0.20;
     const yUpOcc = h * 0.40, yLoOcc = h * 0.48;
@@ -1202,15 +1229,28 @@ from published studies, named above. Not advice about a particular tooth. Part o
       const bx = aX + aW * 0.90;
       TC.line(ctx, bx, h * 0.30, bx, h * 0.86, "rgba(243,241,233,0.16)", 1, [4, 4]);
       lab(ctx, "end of the arch — nothing behind", bx - 8, h * 0.94,
-        { align: "right", color: C.muted, font: mono(10.5) });
+        { align: "right", color: onBone, font: mono(10.5) });
     } else {
       lab(ctx, "teeth on both sides — a corridor for drift", cxOf(gapIdx), h * 0.94,
-        { align: "center", color: C.muted, font: mono(10.5) });
+        { align: "center", color: onBone, font: mono(10.5) });
     }
 
-    lab(ctx, years < 1 ? Math.round(years * 12) + " MONTHS" : years.toFixed(1) + " YEARS",
-      aX, h * 0.075, { color: C.mint, font: mono(narrow ? 13 : 16, true) });
-    lab(ctx, "since the extraction", aX, h * 0.075 + 16, { color: C.muted, font: mono(10) });
+    /* the elapsed-time readout sits over the bone block, so it gets a dark
+       plate to read against rather than the page's background colours */
+    const yrTxt = years < 1 ? Math.round(years * 12) + " MONTHS" : years.toFixed(1) + " YEARS";
+    const yrFont = mono(narrow ? 13 : 16, true);
+    const subFont = mono(10);
+    ctx.save();
+    ctx.font = yrFont;
+    let plateW = ctx.measureText(yrTxt).width;
+    ctx.font = subFont;
+    plateW = Math.max(plateW, ctx.measureText("since the extraction").width) + 18;
+    ctx.restore();
+    ctx.fillStyle = "rgba(10,10,14,0.85)";
+    TC.roundRect(ctx, aX - 9, h * 0.075 - 16, plateW, 37, 5);
+    ctx.fill();
+    lab(ctx, yrTxt, aX, h * 0.075, { color: C.mint, font: yrFont });
+    lab(ctx, "since the extraction", aX, h * 0.075 + 16, { color: C.muted, font: subFont });
 
     /* ---- inset: the ridge in cross-section ---- */
     const ix = w * 0.775, iw = w * 0.205;

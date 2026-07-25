@@ -28,13 +28,13 @@
   </nav>
 </header>
 
-<main class="page">
+<main class="page" id="main">
 
 <section class="hero">
   <p class="kicker">CHAPTER 2</p>
   <h1>The Nerve</h1>
   <p class="standfirst">Ice on a tooth hurts. Sugar on exposed dentine hurts. A puff of air hurts,
-  and a drill hurts most of all. Four unrelated stimuli, one sensation — because a tooth has
+  and heat hurts slowest of all. Four unrelated stimuli, one sensation — because a tooth has
   essentially one sense, and that sense is pain. Here is how that single channel works, why cold
   beats heat to it, and why it is so vague about where the trouble is.</p>
 </section>
@@ -53,7 +53,7 @@ of what follows.</p>
 <p>The pulp is the tooth's only soft tissue: loose connective tissue in a chamber at the heart of
 the crown, running down a canal in each root and out through a hole at the tip called the
 <strong>apical foramen</strong>. An artery, a vein or two, lymphatics and the nerve bundle all pass
-through that hole, and it is roughly the calibre of a coarse hair. That narrow entrance drives all of
+through that hole, and it is only a few tenths of a millimetre across. That narrow entrance drives all of
 <a href="pulpitis.html">Chapter&nbsp;5</a>.</p>
 
 <p>Lining the chamber wall is a palisade of tall cells, the <strong>odontoblasts</strong> — the
@@ -87,8 +87,8 @@ time in — has no nerve supply at all.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="nrv-tub-stim">stimulus at the surface</label>
-      <span class="seg" id="nrv-tub-stim">
+      <span class="ctl-lbl" id="nrv-tub-stim-lbl">stimulus at the surface</span>
+      <span class="seg" id="nrv-tub-stim" role="group" aria-labelledby="nrv-tub-stim-lbl">
         <button data-v="none">none</button><button data-v="cold" class="on">cold</button><button data-v="air">air</button><button data-v="sweet">sugar</button><button data-v="hot">heat</button>
       </span>
     </div>
@@ -164,7 +164,7 @@ thought: in <a href="pulpitis.html">Chapter&nbsp;5</a> the asymmetry inverts, an
 be <em>soothed</em> by cold and set off by heat.</p>
 
 <div class="tryit">Set the stimulus to <b>air</b> and drag the cavity floor to <b>0.2&nbsp;mm</b> —
-a tooth mid-treatment, pulp a hair's breadth away. Then drag <b>tubules open</b> to zero: same
+a tooth mid-treatment, pulp a fraction of a millimetre away. Then drag <b>tubules open</b> to zero: same
 insult, nothing happens. Sealing tubules is what a desensitising toothpaste, a varnish or a layer of
 sclerotic dentine is for.</div>
 
@@ -181,8 +181,8 @@ sclerotic dentine is for.</div>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="nrv-fib-pulp">state of the pulp</label>
-      <span class="seg" id="nrv-fib-pulp">
+      <span class="ctl-lbl" id="nrv-fib-pulp-lbl">state of the pulp</span>
+      <span class="seg" id="nrv-fib-pulp" role="group" aria-labelledby="nrv-fib-pulp-lbl">
         <button data-v="healthy" class="on">healthy</button><button data-v="inflamed">inflamed</button><button data-v="dying">losing its blood supply</button>
       </span>
     </div>
@@ -254,8 +254,8 @@ cause. Axon counts put them in the clear majority of a mature tooth's nerve supp
 
 <div class="toon">
   <div class="cast">
-    <svg class="char float"><use href="#char-nerve"/></svg>
-    <svg class="char sm"><use href="#char-chill"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-nerve"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-chill"/></svg>
   </div>
   <div class="lines">
     <p class="who">Nerv meets Chill</p>
@@ -300,8 +300,8 @@ and skin sharing wiring. Downstream, the brain can only guess which input opened
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="nrv-loc-arch">arch</label>
-      <span class="seg" id="nrv-loc-arch">
+      <span class="ctl-lbl" id="nrv-loc-arch-lbl">arch</span>
+      <span class="seg" id="nrv-loc-arch" role="group" aria-labelledby="nrv-loc-arch-lbl">
         <button data-v="upper" class="on">upper</button><button data-v="lower">lower</button>
       </span>
     </div>
@@ -311,8 +311,8 @@ and skin sharing wiring. Downstream, the brain can only guess which input opened
       <output></output>
     </div>
     <div class="ctl">
-      <label for="nrv-loc-src">what is inflamed</label>
-      <span class="seg" id="nrv-loc-src">
+      <span class="ctl-lbl" id="nrv-loc-src-lbl">what is inflamed</span>
+      <span class="seg" id="nrv-loc-src" role="group" aria-labelledby="nrv-loc-src-lbl">
         <button data-v="pulp" class="on">pulp only</button><button data-v="pdl">pulp and ligament</button>
       </span>
     </div>
@@ -391,7 +391,7 @@ reach it, and almost always that something is acid, made by bacteria a few hundr
 
 </div>
 
-<nav class="chapnav">
+<nav class="chapnav" aria-label="Previous and next chapter">
   <a href="anatomy.html"><span class="dir">Previous</span><span class="title">1 · Anatomy</span></a>
   <a class="next" href="decay.html"><span class="dir">Next</span><span class="title">3 · Decay</span></a>
 </nav>
@@ -419,6 +419,20 @@ reach it, and almost always that something is acid, made by bacteria a few hundr
     if (cur) lines.push(cur);
     ctx.restore();
     return lines;
+  }
+  /* a label that lands on light artwork: a translucent pale chip behind dark ink,
+     so the text never has to compete with the tan dentine or a tubule beneath it */
+  function plated(ctx, txt, x, y, o) {
+    o = o || {};
+    ctx.save();
+    ctx.font = o.font || mono(11);
+    const tw = ctx.measureText(txt).width;
+    const px = o.align === "center" ? x - tw / 2 : x;
+    ctx.fillStyle = "rgba(250,244,229,0.90)";
+    TC.roundRect(ctx, px - 6, y - 12, tw + 12, 17, 4);
+    ctx.fill();
+    ctx.restore();
+    TC.label(ctx, txt, x, y, o);
   }
   /* multi-line label; returns the number of lines drawn */
   function mline(ctx, txt, x, y, maxW, o) {
@@ -653,11 +667,11 @@ reach it, and almost always that something is acid, made by bacteria a few hundr
     }
 
     /* ---- annotations inside the dentine block ---- */
-    TC.label(ctx, tubDens(tubDepth).toLocaleString("en-GB") + " tubules / mm²",
-      dx0 + 5, bot - 6, { color: "rgba(58,42,16,0.9)", font: F(10.5, true) });
+    plated(ctx, tubDens(tubDepth).toLocaleString("en-GB") + " tubules / mm²",
+      dx0 + 10, bot - 8, { color: "rgba(44,32,10,0.95)", font: F(10.5, true) });
     if (tubOpen < 0.5) {
-      TC.label(ctx, Math.round((1 - tubOpen) * 100) + "% of tubules plugged",
-        dx0 + dw / 2, top + 14, { align: "center", color: "rgba(46,64,44,0.95)", font: F(11, true) });
+      plated(ctx, Math.round((1 - tubOpen) * 100) + "% of tubules plugged",
+        dx0 + dw / 2, top + 16, { align: "center", color: "rgba(30,50,30,0.98)", font: F(11, true) });
     }
 
     /* ---- depth ruler and stimulus caption, below the section ---- */
@@ -811,7 +825,8 @@ reach it, and almost always that something is acid, made by bacteria a few hundr
       const now = sim.a[i] > 0.35 ? "sharp"
         : sim.c[i] > 0.35 ? "aching"
         : sim.a[i] + sim.c[i] > 0.1 ? "grumbling" : "quiet";
-      TC.label(ctx, now, clamp(X(ph) + 6, L, w - 60), h * 0.125, { color: C.ink, font: F(12, true) });
+      // drawn in the gap between the two panels, where no title can be sitting
+      TC.label(ctx, now, clamp(X(ph) + 6, L, w - 60), h * 0.49, { color: C.ink, font: F(12, true) });
     }
   }, { animate: !TC.reducedMotion });
 
@@ -975,7 +990,10 @@ reach it, and almost always that something is acid, made by bacteria a few hundr
     });
     const vHead = wrap(ctx, verdict.head, innerW, F(10.5, true));
     const vSub = wrap(ctx, verdict.sub, innerW, F(10));
-    const vH = 12 + vHead.length * lhS + 20 * k + vSub.length * lhS + 10;
+    // the "big" line is set at 15k, so reserve its own height rather than a guess,
+    // and leave room under the last sub-line for its descenders
+    const vBigH = 15 * k + 8;
+    const vH = 12 + lhS * (vHead.length + 0.7) + vBigH + vSub.length * lhS + 12;
 
     const availTop = h * 0.045, availBot = h * 0.975;
     let sumH = vH;
@@ -1035,7 +1053,10 @@ reach it, and almost always that something is acid, made by bacteria a few hundr
   function locSliderOut() {
     const el = document.getElementById("nrv-loc-tooth");
     const out = el && el.parentElement.querySelector("output");
-    if (out) out.textContent = locInfo(locArch, locTooth).name;
+    const nm = locInfo(locArch, locTooth).name;
+    if (out) out.textContent = nm;
+    // the visible readout is a word, so give assistive tech the word rather than the index
+    if (el) el.setAttribute("aria-valuetext", nm);
   }
   function locUpdate() { locReadouts(); locSliderOut(); if (locFig) locFig.redraw(); }
 

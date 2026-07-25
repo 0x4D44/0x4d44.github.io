@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "root-and-crown",
+    title: "Root and Crown",
+    tagline: "A deep, interactive field guide to the tooth — the one organ your body cannot repair. Why enamel never grows back, why toothache is its own category of pain, the acid clock behind decay, and what each repair from filling to implant really buys you. Nine chapters, 27 live figures and a real annotated radiograph.",
+    url: "https://0x4d44.github.io/root-and-crown/",
+    illustration: "ill-tooth",
+    date: "2026-07-25T18:30:00",
+    year: 1728,
+    readingMin: 145,
+    words: 33400,
+    tags: ["science", "software"],
+    real: true,
+  },
+  {
     slug: "road-wear",
     title: "The Road to Ruin",
     tagline: "A deep, interactive field guide to why roads fall apart and how we keep them alive: the layer sandwich that spreads a wheel load, the fourth-power law that makes one lorry outweigh tens of thousands of cars, and how frost prises a crack into a pothole. Eight chapters, a cartoon cast, canvas + SVG; no build step.",
@@ -1536,7 +1549,7 @@ window.COLLECTIONS = [
       "claude-workflows", "the-ai-who-watched"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
-    slugs: ["teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
+    slugs: ["root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",
       "logistic-map", "godel", "calculus", "driftfield", "paint-drying",
       "emdtime", "nettles", "gene-inheritance", "edinburgh-biosci",
       "ocean-currents"] },

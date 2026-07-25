@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Death of a Pulp — Root and Crown</title>
-<meta name="description" content="Why toothache is its own category of pain: a compartment syndrome the size of a grain of rice, the reversible-to-necrotic ladder, the cold paradox, why anaesthetic and antibiotics disappoint, and a real annotated radiograph.">
+<meta name="description" content="Why toothache is its own category of pain: a compartment syndrome the size of a grain of rice, the reversible-to-necrotic ladder, the cold paradox, why anaesthetic and antibiotics disappoint, why cold water outperforms a full dose of painkillers against a dying pulp, and a real annotated radiograph.">
 <link rel="stylesheet" href="tooth.css">
 </head>
 <body>
@@ -36,9 +36,10 @@
   <p class="standfirst">A tooth can hurt more than a broken bone, and the reason is
   architectural rather than poetic. This chapter follows an inflamed pulp from the first
   twinge to the abscess: why a rigid chamber turns ordinary swelling into agony, how
-  clinicians sort the stages, why cold sometimes <em>stops</em> the pain of a dying nerve, and
-  why anaesthetic and antibiotics both disappoint. It ends with a real radiograph — and with
-  the honest limits of what a radiograph can show.</p>
+  clinicians sort the stages, why cold sometimes <em>stops</em> the pain of a dying nerve, why
+  anaesthetic and antibiotics both disappoint, and why a mouthful of cold water can beat a full
+  dose of painkillers. It ends with a real radiograph — and with the honest limits of what a
+  radiograph can show.</p>
 </section>
 
 <div class="prose">
@@ -72,8 +73,8 @@ the root tip a fraction of a millimetre across. Engineers call that
       <output></output>
     </div>
     <div class="ctl">
-      <label for="pu-loop-posture">posture</label>
-      <span class="seg" id="pu-loop-posture">
+      <span class="ctl-lbl" id="pu-loop-posture-lbl">posture</span>
+      <span class="seg" id="pu-loop-posture" role="group" aria-labelledby="pu-loop-posture-lbl">
         <button data-v="up" class="on">upright</button><button data-v="flat">lying down</button>
       </span>
     </div>
@@ -161,26 +162,26 @@ infection spreading through the soft tissue planes of the face is
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="pu-cls-onset">onset</label>
-      <span class="seg" id="pu-cls-onset">
+      <span class="ctl-lbl" id="pu-cls-onset-lbl">onset</span>
+      <span class="seg" id="pu-cls-onset" role="group" aria-labelledby="pu-cls-onset-lbl">
         <button data-v="prov" class="on">provoked</button><button data-v="spont">spontaneous</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="pu-cls-dur">duration</label>
-      <span class="seg" id="pu-cls-dur">
+      <span class="ctl-lbl" id="pu-cls-dur-lbl">duration</span>
+      <span class="seg" id="pu-cls-dur" role="group" aria-labelledby="pu-cls-dur-lbl">
         <button data-v="brief" class="on">stops in seconds</button><button data-v="linger">lingers</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="pu-cls-therm">thermal</label>
-      <span class="seg" id="pu-cls-therm">
+      <span class="ctl-lbl" id="pu-cls-therm-lbl">thermal</span>
+      <span class="seg" id="pu-cls-therm" role="group" aria-labelledby="pu-cls-therm-lbl">
         <button data-v="cold" class="on">cold provokes</button><button data-v="relief">cold eases, heat provokes</button><button data-v="none">no response</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="pu-cls-bite">biting</label>
-      <span class="seg" id="pu-cls-bite">
+      <span class="ctl-lbl" id="pu-cls-bite-lbl">biting</span>
+      <span class="seg" id="pu-cls-bite" role="group" aria-labelledby="pu-cls-bite-lbl">
         <button data-v="ok" class="on">not tender</button><button data-v="tender">tender to bite</button>
       </span>
     </div>
@@ -232,14 +233,14 @@ looking faintly embarrassed. It is not a quirk. It is a sign.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="pu-cold-state">pulp</label>
-      <span class="seg" id="pu-cold-state">
+      <span class="ctl-lbl" id="pu-cold-state-lbl">pulp</span>
+      <span class="seg" id="pu-cold-state" role="group" aria-labelledby="pu-cold-state-lbl">
         <button data-v="healthy" class="on">healthy</button><button data-v="inflamed">inflamed, alive</button><button data-v="necrosing">necrosing</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="pu-cold-stim">stimulus</label>
-      <span class="seg" id="pu-cold-stim">
+      <span class="ctl-lbl" id="pu-cold-stim-lbl">stimulus</span>
+      <span class="seg" id="pu-cold-stim" role="group" aria-labelledby="pu-cold-stim-lbl">
         <button data-v="cold" class="on">cold</button><button data-v="heat">heat</button>
       </span>
     </div>
@@ -274,7 +275,7 @@ partly dead pulp.</p>
 <p>Ask someone with early toothache which tooth it is and they are usually wrong, often by
 several teeth, sometimes by the wrong jaw. The pulp holds nociceptive fibres and essentially
 no proprioceptors, and many teeth funnel into shared branches of the trigeminal nerve — so the
-brain receives a loud signal with no return address. Chapter&nbsp;2 covers the wiring.</p>
+brain receives a loud signal with no return address. <a href="nerve.html">Chapter&nbsp;2</a> covers the wiring.</p>
 
 <p>The <strong>periodontal ligament</strong> is different. It is packed with mechanoreceptors,
 because its day job is telling you how hard you are biting and on what. So the moment
@@ -356,8 +357,9 @@ whose contents have nowhere to go, pressing directly on nerve endings. No COX in
 decompresses a box.</p>
 
 <p><strong>Codeine, specifically.</strong> It is the drug people reach for when the first two
-fail, and it is close to the worst choice available. A Canadian drug-agency review of codeine
-in dental pain concluded that codeine alone performs poorly, and — more pointedly — that
+fail, and it is close to the worst choice available. A 2021 review by CADTH, the Canadian
+drug-assessment agency, of codeine for acute dental pain concluded that codeine alone performs
+poorly, and — more pointedly — that
 <em>adding</em> codeine to paracetamol or ibuprofen did not add benefit in dental pain. There
 is a pharmacogenetic sting as well: codeine is a prodrug that must be converted to morphine by
 the liver enzyme CYP2D6, and a few per cent of people of northern European ancestry carry
@@ -437,8 +439,8 @@ line. So the relief is real, immediate, and almost immediately spent.</p>
   mains water in southern England runs to 18–26&nbsp;°C in July but sits nearer 9–12&nbsp;°C in
   winter, and UK regulations require cold water to be stored and distributed below
   20&nbsp;°C. Scotland runs colder than the south — cooler climate, cooler sources — so a
-  summer figure in the low-to-mid teens is a fair <em>estimate</em> for an Edinburgh tap,
-  though we could find no published measurements of Scottish mains temperature to confirm it.</p>
+  summer figure in the low-to-mid teens is a fair <em>estimate</em> for a Scottish cold tap,
+  though no published measurements of Scottish mains temperature could be found to confirm it.</p>
   <p>The number that matters is not the absolute temperature but the gap. Water at about
   14&nbsp;°C is roughly 23&nbsp;°C below body temperature — a large gradient, and enough to
   drag a warmed nerve down into the band where conduction begins to fail. It has a practical
@@ -560,7 +562,7 @@ line; bone shows its trabecular scaffolding as a fine mottle.</p>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="pu-xray-toggle">annotations</label>
+      <span class="ctl-lbl">annotations</span>
       <button class="btn primary" id="pu-xray-toggle" aria-pressed="true">hide labels</button>
     </div>
   </div>
@@ -621,7 +623,7 @@ tooth that hurt, at the point where the pain had finally acquired an address. Th
 raised — why the anaesthetic struggled, why cold helped, why nothing on the image could
 confirm what was already obvious in the chair — are the reason this guide exists.</p>
 
-<p>Chapter&nbsp;6 turns to what gets done about it, beginning with the least dramatic
+<p><a href="fillings.html">Chapter&nbsp;6</a> turns to what gets done about it, beginning with the least dramatic
 intervention in dentistry and the one that quietly sets up everything here: the filling.</p>
 
 </div>
@@ -788,8 +790,10 @@ intervention in dentistry and the one that quietly sets up everything here: the 
     let by = h * 0.17;
     const bh = 13 * k;
 
-    // pressure, 0..60 mmHg, with the two published anchors marked
-    TC.label(ctx, "MODELLED INTRAPULPAL PRESSURE", bx, by - 7 * k,
+    // pressure, 0..60 mmHg, with the two published anchors marked.
+    // Caption kept short: the long form overran the bar and collided with the
+    // right-aligned value sharing its baseline.
+    TC.label(ctx, "INTRAPULPAL PRESSURE", bx, by - 7 * k,
       { color: C.muted, font: mono(fs) });
     ctx.fillStyle = C.surface3;
     TC.roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
@@ -908,17 +912,23 @@ intervention in dentistry and the one that quietly sets up everything here: the 
     const fs = 11 * k;
     const r = classify();
 
-    const th = Math.min(h * 0.84, w * 0.28);
+    // Below about 660px the three columns cannot sit side by side: the verdict
+    // text lands on top of the ladder labels and the tooth is clipped. Stack
+    // instead — tooth and ladder on one row, verdict across the foot.
+    const narrow = w < 660;
+
+    const th = narrow ? Math.min(h * 0.52, w * 0.30) : Math.min(h * 0.84, w * 0.28);
     const tw = th * 0.78;
-    const tx = w * 0.05, ty = (h - th) / 2;
+    const tx = narrow ? w * 0.03 : w * 0.05;
+    const ty = narrow ? h * 0.06 : (h - th) / 2;
     TC.drawTooth(ctx, tx, ty, tw, th, {
       pulpState: r.state, lesion: r.lesion, secondary: 0.2, seed: 4242,
     });
 
     /* the ladder */
-    const lx = w * 0.365;
-    let ly = h * 0.20;
-    const step = h * 0.135;
+    const lx = narrow ? w * 0.34 : w * 0.365;
+    let ly = narrow ? h * 0.12 : h * 0.20;
+    const step = narrow ? h * 0.09 : h * 0.135;
     TC.label(ctx, "THE LADDER", lx, ly - 20 * k, { color: C.muted, font: mono(fs) });
     for (let i = 0; i < LADDER.length; i++) {
       const here = i === r.rung, past = i < r.rung;
@@ -938,8 +948,12 @@ intervention in dentistry and the one that quietly sets up everything here: the 
     }
 
     /* the verdict panel */
-    const vx = w * 0.615, vw = w * 0.34;
-    let vy = h * 0.20;
+    const vx = narrow ? w * 0.04 : w * 0.615;
+    const vw = narrow ? w * 0.92 : w * 0.34;
+    let vy = narrow ? h * 0.66 : h * 0.20;
+    if (narrow) {
+      TC.line(ctx, vx, vy - 20 * k, vx + vw, vy - 20 * k, C.line, 1);
+    }
     vy = wrapText(ctx, r.name, vx, vy, vw, 19 * k, mono(14.5 * k, true), C.mint);
     wrapText(ctx, r.why, vx, vy + 12 * k, vw, 15.5 * k, mono(fs), C.ink2);
   }, { animate: false });
@@ -1047,8 +1061,10 @@ intervention in dentistry and the one that quietly sets up everything here: the 
     ctx.fillStyle = C.mint;
     ctx.beginPath(); ctx.arc(X(coldT), Y(pv), 4.6 * k, 0, TAU); ctx.fill();
     ctx.restore();
-    TC.label(ctx, "t = " + coldT.toFixed(1) + " s", X(coldT), py0 - 10 * k,
-      { align: "center", color: C.mint, font: mono(fs, true) });
+    // Pinned to the top right rather than tracking the playhead: at low t the
+    // playhead sits on top of the axis title and the two labels collide.
+    TC.label(ctx, "t = " + coldT.toFixed(1) + " s", px1, py0 - 10 * k,
+      { align: "right", color: C.mint, font: mono(fs, true) });
 
     // verdict under the axis
     wrapText(ctx, sp.v, px0, py1 + 38 * k, (px1 - px0) * 0.82, 16 * k,

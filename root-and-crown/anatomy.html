@@ -50,14 +50,14 @@
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="an-map-layer">isolate</label>
-      <span class="seg" id="an-map-layer">
+      <span class="ctl-lbl" id="an-map-layer-lbl">isolate</span>
+      <span class="seg" id="an-map-layer" role="group" aria-labelledby="an-map-layer-lbl">
         <button data-v="all" class="on">whole tooth</button><button data-v="enamel">enamel</button><button data-v="dentine">dentine</button><button data-v="pulp">pulp</button><button data-v="perio">attachment</button>
       </span>
     </div>
     <div class="ctl">
-      <label for="an-map-lab">labels</label>
-      <span class="seg" id="an-map-lab">
+      <span class="ctl-lbl" id="an-map-lab-lbl">labels</span>
+      <span class="seg" id="an-map-lab" role="group" aria-labelledby="an-map-lab-lbl">
         <button data-v="on" class="on">on</button><button data-v="off">off</button>
       </span>
     </div>
@@ -180,12 +180,12 @@ fast decay it loses: the wall goes up at the pace of biology and the acid does n
   <div class="fig-controls">
     <div class="ctl">
       <label for="an-probe-d">depth from the surface</label>
-      <input type="range" id="an-probe-d" min="0" max="6" step="0.05" value="1.2">
+      <input type="range" id="an-probe-d" min="0" max="6" step="0.05" value="5.90">
       <output></output>
     </div>
     <div class="ctl">
-      <label for="an-probe-tr">plot</label>
-      <span class="seg" id="an-probe-tr">
+      <span class="ctl-lbl" id="an-probe-tr-lbl">plot</span>
+      <span class="seg" id="an-probe-tr" role="group" aria-labelledby="an-probe-tr-lbl">
         <button data-v="hard" class="on">hardness</button><button data-v="tub">tubules</button><button data-v="min">mineral</button>
       </span>
     </div>
@@ -281,8 +281,8 @@ remodelling — which is what makes orthodontic movement possible — and it is 
       <output></output>
     </div>
     <div class="ctl">
-      <label for="an-pdl-load">state</label>
-      <span class="seg" id="an-pdl-load">
+      <span class="ctl-lbl" id="an-pdl-load-lbl">state</span>
+      <span class="seg" id="an-pdl-load" role="group" aria-labelledby="an-pdl-load-lbl">
         <button data-v="rest" class="on">at rest</button><button data-v="bite">under a bite</button>
       </span>
     </div>
@@ -324,8 +324,8 @@ warmth or touch or texture. It feels pain, and decides for itself what counts.</
 
 <div class="toon">
   <div class="cast">
-    <svg class="char float"><use href="#char-molar"/></svg>
-    <svg class="char sm"><use href="#char-nerve"/></svg>
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-molar"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-nerve"/></svg>
   </div>
   <div class="lines">
     <p class="who">Molar, on the layout</p>
@@ -385,7 +385,7 @@ is the next chapter.</p>
 
 </div>
 
-<nav class="chapnav">
+<nav class="chapnav" aria-label="Previous and next chapter">
   <a class="next" href="nerve.html"><span class="dir">Next</span><span class="title">2 · The Nerve</span></a>
 </nav>
 
@@ -502,7 +502,10 @@ is the next chapter.</p>
     if (W < 40) return;
 
     const compact = W < 660;
-    const th = Math.min(H * 0.88, W * (compact ? 0.30 : 0.40));
+    /* The tooth is drawn a little smaller than the box allows so the caption
+       gutters on either side clear the bone and gum bands, which drawTooth
+       spreads from -0.34 to +1.34 of the tooth width. */
+    const th = Math.min(H * 0.88, W * (compact ? 0.28 : 0.37));
     const tw = th * 0.78;
     const tx = W * 0.5 - tw / 2;
     const ty = (H - th) / 2;
@@ -550,8 +553,9 @@ is the next chapter.</p>
     if (!mapLabels) return;
 
     const fs = compact ? 9 : Math.max(10, Math.min(12, W / 82));
-    const leftX = Math.max(4, tx - tw * 0.30);
-    const rightX = Math.min(W - 4, tx + tw * 1.30);
+    /* outside the bone/gum extents (±0.34 tw), so no caption sits on artwork */
+    const leftX = Math.max(4, tx - tw * 0.40);
+    const rightX = Math.min(W - 4, tx + tw * 1.40);
     const shown = MAP_LAB.filter((l) => !compact || l.c);
 
     for (const side of ["L", "R"]) {
@@ -794,13 +798,23 @@ is the next chapter.</p>
     ctx.beginPath();
     ctx.arc(px, Y(tr.get(p)), 4, 0, TC.TAU);
     ctx.fill();
-    TC.label(ctx, probeD.toFixed(2) + " mm", px + (probeD > D_MAX * 0.72 ? -8 : 8), slabTop + 14, {
-      align: probeD > D_MAX * 0.72 ? "right" : "left", color: C.mint, font: TC.mono(fs, true),
-    });
-    TC.label(ctx, p.feel, px + (probeD > D_MAX * 0.72 ? -8 : 8), slabTop + 14 + fs + 4, {
-      align: probeD > D_MAX * 0.72 ? "right" : "left",
-      color: p.feelHot ? C.pulpAcc : C.muted, font: TC.mono(fs),
-    });
+    /* Both readouts sit inside the slab, on near-white enamel or tan dentine,
+       where the dark-theme palette is unreadable. Set each on a dark plate so
+       the mint and coral keep their meaning and the text stays legible. */
+    const flip = probeD > D_MAX * 0.72;
+    const lx = px + (flip ? -8 : 8);
+    function plated(txt, y, col, font) {
+      ctx.save();
+      ctx.font = font;
+      const tw = ctx.measureText(txt).width;
+      TC.roundRect(ctx, flip ? lx - tw - 5 : lx - 5, y - fs - 2, tw + 10, fs + 8, 3);
+      ctx.fillStyle = "rgba(10,13,15,0.86)";
+      ctx.fill();
+      ctx.restore();
+      TC.label(ctx, txt, lx, y, { align: flip ? "right" : "left", color: col, font: font });
+    }
+    plated(probeD.toFixed(2) + " mm", slabTop + 14, C.mint, TC.mono(fs, true));
+    plated(p.feel, slabTop + 14 + fs + 4, p.feelHot ? C.pulpAcc : C.ink2, TC.mono(fs));
   });
 
   function probeRead() {
@@ -942,12 +956,18 @@ is the next chapter.</p>
     TC.line(ctx, x0, by - 4, x0, by + 4, C.ice, 1.4);
     TC.line(ctx, x1, by - 4, x1, by + 4, C.ice, 1.4);
 
-    /* a hair, drawn to the same scale */
-    const hx = x2 + (xR - x2) * 0.42;
+    /* a hair, drawn to the same scale. On a narrow canvas the caption is
+       shortened and the hair slid left, so the text cannot run off the edge. */
+    const hairTxt = W < 620 ? "a hair, same scale" : "a hair (50–100 µm), same scale";
+    ctx.save();
+    ctx.font = TC.mono(fs - 1);
+    const htw = ctx.measureText(hairTxt).width;
+    ctx.restore();
     const hw = HAIR_MM * mm;
+    const hx = Math.max(x2 + 4, Math.min(x2 + (xR - x2) * 0.42, W - 6 - htw - 6 - hw));
     ctx.fillStyle = "rgba(243,241,233,0.85)";
     ctx.fillRect(hx, bot + 16, Math.max(1, hw), 12);
-    TC.label(ctx, "a hair (50–100 µm), same scale", hx + hw + 6, bot + 26,
+    TC.label(ctx, hairTxt, hx + hw + 6, bot + 26,
       { color: C.muted, font: TC.mono(fs - 1) });
 
     if (drop > 0) {

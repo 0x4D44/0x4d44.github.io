@@ -62,8 +62,8 @@
       <output></output>
     </div>
     <div class="ctl">
-      <label for="ag-life-gum">gum</label>
-      <span class="seg" id="ag-life-gum">
+      <span class="ctl-lbl" id="ag-life-gum-lbl">gum</span>
+      <span class="seg" id="ag-life-gum" role="group" aria-labelledby="ag-life-gum-lbl">
         <button data-v="none">stable</button><button data-v="slow" class="on">gradual</button><button data-v="marked">marked</button>
       </span>
     </div>
@@ -135,8 +135,12 @@ paste's abrasive, and above all exposed dentine, that lets brushing cut: dentine
 hardness is about 60 against enamel's 300.</p>
 
 <p><strong>Erosion</strong> is chemistry. No bacteria, no plaque — the acid arrives ready-made
-and dissolves mineral straight off the surface. Enamel starts dissolving below about pH 5.5,
-root surfaces below about 6.2. Measure what people drink and the exposure is obvious: cola
+and dissolves mineral straight off the surface. That is also why the pH 5.5 threshold from
+<a href="decay.html">Chapter&nbsp;3</a> is the wrong yardstick here. It is the point at which
+plaque fluid, already carrying calcium and phosphate of its own, stops being able to hold
+mineral in the tooth. A dietary or gastric acid carries neither, so it can dissolve enamel at
+pH values well above 5.5 — which is why adding calcium to a soft drink makes it measurably
+less erosive at the same pH. Measure what people drink and the exposure is obvious anyway: cola
 sits around pH 2.4, wine around 3.0 to 3.8, orange juice around 3.3 to 4.0. When Reddy and
 colleagues measured 379 commercial beverages in 2016, roughly 93% came in below pH 4. Gastric
 contents are more aggressive still, at roughly pH 1 to 3, which is why reflux and self-induced
@@ -168,8 +172,8 @@ fillings</b>.</div>
   </div>
   <div class="fig-controls">
     <div class="ctl">
-      <label for="ag-quiz-ans">your answer</label>
-      <span class="seg" id="ag-quiz-ans">
+      <span class="ctl-lbl" id="ag-quiz-ans-lbl">your answer</span>
+      <span class="seg" id="ag-quiz-ans" role="group" aria-labelledby="ag-quiz-ans-lbl">
         <button data-v="attrition">attrition</button><button data-v="abrasion">abrasion</button><button data-v="erosion">erosion</button><button data-v="abfraction">abfraction</button>
       </span>
     </div>
@@ -311,8 +315,8 @@ the tubules bridging the crack fires the nerve.</p>
       <output></output>
     </div>
     <div class="ctl">
-      <label for="ag-crack-beam">beam</label>
-      <span class="seg" id="ag-crack-beam">
+      <span class="ctl-lbl" id="ag-crack-beam-lbl">beam</span>
+      <span class="seg" id="ag-crack-beam" role="group" aria-labelledby="ag-crack-beam-lbl">
         <button data-v="across" class="on">as taken in the mouth</button><button data-v="along">along the crack</button>
       </span>
     </div>
@@ -816,7 +820,7 @@ turns out to be exactly the wrong shape for what happens next. That is
     {
       answer: "erosion",
       brief: "The tongue-side surfaces of the upper front teeth are thinned to a glassy translucency and the biting edges have started to chip and look grey. The lip-side surfaces are almost untouched, and so are the lower front teeth.",
-      why: "<b>Erosion</b> — and the location names the source. Nothing mechanical acts on the tongue side of the upper incisors: no opposing tooth grinds there and no brush stroke reaches it hard. But it is exactly where gastric contents pool when they come up, and gastric acid at roughly pH 1 to 3 sits far below the pH 5.5 at which enamel begins to dissolve. This asymmetric pattern is one of the few dental signs that points to a problem outside the mouth.",
+      why: "<b>Erosion</b> — and the location names the source. Nothing mechanical acts on the tongue side of the upper incisors: no opposing tooth grinds there and no brush stroke reaches it hard. But it is exactly where gastric contents pool when they come up, and gastric acid at roughly pH 1 to 3 sits far below anything enamel can survive. This asymmetric pattern is one of the few dental signs that points to a problem outside the mouth.",
       draw: function (ctx, w, h, rev) {
         const ih = h * 0.44, iw = ih * 0.42;
         const ih2 = ih * 0.85, iw2 = ih2 * 0.42;
@@ -861,9 +865,20 @@ turns out to be exactly the wrong shape for what happens next. That is
     if (figQuiz) figQuiz.redraw();
   }
 
+  /* Lock the answer buttons once a case has been scored. Without this the
+     segmented control still moves its highlight on a second click, leaving the
+     verdict and the score describing the first answer. */
+  function qLock(locked) {
+    Array.from(document.querySelectorAll("#ag-quiz-ans button")).forEach((b) => {
+      b.disabled = locked;
+      b.style.cursor = locked ? "default" : "";
+    });
+  }
+
   function qAnswer(v) {
     if (Q.answered) return;
     Q.answered = true;
+    qLock(true);
     Q.done += 1;
     const c = CASES[Q.i];
     const right = v === c.answer;
@@ -882,6 +897,7 @@ turns out to be exactly the wrong shape for what happens next. That is
   TC.on("ag-quiz-next", "click", function () {
     Q.i = (Q.i + 1) % CASES.length;
     Q.answered = false;
+    qLock(false);
     Array.from(document.querySelectorAll("#ag-quiz-ans button"))
       .forEach((b) => b.classList.remove("on"));
     TC.set("ag-quiz-verdict", "Pick a mechanism. The explanation matters more than the score.");
