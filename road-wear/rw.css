@@ -529,9 +529,18 @@ dl.gloss dd { margin: 4px 0 0 0; color: var(--ink-2); font-size: 15.5px; }
   overflow: hidden;
 }
 .fig.wide { margin-left: 0; margin-right: 0; }
-@media (min-width: 1080px) {
+/* Only break out of the prose column once the viewport is genuinely wider than
+   the page frame (1080px) plus both bleeds (2 x 140px) plus the page padding —
+   otherwise the figure's left edge, y-axis labels and all, is pushed off screen
+   and the whole page gains a horizontal scrollbar. */
+@media (min-width: 1400px) {
   .fig.wide { margin-left: -140px; margin-right: -140px; }
 }
+
+/* The masthead is sticky, so anything drawn in the top strip of a canvas would
+   sit underneath it after an in-page jump. Give figures the same scroll offset
+   the headings use, plus the taller nav. */
+.fig { scroll-margin-top: 130px; }
 .fig-head {
   display: flex;
   flex-wrap: wrap;
@@ -643,12 +652,13 @@ input[type="range"]:focus-visible { outline: 2px solid var(--cyan); outline-offs
 .btn.danger { border-color: rgba(255, 93, 108, 0.5); color: #ff9aa4; }
 .btn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 
+/* Each button carries its own border and radius rather than relying on a
+   clipped container, so a control with many options (the distress picker) still
+   reads as a group once it wraps onto several rows. */
 .seg {
   display: inline-flex;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  overflow: hidden;
   flex-wrap: wrap;
+  gap: 4px;
 }
 .seg button {
   font-family: var(--mono);
@@ -656,14 +666,13 @@ input[type="range"]:focus-visible { outline: 2px solid var(--cyan); outline-offs
   letter-spacing: 0.03em;
   background: var(--surface-2);
   color: var(--ink-2);
-  border: none;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   padding: 7px 12px;
   cursor: pointer;
-  border-right: 1px solid var(--line);
 }
-.seg button:last-child { border-right: none; }
-.seg button:hover { color: #fff; }
-.seg button.on { background: var(--amber); color: #1a0f04; font-weight: 700; }
+.seg button:hover { color: #fff; border-color: var(--amber-dim); }
+.seg button.on { background: var(--amber); color: #1a0f04; font-weight: 700; border-color: var(--amber); }
 .seg button:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
 
 /* readout chips */
@@ -770,9 +779,19 @@ input[type="range"]:focus-visible { outline: 2px solid var(--cyan); outline-offs
   .toon.right .lines { text-align: left; }
   /* clear the fixed "← Almanac" pill injected top-left by /almanac-back.js */
   .masthead-inner { padding: 8px 14px 0 118px; }
-  .tabs { padding: 2px 6px 0; }
+  /* Nine chapter tabs wrap to five rows on a phone and eat a quarter of the
+     viewport for the whole scroll. Keep them on one swipeable row instead. */
+  .tabs {
+    padding: 2px 6px 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
   .tabs a { padding: 6px 7px 8px; font-size: 11px; }
   .page { padding: 0 14px 60px; }
+  .fig { scroll-margin-top: 96px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

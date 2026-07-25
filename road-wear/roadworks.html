@@ -21,7 +21,7 @@
     <a href="water.html">3 · Water &amp; Frost</a>
     <a href="materials.html">4 · Ageing</a>
     <a href="distress.html">5 · The Distress Catalogue</a>
-    <a href="repair.html">6 · Repair</a>
+    <a href="repair.html">6 · Looking After Roads</a>
     <a href="roadworks.html" aria-current="page">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -182,17 +182,18 @@ night in summer and not at all in a hard winter.</p>
 <script>
 (function () {
   "use strict";
-  const { clamp, lerp, mix, C } = RW;
+  const { clamp, mix, C } = RW;
 
   let air = 12, thick = 50;
   const T_LAY = 150, T_MIN = 85; // compaction window
 
   // Cooling time constant, in minutes. Calibrated so a 50 mm mat laid at 12 °C
   // stays above the 85 °C compaction limit for roughly 12 minutes — the order of
-  // magnitude practitioners plan around. Scales with thickness (a thick mat holds
-  // heat far longer) and stretches slightly in warm air.
+  // magnitude practitioners plan around. It grows with thickness (a thick mat
+  // holds its heat far longer) and with air temperature (a cold day pulls heat
+  // out faster), so thin-and-cold is the losing combination.
   function tau() {
-    return thick * 0.34 * (1 + (20 - air) * 0.02);
+    return thick * 0.448 * (1 + (air - 20) * 0.02);
   }
   // rollers finish this many minutes after laydown (fixed operation pace)
   const ROLL_TIME = 7;
@@ -223,8 +224,10 @@ night in summer and not at all in a hard winter.</p>
   RW.canvas("pave", function (ctx, w, h, t) {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
-    const sceneH = h * 0.5;
-    const roadY = sceneH * 0.72;
+    // The scene needs only enough sky to clear the machines' roofs and captions;
+    // the rest of the frame is better spent on the temperature chart below.
+    const sceneH = h * 0.46;
+    const roadY = sceneH * 0.82;
     const phase = RW.reducedMotion ? 0 : (t * 40) % (w * 0.08);
 
     // ---- SCENE: old → milled → fresh across x (right to left) ----
@@ -253,16 +256,23 @@ night in summer and not at all in a hard winter.</p>
 
     // ---- machines ----
     // milling machine
-    machine(ctx, xMill, roadY, "#f4b800", "PLANER");
-    // spinning drum teeth
-    ctx.save(); ctx.translate(xMill, roadY); const dr = 14;
-    ctx.strokeStyle = "#2a2a30"; ctx.lineWidth = 2;
+    machine(ctx, xMill, roadY, "#f4b800", "PLANER", true);
+    // The cutting drum, biting into the road just ahead of the tracks. Clipped
+    // to the pavement so only the half doing the work shows.
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, roadY - 10, w, sceneH - roadY + 10); ctx.clip();
+    ctx.translate(xMill + 34, roadY + 2); const dr = 11;
+    ctx.fillStyle = "#15151a"; ctx.beginPath(); ctx.arc(0, 0, dr + 4, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = "#8a8698"; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.arc(0, 0, dr, 0, 6.28); ctx.stroke();
-    for (let i = 0; i < 8; i++) { const a = t * 6 + i / 8 * 6.28; ctx.beginPath();
-      ctx.moveTo(Math.cos(a) * dr, Math.sin(a) * dr); ctx.lineTo(Math.cos(a) * (dr + 4), Math.sin(a) * (dr + 4)); ctx.stroke(); }
+    for (let i = 0; i < 8; i++) {
+      const a = t * 6 + i / 8 * 6.28; ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * dr, Math.sin(a) * dr);
+      ctx.lineTo(Math.cos(a) * (dr + 4), Math.sin(a) * (dr + 4)); ctx.stroke();
+    }
     ctx.restore();
     // paver
-    machine(ctx, xPave, roadY, "#ff9d3c", "PAVER");
+    machine(ctx, xPave, roadY, "#ff9d3c", "PAVER", false);
     // rollers (two drums)
     roller(ctx, xRoll + 14, roadY, t);
     roller(ctx, xRoll - 18, roadY, t);
@@ -278,39 +288,59 @@ night in summer and not at all in a hard winter.</p>
     const T = sceneH + 18, B = h - 26, L = 44, Rp = 14;
     const maxMin = 16;
     const X = (min) => L + min / maxMin * (w - L - Rp);
-    const Y = (temp) => T + (T_LAY + 10 - temp) / (T_LAY + 10 - (air - 5)) * (B - T);
+    // Clip the axis a little below the compaction floor rather than running it
+    // all the way down to air temperature: everything that matters happens
+    // between 150 °C and 85 °C, and the tail below it is just dead space.
+    const T_FLOOR = T_MIN - 25;
+    const Y = (temp) => T + (T_LAY + 10 - temp) / (T_LAY + 10 - T_FLOOR) * (B - T);
 
     // window band
     ctx.fillStyle = "rgba(70,192,122,0.10)"; ctx.fillRect(L, Y(T_LAY), w - L - Rp, Y(T_MIN) - Y(T_LAY));
     ctx.strokeStyle = "rgba(70,192,122,0.5)"; ctx.setLineDash([4, 3]);
     ctx.beginPath(); ctx.moveTo(L, Y(T_MIN)); ctx.lineTo(w - Rp, Y(T_MIN)); ctx.stroke(); ctx.setLineDash([]);
-    RW.label(ctx, "min compaction temp " + T_MIN + " °C", L + 6, Y(T_MIN) - 6, { color: C.good, font: RW.mono(10, true) });
+    RW.label(ctx, "min compaction temp " + T_MIN + " °C", w - Rp - 6, Y(T_MIN) - 6,
+      { align: "right", color: C.good, font: RW.mono(10, true) });
 
     // axes
     ctx.strokeStyle = C.line; ctx.lineWidth = 1;
     for (let tt = 0; tt <= maxMin; tt += 4) { const x = X(tt); ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, B); ctx.stroke();
       RW.label(ctx, tt + "m", x, B + 12, { align: "center", color: C.muted }); }
-    for (const tv of [air, T_MIN, T_LAY]) { RW.label(ctx, tv.toFixed(0) + "°", L - 6, Y(tv), { align: "right", baseline: "middle", color: C.muted }); }
-    RW.label(ctx, "minutes after laydown", (L + w - Rp) / 2, h - 4, { align: "center", color: C.ink2, font: RW.mono(10.5, true) });
+    for (const tv of [T_FLOOR, T_MIN, T_LAY]) { RW.label(ctx, tv.toFixed(0) + "°", L - 6, Y(tv), { align: "right", baseline: "middle", color: C.muted }); }
+    RW.label(ctx, "minutes after laydown", w - Rp, h - 4, { align: "right", color: C.ink2, font: RW.mono(10.5, true) });
 
-    // cooling curve
+    // cooling curve, clipped to the panel so the tail below the floor is cut off
+    ctx.save();
+    ctx.beginPath(); ctx.rect(L, T, w - L - Rp, B - T); ctx.clip();
     ctx.strokeStyle = C.amber; ctx.lineWidth = 2.4; ctx.beginPath();
     for (let m = 0; m <= maxMin; m += 0.25) { const x = X(m), y = Y(tempAt(m)); m === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
     ctx.stroke();
+    ctx.restore();
 
     // roller-finish marker
     const tR = tempAt(ROLL_TIME), okR = tR >= T_MIN;
     ctx.strokeStyle = okR ? C.good : C.red; ctx.setLineDash([3, 3]);
     ctx.beginPath(); ctx.moveTo(X(ROLL_TIME), T); ctx.lineTo(X(ROLL_TIME), B); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle = okR ? C.good : C.red;
-    ctx.beginPath(); ctx.arc(X(ROLL_TIME), Y(tR), 5, 0, 6.28); ctx.fill();
-    RW.label(ctx, "rollers finish", X(ROLL_TIME) + 6, Y(tR) - 8, { color: okR ? C.good : C.red, font: RW.mono(10, true) });
+    const markY = Math.min(Y(tR), B - 6);
+    ctx.beginPath(); ctx.arc(X(ROLL_TIME), markY, 5, 0, 6.28); ctx.fill();
+    RW.label(ctx, "rollers finish", X(ROLL_TIME) + 8, markY - 9, { color: okR ? C.good : C.red, font: RW.mono(10, true) });
 
-    function machine(c, x, ry, col, name) {
-      c.fillStyle = "#2a2a35"; RW.roundRect(c, x - 26, ry - 34, 52, 30, 4); c.fill();
-      c.fillStyle = col; RW.roundRect(c, x - 26, ry - 34, 52, 8, 3); c.fill();
-      c.fillStyle = "#1c1c22"; c.beginPath(); c.arc(x - 14, ry - 2, 6, 0, 6.28); c.fill(); c.beginPath(); c.arc(x + 14, ry - 2, 6, 0, 6.28); c.fill();
-      RW.label(c, name, x, ry - 42, { align: "center", color: C.ink2, font: RW.mono(9.5, true) });
+    // `tracked` gives the planer crawler tracks (as real milling machines have),
+    // which also keeps its running gear clear of the cutting drum below it.
+    function machine(c, x, ry, col, name, tracked) {
+      c.fillStyle = "#2a2a35"; RW.roundRect(c, x - 30, ry - 38, 60, 32, 4); c.fill();
+      c.fillStyle = col; RW.roundRect(c, x - 30, ry - 38, 60, 8, 3); c.fill();
+      c.fillStyle = "#161a26"; RW.roundRect(c, x - 6, ry - 32, 22, 12, 2); c.fill();  // cab glass
+      if (tracked) {
+        c.fillStyle = "#1c1c22"; RW.roundRect(c, x - 30, ry - 8, 60, 8, 4); c.fill();
+        c.strokeStyle = "#4a4a56"; c.lineWidth = 1;
+        for (let i = -26; i < 28; i += 7) { c.beginPath(); c.moveTo(x + i, ry - 8); c.lineTo(x + i, ry); c.stroke(); }
+      } else {
+        c.fillStyle = "#1c1c22";
+        c.beginPath(); c.arc(x - 16, ry - 4, 7, 0, 6.28); c.fill();
+        c.beginPath(); c.arc(x + 18, ry - 4, 7, 0, 6.28); c.fill();
+      }
+      RW.label(c, name, x, ry - 46, { align: "center", color: C.ink2, font: RW.mono(9.5, true) });
     }
     function roller(c, x, ry, tt) {
       c.fillStyle = "#ffd43b"; RW.roundRect(c, x - 12, ry - 30, 24, 20, 3); c.fill();

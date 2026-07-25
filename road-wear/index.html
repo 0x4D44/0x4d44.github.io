@@ -21,7 +21,7 @@
     <a href="water.html">3 · Water &amp; Frost</a>
     <a href="materials.html">4 · Ageing</a>
     <a href="distress.html">5 · The Distress Catalogue</a>
-    <a href="repair.html">6 · Repair</a>
+    <a href="repair.html">6 · Looking After Roads</a>
     <a href="roadworks.html">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -36,7 +36,7 @@
   stack of stone and tar, loaded a thousand times a day, soaked, frozen, baked and slowly
   oxidised, and every road on Earth is quietly on its way back to gravel. This guide follows
   that decline from the inside out — how a road is built to spread a load, why one lorry does
-  the damage of ten thousand cars, how a hairline crack becomes a pothole in a single frosty
+  the damage of tens of thousands of cars, how a hairline crack becomes a pothole in a single frosty
   week, and the unglamorous, beautifully cost-effective business of keeping the whole network
   from falling apart.</p>
 </section>
@@ -84,9 +84,11 @@ end of a long, understood chain of physics. This guide walks the whole chain.</p
 and what we do about it. Where the honest engineering is worth seeing — a stress formula, the
 notorious fourth-power damage law, the arithmetic of a maintenance budget — it is folded into
 a panel like the one below. Open it or skip it; the story reads either way. And every chapter
-carries live apparatus you can drive: spread a wheel load through the layers, load a road to
-destruction with different axles, freeze water in a crack until it spalls, age a bitumen
-binder, and place a repair on a deteriorating road to watch it buy back years.</p>
+but the closing lexicon carries live apparatus you can drive: spread a wheel load through the
+layers, load a road to destruction with different axles, freeze water in a crack until it
+spalls, age a bitumen binder until it snaps, identify a distress from its pattern, place a
+repair on a deteriorating road to watch it buy back years, and run a paving train against the
+clock.</p>
 
 <details class="deeper">
   <summary><span class="lbl">Go deeper</span><span class="tag2">the real engineering, on demand</span></summary>
@@ -205,11 +207,11 @@ each:</p>
   <strong>fourth power</strong> of axle load. Relative to a "standard" 8-tonne axle, the
   damage of any other axle is:</p>
   <div class="eq"><span class="m">damage ≈ ( <b>L</b> / <b>L</b><sub>std</sub> )<sup>4</sup></span></div>
-  <p>So doubling the axle load does <strong>2⁴ = 16 times</strong> the damage. A fully-laden
-  40-tonne lorry can do the structural harm of <strong>tens of thousands of cars</strong>. A
-  typical family car? Under a ten-thousandth of a standard axle — for pavement wear, cars are
-  very nearly irrelevant. This single fact reshapes how you think about every road you drive
-  on (that's <a href="loads.html">Chapter&nbsp;2</a>).</p>
+  <p>So doubling the axle load does <strong>2⁴ = 16 times</strong> the damage. Axle for axle, one
+  loaded lorry axle does the structural harm of about <strong>sixty-five thousand car axles</strong>.
+  A typical family car contributes under a sixty-thousandth of a standard axle — for pavement wear,
+  cars are very nearly irrelevant. This single fact reshapes how you think about every road you
+  drive on (that's <a href="loads.html">Chapter&nbsp;2</a>).</p>
 </div>
 
 <h2>Two ways to build a road</h2>
@@ -247,9 +249,10 @@ where it matters.</p>
   method is barely two centuries old: around 1820 the Scot John Loudon McAdam realised you did
   not need Roman depth — a well-drained, compacted layer of small, angular, <em>clean</em>
   broken stone would carry traffic and shed water. "Macadam" roads were later sprayed with tar
-  to lay the dust, giving <em>tarmacadam</em> — "tarmac." Hot-mix asphalt, mixing the bitumen
-  and stone before laying, industrialised that in the twentieth century, and remains how most
-  of the world's roads are surfaced today.</p>
+  to lay the dust, giving <em>tarmacadam</em> — "tarmac." Running alongside it was the idea that
+  actually won: mixing the bitumen and stone together, hot, <em>before</em> laying — first done in
+  the 1870s and industrialised through the twentieth century as hot-mix asphalt, still how most of
+  the world's roads are surfaced today.</p>
 </div>
 
 <h2>How to read this guide</h2>
@@ -432,14 +435,21 @@ the ASTM/US-Army <em>PAVER</em> distress manuals. Part of the
         ctx.strokeStyle = "rgba(120,116,106,0.5)"; ctx.lineWidth = 1.5; ctx.stroke();
       }
     } else {
-      // maintenance patches — darker rectangles where potholes were filled
+      // Maintenance patches — neat saw-cut rectangles of fresh asphalt where a
+      // failure was cut out and replaced. They must read as *repairs*, not as
+      // holes: modest, slightly bluer than the aged surface around them, and
+      // edged with the clean cut line that gives a proper patch away.
       for (const p of pots) {
         if (age < p.born) continue;
-        const pr = p.r * Math.min(w, h) * 1.8;
-        ctx.fillStyle = "#0e0e12";
-        roundRect(ctx, p.x * w - pr, p.y * h - pr * 0.7, pr * 2, pr * 1.4, 3);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(0,0,0,0.6)"; ctx.lineWidth = 1.4; ctx.stroke();
+        const pw = p.r * Math.min(w, h) * 1.5, ph = pw * 0.6;
+        const x = p.x * w - pw / 2, y = p.y * h - ph / 2;
+        ctx.fillStyle = "#232329";                       // fresher than the greyed surface
+        roundRect(ctx, x, y, pw, ph, 2); ctx.fill();
+        RW.speckle(ctx, x, y, pw, ph, 40, p.seed, "#77736a");
+        ctx.strokeStyle = "rgba(10,10,14,0.9)"; ctx.lineWidth = 1.6; ctx.stroke();
+        // the clean saw-cut edge that gives a proper patch away
+        ctx.strokeStyle = "rgba(255,255,255,0.13)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + pw, y); ctx.stroke();
       }
     }
 

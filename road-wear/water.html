@@ -21,7 +21,7 @@
     <a href="water.html" aria-current="page">3 · Water &amp; Frost</a>
     <a href="materials.html">4 · Ageing</a>
     <a href="distress.html">5 · The Distress Catalogue</a>
-    <a href="repair.html">6 · Repair</a>
+    <a href="repair.html">6 · Looking After Roads</a>
     <a href="roadworks.html">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -121,12 +121,17 @@ crack becomes a network of loosened, debonded fragments of surface.</p>
   <span class="tag">The 9% that breaks roads</span>
   <p>When water freezes, its molecules lock into an open crystal lattice that takes up more room
   than the liquid — so ice is less dense than water (which is why it floats), and a given volume
-  of water becomes about 9% larger as ice. Confined in a crack, that expansion generates
-  pressures of tens of megapascals, comfortably exceeding the roughly 1–3&nbsp;MPa tensile
-  strength of cold asphalt. The road cannot win: either it gives way, or the ice finds room. It
-  gives way. Countries with many crossings of 0&nbsp;°C each winter — not the coldest countries,
-  but the ones that hover around freezing — suffer the worst pothole seasons for exactly this
-  reason.</p>
+  of water becomes about 9% larger as ice. Fully confined, that expansion can generate enormous
+  pressures — up to around 200&nbsp;MPa before the ice itself gives way and changes phase — against
+  the roughly 2–4&nbsp;MPa tensile strength of cold asphalt. The road cannot win that contest.</p>
+  <p>One honest caveat, because the "9% expansion" story is told more confidently than it deserves:
+  a crack that is <em>open to the surface</em> lets ice extrude upward rather than build full
+  pressure, so simple confinement is not the whole mechanism. Modern work attributes much of the
+  damage to <strong>ice segregation</strong> — growing ice drawing in more unfrozen water from the
+  surrounding material (the same cryosuction that makes the ice lenses below) — plus hydraulic
+  pressure from water driven ahead of the freezing front. The practical upshot is unchanged, and is
+  the giveaway: the worst pothole seasons belong not to the coldest countries but to the ones that
+  hover either side of 0&nbsp;°C, crossing it again and again.</p>
 </div>
 
 <h2>Step three: traffic ejects the pieces</h2>
@@ -143,14 +148,17 @@ thawing week reaps the whole crop at once.</p>
 <div class="toon">
   <div class="cast">
     <svg class="char float"><use href="#char-drip"/></svg>
+    <svg class="char sm"><use href="#char-lorry"/></svg>
     <svg class="char sm"><use href="#char-pot"/></svg>
   </div>
   <div class="lines">
-    <p class="who">Drip &amp; Percy</p>
+    <p class="who">Drip, Hauler &amp; Percy</p>
     <p class="say"><b>Drip:</b> "All I did was trickle into a little crack and wait for a cold
     night. I expand nine per cent, you know. Nine!"</p>
-    <p class="say"><b>Percy the Pothole:</b> "And I take it from there. A few lorries, a puddle
-    to sit in, and I'll have your front wheel by March. Lovely."</p>
+    <p class="say"><b>Hauler:</b> "And I only drove over it. Repeatedly. At forty-four tonnes.
+    Hardly my fault the bits came out."</p>
+    <p class="say"><b>Percy the Pothole:</b> "Between the pair of you I'm practically inevitable.
+    A puddle to sit in and I'll have a front wheel by March. Lovely."</p>
   </div>
 </div>
 
@@ -195,15 +203,19 @@ loads of <a href="loads.html">Chapter&nbsp;2</a> take far longer to do their wor
   let cycles = 0, traffic = "on";
   const CAP_STAGE = ["sound", "hairline crack", "crack widening", "debonding", "fragmenting", "pothole", "pothole growing"];
 
+  // The single threshold at which a fragmenting surface becomes an open hole.
+  // The canvas, the stage readout and the size readout all key off this one
+  // value, so what is drawn and what is reported can never disagree.
+  const POTHOLE_AT = 0.5;
+  const isPothole = (p) => traffic === "on" && p >= POTHOLE_AT;
+
   function stageIndex(p) {
     if (p <= 0.01) return 0;
     if (p < 0.18) return 1;
     if (p < 0.35) return 2;
-    if (p < 0.5) return 3;
-    if (traffic === "off") return 4;           // frost damages but no hole without traffic
-    if (p < 0.7) return 4;
-    if (p < 0.9) return 5;
-    return 6;
+    if (p < POTHOLE_AT) return 3;
+    if (traffic === "off") return 4;           // frost damages, but no hole without wheels
+    return p < 0.78 ? 5 : 6;
   }
 
   function update() {
@@ -215,8 +227,8 @@ loads of <a href="loads.html">Chapter&nbsp;2</a> take far longer to do their wor
     const sw = document.getElementById("ro-stage-wrap");
     sw.classList.toggle("alert", si >= 5);
     sw.classList.toggle("amber", si >= 2 && si < 5);
-    if (traffic === "on" && p >= 0.55) {
-      const d = lerp(80, 520, clamp((p - 0.55) / 0.45, 0, 1));
+    if (isPothole(p)) {
+      const d = lerp(80, 520, clamp((p - POTHOLE_AT) / (1 - POTHOLE_AT), 0, 1));
       RW.set("ro-size", "~" + d.toFixed(0) + " mm across");
     } else {
       RW.set("ro-size", traffic === "off" ? "held together" : "none yet");
@@ -237,61 +249,84 @@ loads of <a href="loads.html">Chapter&nbsp;2</a> take far longer to do their wor
     // sky
     ctx.fillStyle = mix("#0d0d10", "#0e1420", phase * 0.6); ctx.fillRect(0, 0, w, h);
 
-    const ySurf = h * 0.30, yBaseTop = h * 0.52, yBase = h;
+    // Only enough sky to carry the phase label — the frame belongs to the road.
+    const ySurf = h * 0.17, yBaseTop = h * 0.58, yBase = h;
     // surface course (asphalt)
     ctx.fillStyle = mix(C.surf, "#2b2b32", 0.2); ctx.fillRect(0, ySurf, w, yBaseTop - ySurf);
-    RW.speckle(ctx, 0, ySurf, w, yBaseTop - ySurf, 220, 5, "#9a968c");
-    // base course
+    RW.speckle(ctx, 0, ySurf, w, yBaseTop - ySurf, 320, 5, "#9a968c");
+    // base course — drawn as visible graded stone, so it reads as a granular
+    // layer rather than a blank brown field
     ctx.fillStyle = C.base; ctx.fillRect(0, yBaseTop, w, yBase - yBaseTop);
-    RW.speckle(ctx, 0, yBaseTop, w, yBase - yBaseTop, 320, 9, "#c9bd9a");
+    const ar = rng(2024);
+    for (let i = 0; i < 150; i++) {
+      const ax = ar() * w, ay = yBaseTop + ar() * (yBase - yBaseTop), arad = 1.6 + ar() * 4.2;
+      ctx.fillStyle = mix("#4c4231", "#786a4e", ar() * ar());   // mostly dark, a few pale
+      ctx.beginPath(); ctx.ellipse(ax, ay, arad, arad * (0.62 + ar() * 0.34), ar() * 3, 0, 6.28); ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = 0.7; ctx.stroke();
+    }
     // surface top highlight
     ctx.fillStyle = "rgba(255,255,255,0.05)"; ctx.fillRect(0, ySurf, w, 3);
 
     const cx = w * 0.5;
-    // crack geometry
-    const cw = lerp(1.2, 26, p) * (frozen ? 1.09 : 1.0);  // px width, +9% when frozen
+    // Crack geometry. Ice really only expands ~9%, which on this scale is a
+    // sub-pixel twitch — so the freeze pulse is drawn exaggerated, and labelled
+    // as such on the canvas, to make the mechanism legible.
+    const EXAGGERATION = 4;
+    const swell = frozen ? 1 + 0.09 * EXAGGERATION : 1;
+    const cw = lerp(w * 0.0015, w * 0.03, p) * swell;     // px width, scaled to the frame
     const crackDepth = lerp(ySurf + 8, yBaseTop + (yBase - yBaseTop) * 0.4, clamp(p * 1.2, 0, 1));
 
-    if (p < 0.5 || traffic === "off") {
+    if (!isPothole(p)) {
       // ---- crack stage: jagged widening fissure with water/ice ----
-      const jr = rng(4242);
-      function edge(sign) {
-        ctx.beginPath();
-        ctx.moveTo(cx + sign * cw * 0.5, ySurf);
-        let y = ySurf, x = cx + sign * cw * 0.5;
-        const steps = 9;
-        for (let i = 1; i <= steps; i++) {
-          y = lerp(ySurf, crackDepth, i / steps);
-          const taper = (1 - i / steps);
-          x = cx + sign * (cw * 0.5 * taper) + (jr() - 0.5) * 5;
-          ctx.lineTo(x, y);
+      // Build both walls ONCE, from a single jitter sequence per side, and reuse
+      // the same points for the fill and the strokes — otherwise the outline and
+      // the ice it contains are drawn from different random walks and disagree.
+      const STEPS = 9;
+      function wall(sign, seed) {
+        const jr = rng(seed);
+        const pts = [{ x: cx + sign * cw * 0.5, y: ySurf }];
+        for (let i = 1; i <= STEPS; i++) {
+          const f = i / STEPS;
+          pts.push({
+            x: cx + sign * (cw * 0.5 * (1 - f)) + (jr() - 0.5) * 5,
+            y: lerp(ySurf, crackDepth, f),
+          });
         }
-        return { x, y };
+        return pts;
       }
-      // fill crack interior (water or ice)
+      const left = wall(-1, 4242), right = wall(1, 8484);
+
+      // fill the interior (water or ice) bounded by those exact walls
       ctx.save();
       ctx.beginPath();
-      ctx.moveTo(cx - cw * 0.5, ySurf);
-      const jr2 = rng(4242);
-      for (let i = 1; i <= 9; i++) { const y = lerp(ySurf, crackDepth, i / 9); ctx.lineTo(cx - (cw * 0.5) * (1 - i / 9) - (jr2() - 0.5) * 5, y); }
-      ctx.lineTo(cx, crackDepth);
-      const jr3 = rng(4242);
-      for (let i = 9; i >= 1; i--) { const y = lerp(ySurf, crackDepth, i / 9); ctx.lineTo(cx + (cw * 0.5) * (1 - i / 9) + (jr3() - 0.5) * 5, y); }
+      ctx.moveTo(left[0].x, left[0].y);
+      for (const pt of left) ctx.lineTo(pt.x, pt.y);
+      for (let i = right.length - 1; i >= 0; i--) ctx.lineTo(right[i].x, right[i].y);
       ctx.closePath();
       ctx.fillStyle = frozen ? "rgba(150,205,255,0.85)" : "rgba(70,160,220,0.7)";
       ctx.fill();
       if (frozen) { ctx.strokeStyle = "rgba(220,240,255,0.6)"; ctx.lineWidth = 1; ctx.stroke(); }
       ctx.restore();
-      // crack walls
+
+      // the walls themselves, on the very same points
       ctx.strokeStyle = "rgba(6,6,10,0.85)"; ctx.lineWidth = 1.5;
-      edge(-1); ctx.stroke(); edge(1); ctx.stroke();
+      for (const side of [left, right]) {
+        ctx.beginPath();
+        ctx.moveTo(side[0].x, side[0].y);
+        for (const pt of side) ctx.lineTo(pt.x, pt.y);
+        ctx.stroke();
+      }
+
       // frost expansion arrows when frozen and damaged
       if (frozen && p > 0.2) {
-        ctx.strokeStyle = C.blue; ctx.lineWidth = 1.6;
+        ctx.strokeStyle = C.blue; ctx.fillStyle = C.blue; ctx.lineWidth = 1.6;
         for (const yy of [ySurf + 18, ySurf + 40]) {
-          arrow(ctx, cx - cw * 0.5 - 12, yy, cx - cw * 0.5 - 2, yy);
-          arrow(ctx, cx + cw * 0.5 + 12, yy, cx + cw * 0.5 + 2, yy);
+          // ice expands: the walls are pushed OUTWARD, away from the crack
+          arrow(ctx, cx - cw * 0.5 - 2, yy, cx - cw * 0.5 - 14, yy);
+          arrow(ctx, cx + cw * 0.5 + 2, yy, cx + cw * 0.5 + 14, yy);
         }
+        RW.label(ctx, "expansion shown ×" + EXAGGERATION, cx + cw * 0.5 + 20, ySurf + 18,
+          { color: "rgba(111,155,255,0.75)", font: RW.mono(9.5) });
       }
     } else {
       // ---- pothole stage ----
@@ -320,11 +355,25 @@ loads of <a href="loads.html">Chapter&nbsp;2</a> take far longer to do their wor
       ctx.lineTo(cx + rad, ySurf);
       ctx.closePath(); ctx.fill();
 
-      // pooled water sitting ON the cavity floor
-      const poolY = ySurf + maxDepth * 0.86;
-      const poolRx = rad * 0.72, poolRy = Math.max(3, maxDepth * 0.08);
-      ctx.fillStyle = frozen ? "rgba(150,205,255,0.85)" : "rgba(70,160,220,0.7)";
-      ctx.beginPath(); ctx.ellipse(cx, poolY, poolRx, poolRy, 0, 0, 6.28); ctx.fill();
+      // Pooled water sitting ON the cavity floor. Take the water line from the
+      // shallowest floor point across the pool's own span, and clip to the
+      // cavity, so the puddle can never spill outside the hole that holds it.
+      // Standing water has a FLAT surface, so fill everything below a level
+      // waterline and clip it to the cavity — an ellipse on a ragged floor reads
+      // as a row of teeth, not a puddle.
+      const waterline = ySurf + maxDepth * 0.62;
+      ctx.save();
+      ctx.beginPath();                         // clip region = the cavity itself
+      ctx.moveTo(cx - rad, ySurf);
+      for (const pt of floor) ctx.lineTo(pt.x, pt.y);
+      ctx.lineTo(cx + rad, ySurf);
+      ctx.closePath(); ctx.clip();
+      ctx.fillStyle = frozen ? "rgba(150,205,255,0.85)" : "rgba(70,160,220,0.72)";
+      ctx.fillRect(cx - rad, waterline, rad * 2, maxDepth);
+      // a bright meniscus along the waterline sells it as a liquid surface
+      ctx.fillStyle = frozen ? "rgba(225,245,255,0.9)" : "rgba(150,215,250,0.75)";
+      ctx.fillRect(cx - rad, waterline, rad * 2, 2);
+      ctx.restore();
 
       // ragged rim highlight
       ctx.strokeStyle = "rgba(150,146,136,0.55)"; ctx.lineWidth = 1.5;
@@ -342,15 +391,25 @@ loads of <a href="loads.html">Chapter&nbsp;2</a> take far longer to do their wor
       // a wheel hammering the hole
       if (!RW.reducedMotion && traffic === "on") {
         const swing = Math.sin(t * 1.7);
-        const wheelR = Math.min(rad * 0.85, (ySurf - 12) * 0.42);
+        // sized to the sky available, so it always sits fully in frame
+        const wheelR = Math.min(rad * 0.8, (ySurf - 10) * 0.48);
         const wx = cx + swing * rad * 0.55;
         const wy = ySurf - wheelR;
-        ctx.fillStyle = "#1c1c22";
+        ctx.fillStyle = "#16161b";
         ctx.beginPath(); ctx.arc(wx, wy, wheelR, 0, 6.28); ctx.fill();
+        // tread blocks around the carcass, so it reads as a tyre not a disc
+        ctx.strokeStyle = "#33333d"; ctx.lineWidth = Math.max(2, wheelR * 0.16);
+        for (let i = 0; i < 12; i++) {
+          const a = t * 5 + i / 12 * 6.28;
+          ctx.beginPath();
+          ctx.moveTo(wx + Math.cos(a) * wheelR * 0.82, wy + Math.sin(a) * wheelR * 0.82);
+          ctx.lineTo(wx + Math.cos(a) * wheelR * 0.99, wy + Math.sin(a) * wheelR * 0.99);
+          ctx.stroke();
+        }
         ctx.fillStyle = "#3a3a44";
-        ctx.beginPath(); ctx.arc(wx, wy, wheelR * 0.42, 0, 6.28); ctx.fill();
-        ctx.strokeStyle = "#55555f"; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(t * 5) * wheelR * 0.7, wy + Math.sin(t * 5) * wheelR * 0.7); ctx.stroke();
+        ctx.beginPath(); ctx.arc(wx, wy, wheelR * 0.4, 0, 6.28); ctx.fill();
+        ctx.strokeStyle = "#6a6a78"; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(t * 5) * wheelR * 0.36, wy + Math.sin(t * 5) * wheelR * 0.36); ctx.stroke();
         // splash of pressurised water as the wheel strikes
         if (!frozen && swing > 0.7) {
           ctx.strokeStyle = "rgba(120,200,240,0.8)"; ctx.fillStyle = "rgba(120,200,240,0.8)"; ctx.lineWidth = 2;
@@ -372,7 +431,7 @@ loads of <a href="loads.html">Chapter&nbsp;2</a> take far longer to do their wor
     }
 
     // phase label
-    RW.label(ctx, frozen ? "❄ FROZEN — ice expanding" : "≈ THAWED — water sinking", 12, 20,
+    RW.label(ctx, frozen ? "❄ FROZEN — ice expanding" : "≈ THAWED — water sinking", 12, 46,
       { color: frozen ? C.blue : C.cyan, font: RW.mono(11, true) });
   }, { animate: true });
 

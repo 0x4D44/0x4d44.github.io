@@ -21,7 +21,7 @@
     <a href="water.html">3 · Water &amp; Frost</a>
     <a href="materials.html">4 · Ageing</a>
     <a href="distress.html">5 · The Distress Catalogue</a>
-    <a href="repair.html">6 · Repair</a>
+    <a href="repair.html">6 · Looking After Roads</a>
     <a href="roadworks.html">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -31,7 +31,7 @@
 
 <section class="hero">
   <p class="kicker">Chapter 2 — The Weight of Traffic</p>
-  <h1>Why one lorry beats ten thousand cars</h1>
+  <h1>Why one lorry beats sixty-five thousand cars</h1>
   <p class="standfirst">If you remember one thing from this entire guide, make it this: road
   damage does not rise in step with weight. It rises with roughly the <em>fourth power</em> of
   axle load. That single, well-measured fact means the wear on a road is almost entirely the
@@ -81,13 +81,13 @@ pass rose not linearly with load, not with its square, but with something close 
     <span class="ro">= the damage of <b id="ro-cars">—</b> cars</span>
     <span class="ro" id="ro-cls-wrap">nearest class <b id="ro-cls">—</b></span>
   </div>
-  <div class="fig-note">The vertical scale is logarithmic — each gridline is ten times the last
-  — because the numbers span seven orders of magnitude. The 8.16-tonne (80 kN) standard axle sits
-  at exactly&nbsp;1 by definition. Note where the <b>car</b> lands: about a hundred-thousandth of
-  a standard axle, roughly five decades below the lorry — that gulf is the whole point of this
-  chapter. The AASHO exponent is about 4 for flexible pavements; it is
-  genuinely uncertain (roughly 3–5 depending on the pavement and failure mode), so the toggle
-  lets you see how sharp the effect is either way.</div>
+  <div class="fig-note">The vertical scale is logarithmic — each gridline is ten times the last —
+  because the numbers span many orders of magnitude. The 8.16-tonne (80 kN) standard axle sits at
+  exactly&nbsp;1 by definition. Note where the <b>car</b> lands, far below everything else: that
+  gulf is the whole point of this chapter. The AASHO exponent is about 4 for flexible pavements,
+  but it is genuinely uncertain (roughly 3–5, depending on the pavement and the failure mode), so
+  the toggle lets you see how sharp the effect is either way — watch the car fall further with
+  every step up in <b>n</b>, and note that the scale restretches to keep it on the chart.</div>
 </figure>
 
 <div class="prose">
@@ -103,7 +103,7 @@ and you have counted the damage. Here is what that does to a mixed stream of tra
 <table class="data">
   <caption>Damage per axle pass, relative to one standard axle (n = 4)</caption>
   <tr><th>Vehicle</th><th>Typical axle load</th><th>Load equivalency (ESAL)</th><th>Passes to equal one lorry axle</th></tr>
-  <tr><td class="k">Family car</td><td class="num">~5 kN (0.5 t)</td><td class="num">0.00002</td><td class="num">~40,000</td></tr>
+  <tr><td class="k">Family car</td><td class="num">~5 kN (0.5 t)</td><td class="num">0.000015</td><td class="num">~65,000</td></tr>
   <tr><td class="k">Loaded van</td><td class="num">~15 kN (1.5 t)</td><td class="num">0.001</td><td class="num">~800</td></tr>
   <tr><td class="k">Bus / coach axle</td><td class="num">~65 kN (6.6 t)</td><td class="num">0.44</td><td class="num">~2</td></tr>
   <tr><td class="k">Standard axle</td><td class="num">80 kN (8.16 t)</td><td class="num">1.00</td><td class="num">1</td></tr>
@@ -113,7 +113,7 @@ and you have counted the damage. Here is what that does to a mixed stream of tra
 <div class="callout warn">
   <span class="tag">Cars do not wear out roads</span>
   <p>Run the numbers and the conclusion is stark. A single loaded-lorry axle can do the
-  structural damage of roughly <strong>40,000 car axles</strong>. On a typical road, heavy
+  structural damage of roughly <strong>65,000 car axles</strong>. On a typical road, heavy
   goods vehicles are a small minority of the traffic but cause the <strong>great majority</strong>
   of the structural wear — often cited as HGVs being a few per cent of vehicles yet ~80–90% of
   the damage. The potholes you swerve round were, to a first approximation, <em>not</em> made by
@@ -141,7 +141,7 @@ visible ruts and cracks into bus lanes and turning circles.</p>
     <p class="who">Hauler &amp; Tarmac</p>
     <p class="say"><b>Hauler:</b> "Forty-four tonnes, coming through! I pay road tax same as
     everyone."</p>
-    <p class="say"><b>Tarmac:</b> "Sure — but every one of your axles does what forty thousand
+    <p class="say"><b>Tarmac:</b> "Sure — but every one of your axles does what sixty-odd thousand
     cars do to me. The bloke in the hatchback behind you? I barely feel him."</p>
   </div>
 </div>
@@ -219,8 +219,8 @@ the other half (<a href="materials.html">Chapter&nbsp;4</a>).</p>
   }
 
   function update() {
-    const lef = Math.pow(load / STD, n);
-    RW.set("ro-lef", lef >= 1 ? lef.toFixed(2) : lef.toPrecision(2));
+    const lef = RW.LEF(load, n);
+    RW.set("ro-lef", lef >= 0.01 ? lef.toFixed(2) : RW.fmtSci(lef));
     const cars = lef / carLEF();
     RW.set("ro-cars", RW.fmtSci(cars));
     RW.set("ro-cls", nearest(load));
@@ -232,10 +232,13 @@ the other half (<a href="materials.html">Chapter&nbsp;4</a>).</p>
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
     const L = 46, Rp = 16, T = 30, B = h - 34;
     const xLo = 0, xHi = 130;
-    const yLo = -6, yHi = 2;  // log10(LEF)
+    const lg = (kN) => Math.log10(RW.LEF(kN, n));
+    // The vertical scale follows the exponent: at n = 5 the lightest axle on the
+    // slider is nearly nine decades below the standard, so a fixed floor would
+    // clamp the curve, the marker and the readout into disagreement.
+    const yHi = 2, yLo = Math.floor(lg(2));
     const X = (kN) => L + (kN - xLo) / (xHi - xLo) * (w - L - Rp);
     const Y = (log) => T + (yHi - log) / (yHi - yLo) * (B - T);
-    const lg = (kN) => Math.log10(Math.pow(kN / STD, n));
 
     // gridlines (decades)
     ctx.strokeStyle = C.line; ctx.lineWidth = 1;
@@ -256,14 +259,18 @@ the other half (<a href="materials.html">Chapter&nbsp;4</a>).</p>
     ctx.strokeStyle = "rgba(255,157,60,0.5)"; ctx.setLineDash([5, 4]);
     ctx.beginPath(); ctx.moveTo(L, Y(0)); ctx.lineTo(w - Rp, Y(0)); ctx.stroke(); ctx.setLineDash([]);
 
-    // the quartic curve
+    // the power-law curve — drawn only where it is on scale, so it can never
+    // run out over the axis labels
+    ctx.save();
+    ctx.beginPath(); ctx.rect(L, T, w - L - Rp, B - T); ctx.clip();
     ctx.strokeStyle = C.amber; ctx.lineWidth = 2.4; ctx.beginPath();
     let first = true;
     for (let kN = 1; kN <= xHi; kN += 1) {
-      const y = Y(clamp(lg(kN), yLo - 1, yHi + 1));
+      const y = Y(lg(kN));
       if (first) { ctx.moveTo(X(kN), y); first = false; } else ctx.lineTo(X(kN), y);
     }
     ctx.stroke();
+    ctx.restore();
 
     // class markers
     for (const c of CLASSES) {

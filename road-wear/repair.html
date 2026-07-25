@@ -21,7 +21,7 @@
     <a href="water.html">3 · Water &amp; Frost</a>
     <a href="materials.html">4 · Ageing</a>
     <a href="distress.html">5 · The Distress Catalogue</a>
-    <a href="repair.html" aria-current="page">6 · Repair</a>
+    <a href="repair.html" aria-current="page">6 · Looking After Roads</a>
     <a href="roadworks.html">7 · Roadworks</a>
     <a href="lexicon.html">8 · The Lexicon</a>
   </nav>
@@ -87,21 +87,28 @@ single most important idea in pavement management is <em>where on that curve you
   buys early on: not a road made new — a seal renews the surface, not the structure — but a
   <b>plateau</b>, years of ageing held at bay for a fraction of the cost. Drag it past the knee and
   watch the same seal do almost nothing: the structure is already failing and only a costly overlay
-  or full reconstruction will help. Compare the <b>value</b> figures and the "£1 now or £6 later"
-  rule appears on its own.</div>
+  or full reconstruction will help. To see the "£1 now or £6 later" rule, hold the treatment fixed
+  and move it in <em>time</em>: a surface dressing early buys several years per £ spent, and the
+  identical dressing applied late buys a fraction of that. (Don't read <b>value</b> across
+  <em>different</em> treatments — it is life bought per £, so it will always flatter the cheapest
+  option, even one that is far too light for the road. That is what the verdict is for.)</div>
 </figure>
 
 <div class="prose">
 
 <div class="callout gold">
   <span class="tag">The rule that runs a highways budget</span>
-  <p>A widely-cited finding from US pavement studies (and the intuition behind maintenance policy
-  everywhere) is that <strong>every £1 spent on preventive maintenance at the right time can save
-  £6–£10 of future reconstruction</strong>. The reason is the curve: a road typically drops the
-  first 40% of its quality over ~75% of its life, then the <em>next</em> 40% in a small fraction
-  of the time. Treat it in the gentle zone and you slide back up cheaply; miss the window and you
-  are buying a rebuild. Deferring maintenance to "save money" is one of the most expensive things
-  a road authority can do.</p>
+  <p>The rule of thumb quoted across the industry is that <strong>every £1 spent on preventive
+  maintenance at the right time saves £6–£10 of future reconstruction</strong>, usually alongside
+  the claim that a road loses the first 40% of its quality over ~75% of its life and the next 40%
+  in a small fraction of that. Both come from the same 1980s American pavement-preservation
+  graphic, and — in the interests of the honesty promised on the way in — the original study behind
+  them is genuinely hard to pin down. Treat the figures as an illustration of the curve's
+  <em>shape</em>, not as a measurement.</p>
+  <p>The underlying point is not in doubt, though, and it is the one that matters: because
+  deterioration accelerates, treating a road in the gentle zone slides it back up cheaply, while
+  missing the window means buying a rebuild. Deferring maintenance to "save money" is one of the
+  most expensive things a road authority can do.</p>
 </div>
 
 <h2>The maintenance ladder</h2>
@@ -205,7 +212,7 @@ every highways department.</p>
 <script>
 (function () {
   "use strict";
-  const { clamp, lerp, mix, C } = RW;
+  const { clamp, C } = RW;
 
   let when = 10, what = "seal";
 
@@ -262,11 +269,14 @@ every highways department.</p>
     return baseline(eqYr + Math.max(0, (yr - when) - hold));
   }
 
-  // Year at which a curve falls to the failure threshold (bisection is overkill;
-  // step finely and return the first crossing).
+  // Year at which a curve finally falls to the failure threshold. Must be the
+  // LAST crossing, not the first: a treated curve shares the baseline up to the
+  // treatment, so a road treated after it has already dipped below the threshold
+  // would otherwise report zero life gained however much was spent on it.
   function yearOfFailure(fn) {
-    for (let yr = 0; yr <= 80; yr += 0.1) if (fn(yr) <= FAIL_PCI) return yr;
-    return 80;
+    let last = 0;
+    for (let yr = 0; yr <= 80; yr += 0.1) if (fn(yr) > FAIL_PCI) last = yr;
+    return last + 0.1;
   }
 
   let fig;
@@ -286,10 +296,12 @@ every highways department.</p>
     RW.set("cv-life", "+" + lifeAdded.toFixed(1) + " yr");
     RW.set("cv-value", (lifeAdded / tr.cost).toFixed(2) + " yr per £");
 
-    // The verdict judges whether this treatment SUITS this road's condition —
-    // a seal on a failed road is wasted; a rebuild on a failed road is necessary.
+    // The verdict judges whether this treatment SUITS this road's condition, in
+    // both directions: too cheap for a failed road is wasted money, and too heavy
+    // for a sound one is money burned just as surely.
     let verdict, vc;
-    if (eff > 0.85) { verdict = "well matched"; vc = "good"; }
+    if (tr.cost >= 14 && pciNow > 82) { verdict = "overkill — the road is still sound"; vc = "alert"; }
+    else if (eff > 0.85) { verdict = "well matched"; vc = "good"; }
     else if (eff > 0.5) { verdict = "marginal — acting late"; vc = "amber"; }
     else { verdict = "wrong treatment — money wasted"; vc = "alert"; }
     RW.set("cv-verdict", verdict);
@@ -303,7 +315,9 @@ every highways department.</p>
   fig = RW.canvas("curve", function (ctx, w, h) {
     ctx.clearRect(0, 0, w, h);
     ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
-    const L = 44, Rp = 14, T = 28, B = h - 34;
+    // T leaves headroom above PCI 100 so a treatment marker sitting at full
+    // condition, and its label, stay inside the plot rather than clipping off.
+    const L = 44, Rp = 14, T = 48, B = h - 34;
     const X = (yr) => L + yr / 30 * (w - L - Rp);
     const Y = (pci) => T + (100 - pci) / 100 * (B - T);
 
@@ -321,11 +335,21 @@ every highways department.</p>
     RW.label(ctx, "years", (L + w - Rp) / 2, h - 6, { align: "center", color: C.ink2, font: RW.mono(11, true) });
     RW.label(ctx, "condition (PCI)", L - 34, T - 12, { align: "left", color: C.ink2, font: RW.mono(11, true) });
 
-    // baseline "do nothing" curve
+    // Baseline "do nothing" curve, stopped once the road has reached zero rather
+    // than flat-lining along the axis for the last few years.
     ctx.strokeStyle = "rgba(180,180,200,0.45)"; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.6;
-    ctx.beginPath(); for (let yr = 0; yr <= 30; yr += 0.5) { const x = X(yr), y = Y(baseline(yr)); yr === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.stroke();
+    ctx.beginPath();
+    let baseStarted = false, deadYr = 30;
+    for (let yr = 0; yr <= 30; yr += 0.5) {
+      const b = baseline(yr);
+      const x = X(yr), y = Y(b);
+      baseStarted ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), baseStarted = true);
+      if (b <= 0) { deadYr = yr; break; }
+    }
+    ctx.stroke();
     ctx.setLineDash([]);
-    RW.label(ctx, "do nothing", X(28), Y(baseline(28)) - 8, { align: "right", color: "rgba(180,180,200,0.7)" });
+    RW.label(ctx, "do nothing ↘", X(deadYr) - 6, Y(baseline(Math.max(0, deadYr - 2.5))),
+      { align: "right", color: "rgba(180,180,200,0.7)" });
 
     // treated curve: jump up at `when`, then decline again
     const pciNow = baseline(when);
@@ -360,7 +384,9 @@ every highways department.</p>
     ctx.fillStyle = eff > 0.6 ? C.good : eff > 0.35 ? C.amber : C.red;
     ctx.beginPath(); ctx.arc(X(when), Y(pciNow), 6, 0, 6.28); ctx.fill();
     ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.stroke();
-    RW.label(ctx, tr.label, X(when), Y(newPci) - 10, { align: "center", color: C.cyan, font: RW.mono(11, true) });
+    // flip the label below the marker when there is no room above it
+    const labY = Y(newPci) - 10 < T + 6 ? Y(newPci) + 20 : Y(newPci) - 10;
+    RW.label(ctx, tr.label, X(when), labY, { align: "center", color: C.cyan, font: RW.mono(11, true) });
 
     // "knee" annotation
     RW.label(ctx, "the knee ↓", X(20), Y(baseline(20)) - 30, { align: "center", color: C.muted });
