@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Restoration Cycle — Root and Crown</title>
+<meta name="description" content="What a filling really is: a hole cut deliberately larger than the disease. Amalgam, composite, glass ionomer and gold compared honestly, how each fails at the margin, and the one-way arithmetic of replacement.">
+<link rel="stylesheet" href="tooth.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">ROOT&nbsp;AND&nbsp;CROWN</a></div>
+    <div class="strap">how teeth work, how they fail, and how they are repaired</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="nerve.html">2 · The Nerve</a>
+    <a href="decay.html">3 · Decay</a>
+    <a href="ageing.html">4 · Ageing</a>
+    <a href="pulpitis.html">5 · Death of a Pulp</a>
+    <a href="fillings.html" aria-current="page">6 · Fillings</a>
+    <a href="root-canal.html">7 · Root Canal</a>
+    <a href="crowns.html">8 · Crowns &amp; After</a>
+    <a href="lexicon.html">9 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 6</p>
+  <h1>The Restoration Cycle</h1>
+  <p class="standfirst">Nothing in a tooth is ever repaired. Enamel cannot regrow, so the only
+  available move is to cut the hole <em>bigger</em>, then pack it. That buys a decade or two,
+  until the plug fails at its edge — and the next one must be larger than the last. Here are the
+  materials, how each dies, and the one-way ratchet that follows.</p>
+</section>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Figure 6.1 · Cut wider than the disease</span>
+    <span class="hint">lesion size · preparation philosophy · before and after</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fl-prep" style="aspect-ratio: 2.3 / 1; min-height: 300px;"
+            role="img" aria-label="Cross-section of a molar showing a decay lesion, then the cavity cut to remove it, then the finished filling. Three preparation philosophies produce visibly different amounts of tooth removal for the same lesion."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="fl-prep-lesion">lesion</label>
+      <input type="range" id="fl-prep-lesion" min="0.15" max="0.8" step="0.01" value="0.42">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="fl-prep-approach">approach</label>
+      <span class="seg" id="fl-prep-approach">
+        <button data-v="min" class="on">selective</button><button data-v="bond">bonded</button><button data-v="amal">retentive</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="fl-prep-stage">stage</label>
+      <span class="seg" id="fl-prep-stage">
+        <button data-v="lesion" class="on">the lesion</button><button data-v="prepared">prepared</button><button data-v="restored">restored</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">approach <b id="fl-prep-ro-name">selective removal</b></span>
+    <span class="ro">preparation width, off this diagram <b id="fl-prep-ro-width">—</b></span>
+    <span class="ro">sound tissue taken beyond the lesion <b id="fl-prep-ro-cost">minimal</b></span>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="fl-prep-cap" style="font-size:13px; color:var(--ink-2)">
+      Set a <b>lesion</b>, then step through <b>the lesion → prepared → restored</b>. Now switch
+      the <b>approach</b>, and watch the same disease produce three different holes.
+    </span>
+  </div>
+  <div class="fig-note">The lesion is identical in all three approaches. What changes is how much
+  healthy tooth goes with it — a decision made once, permanently, by a person holding a drill.</div>
+</figure>
+
+<div class="prose">
+
+<p class="lead">The word "filling" does a lot of quiet work. It sounds like topping something up:
+a hole appeared, we filled it in. The operation is closer to a controlled excavation, and much of
+what comes out was never diseased.</p>
+
+<h2>A hole cut deliberately larger than the disease</h2>
+
+<p>Three things force the cavity wider than the lesion looked. Softened dentine has to go: you
+cannot bond to mush, or seal against an advancing front. <strong>Undermined enamel</strong> has
+to go too — enamel with no dentine beneath it chips at the first hard bite. And because decay
+spreads sideways along the junction between the two tissues, a pinhead of damage on the surface
+has usually hollowed out a far wider area below. Some materials must also be mechanically
+<em>trapped</em>: a shape wider at its base than its opening, cut whether the disease went there
+or not.</p>
+
+<p>For most of the twentieth century that logic went further. Greene Vardiman Black, whose
+<em>Operative Dentistry</em> of 1908 gave the profession its cavity classification — Class I for
+pits and fissures through Class V for the necks — also gave it <strong>extension for
+prevention</strong>: push the margins out until they sit where a brush and a cheek keep them
+clean, because a margin in a stagnation groove decays again. With no fluoride, no adhesives and a
+material that had to be wedged in place, that was rational. It also meant a pinhead lesion could
+justify a preparation the width of the tooth.</p>
+
+<p>The reaction was a return to first principles: caries is not something to excise to a clean
+margin, but a disease of the biofilm that happens to leave a hole. Soft dentine still comes off
+the walls, where a sealable margin matters. But in a deep lesion, firmer stained
+<em>affected</em> dentine is now deliberately left over the pulp rather than chased out at the
+risk of exposing the nerve — sealed off, it loses its supply line and goes quiet. The
+International Caries Consensus Collaboration set this out in <em>Advances in Dental Research</em>
+in 2016: selective removal to firm dentine, not to hard dentine everywhere.</p>
+
+<div class="callout gold">
+  <span class="tag">The trade at the heart of it</span>
+  <p>Every millimetre you cut makes the restoration more retentive and easier to seal — and the
+  tooth permanently weaker. No setting of that dial is free.</p>
+</div>
+
+<h2>Four materials, four different bargains</h2>
+
+<p><strong>Amalgam</strong> is an alloy of silver, tin and copper mixed with liquid mercury,
+roughly half the set material by weight. It is strong in bulk, forgiving of a damp field, and it
+has one elegant property: it corrodes, and its own corrosion products silt up the microscopic gap
+at its margin, so an amalgam's seal can improve over its first years. High-copper alloys, standard
+since the 1970s, removed the weak phase that made older amalgams crumble at the edges. But it
+sticks to nothing: retention is purely mechanical — undercuts, grooves, dovetails, and the sound
+tooth they consume.</p>
+
+<div class="callout">
+  <span class="tag">On mercury, plainly</span>
+  <p>The major reviews — the European Commission's SCENIHR opinion of 2015, and assessments by the
+  World Health Organization and the US Food and Drug Administration — have <em>not</em> found
+  evidence that dental amalgam harms patients at the exposures involved. The FDA nonetheless
+  advised in 2020 that some groups, including pregnant women and young children, might avoid new
+  amalgam where an alternative exists: a precaution, not a finding of injury.</p>
+  <p>The phase-down is a different argument. It runs under the <strong>Minamata Convention on
+  Mercury</strong>, a treaty about mercury as a persistent global pollutant, and lists amalgam for
+  progressive reduction rather than prohibition. The European Union has since ended routine use.
+  Environmental policy and patient toxicity are separate cases, and they get conflated constantly,
+  in both directions.</p>
+</div>
+
+<p><strong>Composite resin</strong> made minimal intervention possible, because it sticks.
+Buonocore showed in 1955 that etching enamel with acid — today about 35% phosphoric acid — leaves
+a porous surface that liquid resin locks into; on dentine the equivalent trick builds a
+<em>hybrid layer</em>, resin infiltrating demineralised collagen and setting inside it. A bonded
+restoration needs no trap, so the outline can follow the disease. But polymers occupy less space
+than their monomers — typically 1.5% to 3% by volume — and in a cavity bonded on every wall that
+contraction cannot flow away, so it becomes stress pulling on the bond and the cusps. Hence
+incremental placement, and hence post-operative sensitivity. Composite is unforgiving of moisture
+too: saliva on etched enamel at the wrong moment wrecks the bond, invisibly.</p>
+
+<p><strong>Glass ionomer</strong> runs on different chemistry: an acid–base reaction between a
+fluoroaluminosilicate glass and a polyalkenoic acid. It bonds chemically to the calcium in tooth
+mineral without etching, and releases fluoride. It is also weaker, more brittle and more soluble
+— which makes it excellent precisely where the others struggle: root-surface lesions, a child who
+cannot hold still, a field that will not stay dry. <strong>Resin-modified</strong> versions add
+resin for strength. How much that fluoride prevents decay at a real margin is a place where the
+evidence is thinner than the marketing.</p>
+
+<p>Finally the <strong>indirect</strong> options: gold and ceramic inlays and onlays, made outside
+the mouth and cemented in. Because they cure before they arrive, no shrinkage happens inside the
+tooth, and the margin can be finished to tens of micrometres. Gold is the kindest material to the
+tooth biting against it; ceramic is harder than enamel, so it wears that tooth instead.</p>
+
+<table class="data">
+  <caption>The bargain each material offers</caption>
+  <tr><th>Material</th><th>Holds on by</th><th>Strong point</th><th>Weak point</th></tr>
+  <tr><td class="k">Amalgam</td><td>Shape alone</td>
+    <td>Bulk strength; forgives moisture; self-sealing margins</td>
+    <td>More tooth cut for retention; grey</td></tr>
+  <tr><td class="k">Composite</td><td>Micromechanical bond</td>
+    <td>Conserves tissue; tooth-coloured; repairable</td>
+    <td>Shrinkage stress; needs a dry field</td></tr>
+  <tr><td class="k">Glass ionomer</td><td>Chemical bond to mineral</td>
+    <td>Sets damp; releases fluoride; kind to roots</td>
+    <td>Weaker, more soluble, wears faster</td></tr>
+  <tr><td class="k">Gold / ceramic</td><td>Cement and precise fit</td>
+    <td>No shrinkage inside the tooth; excellent margins</td>
+    <td>More tooth removed; two visits</td></tr>
+</table>
+
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-dentist"/></svg>
+    <svg class="char sm"><use href="#char-crown"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Miss Molaris, on material choice</p>
+    <p class="say">"Patients ask which filling lasts longest, and it is the wrong question by
+    about two orders of magnitude. The size of the hole and the mouth it lives in swamp the
+    material every time. No meta-analysis will rescue you from that."</p>
+  </div>
+</div>
+
+<div class="prose">
+
+<h2>Everything fails at the edge</h2>
+
+<p>Fillings almost never fail in the middle; they fail at the join. A margin is the interface
+between two substances with different stiffnesses, thermal expansions and appetites for water,
+held together by a bond or by friction, in warm salt water, loaded a few hundred times a day and
+cycled between ice cream and coffee. A gap of a few micrometres is not a defect; it is the
+expected outcome.</p>
+
+<p><strong>Microleakage</strong> is what passes through that gap: fluid, ions and, once it is
+wide enough, bacteria. Older teaching treated the leak itself as the disease. The modern reading
+is sharper — <strong>secondary caries</strong> is no special affliction of restorations. It is
+ordinary caries, at the one spot on the tooth that holds plaque best and is hardest to clean and
+see. Same chemistry as <a href="decay.html">Chapter&nbsp;3</a>; different geography.</p>
+
+<p>Roughly in order of how often they send a restoration to be redone:</p>
+
+<ul>
+<li><strong>Secondary caries at the margin</strong> — consistently the most-cited reason for
+replacement in practice-based surveys.</li>
+<li><strong>Fracture</strong> — of the material, or of the tooth. In a wide restoration it is
+usually the cusp that goes, not the filling.</li>
+<li><strong>Marginal breakdown and wear</strong> — the edge chips and "ditches", building the
+plaque trap that produces the first item on this list.</li>
+<li><strong>Debonding</strong> — a restoration that comes loose while perfectly intact, its
+dentine bond quietly hydrolysed.</li>
+<li><strong>Post-operative sensitivity</strong> — the one that fails immediately rather than
+eventually: shrinkage stress, or an incomplete seal.</li>
+</ul>
+
+<p>One more failure mode is not in the tooth. Shown the same restorations, different dentists
+disagree strikingly about which need replacing. Redoing a filling is a judgement under
+uncertainty — and it triggers everything that follows.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Figure 6.2 · Thirty years of survival</span>
+    <span class="hint">restoration size · patient caries risk · read off any year</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fl-surv" style="aspect-ratio: 2.2 / 1; min-height: 320px;"
+            role="img" aria-label="Survival curves over thirty years for gold or ceramic inlays, amalgam and composite restorations, falling from one hundred per cent as annual failures compound. Sliders for restoration size and patient caries risk move all three curves together."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="fl-surv-size">size</label>
+      <input type="range" id="fl-surv-size" min="1" max="4" step="1" value="1">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="fl-surv-risk">caries risk</label>
+      <span class="seg" id="fl-surv-risk">
+        <button data-v="low">low</button><button data-v="mod" class="on">moderate</button><button data-v="high">high</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="fl-surv-year">read at</label>
+      <input type="range" id="fl-surv-year" min="1" max="30" step="1" value="10">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro good">gold / ceramic <b id="fl-surv-ro-ind">—</b></span>
+    <span class="ro">amalgam <b id="fl-surv-ro-amal">—</b></span>
+    <span class="ro amber">composite <b id="fl-surv-ro-comp">—</b></span>
+    <span class="ro alert">failure rate applied <b id="fl-surv-ro-afr">—</b></span>
+  </div>
+  <div class="fig-note">Base annual failure rates come from the published literature: about
+  <b>2.4%</b> a year for posterior composite (the ten-year pooled figure from the meta-analysis by
+  Opdam and colleagues, <b>Journal of Dental Research</b>, 2014), a mid-range <b>2.0%</b> for
+  amalgam and <b>1.5%</b> for cast gold and ceramic inlays, both within the bands reported by
+  reviews of posterior restorations. Individual studies span far wider. The size and risk
+  multipliers are <b>illustrative</b>: the literature agrees both effects are large and dominate
+  the material choice, but the exact factors here are a model, not a measured hazard ratio.</div>
+</figure>
+
+<div class="prose">
+
+<h2>How long, honestly</h2>
+
+<p>The unit the literature uses is the <strong>annual failure rate</strong>: the share of
+surviving restorations that fail each year. The meta-analysis of posterior composites by Opdam
+and colleagues (<em>Journal of Dental Research</em>, 2014) pooled rates of roughly 1.8% over five
+years and 2.4% over ten. Reviews put both amalgam and composite in the low single digits, with
+individual studies scattered far wider.</p>
+
+<p>Compound those and the picture is neither as good nor as bad as people assume. At 2% a year,
+82 restorations in 100 survive ten years and 67 survive twenty. At 5% — a large one in a
+high-risk mouth — it is 60 and 36. Same material, two different worlds.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">where the numbers come from, and where they disagree</span></summary>
+  <p>Two bodies of evidence point opposite ways. The Cochrane review of randomised trials
+  (Rasines Alcaraz and colleagues, <em>Cochrane Database of Systematic Reviews</em>, 2014) found
+  direct composites carried roughly <b>twice</b> the failure risk of amalgam in posterior teeth,
+  driven mainly by secondary caries — while grading the evidence low quality and noting the trials
+  were largely in children's teeth. Practice-based cohorts of adults, notably from Opdam's group,
+  found composite doing at least as well. Both can be true: they follow different patients,
+  cavities and eras of material.</p>
+  <p>What survives every dataset is the ranking of predictors. Demarco and colleagues titled their
+  2012 review in <em>Dental Materials</em> "not only a matter of materials" for a reason: surfaces
+  restored, caries risk, heavy grinding and the operator all outweigh the choice of material.</p>
+  <p>Note what "failure" means. These studies count re-intervention, folding the clinician's
+  judgement into the outcome — a real limitation, and one reason the spread is so wide.</p>
+</details>
+
+<div class="tryit">Set size to <b>1 surface</b> and risk <b>low</b>, then move to <b>4 surfaces</b>
+and <b>high</b>. That gap dwarfs the gap between any two materials.</div>
+
+<h2>The restoration cycle</h2>
+
+<p>Here is the part that reframes everything above. When a filling is replaced, the new one is
+<em>necessarily</em> larger. Not usually. Not on average. Necessarily.</p>
+
+<p>Two forces guarantee it. The old material has to come out, and no instrument can tell material
+from tooth at their shared boundary, so removing the one takes a rim of the other. And the reason
+for replacing it — decay at a margin, a chipped edge — sits <em>outside</em> the old outline by
+definition, so the new outline must enclose it. Robert Elderton named this the
+<strong>restorative cycle</strong>; Brantley and colleagues measured it in the <em>Journal of the
+American Dental Association</em> in 1995, and re-restoration does enlarge restorations.</p>
+
+<p>The consequence is structural. Reeh, Messer and Douglas measured the stiffness of extracted
+teeth as they cut them (<em>Journal of Endodontics</em>, 1989): a conservative occlusal cavity
+cost roughly a fifth of the tooth's cuspal stiffness, while extending it into an MOD — a slot
+running right across the tooth — cost about <strong>60%</strong>. The access cavity for a root
+canal, which patients dread, cost around 5%. It is the <em>width</em> of the preparation, not the
+depth of treatment, that turns a tooth into two cantilevered cusps.</p>
+
+<div class="axiom">
+  <span class="tag">The ratchet</span>
+  <p>Small filling → larger filling → larger still → cuspal coverage → crown → and, if the cutting
+  or the caries reaches the pulp, root canal treatment and a crown after it → and finally too
+  little structure above the gum to hold anything at all.</p>
+  <p>Nobody chooses this path. It is what emerges when a tissue that cannot regenerate meets a
+  repair with a service life: subtraction, run at roughly a step a decade, inside a lifetime long
+  enough to run it several times.</p>
+</div>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Figure 6.3 · The cycle</span>
+    <span class="hint">press replace, and keep pressing</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fl-cyc" style="aspect-ratio: 2.4 / 1; min-height: 320px;"
+            role="img" aria-label="One molar stepped through the restoration cycle. Each replacement enlarges the restoration and shrinks the band of remaining sound tooth, moving down a one-way ladder from a small filling through cuspal coverage, a crown and root canal treatment to extraction."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="fl-cyc-next">the cycle</label>
+      <button class="btn primary" type="button" id="fl-cyc-next">replace it</button>
+      <button class="btn" type="button" id="fl-cyc-reset">start again</button>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">stage <b id="fl-cyc-ro-stage">—</b></span>
+    <span class="ro">replacements so far <b id="fl-cyc-ro-step">0</b></span>
+    <span class="ro alert">steps that can be undone <b id="fl-cyc-ro-back">none</b></span>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="fl-cyc-cap" style="font-size:13px; color:var(--ink-2)">
+      A first, small restoration in a young adult tooth. Press <b>replace it</b> to run one turn
+      of the cycle.
+    </span>
+  </div>
+  <div class="fig-note">The ladder on the right runs one way: there is no button that gives tissue
+  back. The pace is not fixed — plenty of first fillings are never replaced at all — but the
+  <b>order</b> of the steps is, and each one narrows what remains possible. This is a schematic of
+  the mechanism, not a prediction about any particular tooth.</div>
+</figure>
+
+<div class="prose">
+
+<h2>Which is why watching is sometimes the treatment</h2>
+
+<p>If replacement is a ratchet, the decision to replace is bigger than it feels in the chair. It
+is not "this filling for a fresh one". It is "this filling, plus a rim of tooth I will never get
+back, for one that will also fail". Two consequences follow.</p>
+
+<p>The first is <strong>repair instead of replacement</strong>: if one corner has failed, cut out
+that corner and patch it. It preserves tissue, and reported outcomes compare well with wholesale
+replacement. The second is <strong>monitoring instead of intervention</strong>. Marginal staining
+is not caries; a slightly ditched amalgam edge is common and often stable for years. Telling an
+untidy margin from an active one — over time, with radiographs — is much of what an examination
+is for.</p>
+
+<div class="callout warn">
+  <span class="tag">Not advice about your tooth</span>
+  <p>None of this is a rule anyone can apply to their own mouth from a web page: whether a margin
+  is stable or active needs someone who can see it. The point here is narrower. When a dentist
+  says "let us keep an eye on that", they may be making the more conservative call rather than the
+  lazier one — because the alternative spends something that cannot be earned back.</p>
+</div>
+
+<p>The tooth that keeps its small filling for thirty years is not lucky. It is one on which
+somebody repeatedly declined to start the next turn. The tooth that runs the cycle all the way
+down arrives where the pulp is breached and the whole calculation changes — which is where
+<a href="root-canal.html">Chapter&nbsp;7</a> picks it up.</p>
+
+</div>
+
+<nav class="chapnav">
+  <a href="pulpitis.html"><span class="dir">Previous</span><span class="title">5 · Death of a Pulp</span></a>
+  <a class="next" href="root-canal.html"><span class="dir">Next</span><span class="title">7 · Root Canal</span></a>
+</nav>
+
+</main>
+
+<script src="tooth-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp } = TC;
+  const BG = "#0a0a0e";
+
+  /* small word-wrap helper for canvas paragraphs */
+  function wrap(ctx, txt, maxW) {
+    const words = txt.split(" ");
+    const lines = [];
+    let cur = "";
+    for (const word of words) {
+      const test = cur ? cur + " " + word : word;
+      if (ctx.measureText(test).width > maxW && cur) { lines.push(cur); cur = word; }
+      else cur = test;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  /* ================================================================
+     FIGURE 6.1 — the preparation
+     ================================================================ */
+
+  const APPROACH = {
+    min:  { name: "selective removal",      base: 0.06, gain: 0.34, mat: "composite",
+            cost: "minimal", leaves: true },
+    bond: { name: "conventional bonded",    base: 0.20, gain: 0.44, mat: "composite",
+            cost: "moderate", leaves: false },
+    amal: { name: "mechanically retentive", base: 0.36, gain: 0.46, mat: "amalgam",
+            cost: "substantial", leaves: false },
+  };
+  const APPROACH_CAP = {
+    min: "<b>Selective removal.</b> The outline follows the lesion and stops. Soft dentine is taken from the walls, where a sound margin matters, but firmer stained dentine is deliberately left over the pulp rather than risk exposing it. Sealed off from its supply line, what remains underneath goes quiet.",
+    bond: "<b>Conventional bonded preparation.</b> All the discoloured dentine goes, and so does the enamel left unsupported around it. The outline is wider than the lesion because undermined enamel would chip out — but nothing is cut purely to hold the material in. The bond does that.",
+    amal: "<b>Mechanically retentive preparation.</b> Amalgam sticks to nothing, so the cavity has to be a trap: converging walls, a base wider than the opening, retention grooves at the corners. Every one of those features is sound tooth removed for the material's benefit, not the disease's.",
+  };
+
+  let prepLesion = 0.42, prepApproach = "min", prepStage = "lesion";
+
+  const figPrep = TC.canvas("fl-prep", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, w, h);
+
+    const A = APPROACH[prepApproach];
+    const size = clamp(A.base + A.gain * prepLesion, 0, 1);
+    const residual = prepStage === "lesion" ? prepLesion
+      : (A.leaves ? Math.max(0, prepLesion - 0.16) : 0);
+
+    const th = Math.min(h * 0.88, w * 0.42);
+    const tw = th * 0.78;
+    const tx = w * 0.28 - tw / 2;
+    const ty = (h - th) / 2;
+
+    const g = TC.drawTooth(ctx, tx, ty, tw, th, {
+      wear: 0.12,
+      caries: residual,
+      filling: prepStage === "restored" ? size : 0,
+      fillMat: A.mat,
+      secondary: 0.28,
+      pulpState: "healthy",
+      showBone: false,
+      seed: 4242,
+    });
+
+    const cx = g.cx, top = g.crownTop;
+    const fw = tw * (0.13 + 0.26 * size);
+    const fd = th * (0.042 + 0.078 * size);
+
+    /* the cut cavity, drawn as a void when the tooth is prepared but not yet filled */
+    if (prepStage === "prepared") {
+      ctx.save();
+      TC.toothPath(ctx, tx, ty, tw, th, 0.12);
+      ctx.clip();
+      ctx.fillStyle = "#090c0d";
+      ctx.beginPath();
+      ctx.moveTo(cx - fw / 2, top + th * 0.006);
+      ctx.lineTo(cx + fw / 2, top + th * 0.006);
+      ctx.lineTo(cx + fw * 0.58, top + fd * 0.72);
+      ctx.quadraticCurveTo(cx + fw * 0.56, top + fd, cx + fw * 0.40, top + fd);
+      ctx.lineTo(cx - fw * 0.40, top + fd);
+      ctx.quadraticCurveTo(cx - fw * 0.56, top + fd, cx - fw * 0.58, top + fd * 0.72);
+      ctx.closePath();
+      ctx.fill();
+      if (prepApproach === "amal") {
+        for (const s of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(cx + s * fw * 0.56, top + fd * 0.58);
+          ctx.lineTo(cx + s * fw * 0.74, top + fd * 0.88);
+          ctx.lineTo(cx + s * fw * 0.46, top + fd * 0.96);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+      ctx.strokeStyle = "rgba(255,246,221,0.42)";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(cx - fw / 2, top + th * 0.006);
+      ctx.lineTo(cx - fw * 0.58, top + fd * 0.72);
+      ctx.quadraticCurveTo(cx - fw * 0.56, top + fd, cx - fw * 0.40, top + fd);
+      ctx.lineTo(cx + fw * 0.40, top + fd);
+      ctx.quadraticCurveTo(cx + fw * 0.56, top + fd, cx + fw * 0.58, top + fd * 0.72);
+      ctx.lineTo(cx + fw / 2, top + th * 0.006);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* annotation column — labels shorten on a narrow canvas so nothing clips */
+    const narrow = w < 620;
+    const lx = narrow ? w * 0.50 : w * 0.54;
+    const lf = TC.mono(narrow ? 10 : 11, true);
+    let ly = h * 0.26;
+    const step = h * 0.21;
+    const say = (long, short) => (narrow ? short : long);
+
+    if (prepStage === "lesion") {
+      TC.leader(ctx, lx, ly, cx + fw * 0.10, top + th * 0.10 + prepLesion * th * 0.16,
+        say("the lesion — soft dentine, spreading sideways", "the lesion"),
+        { color: C.pulpAcc, textColor: C.ink, font: lf });
+      ly += step;
+      TC.leader(ctx, lx, ly, cx - tw * 0.20, top + th * 0.045,
+        say("undermined enamel: no dentine beneath it", "undermined enamel"),
+        { color: C.muted, textColor: C.ink2, font: lf });
+    } else {
+      TC.leader(ctx, lx, ly, cx + fw * 0.52, top + fd * 0.5,
+        say("the margin — where every filling fails first", "the margin"),
+        { color: C.mint, textColor: C.ink, font: lf });
+      ly += step;
+      if (prepApproach === "amal") {
+        TC.leader(ctx, lx, ly, cx - fw * 0.62, top + fd * 0.82,
+          say("retention grooves: cut to hold the metal", "retention grooves"),
+          { color: C.dentineAcc, textColor: C.ink2, font: lf });
+        ly += step;
+      }
+      if (A.leaves && residual > 0.05) {
+        TC.leader(ctx, lx, ly, cx, top + th * 0.16,
+          say("firm stained dentine, left over the pulp", "stained dentine left"),
+          { color: C.dentineAcc, textColor: C.ink2, font: lf });
+      } else if (prepApproach !== "amal") {
+        TC.leader(ctx, lx, ly, cx - fw * 0.30, top + fd * 0.95,
+          say("cut to sound dentine on every wall", "cut to sound dentine"),
+          { color: C.muted, textColor: C.ink2, font: lf });
+      }
+    }
+
+    TC.label(ctx, A.name.toUpperCase(), lx, h * 0.13,
+      { color: C.mint, font: TC.mono(narrow ? 11 : 13, true) });
+    TC.label(ctx,
+      prepStage === "lesion" ? "before anything is cut"
+        : prepStage === "prepared" ? "the cavity, cut and empty"
+        : "the restoration in place",
+      lx, h * 0.13 + 18, { color: C.muted, font: TC.mono(narrow ? 10 : 11) });
+  });
+
+  function prepSync() {
+    const A = APPROACH[prepApproach];
+    const size = clamp(A.base + A.gain * prepLesion, 0, 1);
+    TC.set("fl-prep-ro-name", A.name);
+    TC.set("fl-prep-ro-width", Math.round((0.13 + 0.26 * size) / 0.84 * 100) + "% of the crown");
+    TC.set("fl-prep-ro-cost", A.cost);
+    TC.html("fl-prep-cap", APPROACH_CAP[prepApproach]);
+    if (figPrep) figPrep.redraw();
+  }
+
+  TC.slider("fl-prep-lesion", function (v) {
+    return v < 0.3 ? "enamel only" : v < 0.55 ? "into dentine" : "deep, near the pulp";
+  }, function (v) { prepLesion = v; prepSync(); });
+
+  TC.seg("fl-prep-approach", function (v) { prepApproach = v; prepSync(); });
+  TC.seg("fl-prep-stage", function (v) { prepStage = v; prepSync(); });
+
+  /* ================================================================
+     FIGURE 6.2 — thirty years of survival
+     ================================================================ */
+
+  const SURV = [
+    { key: "ind",  name: "gold / ceramic inlay", short: "gold/ceramic", afr: 0.015,
+      col: C.dentineAcc, ro: "fl-surv-ro-ind" },
+    { key: "amal", name: "amalgam",              short: "amalgam",      afr: 0.020,
+      col: "#b9c0c8",    ro: "fl-surv-ro-amal" },
+    { key: "comp", name: "composite",            short: "composite",    afr: 0.024,
+      col: C.ice,        ro: "fl-surv-ro-comp" },
+  ];
+  const SIZE_MULT = { 1: 1.0, 2: 1.35, 3: 1.75, 4: 2.2 };
+  const RISK_MULT = { low: 0.75, mod: 1.0, high: 1.6 };
+  const SIZE_NAME = { 1: "1 surface", 2: "2 surfaces", 3: "3 surfaces", 4: "4 surfaces" };
+
+  let survSize = 1, survRisk = "mod", survYear = 10;
+
+  function effAfr(base) {
+    return clamp(base * SIZE_MULT[survSize] * RISK_MULT[survRisk], 0.002, 0.2);
+  }
+
+  const figSurv = TC.canvas("fl-surv", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, w, h);
+
+    const m = { l: 52, r: 20, t: 26, b: 38 };
+    const pw = w - m.l - m.r, ph = h - m.t - m.b;
+    const X = (yr) => m.l + (yr / 30) * pw;
+    const Y = (s) => m.t + (1 - s) * ph;
+
+    /* grid */
+    for (let p = 0; p <= 100; p += 20) {
+      const y = Y(p / 100);
+      TC.line(ctx, m.l, y, m.l + pw, y, p === 0 ? C.line : C.line2, 1);
+      TC.label(ctx, p + "%", m.l - 8, y + 4, { align: "right", color: C.muted, font: TC.mono(11) });
+    }
+    for (let yr = 0; yr <= 30; yr += 5) {
+      const x = X(yr);
+      TC.line(ctx, x, m.t, x, m.t + ph, C.line2, 1);
+      TC.label(ctx, String(yr), x, m.t + ph + 18, { align: "center", color: C.muted, font: TC.mono(11) });
+    }
+    TC.label(ctx, "YEARS IN SERVICE", m.l + pw / 2, m.t + ph + 33,
+      { align: "center", color: C.muted, font: TC.mono(10, true) });
+    TC.label(ctx, "STILL IN SERVICE", m.l - 8, m.t - 10,
+      { align: "right", color: C.muted, font: TC.mono(10, true) });
+
+    /* curves */
+    for (const s of SURV) {
+      const a = effAfr(s.afr);
+      ctx.save();
+      ctx.strokeStyle = s.col;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (let yr = 0; yr <= 30.001; yr += 0.25) {
+        const x = X(yr), y = Y(TC.survival(yr, a));
+        if (yr === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* the cursor year */
+    const cxs = X(survYear);
+    TC.line(ctx, cxs, m.t, cxs, m.t + ph, "rgba(243,241,233,0.28)", 1, [4, 4]);
+    for (const s of SURV) {
+      const v = TC.survival(survYear, effAfr(s.afr));
+      const y = Y(v);
+      ctx.fillStyle = s.col;
+      ctx.beginPath(); ctx.arc(cxs, y, 4, 0, TC.TAU); ctx.fill();
+      const right = cxs < m.l + pw * 0.62;
+      TC.label(ctx, Math.round(v * 100) + "%", cxs + (right ? 9 : -9), y + 4,
+        { align: right ? "left" : "right", color: s.col, font: TC.mono(12, true) });
+    }
+    TC.label(ctx, "year " + survYear, cxs, m.t - 10,
+      { align: "center", color: C.ink2, font: TC.mono(11, true) });
+
+    /* legend — right-aligned against the plot edge so it can never overflow */
+    const narrow = w < 620;
+    const lfont = TC.mono(narrow ? 10 : 11);
+    let ly = m.t + 16;
+    for (const s of SURV) {
+      const xr = m.l + pw - 6;
+      const txt = (narrow ? s.short : s.name) + "  " + (effAfr(s.afr) * 100).toFixed(1) + "%/yr";
+      ctx.save();
+      ctx.font = lfont;
+      const tw2 = ctx.measureText(txt).width;
+      ctx.restore();
+      TC.label(ctx, txt, xr, ly, { align: "right", color: C.ink2, font: lfont });
+      TC.line(ctx, xr - tw2 - 22, ly - 4, xr - tw2 - 6, ly - 4, s.col, 2.4);
+      ly += 17;
+    }
+  });
+
+  function survSync() {
+    for (const s of SURV) {
+      TC.set(s.ro, Math.round(TC.survival(survYear, effAfr(s.afr)) * 100) + "% at year " + survYear);
+    }
+    const lo = (effAfr(SURV[0].afr) * 100).toFixed(1);
+    const hi = (effAfr(SURV[2].afr) * 100).toFixed(1);
+    TC.set("fl-surv-ro-afr", lo + "–" + hi + "% a year");
+    if (figSurv) figSurv.redraw();
+  }
+
+  TC.slider("fl-surv-size", (v) => SIZE_NAME[v], function (v) { survSize = v; survSync(); });
+  TC.slider("fl-surv-year", (v) => "year " + v.toFixed(0), function (v) { survYear = v; survSync(); });
+  TC.seg("fl-surv-risk", function (v) { survRisk = v; survSync(); });
+
+  /* ================================================================
+     FIGURE 6.3 — the cycle
+     ================================================================ */
+
+  const CYCLE = [
+    {
+      short: "first restoration",
+      ladder: "small filling",
+      filling: 0.18, mat: "composite", sound: 0.93,
+      cap: "<b>A first, small restoration.</b> One surface: the lesion, plus the undermined enamel around it. Both cusps still stand on a full thickness of dentine — and if nothing ever disturbs this margin, nothing else on this ladder has to happen.",
+    },
+    {
+      short: "replaced — two surfaces",
+      ladder: "larger filling",
+      filling: 0.38, mat: "composite", sound: 0.81,
+      cap: "<b>Caries at one margin.</b> The old composite comes out, and because no bur can tell material from tooth at the join, a rim of sound dentine comes with it. The lesion that triggered the replacement lay outside the old outline, so the new outline has to be wider. It could not have been otherwise.",
+    },
+    {
+      short: "replaced — three surfaces",
+      ladder: "larger still",
+      filling: 0.60, mat: "amalgam", sound: 0.66,
+      cap: "<b>Now a three-surface restoration.</b> The slot runs across the tooth between both contact points. Reeh and colleagues measured this shape as costing roughly 60% of a tooth's cuspal stiffness: the cusps have become cantilevers, with filling material where their support used to be.",
+    },
+    {
+      short: "cuspal coverage",
+      ladder: "onlay",
+      filling: 0.86, mat: "amalgam", sound: 0.50,
+      cap: "<b>A cusp fractures.</b> Predictable, and the point at which patching stops being an option. The repair now has to cover the cusps rather than sit between them — which means reducing what is left of them deliberately, so something can be laid over the top.",
+    },
+    {
+      short: "crown",
+      ladder: "full crown",
+      crown: true, sound: 0.36,
+      cap: "<b>A full crown.</b> The remaining tooth is cut down to a stump and a shell is cemented over it. This works well and lasts a long time. It is also a bigger subtraction than everything before it combined, and the last option that leaves the nerve alone.",
+    },
+    {
+      short: "root canal, then crown again",
+      ladder: "root canal",
+      crown: true, rootFilled: true, pulpState: "removed", sound: 0.26,
+      cap: "<b>The pulp is breached.</b> Cumulative insult, or a preparation that finally reached it. The nerve is removed, the canals cleaned and filled, and the crown goes back on — a hollow tooth needs that coverage more than a solid one ever did. That is <a href='root-canal.html'>Chapter 7</a>.",
+    },
+    {
+      short: "extraction",
+      ladder: "extraction",
+      gone: true, sound: 0,
+      cap: "<b>Nothing left to hold onto.</b> Rarely dramatic — usually a fracture below the gum, or too little sound tooth above it to grip a crown. The tooth comes out and the ridge beneath begins to resorb. Every step on this ladder was reasonable when it was taken. None of them could be taken back.",
+    },
+  ];
+
+  let cycStep = 0;
+
+  const figCyc = TC.canvas("fl-cyc", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, w, h);
+
+    const s = CYCLE[cycStep];
+    const th = Math.min(h * 0.70, w * 0.32);
+    const tw = th * 0.78;
+    const tx = w * 0.22 - tw / 2;
+    const ty = h * 0.08;
+
+    if (s.gone) {
+      const gumY = ty + th * 0.50;
+      ctx.fillStyle = C.bone;
+      ctx.fillRect(tx - tw * 0.6, gumY + th * 0.06, tw * 2.2, th * 0.52);
+      TC.grain(ctx, tx - tw * 0.6, gumY + th * 0.06, tw * 2.2, th * 0.52, 240, 77, "#efe8d0", 0.10);
+      ctx.fillStyle = C.gum;
+      ctx.beginPath();
+      ctx.moveTo(tx - tw * 0.6, gumY + th * 0.12);
+      ctx.quadraticCurveTo(tx + tw * 0.5, gumY - th * 0.02, tx + tw * 1.6, gumY + th * 0.12);
+      ctx.lineTo(tx + tw * 1.6, gumY + th * 0.2);
+      ctx.lineTo(tx - tw * 0.6, gumY + th * 0.2);
+      ctx.closePath();
+      ctx.fill();
+      TC.label(ctx, "an empty socket", tx + tw * 0.5, gumY + th * 0.34,
+        { align: "center", color: C.muted, font: TC.mono(12) });
+    } else {
+      TC.drawTooth(ctx, tx, ty, tw, th, {
+        wear: 0.10 + 0.035 * cycStep,
+        filling: s.filling || 0,
+        fillMat: s.mat || "composite",
+        crown: !!s.crown,
+        rootFilled: !!s.rootFilled,
+        pulpState: s.pulpState || "healthy",
+        secondary: 0.20 + 0.06 * cycStep,
+        recession: 0.04 * cycStep,
+        seed: 4242,
+      });
+    }
+
+    /* the band of sound tooth left — deliberately unnumbered: a direction, not a measurement */
+    const narrow = w < 620;
+    const bx = w * 0.05, bw = w * 0.32, by = ty + th + h * 0.05, bh = 13;
+    TC.label(ctx, narrow ? "SOUND TOOTH LEFT" : "SOUND TOOTH REMAINING — SCHEMATIC", bx, by - 7,
+      { color: C.muted, font: TC.mono(10, true) });
+    ctx.fillStyle = "rgba(243,241,233,0.07)";
+    TC.roundRect(ctx, bx, by, bw, bh, 3); ctx.fill();
+    if (s.sound > 0) {
+      ctx.fillStyle = s.sound > 0.6 ? C.good : s.sound > 0.3 ? C.dentineAcc : C.pulpAcc;
+      TC.roundRect(ctx, bx, by, bw * s.sound, bh, 3); ctx.fill();
+    }
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    TC.roundRect(ctx, bx, by, bw, bh, 3); ctx.stroke();
+
+    ctx.font = TC.mono(11);
+    let ny = by + bh + 24;
+    for (const ln of wrap(ctx, "each step removes tissue that no biological process replaces", bw + 20)) {
+      TC.label(ctx, ln, bx, ny, { color: C.muted, font: TC.mono(11) });
+      ny += 15;
+    }
+
+    /* the one-way ladder */
+    const lx = w * 0.50;
+    const topY = h * 0.15, rowH = (h * 0.72) / CYCLE.length;
+    TC.label(ctx, narrow ? "ONE WAY ONLY" : "THE LADDER — ONE WAY ONLY", lx - 22, topY - 22,
+      { color: C.mint, font: TC.mono(narrow ? 10 : 11, true) });
+    TC.line(ctx, lx, topY, lx, topY + rowH * (CYCLE.length - 1), C.line, 2);
+    for (let i = 0; i < CYCLE.length; i++) {
+      const y = topY + rowH * i;
+      const done = i < cycStep, here = i === cycStep;
+      const col = here ? C.mint : done ? C.ink2 : C.muted;
+      ctx.fillStyle = here ? C.mint : done ? "rgba(194,198,200,0.6)" : "rgba(134,144,154,0.35)";
+      ctx.beginPath(); ctx.arc(lx, y, here ? 6 : 4, 0, TC.TAU); ctx.fill();
+      if (here) {
+        ctx.strokeStyle = "rgba(74,216,196,0.35)"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(lx, y, 11, 0, TC.TAU); ctx.stroke();
+      }
+      TC.label(ctx, CYCLE[i].ladder, lx + 18, y + 4,
+        { color: col, font: TC.mono(narrow ? (here ? 12 : 11) : (here ? 13 : 12), here) });
+      if (done && !narrow) {
+        TC.label(ctx, "passed", lx - 18, y + 4,
+          { align: "right", color: "rgba(134,144,154,0.7)", font: TC.mono(10) });
+      }
+    }
+  });
+
+  function cycSync() {
+    const s = CYCLE[cycStep];
+    TC.set("fl-cyc-ro-stage", s.short);
+    TC.set("fl-cyc-ro-step", String(cycStep));
+    TC.set("fl-cyc-ro-back", "none");
+    TC.html("fl-cyc-cap", s.cap);
+    const nextBtn = document.getElementById("fl-cyc-next");
+    if (nextBtn) {
+      const last = cycStep >= CYCLE.length - 1;
+      nextBtn.disabled = last;
+      nextBtn.textContent = last ? "nothing left to replace" : "replace it";
+      nextBtn.classList.toggle("primary", !last);
+      nextBtn.style.opacity = last ? "0.55" : "1";
+      nextBtn.style.cursor = last ? "default" : "pointer";
+    }
+    if (figCyc) figCyc.redraw();
+  }
+
+  TC.on("fl-cyc-next", "click", function () {
+    if (cycStep < CYCLE.length - 1) cycStep++;
+    cycSync();
+  });
+  TC.on("fl-cyc-reset", "click", function () {
+    cycStep = 0;
+    cycSync();
+  });
+  cycSync();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
