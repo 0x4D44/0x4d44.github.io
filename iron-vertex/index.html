@@ -1,0 +1,1009 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Iron Vertex — procedural coaster lab</title>
+<meta name="description" content="A rollercoaster that designs itself: a fresh closed circuit every time, ridden on gravity alone. Three.js in the browser, no build step.">
+
+<style>
+  :root {
+    --ink: #e8edf6;
+    --panel: rgba(16, 28, 48, 0.82);
+    --panel-line: rgba(150, 180, 225, 0.28);
+    --accent: #b4432a;
+    --accent-hi: #d75a37;
+    --btn: rgba(30, 52, 88, 0.86);
+    --btn-hi: rgba(46, 76, 122, 0.95);
+    --muted: #9db0cc;
+    --ui: "Segoe UI", Roboto, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #6f9fd0;
+    color: var(--ink);
+    font-family: var(--ui);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  #scene {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
+  }
+
+  /* Anything hidden via the attribute must stay hidden even though these
+     panels set their own display. An author `display` beats the UA rule
+     for [hidden], which otherwise leaves an invisible layer eating taps. */
+  [hidden] { display: none !important; }
+
+  .panel {
+    position: fixed;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 10px;
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+    box-shadow: 0 10px 34px rgba(4, 12, 26, 0.36);
+  }
+
+  /* ---- control panel ---- */
+  /* The shared "← Almanac" pill is injected fixed at the top-left of
+     every document, so this panel starts below it rather than under it. */
+  #controls {
+    top: 58px;
+    left: 14px;
+    width: 268px;
+    max-width: calc(100vw - 28px);
+    padding: 14px;
+    z-index: 6;
+  }
+
+  #controls h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  #controls .sub {
+    margin: 2px 0 12px;
+    font-size: 11.5px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  button.act {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 9px 12px;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink);
+    background: var(--btn);
+    border: 1px solid var(--panel-line);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 120ms ease, transform 120ms ease;
+  }
+
+  button.act:hover { background: var(--btn-hi); }
+  button.act:active { transform: translateY(1px); }
+  button.act:focus-visible { outline: 2px solid #8fc0ff; outline-offset: 2px; }
+
+  button.act.primary {
+    background: linear-gradient(180deg, var(--accent-hi), var(--accent));
+    border-color: rgba(255, 170, 140, 0.42);
+  }
+  button.act.primary:hover { filter: brightness(1.1); }
+
+  #controls .hint {
+    margin: 10px 0 0;
+    font-size: 10.5px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+
+  /* ---- track name ---- */
+  #nameplate {
+    top: 14px;
+    right: 14px;
+    padding: 8px 14px;
+    text-align: right;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    z-index: 5;
+    pointer-events: none;
+    text-shadow: 0 2px 12px rgba(6, 16, 32, 0.75);
+  }
+
+  #nameplate .label {
+    font-size: 9.5px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: rgba(232, 237, 246, 0.7);
+  }
+
+  #nameplate .value {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+
+  /* ---- stat tiles ---- */
+  #stats {
+    left: 50%;
+    bottom: 18px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    z-index: 5;
+    pointer-events: none;
+    max-width: calc(100vw - 20px);
+  }
+
+  .tile {
+    min-width: 86px;
+    padding: 7px 14px 8px;
+    text-align: center;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    border-radius: 9px;
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+  }
+
+  .tile .k {
+    font-size: 8.5px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .tile .v {
+    font-size: 21px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.15;
+  }
+
+  .tile .u {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 2px;
+  }
+
+  /* ---- boot / failure notice ---- */
+  #notice {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    text-align: center;
+    background: #14273f;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  #notice .inner { max-width: 30rem; }
+  #notice code {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    color: #ffd9a8;
+  }
+
+  @media (max-width: 640px) {
+    #controls { width: 200px; padding: 11px; top: 52px; left: 10px; }
+    #controls h1 { font-size: 13px; }
+    #controls .hint { display: none; }
+    button.act { padding: 8px 10px; font-size: 11px; }
+    #nameplate .value { font-size: 15px; }
+    #stats { gap: 5px; bottom: 12px; }
+    .tile { min-width: 0; padding: 5px 9px 6px; }
+    .tile .v { font-size: 16px; }
+    .tile .k { font-size: 7.5px; letter-spacing: 0.14em; }
+  }
+
+  @media (max-height: 460px) {
+    #controls .hint { display: none; }
+    #stats { bottom: 8px; }
+  }
+</style>
+
+<canvas id="scene" aria-label="Three-dimensional rollercoaster view"></canvas>
+
+<div class="panel" id="controls">
+  <h1>Iron Vertex</h1>
+  <p class="sub">procedural coaster lab</p>
+  <button class="act primary" id="btn-ride" type="button" aria-label="Ride the coaster">&#9654; Ride (R)</button>
+  <button class="act" id="btn-new" type="button" aria-label="Generate a new track">&#9711; New track (N)</button>
+  <button class="act" id="btn-cam" type="button" aria-label="Change camera">&#9678; Cam: orbit (C)</button>
+  <p class="hint">
+    Drag to orbit &middot; scroll to zoom<br>
+    Physics: gravity energy model with chain lift, brakes, drag &amp; banked turns.
+  </p>
+</div>
+
+<div class="panel" id="nameplate">
+  <div class="label">Track</div>
+  <div class="value" id="track-name">&nbsp;</div>
+</div>
+
+<div class="panel" id="stats">
+  <div class="tile"><div class="k">Speed</div><div class="v"><span id="stat-speed">0</span><span class="u">km/h</span></div></div>
+  <div class="tile"><div class="k">G-force</div><div class="v"><span id="stat-g">0.0</span><span class="u">g</span></div></div>
+  <div class="tile"><div class="k">Height</div><div class="v"><span id="stat-height">0</span><span class="u">m</span></div></div>
+  <div class="tile"><div class="k">Length</div><div class="v"><span id="stat-length">0</span><span class="u">m</span></div></div>
+</div>
+
+<div id="notice">
+  <div class="inner">
+    <p><strong>Building the park&hellip;</strong></p>
+    <p id="notice-detail">Setting out the track.</p>
+  </div>
+</div>
+
+<script>
+  // three.js is vendored beside this page rather than pulled from a CDN,
+  // so the document keeps working offline and cannot be broken by someone
+  // else's outage. If the module still fails — no WebGL, a blocked
+  // module script — it never runs and the page would sit on a blank blue
+  // field with no explanation, so say what happened instead.
+  window.setTimeout(function () {
+    if (window.__ironVertexReady) return;
+    var detail = document.getElementById("notice-detail");
+    if (detail) {
+      detail.textContent = "This page needs WebGL, and the browser did not start it. "
+        + "Check that hardware acceleration is enabled, then reload.";
+    }
+  }, 9000);
+</script>
+
+<script type="module">
+import * as THREE from "./three.module.min.js";
+import { CoasterSim, buildTrack, supportColumns } from "./track.js";
+
+// ============================================================
+// Palette
+// ============================================================
+const COLOR = {
+  skyTop: new THREE.Color("#2f6ab4"),
+  skyLow: new THREE.Color("#bcd8ee"),
+  fog: new THREE.Color("#b3d0e6"),
+  grass: new THREE.Color("#7fae4e"),
+  grassFar: new THREE.Color("#9dc267"),
+  rail: new THREE.Color("#b8412a"),
+  tie: new THREE.Color("#39414c"),
+  spine: new THREE.Color("#59636f"),
+  support: new THREE.Color("#9aa3ac"),
+  trunk: new THREE.Color("#6b4a32"),
+  leafA: new THREE.Color("#2f6b34"),
+  leafB: new THREE.Color("#3f8340"),
+  building: new THREE.Color("#c3cbd4"),
+  cloud: new THREE.Color("#f4f8fb"),
+  car: new THREE.Color("#c0452c"),
+  carDark: new THREE.Color("#2b3038"),
+};
+
+const GAUGE = 1.05;      // spacing between the running rails, metres
+const RAIL_RADIUS = 0.13;
+const PARK_RADIUS = 420;
+
+// ============================================================
+// Renderer, scene, camera
+// ============================================================
+const canvas = document.getElementById("scene");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(COLOR.fog, 260, 720);
+
+const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 2000);
+
+// ---- sky dome: a plain vertical gradient, cheap and stable ----
+const skyGeo = new THREE.SphereGeometry(900, 32, 16);
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide,
+  depthWrite: false,
+  uniforms: {
+    top: { value: COLOR.skyTop },
+    bottom: { value: COLOR.skyLow },
+  },
+  vertexShader: `
+    varying float vH;
+    void main() {
+      vec4 world = modelMatrix * vec4(position, 1.0);
+      vH = normalize(world.xyz).y;
+      gl_Position = projectionMatrix * viewMatrix * world;
+    }`,
+  fragmentShader: `
+    uniform vec3 top;
+    uniform vec3 bottom;
+    varying float vH;
+    void main() {
+      float t = clamp(vH * 1.35 + 0.18, 0.0, 1.0);
+      gl_FragColor = vec4(mix(bottom, top, t), 1.0);
+    }`,
+});
+scene.add(new THREE.Mesh(skyGeo, skyMat));
+
+// ---- light ----
+const sun = new THREE.DirectionalLight(0xfff3dd, 2.05);
+sun.position.set(-125, 190, 95);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 20;
+sun.shadow.camera.far = 560;
+sun.shadow.camera.left = -190;
+sun.shadow.camera.right = 190;
+sun.shadow.camera.top = 190;
+sun.shadow.camera.bottom = -190;
+sun.shadow.bias = -0.0012;
+sun.shadow.normalBias = 0.5;
+scene.add(sun);
+scene.add(new THREE.HemisphereLight(0xdcecff, 0x5c7a44, 1.15));
+
+// ============================================================
+// Static landscape (built once; the track is rebuilt on demand)
+// ============================================================
+
+// Deterministic-enough scatter for the scenery.
+function scatterRng(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x9e3779b9) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 16), 0x21f0aaad);
+    t = Math.imul(t ^ (t >>> 15), 0x735a2d97);
+    return ((t ^ (t >>> 15)) >>> 0) / 4294967296;
+  };
+}
+
+function groundHeight(x, z) {
+  // Flat where the coaster stands, gently rolling further out, so the
+  // horizon has shape without the track ever burying itself.
+  const d = Math.hypot(x, z);
+  const rise = Math.min(1, Math.max(0, (d - 150) / 220));
+  return (
+    Math.sin(x * 0.0075) * Math.cos(z * 0.0061) * 13 +
+    Math.sin(x * 0.019 + 1.7) * Math.cos(z * 0.017 - 0.6) * 4
+  ) * rise;
+}
+
+function buildGround() {
+  const size = PARK_RADIUS * 2.4;
+  const seg = 150;
+  const geo = new THREE.PlaneGeometry(size, size, seg, seg);
+  geo.rotateX(-Math.PI / 2);
+  const pos = geo.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const near = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const z = pos.getZ(i);
+    pos.setY(i, groundHeight(x, z));
+    const t = Math.min(1, Math.hypot(x, z) / PARK_RADIUS);
+    near.copy(COLOR.grass).lerp(COLOR.grassFar, t * 0.85);
+    colors[i * 3] = near.r;
+    colors[i * 3 + 1] = near.g;
+    colors[i * 3 + 2] = near.b;
+  }
+  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  geo.computeVertexNormals();
+  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
+  mesh.receiveShadow = true;
+  return mesh;
+}
+scene.add(buildGround());
+
+function buildTrees(count) {
+  const rng = scatterRng(0x5eed17);
+  const trunkGeo = new THREE.CylinderGeometry(0.28, 0.42, 3.2, 5);
+  trunkGeo.translate(0, 1.6, 0);
+  const leafGeo = new THREE.ConeGeometry(2.5, 8.4, 7);
+  leafGeo.translate(0, 6.6, 0);
+
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: COLOR.trunk }), count);
+  const leaves = new THREE.InstancedMesh(leafGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: false }), count);
+  leaves.castShadow = true;
+  leaves.receiveShadow = true;
+  trunks.castShadow = true;
+
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const pos = new THREE.Vector3();
+  const scl = new THREE.Vector3();
+  const tint = new THREE.Color();
+  let placed = 0;
+  let guard = 0;
+  while (placed < count && guard++ < count * 40) {
+    const ang = rng() * Math.PI * 2;
+    const rad = 26 + Math.sqrt(rng()) * (PARK_RADIUS - 26);
+    const x = Math.cos(ang) * rad;
+    const z = Math.sin(ang) * rad;
+    const s = 0.55 + rng() * 0.95;
+    pos.set(x, groundHeight(x, z) - 0.2, z);
+    scl.set(s, s * (0.85 + rng() * 0.5), s);
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng() * Math.PI * 2);
+    m.compose(pos, q, scl);
+    trunks.setMatrixAt(placed, m);
+    leaves.setMatrixAt(placed, m);
+    tint.copy(COLOR.leafA).lerp(COLOR.leafB, rng());
+    leaves.setColorAt(placed, tint);
+    placed++;
+  }
+  trunks.count = placed;
+  leaves.count = placed;
+  if (leaves.instanceColor) leaves.instanceColor.needsUpdate = true;
+  return [trunks, leaves];
+}
+// Trees are placed on a fixed scatter and the track is generated inside
+// them; a clearing is carved per track further down.
+const [treeTrunks, treeLeaves] = buildTrees(950);
+scene.add(treeTrunks);
+scene.add(treeLeaves);
+
+function buildBuildings(count) {
+  const rng = scatterRng(0xb01dface);
+  const geo = new THREE.BoxGeometry(1, 1, 1);
+  geo.translate(0, 0.5, 0);
+  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: COLOR.building }), count);
+  const m = new THREE.Matrix4();
+  const q = new THREE.Quaternion();
+  const pos = new THREE.Vector3();
+  const scl = new THREE.Vector3();
+  const tint = new THREE.Color();
+  for (let i = 0; i < count; i++) {
+    const ang = rng() * Math.PI * 2;
+    const rad = 210 + rng() * 330;
+    const x = Math.cos(ang) * rad;
+    const z = Math.sin(ang) * rad;
+    pos.set(x, groundHeight(x, z), z);
+    scl.set(9 + rng() * 22, 9 + rng() * 42, 9 + rng() * 22);
+    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng() * Math.PI * 2);
+    m.compose(pos, q, scl);
+    mesh.setMatrixAt(i, m);
+    tint.copy(COLOR.building).offsetHSL(0, 0, (rng() - 0.5) * 0.12);
+    mesh.setColorAt(i, tint);
+  }
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  return mesh;
+}
+scene.add(buildBuildings(90));
+
+function buildClouds(count) {
+  const rng = scatterRng(0xc10bd5);
+  const group = new THREE.Group();
+  const mat = new THREE.MeshLambertMaterial({ color: COLOR.cloud, transparent: true, opacity: 0.94 });
+  const geo = new THREE.SphereGeometry(1, 9, 7);
+  for (let i = 0; i < count; i++) {
+    const puff = new THREE.Group();
+    const lumps = 3 + Math.floor(rng() * 4);
+    for (let j = 0; j < lumps; j++) {
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set((rng() - 0.5) * 34, (rng() - 0.5) * 6, (rng() - 0.5) * 16);
+      const s = 7 + rng() * 12;
+      mesh.scale.set(s, s * (0.45 + rng() * 0.25), s * 0.8);
+      puff.add(mesh);
+    }
+    const ang = rng() * Math.PI * 2;
+    const rad = 90 + rng() * 460;
+    puff.position.set(Math.cos(ang) * rad, 105 + rng() * 85, Math.sin(ang) * rad);
+    group.add(puff);
+  }
+  return group;
+}
+scene.add(buildClouds(20));
+
+// ============================================================
+// Track geometry
+// ============================================================
+
+// A tube of square-ish cross-section swept along a centreline, built by
+// hand so the frame (and therefore the banking) is exactly the one the
+// physics used.
+function sweptTube(centres, ups, tangents, radius, radialSegments) {
+  const n = centres.length;
+  const verts = new Float32Array(n * radialSegments * 3);
+  const indices = [];
+  const lateral = new THREE.Vector3();
+  const up = new THREE.Vector3();
+  const tan = new THREE.Vector3();
+  const p = new THREE.Vector3();
+
+  for (let i = 0; i < n; i++) {
+    up.set(ups[i].x, ups[i].y, ups[i].z);
+    tan.set(tangents[i].x, tangents[i].y, tangents[i].z);
+    lateral.crossVectors(tan, up).normalize();
+    for (let j = 0; j < radialSegments; j++) {
+      const a = (j / radialSegments) * Math.PI * 2;
+      const ca = Math.cos(a) * radius;
+      const sa = Math.sin(a) * radius;
+      p.set(
+        centres[i].x + lateral.x * ca + up.x * sa,
+        centres[i].y + lateral.y * ca + up.y * sa,
+        centres[i].z + lateral.z * ca + up.z * sa,
+      );
+      const o = (i * radialSegments + j) * 3;
+      verts[o] = p.x;
+      verts[o + 1] = p.y;
+      verts[o + 2] = p.z;
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    const i2 = (i + 1) % n;
+    for (let j = 0; j < radialSegments; j++) {
+      const j2 = (j + 1) % radialSegments;
+      const a = i * radialSegments + j;
+      const b = i * radialSegments + j2;
+      const c = i2 * radialSegments + j2;
+      const d = i2 * radialSegments + j;
+      indices.push(a, b, c, a, c, d);
+    }
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute("position", new THREE.BufferAttribute(verts, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+function offsetLine(track, lateralOffset, upOffset) {
+  const out = [];
+  const lat = new THREE.Vector3();
+  const up = new THREE.Vector3();
+  const tan = new THREE.Vector3();
+  for (let i = 0; i < track.points.length; i++) {
+    up.set(track.ups[i].x, track.ups[i].y, track.ups[i].z);
+    tan.set(track.tangents[i].x, track.tangents[i].y, track.tangents[i].z);
+    lat.crossVectors(tan, up).normalize();
+    out.push({
+      x: track.points[i].x + lat.x * lateralOffset + up.x * upOffset,
+      y: track.points[i].y + lat.y * lateralOffset + up.y * upOffset,
+      z: track.points[i].z + lat.z * lateralOffset + up.z * upOffset,
+    });
+  }
+  return out;
+}
+
+function buildTrackMesh(track) {
+  const group = new THREE.Group();
+  const railMat = new THREE.MeshStandardMaterial({ color: COLOR.rail, roughness: 0.55, metalness: 0.25 });
+  const tieMat = new THREE.MeshStandardMaterial({ color: COLOR.tie, roughness: 0.85, metalness: 0.15 });
+  const spineMat = new THREE.MeshStandardMaterial({ color: COLOR.spine, roughness: 0.7, metalness: 0.3 });
+
+  // Two running rails.
+  for (const side of [-1, 1]) {
+    const line = offsetLine(track, side * GAUGE * 0.5, 0);
+    const geo = sweptTube(line, track.ups, track.tangents, RAIL_RADIUS, 6);
+    const mesh = new THREE.Mesh(geo, railMat);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    group.add(mesh);
+  }
+
+  // Spine below the rails.
+  const spineLine = offsetLine(track, 0, -0.62);
+  const spineGeo = sweptTube(spineLine, track.ups, track.tangents, 0.3, 4);
+  const spine = new THREE.Mesh(spineGeo, spineMat);
+  spine.castShadow = true;
+  group.add(spine);
+
+  // Cross ties every few samples.
+  const step = 2;
+  const tieCount = Math.floor(track.points.length / step);
+  const tieGeo = new THREE.BoxGeometry(GAUGE * 2.0, 0.1, 0.28);
+  const ties = new THREE.InstancedMesh(tieGeo, tieMat, tieCount);
+  ties.castShadow = true;
+  const m = new THREE.Matrix4();
+  const lat = new THREE.Vector3();
+  const up = new THREE.Vector3();
+  const tan = new THREE.Vector3();
+  const pos = new THREE.Vector3();
+  for (let k = 0; k < tieCount; k++) {
+    const i = k * step;
+    up.set(track.ups[i].x, track.ups[i].y, track.ups[i].z);
+    tan.set(track.tangents[i].x, track.tangents[i].y, track.tangents[i].z);
+    lat.crossVectors(tan, up).normalize();
+    pos.set(
+      track.points[i].x - up.x * 0.34,
+      track.points[i].y - up.y * 0.34,
+      track.points[i].z - up.z * 0.34,
+    );
+    m.makeBasis(lat, up, tan);
+    m.setPosition(pos);
+    ties.setMatrixAt(k, m);
+  }
+  group.add(ties);
+
+  // Support columns down to the ground.
+  const columns = supportColumns(track, 8.5);
+  if (columns.length) {
+    const colGeo = new THREE.CylinderGeometry(0.24, 0.32, 1, 6);
+    colGeo.translate(0, 0.5, 0);
+    const colMat = new THREE.MeshStandardMaterial({ color: COLOR.support, roughness: 0.75, metalness: 0.35 });
+    const posts = new THREE.InstancedMesh(colGeo, colMat, columns.length);
+    posts.castShadow = true;
+    posts.receiveShadow = true;
+    const q = new THREE.Quaternion();
+    const p = new THREE.Vector3();
+    const s = new THREE.Vector3();
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      const base = groundHeight(col.x, col.z);
+      p.set(col.x, base, col.z);
+      s.set(1, Math.max(0.5, col.top - base - 0.35), 1);
+      m.compose(p, q, s);
+      posts.setMatrixAt(i, m);
+    }
+    group.add(posts);
+  }
+
+  // Station canopy over the boarding straight.
+  const stationIdx = track.roles.indexOf("station");
+  if (stationIdx >= 0) {
+    const p = track.points[Math.max(0, stationIdx)];
+    const deck = new THREE.Mesh(
+      new THREE.BoxGeometry(9, 0.5, 16),
+      new THREE.MeshStandardMaterial({ color: 0x8b7a63, roughness: 0.9 }),
+    );
+    const tan = track.tangents[Math.max(0, stationIdx)];
+    deck.position.set(p.x, p.y - 1.5, p.z);
+    deck.rotation.y = Math.atan2(tan.x, tan.z);
+    deck.receiveShadow = true;
+    deck.castShadow = true;
+    group.add(deck);
+  }
+
+  return group;
+}
+
+function buildTrain(cars) {
+  const group = new THREE.Group();
+  const bodyMat = new THREE.MeshStandardMaterial({ color: COLOR.car, roughness: 0.45, metalness: 0.3 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: COLOR.carDark, roughness: 0.7 });
+  for (let i = 0; i < cars; i++) {
+    const car = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.85, 3.1), bodyMat);
+    body.position.y = 0.62;
+    body.castShadow = true;
+    car.add(body);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1.15, 4), bodyMat);
+    nose.rotation.x = Math.PI / 2;
+    nose.rotation.y = Math.PI / 4;
+    nose.position.set(0, 0.62, 2.05);
+    nose.castShadow = true;
+    car.add(nose);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.16, 0.16), trimMat);
+    bar.position.set(0, 1.12, 0.35);
+    car.add(bar);
+    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.4, 2.6), trimMat);
+    chassis.position.y = 0.2;
+    car.add(chassis);
+    group.add(car);
+  }
+  return group;
+}
+
+// Clear the trees that the track would otherwise grow through.
+function carveClearing(track) {
+  const m = new THREE.Matrix4();
+  const pos = new THREE.Vector3();
+  const q = new THREE.Quaternion();
+  const scl = new THREE.Vector3();
+  for (const mesh of [treeTrunks, treeLeaves]) {
+    for (let i = 0; i < mesh.count; i++) {
+      mesh.getMatrixAt(i, m);
+      m.decompose(pos, q, scl);
+      let clash = false;
+      for (let k = 0; k < track.points.length; k += 2) {
+        const p = track.points[k];
+        if ((p.x - pos.x) * (p.x - pos.x) + (p.z - pos.z) * (p.z - pos.z) < 64) { clash = true; break; }
+      }
+      // Sink offenders below the ground rather than reshuffling the
+      // whole scatter: keeps every other tree exactly where it was.
+      const wanted = clash ? -40 : groundHeight(pos.x, pos.z) - 0.2;
+      if (Math.abs(pos.y - wanted) > 0.01) {
+        pos.y = wanted;
+        m.compose(pos, q, scl);
+        mesh.setMatrixAt(i, m);
+      }
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+}
+
+// ============================================================
+// Ride state
+// ============================================================
+const CAM_MODES = ["orbit", "chase", "pov"];
+const state = {
+  track: null,
+  sim: null,
+  trackGroup: null,
+  train: null,
+  camMode: "orbit",
+  riding: false,
+  orbit: { yaw: 0.7, pitch: 0.42, dist: 250, target: new THREE.Vector3(0, 18, 0) },
+};
+
+function disposeGroup(group) {
+  if (!group) return;
+  group.traverse((obj) => {
+    if (obj.geometry) obj.geometry.dispose();
+    if (obj.material) {
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      for (const mat of mats) mat.dispose();
+    }
+  });
+  scene.remove(group);
+}
+
+function loadTrack(seed) {
+  const track = buildTrack(seed >>> 0);
+  disposeGroup(state.trackGroup);
+  disposeGroup(state.train);
+
+  state.track = track;
+  state.sim = new CoasterSim(track);
+  state.trackGroup = buildTrackMesh(track);
+  state.train = buildTrain(3);
+  scene.add(state.trackGroup);
+  scene.add(state.train);
+  carveClearing(track);
+
+  let cx = 0;
+  let cz = 0;
+  for (const p of track.points) { cx += p.x; cz += p.z; }
+  state.orbit.target.set(cx / track.points.length, track.apex * 0.42, cz / track.points.length);
+  state.orbit.dist = Math.min(420, Math.max(170, track.length * 0.34));
+
+  document.getElementById("track-name").textContent = track.name;
+  setText("stat-length", Math.round(track.length));
+}
+
+// ============================================================
+// Camera
+// ============================================================
+const tmpPos = new THREE.Vector3();
+const tmpUp = new THREE.Vector3();
+const tmpFwd = new THREE.Vector3();
+const smoothUp = new THREE.Vector3(0, 1, 0);
+
+function updateCamera(ride, dt) {
+  if (state.camMode === "orbit") {
+    const o = state.orbit;
+    const cp = Math.cos(o.pitch);
+    camera.up.set(0, 1, 0);
+    camera.position.set(
+      o.target.x + Math.sin(o.yaw) * cp * o.dist,
+      o.target.y + Math.sin(o.pitch) * o.dist,
+      o.target.z + Math.cos(o.yaw) * cp * o.dist,
+    );
+    camera.lookAt(o.target);
+    return;
+  }
+
+  tmpPos.set(ride.pos.x, ride.pos.y, ride.pos.z);
+  tmpUp.set(ride.up.x, ride.up.y, ride.up.z);
+  tmpFwd.set(ride.fwd.x, ride.fwd.y, ride.fwd.z);
+  // Ease the roll a touch so the horizon does not judder sample to
+  // sample, but keep it fast enough to read as a real inversion.
+  smoothUp.lerp(tmpUp, Math.min(1, dt * 14)).normalize();
+
+  if (state.camMode === "pov") {
+    camera.up.copy(smoothUp);
+    camera.position.copy(tmpPos)
+      .addScaledVector(smoothUp, 1.32)
+      .addScaledVector(tmpFwd, 0.55);
+    camera.lookAt(
+      tmpPos.x + tmpFwd.x * 30 + smoothUp.x * 1.3,
+      tmpPos.y + tmpFwd.y * 30 + smoothUp.y * 1.3,
+      tmpPos.z + tmpFwd.z * 30 + smoothUp.z * 1.3,
+    );
+  } else {
+    camera.up.set(0, 1, 0);
+    camera.position.copy(tmpPos)
+      .addScaledVector(tmpFwd, -13)
+      .addScaledVector(smoothUp, 4.6);
+    camera.lookAt(tmpPos.x, tmpPos.y + 1.2, tmpPos.z);
+  }
+}
+
+function updateTrain(ride) {
+  if (!state.train) return;
+  const spacing = 3.4;
+  const m = new THREE.Matrix4();
+  const lat = new THREE.Vector3();
+  const up = new THREE.Vector3();
+  const fwd = new THREE.Vector3();
+  const pos = new THREE.Vector3();
+  for (let i = 0; i < state.train.children.length; i++) {
+    const sample = state.sim.sample(ride.s - i * spacing);
+    up.set(sample.up.x, sample.up.y, sample.up.z);
+    fwd.set(sample.fwd.x, sample.fwd.y, sample.fwd.z);
+    lat.crossVectors(fwd, up).normalize();
+    pos.set(sample.pos.x, sample.pos.y, sample.pos.z).addScaledVector(up, 0.18);
+    m.makeBasis(lat, up, fwd);
+    m.setPosition(pos);
+    state.train.children[i].matrix.copy(m);
+    state.train.children[i].matrixAutoUpdate = false;
+    state.train.children[i].matrixWorldNeedsUpdate = true;
+  }
+  // The rider's own car is hidden in POV so it does not fill the lens.
+  state.train.children[0].visible = state.camMode !== "pov";
+}
+
+// ============================================================
+// HUD
+// ============================================================
+const lastText = {};
+function setText(id, value) {
+  const text = String(value);
+  if (lastText[id] === text) return;
+  lastText[id] = text;
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function updateHud(ride) {
+  setText("stat-speed", Math.round(ride.speedKmh));
+  setText("stat-g", ride.gForce.toFixed(1));
+  setText("stat-height", Math.round(Math.max(0, ride.height)));
+}
+
+function syncButtons() {
+  const rideBtn = document.getElementById("btn-ride");
+  rideBtn.innerHTML = state.riding ? "&#9632; Exit ride (R)" : "&#9654; Ride (R)";
+  rideBtn.setAttribute("aria-label", state.riding ? "Leave the ride" : "Ride the coaster");
+  const camBtn = document.getElementById("btn-cam");
+  camBtn.innerHTML = "&#9678; Cam: " + state.camMode + " (C)";
+}
+
+function setRiding(riding) {
+  state.riding = riding;
+  state.camMode = riding ? "pov" : "orbit";
+  syncButtons();
+}
+
+function cycleCamera() {
+  const next = CAM_MODES[(CAM_MODES.indexOf(state.camMode) + 1) % CAM_MODES.length];
+  state.camMode = next;
+  state.riding = next !== "orbit";
+  syncButtons();
+}
+
+function newTrack() {
+  loadTrack((Math.random() * 0xffffffff) >>> 0);
+}
+
+// ============================================================
+// Input
+// ============================================================
+document.getElementById("btn-ride").addEventListener("click", () => setRiding(!state.riding));
+document.getElementById("btn-new").addEventListener("click", newTrack);
+document.getElementById("btn-cam").addEventListener("click", cycleCamera);
+
+window.addEventListener("keydown", (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const key = e.key.toLowerCase();
+  if (key === "r") { setRiding(!state.riding); e.preventDefault(); }
+  else if (key === "n") { newTrack(); e.preventDefault(); }
+  else if (key === "c") { cycleCamera(); e.preventDefault(); }
+});
+
+const drag = { active: false, x: 0, y: 0, id: null };
+canvas.addEventListener("pointerdown", (e) => {
+  drag.active = true;
+  drag.x = e.clientX;
+  drag.y = e.clientY;
+  drag.id = e.pointerId;
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener("pointermove", (e) => {
+  if (!drag.active || e.pointerId !== drag.id) return;
+  const dx = e.clientX - drag.x;
+  const dy = e.clientY - drag.y;
+  drag.x = e.clientX;
+  drag.y = e.clientY;
+  if (state.camMode !== "orbit") return;
+  state.orbit.yaw -= dx * 0.006;
+  state.orbit.pitch = Math.min(1.35, Math.max(0.03, state.orbit.pitch + dy * 0.004));
+});
+function endDrag(e) {
+  if (drag.id !== null && e.pointerId === drag.id) {
+    drag.active = false;
+    drag.id = null;
+  }
+}
+canvas.addEventListener("pointerup", endDrag);
+canvas.addEventListener("pointercancel", endDrag);
+
+canvas.addEventListener("wheel", (e) => {
+  if (state.camMode !== "orbit") return;
+  e.preventDefault();
+  state.orbit.dist = Math.min(600, Math.max(45, state.orbit.dist * (1 + Math.sign(e.deltaY) * 0.11)));
+}, { passive: false });
+
+// Pinch to zoom.
+const touches = new Map();
+canvas.addEventListener("pointerdown", (e) => touches.set(e.pointerId, e));
+canvas.addEventListener("pointerup", (e) => touches.delete(e.pointerId));
+canvas.addEventListener("pointercancel", (e) => touches.delete(e.pointerId));
+let pinchDist = 0;
+canvas.addEventListener("pointermove", (e) => {
+  if (!touches.has(e.pointerId)) return;
+  touches.set(e.pointerId, e);
+  if (touches.size !== 2) { pinchDist = 0; return; }
+  const [a, b] = [...touches.values()];
+  const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+  if (pinchDist && state.camMode === "orbit") {
+    state.orbit.dist = Math.min(600, Math.max(45, state.orbit.dist * (pinchDist / d)));
+  }
+  pinchDist = d;
+});
+
+function resize() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener("resize", resize);
+
+// ============================================================
+// Boot and main loop
+// ============================================================
+const params = new URLSearchParams(window.location.search);
+const seedParam = Number.parseInt(params.get("seed") || "", 10);
+loadTrack(Number.isFinite(seedParam) ? seedParam : (Math.random() * 0xffffffff) >>> 0);
+syncButtons();
+resize();
+
+let last = performance.now();
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000);
+  last = now;
+  const ride = state.sim.step(dt);
+  updateTrain(ride);
+  updateCamera(ride, dt);
+  updateHud(ride);
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+}
+
+window.__ironVertexReady = true;
+document.getElementById("notice").hidden = true;
+requestAnimationFrame(frame);
+</script>
+
+<script defer src="/almanac-back.js"></script>
