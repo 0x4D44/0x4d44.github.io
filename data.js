@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "african-star",
+    title: "The African Star",
+    tagline: "A lavish browser adaptation of Kari Mannerla’s Finnish route-and-reveal classic: cross a hand-drawn Africa by road, ship and aeroplane, turn thirty hidden disks, outwit rival expeditions, and race the Star — or a lucky horseshoe — home. Original SVG illustration, offline vanilla JavaScript; no build step.",
+    url: "https://0x4d44.github.io/african-star/",
+    illustration: "ill-map",
+    date: "2026-07-25T19:00:00",
+    year: 1951,
+    tags: ["games", "history"],
+    real: true,
+  },
+  {
     slug: "root-and-crown",
     title: "Root and Crown",
     tagline: "A deep, interactive field guide to the tooth — the one organ your body cannot repair. Why enamel never grows back, why toothache is its own category of pain, the acid clock behind decay, and what each repair from filling to implant really buys you. Nine chapters, 27 live figures and a real annotated radiograph.",
@@ -1534,7 +1545,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers and a flight sim.",
-    slugs: ["vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },
