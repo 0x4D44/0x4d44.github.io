@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "iron-vertex",
+    title: "Iron Vertex",
+    tagline: "A rollercoaster that designs itself. Press one button and a fresh circuit is drawn, propped up and handed over to gravity — chain lift, first drop, a vertical loop, then home to the brakes. Ride it from the front seat or watch from the air. Three.js, and a physics core that proves every track it builds is actually rideable.",
+    url: "https://0x4d44.github.io/iron-vertex/",
+    illustration: "ill-coaster",
+    date: "2026-07-26T09:30:00",
+    year: 1959,
+    readingMin: 6,
+    words: 900,
+    tags: ["simulation", "engineering"],
+    real: true,
+  },
+  {
     slug: "african-star",
     title: "The African Star",
     tagline: "A lavish browser adaptation of Kari Mannerla’s Finnish route-and-reveal classic: cross a hand-drawn Africa by road, ship and aeroplane, turn thirty hidden disks, outwit rival expeditions, and race the Star — or a lucky horseshoe — home. Original SVG illustration, offline vanilla JavaScript; no build step.",
@@ -1544,8 +1557,8 @@ window.COLLECTIONS = [
     slugs: ["transistor-packages", "broadband-speed-checker", "opus-verdict",
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
-    blurb: "Games you play to win — cards, boards, racers and a flight sim.",
-    slugs: ["african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
+    slugs: ["iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },
