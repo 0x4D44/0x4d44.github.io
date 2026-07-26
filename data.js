@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "lost-valley-dinosaurs",
+    title: "Lost Valley of the Dinosaurs",
+    tagline: "A lavish browser adaptation of Waddingtons’ erupting 1985 adventure game: guide four explorers through caves and rivers, steal treasure from the temple, direct six tyrannosaurs, survive the pteranodon and swamp monster, and escape before thirty lava counters bury the valley. Original SVG table art, deterministic offline vanilla JavaScript; no build step.",
+    url: "https://0x4d44.github.io/lost-valley-dinosaurs/",
+    illustration: "ill-impact",
+    date: "2026-07-26T16:45:00",
+    year: 1985,
+    tags: ["games", "history"],
+    real: true,
+  },
+  {
     slug: "iron-vertex",
     title: "Iron Vertex",
     tagline: "A rollercoaster that designs itself. Press one button and a fresh circuit is drawn, propped up and handed over to gravity — chain lift, first drop, a vertical loop, then home to the brakes. Ride it from the front seat or watch from the air. Three.js, and a physics core that proves every track it builds is actually rideable.",
@@ -1558,7 +1569,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },
