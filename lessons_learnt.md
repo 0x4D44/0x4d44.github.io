@@ -3,6 +3,20 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-26 — Edit y after arc-length resampling → uneven spacing → curvature ÷ nominal
+  ds overstates g ~3x (`iron-vertex/track.js:relaxProfile`); re-resample after. This one
+  defect masqueraded as three unrelated ones — a spacing-uniformity failure, wrong g
+  readings, and "generation is too timid" (loops kept being rejected as too violent by a
+  budget fed with inflated numbers). General rule for these procedural-geometry docs: any
+  pass that MOVES sample positions invalidates every quantity derived from the sample
+  spacing, so re-establish the invariant before measuring anything. More broadly, the split
+  that made all of this findable was keeping the generator and physics in a pure ESM module
+  (no Three.js, no DOM) with the renderer as a thin consumer: eight substantive defects —
+  a role/parameterisation mismatch across a geometry splice, a lift released while still
+  climbing, a 30g pull-out, a loop pinched by pouring the base gradient into its forward
+  axis, a 140°-in-3m snap roll — were all caught by `node --test` in milliseconds. Verify
+  by simulation, not by heuristic: `buildTrack` rides its own finished track and retries
+  until the train demonstrably completes the circuit.
 - 2026-07-13 — The `/deep-review` workflow is **diff-oriented**: run from a fresh
   worktree off `origin/main` (empty diff), it silently retargets to the most recent
   *commit* instead of erroring. A darmok area-review launched this way reviewed the
