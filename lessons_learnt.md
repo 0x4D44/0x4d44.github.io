@@ -3,6 +3,26 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-30 — A penalty square 3 stones from HOME made being bitten a 72% win — measure
+  outcome rates (`game-of-dracula/engine.js:EDGE_LIST`). The rule text said "victims are
+  carried to the vault" and the code did exactly that; the defect was purely the board
+  graph, which wired the vault into the left HOME run three stones from escape while the
+  START stones sat 11–13 away. Since every red sector moves a guest exactly 3 or 4, both
+  counts landed on the doorway. No unit test could see it — all 18 passed, and the shipped
+  5000-game simulation reported zero stalls — because "did the game finish" is not "is the
+  game fair". What found it was a *differential* measurement: win rate conditioned on
+  having been penalised (72.3% vs 14.3%; now 23.3% vs 25.2%). For any game doc, assert on
+  graph distances between the special squares and the win condition, and on conditional
+  win rates, not just on completion. Two related traps in the same pass: a residual
+  "seat 3 wins more" signal is worth decomposing into wins-by-seat vs
+  wins-by-offset-from-opener before calling it bias — here the real effect was a 32.6%
+  vs 19.0% first-mover advantage inherent to a race, plus a *documented* seat-order
+  tie-break; and seeding xorshift32 with a raw small "night number" makes the very first
+  draw degenerate (every seed <1000 opened seat 1, seat 4 never opened under 10000), so
+  avalanche the seed — but note that mixing breaks `new RNG(rng.state)` as a way to
+  round-trip a generator, which is exactly what the test helpers used to predict the next
+  spin (`RNG.fromState` now exists for that, and `Game.restore` was already hand-rolling
+  the overwrite).
 - 2026-07-26 — Edit y after arc-length resampling → uneven spacing → curvature ÷ nominal
   ds overstates g ~3x (`iron-vertex/track.js:relaxProfile`); re-resample after. This one
   defect masqueraded as three unrelated ones — a spacing-uniformity failure, wrong g
