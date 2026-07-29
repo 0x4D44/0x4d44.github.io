@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "game-of-dracula",
+    title: "Game of Dracula",
+    tagline: "A vivid browser restoration of Waddingtons’ 1977 castle chase: spin Dracula around his blood-red trail, race the yellow stones, hide from two vampires, and pass the Green Vampire mask from victim to victim. Original SVG table art, hot-seat and automata, deterministic offline vanilla JavaScript; no build step.",
+    url: "https://0x4d44.github.io/game-of-dracula/",
+    illustration: "ill-eye",
+    date: "2026-07-29T18:00:00",
+    year: 1977,
+    tags: ["games", "history"],
+    real: true,
+  },
+  {
     slug: "lost-valley-dinosaurs",
     title: "Lost Valley of the Dinosaurs",
     tagline: "A lavish browser adaptation of Waddingtons’ erupting 1985 adventure game: guide four explorers through caves and rivers, steal treasure from the temple, direct six tyrannosaurs, survive the pteranodon and swamp monster, and escape before thirty lava counters bury the valley. Original SVG table art, deterministic offline vanilla JavaScript; no build step.",
@@ -1569,7 +1580,7 @@ window.COLLECTIONS = [
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
-    slugs: ["lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
+    slugs: ["game-of-dracula", "lost-valley-dinosaurs", "iron-vertex", "african-star", "vector-gp", "brilliancy", "onu", "quixo", "quarto", "pylos", "focus",
       "salient", "estimation-whist-game", "humanity-retention", "span-of-control",
       "coil", "japanese-wordle", "tidecall", "flight", "northern-line-1987",
       "chief-engineer"] },
