@@ -13,7 +13,10 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const VERSION = 1;
+  // 2: the crypt was re-cut as a dead-end stair off the vault antechamber, so
+  // saves written against the old board (where the vault sat on the HOME run)
+  // describe a different graph and must not resume.
+  const VERSION = 2;
 
   const PLAYER_STYLES = [
     { name: "Crimson", colour: "#e8453c", dark: "#7c1718", symbol: "●" },
@@ -42,6 +45,11 @@
     // room, reflecting period recollections of the former vampire diving for
     // cover as the mask changes hands.
     releasedVampireFindsCover: true,
+    // Evidence fixes that victims are carried to the vault, but not where the
+    // vault sits on the board. Cutting the crypt as a dead-end stair off the
+    // vault antechamber is what makes a bite cost something: reachable, but a
+    // long climb back out, and touching the HOME run nowhere.
+    cryptIsADeadEnd: true,
   });
 
   const ROOMS = Object.freeze([
@@ -116,11 +124,22 @@
     node("m3", 545, 500, "court", { hide: true }),
     node("m4", 540, 430, "court"),
 
-    node("v0", 205, 630, "vault"),
-    node("vault", 125, 685, "vault", { kind: "vault", hide: true }),
-    node("v2", 190, 735, "vault"),
-    node("v3", 285, 690, "chapel", { hide: true }),
+    // The left HOME run, mirroring the right (re3-g0-g1-g2-g3-home-right).
+    node("v0", 256, 606, "vault"),
+    node("v1", 232, 668, "vault", { hide: true }),
+    node("v2", 252, 740, "vault"),
+    node("v3", 300, 690, "chapel", { hide: true }),
     node("home-left", 355, 748, "gate", { kind: "home", home: true }),
+
+    // Dracula's crypt: a dead-end stair descending from the vault antechamber
+    // to the coffin. Victims are carried down here and must climb back out, so
+    // the crypt deliberately touches the HOME run nowhere. Stones avoid the
+    // decorative corner tower drawn at (68,740).
+    node("cr1", 192, 600, "vault"),
+    node("cr2", 132, 606, "vault"),
+    node("cr3", 86, 650, "vault"),
+    node("cr4", 146, 686, "vault"),
+    node("vault", 168, 750, "vault", { kind: "vault", hide: true }),
 
     node("g0", 795, 630, "gate"),
     node("g1", 875, 685, "gate", { hide: true, perch: 6 }),
@@ -143,7 +162,8 @@
     ["w3", "lw0"], ["lw0", "lw1"], ["lw1", "lw2"], ["lw2", "lw3"], ["lw3", "lw4"], ["lw4", "lw5"], ["lw5", "lw6"], ["lw6", "lw0"], ["lw5", "c3"],
     ["e3", "re0"], ["re0", "re1"], ["re1", "re2"], ["re2", "re3"], ["re3", "re4"], ["re4", "re5"], ["re5", "re6"], ["re6", "re0"], ["re5", "c3"],
     ["c3", "m0"], ["m0", "m1"], ["m1", "m2"], ["m2", "m3"], ["m3", "m4"], ["m4", "c3"], ["m1", "lw5"], ["m3", "re5"],
-    ["lw3", "v0"], ["v0", "vault"], ["vault", "v2"], ["v2", "v3"], ["v3", "home-left"], ["v3", "x0"],
+    ["lw3", "v0"], ["v0", "v1"], ["v1", "v2"], ["v2", "v3"], ["v3", "home-left"], ["v3", "x0"],
+    ["v0", "cr1"], ["cr1", "cr2"], ["cr2", "cr3"], ["cr3", "cr4"], ["cr4", "vault"],
     ["re3", "g0"], ["g0", "g1"], ["g1", "g2"], ["g2", "g3"], ["g3", "home-right"], ["g3", "x2"],
     ["m2", "x1"], ["x0", "x1"], ["x1", "x2"], ["x0", "v3"], ["x2", "g3"], ["x0", "home-left"], ["x2", "home-right"],
   ];
@@ -242,7 +262,18 @@
       let value = Number(seed);
       if (!Number.isFinite(value)) value = Date.now();
       value = (value >>> 0) || 0x4d44d2ac;
-      this.state = value;
+      // Avalanche the seed before first use (splitmix32 finaliser). xorshift32
+      // started from a small state returns a small first output, and the very
+      // first next() call picks the opening seat — so a raw "Night no." like
+      // the default 1977 was severely biased: every seed below 1000 opened
+      // seat 1, and seat 4 could never open a four-player game for any seed
+      // below 10000. Mixing costs nothing and keeps the seed reproducible.
+      value ^= value >>> 16;
+      value = Math.imul(value, 0x21f0aaad) >>> 0;
+      value ^= value >>> 15;
+      value = Math.imul(value, 0x735a2d97) >>> 0;
+      value ^= value >>> 15;
+      this.state = (value >>> 0) || 0x4d44d2ac;
     }
     next() {
       let x = this.state >>> 0;
@@ -254,6 +285,13 @@
     }
     int(max) { return Math.floor(this.next() * max); }
     pick(list) { return list.length ? list[this.int(list.length)] : null; }
+    // Resume a generator at an exact state. The constructor deliberately mixes
+    // its argument, so it cannot be used to round-trip a saved state — use this.
+    static fromState(state) {
+      const rng = new RNG(0);
+      rng.state = (Number(state) >>> 0) || 0x4d44d2ac;
+      return rng;
+    }
   }
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -551,8 +589,7 @@
       validateSavedState(data);
       const game = Object.create(Game.prototype);
       game.state = data;
-      game.rng = new RNG(data.rngState);
-      game.rng.state = data.rngState >>> 0;
+      game.rng = RNG.fromState(data.rngState);
       game.events = [];
       return game;
     }

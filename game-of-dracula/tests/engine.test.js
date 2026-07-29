@@ -16,7 +16,7 @@ function forceSpin(game, predicate) {
   // Advance RNG state until the next sector matches. Tests use this only to
   // exercise public spin(), not to alter production rules.
   for (let attempts = 0; attempts < 1000; attempts += 1) {
-    const probe = new E.RNG(game.rng.state);
+    const probe = E.RNG.fromState(game.rng.state);
     const index = probe.int(E.SPINNER.length);
     if (predicate(E.SPINNER[index])) return game.spin();
     game.rng.next();
@@ -26,7 +26,7 @@ function forceSpin(game, predicate) {
 }
 
 test("castle graph is connected and every perch sits on a valid stone", () => {
-  assert.equal(Object.keys(E.NODES).length, 60);
+  assert.equal(Object.keys(E.NODES).length, 65);
   const seen = new Set(["s0"]);
   const queue = ["s0"];
   while (queue.length) {
