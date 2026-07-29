@@ -14,7 +14,7 @@ function gameWithPlayers(count = 4, seed = 0x4d44) {
 
 function forceRedMove(game) {
   for (let attempts = 0; attempts < 1000; attempts += 1) {
-    const probe = new E.RNG(game.rng.state);
+    const probe = E.RNG.fromState(game.rng.state);
     const sector = E.SPINNER[probe.int(E.SPINNER.length)];
     if (sector.type === "red") {
       game.spin();
@@ -99,4 +99,80 @@ test("restore rejects structurally plausible but contradictory saves", () => {
   wrongWinner.winner = 0;
   wrongWinner.endReason = "A forged escape";
   assert.throws(() => E.Game.restore(wrongWinner), /winner state is inconsistent/);
+});
+
+// --- regressions for the two defects found before this document was published -
+
+test("the crypt is a setback: the vault is nowhere near the HOME run", () => {
+  // The shipped board wired the vault straight into the left HOME run
+  // (vault-v2-v3-home-left), putting it 3 stones from escape while the START
+  // stones sit 11-13 away. Every red sector carries an inner 3 or 4 and both
+  // counts landed exactly on home-left, so being carried to the vault was a
+  // near-certain win: over 4000 automata games a guest who had been vaulted won
+  // ~72% of the time against ~14% for one who never was. The crypt is now a
+  // dead-end stair, so a bite costs tempo instead of handing over the game.
+  const toHome = Math.min(...[...E.HOME_NODES].map((home) => E.graphDistance("vault", home)));
+  assert.ok(toHome >= 8, "the vault must be a long climb from HOME, got " + toHome);
+
+  const startDistances = E.START_NODES.map((start) =>
+    Math.min(...[...E.HOME_NODES].map((home) => E.graphDistance(start, home))));
+  assert.ok(toHome >= Math.min(...startDistances) - 3,
+    "being vaulted must not beat starting the game, vault " + toHome + " vs starts " + startDistances);
+
+  // No single spin may take a vaulted guest home. Guests move the inner count
+  // on red, and the spinner offers nothing larger than 6.
+  for (let steps = 1; steps <= 6; steps += 1) {
+    const reachable = [...E.exactPaths("vault", steps).keys()];
+    assert.ok(!reachable.some((node) => E.HOME_NODES.has(node)),
+      "a vaulted guest must not reach HOME in one " + steps + "-stone move");
+  }
+
+  // The crypt must still be escapable, or a bite would be an elimination.
+  assert.ok(E.exactPaths("vault", 3).size > 0, "a vaulted guest must have a legal 3-stone move");
+  assert.ok(E.exactPaths("vault", 4).size > 0, "a vaulted guest must have a legal 4-stone move");
+});
+
+test("the night seed is mixed, so small Night numbers do not fix the opening seat", () => {
+  // RNG took the seed unmixed and the opening seat consumed its very first
+  // xorshift32 output, whose high bits are near zero for a small state. Every
+  // seed below 1000 opened seat 1, seat 4 could never open a four-player game
+  // for any seed below 10000, and the default 1977 always opened seat 1.
+  for (const count of [2, 3, 4]) {
+    const seen = new Set();
+    for (let seed = 1; seed <= 400; seed += 1) seen.add(new E.RNG(seed).int(count));
+    assert.equal(seen.size, count,
+      "every one of the " + count + " seats must be able to open within the first 400 Night numbers, saw " + [...seen].sort());
+  }
+  // And the spread must be broadly even rather than merely non-constant.
+  const counts = [0, 0, 0, 0];
+  for (let seed = 1; seed <= 4000; seed += 1) counts[new E.RNG(seed).int(4)] += 1;
+  for (const n of counts) {
+    assert.ok(n > 850 && n < 1150,
+      "opening seats must be near-uniform over small seeds, got " + counts);
+  }
+});
+
+test("RNG.fromState resumes a generator exactly, unlike the mixing constructor", () => {
+  // The constructor avalanches its argument, so new RNG(rng.state) does NOT
+  // reproduce a generator sitting at that state. Save/restore and the test
+  // helpers depend on exact resumption; this pins the distinction.
+  const live = new E.RNG(1977);
+  live.next(); live.next();
+  const resumed = E.RNG.fromState(live.state);
+  assert.equal(resumed.state, live.state, "fromState must adopt the state verbatim");
+  assert.equal(resumed.next(), live.next(), "a resumed generator must produce the same next value");
+
+  const mixed = new E.RNG(live.state);
+  assert.notEqual(mixed.state, live.state, "the constructor is expected to mix, not adopt");
+});
+
+test("a saved game from the old board layout is refused", () => {
+  // The crypt re-cut changed the graph, so version 1 saves describe a
+  // different castle and must not resume into this one.
+  const game = gameWithPlayers(2, 4242);
+  const save = JSON.parse(game.serialize());
+  assert.equal(save.version, 2, "the board change must carry a save-format bump");
+  save.version = 1;
+  assert.throws(() => E.Game.restore(JSON.stringify(save)), /version/i,
+    "a version 1 save must be rejected");
 });
