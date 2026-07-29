@@ -1,0 +1,65 @@
+name: Publish Game of Dracula candidate
+
+on:
+  push:
+    branches:
+      - agent/game-of-dracula-restoration
+    paths:
+      - .github/workflows/apply-game-of-dracula.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-game-of-dracula
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out candidate branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify and unpack reviewed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .github/dracula-payload.part-* > /tmp/dracula-payload.b64
+          test "$(wc -c < /tmp/dracula-payload.b64)" -eq 74800
+          echo "149ad917793b5f2b26b7713547135496f976a0f0629a4cc77af10ddfba4ba6c3  /tmp/dracula-payload.b64" | sha256sum -c -
+          base64 -d /tmp/dracula-payload.b64 > /tmp/dracula-payload.tar.xz
+          echo "6aa84004e8ddcd3cf171a1a410f69f3448fc2d040cf1c9c5a001e08ccdd0b3a4  /tmp/dracula-payload.tar.xz" | sha256sum -c -
+          mkdir -p /tmp/dracula-payload
+          tar -xJf /tmp/dracula-payload.tar.xz -C /tmp/dracula-payload
+          test -d /tmp/dracula-payload/game-of-dracula
+          test -f /tmp/dracula-payload/catalog-entry.patch
+          test ! -e game-of-dracula
+          cp -a /tmp/dracula-payload/game-of-dracula ./
+          git apply --check /tmp/dracula-payload/catalog-entry.patch
+          git apply /tmp/dracula-payload/catalog-entry.patch
+          git rm .github/dracula-payload.part-*
+          git add game-of-dracula data.js
+          git diff --cached --check
+
+      - name: Validate candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in game-of-dracula/engine.js game-of-dracula/app.js game-of-dracula/sw.js game-of-dracula/tests/*.js; do
+            node --check "$file"
+          done
+          node --test game-of-dracula/tests/*.test.js
+          node game-of-dracula/tests/simulate.js 5000
+
+      - name: Commit reviewed candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add Game of Dracula"
+          git push origin HEAD
