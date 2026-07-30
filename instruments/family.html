@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Piano Family — The Well-Tempered Machine</title>
+<meta name="description" content="Three centuries of the instrument: Cristofori's fragile fortepiano, the five-octave piano of Mozart's day, the iron-framed Romantic grand, the parlour upright, the Bösendorfer Imperial, the player piano, the prepared piano and the digital stage piano. Compare their keyboard compass and their footprints, to scale.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="strings.html">1 · Strings &amp; Frequency</a>
+    <a href="action.html">2 · The Action</a>
+    <a href="tone.html">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html">4 · Temperament</a>
+    <a href="anatomy.html">5 · Anatomy</a>
+    <a href="family.html" aria-current="page">6 · The Family</a>
+    <a href="lexicon.html">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 6</p>
+  <h1>The Piano Family</h1>
+  <p class="standfirst">The instrument in the last five chapters did not spring into being. It was argued into
+  shape over three hundred years, by rival makers each chasing a bit more volume, a bit more evenness, a wider
+  range, a repeating action. Line the family up and you can watch the modern grand assemble itself — and see how
+  much of "how a piano works" is really a snapshot of a machine still, quietly, evolving.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Every piano is a fortepiano that grew a cast-iron skeleton and never stopped eating octaves.</p>
+
+<p>The most visible way the piano changed is its <strong>compass</strong> — how many keys it has. Cristofori's
+first instruments barely spanned four octaves; composers promptly wrote to the very edges, and makers answered by
+extending the range, which meant longer, higher-tension strings, which meant a stronger frame, which was the iron
+plate of Chapter&nbsp;5. Pick an era and see how much keyboard a composer actually had under their hands:</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The keyboard grows</span>
+    <span class="hint">the playable compass, era by era</span>
+  </div>
+  <div class="fig-body"><canvas id="compass" style="aspect-ratio: 3.4 / 1; min-height: 150px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>era</label>
+      <span class="seg" id="cm-era">
+        <button data-v="crist" class="on">Cristofori ~1720</button>
+        <button data-v="mozart">Mozart ~1780</button>
+        <button data-v="broad">Broadwood ~1820</button>
+        <button data-v="modern">modern 88</button>
+        <button data-v="bosen">Bösendorfer 97</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="cm-keys"><b>—</b></span>
+    <span class="ro" id="cm-range">range <b>—</b></span>
+    <span class="ro" id="cm-oct">span <b>—</b></span>
+  </div>
+  <div class="fig-note">Grey is the full modern 97-key range for reference; gold is what that era's instrument
+  actually had. Each extension down the bass and up the treble waited on a frame strong enough to hold the strings.</div>
+</figure>
+
+<h2><span class="no">§ 6.1</span>A short march through the family</h2>
+
+<table class="data">
+  <caption>The line of descent</caption>
+  <tr><th>Instrument</th><th>When</th><th>The leap</th></tr>
+  <tr><td class="k">Cristofori's piano</td><td>c. 1700</td>
+    <td>The first escapement action. Soft leather hammers, a light harpsichord-like case, a thin but genuinely
+    dynamic tone. Three survive.</td></tr>
+  <tr><td class="k">Viennese fortepiano</td><td>c. 1780</td>
+    <td>Light, shallow action (Stein, Walter) with a clear, quick tone — the piano Mozart and Haydn knew. About five octaves.</td></tr>
+  <tr><td class="k">English grand</td><td>c. 1800</td>
+    <td>Broadwood's heavier action and bigger, more sustaining tone; a louder, more robust instrument that pushed the range wider.</td></tr>
+  <tr><td class="k">Érard repetition grand</td><td>1821</td>
+    <td>The double-escapement action (Chapter&nbsp;2) — fast repeated notes at last. Still used in every grand.</td></tr>
+  <tr class="hi"><td class="k">Iron-framed grand</td><td>c. 1825–1870</td>
+    <td>The full cast-iron plate (Babcock, 1825) plus overstringing (Steinway, 1859): huge tension, huge tone. The modern grand is born.</td></tr>
+  <tr><td class="k">Upright</td><td>19th c. on</td>
+    <td>Strings and action stood vertical to fit a parlour. The instrument that put a piano in ordinary homes.</td></tr>
+  <tr><td class="k">Player piano</td><td>c. 1900</td>
+    <td>A pneumatic mechanism reads a perforated paper roll and plays the keys — the recorded performance, before records.</td></tr>
+  <tr><td class="k">Digital piano</td><td>1980s on</td>
+    <td>Weighted keys drive sensors, not hammers; the sound is sampled or physically modelled. No strings, no tuning, but the same keyboard.</td></tr>
+</table>
+
+<h2><span class="no">§ 6.2</span>Grand, or upright — and how big?</h2>
+
+<p>Among acoustic pianos the great divide is <strong>grand</strong> (strings horizontal, hammers falling back
+under gravity, Érard's repetition action) versus <strong>upright</strong> (strings vertical, hammers returned by
+springs, a simpler action — Chapter&nbsp;2). Within the grands, size is destiny: a longer case means longer bass
+strings, a bigger soundboard, and — by Mersenne and by Chapter&nbsp;3 — a deeper, more even, more powerful tone.
+That is the entire reason a concert hall uses a nine-foot instrument and not a baby grand. Compare the footprints:</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Grands, to scale</span>
+    <span class="hint">footprint length sets the bass string length, and the tone</span>
+  </div>
+  <div class="fig-body"><canvas id="sizes" style="aspect-ratio: 2.3 / 1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>model</label>
+      <span class="seg" id="sz-model">
+        <button data-v="baby">baby grand</button>
+        <button data-v="parlour">parlour grand</button>
+        <button data-v="semi" class="on">semi-concert</button>
+        <button data-v="concert">concert grand</button>
+        <button data-v="imperial">Bösendorfer Imperial</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="sz-len"><b>—</b></span>
+    <span class="ro" id="sz-bass">longest bass string ≈ <b>—</b></span>
+    <span class="ro" id="sz-use">typically <b>—</b></span>
+  </div>
+  <div class="fig-note">All drawn to the same scale over a one-metre grid; faint outlines are the other models for
+  comparison. Lengths are representative — a "concert grand" is about nine feet (2.7&nbsp;m); a baby grand about five.</div>
+</figure>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float" aria-hidden="true"><use href="#char-maestro"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Maestro</p>
+    <p class="say">"People ask which piano has the 'best' bass. It's mostly length — a longer string can be
+    tuned low without so much winding, so it's less inharmonic and sings truer (Chapter&nbsp;3). That's why a
+    nine-foot concert grand rumbles cleanly where a spinet just thuds. Physics, not magic. Though a great
+    <em>voicing</em> never hurt."</p>
+  </div>
+</div>
+
+<h2><span class="no">§ 6.3</span>The edges of the family</h2>
+
+<p>Beyond the mainstream sit the instrument's odder cousins, each of which tells you something about how a piano
+works by breaking one of its rules:</p>
+
+<ul>
+  <li><strong>The prepared piano.</strong> Wedge bolts, coins and rubber between the strings, as John Cage did from
+  the late 1930s, and the hammer's clean blow becomes a buzz, a thunk, a gong. It is a live demonstration of
+  Chapter&nbsp;3: you are hacking the string's mass and its overtones by hand.</li>
+  <li><strong>The toy piano.</strong> No strings at all — the "hammers" strike tuned metal rods. It keeps the
+  keyboard and the action idea, and throws away everything else, which is why it sounds like a music box.</li>
+  <li><strong>The digital piano.</strong> The most radical cousin: it keeps <em>only</em> the weighted keyboard and
+  the escapement's <em>feel</em>, and replaces string, hammer, soundboard and tuning with a loudspeaker and either a
+  library of recorded samples or a real-time physical model of everything in this guide. When a modelled digital
+  piano computes inharmonicity and sympathetic resonance, it is running Chapters 1–3 as software.</li>
+</ul>
+
+<p>Which is a fitting place to end. Every one of these instruments — the fragile Florentine original, the
+iron-framed monster, the pocket digital — is a different answer to the same four questions we started with: how to
+fix a pitch, how to strike it freely, how to colour the tone, and how to tune the whole. Turn to the
+<a href="lexicon.html">lexicon</a> for the vocabulary, the constants, and every one of the 88 frequencies, set down
+in one place.</p>
+
+<div class="chapnav">
+  <a class="prev" href="anatomy.html"><span class="dir">← Previous</span><span class="title">5 · Anatomy &amp; Construction</span></a>
+  <a class="next" href="lexicon.html"><span class="dir">Next →</span><span class="title">7 · The Lexicon</span></a>
+</div>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · Chapter 6 · Cristofori (c.1700) through the digital piano; compass and
+size figures representative. Key dates: Érard double escapement 1821; Babcock full-plate patent 1825; Steinway
+overstrung grand patent 1859; Bösendorfer Imperial 97 keys. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, seg, TAU, clamp, lerp, mtof, noteName, isBlack, fmtHz, html } = PZ;
+
+  /* ---------- 6.0 compass comparator ---------- */
+  // full reference compass C0 (MIDI 12) .. C8 (MIDI 108) = 97 keys (Imperial)
+  const LO = 12, HI = 108;
+  const ERAS = {
+    crist:  { lo: 36, hi: 84, name: "Cristofori ~1720", note: "~4 octaves" },
+    mozart: { lo: 29, hi: 89, name: "Mozart-era fortepiano ~1780", note: "5 octaves (FF–f³)" },
+    broad:  { lo: 24, hi: 96, name: "Broadwood grand ~1820", note: "~6 octaves" },
+    modern: { lo: 21, hi: 108, name: "modern grand (from ~1880)", note: "88 keys, A0–C8" },
+    bosen:  { lo: 12, hi: 108, name: "Bösendorfer Imperial", note: "97 keys, C0–C8" },
+  };
+  let era = "crist", figCm;
+  function keyCount(lo, hi) { let n = 0; for (let m = lo; m <= hi; m++) n++; return n; }
+  function refreshCm() {
+    const e = ERAS[era];
+    html("cm-keys", "<b>" + keyCount(e.lo, e.hi) + " keys</b> · " + e.name);
+    html("cm-range", "range <b>" + noteName(e.lo) + " – " + noteName(e.hi) + "</b>");
+    const oct = ((e.hi - e.lo) / 12);
+    html("cm-oct", "span <b>" + oct.toFixed(1) + " octaves</b> · " + fmtHz(mtof(e.lo)) + " – " + fmtHz(mtof(e.hi)));
+    figCm && figCm.redraw();
+  }
+  seg("cm-era", (v) => { era = v; refreshCm(); });
+
+  figCm = canvas("compass", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const e = ERAS[era];
+    const padX = 12, y0 = 20, kh = h - 56;
+    const x0 = padX, x1 = w - padX;
+    // count white keys in full compass for layout
+    const whites = []; for (let m = LO; m <= HI; m++) if (!isBlack(m)) whites.push(m);
+    const wI = {}; whites.forEach((m, i) => wI[m] = i);
+    const Wn = whites.length, ww = (x1 - x0) / Wn;
+    // white keys
+    for (let m = LO; m <= HI; m++) {
+      if (isBlack(m)) continue;
+      const x = x0 + wI[m] * ww;
+      const inRange = m >= e.lo && m <= e.hi;
+      ctx.fillStyle = inRange ? "#efe2cf" : "#3a3128";
+      ctx.fillRect(x + 0.5, y0, ww - 1, kh);
+      if (inRange) { ctx.fillStyle = "rgba(224,168,60,0.28)"; ctx.fillRect(x + 0.5, y0, ww - 1, kh); }
+    }
+    // black keys
+    for (let m = LO; m <= HI; m++) {
+      if (!isBlack(m)) continue;
+      const lower = m - 1; if (wI[lower] == null) continue;
+      const x = x0 + (wI[lower] + 1) * ww;
+      const inRange = m >= e.lo && m <= e.hi;
+      ctx.fillStyle = inRange ? "#2a2019" : "#20140d";
+      ctx.fillRect(x - ww * 0.34, y0, ww * 0.68, kh * 0.62);
+      if (inRange) { ctx.fillStyle = "rgba(224,168,60,0.22)"; ctx.fillRect(x - ww * 0.34, y0, ww * 0.68, kh * 0.62); }
+    }
+    // range brackets & C labels
+    function xOf(m) { const lw = isBlack(m) ? m - 1 : m; return x0 + (wI[lw] + (isBlack(m) ? 0.5 : 0.5)) * ww; }
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2;
+    [e.lo, e.hi].forEach((m) => { const x = xOf(m); PZ.line(ctx, x, y0 - 8, x, y0 + kh + 6, C.amber, 2); });
+    // octave C markers
+    for (let m = LO; m <= HI; m++) if (m % 12 === 0) {
+      const x = x0 + wI[m] * ww + ww / 2;
+      PZ.label(ctx, "C" + (m / 12 - 1), x, h - 8, { align: "center", color: C.muted, font: PZ.mono(9) });
+    }
+    PZ.label(ctx, noteName(e.lo), xOf(e.lo), y0 - 12, { align: "center", color: C.amber, font: PZ.mono(10, true) });
+    PZ.label(ctx, noteName(e.hi), xOf(e.hi), y0 - 12, { align: "center", color: C.amber, font: PZ.mono(10, true) });
+  });
+  refreshCm();
+
+  /* ---------- 6.2 grand sizes ---------- */
+  const MODELS = {
+    baby:     { len: 1.50, name: "baby grand", use: "a home or small studio" },
+    parlour:  { len: 1.85, name: "parlour / living-room grand", use: "a large room, teaching" },
+    semi:     { len: 2.30, name: "semi-concert grand", use: "recital halls, recording" },
+    concert:  { len: 2.74, name: "concert grand (≈ 9 ft)", use: "the concert stage" },
+    imperial: { len: 2.90, name: "Bösendorfer Imperial 290", use: "the very largest stages" },
+  };
+  const ORDER = ["baby", "parlour", "semi", "concert", "imperial"];
+  let model = "semi", figSz;
+  function refreshSz() {
+    const md = MODELS[model];
+    html("sz-len", "<b>" + md.len.toFixed(2) + " m</b> (" + (md.len * 3.281).toFixed(1) + " ft) · " + md.name);
+    html("sz-bass", "longest bass string ≈ <b>" + (md.len * 0.72).toFixed(2) + " m</b>");
+    html("sz-use", "typically <b>" + md.use + "</b>");
+    figSz && figSz.redraw();
+  }
+  seg("sz-model", (v) => { model = v; refreshSz(); });
+
+  // draw a simple grand plan of a given length (m) at a pixels-per-metre scale
+  function grandPath(ctx, x, yTop, Lpx, Wpx) {
+    // x = keyboard-left, yTop = top; keyboard along the top edge; tail curves right-down
+    ctx.beginPath();
+    ctx.moveTo(x, yTop);
+    ctx.lineTo(x + Lpx * 0.62, yTop);                         // keyboard front (wide end)
+    ctx.quadraticCurveTo(x + Lpx * 1.02, yTop + Wpx * 0.10, x + Lpx, yTop + Wpx * 0.5);
+    ctx.quadraticCurveTo(x + Lpx * 0.98, yTop + Wpx * 0.95, x + Lpx * 0.5, yTop + Wpx);
+    ctx.lineTo(x, yTop + Wpx);                                // spine
+    ctx.closePath();
+  }
+  figSz = canvas("sizes", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const padL = 40, padR = 20, padT = 20, padB = 30;
+    const maxLen = 2.90, ppm = (w - padL - padR) / (maxLen * 1.05);
+    // metre grid
+    ctx.strokeStyle = C.line2; ctx.lineWidth = 1;
+    for (let mtr = 0; mtr <= 3; mtr++) {
+      const x = padL + mtr * ppm;
+      PZ.line(ctx, x, padT, x, h - padB, C.line2, 1);
+      PZ.label(ctx, mtr + " m", x, h - padB + 14, { align: "center", color: C.muted, font: PZ.mono(9.5) });
+    }
+    const yTop = padT + 10, Wpx = (h - padT - padB - 20) * 0.62;
+    // faint outlines of all
+    ORDER.forEach((k) => {
+      const md = MODELS[k];
+      grandPath(ctx, padL, yTop, md.len * ppm, Wpx);
+      ctx.strokeStyle = k === model ? C.amber : C.line; ctx.lineWidth = k === model ? 2.5 : 1;
+      if (k === model) { ctx.fillStyle = "rgba(224,168,60,0.14)"; ctx.fill(); }
+      ctx.stroke();
+    });
+    // selected label + keyboard hint
+    const md = MODELS[model];
+    grandPath(ctx, padL, yTop, md.len * ppm, Wpx);
+    ctx.save(); ctx.clip();
+    // string hint lines inside selected
+    ctx.strokeStyle = "rgba(230,230,240,0.25)"; ctx.lineWidth = 0.6;
+    for (let i = 0; i < 18; i++) {
+      const yy = yTop + 6 + i * (Wpx - 12) / 17;
+      PZ.line(ctx, padL + 6, yy, padL + md.len * ppm * (0.55 + 0.4 * (i / 17)), yy, "rgba(230,230,240,0.22)", 0.6);
+    }
+    ctx.restore();
+    ctx.fillStyle = "#2a2019"; ctx.fillRect(padL, yTop, md.len * ppm * 0.10, Wpx); // keyboard block
+    PZ.label(ctx, "keyboard", padL + 2, yTop - 6, { color: C.ink2, font: PZ.mono(10) });
+    PZ.label(ctx, md.name + " — " + md.len.toFixed(2) + " m", padL + md.len * ppm * 0.5, yTop + Wpx + 4,
+      { align: "center", color: C.amber, font: PZ.mono(11), baseline: "top" });
+  });
+  refreshSz();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

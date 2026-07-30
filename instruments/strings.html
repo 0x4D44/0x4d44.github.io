@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strings &amp; Frequency — The Well-Tempered Machine</title>
+<meta name="description" content="What makes a musical pitch: a vibrating string and the three things that fix its frequency — length, tension and mass (Mersenne's laws) — plus the harmonic series hidden inside every note. With a live plucked-string lab and a harmonic-series builder you can hear.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="strings.html" aria-current="page">1 · Strings &amp; Frequency</a>
+    <a href="action.html">2 · The Action</a>
+    <a href="tone.html">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html">4 · Temperament</a>
+    <a href="anatomy.html">5 · Anatomy</a>
+    <a href="family.html">6 · The Family</a>
+    <a href="lexicon.html">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 1</p>
+  <h1>Strings &amp; Frequency</h1>
+  <p class="standfirst">Before there is a piano there is a stretched string, and before there is
+  music there is a number: the frequency of that string's vibration, in wobbles per second. Almost
+  everything the instrument does is a way of controlling one string's frequency and then hitting it
+  cleanly. So start there — with what a pitch <em>is</em>, and the three humble measurements that set it.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Sound is pressure, arriving in waves. A pitch is how often those waves arrive.</p>
+
+<p>When a piano string vibrates, it shoves the air beside it back and forth, and that shove races
+outward as a pressure wave. If the string swings back and forth <strong>440 times a second</strong>, it
+sends 440 pressure crests a second into your ear, and you hear the note we call A above middle&nbsp;C.
+Double the rate to 880 and you hear the A an octave higher; halve it to 220 and you hear the A an octave
+lower. That rate — cycles per second — has a unit, the <strong>hertz</strong> (Hz), and it is the single
+most important quantity in this whole guide. <em>Pitch is frequency.</em></p>
+
+<p>The piano's job is to produce a chosen frequency, on demand, 88 times over. And a stretched string is a
+beautifully controllable frequency machine, because its rate of vibration is set by just three things you
+can measure with a ruler and a scale.</p>
+
+<h2><span class="no">§ 1.1</span>The three dials on a string</h2>
+
+<p>Pin a string down at both ends, pull it tight, and pluck it. It springs back, overshoots, springs
+back again — vibrating at a rate that depends on how <strong>long</strong> it is, how <strong>tight</strong>
+it is, and how <strong>heavy</strong> it is. Nothing else. Not how hard you pluck (that sets loudness), not
+what it's made of except through its weight. Three dials, one frequency. The lab below is a real string with
+those three dials exposed.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The string lab</span>
+    <span class="hint">standing waves · length, tension &amp; thickness · pluck to hear it</span>
+  </div>
+  <div class="fig-body"><canvas id="lab" style="aspect-ratio: 2.7 / 1; min-height: 240px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>show</label>
+      <span class="seg" id="lab-mode">
+        <button data-v="pluck" class="on">plucked</button>
+        <button data-v="1">mode 1</button>
+        <button data-v="2">mode 2</button>
+        <button data-v="3">mode 3</button>
+        <button data-v="4">mode 4</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="lab-L">length</label>
+      <input type="range" id="lab-L" min="0.10" max="2.00" step="0.01" value="0.65">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="lab-T">tension</label>
+      <input type="range" id="lab-T" min="300" max="1400" step="5" value="750">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="lab-d">thickness</label>
+      <input type="range" id="lab-d" min="0.80" max="1.60" step="0.01" value="1.00">
+      <output></output>
+    </div>
+    <div class="ctl"><button class="btn primary" id="lab-pluck">▶ pluck</button></div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="lab-f"><b>—</b></span>
+    <span class="ro" id="lab-note">nearest note <b>—</b></span>
+    <span class="ro" id="lab-len">speaking length <b>—</b></span>
+  </div>
+  <div class="fig-note"><b>Modes:</b> pick 1–4 to freeze the string into a pure standing wave with that many
+  humps — the "harmonics" of the next section. <b>Plucked</b> shows the real thing: several modes at once,
+  the higher ones fading first. The animation speed rises with the true pitch, so a higher note visibly shivers faster.</div>
+</figure>
+
+<p>Play with it and you rediscover, in a minute, what the friar-mathematician Marin Mersenne worked out and
+published in 1636. There are three laws, one per dial:</p>
+
+<div class="axiom">
+  <span class="tag">Mersenne's laws — the frequency of a string</span>
+  <p><b>1. Shorter is higher.</b> Halve the length and you double the frequency (up an octave). Frequency is
+  <em>inversely</em> proportional to length. This is the one your finger uses on a guitar.</p>
+  <p><b>2. Tighter is higher.</b> Pull four times as hard and the frequency doubles. Frequency rises with the
+  <em>square root</em> of tension — which is why tuning is a matter of tiny turns of the pin.</p>
+  <p><b>3. Heavier is lower.</b> Make the string four times as massive per unit length and the frequency halves.
+  Frequency falls with the square root of the mass per length — which is why bass strings are fat and wound with copper.</p>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">The one equation</span><span class="tag2">Mersenne–Taylor, and why bass strings are wound</span></summary>
+  <p>All three laws are the same formula. For an ideal flexible string of length <span class="m"><b>L</b></span>
+  (metres), under tension <span class="m"><b>T</b></span> (newtons), with mass per unit length
+  <span class="m"><b>μ</b></span> (kg/m), the fundamental frequency is</p>
+  <div class="eq"><span class="m">f = <frac><span>1</span><span>2<b>L</b></span></frac>
+    <span class="big">√</span><span class="ol">&nbsp;<b>T</b> / <b>μ</b>&nbsp;</span></span>
+    <span class="eqno">MERSENNE–TAYLOR</span></div>
+  <p>Read the three laws straight off it: <span class="m">f</span> goes as <span class="m">1/<b>L</b></span>
+  (law 1), as <span class="m">√<b>T</b></span> (law 2), and as <span class="m">1/√<b>μ</b></span> (law 3).</p>
+  <p>Now the bass problem. To reach the bottom A at 27.5&nbsp;Hz with a plain steel wire you would need a string
+  several metres long — no cabinet could hold it. You cannot just make it thicker either: a thick <em>solid</em>
+  wire becomes stiff and rings sharp and dull. The fix is to add mass <em>without</em> adding stiffness — wrap a
+  thin, flexible steel core with one or two layers of heavy copper. That raises <span class="m"><b>μ</b></span>,
+  drops the pitch, and keeps the core supple. It is Mersenne's third law, solved with a wire winder.</p>
+</details>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float" aria-hidden="true"><use href="#char-wire"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Miss Wire</p>
+    <p class="say">"Three dials, and only tension is easy to turn once I'm built — a quarter-turn of my pin
+    and I'm in tune or I'm not. My length and my weight were decided the day I was strung. That's why the
+    tuner visits and the string-maker doesn't."</p>
+  </div>
+</div>
+
+<h2><span class="no">§ 1.2</span>One note, many notes: the harmonic series</h2>
+
+<p>Freeze the lab into "mode 2" and you'll see the string split into two humps with a still point — a
+<em>node</em> — in the middle. Mode 3 gives three humps and two nodes, and so on. Here is the crucial fact:
+a real plucked string does <strong>all of these at once</strong>. It vibrates as a whole (giving the
+<em>fundamental</em>, the pitch you name), and simultaneously in halves, in thirds, in quarters — each
+faster subdivision producing a fainter, higher tone called a <strong>harmonic</strong> or
+<em>overtone</em>.</p>
+
+<p>Because the halves vibrate exactly twice as fast, the thirds three times, the quarters four times, the
+overtones form a perfectly regular ladder: <strong>1, 2, 3, 4, 5…</strong> times the fundamental frequency.
+This ladder is the <strong>harmonic series</strong>, and it is the reason a note has a <em>colour</em> and
+not just a pitch — and, as Chapter&nbsp;4 will show, the hidden source of every problem in tuning. Build one
+and listen:</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The harmonic series</span>
+    <span class="hint">toggle partials · hear the timbre change · read each one's true note</span>
+  </div>
+  <div class="fig-body"><canvas id="harm" style="aspect-ratio: 2.9 / 1; min-height: 210px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="harm-f">fundamental</label>
+      <input type="range" id="harm-f" min="55" max="220" step="1" value="110">
+      <output></output>
+    </div>
+    <div class="ctl" id="harm-toggles" style="flex:1 1 100%; flex-wrap:wrap"></div>
+    <div class="ctl"><button class="btn primary" id="harm-play">▶ play the stack</button></div>
+  </div>
+  <div class="fig-note">Each bar is one partial; its height is roughly how loud it is in a real piano tone
+  (the fundamental is loudest, higher partials fade). The label under each is the nearest piano note and how
+  far off it is in <b>cents</b> (hundredths of a semitone). Notice partials <b>7</b>, <b>11</b> and <b>13</b>
+  are badly out of tune with the keyboard — remember them for Chapter&nbsp;4.</div>
+</figure>
+
+<p>Switch the partials on one at a time and you're not changing the pitch — the fundamental stays put — you're
+changing the <strong>timbre</strong>, the tone colour. Fundamental alone is a pure, hollow flute-like tone.
+Add the low harmonics and it warms and rounds. Add only the high ones and it thins and buzzes. A piano, a
+violin and a human voice singing the very same pitch differ <em>entirely</em> in which harmonics they emphasise
+and how those fade over time. Chapter&nbsp;3 is about how the piano shapes exactly this recipe.</p>
+
+<div class="callout">
+  <span class="tag">Where the intervals come from</span>
+  <p>The first few rungs of the harmonic series <em>are</em> the basic musical intervals, and this is no
+  coincidence — our ears learned them from natural vibrating things. Partial 2 is one <strong>octave</strong>
+  above the fundamental (frequency ratio 2:1). Partial 3 above partial 2 is a <strong>perfect fifth</strong>
+  (3:2). Then a <strong>fourth</strong> (4:3), a major <strong>third</strong> (5:4), and on up. Two notes
+  whose frequencies form a simple ratio share many harmonics and sound consonant; complicated ratios clash.
+  The whole of harmony is downstream of this ladder.</p>
+</div>
+
+<h2><span class="no">§ 1.3</span>The keyboard as a frequency chart</h2>
+
+<p>Put the two ideas together and the 88 keys become a chart of frequencies. Each key is tuned so that going
+up twelve keys (an octave) exactly doubles the frequency, and the twelve steps in between are spaced equally in
+the way the ear judges spacing — that is, by equal <em>ratio</em>, not equal <em>difference</em>. Each semitone
+multiplies the frequency by the twelfth root of two, about 1.0595. Tap along the keyboard and watch the numbers
+climb geometrically:</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Every key is a frequency</span>
+    <span class="hint">play — read the hertz climb</span>
+  </div>
+  <div id="kbd2"></div>
+  <div class="readouts">
+    <span class="ro amber" id="k2-note"><b>—</b></span>
+    <span class="ro" id="k2-freq">frequency <b>—</b></span>
+    <span class="ro" id="k2-ratio">ratio to bottom A <b>—</b></span>
+  </div>
+</figure>
+
+<p>The lowest note on the piano, A0, vibrates at 27.5&nbsp;Hz — slow enough that you half-feel the individual
+pulses as much as hear a pitch. The highest, C8, sits at 4,186&nbsp;Hz, up where the tone is more glitter than
+melody. Between them lies every frequency the instrument can name. The next question is the one Cristofori
+actually had to solve: given a string tuned to the pitch you want, how do you strike it — hard or soft, at will —
+and then get out of its way? That is the <a href="action.html">action</a>.</p>
+
+<div class="chapnav">
+  <a class="prev" href="./"><span class="dir">← Previous</span><span class="title">Overview</span></a>
+  <a class="next" href="action.html"><span class="dir">Next →</span><span class="title">2 · The Action</span></a>
+</div>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · Chapter 1 · The vibrating string after Mersenne (1636) and Brook
+Taylor (1713); the harmonic series and its link to consonance. Frequencies in 12-tone equal temperament, A4 = 440 Hz.
+Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, seg, on, TAU, clamp, lerp, fmtHz, fmtCents,
+          stringFreq, wireMu, ftom, mtof, noteName, harmonics, playNote, playSine,
+          buildKeyboard, html } = PZ;
+
+  /* ---------- 1.1 string lab ---------- */
+  let L = 0.65, T = 750, dia = 1.0, mode = "pluck";
+  let pluckAmp = 1, pluckT = 0;
+  const p = 0.16; // pluck point (fraction of length)
+  // modal amplitudes for a string plucked at p: a_n ∝ sin(nπp)/n²
+  const amps = [];
+  for (let n = 1; n <= 8; n++) amps[n] = Math.sin(n * Math.PI * p) / (n * n);
+
+  function freq() { return stringFreq(L, T, wireMu(dia / 1000)); }
+  function refresh() {
+    const f = freq();
+    const midi = Math.round(ftom(f));
+    html("lab-f", "<b>" + fmtHz(f) + "</b>");
+    html("lab-note", "nearest note <b>" + noteName(midi) + "</b>");
+    html("lab-len", "speaking length <b>" + (L * 100).toFixed(0) + " cm</b>");
+  }
+  slider("lab-L", (v) => v.toFixed(2) + " m", (v) => { L = v; refresh(); });
+  slider("lab-T", (v) => v.toFixed(0) + " N", (v) => { T = v; refresh(); });
+  slider("lab-d", (v) => v.toFixed(2) + " mm", (v) => { dia = v; refresh(); });
+  seg("lab-mode", (v) => { mode = v; });
+  refresh();
+
+  function doPluck() {
+    pluckAmp = 1; pluckT = 0;
+    playNote(freq(), { dur: 2.2, gain: 0.45, partials: 10, B: 0.0003, noise: 0.25 });
+  }
+  on("lab-pluck", "click", doPluck);
+
+  canvas("lab", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const padX = 46, midY = h / 2;
+    const x0 = padX, x1 = w - padX, span = x1 - x0;
+    // posts (nut & bridge)
+    ctx.fillStyle = C.surface3;
+    ctx.fillRect(x0 - 10, midY - 42, 8, 84);
+    ctx.fillRect(x1 + 2, midY - 42, 8, 84);
+    PZ.label(ctx, "nut", x0 - 6, midY + 58, { align: "center", color: C.muted });
+    PZ.label(ctx, "bridge", x1 + 6, midY + 58, { align: "center", color: C.muted });
+
+    const f = freq();
+    // visual angular speed: scale with true pitch but keep watchable
+    const visHz = clamp(f / 55, 0.6, 8);
+    const omega = TAU * visHz;
+
+    // decay the plucked envelope
+    pluckT += 0.016;
+    const env = Math.exp(-pluckT * 1.1);
+    const amp = (mode === "pluck") ? pluckAmp * (0.35 + 0.65 * env) : 0.8;
+
+    ctx.beginPath();
+    const A = 34; // px amplitude
+    for (let i = 0; i <= 200; i++) {
+      const fx = i / 200;
+      const x = x0 + fx * span;
+      let y = 0;
+      if (mode === "pluck") {
+        for (let n = 1; n <= 6; n++) {
+          const md = Math.exp(-pluckT * (0.8 + n * 0.5)); // higher modes decay faster
+          y += amps[n] * md * Math.sin(n * Math.PI * fx) * Math.cos(omega * n * t);
+        }
+        y *= 3.0;
+      } else {
+        const n = +mode;
+        y = Math.sin(n * Math.PI * fx) * Math.cos(omega * n * t);
+      }
+      const yy = midY - y * A * amp;
+      i === 0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
+    }
+    ctx.strokeStyle = C.cyan; ctx.lineWidth = 2.4; ctx.stroke();
+    // faint ghost of rest position
+    PZ.line(ctx, x0, midY, x1, midY, C.line, 1, [4, 5]);
+
+    // node dots for pure modes
+    if (mode !== "pluck") {
+      const n = +mode;
+      ctx.fillStyle = C.amber;
+      for (let k = 0; k <= n; k++) {
+        const x = x0 + (k / n) * span;
+        ctx.beginPath(); ctx.arc(x, midY, 3, 0, TAU); ctx.fill();
+      }
+      PZ.label(ctx, n + (n === 1 ? " hump — the fundamental" : " humps — harmonic " + n),
+        w / 2, 26, { align: "center", color: C.ink2, font: PZ.mono(12) });
+    } else {
+      PZ.label(ctx, "plucked: the fundamental plus its fading overtones",
+        w / 2, 26, { align: "center", color: C.ink2, font: PZ.mono(12) });
+    }
+  }, { animate: true });
+
+  /* ---------- 1.2 harmonic series ---------- */
+  let f0 = 110, fig;
+  const active = {}; for (let n = 1; n <= 10; n++) active[n] = n <= 6;
+  const togWrap = document.getElementById("harm-toggles");
+  const buttons = {};
+  for (let n = 1; n <= 10; n++) {
+    const b = document.createElement("button");
+    b.className = "btn" + (active[n] ? " primary" : "");
+    b.style.padding = "5px 9px"; b.style.minWidth = "34px";
+    b.textContent = n;
+    b.addEventListener("click", () => {
+      active[n] = !active[n];
+      b.classList.toggle("primary", active[n]);
+      fig && fig.redraw();
+    });
+    buttons[n] = b;
+    togWrap.appendChild(b);
+  }
+  const lbl = document.createElement("span");
+  lbl.style.cssText = "font-family:var(--mono);font-size:11px;color:var(--muted);margin-right:8px";
+  lbl.textContent = "partials:";
+  togWrap.insertBefore(lbl, togWrap.firstChild);
+
+  slider("harm-f", (v) => noteName(Math.round(ftom(v))) + " · " + fmtHz(v),
+    (v) => { f0 = v; fig && fig.redraw(); });
+
+  fig = canvas("harm", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const padL = 12, padR = 12, padB = 46, padT = 16;
+    const x0 = padL, x1 = w - padR, y1 = h - padB;
+    const hs = harmonics(f0, 10);
+    const bw = (x1 - x0) / 10;
+    hs.forEach((hn, i) => {
+      const n = hn.n;
+      const cx = x0 + (i + 0.5) * bw;
+      const amp = 1 / Math.pow(n, 1.4);           // display loudness
+      const bh = amp * (y1 - padT);
+      const off = Math.abs(hn.dev) > 18;          // notably out of tune with ET
+      const isOn = active[n];
+      ctx.fillStyle = isOn ? (off ? C.felt : C.amber) : C.surface3;
+      PZ.roundRect(ctx, cx - bw * 0.32, y1 - bh, bw * 0.64, bh, 3); ctx.fill();
+      if (isOn) {
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = off ? C.felt : C.gold;
+        PZ.roundRect(ctx, cx - bw * 0.32, y1 - bh, bw * 0.64, 4, 2); ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      // labels
+      PZ.label(ctx, String(n), cx, y1 + 15, { align: "center", color: isOn ? C.ink : C.muted, font: PZ.mono(12, true) });
+      PZ.label(ctx, hn.name, cx, y1 + 28, { align: "center", color: C.muted, font: PZ.mono(10) });
+      PZ.label(ctx, fmtCents(hn.dev), cx, y1 + 40, { align: "center", color: off ? C.felt : C.muted, font: PZ.mono(9.5) });
+    });
+    PZ.line(ctx, x0, y1, x1, y1, C.line, 1);
+    PZ.label(ctx, "fundamental " + fmtHz(f0), x0 + 2, padT + 2, { color: C.ink2, font: PZ.mono(11) });
+  });
+
+  on("harm-play", "click", () => {
+    const freqs = [];
+    for (let n = 1; n <= 10; n++) if (active[n]) freqs.push(f0 * n);
+    if (!freqs.length) return;
+    // play as one blended tone: sum of pure partials with 1/n^1.4 weights
+    freqs.forEach((f, i) => playSine(f, 1.8, 0.28 / Math.pow(i + 1, 0.7)));
+  });
+
+  /* ---------- 1.3 keyboard frequency chart ---------- */
+  const A0 = mtof(21);
+  buildKeyboard(document.getElementById("kbd2"), {
+    from: 45, to: 69, labels: "c",
+    noteOpts: { dur: 2.0, gain: 0.45, partials: 10, B: 0.0004, noise: 0.28 },
+    onDown: (m, f) => {
+      html("k2-note", "<b>" + noteName(m) + "</b>");
+      html("k2-freq", "frequency <b>" + fmtHz(f) + "</b>");
+      html("k2-ratio", "ratio to bottom A <b>" + (f / A0).toFixed(2) + "×</b>");
+    },
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
