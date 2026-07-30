@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomy &amp; Construction — The Well-Tempered Machine</title>
+<meta name="description" content="A guided cutaway of the grand piano: the cast-iron plate that holds back some twenty tons of string tension, the bent maple rim, the graduated scale of strings, the overstrung bass, the pinblock and tuning pins, the 88 keys and why exactly 88. With a tension tally you can string up yourself and a labelled plan of the harp.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="strings.html">1 · Strings &amp; Frequency</a>
+    <a href="action.html">2 · The Action</a>
+    <a href="tone.html">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html">4 · Temperament</a>
+    <a href="anatomy.html" aria-current="page">5 · Anatomy</a>
+    <a href="family.html">6 · The Family</a>
+    <a href="lexicon.html">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 5</p>
+  <h1>Anatomy &amp; Construction</h1>
+  <p class="standfirst">Everything so far — the string, the throw, the tone, the tuning — has to be held
+  together against a ferocious load. Two hundred-odd strings pulled tight add up to something like the weight
+  of a dozen cars, all trying to fold the instrument in half. The story of how the piano is <em>built</em>
+  is largely the story of holding back that force without choking the sound it is there to make.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">A concert grand is a controlled explosion, frozen. Cut a string and you would hear the crack across the room.</p>
+
+<p>Each string on a grand is tuned to a tension of roughly 70 to 90 kilograms — the pull of a hanging adult. There
+are more than two hundred of them. Add it all up and the frame carries on the order of <strong>twenty
+tons</strong> of steadily applied force — as much as thirty on a full nine-foot concert grand — forever. The single most important structural fact about the modern piano
+is the thing invented to take that load: a one-piece <strong>cast-iron plate</strong> (the "frame" or "harp"),
+poured to shape and bolted into a heavy wooden case. Before it existed, string tension had to stay low, and the
+tone stayed thin. String the frame up yourself and watch the load climb:</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">String up the frame</span>
+    <span class="hint">add strings from the bass up · watch the tension reach twenty tons</span>
+  </div>
+  <div class="fig-body"><canvas id="tension" style="aspect-ratio: 2.7 / 1; min-height: 250px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="ten-n">strung up to</label>
+      <input type="range" id="ten-n" min="1" max="88" step="1" value="88">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="ten-total"><b>—</b></span>
+    <span class="ro" id="ten-note">this note <b>—</b></span>
+    <span class="ro" id="ten-str">strings so far <b>—</b></span>
+  </div>
+  <div class="fig-note">Each bar is one note's total pull, coloured by how many strings it has — <span style="color:var(--copper)">■</span>
+  single wound bass, <span style="color:var(--cyan)">■</span> double, <span style="color:var(--amber)">■</span> triple
+  plain-wire treble. The running total fills toward roughly <b>20 tons</b> across about <b>230 strings</b> — a
+  full nine-foot concert grand can reach thirty. Representative figures; exact numbers vary by model.</div>
+</figure>
+
+<div class="axiom">
+  <span class="tag">Why a piano is so heavy</span>
+  <p>A concert grand weighs around 480&nbsp;kg (half a tonne), and most of that is structure fighting the strings:
+  the cast-iron plate alone is well over a hundred kilograms. The rest of the case — the bent laminated
+  <strong>rim</strong> of hard rock maple, the heavy wooden beams under the soundboard, the <strong>pinblock</strong>
+  of cross-laminated hardwood that grips the tuning pins — all exists to keep the geometry from creeping under
+  that permanent twenty-ton pull. A piano that goes out of tune quickly is usually one whose structure is quietly losing that fight.</p>
+</div>
+
+<h2><span class="no">§ 5.1</span>The harp, laid bare</h2>
+
+<p>Lift the lid of a grand and look straight down and you see the whole system at once. Here is that plan view,
+labelled — trace the force from the front, where the tuning pins grip the strings, to the back, where the strings
+hitch onto the iron plate.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Plan of a grand — looking down</span>
+    <span class="hint">the cast-iron plate, the strings, the bridges and the overstrung bass</span>
+  </div>
+  <div class="fig-body"><canvas id="harp" style="aspect-ratio: 1.7 / 1; min-height: 360px;"></canvas></div>
+  <div class="fig-note">The long <b>bass strings</b> fan diagonally <em>over</em> the treble — this is
+  <b>overstringing</b> (or cross-stringing), which lets the bass strings be as long as possible and spreads their
+  bridge load across the middle of the soundboard, where it sings best.</div>
+</figure>
+
+<p>The parts, front to back:</p>
+
+<ul>
+  <li><strong>Tuning pins &amp; pinblock.</strong> At the keyboard end, each string is wound round a steel
+  <em>tuning pin</em> driven into a block of cross-laminated hardwood. Turning the pin a hair changes the tension —
+  and hence, by Chapter&nbsp;1, the pitch. The block's grip is what holds the tuning.</li>
+  <li><strong>The cast-iron plate.</strong> The gold-painted skeleton taking the full string load; struts run down
+  its length to resist the pull.</li>
+  <li><strong>The strings &amp; the scale.</strong> Graduated from short, thin, plain-steel trebles to long,
+  copper-wound bass — Mersenne's laws made into a design (Chapter&nbsp;1).</li>
+  <li><strong>The bridges.</strong> Wooden ridges — a long <em>treble bridge</em> and a separate <em>bass bridge</em> —
+  glued to the soundboard, over which the strings press. They pass the vibration into the board.</li>
+  <li><strong>The soundboard.</strong> The great spruce panel beneath the strings, ribbed and slightly crowned, that
+  actually makes the sound (Chapter&nbsp;3).</li>
+  <li><strong>Hitch pins.</strong> At the tail, the far ends of the strings loop onto pins anchored in the plate.</li>
+</ul>
+
+<h2><span class="no">§ 5.2</span>Why exactly 88 keys?</h2>
+
+<p>The modern keyboard runs from <strong>A0</strong> at the bottom to <strong>C8</strong> at the top — 88 keys,
+a little over seven octaves. It is a surprisingly recent standard. Cristofori's pianos had about four octaves;
+Mozart wrote for five; by Beethoven's late years makers had pushed to six and beyond as the iron frame allowed
+ever-longer, higher-tension strings. Around 1880 <strong>Steinway</strong> and others settled on 88, and it stuck —
+for a reason rooted in Chapter&nbsp;1 and Chapter&nbsp;3.</p>
+
+<div class="callout">
+  <span class="tag">The two ends of hearing</span>
+  <p>The bottom A0 vibrates at 27.5&nbsp;Hz — down near the floor of clearly-pitched hearing, where a note is felt as
+  much as heard. Below it, extra keys would give more rumble than melody. The top C8 sits at about 4,186&nbsp;Hz;
+  higher still, and inharmonicity (Chapter&nbsp;3) and our own fading pitch sense make the notes hard to tune and hard
+  to tell apart. Eighty-eight keys is, roughly, as wide as the ear finds musically useful. A few makers go
+  further — the <strong>Bösendorfer Imperial</strong> adds extra bass keys down to C0 for a full 97 — but those low
+  strings are there as much to resonate <em>with</em> the notes above as to be played.</p>
+</div>
+
+<h2><span class="no">§ 5.3</span>The three pedals</h2>
+
+<p>The feet get a say too. On a modern grand, from right to left:</p>
+
+<ul>
+  <li><strong>Damper (sustain) pedal</strong> — the important one. It lifts <em>all</em> the dampers at once, so
+  every string is free to ring and, crucially, to resonate sympathetically with the notes you play. It is what makes
+  the piano bloom.</li>
+  <li><strong>Sostenuto pedal</strong> (middle, a later addition) — a clever selective sustain: it holds up only the
+  dampers of the notes already down when you press it, letting you sustain a chord while playing staccato above it.</li>
+  <li><strong>Una corda (soft) pedal</strong> — shifts the action sideways so the hammers strike fewer strings and
+  with softer felt, changing the colour as much as the volume (Chapter&nbsp;3).</li>
+</ul>
+
+<p>That is the instrument, whole: string, action, tone, tuning, and the frame that survives them all. It did not
+arrive fully formed — it was argued into shape over three centuries, by makers competing to be louder, more even and
+more reliable. That argument is the last chapter: the <a href="family.html">family</a>.</p>
+
+<div class="chapnav">
+  <a class="prev" href="temperament.html"><span class="dir">← Previous</span><span class="title">4 · Temperament</span></a>
+  <a class="next" href="family.html"><span class="dir">Next →</span><span class="title">6 · The Piano Family</span></a>
+</div>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · Chapter 5 · The cast-iron plate (full-plate patent Alpheus Babcock 1825;
+overstringing developed by Steinway, patent 1859); pinblock, bridges, soundboard; the 88-key compass (A0–C8) and the
+97-key Bösendorfer Imperial. Tension figures representative of a concert grand. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, TAU, clamp, lerp, mtof, noteName, html } = PZ;
+
+  /* ---------- 5.0 per-note string model (illustrative, concert grand) ---------- */
+  // key i=1..88 -> MIDI 20+i (A0=21). strings, speaking length, tension.
+  function noteModel(i) {
+    const m = 20 + i;
+    const frac = (m - 21) / 87;
+    const strings = m <= 28 ? 1 : (m <= 39 ? 2 : 3);
+    // per-string tension (kgf): rises bass->treble
+    const kgf = 65 + 32 * frac;
+    // speaking length (m), illustrative: long wound bass -> short plain treble
+    let L;
+    if (m < 40) L = lerp(1.95, 1.05, (m - 21) / (40 - 21));
+    else L = clamp(209 / mtof(m), 0.05, 1.05);
+    return { m, strings, kgf, L, totalKgf: strings * kgf };
+  }
+  const MODEL = []; for (let i = 1; i <= 88; i++) MODEL.push(noteModel(i));
+  const GRAND_TOTAL = MODEL.reduce((s, n) => s + n.totalKgf, 0);
+  const TOTAL_STRINGS = MODEL.reduce((s, n) => s + n.strings, 0);
+
+  let upto = 88, figT;
+  function tons(kgf) { return kgf / 1000; }
+  function refreshT() {
+    let sum = 0, str = 0;
+    for (let i = 0; i < upto; i++) { sum += MODEL[i].totalKgf; str += MODEL[i].strings; }
+    const cur = MODEL[upto - 1];
+    html("ten-total", "<b>" + tons(sum).toFixed(1) + " tons</b> on the frame");
+    html("ten-note", "this note <b>" + noteName(cur.m) + "</b> · " + cur.strings + "× " + cur.kgf.toFixed(0) + " kgf");
+    html("ten-str", "strings so far <b>" + str + " / " + TOTAL_STRINGS + "</b>");
+    figT && figT.redraw();
+  }
+  slider("ten-n", (v) => "key " + v, (v) => { upto = v; refreshT(); });
+
+  figT = canvas("tension", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const padL = 16, padR = 16, padT = 30, padB = 40;
+    const x0 = padL, x1 = w - padR, y1 = h - padB, y0 = padT;
+    const bw = (x1 - x0) / 88;
+    const maxBar = Math.max(...MODEL.map((n) => n.totalKgf));
+    for (let i = 0; i < 88; i++) {
+      const n = MODEL[i];
+      const cx = x0 + (i + 0.5) * bw;
+      const bh = (n.totalKgf / maxBar) * (y1 - y0);
+      const on = i < upto;
+      const col = n.strings === 1 ? C.copper : n.strings === 2 ? C.cyan : C.amber;
+      ctx.fillStyle = on ? col : C.surface3;
+      ctx.globalAlpha = on ? 1 : 0.5;
+      ctx.fillRect(cx - bw * 0.4, y1 - bh, bw * 0.8, bh);
+      ctx.globalAlpha = 1;
+    }
+    PZ.line(ctx, x0, y1, x1, y1, C.line, 1);
+    // marker for current
+    const mx = x0 + (upto - 0.5) * bw;
+    PZ.line(ctx, mx, y0, mx, y1, C.ink, 1, [3, 3]);
+    // labels
+    PZ.label(ctx, "A0", x0 + 2, y1 + 14, { color: C.muted, font: PZ.mono(10) });
+    PZ.label(ctx, "middle C", x0 + 39 * bw, y1 + 26, { align: "center", color: C.muted, font: PZ.mono(9.5) });
+    PZ.label(ctx, "C8", x1 - 2, y1 + 14, { align: "right", color: C.muted, font: PZ.mono(10) });
+    PZ.label(ctx, "per-note string tension →  taller = harder pull", x0 + 2, y0 - 12, { color: C.ink2, font: PZ.mono(11) });
+    // big total meter along the top
+    const frac = (function () { let s = 0; for (let i = 0; i < upto; i++) s += MODEL[i].totalKgf; return s / GRAND_TOTAL; })();
+    PZ.roundRect(ctx, x0, 4, x1 - x0, 8, 4); ctx.fillStyle = C.surface3; ctx.fill();
+    ctx.fillStyle = C.gold; PZ.roundRect(ctx, x0, 4, (x1 - x0) * frac, 8, 4); ctx.fill();
+  });
+  refreshT();
+
+  /* ---------- 5.1 plan of the grand (static, labelled) ---------- */
+  canvas("harp", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    // grand plan: keyboard end at bottom (wide), tail curving to upper right.
+    // Define the outline.
+    const L = w * 0.10, Rk = w * 0.62;   // keyboard-end span (bottom)
+    const bottom = h * 0.90, top = h * 0.10;
+    const spineX = w * 0.16;             // straight left side
+    // soundboard / plate area fill
+    ctx.beginPath();
+    ctx.moveTo(spineX, bottom);
+    ctx.lineTo(spineX, top + h * 0.10);
+    ctx.quadraticCurveTo(spineX + w * 0.04, top, w * 0.42, top + h * 0.02);
+    // bentside curve from tail to keyboard right
+    ctx.quadraticCurveTo(w * 0.86, top + h * 0.14, w * 0.80, h * 0.52);
+    ctx.quadraticCurveTo(w * 0.74, bottom - h * 0.02, Rk, bottom);
+    ctx.closePath();
+    ctx.fillStyle = "#241a15"; ctx.fill();
+    ctx.strokeStyle = "#4a3a2b"; ctx.lineWidth = 2; ctx.stroke();
+
+    // pinblock band across the keyboard end (bottom)
+    ctx.fillStyle = "#3a2c20";
+    ctx.fillRect(spineX, bottom - 18, Rk - spineX, 18);
+    // tuning pins
+    ctx.fillStyle = C.amber;
+    for (let i = 0; i < 40; i++) {
+      const x = lerp(spineX + 6, Rk - 6, i / 39);
+      ctx.beginPath(); ctx.arc(x, bottom - 9, 1.6, 0, TAU); ctx.fill();
+    }
+
+    // treble strings: from pinblock up to bentside (short at left/keyboard, longer to the right)
+    ctx.strokeStyle = "rgba(230,230,240,0.5)"; ctx.lineWidth = 0.7;
+    for (let i = 0; i < 46; i++) {
+      const f = i / 45;
+      const sx = lerp(spineX + w * 0.14, Rk - 6, f);
+      const ex = lerp(w * 0.40, w * 0.78, f);
+      const ey = lerp(top + h * 0.06, h * 0.50, f);
+      ctx.beginPath(); ctx.moveTo(sx, bottom - 18); ctx.lineTo(ex, ey); ctx.stroke();
+    }
+    // overstrung bass: from pinblock (left of treble) crossing diagonally over to the spine tail
+    ctx.strokeStyle = "rgba(198,123,69,0.85)"; ctx.lineWidth = 1.4;
+    for (let i = 0; i < 10; i++) {
+      const f = i / 9;
+      const sx = lerp(spineX + 4, spineX + w * 0.16, f);
+      const ex = lerp(spineX + 2, w * 0.44, f);
+      const ey = lerp(bottom - h * 0.30, top + h * 0.06, f);
+      ctx.beginPath(); ctx.moveTo(sx, bottom - 18); ctx.lineTo(ex, ey); ctx.stroke();
+    }
+
+    // bridges (curved ridges)
+    ctx.strokeStyle = C.good; ctx.lineWidth = 3; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(w * 0.40, h * 0.34); ctx.quadraticCurveTo(w * 0.60, h * 0.42, w * 0.70, h * 0.62);
+    ctx.stroke();
+    ctx.strokeStyle = C.copper; ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(spineX + w * 0.06, h * 0.30); ctx.quadraticCurveTo(w * 0.30, h * 0.44, w * 0.34, h * 0.62);
+    ctx.stroke();
+
+    // plate struts (a couple of iron bars)
+    ctx.strokeStyle = "rgba(244,200,105,0.55)"; ctx.lineWidth = 6; ctx.lineCap = "round";
+    [0.30, 0.5].forEach((fx) => {
+      ctx.beginPath();
+      ctx.moveTo(lerp(spineX, Rk, fx), bottom - 20);
+      ctx.lineTo(lerp(w * 0.42, w * 0.74, fx), lerp(top + h * 0.04, h * 0.48, fx));
+      ctx.stroke();
+    });
+
+    // hitch pins at the tail rim
+    ctx.fillStyle = C.gold;
+    for (let i = 0; i < 16; i++) {
+      const f = i / 15;
+      const x = lerp(w * 0.42, w * 0.80, f), y = lerp(top + h * 0.04, h * 0.50, f);
+      ctx.beginPath(); ctx.arc(x, y, 1.6, 0, TAU); ctx.fill();
+    }
+
+    // labels with leaders
+    function lbl(text, tx, ty, lx, ly, col) {
+      col = col || C.ink2;
+      PZ.line(ctx, tx, ty, lx, ly, C.line, 1);
+      PZ.label(ctx, text, tx, ty + (ty < ly ? -4 : 12), { color: col, font: PZ.mono(10.5), align: tx > w * 0.5 ? "right" : "left" });
+    }
+    lbl("tuning pins & pinblock", w * 0.20, bottom + 4, w * 0.30, bottom - 12, C.amber);
+    lbl("cast-iron plate (struts)", w * 0.55, h * 0.16, w * 0.52, h * 0.26, C.gold);
+    lbl("overstrung bass", spineX + 2, h * 0.20, spineX + w * 0.08, h * 0.30, C.copper);
+    lbl("treble bridge", w * 0.80, h * 0.66, w * 0.66, h * 0.56, C.good);
+    lbl("bass bridge", w * 0.14, h * 0.60, w * 0.28, h * 0.52, C.copper);
+    lbl("hitch pins (tail)", w * 0.86, h * 0.20, w * 0.72, h * 0.24, C.gold);
+    PZ.label(ctx, "soundboard beneath", w * 0.5, h * 0.80, { align: "center", color: C.muted, font: PZ.mono(10) });
+    PZ.label(ctx, "keyboard end ↓", (spineX + Rk) / 2, bottom + 22, { align: "center", color: C.ink2, font: PZ.mono(10) });
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
