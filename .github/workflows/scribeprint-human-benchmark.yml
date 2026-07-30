@@ -64,6 +64,13 @@ jobs:
           python-version: "3.12"
           cache: pip
           cache-dependency-path: scribeprint/model/pyproject.toml
+      - name: Restore pinned dataset cache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/huggingface
+          key: ${{ runner.os }}-scribeprint-human-${{ hashFiles('scribeprint/model/benchmark/profiles/open-core-v0.1.json') }}
+          restore-keys: |
+            ${{ runner.os }}-scribeprint-human-
       - name: Install benchmark dependencies
         run: python -m pip install -e './scribeprint/model[benchmark,dev]'
       - name: Construct 10,000-document open core
