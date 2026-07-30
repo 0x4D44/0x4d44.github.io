@@ -99,6 +99,9 @@ const html=read("index.html");assert.equal(JSON.parse(read("manifest.webmanifest
   const { createHash } = await import("node:crypto");
   const support = read("support.js");
   const sw = read("sw.js");
+  const attributes = fs.readFileSync(path.join(root, "..", ".gitattributes"), "utf8");
+  assert.match(attributes, /^japanese-travel-rpg\/vendor\/\*\.js -text$/m,
+    "vendored runtime bytes must not be rewritten by core.autocrlf on Windows");
   assert.match(support, /var REACT_URL = "\.\/vendor\/react\.production\.min\.js"/, "React must be vendored same-origin, not unpkg");
   assert.match(support, /var REACT_DOM_URL = "\.\/vendor\/react-dom\.production\.min\.js"/, "ReactDOM must be vendored same-origin");
   assert.ok(!/from="[^"]*\.(jsx|tsx)"/.test(html), "no .jsx/.tsx x-import may remain — that would make the runtime fetch Babel from the CDN");

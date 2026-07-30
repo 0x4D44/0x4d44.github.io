@@ -13,7 +13,7 @@ const report = {
   signs: allSigns().length,
   files: []
 };
-for (const name of ["index.html", "support.js", "GuideFace.dc.html", "ios-frame.jsx", "content.js", "content-extra.js", "engines.js", "manifest.webmanifest", "sw.js", "icons/icon.svg"]) {
+for (const name of ["index.html", "support.js", "GuideFace.dc.html", "ios-frame.js", "content.js", "content-extra.js", "engines.js", "manifest.webmanifest", "sw.js", "icons/icon.svg"]) {
   const full = path.join(root, name);
   if (!fs.existsSync(full)) throw new Error(`Missing static asset: ${name}`);
   const size = fs.statSync(full).size;
@@ -21,7 +21,7 @@ for (const name of ["index.html", "support.js", "GuideFace.dc.html", "ios-frame.
   report.files.push({ name, size });
 }
 const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-for (const ref of ["support.js", "ios-frame.jsx", "content.js", "content-extra.js", "engines.js", "manifest.webmanifest"]) {
+for (const ref of ["support.js", "ios-frame.js", "content.js", "content-extra.js", "engines.js", "manifest.webmanifest"]) {
   if (!html.includes(ref)) throw new Error(`index.html does not reference ${ref}`);
 }
 fs.writeFileSync(path.join(root, "build-report.json"), JSON.stringify(report, null, 2) + "\n");
