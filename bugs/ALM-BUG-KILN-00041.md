@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00041 — The action panel is a live region rebuilt several times per turn, so screen readers re-read it
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T172737Z-p84569-n992774000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00041-run-fix-20260730T172737Z-p84569-n992774000-c1
-- **Owner base:** 6ceeeea7c93714f7148b6e35004d8a47369cf514
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T17:27:37Z
-- **Owner until:** 2026-07-30T19:27:37Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T172737Z-p84569-n992774000-c1 branch=task/bug-ALM-BUG-KILN-00041-run-fix-20260730T172737Z-p84569-n992774000-c1 code=d411a35b24ba0e70c688b2babbe81a762e4bf33e gate=manual)
 
 ## Observation
 
