@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00034 — Hand-off gate's key trap softlocks a keyboard player when a modal is open
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T164155Z-p55639-n181229000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00034-run-fix-20260730T164155Z-p55639-n181229000-c1
-- **Owner base:** 8f87a55da21027f27cb55f195a576ecd6dc1380e
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T16:41:55Z
-- **Owner until:** 2026-07-30T18:41:55Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T164155Z-p55639-n181229000-c1 branch=task/bug-ALM-BUG-KILN-00034-run-fix-20260730T164155Z-p55639-n181229000-c1 code=674dbc60ce55aa649c0fe472e458aba129dd63fb gate=manual)
 
 ## Observation
 
