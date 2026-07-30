@@ -5,15 +5,15 @@
 - **Severity:** High
 - **Area:** japanese-travel-rpg
 - **Raised:** 2026-07-30
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20260730T225253Z-p30268-n693916000-c1
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-KILN-00043-run-fix-20260730T225253Z-p30268-n693916000-c1
+- **Owner base:** 0f8c5a6faf150b5ee07fcc45f0574090f525c2e1
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-07-30T22:52:53Z
+- **Owner until:** 2026-07-31T00:52:53Z
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
