@@ -34,10 +34,10 @@ A 10,000-document, rebuildable core with a pre-LLM cutoff of 31 December 2021:
 
 | Slice | Documents | Sources |
 |---|---:|---|
-| Creative books | 3,200 | Public-domain Project Gutenberg works |
+| Creative books | 3,250 | Public-domain Project Gutenberg works |
 | Journalism | 800 | Openly licensed Common Pile news sources |
 | Informal online writing | 2,000 | Public-domain Ubuntu IRC channel-days |
-| Technical prose | 2,000 | 500 Python PEPs + 1,500 technical Stack Exchange threads |
+| Technical prose | 1,950 | 450 Python PEPs + 1,500 technical Stack Exchange threads |
 | Professional government writing | 1,000 | Non-SEC Regulations.gov documents |
 | Business-regulatory writing | 1,000 | SEC Regulations.gov documents |
 
