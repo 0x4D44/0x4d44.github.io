@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00025 — validate-static resolves root-absolute refs against the document dir, so the whole npm gate is red
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Must
 - **Severity:** Medium
 - **Area:** tests
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude — found while adding the northern-line-1987 document)
 - **State history:** Fixed (2026-07-13, fixed by Claude in 41d401b; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — all four validators resolve root-absolute refs against the repo root; adversarial typo probe still fails correctly)
 - **Note:** minted as KILN-00006 from a stale view; renumbered to KILN-00025 at integration after an overnight pass claimed 00006-00024 on the same host shard (see bugs/README.md).
 
 ## Observation
@@ -98,3 +99,33 @@ cause behind the code-level one.
 
 Independent closure still required (two-eyes): I raised and fixed this, so I cannot
 close it.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commits: `41d401b`, `a05877c`, `f88660d`.
+
+**Original observation re-checked — resolved.** The identical two-line change is present in all four validators — `humanity-retention/tests/validate-static.mjs:35`, `shipshape/tests/validate-static.mjs:25`, `span-of-control/tests/validate-static.mjs:30`, `tidecall/validate-static.test.js:51-55`:
+
+```js
+const target = ref.startsWith("/") ? join(root, ref.slice(1)) : join(appDir, ref);
+```
+
+```
+node humanity-retention/tests/validate-static.mjs -> static validation passed             exit=0
+node shipshape/tests/validate-static.mjs          -> shipshape static validation passed   exit=0
+node span-of-control/tests/validate-static.mjs    -> span-of-control static validation passed exit=0
+node tidecall/validate-static.test.js             -> ✓ all local document assets exist
+```
+
+**Adversarial probe — the assertion kept its teeth.** Each validator's verbatim resolver was lifted and applied to a typo'd ref, without mutating the tree:
+
+```
+"/almanac-back.js" -> <repo-root>\almanac-back.js  exists=true    (would PASS)
+"/almanac-bak.js"  -> <repo-root>\almanac-bak.js   exists=false   (would FAIL -> not a vacuous skip)
+OLD behaviour join(appDir,ref) -> <doc>\almanac-back.js  exists=false  (the original bug)
+skips root-absolute before resolving (would neuter): false
+```
+
+Each validator's pre-resolver `continue` filter was also read to confirm no path silently skips `/`-prefixed refs. Correct fix at the right layer, applied to all four sites.
+
+**Note on the wider gate.** `tidecall/validate-static.test.js` still exits non-zero overall, but for an unrelated reason tracked as ALM-BUG-KILN-00045; its `/almanac-back.js` reference check — the subject of this bug — passes.

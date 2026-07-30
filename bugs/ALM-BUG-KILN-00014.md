@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00014 — Two vocab entries have mis-split furigana -- wrong ruby on the card and a self-contradicting typeback hint
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** darmok
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — both entries corrected; whole-corpus furigana oracle reports 0 mismatches)
 
 ## Observation
 Two words render furigana that does not match their kana, and one of them makes the typeback hint tell the learner to type an answer the grader then rejects.
@@ -37,3 +38,17 @@ Corrected the two mis-split furigana entries so the ruby run matches the reading
 `問題[もんだい]ありません` (weeks10-12.js). Recurrence guard: darmok/grading.test.mjs now
 asserts `kataToHira(readingForm(v[0]))` folds to `v[1]` for every vocab entry (allowing only
 a leading 〜 counter placeholder); it fails on either pre-fix entry.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `19c6a23`.
+
+**Original observation re-checked — resolved.** `weeks01-03.js` now carries `お茶[ちゃ]` and `weeks10-12.js` carries `問題[もんだい]ありません`. Running the real rendering functions:
+
+```
+v0=お茶[ちゃ]  readingForm=おちゃ  kana=おちゃ  match=true
+   ruby: お<ruby>茶<rt>ちゃ</rt></ruby>
+corpus furigana mismatches: 0   (all 513 entries)
+```
+
+The お correctly sits outside the `<ruby>` run. Regression coverage `darmok/grading.test.mjs` ("every entry's furigana folds to its kana reading") passes and is a whole-corpus oracle, so it prevents recurrence across future entries rather than pinning just these two — the strongest shape of guard available here. The corpus fold was re-run independently with the same `〜` allowance: 0 failures.

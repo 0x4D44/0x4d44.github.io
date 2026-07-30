@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00042 — No static or service-worker regression assertions for game-of-dracula, so two recorded lessons are unguarded
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** tooling
@@ -19,6 +19,7 @@
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T171126Z-p6174-n120393000-c1 branch=task/bug-ALM-BUG-KILN-00042-run-fix-20260730T171126Z-p6174-n120393000-c1 code=0d12aba66ef809818d08cfbf31d18b894ff50cab gate=manual)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 0d12aba verified; all four assertions proven to bite by mutation testing on scratch copies)
 
 ## Observation
 
@@ -71,3 +72,29 @@ closes this.
 Worth noting for whoever fixes it: per `BUGFIX-GUIDE.md` the root `test` / `build` scripts are a
 single `&&` chain of hard-coded paths, so adding a segment is a `package.json` edit in both
 scripts.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit `0d12aba66ef809818d08cfbf31d18b894ff50cab` exists, is an ancestor of HEAD, and touches `game-of-dracula/tests/validate-static.mjs` (+123, new file) and `package.json` (+6/-3) — matching the notes exactly.
+
+**Original observation re-checked — resolved.** The new validator runs `sw.js` in a `node:vm` against mock `caches`/`fetch` and drives the real `activate` and `fetch` listeners. It is wired into `package.json`'s `test:game-of-dracula`, `test` and `build` scripts, and the validator **self-asserts that wiring** at `validate-static.mjs:117-121`, so it cannot silently rot.
+
+**The two lessons it guards:** (a) the 2026-07-10 lesson (`lessons_learnt.md:109`) — `CacheStorage` is origin-wide, so activation must delete only keys carrying the document's own prefix and the fetch handler must reject out-of-scope URLs; (b) the 2026-07-11 `brilliancy` lesson (`lessons_learnt.md:53`) — an author `display:` beats the UA `[hidden]` rule, which once shipped a transparent full-screen layer that softlocked every real tap.
+
+**Proven to bite — four independent mutations applied to scratch copies (the worktree was never modified), each caught with EXIT=1:**
+
+```
+drop `key.startsWith(PREFIX) &&` from sw.js activation
+  -> AssertionError: activation must retire only stale Game of Dracula caches, never sibling caches
+     + actual - expected  [ 'game-of-dracula-old', + 'sibling-app-v9' ]
+move the scope check after respondWith in sw.js
+  -> AssertionError: out-of-scope requests must not be intercepted   true !== false
+weaken `[hidden] { display: none !important; }` to `display: none;`
+  -> AssertionError: the global hidden guard must keep author display rules from exposing overlays
+remove the game-of-dracula segment from the root `build` script
+  -> AssertionError: build must invoke the Game of Dracula static validator
+```
+
+**Refutation attempt that held.** The cache assertion is a `deepEqual` on the exact deleted-key list including a deliberate `sibling-app-v9` decoy, so it fails both if the filter is dropped and if it over-deletes. The fetch probe distinguishes out-of-scope, in-scope GET and non-GET by whether `respondWith` was called, which is the real observable. The `[hidden]` half additionally has a real-browser computed-style check at `browser.test.mjs:261`. No guard-theatre found.
+
+**Gate segments re-run by the verifier, all exit 0:** `engine.test.js` (0 failures), `invariants.test.js` (0 failures), `validate-static.mjs` ("99 ids, 7 offline entries"), `simulate.js 500`.

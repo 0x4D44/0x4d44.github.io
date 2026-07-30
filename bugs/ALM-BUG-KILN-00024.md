@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00024 — Masthead date mixes the local weekday with the UTC calendar date -- wrong for an hour a day in BST
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** news
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — 0 weekday/date mismatches across the whole BST midnight straddle)
 
 ## Observation
 The news masthead can show a weekday that disagrees with its own date near midnight in a timezone offset from UTC.
@@ -38,3 +39,19 @@ that to `fmtDate`, instead of pairing `now.getDay()` (local) with `fmtDate(now.t
 (UTC). The weekday and dateline can no longer disagree in the sub-UTC hour each night.
 Regression: news/tests/validate-static.mjs drives header() with a faked clock where local
 is a day ahead of UTC and asserts the printed weekday matches the printed date.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `e5bd068`.
+
+**Original observation re-checked — resolved.** `news/news.js:254-261` builds a local `YYYY-MM-DD` from `now.getFullYear()/getMonth()/getDate()` and feeds *that* to `fmtDate`, so the weekday and the date now come from one clock. Driving the real `header()` across the BST midnight straddle (UTC 21:00→02:00 in 15-minute steps, local = UTC+1):
+
+```
+local 2026-07-13 22:00 BST (UTC 21:00) -> "Monday, 13 Jul 2026"   agree=true
+local 2026-07-13 23:00 BST (UTC 22:00) -> "Monday, 13 Jul 2026"   agree=true
+local 2026-07-14 00:00 BST (UTC 23:00) -> "Tuesday, 14 Jul 2026"  agree=true
+local 2026-07-14 01:00 BST (UTC 00:00) -> "Tuesday, 14 Jul 2026"  agree=true
+mismatches over 21 samples spanning the midnight straddle: 0
+```
+
+The same probe against the pre-fix renderer at local Tue 14 Jul 00:00 BST prints **`Tuesday, 13 Jul 2026`** — and 13 Jul 2026 is a Monday — so the oracle discriminates. This is a root-cause fix rather than a window patch: both values derive from one `Date` instance, so no straddle can split them. Regression coverage `news/tests/validate-static.mjs:288-307` passes.

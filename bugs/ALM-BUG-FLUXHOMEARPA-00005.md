@@ -1,6 +1,6 @@
 # ALM-BUG-FLUXHOMEARPA-00005 — Nihon Quest review exposes locked future material to new users
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** japanese-travel-rpg
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-03, raised by Codex overnight code-review pass)
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — a new learner's due queue measured 40 cards before the fix, 0 after)
 
 ## Observation
 `createInitialProgress()` creates review cards for every chapter phrase and sign immediately in `japanese-travel-rpg/engines.js:7`. `dueCards()` filters only by due timestamp in `japanese-travel-rpg/engines.js:20`, and the shipped review tab uses that result directly at `japanese-travel-rpg/index.html:798`.
@@ -39,3 +40,22 @@ and `completeLesson()` brings that chapter's phrase/sign cards into review — m
 app copy ("Complete lessons to add more"). Regression: tests/self-check.mjs asserts a new
 learner has 0 due cards and that after completing uk-home only uk-home cards are due;
 fails on the pre-fix engine.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix.
+
+**Original observation re-checked — resolved, measured.** `dueCards` (`engines.js:20`) now intersects the due filter with the learner's `learnedPhraseIds`/`learnedSignIds` sets. Driving the real engine:
+
+```
+total review cards created: 144
+PRE-FIX dueCards(new learner,'deep'): 40 -> chapters: uk-home,airport-flight,arrival-japan,tokyo-transport-hotel,tokyo-food-conbini
+POST-FIX dueCards(new learner,'deep'): 0
+POST-FIX dueCards(new learner,'daily'): 0
+after completing uk-home: due=9  chapters=uk-home            types=phrase,sign
+after also airport-flight: due=18 chapters=uk-home,airport-flight
+```
+
+The pre-fix row reproduces the recorded symptom (40 cards spanning 5 chapters, 4 of them locked); post-fix the queue is empty until a lesson is completed, then grows by exactly that chapter's 5 phrases + 4 signs. Guard `tests/self-check.mjs:19-22` mutation-tested: reverting to the bare timestamp filter fires *"a new learner has no due review cards until material is learned"*.
+
+**Refutation attempts that held.** Existing saves are unaffected — `mergeProgress` (`engines.js:10`) preserves both learned-id lists. Id consistency under the content overlay holds because the overlay (`index.html:519-524`) runs before `mergeProgress`, so `sourceId` and `learnedPhraseIds` are drawn from the same mutated chapter objects; signs are never overlaid. `createInitialProgress` still mints all 144 cards, but they are inert — by design, not a defect.
