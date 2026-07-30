@@ -9,11 +9,11 @@ from scribeprint_model.human_benchmark import (
     BenchmarkSourceSpec,
     _candidate_from_row,
     _iter_fce_xml,
-    _prepare_huggingface_stream,
     audit_records,
     build_benchmark,
     near_duplicate_pairs,
 )
+from scribeprint_model.human_sources import _prepare_huggingface_stream
 
 
 def prose(topic: str, index: int, words: int = 140) -> str:
