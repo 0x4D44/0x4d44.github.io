@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00047 — News home and search still blank on a 1-8 article corpus and on non-array body/tags
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** news
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T233047Z-p18484-n378881000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00047-run-fix-20260730T233047Z-p18484-n378881000-c1
-- **Owner base:** d82d5cc40f83873ff1d57681b2e55274ad72ea09
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T23:30:47Z
-- **Owner until:** 2026-07-31T01:30:47Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T233047Z-p18484-n378881000-c1 branch=task/bug-ALM-BUG-KILN-00047-run-fix-20260730T233047Z-p18484-n378881000-c1 code=c06d6ab gate=manual)
 
 ## Observation
 
