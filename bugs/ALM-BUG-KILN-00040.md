@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00040 — A long single-word player name overflows the turn card and hand-off gate
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T172238Z-p63110-n880926000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00040-run-fix-20260730T172238Z-p63110-n880926000-c1
-- **Owner base:** f83462b7805a50677f6ad1538f1294a8668f6022
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T17:22:38Z
-- **Owner until:** 2026-07-30T19:22:38Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T172238Z-p63110-n880926000-c1 branch=task/bug-ALM-BUG-KILN-00040-run-fix-20260730T172238Z-p63110-n880926000-c1 code=7b469c9f0310ac5621c56f6e9d78cd0170214ff9 gate=manual)
 
 ## Observation
 
