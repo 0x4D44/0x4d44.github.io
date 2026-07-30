@@ -5,15 +5,15 @@
 - **Severity:** Low
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20260730T170001Z-p74152-n932726000-c1
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-KILN-00038-run-fix-20260730T170001Z-p74152-n932726000-c1
+- **Owner base:** 15b634243752d66338c101e2402f1dbb20731d5e
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-07-30T17:00:01Z
+- **Owner until:** 2026-07-30T19:00:01Z
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
