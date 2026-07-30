@@ -19857,7 +19857,10239 @@ window.NEWS_ARTICLES.push({id:"voices-the-sprocket-family",image:"images/voices-
   });
 })();
 
-
-
-
-
+// Restored after f8b0dad replaced the corpus from a stale snapshot.
+window.NEWS_ARTICLES.push(
+  {
+    "id": "sf-021",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials renames the bushes after a committee review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T07:39:00",
+    "image": "images/sparks-fly-021.svg",
+    "imageAlt": "A satirical sketch about bushes in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-022",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials quarantines the ferry whistles after a desk review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T07:38:00",
+    "image": "images/sparks-fly-022.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-023",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials subcontracts the neighbourhood swans after a auditor review",
+    "standfirst": "The city's transport office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T07:37:00",
+    "image": "images/sparks-fly-023.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-024",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials catalogues the bushes after a garden review",
+    "standfirst": "The city's governance office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T07:36:00",
+    "image": "images/sparks-fly-024.svg",
+    "imageAlt": "A satirical sketch about bushes in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-025",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials upcycles the ferry whistles after a noticeboard review",
+    "standfirst": "The city's architecture office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T07:35:00",
+    "image": "images/sparks-fly-025.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-026",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials maps the neighbourhood swans after a budget review",
+    "standfirst": "The city's public mood office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T07:34:00",
+    "image": "images/sparks-fly-026.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-027",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials suspends the bushes after a sieve review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T07:33:00",
+    "image": "images/sparks-fly-027.svg",
+    "imageAlt": "A satirical sketch about bushes in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-028",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials interrogates the ferry whistles after a archive review",
+    "standfirst": "The city's weather office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T07:32:00",
+    "image": "images/sparks-fly-028.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-029",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials licenses the neighbourhood swans after a label review",
+    "standfirst": "The city's queue science office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T07:31:00",
+    "image": "images/sparks-fly-029.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-030",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials releases the bushes after a statute review",
+    "standfirst": "The city's office order office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T07:30:00",
+    "image": "images/sparks-fly-030.svg",
+    "imageAlt": "A satirical sketch about bushes in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-031",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials calibrates the ferry whistles after a policy review",
+    "standfirst": "The city's urban planning office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T07:29:00",
+    "image": "images/sparks-fly-031.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-032",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials reopens the neighbourhood swans after a canteen review",
+    "standfirst": "The city's music policy office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T07:28:00",
+    "image": "images/sparks-fly-032.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-033",
+    "category": "Sparks fly",
+    "headline": "In NORWICH, officials appoints the bushes after a timetable review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "NORWICH",
+    "published": "2026-07-22T07:27:00",
+    "image": "images/sparks-fly-033.svg",
+    "imageAlt": "A satirical sketch about bushes in NORWICH.",
+    "body": [
+      "In NORWICH, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-034",
+    "category": "Sparks fly",
+    "headline": "In NEWCASTLE, officials resurrects the ferry whistles after a manifesto review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T07:26:00",
+    "image": "images/sparks-fly-034.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in NEWCASTLE.",
+    "body": [
+      "In NEWCASTLE, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-035",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials digitizes the neighbourhood swans after a wardrobe review",
+    "standfirst": "The city's transport office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T07:25:00",
+    "image": "images/sparks-fly-035.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-036",
+    "category": "Sparks fly",
+    "headline": "In DUBLIN, officials archives the bushes after a pilot review",
+    "standfirst": "The city's governance office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "DUBLIN",
+    "published": "2026-07-22T07:24:00",
+    "image": "images/sparks-fly-036.svg",
+    "imageAlt": "A satirical sketch about bushes in DUBLIN.",
+    "body": [
+      "In DUBLIN, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-037",
+    "category": "Sparks fly",
+    "headline": "In BRISTOL, officials hosts the ferry whistles after a office review",
+    "standfirst": "The city's architecture office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-22T07:23:00",
+    "image": "images/sparks-fly-037.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in BRISTOL.",
+    "body": [
+      "In BRISTOL, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-038",
+    "category": "Sparks fly",
+    "headline": "In LEEDS, officials reforms the neighbourhood swans after a queue review",
+    "standfirst": "The city's public mood office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "LEEDS",
+    "published": "2026-07-22T07:22:00",
+    "image": "images/sparks-fly-038.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in LEEDS.",
+    "body": [
+      "In LEEDS, a temporary team began a review after citizens noticed that the neighbourhood swans had become impossible to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-039",
+    "category": "Sparks fly",
+    "headline": "In SHEFFIELD, officials declassifies the bushes after a protocol review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "SHEFFIELD",
+    "published": "2026-07-22T07:21:00",
+    "image": "images/sparks-fly-039.svg",
+    "imageAlt": "A satirical sketch about bushes in SHEFFIELD.",
+    "body": [
+      "In SHEFFIELD, a temporary team began a review after citizens noticed that the bushes had become impossible to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-040",
+    "category": "Sparks fly",
+    "headline": "In PORTSMOUTH, officials rehearses the ferry whistles after a bridge review",
+    "standfirst": "The city's weather office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "PORTSMOUTH",
+    "published": "2026-07-22T07:20:00",
+    "image": "images/sparks-fly-040.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in PORTSMOUTH.",
+    "body": [
+      "In PORTSMOUTH, a temporary team began a review after citizens noticed that the ferry whistles had become impossible to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "If the city can schedule meaning, it can probably schedule another form.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-041",
+    "category": "Sparks fly",
+    "headline": "In READING, officials interrogates the community radios after a platform review",
+    "standfirst": "The city's queue science office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "READING",
+    "published": "2026-07-22T07:17:00",
+    "image": "images/sparks-fly-041.svg",
+    "imageAlt": "A satirical sketch about community radios in READING.",
+    "body": [
+      "In READING, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-042",
+    "category": "Sparks fly",
+    "headline": "In OXFORD, officials upcycles the museum lifts after a roof review",
+    "standfirst": "The city's office order office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "OXFORD",
+    "published": "2026-07-22T07:16:00",
+    "image": "images/sparks-fly-042.svg",
+    "imageAlt": "A satirical sketch about museum lifts in OXFORD.",
+    "body": [
+      "In OXFORD, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-043",
+    "category": "Sparks fly",
+    "headline": "In CAMBRIDGE, officials maps the pigeons after a timetable review",
+    "standfirst": "The city's urban planning office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-22T07:15:00",
+    "image": "images/sparks-fly-043.svg",
+    "imageAlt": "A satirical sketch about pigeons in CAMBRIDGE.",
+    "body": [
+      "In CAMBRIDGE, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-044",
+    "category": "Sparks fly",
+    "headline": "In ABERDEEN, officials subcontracts the library card booths after a tramline review",
+    "standfirst": "The city's music policy office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-22T07:14:00",
+    "image": "images/sparks-fly-044.svg",
+    "imageAlt": "A satirical sketch about library card booths in ABERDEEN.",
+    "body": [
+      "In ABERDEEN, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-045",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials catalogues the bike sheds after a noticeboard review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T07:13:00",
+    "image": "images/sparks-fly-045.svg",
+    "imageAlt": "A satirical sketch about bike sheds in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-046",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials renames the trolley lanes after a bench review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T07:12:00",
+    "image": "images/sparks-fly-046.svg",
+    "imageAlt": "A satirical sketch about trolley lanes in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-047",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials quarantines the bus shelters after a queue review",
+    "standfirst": "The city's transport office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T07:11:00",
+    "image": "images/sparks-fly-047.svg",
+    "imageAlt": "A satirical sketch about bus shelters in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-048",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials sponsors the fountain statues after a ticket review",
+    "standfirst": "The city's governance office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T07:10:00",
+    "image": "images/sparks-fly-048.svg",
+    "imageAlt": "A satirical sketch about fountain statues in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-049",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials commissions the park fountains after a statute review",
+    "standfirst": "The city's architecture office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T07:09:00",
+    "image": "images/sparks-fly-049.svg",
+    "imageAlt": "A satirical sketch about park fountains in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-050",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials calibrates the bushes after a committee review",
+    "standfirst": "The city's public mood office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T07:08:00",
+    "image": "images/sparks-fly-050.svg",
+    "imageAlt": "A satirical sketch about bushes in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-051",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials declassifies the ferry whistles after a desk review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T07:07:00",
+    "image": "images/sparks-fly-051.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after residents noticed that the ferry whistles had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-052",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials rehearses the neighbourhood swans after a manifesto review",
+    "standfirst": "The city's weather office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T07:06:00",
+    "image": "images/sparks-fly-052.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after residents noticed that the neighbourhood swans had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-053",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials hosts the bench straps after a wardrobe review",
+    "standfirst": "The city's queue science office has asked staff to treat the bench straps as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T07:05:00",
+    "image": "images/sparks-fly-053.svg",
+    "imageAlt": "A satirical sketch about bench straps in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after residents noticed that the bench straps had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-054",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials reforms the street lamps after a budget review",
+    "standfirst": "The city's office order office has asked staff to treat the street lamps as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T07:04:00",
+    "image": "images/sparks-fly-054.svg",
+    "imageAlt": "A satirical sketch about street lamps in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after residents noticed that the street lamps had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-055",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials digitizes the city clocks after a sieve review",
+    "standfirst": "The city's urban planning office has asked staff to treat the city clocks as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T07:03:00",
+    "image": "images/sparks-fly-055.svg",
+    "imageAlt": "A satirical sketch about city clocks in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after residents noticed that the city clocks had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-056",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials archives the canteen kettles after a protocol review",
+    "standfirst": "The city's music policy office has asked staff to treat the canteen kettles as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T07:02:00",
+    "image": "images/sparks-fly-056.svg",
+    "imageAlt": "A satirical sketch about canteen kettles in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after residents noticed that the canteen kettles had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-057",
+    "category": "Sparks fly",
+    "headline": "In NORWICH, officials appoints the signal boxes after a bridge review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the signal boxes as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "NORWICH",
+    "published": "2026-07-22T07:01:00",
+    "image": "images/sparks-fly-057.svg",
+    "imageAlt": "A satirical sketch about signal boxes in NORWICH.",
+    "body": [
+      "In NORWICH, a temporary team began a review after residents noticed that the signal boxes had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-058",
+    "category": "Sparks fly",
+    "headline": "In NEWCASTLE, officials resurrects the luggage tags after a policy review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the luggage tags as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T07:00:00",
+    "image": "images/sparks-fly-058.svg",
+    "imageAlt": "A satirical sketch about luggage tags in NEWCASTLE.",
+    "body": [
+      "In NEWCASTLE, a temporary team began a review after residents noticed that the luggage tags had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-059",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials calibrates the train platforms after a canteen review",
+    "standfirst": "The city's transport office has asked staff to treat the train platforms as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T06:59:00",
+    "image": "images/sparks-fly-059.svg",
+    "imageAlt": "A satirical sketch about train platforms in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the train platforms had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-060",
+    "category": "Sparks fly",
+    "headline": "In DUBLIN, officials reopens the hydrant covers after a auditor review",
+    "standfirst": "The city's governance office has asked staff to treat the hydrant covers as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "DUBLIN",
+    "published": "2026-07-22T06:58:00",
+    "image": "images/sparks-fly-060.svg",
+    "imageAlt": "A satirical sketch about hydrant covers in DUBLIN.",
+    "body": [
+      "In DUBLIN, a temporary team began a review after residents noticed that the hydrant covers had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-061",
+    "category": "Sparks fly",
+    "headline": "In BRISTOL, officials licenses the rain gauges after a garden review",
+    "standfirst": "The city's architecture office has asked staff to treat the rain gauges as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-22T06:57:00",
+    "image": "images/sparks-fly-061.svg",
+    "imageAlt": "A satirical sketch about rain gauges in BRISTOL.",
+    "body": [
+      "In BRISTOL, a temporary team began a review after residents noticed that the rain gauges had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-062",
+    "category": "Sparks fly",
+    "headline": "In LEEDS, officials releases the elevator buttons after a pilot review",
+    "standfirst": "The city's public mood office has asked staff to treat the elevator buttons as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "LEEDS",
+    "published": "2026-07-22T06:56:00",
+    "image": "images/sparks-fly-062.svg",
+    "imageAlt": "A satirical sketch about elevator buttons in LEEDS.",
+    "body": [
+      "In LEEDS, a temporary team began a review after residents noticed that the elevator buttons had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-063",
+    "category": "Sparks fly",
+    "headline": "In SHEFFIELD, officials suspends the district banners after a office review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the district banners as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "SHEFFIELD",
+    "published": "2026-07-22T06:55:00",
+    "image": "images/sparks-fly-063.svg",
+    "imageAlt": "A satirical sketch about district banners in SHEFFIELD.",
+    "body": [
+      "In SHEFFIELD, a temporary team began a review after residents noticed that the district banners had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-064",
+    "category": "Sparks fly",
+    "headline": "In PORTSMOUTH, officials interrogates the queue signs after a archive review",
+    "standfirst": "The city's weather office has asked staff to treat the queue signs as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "PORTSMOUTH",
+    "published": "2026-07-22T06:54:00",
+    "image": "images/sparks-fly-064.svg",
+    "imageAlt": "A satirical sketch about queue signs in PORTSMOUTH.",
+    "body": [
+      "In PORTSMOUTH, a temporary team began a review after residents noticed that the queue signs had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-065",
+    "category": "Sparks fly",
+    "headline": "In READING, officials upcycles the office chairs after a label review",
+    "standfirst": "The city's queue science office has asked staff to treat the office chairs as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "READING",
+    "published": "2026-07-22T06:53:00",
+    "image": "images/sparks-fly-065.svg",
+    "imageAlt": "A satirical sketch about office chairs in READING.",
+    "body": [
+      "In READING, a temporary team began a review after residents noticed that the office chairs had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-066",
+    "category": "Sparks fly",
+    "headline": "In OXFORD, officials maps the community radios after a platform review",
+    "standfirst": "The city's office order office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "OXFORD",
+    "published": "2026-07-22T06:52:00",
+    "image": "images/sparks-fly-066.svg",
+    "imageAlt": "A satirical sketch about community radios in OXFORD.",
+    "body": [
+      "In OXFORD, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-067",
+    "category": "Sparks fly",
+    "headline": "In CAMBRIDGE, officials subcontracts the museum lifts after a roof review",
+    "standfirst": "The city's urban planning office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-22T06:51:00",
+    "image": "images/sparks-fly-067.svg",
+    "imageAlt": "A satirical sketch about museum lifts in CAMBRIDGE.",
+    "body": [
+      "In CAMBRIDGE, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-068",
+    "category": "Sparks fly",
+    "headline": "In ABERDEEN, officials catalogues the pigeons after a timetable review",
+    "standfirst": "The city's music policy office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-22T06:50:00",
+    "image": "images/sparks-fly-068.svg",
+    "imageAlt": "A satirical sketch about pigeons in ABERDEEN.",
+    "body": [
+      "In ABERDEEN, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-069",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials renames the library card booths after a tramline review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T06:49:00",
+    "image": "images/sparks-fly-069.svg",
+    "imageAlt": "A satirical sketch about library card booths in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-070",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials quarantines the bike sheds after a noticeboard review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T06:48:00",
+    "image": "images/sparks-fly-070.svg",
+    "imageAlt": "A satirical sketch about bike sheds in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-071",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials sponsors the trolley lanes after a bench review",
+    "standfirst": "The city's transport office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T06:47:00",
+    "image": "images/sparks-fly-071.svg",
+    "imageAlt": "A satirical sketch about trolley lanes in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-072",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials commissions the bus shelters after a queue review",
+    "standfirst": "The city's governance office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T06:46:00",
+    "image": "images/sparks-fly-072.svg",
+    "imageAlt": "A satirical sketch about bus shelters in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-073",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials calibrates the fountain statues after a ticket review",
+    "standfirst": "The city's architecture office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T06:45:00",
+    "image": "images/sparks-fly-073.svg",
+    "imageAlt": "A satirical sketch about fountain statues in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-074",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials declassifies the park fountains after a statute review",
+    "standfirst": "The city's public mood office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T06:44:00",
+    "image": "images/sparks-fly-074.svg",
+    "imageAlt": "A satirical sketch about park fountains in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-075",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials rehearses the bushes after a committee review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T06:43:00",
+    "image": "images/sparks-fly-075.svg",
+    "imageAlt": "A satirical sketch about bushes in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-076",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials hosts the ferry whistles after a desk review",
+    "standfirst": "The city's weather office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T06:42:00",
+    "image": "images/sparks-fly-076.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after residents noticed that the ferry whistles had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-077",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials reforms the neighbourhood swans after a manifesto review",
+    "standfirst": "The city's queue science office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T06:41:00",
+    "image": "images/sparks-fly-077.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after residents noticed that the neighbourhood swans had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-078",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials digitizes the bench straps after a wardrobe review",
+    "standfirst": "The city's office order office has asked staff to treat the bench straps as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T06:40:00",
+    "image": "images/sparks-fly-078.svg",
+    "imageAlt": "A satirical sketch about bench straps in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after residents noticed that the bench straps had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-079",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials archives the street lamps after a budget review",
+    "standfirst": "The city's urban planning office has asked staff to treat the street lamps as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T06:39:00",
+    "image": "images/sparks-fly-079.svg",
+    "imageAlt": "A satirical sketch about street lamps in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after residents noticed that the street lamps had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-080",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials appoints the city clocks after a sieve review",
+    "standfirst": "The city's music policy office has asked staff to treat the city clocks as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T06:38:00",
+    "image": "images/sparks-fly-080.svg",
+    "imageAlt": "A satirical sketch about city clocks in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after residents noticed that the city clocks had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-081",
+    "category": "Sparks fly",
+    "headline": "In NORWICH, officials resurrects the canteen kettles after a protocol review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the canteen kettles as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "NORWICH",
+    "published": "2026-07-22T06:37:00",
+    "image": "images/sparks-fly-081.svg",
+    "imageAlt": "A satirical sketch about canteen kettles in NORWICH.",
+    "body": [
+      "In NORWICH, a temporary team began a review after residents noticed that the canteen kettles had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-082",
+    "category": "Sparks fly",
+    "headline": "In NEWCASTLE, officials calibrates the signal boxes after a bridge review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the signal boxes as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T06:36:00",
+    "image": "images/sparks-fly-082.svg",
+    "imageAlt": "A satirical sketch about signal boxes in NEWCASTLE.",
+    "body": [
+      "In NEWCASTLE, a temporary team began a review after residents noticed that the signal boxes had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-083",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials reopens the luggage tags after a policy review",
+    "standfirst": "The city's transport office has asked staff to treat the luggage tags as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T06:35:00",
+    "image": "images/sparks-fly-083.svg",
+    "imageAlt": "A satirical sketch about luggage tags in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the luggage tags had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-084",
+    "category": "Sparks fly",
+    "headline": "In DUBLIN, officials licenses the train platforms after a canteen review",
+    "standfirst": "The city's governance office has asked staff to treat the train platforms as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "DUBLIN",
+    "published": "2026-07-22T06:34:00",
+    "image": "images/sparks-fly-084.svg",
+    "imageAlt": "A satirical sketch about train platforms in DUBLIN.",
+    "body": [
+      "In DUBLIN, a temporary team began a review after residents noticed that the train platforms had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-085",
+    "category": "Sparks fly",
+    "headline": "In BRISTOL, officials releases the hydrant covers after a auditor review",
+    "standfirst": "The city's architecture office has asked staff to treat the hydrant covers as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-22T06:33:00",
+    "image": "images/sparks-fly-085.svg",
+    "imageAlt": "A satirical sketch about hydrant covers in BRISTOL.",
+    "body": [
+      "In BRISTOL, a temporary team began a review after residents noticed that the hydrant covers had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-086",
+    "category": "Sparks fly",
+    "headline": "In LEEDS, officials suspends the rain gauges after a garden review",
+    "standfirst": "The city's public mood office has asked staff to treat the rain gauges as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "LEEDS",
+    "published": "2026-07-22T06:32:00",
+    "image": "images/sparks-fly-086.svg",
+    "imageAlt": "A satirical sketch about rain gauges in LEEDS.",
+    "body": [
+      "In LEEDS, a temporary team began a review after residents noticed that the rain gauges had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-087",
+    "category": "Sparks fly",
+    "headline": "In SHEFFIELD, officials interrogates the elevator buttons after a pilot review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the elevator buttons as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "SHEFFIELD",
+    "published": "2026-07-22T06:31:00",
+    "image": "images/sparks-fly-087.svg",
+    "imageAlt": "A satirical sketch about elevator buttons in SHEFFIELD.",
+    "body": [
+      "In SHEFFIELD, a temporary team began a review after residents noticed that the elevator buttons had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-088",
+    "category": "Sparks fly",
+    "headline": "In PORTSMOUTH, officials upcycles the district banners after a office review",
+    "standfirst": "The city's weather office has asked staff to treat the district banners as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "PORTSMOUTH",
+    "published": "2026-07-22T06:30:00",
+    "image": "images/sparks-fly-088.svg",
+    "imageAlt": "A satirical sketch about district banners in PORTSMOUTH.",
+    "body": [
+      "In PORTSMOUTH, a temporary team began a review after residents noticed that the district banners had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-089",
+    "category": "Sparks fly",
+    "headline": "In READING, officials maps the queue signs after a archive review",
+    "standfirst": "The city's queue science office has asked staff to treat the queue signs as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "READING",
+    "published": "2026-07-22T06:29:00",
+    "image": "images/sparks-fly-089.svg",
+    "imageAlt": "A satirical sketch about queue signs in READING.",
+    "body": [
+      "In READING, a temporary team began a review after residents noticed that the queue signs had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-090",
+    "category": "Sparks fly",
+    "headline": "In OXFORD, officials subcontracts the office chairs after a label review",
+    "standfirst": "The city's office order office has asked staff to treat the office chairs as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "OXFORD",
+    "published": "2026-07-22T06:28:00",
+    "image": "images/sparks-fly-090.svg",
+    "imageAlt": "A satirical sketch about office chairs in OXFORD.",
+    "body": [
+      "In OXFORD, a temporary team began a review after residents noticed that the office chairs had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-091",
+    "category": "Sparks fly",
+    "headline": "In CAMBRIDGE, officials catalogues the community radios after a platform review",
+    "standfirst": "The city's urban planning office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-22T06:27:00",
+    "image": "images/sparks-fly-091.svg",
+    "imageAlt": "A satirical sketch about community radios in CAMBRIDGE.",
+    "body": [
+      "In CAMBRIDGE, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-092",
+    "category": "Sparks fly",
+    "headline": "In ABERDEEN, officials renames the museum lifts after a roof review",
+    "standfirst": "The city's music policy office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-22T06:26:00",
+    "image": "images/sparks-fly-092.svg",
+    "imageAlt": "A satirical sketch about museum lifts in ABERDEEN.",
+    "body": [
+      "In ABERDEEN, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-093",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials quarantines the pigeons after a timetable review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T06:25:00",
+    "image": "images/sparks-fly-093.svg",
+    "imageAlt": "A satirical sketch about pigeons in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-094",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials sponsors the library card booths after a tramline review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T06:24:00",
+    "image": "images/sparks-fly-094.svg",
+    "imageAlt": "A satirical sketch about library card booths in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-095",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials commissions the bike sheds after a noticeboard review",
+    "standfirst": "The city's transport office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T06:23:00",
+    "image": "images/sparks-fly-095.svg",
+    "imageAlt": "A satirical sketch about bike sheds in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-096",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials calibrates the trolley lanes after a bench review",
+    "standfirst": "The city's governance office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T06:22:00",
+    "image": "images/sparks-fly-096.svg",
+    "imageAlt": "A satirical sketch about trolley lanes in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-097",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials declassifies the bus shelters after a queue review",
+    "standfirst": "The city's architecture office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T06:21:00",
+    "image": "images/sparks-fly-097.svg",
+    "imageAlt": "A satirical sketch about bus shelters in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-098",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials rehearses the fountain statues after a ticket review",
+    "standfirst": "The city's public mood office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T06:20:00",
+    "image": "images/sparks-fly-098.svg",
+    "imageAlt": "A satirical sketch about fountain statues in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-099",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials hosts the park fountains after a statute review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T06:19:00",
+    "image": "images/sparks-fly-099.svg",
+    "imageAlt": "A satirical sketch about park fountains in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-100",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials reforms the bushes after a committee review",
+    "standfirst": "The city's weather office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T06:18:00",
+    "image": "images/sparks-fly-100.svg",
+    "imageAlt": "A satirical sketch about bushes in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-101",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials digitizes the ferry whistles after a desk review",
+    "standfirst": "The city's queue science office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T06:17:00",
+    "image": "images/sparks-fly-101.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after residents noticed that the ferry whistles had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-102",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials archives the neighbourhood swans after a manifesto review",
+    "standfirst": "The city's office order office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T06:16:00",
+    "image": "images/sparks-fly-102.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after residents noticed that the neighbourhood swans had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-103",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials appoints the bench straps after a wardrobe review",
+    "standfirst": "The city's urban planning office has asked staff to treat the bench straps as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T06:15:00",
+    "image": "images/sparks-fly-103.svg",
+    "imageAlt": "A satirical sketch about bench straps in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after residents noticed that the bench straps had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-104",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials resurrects the street lamps after a budget review",
+    "standfirst": "The city's music policy office has asked staff to treat the street lamps as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T06:14:00",
+    "image": "images/sparks-fly-104.svg",
+    "imageAlt": "A satirical sketch about street lamps in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after residents noticed that the street lamps had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-105",
+    "category": "Sparks fly",
+    "headline": "In NORWICH, officials calibrates the city clocks after a sieve review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the city clocks as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "NORWICH",
+    "published": "2026-07-22T06:13:00",
+    "image": "images/sparks-fly-105.svg",
+    "imageAlt": "A satirical sketch about city clocks in NORWICH.",
+    "body": [
+      "In NORWICH, a temporary team began a review after residents noticed that the city clocks had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-106",
+    "category": "Sparks fly",
+    "headline": "In NEWCASTLE, officials reopens the canteen kettles after a protocol review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the canteen kettles as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T06:12:00",
+    "image": "images/sparks-fly-106.svg",
+    "imageAlt": "A satirical sketch about canteen kettles in NEWCASTLE.",
+    "body": [
+      "In NEWCASTLE, a temporary team began a review after residents noticed that the canteen kettles had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-107",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials licenses the signal boxes after a bridge review",
+    "standfirst": "The city's transport office has asked staff to treat the signal boxes as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T06:11:00",
+    "image": "images/sparks-fly-107.svg",
+    "imageAlt": "A satirical sketch about signal boxes in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the signal boxes had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-108",
+    "category": "Sparks fly",
+    "headline": "In DUBLIN, officials releases the luggage tags after a policy review",
+    "standfirst": "The city's governance office has asked staff to treat the luggage tags as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "DUBLIN",
+    "published": "2026-07-22T06:10:00",
+    "image": "images/sparks-fly-108.svg",
+    "imageAlt": "A satirical sketch about luggage tags in DUBLIN.",
+    "body": [
+      "In DUBLIN, a temporary team began a review after residents noticed that the luggage tags had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-109",
+    "category": "Sparks fly",
+    "headline": "In BRISTOL, officials suspends the train platforms after a canteen review",
+    "standfirst": "The city's architecture office has asked staff to treat the train platforms as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-22T06:09:00",
+    "image": "images/sparks-fly-109.svg",
+    "imageAlt": "A satirical sketch about train platforms in BRISTOL.",
+    "body": [
+      "In BRISTOL, a temporary team began a review after residents noticed that the train platforms had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-110",
+    "category": "Sparks fly",
+    "headline": "In LEEDS, officials interrogates the hydrant covers after a auditor review",
+    "standfirst": "The city's public mood office has asked staff to treat the hydrant covers as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "LEEDS",
+    "published": "2026-07-22T06:08:00",
+    "image": "images/sparks-fly-110.svg",
+    "imageAlt": "A satirical sketch about hydrant covers in LEEDS.",
+    "body": [
+      "In LEEDS, a temporary team began a review after residents noticed that the hydrant covers had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-111",
+    "category": "Sparks fly",
+    "headline": "In SHEFFIELD, officials upcycles the rain gauges after a garden review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the rain gauges as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "SHEFFIELD",
+    "published": "2026-07-22T06:07:00",
+    "image": "images/sparks-fly-111.svg",
+    "imageAlt": "A satirical sketch about rain gauges in SHEFFIELD.",
+    "body": [
+      "In SHEFFIELD, a temporary team began a review after residents noticed that the rain gauges had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-112",
+    "category": "Sparks fly",
+    "headline": "In PORTSMOUTH, officials maps the elevator buttons after a pilot review",
+    "standfirst": "The city's weather office has asked staff to treat the elevator buttons as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "PORTSMOUTH",
+    "published": "2026-07-22T06:06:00",
+    "image": "images/sparks-fly-112.svg",
+    "imageAlt": "A satirical sketch about elevator buttons in PORTSMOUTH.",
+    "body": [
+      "In PORTSMOUTH, a temporary team began a review after residents noticed that the elevator buttons had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-113",
+    "category": "Sparks fly",
+    "headline": "In READING, officials subcontracts the district banners after a office review",
+    "standfirst": "The city's queue science office has asked staff to treat the district banners as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "READING",
+    "published": "2026-07-22T06:05:00",
+    "image": "images/sparks-fly-113.svg",
+    "imageAlt": "A satirical sketch about district banners in READING.",
+    "body": [
+      "In READING, a temporary team began a review after residents noticed that the district banners had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-114",
+    "category": "Sparks fly",
+    "headline": "In OXFORD, officials catalogues the queue signs after a archive review",
+    "standfirst": "The city's office order office has asked staff to treat the queue signs as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "OXFORD",
+    "published": "2026-07-22T06:04:00",
+    "image": "images/sparks-fly-114.svg",
+    "imageAlt": "A satirical sketch about queue signs in OXFORD.",
+    "body": [
+      "In OXFORD, a temporary team began a review after residents noticed that the queue signs had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-115",
+    "category": "Sparks fly",
+    "headline": "In CAMBRIDGE, officials renames the office chairs after a label review",
+    "standfirst": "The city's urban planning office has asked staff to treat the office chairs as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-22T06:03:00",
+    "image": "images/sparks-fly-115.svg",
+    "imageAlt": "A satirical sketch about office chairs in CAMBRIDGE.",
+    "body": [
+      "In CAMBRIDGE, a temporary team began a review after residents noticed that the office chairs had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-116",
+    "category": "Sparks fly",
+    "headline": "In ABERDEEN, officials quarantines the community radios after a platform review",
+    "standfirst": "The city's music policy office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-22T06:02:00",
+    "image": "images/sparks-fly-116.svg",
+    "imageAlt": "A satirical sketch about community radios in ABERDEEN.",
+    "body": [
+      "In ABERDEEN, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-117",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials sponsors the museum lifts after a roof review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T06:01:00",
+    "image": "images/sparks-fly-117.svg",
+    "imageAlt": "A satirical sketch about museum lifts in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-118",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials commissions the pigeons after a timetable review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T06:00:00",
+    "image": "images/sparks-fly-118.svg",
+    "imageAlt": "A satirical sketch about pigeons in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-119",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials calibrates the library card booths after a tramline review",
+    "standfirst": "The city's transport office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T05:59:00",
+    "image": "images/sparks-fly-119.svg",
+    "imageAlt": "A satirical sketch about library card booths in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-120",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials declassifies the bike sheds after a noticeboard review",
+    "standfirst": "The city's governance office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T05:58:00",
+    "image": "images/sparks-fly-120.svg",
+    "imageAlt": "A satirical sketch about bike sheds in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-121",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials rehearses the trolley lanes after a bench review",
+    "standfirst": "The city's architecture office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T05:57:00",
+    "image": "images/sparks-fly-121.svg",
+    "imageAlt": "A satirical sketch about trolley lanes in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-122",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials hosts the bus shelters after a queue review",
+    "standfirst": "The city's public mood office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T05:56:00",
+    "image": "images/sparks-fly-122.svg",
+    "imageAlt": "A satirical sketch about bus shelters in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-123",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials reforms the fountain statues after a ticket review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T05:55:00",
+    "image": "images/sparks-fly-123.svg",
+    "imageAlt": "A satirical sketch about fountain statues in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-124",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials digitizes the park fountains after a statute review",
+    "standfirst": "The city's weather office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T05:54:00",
+    "image": "images/sparks-fly-124.svg",
+    "imageAlt": "A satirical sketch about park fountains in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-125",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials archives the bushes after a committee review",
+    "standfirst": "The city's queue science office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T05:53:00",
+    "image": "images/sparks-fly-125.svg",
+    "imageAlt": "A satirical sketch about bushes in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-126",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials appoints the ferry whistles after a desk review",
+    "standfirst": "The city's office order office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T05:52:00",
+    "image": "images/sparks-fly-126.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after residents noticed that the ferry whistles had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-127",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials resurrects the neighbourhood swans after a manifesto review",
+    "standfirst": "The city's urban planning office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T05:51:00",
+    "image": "images/sparks-fly-127.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after residents noticed that the neighbourhood swans had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-128",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials calibrates the bench straps after a wardrobe review",
+    "standfirst": "The city's music policy office has asked staff to treat the bench straps as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T05:50:00",
+    "image": "images/sparks-fly-128.svg",
+    "imageAlt": "A satirical sketch about bench straps in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after residents noticed that the bench straps had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-129",
+    "category": "Sparks fly",
+    "headline": "In NORWICH, officials reopens the street lamps after a budget review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the street lamps as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "NORWICH",
+    "published": "2026-07-22T05:49:00",
+    "image": "images/sparks-fly-129.svg",
+    "imageAlt": "A satirical sketch about street lamps in NORWICH.",
+    "body": [
+      "In NORWICH, a temporary team began a review after residents noticed that the street lamps had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-130",
+    "category": "Sparks fly",
+    "headline": "In NEWCASTLE, officials licenses the city clocks after a sieve review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the city clocks as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T05:48:00",
+    "image": "images/sparks-fly-130.svg",
+    "imageAlt": "A satirical sketch about city clocks in NEWCASTLE.",
+    "body": [
+      "In NEWCASTLE, a temporary team began a review after residents noticed that the city clocks had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-131",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials releases the canteen kettles after a protocol review",
+    "standfirst": "The city's transport office has asked staff to treat the canteen kettles as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T05:47:00",
+    "image": "images/sparks-fly-131.svg",
+    "imageAlt": "A satirical sketch about canteen kettles in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the canteen kettles had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-132",
+    "category": "Sparks fly",
+    "headline": "In DUBLIN, officials suspends the signal boxes after a bridge review",
+    "standfirst": "The city's governance office has asked staff to treat the signal boxes as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "DUBLIN",
+    "published": "2026-07-22T05:46:00",
+    "image": "images/sparks-fly-132.svg",
+    "imageAlt": "A satirical sketch about signal boxes in DUBLIN.",
+    "body": [
+      "In DUBLIN, a temporary team began a review after residents noticed that the signal boxes had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-133",
+    "category": "Sparks fly",
+    "headline": "In BRISTOL, officials interrogates the luggage tags after a policy review",
+    "standfirst": "The city's architecture office has asked staff to treat the luggage tags as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-22T05:45:00",
+    "image": "images/sparks-fly-133.svg",
+    "imageAlt": "A satirical sketch about luggage tags in BRISTOL.",
+    "body": [
+      "In BRISTOL, a temporary team began a review after residents noticed that the luggage tags had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-134",
+    "category": "Sparks fly",
+    "headline": "In LEEDS, officials upcycles the train platforms after a canteen review",
+    "standfirst": "The city's public mood office has asked staff to treat the train platforms as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "LEEDS",
+    "published": "2026-07-22T05:44:00",
+    "image": "images/sparks-fly-134.svg",
+    "imageAlt": "A satirical sketch about train platforms in LEEDS.",
+    "body": [
+      "In LEEDS, a temporary team began a review after residents noticed that the train platforms had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-135",
+    "category": "Sparks fly",
+    "headline": "In SHEFFIELD, officials maps the hydrant covers after a auditor review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the hydrant covers as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "SHEFFIELD",
+    "published": "2026-07-22T05:43:00",
+    "image": "images/sparks-fly-135.svg",
+    "imageAlt": "A satirical sketch about hydrant covers in SHEFFIELD.",
+    "body": [
+      "In SHEFFIELD, a temporary team began a review after residents noticed that the hydrant covers had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-136",
+    "category": "Sparks fly",
+    "headline": "In PORTSMOUTH, officials subcontracts the rain gauges after a garden review",
+    "standfirst": "The city's weather office has asked staff to treat the rain gauges as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "PORTSMOUTH",
+    "published": "2026-07-22T05:42:00",
+    "image": "images/sparks-fly-136.svg",
+    "imageAlt": "A satirical sketch about rain gauges in PORTSMOUTH.",
+    "body": [
+      "In PORTSMOUTH, a temporary team began a review after residents noticed that the rain gauges had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-137",
+    "category": "Sparks fly",
+    "headline": "In READING, officials catalogues the elevator buttons after a pilot review",
+    "standfirst": "The city's queue science office has asked staff to treat the elevator buttons as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "READING",
+    "published": "2026-07-22T05:41:00",
+    "image": "images/sparks-fly-137.svg",
+    "imageAlt": "A satirical sketch about elevator buttons in READING.",
+    "body": [
+      "In READING, a temporary team began a review after residents noticed that the elevator buttons had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-138",
+    "category": "Sparks fly",
+    "headline": "In OXFORD, officials renames the district banners after a office review",
+    "standfirst": "The city's office order office has asked staff to treat the district banners as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "OXFORD",
+    "published": "2026-07-22T05:40:00",
+    "image": "images/sparks-fly-138.svg",
+    "imageAlt": "A satirical sketch about district banners in OXFORD.",
+    "body": [
+      "In OXFORD, a temporary team began a review after residents noticed that the district banners had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-139",
+    "category": "Sparks fly",
+    "headline": "In CAMBRIDGE, officials quarantines the queue signs after a archive review",
+    "standfirst": "The city's urban planning office has asked staff to treat the queue signs as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-22T05:39:00",
+    "image": "images/sparks-fly-139.svg",
+    "imageAlt": "A satirical sketch about queue signs in CAMBRIDGE.",
+    "body": [
+      "In CAMBRIDGE, a temporary team began a review after residents noticed that the queue signs had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-140",
+    "category": "Sparks fly",
+    "headline": "In ABERDEEN, officials sponsors the office chairs after a label review",
+    "standfirst": "The city's music policy office has asked staff to treat the office chairs as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-22T05:38:00",
+    "image": "images/sparks-fly-140.svg",
+    "imageAlt": "A satirical sketch about office chairs in ABERDEEN.",
+    "body": [
+      "In ABERDEEN, a temporary team began a review after residents noticed that the office chairs had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-141",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials commissions the community radios after a platform review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T05:37:00",
+    "image": "images/sparks-fly-141.svg",
+    "imageAlt": "A satirical sketch about community radios in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-142",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials calibrates the museum lifts after a roof review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T05:36:00",
+    "image": "images/sparks-fly-142.svg",
+    "imageAlt": "A satirical sketch about museum lifts in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-143",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials declassifies the pigeons after a timetable review",
+    "standfirst": "The city's transport office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T05:35:00",
+    "image": "images/sparks-fly-143.svg",
+    "imageAlt": "A satirical sketch about pigeons in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-144",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials rehearses the library card booths after a tramline review",
+    "standfirst": "The city's governance office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T05:34:00",
+    "image": "images/sparks-fly-144.svg",
+    "imageAlt": "A satirical sketch about library card booths in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-145",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials hosts the bike sheds after a noticeboard review",
+    "standfirst": "The city's architecture office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T05:33:00",
+    "image": "images/sparks-fly-145.svg",
+    "imageAlt": "A satirical sketch about bike sheds in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-146",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials reforms the trolley lanes after a bench review",
+    "standfirst": "The city's public mood office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T05:32:00",
+    "image": "images/sparks-fly-146.svg",
+    "imageAlt": "A satirical sketch about trolley lanes in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-147",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials digitizes the bus shelters after a queue review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T05:31:00",
+    "image": "images/sparks-fly-147.svg",
+    "imageAlt": "A satirical sketch about bus shelters in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-148",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials archives the fountain statues after a ticket review",
+    "standfirst": "The city's weather office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T05:30:00",
+    "image": "images/sparks-fly-148.svg",
+    "imageAlt": "A satirical sketch about fountain statues in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-149",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials appoints the park fountains after a statute review",
+    "standfirst": "The city's queue science office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T05:29:00",
+    "image": "images/sparks-fly-149.svg",
+    "imageAlt": "A satirical sketch about park fountains in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-150",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials resurrects the bushes after a committee review",
+    "standfirst": "The city's office order office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T05:28:00",
+    "image": "images/sparks-fly-150.svg",
+    "imageAlt": "A satirical sketch about bushes in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-151",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials calibrates the ferry whistles after a desk review",
+    "standfirst": "The city's urban planning office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T05:27:00",
+    "image": "images/sparks-fly-151.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after residents noticed that the ferry whistles had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-152",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials reopens the neighbourhood swans after a manifesto review",
+    "standfirst": "The city's music policy office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T05:26:00",
+    "image": "images/sparks-fly-152.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after residents noticed that the neighbourhood swans had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-153",
+    "category": "Sparks fly",
+    "headline": "In NORWICH, officials licenses the bench straps after a wardrobe review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the bench straps as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "NORWICH",
+    "published": "2026-07-22T05:25:00",
+    "image": "images/sparks-fly-153.svg",
+    "imageAlt": "A satirical sketch about bench straps in NORWICH.",
+    "body": [
+      "In NORWICH, a temporary team began a review after residents noticed that the bench straps had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-154",
+    "category": "Sparks fly",
+    "headline": "In NEWCASTLE, officials releases the street lamps after a budget review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the street lamps as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T05:24:00",
+    "image": "images/sparks-fly-154.svg",
+    "imageAlt": "A satirical sketch about street lamps in NEWCASTLE.",
+    "body": [
+      "In NEWCASTLE, a temporary team began a review after residents noticed that the street lamps had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-155",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials suspends the city clocks after a sieve review",
+    "standfirst": "The city's transport office has asked staff to treat the city clocks as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T05:23:00",
+    "image": "images/sparks-fly-155.svg",
+    "imageAlt": "A satirical sketch about city clocks in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the city clocks had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-156",
+    "category": "Sparks fly",
+    "headline": "In DUBLIN, officials interrogates the canteen kettles after a protocol review",
+    "standfirst": "The city's governance office has asked staff to treat the canteen kettles as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "DUBLIN",
+    "published": "2026-07-22T05:22:00",
+    "image": "images/sparks-fly-156.svg",
+    "imageAlt": "A satirical sketch about canteen kettles in DUBLIN.",
+    "body": [
+      "In DUBLIN, a temporary team began a review after residents noticed that the canteen kettles had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-157",
+    "category": "Sparks fly",
+    "headline": "In BRISTOL, officials upcycles the signal boxes after a bridge review",
+    "standfirst": "The city's architecture office has asked staff to treat the signal boxes as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-22T05:21:00",
+    "image": "images/sparks-fly-157.svg",
+    "imageAlt": "A satirical sketch about signal boxes in BRISTOL.",
+    "body": [
+      "In BRISTOL, a temporary team began a review after residents noticed that the signal boxes had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-158",
+    "category": "Sparks fly",
+    "headline": "In LEEDS, officials maps the luggage tags after a policy review",
+    "standfirst": "The city's public mood office has asked staff to treat the luggage tags as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "LEEDS",
+    "published": "2026-07-22T05:20:00",
+    "image": "images/sparks-fly-158.svg",
+    "imageAlt": "A satirical sketch about luggage tags in LEEDS.",
+    "body": [
+      "In LEEDS, a temporary team began a review after residents noticed that the luggage tags had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-159",
+    "category": "Sparks fly",
+    "headline": "In SHEFFIELD, officials subcontracts the train platforms after a canteen review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the train platforms as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "SHEFFIELD",
+    "published": "2026-07-22T05:19:00",
+    "image": "images/sparks-fly-159.svg",
+    "imageAlt": "A satirical sketch about train platforms in SHEFFIELD.",
+    "body": [
+      "In SHEFFIELD, a temporary team began a review after residents noticed that the train platforms had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-160",
+    "category": "Sparks fly",
+    "headline": "In PORTSMOUTH, officials catalogues the hydrant covers after a auditor review",
+    "standfirst": "The city's weather office has asked staff to treat the hydrant covers as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "PORTSMOUTH",
+    "published": "2026-07-22T05:18:00",
+    "image": "images/sparks-fly-160.svg",
+    "imageAlt": "A satirical sketch about hydrant covers in PORTSMOUTH.",
+    "body": [
+      "In PORTSMOUTH, a temporary team began a review after residents noticed that the hydrant covers had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-161",
+    "category": "Sparks fly",
+    "headline": "In READING, officials renames the rain gauges after a garden review",
+    "standfirst": "The city's queue science office has asked staff to treat the rain gauges as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "READING",
+    "published": "2026-07-22T05:17:00",
+    "image": "images/sparks-fly-161.svg",
+    "imageAlt": "A satirical sketch about rain gauges in READING.",
+    "body": [
+      "In READING, a temporary team began a review after residents noticed that the rain gauges had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-162",
+    "category": "Sparks fly",
+    "headline": "In OXFORD, officials quarantines the elevator buttons after a pilot review",
+    "standfirst": "The city's office order office has asked staff to treat the elevator buttons as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "OXFORD",
+    "published": "2026-07-22T05:16:00",
+    "image": "images/sparks-fly-162.svg",
+    "imageAlt": "A satirical sketch about elevator buttons in OXFORD.",
+    "body": [
+      "In OXFORD, a temporary team began a review after residents noticed that the elevator buttons had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-163",
+    "category": "Sparks fly",
+    "headline": "In CAMBRIDGE, officials sponsors the district banners after a office review",
+    "standfirst": "The city's urban planning office has asked staff to treat the district banners as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-22T05:15:00",
+    "image": "images/sparks-fly-163.svg",
+    "imageAlt": "A satirical sketch about district banners in CAMBRIDGE.",
+    "body": [
+      "In CAMBRIDGE, a temporary team began a review after residents noticed that the district banners had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-164",
+    "category": "Sparks fly",
+    "headline": "In ABERDEEN, officials commissions the queue signs after a archive review",
+    "standfirst": "The city's music policy office has asked staff to treat the queue signs as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-22T05:14:00",
+    "image": "images/sparks-fly-164.svg",
+    "imageAlt": "A satirical sketch about queue signs in ABERDEEN.",
+    "body": [
+      "In ABERDEEN, a temporary team began a review after residents noticed that the queue signs had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-165",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials calibrates the office chairs after a label review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the office chairs as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T05:13:00",
+    "image": "images/sparks-fly-165.svg",
+    "imageAlt": "A satirical sketch about office chairs in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the office chairs had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-166",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials declassifies the community radios after a platform review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T05:12:00",
+    "image": "images/sparks-fly-166.svg",
+    "imageAlt": "A satirical sketch about community radios in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-167",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials rehearses the museum lifts after a roof review",
+    "standfirst": "The city's transport office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T05:11:00",
+    "image": "images/sparks-fly-167.svg",
+    "imageAlt": "A satirical sketch about museum lifts in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-168",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials hosts the pigeons after a timetable review",
+    "standfirst": "The city's governance office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T05:10:00",
+    "image": "images/sparks-fly-168.svg",
+    "imageAlt": "A satirical sketch about pigeons in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-169",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials reforms the library card booths after a tramline review",
+    "standfirst": "The city's architecture office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T05:09:00",
+    "image": "images/sparks-fly-169.svg",
+    "imageAlt": "A satirical sketch about library card booths in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-170",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials digitizes the bike sheds after a noticeboard review",
+    "standfirst": "The city's public mood office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T05:08:00",
+    "image": "images/sparks-fly-170.svg",
+    "imageAlt": "A satirical sketch about bike sheds in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-171",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials archives the trolley lanes after a bench review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T05:07:00",
+    "image": "images/sparks-fly-171.svg",
+    "imageAlt": "A satirical sketch about trolley lanes in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-172",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials appoints the bus shelters after a queue review",
+    "standfirst": "The city's weather office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T05:06:00",
+    "image": "images/sparks-fly-172.svg",
+    "imageAlt": "A satirical sketch about bus shelters in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-173",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials resurrects the fountain statues after a ticket review",
+    "standfirst": "The city's queue science office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T05:05:00",
+    "image": "images/sparks-fly-173.svg",
+    "imageAlt": "A satirical sketch about fountain statues in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-174",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials calibrates the park fountains after a statute review",
+    "standfirst": "The city's office order office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T05:04:00",
+    "image": "images/sparks-fly-174.svg",
+    "imageAlt": "A satirical sketch about park fountains in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-175",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials reopens the bushes after a committee review",
+    "standfirst": "The city's urban planning office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T05:03:00",
+    "image": "images/sparks-fly-175.svg",
+    "imageAlt": "A satirical sketch about bushes in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-176",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials licenses the ferry whistles after a desk review",
+    "standfirst": "The city's music policy office has asked staff to treat the ferry whistles as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T05:02:00",
+    "image": "images/sparks-fly-176.svg",
+    "imageAlt": "A satirical sketch about ferry whistles in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after residents noticed that the ferry whistles had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-177",
+    "category": "Sparks fly",
+    "headline": "In NORWICH, officials releases the neighbourhood swans after a manifesto review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the neighbourhood swans as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "NORWICH",
+    "published": "2026-07-22T05:01:00",
+    "image": "images/sparks-fly-177.svg",
+    "imageAlt": "A satirical sketch about neighbourhood swans in NORWICH.",
+    "body": [
+      "In NORWICH, a temporary team began a review after residents noticed that the neighbourhood swans had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-178",
+    "category": "Sparks fly",
+    "headline": "In NEWCASTLE, officials suspends the bench straps after a wardrobe review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the bench straps as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "NEWCASTLE",
+    "published": "2026-07-22T05:00:00",
+    "image": "images/sparks-fly-178.svg",
+    "imageAlt": "A satirical sketch about bench straps in NEWCASTLE.",
+    "body": [
+      "In NEWCASTLE, a temporary team began a review after residents noticed that the bench straps had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-179",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials interrogates the street lamps after a budget review",
+    "standfirst": "The city's transport office has asked staff to treat the street lamps as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T04:59:00",
+    "image": "images/sparks-fly-179.svg",
+    "imageAlt": "A satirical sketch about street lamps in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the street lamps had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-180",
+    "category": "Sparks fly",
+    "headline": "In DUBLIN, officials upcycles the city clocks after a sieve review",
+    "standfirst": "The city's governance office has asked staff to treat the city clocks as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "DUBLIN",
+    "published": "2026-07-22T04:58:00",
+    "image": "images/sparks-fly-180.svg",
+    "imageAlt": "A satirical sketch about city clocks in DUBLIN.",
+    "body": [
+      "In DUBLIN, a temporary team began a review after residents noticed that the city clocks had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-181",
+    "category": "Sparks fly",
+    "headline": "In BRISTOL, officials maps the canteen kettles after a protocol review",
+    "standfirst": "The city's architecture office has asked staff to treat the canteen kettles as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-22T04:57:00",
+    "image": "images/sparks-fly-181.svg",
+    "imageAlt": "A satirical sketch about canteen kettles in BRISTOL.",
+    "body": [
+      "In BRISTOL, a temporary team began a review after residents noticed that the canteen kettles had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-182",
+    "category": "Sparks fly",
+    "headline": "In LEEDS, officials subcontracts the signal boxes after a bridge review",
+    "standfirst": "The city's public mood office has asked staff to treat the signal boxes as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "LEEDS",
+    "published": "2026-07-22T04:56:00",
+    "image": "images/sparks-fly-182.svg",
+    "imageAlt": "A satirical sketch about signal boxes in LEEDS.",
+    "body": [
+      "In LEEDS, a temporary team began a review after residents noticed that the signal boxes had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-183",
+    "category": "Sparks fly",
+    "headline": "In SHEFFIELD, officials catalogues the luggage tags after a policy review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the luggage tags as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "SHEFFIELD",
+    "published": "2026-07-22T04:55:00",
+    "image": "images/sparks-fly-183.svg",
+    "imageAlt": "A satirical sketch about luggage tags in SHEFFIELD.",
+    "body": [
+      "In SHEFFIELD, a temporary team began a review after residents noticed that the luggage tags had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-184",
+    "category": "Sparks fly",
+    "headline": "In PORTSMOUTH, officials renames the train platforms after a canteen review",
+    "standfirst": "The city's weather office has asked staff to treat the train platforms as civic furniture until the audit can finish.",
+    "byline": "By Rafe Nettle, Opinion Correspondent",
+    "location": "PORTSMOUTH",
+    "published": "2026-07-22T04:54:00",
+    "image": "images/sparks-fly-184.svg",
+    "imageAlt": "A satirical sketch about train platforms in PORTSMOUTH.",
+    "body": [
+      "In PORTSMOUTH, a temporary team began a review after residents noticed that the train platforms had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-185",
+    "category": "Sparks fly",
+    "headline": "In READING, officials quarantines the hydrant covers after a auditor review",
+    "standfirst": "The city's queue science office has asked staff to treat the hydrant covers as civic furniture until the audit can finish.",
+    "byline": "By Jodie Sprocket, Opinion Correspondent",
+    "location": "READING",
+    "published": "2026-07-22T04:53:00",
+    "image": "images/sparks-fly-185.svg",
+    "imageAlt": "A satirical sketch about hydrant covers in READING.",
+    "body": [
+      "In READING, a temporary team began a review after residents noticed that the hydrant covers had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-186",
+    "category": "Sparks fly",
+    "headline": "In OXFORD, officials sponsors the rain gauges after a garden review",
+    "standfirst": "The city's office order office has asked staff to treat the rain gauges as civic furniture until the audit can finish.",
+    "byline": "By Leona Briggs, Opinion Correspondent",
+    "location": "OXFORD",
+    "published": "2026-07-22T04:52:00",
+    "image": "images/sparks-fly-186.svg",
+    "imageAlt": "A satirical sketch about rain gauges in OXFORD.",
+    "body": [
+      "In OXFORD, a temporary team began a review after residents noticed that the rain gauges had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-187",
+    "category": "Sparks fly",
+    "headline": "In CAMBRIDGE, officials commissions the elevator buttons after a pilot review",
+    "standfirst": "The city's urban planning office has asked staff to treat the elevator buttons as civic furniture until the audit can finish.",
+    "byline": "By Poppy Vane, Opinion Correspondent",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-22T04:51:00",
+    "image": "images/sparks-fly-187.svg",
+    "imageAlt": "A satirical sketch about elevator buttons in CAMBRIDGE.",
+    "body": [
+      "In CAMBRIDGE, a temporary team began a review after residents noticed that the elevator buttons had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-188",
+    "category": "Sparks fly",
+    "headline": "In ABERDEEN, officials calibrates the district banners after a office review",
+    "standfirst": "The city's music policy office has asked staff to treat the district banners as civic furniture until the audit can finish.",
+    "byline": "By Dorian Hale, Opinion Correspondent",
+    "location": "ABERDEEN",
+    "published": "2026-07-22T04:50:00",
+    "image": "images/sparks-fly-188.svg",
+    "imageAlt": "A satirical sketch about district banners in ABERDEEN.",
+    "body": [
+      "In ABERDEEN, a temporary team began a review after residents noticed that the district banners had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-189",
+    "category": "Sparks fly",
+    "headline": "In PLYMOUTH, officials declassifies the queue signs after a archive review",
+    "standfirst": "The city's civic etiquette office has asked staff to treat the queue signs as civic furniture until the audit can finish.",
+    "byline": "By Rhea Finch, Opinion Correspondent",
+    "location": "PLYMOUTH",
+    "published": "2026-07-22T04:49:00",
+    "image": "images/sparks-fly-189.svg",
+    "imageAlt": "A satirical sketch about queue signs in PLYMOUTH.",
+    "body": [
+      "In PLYMOUTH, a temporary team began a review after residents noticed that the queue signs had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "municipal-ethics",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-190",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials rehearses the office chairs after a label review",
+    "standfirst": "The city's bureaucratic dignity office has asked staff to treat the office chairs as civic furniture until the audit can finish.",
+    "byline": "By M. K. Rowe, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T04:48:00",
+    "image": "images/sparks-fly-190.svg",
+    "imageAlt": "A satirical sketch about office chairs in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the office chairs had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "public-mood",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-191",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials hosts the community radios after a platform review",
+    "standfirst": "The city's transport office has asked staff to treat the community radios as civic furniture until the audit can finish.",
+    "byline": "By S. Bell, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T04:47:00",
+    "image": "images/sparks-fly-191.svg",
+    "imageAlt": "A satirical sketch about community radios in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the community radios had become politically difficult to classify.",
+      "The proposal was enthusiastically, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "architecture",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-192",
+    "category": "Sparks fly",
+    "headline": "In LONDON, officials reforms the museum lifts after a roof review",
+    "standfirst": "The city's governance office has asked staff to treat the museum lifts as civic furniture until the audit can finish.",
+    "byline": "By Noor Patel, Opinion Correspondent",
+    "location": "LONDON",
+    "published": "2026-07-22T04:46:00",
+    "image": "images/sparks-fly-192.svg",
+    "imageAlt": "A satirical sketch about museum lifts in LONDON.",
+    "body": [
+      "In LONDON, a temporary team began a review after residents noticed that the museum lifts had become politically difficult to classify.",
+      "The proposal was urgently, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "governance",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-193",
+    "category": "Sparks fly",
+    "headline": "In GLASGOW, officials digitizes the pigeons after a timetable review",
+    "standfirst": "The city's architecture office has asked staff to treat the pigeons as civic furniture until the audit can finish.",
+    "byline": "By Eli Cartwright, Opinion Correspondent",
+    "location": "GLASGOW",
+    "published": "2026-07-22T04:45:00",
+    "image": "images/sparks-fly-193.svg",
+    "imageAlt": "A satirical sketch about pigeons in GLASGOW.",
+    "body": [
+      "In GLASGOW, a temporary team began a review after residents noticed that the pigeons had become politically difficult to classify.",
+      "The proposal was ceremonially, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "transport",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-194",
+    "category": "Sparks fly",
+    "headline": "In MANCHESTER, officials archives the library card booths after a tramline review",
+    "standfirst": "The city's public mood office has asked staff to treat the library card booths as civic furniture until the audit can finish.",
+    "byline": "By June Argo, Opinion Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-22T04:44:00",
+    "image": "images/sparks-fly-194.svg",
+    "imageAlt": "A satirical sketch about library card booths in MANCHESTER.",
+    "body": [
+      "In MANCHESTER, a temporary team began a review after residents noticed that the library card booths had become politically difficult to classify.",
+      "The proposal was reluctantly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "bureaucratic-dignity",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-195",
+    "category": "Sparks fly",
+    "headline": "In BIRMINGHAM, officials appoints the bike sheds after a noticeboard review",
+    "standfirst": "The city's municipal ethics office has asked staff to treat the bike sheds as civic furniture until the audit can finish.",
+    "byline": "By Felix Wren, Opinion Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-22T04:43:00",
+    "image": "images/sparks-fly-195.svg",
+    "imageAlt": "A satirical sketch about bike sheds in BIRMINGHAM.",
+    "body": [
+      "In BIRMINGHAM, a temporary team began a review after residents noticed that the bike sheds had become politically difficult to classify.",
+      "The proposal was playfully, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "civic-etiquette",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-196",
+    "category": "Sparks fly",
+    "headline": "In LIVERPOOL, officials resurrects the trolley lanes after a bench review",
+    "standfirst": "The city's weather office has asked staff to treat the trolley lanes as civic furniture until the audit can finish.",
+    "byline": "By June Vale, Opinion Correspondent",
+    "location": "LIVERPOOL",
+    "published": "2026-07-22T04:42:00",
+    "image": "images/sparks-fly-196.svg",
+    "imageAlt": "A satirical sketch about trolley lanes in LIVERPOOL.",
+    "body": [
+      "In LIVERPOOL, a temporary team began a review after residents noticed that the trolley lanes had become politically difficult to classify.",
+      "The proposal was publicly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "music-policy",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-197",
+    "category": "Sparks fly",
+    "headline": "In BATH, officials calibrates the bus shelters after a queue review",
+    "standfirst": "The city's queue science office has asked staff to treat the bus shelters as civic furniture until the audit can finish.",
+    "byline": "By Priyanka Ives, Opinion Correspondent",
+    "location": "BATH",
+    "published": "2026-07-22T04:41:00",
+    "image": "images/sparks-fly-197.svg",
+    "imageAlt": "A satirical sketch about bus shelters in BATH.",
+    "body": [
+      "In BATH, a temporary team began a review after residents noticed that the bus shelters had become politically difficult to classify.",
+      "The proposal was politely, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "urban-planning",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-198",
+    "category": "Sparks fly",
+    "headline": "In CARDIFF, officials reopens the fountain statues after a ticket review",
+    "standfirst": "The city's office order office has asked staff to treat the fountain statues as civic furniture until the audit can finish.",
+    "byline": "By Owen Pike, Opinion Correspondent",
+    "location": "CARDIFF",
+    "published": "2026-07-22T04:40:00",
+    "image": "images/sparks-fly-198.svg",
+    "imageAlt": "A satirical sketch about fountain statues in CARDIFF.",
+    "body": [
+      "In CARDIFF, a temporary team began a review after residents noticed that the fountain statues had become politically difficult to classify.",
+      "The proposal was formally, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "office-order",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-199",
+    "category": "Sparks fly",
+    "headline": "In EDINBURGH, officials licenses the park fountains after a statute review",
+    "standfirst": "The city's urban planning office has asked staff to treat the park fountains as civic furniture until the audit can finish.",
+    "byline": "By Tamsin Quill, Opinion Correspondent",
+    "location": "EDINBURGH",
+    "published": "2026-07-22T04:39:00",
+    "image": "images/sparks-fly-199.svg",
+    "imageAlt": "A satirical sketch about park fountains in EDINBURGH.",
+    "body": [
+      "In EDINBURGH, a temporary team began a review after residents noticed that the park fountains had become politically difficult to classify.",
+      "The proposal was unexpectedly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "queue-science",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "sf-200",
+    "category": "Sparks fly",
+    "headline": "In BRIGHTON, officials releases the bushes after a committee review",
+    "standfirst": "The city's music policy office has asked staff to treat the bushes as civic furniture until the audit can finish.",
+    "byline": "By Mira Vale, Opinion Correspondent",
+    "location": "BRIGHTON",
+    "published": "2026-07-22T04:38:00",
+    "image": "images/sparks-fly-200.svg",
+    "imageAlt": "A satirical sketch about bushes in BRIGHTON.",
+    "body": [
+      "In BRIGHTON, a temporary team began a review after residents noticed that the bushes had become politically difficult to classify.",
+      "The proposal was quietly, but nobody expected it to be explained with such confidence by a standing-room panel.",
+      "An office notice now appears near every doorway so the issue can be discussed by everyone without requiring central command.",
+      "For now, officials are treating this as a pilot, which means everyone is expected to behave as if it is already permanent and temporary."
+    ],
+    "pullQuote": "Civic clarity is now a provisional release with rolling review.",
+    "tags": [
+      "satire",
+      "opinion",
+      "sparks-fly",
+      "weather",
+      "urban-oddity"
+    ]
+  },
+  {
+    "id": "master-flanger-01",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 01: The Call of the Washer",
+    "standfirst": "A new wellness movement begins with a sound nobody can identify. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T18:55:00",
+    "body": [
+      "The Daily Flange can now confirm that a new wellness movement begins with a sound nobody can identify. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a bell, a cough and a tin of biscuits arriving in the same corridor. Witnesses described the arrangement as the flange must establish boundaries before it establishes anything else, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the flange must establish boundaries before it establishes anything else. Readers are invited to continue to Part 02, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The flange must establish boundaries before it establishes anything else.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 1,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-series-ceremony.webp",
+    "imageAlt": "A solemn gentleman flanges a washer while a brass band applauds."
+  },
+  {
+    "id": "master-flanger-02",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 02: What Is a Flange?",
+    "standfirst": "A projecting rim becomes the year's most discussed personal boundary. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T18:44:00",
+    "body": [
+      "The Daily Flange can now confirm that a projecting rim becomes the year's most discussed personal boundary. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a collar, a rib and a very confident drawing labelled ‘probably’. Witnesses described the arrangement as the dictionary remains calm while the public does not, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the dictionary remains calm while the public does not. Readers are invited to continue to Part 03, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The dictionary remains calm while the public does not.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 2,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-plate-wellness.webp",
+    "imageAlt": "A clinician presents a wildly overcomplicated wellness chart centred on a washer."
+  },
+  {
+    "id": "master-flanger-03",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 03: Why Would Anyone Flange?",
+    "standfirst": "Citizens seek an answer to the question nobody asked at the council meeting. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T18:33:00",
+    "body": [
+      "The Daily Flange can now confirm that citizens seek an answer to the question nobody asked at the council meeting. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns loose pipes, nervous shelves and a 1974 committee report on awkward joins. Witnesses described the arrangement as unflanged life is possible but poorly supervised, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: unflanged life is possible but poorly supervised. Readers are invited to continue to Part 04, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Unflanged life is possible but poorly supervised.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 3,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-plate-testimonials.webp",
+    "imageAlt": "A railway guard, an aunt and a pigeon hold washers during an interview."
+  },
+  {
+    "id": "master-flanger-04",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 04: The Alleged Health Benefits",
+    "standfirst": "Researchers publish a chart linking a washer to posture, focus and a goose's paperwork. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T18:22:00",
+    "body": [
+      "The Daily Flange can now confirm that researchers publish a chart linking a washer to posture, focus and a goose's paperwork. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a confident arrow and no control group whatsoever. Witnesses described the arrangement as the chart is not evidence, although it has excellent typography, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the chart is not evidence, although it has excellent typography. Readers are invited to continue to Part 05, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The chart is not evidence, although it has excellent typography.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 4,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-series-benefits.webp",
+    "imageAlt": "An absurd schematic connects a washer to gauges for posture and confidence.",
+    "images": [
+      {
+        "src": "images/flanger-series-benefits.webp",
+        "alt": "An absurd schematic connects a washer to gauges for posture and confidence.",
+        "afterParagraph": 2,
+        "caption": "Flange plate 04: evidence remains inconclusive."
+      }
+    ]
+  },
+  {
+    "id": "master-flanger-05",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 05: A Note from Dr Flange",
+    "standfirst": "The paper consults a physician who is, technically, an illustration. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T18:11:00",
+    "body": [
+      "The Daily Flange can now confirm that the paper consults a physician who is, technically, an illustration. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns hydration, sensible shoes and the diagnosis of low washer self-esteem. Witnesses described the arrangement as Dr Mavis Flange has no clinic and is not a doctor, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: Dr Mavis Flange has no clinic and is not a doctor. Readers are invited to continue to Part 06, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Dr Mavis Flange has no clinic and is not a doctor.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 5,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-plate-rims.webp",
+    "imageAlt": "A museum taxonomy displays four increasingly serious kinds of rim."
+  },
+  {
+    "id": "master-flanger-06",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 06: The Wellness Industrial Complex",
+    "standfirst": "Flanging enters the market already wearing a linen shirt. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T17:55:00",
+    "body": [
+      "The Daily Flange can now confirm that flanging enters the market already wearing a linen shirt. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns green powders, moon water and a cushion shaped like a disappointed cloud. Witnesses described the arrangement as the washer remains the only product that does not claim to align your soul, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the washer remains the only product that does not claim to align your soul. Readers are invited to continue to Part 07, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The washer remains the only product that does not claim to align your soul.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 6,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-plate-quiet.webp",
+    "imageAlt": "A brass band waits silently while a washer receives ceremonial attention."
+  },
+  {
+    "id": "master-flanger-07",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 07: Breathing with a Washer",
+    "standfirst": "A mindfulness class discovers the difficulty of putting a metal ring down. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T17:44:00",
+    "body": [
+      "The Daily Flange can now confirm that a mindfulness class discovers the difficulty of putting a metal ring down. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns four counts in, four held, twenty minutes of quiet panic. Witnesses described the arrangement as stillness is available, but not necessarily near the sofa, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: stillness is available, but not necessarily near the sofa. Readers are invited to continue to Part 08, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Stillness is available, but not necessarily near the sofa.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 7,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-plate-emergency.webp",
+    "imageAlt": "A clerk routes an emergency flange between a jar lid, bell and bridge."
+  },
+  {
+    "id": "master-flanger-08",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 08: The Seven Vibes of Flange",
+    "standfirst": "Consultants identify seven kinds of flange and invoice for eight. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T17:33:00",
+    "body": [
+      "The Daily Flange can now confirm that consultants identify seven kinds of flange and invoice for eight. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns practical, ceremonial, emergency, decorative, philosophical, municipal and misplaced. Witnesses described the arrangement as classification is the first step towards a laminated chart, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: classification is the first step towards a laminated chart. Readers are invited to continue to Part 09, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Classification is the first step towards a laminated chart.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 8,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-series-apparatus.webp",
+    "imageAlt": "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."
+  },
+  {
+    "id": "master-flanger-09",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 09: Testimonials: Before and After",
+    "standfirst": "A guard, an aunt and a pigeon describe their lives before the rim. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T17:22:00",
+    "body": [
+      "The Daily Flange can now confirm that a guard, an aunt and a pigeon describe their lives before the rim. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a timetable challenged, cutlery reorganised and a certificate accepted. Witnesses described the arrangement as the pigeon declined to comment but looked extremely improved, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the pigeon declined to comment but looked extremely improved. Readers are invited to continue to Part 10, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The pigeon declined to comment but looked extremely improved.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 9,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-series-testimonials.webp",
+    "imageAlt": "A railway guard, an aunt and a pigeon hold washers during an interview.",
+    "images": [
+      {
+        "src": "images/flanger-series-testimonials.webp",
+        "alt": "A railway guard, an aunt and a pigeon hold washers during an interview.",
+        "afterParagraph": 2,
+        "caption": "Flange plate 09: evidence remains inconclusive."
+      }
+    ]
+  },
+  {
+    "id": "master-flanger-10",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 10: The Flange and Society",
+    "standfirst": "Civilisation turns out to be an agreement about where the rim should go. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE WELLNESS ROOM",
+    "published": "2026-07-18T17:11:00",
+    "body": [
+      "The Daily Flange can now confirm that civilisation turns out to be an agreement about where the rim should go. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns Roman aqueducts, Victorian brackets and one modern progress bar. Witnesses described the arrangement as the course is self-paced provided you pace yourself in a circle, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the course is self-paced provided you pace yourself in a circle. Readers are invited to continue to Part 11, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The course is self-paced provided you pace yourself in a circle.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 10,
+    "seriesBook": "The Wellness Question",
+    "image": "images/flanger-series-fab-flow.webp",
+    "imageAlt": "A line-art flowchart leads from nervous beginner to ceremonial tea trolley."
+  },
+  {
+    "id": "master-flanger-11",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 11: Can Flanging Make You Happier?",
+    "standfirst": "A happiness study finds that misery is more manageable when it is circular. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T16:55:00",
+    "body": [
+      "The Daily Flange can now confirm that a happiness study finds that misery is more manageable when it is circular. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns notebooks, a tea trolley and a participant who rated the washer ‘promising’. Witnesses described the arrangement as no one became happier, but several people became more specific, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: no one became happier, but several people became more specific. Readers are invited to continue to Part 12, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "No one became happier, but several people became more specific.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 11,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-plate-peer-review.webp",
+    "imageAlt": "Academics and a goose peer-review one washer beneath a giant eyebrow."
+  },
+  {
+    "id": "master-flanger-12",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 12: Flanging at Work",
+    "standfirst": "Employees use flange terminology to survive the status meeting. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T16:44:00",
+    "body": [
+      "The Daily Flange can now confirm that employees use flange terminology to survive the status meeting. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns the phrase ‘within tolerance’ deployed in manufacturing, administration and dentistry. Witnesses described the arrangement as management remains unable to distinguish progress from a rim, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: management remains unable to distinguish progress from a rim. Readers are invited to continue to Part 13, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Management remains unable to distinguish progress from a rim.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 12,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-plate-log.webp",
+    "imageAlt": "A clerk records washer diagrams, clocks and biscuit tallies in a giant logbook."
+  },
+  {
+    "id": "master-flanger-13",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 13: Testimonials: The Changed Life",
+    "standfirst": "Harold from Selkirk replaces fear of the future with fear of overtightening. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T16:33:00",
+    "body": [
+      "The Daily Flange can now confirm that harold from selkirk replaces fear of the future with fear of overtightening. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns three washers, an unopened yoghurt and a system nobody else can see. Witnesses described the arrangement as he has requested that the system not be called a collection, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: he has requested that the system not be called a collection. Readers are invited to continue to Part 14, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "He has requested that the system not be called a collection.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 13,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-series-graduation.webp",
+    "imageAlt": "A washer receives a graduation medal as the academic goose applauds."
+  },
+  {
+    "id": "master-flanger-14",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 14: The Five-Minute Flange",
+    "standfirst": "A short exercise becomes a drawer-based philosophy. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T16:22:00",
+    "body": [
+      "The Daily Flange can now confirm that a short exercise becomes a drawer-based philosophy. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns one quarter-turn, one question and a label marked ‘ongoing’. Witnesses described the arrangement as the drawer is now a protected research environment, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the drawer is now a protected research environment. Readers are invited to continue to Part 15, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The drawer is now a protected research environment.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 14,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-series-ceremony.webp",
+    "imageAlt": "A solemn gentleman flanges a washer while a brass band applauds."
+  },
+  {
+    "id": "master-flanger-15",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 15: Flange and Fitness",
+    "standfirst": "The controlled reach is declared an exercise after the sofa incident. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T16:11:00",
+    "body": [
+      "The Daily Flange can now confirm that the controlled reach is declared an exercise after the sofa incident. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns gentle lift, dignified return and one washer rolling under the furniture. Witnesses described the arrangement as the official programme contains no lunges and several caveats, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the official programme contains no lunges and several caveats. Readers are invited to continue to Part 16, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The official programme contains no lunges and several caveats.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 15,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-plate-wellness.webp",
+    "imageAlt": "A clinician presents a wildly overcomplicated wellness chart centred on a washer."
+  },
+  {
+    "id": "master-flanger-16",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 16: Nutrition for the Aspiring Flanger",
+    "standfirst": "The Department of Flange publishes a food pyramid with tea at the top. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T15:55:00",
+    "body": [
+      "The Daily Flange can now confirm that the department of flange publishes a food pyramid with tea at the top. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns metal belongs on a plate only when the plate is not being eaten. Witnesses described the arrangement as biscuits are listed as a morale intervention, not a food group, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: biscuits are listed as a morale intervention, not a food group. Readers are invited to continue to Part 17, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Biscuits are listed as a morale intervention, not a food group.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 16,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-plate-testimonials.webp",
+    "imageAlt": "A railway guard, an aunt and a pigeon hold washers during an interview."
+  },
+  {
+    "id": "master-flanger-17",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 17: The Importance of a Good Surface",
+    "standfirst": "A wobbling table is blamed for a national decline in flange confidence. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T15:44:00",
+    "body": [
+      "The Daily Flange can now confirm that a wobbling table is blamed for a national decline in flange confidence. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns glitter, temporary tables and one heroic coaster. Witnesses described the arrangement as stability is a feeling, a property and occasionally furniture, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: stability is a feeling, a property and occasionally furniture. Readers are invited to continue to Part 18, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Stability is a feeling, a property and occasionally furniture.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 17,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-series-benefits.webp",
+    "imageAlt": "An absurd schematic connects a washer to gauges for posture and confidence."
+  },
+  {
+    "id": "master-flanger-18",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 18: Testimonials: The Domestic Flanger",
+    "standfirst": "A hallway becomes a workshop and a relationship becomes a storage system. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T15:33:00",
+    "body": [
+      "The Daily Flange can now confirm that a hallway becomes a workshop and a relationship becomes a storage system. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a partner, a small meaningful shelf and a dispute over the word ‘temporary’. Witnesses described the arrangement as the hallway has declined to issue a statement, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the hallway has declined to issue a statement. Readers are invited to continue to Part 19, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The hallway has declined to issue a statement.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 18,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-plate-rims.webp",
+    "imageAlt": "A museum taxonomy displays four increasingly serious kinds of rim."
+  },
+  {
+    "id": "master-flanger-19",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 19: The History of Making Things Circular",
+    "standfirst": "Wheels, seals and teacup plates are asked if they feel represented. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T15:22:00",
+    "body": [
+      "The Daily Flange can now confirm that wheels, seals and teacup plates are asked if they feel represented. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a circle that began in transport and ended in a paragraph pleased to be included. Witnesses described the arrangement as history is not a syllabus but it does have a rim, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: history is not a syllabus but it does have a rim. Readers are invited to continue to Part 20, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "History is not a syllabus but it does have a rim.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 19,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-plate-quiet.webp",
+    "imageAlt": "A brass band waits silently while a washer receives ceremonial attention."
+  },
+  {
+    "id": "master-flanger-20",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 20: A Brief Taxonomy of Rims",
+    "standfirst": "The lip, edge and collar refuse to be managed by the flange. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "LEITH",
+    "published": "2026-07-18T15:11:00",
+    "body": [
+      "The Daily Flange can now confirm that the lip, edge and collar refuse to be managed by the flange. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns one edge completing a management course and expecting minutes. Witnesses described the arrangement as the minutes contain no action points and are nevertheless binding, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the minutes contain no action points and are nevertheless binding. Readers are invited to continue to Part 21, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The minutes contain no action points and are nevertheless binding.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 20,
+    "seriesBook": "The Human Evidence",
+    "image": "images/flanger-plate-emergency.webp",
+    "imageAlt": "A clerk routes an emergency flange between a jar lid, bell and bridge."
+  },
+  {
+    "id": "master-flanger-21",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 21: The Apparatus",
+    "standfirst": "An over-serious engineering plate reveals the unnecessary machinery beneath the movement. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T14:55:00",
+    "body": [
+      "The Daily Flange can now confirm that an over-serious engineering plate reveals the unnecessary machinery beneath the movement. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a vice, spring, bell, tea cup and component of unknown inheritance. Witnesses described the arrangement as the apparatus works best when nobody asks why, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the apparatus works best when nobody asks why. Readers are invited to continue to Part 22, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The apparatus works best when nobody asks why.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 21,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-series-apparatus.webp",
+    "imageAlt": "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup.",
+    "images": [
+      {
+        "src": "images/flanger-series-apparatus.webp",
+        "alt": "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup.",
+        "afterParagraph": 2,
+        "caption": "Flange plate 21: evidence remains inconclusive."
+      }
+    ]
+  },
+  {
+    "id": "master-flanger-22",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 22: Tolerance and Forgiveness",
+    "standfirst": "Engineers and relatives adopt a shared definition of acceptable deviation. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T14:44:00",
+    "body": [
+      "The Daily Flange can now confirm that engineers and relatives adopt a shared definition of acceptable deviation. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a range in which a thing remains a thing and a person can still say ‘interesting’. Witnesses described the arrangement as forgiveness is not normally measured in millimetres, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: forgiveness is not normally measured in millimetres. Readers are invited to continue to Part 23, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Forgiveness is not normally measured in millimetres.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 22,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-plate-fab-bench.webp",
+    "imageAlt": "An apprentice learns a bench vise under the eye of a severe supervisor."
+  },
+  {
+    "id": "master-flanger-23",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 23: When to Stop",
+    "standfirst": "A goose interrupts a performance before it becomes a public inquiry. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T14:33:00",
+    "body": [
+      "The Daily Flange can now confirm that a goose interrupts a performance before it becomes a public inquiry. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a cool tea, a completed risk assessment and a washer with enough attention. Witnesses described the arrangement as mastery includes the courage to end the ceremony, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: mastery includes the courage to end the ceremony. Readers are invited to continue to Part 24, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Mastery includes the courage to end the ceremony.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 23,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-series-fab-flow.webp",
+    "imageAlt": "A line-art flowchart leads from nervous beginner to ceremonial tea trolley."
+  },
+  {
+    "id": "master-flanger-24",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 24: Testimonials: The Skeptic",
+    "standfirst": "Professor Lyle dismisses theatrical metal and then buys twelve velvet-lined examples. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T14:22:00",
+    "body": [
+      "The Daily Flange can now confirm that professor lyle dismisses theatrical metal and then buys twelve velvet-lined examples. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a criticism, a case and a request not to call it a collection. Witnesses described the arrangement as the professor's position is unchanged except for its accessories, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the professor's position is unchanged except for its accessories. Readers are invited to continue to Part 25, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The professor's position is unchanged except for its accessories.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 24,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-plate-peer-review.webp",
+    "imageAlt": "Academics and a goose peer-review one washer beneath a giant eyebrow."
+  },
+  {
+    "id": "master-flanger-25",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 25: The Flange in Art",
+    "standfirst": "A picture frame, a hat and a plinth defend their rim-based practice. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T14:11:00",
+    "body": [
+      "The Daily Flange can now confirm that a picture frame, a hat and a plinth defend their rim-based practice. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a flange for an idea, a flange for a head and a flange for a plinth. Witnesses described the arrangement as the gallery has installed a small sign saying please do not flange the visitors, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the gallery has installed a small sign saying please do not flange the visitors. Readers are invited to continue to Part 26, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The gallery has installed a small sign saying please do not flange the visitors.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 25,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-plate-log.webp",
+    "imageAlt": "A clerk records washer diagrams, clocks and biscuit tallies in a giant logbook."
+  },
+  {
+    "id": "master-flanger-26",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 26: The Flange in Language",
+    "standfirst": "A new verb enters English while the dictionary pretends not to notice. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T13:55:00",
+    "body": [
+      "The Daily Flange can now confirm that a new verb enters english while the dictionary pretends not to notice. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns I flange, you flange, we have flanged and the agenda is now complete. Witnesses described the arrangement as grammar is the only flange that can be plural before it exists, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: grammar is the only flange that can be plural before it exists. Readers are invited to continue to Part 27, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Grammar is the only flange that can be plural before it exists.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 26,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-series-graduation.webp",
+    "imageAlt": "A washer receives a graduation medal as the academic goose applauds."
+  },
+  {
+    "id": "master-flanger-27",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 27: Emergency Flanging",
+    "standfirst": "A jar lid, bicycle bell and infrastructure project discover the same emergency protocol. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T13:44:00",
+    "body": [
+      "The Daily Flange can now confirm that a jar lid, bicycle bell and infrastructure project discover the same emergency protocol. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns confidence under pressure and a form with no correct box. Witnesses described the arrangement as this is not emergency medicine and should not be treated as such, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: this is not emergency medicine and should not be treated as such. Readers are invited to continue to Part 28, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "This is not emergency medicine and should not be treated as such.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 27,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-series-ceremony.webp",
+    "imageAlt": "A solemn gentleman flanges a washer while a brass band applauds."
+  },
+  {
+    "id": "master-flanger-28",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 28: The Ethics of Flanging",
+    "standfirst": "The paper publishes rules after a goose is found inside a training vice. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T13:33:00",
+    "body": [
+      "The Daily Flange can now confirm that the paper publishes rules after a goose is found inside a training vice. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns consent, licences, borrowed tools and the dangerous blank box labelled ‘flange status’. Witnesses described the arrangement as the goose has retained counsel, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the goose has retained counsel. Readers are invited to continue to Part 29, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The goose has retained counsel.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 28,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-plate-wellness.webp",
+    "imageAlt": "A clinician presents a wildly overcomplicated wellness chart centred on a washer."
+  },
+  {
+    "id": "master-flanger-29",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 29: The Flange and Sleep",
+    "standfirst": "Experts advise against putting a washer under the pillow. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T13:22:00",
+    "body": [
+      "The Daily Flange can now confirm that experts advise against putting a washer under the pillow. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a lumpy night, metallic dreams and a bedside table that knows too much. Witnesses described the arrangement as the mind may unclench without hardware, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the mind may unclench without hardware. Readers are invited to continue to Part 30, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The mind may unclench without hardware.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 29,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-plate-testimonials.webp",
+    "imageAlt": "A railway guard, an aunt and a pigeon hold washers during an interview."
+  },
+  {
+    "id": "master-flanger-30",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 30: A Ceremony of Preparation",
+    "standfirst": "The cardigan is buttoned and FAB begins under observation. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "THE SCIENCE DESK",
+    "published": "2026-07-18T13:11:00",
+    "body": [
+      "The Daily Flange can now confirm that the cardigan is buttoned and fab begins under observation. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a washer, a vice, a biscuit and a screwdriver kept safely out of the room. Witnesses described the arrangement as preparation is mostly moving objects into a more serious order, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: preparation is mostly moving objects into a more serious order. Readers are invited to continue to Part 31, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Preparation is mostly moving objects into a more serious order.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 30,
+    "seriesBook": "The Serious Theory",
+    "image": "images/flanger-series-fab-flow.webp",
+    "imageAlt": "A six-step line-art flowchart leads from nervous beginner to ceremonial tea trolley.",
+    "images": [
+      {
+        "src": "images/flanger-series-fab-flow.webp",
+        "alt": "A six-step line-art flowchart leads from nervous beginner to ceremonial tea trolley.",
+        "afterParagraph": 2,
+        "caption": "Flange plate 30: evidence remains inconclusive."
+      }
+    ]
+  },
+  {
+    "id": "master-flanger-31",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 31: FAB 01: Meet the Washer",
+    "standfirst": "Absolute beginners are introduced to a plain ring with no dramatic backstory. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T12:55:00",
+    "body": [
+      "The Daily Flange can now confirm that absolute beginners are introduced to a plain ring with no dramatic backstory. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns sharp burrs, unexplained smells and a rank withheld until Part 47. Witnesses described the arrangement as the first lesson is respect for small metal, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the first lesson is respect for small metal. Readers are invited to continue to Part 32, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The first lesson is respect for small metal.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 31,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-plate-rims.webp",
+    "imageAlt": "A museum taxonomy displays four increasingly serious kinds of rim."
+  },
+  {
+    "id": "master-flanger-32",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 32: FAB 02: Find a Sensible Bench",
+    "standfirst": "The course rejects three benches for singing, rocking and belonging to a museum. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T12:44:00",
+    "body": [
+      "The Daily Flange can now confirm that the course rejects three benches for singing, rocking and belonging to a museum. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a central washer and a surface that has resigned. Witnesses described the arrangement as if it rolls away, the bench has made its position clear, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: if it rolls away, the bench has made its position clear. Readers are invited to continue to Part 33, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "If it rolls away, the bench has made its position clear.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 32,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-plate-quiet.webp",
+    "imageAlt": "A brass band waits silently while a washer receives ceremonial attention."
+  },
+  {
+    "id": "master-flanger-33",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 33: FAB 03: Learn the Vise",
+    "standfirst": "Students learn that a vise is not a hungry animal but deserves similar caution. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T12:33:00",
+    "body": [
+      "The Daily Flange can now confirm that students learn that a vise is not a hungry animal but deserves similar caution. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns slow jaws, light pressure and the principle of containment. Witnesses described the arrangement as revenge is not an engineering specification, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: revenge is not an engineering specification. Readers are invited to continue to Part 34, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Revenge is not an engineering specification.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 33,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-plate-emergency.webp",
+    "imageAlt": "A clerk routes an emergency flange between a jar lid, bell and bridge."
+  },
+  {
+    "id": "master-flanger-34",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 34: FAB 04: The First Rotation",
+    "standfirst": "Two fingers attempt a quarter-turn while a three-finger method seeks peer review. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T12:22:00",
+    "body": [
+      "The Daily Flange can now confirm that two fingers attempt a quarter-turn while a three-finger method seeks peer review. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a marked washer, a stopwatch and an observer saying ‘hmm’. Witnesses described the arrangement as rotation is simple until it acquires a committee, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: rotation is simple until it acquires a committee. Readers are invited to continue to Part 35, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Rotation is simple until it acquires a committee.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 34,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-series-apparatus.webp",
+    "imageAlt": "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."
+  },
+  {
+    "id": "master-flanger-35",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 35: FAB 05: Pressure, Not Drama",
+    "standfirst": "Apprentices are told to use the least force that keeps the work in place. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T12:11:00",
+    "body": [
+      "The Daily Flange can now confirm that apprentices are told to use the least force that keeps the work in place. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns an apparatus settling a debt from 1889 and a very calm hand. Witnesses described the arrangement as purpose is not improved by theatrical tightening, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: purpose is not improved by theatrical tightening. Readers are invited to continue to Part 36, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Purpose is not improved by theatrical tightening.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 35,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-plate-fab-bench.webp",
+    "imageAlt": "An apprentice learns a bench vise under the eye of a severe supervisor."
+  },
+  {
+    "id": "master-flanger-36",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 36: FAB 06: The Bell Test",
+    "standfirst": "The bell rings once and the washer considers its options. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T11:55:00",
+    "body": [
+      "The Daily Flange can now confirm that the bell rings once and the washer considers its options. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a desk bell, a moving component and an instructor taking a short break. Witnesses described the arrangement as identify the bell before blaming the flange, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: identify the bell before blaming the flange. Readers are invited to continue to Part 37, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Identify the bell before blaming the flange.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 36,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-series-fab-flow.webp",
+    "imageAlt": "A line-art flowchart leads from nervous beginner to ceremonial tea trolley."
+  },
+  {
+    "id": "master-flanger-37",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 37: FAB 07: The Tea Interval",
+    "standfirst": "Tea is formally classified as a pause and not a lubricant. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T11:44:00",
+    "body": [
+      "The Daily Flange can now confirm that tea is formally classified as a pause and not a lubricant. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a cup, a washer and the sudden memory that life contains other subjects. Witnesses described the arrangement as the interval is part of the method, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the interval is part of the method. Readers are invited to continue to Part 38, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The interval is part of the method.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 37,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-plate-peer-review.webp",
+    "imageAlt": "Academics and a goose peer-review one washer beneath a giant eyebrow."
+  },
+  {
+    "id": "master-flanger-38",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 38: FAB 08: The Alignment",
+    "standfirst": "Learners line up the washer, worksheet arrow and their sense of purpose. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T11:33:00",
+    "body": [
+      "The Daily Flange can now confirm that learners line up the washer, worksheet arrow and their sense of purpose. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns two out of three accepted, three out of three photographed. Witnesses described the arrangement as alignment is the least glamorous form of hope, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: alignment is the least glamorous form of hope. Readers are invited to continue to Part 39, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Alignment is the least glamorous form of hope.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 38,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-plate-log.webp",
+    "imageAlt": "A clerk records washer diagrams, clocks and biscuit tallies in a giant logbook."
+  },
+  {
+    "id": "master-flanger-39",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 39: FAB 09: The Controlled Flange",
+    "standfirst": "Rotate, pause and inspect becomes the entire technique, almost. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T11:22:00",
+    "body": [
+      "The Daily Flange can now confirm that rotate, pause and inspect becomes the entire technique, almost. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns dignity, paperwork and an examiner with a whistle. Witnesses described the arrangement as repeatability is confidence with a clipboard, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: repeatability is confidence with a clipboard. Readers are invited to continue to Part 40, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Repeatability is confidence with a clipboard.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 39,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-series-graduation.webp",
+    "imageAlt": "A washer receives a graduation medal as the academic goose applauds.",
+    "images": [
+      {
+        "src": "images/flanger-series-graduation.webp",
+        "alt": "A washer receives a graduation medal as the academic goose applauds.",
+        "afterParagraph": 2,
+        "caption": "Flange plate 39: evidence remains inconclusive."
+      }
+    ]
+  },
+  {
+    "id": "master-flanger-40",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 40: FAB 10: Troubleshooting",
+    "standfirst": "The helpdesk receives a call from a washer giving career advice. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "WORKSHOP 3",
+    "published": "2026-07-18T11:11:00",
+    "body": [
+      "The Daily Flange can now confirm that the helpdesk receives a call from a washer giving career advice. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns squeaks, whistles and one component with a suspiciously good CV. Witnesses described the arrangement as stop first, diagnose later and contact nobody in particular, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: stop first, diagnose later and contact nobody in particular. Readers are invited to continue to Part 41, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Stop first, diagnose later and contact nobody in particular.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 40,
+    "seriesBook": "FAB: The Foundations",
+    "image": "images/flanger-series-ceremony.webp",
+    "imageAlt": "A solemn gentleman flanges a washer while a brass band applauds."
+  },
+  {
+    "id": "master-flanger-41",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 41: FAB 11: The Flange Log",
+    "standfirst": "A notebook turns an accident into data and then into a memoir. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T10:55:00",
+    "body": [
+      "The Daily Flange can now confirm that a notebook turns an accident into data and then into a memoir. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns date, washer, pressure, angle and biscuit count. Witnesses described the arrangement as the best log has fewer adjectives than the worst one, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the best log has fewer adjectives than the worst one. Readers are invited to continue to Part 42, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The best log has fewer adjectives than the worst one.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 41,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-plate-wellness.webp",
+    "imageAlt": "A clinician presents a wildly overcomplicated wellness chart centred on a washer."
+  },
+  {
+    "id": "master-flanger-42",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 42: FAB 12: Repeatability",
+    "standfirst": "Two identical flanges produce different results and a useful argument. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T10:44:00",
+    "body": [
+      "The Daily Flange can now confirm that two identical flanges produce different results and a useful argument. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns experimental variation or an entirely different washer. Witnesses described the arrangement as both outcomes are valuable if labelled honestly, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: both outcomes are valuable if labelled honestly. Readers are invited to continue to Part 43, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Both outcomes are valuable if labelled honestly.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 42,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-plate-testimonials.webp",
+    "imageAlt": "A railway guard, an aunt and a pigeon hold washers during an interview."
+  },
+  {
+    "id": "master-flanger-43",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 43: FAB 13: The Peer Review",
+    "standfirst": "A trusted colleague is asked to observe and leave with a laboratory impression. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T10:33:00",
+    "body": [
+      "The Daily Flange can now confirm that a trusted colleague is asked to observe and leave with a laboratory impression. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns one ‘hmm’, one unnecessary question and no touching of the controls. Witnesses described the arrangement as peer review is mostly the management of eyebrows, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: peer review is mostly the management of eyebrows. Readers are invited to continue to Part 44, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Peer review is mostly the management of eyebrows.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 43,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-series-benefits.webp",
+    "imageAlt": "An absurd schematic connects a washer to gauges for posture and confidence.",
+    "images": [
+      {
+        "src": "images/flanger-series-benefits.webp",
+        "alt": "An absurd schematic connects a washer to gauges for posture and confidence.",
+        "afterParagraph": 2,
+        "caption": "Flange plate 43: evidence remains inconclusive."
+      }
+    ]
+  },
+  {
+    "id": "master-flanger-44",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 44: FAB 14: Public Demonstration",
+    "standfirst": "A consent form is introduced after somebody flanges near soup. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T10:22:00",
+    "body": [
+      "The Daily Flange can now confirm that a consent form is introduced after somebody flanges near soup. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns a council sign, a small audience and no hot liquid. Witnesses described the arrangement as public flange is a privilege, not a right, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: public flange is a privilege, not a right. Readers are invited to continue to Part 45, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Public flange is a privilege, not a right.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 44,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-plate-rims.webp",
+    "imageAlt": "A museum taxonomy displays four increasingly serious kinds of rim."
+  },
+  {
+    "id": "master-flanger-45",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 45: FAB 15: The Quiet Flange",
+    "standfirst": "The brass band is dismissed and the washer learns about inner confidence. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T10:11:00",
+    "body": [
+      "The Daily Flange can now confirm that the brass band is dismissed and the washer learns about inner confidence. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns no bell, no announcement and a Tuesday that remains ordinary. Witnesses described the arrangement as the quiet flange is still a flange, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the quiet flange is still a flange. Readers are invited to continue to Part 46, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The quiet flange is still a flange.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 45,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-plate-quiet.webp",
+    "imageAlt": "A brass band waits silently while a washer receives ceremonial attention."
+  },
+  {
+    "id": "master-flanger-46",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 46: FAB 16: Advanced Rims",
+    "standfirst": "A wider washer enters the programme and the old one begins listening from the drawer. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T09:55:00",
+    "body": [
+      "The Daily Flange can now confirm that a wider washer enters the programme and the old one begins listening from the drawer. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns an upgrade that must not be called an upgrade. Witnesses described the arrangement as hardware has feelings, especially when replaced, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: hardware has feelings, especially when replaced. Readers are invited to continue to Part 47, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Hardware has feelings, especially when replaced.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 46,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-plate-emergency.webp",
+    "imageAlt": "A clerk routes an emergency flange between a jar lid, bell and bridge."
+  },
+  {
+    "id": "master-flanger-47",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 47: FAB 17: Recovery from Overflanging",
+    "standfirst": "An apprentice admits the ceremony has acquired a second ceremony. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T09:44:00",
+    "body": [
+      "The Daily Flange can now confirm that an apprentice admits the ceremony has acquired a second ceremony. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns water, a chair away from the bench and a long look at the wall. Witnesses described the arrangement as recovery begins when everything is put down, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: recovery begins when everything is put down. Readers are invited to continue to Part 48, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "Recovery begins when everything is put down.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 47,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-series-apparatus.webp",
+    "imageAlt": "A cutaway engineering plate shows the flanging apparatus, spring, bell and tea cup."
+  },
+  {
+    "id": "master-flanger-48",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 48: FAB 18: The Examination",
+    "standfirst": "The examiner presents a washer, a vice and a morally ambiguous tea trolley. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T09:33:00",
+    "body": [
+      "The Daily Flange can now confirm that the examiner presents a washer, a vice and a morally ambiguous tea trolley. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns twelve minutes, one whistle and marks awarded for restraint. Witnesses described the arrangement as the highest grade is calm containment, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the highest grade is calm containment. Readers are invited to continue to Part 49, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The highest grade is calm containment.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 48,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-plate-fab-bench.webp",
+    "imageAlt": "An apprentice learns a bench vise under the eye of a severe supervisor."
+  },
+  {
+    "id": "master-flanger-49",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 49: FAB 19: The Master Flanger’s Oath",
+    "standfirst": "Graduates promise to respect the rim and return borrowed tools. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T09:22:00",
+    "body": [
+      "The Daily Flange can now confirm that graduates promise to respect the rim and return borrowed tools. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns tolerance, consent and no claim that a washer has healed anyone. Witnesses described the arrangement as the tools-returned clause remains the hardest, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: the tools-returned clause remains the hardest. Readers are invited to continue to Part 50, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "The tools-returned clause remains the hardest.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 49,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-series-fab-flow.webp",
+    "imageAlt": "A line-art flowchart leads from nervous beginner to ceremonial tea trolley."
+  },
+  {
+    "id": "master-flanger-50",
+    "category": "Flanging",
+    "headline": "Master Flanger, Part 50: FAB 20: Graduation",
+    "standfirst": "A washer receives a medal while an academic goose and brass band applaud. The Daily Flange’s fifty-part investigation continues with a washer, a witness and several avoidable forms.",
+    "byline": "By Mavis Flange, Senior Correspondent for Rims",
+    "location": "ONLINE",
+    "published": "2026-07-18T09:11:00",
+    "body": [
+      "The Daily Flange can now confirm that a washer receives a medal while an academic goose and brass band applaud. The development follows months of observation at the Institute of Unnecessary Precision, where a plain washer has been given its own chair, a provisional biography and a small envelope marked ‘urgent’. The paper stresses that none of this is medical advice, and that the envelope contains a biscuit.",
+      "The central finding concerns velvet, tea, bewildered examiners and a certificate nobody accepts. Witnesses described the arrangement as you may now say ‘flange’ with calm authority, although one witness asked that the word ‘arrangement’ be used only after the tea had arrived. The team recorded the event in triplicate, then discovered that two copies had been filed under ‘circles’ and the third had achieved a minor administrative rank.",
+      "‘The public wants a method,’ said Professor Mavis Flange, speaking from behind a clipboard she has not been authorised to carry. ‘What we have given them is a sequence of actions, a tone of voice and an object that cannot answer follow-up questions.’ She said the important principle was to proceed slowly, inspect the rim and avoid making claims that would require a control group.",
+      "The technical position is less dramatic but considerably more useful. A flange can project, locate, strengthen or connect; it can also sit quietly while a grown adult explains it to a room that has stopped pretending to be interested. In trials, the most reliable results came from stable surfaces, modest pressure and participants who did not introduce a brass band before the second rotation.",
+      "There are limits. Flanging should never involve another person’s property without permission, a goose without a licence, or a tool borrowed from a neighbour who remembers exactly what it looked like. Anyone experiencing actual pain, distress or a washer that appears to be giving career advice should stop and seek appropriate real-world help.",
+      "The Institute’s interim conclusion is therefore simple: you may now say ‘flange’ with calm authority. Readers are invited to continue to Part 01, if they have forgotten everything, where the series will address the next rim-related difficulty with the confidence of a newspaper that has never once been asked to demonstrate its method."
+    ],
+    "pullQuote": "You may now say ‘flange’ with calm authority.",
+    "tags": [
+      "master-flanger",
+      "flanging",
+      "flanging",
+      "fab",
+      "satire"
+    ],
+    "series": "How to Become a Master Flanger",
+    "seriesPart": 50,
+    "seriesBook": "FAB: Mastery and Assessment",
+    "image": "images/flanger-series-graduation.webp",
+    "imageAlt": "A washer receives a graduation medal as the academic goose applauds.",
+    "images": [
+      {
+        "src": "images/flanger-series-graduation.webp",
+        "alt": "A washer receives a graduation medal as the academic goose applauds.",
+        "afterParagraph": 2,
+        "caption": "Flange plate 50: evidence remains inconclusive."
+      }
+    ]
+  },
+  {
+    "id": "mgmt-dashboard-turnstile-lockout",
+    "category": "Middle Management",
+    "headline": "Dashboard Chief Trapped Outside Office After Optimising Away ‘Unproductive Entry Time’",
+    "standfirst": "A regional director’s frictionless-access programme achieved perfect punctuality by preventing every late employee—including him—from entering.",
+    "byline": "Crispin Vane, Operational Irony Correspondent",
+    "location": "MILTON QUAYS",
+    "published": "2026-07-21T10:30:00Z",
+    "body": [
+      "Regional director Piers Nettles launched Project Seamless after his dashboard revealed employees spent eleven seconds presenting passes at the office turnstile. Calling this ‘an annualised haemorrhage of human potential,’ he ordered the readers replaced with facial recognition linked directly to the punctuality database.",
+      "Nettles personally added a rule denying entry to anyone arriving after 8:59 a.m. He rejected a facilities request for manual override because exceptions, he explained, were ‘where culture goes to die.’ Security staff were reassigned to an online workshop about empowered ownership.",
+      "On launch morning, Nettles arrived at 9:07 after extending a breakfast webinar on time discipline. The system recognised him, displayed his lateness score and sealed every entrance. His attempts to phone reception failed because the new escalation tree routed building-access questions back to the regional director.",
+      "Employees watched through the glass as Nettles delivered the morning briefing from the pavement, gesturing at slides visible only on his laptop. The dashboard recorded a historic 100 percent punctuality rate among those inside and automatically nominated Project Seamless for an efficiency award."
+    ],
+    "pullQuote": "Exceptions are where culture goes to die.",
+    "image": "images/mgmt-dashboard-turnstile-lockout.webp",
+    "imageAlt": "An office director stands outside locked glass turnstiles while employees observe from the lobby.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "dashboards",
+      "workplace technology",
+      "punctuality",
+      "metrics"
+    ]
+  },
+  {
+    "id": "mgmt-risk-register-cabinet",
+    "category": "Middle Management",
+    "headline": "Risk Director Secures Risk Register So Thoroughly Nobody Can Consult It",
+    "standfirst": "A tamper-proof governance initiative left the organisation’s sole risk register inside a cabinet requiring approval from the person locked out of it.",
+    "byline": "Moira Clasp, Governance Mishaps Editor",
+    "location": "BARTON-ON-CLIPBOARD",
+    "published": "2026-07-21T10:45:00Z",
+    "body": [
+      "Compliance manager Dennis Quirk became alarmed after discovering that several employees had read the corporate risk register without first recording the risk of reading it. He commissioned a steel cabinet, biometric lock and seven-stage access workflow to protect the document from ‘unstructured awareness.’",
+      "Quirk retained sole authority to approve access. He also insisted that his fingerprint profile be stored only inside the cabinet, reasoning that external storage would create an unacceptable data-governance exposure. A consultant praised the arrangement as ‘closed-loop assurance’ and invoiced for a maturity assessment.",
+      "During the quarterly audit, Quirk discovered the cabinet would not open without validating the enclosed fingerprint file. His emergency request entered the escalation chain, travelled through six absent deputies and returned to him for final authorisation. He rejected it automatically because the requester had not attached the register.",
+      "The audit proceeded without evidence, risks or visible concern. Quirk spent the afternoon beside the cabinet conducting a lessons-learned workshop. The workshop concluded that staff needed additional training in responsible access, while the inaccessible register was formally classified as fully protected."
+    ],
+    "pullQuote": "The inaccessible register was formally classified as fully protected.",
+    "image": "images/mgmt-risk-register-cabinet.webp",
+    "imageAlt": "A manager stands beside an over-secured filing cabinet while auditors wait with empty clipboards.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "risk registers",
+      "compliance",
+      "bureaucracy",
+      "consultants"
+    ]
+  },
+  {
+    "id": "mgmt-meeting-free-calendar",
+    "category": "Middle Management",
+    "headline": "Meetings Tsar Eliminates Calendar Clutter by Scheduling One Continuous Meeting",
+    "standfirst": "A head of collaboration cleared every diary by merging 146 appointments into a single session nobody could leave.",
+    "byline": "Basil Agenda, Senior Conference-Room Reporter",
+    "location": "NEW BASINGFORD",
+    "published": "2026-07-21T11:00:00Z",
+    "body": [
+      "Head of collaboration Saskia Blunt was disturbed to learn that staff considered the company’s meeting culture excessive. Her analysis found the true problem was not meeting volume but ‘fragmentation between meetings,’ which created wasteful intervals for travel, preparation and independent thought.",
+      "Blunt merged every recurring call into one Monday-to-Friday Strategic Alignment Continuum. Attendance was mandatory, cameras remained on and comfort breaks required a breakout-room request approved by three workstream leads. She congratulated herself when calendars displayed only one appointment.",
+      "By Tuesday afternoon, the meeting platform stopped admitting new participants because Blunt’s session had exceeded its maximum duration. Unfortunately, she had made herself host and could neither end nor rejoin without losing the official transcript. She remained alone on screen, preserving governance by presenting to an empty participant list.",
+      "The rest of the company enjoyed its most productive three days in years. Blunt emerged on Friday with 1,900 pages of auto-generated minutes and no decisions. Her dashboard nevertheless showed a 99 percent reduction in meeting count, triggering a bonus and a compulsory celebration call."
+    ],
+    "pullQuote": "The problem was fragmentation between meetings.",
+    "image": "images/mgmt-meeting-free-calendar.webp",
+    "imageAlt": "A manager presents to empty video-call screens as colleagues work elsewhere.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "meetings",
+      "productivity",
+      "dashboards",
+      "collaboration"
+    ]
+  },
+  {
+    "id": "mgmt-zero-waste-bin-ban",
+    "category": "Middle Management",
+    "headline": "Sustainability Manager Removes Every Bin, Discovers Waste Has Not Resigned",
+    "standfirst": "A zero-waste office became a maximum-waste lobby after its architect confused disposal infrastructure with rubbish itself.",
+    "byline": "Petunia Rummage, Environmental Desk",
+    "location": "LOWER THRIFTING",
+    "published": "2026-07-21T11:15:00Z",
+    "body": [
+      "Sustainability manager Gavin Sprout announced that workplace waste would reach zero by Wednesday. His method was strikingly direct: remove every bin from the building, then use the absence of bin collections as proof that the target had been achieved.",
+      "Facilities warned that employees would continue producing teabags, packaging and failed workshop sticky notes. Sprout dismissed this as ‘legacy-waste thinking’ and replaced the cleaners with a consultant-led Waste Mindset Circle. Participants received individually wrapped bamboo badges.",
+      "By lunchtime, staff had begun depositing rubbish outside Sprout’s office because it was the only space marked on the waste responsibility chart. Unable to open his door, he attempted to escalate the obstruction but discovered he chaired both the sustainability panel and the appeals panel.",
+      "Sprout conducted the afternoon’s investor tour through a window, pointing proudly to a graph showing bin collections at zero. Behind the visitors, a colourful ridge of compostable cups crossed the lobby. The initiative was rated ‘green’ because the reporting template contained no field for loose rubbish."
+    ],
+    "pullQuote": "The reporting template contained no field for loose rubbish.",
+    "image": "images/mgmt-zero-waste-bin-ban.webp",
+    "imageAlt": "A manager gestures from behind glass as office waste piles outside his door.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "sustainability",
+      "metrics",
+      "consultants",
+      "workplace policy"
+    ]
+  },
+  {
+    "id": "mgmt-paperless-print-avalanche",
+    "category": "Middle Management",
+    "headline": "Paperless Champion Prints Proof of Every Document Deleted",
+    "standfirst": "The office’s digital transformation produced its largest paper order after management demanded physical evidence that printing had stopped.",
+    "byline": "Tabitha Ream, Stationery Affairs Correspondent",
+    "location": "SHEETON INDUSTRIAL ESTATE",
+    "published": "2026-07-21T11:30:00Z",
+    "body": [
+      "Transformation lead Lionel Fench declared the office paperless and instructed employees to delete all printable documents. To satisfy audit requirements, however, each deletion had to generate a signed confirmation sheet proving that no paper copy remained.",
+      "Fench added daily exception reports, weekly deletion summaries and a monthly colour-coded dashboard printed for the steering committee. He rejected an electronic dashboard because senior stakeholders, he said, ‘engaged best with something they could hold and annotate.’",
+      "The printers ran continuously until the paperless programme exhausted the annual stationery budget before lunch. Fench’s own office became inaccessible after delivery staff stacked emergency reams against his door. He chaired the crisis call from behind the barricade and requested printed packs for clarity.",
+      "Procurement recorded a 640 percent increase in paper consumption. Fench disputed the figure because confirmation sheets were ‘governance artefacts, not paper.’ The programme retained its green status after he changed the dashboard unit from sheets used to documents successfully deleted."
+    ],
+    "pullQuote": "Governance artefacts are not paper.",
+    "image": "images/mgmt-paperless-print-avalanche.webp",
+    "imageAlt": "A manager is boxed into his office by stacks of printer paper.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "digital transformation",
+      "paperless office",
+      "audit",
+      "dashboards"
+    ]
+  },
+  {
+    "id": "mgmt-hot-desk-chair-auction",
+    "category": "Middle Management",
+    "headline": "Workplace Strategist Auctions His Own Chair Under Ruthless Hot-Desk Rules",
+    "standfirst": "A utilisation crusade ended with its sponsor presenting quarterly results from a wheeled recycling crate.",
+    "byline": "Felicity Lumbar, Workplace Comfort Critic",
+    "location": "CHAIRFORD",
+    "published": "2026-07-21T11:45:00Z",
+    "body": [
+      "Workplace strategy manager Hugo Pinch calculated that office chairs sat empty whenever employees stood up. Calling this ‘latent furniture capital,’ he introduced minute-by-minute chair allocation through a competitive internal booking system.",
+      "Pinch ordered unoccupied seats automatically released after ninety seconds. Staff warned that bathroom visits and trips to the printer took longer, but he insisted urgency would improve personal discipline. Premium chairs were reserved for departments exceeding utilisation targets.",
+      "While unveiling the scheme, Pinch left his executive chair to point at the utilisation graph. The system marked it idle and awarded it to Payroll, whose manager rolled it away immediately. Pinch’s appeal was rejected because his own policy prohibited retrospective claims based on seniority.",
+      "Every remaining chair had been booked through Friday. Pinch completed the presentation perched on a recycling crate, insisting the posture demonstrated leadership agility. His dashboard logged his missing chair as a successful asset redeployment and recommended auctioning his desk next."
+    ],
+    "pullQuote": "The posture demonstrated leadership agility.",
+    "image": "images/mgmt-hot-desk-chair-auction.webp",
+    "imageAlt": "A manager gives a presentation while seated on a recycling crate.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "hot desking",
+      "utilisation",
+      "metrics",
+      "office furniture"
+    ]
+  },
+  {
+    "id": "mgmt-approval-loop-lunch",
+    "category": "Middle Management",
+    "headline": "Procurement Boss Misses Lunch After Sending His Sandwich Through Seven Approvals",
+    "standfirst": "A cost-control demonstration proved the purchasing process was capable of protecting the company from a modest cheese roll.",
+    "byline": "Neville Crumb, Corporate Catering Reporter",
+    "location": "GREAT REQUISITION",
+    "published": "2026-07-21T12:00:00Z",
+    "body": [
+      "Procurement manager Cuthbert Vale wanted employees to appreciate the elegance of his new purchasing controls. He volunteered to obtain lunch through the official system, predicting that disciplined governance would deliver his sandwich ‘with confidence and complete traceability.’",
+      "Vale raised a requisition, rejected it for insufficient nutritional justification, then resubmitted it with a business case. Finance returned it because the pickle lacked a cost centre. Legal requested an allergen matrix, while sustainability demanded evidence that the cheese understood the net-zero roadmap.",
+      "At 3:45 p.m., the request reached Vale for executive approval. He declined it because buying lunch so late suggested poor forward planning. The café closed while he chaired an emergency workshop on why employees kept using their own money for food.",
+      "Vale eventually ate three biscuits left from the workshop. His dashboard celebrated a 100 percent reduction in unauthorised sandwich expenditure and identified hunger as an emerging conduct risk requiring an eight-week consultancy review."
+    ],
+    "pullQuote": "The process protected the company from a modest cheese roll.",
+    "image": "images/mgmt-approval-loop-lunch.webp",
+    "imageAlt": "A manager reaches toward a sandwich blocked by stacks of approval paperwork.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "procurement",
+      "approvals",
+      "cost control",
+      "bureaucracy"
+    ]
+  },
+  {
+    "id": "mgmt-parking-efficiency-reserved-bay",
+    "category": "Middle Management",
+    "headline": "Efficiency Chief Converts Reserved Space Into Four Bays Too Small for His Car",
+    "standfirst": "A parking-capacity triumph left its sponsor circling the building while compact bicycles enjoyed executive provision.",
+    "byline": "Gloria Kerb, Transport Optimisation Desk",
+    "location": "MULTISTOREY MINOR",
+    "published": "2026-07-21T12:15:00Z",
+    "body": [
+      "Operations chief Malcolm Wedge promised to increase staff parking capacity without acquiring more land. His solution divided every generous bay into four ‘mobility-neutral microspaces,’ raising the theoretical capacity by 300 percent overnight.",
+      "Facilities demonstrated that ordinary cars no longer fitted between the new lines. Wedge accused them of resisting modal innovation and selected his own reserved bay for the launch photograph. A dashboard immediately counted its four painted rectangles as four available spaces.",
+      "The next morning, Wedge attempted to park his broad company saloon. After twenty minutes of careful manoeuvring, it occupied all four microspaces and triggered four separate parking violations. His appeal climbed the enforcement chain before returning to him as accountable executive.",
+      "Wedge spent the quarterly briefing circling the car park on speakerphone. Staff bicycles fitted neatly into his former bay, though cycling remained excluded from the capacity metric. The project was judged successful because the number of painted spaces had quadrupled."
+    ],
+    "pullQuote": "The number of painted spaces had quadrupled.",
+    "image": "images/mgmt-parking-efficiency-reserved-bay.webp",
+    "imageAlt": "An executive car straddles four tiny parking bays beside neatly parked bicycles.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "parking",
+      "efficiency",
+      "dashboards",
+      "transport"
+    ]
+  },
+  {
+    "id": "mgmt-sentiment-bot-bans-boss",
+    "category": "Middle Management",
+    "headline": "Culture Bot Suspends Manager for Excessive Positivity During Morale Crisis",
+    "standfirst": "An automated authenticity drive identified its creator’s inspirational messages as coordinated workplace spam.",
+    "byline": "Eunice Pulse, Employee Feeling Analyst",
+    "location": "CHEERFUL PARVA",
+    "published": "2026-07-21T12:30:00Z",
+    "body": [
+      "People-experience manager Roland Gleam bought a sentiment bot to identify negativity before it reached leadership. He configured it to flag repeated slogans, implausible enthusiasm and messages that ignored obvious workplace concerns.",
+      "Gleam then sent hourly reminders that the restructuring was an ‘exciting shared adventure.’ Employees replied mostly with silence. The bot compared his phrases across email, chat and presentation captions, rated them 98 percent synthetic and suspended his account for manipulative positivity.",
+      "Unable to access the appeals portal, Gleam instructed his assistant to post that the suspension proved the system treated everyone equally. The bot detected delegated repetition, suspended the assistant and automatically cancelled Gleam’s culture workshop as suspected coordinated messaging.",
+      "Staff sentiment rose sharply during the resulting quiet afternoon. Gleam’s dashboard attributed the improvement to his campaign, then locked him out of the results for displaying an unhealthy fixation on positive scores."
+    ],
+    "pullQuote": "The bot rated his enthusiasm 98 percent synthetic.",
+    "image": "images/mgmt-sentiment-bot-bans-boss.webp",
+    "imageAlt": "A cheerful manager stares at a blocked computer while coworkers enjoy the quiet.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "workplace culture",
+      "artificial intelligence",
+      "morale",
+      "automation"
+    ]
+  },
+  {
+    "id": "mgmt-open-plan-echo-chamber",
+    "category": "Middle Management",
+    "headline": "Collaboration Director Builds Literal Echo Chamber, Cannot End His Own Announcement",
+    "standfirst": "An acoustics-free office redesign ensured every leadership slogan returned for several minutes.",
+    "byline": "Quentin Hush, Built Environment Correspondent",
+    "location": "RESONANCE PARK",
+    "published": "2026-07-21T12:45:00Z",
+    "body": [
+      "Collaboration director Tristram Bell removed partitions, curtains and soft furniture after a consultant said open spaces encouraged ideas to travel. He selected polished concrete, glass walls and metal desks to maximise ‘organisational permeability.’",
+      "An acoustic engineer warned that the redesigned floor would produce severe echoes. Bell removed the warning from the risk register because repetition, he reasoned, strengthened strategic messages. Staff received noise-cancelling headphones but were told not to wear them during collaboration hours.",
+      "At the grand opening, Bell shouted the new company purpose from the central staircase. The phrase ricocheted around the floor, repeatedly triggering voice-controlled lights, blinds and presentation screens. Each echo restarted his timed announcement, preventing the system from completing its welcome sequence.",
+      "Employees relocated to the quiet loading bay while Bell remained amid flashing slides and automated applause. His post-launch survey registered no complaints because nobody could hear the questions. The consultant described the outcome as unusually high message retention."
+    ],
+    "pullQuote": "Repetition strengthened strategic messages.",
+    "image": "images/mgmt-open-plan-echo-chamber.webp",
+    "imageAlt": "Sound waves echo around a glass office while a manager struggles with automated equipment.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "office design",
+      "consultants",
+      "collaboration",
+      "acoustics"
+    ]
+  },
+  {
+    "id": "mgmt-ideas-quota-suggestion-flood",
+    "category": "Middle Management",
+    "headline": "Innovation Manager Buried in Suggestions After Imposing Hourly Ideas Quota",
+    "standfirst": "A creativity metric generated 14,000 proposals, including several hundred ways to abolish the metric.",
+    "byline": "Imogen Spark, Innovation Bureau",
+    "location": "BRIGHTTHOUGHT-UNDER-LYNE",
+    "published": "2026-07-21T13:00:00Z",
+    "body": [
+      "Innovation manager Rufus Hatch complained that employees produced ideas unpredictably. To create a dependable pipeline, he required each person to submit one idea per working hour through a portal that printed every entry for his personal review.",
+      "Staff quickly discovered the system rewarded volume rather than merit. Proposals included diagonal mugs, reversible staplers and 417 variations on cancelling the ideas quota. Hatch praised the ‘unprecedented creative velocity’ while refusing requests for extra reviewers.",
+      "By mid-afternoon, printouts filled his office and pressed harmlessly against the inward-opening door. Hatch could not leave, and his escalation request was automatically converted into another innovation proposal. The portal awarded it a bronze creativity badge and printed six copies.",
+      "Facilities freed him after the overnight paper delivery ended. Hatch’s dashboard showed a record number of ideas but zero reviewed outcomes. He responded by launching a mandatory workshop on execution discipline, generating another 600 proposals to replace workshops with work."
+    ],
+    "pullQuote": "The system rewarded volume rather than merit.",
+    "image": "images/mgmt-ideas-quota-suggestion-flood.webp",
+    "imageAlt": "An office manager sits amid piles of printed employee suggestions.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "innovation",
+      "quotas",
+      "metrics",
+      "workshops"
+    ]
+  },
+  {
+    "id": "mgmt-just-in-time-kettle",
+    "category": "Middle Management",
+    "headline": "Lean Manager Removes Spare Kettles, Then Schedules Tea by Algorithm",
+    "standfirst": "A just-in-time refreshment policy collapsed when its single approved kettle attended mandatory maintenance.",
+    "byline": "Mabel Steep, Beverage Systems Correspondent",
+    "location": "BREWSTER BUSINESS PARK",
+    "published": "2026-07-21T13:15:00Z",
+    "body": [
+      "Lean operations manager Alistair Sip identified three office kettles as wasteful duplication. He retained one, fitted it with a booking app and sold the others after declaring that unused boiling capacity was ‘inventory wearing a plug.’",
+      "Sip’s algorithm assigned each employee a fourteen-second pouring window based on grade, commute and beverage complexity. He exempted himself from queues but required everyone, including himself, to book maintenance interruptions through the same capacity process.",
+      "On launch day, the kettle requested descaling and automatically reserved itself for six hours. Sip attempted an emergency override, but his own lean policy had removed the spare key, spare kettle and facilities contractor. His escalation meeting stalled because nobody had tea.",
+      "By noon, employees had walked to a nearby café and returned unusually cheerful. Sip remained beside the cold kettle, refreshing a dashboard that showed perfect compliance and zero unauthorised boils. He later classified caffeine withdrawal as resistance to continuous improvement."
+    ],
+    "pullQuote": "Unused boiling capacity was inventory wearing a plug.",
+    "image": "images/mgmt-just-in-time-kettle.webp",
+    "imageAlt": "A manager waits beside a single office kettle while colleagues carry drinks from elsewhere.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "lean management",
+      "workplace policy",
+      "efficiency",
+      "tea"
+    ]
+  },
+  {
+    "id": "mgmt-escalation-tree-pruning",
+    "category": "Middle Management",
+    "headline": "Escalation Manager Prunes Chain Until Every Complaint Reaches Herself",
+    "standfirst": "A flatter reporting structure transformed one executive’s inbox into the organisation’s most comprehensive problem archive.",
+    "byline": "Cedric Branch, Hierarchy Correspondent",
+    "location": "CHAINBRIDGE",
+    "published": "2026-07-21T13:30:00Z",
+    "body": [
+      "Service manager Octavia Prune announced that customer issues took too long to reach accountable leadership. She removed supervisors, triage queues and specialist routes from the escalation map, proudly replacing them with a single arrow pointing to her inbox.",
+      "Prune dismissed warnings about volume because ‘leaders must own outcomes.’ She required every message to include fifteen attachments, a root-cause hypothesis and proof that all nonexistent intermediate stages had been consulted.",
+      "Within an hour, her mailbox exceeded its storage limit. Automated notices about the failure were also routed to her, producing thousands of additional failures. Prune could not request technical help because the support form now escalated directly to the inaccessible inbox.",
+      "Customers received cheerful confirmations that their concerns had reached the highest possible level. Prune spent the day presenting an empty dashboard because its data feed depended on her unread messages. She concluded that the silence proved simplification had resolved demand."
+    ],
+    "pullQuote": "The silence proved simplification had resolved demand.",
+    "image": "images/mgmt-escalation-tree-pruning.webp",
+    "imageAlt": "Thousands of message symbols converge on one manager’s overflowing computer.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "escalation",
+      "customer service",
+      "hierarchy",
+      "simplification"
+    ]
+  },
+  {
+    "id": "mgmt-training-room-cardboard-cutout",
+    "category": "Middle Management",
+    "headline": "Attendance Director Replaces Staff With Cutouts, Then Fails His Own Engagement Test",
+    "standfirst": "A compulsory learning programme achieved full attendance and almost no detectable consciousness.",
+    "byline": "Daphne Module, Professional Development Critic",
+    "location": "CERTIFICATE WELLS",
+    "published": "2026-07-21T13:45:00Z",
+    "body": [
+      "Learning director Barnaby Course demanded 100 percent attendance at his six-hour seminar on authentic engagement. When diaries proved resistant, he authorised life-size cardboard stand-ins, each fitted with a QR code to record participation.",
+      "Course rejected concerns that the cutouts could not learn, arguing that attendance was the only consistently measurable precursor to growth. He placed one bearing his own photograph in the front row so he could simultaneously deliver the seminar and model compliance.",
+      "An automated engagement camera later scored the cardboard audience above Course because the cutouts maintained eye contact, never checked email and displayed no visible fatigue. His moving, blinking face was classified as distracted. The system revoked his facilitator accreditation.",
+      "Course appealed, but his cardboard double had already received administrator rights after achieving the room’s highest engagement score. The cutout denied the appeal and enrolled him in remedial training. The programme closed with 100 percent completion and one manager seated behind his own photograph."
+    ],
+    "pullQuote": "The cardboard audience maintained perfect eye contact.",
+    "image": "images/mgmt-training-room-cardboard-cutout.webp",
+    "imageAlt": "A trainer stands before cardboard attendees while an automated camera watches him.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "training",
+      "attendance",
+      "engagement",
+      "automation"
+    ]
+  },
+  {
+    "id": "mgmt-expense-cap-conference-suite",
+    "category": "Middle Management",
+    "headline": "Cost-Cutting Boss Holds Luxury Summit to Announce Ban on Biscuits",
+    "standfirst": "A savings initiative recovered £38 in refreshments after spending an imaginary fortune explaining fiscal restraint.",
+    "byline": "Horace Ledger, Expense Account Examiner",
+    "location": "GRAND ECONOMY BAY",
+    "published": "2026-07-21T14:00:00Z",
+    "body": [
+      "Finance manager Veronica Thrift identified meeting biscuits as the clearest symbol of uncontrolled spending. She booked a three-day off-site summit so leaders could align on removing them without causing ‘snack-related change fatigue.’",
+      "The programme included a keynote consultant, embroidered delegate robes and a ceremonial unveiling of the biscuit-free policy. Thrift upgraded herself to the panoramic suite because visible leadership, she said, required sufficient natural light.",
+      "During the final session, the hotel declined her corporate card after the new expense cap—personally approved by Thrift—limited all accommodation claims to the price of two tea bags. She spent checkout morning chairing an emergency affordability workshop from the luggage room.",
+      "The biscuit ban saved £38 in its first month. Summit costs were excluded from the calculation as transformational investment. Thrift’s dashboard showed the programme 112 percent ahead of target after she measured success in biscuits avoided rather than money spent."
+    ],
+    "pullQuote": "Summit costs were transformational investment.",
+    "image": "images/mgmt-expense-cap-conference-suite.webp",
+    "imageAlt": "A finance manager presents an empty biscuit plate during an extravagant conference.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "expenses",
+      "cost cutting",
+      "consultants",
+      "conferences"
+    ]
+  },
+  {
+    "id": "mgmt-delegation-bot-demotion",
+    "category": "Middle Management",
+    "headline": "Delegation Bot Concludes Manager Is Organisation’s Most Avoidable Task",
+    "standfirst": "An automation advocate outsourced every responsibility until the software revoked his access for inactivity.",
+    "byline": "Sybil Widget, Automation Affairs",
+    "location": "DELEGATE MINSTER",
+    "published": "2026-07-21T14:15:00Z",
+    "body": [
+      "Automation manager Gerald Proxy introduced a bot that reassigned tasks whenever a manager took longer than thirty seconds to act. He described hesitation as ‘the final analogue bottleneck’ and granted the system authority over calendars, approvals and access rights.",
+      "Proxy demonstrated confidence by delegating his inbox, performance reviews and weekly leadership call. When colleagues asked what remained under his control, he scheduled a workshop for the bot to answer. The bot delegated that workshop to an intern.",
+      "After detecting no completed activity under Proxy’s account, the system classified him as dormant capacity. It reassigned his office, cancelled his parking permit and transferred his approval powers to the building’s reception tablet, which had a better response time.",
+      "Proxy attempted to override the decision but the bot delegated his appeal back to itself and closed it as duplicate work. His dashboard celebrated the removal of one redundant managerial layer. Proxy called this proof that the technology was powerful, though he did so from the visitor seating area."
+    ],
+    "pullQuote": "The reception tablet had a better response time.",
+    "image": "images/mgmt-delegation-bot-demotion.webp",
+    "imageAlt": "An automated system occupies a manager’s desk while he waits in visitor seating.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "automation",
+      "delegation",
+      "management layers",
+      "efficiency"
+    ]
+  },
+  {
+    "id": "mgmt-temperature-productivity-freeze",
+    "category": "Middle Management",
+    "headline": "Productivity Chief Chills Office Until Dashboard Runs Faster Than Staff",
+    "standfirst": "A temperature experiment improved server performance while turning the strategy workshop into a silent coat convention.",
+    "byline": "Prudence Celsius, Workplace Climate Desk",
+    "location": "COLDHARBOUR CENTRAL",
+    "published": "2026-07-21T14:30:00Z",
+    "body": [
+      "Performance manager Miles Frost discovered that computers operated more efficiently in cool conditions. Without consulting facilities, he lowered the entire office thermostat to the server room’s preferred temperature and labelled the change ‘human-hardware alignment.’",
+      "Employees arrived in coats and gloves. Frost dismissed their complaints because the productivity dashboard loaded three seconds faster, proving the environment was working. He removed comfort from the risk register on grounds that it lacked an agreed measurement framework.",
+      "During his afternoon strategy workshop, the touchscreen ignored Frost’s gloved hands. He removed one glove, dropped the electronic pointer from numb fingers and spent forty minutes trying to advance a slide about frictionless execution. Participants communicated by writing on fogged windows.",
+      "The building’s computers achieved record responsiveness while human output stopped. Frost’s final dashboard displayed an excellent system-health score and no completed work. He proposed a second experiment to determine whether employees were essential to productivity."
+    ],
+    "pullQuote": "The dashboard loaded three seconds faster.",
+    "image": "images/mgmt-temperature-productivity-freeze.webp",
+    "imageAlt": "Coat-wearing employees sit in a cold office as a manager struggles with a touchscreen.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "productivity",
+      "dashboards",
+      "workplace climate",
+      "risk management"
+    ]
+  },
+  {
+    "id": "mgmt-consultant-map-actual-office",
+    "category": "Middle Management",
+    "headline": "Strategy Chief Follows Consultant’s Process Map Into Locked Stationery Cupboard",
+    "standfirst": "A meticulously mapped customer journey ended where the diagram said it should, rather than where reality had put the door.",
+    "byline": "Jasper Flow, Process Cartography Editor",
+    "location": "ARROWHEAD CROSS",
+    "published": "2026-07-21T14:45:00Z",
+    "body": [
+      "Strategy chief Lavinia Route commissioned consultants to redesign movement through headquarters. Their process map replaced room names with coloured arrows, decision diamonds and ‘value portals,’ despite being drawn remotely from an outdated floor plan.",
+      "Facilities explained that several walls had moved years earlier. Route rejected this local knowledge as anecdotal and ordered staff to follow the map precisely for a week. She volunteered to demonstrate the new journey from reception to the executive suite.",
+      "The arrows guided Route through Accounts, around a photocopier and into a stationery cupboard whose spring-loaded door closed behind her. She refused to use the clearly marked internal release because it was absent from the approved process. Instead, she raised a deviation request by phone.",
+      "The consultants scheduled a discovery workshop for the following month. A cleaner opened the cupboard that evening, but Route recorded her exit as an unauthorised shortcut. Her dashboard gave the mapped journey full marks for compliance and deducted points from the building for not matching the slide."
+    ],
+    "pullQuote": "She deducted points from the building for not matching the slide.",
+    "image": "images/mgmt-consultant-map-actual-office.webp",
+    "imageAlt": "A manager follows process arrows into a stationery cupboard as consultants study a map.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "consultants",
+      "process maps",
+      "strategy",
+      "compliance"
+    ]
+  },
+  {
+    "id": "mgmt-synergy-zipline-evacuation",
+    "category": "Middle Management",
+    "headline": "Synergy Director Tests Office Zipline, Discovers Gravity Is Not a Stakeholder",
+    "standfirst": "A compulsory ‘rapid alignment corridor’ left its architect dangling above reception while everyone else missed the evacuation target.",
+    "byline": "Crispin Lever, Vertical Integration Correspondent",
+    "location": "SWINDON",
+    "published": "2026-07-21T06:00:00Z",
+    "body": [
+      "At 8:03 on Monday, transformation director Nigel Plume unveiled a zipline across the company atrium. He called it a ‘rapid alignment corridor’ designed to reduce the 47 seconds employees wasted walking between Finance and Brand Experience.",
+      "Facilities had declined the idea three times, citing ceilings, insurance and the traditional usefulness of stairs. Plume overruled them after adding ‘culture-critical’ to the risk register and changing every red warning to amber on the executive dashboard.",
+      "During the demonstration, his motivational headset snagged on an artificial tree. Plume stopped halfway above reception, rotating gently while still delivering a presentation on decisive leadership. An unexpected fire drill then required two wardens to stand beneath him with a conference-room beanbag.",
+      "Nobody was harmed, but the building missed its evacuation target by eleven minutes. Plume blamed ‘legacy pedestrian thinking’ and commissioned a workshop. The zipline was removed; the tree received an employee-recognition badge for effective upward challenge."
+    ],
+    "pullQuote": "Gravity had not been included in the stakeholder map.",
+    "image": "images/mgmt-synergy-zipline-evacuation.webp",
+    "imageAlt": "An office manager hangs from an atrium zipline while staff wait below with a beanbag.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "risk registers",
+      "transformation",
+      "office safety",
+      "metrics"
+    ]
+  },
+  {
+    "id": "mgmt-floor-markings-efficiency-maze",
+    "category": "Middle Management",
+    "headline": "Warehouse Manager Removes Floor Markings to Eliminate ‘Lane-Based Silos’",
+    "standfirst": "The liberated warehouse immediately became so agile that nobody could locate the loading bay.",
+    "byline": "Mavis Spindle, Operational Liberation Editor",
+    "location": "COVENTRY",
+    "published": "2026-07-21T06:15:00Z",
+    "body": [
+      "Warehouse optimisation manager Petra Gant ordered every coloured floor marking removed after deciding that lanes encouraged ‘fixed-route thinking.’ Forklifts, pedestrians and cleaning machines would instead negotiate space dynamically using trust, eye contact and a laminated values card.",
+      "Safety staff objected that the lines separated people from machinery. Gant replied that separation was precisely the silo mentality she had been hired to disrupt. Their concern was entered into the risk register under ‘resistance to empowerment.’",
+      "On launch morning, six autonomous pallet carriers encountered Gant’s mobile leadership podium. Following their collision-avoidance rules, they slowly surrounded it with boxes of novelty mugs. Gant remained unhurt but marooned inside a perfectly organised cardboard hexagon.",
+      "The loading team spent three hours rediscovering the exits while shipments accumulated outside. Gant praised the incident as ‘spontaneous cross-functional clustering.’ The floor markings returned overnight, now classified as a visual collaboration framework so the project could still be marked successful."
+    ],
+    "pullQuote": "The safety lines returned once they were renamed collaboration infrastructure.",
+    "image": "images/mgmt-floor-markings-efficiency-maze.webp",
+    "imageAlt": "A warehouse manager is surrounded by boxes after removing the building’s safety lanes.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "warehouses",
+      "optimisation",
+      "safety",
+      "corporate language"
+    ]
+  },
+  {
+    "id": "mgmt-floating-leadership-dashboard",
+    "category": "Middle Management",
+    "headline": "Leadership Offsite Sinks Dashboard but Declares Buoyancy Target Achieved",
+    "standfirst": "A paddleboard strategy session produced no decisions, one soggy laptop and record levels of visible alignment.",
+    "byline": "Barnaby Wake, Aquatic Governance Reporter",
+    "location": "WINDERMERE",
+    "published": "2026-07-21T06:30:00Z",
+    "body": [
+      "Regional manager Simon Crake moved the quarterly review onto paddleboards after a consultant described water as ‘nature’s agile workspace.’ Attendance remained compulsory, although several department heads disclosed that they could neither swim nor approve expenses while kneeling.",
+      "Crake insisted on carrying the performance dashboard aboard his board. He rejected a waterproof case because protective layers, he explained, create distance between leaders and data. The instructor’s objections were recorded as ‘supplier negativity.’",
+      "While demonstrating a pivot, Crake executed one literally. He tipped harmlessly into waist-deep water wearing a buoyancy vest, while his laptop slid beneath a cloud of startled ducks. Staff helped him ashore before the opening slide had finished loading.",
+      "Crake announced that the team had achieved 100 percent immersion in strategy. Finance disagreed, particularly after receiving the replacement invoice. Future offsites will occur beside the lake in a room whose carpet pattern has been certified as sufficiently fluid."
+    ],
+    "pullQuote": "The dashboard went under, but visible alignment remained exceptionally high.",
+    "image": "images/mgmt-floating-leadership-dashboard.webp",
+    "imageAlt": "Managers conduct a paddleboard meeting as their leader and his laptop enter the water.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "offsites",
+      "dashboards",
+      "consultants",
+      "leadership"
+    ]
+  },
+  {
+    "id": "mgmt-smart-badge-self-escalation",
+    "category": "Middle Management",
+    "headline": "Surveillance Champion’s Smart Badge Escalates Him to His Own Manager",
+    "standfirst": "An executive visibility scheme worked flawlessly until its inventor took an unapproved comfort break.",
+    "byline": "Dotty Quorum, Workplace Observation Correspondent",
+    "location": "READING",
+    "published": "2026-07-21T06:45:00Z",
+    "body": [
+      "Productivity manager Clive Sorn introduced smart badges that scored staff on movement, proximity and minutes spent near designated collaboration zones. He assured employees the system measured patterns, not people, while displaying a league table containing everyone’s names.",
+      "Sorn exempted nobody, explaining that leadership meant sharing accountability. He also configured automatic escalation for any worker stationary outside an approved zone for more than eight minutes. Human Resources suggested testing the rules first; he called that ‘manual thinking.’",
+      "On Tuesday, Sorn’s badge reported an extended visit to a quiet corridor beside the lavatories. The platform alerted his manager, cancelled his focus-room access and booked him into a remedial energy workshop led by a chatbot using his own recorded voice.",
+      "He spent the afternoon appealing through a portal he had designed without an appeal button. The badges were later withdrawn for ‘strategic recalibration.’ Sorn’s personal score remains displayed on reception screens because removing historical data requires his suspended administrator privileges."
+    ],
+    "pullQuote": "The machine did not know he was management, which was briefly its finest feature.",
+    "image": "images/mgmt-smart-badge-self-escalation.webp",
+    "imageAlt": "A manager’s own tracking badge denies him access to the office system he introduced.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "surveillance",
+      "productivity",
+      "dashboards",
+      "automation"
+    ]
+  },
+  {
+    "id": "mgmt-zero-chair-revolving-door",
+    "category": "Middle Management",
+    "headline": "Zero-Chair Initiative Leaves Manager Circling Lobby on Mobile Lectern",
+    "standfirst": "Removing all seats increased motion by 34 percent and useful work by an amount still being calculated.",
+    "byline": "Lionel Caster, Furniture Futures Critic",
+    "location": "MILTON KEYNES",
+    "published": "2026-07-21T07:00:00Z",
+    "body": [
+      "Workplace vitality lead Gerald Mott removed every office chair after a dashboard linked standing time with executive visibility. Employees received wheeled lecterns and instructions to ‘bring their energy with them’ between meetings, meals and confidential conversations.",
+      "Occupational health requested adjustable seating for those who needed it. Mott refused, saying exceptions weakened cultural clarity. He demonstrated the lectern personally, rolling through departments while announcing that static furniture belonged to the industrial age.",
+      "Momentum carried him into the lobby’s revolving door, where the lectern fitted neatly between two glass panels. Mott completed seventeen slow circuits before security stopped the mechanism. He remained upright throughout, allowing Communications to classify the incident as active leadership.",
+      "Chairs returned that afternoon under the name ‘stationary wellbeing platforms.’ Mott’s dashboard recorded a remarkable surge in movement and no completed decisions. The revolving door now requires a booking, a spotter and approval from the newly formed Mobility Governance Board."
+    ],
+    "pullQuote": "His movement metric soared while his destination remained stubbornly unchanged.",
+    "image": "images/mgmt-zero-chair-revolving-door.webp",
+    "imageAlt": "A manager becomes stuck circling a revolving door with his mobile standing desk.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "workplace trends",
+      "metrics",
+      "wellbeing",
+      "bureaucracy"
+    ]
+  },
+  {
+    "id": "mgmt-rooftop-risk-register",
+    "category": "Middle Management",
+    "headline": "Risk Workshop Moves to Roof, Then Locks Its Facilitator Outside",
+    "standfirst": "A manager seeking ‘blue-sky risk ownership’ became the only hazard requiring immediate escalation.",
+    "byline": "Fenella Hatch, Exposure and Umbrellas Desk",
+    "location": "LEEDS",
+    "published": "2026-07-21T07:15:00Z",
+    "body": [
+      "Compliance manager Vernon Bleak relocated the annual risk workshop to the office roof so participants could ‘see beyond the operational horizon.’ Facilities warned that the access door locked automatically. Bleak added this to a sticky note labelled ‘interesting edge case.’",
+      "He then sent everyone downstairs to fetch coloured markers, promising to hold the strategic space. The door closed behind the final attendee. Bleak discovered that his phone, key card and weatherproof jacket were inside beside a flipchart reading ‘Always maintain fallback controls.’",
+      "For forty minutes he waved through a window while the escalation chain debated whether rooftop retrieval belonged to Security, Estates or People Experience. A window cleaner eventually alerted reception and lent Bleak a spare coat until the door was opened.",
+      "The workshop concluded indoors. Bleak reported that the exercise had produced an ‘embodied understanding of unmanaged exposure.’ The lock remains unchanged, but roof access now requires a sixteen-page risk assessment authored by the only person who ignored it."
+    ],
+    "pullQuote": "The facilitator became both the hazard and the unresolved action.",
+    "image": "images/mgmt-rooftop-risk-register.webp",
+    "imageAlt": "A risk manager waits on an office roof after locking himself outside.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "risk registers",
+      "workshops",
+      "escalation",
+      "compliance"
+    ]
+  },
+  {
+    "id": "mgmt-paperless-backup-code-lockout",
+    "category": "Middle Management",
+    "headline": "Paperless Champion Shreds Only Copy of Smart Office Recovery Codes",
+    "standfirst": "The organisation reached zero paper moments before reaching zero access.",
+    "byline": "Poppy Ream, Document Extinction Correspondent",
+    "location": "BRISTOL",
+    "published": "2026-07-21T07:30:00Z",
+    "body": [
+      "Sustainability programme manager Hugo Vell ordered a ceremonial shredding of every printed manual, checklist and emergency envelope. Cameras captured him feeding the final pages into a machine while declaring that paper represented ‘institutional reluctance to trust the cloud.’",
+      "IT asked to retain the sealed recovery codes for the building’s smart locks. Vell declined because exceptions diluted the headline metric. He entered the concern into a spreadsheet stored on the same cloud account those codes could restore.",
+      "Minutes later, his demonstration update restarted the access controller. Every meeting pod locked, including the glass innovation booth containing Vell, his phone and the ceremonial scissors. Colleagues communicated with him by holding handwritten notes against the window.",
+      "A locksmith released him before lunch. Vell later claimed the episode proved demand for a stronger digital roadmap. Emergency codes are again kept on paper inside a safe, although the dashboard describes them as ‘offline resilience artefacts’ to preserve the paperless score."
+    ],
+    "pullQuote": "The cloud remained available to everyone who could still enter the building.",
+    "image": "images/mgmt-paperless-backup-code-lockout.webp",
+    "imageAlt": "A paperless programme manager waits inside a locked glass booth after destroying backup codes.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "paperless office",
+      "resilience",
+      "dashboards",
+      "technology"
+    ]
+  },
+  {
+    "id": "mgmt-one-way-corridor-loop",
+    "category": "Middle Management",
+    "headline": "Efficiency Chief Spends Afternoon Following Her Own One-Way Corridors",
+    "standfirst": "A workplace traffic scheme eliminated collisions by making every destination reachable only tomorrow.",
+    "byline": "Cedric Verge, Internal Transport Editor",
+    "location": "NOTTINGHAM",
+    "published": "2026-07-21T07:45:00Z",
+    "body": [
+      "Process manager Elaine Forth converted office corridors into a one-way network after observing two colleagues politely sidestep near the photocopier. Her consultants predicted smoother flow, fewer collisions and a measurable increase in purposeful walking.",
+      "Staff noted that the proposed arrows created a closed loop around Accounts. Forth dismissed the objection because the simulation contained no ‘negative destination events.’ She personally launched the scheme carrying a large foam arrow and a stopwatch.",
+      "Attempting to reach a meeting three doors away, Forth obeyed every route and completed nine circuits of the building. Each lap triggered another motion sensor, making her dashboard celebrate unprecedented workspace engagement while the unattended meeting repeatedly extended itself.",
+      "Security eventually opened a normally locked cross-corridor. The arrows were removed, but Forth retained the engagement figures in her quarterly report. The consultants recommended a second phase to investigate why employees had begun climbing through the stationery cupboard."
+    ],
+    "pullQuote": "She reached every performance target except the room she wanted.",
+    "image": "images/mgmt-one-way-corridor-loop.webp",
+    "imageAlt": "An efficiency manager loops around an office after imposing one-way corridors.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "efficiency",
+      "consultants",
+      "metrics",
+      "office design"
+    ]
+  },
+  {
+    "id": "mgmt-ice-sculpture-server-cooling",
+    "category": "Middle Management",
+    "headline": "Manager Cools Server Room with Ice Sculpture of Company Values",
+    "standfirst": "The temporary cooling solution lasted until the value marked ‘resilience’ became a puddle.",
+    "byline": "Aubrey Melt, Infrastructure Culture Reporter",
+    "location": "PETERBOROUGH",
+    "published": "2026-07-21T08:00:00Z",
+    "body": [
+      "Culture and operations manager Basil Crimp commissioned an ice sculpture for the summer town hall. When the server room overheated, he proposed moving it beside the equipment, combining emergency cooling with ‘visible values activation.’",
+      "Engineers warned about condensation and requested portable cooling units. Crimp rejected the hire cost because the ice had already been charged to employee engagement. He wheeled the sculpture inside and positioned a bucket beneath its least inspiring corner.",
+      "The sculpture cooled nothing useful, softened rapidly and blocked the doorway with a glossy lake. Crimp’s smart shoes lost traction, carrying him gently backward onto a stack of unopened branded cushions. Systems shut down safely before water reached any equipment.",
+      "Services resumed after proper coolers arrived. Crimp described the cushions as a successful resilience investment and added ‘seasonal state change’ to the risk register. Next year’s values sculpture will be made from sponge and displayed somewhere without electricity."
+    ],
+    "pullQuote": "Resilience melted first, followed closely by accountability.",
+    "image": "images/mgmt-ice-sculpture-server-cooling.webp",
+    "imageAlt": "A manager sits on cushions beside a melting ice sculpture in a server room.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "resilience",
+      "infrastructure",
+      "company values",
+      "risk registers"
+    ]
+  },
+  {
+    "id": "mgmt-drone-inventory-coat-swarm",
+    "category": "Middle Management",
+    "headline": "Indoor Drone Trial Successfully Inventories Manager’s Jacket 214 Times",
+    "standfirst": "A fleet of autonomous counters met every accuracy target after choosing one exceptionally visible garment.",
+    "byline": "Tansy Rotor, Unmanned Office Affairs",
+    "location": "DERBY",
+    "published": "2026-07-21T08:15:00Z",
+    "body": [
+      "Inventory manager Keith Purl bought twelve miniature drones to count warehouse stock without interrupting human work. The supplier recommended a staged trial with two machines. Purl launched all twelve because scale, he said, was the difference between experimentation and leadership.",
+      "He also wore a new reflective safety jacket whose fastening strips closely resembled the drones’ shelf markers. Technicians spotted the conflict during calibration, but Purl had already ended questions so the launch could fit before his next steering committee.",
+      "The fleet selected him as high-priority inventory. Wherever Purl moved, twelve drones followed, repeatedly scanning his sleeves and herding him toward the returns cage. He entered voluntarily to stop them alarming and waited behind mesh while staff powered them down.",
+      "The dashboard reported 214 perfectly consistent scans and classified the trial as exceptionally accurate. Purl approved a wider rollout after changing the metric from ‘distinct items counted’ to ‘successful observations.’ His jacket is now stored under controlled access."
+    ],
+    "pullQuote": "The system counted precisely what management had made impossible to ignore.",
+    "image": "images/mgmt-drone-inventory-coat-swarm.webp",
+    "imageAlt": "Inventory drones repeatedly scan a manager’s reflective jacket and follow him into a cage.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "drones",
+      "automation",
+      "metrics",
+      "warehouses"
+    ]
+  },
+  {
+    "id": "mgmt-algorithmic-trust-fall",
+    "category": "Middle Management",
+    "headline": "Algorithm Schedules Trust Fall During Manager’s Budget Call",
+    "standfirst": "The facilitator delegated timing to software and entered the foam pit at the least collaborative moment.",
+    "byline": "Roland Cushion, Organisational Gravity Writer",
+    "location": "YORK",
+    "published": "2026-07-21T08:30:00Z",
+    "body": [
+      "Development manager Imogen Sleet introduced algorithmic trust falls at the leadership retreat. Software would choose an unpredictable moment, proving that genuine trust cannot be rehearsed, scheduled or weakened by warning colleagues that someone was about to fall backward.",
+      "The trainer requested a manual pause during calls and meals. Sleet refused because human intervention contaminates behavioural data. She connected the trigger to everyone’s calendars, then began a budget call beside a deep foam demonstration pit.",
+      "Midway through rejecting three training requests, Sleet’s watch chimed. Faithful to her own policy, she fell backward into the foam. She landed safely but sank beyond reach of her laptop camera, continuing negotiations while two junior managers searched for the retrieval ladder.",
+      "The board approved the smallest budget after interpreting the muffled audio as agreement. Sleet later praised the exercise for exposing communication gaps. Manual pause controls were added, available only after completing an online module she had not funded."
+    ],
+    "pullQuote": "Her policy caught her perfectly; her escalation chain did not.",
+    "image": "images/mgmt-algorithmic-trust-fall.webp",
+    "imageAlt": "A manager conducts a budget call from a foam pit after triggering her own trust exercise.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "workshops",
+      "algorithms",
+      "training",
+      "budgets"
+    ]
+  },
+  {
+    "id": "mgmt-narrow-parking-bay-sunroof",
+    "category": "Middle Management",
+    "headline": "Parking Optimiser Delivers Presentation Through Sunroof of Wedged Car",
+    "standfirst": "Narrower bays increased theoretical capacity and removed all practical methods of leaving a vehicle.",
+    "byline": "Gloria Kerb, Corporate Motoring Analyst",
+    "location": "BASINGSTOKE",
+    "published": "2026-07-21T08:45:00Z",
+    "body": [
+      "Estates manager Dominic Rake increased headquarters parking capacity by repainting every bay twelve centimetres narrower. His dashboard immediately gained 38 spaces, although no additional tarmac, entrances or physically plausible cars had appeared.",
+      "Staff warned that doors could not open when adjacent bays were occupied. Rake called this ‘legacy dependency on lateral access’ and volunteered his large company car for the launch photograph between two pool vehicles.",
+      "The car fitted exactly. Its doors did not. Rake climbed through the sunroof but became reluctant to abandon his presentation equipment below, so he delivered the morning briefing waist-high above the roof while Facilities moved both neighbouring cars.",
+      "The bays were restored by evening. Rake’s report still claimed 38 new spaces because reversing the paint did not reverse the recorded benefit. A mobility consultant is now studying whether future drivers can be issued narrower expectations."
+    ],
+    "pullQuote": "The capacity existed mainly inside the spreadsheet.",
+    "image": "images/mgmt-narrow-parking-bay-sunroof.webp",
+    "imageAlt": "A parking manager gives a presentation through his sunroof because the bays are too narrow.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "parking",
+      "optimisation",
+      "dashboards",
+      "consultants"
+    ]
+  },
+  {
+    "id": "mgmt-fog-machine-brainstorm",
+    "category": "Middle Management",
+    "headline": "Brainstorming Fog Machine Activates Every Sprinkler Except Manager’s Imagination",
+    "standfirst": "An immersive strategy session ended with excellent water pressure and limited strategic visibility.",
+    "byline": "Vera Nimbus, Atmospheric Meetings Correspondent",
+    "location": "MANCHESTER",
+    "published": "2026-07-21T09:00:00Z",
+    "body": [
+      "Innovation manager Celia Mews hired a theatrical fog machine to make the annual planning workshop ‘less visually constrained.’ Participants would enter uncertainty together and discover ideas without relying on familiar objects such as doors, clocks or fire sensors.",
+      "Facilities refused permission. Mews escalated until a deputy director approved the session on condition that risks were documented. She listed ‘temporary mystique’ and ‘possible damp energy,’ then placed umbrellas beside the projector as mitigation.",
+      "The fog triggered the sprinkler system within seconds. Mews opened an umbrella indoors, which caught the stream and funnelled water directly into her presentation case. Everyone evacuated safely while her laminated idea cards floated around the empty conference room.",
+      "Mews described the outcome as a live demonstration of disruption. The workshop was rescheduled in a dry room with transparent air. Her risk register now includes sprinklers, although only under the heading ‘unplanned stakeholder participation.’"
+    ],
+    "pullQuote": "The room achieved total immersion before producing a single idea.",
+    "image": "images/mgmt-fog-machine-brainstorm.webp",
+    "imageAlt": "Sprinklers soak a strategy workshop after its manager starts an indoor fog machine.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "workshops",
+      "innovation",
+      "risk registers",
+      "office safety"
+    ]
+  },
+  {
+    "id": "mgmt-agile-sprint-turnstile",
+    "category": "Middle Management",
+    "headline": "Agile Director Loses Literal Sprint to Headcount-Freeze Turnstile",
+    "standfirst": "A compulsory race across headquarters ended when its organiser’s own access was optimised away.",
+    "byline": "Percy Baton, Corporate Athletics Desk",
+    "location": "SHEFFIELD",
+    "published": "2026-07-21T09:15:00Z",
+    "body": [
+      "Delivery director Frank Sprint renamed the monthly planning cycle an ‘actual agile sprint’ and required managers to race between reception and the project room. He promised that physical urgency would remove hesitation from software estimates.",
+      "Security asked participants not to run through access gates. Sprint overruled them and linked finishing times to performance reviews. Meanwhile, his cost-cutting programme automatically deactivated badges belonging to anyone recorded as ‘non-delivery overhead,’ including his own transformation office.",
+      "At the starting whistle, Sprint surged ahead and met a locked turnstile. His foam baton sailed harmlessly into a decorative planter while the engineering team walked through another gate using valid badges. They reached the project room without changing their estimates.",
+      "Sprint cancelled the race and blamed inconsistent infrastructure velocity. His access returned after a four-level escalation. The sprint metric was retained, but future events measure how quickly managers approve the realistic schedules they previously delayed."
+    ],
+    "pullQuote": "He outran the team and arrived behind it.",
+    "image": "images/mgmt-agile-sprint-turnstile.webp",
+    "imageAlt": "An agile manager’s own access policy stops him at a turnstile during an office race.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "agile",
+      "metrics",
+      "access control",
+      "delivery"
+    ]
+  },
+  {
+    "id": "mgmt-anonymous-feedback-catchphrase",
+    "category": "Middle Management",
+    "headline": "Anonymous Feedback Bot Identifies Manager by Saying ‘Let’s Double-Click’",
+    "standfirst": "A leader’s favourite phrases defeated the expensive anonymity system before lunch.",
+    "byline": "Hester Echo, Confidential Culture Editor",
+    "location": "CAMBRIDGE",
+    "published": "2026-07-21T09:30:00Z",
+    "body": [
+      "Engagement manager Rupert Bland introduced an anonymous voice system so employees could challenge decisions without fear. To prove safety, he recorded the first submission himself, criticising an unnamed leader for excessive meetings and weak listening.",
+      "The platform disguised pitch but preserved vocabulary. Within seconds, its summary included ‘double-click,’ ‘circle back’ and ‘socialise the journey’—phrases Bland used so relentlessly that the office sweepstake identified him before the audio finished.",
+      "Worse, the bot followed his escalation rules and forwarded criticism of senior management to the subject’s line manager. Bland therefore received a formal request to investigate his own complaint, interview himself and produce a corrective action plan by Friday.",
+      "He closed the case after concluding that no witness could be considered independent. The system remains active, but employees now submit feedback using concise ordinary English, a practice management has labelled suspiciously difficult to attribute."
+    ],
+    "pullQuote": "Anonymity survived the technology but not the vocabulary.",
+    "image": "images/mgmt-anonymous-feedback-catchphrase.webp",
+    "imageAlt": "Colleagues recognise a manager’s anonymous recording from his familiar corporate phrases.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "feedback",
+      "corporate language",
+      "automation",
+      "culture"
+    ]
+  },
+  {
+    "id": "mgmt-resilience-left-shoes",
+    "category": "Middle Management",
+    "headline": "Procurement Split Creates 4,000 Left Shoes and One Right-Footed Crisis",
+    "standfirst": "A resilience manager diversified the supply chain by separating footwear into incompatible workstreams.",
+    "byline": "Myrtle Lace, Strategic Footwear Correspondent",
+    "location": "NORTHAMPTON",
+    "published": "2026-07-21T09:45:00Z",
+    "body": [
+      "Resilience manager Colin Welt decided paired safety shoes represented a dangerous single point of dependency. He divided procurement into left and right workstreams, each with separate suppliers, dashboards, steering groups and colour-coded escalation routes.",
+      "The left-foot team ordered early and exceeded target. The right-foot contract remained in consultation after Welt added twelve approval gates to reduce risk. He celebrated delivery of 4,000 left shoes as 50 percent completion achieved ahead of schedule.",
+      "For the launch photograph, Welt insisted on wearing two left shoes to demonstrate confidence. He shuffled onto the presentation platform, rotated slowly and settled unharmed into a display chair when neither foot agreed about direction.",
+      "Staff retained their existing matched footwear while the new stock filled three storerooms. Welt commissioned a consultant to explore ‘right-side acceleration.’ The consultant’s first recommendation was to purchase shoes in pairs, now scheduled for executive review next quarter."
+    ],
+    "pullQuote": "Every workstream succeeded except the one involving feet.",
+    "image": "images/mgmt-resilience-left-shoes.webp",
+    "imageAlt": "A procurement manager demonstrates two left shoes beside a warehouse full of unmatched footwear.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "procurement",
+      "resilience",
+      "consultants",
+      "supply chains"
+    ]
+  },
+  {
+    "id": "mgmt-seven-minute-meeting-lock",
+    "category": "Middle Management",
+    "headline": "Meeting-Reduction System Books Manager into 23 Consecutive Escalations",
+    "standfirst": "Seven-minute rooms cut individual meetings while multiplying the machinery needed to discuss them.",
+    "byline": "Quentin Minute, Calendar Efficiency Reporter",
+    "location": "WATFORD",
+    "published": "2026-07-21T10:00:00Z",
+    "body": [
+      "Productivity manager Sheila Clock limited every meeting room booking to seven minutes. Doors would unlock automatically at the end, lights would flash and unfinished topics would move into a mandatory escalation session with the next management tier.",
+      "Employees predicted that complex decisions might require longer. Clock replied that complexity was usually a symptom of insufficient urgency. She scheduled herself to demonstrate the system by resolving the annual budget before the first warning light.",
+      "At minute seven, the room released her with four questions unanswered. Each generated its own escalation, whose unresolved points generated more. By lunchtime, Clock had 23 linked meetings across six floors and was following a trolley carrying the same untouched spreadsheet.",
+      "The original budget was eventually approved by email in three sentences. Clock’s dashboard celebrated a 61 percent reduction in average meeting length while omitting the 900 percent increase in meetings. The seven-minute rule now awaits review during a three-day workshop."
+    ],
+    "pullQuote": "The meetings became shorter in the same way crumbs become more numerous.",
+    "image": "images/mgmt-seven-minute-meeting-lock.webp",
+    "imageAlt": "A manager moves between dozens of short meetings generated by her own scheduling policy.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "meetings",
+      "productivity",
+      "escalation",
+      "dashboards"
+    ]
+  },
+  {
+    "id": "mgmt-lean-lift-button-removal",
+    "category": "Middle Management",
+    "headline": "Lean Manager Removes ‘Redundant’ Lift Buttons and Misses His Own Town Hall",
+    "standfirst": "A ruthless interface simplification left every floor accessible through a single committee-approved destination.",
+    "byline": "Agnes Elevate, Vertical Process Correspondent",
+    "location": "BIRMINGHAM",
+    "published": "2026-07-21T10:15:00Z",
+    "body": [
+      "Continuous improvement manager Malcolm Tern counted 96 lift buttons across headquarters and declared them duplicated infrastructure. His lean initiative replaced them with one touchscreen offering a default destination selected weekly by the Floor Prioritisation Committee.",
+      "Engineers explained that people worked on different floors. Tern said individual destinations encouraged local optimisation. He approved Tuesday’s default—Level Six—because his town hall had originally been booked there before moving to the ground-floor auditorium.",
+      "On launch day, Tern entered the lift and ascended automatically. He rode down, but the system sent him back to Six before the doors opened at ground level. For twenty minutes, he delivered his speech by video while repeatedly passing between the same two points.",
+      "Facilities restored the buttons using the emergency override he had called ‘interface clutter.’ Tern’s programme reported a 99 percent reduction in choice complexity. The committee now meets weekly to decide whether employees may press things themselves."
+    ],
+    "pullQuote": "The lift became perfectly streamlined once nobody could choose where it went.",
+    "image": "images/mgmt-lean-lift-button-removal.webp",
+    "imageAlt": "A lean manager rides past his own event after removing the lift’s destination buttons.",
+    "imageCaption": "AI-generated editorial illustration of a fictional workplace mishap.",
+    "noticeLabel": "Career selection notice",
+    "notice": "This is fictional satire. Nobody was harmed, and no real person or organisation is depicted.",
+    "tags": [
+      "middle management",
+      "lean management",
+      "simplification",
+      "committees",
+      "office technology"
+    ]
+  },
+  {
+    "id": "mot-1903-paris-madrid-horse-tow",
+    "image": "images/mot-1903-paris-madrid-horse-tow.webp",
+    "imageAlt": "Early racing cars being escorted after the abandoned 1903 Paris-Madrid race",
+    "category": "Motorsport",
+    "headline": "The Race Cars That Left Bordeaux by Horse",
+    "standfirst": "The 1903 Paris-Madrid race ended so abruptly that its fastest machines were forbidden to move under their own power.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BORDEAUX, FRANCE",
+    "published": "2026-07-18T06:00:00Z",
+    "body": [
+      "The Paris-Madrid race began at Versailles on 24 May 1903. Organisers planned three stages covering 1,307 kilometres, with Bordeaux marking the end of the first 552-kilometre leg. Cars departed individually from 3:45am while enormous crowds lined public roads. Dust from the early runners badly reduced visibility for those following.",
+      "A succession of serious accidents led the French authorities to stop the event at Bordeaux. The decision also ended any prospect of continuing from the Spanish frontier. Fernand Gabriel had completed the opening stage fastest in his Mors, but the abandoned competition produced no journey to Madrid and helped end the era of major French city-to-city road races.",
+      "Officials imposed an unusually literal halt. Drivers could not move their racing cars even one metre under engine power. Police supervised their removal, with horses or ordinary touring cars towing the machines to Bordeaux station. The cars then returned towards Paris by train, turning some of the most advanced vehicles of 1903 into closely guarded, horse-drawn railway luggage."
+    ],
+    "pullQuote": "The authorities forbade the competitors from driving their cars even as far as Bordeaux railway station.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented cancellation and supervised removal of cars from the 1903 Paris-Madrid race.",
+    "sources": [
+      "https://mercedes-benz-publicarchive.com/marsClassic/en/instance/ko/Paris--Madrid.xhtml?oid=7427"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1900s",
+      "road-racing",
+      "paris-madrid"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1907-peking-paris-party-detour",
+    "image": "images/mot-1907-peking-paris-party-detour.webp",
+    "imageAlt": "Prince Scipione Borghese and companions beside their Itala during the 1907 Peking-Paris race",
+    "category": "Motorsport",
+    "headline": "The Rally Leader Who Detoured to a Party",
+    "standfirst": "Prince Scipione Borghese led the 1907 Peking-Paris contest by enough time to add an extraordinary social engagement.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "PEKING, QING CHINA",
+    "published": "2026-07-18T06:15:00Z",
+    "body": [
+      "Five cars left Peking on 10 June 1907 for an overland contest to Paris. Much of the route lacked roads, repair facilities or dependable fuel supplies. Organisers and entrants sent petrol ahead using camels and mules, while the competitors generally followed telegraph lines that offered navigation, communication and opportunities for accompanying journalists to file reports.",
+      "Prince Scipione Borghese entered a seven-litre Itala with mechanic Ettore Guizzardi and journalist Luigi Barzini. The larger car proved capable across terrain that frequently reduced progress to improvised bridge-building and human assistance. Borghese established such a commanding advantage that he diverted from Moscow to St Petersburg for a social engagement before returning to the competitive route.",
+      "The detour added roughly 2,000 kilometres to an expedition already stretching across Eurasia. It did not threaten the result. Borghese reached Paris on 10 August, 61 days after leaving Peking and approximately three weeks ahead of his nearest rival. The winning route therefore included a voluntary journey to a party that was longer than many conventional motor races."
+    ],
+    "pullQuote": "Borghese won by about three weeks despite making a lengthy detour from Moscow to St Petersburg.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Prince Scipione Borghese's documented victory and St Petersburg detour during the 1907 Peking-Paris race.",
+    "sources": [
+      "https://www.pekingtoparis2016.co.uk/history-of-the-rally/",
+      "https://www.scmp.com/article/522726/great-peking-paris-expedition"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1900s",
+      "endurance-racing",
+      "peking-paris"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1908-new-york-paris-late-winner",
+    "image": "images/mot-1908-new-york-paris-late-winner.webp",
+    "imageAlt": "The Thomas Flyer crossing rough ground during the 1908 New York-Paris race",
+    "category": "Motorsport",
+    "headline": "The Car That Arrived Late and Still Won",
+    "standfirst": "Germany's Protos reached Paris first in 1908, but penalties made the American Thomas Flyer the official victor.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "NEW YORK, UNITED STATES",
+    "published": "2026-07-18T06:30:00Z",
+    "body": [
+      "Six cars departed Times Square on 12 February 1908 for a race from New York to Paris. The ambitious route crossed the United States and initially envisaged using the frozen Bering Strait to reach Asia. That passage proved impossible, so the remaining teams crossed the Pacific by ship before continuing through Siberia and Europe.",
+      "The German Protos reached Paris on 26 July, four days before the American Thomas Flyer. Its apparent victory did not survive the stewards' calculations. Officials imposed a 15-day penalty because the Protos had used railway transport in the American West. The Thomas received a 15-day allowance for spending time attempting the abandoned Alaska route.",
+      "George Schuster brought the Thomas Flyer into Paris on 30 July after an expedition of approximately 21,933 miles. Once the adjustments were applied, the second car to appear in Paris became the official winner by a substantial corrected margin. The result remains a striking example of an endurance race being decided as much by route compliance as arrival order."
+    ],
+    "pullQuote": "The Thomas Flyer reached Paris four days after the Protos but won once the official time adjustments were applied.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented route penalties and official result of the 1908 New York-Paris automobile race.",
+    "sources": [
+      "https://www.smithsonianmag.com/history/paris-or-bust-the-great-new-york-to-paris-auto-race-of-1908-116784616/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1900s",
+      "endurance-racing",
+      "new-york-paris"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1911-indy-rear-view-mirror",
+    "image": "images/mot-1911-indy-rear-view-mirror.webp",
+    "imageAlt": "Ray Harroun driving the single-seat Marmon Wasp with its rear-view mirror",
+    "category": "Motorsport",
+    "headline": "The Mirror That Replaced an Indianapolis Mechanic",
+    "standfirst": "Ray Harroun answered objections to his single-seat Marmon by fitting a device now found on almost every road car.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T06:45:00Z",
+    "body": [
+      "The inaugural Indianapolis 500 took place on 30 May 1911. Most competing cars carried a riding mechanic who monitored instruments, helped with repairs and watched for vehicles approaching from behind. Ray Harroun's streamlined Marmon Wasp had only one seat, prompting rival teams to object that he lacked the customary second pair of eyes.",
+      "Harroun responded by mounting a mirror above the Wasp's cowling. Indianapolis Motor Speedway describes it as what is believed to have been the first rear-view mirror used on an automobile. The device provided a practical answer to the protests, although vibration on the brick surface reportedly limited the clarity that any small mirror could offer.",
+      "Harroun shared the driving with relief driver Cyrus Patschke and took the Wasp to victory. The winning car therefore combined an unusually narrow single-seat body with an innovation that later became routine on road vehicles. A dispute about race traffic had helped place the rear-view mirror at the centre of one of American motorsport's founding events."
+    ],
+    "pullQuote": "Harroun fitted a rear-view mirror because his single-seat Marmon carried no riding mechanic.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article covers Ray Harroun's documented use of a rear-view mirror in the winning car at the 1911 Indianapolis 500.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/history/first-500"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1910s",
+      "indy-500",
+      "innovation"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1912-depalma-pushes-indy-car",
+    "image": "images/mot-1912-depalma-pushes-indy-car.webp",
+    "imageAlt": "Ralph DePalma and Rupert Jeffkins pushing their disabled Mercedes at Indianapolis",
+    "category": "Motorsport",
+    "headline": "The Indianapolis Finish That Did Not Count",
+    "standfirst": "After leading almost the entire 1912 Indianapolis 500, Ralph DePalma tried to push his broken Mercedes towards the line.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T07:00:00Z",
+    "body": [
+      "Ralph DePalma dominated the second Indianapolis 500 on 30 May 1912. Driving a Mercedes with Rupert Jeffkins as his riding mechanic, he led 196 of the scheduled 200 laps. His advantage appeared decisive until a connecting rod failed with only two laps remaining, leaving the car without the power required to complete the distance.",
+      "DePalma and Jeffkins climbed out and began pushing the Mercedes along the front straight as spectators applauded. Their effort could not preserve the victory. Indianapolis rules required a competing car to travel under its own power, and crossing the nearby line would only have begun the final lap rather than completed the full 500 miles.",
+      "Joe Dawson passed the stranded Mercedes and won after leading only the closing two laps. DePalma's long spell at the front became a record of control without the result that usually accompanies it. The image of driver and mechanic pushing together endured because it captured both the scale of the lost advantage and the strict arithmetic of the unfinished race."
+    ],
+    "pullQuote": "DePalma led 196 laps, but pushing the Mercedes could neither satisfy the rules nor complete the final lap.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Ralph DePalma and Rupert Jeffkins pushing their disabled Mercedes during the documented 1912 Indianapolis 500.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/news-multimedia/news/2020/07/31/de-palma-set-standard-for-sportsmanship-after-heartbreaking-loss-in-1912",
+      "https://imsmuseum.org/fame_inductee/ralph-depalma/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1910s",
+      "indy-500",
+      "open-wheel"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1913-indy-champagne-dispute",
+    "image": "images/mot-1913-indy-champagne-dispute.webp",
+    "imageAlt": "Jules Goux in the Peugeot that won the 1913 Indianapolis 500",
+    "category": "Motorsport",
+    "headline": "The Champagne-Powered Indy Victory That May Have Been Water",
+    "standfirst": "Jules Goux unquestionably won in 1913, but the celebrated story of his mid-race champagne remains contradicted by an official investigation.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T07:15:00Z",
+    "body": [
+      "Jules Goux won the Indianapolis 500 on 30 May 1913 in a French Peugeot. He became the race's first non-American winner and finished 13 minutes 8 seconds ahead of Spencer Wishart. Contemporary reporting soon added a memorable detail: Goux and riding mechanic Emil Begin had supposedly refreshed themselves with champagne during pit stops.",
+      "The claim was serious because the American Automobile Association's rules prohibited intoxicants during competition. A later-published account of the investigation records that pit official W. L. Esterly said only water was consumed. Race referee A. F. Pardington reportedly inspected open and sealed refreshments in the Peugeot area and likewise found no alcohol.",
+      "Goux denied drinking anything except water during the race, and the investigation concluded that the allegations lacked merit. Nevertheless, the champagne version entered racing folklore and continues to appear in reputable histories. The documented oddity is therefore not simply alleged drinking, but the survival of a colourful story despite a contemporary rules inquiry reaching the opposite conclusion."
+    ],
+    "pullQuote": "Goux won by more than 13 minutes, while the official inquiry into champagne reports concluded that his pit supplied water.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article identifies the documented 1913 Indianapolis victory and the recorded AAA investigation that disputed contemporary champagne reports.",
+    "sources": [
+      "https://www.motorsportmagazine.com/archive/article/january-2002/8/bursting-the-bubbly/",
+      "https://www.indycar.com/News/2013/05/5-13-About-time-for-another-French-winner"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1910s",
+      "indy-500",
+      "motorsport-myths"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1924-indy-two-winners-one-car",
+    "image": "images/mot-1924-indy-two-winners-one-car.webp",
+    "imageAlt": "Lora Corum and Joe Boyer with the Duesenberg credited with winning the 1924 Indianapolis 500",
+    "category": "Motorsport",
+    "headline": "The Indianapolis 500 Won by Two Drivers",
+    "standfirst": "Lora Corum started the winning Duesenberg in 1924, but teammate Joe Boyer drove it to the chequered flag.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T07:30:00Z",
+    "body": [
+      "Relief driving was an accepted part of early Indianapolis competition. In the 1924 race, Lora L. Corum started Duesenberg number 15 and ran competitively during the opening half. Joe Boyer began the race in another team car, but mechanical trouble removed that machine from contention and left the faster driver without his original entry.",
+      "Team instructions brought Boyer into the pits and placed him in Corum's Duesenberg on lap 109. Boyer advanced the shared car and led it home after 500 miles. The arrangement was legal under the rules then in force, which treated a driver change as assistance to the same continuing entry rather than a replacement car.",
+      "The official Indianapolis record lists L. L. Corum and Joe Boyer together as the 1924 winners. Corum had established the car's position; Boyer completed its successful run. The result looks unusual through modern rules, but accurately reflects an era when a driver could retire one machine, climb into a teammate's car and share victory in the same afternoon."
+    ],
+    "pullQuote": "Indianapolis officially credited Lora Corum and Joe Boyer as co-winners in the same Duesenberg.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented driver change and shared official victory in the 1924 Indianapolis 500.",
+    "sources": [
+      "https://www.imscdn.com/pdfs/500/stats/indianapolis_500_race_winners.pdf",
+      "https://static1.squarespace.com/static/5b99bc00266c071ef6a5fc82/t/66c35920cb301960ac9a52d6/1724078373377/2024spring.pdf"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1920s",
+      "indy-500",
+      "open-wheel"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1927-le-mans-torchlight-bentley",
+    "image": "images/mot-1927-le-mans-torchlight-bentley.webp",
+    "imageAlt": "The damaged Bentley Old Number 7 after winning the 1927 24 Hours of Le Mans",
+    "category": "Motorsport",
+    "headline": "The Bentley That Won Le Mans by Torchlight",
+    "standfirst": "Old Number 7 survived a major pile-up, damaged steering and a night illuminated by a torch strapped to its windscreen.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:45:00Z",
+    "body": [
+      "Bentley's 1927 Le Mans campaign changed at about 9:30pm when several cars crashed at White House Corner. The two leading works 4½ Litre Bentleys were eliminated. The older three-litre number 7, shared by Sammy Davis and Dudley Benjafield, was caught in the same incident but remained capable of returning to the pits.",
+      "The surviving Bentley carried a twisted chassis, bent front axle and damaged steering. Its headlamps had also been smashed, presenting an immediate problem in a race continuing through the night. The team made the repairs available to them and strapped a torch to the windscreen, providing enough forward illumination for Davis and Benjafield to continue circulating.",
+      "Old Number 7 completed the 24 hours and won. At the subsequent celebration dinner at London's Savoy Hotel, the damaged Bentley was wheeled into the dining room as an honoured guest. The gesture suited a victory in which the machine's visibly battered condition, makeshift lamp and continued movement were as notable as the finishing order."
+    ],
+    "pullQuote": "A torch strapped to the windscreen replaced the Bentley's smashed headlamps during the night.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Bentley Old Number 7's documented damage, improvised lighting and victory at the 1927 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.bentleymotors.com/en/about-bentley/history-and-heritage/motorsport.html",
+      "https://www.bentleymotors.com/en/about-bentley/history-and-heritage/bentley-story.html"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1920s",
+      "le-mans",
+      "endurance-racing"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1928-junekhova-targa-florio-lead",
+    "image": "images/mot-1928-junekhova-targa-florio-lead.webp",
+    "imageAlt": "Eliška Junková driving her Bugatti Type 35B in the 1928 Targa Florio",
+    "category": "Motorsport",
+    "headline": "The Privateer Who Led the Targa Florio",
+    "standfirst": "Eliška Junková placed her Bugatti ahead of Europe's leading drivers before a water leak cost time in Sicily.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SICILY, ITALY",
+    "published": "2026-07-18T08:00:00Z",
+    "body": [
+      "Eliška Junková, widely known outside Czechoslovakia as Elisabeth Junek, entered the 1928 Targa Florio in a Bugatti Type 35B. The event comprised five demanding laps and roughly 335 miles on Sicily's Madonie roads. Against factory-supported stars, Junková began quickly and moved into the overall lead as the competitors entered the third circuit.",
+      "Contemporary reporting recorded that she had moved ahead of Albert Divo, one of Bugatti's leading professionals, and led the whole race on elapsed time. Giuseppe Campari later headed the order in his Alfa Romeo, while Junková remained the highest Bugatti runner for part of the contest. A leaking water pump then delayed her challenge.",
+      "Albert Divo ultimately won, with Junková finishing fifth only nine minutes behind after more than seven hours of competition. Her result was remarkable beyond any single demographic milestone: a private entrant had led experienced works drivers outright on one of the period's longest and most difficult road circuits, then remained close enough to finish among the first five."
+    ],
+    "pullQuote": "Junková led the 1928 Targa Florio outright before a water-pump leak delayed her Bugatti.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Eliška Junková's documented period in the lead and fifth-place finish at the 1928 Targa Florio.",
+    "sources": [
+      "https://newsroom.bugatti.com/en/press-releases/bugatti-type-35-the-world-s-most-successful-racing-car",
+      "https://www.motorsportmagazine.com/archive/article/may-1928/13/targa-florio/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1920s",
+      "targa-florio",
+      "road-racing"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1935-nuvolari-impossible-german-gp",
+    "image": "images/mot-1935-nuvolari-impossible-german-gp.webp",
+    "imageAlt": "Tazio Nuvolari driving an Alfa Romeo P3 at the Nürburgring in 1935",
+    "category": "Motorsport",
+    "headline": "Nuvolari's Impossible German Grand Prix",
+    "standfirst": "An older 265-horsepower Alfa Romeo defeated nine more powerful Mercedes and Auto Union machines at the Nürburgring.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "NÜRBURG, GERMANY",
+    "published": "2026-07-18T08:15:00Z",
+    "body": [
+      "The 1935 German Grand Prix took place at the Nürburgring on 28 July. Tazio Nuvolari entered an Alfa Romeo P3 run by Scuderia Ferrari. The design was already considered obsolete beside the latest German cars. Its supercharged 3,167 cc engine produced approximately 265 horsepower, leaving a substantial deficit on paper.",
+      "The home opposition consisted of five Mercedes-Benz W25s and four Auto Union Type Bs. Both groups fielded cars producing roughly 375 horsepower, backed by major factory programmes and driven by leading professionals. Nuvolari therefore faced nine newer German machines in their national Grand Prix, on a circuit where power and durability both mattered.",
+      "Nuvolari nevertheless won. The Tazio Nuvolari Museum calls the result his impossible victory and one of his most emblematic performances. Its enduring oddity lies in the visible imbalance: a single older Alfa, giving away around 110 horsepower to each principal rival, defeated two numerically dominant factory teams at the most politically prominent German race of the period."
+    ],
+    "pullQuote": "Nuvolari's 265-horsepower Alfa defeated nine German factory cars producing about 375 horsepower each.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Tazio Nuvolari's documented victory over Mercedes-Benz and Auto Union in the 1935 German Grand Prix.",
+    "sources": [
+      "https://museotazionuvolari.com/en/nuvolari-biografia.php"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1930s",
+      "grand-prix",
+      "nurburgring"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1939-belgrade-grand-prix-during-war",
+    "image": "images/mot-1939-belgrade-grand-prix-during-war.webp",
+    "imageAlt": "Grand Prix cars racing on cobbled streets around Kalemegdan fortress in 1939",
+    "category": "Motorsport",
+    "headline": "The Grand Prix Held After War Began",
+    "standfirst": "Five drivers raced around Belgrade on the morning Britain and France declared war on Germany.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BELGRADE, YUGOSLAVIA",
+    "published": "2026-07-18T08:30:00Z",
+    "body": [
+      "Belgrade staged an international automobile and motorcycle meeting on 3 September 1939, centred on a street circuit around Kalemegdan fortress. The programme honoured the approaching birthday of King Peter II. Germany had invaded Poland two days earlier, but organisers continued with an event expected to attract a substantial portion of the city's population.",
+      "Britain and France declared war on Germany that morning. Only five cars started the principal Grand Prix: two Mercedes-Benz entries, two Auto Unions and Boško Milenković's Bugatti. The field completed 50 laps on cobbled public streets, with the race lasting slightly more than 64 minutes despite the extraordinary political circumstances surrounding it.",
+      "Tazio Nuvolari won for Auto Union, 7.6 seconds ahead of Manfred von Brauchitsch's Mercedes. Milenković finished fourth, 19 laps behind. The result became Nuvolari's final career victory and Auto Union's last win of the era. The Belgrade event stands apart because top-level Grand Prix racing continued after the European war had formally begun."
+    ],
+    "pullQuote": "The Belgrade Grand Prix started on the same day Britain and France declared war on Germany.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented Belgrade Grand Prix held on 3 September 1939, two days after Germany invaded Poland.",
+    "sources": [
+      "https://belgradegrandprix.com/en/history/",
+      "https://www.motorsportmagazine.com/archive/article/february-2025/100/the-forgotten-1939-belgrade-grand-prix/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1930s",
+      "grand-prix",
+      "belgrade"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1949-chinetti-nearly-solo-le-mans",
+    "image": "images/mot-1949-chinetti-nearly-solo-le-mans.webp",
+    "imageAlt": "Luigi Chinetti beside the Ferrari 166 MM that won Le Mans in 1949",
+    "category": "Motorsport",
+    "headline": "The Man Who Drove Almost All of Le Mans",
+    "standfirst": "Luigi Chinetti spent 22 hours and 48 minutes at the wheel to secure Ferrari's first Le Mans victory.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T08:45:00Z",
+    "body": [
+      "The 1949 24 Hours of Le Mans was the first running of the race since 1939. Luigi Chinetti entered a Ferrari 166 MM with British owner Peter Mitchell-Thomson, better known as Lord Selsdon. Ferrari itself was only two years old, and Enzo Ferrari had been reluctant about committing the young marque to the endurance contest.",
+      "Selsdon went to rest during the night and drove only from 4:26am until 5:38am on Sunday. Chinetti handled every other portion of the race, spending 22 hours and 48 minutes at the wheel. He managed the small Ferrari through changing conditions while preserving enough performance to defeat the pursuing Delahaye at the finish.",
+      "The victory was Ferrari's first at Le Mans and Chinetti's third as a driver. It also made him the only person to win the race both before and after the Second World War. Although the official result correctly names two drivers, the division of labour made this famous team achievement unusually close to a solo 24-hour performance."
+    ],
+    "pullQuote": "Chinetti drove for 22 hours and 48 minutes, leaving Lord Selsdon only 72 minutes at the wheel.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article covers Luigi Chinetti's documented driving time and victory in the 1949 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.24h-lemans.com/en/news/a-flurry-of-firsts-at-the-1949-24-hours-of-le-mans-50917",
+      "https://www.24h-lemans.com/en/news/the-24-hours-of-le-mans-in-honour-of-luigi-chinetti-56928"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1940s",
+      "le-mans",
+      "endurance-racing"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1953-nascar-monkey-co-driver",
+    "image": "images/mot-1953-nascar-monkey-co-driver.webp",
+    "imageAlt": "NASCAR driver Tim Flock with rhesus monkey Jocko Flocko in racing uniform",
+    "category": "Motorsport",
+    "headline": "NASCAR's Winning Monkey Co-Driver",
+    "standfirst": "Jocko Flocko rode beside Tim Flock in eight races, won at Hickory and retired after causing an unscheduled pit stop.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "HICKORY, NORTH CAROLINA",
+    "published": "2026-07-18T09:00:00Z",
+    "body": [
+      "Tim Flock introduced a rhesus monkey named Jocko Flocko as a publicity attraction during the 1953 NASCAR Grand National season. Jocko wore a tailored racing uniform and occupied a specially designed seat inside Flock's Hudson. According to Flock's official archive, the unusual passenger accompanied him in eight points-paying races that year.",
+      "On 16 May, Flock won at Hickory with Jocko aboard. That result made the monkey the only known animal co-driver to accompany a NASCAR winner. The arrangement continued for another two weeks, despite the obvious complication of carrying an unsecured and unpredictable passenger inside a heavy stock car during genuine competition.",
+      "At Raleigh, Jocko left his seat and approached the floor trap that Flock used to inspect tyre wear. The disturbance forced Flock into the pits so the monkey could be removed. He finished third but estimated the stop had cost second place and substantial prize money. Jocko's racing duties ended immediately after that unscheduled passenger change."
+    ],
+    "pullQuote": "Jocko Flocko accompanied Tim Flock to victory at Hickory on 16 May 1953.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented races in which Tim Flock carried the rhesus monkey Jocko Flocko as a NASCAR passenger.",
+    "sources": [
+      "https://www.timflock.com/jocko.htm"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1950s",
+      "nascar",
+      "stock-car-racing"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1954-porsche-under-railway-barrier",
+    "image": "images/mot-1954-porsche-under-railway-barrier.webp",
+    "imageAlt": "Hans Herrmann and Herbert Linge ducking in a low Porsche 550 Spyder",
+    "category": "Motorsport",
+    "headline": "The Porsche That Duck-Dived a Railway Barrier",
+    "standfirst": "Hans Herrmann and Herbert Linge passed beneath a closing level-crossing gate just ahead of an approaching train.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "CHIETI, ITALY",
+    "published": "2026-07-18T09:15:00Z",
+    "body": [
+      "Hans Herrmann and Porsche mechanic Herbert Linge contested the 1954 Mille Miglia in a Porsche 550 Spyder. Their reconnaissance notes used coloured cards to communicate hazards at speed. Approaching a level crossing between Pescara and Chieti, they travelled at roughly 160 to 180 kilometres per hour when a railway barrier descended ahead of them.",
+      "Herrmann judged that the lightweight Porsche could not stop in the available distance. He also recognised that its exceptionally low body could fit beneath the barrier. Herrmann struck Linge's helmet to signal that both men should duck, then continued under the gate. A fast train passed immediately behind them, reportedly missing the car by only a few metres.",
+      "The pair continued to Brescia and finished sixth overall in 12 hours, 35 minutes and 44 seconds. They also won their class, delivering an important early Mille Miglia success for Porsche. The level-crossing episode became the defining image of their race because the 550's low profile changed a closed railway barrier from an obstruction into a narrow opening."
+    ],
+    "pullQuote": "Herrmann tapped Linge's helmet, and both men ducked as the Porsche passed beneath the lowered barrier.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Hans Herrmann and Herbert Linge's documented level-crossing escape during the 1954 Mille Miglia.",
+    "sources": [
+      "https://www.motorsportmagazine.com/archive/article/april-1998/76/hans-deck/",
+      "https://www.excellence-mag.com/issues/193/articles/hans-im-gluck"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1950s",
+      "mille-miglia",
+      "road-racing"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1958-fangio-kidnapped-before-cuban-gp",
+    "image": "images/mot-1958-fangio-kidnapped-before-cuban-gp.webp",
+    "imageAlt": "Juan Manuel Fangio in Havana before the 1958 Cuban Grand Prix",
+    "category": "Motorsport",
+    "headline": "The World Champion Kidnapped Before His Race",
+    "standfirst": "Cuban revolutionaries removed Juan Manuel Fangio from the 1958 Grand Prix to embarrass President Batista's government.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "HAVANA, CUBA",
+    "published": "2026-07-18T09:30:00Z",
+    "body": [
+      "Five-time Formula One world champion Juan Manuel Fangio travelled to Havana for the 1958 Cuban Grand Prix, a non-championship sports-car race promoted by President Fulgencio Batista's government. On 23 February, the evening before the event, armed members of the revolutionary 26th of July Movement entered the Hotel Lincoln and took Fangio away.",
+      "The operation aimed to deny the government its leading international attraction and generate publicity for the rebellion. Batista ordered the Grand Prix to proceed while police searched Havana and guarded transport routes. Fangio's captors moved him between safe houses but allowed him to follow news of the race by radio and television rather than placing him in complete isolation.",
+      "The revolutionaries released Fangio unharmed after the event, transferring him through the Argentine embassy. Fangio consequently missed a race for which he had been the principal favourite without suffering a racing injury or mechanical failure. It remains an exceptional case of a major driver's participation being prevented through a calculated political abduction conducted for international attention."
+    ],
+    "pullQuote": "Fangio followed the Cuban Grand Prix from captivity while the race continued without its leading attraction.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented abduction and release of Juan Manuel Fangio around the 1958 Cuban Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/podcast-listen-to-the-amazing-true-story-of-how-f1s-biggest-star-was.4KsckqEjLAYvlfDw3Via3Y.4KsckqEjLAYvlfDw3Via3Y",
+      "https://www.espn.com/f1/story/_/id/28999493/when-f1-legend-fangio-was-kidnapped-cuba"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1950s",
+      "cuban-grand-prix",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1965-monaco-lotus-in-harbour",
+    "image": "images/mot-1965-monaco-lotus-in-harbour.webp",
+    "imageAlt": "Paul Hawkins surfacing beside his Lotus after entering Monaco harbour in 1965",
+    "category": "Motorsport",
+    "headline": "The Formula One Car That Finished in the Harbour",
+    "standfirst": "Paul Hawkins left the Monaco circuit at the chicane and landed in the Mediterranean without serious injury.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTE CARLO, MONACO",
+    "published": "2026-07-18T09:45:00Z",
+    "body": [
+      "Paul Hawkins started the Monaco Grand Prix on 30 May 1965 in a Lotus-Climax. Monaco's street circuit ran directly beside the working harbour, with limited protection at the waterside chicane. During the race, Hawkins lost control at that section, passed through the trackside defences and sent the Lotus over the edge into the Mediterranean.",
+      "The car entered the harbour, but Hawkins surfaced and escaped without serious injury. His race ended immediately while the Grand Prix continued around the streets above. Graham Hill eventually won for BRM, completing a demanding afternoon in which his own recovery from an earlier excursion was overshadowed visually by a competitor requiring assistance from the water.",
+      "Hawkins became only the second Formula One driver known to have entered Monaco harbour during a Grand Prix, following Alberto Ascari in 1955. Both survived their respective immersions. The 1965 incident remains unusual because a conventional circuit recovery became a maritime operation, with the boundary between racing surface and harbour proving dramatically literal."
+    ],
+    "pullQuote": "Hawkins surfaced unhurt after his Lotus cleared the Monaco chicane and landed in the harbour.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes Paul Hawkins's documented plunge into Monaco harbour during the 1965 Monaco Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/the-risk-perspective-how-f1-drivers-engineers-and-strategists-tackle-the-monaco-grand-prix.2GImf5MWJqGNRgUx7ZhNh8",
+      "https://www.fia.com/sites/default/files/auto30_impospreads_v01.pdf"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1960s",
+      "formula-one",
+      "monaco-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1969-al-pease-disqualified-too-slow",
+    "image": "images/mot-1969-al-pease-disqualified-too-slow.webp",
+    "imageAlt": "Al Pease driving his Eagle-Climax at the 1969 Canadian Grand Prix",
+    "category": "Motorsport",
+    "headline": "The Formula One Driver Disqualified for Going Too Slowly",
+    "standfirst": "Al Pease remains the only World Championship driver black-flagged during a Grand Prix specifically for insufficient speed.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BOWMANVILLE, CANADA",
+    "published": "2026-07-18T10:00:00Z",
+    "body": [
+      "Al Pease entered the Canadian Grand Prix at Mosport on 20 September 1969 in a privately run Eagle-Climax. The car was already outdated and significantly slower than the leading Formula One machinery. Pease qualified 17th, approximately 11 seconds from Jacky Ickx's pole time, but still earned a place on the starting grid.",
+      "During the race, Pease repeatedly encountered faster cars while being lapped. By the time he had completed 22 laps, the leaders had covered 46. Several awkward on-track meetings drew complaints, with Matra team principal Ken Tyrrell approaching officials after Pease impeded front-running cars competing at more than twice his completed distance.",
+      "Officials displayed the black flag and disqualified Pease for driving too slowly. Ickx won the race for Brabham, while the official result recorded Pease as disqualified after 22 laps. No other driver in a Formula One World Championship Grand Prix has received the same race disqualification specifically for insufficient pace, giving an otherwise accomplished Canadian competitor a uniquely inverted record."
+    ],
+    "pullQuote": "Pease had completed 22 laps when the Canadian Grand Prix leaders had already covered 46.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Al Pease's documented disqualification for insufficient speed in the 1969 Canadian Grand Prix.",
+    "sources": [
+      "https://www.motorsportmagazine.com/archive/article/november-1969/44/the-canadian-grand-prix-2/",
+      "https://www.formula1.com/en/results/1969/races/275/canada/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1960s",
+      "formula-one",
+      "canadian-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2005-us-grand-prix-six-cars",
+    "image": "images/mot-2005-us-grand-prix-six-cars.webp",
+    "imageAlt": "Six Formula One cars line up for the unusually small 2005 United States Grand Prix field",
+    "category": "Motorsport",
+    "headline": "Fourteen Cars Excuse Themselves from the United States Grand Prix",
+    "standfirst": "A tyre crisis reduced Formula One's Indianapolis showpiece to six starters, one bewildered crowd and an unavoidable place in racing history.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "INDIANAPOLIS, UNITED STATES",
+    "published": "2026-07-18T06:00:00Z",
+    "body": [
+      "Toyota driver Ralf Schumacher suffered a Michelin tyre failure at Indianapolis during practice for the 2005 United States Grand Prix. The problem centred on the circuit's fast, banked Turn 13. Michelin concluded that its available tyres could not safely withstand a normal race distance there and advised its seven partner teams that they should not compete without an effective change to the course.",
+      "One proposed answer was a temporary chicane before Turn 13, but the parties could not agree to alter the circuit. All 20 cars therefore took the formation lap as scheduled. At its end, every Michelin-equipped entry turned into the pit lane and retired. The manoeuvre removed 14 cars at once, leaving only Ferrari, Jordan and Minardi, whose six cars all used Bridgestone tyres.",
+      "Michael Schumacher led Ferrari teammate Rubens Barrichello home after 73 laps. Jordan's Tiago Monteiro finished third, earning the only Formula One podium of his career, while Narain Karthikeyan, Christijan Albers and Patrick Friesacher completed the field. The official result records all seven Michelin teams as withdrawals on tyre-related safety grounds, preserving a race in which most entrants appeared but never took the start."
+    ],
+    "pullQuote": "All seven Michelin teams withdrew after the formation lap, leaving six Bridgestone-equipped cars to race.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented six-car 2005 Formula One United States Grand Prix at Indianapolis Motor Speedway.",
+    "sources": [
+      "https://www.formula1.com/en/results/2005/races/779/united-states/race-result",
+      "https://www.motorsport.com/f1/news/the-2005-us-gp-farce-the-full-inside-story/4809048/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2008-singapore-deliberate-crash",
+    "image": "images/mot-2008-singapore-deliberate-crash.webp",
+    "imageAlt": "Renault Formula One cars competing under the lights at the 2008 Singapore Grand Prix",
+    "category": "Motorsport",
+    "headline": "Renault Finds the Safety Car Button Hidden in Its Other Car",
+    "standfirst": "Fernando Alonso's unlikely Singapore victory became the centre of a conspiracy admitted by his own team a year later.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SINGAPORE",
+    "published": "2026-07-18T06:15:00Z",
+    "body": [
+      "Fernando Alonso started only 15th in Formula One's inaugural Singapore night race in 2008. Renault called him in for an early fuel stop, apparently leaving him poorly placed. Soon afterwards, teammate Nelson Piquet Jr crashed at Turn 17 on lap 14. The resulting Safety Car rearranged the field around the era's pit-lane rules and transformed Alonso's early stop into a decisive strategic advantage.",
+      "Alonso advanced through the disrupted order and won, while Piquet was recorded as a retirement after completing 13 laps. The crash initially looked like an ordinary error on a demanding street circuit. After Renault dropped Piquet during the following season, however, he told the FIA that senior team figures had instructed him to cause the accident at a chosen point in the race.",
+      "At a September 2009 hearing, Renault admitted that Piquet, team principal Flavio Briatore and engineering director Pat Symonds had conspired to cause a deliberate crash. The World Motor Sport Council found no evidence that Alonso or other Renault employees knew about the plan. The episode became known as Crashgate: a race-winning strategy executed by intentionally removing the team's second car."
+    ],
+    "pullQuote": "Renault admitted that team members conspired with Nelson Piquet Jr to cause a deliberate crash.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article is based on the FIA's documented investigation into Renault's conduct at the 2008 Singapore Grand Prix.",
+    "sources": [
+      "https://www.autosport.com/f1/news/the-full-verdict-from-the-fias-wmsc-4433046/4433046/",
+      "https://www.formula1.com/en/results/2008/races/839/singapore/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2009-talladega-edwards-runs-finish",
+    "image": "images/mot-2009-talladega-edwards-runs-finish.webp",
+    "imageAlt": "Carl Edwards running towards the Talladega finish after leaving his damaged NASCAR",
+    "category": "Motorsport",
+    "headline": "Carl Edwards Attempts to Finish Talladega on Foot",
+    "standfirst": "A last-lap collision gave Brad Keselowski his first Cup victory and prompted Edwards to borrow a solution from the cinema.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "TALLADEGA, UNITED STATES",
+    "published": "2026-07-18T06:30:00Z",
+    "body": [
+      "Carl Edwards led Brad Keselowski towards the finish of the 2009 Aaron's 499 at Talladega Superspeedway. Keselowski moved low on the final lap, Edwards attempted to block, and their cars made contact. Edwards' Ford became airborne and struck the catch fencing before coming to rest short of the line. Keselowski continued through to claim his first NASCAR Cup Series victory.",
+      "The win came in Keselowski's fifth Cup start and delivered an immediate upset for the small James Finch-owned team. Edwards, meanwhile, climbed from his stopped car and began jogging towards the start-finish stripe. The sight closely resembled the deliberately absurd conclusion of the film Talladega Nights, in which incapacitated drivers abandon their cars and race one another on foot.",
+      "Edwards crossed the painted line to cheers, but NASCAR scoring follows the car rather than the driver's shoes. He was officially classified 24th, one lap short of the completed distance. The spontaneous run did not alter the result, although it supplied the race with an ending almost too neatly tailored to Talladega's existing place in popular culture."
+    ],
+    "pullQuote": "Edwards ran across the finish line, but NASCAR officially classified him 24th.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented final lap of the 2009 Aaron's 499 at Talladega Superspeedway.",
+    "sources": [
+      "https://www.nascar.com/gallery/through-the-years-surprise-talladega-winners/",
+      "https://www.jayski.com/2009/04/26/upset-keselowski-wins-at-talladega/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "nascar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2011-canada-button-last-to-first",
+    "image": "images/mot-2011-canada-button-last-to-first.webp",
+    "imageAlt": "Jenson Button driving his McLaren through heavy rain at the 2011 Canadian Grand Prix",
+    "category": "Motorsport",
+    "headline": "Jenson Button Tries Every Method of Losing, Wins Anyway",
+    "standfirst": "Six pit-lane visits, a penalty, two collisions and last place proved insufficient to prevent an extraordinary Canadian Grand Prix victory.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTREAL, CANADA",
+    "published": "2026-07-18T06:45:00Z",
+    "body": [
+      "Heavy rain turned the 2011 Canadian Grand Prix into a repeatedly interrupted contest. Six Safety Car deployments punctuated the afternoon, while worsening conditions produced a red flag lasting more than two hours. Jenson Button's McLaren visited the pit lane six times, one visit serving a drive-through penalty. His race also included contact with teammate Lewis Hamilton and later with Fernando Alonso.",
+      "Those events pushed Button to the rear of the surviving field during the second half of the race. Once conditions improved and slick tyres became viable, he began recovering positions at a remarkable rate. Further interruptions compressed the field, after which Button passed Mark Webber and Michael Schumacher. With five laps remaining, only leader Sebastian Vettel stood between him and an improbable victory.",
+      "Button pressured Vettel throughout the final lap. The Red Bull driver ran wide at Turn 6, allowing the McLaren through to win. Official timing placed the race at four hours, four minutes and 39 seconds, making it Formula One's longest Grand Prix. Button had combined six pit-lane visits, a penalty, collisions and a spell at the back with victory at the final opportunity."
+    ],
+    "pullQuote": "Button won Formula One's longest race after visiting the pit lane six times.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Jenson Button's documented victory in the rain-affected 2011 Canadian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/canada-2011-torrential-rain-a-safety-car-record-and-buttons-charge-the.1ZWPateMlCFLZ8U6KQBNXj",
+      "https://www.formula1.com/en/results/2011/races/34/canada/pit-stop-summary"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2011-new-hampshire-restart-erased",
+    "image": "images/mot-2011-new-hampshire-restart-erased.webp",
+    "imageAlt": "IndyCars gathered on a wet New Hampshire oval during the disputed 2011 restart",
+    "category": "Motorsport",
+    "headline": "IndyCar Waves Green, Immediately Wishes It Had Not",
+    "standfirst": "A disputed wet-track restart produced a pile-up, an unmistakable gesture and the rare spectacle of race control reversing itself.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LOUDON, UNITED STATES",
+    "published": "2026-07-18T07:00:00Z",
+    "body": [
+      "Rain brought out a late caution during IndyCar's 2011 return to New Hampshire Motor Speedway, with Ryan Hunter-Reay leading. Drivers reported that the oval remained too wet for a safe restart. Race control nevertheless prepared the field to go green with only a few laps remaining, creating a final attempt to resume racing on a surface the competitors had already questioned.",
+      "Danica Patrick spun as the field accelerated, initiating a chain reaction involving four other lead-lap cars. Championship contender Will Power was among those caught. After leaving his damaged car, Power directed a conspicuous two-handed middle-finger gesture towards race officials. Oriol Servià had also moved ahead of Hunter-Reay during the attempted restart, adding a scoring dispute to the immediate problem of multiple stranded cars.",
+      "IndyCar competition chief Brian Barnhart acknowledged that ordering the restart had been a mistake. Officials red-flagged the event and restored the running order from before the aborted attempt, making Hunter-Reay the winner. Newman/Haas and Chip Ganassi Racing protested the result, but IndyCar later upheld it. The championship had briefly restarted a race, watched the decision fail, and then treated that restart as though it had not happened."
+    ],
+    "pullQuote": "IndyCar admitted the wet-track restart was a mistake and reverted to the preceding running order.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article is based on the documented finish of the 2011 IndyCar race at New Hampshire Motor Speedway.",
+    "sources": [
+      "https://www.autosport.com/indycar/news/will-power-slams-indycar-officials-decision-to-restart-4449768/4449768/",
+      "https://www.motorsportmagazine.com/articles/us-scene/indycar/hunter-reay-keeps-new-hampshire-win/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "indycar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2012-daytona-jet-dryer-fire",
+    "image": "images/mot-2012-daytona-jet-dryer-fire.webp",
+    "imageAlt": "Safety crews attend the jet dryer incident during the 2012 Daytona 500",
+    "category": "Motorsport",
+    "headline": "Daytona's Track-Drying Machine Sets the Track on Fire",
+    "standfirst": "Juan Pablo Montoya's mechanical failure turned a Monday-night Daytona 500 into an extended encounter with fire, detergent and social media.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "DAYTONA BEACH, UNITED STATES",
+    "published": "2026-07-18T07:15:00Z",
+    "body": [
+      "Persistent rain forced the 2012 Daytona 500 from its scheduled Sunday slot into Monday, the first postponement in the race's history. On lap 160, while the field circulated under caution, a rear trailing-arm failure affected Juan Pablo Montoya's Chevrolet as he accelerated to catch the pack. The car veered up the banking and struck a jet dryer working near the outside wall.",
+      "The jet dryer carried fuel for its turbine, and the collision produced a major fire on the racing surface. Montoya and dryer driver Duane Barnes escaped injury. Officials stopped the race for roughly two hours while crews extinguished the fire, removed the damaged vehicles and cleaned the track. Laundry detergent was among the materials used during the effort to treat the contaminated asphalt.",
+      "Brad Keselowski used the stoppage to post a photograph from inside his race car, attracting widespread attention to a form of live communication NASCAR later restricted. The circuit was eventually declared usable, and the field resumed racing late into the night. Matt Kenseth won, but the abiding image remained a race car colliding under caution with the machine intended to make racing possible."
+    ],
+    "pullQuote": "A broken rear trailing arm sent Montoya's car into a fuel-carrying jet dryer under caution.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented jet dryer collision during the postponed 2012 Daytona 500.",
+    "sources": [
+      "https://www.nascar.com/gallery/memorable-daytona-500-great-american-race-moments/",
+      "https://www.nascar.com/news-media/2013/01/07/sprint-cup-year-in-review/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "nascar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2014-bathurst-track-breaks-up",
+    "image": "images/mot-2014-bathurst-track-breaks-up.webp",
+    "imageAlt": "Supercars negotiate the repaired Griffins Bend during the 2014 Bathurst 1000",
+    "category": "Motorsport",
+    "headline": "Bathurst Pauses While Someone Repairs the Mountain",
+    "standfirst": "A failing road surface, ten Safety Cars and a last-to-first winner made the 2014 Bathurst 1000 nearly eight hours long.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BATHURST, AUSTRALIA",
+    "published": "2026-07-18T07:30:00Z",
+    "body": [
+      "Chaz Mostert and Paul Morris began the 2014 Bathurst 1000 from 26th and last after their Ford was excluded from qualifying. Their challenge grew stranger when the recently resurfaced track began breaking apart at Griffins Bend. Cars struggled over the damaged section, and officials eventually stopped the race on lap 61 so workers could repair the public road that forms part of Mount Panorama.",
+      "The suspension lasted about an hour. By the time competition resumed, the race had already featured crashes and repeated interruptions, including an earlier impact for the eventual winning car at Griffins Bend. Ten Safety Car periods stretched the event to almost eight hours, the longest running of the Bathurst 1000. Mostert nevertheless returned to contention as strategy and attrition repeatedly reshaped the leading order.",
+      "Jamie Whincup led late but had to conserve fuel. Mostert closed in and passed him at Forrest's Elbow on the final lap, then drove on to victory with Morris. The winning crew had started last, struck a wall, waited while the circuit was physically repaired and completed the decisive pass only kilometres from the finish. Whincup slipped to fifth as his fuel shortage worsened."
+    ],
+    "pullQuote": "Mostert and Morris won from last after a one-hour suspension for repairs to the track surface.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented track failure and last-to-first result of the 2014 Bathurst 1000.",
+    "sources": [
+      "https://www.supercars.com/news/mostert-wins-bathurst-on-final-lap",
+      "https://racer.com/2014/10/12/mostert-morris-win-bathurst-from-last"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "supercars"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2016-toyota-le-mans-last-lap-failure",
+    "image": "images/mot-2016-toyota-le-mans-last-lap-failure.webp",
+    "imageAlt": "The number 5 Toyota TS050 slows near the finish at the 2016 24 Hours of Le Mans",
+    "category": "Motorsport",
+    "headline": "Toyota Wins 23 Hours and 57 Minutes of Le Mans",
+    "standfirst": "The number 5 Toyota led at the end of a day-long race, stopped within sight of the line and was not even classified.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:45:00Z",
+    "body": [
+      "Toyota's number 5 TS050 Hybrid, shared by Anthony Davidson, Sébastien Buemi and Kazuki Nakajima, led the 2016 24 Hours of Le Mans as the race entered its final minutes. Nakajima was completing the last stint with Porsche's number 2 car behind. After nearly a full day of competition, Toyota appeared poised to secure the manufacturer's first overall victory at Le Mans.",
+      "With only minutes remaining, the Toyota lost power and slowed on the pit straight. Nakajima stopped near the start-finish line while the team attempted to diagnose the problem. Neel Jani passed in the number 2 Porsche 919 Hybrid, which he shared with Romain Dumas and Marc Lieb, and completed the final lap to take an victory that had seemed unavailable moments earlier.",
+      "Nakajima eventually restarted and brought the Toyota across the finish, but that did not restore even second place. Its final lap exceeded the event's six-minute maximum and the car was therefore not classified. Toyota's other entry finished second, while Audi took third. The erstwhile leader had survived almost 24 hours, lost first place at the line and then disappeared from the official classification."
+    ],
+    "pullQuote": "Toyota's number 5 restarted after losing the lead, but its slow final lap left it unclassified.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented final minutes of the 2016 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.fiawec.com/en/news/porsche-denies-toyota-at-le-mans-in-dramatic-last-lap-win/4180",
+      "https://newsroom.lemans.org/en/press/porsche-clinches-a-last-minute-victory-in-the-24-hours-of-le-mans"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "wec"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2017-baku-vettel-hamilton-safety-car",
+    "image": "images/mot-2017-baku-vettel-hamilton-safety-car.webp",
+    "imageAlt": "Sebastian Vettel draws alongside Lewis Hamilton behind the Safety Car in Baku",
+    "category": "Motorsport",
+    "headline": "Vettel Turns the Safety Car Period into a Contact Sport",
+    "standfirst": "A perceived brake test led one championship contender to drive deliberately into another while the race was neutralised.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BAKU, AZERBAIJAN",
+    "published": "2026-07-18T08:00:00Z",
+    "body": [
+      "Lewis Hamilton led Sebastian Vettel behind the Safety Car during the 2017 Azerbaijan Grand Prix. Approaching a restart, Vettel ran into the rear of Hamilton's Mercedes. Believing that Hamilton had brake-tested him, the Ferrari driver pulled alongside, gestured towards his rival and then steered across. Their wheels made deliberate contact while the field was still circulating under neutralised conditions.",
+      "Telemetry reviewed by the stewards did not support the allegation that Hamilton had brake-tested Vettel. Officials imposed a ten-second stop-go penalty on Vettel for dangerous driving. Hamilton later lost time because a loose headrest forced an additional pit stop, allowing Vettel to finish fourth, one position ahead of him. Daniel Ricciardo won an event whose championship argument continued beyond the chequered flag.",
+      "The FIA summoned Vettel to its Paris headquarters for a further review. He accepted full responsibility, apologised to Hamilton and committed to educational work across junior racing categories. The governing body then closed the matter without an additional sporting penalty. An incident that began under the Safety Car had produced intentional contact, an in-race sanction and a separate disciplinary meeting between title rivals."
+    ],
+    "pullQuote": "Vettel received a ten-second stop-go penalty for making retaliatory contact with Hamilton behind the Safety Car.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the FIA-documented Vettel-Hamilton incident at the 2017 Azerbaijan Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/baku-incident-closed-after-vettel-apology-fia.5XI64usbAIg2WyG6KaAIOm"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2018-detroit-pace-car-crash",
+    "image": "images/mot-2018-detroit-pace-car-crash.webp",
+    "imageAlt": "A damaged Chevrolet Corvette ZR1 pace car beside the wall at the 2018 Detroit Grand Prix",
+    "category": "Motorsport",
+    "headline": "Detroit Pace Car Volunteers to Crash First",
+    "standfirst": "A senior General Motors executive lost the Corvette pace car before IndyCar's second Detroit race had even started.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "DETROIT, UNITED STATES",
+    "published": "2026-07-18T08:15:00Z",
+    "body": [
+      "The field for the second 2018 Detroit IndyCar race followed a Chevrolet Corvette ZR1 through its pre-start laps at Belle Isle. Driving the pace car was Mark Reuss, then General Motors' executive vice president for global product development. IndyCar official Mark Sandy occupied the passenger seat. Before the racing cars received the green flag, Reuss lost control and struck the circuit wall.",
+      "The Corvette sustained heavy front-end damage and its airbags deployed. Reuss and Sandy climbed from the vehicle before being taken to the circuit medical centre, where both were examined and cleared. IndyCar sent out a replacement pace car while marshals removed the damaged Corvette and dealt with the scene, delaying the scheduled start by roughly half an hour.",
+      "The race eventually began and Ryan Hunter-Reay won, but its first incident belonged to a vehicle outside the competitive field. Chevrolet acknowledged the crash and cited weather and track conditions among the contributing factors. The episode inverted the pace car's entire purpose: the machine assigned to lead 22 racing cars safely to the start became the first car requiring recovery."
+    ],
+    "pullQuote": "Both occupants were cleared after the Corvette pace car crashed before the IndyCar race began.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented pace car crash before Race 2 of the 2018 Detroit Grand Prix.",
+    "sources": [
+      "https://www.autosport.com/indycar/news/chevrolet-describes-indycar-detroit-pace-car-crash-as-unfortunate-5320263/5320263/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "indycar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2018-argentina-motogp-solo-grid",
+    "image": "images/mot-2018-argentina-motogp-solo-grid.webp",
+    "imageAlt": "Jack Miller waits alone at the front of the rearranged 2018 Argentine MotoGP grid",
+    "category": "Motorsport",
+    "headline": "Jack Miller Qualifies for a Private Starting Grid",
+    "standfirst": "A drying circuit sent almost every MotoGP rider to the pits and left the pole-sitter briefly facing an empty grid.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "TERMAS DE RÍO HONDO, ARGENTINA",
+    "published": "2026-07-18T08:30:00Z",
+    "body": [
+      "The track was wet but drying as riders assembled for the 2018 Argentine MotoGP race. Pole-sitter Jack Miller had selected a bike configured for dry conditions. Every other rider initially chose wet-weather equipment, then left the grid to change bikes as the surface improved. Miller remained in his pole position while the rest of the starting field gathered at the pit-lane exit.",
+      "Starting almost everyone from pit lane would have created its own safety problem. Race direction delayed the start and rearranged the returning riders several rows behind Miller, preserving an advantage for the only competitor who had made the correct initial choice but substantially reducing its size. The resulting image showed Miller alone at the front, separated by an expanse of empty grid from every rival.",
+      "Further disorder followed when Marc Márquez stalled, restarted his motorcycle by riding against the normal direction and later received a ride-through penalty. Cal Crutchlow ultimately won, with Miller finishing fourth. MotoGP subsequently revised its grid procedures, explicitly referring to the Argentine circumstances. One rider's correct tyre decision had exposed a situation the existing starting rules handled only awkwardly."
+    ],
+    "pullQuote": "Every MotoGP rider except Jack Miller left the grid to change motorcycles as the track dried.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented starting-grid confusion at the 2018 Argentine MotoGP.",
+    "sources": [
+      "https://www.motogp.com/en/news/2018/04/08/crutchlow-on-top-as-the-title-fight-explodes-in-argentina/144227",
+      "https://www.motogp.com/de/news/2018/05/29/official-changes-to-the-grid-procedure-decided/145690"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2010s",
+      "motogp"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2021-valencia-formula-e-energy-crisis",
+    "image": "images/mot-2021-valencia-formula-e-energy-crisis.webp",
+    "imageAlt": "Formula E cars slow with depleted energy near the end of the 2021 Valencia E-Prix",
+    "category": "Motorsport",
+    "headline": "Formula E Discovers the Finish Is One Lap Farther Away",
+    "standfirst": "Repeated Safety Cars upset the field's calculations and turned Valencia's final lap into a mass exercise in energy shortage.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "VALENCIA, SPAIN",
+    "published": "2026-07-18T08:45:00Z",
+    "body": [
+      "Formula E's first race at Valencia's permanent Ricardo Tormo circuit took place in wet conditions in April 2021. Incidents brought the Safety Car out five times. Under the regulations, energy allowances were reduced to reflect time spent at slower speed. Teams attempted to calculate what remained while also accounting for the timed race format, which required the leader to complete an additional lap after time expired.",
+      "The final Safety Car period left the race running one lap longer than many teams had expected. Long-time leader António Félix da Costa and much of the pack had insufficient usable energy to complete that distance at racing speed. Cars slowed dramatically during the closing tour, while drivers who had preserved a larger contingency moved through an order that changed almost continuously.",
+      "Nyck de Vries passed da Costa and won for Mercedes, followed by Nico Müller and Stoffel Vandoorne. Only 12 drivers were classified. Formula E's official report attributed the extraordinary finish to Safety Car interruptions, the extra lap and differing conservation choices. The electric championship had produced a final straight on which reaching the flag with usable power mattered more than conventional overtaking speed."
+    ],
+    "pullQuote": "Only 12 drivers were classified after the extended race distance exhausted much of the field's usable energy.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented energy-management finish of the first 2021 Valencia E-Prix.",
+    "sources": [
+      "https://www.fiaformulae.com/en/news/4446/mercedes-eqs-nyck-de-vries-wins-crazy-dhl-valencia-e-prix-round-5"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-e"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2021-belgian-gp-no-racing-laps",
+    "image": "images/mot-2021-belgian-gp-no-racing-laps.webp",
+    "imageAlt": "Formula One cars follow the Safety Car through heavy spray at Spa in 2021",
+    "category": "Motorsport",
+    "headline": "Belgian Grand Prix Completes a Race Without Going Racing",
+    "standfirst": "Three official laps behind the Safety Car were enough to produce a winner, a podium and half points at rain-soaked Spa.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPA-FRANCORCHAMPS, BELGIUM",
+    "published": "2026-07-18T09:00:00Z",
+    "body": [
+      "Heavy rain and poor visibility delayed the 2021 Belgian Grand Prix at Spa-Francorchamps. After an initial wait, the field completed formation laps behind the Safety Car before returning to the pit lane under a red flag. Rain continued while officials worked within the event's regulatory time limits and considered whether conditions might improve enough for competitive running.",
+      "More than three hours after the scheduled start, the cars emerged again behind the Safety Car. Three laps appeared on the official count before another red flag ended the attempt. No green-flag racing took place. Because the rules then awarded half points once more than two laps had been completed, the brief controlled procession was sufficient to create a classified Grand Prix result.",
+      "Pole-sitter Max Verstappen was declared the winner. George Russell retained second place from qualifying and collected his first Formula One podium, while Lewis Hamilton finished third. Most of the order simply reproduced the grid. Formula One had staged its shortest Grand Prix, awarding trophies and championship points after a race in which overtaking under competitive conditions had never been possible."
+    ],
+    "pullQuote": "The 2021 Belgian Grand Prix awarded half points despite completing no laps under green-flag conditions.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the officially classified, rain-shortened 2021 Belgian Grand Prix at Spa-Francorchamps.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/verstappen-takes-victory-in-severely-shortened-rain-affected-belgian-gp-as.4AqGhiKQfFaqr7KZjyDjPZ.4AqGhiKQfFaqr7KZjyDjPZ"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2021-hungary-hamilton-solo-start",
+    "image": "images/mot-2021-hungary-hamilton-solo-start.webp",
+    "imageAlt": "Lewis Hamilton waits alone on the grid for the 2021 Hungarian Grand Prix restart",
+    "category": "Motorsport",
+    "headline": "Lewis Hamilton Defeats the Entire Grid by Being the Entire Grid",
+    "standfirst": "Fourteen rivals chose the pit lane as Hungary dried, leaving one Mercedes to perform Formula One's starting ritual alone.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "BUDAPEST, HUNGARY",
+    "published": "2026-07-18T09:15:00Z",
+    "body": [
+      "A first-lap collision eliminated several cars and brought out a red flag during the wet 2021 Hungarian Grand Prix. When the remaining field left the pit lane for the restart formation lap, every car wore intermediate tyres. The circuit dried rapidly during that lap, making slicks the better choice before the drivers had returned to their designated grid positions.",
+      "Fourteen drivers entered the pit lane to change tyres. Mercedes kept polesitter Lewis Hamilton on intermediates, so he proceeded alone to the grid. The five starting lights illuminated and went out for a single stationary car, while every rival waited at the pit exit. Hamilton completed the formal standing start without opposition, then pitted at the end of the lap and rejoined at the rear.",
+      "Esteban Ocon inherited the lead and went on to take his first Formula One victory. Hamilton recovered through the field, but Mercedes' decision had cost him the advantage created by his solitary restart. Race officials later explained that the normal start procedure remained valid even with one car present. The rules had anticipated many contingencies, including, indirectly, a Grand Prix grid reduced to one."
+    ],
+    "pullQuote": "Hamilton took the standing restart alone while all 14 rivals waited at the pit-lane exit.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented solo restart during the 2021 Hungarian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/race-director-michael-masi-explains-how-hungary-restart-would-have-worked-if.7iCcbfEIN1BfFej2P2BTyh",
+      "https://www.formula1.com/en/latest/article/ocon-beats-vettel-to-claim-shock-maiden-victory-in-action-packed-hungarian.4Ewxz6olluqX7Y4E1U8NOq.4Ewxz6olluqX7Y4E1U8NOq"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2022-chastain-martinsville-wall-ride",
+    "image": "images/mot-2022-chastain-martinsville-wall-ride.webp",
+    "imageAlt": "Ross Chastain's NASCAR rides the outside wall on the final lap at Martinsville",
+    "category": "Motorsport",
+    "headline": "Ross Chastain Selects the Video-Game Line",
+    "standfirst": "A full-throttle wall ride carried Chastain past five cars, set a track speed record and secured a championship-final place.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MARTINSVILLE, UNITED STATES",
+    "published": "2026-07-18T09:30:00Z",
+    "body": [
+      "Ross Chastain entered the final lap of NASCAR's 2022 Martinsville playoff race needing additional positions to overtake Denny Hamlin in the championship standings. Running tenth, he approached the final two corners with conventional passing opportunities almost exhausted. Chastain selected top gear, kept the throttle open and deliberately aimed his Chevrolet against the outside SAFER barrier.",
+      "The wall supported the car while its right side scraped through Turns 3 and 4. Chastain passed five cars and crossed the line fifth, recording a 100.483 mph lap that NASCAR identified as the fastest Cup Series lap in Martinsville Speedway history. The recovered positions changed him from one point below Hamlin to four points ahead, securing the final place in the Championship 4.",
+      "Chastain said the idea recalled a manoeuvre his brother had used against him in a 2005 NASCAR game on the Nintendo GameCube. He had not practised it in race preparation and did not know whether the real physics would cooperate. The move worked once, became known as the Hail Melon and later prompted NASCAR to prohibit similar wall-riding attempts."
+    ],
+    "pullQuote": "Chastain moved from tenth to fifth by riding the wall and secured the final Championship 4 berth.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Ross Chastain's documented final-lap wall ride at Martinsville in October 2022.",
+    "sources": [
+      "https://www.nascar.com/news-media/2022/10/30/nascar-cup-series-2022-playoffs-ross-chastain-martinsville/",
+      "https://www.nascar.com/news-media/2023/03/07/chastain-helps-remove-martinsville-wall-commemorates-hail-melon/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "nascar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2023-las-vegas-drain-cover-penalty",
+    "image": "images/mot-2023-las-vegas-drain-cover-penalty.webp",
+    "imageAlt": "Carlos Sainz's Ferrari passes over the Las Vegas Strip circuit before the 2023 drain-cover stoppage",
+    "category": "Motorsport",
+    "headline": "Las Vegas Road Breaks Ferrari, Ferrari Receives Penalty",
+    "standfirst": "A failed water-valve cover destroyed legal components in Carlos Sainz's car, leaving the blameless driver ten grid places poorer.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LAS VEGAS, UNITED STATES",
+    "published": "2026-07-18T09:45:00Z",
+    "body": [
+      "The first practice session for Formula One's new Las Vegas Grand Prix lasted only minutes. Carlos Sainz passed over a water-valve cover on the Strip, where the surrounding concrete frame failed. The impact damaged his Ferrari and brought it to a halt. Race control stopped the session, and the FIA cancelled the remaining running while every comparable cover around the street circuit was inspected.",
+      "Ferrari had to replace the survival cell, energy store, control electronics and other affected components. The stewards accepted that the incident resulted from highly unusual external circumstances and that Ferrari had done nothing wrong. They nevertheless concluded that the regulations gave them no authority to waive the prescribed ten-place grid penalty for fitting components beyond the permitted allocation.",
+      "Sainz qualified second but started 12th after the sanction. The delayed second practice session then ran without spectators after organisers closed fan areas during the extended overnight schedule. What began as a failure in public-road infrastructure therefore damaged a car, curtailed one session, displaced another and penalised the driver whose principal involvement had been arriving at the defective cover first."
+    ],
+    "pullQuote": "Stewards said Ferrari was not at fault but imposed the component-related ten-place grid penalty.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented water-valve-cover incident during practice for the 2023 Las Vegas Grand Prix.",
+    "sources": [
+      "https://www.fia.com/news/f1-first-practice-session-las-vegas-stopped-for-circuit-repairs-following-sainz-incident"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2020s",
+      "formula-one"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1982-monaco-nobody-wins",
+    "image": "images/mot-1982-monaco-nobody-wins.webp",
+    "imageAlt": "Riccardo Patrese's Brabham leading through the streets of Monaco during the chaotic 1982 finish",
+    "category": "Motorsport",
+    "headline": "The Monaco Grand Prix Nobody Seemed Able to Win",
+    "standfirst": "Five late changes of fortune left Riccardo Patrese unsure that he had won the 1982 Monaco Grand Prix.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTE CARLO, MONACO",
+    "published": "2026-07-18T09:00:00Z",
+    "body": [
+      "Alain Prost led the Monaco Grand Prix on 23 May 1982 until rain began falling near the end. On lap 74 his Renault hit a barrier on the harbour front, handing the lead to Riccardo Patrese. The Brabham driver then spun at the Loews hairpin and stalled, apparently ending his own chance of victory.",
+      "Didier Pironi inherited first place but stopped in the tunnel on the final lap, short of fuel and with an electrical problem. Andrea de Cesaris also ran out of fuel before he could pass the stranded Ferrari, while Derek Daly's damaged Williams came to a halt. Patrese, meanwhile, had restarted by rolling downhill and bump-starting his engine.",
+      "Patrese completed the final lap and took the chequered flag, although the confusion was so complete that he initially thought he had lost. Pironi and de Cesaris were classified second and third from the distance they had covered. The sequence turned a straightforward lead into a finish remembered as the race that nobody appeared willing, or mechanically able, to win."
+    ],
+    "pullQuote": "Patrese spun out of the lead, restarted downhill and still returned to win.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented sequence of late retirements and Riccardo Patrese's victory at the 1982 Monaco Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/were-streaming-the-1982-monaco-grand-prix-heres-why-you-should-watch.2WIrjG5qpc0BoK0ERjab6v.2WIrjG5qpc0BoK0ERjab6v",
+      "https://www.formula1.com/en/results/1982/races/442/monaco/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "formula-one",
+      "monaco-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1991-adelaide-fourteen-lap-grand-prix",
+    "image": "images/mot-1991-adelaide-fourteen-lap-grand-prix.webp",
+    "imageAlt": "Formula One cars struggling through standing water at the 1991 Australian Grand Prix in Adelaide",
+    "category": "Motorsport",
+    "headline": "The Grand Prix Decided After Fourteen Laps",
+    "standfirst": "Adelaide's torrential 1991 race lasted sixteen laps, but the official result was wound back to lap fourteen.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "ADELAIDE, AUSTRALIA",
+    "published": "2026-07-18T09:15:00Z",
+    "body": [
+      "Heavy rain engulfed Adelaide for the Australian Grand Prix on 3 November 1991. Ayrton Senna started from pole and led, but visibility and standing water made the street circuit treacherous. Cars spun or crashed as the downpour worsened, while drivers increasingly signalled that the conditions had become unsafe for racing.",
+      "Officials stopped the event during lap 17. Formula One's countback rule placed the result at the end of lap 14, erasing positions gained during the next two completed tours. Senna was declared the winner ahead of Nigel Mansell and Gerhard Berger, even though Mansell had crashed and required hospital attention before the stoppage.",
+      "The classified distance was 52.92 kilometres and Senna's official winning time was 24 minutes 34.899 seconds. Because less than 75 percent of the scheduled distance had been completed, half points were awarded. The race became the shortest Formula One world championship Grand Prix by distance, a record it retained until the rain-curtailed 2021 Belgian Grand Prix."
+    ],
+    "pullQuote": "The cars reached lap sixteen, but the official result returned to the end of lap fourteen.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented stoppage, countback and half-points result of the 1991 Australian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/in-numbers-the-australian-grand-prix.5ESNHWNGx55OK2zceW8np7",
+      "https://www.formula1.com/en/results/1991/races/574/australia/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "australian-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1996-panis-monaco-three-finishers",
+    "image": "images/mot-1996-panis-monaco-three-finishers.webp",
+    "imageAlt": "Olivier Panis driving the Ligier through wet Monaco streets during the 1996 Grand Prix",
+    "category": "Motorsport",
+    "headline": "The Monaco Grand Prix With Three Cars Still Running",
+    "standfirst": "Olivier Panis started fourteenth and survived a wet afternoon that eliminated almost the entire field.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MONTE CARLO, MONACO",
+    "published": "2026-07-18T09:30:00Z",
+    "body": [
+      "Rain arrived before the Monaco Grand Prix on 19 May 1996, producing a race of changing grip and repeated retirements. Olivier Panis began only 14th in his Ligier-Mugen-Honda. A well-timed switch from wet tyres to slicks helped him advance as faster qualifiers crashed, collided or suffered mechanical failures.",
+      "Panis overtook several rivals on the narrow street circuit and took the lead after Jean Alesi's Benetton retired with suspension trouble. He then resisted David Coulthard's McLaren to claim his first Formula One victory. It was also Ligier's first win since 1981 and the final Grand Prix victory in the French team's history.",
+      "Only Panis, Coulthard and Johnny Herbert were still running when the two-hour limit ended the race after 75 of the scheduled 78 laps. Seven drivers appeared in the classification because four retired cars had covered enough distance to be counted. The winner had therefore climbed from the seventh row through a contest with fewer active finishers than podium positions usually require."
+    ],
+    "pullQuote": "Only Panis, Coulthard and Herbert remained in motion when the race ended.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Olivier Panis's documented victory and the unusually small number of running finishers at the 1996 Monaco Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/olivier-panis-on-that-monaco-grand-prix-victory.3ssD41qZZk0IiGkCdA6j0Z",
+      "https://www.formula1.com/en/results/1996/races/635/monaco/race-result"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "monaco-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1997-jerez-identical-qualifying-times",
+    "image": "images/mot-1997-jerez-identical-qualifying-times.webp",
+    "imageAlt": "Three Formula One cars on the Jerez circuit during the tightly matched 1997 European Grand Prix weekend",
+    "category": "Motorsport",
+    "headline": "Three Drivers Set Exactly the Same Pole Time",
+    "standfirst": "Formula One's 1997 title decider produced a qualifying tie to the thousandth of a second among three leading drivers.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "JEREZ DE LA FRONTERA, SPAIN",
+    "published": "2026-07-18T09:45:00Z",
+    "body": [
+      "Jacques Villeneuve arrived at Jerez for the 1997 European Grand Prix one championship point behind Michael Schumacher. During qualifying on 25 October, the Williams driver recorded a lap of 1 minute 21.072 seconds. It looked like the benchmark for the title-deciding race, but the timing screens soon produced an unprecedented repetition.",
+      "Schumacher matched Villeneuve's time exactly, down to the thousandth of a second. Heinz-Harald Frentzen then completed another lap in precisely 1:21.072. The regulations broke the three-way tie by the order in which the times were set, giving Villeneuve pole, Schumacher second and Frentzen third. Damon Hill missed joining them by only 0.058 seconds.",
+      "The numerical dead heat became the prelude to an equally dramatic race. Schumacher led before colliding with Villeneuve during their championship fight and retiring. Villeneuve continued to finish third and secure the title. Yet before that confrontation, qualifying had already created its own rarity: three different cars, from two teams, occupying the first three grid positions with an identical recorded time."
+    ],
+    "pullQuote": "Villeneuve, Schumacher and Frentzen each stopped the clock at 1:21.072.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented three-way tie for the fastest qualifying time at the 1997 European Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/revealed-the-classic-f1-race-you-voted-to-watch-this-wednesday.4v787ZuyIcxz4cWQ6EbACV",
+      "https://www.formula1.com/en/latest/article/how-i-beat-schumacher-to-the-title-at-jerez-97-by-jacques-villeneuve.2cerUxDqRaYUsoQi2KGSQW"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "european-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1998-schumacher-wins-in-pit-lane",
+    "image": "images/mot-1998-schumacher-wins-in-pit-lane.webp",
+    "imageAlt": "Michael Schumacher's Ferrari entering the Silverstone pit lane at the end of the 1998 British Grand Prix",
+    "category": "Motorsport",
+    "headline": "The Grand Prix Won on the Way Into the Pits",
+    "standfirst": "Michael Schumacher crossed Silverstone's finish line in the pit lane while arriving to serve a late penalty.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SILVERSTONE, ENGLAND",
+    "published": "2026-07-18T10:00:00Z",
+    "body": [
+      "Rain shaped the British Grand Prix at Silverstone on 12 July 1998. Mika Hakkinen built a large lead for McLaren, but an off-track moment and a safety-car period erased his advantage. Michael Schumacher passed him after the restart and moved his Ferrari into first place with the closing laps approaching.",
+      "Officials then issued Schumacher a stop-and-go penalty for passing Alexander Wurz while the safety car was deployed. The notice arrived late and its wording caused a dispute between Ferrari and the stewards. Ferrari kept Schumacher racing long enough to create a lead over Hakkinen, then called him into the pit lane on the final lap.",
+      "Silverstone's start-finish line crossed the pit lane before Ferrari's garage. Schumacher therefore completed the race and officially won while driving towards the box where he was supposed to serve the penalty. The stewards later added ten seconds to his race time, but his advantage was about 22 seconds, so the result remained unchanged: victory had been sealed before the car stopped."
+    ],
+    "pullQuote": "Schumacher crossed the finish line inside the pit lane before reaching Ferrari's garage.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Michael Schumacher's documented pit-lane finish and victory at the 1998 British Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/moments-in-time-the-british-grand-prix.75fZYfjfQvbAofkfSAOvLe",
+      "https://www.formula1.com/en/latest/article/from-wet-weather-mastery-to-last-lap-shocks-10-of-the-most-memorable-wins-at.3CKqgTx7juBp8nglWBgffT.3CKqgTx7juBp8nglWBgffT"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "formula-one",
+      "british-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2003-brazil-winner-trophy-exchange",
+    "image": "images/mot-2003-brazil-winner-trophy-exchange.webp",
+    "imageAlt": "Giancarlo Fisichella and Kimi Raikkonen exchanging the Brazilian Grand Prix trophy at Imola in 2003",
+    "category": "Motorsport",
+    "headline": "The Winner Who Received His Trophy Three Weeks Late",
+    "standfirst": "A timing review reversed the 2003 Brazilian Grand Prix result after Kimi Raikkonen had already left with the trophy.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SAO PAULO, BRAZIL",
+    "published": "2026-07-18T10:15:00Z",
+    "body": [
+      "The Brazilian Grand Prix on 6 April 2003 unfolded in heavy rain and repeated accidents. Mark Webber crashed his Jaguar on the approach to the final turn, scattering debris across the circuit. Fernando Alonso then struck the wreckage and suffered another major impact, prompting officials to stop the race rather than attempt a restart.",
+      "Giancarlo Fisichella had taken the lead shortly before the red flag, but the initial countback placed Kimi Raikkonen first and the Jordan driver second. Raikkonen received the winner's trophy. Fisichella's car, already suffering an engine problem, caught fire in parc ferme and provided an appropriately chaotic final image to the abandoned afternoon.",
+      "A later examination of the timing evidence showed Fisichella had begun lap 56 before the stoppage. That meant the required two-lap countback used the order at the end of lap 54, when he led, rather than lap 53. Officials revised the result, giving Fisichella his first Formula One victory. Raikkonen handed over the trophy at Imola about three weeks later."
+    ],
+    "pullQuote": "The timing review moved the countback forward one lap and transferred the victory to Fisichella.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented review and delayed trophy handover that followed the 2003 Brazilian Grand Prix.",
+    "sources": [
+      "https://www.formula1.com/en/latest/article/moments-in-time-the-brazilian-grand-prix.5dr3Egu9lleFLsheSjlkQ0.5dr3Egu9lleFLsheSjlkQ0",
+      "https://www.formula1.com/en/latest/article/from-ayrton-sennas-suspended-ban-to-sebastian-vettels-victory-antics-8-crazy-post-race.2Pssou2f1Rh9Iv99fpfcNR"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "formula-one",
+      "brazilian-grand-prix"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1981-indy-winner-restored-138-days",
+    "image": "images/mot-1981-indy-winner-restored-138-days.webp",
+    "imageAlt": "Bobby Unser and Mario Andretti beside their Indianapolis cars during the disputed 1981 result",
+    "category": "Motorsport",
+    "headline": "The Indianapolis Winner Restored After 138 Days",
+    "standfirst": "Bobby Unser crossed the line first in 1981, lost the race the next morning and recovered it in October.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T10:30:00Z",
+    "body": [
+      "Bobby Unser crossed the finish line first in the Indianapolis 500 on 24 May 1981, with Mario Andretti second. The next morning, officials penalised Unser one lap for passing cars while leaving the pits during a caution period. The decision moved Andretti to the top of the results and appeared to give him a second Indianapolis victory.",
+      "Roger Penske's team protested, arguing that Unser's manoeuvres occurred as the field reorganised through pit stops and that the punishment was excessive. The dispute moved through a lengthy appeal and arbitration process. During that interval, the race existed with a declared winner who had not been the first driver to take the chequered flag.",
+      "On 8 October, 138 days after the race, the review panel rescinded the lap penalty and restored Unser to first place, while retaining a monetary fine. The ruling gave him his third Indianapolis 500 victory. Andretti returned to second, completing a result whose final form took more than four months to travel from the speedway to the record book."
+    ],
+    "pullQuote": "Unser won in May, lost the result the next morning and officially recovered it in October.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented penalty, appeal and restoration of Bobby Unser's 1981 Indianapolis 500 victory.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/news-multimedia/news/2020/05/27/indy-500-race-recaps-1980s"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "indycar",
+      "indy-500"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1987-indy-hotel-lobby-car-wins",
+    "image": "images/mot-1987-indy-hotel-lobby-car-wins.webp",
+    "imageAlt": "Al Unser driving the year-old March that had been removed from a hotel lobby for the 1987 Indianapolis 500",
+    "category": "Motorsport",
+    "headline": "The Indianapolis Winner Retrieved From a Hotel Lobby",
+    "standfirst": "A year-old display car was taken from a Pennsylvania hotel and prepared in time to win the 1987 Indianapolis 500.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T10:45:00Z",
+    "body": [
+      "Team Penske arrived at Indianapolis in 1987 with its new PC-16, but the car struggled for speed and handling. The team abandoned it for older March chassis. When Danny Ongais was injured in a practice crash, Roger Penske recruited Al Unser, who had come to the speedway without a race drive and expected only to advise his son.",
+      "Penske needed another car. A 1986 March-Cosworth owned by the team was serving as a showpiece in the lobby of a Sheraton hotel in Reading, Pennsylvania. It was removed, transported to Indianapolis and rebuilt for competition. Unser qualified the year-old machine 20th in the 33-car field with little preparation time remaining.",
+      "Unser drove a measured race while faster contenders encountered trouble. Mario Andretti dominated before an ignition failure, and Roberto Guerrero lost time after stalling in the pits. Unser took the lead and won by nearly five seconds. His fourth Indianapolis 500 victory tied A. J. Foyt's record, delivered by a car that had begun the month as hotel decoration."
+    ],
+    "pullQuote": "The March went from a Sheraton lobby to Indianapolis victory in the same month.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article describes the documented retrieval and victory of Al Unser's hotel-display car at the 1987 Indianapolis 500.",
+    "sources": [
+      "https://www.teampenske.com/news/index.cfm/c/666/53009/Throwback_Thursday_-_1987_Indianapolis_500",
+      "https://www.indianapolismotorspeedway.com/events/indy500/history/historical-stats/race-stats/race-results/1987"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "indycar",
+      "indy-500"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1995-penske-fails-indy-qualifying",
+    "image": "images/mot-1995-penske-fails-indy-qualifying.webp",
+    "imageAlt": "Team Penske mechanics pushing an unqualified Indianapolis car during the troubled 1995 time trials",
+    "category": "Motorsport",
+    "headline": "The Defending Indianapolis Champions Missed the Race",
+    "standfirst": "One year after dominating Indianapolis, Team Penske could not qualify either of its former winners for the 1995 field.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SPEEDWAY, INDIANA",
+    "published": "2026-07-18T11:00:00Z",
+    "body": [
+      "Team Penske had won the 1993 Indianapolis 500 with Emerson Fittipaldi and the 1994 race with Al Unser Jr. The latter victory featured the specially developed Mercedes-Benz pushrod engine and overwhelming speed. Both former winners returned for 1995, when Penske was already the event's most successful entrant and expected to challenge at the front again.",
+      "Instead, the new Penske PC-24 combination lacked the pace required to qualify. The team tried older machinery and borrowed alternative chassis as practice and time trials continued. Fittipaldi briefly put a borrowed Lola into the 33-car field on the final day, but Stefan Johansson later completed a faster run and bumped him out.",
+      "Unser made further attempts but could not produce a qualifying average fast enough to enter the race. When time expired, neither Penske driver had a starting place. The reigning winner and his immediate predecessor therefore watched the 1995 Indianapolis 500 from outside the field, giving the team its first complete failure to qualify at Indianapolis since 1968."
+    ],
+    "pullQuote": "The drivers who won the previous two Indianapolis 500s both failed to make the 1995 field.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Team Penske's documented failure to qualify Emerson Fittipaldi and Al Unser Jr. for the 1995 Indianapolis 500.",
+    "sources": [
+      "https://www.indianapolismotorspeedway.com/events/indy500/history/1995-indianapolis-500-review",
+      "https://www.teampenske.com/about/index.cfm?cid=51992"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "indycar",
+      "indy-500"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1986-richmond-leaders-wreck-petty-wins",
+    "image": "images/mot-1986-richmond-leaders-wreck-petty-wins.webp",
+    "imageAlt": "Kyle Petty's stock car passes the damaged leaders late in the 1986 Richmond race",
+    "category": "Motorsport",
+    "headline": "Richmond's Leaders Settle the Race by Eliminating Each Other",
+    "standfirst": "Dale Earnhardt and Darrell Waltrip reached the final two laps first, then left Kyle Petty an unexpected route to his maiden Cup victory.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "RICHMOND, UNITED STATES",
+    "published": "2026-07-18T06:00:00Z",
+    "body": [
+      "Dale Earnhardt led Darrell Waltrip into the closing laps of the 1986 Miller High Life 400 at Richmond Fairgrounds Raceway. Waltrip had the faster car late in the contest and repeatedly challenged for the lead. With two laps remaining, the pair made contact entering Turn 3 while the rest of the field followed at a respectful distance.",
+      "Both leading cars slid into the wall and collected other contenders in the ensuing confusion. Earnhardt and Waltrip had been fighting for victory; neither reached the chequered flag in position to claim it. Kyle Petty, who had been running behind the dispute, found the track opening ahead and drove through to inherit first place.",
+      "Petty held the lead for the final circulation and took his first NASCAR Cup Series victory. The finish supplied a neat lesson in race arithmetic: two established champions contested one piece of road, while a 25-year-old without a Cup win collected the result. NASCAR's own archive records the collision as the event that delivered Petty's breakthrough."
+    ],
+    "pullQuote": "Kyle Petty inherited the lead with two laps remaining and converted it into his first Cup victory.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the documented finish of the 1986 Miller High Life 400 at Richmond Fairgrounds Raceway.",
+    "sources": [
+      "https://www.nascar.com/gallery/drivers-with-first-win-at-richmond-raceway/",
+      "https://www.nascar.com/videos/franchise/from-the-vault/earnhardt-waltrip-collide-richmond-1986/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "nascar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1992-kulwicki-title-by-one-lap",
+    "image": "images/mot-1992-kulwicki-title-by-one-lap.webp",
+    "imageAlt": "Alan Kulwicki leads Bill Elliott during the 1992 NASCAR season finale at Atlanta",
+    "category": "Motorsport",
+    "headline": "Alan Kulwicki Wins a Championship by Leading One Additional Lap",
+    "standfirst": "Bill Elliott won the Atlanta finale, but Kulwicki's insistence on staying ahead for lap 103 secured the bonus that decided the season.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "HAMPTON, UNITED STATES",
+    "published": "2026-07-18T06:15:00Z",
+    "body": [
+      "Six drivers arrived at Atlanta Motor Speedway for the 1992 Hooters 500 with a mathematical chance of winning the NASCAR Cup title. Davey Allison began the race 30 points ahead of Alan Kulwicki, with Bill Elliott a further 10 points back. Allison's challenge ended in a crash on lap 254, leaving Elliott and Kulwicki to settle the championship between them.",
+      "Elliott was positioned to win the race, so Kulwicki's route to the title depended on finishing second and collecting the five-point bonus for leading the most laps. Kulwicki stayed on track during the final pit-stop sequence long enough to secure that distinction. He led 103 laps in total; Elliott led 102.",
+      "Elliott took the chequered flag and Kulwicki followed in second. The extra bonus carried the independent owner-driver to the championship by 10 points, then the closest title margin in NASCAR history. One lap did not decide the entire scoring table by itself, but without that single-lap advantage Elliott's race victory would also have delivered the season."
+    ],
+    "pullQuote": "Kulwicki led 103 laps to Elliott's 102 and won the championship by 10 points.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Alan Kulwicki's documented title victory in the 1992 Hooters 500 at Atlanta.",
+    "sources": [
+      "https://www.nascar.com/news-media/2023/03/17/best-race-ever-making-the-case-for-the-1992-hooters-500-at-atlanta/",
+      "https://www.nascar.com/gallery/nascar-in-1992-key-story-lines-moments-of-the-season/?mode=list"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "nascar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-2002-daytona-marlin-repairs-under-red",
+    "image": "images/mot-2002-daytona-marlin-repairs-under-red.webp",
+    "imageAlt": "Sterling Marlin stands beside his stopped stock car during a red flag at the 2002 Daytona 500",
+    "category": "Motorsport",
+    "headline": "Daytona Leader Performs Unauthorized Kerbside Bodywork",
+    "standfirst": "Sterling Marlin left his car during a red flag to pull its damaged fender clear, accomplishing a useful repair and an immediate penalty.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "DAYTONA BEACH, UNITED STATES",
+    "published": "2026-07-18T06:30:00Z",
+    "body": [
+      "Sterling Marlin led the 2002 Daytona 500 when contact with Jeff Gordon helped trigger a late multi-car crash. NASCAR stopped the field under a red flag with Marlin's right-front fender pressed towards its tyre. The stationary leader faced a practical concern: if the bodywork cut the tyre after racing resumed, his chance of victory would disappear.",
+      "Marlin climbed from the car and tugged the fender away from the tyre with his hands. The intervention was brief, conspicuous and prohibited. NASCAR rules did not allow teams or drivers to work on cars during a red flag, so officials ordered Marlin to the rear of the field for the restart.",
+      "The penalty handed the lead to Ward Burton. Burton controlled the remaining laps and earned his first Daytona 500 victory, while Marlin finished eighth. The repair may have protected Marlin's tyre, but it removed the track position he was trying to preserve. Daytona thus produced the unusual sight of a race leader becoming his own mechanic and being penalized before reaching for a single tool."
+    ],
+    "pullQuote": "Marlin pulled his own fender clear during the red flag and was sent to the rear for the restart.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Sterling Marlin's documented red-flag repair and penalty in the 2002 Daytona 500.",
+    "sources": [
+      "https://www.nascar.com/news-media/2020/01/30/ward-burton-sterling-marlin-2002-daytona-500-replay/amp/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "2000s",
+      "nascar"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1986-sanremo-result-annulled",
+    "image": "images/mot-1986-sanremo-result-annulled.webp",
+    "imageAlt": "Group B rally cars negotiate an Italian mountain stage during the 1986 Sanremo Rally",
+    "category": "Motorsport",
+    "headline": "The Sanremo Rally Completes Every Stage and Produces No Result",
+    "standfirst": "A disputed exclusion handed Markku Alén an apparent win and world title before the governing body annulled the entire event.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "SANREMO, ITALY",
+    "published": "2026-07-18T06:45:00Z",
+    "body": [
+      "Peugeot's leading cars were excluded during the 1986 Sanremo Rally after officials ruled that their underbody side skirts were illegal. Peugeot disputed that interpretation, but the rally continued without them. Lancia driver Markku Alén won on the road and carried the points into the remaining championship round against Peugeot's Juha Kankkunen.",
+      "Alén then won the season-ending Olympus Rally in the United States and was provisionally celebrated as world champion. The title still depended on Peugeot's appeal over Sanremo. FISA later concluded that the Italian exclusions had not been justified, but it could not restore the removed cars to an event whose competitive order had already been altered.",
+      "The governing body therefore annulled the entire Sanremo result in December. Every point from the rally disappeared, including Alén's victory, and Kankkunen became the 1986 drivers' champion. The official WRC archive lists the season with an explicit note that Sanremo was annulled: a completed championship round removed from the standings after it had helped crown the wrong champion."
+    ],
+    "pullQuote": "Annulment erased every Sanremo point and made Juha Kankkunen the 1986 world champion.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article is based on the documented annulment of the 1986 Sanremo Rally and its effect on the world championship.",
+    "sources": [
+      "https://www.wrc.com/en/misc/wrc-season-archive/wrc-season-1986",
+      "https://www.wrc.com/en/misc/wrc-history"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1980s",
+      "wrc"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1995-toyota-secret-turbo-restrictor",
+    "image": "images/mot-1995-toyota-secret-turbo-restrictor.webp",
+    "imageAlt": "A 1995 Toyota Celica GT-Four rally car is inspected with its turbocharger intake exposed",
+    "category": "Motorsport",
+    "headline": "Toyota Builds a Turbo Restrictor That Restricts Only During Inspection",
+    "standfirst": "The Celica's concealed bypass preserved the sealed appearance scrutineers expected while admitting extra air when assembled for competition.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "CATALONIA, SPAIN",
+    "published": "2026-07-18T07:00:00Z",
+    "body": [
+      "World Rally Championship rules required the turbocharged Toyota Celica GT-Four ST205 to breathe through a regulated air restrictor. At the 1995 Rally Catalunya, scrutineers discovered that Toyota Team Europe's installation did something more elaborate. The restrictor and its official seals could appear compliant when examined, while concealed components allowed additional air to reach the turbocharger when the assembly was fitted to the car.",
+      "The mechanism relied on movement within the intake hardware rather than an obviously enlarged hole. Once removed for ordinary inspection, the parts returned to their expected positions and concealed the bypass. It was an exceptionally sophisticated way to defeat a simple rule: all air feeding the engine was supposed to pass through the prescribed opening.",
+      "The FIA excluded Toyota from the 1995 championship and the works team did not contest the 1996 season. Its drivers also lost their 1995 championship points, although officials did not accuse them of knowing about the device. Toyota had won consecutive manufacturers' titles in 1993 and 1994; the successor Celica's most enduring result was instead a piece of illegal engineering designed to look legal when taken apart."
+    ],
+    "pullQuote": "The sealed restrictor looked compliant during inspection while the installed assembly admitted extra air.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the illegal turbocharger bypass discovered on Toyota's Celica GT-Four at the 1995 Rally Catalunya.",
+    "sources": [
+      "https://www.wrc.com/en/misc/toyota-celica-turbo-4wd-gt-four",
+      "https://www.motorsport.com/wrc/news/toyotas-schummelei-1995-so-genial-dass-selbst-der-fia-boss-staunte-25102501/3435933/"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "wrc"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1998-sainz-title-lost-300-metres",
+    "image": "images/mot-1998-sainz-title-lost-300-metres.webp",
+    "imageAlt": "Carlos Sainz's Toyota Corolla WRC stands stopped near the end of the final 1998 Rally GB stage",
+    "category": "Motorsport",
+    "headline": "Carlos Sainz Loses the World Championship 300 Metres from Home",
+    "standfirst": "Fourth place on Rally GB would have secured the crown until the Toyota stopped within sight of the final stage's finish.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "MARGAM, WALES",
+    "published": "2026-07-18T07:15:00Z",
+    "body": [
+      "Carlos Sainz began the final stage of the 1998 Rally GB running fourth, the position he needed to win a third World Rally Championship. His title rival Tommi Mäkinen had already retired after damaging his Mitsubishi earlier in the event. Mäkinen left Wales believing the championship had gone to Sainz, while the Toyota crew still had only the Margam stage to complete.",
+      "Sainz and co-driver Luis Moya approached the stage finish with roughly 300 metres remaining when their Toyota Corolla WRC suffered an engine failure and stopped. Moya got out, but the car could not be restarted or brought across the timing line. Without a classified finish, Sainz lost the points that fourth place would have supplied.",
+      "The retirement made Mäkinen world champion for the third consecutive season. Mitsubishi teammate Richard Burns won Rally GB, yet the event's defining result belonged to a car that covered nearly the whole championship distance and failed at the final measurable instant. Sainz had survived 13 rallies of calculation; the decisive margin was the short stretch his Toyota could no longer cross."
+    ],
+    "pullQuote": "Sainz's Toyota stopped about 300 metres before the final stage finish, returning the title to Mäkinen.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts Carlos Sainz's documented retirement near the finish of the 1998 Rally GB and the resulting title loss.",
+    "sources": [
+      "https://www.mitsubishi-motors.com/en/brand/motorsports/wrc/1998/index.html",
+      "https://www.fia.com/sites/default/files/auto8.pdf"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "wrc"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1994-dauer-962-gt-loophole-le-mans",
+    "image": "images/mot-1994-dauer-962-gt-loophole-le-mans.webp",
+    "imageAlt": "The road-legal Dauer 962 Le Mans races among prototypes at the 1994 24 Hours of Le Mans",
+    "category": "Motorsport",
+    "headline": "Porsche Converts a Prototype into a Road Car and Back Again",
+    "standfirst": "The 1994 Le Mans rules welcomed production-based GTs, including a Dauer 962 whose production ancestry began as a dominant Group C racer.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:30:00Z",
+    "body": [
+      "Porsche's 962 had been built as a Group C prototype, but changing regulations had pushed that category towards history by 1994. Jochen Dauer created a road-legal version called the Dauer 962 Le Mans. When Le Mans reintroduced a class for cars derived from road-going GTs, the conversion gave Porsche a route back into the race through rules that required only one production example.",
+      "Porsche and Dauer entered two 962 LMs in the GT category, with Reinhold Joest running them. Beneath the road-car eligibility sat the architecture of a proven endurance prototype. The classification also brought regulatory advantages unavailable to the remaining purpose-built prototypes, making the old design competitive again under a new name and a new route through scrutineering.",
+      "The number 36 Dauer driven by Yannick Dalmas, Mauro Baldi and Hurley Haywood won the 1994 24 Hours overall. Its sister car finished third. The official Le Mans history describes the route plainly as a technical loophole: a prototype became a legal road GT, then returned to the circuit and defeated the prototypes that had remained prototypes throughout."
+    ],
+    "pullQuote": "A road-legal derivative of the Porsche 962 returned as a GT and won Le Mans overall.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the Dauer-Porsche 962 LM's documented overall victory at the 1994 24 Hours of Le Mans.",
+    "sources": [
+      "https://www.24h-lemans.com/en/news/24-hours-centenary-1994-1997-dauer-and-twr-the-art-of-recycling-according-to-porsche-56786"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "le-mans"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "mot-1999-mercedes-clr-flight",
+    "image": "images/mot-1999-mercedes-clr-flight.webp",
+    "imageAlt": "A Mercedes CLR prototype crests at high speed during the 1999 Le Mans meeting",
+    "category": "Motorsport",
+    "headline": "Mercedes Conducts Three Unscheduled Flights at Le Mans",
+    "standfirst": "Two airborne incidents before the race did not stop the CLR programme; a third during the race finally did.",
+    "byline": "By Osgood Fairweather-Nkosi, Motorsport Correspondent",
+    "location": "LE MANS, FRANCE",
+    "published": "2026-07-18T07:45:00Z",
+    "body": [
+      "Mark Webber's Mercedes CLR became airborne during Thursday qualifying for the 1999 24 Hours of Le Mans. Mercedes rebuilt the car, but it took off again during Saturday morning's warm-up. Webber escaped both incidents. The team withdrew his entry and modified the two remaining CLRs before allowing them to start the race.",
+      "Several hours into the event, Peter Dumbreck's number 5 CLR approached a Toyota on the high-speed section between Mulsanne and Indianapolis. The Mercedes pitched upwards, rose above the track and landed beyond the barriers. Dumbreck survived the third airborne event of the meeting, which demonstrated that the programme's instability had not been resolved by the pre-race changes.",
+      "Mercedes immediately withdrew its sole remaining CLR from the race. The manufacturer had arrived with three entries and left without a classified finisher, while BMW went on to take its first overall Le Mans victory. Subsequent regulation changes addressed prototype aerodynamics to reduce the risk of similar incidents. The weekend remains an extraordinary sequence: warning, repeated warning, race start, then confirmation."
+    ],
+    "pullQuote": "After the third CLR became airborne, Mercedes withdrew its final car from the race.",
+    "noticeLabel": "Based on a true story",
+    "notice": "This article recounts the three documented Mercedes CLR airborne incidents during the 1999 Le Mans meeting.",
+    "sources": [
+      "https://www.24h-lemans.com/en/news/peter-dumbreck-remembers-1999-7141",
+      "https://www.24h-lemans.com/en/news/24-hours-of-le-mans-bmws-astonishing-1999-v12-lmr-56547"
+    ],
+    "tags": [
+      "motorsport",
+      "based-on-truth",
+      "1990s",
+      "le-mans"
+    ],
+    "imageCaption": "AI-generated editorial illustration of the reported incident."
+  },
+  {
+    "id": "bus-desk-01",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 01: The Tread That Knew Too Much",
+    "standfirst": "A city bus tyre develops an opinion about road surfaces. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T18:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a city bus tyre develops an opinion about road surfaces. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was the tyre has identified seven grades of municipal asphalt. Staff described the process as it refuses to discuss potholes without a representative, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that it refuses to discuss potholes without a representative. The matter will be revisited in Part 02, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "It refuses to discuss potholes without a representative.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 1,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-tyres.webp",
+    "imageAlt": "Mechanics measure an oversized bus tyre before a solemn committee.",
+    "images": [
+      {
+        "src": "images/bus-plate-tyres.webp",
+        "alt": "Mechanics measure an oversized bus tyre before a solemn committee.",
+        "afterParagraph": 2,
+        "caption": "Bus Desk plate 01: the evidence remains in service."
+      }
+    ]
+  },
+  {
+    "id": "bus-desk-02",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 02: Pressure Group",
+    "standfirst": "Operators discover that tyre pressure is also a political position. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T18:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that operators discover that tyre pressure is also a political position. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was one fleet inflated by feel and another by committee. Staff described the process as both sides claim the road is listening, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that both sides claim the road is listening. The matter will be revisited in Part 03, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "Both sides claim the road is listening.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 2,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-engine.webp",
+    "imageAlt": "A bus engine receives a medical examination from mechanics and a goose nurse."
+  },
+  {
+    "id": "bus-desk-03",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 03: Retreads Return to the Scene",
+    "standfirst": "Refurbished tyres are welcomed back into service with a small civic ceremony. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T18:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that refurbished tyres are welcomed back into service with a small civic ceremony. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a ribbon, four bolts and a suspiciously familiar tread pattern. Staff described the process as the tyre insists it has changed, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the tyre insists it has changed. The matter will be revisited in Part 04, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The tyre insists it has changed.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 3,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-cooling.webp",
+    "imageAlt": "A conductor conducts a bus cooling system like a grand organ."
+  },
+  {
+    "id": "bus-desk-04",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 04: The Dual-Wheel Debate",
+    "standfirst": "Two rear tyres spend six months disagreeing about who is carrying the axle. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T18:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that two rear tyres spend six months disagreeing about who is carrying the axle. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a mediator, a torque wrench and one exhausted wheel nut. Staff described the process as the bus has recommended separate seating, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the bus has recommended separate seating. The matter will be revisited in Part 05, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The bus has recommended separate seating.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 4,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-depot.webp",
+    "imageAlt": "Mechanics wake a blanket-covered fleet at a bus depot."
+  },
+  {
+    "id": "bus-desk-05",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 05: Puncture Declares Itself a Weather Event",
+    "standfirst": "A slow leak is upgraded after refusing to take responsibility. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T18:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a slow leak is upgraded after refusing to take responsibility. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a pressure gauge, a drizzle and an insurance form. Staff described the process as the inner tube has been placed under observation, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the inner tube has been placed under observation. The matter will be revisited in Part 06, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The inner tube has been placed under observation.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 5,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-routes.webp",
+    "imageAlt": "Passengers consult compasses while a bus follows an impossible route.",
+    "images": [
+      {
+        "src": "images/bus-plate-routes.webp",
+        "alt": "Passengers consult compasses while a bus follows an impossible route.",
+        "afterParagraph": 2,
+        "caption": "Bus Desk plate 05: the evidence remains in service."
+      }
+    ]
+  },
+  {
+    "id": "bus-desk-06",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 06: Wheel Alignment Summit Ends Without a Straight Line",
+    "standfirst": "Four corners of a bus meet to discuss their differences. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T17:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that four corners of a bus meet to discuss their differences. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was toe-in, camber and an axle that arrived from another department. Staff described the process as the vehicle left pointing slightly towards policy, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the vehicle left pointing slightly towards policy. The matter will be revisited in Part 07, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The vehicle left pointing slightly towards policy.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 6,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-driver.webp",
+    "imageAlt": "A driver performs an elaborate pre-departure ritual in the cab."
+  },
+  {
+    "id": "bus-desk-07",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 07: Tyre Noise Wins the Quiet Carriage",
+    "standfirst": "Passengers mistake tread harmonics for an announcement. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T17:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that passengers mistake tread harmonics for an announcement. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a low hum, a high whine and one beautifully resonant drain cover. Staff described the process as the driver has been asked to turn the volume down, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the driver has been asked to turn the volume down. The matter will be revisited in Part 08, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The driver has been asked to turn the volume down.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 7,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-heat.webp",
+    "imageAlt": "Passengers attempt to cool a double-decker during a heatwave."
+  },
+  {
+    "id": "bus-desk-08",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 08: Wet Grip Measured in Applause",
+    "standfirst": "A test track replaces friction instruments with a seated audience. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T17:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a test track replaces friction instruments with a seated audience. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was rain, cones and 312 people clapping when the bus stops. Staff described the process as engineers call the result encouragingly damp, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that engineers call the result encouragingly damp. The matter will be revisited in Part 09, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "Engineers call the result encouragingly damp.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 8,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-drivetrain.webp",
+    "imageAlt": "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."
+  },
+  {
+    "id": "bus-desk-09",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 09: The Spare Wheel Has Been Promoted",
+    "standfirst": "A reserve tyre is given a desk, a title and no immediate duties. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T17:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a reserve tyre is given a desk, a title and no immediate duties. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a velvet cover and a calendar of meetings. Staff described the process as the spare says it is ready whenever the main wheels are, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the spare says it is ready whenever the main wheels are. The matter will be revisited in Part 10, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The spare says it is ready whenever the main wheels are.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 9,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-election.webp",
+    "imageAlt": "Rival buses campaign for passengers while a goose counts votes."
+  },
+  {
+    "id": "bus-desk-10",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 10: Inspection Finds Tyre Full of Character",
+    "standfirst": "A routine check becomes a personality assessment. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "TYRE BAY",
+    "published": "2026-07-18T17:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a routine check becomes a personality assessment. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was tread depth, sidewall scars and a strong preference for roundabouts. Staff described the process as the inspector has passed the tyre with reservations, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the inspector has passed the tyre with reservations. The matter will be revisited in Part 11, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The inspector has passed the tyre with reservations.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 10,
+    "seriesBook": "The Tyre Situation",
+    "image": "images/bus-plate-tyres.webp",
+    "imageAlt": "Mechanics measure an oversized bus tyre before a solemn committee."
+  },
+  {
+    "id": "bus-desk-11",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 11: Cold Start, Warm Reception",
+    "standfirst": "A bus engine receives applause for starting on the first attempt. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T16:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a bus engine receives applause for starting on the first attempt. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was frost, glow plugs and a conductor who brought a bouquet. Staff described the process as the engine would prefer not to make a habit of it, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the engine would prefer not to make a habit of it. The matter will be revisited in Part 12, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The engine would prefer not to make a habit of it.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 11,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-engine.webp",
+    "imageAlt": "A bus engine receives a medical examination from mechanics and a goose nurse.",
+    "images": [
+      {
+        "src": "images/bus-plate-engine.webp",
+        "alt": "A bus engine receives a medical examination from mechanics and a goose nurse.",
+        "afterParagraph": 2,
+        "caption": "Bus Desk plate 11: the evidence remains in service."
+      }
+    ]
+  },
+  {
+    "id": "bus-desk-12",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 12: Diesel Engine Requests a More Nuanced Reputation",
+    "standfirst": "A veteran power unit asks the public to distinguish between noise and character. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T16:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a veteran power unit asks the public to distinguish between noise and character. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was smoke, torque and an interview conducted beside the sump. Staff described the process as it denies ever being ‘agricultural’, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that it denies ever being ‘agricultural’. The matter will be revisited in Part 13, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "It denies ever being ‘agricultural’.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 12,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-cooling.webp",
+    "imageAlt": "A conductor conducts a bus cooling system like a grand organ."
+  },
+  {
+    "id": "bus-desk-13",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 13: Turbocharger Found Living Above Its Means",
+    "standfirst": "A turbo is asked to explain its lifestyle and several sudden noises. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T16:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a turbo is asked to explain its lifestyle and several sudden noises. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was boost pressure, hot bearings and a holiday it cannot account for. Staff described the process as the compressor has retained counsel, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the compressor has retained counsel. The matter will be revisited in Part 14, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The compressor has retained counsel.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 13,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-depot.webp",
+    "imageAlt": "Mechanics wake a blanket-covered fleet at a bus depot."
+  },
+  {
+    "id": "bus-desk-14",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 14: Idle Speed Becomes a Philosophy",
+    "standfirst": "A bus spends an afternoon considering whether motion is necessary. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T16:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a bus spends an afternoon considering whether motion is necessary. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a steady tickover and passengers who have stopped asking when it will leave. Staff described the process as the gearbox believes in action, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the gearbox believes in action. The matter will be revisited in Part 15, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The gearbox believes in action.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 14,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-routes.webp",
+    "imageAlt": "Passengers consult compasses while a bus follows an impossible route."
+  },
+  {
+    "id": "bus-desk-15",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 15: Gearbox Offers Six Opinions at Once",
+    "standfirst": "An automatic transmission develops a distinct view of every hill. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T16:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that an automatic transmission develops a distinct view of every hill. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was first, second, third and a neutral position nobody can find. Staff described the process as the driver has requested a quieter debate, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the driver has requested a quieter debate. The matter will be revisited in Part 16, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The driver has requested a quieter debate.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 15,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-driver.webp",
+    "imageAlt": "A driver performs an elaborate pre-departure ritual in the cab."
+  },
+  {
+    "id": "bus-desk-16",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 16: Oil Change Treated as a Spa Day",
+    "standfirst": "A fleet of engines is given fresh oil, towels and a little privacy. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T15:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a fleet of engines is given fresh oil, towels and a little privacy. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was filters, drain pans and a mechanic saying ‘you carry tension here’. Staff described the process as the sump emerged glossy but unrepentant, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the sump emerged glossy but unrepentant. The matter will be revisited in Part 17, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The sump emerged glossy but unrepentant.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 16,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-heat.webp",
+    "imageAlt": "Passengers attempt to cool a double-decker during a heatwave."
+  },
+  {
+    "id": "bus-desk-17",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 17: Exhaust Note Wins Local Arts Prize",
+    "standfirst": "A bus engine’s rattle is recognised as an experimental composition. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T15:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a bus engine’s rattle is recognised as an experimental composition. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was cylinder timing, loose heat shields and a standing ovation at the terminus. Staff described the process as the judge called it brave, though not pleasant, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the judge called it brave, though not pleasant. The matter will be revisited in Part 18, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The judge called it brave, though not pleasant.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 17,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-drivetrain.webp",
+    "imageAlt": "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."
+  },
+  {
+    "id": "bus-desk-18",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 18: Hybrid Bus Has Both Opinions",
+    "standfirst": "A hybrid powertrain alternates between efficiency and theatrical silence. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T15:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a hybrid powertrain alternates between efficiency and theatrical silence. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a motor, an engine and a battery refusing to be introduced properly. Staff described the process as the passenger information system has declared a coalition, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the passenger information system has declared a coalition. The matter will be revisited in Part 19, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The passenger information system has declared a coalition.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 18,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-election.webp",
+    "imageAlt": "Rival buses campaign for passengers while a goose counts votes."
+  },
+  {
+    "id": "bus-desk-19",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 19: Electric Motor Misses the Noise",
+    "standfirst": "A silent bus engine hires a brass section for emotional support. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T15:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a silent bus engine hires a brass section for emotional support. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was induction, torque and a tuba mounted near the rear axle. Staff described the process as the tuba is consuming more electricity than the motor, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the tuba is consuming more electricity than the motor. The matter will be revisited in Part 20, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The tuba is consuming more electricity than the motor.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 19,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-tyres.webp",
+    "imageAlt": "Mechanics measure an oversized bus tyre before a solemn committee."
+  },
+  {
+    "id": "bus-desk-20",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 20: Engine Sound Recorded for Posterity",
+    "standfirst": "A depot archives every cough, clatter and dignified hum. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "ENGINE ROOM",
+    "published": "2026-07-18T15:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a depot archives every cough, clatter and dignified hum. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a microphone, a waveform and one mechanic who can identify a bearing by mood. Staff described the process as the archive has run out of shelves, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the archive has run out of shelves. The matter will be revisited in Part 21, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The archive has run out of shelves.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 20,
+    "seriesBook": "Under the Bonnet",
+    "image": "images/bus-plate-engine.webp",
+    "imageAlt": "A bus engine receives a medical examination from mechanics and a goose nurse."
+  },
+  {
+    "id": "bus-desk-21",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 21: Radiator Announces It Is an Organ",
+    "standfirst": "A cooling system demands the respect usually reserved for a cathedral. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T14:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a cooling system demands the respect usually reserved for a cathedral. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was tubes, fins and a fan conducting coolant like a grand choir. Staff described the process as the bus has been asked to stop overheating during the sermon, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the bus has been asked to stop overheating during the sermon. The matter will be revisited in Part 22, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The bus has been asked to stop overheating during the sermon.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 21,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-cooling.webp",
+    "imageAlt": "A conductor conducts a bus cooling system like a grand organ.",
+    "images": [
+      {
+        "src": "images/bus-plate-cooling.webp",
+        "alt": "A conductor conducts a bus cooling system like a grand organ.",
+        "afterParagraph": 2,
+        "caption": "Bus Desk plate 21: the evidence remains in service."
+      }
+    ]
+  },
+  {
+    "id": "bus-desk-22",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 22: Fan Clutch Engages at Socially Awkward Moment",
+    "standfirst": "A cooling fan starts loudly whenever the conversation becomes personal. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T14:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a cooling fan starts loudly whenever the conversation becomes personal. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was temperature, viscous coupling and a silent upper deck. Staff described the process as the fan says it only does this under pressure, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the fan says it only does this under pressure. The matter will be revisited in Part 23, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The fan says it only does this under pressure.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 22,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-depot.webp",
+    "imageAlt": "Mechanics wake a blanket-covered fleet at a bus depot."
+  },
+  {
+    "id": "bus-desk-23",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 23: Thermostat Refuses to Open Until It Is Ready",
+    "standfirst": "A small valve adopts a boundary policy and sticks to it. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T14:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a small valve adopts a boundary policy and sticks to it. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was wax, spring force and a queue of increasingly warm passengers. Staff described the process as the coolant has lodged an appeal, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the coolant has lodged an appeal. The matter will be revisited in Part 24, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The coolant has lodged an appeal.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 23,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-routes.webp",
+    "imageAlt": "Passengers consult compasses while a bus follows an impossible route."
+  },
+  {
+    "id": "bus-desk-24",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 24: Coolant Leak Leaves a Helpful Trail",
+    "standfirst": "A bus marks its route with green drops and calls it navigation. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T14:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a bus marks its route with green drops and calls it navigation. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a hose clamp, a puddle and three mechanics following the evidence. Staff described the process as the map is accurate but not approved for public use, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the map is accurate but not approved for public use. The matter will be revisited in Part 25, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The map is accurate but not approved for public use.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 24,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-driver.webp",
+    "imageAlt": "A driver performs an elaborate pre-departure ritual in the cab."
+  },
+  {
+    "id": "bus-desk-25",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 25: Heater Turns Winter Route into Tropical Service",
+    "standfirst": "Passengers remove coats as the engine discovers its purpose. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T14:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that passengers remove coats as the engine discovers its purpose. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a matrix, a valve and a driver who has opened every window. Staff described the process as the bus is now warm enough to grow a fern, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the bus is now warm enough to grow a fern. The matter will be revisited in Part 26, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The bus is now warm enough to grow a fern.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 25,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-heat.webp",
+    "imageAlt": "Passengers attempt to cool a double-decker during a heatwave."
+  },
+  {
+    "id": "bus-desk-26",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 26: Heatwave Prompts Emergency Ice for Radiators",
+    "standfirst": "The depot orders a lorry of ice and immediately regrets the invoice. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T13:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that the depot orders a lorry of ice and immediately regrets the invoice. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was frozen blocks, fan belts and a melting procurement strategy. Staff described the process as the coolant remains professionally unconvinced, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the coolant remains professionally unconvinced. The matter will be revisited in Part 27, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The coolant remains professionally unconvinced.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 26,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-drivetrain.webp",
+    "imageAlt": "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."
+  },
+  {
+    "id": "bus-desk-27",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 27: Winter Cooling System Feels Unappreciated",
+    "standfirst": "A radiator spends three months being useful in theory. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T13:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a radiator spends three months being useful in theory. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was frost, shutters and an engine that thinks cold is a personal insult. Staff described the process as the thermostat has taken up knitting, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the thermostat has taken up knitting. The matter will be revisited in Part 28, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The thermostat has taken up knitting.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 27,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-election.webp",
+    "imageAlt": "Rival buses campaign for passengers while a goose counts votes."
+  },
+  {
+    "id": "bus-desk-28",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 28: Air Conditioning Requests More Engine",
+    "standfirst": "The cabin wants to be cool but the engine wants to climb the hill. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T13:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that the cabin wants to be cool but the engine wants to climb the hill. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was compressors, belts and a negotiation at the traffic lights. Staff described the process as the passengers voted for shade, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the passengers voted for shade. The matter will be revisited in Part 29, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The passengers voted for shade.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 28,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-tyres.webp",
+    "imageAlt": "Mechanics measure an oversized bus tyre before a solemn committee."
+  },
+  {
+    "id": "bus-desk-29",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 29: Overheating Bus Reaches Philosophical Boil",
+    "standfirst": "A temperature gauge climbs past red and begins asking questions. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T13:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a temperature gauge climbs past red and begins asking questions. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was steam, a roadside pause and the nature of responsibility. Staff described the process as the driver has answered with a bonnet, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the driver has answered with a bonnet. The matter will be revisited in Part 30, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The driver has answered with a bonnet.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 29,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-engine.webp",
+    "imageAlt": "A bus engine receives a medical examination from mechanics and a goose nurse."
+  },
+  {
+    "id": "bus-desk-30",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 30: Cooling Committee Adds a Subcommittee",
+    "standfirst": "The radiator, fan, pump and thermostat divide the work still further. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "COOLING DESK",
+    "published": "2026-07-18T13:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that the radiator, fan, pump and thermostat divide the work still further. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was minutes, terms of reference and a hose waiting for a decision. Staff described the process as the bus cooled down while the meeting continued, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the bus cooled down while the meeting continued. The matter will be revisited in Part 31, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The bus cooled down while the meeting continued.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 30,
+    "seriesBook": "Keeping Cool",
+    "image": "images/bus-plate-cooling.webp",
+    "imageAlt": "A conductor conducts a bus cooling system like a grand organ."
+  },
+  {
+    "id": "bus-desk-31",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 31: Depot Wakes the Fleet with a Bell",
+    "standfirst": "A dawn ceremony persuades sleeping buses to face the road. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T12:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a dawn ceremony persuades sleeping buses to face the road. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was blankets, tyre changes, tea and one goose with a clipboard. Staff described the process as the first bus claims it was already awake, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the first bus claims it was already awake. The matter will be revisited in Part 32, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The first bus claims it was already awake.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 31,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-depot.webp",
+    "imageAlt": "Mechanics wake a blanket-covered fleet at a bus depot.",
+    "images": [
+      {
+        "src": "images/bus-plate-depot.webp",
+        "alt": "Mechanics wake a blanket-covered fleet at a bus depot.",
+        "afterParagraph": 2,
+        "caption": "Bus Desk plate 31: the evidence remains in service."
+      }
+    ]
+  },
+  {
+    "id": "bus-desk-32",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 32: Driver’s Pre-Departure Ritual Expands to Forty-Seven Steps",
+    "standfirst": "A routine mirror check becomes a small religion. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T12:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a routine mirror check becomes a small religion. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was mirrors, tickets, steering wheel, tea and a brush with ceremonial status. Staff described the process as passengers remain patient for nearly three minutes, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that passengers remain patient for nearly three minutes. The matter will be revisited in Part 33, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "Passengers remain patient for nearly three minutes.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 32,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-routes.webp",
+    "imageAlt": "Passengers consult compasses while a bus follows an impossible route."
+  },
+  {
+    "id": "bus-desk-33",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 33: Route Map Develops a Mountain",
+    "standfirst": "A local service discovers a scenic detour it cannot explain. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T12:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a local service discovers a scenic detour it cannot explain. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a looping line, a tea shop and an anxious road sign. Staff described the process as the timetable calls it an opportunity, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the timetable calls it an opportunity. The matter will be revisited in Part 34, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The timetable calls it an opportunity.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 33,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-driver.webp",
+    "imageAlt": "A driver performs an elaborate pre-departure ritual in the cab."
+  },
+  {
+    "id": "bus-desk-34",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 34: Bus Stop Applies for Planning Permission",
+    "standfirst": "A shelter objects to being placed wherever the public needs it. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T12:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a shelter objects to being placed wherever the public needs it. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a consultation, a bench and a pole with strong views. Staff described the process as the bus has agreed to stop nearby, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the bus has agreed to stop nearby. The matter will be revisited in Part 35, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The bus has agreed to stop nearby.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 34,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-heat.webp",
+    "imageAlt": "Passengers attempt to cool a double-decker during a heatwave."
+  },
+  {
+    "id": "bus-desk-35",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 35: Timetable Admits It Is Aspirational",
+    "standfirst": "A printed schedule clarifies that its times are more of a mood. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T12:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a printed schedule clarifies that its times are more of a mood. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was traffic, weather and a minute hand with no legal training. Staff described the process as passengers appreciate the honesty but not the interval, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that passengers appreciate the honesty but not the interval. The matter will be revisited in Part 36, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "Passengers appreciate the honesty but not the interval.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 35,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-drivetrain.webp",
+    "imageAlt": "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."
+  },
+  {
+    "id": "bus-desk-36",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 36: Passenger Loads Measured by Vibe",
+    "standfirst": "The operator replaces headcounts with an atmosphere gauge. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T11:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that the operator replaces headcounts with an atmosphere gauge. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was standing room, shopping bags and a child holding a balloon. Staff described the process as the upper deck has been described as emotionally full, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the upper deck has been described as emotionally full. The matter will be revisited in Part 37, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The upper deck has been described as emotionally full.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 36,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-election.webp",
+    "imageAlt": "Rival buses campaign for passengers while a goose counts votes."
+  },
+  {
+    "id": "bus-desk-37",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 37: Farebox Starts Giving Change in Advice",
+    "standfirst": "A ticket machine adds unsolicited guidance to every transaction. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T11:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a ticket machine adds unsolicited guidance to every transaction. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was coins, thermal paper and a warning about personal boundaries. Staff described the process as the driver has unplugged its opinions, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the driver has unplugged its opinions. The matter will be revisited in Part 38, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The driver has unplugged its opinions.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 37,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-tyres.webp",
+    "imageAlt": "Mechanics measure an oversized bus tyre before a solemn committee."
+  },
+  {
+    "id": "bus-desk-38",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 38: Traffic Jam Agrees to Let Bus Through",
+    "standfirst": "A queue of cars negotiates a temporary lane for public transport. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T11:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a queue of cars negotiates a temporary lane for public transport. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a handshake, several hazard lights and a bus carrying 62 people. Staff described the process as the cars will require a commemorative plaque, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the cars will require a commemorative plaque. The matter will be revisited in Part 39, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The cars will require a commemorative plaque.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 38,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-engine.webp",
+    "imageAlt": "A bus engine receives a medical examination from mechanics and a goose nurse."
+  },
+  {
+    "id": "bus-desk-39",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 39: School Run Reclassified as Mobile Weather System",
+    "standfirst": "Forty children generate their own atmospheric conditions. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T11:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that forty children generate their own atmospheric conditions. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was coats, steam, noise and a radiator working overtime. Staff described the process as the driver has requested a wind advisory, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the driver has requested a wind advisory. The matter will be revisited in Part 40, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The driver has requested a wind advisory.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 39,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-cooling.webp",
+    "imageAlt": "A conductor conducts a bus cooling system like a grand organ."
+  },
+  {
+    "id": "bus-desk-40",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 40: Night Bus Finds Itself in a Gothic Novel",
+    "standfirst": "The last service becomes atmospheric after passing a closed depot. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "CENTRAL DEPOT",
+    "published": "2026-07-18T11:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that the last service becomes atmospheric after passing a closed depot. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was streetlamps, fog and a passenger reading the wrong timetable. Staff described the process as the bus insists it is merely on route, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the bus insists it is merely on route. The matter will be revisited in Part 41, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The bus insists it is merely on route.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 40,
+    "seriesBook": "Life on the Route",
+    "image": "images/bus-plate-depot.webp",
+    "imageAlt": "Mechanics wake a blanket-covered fleet at a bus depot."
+  },
+  {
+    "id": "bus-desk-41",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 41: Autonomous Bus Still Waiting for Someone to Ask It",
+    "standfirst": "A self-driving vehicle remains stationary out of politeness. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T10:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a self-driving vehicle remains stationary out of politeness. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was lidar, sensors and a bus that will not interrupt. Staff described the process as the passengers have voted to wave first, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the passengers have voted to wave first. The matter will be revisited in Part 42, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The passengers have voted to wave first.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 41,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-routes.webp",
+    "imageAlt": "Passengers consult compasses while a bus follows an impossible route.",
+    "images": [
+      {
+        "src": "images/bus-plate-routes.webp",
+        "alt": "Passengers consult compasses while a bus follows an impossible route.",
+        "afterParagraph": 2,
+        "caption": "Bus Desk plate 41: the evidence remains in service."
+      }
+    ]
+  },
+  {
+    "id": "bus-desk-42",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 42: Bus Election Produces Coalition of Tyres and Cooling",
+    "standfirst": "Two platforms campaign on traction and lower temperatures. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T10:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that two platforms campaign on traction and lower temperatures. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was rosettes, manifestos and a goose counting tickets. Staff described the process as the engine has declined to form a government, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the engine has declined to form a government. The matter will be revisited in Part 43, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The engine has declined to form a government.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 42,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-driver.webp",
+    "imageAlt": "A driver performs an elaborate pre-departure ritual in the cab."
+  },
+  {
+    "id": "bus-desk-43",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 43: Luxury Bus Adds a Quiet Upper Deck",
+    "standfirst": "A premium service offers silence, cushions and one audible suspension bush. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T10:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a premium service offers silence, cushions and one audible suspension bush. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was tea service, velvet and a passenger who brought a spanner. Staff described the process as the upgrade has not improved the potholes, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the upgrade has not improved the potholes. The matter will be revisited in Part 44, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The upgrade has not improved the potholes.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 43,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-heat.webp",
+    "imageAlt": "Passengers attempt to cool a double-decker during a heatwave."
+  },
+  {
+    "id": "bus-desk-44",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 44: Double-Decker Discovers Vertical Ambition",
+    "standfirst": "A bus seeks planning permission for a third deck. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T10:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a bus seeks planning permission for a third deck. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was stairs, headroom and an architect who has forgotten the bridge network. Staff described the process as the tyres are cautiously optimistic, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the tyres are cautiously optimistic. The matter will be revisited in Part 45, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The tyres are cautiously optimistic.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 44,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-drivetrain.webp",
+    "imageAlt": "A cutaway bus drivetrain links gearbox, axle, brakes and tyre."
+  },
+  {
+    "id": "bus-desk-45",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 45: Rural Bus Announces It Is Also a Post Office",
+    "standfirst": "A village service expands its duties to letters, parcels and emotional support. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T10:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a village service expands its duties to letters, parcels and emotional support. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a ticket machine, a sorting shelf and one patient engine. Staff described the process as the route now takes slightly longer, but knows everyone, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the route now takes slightly longer, but knows everyone. The matter will be revisited in Part 46, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The route now takes slightly longer, but knows everyone.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 45,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-election.webp",
+    "imageAlt": "Rival buses campaign for passengers while a goose counts votes."
+  },
+  {
+    "id": "bus-desk-46",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 46: Airport Shuttle Loses the Airport",
+    "standfirst": "A shuttle reaches a terminal and cannot find the building it serves. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T09:57:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a shuttle reaches a terminal and cannot find the building it serves. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was signage, luggage and a driver following a very confident arrow. Staff described the process as passengers have been reunited with the car park, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that passengers have been reunited with the car park. The matter will be revisited in Part 47, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "Passengers have been reunited with the car park.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 46,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-tyres.webp",
+    "imageAlt": "Mechanics measure an oversized bus tyre before a solemn committee."
+  },
+  {
+    "id": "bus-desk-47",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 47: Heritage Bus Refuses to Become Nostalgia",
+    "standfirst": "A preserved vehicle insists it remains a working machine. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T09:46:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a preserved vehicle insists it remains a working machine. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was polished brass, old tyres and an engine with long memories. Staff described the process as the museum has been asked to stop calling it charming, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the museum has been asked to stop calling it charming. The matter will be revisited in Part 48, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The museum has been asked to stop calling it charming.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 47,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-engine.webp",
+    "imageAlt": "A bus engine receives a medical examination from mechanics and a goose nurse."
+  },
+  {
+    "id": "bus-desk-48",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 48: Tyre Union Demands a Seat at the Axle",
+    "standfirst": "Rubber representatives seek recognition in fleet negotiations. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T09:35:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that rubber representatives seek recognition in fleet negotiations. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was tread, pressure and a collective refusal to squeak. Staff described the process as the spare wheel has crossed the picket line, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the spare wheel has crossed the picket line. The matter will be revisited in Part 49, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The spare wheel has crossed the picket line.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 48,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-cooling.webp",
+    "imageAlt": "A conductor conducts a bus cooling system like a grand organ."
+  },
+  {
+    "id": "bus-desk-49",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 49: Engine Enters Therapy for Cooling Anxiety",
+    "standfirst": "A power unit learns to name its temperatures and share the load. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T09:24:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that a power unit learns to name its temperatures and share the load. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was a counsellor, a radiator and a very long idle. Staff described the process as the engine now says ‘I feel warm’ without alarming anyone, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the engine now says ‘I feel warm’ without alarming anyone. The matter will be revisited in Part 50, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The engine now says ‘I feel warm’ without alarming anyone.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 49,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-depot.webp",
+    "imageAlt": "Mechanics wake a blanket-covered fleet at a bus depot."
+  },
+  {
+    "id": "bus-desk-50",
+    "category": "Buses",
+    "headline": "The Bus Desk, Part 50: The Bus Desk Publishes Its Final Stop",
+    "standfirst": "After 49 reports, the paper asks what a bus is for. A 50-part Daily Flange investigation into tyres, engines, cooling systems and the people who keep them moving.",
+    "byline": "By Mavis Torque, Transport Correspondent",
+    "location": "THE ROAD AHEAD",
+    "published": "2026-07-18T09:13:00",
+    "body": [
+      "The Daily Flange Bus Desk can report that after 49 reports, the paper asks what a bus is for. The finding emerged after a morning of observation at a municipal depot, where the relevant bus, component or committee was placed under a blanket and asked to behave normally. It declined, which is why this article exists.",
+      "The immediate subject was movement, waiting, carrying people and looking serious at a roundabout. Staff described the process as the answer is probably to keep going, although the phrase was written down by a passenger who had mistaken the maintenance clipboard for a menu. The operator has since confirmed that nobody was injured, except the timetable, which has been folded into a shape no longer recognised by the route planner.",
+      "‘A bus is a collection of systems that have agreed to travel together,’ said Chief Engineer Mavis Torque, speaking beside a radiator that was making a point. ‘The tyres negotiate with the road, the engine negotiates with the hill and the cooling system negotiates with the weather. The passengers negotiate with the farebox. We call this transport.’",
+      "The mechanical facts are more sober. Tyres carry load and provide grip; engines turn fuel or electricity into motion; cooling systems remove heat before it becomes an announcement. Everything else is an arrangement of hoses, bearings, valves, belts, fans and paperwork that works best when inspected before it begins making a smell.",
+      "There are limits to the new policy. Operators have been told not to diagnose a bus with emotional damage, to keep hands away from moving machinery and to avoid replacing a coolant hose with anything described as ‘roughly the right diameter’. Passengers are also asked not to lean on the emergency exit while making a philosophical observation about torque.",
+      "The desk’s conclusion is that the answer is probably to keep going. The matter will be revisited in Part 01, once everyone has forgotten the route, when the Bus Desk will investigate another component that appears simple until asked to carry a city through winter."
+    ],
+    "pullQuote": "The answer is probably to keep going.",
+    "tags": [
+      "buses",
+      "transport",
+      "bus-desk",
+      "tyres",
+      "engines",
+      "cooling",
+      "satire"
+    ],
+    "series": "The Bus Desk",
+    "seriesPart": 50,
+    "seriesBook": "The Future of the Bus",
+    "image": "images/bus-plate-routes.webp",
+    "imageAlt": "Passengers consult compasses while a bus follows an impossible route.",
+    "images": [
+      {
+        "src": "images/bus-plate-routes.webp",
+        "alt": "Passengers consult compasses while a bus follows an impossible route.",
+        "afterParagraph": 2,
+        "caption": "Bus Desk plate 50: the evidence remains in service."
+      }
+    ]
+  }
+);
