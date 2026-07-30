@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00049 — Darmok progress import: a null value inside srs bricks the next render
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** darmok
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T232543Z-p11889-n874144000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00049-run-fix-20260730T232543Z-p11889-n874144000-c1
-- **Owner base:** f1666ad4da4c2dcee0a60dba8c7590123cf49cc5
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T23:25:43Z
-- **Owner until:** 2026-07-31T01:25:43Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T232543Z-p11889-n874144000-c1 branch=task/bug-ALM-BUG-KILN-00049-run-fix-20260730T232543Z-p11889-n874144000-c1 code=fd76b2a gate=manual)
 
 ## Observation
 
