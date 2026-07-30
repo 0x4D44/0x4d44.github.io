@@ -18,7 +18,8 @@
   // Skipping the bad entry keeps every other story rendering.
   var ARTICLES = (window.NEWS_ARTICLES || []).filter(function (a) {
     return a && typeof a.id === "string" && typeof a.category === "string" &&
-      typeof a.headline === "string" && typeof a.standfirst === "string";
+      typeof a.headline === "string" && typeof a.standfirst === "string" &&
+      Array.isArray(a.body) && Array.isArray(a.tags);
   });
   var ADS = window.NEWS_ADS || [];
 
@@ -586,10 +587,10 @@
     document.title = "The Daily Flange — All the news that's unfit to be true";
 
     var seq = rotated();
-    // If the article data failed to load (coerced to []), degrade to a friendly notice
-    // rather than throwing on the unguarded seq[0..8] / pickAds()[0] head reads below and
-    // leaving #app blank — every almanac doc shares this origin, so be robust.
-    if (!seq.length) {
+    // If the article data failed to load or filtering leaves fewer stories than the fixed
+    // nine-story homepage head consumes, degrade to a friendly notice rather than throwing
+    // on seq[0..8] and leaving #app blank.
+    if (seq.length < 9) {
       mount.innerHTML = headerHtml(null) +
         '<div class="wrap"><div class="layout"><main><div class="band">' +
         '<h3 class="section-title">Nothing to show</h3>' +
@@ -974,5 +975,4 @@
     count: function () { return ARTICLES.length; }
   };
 })();
-
 
