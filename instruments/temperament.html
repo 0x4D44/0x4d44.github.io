@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Temperament &amp; Tuning — The Well-Tempered Machine</title>
+<meta name="description" content="The oldest problem in music: pure intervals do not fit into an octave. The Pythagorean comma, just intonation and its wolves, meantone, and the even compromise of 12-tone equal temperament that the modern keyboard uses. Hear a fifth beat, and watch a circle of pure fifths refuse to close.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="strings.html">1 · Strings &amp; Frequency</a>
+    <a href="action.html">2 · The Action</a>
+    <a href="tone.html">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html" aria-current="page">4 · Temperament</a>
+    <a href="anatomy.html">5 · Anatomy</a>
+    <a href="family.html">6 · The Family</a>
+    <a href="lexicon.html">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 4</p>
+  <h1>Temperament &amp; Tuning</h1>
+  <p class="standfirst">Now the twist in the tale. In Chapter&nbsp;1 the harmonic series handed us the pure,
+  consonant intervals as simple frequency ratios — the octave 2:1, the fifth 3:2. You would think a keyboard
+  should just be tuned to those. It <em>can't be</em>. The pure intervals, stacked up, do not fit into the
+  octave — not by a little, but by an amount you can hear. Every fixed-pitch instrument in Western music is a
+  negotiated settlement of this problem, and the piano's settlement is the most ruthless of all.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Two ways up the same hill that should meet at the top — and miss.</p>
+
+<p>Start on a note and go up by pure <strong>fifths</strong> (ratio 3:2), twelve times: C&nbsp;→&nbsp;G&nbsp;→&nbsp;D&nbsp;→&nbsp;A…
+all the way around through every sharp and back to a C, seven octaves higher. Now start on the same note and go up by
+pure <strong>octaves</strong> (ratio 2:1), seven times, to reach — the same C. Two routes to the same note. They should
+arrive at the identical frequency. They do not. The twelve-fifths route lands about a quarter of a semitone
+<strong>sharp</strong> of the seven-octaves route. That stubborn little gap is the <strong>Pythagorean comma</strong>,
+and it is the crack in the universe that all tuning has to paper over.</p>
+
+<div class="callout gold">
+  <span class="tag">The comma, in numbers</span>
+  <p>Twelve pure fifths multiply to <span class="m">(3/2)<sup>12</sup> = 129.746…</span>, while seven octaves give
+  <span class="m">2<sup>7</sup> = 128</span>. Their ratio is</p>
+  <div class="eq"><span class="m"><frac><span>(3/2)<sup>12</sup></span><span>2<sup>7</sup></span></frac> =
+    <frac><span>531 441</span><span>524 288</span></frac> = 1.01364…</span> <span class="eqno">≈ 23.46 CENTS</span></div>
+  <p>You cannot wish this away; it is arithmetic. Since <span class="m">2</span> and <span class="m">3</span> are
+  different primes, no number of 3:2s will ever exactly equal a number of 2:1s. Something, somewhere, has to give.</p>
+</div>
+
+<h2><span class="no">§ 4.1</span>Watch the circle refuse to close</h2>
+
+<p>Here is the comma made visible. Stack pure fifths one at a time and follow where each new note lands on the pitch
+circle (one full turn = one octave). With <em>pure</em> fifths the twelfth note overshoots the starting point — the
+"circle" of fifths is really a spiral. Switch to <em>equal</em> fifths, each shaved a hair flat, and it closes exactly.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The circle of fifths that won't close</span>
+    <span class="hint">stack twelve fifths · pure overshoots by the comma · equal closes</span>
+  </div>
+  <div class="fig-body"><canvas id="comma" style="aspect-ratio: 2.1 / 1; min-height: 320px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>fifths</label>
+      <span class="seg" id="comma-mode">
+        <button data-v="pure" class="on">pure (3:2)</button>
+        <button data-v="equal">equal (tempered)</button>
+      </span>
+    </div>
+    <div class="ctl"><button class="btn" id="comma-step">＋ add a fifth</button></div>
+    <div class="ctl"><button class="btn primary" id="comma-all">▶ stack all twelve</button></div>
+    <div class="ctl"><button class="btn" id="comma-reset">↺ reset</button></div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="comma-count"><b>0</b> fifths stacked</span>
+    <span class="ro" id="comma-cents">total <b>0¢</b></span>
+    <span class="ro" id="comma-gap">gap from close <b>—</b></span>
+  </div>
+  <div class="fig-note">Each pure fifth is <b>701.96¢</b>; twelve of them make <b>8 423.5¢</b> — seven octaves
+  (<b>8 400¢</b>) <em>plus</em> the 23.5¢ comma. An equal fifth is exactly <b>700¢</b>, so twelve close the loop
+  perfectly. That 2¢ shaved off each fifth is the entire compromise of the modern piano.</div>
+</figure>
+
+<h2><span class="no">§ 4.2</span>Three ways to spend the comma</h2>
+
+<p>Every tuning system is a decision about <em>where to hide</em> that 23.5-cent error. You have to put it somewhere;
+the question is which intervals you are willing to spoil.</p>
+
+<table class="data">
+  <caption>How the great temperaments spend the comma</caption>
+  <tr><th>System</th><th>Keeps pure</th><th>Ruins</th><th>Verdict</th></tr>
+  <tr><td class="k">Just intonation</td><td>Fifths <em>and</em> thirds — in one key</td>
+    <td>Every other key; a "wolf" fifth appears</td>
+    <td>Heavenly in C, unusable in F♯. Fine for a fixed choir, hopeless for a keyboard that modulates.</td></tr>
+  <tr><td class="k">Meantone</td><td>The major thirds (pure 5:4)</td>
+    <td>One fifth becomes a howling "wolf"</td>
+    <td>Ruled ~1500–1700. Glorious thirds, but a few keys are off-limits.</td></tr>
+  <tr><td class="k">Well temperament</td><td>Nothing pure, but all keys usable</td>
+    <td>Each key coloured differently</td>
+    <td>Bach's world (<em>Das Wohltemperirte Clavier</em>, 1722): every key playable, each with its own character.</td></tr>
+  <tr class="hi"><td class="k">Equal temperament</td><td>Only the octave</td>
+    <td>Every fifth (−2¢) and third (+14¢) — but the same in all keys</td>
+    <td>The modern default. No key better or worse than any other; nothing pure but the octave.</td></tr>
+</table>
+
+<p>Modern pianos use the last row: <strong>twelve-tone equal temperament</strong>. The octave is split into twelve
+identical steps, each a frequency ratio of the twelfth root of two. Every fifth is about 2 cents flat of pure, every
+major third a noticeable 14 cents sharp — but <em>every</em> key is exactly as slightly-wrong as every other, so you
+can play in all 24 keys and modulate freely between them. It is a democracy of evenly-shared error — each interval
+mistuned by a fixed amount, the same in every key. The cost is that nothing
+except the octave is truly in tune; the gain is everything Chopin and jazz ever did with distant keys.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Cents, and the twelfth root of two</span><span class="tag2">the measuring stick of tuning</span></summary>
+  <p>Because pitch is multiplicative, we measure intervals in <b>cents</b>: 1200 to the octave, 100 to an
+  equal-tempered semitone. The cents between two frequencies is</p>
+  <div class="eq"><span class="m">cents = 1200 · log<sub>2</sub>(f<sub>2</sub> / f<sub>1</sub>)</span></div>
+  <p>In equal temperament every semitone is the same ratio <span class="m">2<sup>1/12</sup> ≈ 1.05946</span>, so the
+  fifth (7 semitones) is <span class="m">2<sup>7/12</sup> ≈ 1.4983</span> — against the pure <span class="m">1.5000</span>,
+  which is <b>701.96¢</b>. The equal fifth is <b>700¢</b>: flat by 1.96¢. Twelve of those shavings sum to
+  <span class="m">12 × 1.96 = 23.5¢</span> — the Pythagorean comma, now spread invisibly around the whole keyboard.</p>
+</details>
+
+<h2><span class="no">§ 4.3</span>Hear the difference — beats</h2>
+
+<p>How can a tuner, by ear, set a fifth exactly 2 cents flat? By listening for <strong>beats</strong>. When two tones
+are <em>almost</em> in tune, they slip in and out of step, and the loudness pulses — a slow <em>wah… wah… wah</em>. The
+pulse rate equals the frequency difference between the tones (or between the harmonics that nearly coincide). A pure
+interval has no beats; a tempered one beats at a steady, countable rate. Choose an interval and a tuning and listen —
+and watch the two nearly-matching harmonics drift past each other:</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The interval comparator</span>
+    <span class="hint">pure vs tempered · hear it beat · count the beats per second</span>
+  </div>
+  <div class="fig-body"><canvas id="beat" style="aspect-ratio: 2.8 / 1; min-height: 200px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>interval</label>
+      <span class="seg" id="iv-int">
+        <button data-v="P8" >octave</button>
+        <button data-v="P5" class="on">fifth</button>
+        <button data-v="P4">fourth</button>
+        <button data-v="M3">maj 3rd</button>
+        <button data-v="m3">min 3rd</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label>tuning</label>
+      <span class="seg" id="iv-temp">
+        <button data-v="just" class="on">just (pure)</button>
+        <button data-v="equal">equal</button>
+        <button data-v="pythagorean">Pythagorean</button>
+      </span>
+    </div>
+    <div class="ctl"><button class="btn primary" id="iv-play">▶ play</button></div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="iv-ratio">ratio <b>—</b></span>
+    <span class="ro" id="iv-dev">vs pure <b>—</b></span>
+    <span class="ro" id="iv-beat">beats <b>—</b></span>
+  </div>
+  <div class="fig-note">The wavy line is the sum of the two harmonics that <em>ought</em> to coincide. When they match
+  exactly (a pure interval) it holds steady; when they're detuned it swells and fades — that swelling is the beat, and
+  its rate is what the tuner counts. A just fifth is dead still; the equal fifth beats slowly; a Pythagorean major third
+  beats fast and sour.</div>
+</figure>
+
+<p>This is the craft under the science. An aural tuner sets one octave in the middle of the keyboard by counting beats —
+so many per second for a tempered fifth, a bit more for a third — then tunes outward from it, widening the octaves as
+Chapter&nbsp;3's inharmonicity demands. What looks like a mystical "good ear" is, at bottom, arithmetic done by listening:
+spreading one 23.5-cent comma so evenly that no single interval ever offends. The well-tempered machine is well-tempered
+precisely because it is, everywhere, a little out of tune.</p>
+
+<p>We have the string, the throw, the tone and the tuning. What remains is the thing that holds it all — the
+twenty-ton frame and the century of design that shaped it. That is the <a href="anatomy.html">anatomy</a>.</p>
+
+<div class="chapnav">
+  <a class="prev" href="tone.html"><span class="dir">← Previous</span><span class="title">3 · Tone &amp; the Soundboard</span></a>
+  <a class="next" href="anatomy.html"><span class="dir">Next →</span><span class="title">5 · Anatomy &amp; Construction</span></a>
+</div>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · Chapter 4 · The Pythagorean comma (531441/524288 ≈ 23.46¢); just,
+meantone, well and 12-tone equal temperament; cents and beats. Equal-tempered semitone = 2<sup>1/12</sup>, reference
+A4 = 440 Hz. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, seg, on, TAU, clamp, lerp, cents, playFreqs, playSine, html, fmtCents } = PZ;
+
+  /* ---------- 4.1 the comma spiral ---------- */
+  const PURE5 = 1200 * Math.log2(3 / 2);   // 701.955
+  const EQ5 = 700;
+  const NOTE12 = ["C","G","D","A","E","B","F♯","C♯","G♯","D♯","A♯","F","C"];
+  let cmode = "pure", cn = 0, figC, figB;
+  function cstepCents() { return cmode === "pure" ? PURE5 : EQ5; }
+  function refreshComma() {
+    const total = cn * cstepCents();
+    html("comma-count", "<b>" + cn + "</b> fifth" + (cn === 1 ? "" : "s") + " stacked");
+    html("comma-cents", "total <b>" + total.toFixed(1) + "¢</b>");
+    if (cn === 12) {
+      const gap = total - 8400;
+      html("comma-gap", "gap from close <b>" + (Math.abs(gap) < 0.05 ? "0¢ — closed!" : "+" + gap.toFixed(1) + "¢ (the comma)") + "</b>");
+    } else html("comma-gap", "gap from close <b>—</b>");
+    figC && figC.redraw();
+  }
+  seg("comma-mode", (v) => { cmode = v; cn = 0; refreshComma(); });
+  on("comma-step", "click", () => { if (cn < 12) { cn++; playFifth(cn); refreshComma(); } });
+  on("comma-reset", "click", () => { cn = 0; refreshComma(); });
+  on("comma-all", "click", () => {
+    cn = 0; refreshComma();
+    let i = 0;
+    const iv = setInterval(() => { if (cn >= 12) { clearInterval(iv); return; } cn++; playFifth(cn); refreshComma(); }, 320);
+  });
+  function playFifth(k) {
+    // the note reached after k fifths, folded into one octave above the base
+    const base = 220;
+    const foldedCents = ((k * cstepCents()) % 1200 + 1200) % 1200;
+    playSine(base * Math.pow(2, foldedCents / 1200), 0.3, 0.16);
+  }
+
+  figC = canvas("comma", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const cx = w / 2, cy = h / 2, R = Math.min(w, h) * 0.36;
+    // pitch ring (one turn = octave)
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, TAU); ctx.stroke();
+    // twelve tick marks (equal positions)
+    for (let i = 0; i < 12; i++) {
+      const a = -Math.PI / 2 + i / 12 * TAU;
+      const x1 = cx + Math.cos(a) * (R - 6), y1 = cy + Math.sin(a) * (R - 6);
+      const x2 = cx + Math.cos(a) * (R + 6), y2 = cy + Math.sin(a) * (R + 6);
+      PZ.line(ctx, x1, y1, x2, y2, C.line, 1);
+    }
+    // stacked fifths as a spiral: radius grows slightly with each step
+    const step = cstepCents();
+    let pts = [];
+    for (let k = 0; k <= cn; k++) {
+      const totalC = k * step;
+      const a = -Math.PI / 2 + (totalC / 1200) * TAU;
+      const r = R * (0.5 + 0.5 * (k / 12)) - (cmode === "equal" ? 0 : 0);
+      const rr = lerp(R * 0.42, R * 0.96, k / 12);
+      pts.push({ x: cx + Math.cos(a) * rr, y: cy + Math.sin(a) * rr, a, k });
+    }
+    // path
+    ctx.strokeStyle = cmode === "pure" ? C.amber : C.good; ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+    ctx.stroke();
+    // dots + labels
+    pts.forEach((p) => {
+      ctx.fillStyle = p.k === 0 ? C.cyan : (p.k === 12 ? (cmode === "pure" ? C.felt : C.good) : C.gold);
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.k === 0 || p.k === 12 ? 5 : 3.4, 0, TAU); ctx.fill();
+      const lx = cx + Math.cos(p.a) * (Math.min(w, h) * 0.44), ly = cy + Math.sin(p.a) * (Math.min(w, h) * 0.44);
+      PZ.label(ctx, NOTE12[p.k], lx, ly + 3, { align: "center", color: p.k === 0 ? C.cyan : C.ink2, font: PZ.mono(11, p.k === 0 || p.k === 12) });
+    });
+    // gap arc at end
+    if (cn === 12 && cmode === "pure") {
+      const start = pts[0], end = pts[12];
+      ctx.strokeStyle = C.felt; ctx.lineWidth = 2; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.arc(cx, cy, R * 0.96, -Math.PI / 2 - 0.02, -Math.PI / 2 + (23.46 / 1200) * TAU); ctx.stroke();
+      ctx.setLineDash([]);
+      PZ.label(ctx, "← comma (won't close)", cx, cy + R + 30, { align: "center", color: C.felt, font: PZ.mono(11, true) });
+    } else if (cn === 12) {
+      PZ.label(ctx, "closed — every key equal", cx, cy + R + 30, { align: "center", color: C.good, font: PZ.mono(11, true) });
+    }
+    PZ.label(ctx, "one turn = one octave", cx, cy - 2, { align: "center", color: C.muted, font: PZ.mono(10) });
+    PZ.label(ctx, "(pitch spirals outward as you climb)", cx, cy + 14, { align: "center", color: C.muted, font: PZ.mono(9.5) });
+  });
+  refreshComma();
+
+  /* ---------- 4.3 interval comparator + beats ---------- */
+  const INTERVALS = {
+    P8: { name: "octave",   semis: 12, pure: [2, 1],  coin: [1, 2] },
+    P5: { name: "fifth",    semis: 7,  pure: [3, 2],  coin: [2, 3] },
+    P4: { name: "fourth",   semis: 5,  pure: [4, 3],  coin: [3, 4] },
+    M3: { name: "maj third",semis: 4,  pure: [5, 4],  coin: [4, 5] },
+    m3: { name: "min third",semis: 3,  pure: [6, 5],  coin: [5, 6] },
+  };
+  const ROOT = 220; // A3
+  let ivKey = "P5", temp = "just";
+  function ratioFor() {
+    const iv = INTERVALS[ivKey];
+    if (temp === "equal") return Math.pow(2, iv.semis / 12);
+    if (temp === "just") return iv.pure[0] / iv.pure[1];
+    // pythagorean: fifths & fourths pure; thirds from chain
+    const P = PZ.RATIOS.pythagorean;
+    return P[iv.semis];
+  }
+  function beatRate() {
+    const iv = INTERVALS[ivKey];
+    const r = ratioFor();
+    const fLow = ROOT, fHigh = ROOT * r;
+    // the two harmonics that coincide for the pure interval
+    const [aLow, bHigh] = [iv.coin[1], iv.coin[0]]; // pure: coin[0]*fLow? ensure a*fLow≈b*fHigh
+    // pure gives pure[0]/pure[1]; coincident: pure[1]*fHigh = pure[0]*fLow
+    const A = iv.pure[0] * fLow, Bh = iv.pure[1] * fHigh;
+    return Math.abs(A - Bh);
+  }
+  function refreshIv() {
+    const iv = INTERVALS[ivKey], r = ratioFor();
+    const pure = iv.pure[0] / iv.pure[1];
+    const dev = cents(pure, r); // cents of tempered vs pure (relative)
+    html("iv-ratio", "ratio <b>" + r.toFixed(4) + "</b> (pure " + iv.pure[0] + ":" + iv.pure[1] + ")");
+    html("iv-dev", "vs pure <b>" + (Math.abs(dev) < 0.05 ? "0¢ (pure)" : fmtCents(dev)) + "</b>");
+    const br = beatRate();
+    html("iv-beat", "beats <b>" + (br < 0.05 ? "none — pure" : br.toFixed(1) + " / sec") + "</b>");
+    figB && figB.redraw();
+  }
+  seg("iv-int", (v) => { ivKey = v; refreshIv(); });
+  seg("iv-temp", (v) => { temp = v; refreshIv(); });
+  on("iv-play", "click", () => {
+    const r = ratioFor();
+    playFreqs([ROOT, ROOT * r], { dur: 2.6, gain: 0.42, partials: 10, B: 0.0002, noise: 0.2 });
+  });
+
+  figB = canvas("beat", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const iv = INTERVALS[ivKey], r = ratioFor();
+    const fLow = ROOT, fHigh = ROOT * r;
+    const A = iv.pure[0] * fLow, Bh = iv.pure[1] * fHigh; // the two near-coincident harmonics
+    const beat = Math.abs(A - Bh);
+    const mid = h / 2, amp = h * 0.30, x0 = 16, x1 = w - 16;
+    // draw a window of time long enough to show ~2 beats (or a fixed window if pure)
+    const winT = beat > 0.2 ? clamp(2 / beat, 0.05, 1.2) : 0.05;
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2; ctx.beginPath();
+    for (let i = 0; i <= 480; i++) {
+      const tt = (i / 480) * winT;
+      const y = mid - amp * 0.5 * (Math.sin(TAU * A * tt) + Math.sin(TAU * Bh * tt));
+      const x = lerp(x0, x1, i / 480);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // envelope
+    if (beat > 0.2) {
+      ctx.strokeStyle = C.felt; ctx.lineWidth = 1.2; ctx.setLineDash([4, 4]);
+      [1, -1].forEach((s) => {
+        ctx.beginPath();
+        for (let i = 0; i <= 240; i++) {
+          const tt = (i / 240) * winT;
+          const env = Math.abs(Math.cos(Math.PI * beat * tt));
+          const x = lerp(x0, x1, i / 240);
+          const y = mid - s * amp * env;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      PZ.label(ctx, "beating at " + beat.toFixed(1) + " Hz", x0 + 4, mid - amp - 6, { color: C.felt, font: PZ.mono(11) });
+    } else {
+      PZ.label(ctx, "steady — the harmonics coincide (pure)", x0 + 4, mid - amp - 6, { color: C.good, font: PZ.mono(11) });
+    }
+    PZ.label(ctx, iv.pure[0] + "× lower  vs  " + iv.pure[1] + "× upper harmonic", x1 - 4, mid + amp + 16,
+      { align: "right", color: C.muted, font: PZ.mono(10) });
+  });
+  refreshIv();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

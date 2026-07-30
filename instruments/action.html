@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Action — The Well-Tempered Machine</title>
+<meta name="description" content="The mechanism that made the piano possible: the escapement action that throws a free-flying hammer at the string and instantly gets out of its way, and Érard's 1821 double escapement that lets a note repeat before the key has risen. Drive an animated grand action through its travel and watch let-off happen.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="strings.html">1 · Strings &amp; Frequency</a>
+    <a href="action.html" aria-current="page">2 · The Action</a>
+    <a href="tone.html">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html">4 · Temperament</a>
+    <a href="anatomy.html">5 · Anatomy</a>
+    <a href="family.html">6 · The Family</a>
+    <a href="lexicon.html">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 2</p>
+  <h1>The Action</h1>
+  <p class="standfirst">Here is the invention. Everything else about the piano — the strings, the wood,
+  the frame — the harpsichord already had in some form. What Cristofori added, and what took a further
+  century to perfect, was a chain of little levers that converts the gentle push of a finger into the
+  fast, <em>free</em> blow of a hammer, and then snatches that hammer back before it can spoil the note.
+  It is called the <strong>action</strong>, and it is the reason the instrument can play both soft and loud.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">The problem sounds trivial and is not: hit a string with a hammer, but don't leave the
+hammer touching it.</p>
+
+<p>A string only rings if it is free to vibrate. Rest anything against it — a finger, a felt, the very
+hammer that struck it — and the sound dies at once. So the hammer must strike and <strong>rebound in the
+same instant</strong>, flying back off the string under its own momentum. But it also has to be
+<em>driven</em> by the key right up to the last moment, or you would have no control over how hard it hits.
+Driven, then suddenly free, then caught again before it bounces back up for a second, unwanted blow. The
+device that manages this hand-off is the <strong>escapement</strong>, and it is the beating heart of every
+piano ever built.</p>
+
+<h2><span class="no">§ 2.1</span>Drive it yourself</h2>
+
+<p>Below is a schematic grand action — one key's worth — seen from the side, with the string at the top and
+the player's finger at the left. Drag the <strong>key</strong> slider to press the key slowly and watch the
+chain of levers move: the key tips on its balance pin, its tail lifts the <em>wippen</em>, the wippen's
+<em>jack</em> pushes the hammer up toward the string, and the <em>damper</em> lifts off so the string will be
+free to sound. Keep pressing, and at about four-fifths of the way down something decisive happens.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">A grand action, one key</span>
+    <span class="hint">drag "key" to press slowly · or hit strike · watch the jack escape</span>
+  </div>
+  <div class="fig-body"><canvas id="act" style="aspect-ratio: 1.9 / 1; min-height: 340px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="act-key">key</label>
+      <input type="range" id="act-key" min="0" max="100" step="1" value="0">
+      <output></output>
+    </div>
+    <div class="ctl"><button class="btn" id="act-slow">▶ strike (slow)</button></div>
+    <div class="ctl"><button class="btn primary" id="act-fast">▶ strike (fast)</button></div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="act-state"><b>at rest</b></span>
+    <span class="ro" id="act-damp">damper <b>on the string</b></span>
+    <span class="ro amber" id="act-note">escapement <b>engaged</b></span>
+  </div>
+  <div class="fig-note"><b>Press slowly and the hammer never reaches the string</b> — you can feel the "let-off"
+  as the jack slips free, but the parked hammer can't be shoved the last few millimetres. Only a real
+  <b>throw</b> carries it home. That is the whole trick: the hammer arrives under its own momentum, not the
+  finger's, so the string is struck by something already flying free.</div>
+</figure>
+
+<p>The moment at four-fifths depth is <strong>let-off</strong> (or escapement). Until then the jack sits under
+a rounded knuckle on the hammer shank and drives it upward. At let-off, the jack's toe meets a fixed
+regulating button and is tipped out from under the knuckle — so for the final few millimetres the hammer
+coasts, unpowered, onto the string, and rebounds into a padded <em>back-check</em> that stops it bouncing.
+Press slowly and you prove the point the animation makes: with the jack escaped, the hammer simply parks
+below the string. It has to be <em>thrown</em>.</p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float" aria-hidden="true"><use href="#char-mallet"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Mallet</p>
+    <p class="say">"For the first four-fifths of the trip I'm a passenger — the jack carries me. Then the jack
+    ducks out and I'm on my own for the last three millimetres. I hit the string, bounce straight off, and land
+    in the back-check. If I <em>didn't</em> bounce off, there'd be no note at all — I'd be a mute sitting on the wire."</p>
+  </div>
+</div>
+
+<h2><span class="no">§ 2.2</span>Escapement, and then escapement twice</h2>
+
+<p>Cristofori's genius was the first escapement: a hopper that drove the hammer and then let it go. But his
+action, and the simpler <em>single-escapement</em> actions that followed, had a limitation that mattered
+enormously to players. After a note, the jack could only slide back under the knuckle once the key had risen
+<strong>almost all the way</strong> back to rest. Until it did, you could not play the note again. On a fast
+trill or a repeated chord, that meant letting the key come fully up between every strike — a real ceiling on
+how fast and how quietly you could repeat a note.</p>
+
+<p>In 1821 the Parisian maker <strong>Sébastien Érard</strong> patented the fix that every grand piano still
+uses: the <strong>double escapement</strong>, or <em>repetition</em> action. He added a sprung
+<em>repetition lever</em> that catches the falling hammer and holds it partway up, so the jack can slip back
+underneath while the key is <em>still half-depressed</em>. The note can be re-struck from halfway, again and
+again, faster and softer than before.</p>
+
+<div class="callout gold">
+  <span class="tag">Why grands feel different</span>
+  <p>This is the concrete reason a good grand "repeats" so effortlessly and an upright feels stiffer for fast
+  passages. Uprights use a simpler action (the hammers travel horizontally and are returned partly by springs
+  and gravity across their travel); most cannot reset from a half-lifted key the way Érard's repetition action
+  can. It is not snobbery — it is a different linkage doing a genuinely harder job. Concert repertoire from
+  Liszt onward quietly assumes the double escapement exists.</p>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">The parts, named</span><span class="tag2">a field glossary of one key</span></summary>
+  <p>Following the force from finger to string, a modern grand action has, per key, roughly: the
+  <b>key</b> itself (a first-class lever on a balance pin); the <b>capstan</b> screw on its tail; the
+  <b>wippen</b>, the rocking sub-assembly the capstan lifts; the <b>jack</b> (or hopper), the spring-loaded
+  lever that drives the hammer and then escapes; the <b>repetition lever</b> of Érard's design; the
+  <b>knuckle</b> (a leather-covered roller under the hammer shank the jack pushes on); the <b>hammer</b> —
+  shank, and a wooden core wrapped in graded wool <b>felt</b>; the <b>back-check</b> that catches the rebounding
+  hammer; the <b>let-off button</b> and <b>drop screw</b> that a technician adjusts to set where escapement
+  happens; and the <b>damper</b> with its own lever, lifted by the key so the string can ring and dropped again
+  on release. Multiply by 88. A regulator's job is to set the clearances of all of them, to thousandths of an
+  inch, so every key feels and speaks the same.</p>
+</details>
+
+<h2><span class="no">§ 2.3</span>Three ways to make a string speak</h2>
+
+<p>It is worth seeing the piano's method against its two ancestors, because the difference in mechanism is
+exactly the difference you hear. All three put a keyboard in front of a set of strings; what the key does at
+the far end is entirely different.</p>
+
+<div class="strip">
+  <div class="panel">
+    <span class="n">a · harpsichord</span>
+    <div class="art"><svg class="char" aria-hidden="true"><use href="#char-wire"/></svg></div>
+    <div class="cap"><b>Plucked.</b> A quill on a jack plucks the string as the key goes down. Bright and clear —
+    but the pluck is the same strength however you play, so there is no <em>loud</em> and <em>soft</em> from the fingers.</div>
+  </div>
+  <div class="panel">
+    <span class="n">b · clavichord</span>
+    <div class="art"><svg class="char" aria-hidden="true"><use href="#char-ivory"/></svg></div>
+    <div class="cap"><b>Struck &amp; held.</b> A brass tangent strikes the string and <em>stays</em> pressed to it,
+    setting the pitch and staying in contact. Touch-sensitive and even bendable in pitch — but so quiet it barely
+    carries across a room.</div>
+  </div>
+  <div class="panel">
+    <span class="n">c · piano</span>
+    <div class="art"><svg class="char" aria-hidden="true"><use href="#char-mallet"/></svg></div>
+    <div class="cap"><b>Struck &amp; freed.</b> A hammer is thrown at the string and rebounds instantly. Loudness
+    follows hammer speed, so the fingers control dynamics — <em>and</em> the note rings freely. The best of both,
+    at the cost of a far cleverer mechanism.</div>
+  </div>
+</div>
+
+<p>That third column is the whole point of the escapement. It buys touch-sensitivity (like the clavichord) and
+a big free-ringing tone (better than the harpsichord) in one instrument, by throwing the hammer rather than
+holding it. The price is complexity: those ten thousand parts. What the hammer then does to the string when it
+lands — soft or hard, and <em>where</em> it lands — decides the actual sound. That is <a href="tone.html">tone</a>.</p>
+
+<div class="chapnav">
+  <a class="prev" href="strings.html"><span class="dir">← Previous</span><span class="title">1 · Strings &amp; Frequency</span></a>
+  <a class="next" href="tone.html"><span class="dir">Next →</span><span class="title">3 · Tone &amp; the Soundboard</span></a>
+</div>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · Chapter 2 · The escapement after Cristofori (c.1700) and the
+double-escapement repetition action of Sébastien Érard (patented 1821). Action schematic simplified for clarity;
+part names follow standard piano-technology usage. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, on, TAU, clamp, lerp, mtof, playNote, html, set } = PZ;
+
+  const LETOFF = 0.82;
+  // state
+  let dipTarget = 0;       // from slider (0..1)
+  let dip = 0;             // eased key depression
+  let hammer = 0;          // 0 rest .. 1 at string
+  let vib = 0;             // string vibration amplitude
+  let escaped = false;
+  let striking = null;     // {t0, speed} or null
+  let played = false;
+  let lastT = 0;
+
+  // keyframe interpolation
+  function kf(frames, x) {
+    if (x <= frames[0][0]) return frames[0][1];
+    for (let i = 1; i < frames.length; i++) {
+      if (x <= frames[i][0]) {
+        const [ta, va] = frames[i - 1], [tb, vb] = frames[i];
+        return lerp(va, vb, (x - ta) / (tb - ta));
+      }
+    }
+    return frames[frames.length - 1][1];
+  }
+  const HAMMER_KF = [[0,0],[0.42,0.86],[0.55,1.0],[0.72,0.5],[2.1,0.5],[2.7,0.0]];
+  const DIP_KF    = [[0,0],[0.5,1.0],[2.2,1.0],[2.75,0.0]];
+
+  function startStrike(speed) {
+    striking = { t0: lastT, speed };
+    played = false;
+  }
+  on("act-slow", "click", () => startStrike(0.42));
+  on("act-fast", "click", () => startStrike(1.0));
+  slider("act-key", (v) => v.toFixed(0) + "%", (v) => { dipTarget = v / 100; });
+
+  function updateReadouts() {
+    let st = "at rest";
+    if (striking) st = "striking";
+    else if (dip > 0.02) st = escaped ? "held down — jack escaped" : "pressing";
+    html("act-state", "<b>" + st + "</b>");
+    html("act-damp", "damper <b>" + (dip > 0.12 ? "raised (string free)" : "on the string") + "</b>");
+    html("act-note", "escapement <b>" + (escaped ? "released — hammer free" : "engaged") + "</b>");
+  }
+
+  canvas("act", function (ctx, w, h, t) {
+    const dt = clamp(t - lastT, 0, 0.05); lastT = t;
+
+    if (striking) {
+      const tau = (t - striking.t0) * striking.speed;
+      dip = kf(DIP_KF, tau);
+      hammer = kf(HAMMER_KF, tau);
+      escaped = tau > 0.42 && tau < 2.7;
+      if (!played && tau >= 0.55) {
+        played = true; vib = 1;
+        playNote(mtof(52), { dur: 2.4, gain: 0.5, partials: 12, B: 0.0004, noise: 0.35 });
+      }
+      if (tau > 2.9) { striking = null; dip = 0; hammer = 0; escaped = false; }
+    } else {
+      dip += (dipTarget - dip) * clamp(dt * 12, 0, 1);
+      escaped = dip > LETOFF;
+      // slow press: hammer rises to just below string, parks after let-off
+      hammer = dip <= LETOFF ? (dip / LETOFF) * 0.9 : 0.9;
+    }
+    // damper releases string; if damper down, vibration killed
+    if (dip < 0.12) vib *= Math.exp(-dt * 30); else vib *= Math.exp(-dt * 1.4);
+
+    draw(ctx, w, h, t);
+    updateReadouts();
+  }, { animate: true });
+
+  function draw(ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    // ---- reference geometry ----
+    const stringY = h * 0.16;
+    const strX0 = w * 0.40, strX1 = w * 0.965;
+    // hammer pivot (flange)
+    const HFX = w * 0.545, HFY = h * 0.66;
+    const shank = HFY - stringY - h * 0.03;      // shank length
+    const contactX = w * 0.60;
+    // rest & contact angles for hammer head (measured so head sits under string)
+    const restAng = Math.atan2(stringY + h * 0.30 - HFY, contactX - HFX);
+    const hitAng  = Math.atan2(stringY + 6 - HFY, contactX - HFX);
+    const ang = lerp(restAng, hitAng, clamp(hammer, 0, 1));
+
+    // ---- string ----
+    ctx.save();
+    ctx.strokeStyle = C.cyan; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= 80; i++) {
+      const x = lerp(strX0, strX1, i / 80);
+      const env = Math.sin((i / 80) * Math.PI);
+      const y = stringY + (vib > 0.01 ? Math.sin(i * 0.9 + t * 60) * env * vib * 7 : 0);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // string posts
+    ctx.fillStyle = C.surface3;
+    ctx.fillRect(strX0 - 6, stringY - 14, 6, 28);
+    ctx.fillRect(strX1, stringY - 14, 6, 28);
+    PZ.label(ctx, "string", strX0 + 24, stringY - 12, { color: C.cyan, font: PZ.mono(11) });
+    ctx.restore();
+
+    // ---- damper (on string, right of hammer) ----
+    const dampX = w * 0.80;
+    const dampLift = clamp((dip - 0.05) / 0.15, 0, 1) * 20;
+    ctx.fillStyle = dip > 0.12 ? C.muted : C.felt;
+    PZ.roundRect(ctx, dampX - 8, stringY - 26 - dampLift, 16, 20, 3); ctx.fill();
+    PZ.line(ctx, dampX, stringY - 26 - dampLift + 20, dampX, stringY + 40, C.surface3, 3);
+    PZ.label(ctx, dip > 0.12 ? "damper up" : "damper", dampX + 12, stringY - 14 - dampLift, { color: dip > 0.12 ? C.good : C.felt, font: PZ.mono(10) });
+
+    // ---- hammer (shank + felt head) ----
+    const headX = HFX + Math.cos(ang) * shank;
+    const headY = HFY + Math.sin(ang) * shank;
+    ctx.strokeStyle = "#b98a52"; ctx.lineWidth = 5; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(HFX, HFY); ctx.lineTo(headX, headY); ctx.stroke();
+    // knuckle (roller) near pivot
+    const kx = HFX + Math.cos(ang) * (shank * 0.22), ky = HFY + Math.sin(ang) * (shank * 0.22);
+    ctx.fillStyle = "#7a5a34"; ctx.beginPath(); ctx.arc(kx, ky, 5, 0, TAU); ctx.fill();
+    // felt head
+    ctx.save(); ctx.translate(headX, headY); ctx.rotate(ang + Math.PI / 2);
+    ctx.fillStyle = "#efe2d2"; PZ.roundRect(ctx, -9, -14, 18, 20, 6); ctx.fill();
+    ctx.fillStyle = "#f7efe2"; PZ.roundRect(ctx, -7, -13, 14, 10, 5); ctx.fill();
+    ctx.restore();
+    // pivot
+    ctx.fillStyle = C.surface3; ctx.beginPath(); ctx.arc(HFX, HFY, 5, 0, TAU); ctx.fill();
+    PZ.label(ctx, "hammer", HFX + 10, HFY + 4, { color: "#c9975f", font: PZ.mono(11) });
+
+    // ---- key (first-class lever) ----
+    const BPX = w * 0.28, BPY = h * 0.80;
+    const frontX = w * 0.05, backX = w * 0.50;
+    const keyAng = dip * 0.11;   // radians, front goes down
+    function keyPt(px) {
+      const dx = px - BPX;
+      return { x: px, y: BPY + dx * Math.sin(keyAng) - (dx < 0 ? 0 : 0) };
+    }
+    // draw as a rotated bar
+    ctx.save();
+    ctx.translate(BPX, BPY); ctx.rotate(keyAng);
+    ctx.fillStyle = "#241a15";
+    PZ.roundRect(ctx, frontX - BPX, -8, (backX - frontX), 14, 4); ctx.fill();
+    // ivory front
+    ctx.fillStyle = "#f6efe2";
+    PZ.roundRect(ctx, frontX - BPX, -8, w * 0.11, 14, 4); ctx.fill();
+    ctx.restore();
+    // balance pin
+    ctx.fillStyle = C.amber; ctx.beginPath(); ctx.arc(BPX, BPY, 4, 0, TAU); ctx.fill();
+    PZ.label(ctx, "key", frontX + 8, BPY + 30, { color: C.ink2, font: PZ.mono(11) });
+    PZ.label(ctx, "balance pin", BPX - 4, BPY + 34, { color: C.muted, font: PZ.mono(9.5), align: "center" });
+
+    // capstan on key tail
+    const capBaseY = BPY + (backX - BPX) * Math.sin(keyAng);  // key tail y (rises as front drops => negative)
+    const capX = backX, capTopY = capBaseY - 8;
+    ctx.fillStyle = C.copper; ctx.beginPath(); ctx.arc(capX, capTopY, 4, 0, TAU); ctx.fill();
+
+    // ---- wippen + jack ----
+    // wippen pivot fixed; its front lifted by capstan
+    const WPX = w * 0.60, WPY = h * 0.90;
+    const lift = (1 - Math.cos(keyAng)) * 0 + dip * 26;   // how far the capstan pushed up
+    const wipFrontX = capX, wipFrontY = capTopY - 4;
+    ctx.strokeStyle = "#5a4736"; ctx.lineWidth = 6; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(WPX, WPY); ctx.lineTo(wipFrontX, wipFrontY); ctx.stroke();
+    ctx.fillStyle = C.surface3; ctx.beginPath(); ctx.arc(WPX, WPY, 4, 0, TAU); ctx.fill();
+    PZ.label(ctx, "wippen", WPX - 30, WPY + 4, { color: "#8a6f52", font: PZ.mono(10) });
+
+    // jack: rises with wippen, points up to knuckle; rotates away when escaped
+    const jackBaseX = lerp(WPX, wipFrontX, 0.42), jackBaseY = lerp(WPY, wipFrontY, 0.42);
+    const jackLen = 30;
+    const jackTip = escaped ? -0.9 : -Math.PI / 2 + 0.12;   // angle: upright vs tipped
+    const jackAng = escaped ? jackTip : -Math.PI / 2 + (hammer * 0.05);
+    const jtx = jackBaseX + Math.cos(jackAng) * jackLen;
+    const jty = jackBaseY + Math.sin(jackAng) * jackLen;
+    ctx.strokeStyle = escaped ? C.felt : C.amber; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(jackBaseX, jackBaseY); ctx.lineTo(jtx, jty); ctx.stroke();
+    PZ.label(ctx, escaped ? "jack (escaped)" : "jack", jackBaseX + 8, jackBaseY + 16,
+      { color: escaped ? C.felt : C.amber, font: PZ.mono(10) });
+
+    // let-off button (fixed regulating stop)
+    const lbX = jackBaseX - 20, lbY = jackBaseY - 6;
+    ctx.fillStyle = C.violet; ctx.beginPath(); ctx.arc(lbX, lbY, 4, 0, TAU); ctx.fill();
+    PZ.label(ctx, "let-off button", lbX - 8, lbY - 8, { color: C.violet, font: PZ.mono(9.5), align: "right" });
+
+    // let-off flash marker
+    if (escaped) {
+      ctx.save();
+      ctx.strokeStyle = C.felt; ctx.lineWidth = 1.5; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.arc(kx, ky, 16, 0, TAU); ctx.stroke();
+      ctx.restore();
+      PZ.label(ctx, "LET-OFF — hammer flying free", w * 0.5, h * 0.40,
+        { color: C.felt, font: PZ.mono(12, true), align: "center" });
+    }
+
+    // finger hint
+    if (dip < 0.02 && !striking) {
+      PZ.label(ctx, "↓ drag the key slider, or hit strike", frontX + 6, BPY - 22,
+        { color: C.muted, font: PZ.mono(11) });
+    }
+  }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
