@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#083f47" />
+  <meta name="description" content="The African Star — an original browser adaptation of Kari Mannerla's classic 1951 route-and-reveal board game." />
+  <title>The African Star — Almanac Games</title>
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect rx="20" width="100" height="100" fill="%230b5963"/><path d="M50 9 61 38 92 40 68 59 76 90 50 72 24 90 32 59 8 40 39 38Z" fill="%23f4cf57" stroke="%23fff1bb" stroke-width="3"/></svg>' />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <a class="skip-link" href="#commandPanel">Skip to game controls</a>
+  <div id="app" class="app" data-phase="boot">
+    <header class="topbar">
+      <button id="brandButton" class="brand-button" type="button" aria-label="About The African Star">
+        <span class="brand-star" aria-hidden="true">★</span>
+        <span class="brand-copy">
+          <span class="brand-kicker">A 1951 route-and-reveal classic</span>
+          <span class="brand-name">THE AFRICAN STAR</span>
+        </span>
+      </button>
+      <div id="raceBanner" class="race-banner" hidden>
+        <span class="race-spark" aria-hidden="true">✦</span>
+        <span id="raceBannerText">The race home has begun</span>
+      </div>
+      <nav class="top-actions" aria-label="Game controls">
+        <button id="soundButton" class="icon-button" type="button" aria-pressed="true" title="Sound on">
+          <span aria-hidden="true">♪</span><span class="icon-label">Sound</span>
+        </button>
+        <button id="rulesButton" class="icon-button" type="button">
+          <span aria-hidden="true">?</span><span class="icon-label">Rules</span>
+        </button>
+        <button id="newGameButton" class="icon-button danger-soft" type="button">
+          <span aria-hidden="true">↻</span><span class="icon-label">New</span>
+        </button>
+      </nav>
+    </header>
+
+    <main class="game-shell">
+      <section class="board-column" aria-label="Game board">
+        <div class="board-frame">
+          <div class="board-ribbon" aria-hidden="true">
+            <span>LAND</span><i></i><span>SEA</span><i></i><span>AIR</span>
+          </div>
+          <div class="map-toolbar">
+            <div class="legend-pills" aria-label="Route legend">
+              <span class="legend-pill land"><i></i>Road</span>
+              <span class="legend-pill sea"><i></i>Ship</span>
+              <span class="legend-pill air"><i></i>Flight</span>
+            </div>
+            <div class="zoom-tools" aria-label="Map zoom">
+              <button id="zoomOutButton" type="button" aria-label="Zoom out">−</button>
+              <button id="zoomResetButton" type="button" aria-label="Fit board"><span id="zoomLabel">100%</span></button>
+              <button id="zoomInButton" type="button" aria-label="Zoom in">+</button>
+            </div>
+          </div>
+          <div id="mapViewport" class="map-viewport" tabindex="0" aria-label="Scrollable map. Use the controls panel or highlighted map destinations to move.">
+            <svg id="board" class="board-svg" viewBox="0 0 1000 1200" role="img" aria-labelledby="boardTitle boardDesc">
+              <title id="boardTitle">The African Star game board</title>
+              <desc id="boardDesc">A stylised map of Africa with roads, shipping lanes, flights, thirty face-down expedition disks and player pieces.</desc>
+              <defs>
+                <linearGradient id="seaGradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#0f6d72" />
+                  <stop offset="0.55" stop-color="#0b5963" />
+                  <stop offset="1" stop-color="#073d49" />
+                </linearGradient>
+                <linearGradient id="landGradient" x1="0" y1="0" x2="0.8" y2="1">
+                  <stop offset="0" stop-color="#f3d982" />
+                  <stop offset="0.45" stop-color="#e9c65c" />
+                  <stop offset="1" stop-color="#cf9835" />
+                </linearGradient>
+                <radialGradient id="diskBack" cx="35%" cy="30%" r="75%">
+                  <stop offset="0" stop-color="#ffed9c" />
+                  <stop offset="0.55" stop-color="#d5a33a" />
+                  <stop offset="1" stop-color="#7d4e18" />
+                </radialGradient>
+                <radialGradient id="diskFace" cx="35%" cy="25%" r="80%">
+                  <stop offset="0" stop-color="#fff8d7" />
+                  <stop offset="1" stop-color="#d9c693" />
+                </radialGradient>
+                <filter id="boardShadow" x="-30%" y="-30%" width="160%" height="160%">
+                  <feDropShadow dx="0" dy="6" stdDeviation="7" flood-color="#001b1e" flood-opacity="0.45" />
+                </filter>
+                <filter id="pieceShadow" x="-60%" y="-60%" width="220%" height="240%">
+                  <feDropShadow dx="0" dy="7" stdDeviation="4" flood-color="#00181b" flood-opacity="0.65" />
+                </filter>
+                <filter id="choiceGlow" x="-80%" y="-80%" width="260%" height="260%">
+                  <feGaussianBlur stdDeviation="7" result="blur" />
+                  <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                </filter>
+                <pattern id="paperSpeckle" width="44" height="44" patternUnits="userSpaceOnUse">
+                  <circle cx="5" cy="7" r="1.2" fill="#173a35" opacity="0.07" />
+                  <circle cx="31" cy="13" r="0.8" fill="#173a35" opacity="0.08" />
+                  <circle cx="19" cy="35" r="1.1" fill="#fff" opacity="0.13" />
+                </pattern>
+                <pattern id="waves" width="54" height="36" patternUnits="userSpaceOnUse">
+                  <path d="M0 18 Q13 7 27 18 T54 18" fill="none" stroke="#b9e1d5" stroke-width="2" opacity="0.16" />
+                  <path d="M-14 33 Q0 22 14 33 T42 33 T70 33" fill="none" stroke="#b9e1d5" stroke-width="1.2" opacity="0.10" />
+                </pattern>
+                <marker id="planeMarker" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+                  <path d="M1 5 9 1 6.3 5 9 9Z" fill="#f5e6b8" opacity="0.85" />
+                </marker>
+                <clipPath id="africaClip">
+                  <path d="M320 76 C397 39 586 51 711 78 C781 93 819 132 809 191 C800 250 831 302 861 358 C887 406 914 446 883 480 C858 507 817 516 803 559 C785 616 826 676 806 742 C790 795 751 834 726 895 C693 973 618 1116 507 1122 C427 1121 385 1043 379 964 C373 891 327 839 326 773 C324 708 350 650 310 603 C275 563 218 541 204 480 C188 411 222 348 259 296 C294 247 296 195 296 145 C296 113 300 91 320 76Z" />
+                </clipPath>
+              </defs>
+
+              <rect width="1000" height="1200" fill="url(#seaGradient)" />
+              <rect width="1000" height="1200" fill="url(#waves)" />
+
+              <g class="ocean-lettering" aria-hidden="true">
+                <text x="82" y="590" transform="rotate(-75 82 590)">ATLANTIC OCEAN</text>
+                <text x="935" y="690" transform="rotate(75 935 690)">INDIAN OCEAN</text>
+                <text x="655" y="76">MEDITERRANEAN SEA</text>
+              </g>
+
+              <path class="africa-land" d="M320 76 C397 39 586 51 711 78 C781 93 819 132 809 191 C800 250 831 302 861 358 C887 406 914 446 883 480 C858 507 817 516 803 559 C785 616 826 676 806 742 C790 795 751 834 726 895 C693 973 618 1116 507 1122 C427 1121 385 1043 379 964 C373 891 327 839 326 773 C324 708 350 650 310 603 C275 563 218 541 204 480 C188 411 222 348 259 296 C294 247 296 195 296 145 C296 113 300 91 320 76Z" fill="url(#landGradient)" stroke="#f6e4a6" stroke-width="9" />
+              <path class="madagascar-land" d="M830 704 C870 717 895 772 888 827 C881 889 853 984 819 1019 C793 984 791 905 803 837 C812 783 805 731 830 704Z" fill="url(#landGradient)" stroke="#f6e4a6" stroke-width="7" />
+              <g class="island-land" fill="#e8c65e" stroke="#f6e4a6" stroke-width="5">
+                <path d="M118 190 q18 -24 37 -2 q-5 30 -27 33 q-19 -6 -10 -31Z" />
+                <path d="M99 367 q18 -20 37 1 q-4 28 -26 29 q-18 -8 -11 -30Z" />
+                <path d="M129 719 q25 -24 48 3 q-4 36 -29 37 q-28 -8 -19 -40Z" />
+              </g>
+              <rect width="1000" height="1200" fill="url(#paperSpeckle)" clip-path="url(#africaClip)" />
+
+              <g class="map-ornaments" aria-hidden="true">
+                <g class="sun" transform="translate(135 105)">
+                  <circle r="36" fill="#f8ce4c" />
+                  <g stroke="#f8ce4c" stroke-width="5">
+                    <path d="M0 -55V-72M0 55V72M-55 0H-72M55 0H72M-39 -39L-51 -51M39 39L51 51M39 -39L51 -51M-39 39L-51 51" />
+                  </g>
+                </g>
+                <g class="compass" transform="translate(890 160)">
+                  <circle r="58" fill="#f3e5b8" opacity="0.92" stroke="#173d39" stroke-width="4" />
+                  <circle r="44" fill="none" stroke="#173d39" stroke-width="2" stroke-dasharray="2 8" />
+                  <path d="M0 -42 10 -8 0 0 -10 -8Z" fill="#c34d35" /><path d="M0 42 10 8 0 0 -10 8Z" fill="#173d39" />
+                  <path d="M-42 0 -8 -10 0 0 -8 10Z M42 0 8 -10 0 0 8 10Z" fill="#3d7669" />
+                  <text x="0" y="-47">N</text>
+                </g>
+                <g class="pyramids" transform="translate(711 176)">
+                  <path d="M-42 30 0 -35 42 30Z" fill="#bf7f2b" opacity="0.72" />
+                  <path d="M6 30 43 -20 78 30Z" fill="#a96b24" opacity="0.62" />
+                </g>
+                <g class="baobab" transform="translate(467 415)">
+                  <path d="M-9 53 C-5 28 -12 5 -4 -9 C-23 -16 -38 -28 -31 -35 C-20 -42 -7 -27 1 -22 C5 -42 15 -58 22 -51 C30 -43 14 -25 11 -15 C25 -23 43 -24 45 -14 C46 -3 25 1 13 3 C22 18 16 36 14 53Z" fill="#73501c" opacity="0.55" />
+                </g>
+                <g class="elephant" transform="translate(350 692) scale(1.05)">
+                  <path d="M-57 15 C-59 -17 -39 -37 -4 -37 C28 -37 47 -20 48 4 L63 12 C70 18 69 31 60 33 C51 34 49 24 48 18 L40 18 L37 48 L24 48 L20 18 L-20 18 L-23 48 L-36 48 L-38 17 C-51 14 -57 13 -57 15Z" fill="#294c42" opacity="0.28" />
+                  <circle cx="38" cy="-18" r="16" fill="#294c42" opacity="0.28" />
+                </g>
+                <g class="giraffe" transform="translate(666 744)">
+                  <path d="M-20 45 -11 4 2 -20 8 -82 24 -82 20 -24 33 -4 29 45 18 45 18 0 2 0 -7 45Z" fill="#8f6622" opacity="0.30" />
+                  <circle cx="17" cy="-90" r="13" fill="#8f6622" opacity="0.30" />
+                  <path d="M10 -100 7 -114M24 -100 29 -113" stroke="#8f6622" stroke-width="5" opacity="0.30" />
+                </g>
+                <g class="falls" transform="translate(566 848)">
+                  <path d="M-54 -21 Q-28 -34 0 -21 T54 -21 M-54 -8 Q-28 -21 0 -8 T54 -8 M-42 8 Q-20 -4 3 8 T46 8" fill="none" stroke="#f7f0c3" stroke-width="6" opacity="0.55" />
+                </g>
+                <g class="cape-wind" transform="translate(470 1137)">
+                  <path d="M-76 0 Q-38 -23 0 0 T76 0 M-60 16 Q-25 -4 12 16 T70 16" fill="none" stroke="#fff3bd" stroke-width="4" opacity="0.55" />
+                </g>
+              </g>
+
+              <g id="flightLayer" class="flight-layer" aria-hidden="true"></g>
+              <g id="routeLayer" class="route-layer" aria-hidden="true"></g>
+              <g id="cityLayer" class="city-layer"></g>
+              <g id="tokenLayer" class="token-layer"></g>
+              <g id="choiceLayer" class="choice-layer"></g>
+              <g id="playerLayer" class="player-layer"></g>
+
+              <g class="map-title-card" transform="translate(690 1040)" aria-hidden="true">
+                <path d="M-118 -62 H118 L105 62 H-105Z" fill="#123f3c" stroke="#f3dfa1" stroke-width="4" />
+                <text class="map-title-small" x="0" y="-26">THE GREAT SEARCH FOR</text>
+                <text class="map-title-star" x="0" y="13">THE AFRICAN STAR</text>
+                <path d="M-90 31H90" stroke="#d7a83e" stroke-width="2" />
+                <text class="map-title-year" x="0" y="49">KARI MANNERLA · 1951</text>
+              </g>
+            </svg>
+          </div>
+          <div id="mapHint" class="map-hint" hidden>Drag the map to explore · highlighted destinations are selectable</div>
+          <div id="toastRegion" class="toast-region" aria-live="polite" aria-atomic="true"></div>
+        </div>
+      </section>
+
+      <aside id="commandPanel" class="command-panel" tabindex="-1">
+        <section class="expedition-heading">
+          <div class="heading-eyebrow">EXPEDITION CONTROL</div>
+          <div class="heading-rule"><span></span><i>✦</i><span></span></div>
+          <h1>Find the hidden diamond.</h1>
+          <p id="objectiveText">Turn the thirty disks, manage your £300, and bring the Star back to Tangier or Cairo.</p>
+        </section>
+
+        <section id="turnCard" class="turn-card" aria-labelledby="turnPlayerName">
+          <div class="turn-card-top">
+            <div id="turnPiece" class="mini-piece" aria-hidden="true"></div>
+            <div>
+              <div id="turnKicker" class="turn-kicker">CURRENT EXPEDITION</div>
+              <h2 id="turnPlayerName">Preparing the board…</h2>
+            </div>
+            <div id="turnMoney" class="money-badge">£300</div>
+          </div>
+          <div id="turnStatus" class="turn-status" aria-live="polite">Shuffle the expedition disks and choose your party.</div>
+          <div id="cargoRow" class="cargo-row" aria-label="Current player's race pieces"></div>
+        </section>
+
+        <section id="actionArea" class="action-area" aria-label="Available actions">
+          <div class="boot-card">
+            <div class="boot-star">★</div>
+            <strong>Opening the map case…</strong>
+          </div>
+        </section>
+
+        <section class="scoreboard-section" aria-labelledby="scoreboardTitle">
+          <div class="section-title-row">
+            <h2 id="scoreboardTitle">Expeditions</h2>
+            <span id="roundLabel">Round 1</span>
+          </div>
+          <div id="playersRail" class="players-rail"></div>
+        </section>
+
+        <details class="journal" open>
+          <summary><span>Expedition journal</span><span aria-hidden="true">⌄</span></summary>
+          <ol id="journalList" class="journal-list" aria-live="polite"></ol>
+        </details>
+
+        <div class="copyright-note">
+          Unofficial, non-commercial browser adaptation. Original code and illustration; no commercial game artwork reproduced.
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="setupDialog" class="paper-dialog setup-dialog" aria-labelledby="setupTitle">
+    <form id="setupForm" method="dialog">
+      <button class="dialog-close setup-close" type="button" aria-label="Close setup" hidden>×</button>
+      <div class="dialog-stamp">ALMANAC GAME No. 1951</div>
+      <div class="setup-hero">
+        <div class="setup-star" aria-hidden="true">★</div>
+        <div>
+          <div class="dialog-kicker">PACK YOUR EXPEDITION</div>
+          <h2 id="setupTitle">The African Star</h2>
+          <p>Cross the continent by road, ship and aeroplane. Beneath one of thirty disks lies the world's great diamond — and beneath the others, fortune or disaster.</p>
+        </div>
+      </div>
+
+      <div class="preset-row" aria-label="Quick setup presets">
+        <button type="button" data-preset="solo" class="preset active"><strong>Solo table</strong><span>You + 3 rivals</span></button>
+        <button type="button" data-preset="duo" class="preset"><strong>Two at the table</strong><span>2 people + 2 rivals</span></button>
+        <button type="button" data-preset="family" class="preset"><strong>Family table</strong><span>4 people</span></button>
+      </div>
+
+      <fieldset class="setup-fieldset">
+        <legend>Expeditions</legend>
+        <div id="setupPlayers" class="setup-players"></div>
+        <button id="addPlayerButton" class="text-button" type="button">+ Add another expedition</button>
+      </fieldset>
+
+      <div class="setup-grid">
+        <fieldset class="setup-fieldset ruleset-fieldset">
+          <legend>Coast rule</legend>
+          <label class="choice-card">
+            <input type="radio" name="coastRule" value="classic" checked />
+            <span><strong>Classic board</strong><small>Empty disk at Bight of Benin: miss 3 turns.</small></span>
+          </label>
+          <label class="choice-card">
+            <input type="radio" name="coastRule" value="modern" />
+            <span><strong>Modern family rule</strong><small>The same delay is shortened to 1 turn.</small></span>
+          </label>
+        </fieldset>
+        <fieldset class="setup-fieldset map-fieldset">
+          <legend>Map case</legend>
+          <label class="seed-label" for="seedInput">Expedition number</label>
+          <div class="seed-row">
+            <input id="seedInput" name="seed" type="text" inputmode="numeric" maxlength="10" value="1951" />
+            <button id="randomSeedButton" type="button" aria-label="Choose a random expedition number">↻</button>
+          </div>
+          <small>Use the same number to replay the same hidden disk layout.</small>
+        </fieldset>
+      </div>
+
+      <div class="context-note">
+        <strong>A map from another era.</strong> The game dates from 1951 and retains several historical place names and a treasure-hunt premise shaped by European adventure fiction. This edition uses original, non-caricatured art, replaces the old “robber” drawing with a leopard, and names the Bight of Benin while explaining the original rule in context.
+      </div>
+
+      <div class="setup-actions">
+        <button id="resumeButton" class="secondary-button" type="button" hidden>Resume saved expedition</button>
+        <button id="startButton" class="primary-button" value="start" type="submit"><span>Open the map</span><i aria-hidden="true">★</i></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="rulesDialog" class="paper-dialog rules-dialog" aria-labelledby="rulesTitle">
+    <form method="dialog">
+      <button class="dialog-close" value="close" aria-label="Close rules">×</button>
+      <div class="dialog-kicker">FIELD MANUAL</div>
+      <h2 id="rulesTitle">How to play</h2>
+      <div class="tab-list" role="tablist" aria-label="Rules sections">
+        <button id="rules-tab-play" type="button" role="tab" aria-selected="true" aria-controls="rules-panel-play" tabindex="0" data-rule-tab="play">The game</button>
+        <button id="rules-tab-disks" type="button" role="tab" aria-selected="false" aria-controls="rules-panel-disks" tabindex="-1" data-rule-tab="disks">The disks</button>
+        <button id="rules-tab-history" type="button" role="tab" aria-selected="false" aria-controls="rules-panel-history" tabindex="-1" data-rule-tab="history">1951 & today</button>
+      </div>
+      <div class="rule-panels">
+        <section id="rules-panel-play" role="tabpanel" aria-labelledby="rules-tab-play" tabindex="0" data-rule-panel="play">
+          <div class="rule-steps">
+            <article><b>1</b><div><h3>Search</h3><p>Start in Tangier or Cairo with £300. Everyone throws first; play proceeds from highest roll to lowest, with tied expeditions re-rolling for their places.</p></div></article>
+            <article><b>2</b><div><h3>Turn a disk</h3><p>On arrival, pay £100 to turn the disk immediately or wait. From your next turn there, a 4–6 turns it for free; you may still pay or travel on.</p></div></article>
+            <article><b>3</b><div><h3>Race home</h3><p>The finder carries the Star. Once it is found, any later horseshoe also becomes a race piece. First to either starting city wins.</p></div></article>
+          </div>
+          <div class="travel-table">
+            <div><span class="route-swatch land"></span><strong>Road</strong><em>Free</em><small>Roll and move. You may stop early at a city.</small></div>
+            <div><span class="route-swatch sea"></span><strong>Ship</strong><em>£100</em><small>Pay on boarding, roll and stop at the next port. With no cash, move exactly 2 sea spaces without rolling.</small></div>
+            <div><span class="route-swatch air"></span><strong>Flight</strong><em>£300</em><small>Move directly to the next linked flight city; no die roll.</small></div>
+          </div>
+          <div class="special-rules">
+            <h3>Places with special rules</h3>
+            <p><strong>Cape Town:</strong> first expedition to arrive receives £500. <strong>Gold Coast:</strong> any gem found there pays double. <strong>Sahara & Saint Helena:</strong> land on a ringed trap and, on later turns, roll for a 1 or 2. A successful escape uses that turn; movement resumes on the next.</p>
+          </div>
+        </section>
+        <section id="rules-panel-disks" role="tabpanel" aria-labelledby="rules-tab-disks" tabindex="0" data-rule-panel="disks" hidden>
+          <div class="disk-ledger">
+            <article class="disk-rule star"><span>★</span><div><strong>1 · African Star</strong><p>Carry it to Tangier or Cairo.</p></div></article>
+            <article class="disk-rule ruby"><span>◆</span><div><strong>2 · Rubies</strong><p>£1,000 each.</p></div></article>
+            <article class="disk-rule emerald"><span>◆</span><div><strong>3 · Emeralds</strong><p>£600 each.</p></div></article>
+            <article class="disk-rule topaz"><span>◆</span><div><strong>4 · Topazes</strong><p>£300 each.</p></div></article>
+            <article class="disk-rule horseshoe"><span>∩</span><div><strong>5 · Horseshoes</strong><p>Only count after the Star is found.</p></div></article>
+            <article class="disk-rule leopard"><span>●</span><div><strong>3 · Leopards</strong><p>Lose all your money.</p></div></article>
+            <article class="disk-rule blank"><span>·</span><div><strong>12 · Empty</strong><p>Nothing — except at Bight of Benin.</p></div></article>
+          </div>
+        </section>
+        <section id="rules-panel-history" role="tabpanel" aria-labelledby="rules-tab-history" tabindex="0" data-rule-panel="history" hidden>
+          <div class="history-copy">
+            <p class="dropcap">Kari Mannerla designed <em>Afrikan tähti</em> as a nineteen-year-old in Finland. First published in 1951, its exceptionally simple loop — choose a route, roll, reveal — turned it into a family fixture across the Nordic countries.</p>
+            <p>The board is also unmistakably a product of its time. Its geography mixes cities, regions and colonial-era names; its fantasy of extracting gems from a continent was inherited from European adventure stories, not from African perspectives.</p>
+            <p>This browser edition treats the object as both game and artefact. The route structure, economy and 30-disk mix remain recognisable. The illustration is entirely new, human caricatures have been omitted, the old coast label is not printed on the board, and a short note is kept visible rather than pretending the context is not there.</p>
+            <div class="history-credit">Game designed by Kari Mannerla · Browser adaptation and original SVG illustration for the 0x4D44 Almanac · Unofficial and non-commercial.</div>
+            <p class="research-links"><strong>Research trail:</strong> <a href="https://res.cloudinary.com/martinex/image/upload/v1741161568/game-instructions/AFRIKAN_T%C3%84HTI_DELUXE_FI_SE_ES_EN_40856075_mxiymz.pdf" target="_blank" rel="noopener noreferrer">current Peliko rules</a> · <a href="https://algaspel.se/wp-content/uploads/2024/10/38010814_denforsvunnadiamanten.pdf" target="_blank" rel="noopener noreferrer">ALGA edition comparison</a> · <a href="https://www.finna.fi/Record/lapinkirjasto.1847392" target="_blank" rel="noopener noreferrer">70th-edition components</a> · <a href="https://www.finna.fi/Record/museovirasto.c778aa86-e862-4cc4-9654-e672fb808d55" target="_blank" rel="noopener noreferrer">National Museum catalogue</a>.</p>
+          </div>
+        </section>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="revealDialog" class="reveal-dialog" aria-labelledby="revealTitle">
+    <div id="revealScene" class="reveal-scene">
+      <div class="reveal-rays" aria-hidden="true"></div>
+      <div id="bigDisk" class="big-disk" aria-hidden="true">
+        <div class="big-disk-inner">
+          <div class="big-disk-back"><span>?</span></div>
+          <div class="big-disk-face"><span id="bigDiskIcon">★</span></div>
+        </div>
+      </div>
+      <div class="reveal-copy">
+        <div id="revealKicker" class="dialog-kicker">THE DISK REVEALS</div>
+        <h2 id="revealTitle">The African Star!</h2>
+        <p id="revealMessage">The race home has begun.</p>
+      </div>
+      <button id="revealContinueButton" class="primary-button" type="button">Continue</button>
+    </div>
+  </dialog>
+
+  <dialog id="handoffDialog" class="handoff-dialog" aria-labelledby="handoffTitle">
+    <div class="handoff-card">
+      <div id="handoffPiece" class="handoff-piece" aria-hidden="true"></div>
+      <div class="dialog-kicker">PASS THE MAP</div>
+      <h2 id="handoffTitle">Ready for the next expedition?</h2>
+      <p id="handoffText">Hand the device to the next player.</p>
+      <button id="handoffButton" class="primary-button" type="button">Begin turn</button>
+    </div>
+  </dialog>
+
+  <dialog id="winnerDialog" class="winner-dialog" aria-labelledby="winnerTitle">
+    <div class="winner-sky" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="winner-card">
+      <div class="winner-star" aria-hidden="true">★</div>
+      <div class="dialog-kicker">EXPEDITION COMPLETE</div>
+      <h2 id="winnerTitle">The Star reaches Cairo!</h2>
+      <p id="winnerText">A brilliant race across the continent.</p>
+      <div id="winnerStats" class="winner-stats"></div>
+      <div class="winner-actions">
+        <button id="winnerNewButton" class="primary-button" type="button">Play another map</button>
+        <button id="winnerCloseButton" class="secondary-button" type="button">Admire the board</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="aboutDialog" class="paper-dialog about-dialog" aria-labelledby="aboutTitle">
+    <form method="dialog">
+      <button class="dialog-close" value="close" aria-label="Close about">×</button>
+      <div class="about-poster" aria-hidden="true">
+        <span class="about-poster-star">★</span>
+        <span class="about-poster-title">THE AFRICAN STAR</span>
+        <span class="about-poster-route">TANGIER · CAPE TOWN · CAIRO</span>
+      </div>
+      <div class="dialog-kicker">ABOUT THIS EDITION</div>
+      <h2 id="aboutTitle">A board game, rebuilt as a living map.</h2>
+      <p>This is an unofficial, non-commercial adaptation made for the 0x4D44 Almanac. It uses a deterministic, tested rules core, local-only saving, synthesised Web Audio and an original mid-century travel-poster board drawn entirely in SVG and CSS.</p>
+      <p>No commercial scans, logos or illustrations are included. The historical note is part of the design, not an afterthought.</p>
+      <div class="about-features"><span>2–6 players</span><span>Human & AI</span><span>No network assets</span><span>No account</span></div>
+    </form>
+  </dialog>
+
+  <div id="confettiLayer" class="confetti-layer" aria-hidden="true"></div>
+  <div id="screenReaderStatus" class="sr-only" aria-live="assertive"></div>
+
+  <script src="game-core.js"></script>
+  <script src="game.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

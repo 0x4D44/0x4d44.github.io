@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00016 — Medals earned during a drill are awarded silently -- no popup, no chime
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** darmok
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — drill now collects pops, plays the chime, and renders COMMENDATION cards)
 
 ## Observation
 Crossing a medal threshold during a spaced-review drill records the medal but shows the user nothing -- no popup, no medal chime, nothing on the drill-complete screen.
@@ -37,3 +38,11 @@ done view). So a medal crossed mid-drill — notably Universal Translator, earna
 a drill — is celebrated instead of recorded silently. Regression: darmok/handlers.test.mjs
 asserts the drill branch passes a real pops array (not null,null) and the view renders
 D.pops.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `0e87a14`.
+
+**Original observation re-checked — resolved.** `darmok/app.js:675-680` now passes a real `pops` array into `checkMedals`, stores it on `S.drill`, and schedules the `medal` tone; the drill-complete view renders `(D.pops || []).map(...)` as COMMENDATION cards at `app.js:757`. All three prerequisites were checked to exist: `award()` only pushes to a truthy `popList` (`app.js:42-47`) — now truthy; the `medal` tone exists in `DK.beep` (`engine.js:566`); the `.medal-pop` class exists (`darmok/lcars.css:905`). `award` dedupes against `P.medals`, so only genuinely new medals pop, and every id passed to `award` in `checkMedals` exists in the `MEDALS` table (`app.js:27-41`), so `pops` cannot receive an `undefined` that would throw on `m.ic`. `universal-translator` (`P.reviews >= 300`, `app.js:65`) is reached in the same call and `P.reviews` increments on the drill path (`app.js:627`).
+
+**Limits of this verification:** the popup and chime were not observed — this is a visual/audio outcome — and the regression guard in `darmok/handlers.test.mjs` is a source-shape oracle (3 assertions, all confirmed to fail against pre-fix `app.js`).

@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00028 — Tidecall round/match recap modals open with focus on `<body>`, never inside the dialog
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** tidecall
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude — split from ALM-BUG-KILN-00002 during its independent two-eyes verification; this is a regression *introduced* by that bug's fix, `b2c47f0`)
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the shipped focus fix is present and correct; its regression guard is broken on Windows and is split to ALM-BUG-KILN-00045)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage and play a round out to its recap
@@ -73,3 +74,37 @@ round/match recaps the ✕ is hidden, and the old unfiltered `$(...)` picked tha
 so focus fell back to `<body>`; the fix moves focus inside the dialog. Regression:
 tidecall/validate-static.test.js pins that openModal's focus selection uses the offsetParent
 visibility filter.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `1efa30c`.
+
+**Original observation re-checked — the shipped fix is present and correct.** `tidecall/app.js:784-791` now defers to `requestAnimationFrame` and filters to the first *visible* control before focusing:
+
+```js
+requestAnimationFrame(() => {
+  const focusable = $$('button:not([disabled]), [href], input:not([disabled])', dom.modalLayer)
+    .filter((el) => el.offsetParent !== null)[0];
+  if (focusable) focusable.focus({ preventScroll: true });
+});
+```
+
+This is exactly the one-liner the bug proposed, mirroring the Tab trap at `app.js:1085`. Supporting evidence: `.modal-close` is hidden for round/match at `app.js:783`; `.modal-layer` is `position: fixed` (`styles.css:635`) while `.modal-close` is `position: sticky` (`styles.css:638`), so the surviving `#modal-content` buttons have a non-null `offsetParent` and the hidden ✕ has a null one. The bug report itself established empirically that this same `offsetParent` filter, used by the Tab trap on this same DOM, reaches CHART NEXT ROUND / HOME.
+
+**Limit of this verification:** focus and `offsetParent` need real layout, so the initial-focus application was not measured in a browser.
+
+**Residual split to ALM-BUG-KILN-00045 — this fix's own regression guard is broken.** `tidecall/validate-static.test.js:130-139` fails on **every Windows checkout**, taking `npm test` and `npm run build` down with it:
+
+```
+✗ a modal moves focus to its first VISIBLE control, not a hidden one (KILN-00028)
+AssertionError: openModal function should be found     REAL_EXIT=1
+```
+
+Cause: the extractor regex `/function openModal[\s\S]*?\n  \}\n/` requires `}` immediately followed by LF, but `core.autocrlf=true` checks `tidecall/app.js` out as CRLF. The committed blob is pure LF, which is why the guard passes under WSL/Linux and the fixer saw it green. Proven by normalising line endings, which makes both assertions pass — confirming the guard's *inner* behavioural assertion is satisfied by the shipped code:
+
+```
+AS CHECKED OUT (CRLF):       regex MATCH=false -> assert.ok fails
+LINE-ENDING NORMALISED (LF): regex MATCH=true, inner rAF+offsetParent+.focus assertion = true
+```
+
+Closed rather than reopened because the recorded symptom — focus stranded on `<body>` — is genuinely addressed, and the guard fails *noisily*, so it cannot hide a regression; it is a red gate, which is a distinct defect.

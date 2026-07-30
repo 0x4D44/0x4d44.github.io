@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00026 — Homepage always shows at least one story twice -- feature bands are not deduped against the top block
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** news
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — 0/500 hour seeds repeat a story, against 329/500 pre-fix)
 
 ## Observation
 On every hourly render of the Daily Flange homepage, at least one story that already appears in the hero / lead row / "More top stories" / "Around The Flange" blocks is repeated inside a category feature band lower down the page.
@@ -38,3 +39,15 @@ row, "More top stories") and both feature bands, and filters each subsequent ban
 already shown above. The "Most read" sidebar and the ticker stay intentionally separate.
 Regression: news/tests/validate-static.mjs renders the homepage across 24 hour-seeds and
 asserts the `<main>` column never repeats a story.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `07941bf`.
+
+**Original observation re-checked — resolved.** `news/news.js:618-619` introduces a `used` set with `markUsed`, applied at `:623`, `:625`, `:630`, `:635`, `:640`, `:650`, `:655` and `:662-663`. Driving the real `renderHome` over **500** consecutive hour seeds — ten times the recorded 48-seed repro — extracting article ids from the `<main>` column:
+
+```
+seeds with a repeated story in <main>: 0/500
+```
+
+The pre-fix renderer on the identical probe and corpus: `329/500 (e.g. seed 0: wld-parliament-accidentally-dissolves-itself-vote)`. Ids are unique (asserted at `news.js:22`) and `seq` is a shuffle, so the top block cannot self-collide. "Most read" and the ticker are deliberately excluded and correctly out of scope. Regression coverage `news/tests/validate-static.mjs:345-373` (24 hour-seeds) passes.

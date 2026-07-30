@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00029 — Tidecall regression guards are source-text regexes: they pin yesterday's spelling, not the invariant
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** tests
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude — split from the independent two-eyes verification of ALM-BUG-KILN-00003 and ALM-BUG-KILN-00004)
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — manifestation (1) fixed with a mutation-proven behavioural oracle; (2) and (3) split to ALM-BUG-KILN-00046)
 
 ## Observation
 Every Tidecall regression guard added by the recent bug-fix batch is a **regex over source text**
@@ -93,3 +94,24 @@ demonstrated-vacuous guard it centres on. The board-overflow constant guard (KIL
 the morning-run source regexes (KILN-00001) named under "Suggested direction" are a broader
 harness-hardening effort (compute chrome / headless measurement) better tracked as their own
 follow-up items than folded into this pass; the proven vacuous guard is now behavioural.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `c0a9c7b`.
+
+**Manifestation (1) — the vacuous confetti guard — VERIFIED FIXED, and the new oracle is genuinely behavioural.** `tidecall/celebrate.test.js` extracts the real `celebrate()` and drives it with a fake rAF scheduler and a canvas op-log. Applying this bug's own documented mutation in a scratch copy (keep the asserted cancel line, revert both `celebrateRaf =` assignments to a bare `requestAnimationFrame(frame)`):
+
+```
+✗ a first celebrate() schedules exactly one live loop        (the live rAF id is captured in celebrateRaf)
+✗ an overlapping celebrate() cancels the previous loop        (0 !== 1)
+✗ overlap after a frame has rescheduled still leaves one loop (0 !== 1)
+ORACLE_EXIT=1
+```
+
+The old string guard passed this exact mutation; the oracle fails it. That is the real thing.
+
+**Manifestations (2) and (3) remain — split to ALM-BUG-KILN-00046.** The board-overflow constant regex survives at `tidecall/validate-static.test.js:80-89`, and the KILN-00004 pass *added a second copy* at `:141-148`; the `morning-run` source regexes are untouched. The fix note deferred both as "better tracked as their own follow-up items" — no such follow-up had been created, so they are now tracked.
+
+**A live instance of this bug's own thesis.** Sweeping every test file in the repo for the same LF-only source-regex fragility found exactly one affected extractor: `tidecall/validate-static.test.js:135` (the KILN-00028 guard), which fails on every Windows checkout and reds the gate — tracked as ALM-BUG-KILN-00045. `onu/tests/validate-static.mjs:191` (`\n\}`) and `celebrate.test.js:15` (`\n {2}\}`) survive CRLF because their terminators place the newline *before* the brace. So the anti-pattern this bug names produced a real gate failure within the same fix batch.
+
+Closed with the recorded Observation's flagship item genuinely fixed and the two deferred items now tracked rather than lost.

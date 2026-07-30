@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00031 — Shipshape difficulty adjusts after a single feedback log instead of the intended run of 3 (or 2)
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** shipshape
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — single-session feedback no longer moves difficulty; legacy migration verified)
 
 ## Observation
 A single session's feedback moves an exercise's difficulty level: one "too_easy" bumps the level up (targets get harder), one "too_hard" drops it down (targets get easier) — even though the code intends a sustained run before adjusting. The effect is user-visible via the next day's target reps/seconds/weight.
@@ -44,3 +45,22 @@ columns), so a status-only 'skipped' duty can no longer shift feedback and statu
 step. Difficulty now moves on a genuine run, not one session. Regression:
 shipshape/tests/engine.test.mjs adds the empty-history single-feedback cases and a
 status-only alignment check, and keeps the three-easy-completions progression test.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `91940a3`.
+
+**Original observation re-checked — resolved, driven against the real engine.** `shipshape/engine.js:156-168` replaces the two independently-filtered arrays with a single aligned `recentLog` of `{feedback, status}` (with positional migration from the legacy columns) and adds explicit length gates, so `every` can no longer be vacuously true on a short slice:
+
+```
+A. fresh progression, ONE too_easy/done: level= 0   (was 1)
+B. after 1 easy=0, after 2 easy=0, after 3 easy=1, after 4 easy=2
+C. level 3 + ONE too_hard: level= 3   (was 2);  + a second too_hard: level= 2
+D. 2 easy+done, then status-only 'skipped', then 1 easy+done -> level 0
+   (the skipped entry correctly breaks the run)
+E. legacy {recentFeedback:[easy,easy], recentStatuses:[done,done]} + 1 easy -> level 1
+```
+
+Row D is the alignment hole from the observation: `easyRun` now also requires `status === 'done'` on the *same* entry. Row E confirms the legacy-column migration does not silently reset an existing user's history — a real risk with this shape of change.
+
+**Over-correction probed.** `pain_or_discomfort` still drops the level on a single report (4→3), which is the deliberate immediate branch; three status-only `skipped` entries from empty history leave the level at 0 because it is already floored. Regression coverage `shipshape/tests/engine.test.mjs:51-62` passes, along with `storage.test.mjs` and `validate-static.mjs`.

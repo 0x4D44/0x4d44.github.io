@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#183c2a">
+  <meta name="description" content="A faithful, original browser adaptation of the 1985 adventure board game Lost Valley of the Dinosaurs.">
+  <title>Lost Valley of the Dinosaurs — 0x4D44 Almanac</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="topbar" id="topbar">
+    <button class="brand-mini" id="brand-home" type="button" aria-label="Return to expedition setup">
+      <span class="brand-mini-kicker">THE LOST VALLEY OF THE</span>
+      <span class="brand-mini-main">DINOSAURS</span>
+    </button>
+    <div class="top-actions">
+      <button class="icon-button" id="fit-board" type="button" title="Fit board" aria-label="Fit board">⌂</button>
+      <button class="icon-button" id="zoom-out" type="button" title="Zoom out" aria-label="Zoom out">−</button>
+      <button class="icon-button" id="zoom-in" type="button" title="Zoom in" aria-label="Zoom in">+</button>
+      <button class="icon-button" id="sound-toggle" type="button" aria-pressed="false" title="Sound">♩</button>
+      <button class="icon-button" id="rules-open" type="button" title="Rules" aria-label="Open rules">?</button>
+      <button class="icon-button" id="settings-open" type="button" title="Settings" aria-label="Open settings">⚙</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="setup-screen" id="setup-screen" aria-labelledby="setup-title">
+      <div class="box-wrap" aria-hidden="true">
+        <div class="box-lid">
+          <svg class="box-art" viewBox="0 0 780 520" role="img" aria-label="An explorer faces a tyrannosaur beneath an erupting volcano">
+            <defs>
+              <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#203b4b"/><stop offset=".58" stop-color="#66806c"/><stop offset="1" stop-color="#d4aa54"/></linearGradient>
+              <linearGradient id="lavaG" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffd64c"/><stop offset=".4" stop-color="#f05a28"/><stop offset="1" stop-color="#8f1b15"/></linearGradient>
+              <radialGradient id="mist" cx="50%" cy="50%" r="50%"><stop stop-color="#f5e7a3" stop-opacity=".8"/><stop offset="1" stop-color="#f5e7a3" stop-opacity="0"/></radialGradient>
+              <filter id="rough"><feTurbulence baseFrequency=".03" numOctaves="3" seed="8" result="n"/><feBlend in="SourceGraphic" in2="n" mode="soft-light"/></filter>
+            </defs>
+            <rect width="780" height="520" fill="url(#sky)"/>
+            <circle cx="570" cy="150" r="120" fill="url(#mist)" opacity=".35"/>
+            <path d="M0 235 Q80 185 148 226 Q220 150 304 221 Q371 175 440 230 Q525 155 640 225 Q716 177 780 222 V520 H0Z" fill="#152b20"/>
+            <path d="M64 247 L205 83 L328 249Z" fill="#39271f"/>
+            <path d="M158 137 Q199 106 244 139 L220 171 L187 160Z" fill="#171817"/>
+            <path d="M195 145 C178 189 202 203 181 248 C167 279 142 305 126 349" fill="none" stroke="url(#lavaG)" stroke-width="20" stroke-linecap="round"/>
+            <g fill="#050a07" opacity=".75"><ellipse cx="174" cy="80" rx="45" ry="19"/><ellipse cx="228" cy="70" rx="58" ry="22"/><ellipse cx="265" cy="101" rx="38" ry="16"/></g>
+            <g transform="translate(472 180)" filter="url(#rough)">
+              <path d="M94 59 C137 35 185 44 202 78 C225 125 189 155 157 165 C181 182 192 208 178 227 C157 250 127 220 108 197 L79 228 L55 214 L70 181 C49 161 29 140 26 110 C23 83 48 65 94 59Z" fill="#5d8d45" stroke="#162f21" stroke-width="7"/>
+              <path d="M190 81 C236 62 276 77 290 107 C299 128 285 151 260 161 L211 165 C220 144 222 112 190 81Z" fill="#668f49" stroke="#162f21" stroke-width="7"/>
+              <path d="M274 109 L309 102 L283 125 L317 126 L278 142" fill="#eee0af" stroke="#162f21" stroke-width="5"/>
+              <circle cx="260" cy="104" r="8" fill="#f5c73c" stroke="#111" stroke-width="4"/>
+              <circle cx="263" cy="104" r="3"/>
+              <path d="M66 190 L29 262 L59 269 L94 216 M147 206 L168 276 L202 269 L177 218" fill="#577f3f" stroke="#162f21" stroke-width="7"/>
+              <path d="M53 109 C19 96 -10 103 -34 123 C4 128 27 145 44 162" fill="#658f47" stroke="#162f21" stroke-width="7"/>
+              <path d="M76 128 L45 150 L24 143" fill="none" stroke="#162f21" stroke-width="11" stroke-linecap="round"/>
+              <path d="M144 129 L116 149 L95 139" fill="none" stroke="#162f21" stroke-width="11" stroke-linecap="round"/>
+            </g>
+            <g transform="translate(280 280)" filter="url(#rough)">
+              <path d="M91 31 C80 10 42 9 29 30 C19 48 35 64 52 65 L45 92 L28 150 L54 156 L72 104 L89 151 L118 146 L94 88 L90 63 C108 59 116 43 109 29Z" fill="#d8c3a1" stroke="#2b211a" stroke-width="6"/>
+              <ellipse cx="69" cy="25" rx="43" ry="12" fill="#e3d2ae" stroke="#2b211a" stroke-width="6"/>
+              <path d="M40 22 Q69 -11 98 22" fill="#d7c49e" stroke="#2b211a" stroke-width="6"/>
+              <path d="M31 72 L-8 110 M96 73 L142 100" fill="none" stroke="#2b211a" stroke-width="13" stroke-linecap="round"/>
+              <path d="M142 100 L195 73" stroke="#3b2b20" stroke-width="7"/>
+              <path d="M184 70 L210 58" stroke="#121212" stroke-width="10"/>
+              <path d="M45 93 L85 93" stroke="#8c321f" stroke-width="9"/>
+            </g>
+            <g fill="#1a3825">
+              <path d="M0 408 Q72 330 138 402 Q205 342 274 420 Q344 350 420 419 Q480 355 541 410 Q618 340 700 402 Q746 369 780 388 V520 H0Z"/>
+              <path d="M25 463 l25 -89 12 68 36 -80 3 98 42 -73 -11 103 H0Z"/>
+              <path d="M660 461 l18 -99 20 74 31 -91 7 106 32 -65 12 104 H635Z"/>
+            </g>
+            <g transform="translate(360 88) rotate(-8)">
+              <path d="M0 31 Q45 -2 91 30 L53 24 L102 63 L54 45 L62 84 L35 50 L8 77 L20 42 L-15 54 L14 30Z" fill="#253d32" stroke="#101d18" stroke-width="4"/>
+              <path d="M35 38 C45 31 59 34 62 43 C65 52 54 58 45 56" fill="none" stroke="#101d18" stroke-width="6"/>
+            </g>
+            <rect x="16" y="16" width="748" height="488" rx="6" fill="none" stroke="#efcf50" stroke-width="8"/>
+            <rect x="28" y="28" width="724" height="464" rx="4" fill="none" stroke="#123f25" stroke-width="7"/>
+          </svg>
+          <div class="box-title">
+            <span class="lost">LOST VALLEY</span>
+            <span class="of-the">of the</span>
+            <span class="dinosaurs">DINOSAURS</span>
+          </div>
+          <div class="box-ribbon">A GAME OF ADVENTURE, LAVA &amp; VERY LARGE TEETH</div>
+        </div>
+      </div>
+
+      <div class="setup-copy">
+        <p class="eyebrow">0x4D44 TABLETOP ARCHIVE · 1985</p>
+        <h1 id="setup-title">Open the valley.</h1>
+        <p class="intro">Race four explorers to the temple, steal a treasure coin and get out alive. The active expedition also directs the dinosaurs, chooses the lava flow and decides whether the pteranodon is an angel or a menace.</p>
+
+        <div class="setup-card">
+          <div class="setup-row">
+            <span class="setup-label">Expeditions</span>
+            <div class="segmented" id="player-count" role="group" aria-label="Number of players">
+              <button type="button" data-count="2" aria-pressed="true">2</button>
+              <button type="button" data-count="3" aria-pressed="false">3</button>
+              <button type="button" data-count="4" aria-pressed="false">4</button>
+            </div>
+          </div>
+          <div class="seat-list" id="seat-list"></div>
+          <div class="setup-row game-length-row">
+            <span class="setup-label">Expedition</span>
+            <label class="radio-card"><input type="radio" name="length" value="1" checked><span><b>Short game</b><small>First coin safely out wins</small></span></label>
+            <label class="radio-card"><input type="radio" name="length" value="3"><span><b>Long game</b><small>Three coins safely out</small></span></label>
+          </div>
+          <div class="setup-row seed-row">
+            <label for="seed-input" class="setup-label">Map seed</label>
+            <input id="seed-input" inputmode="numeric" value="1975" aria-describedby="seed-help">
+            <button type="button" class="small-button" id="random-seed">Shake</button>
+            <small id="seed-help">Same seed, same deck and dice.</small>
+          </div>
+          <div class="setup-buttons">
+            <button type="button" class="primary-button" id="start-game"><span>Enter the valley</span><b>→</b></button>
+            <button type="button" class="secondary-button" id="resume-game" hidden>Resume saved expedition</button>
+          </div>
+        </div>
+        <div class="authentic-note"><span>54</span> original card outcomes · <span>30</span> lava counters · <span>6</span> tyrannosaurs · no scans, ads or servers</div>
+      </div>
+    </section>
+
+    <section class="game-view" id="game-view" hidden aria-label="Game board">
+      <div class="table-felt">
+        <section class="board-stage" id="board-stage">
+          <div class="board-bezel">
+            <svg id="board" viewBox="0 0 1000 760" role="application" aria-label="Lost Valley game board. Use highlighted board spaces or the action list to move.">
+              <defs>
+                <filter id="pieceShadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#1b150d" flood-opacity=".52"/></filter>
+                <filter id="paperWobble"><feTurbulence type="fractalNoise" baseFrequency=".015" numOctaves="2" seed="17" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.4"/></filter>
+                <filter id="lavaGlow" x="-70%" y="-70%" width="240%" height="240%"><feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#ff9c25" flood-opacity=".85"/></filter>
+                <pattern id="plainPattern" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="#dfc77d"/><circle cx="7" cy="11" r="1.1" fill="#b89048" opacity=".28"/><path d="M31 7 q5 4 1 9 M14 31 q4 -7 9 -1" fill="none" stroke="#9a7a36" stroke-width="1" opacity=".23"/></pattern>
+                <pattern id="junglePattern" width="50" height="50" patternUnits="userSpaceOnUse"><rect width="50" height="50" fill="#b8bb59"/><path d="M5 37 Q13 18 20 38 M14 42 Q25 13 31 40 M29 43 Q37 18 44 39" stroke="#416f38" stroke-width="3" fill="none"/><circle cx="10" cy="14" r="3" fill="#e66f49"/><circle cx="38" cy="12" r="2.6" fill="#7060a6"/><circle cx="27" cy="27" r="2.2" fill="#f1d244"/></pattern>
+                <linearGradient id="waterFill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#64b5b2"/><stop offset=".48" stop-color="#347e86"/><stop offset="1" stop-color="#245c66"/></linearGradient>
+                <radialGradient id="swampFill"><stop stop-color="#364c32"/><stop offset=".55" stop-color="#52703c"/><stop offset="1" stop-color="#223a2c"/></radialGradient>
+                <linearGradient id="mountainFill" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#7c5034"/><stop offset=".45" stop-color="#4f3025"/><stop offset="1" stop-color="#2e1d19"/></linearGradient>
+                <radialGradient id="coinFill" cx="35%" cy="28%"><stop stop-color="#fff5a6"/><stop offset=".35" stop-color="#e8b944"/><stop offset="1" stop-color="#8c5d16"/></radialGradient>
+                <linearGradient id="lavaFill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffcf3b"/><stop offset=".25" stop-color="#e34a24"/><stop offset=".7" stop-color="#a51f18"/><stop offset="1" stop-color="#5f1515"/></linearGradient>
+                <marker id="arrowHead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10Z" fill="currentColor"/></marker>
+              </defs>
+              <g id="board-camera">
+                <g id="board-static"></g>
+                <g id="board-highlights"></g>
+                <g id="board-tokens"></g>
+                <g id="board-effects"></g>
+              </g>
+            </svg>
+            <div class="board-caption"><span>WADDINGTONS-INSPIRED · ORIGINAL VECTOR TABLE</span><span id="seed-display">SEED 1975</span></div>
+          </div>
+          <div class="board-hint" id="board-hint" role="status"></div>
+          <div class="swoop-layer" id="swoop-layer" aria-hidden="true"><span class="swoop-bird">⌁</span></div>
+        </section>
+
+        <aside class="command-panel" id="command-panel">
+          <section class="turn-banner" id="turn-banner">
+            <div class="turn-symbol" id="turn-symbol">●</div>
+            <div><span id="turn-kicker">TURN 1 · GOLD EXPEDITION</span><strong id="turn-title">Draw an Adventure card</strong></div>
+          </section>
+
+          <section class="card-table" aria-label="Adventure card">
+            <div class="deck-stack" id="deck-stack" aria-hidden="true"><i></i><i></i><i></i><span id="deck-count">54</span></div>
+            <div class="adventure-card is-back" id="adventure-card">
+              <div class="card-face card-back"><span class="card-wing">⌁</span><b>ADVENTURE</b><small>THE LOST VALLEY</small></div>
+              <div class="card-face card-front">
+                <div class="card-illustration" id="card-illustration" aria-hidden="true"></div>
+                <p class="card-type">ADVENTURE</p>
+                <h2 id="card-title">The valley waits</h2>
+                <p id="card-strap">Turn the first card when every explorer is ready.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="prompt-panel" aria-live="polite">
+            <p class="prompt-eyebrow" id="prompt-eyebrow">ADVENTURE CARD</p>
+            <h2 id="prompt-title">Draw a card</h2>
+            <p id="prompt-copy">Every turn begins with whatever the valley sends.</p>
+            <div class="dice-tray" id="dice-tray" aria-label="Dice"></div>
+            <div class="action-grid" id="action-grid"></div>
+            <button class="assist-button" id="assist-button" type="button" hidden>Resolve this choice for me</button>
+          </section>
+
+          <section class="expedition-tray" id="expedition-tray" aria-label="Expedition status"></section>
+
+          <details class="field-log" id="field-log">
+            <summary><span>Field log</span><b id="log-count">0</b></summary>
+            <ol id="log-list"></ol>
+          </details>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <div class="pass-screen" id="pass-screen" hidden role="dialog" aria-modal="true" aria-labelledby="pass-title">
+    <div class="pass-card">
+      <span class="pass-symbol" id="pass-symbol">▲</span>
+      <p>PASS THE MAP</p>
+      <h2 id="pass-title">Fern Expedition</h2>
+      <small>Keep your plans to yourself. The valley has ears.</small>
+      <button class="primary-button" id="pass-ready" type="button"><span>Ready for my turn</span><b>→</b></button>
+    </div>
+  </div>
+
+  <dialog class="modal" id="rules-modal">
+    <form method="dialog" class="modal-shell">
+      <header><div><p class="eyebrow">FIELD MANUAL</p><h2>How to survive the valley</h2></div><button class="modal-close" value="close" aria-label="Close rules">×</button></header>
+      <div class="rule-tabs" role="tablist" aria-label="Rules sections">
+        <button type="button" role="tab" aria-selected="true" data-rule-tab="turn">Your turn</button>
+        <button type="button" role="tab" aria-selected="false" data-rule-tab="cards">Adventure cards</button>
+        <button type="button" role="tab" aria-selected="false" data-rule-tab="movement">Movement</button>
+        <button type="button" role="tab" aria-selected="false" data-rule-tab="reference">Reference</button>
+      </div>
+      <div class="rule-pages">
+        <article data-rule-page="turn">
+          <div class="rule-lead"><span>1</span><div><h3>Draw and resolve</h3><p>Turn over one Adventure card, read it, and carry it out if possible. You choose dinosaur routes, lava spaces and pteranodon mischief during your own turn.</p></div></div>
+          <div class="rule-lead"><span>2</span><div><h3>Move one explorer</h3><p>Choose any one of your four surviving explorers. Land explorers roll one die. An explorer carrying treasure rolls two. River and swamp explorers move exactly one space without rolling.</p></div></div>
+          <div class="rule-lead"><span>3</span><div><h3>Bring treasure home</h3><p>Enter the temple without exact count, take one coin, and escape by any of the four yellow arrows. Short game: first coin out. Long game: first three.</p></div></div>
+        </article>
+        <article data-rule-page="cards" hidden>
+          <div class="card-rules-grid">
+            <section><b>7×</b><h3>Volcano</h3><p>Six single counters descend the cone. After that, each eruption adds three connected counters in the valley. Lava may cover any board space except the swamp and kills explorers beneath it.</p></section>
+            <section><b>6×</b><h3>Pteranodon</h3><p>Move one of your explorers—even from outside, a lair, a lava cut-off or the swamp—to a safe empty space, or drop an opponent onto an empty dangerous space or one of the four separate inner-swamp spaces.</p></section>
+            <section><b>19×</b><h3>Dinosaurs move</h3><p>Grazing, undergrowth, restless, danger and attack cards tell you exactly how many different dinosaurs move and how far. A dinosaur captures every explorer on every space it enters.</p></section>
+            <section><b>6×</b><h3>Monster</h3><p>The swamp monster advances one grey arrow clockwise. Any explorer on its new space is eaten.</p></section>
+            <section><b>7×</b><h3>Swamp</h3><p>Six cards place one expedition member on any grey-arrow space except the monster’s; explorers may share. They then move exactly one arrow clockwise per turn until leaving through either blue exit. The single Escape card jumps one of yours beyond the nearest exit.</p></section>
+            <section><b>9×</b><h3>Water, fights &amp; kit</h3><p>Water crises force a chosen explorer to reach a river on two dice or perish at the route’s end. Dinosaur fights free a captive one footprint outside a lair. Secret paths link caves and temple; guns unlock finite bullets at the two ammunition dumps.</p></section>
+          </div>
+        </article>
+        <article data-rule-page="movement" hidden>
+          <ul class="rules-list">
+            <li><b>No doubling back.</b> An explorer may move in any direction but cannot enter the same space twice during one roll.</li>
+            <li><b>Water stops you.</b> Wading from land into a river ends movement immediately. Starting in water—or climbing out—means one space only. Bridges are ordinary land.</li>
+            <li><b>Hazards block.</b> Explorers cannot voluntarily enter the swamp or a lair, and cannot enter a space occupied by a dinosaur, the monster or lava.</li>
+            <li><b>Company is allowed.</b> Any number of explorers may share a normal space or the temple.</li>
+            <li><b>Loose treasure needs exact count.</b> Coins abandoned through capture, swamp or pteranodon can be claimed only when a movement roll ends exactly on them.</li>
+            <li><b>No exact count at the big doors.</b> Entering the temple or leaving the valley ends movement immediately, whatever remains on the dice.</li>
+            <li><b>Dinosaurs obey the whole order.</b> A chosen dinosaur must be able to complete the exact printed distance; unlike explorers, dinosaurs move freely and may retrace a space. Entering an explorer’s space interrupts the route for capture. A lair may be entered only as the final step.</li>
+            <li><b>Bullets are physical and finite.</b> A gun card lets that expedition take one bullet when it lands on an ammunition dump. Each bullet frightens one dinosaur exactly one adjacent space, before or after normal explorer movement.</li>
+          </ul>
+        </article>
+        <article data-rule-page="reference" hidden>
+          <div class="reference-table">
+            <div><span>Short game</span><b>1 banked coin</b></div><div><span>Long game</span><b>3 banked coins</b></div>
+            <div><span>Explorers</span><b>4 per expedition</b></div><div><span>Treasure</span><b>12 coins</b></div>
+            <div><span>Tyrannosaurs</span><b>6</b></div><div><span>Lava</span><b>30 counters</b></div>
+            <div><span>Adventure deck</span><b>54 cards</b></div><div><span>Players</span><b>2–4, age 8+</b></div>
+            <div><span>Swamp route</span><b>11 arrows · 2 exits</b></div><div><span>Pteranodon drops</span><b>4 inner spaces</b></div>
+          </div>
+          <p class="digital-note"><b>End of expedition.</b> The first player to bank the required treasure wins. If no treasure remains claimable, rank expeditions by banked coins and then by surviving explorers—the printed tie-break.</p>
+          <p class="digital-note"><b>Digital table note.</b> This is an unofficial fan reconstruction with newly drawn vector art and an original rules engine. “Resolve this choice for me,” AI seats, deterministic seeds and local saves are digital conveniences; the board-game decisions beneath them follow the printed rules.</p>
+        </article>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal settings-modal" id="settings-modal">
+    <form method="dialog" class="modal-shell compact">
+      <header><div><p class="eyebrow">TABLE OPTIONS</p><h2>Expedition settings</h2></div><button class="modal-close" value="close" aria-label="Close settings">×</button></header>
+      <label class="switch-row"><span><b>Sound effects</b><small>Procedural audio; nothing is downloaded.</small></span><input type="checkbox" id="setting-sound"></label>
+      <label class="switch-row"><span><b>First-game hints</b><small>Brief rule reminders in the prompt tray.</small></span><input type="checkbox" id="setting-hints" checked></label>
+      <label class="switch-row"><span><b>Fast AI</b><small>Shorter pauses between automated choices.</small></span><input type="checkbox" id="setting-fast-ai"></label>
+      <div class="settings-actions">
+        <button type="button" class="secondary-button danger" id="abandon-game">Abandon this expedition</button>
+        <button value="close" class="primary-button"><span>Back to the table</span></button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal gameover-modal" id="gameover-modal">
+    <form method="dialog" class="modal-shell compact victory-shell">
+      <div class="victory-rays" aria-hidden="true"></div>
+      <p class="eyebrow">THE VALLEY HAS SPOKEN</p>
+      <div class="victory-symbol" id="victory-symbol">●</div>
+      <h2 id="victory-title">Gold Expedition wins</h2>
+      <p id="victory-reason"></p>
+      <div class="victory-stats" id="victory-stats"></div>
+      <div class="settings-actions">
+        <button value="close" class="secondary-button" id="view-final-board">View final board</button>
+        <button type="button" class="primary-button" id="new-expedition"><span>New expedition</span><b>→</b></button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

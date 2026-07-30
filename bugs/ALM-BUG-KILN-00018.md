@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00018 — based-on-truth articles still carry the "this story never happened" satire notice, contradicting the About page
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** news
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — all 169 based-on-truth articles rendered; 0 assert total fiction)
 
 ## Observation
 The 100 articles tagged `based-on-truth` retell real events (Tacoma Narrows collapse, Gerald Ratner's 1991 speech, the Emu War, the Boston Molasses Flood). On each of their article pages the site prints a satire notice saying the opposite of what the About page now says.
@@ -44,3 +45,21 @@ invented. Articles with their own `notice`/`imageCaption` keep them; pure-satire
 unchanged. Regression: news/tests/validate-static.mjs renders a based-on-truth article
 (asserts no "never happened"/"Nothing here is true", presence of the truthful line) and a
 control satire article (asserts the fiction disclaimers remain).
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `0db33f4`.
+
+**Original observation re-checked — resolved, exhaustively.** `news/news.js:750` derives `basedOnTruth` from the article's own tag and branches the hero figcaption (`:753`), the notice (`:755-761`) and the footer via `footerHtml(basedOnTruth)` (`:801`, definition `:462`, branch `:487-495`). Rendering **every** tagged article through the real `renderArticle` — not a sample:
+
+```
+based-on-truth articles rendered: 169
+  footer/notice asserting total fiction: 0
+  containing "underlying event really happened": 169
+-- control: 5 pure-satire articles --
+  all 5: neverHappened=true nothingTrue=true
+```
+
+The 55 tagged articles that carry a *custom* `notice` (which bypasses the new branch) were checked separately: 0 still assert total fiction, and 0 have an "entirely made up" image caption.
+
+**This is a root-cause fix.** It branches on the data's own tag, so the corpus growing from the recorded 100 tagged articles to 169 was absorbed automatically. The oracle discriminates: the same check against the pre-fix renderer (`f992e42^`) over the *current* corpus reports 114 of 114 untagged-notice articles still rendering "never happened". Regression coverage `news/tests/validate-static.mjs:400-421` passes.
