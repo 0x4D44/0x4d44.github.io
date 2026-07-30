@@ -18,7 +18,7 @@
     playerRibbon: $("#player-ribbon"), turnCard: $("#turn-card"), turnPiece: $("#turn-piece"), turnName: $("#turn-name"), turnRole: $("#turn-role"),
     spinnerButton: $("#spinner-button"), spinnerArt: $("#spinner-art"), spinnerPointer: $("#spinner-pointer"), spinnerReadout: $("#spinner-readout"), spinnerCta: $("#spinner-cta"),
     outcomeCard: $("#outcome-card"), outcomeIcon: $("#outcome-icon"), outcomeTitle: $("#outcome-title"), outcomeCopy: $("#outcome-copy"),
-    commandPanel: $("#command-panel"), actionKicker: $("#action-kicker"), actionTitle: $("#action-title"), actionCopy: $("#action-copy"), primary: $("#primary-action"), destinationList: $("#destination-list"), resolve: $("#resolve-for-me"),
+    commandPanel: $("#command-panel"), actionStatus: $("#action-status"), actionKicker: $("#action-kicker"), actionTitle: $("#action-title"), actionCopy: $("#action-copy"), primary: $("#primary-action"), destinationList: $("#destination-list"), resolve: $("#resolve-for-me"),
     logList: $("#log-list"), logCount: $("#log-count"),
     rules: $("#rules-modal"), settings: $("#settings-modal"), victory: $("#victory-modal"),
     settingSound: $("#setting-sound"), settingHints: $("#setting-hints"), settingKeyboardShortcuts: $("#setting-keyboard-shortcuts"), settingFastAI: $("#setting-fast-ai"), settingContrast: $("#setting-contrast"), abandon: $("#abandon-game"),
@@ -503,6 +503,8 @@
     } else {
       dom.actionKicker.textContent = "THE CASTLE MOVES"; dom.actionTitle.textContent = "Resolving the spin"; dom.actionCopy.textContent = "Listen for footsteps on the blood trail."; dom.primary.hidden = true;
     }
+    const announcement = `${player.name}. ${dom.actionKicker.textContent}. ${dom.actionTitle.textContent}.`;
+    if (dom.actionStatus.textContent !== announcement) dom.actionStatus.textContent = announcement;
   }
 
   function renderLog() {
