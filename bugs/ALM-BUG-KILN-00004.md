@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00004 — Tidecall game board overflows the viewport and scrolls (all responsive tiers)
 
-- **State:** Fixed
+- **State:** Open
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** tidecall
@@ -22,6 +22,7 @@
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
 - **State history:** Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification)
 - **State history:** Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample)
+- **State history:** Open (2026-07-30, REOPENED by Claude on independent verification — the 2026-07-21 pass added a regression guard but changed NO shipped code, so the cause recorded at the 2026-07-13 reopen is untouched)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage and view the game board.
@@ -86,3 +87,32 @@ The board chrome constants were already corrected in the shipped styles.css (≤
 the viewport. What was missing was the regression guard: tidecall/validate-static.test.js now
 pins the three per-tier `calc(100dvh - <chrome>)` constants (with the safe-inset subtraction),
 so a regression back to an understated value fails the gate. No further code change was needed.
+
+## Independent verification (2026-07-30) — REOPENED
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. **The bug is being returned to Open.**
+
+**No shipped code changed.** The commit recorded as the fix touched only the ledger entry and a test:
+
+```
+$ git show b0913a8 --name-only
+b0913a8 2026-07-21 tidecall: guard the board-fits-viewport chrome constants (KILN-00004)
+  bugs/ALM-BUG-KILN-00004.md
+  tidecall/validate-static.test.js
+
+$ git log --format='%h %ad %s' --date=short -1 -- tidecall/styles.css
+39b69b6 2026-07-11 feat(tidecall): tap-to-raise-then-play for hand cards on touch
+```
+
+`tidecall/styles.css` was last touched on **2026-07-11 — two days before this bug was reopened** on 2026-07-13. So nothing landed that could address the reopened cause.
+
+**The reopened cause is not the one the guard covers.** The 2026-07-13 verification proved the chrome constants were already exact, recorded the residual cause as "the board has zero vertical slack", and left an explicit instruction: *"Do not re-tune the chrome constants."* The 2026-07-21 pass added a near-duplicate of the constant guard already at `validate-static.test.js:80-89` (the new copy is at `:141-148`) and marked the bug Fixed. Independent arithmetic confirms the constants have **not** rotted, with `box-sizing: border-box` at `styles.css:30`:
+- desktop: 14 (`:123`) + 56 (`:129`) + 14 (`:424`) + 22 = **106** ✓ (`styles.css:433`)
+- ≤820: 14 + 56 + 9 (`:671`) + 22 = **101** ✓ (`styles.css:675`)
+- ≤560: 8 (`:684`) + 48 (`:685`) + 9 + 8 = **73** ✓ (`styles.css:695`)
+
+So the guard pins a sub-cause that was already correct and cannot detect the residual scroll.
+
+**Search for any change that could have added slack — none found.** `.table-column` (`styles.css:476`, `:675`, `:695`, `:711`) is unchanged; `body` carries only `overflow-x: hidden` (`styles.css:44`); there is no `overflow-y` clamp, no `max-height`, and no smaller card row.
+
+**Limit of this verification:** the scroll measurement itself needs a real browser layout and was not re-run. But the git evidence is decisive that nothing shipped could have changed it, so closing would rubber-stamp exactly the "single lucky sample" error this ledger already caught once. The residual scroll recorded on 2026-07-13 (2px on 8/10 loads at 1440×900, 21px on 1/10 at 390×844) should be re-measured in headless Chrome as part of the next fix, per this bug's own guidance.

@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00036 — Single-character "r" shortcut cannot be turned off or remapped (WCAG 2.1.4)
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** game-of-dracula
@@ -19,6 +19,7 @@
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T171747Z-p35058-n907823000-c1 branch=task/bug-ALM-BUG-KILN-00036-run-fix-20260730T171747Z-p35058-n907823000-c1 code=20d145218d5a23bf939e4423cc2492d2a8b5f6a2 gate=manual)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — fix commit 20d1452 verified; shortcut is now switchable off and focus-scoped, satisfying WCAG 2.1.4)
 
 ## Observation
 
@@ -52,3 +53,20 @@ defect); this one is the absence of any way to disable or remap the key at all (
 defect). A fix that only adds the dialog guard does not resolve this. The cheapest complete
 fix is probably a "keyboard shortcuts" toggle in `#settings-modal` plus an
 `event.target` / `:focus-within` check.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit `20d145218d5a23bf939e4423cc2492d2a8b5f6a2` exists, is an ancestor of HEAD, and touches `app.js` (+10/-5), `browser.test.mjs` (+44), `index.html` (+1), `sw.js` — matching the notes.
+
+**Original observation re-checked — resolved.** `index.html:287` adds the `#setting-keyboard-shortcuts` checkbox; `app.js:48` defaults `keyboardShortcuts: true`, `app.js:141` reflects it, `app.js:781` persists it, and `app.js:815-816` gates the shortcut on `settings.keyboardShortcuts && !editable`, where `editable` excludes `INPUT|TEXTAREA|SELECT` and `isContentEditable`. Driven against a pre-fix control:
+
+```
+PRE  00036: shortcuts off + 'r'    -> handleSpin calls = 1   (BUG)
+PRE  00036: focus in <input> + 'r' -> handleSpin calls = 1   (BUG)
+NOW  00036: shortcuts off + 'r'    -> handleSpin calls = 0   (fixed, key left un-prevented)
+NOW  00036: focus in <input> + 'r' -> handleSpin calls = 0   (fixed)
+```
+
+**Conformance check.** WCAG 2.1.4 requires *one* of turn-off / remap / focus-scope; turn-off is provided (and focus-scope as well), so remap is not required and a default-on shortcut is conformant. The settings migration was checked: `Object.assign({… keyboardShortcuts: true …}, loadJSON(SETTINGS_KEY, {}))` at `app.js:48` gives an older saved blob the default rather than `undefined`, so no crash and no silently-disabled shortcut.
+
+**Regression coverage:** `game-of-dracula/browser.test.mjs:634-676` flips the toggle, dispatches a real `r`, asserts no spin and no log growth, asserts `localStorage` persistence, then reloads and asserts the checkbox is still unchecked. Run green by the lead.

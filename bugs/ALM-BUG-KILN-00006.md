@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00006 — Answer grading rejects the romaji the app itself teaches (long-vowel / apostrophe / du-zu)
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Must
 - **Severity:** Medium
 - **Area:** darmok
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — corpus oracle: 20 rejects before the fix, 1 after; the survivor split to ALM-BUG-KILN-00048)
 
 ## Observation
 On a typeback ("Type the Japanese for ...") exercise, typing the exact romaji printed on the vocab card is marked WRONG for ~20 of the 513 curriculum words, and the wrong grade then demotes that word's spaced-repetition stage.
@@ -50,3 +51,21 @@ the remaining two are authored-data typos tracked as KILN-00015 (kinyoubi) and a
 counter-form card. Regression coverage: darmok/grading.test.mjs (fails on the pre-fix
 engine, passes after), wired into `npm run build`/`npm test`. The two authored typos
 (furigana KILN-00014, kinyoubi KILN-00015) are left to their own passes.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `d257cd5`.
+
+**Original observation re-checked — resolved for 19 of the 20 recorded entries.** The fix at `darmok/engine.js:104-146` expands `ー` to the preceding mora's vowel kana rather than deleting it (`KANA_VOWEL` + `foldLongVowels()`), keeps the apostrophe alive through `romajiToHiragana` before stripping leftovers, and folds `づ→ず` / `ぢ→じ`. An independent whole-corpus oracle — accept list taken from the real construction at `engine.js:447` + `app.js:1072`, swept over all 513 entries twice: raw romaji, and romaji typed character-by-character through `DK.imeConvert` exactly as `wireTypeInput` does — differentially against the pre-fix engine (`d257cd5^`):
+
+```
+PRE-FIX  corpus 513  rejects: 20   collisions: 2  (すき/すきー , かれ/かれー)
+CURRENT  corpus 513  rejects: 1    collisions: 0
+(A) IME OFF rejected:  -fun/-pun |kana=ふん |jp=〜分[ふん] |en=minute
+(B) IME ON  rejected:  -fun/-pun -> IME "ーふん/ーぷn"
+(C) typing the card kana rejected: 0
+```
+
+The two false-accept collisions the Notes flagged (かれー/かれ, すきー/すき) are also gone. This is a root-cause fix — it makes both sides of the comparison symmetric rather than special-casing words — and no new failure could be constructed.
+
+**Residual split to ALM-BUG-KILN-00048.** The `〜分[ふん]` card (`weeks07-09.js:157`) prints romaji `-fun/-pun`; typing that literal string, or the taught alternate `pun`/`ぷん`, is still rejected. It is a data-authoring residual, not an engine defect, and it is excluded from the `known` whitelist in `darmok/grading.test.mjs`, so the suite cannot regress on it.

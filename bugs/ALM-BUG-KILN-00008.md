@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00008 — Match-exercise retry is unwinnable -- _matchMistakes not reset in the requeue copy
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Must
 - **Severity:** Medium
 - **Area:** darmok
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — retry copy strips all _-prefixed play state; flawless retry now grades PASS)
 
 ## Observation
 Failing a "match" exercise (too many wrong taps) requeues it, but a flawless retry is still graded WRONG and demotes the word again.
@@ -43,3 +44,18 @@ now satisfies `mistakes <= ceil(pairs/2)`. It also kills the whole class: any fu
 strip-all construction and executes the real requeue expression against a failed match
 exercise to prove `_matchMistakes` no longer survives; fails before, passes after. Wired
 into `npm run build`/`npm test`.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `f0ab329`.
+
+**Original observation re-checked — resolved.** `darmok/app.js:619-621` now builds the requeue copy by stripping every `_`-prefixed key rather than resetting a named list. Running the real expression against a failed 4-pair match carrying `_matchMistakes: 3`:
+
+```
+retry copy keys: t,q,pairs,_retry,_dataNudge
+_matchMistakes on copy: undefined
+flawless retry graded: PASS (0 <= 2)
+pre-fix (inherited count) would grade: FAIL
+```
+
+**This is the class fix, not the field fix**, and that was checked exhaustively: every write to an exercise object in `app.js` (`_hidden:502`, `_bank:523`, `_placed:524/1132/1137/1207`, `_left/_right/_done:532-534/1152`, `_matchMistakes:1156/1162`, `_hints/_assisted/_dataNudge:1235-1237`, `_typed:1258`) is `_`-prefixed, and no definition field (`t/q/pairs/tokens/choices/a/accept/gen/why/show/alsoOk/extra/wrongGloss`) is — so stripping `_*` cannot drop anything a retry needs. Regression coverage `darmok/requeue.test.mjs` passes 2/2 and is behavioural: it extracts the copy expression from live `app.js` source and executes it.

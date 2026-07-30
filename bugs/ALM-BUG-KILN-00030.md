@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00030 — Onu: unguarded top-level localStorage read can blank the whole game on load
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** onu
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — shipped statements complete under a genuinely throwing localStorage accessor; pre-fix control throws)
 
 ## Observation
 If the browser denies storage access, Onu fails to initialise and renders a blank
@@ -70,3 +71,19 @@ blocked-storage context the read returns null so sound simply defaults on and th
 loads, instead of throwing at module top level and blanking the page. Regression:
 onu/tests/validate-static.mjs executes the extracted `readStored` against a throwing
 localStorage and asserts it returns null (plus that no unguarded top-level read remains).
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `96869a0`.
+
+**Original observation re-checked — resolved.** `onu/app.mjs:49-51` introduces `readStored`/`writeStored` wrappers and `let soundOn = readStored("onu.sound") !== "off";`, with the write site at `onu/app.mjs:642` also routed through the wrapper. Verified against a **throwing property accessor** on `globalThis.localStorage` — a faithful stand-in for the browser's `SecurityError` on *property access*, which is the actual failure mode, rather than merely a throwing `getItem`:
+
+```
+sanity: bare access throws -> SecurityError: Access is denied for this document.
+SHIPPED top-level statements COMPLETED under SecurityError, soundOn = true
+PRE-FIX THREW (the original bug): SecurityError: Access is denied for this document.
+```
+
+Four contexts exercised — throwing access, absent global, throwing `getItem`, working store — all complete, and `working-off` correctly yields `soundOn = false`, so the guard did not flatten the real preference. A sweep for any other `localStorage` mention outside the two helpers returns none. Regression coverage `onu/tests/validate-static.mjs:188-198` passes (46 checks) and both asserts no unguarded top-level read remains *and* executes the extracted `readStored` against a throwing store.
+
+**Note:** the repo's own guard simulates only a throwing `getItem`, not a throwing global access; that gap was closed by this verification, and the code survives both.
