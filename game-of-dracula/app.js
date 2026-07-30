@@ -798,6 +798,7 @@
         if (event.key === "Escape" || event.key.toLowerCase() === "r") event.preventDefault();
         return;
       }
+      if ($("dialog[open]")) return;
       if(event.key.toLowerCase()==="r"&&!event.metaKey&&!event.ctrlKey&&game&&game.state.phase==="await-spin"&&!busy&&displayedActor().human){event.preventDefault();handleSpin();}
     });
     setupPanZoom();
