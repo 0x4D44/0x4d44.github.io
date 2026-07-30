@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00048 — Darmok minute vocab card prints romaji -fun/-pun, which the grader rejects
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** darmok
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T233511Z-p21807-n446239000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00048-run-fix-20260730T233511Z-p21807-n446239000-c1
-- **Owner base:** 638c6de37c0866816018a0289b6d779d990065e9
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T23:35:11Z
-- **Owner until:** 2026-07-31T01:35:11Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T233511Z-p21807-n446239000-c1 branch=task/bug-ALM-BUG-KILN-00048-run-fix-20260730T233511Z-p21807-n446239000-c1 code=c73309d gate=manual)
 
 ## Observation
 
