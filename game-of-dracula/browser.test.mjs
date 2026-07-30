@@ -305,6 +305,68 @@ try {
   const narrow = await evaluate("({ innerWidth, documentWidth: document.documentElement.scrollWidth })");
   assert.ok(narrow.documentWidth <= narrow.innerWidth + 1, `360px must not scroll sideways (${narrow.documentWidth} > ${narrow.innerWidth})`);
 
+  stage = "checking the spin shortcut cannot advance play behind a modal";
+  await loadAt(appUrl, 1440, 1000, APP_READY);
+  const modalShortcutSetup = await evaluate(`(async () => {
+    const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+    const waitFor = async (probe, timeout = 8_000) => {
+      const deadline = Date.now() + timeout;
+      while (Date.now() < deadline) {
+        if (probe()) return true;
+        await sleep(25);
+      }
+      return false;
+    };
+
+    document.querySelectorAll("#seat-list .seat-row")[1]
+      .querySelector("[data-human='true']").click();
+    document.querySelector("#seed-input").value = "7";
+    document.querySelector("#start-game").click();
+    if (!await waitFor(() => !document.querySelector("#handoff-overlay").hidden)) {
+      return { initialHandoff: false };
+    }
+    document.querySelector("#handoff-ready").click();
+    if (!await waitFor(() => document.querySelector("#handoff-overlay").hidden)) {
+      return { initialHandoff: true, initialGateClosed: false };
+    }
+
+    document.querySelector("#rules-open").click();
+    window.__modalShortcutEvents = [];
+    window.addEventListener("keydown", (event) => {
+      if (event.key.toLowerCase() === "r") {
+        window.__modalShortcutEvents.push({ prevented: event.defaultPrevented });
+      }
+    });
+    return {
+      initialHandoff: true,
+      initialGateClosed: true,
+      rulesOpen: document.querySelector("#rules-modal").open,
+      spinnerDisabled: document.querySelector("#spinner-button").disabled,
+      logSize: document.querySelector("#log-list").children.length,
+    };
+  })()`);
+  assert.equal(modalShortcutSetup.initialHandoff, true, "the modal-shortcut fixture must start at a privacy hand-off");
+  assert.equal(modalShortcutSetup.initialGateClosed, true, "the first player must be able to accept the privacy hand-off");
+  assert.equal(modalShortcutSetup.rulesOpen, true, "the Rules dialog must own the top layer before the shortcut");
+  await session("Input.dispatchKeyEvent", { type: "keyDown", key: "r", code: "KeyR", windowsVirtualKeyCode: 82 });
+  await session("Input.dispatchKeyEvent", { type: "keyUp", key: "r", code: "KeyR", windowsVirtualKeyCode: 82 });
+  await delay(100);
+  const modalShortcutResult = await evaluate(`({
+    events: window.__modalShortcutEvents,
+    rulesOpen: document.querySelector("#rules-modal").open,
+    handoffOpen: !document.querySelector("#handoff-overlay").hidden,
+    spinnerDisabled: document.querySelector("#spinner-button").disabled,
+    logSize: document.querySelector("#log-list").children.length,
+  })`);
+  assert.deepEqual(modalShortcutResult.events, [{ prevented: false }],
+    `a modal-owned "r" key must not be consumed by the game shortcut, got ${JSON.stringify(modalShortcutResult.events)}`);
+  assert.equal(modalShortcutResult.rulesOpen, true, "the Rules dialog must remain open after its own key event");
+  assert.equal(modalShortcutResult.handoffOpen, false, "a modal-owned key must not advance to the next player's hand-off");
+  assert.equal(modalShortcutResult.spinnerDisabled, modalShortcutSetup.spinnerDisabled,
+    "a modal-owned key must not start the spinner");
+  assert.equal(modalShortcutResult.logSize, modalShortcutSetup.logSize,
+    "a modal-owned key must not write a hidden game event");
+
   stage = "checking the hand-off gate cannot trap an open modal";
   await loadAt(appUrl, 1440, 1000, APP_READY);
   const handoffModalRace = await evaluate(`(async () => {
