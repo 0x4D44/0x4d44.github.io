@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crowns, Gaps and Implants — Root and Crown</title>
+<meta name="description" content="Why a root-treated molar splits without cuspal coverage, what a crown really costs the tooth beneath it, and an honest comparison of saving a tooth against extraction, implant, bridge, denture and simply leaving the gap.">
+<link rel="stylesheet" href="tooth.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">ROOT&nbsp;AND&nbsp;CROWN</a></div>
+    <div class="strap">how teeth work, how they fail, and how they are repaired</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="nerve.html">2 · The Nerve</a>
+    <a href="decay.html">3 · Decay</a>
+    <a href="ageing.html">4 · Ageing</a>
+    <a href="pulpitis.html">5 · Death of a Pulp</a>
+    <a href="fillings.html">6 · Fillings</a>
+    <a href="root-canal.html">7 · Root Canal</a>
+    <a href="crowns.html" aria-current="page">8 · Crowns &amp; After</a>
+    <a href="lexicon.html">9 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page" id="main">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 8</p>
+  <h1>Crowns, Gaps and Implants</h1>
+  <p class="standfirst">A root-treated molar usually does not fail because the root filling
+  failed. It fails because the tooth splits. This is the last third of a tooth's clinical life:
+  why a hollowed-out back tooth needs a lid, what a crown costs the tooth underneath it, and the
+  decision nobody lays out honestly — keep it, or take it out and choose between an implant, a
+  bridge, a denture and an empty space.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead"><a href="root-canal.html">Chapter&nbsp;7</a> left a molar disinfected and sealed,
+and still not safe. What threatens it now is its shape. A molar is not a solid lump: it is a ring
+of enamel and dentine, braced across the top by two raised rims — the marginal ridges — and
+floored by the roof of the pulp chamber. Those are the tie-beams. Take them away and the cusps
+stop being parts of a box and start being cantilevers, levered outwards a few micrometres every
+time you bite.</p>
+
+<p>That is the argument for crowning a root-treated back tooth. It has nothing to do with the
+tooth being dead, and everything to do with how much of the tooth the decay and the drill took
+first.</p>
+
+<h2>The keystone problem</h2>
+
+<p>The cleanest evidence is a small experiment from 1989. Reeh, Messer and Douglas loaded
+extracted teeth, measured how far the cusps moved, then cut them a stage at a time and measured
+again. Cutting the endodontic access cavity — through the occlusal surface and off the roof of the
+pulp chamber, the part that sounds most destructive — cost about <strong>5%</strong> of cuspal
+stiffness. An occlusal cavity cost about <strong>20%</strong>. An MOD cavity, running across the
+tooth and taking out both marginal ridges, cost about <strong>63%</strong>: two-thirds of the
+tooth's resistance to being splayed apart, lost not to the root canal but to the cavity that made
+it necessary.</p>
+
+<div class="axiom">
+  <span class="tag">Why the root canal takes the blame</span>
+  <p>A root canal does not weaken a tooth in any way that matters. Losing the marginal ridges
+  does. By the time a molar needs root treatment it has usually already lost them — which is why
+  the two things travel together and why the root canal takes the blame.</p>
+</div>
+
+<p>Now add load. Bite force in the molar region runs to hundreds of newtons, and it does not arrive
+straight down: the opposing cusp lands on the sloping <em>inclines</em> of yours, so a vertical
+force becomes a sideways wedge. An unbraced cusp flexes outwards by a few micrometres — invisible,
+and endlessly repeated — and a crack starts at the sharp internal corner of the cavity, where
+stress concentrates.</p>
+
+<p>When it goes, it does not chip. The fracture follows the long axis and frequently runs below
+the gum, and a vertical fracture beneath the bone crest usually ends the tooth. That is what
+cuspal coverage prevents: a restoration <em>over</em> the cusps rather than between them, so
+biting compresses the tooth instead of prising it apart.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Why an unroofed molar splits</span>
+    <span class="hint">how much tooth is left · direct filling vs cuspal coverage · bite load</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="crn-flex" style="aspect-ratio: 2.1 / 1; min-height: 530px;"
+            role="img" aria-label="A cross-section through a back tooth. As you remove more of the tooth and increase the bite load, the cusps splay outwards and a crack runs down towards the root; a bar chart beside it shows the measured loss of cuspal stiffness at each stage of cutting, and switching to cuspal coverage ties the cusps back together."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <span class="ctl-lbl" id="crn-flex-tooth-lbl">tooth</span>
+      <span class="seg" id="crn-flex-tooth" role="group" aria-labelledby="crn-flex-tooth-lbl">
+        <button data-v="molar" class="on">back tooth</button><button data-v="front">front tooth</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl" id="crn-flex-cav-lbl">how much is left</span>
+      <span class="seg" id="crn-flex-cav" role="group" aria-labelledby="crn-flex-cav-lbl">
+        <button data-v="sound">sound</button><button data-v="access">access only</button><button data-v="occ">occlusal</button><button data-v="mod" class="on">MOD</button><button data-v="moda">MOD + access</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl" id="crn-flex-cover-lbl">restored with</span>
+      <span class="seg" id="crn-flex-cover" role="group" aria-labelledby="crn-flex-cover-lbl">
+        <button data-v="direct" class="on">direct filling</button><button data-v="cover">cuspal coverage</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="crn-flex-load">bite load</label>
+      <input type="range" id="crn-flex-load" min="50" max="800" step="10" value="300">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">cuspal stiffness left <b id="crn-flex-ro-s">37%</b></span>
+    <span class="ro">relative cusp movement <b id="crn-flex-ro-d">2.4×</b></span>
+    <span class="ro alert">outcome <b id="crn-flex-ro-v">a cusp is at risk</b></span>
+  </div>
+  <div class="fig-note">The stiffness bars are measured values from Reeh, Messer and Douglas
+  (<i>Journal of Endodontics</i>, 1989). The cusp movement in the drawing is exaggerated by a
+  factor of several hundred — in life it is micrometres — and the outcome bands are illustrative,
+  not a prediction: real fractures depend on how many cycles a tooth sees and how the load is
+  aimed. <b>Try the front tooth</b>: the same cuts, but the load is smaller and runs along the
+  tooth rather than wedging it open.</div>
+</figure>
+
+<div class="prose">
+
+<p>Follow-up studies agree with the mechanics. Sorensen and Martinoff (1984) found coronal coverage
+significantly improved survival in premolars and molars — and made no difference to front teeth.
+Aquilino and Caplan (2002) found uncrowned teeth were lost at roughly <strong>six times</strong>
+the rate of crowned ones. And the largest review of survival after root canal treatment — Ng, Mann
+and Gulabivala, 2010 — pooled tooth survival at about <strong>86–93% at eight to ten years</strong>,
+naming a crown as one of the few factors that significantly improved it.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">how good is that evidence, really?</span></summary>
+  <p>Good, but not the best kind. Every study above is <em>observational</em>: someone looked back
+  at teeth that had been crowned and teeth that had not, and compared them. The trouble with that
+  design is that the two groups were never comparable to begin with. Teeth get crowned because a
+  clinician judged them worth crowning, and they go uncrowned because the patient could not afford
+  it, or did not return, or the tooth was already a write-off. That is a large, unmeasured bias
+  sitting inside every hazard ratio.</p>
+  <p>The Cochrane review on exactly this question — Sequeira-Byron and colleagues, 2015, "Single
+  crowns versus conventional fillings for the restoration of root-filled teeth" — found only one
+  randomised trial in the whole literature and concluded there was insufficient evidence to
+  support or refute the practice. That is not the same as saying crowns do not help. It means the
+  trial that would settle it has never really been run, and the profession is relying on a strong
+  mechanical rationale plus consistent observational data. Both point the same way. Neither is
+  proof.</p>
+</details>
+
+<p>Front teeth are the honest exception, and the reason is geometry. Incisors have no cusps to wedge
+apart and take lower forces, closer to the long axis. A root-treated incisor with its walls
+standing is often restored by sealing the access hole and nothing more.</p>
+
+<h2>What a crown costs the tooth underneath</h2>
+
+<p>A crown is not added to a tooth; it replaces the outside of one, so the tooth must first be made
+smaller by exactly the crown's thickness. Edelhoff and Sorensen measured it in 2002 by preparing
+extracted teeth and weighing what came off: a full-coverage posterior preparation removed on the
+order of <strong>60–75% of the coronal tooth</strong> by volume. A tooth that has already lost its
+ridges and its chamber roof has little to spare.</p>
+
+<p>The second bill lands on the nerve. Cutting a millimetre or two of dentine severs several
+million tubules, each an open line to the pulp. Follow-up studies of vital teeth prepared for
+crowns report pulp death afterwards at rates from a few per cent to the mid-teens over ten years,
+bridge abutments worse than single crowns (Cheung and colleagues, 2005). A crown on a living tooth
+carries a small but real chance of causing the very problem it was meant to prevent.</p>
+
+<h3>What crowns are made of, and what each one is bad at</h3>
+
+<p>Every crown material compromises between three things you cannot have at once: strength,
+appearance and how little tooth has to go to make room for it.</p>
+
+<table class="data">
+  <caption>Crown materials and their honest trade-offs</caption>
+  <tr><th>Material</th><th>Strong point</th><th>Weak point</th></tr>
+  <tr><td class="k">Full gold</td>
+    <td>Works thin, so the least tooth is cut; wears at a rate close to enamel, so it is the
+    kindest material to the tooth biting against it; forgiving margins</td>
+    <td>It is gold-coloured. That is very nearly the entire objection, and it has been enough to
+    drive a superior restoration close to extinction</td></tr>
+  <tr><td class="k">Porcelain fused to metal</td>
+    <td>A metal shell for strength with a porcelain skin for looks; decades of track record</td>
+    <td>Needs more reduction than gold to house both layers; the porcelain chips; a grey line can
+    show at the gum margin as it recedes</td></tr>
+  <tr><td class="k">Lithium disilicate</td>
+    <td>A glass-ceramic of roughly 350–400&nbsp;MPa flexural strength that can be bonded to the
+    tooth rather than merely cemented; the best-looking option in most mouths</td>
+    <td>Not the material for a heavy grinder or a very short preparation; depends on a good bond,
+    which depends on a dry field</td></tr>
+  <tr><td class="k">Monolithic zirconia</td>
+    <td>Extremely strong — the older 3&nbsp;mol% grades are quoted around 900–1,200&nbsp;MPa — so
+    it can be made thin and cut as one piece with nothing to chip off it</td>
+    <td>The strongest grades are the most opaque, and the translucent grades are weaker: you pick
+    a point on that curve. Rough or glazed zirconia abrades opposing enamel — though a
+    well-polished surface is comparatively kind, which makes the finish more important than the
+    material</td></tr>
+</table>
+
+<p>How long they last depends on who is counting. Reviews of crowns followed in study conditions
+report five-year survival broadly in the <strong>90–96%</strong> range depending on material
+(Pjetursson and colleagues 2007; Sailer and colleagues 2015). Practice-based data are less
+flattering: Burke and Lucarotti's analysis of crowns placed in the General Dental Services in
+England and Wales found roughly <strong>three-quarters still in service at ten years</strong>.</p>
+
+<h3>The conservative middle: onlays and adhesive cuspal coverage</h3>
+
+<p>The full crown was designed when a restoration was held on by shape alone: if a cap grips a
+tapered stump, the stump has to be cut, all of it, everywhere. Adhesion changed the premise. A
+bonded restoration can follow whatever tooth is still there — cover the cusps that need covering,
+leave the sound wall, stop.</p>
+
+<p>That is an onlay, and its evidence is respectable: Morimoto and colleagues' 2016 meta-analysis
+pooled ceramic inlays, onlays and overlays at about <strong>95% survival at five years and 91% at
+ten</strong>. It is not a head-to-head comparison with crowns, and an onlay needs a clean, dry
+bonded surface in a way a cemented crown does not.</p>
+
+<div class="callout story">
+  <span class="tag">The direction of travel</span>
+  <p>Cuspal coverage is the well-supported part. The full crown is one way to deliver it, and for
+  a long time the only way. The modern instinct is to deliver the same protection while cutting
+  the least tooth that will do the job — because whatever is left today has to carry the
+  <em>next</em> restoration, and the one after that.</p>
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-crown"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-molar"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Crownie explains himself</p>
+    <p class="say"><b>Crownie:</b> "I'm not a repair. I'm a splint. My whole job is stopping those
+    two cusps waving at each other."</p>
+    <p class="say"><b>Molar:</b> "And for that you took two-thirds of my crown."</p>
+  </div>
+</div>
+
+<h2>Then the real decision: save it or take it out</h2>
+
+<p>Somewhere in every long dental history there is a tooth where the honest question stops being
+"can this be saved?" and becomes "what does saving it buy, at what cost?" Almost anything can be
+saved by someone determined enough; that was never the question. The routes are usually presented
+one at a time, by whoever is offering that route.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The options comparator</span>
+    <span class="hint">pick a tooth · pick a route · twenty years of survival, invasiveness and collateral cost</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="crn-opt" style="aspect-ratio: 2 / 1; min-height: 620px;"
+            role="img" aria-label="A comparison of six routes for a failing tooth. A chart plots published survival bands for saving the tooth, an implant, a conventional bridge and a resin-bonded bridge over twenty years, alongside a matrix rating each route for invasiveness, relative cost and what it costs the rest of the mouth."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <span class="ctl-lbl" id="crn-opt-pos-lbl">which tooth</span>
+      <span class="seg" id="crn-opt-pos" role="group" aria-labelledby="crn-opt-pos-lbl">
+        <button data-v="front">front tooth</button><button data-v="premol">premolar</button><button data-v="mol1" class="on">first molar</button><button data-v="mol2">last molar</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl" id="crn-opt-route-lbl">route</span>
+      <span class="seg" id="crn-opt-route" role="group" aria-labelledby="crn-opt-route-lbl">
+        <button data-v="save" class="on">save it</button><button data-v="imp">implant</button><button data-v="brg">bridge</button><button data-v="rbb">bonded bridge</button><button data-v="rpd">denture</button><button data-v="gap">leave the gap</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="crn-opt-yr">horizon</label>
+      <input type="range" id="crn-opt-yr" min="1" max="20" step="1" value="10">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">reported survival <b id="crn-opt-ro-s">86–93%</b></span>
+    <span class="ro">invasiveness <b id="crn-opt-ro-i">moderate</b></span>
+    <span class="ro">cost to the rest of the mouth <b id="crn-opt-ro-n">none</b></span>
+  </div>
+  <div class="fig-note">Survival bands are drawn from published ten-year figures compounded
+  backwards and forwards at a constant annual rate; everything past the ten-year mark is an
+  extrapolation, not data, and is drawn faded to say so. The invasiveness, cost and collateral
+  columns are ordered judgements rather than measurements. <b>No survival band is drawn for a
+  denture</b> — see the note in the panel for why that is the honest thing to do.</div>
+</figure>
+
+<div class="prose">
+
+<p>The survival figures cluster: over a decade most of these routes work most of the time. What they
+cost the teeth that were never the problem differs enormously.</p>
+
+<h2>What actually happens to a gap</h2>
+
+<p>The socket heals reliably, but the bone it heals into is not the bone that was there. Alveolar
+bone exists to hold teeth — that is its entire developmental purpose — so when the tooth goes, the
+bone reads it as redundancy and remodels away.</p>
+
+<p>The dimensions are well measured. Schropp and colleagues followed single extraction sites for
+twelve months in 2003 and found the ridge lost about <strong>half its width</strong>, roughly
+twelve millimetres down to six, two-thirds of it inside the first three months. Tan and colleagues'
+2012 review put horizontal bone loss at <strong>29–63%</strong> and vertical loss at
+<strong>11–22%</strong> by six months. It never comes back — which is why the timing of an implant
+is a real clinical question.</p>
+
+<p>Then there is the rest of the mouth. The tooth that used to bite against the missing one now
+bites against nothing, and unopposed teeth tend to over-erupt. The teeth either side can tilt in.
+Tight contacts open and food packs into them, which is the complaint people actually notice.
+Craddock and colleagues, surveying adults who had lost posterior teeth, found these changes common
+but strikingly variable — the folklore version where the dentition collapses like a dropped
+bookshelf is not what the measurements show.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The gap simulator</span>
+    <span class="hint">ten years after an extraction · mid-arch versus the last molar</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="crn-gap" style="aspect-ratio: 2.2 / 1; min-height: 430px;"
+            role="img" aria-label="A side view of upper and lower teeth with one lower tooth extracted. Advancing the years shows the ridge resorbing at the socket, the neighbouring teeth tilting into the space and the opposing tooth over-erupting, with an inset cross-section of the shrinking ridge; switching to the last molar in the arch shows that nothing can drift into the space from behind."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <span class="ctl-lbl" id="crn-gap-site-lbl">which tooth went</span>
+      <span class="seg" id="crn-gap-site" role="group" aria-labelledby="crn-gap-site-lbl">
+        <button data-v="mid" class="on">one with neighbours both sides</button><button data-v="term">the last molar</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl" id="crn-gap-act-lbl">and then</span>
+      <span class="seg" id="crn-gap-act" role="group" aria-labelledby="crn-gap-act-lbl">
+        <button data-v="leave" class="on">left alone</button><button data-v="keep">space maintained</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="crn-gap-yr">time since extraction</label>
+      <input type="range" id="crn-gap-yr" min="0" max="10" step="0.1" value="0">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">ridge width <b id="crn-gap-ro-r">100% of original</b></span>
+    <span class="ro">neighbours <b id="crn-gap-ro-d">no movement</b></span>
+    <span class="ro">tooth above <b id="crn-gap-ro-o">no over-eruption</b></span>
+  </div>
+  <div class="fig-note">The ridge-width curve is shaped to Schropp and colleagues' twelve-month
+  measurements — about half the width lost in the first year, two-thirds of that within three
+  months — and continues to fall slowly afterwards. Tilting and over-eruption are shown as
+  typical behaviour, not as a prediction: the published range is very wide and many teeth barely
+  move. <b>Switch to the last molar</b> and watch what does not happen.</div>
+</figure>
+
+<div class="prose">
+
+<h2>The shortened dental arch</h2>
+
+<p>Losing the last molar in an arch is, by a wide margin, the least consequential extraction in the
+mouth. Nothing sits behind it, so nothing can drift forward. The only thing that reliably moves is
+the tooth above, which has lost its partner and may over-erupt.</p>
+
+<p>This is not a rationalisation invented to make extractions sound better. It is a formal
+position with forty years of evidence behind it. In 1981 Käyser published the shortened dental
+arch concept: about twenty teeth — front teeth and premolars intact, with four occluding pairs
+behind them — supply enough function for most people for life. The World Health Organization later
+adopted twenty functional teeth as an oral health goal. Witter and colleagues found the occlusion
+of shortened arches stable and chewing adequate, and a German multicentre randomised trial
+comparing a shortened arch against one restored with a partial denture found no advantage for the
+denture.</p>
+
+<div class="callout gold">
+  <span class="tag">Worth saying out loud</span>
+  <p>"You do not need to replace that one" is a legitimate, evidence-supported position for a
+  terminal molar, not a counsel of despair. It is also the only route on the list that costs
+  nothing and can be reversed later by choosing one of the others.</p>
+</div>
+
+<p>None of which applies to a front tooth, or to a first molar with an intact arch behind it.
+Position is not a detail here. It is most of the answer.</p>
+
+<h2>Replacing it: four routes and what each really costs</h2>
+
+<p><strong>The implant</strong> is a titanium screw placed in the ridge and left while bone grows
+into direct contact with its surface — osseointegration, which Brånemark stumbled on in 1952, when
+he could not get his titanium chambers back out of rabbit bone; the first titanium implant in a
+patient followed in 1965. The tooth is built on top weeks or months later. Reviews with at least
+ten years of follow-up put survival around <strong>93–97%</strong>, and its central advantage is
+that it does nothing at all to the
+neighbouring teeth. The costs are real: surgery, the highest price by a distance, and enough bone
+in the right place. Smoking roughly doubles the failure rate in meta-analyses. The long-term
+threat is peri-implantitis — inflammatory bone loss around a working implant, found in around a
+fifth of patients in Derks and Tomasi's 2015 review. An implant cannot decay, but it can be lost
+to gum disease, and with no periodontal ligament it gives less warning.</p>
+
+<p><strong>The conventional bridge</strong> carries a false tooth — a pontic — on crowns cemented
+to the teeth either side. Quick, fixed and effective: Tan and colleagues' 2004 review reported
+about <strong>89% survival at ten years</strong>. The bill is paid by two teeth that were often
+sound, both cut down, both now carrying the risk of pulp death and of decay under a margin. A
+failing bridge often takes an abutment with it.</p>
+
+<p><strong>The resin-bonded bridge</strong> does the same job with almost no cutting: a pontic on
+a thin wing bonded to one neighbour. Older two-winged designs debonded often — Pjetursson and
+colleagues' 2008 review put five-year survival around <strong>88%</strong> — but modern
+single-wing cantilevers behave far better, with ten-year survival reported around
+<strong>90–95%</strong> in specialist series, notably Kern's. Its failure mode is forgiving: it
+comes off, and is generally bonded back on.</p>
+
+<p><strong>The removable partial denture</strong> is the cheapest route by an order of magnitude
+and the only fully reversible one. Its characteristic failure is not mechanical: a denture fails
+by living in a drawer. Clasped teeth gather plaque too, so decay around them is a documented risk.
+Hence the comparator's refusal to draw it a survival curve — what matters is not whether the
+appliance survives but whether it is still worn.</p>
+
+<div class="callout warn">
+  <span class="tag">On the money</span>
+  <p>Fees vary so much between countries and practices that quoting them would mislead, so the
+  comparator shows relative order of magnitude only. The ranking is the stable part: a denture is
+  cheapest by a wide margin, a crown or bonded bridge sits in the middle, and an implant with its
+  crown is typically the dearest.</p>
+</div>
+
+<h2>There is no universally right answer</h2>
+
+<p>Everything above trades four currencies that do not convert into one another: cost to the tooth
+in question, cost to the teeth either side, money and time. A route that is obviously right for an
+upper incisor at twenty-five is obviously wrong for a lower second molar at seventy.</p>
+
+<p>What moves the decision, roughly in the order clinicians weigh it: how much sound tooth is left
+above the gum, whether the neighbours are already restored or untouched, which tooth in the arch
+it is, whether the person can maintain the result, and only then cost. The first item is the
+tooth's remaining substance — because every restoration is a bet placed on the tooth that is left,
+and that stock only ever goes down.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">every number on this page, and where it came from</span></summary>
+  <p><b>Cuspal stiffness.</b> Reeh ES, Messer HH, Douglas WH. Reduction in tooth stiffness as a
+  result of endodontic and restorative procedures. <i>J Endod</i> 1989 — endodontic access ≈5%,
+  occlusal cavity ≈20%, MOD cavity ≈63% loss of cuspal stiffness.</p>
+  <p><b>Cuspal coverage and survival.</b> Sorensen JA, Martinoff JT. <i>J Prosthet Dent</i> 1984
+  (benefit in posterior teeth, none demonstrated anteriorly). Aquilino SA, Caplan DJ.
+  <i>J Prosthet Dent</i> 2002 (uncrowned root-filled teeth lost at about six times the rate).
+  Ng Y-L, Mann V, Gulabivala K. <i>Int Endod J</i> 2010 (pooled tooth survival ≈86–93% at 8–10
+  years; crown placement a significant favourable factor). Sequeira-Byron P et al.
+  <i>Cochrane Database of Systematic Reviews</i> 2015 (insufficient randomised evidence).</p>
+  <p><b>Preparation and pulp.</b> Edelhoff D, Sorensen JA. <i>Int J Periodontics Restorative
+  Dent</i> 2002 (≈60–75% of coronal structure removed for full coverage). Cheung GSP, Lai SCN,
+  Ng RPY. Fate of vital pulps beneath a metal-ceramic crown or a bridge retainer.
+  <i>Int Endod J</i> 2005.</p>
+  <p><b>Longevity.</b> Pjetursson BE et al. 2007 and Sailer I et al. <i>Dent Mater</i> 2015
+  (single-crown survival by material). Burke FJT, Lucarotti PSK. Ten-year outcome of crowns placed
+  within the General Dental Services in England and Wales. <i>J Dent</i> 2009. Donovan T, Simonsen
+  RJ, Guertin G, Tucker RV. <i>J Esthet Restor Dent</i> 2004 (1,314 cast gold restorations in
+  service from 1 to 52 years). Morimoto S et al. <i>J Dent Res</i> 2016 (ceramic inlays, onlays and
+  overlays ≈95% at 5 years, ≈91% at 10).</p>
+  <p><b>After extraction.</b> Schropp L, Wenzel A, Kostopoulos L, Karring T. <i>Int J Periodontics
+  Restorative Dent</i> 2003 (≈50% of ridge width lost in 12 months, two-thirds of it in 3 months).
+  Tan WL, Wong TLT, Wong MCM, Lang NP. <i>Clin Oral Implants Res</i> 2012 (horizontal loss 29–63%,
+  vertical 11–22% at 6 months). Craddock HL et al. Occlusal changes following posterior tooth loss
+  in adults. <i>J Prosthodont</i> 2007.</p>
+  <p><b>Shortened arch and replacement.</b> Käyser AF. <i>J Oral Rehabil</i> 1981; Witter DJ et al.
+  (Nijmegen follow-ups); Walter MH et al. (the randomised shortened dental arch study).
+  Moraschini V et al. <i>Int J Oral Maxillofac Surg</i> 2015 (implant survival ≈94.6% at ≥10
+  years). Derks J, Tomasi C. <i>J Clin Periodontol</i> 2015 (peri-implantitis in ≈22% of patients).
+  Chrcanovic BR, Albrektsson T, Wennerberg A. <i>J Dent</i> 2015 (smoking roughly doubles implant
+  failure). Tan K, Pjetursson BE, Lang NP, Chan ESY. <i>Clin Oral Implants Res</i> 2004
+  (conventional bridges ≈89% at 10 years). Pjetursson BE et al. <i>Clin Oral Implants Res</i> 2008
+  and Kern M and colleagues (resin-bonded bridges).</p>
+</details>
+
+<p>The tooth in <a href="./">the opening figure</a> ends its eighty years crowned and still working,
+having lost most of its substance to a series of individually reasonable decisions. That is the
+endgame going well. The alternative endings are not disasters: a well-chosen extraction, an
+implant, a bonded wing or a deliberately empty space are all real answers.</p>
+
+<p class="colophon">ROOT AND CROWN · Chapter 8 · Every survival figure here is a population range
+from published studies, named above. Not advice about a particular tooth. Part of the
+<a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+<nav class="chapnav" aria-label="Previous and next chapter">
+  <a href="root-canal.html"><span class="dir">Previous</span><span class="title">7 · Root Canal</span></a>
+  <a class="next" href="lexicon.html"><span class="dir">Next</span><span class="title">9 · The Lexicon</span></a>
+</nav>
+
+
+</main>
+
+<script src="tooth-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const C = TC.C, clamp = TC.clamp, mono = TC.mono, lab = TC.label;
+  /* dark ink for the few labels that have to sit on the tan bone fill:
+     the page's muted grey is chosen for the near-black background and
+     disappears completely against bone */
+  const onBone = "#2b2620";
+
+  /* ---------- shared local helpers ---------- */
+  function bg(ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = "#0a0a0e";
+    ctx.fillRect(0, 0, w, h);
+  }
+  function wrapLines(ctx, text, maxW, font) {
+    ctx.save();
+    ctx.font = font;
+    const words = String(text).split(" ");
+    const out = [];
+    let cur = "";
+    for (const wd of words) {
+      const t = cur ? cur + " " + wd : wd;
+      if (ctx.measureText(t).width > maxW && cur) { out.push(cur); cur = wd; }
+      else cur = t;
+    }
+    if (cur) out.push(cur);
+    ctx.restore();
+    return out;
+  }
+  function para(ctx, text, x, y, maxW, lh, o) {
+    o = o || {};
+    const font = o.font || mono(11.5);
+    const lines = wrapLines(ctx, text, maxW, font);
+    for (let i = 0; i < lines.length; i++) {
+      lab(ctx, lines[i], x, y + i * lh, { font: font, color: o.color || C.muted });
+    }
+    return y + lines.length * lh;
+  }
+  function pips(ctx, x, y, n, max, col) {
+    for (let i = 0; i < max; i++) {
+      ctx.fillStyle = i < n ? col : "rgba(243,241,233,0.12)";
+      ctx.fillRect(x + i * 9, y - 6, 6, 6);
+    }
+  }
+  function arrow(ctx, x1, y1, x2, y2, col, wdt) {
+    const a = Math.atan2(y2 - y1, x2 - x1), hd = 5 + wdt * 1.4;
+    TC.line(ctx, x1, y1, x2 - Math.cos(a) * hd * 0.6, y2 - Math.sin(a) * hd * 0.6, col, wdt);
+    ctx.save();
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - Math.cos(a - 0.42) * hd, y2 - Math.sin(a - 0.42) * hd);
+    ctx.lineTo(x2 - Math.cos(a + 0.42) * hd, y2 - Math.sin(a + 0.42) * hd);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* =====================================================================
+     FIGURE 1 — cuspal coverage: why an unroofed molar splits
+     Stiffness values are the measured losses reported by Reeh, Messer &
+     Douglas (J Endod 1989): access ≈5%, occlusal ≈20%, MOD ≈63%.
+     ===================================================================== */
+  const F1 = { tooth: "molar", cav: "mod", cover: "direct", load: 300 };
+  const STIFF = [
+    { k: "sound",  nm: "sound tooth",   v: 1.00 },
+    { k: "access", nm: "access only",   v: 0.95 },
+    { k: "occ",    nm: "occlusal box",  v: 0.80 },
+    { k: "mod",    nm: "MOD cavity",    v: 0.37 },
+    { k: "moda",   nm: "MOD + access",  v: 0.35 },
+  ];
+  const CAVGEO = {
+    sound:  { gap: 0.055, d: 0.10, endo: false },
+    access: { gap: 0.150, d: 0.62, endo: true },
+    occ:    { gap: 0.215, d: 0.30, endo: false },
+    mod:    { gap: 0.260, d: 0.55, endo: false },
+    moda:   { gap: 0.290, d: 0.68, endo: true },
+  };
+  function f1Stiff() {
+    const row = STIFF.find((s) => s.k === F1.cav);
+    return row ? row.v : 1;
+  }
+  function f1Eff() {
+    const base = f1Stiff();
+    return F1.cover === "cover"
+      ? Math.min(1, base + 0.60 * (1 - base))
+      : base + 0.10 * (1 - base);
+  }
+  function f1Index() {
+    const wedge = F1.tooth === "molar" ? 1 : 0.22;
+    return (F1.load / 300) * wedge / f1Eff();
+  }
+  function f1Verdict(idx) {
+    if (idx < 1.3) return ["comfortably within tolerance", C.good, "good"];
+    if (idx < 2.0) return ["cusps working, still supported", C.mint, "amber"];
+    if (idx < 3.0) return ["a cusp is at risk", C.dentineAcc, "amber"];
+    return ["at risk of a split below the gum", C.pulpAcc, "alert"];
+  }
+
+  function halfCrown(ctx, H, hw, nw, gap, d) {
+    const rise = H * 0.16;
+    ctx.beginPath();
+    ctx.moveTo(0, -H + d);
+    ctx.lineTo(gap, -H + d);
+    ctx.lineTo(gap, -H + H * 0.02);
+    ctx.quadraticCurveTo(gap * 0.5 + hw * 0.34, -H - rise * 0.55, hw * 0.60, -H - rise * 0.45);
+    ctx.quadraticCurveTo(hw * 0.90, -H - rise * 0.22, hw, -H * 0.60);
+    ctx.bezierCurveTo(hw * 1.03, -H * 0.32, nw * 1.08, -H * 0.10, nw, 0);
+    ctx.lineTo(0, 0);
+    ctx.closePath();
+  }
+
+  function drawMolar(ctx, cx, cy, S, theta) {
+    const H = S, hw = S * 0.62, nw = S * 0.44, Hr = S * 1.15;
+    const geo = CAVGEO[F1.cav];
+    const gap = S * geo.gap, d = S * geo.d;
+
+    /* bone and gum behind the tooth */
+    ctx.fillStyle = C.bone;
+    ctx.fillRect(cx - S * 2.2, cy + S * 0.16, S * 4.4, Hr + S * 0.06);
+    TC.grain(ctx, cx - S * 2.2, cy + S * 0.16, S * 4.4, Hr, 200, 31, "#efe8d0", 0.09);
+    ctx.fillStyle = C.gum;
+    ctx.fillRect(cx - S * 2.2, cy + S * 0.05, S * 4.4, S * 0.16);
+
+    /* root, drawn first so the crown halves sit on it */
+    ctx.beginPath();
+    ctx.moveTo(cx - nw, cy - H * 0.10);
+    ctx.bezierCurveTo(cx - nw * 0.98, cy + Hr * 0.5, cx - nw * 0.66, cy + Hr * 0.94, cx, cy + Hr);
+    ctx.bezierCurveTo(cx + nw * 0.66, cy + Hr * 0.94, cx + nw * 0.98, cy + Hr * 0.5, cx + nw, cy - H * 0.10);
+    ctx.closePath();
+    ctx.fillStyle = C.cementum;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(30,26,20,0.55)";
+    ctx.lineWidth = 1.3;
+    ctx.stroke();
+    /* canal */
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - S * 0.09, cy - H * 0.05);
+    ctx.lineTo(cx + S * 0.09, cy - H * 0.05);
+    ctx.lineTo(cx + S * 0.022, cy + Hr * 0.90);
+    ctx.lineTo(cx - S * 0.022, cy + Hr * 0.90);
+    ctx.closePath();
+    ctx.fillStyle = geo.endo ? C.gutta : C.pulp;
+    ctx.fill();
+    ctx.restore();
+
+    /* the two crown halves, each rotated outward about the cervix */
+    for (const sgn of [-1, 1]) {
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(sgn, 1);
+      ctx.rotate(theta);
+      halfCrown(ctx, H, hw, nw, gap, d);
+      ctx.fillStyle = C.enamel;
+      ctx.fill();
+      ctx.save();
+      ctx.clip();
+      ctx.save();
+      ctx.translate(0, H * 0.13);
+      ctx.scale(0.80, 0.88);
+      halfCrown(ctx, H, hw, nw, gap, d);
+      ctx.fillStyle = C.dentine;
+      ctx.fill();
+      ctx.restore();
+      /* carry the dentine up to the cavity floor: a cut this deep is floored
+         in dentine, so no enamel colour should show at the base of it */
+      if (d > H * 0.12) {
+        ctx.fillStyle = C.dentine;
+        ctx.fillRect(0, -H + d, gap * 1.04, H * 0.30);
+      }
+      ctx.restore();
+      halfCrown(ctx, H, hw, nw, gap, d);
+      ctx.strokeStyle = "rgba(30,26,20,0.55)";
+      ctx.lineWidth = 1.3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* the restoration itself */
+    if (F1.cover === "cover") {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cx - hw * 1.06, cy - H * 0.50);
+      ctx.lineTo(cx - hw * 1.06, cy - H * 0.78);
+      ctx.quadraticCurveTo(cx - hw * 0.62, cy - H * 1.26, cx, cy - H * 1.14);
+      ctx.quadraticCurveTo(cx + hw * 0.62, cy - H * 1.26, cx + hw * 1.06, cy - H * 0.78);
+      ctx.lineTo(cx + hw * 1.06, cy - H * 0.50);
+      ctx.quadraticCurveTo(cx, cy - H * 0.66, cx - hw * 1.06, cy - H * 0.50);
+      ctx.closePath();
+      ctx.fillStyle = C.porcelain;
+      ctx.fill();
+      TC.grain(ctx, cx - hw, cy - H * 1.2, hw * 2, H * 0.7, 90, 44, "#ffffff", 0.13);
+      ctx.strokeStyle = "rgba(60,50,35,0.55)";
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.restore();
+      lab(ctx, "cusps tied together", cx, cy - H * 1.44,
+        { align: "center", color: C.mint, font: mono(11, true) });
+    } else if (F1.cav !== "sound") {
+      /* the filling sits in the notch, so it must follow the walls as they tilt */
+      const ct = Math.cos(theta), st = Math.sin(theta);
+      const wall = (sgn, x, y) => [cx + sgn * (x * ct - y * st), cy + (x * st + y * ct)];
+      const yTop = -H + H * 0.02, yFloor = -H + d;
+      const bl = wall(-1, gap, yFloor), br = wall(1, gap, yFloor);
+      const tr = wall(1, gap, yTop), tl = wall(-1, gap, yTop);
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(bl[0], bl[1]);
+      ctx.lineTo(br[0], br[1]);
+      ctx.lineTo(tr[0], tr[1]);
+      ctx.lineTo(tl[0], tl[1]);
+      ctx.closePath();
+      ctx.fillStyle = C.composite;
+      ctx.fill();
+      ctx.strokeStyle = "rgba(40,30,18,0.35)";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    /* the crack, once the cusps are working hard enough */
+    const idx = f1Index();
+    if (idx > 2.0 && F1.cover !== "cover") {
+      const r = TC.rng(97);
+      const deep = clamp((idx - 2.0) / 2.0, 0, 1);
+      const y0 = cy - H + d, y1 = cy + Hr * (0.10 + 0.55 * deep);
+      ctx.save();
+      ctx.strokeStyle = C.pulpAcc;
+      ctx.lineWidth = 1.6 + deep;
+      ctx.beginPath();
+      ctx.moveTo(cx + S * 0.02, y0);
+      for (let i = 1; i <= 9; i++) {
+        const t = i / 9;
+        ctx.lineTo(cx + S * 0.02 + (r() - 0.35) * S * 0.10 + t * nw * 0.55, y0 + (y1 - y0) * t);
+      }
+      ctx.stroke();
+      ctx.restore();
+      if (deep > 0.45) {
+        lab(ctx, "fracture below the gum", cx + nw * 0.8, cy + Hr * 0.5,
+          { color: C.pulpAcc, font: mono(11, true) });
+      }
+    }
+
+    /* the load, and the wedge it becomes */
+    const lw = 1.4 + F1.load / 260;
+    arrow(ctx, cx, cy - H * 1.95, cx, cy - H * 1.30, C.ice, lw);
+    lab(ctx, F1.load + " N", cx, cy - H * 2.05, { align: "center", color: C.ice, font: mono(12, true) });
+    for (const sgn of [-1, 1]) {
+      arrow(ctx, cx + sgn * S * 0.14, cy - H * 0.94, cx + sgn * S * 0.46, cy - H * 0.88,
+        C.pulpAcc, 1.2 + F1.load / 700);
+    }
+    lab(ctx, "the load lands on the inclines and wedges the cusps apart", cx, cy + Hr + S * 0.34,
+      { align: "center", color: C.muted, font: mono(11) });
+    lab(ctx, "movement exaggerated — in life it is micrometres", cx, cy + Hr + S * 0.52,
+      { align: "center", color: "rgba(134,144,154,0.7)", font: mono(10) });
+  }
+
+  function drawIncisor(ctx, cx, cy, S, theta) {
+    const H = S * 1.15, hw = S * 0.34, Hr = S * 1.35;
+    const geo = CAVGEO[F1.cav];
+
+    ctx.fillStyle = C.bone;
+    ctx.fillRect(cx - S * 2.2, cy + S * 0.16, S * 4.4, Hr + S * 0.06);
+    TC.grain(ctx, cx - S * 2.2, cy + S * 0.16, S * 4.4, Hr, 180, 31, "#efe8d0", 0.09);
+    ctx.fillStyle = C.gum;
+    ctx.fillRect(cx - S * 2.2, cy + S * 0.05, S * 4.4, S * 0.16);
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(theta * 0.6);
+    ctx.beginPath();
+    ctx.moveTo(-hw * 0.78, 0);
+    ctx.bezierCurveTo(-hw * 1.02, -H * 0.42, -hw * 0.96, -H * 0.82, -hw * 0.80, -H);
+    ctx.lineTo(hw * 0.80, -H);
+    ctx.bezierCurveTo(hw * 0.96, -H * 0.82, hw * 1.02, -H * 0.42, hw * 0.78, 0);
+    ctx.closePath();
+    ctx.fillStyle = C.enamel;
+    ctx.fill();
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = C.dentine;
+    ctx.beginPath();
+    ctx.ellipse(0, -H * 0.42, hw * 0.62, H * 0.44, 0, 0, TC.TAU);
+    ctx.fill();
+    ctx.restore();
+    if (geo.endo || F1.cav !== "sound") {
+      ctx.fillStyle = geo.endo ? "#2a2724" : C.composite;
+      TC.roundRect(ctx, hw * 0.10, -H * 0.74, hw * 0.72, H * 0.30, 3);
+      ctx.fill();
+    }
+    ctx.strokeStyle = "rgba(30,26,20,0.55)";
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.moveTo(-hw * 0.78, 0);
+    ctx.bezierCurveTo(-hw * 1.02, -H * 0.42, -hw * 0.96, -H * 0.82, -hw * 0.80, -H);
+    ctx.lineTo(hw * 0.80, -H);
+    ctx.bezierCurveTo(hw * 0.96, -H * 0.82, hw * 1.02, -H * 0.42, hw * 0.78, 0);
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.moveTo(cx - hw * 0.80, cy - H * 0.06);
+    ctx.bezierCurveTo(cx - hw * 0.74, cy + Hr * 0.5, cx - hw * 0.40, cy + Hr * 0.95, cx, cy + Hr);
+    ctx.bezierCurveTo(cx + hw * 0.40, cy + Hr * 0.95, cx + hw * 0.74, cy + Hr * 0.5, cx + hw * 0.80, cy - H * 0.06);
+    ctx.closePath();
+    ctx.fillStyle = C.cementum;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(30,26,20,0.55)";
+    ctx.stroke();
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(cx - S * 0.07, cy - H * 0.1);
+    ctx.lineTo(cx + S * 0.07, cy - H * 0.1);
+    ctx.lineTo(cx + S * 0.018, cy + Hr * 0.9);
+    ctx.lineTo(cx - S * 0.018, cy + Hr * 0.9);
+    ctx.closePath();
+    ctx.fillStyle = geo.endo ? C.gutta : C.pulp;
+    ctx.fill();
+    ctx.restore();
+
+    const lw = 1.4 + F1.load / 400;
+    arrow(ctx, cx + S * 1.30, cy - H * 1.62, cx + hw * 0.55, cy - H * 0.86, C.ice, lw);
+    lab(ctx, Math.round(F1.load * 0.35) + " N", cx + S * 1.34, cy - H * 1.72,
+      { align: "center", color: C.ice, font: mono(12, true) });
+    lab(ctx, "lower forces, aimed much closer to the long axis", cx, cy + Hr + S * 0.34,
+      { align: "center", color: C.muted, font: mono(11) });
+    lab(ctx, "no cusps — nothing for the load to wedge apart", cx, cy + Hr + S * 0.52,
+      { align: "center", color: "rgba(134,144,154,0.7)", font: mono(10) });
+  }
+
+  const fig1 = TC.canvas("crn-flex", function (ctx, w, h) {
+    bg(ctx, w, h);
+    const narrow = w < 780;
+    const P = narrow
+      ? { x: w * 0.04, y: h * 0.02, w: w * 0.92, h: h * 0.56 }
+      : { x: w * 0.02, y: h * 0.04, w: w * 0.52, h: h * 0.92 };
+    const Q = narrow
+      ? { x: w * 0.05, y: h * 0.60, w: w * 0.90, h: h * 0.38 }
+      : { x: w * 0.57, y: h * 0.10, w: w * 0.40, h: h * 0.80 };
+
+    const idx = f1Index();
+    const theta = clamp(idx * 0.030, 0, 0.13) * (F1.tooth === "molar" ? 1 : 0.5);
+    const S = Math.min(P.h * 0.25, P.w * 0.38);
+    const cx = P.x + P.w / 2, cy = P.y + P.h * 0.56;
+    if (F1.tooth === "molar") drawMolar(ctx, cx, cy, S, theta);
+    else drawIncisor(ctx, cx, cy, S * 0.92, theta);
+
+    /* right-hand panel */
+    if (F1.tooth === "molar") {
+      lab(ctx, "REMAINING CUSPAL STIFFNESS", Q.x, Q.y, { color: C.mint, font: mono(11.5, true) });
+      lab(ctx, "measured — Reeh, Messer & Douglas 1989", Q.x, Q.y + 15, { color: C.muted, font: mono(10) });
+      const rowH = Math.min(30, Q.h * 0.115);
+      const bx = Q.x + Math.max(96, Q.w * 0.34), bw = Q.x + Q.w - bx - 42;
+      STIFF.forEach((s, i) => {
+        const y = Q.y + 42 + i * rowH;
+        const on = s.k === F1.cav;
+        lab(ctx, s.nm, bx - 8, y + 4, {
+          align: "right", color: on ? C.ink : C.muted, font: mono(11, on),
+        });
+        ctx.fillStyle = "rgba(243,241,233,0.07)";
+        ctx.fillRect(bx, y - 6, bw, 11);
+        ctx.fillStyle = on ? C.mint : (s.v < 0.5 ? "rgba(232,185,98,0.55)" : "rgba(74,216,196,0.35)");
+        ctx.fillRect(bx, y - 6, bw * s.v, 11);
+        lab(ctx, Math.round(s.v * 100) + "%", bx + bw + 6, y + 4,
+          { color: on ? C.ink : C.muted, font: mono(11, on) });
+      });
+      if (!narrow) {
+        para(ctx,
+          "The access cavity costs almost nothing. Losing both marginal ridges costs nearly two-thirds.",
+          Q.x, Q.y + 42 + 5 * rowH + 20, Q.w, 15, { font: mono(11), color: C.ink2 });
+      }
+    } else {
+      lab(ctx, "THE FRONT-TOOTH EXCEPTION", Q.x, Q.y, { color: C.mint, font: mono(11.5, true) });
+      let ny = Q.y + 26;
+      ny = para(ctx,
+        "Sorensen and Martinoff (1984) found coronal coverage significantly improved survival for premolars and molars — and made no significant difference for anterior teeth.",
+        Q.x, ny, Q.w, 16, { font: mono(11.5), color: C.ink2 }) + 14;
+      ny = para(ctx,
+        "An incisor has no cusps to be wedged apart, takes markedly lower forces, and takes them closer to its long axis. A root-treated front tooth with its walls still standing is often restored by sealing the access cavity and stopping there.",
+        Q.x, ny, Q.w, 16, { font: mono(11.5), color: C.muted });
+    }
+
+    /* verdict strip */
+    const [txt, col] = f1Verdict(idx);
+    const vy = Q.y + Q.h - (narrow ? 4 : 26);
+    ctx.fillStyle = "rgba(243,241,233,0.05)";
+    TC.roundRect(ctx, Q.x, vy - 26, Q.w, 34, 6);
+    ctx.fill();
+    lab(ctx, "OUTCOME", Q.x + 12, vy - 12, { color: C.muted, font: mono(10) });
+    lab(ctx, txt.toUpperCase(), Q.x + 12, vy + 3, { color: col, font: mono(12.5, true) });
+  });
+
+  function f1Update() {
+    if (fig1) fig1.redraw();
+    const idx = f1Index();
+    TC.set("crn-flex-ro-s", Math.round(f1Stiff() * 100) + "%");
+    TC.set("crn-flex-ro-d", idx.toFixed(1) + "×");
+    const [txt, , cls] = f1Verdict(idx);
+    TC.set("crn-flex-ro-v", txt);
+    const el = document.getElementById("crn-flex-ro-v");
+    if (el && el.parentElement) el.parentElement.className = "ro " + cls;
+  }
+  TC.seg("crn-flex-tooth", (v) => { F1.tooth = v; f1Update(); });
+  TC.seg("crn-flex-cav", (v) => { F1.cav = v; f1Update(); });
+  TC.seg("crn-flex-cover", (v) => { F1.cover = v; f1Update(); });
+  TC.slider("crn-flex-load", (v) => v.toFixed(0) + " N", (v) => { F1.load = v; f1Update(); });
+
+  /* =====================================================================
+     FIGURE 2 — the options comparator
+     Survival bands are published ten-year figures (see the "go deeper"
+     panel); everything past year 10 is compounded extrapolation.
+     ===================================================================== */
+  const F2 = { pos: "mol1", route: "save", yr: 10 };
+  const ROUTES = [
+    { k: "save", sh: "save it", nm: "save it — root filling and cuspal coverage",
+      col: C.series[5], s10: [0.86, 0.93], inv: 3, cost: 3, nbr: 0,
+      note: "Nothing is done to any other tooth: the whole cost lands on this one. And if it fails later, every extraction option is still on the table — which makes saving first and deciding later the reversible order to do things in." },
+    { k: "imp", sh: "implant", nm: "extract, then an implant",
+      col: C.series[0], s10: [0.92, 0.97], inv: 5, cost: 5, nbr: 0,
+      note: "A titanium screw fused to bone, restored weeks to months later. About 93–97% survival at ten years and it touches no other tooth. Against that: surgery, the highest cost, a bone-volume requirement, roughly double the failure rate in smokers, and peri-implantitis in around a fifth of patients over the long run." },
+    { k: "brg", sh: "bridge", nm: "extract, then a conventional bridge",
+      col: C.series[1], s10: [0.85, 0.90], inv: 4, cost: 4, nbr: 5,
+      note: "A false tooth carried on crowns cemented to both neighbours: fast, fixed, around 89% survival at ten years. The price is paid by two teeth that were often sound — both cut down, both now carrying a risk of pulp death and of decay under a margin. When it fails it can take an abutment with it." },
+    { k: "rbb", sh: "bonded bridge", nm: "extract, then a resin-bonded bridge",
+      col: C.series[3], s10: [0.80, 0.95], inv: 2, cost: 3, nbr: 1,
+      note: "A pontic on a thin wing bonded to one neighbour, with almost no tooth cut. Older two-winged designs managed about 88% at five years; modern single-wing cantilevers report roughly 90–95% at ten in specialist series. It fails by coming off, which is usually re-bondable." },
+    { k: "rpd", sh: "denture", nm: "extract, then a removable partial denture",
+      col: C.series[4], s10: null, inv: 1, cost: 1, nbr: 2,
+      note: "A removable plate clasped to the remaining teeth: cheapest by an order of magnitude, and the only fully reversible route. Its characteristic failure is a drawer. Clasped teeth also gather plaque, so decay and gum trouble around them is a real risk. No survival band is drawn because the number that matters is whether it is still worn, not whether it is still intact." },
+    { k: "gap", sh: "leave the gap", nm: "extract and leave the space",
+      col: C.series[2], s10: null, inv: 1, cost: 1, nbr: 3,
+      note: "The socket heals and the ridge shrinks — about half its width in the first year. What happens after that depends entirely on which tooth this was." },
+  ];
+  const POS = {
+    front: { nm: "upper front tooth (incisor)", gapNbr: 5, na: ["gap"], notes: {
+      save: "A root-treated incisor with sound walls often needs no crown at all — just the access cavity sealed. Coverage buys little here and costs a great deal of tooth.",
+      imp: "In the front the hard part is not the screw, it is the gum: matching the margin and the papillae over a resorbed ridge is the most demanding cosmetic problem in dentistry.",
+      rbb: "This is where the design is strongest. A single bonded wing replacing an upper incisor is the most conservative fixed replacement there is.",
+      gap: "Almost never acceptable for an upper front tooth, for reasons that have nothing to do with chewing." } },
+    premol: { nm: "premolar", gapNbr: 3, na: [], notes: {
+      gap: "With teeth on both sides the space opens contacts for food to pack into and gives the neighbours somewhere to lean. Movement is variable and often modest — but this is where drift actually matters." } },
+    mol1: { nm: "first molar", gapNbr: 3, na: [], notes: {
+      gap: "The first molar carries a large share of the chewing load and has teeth on both sides, so this is the space most likely to cause trouble if it is left. Contacts open, food packs, and the neighbours have somewhere to lean." } },
+    mol2: { nm: "last molar in the arch", gapNbr: 0, na: ["brg", "rbb"], notes: {
+      save: "The least urgent save in the mouth. If this tooth eventually goes, nothing drifts into the space from behind, because there is nothing behind.",
+      imp: "It works — but ask what it buys. A last molar with nothing behind it and little to bite against contributes modest chewing, which is the classic case for a shortened arch instead.",
+      brg: "There is no tooth behind to carry the far end, so a conventional bridge does not apply here.",
+      rbb: "Nothing behind to cantilever from, so this route rarely applies to the last tooth in an arch.",
+      gap: "The strongest case in the mouth for doing nothing. Nothing can drift forward into the space, only the tooth above it can move, and the shortened dental arch evidence says a dentition of premolars and first molars functions well." } },
+  };
+  const INVW = ["", "minimal", "low", "moderate", "high", "surgical"];
+  const COSTW = ["", "lowest", "low", "moderate", "high", "highest"];
+  const NBRW = ["none", "negligible", "slight", "moderate", "substantial", "severe"];
+
+  const routeOf = (k) => ROUTES.find((r) => r.k === k) || ROUTES[0];
+  const isNA = (k) => POS[F2.pos].na.indexOf(k) >= 0;
+  const nbrOf = (r) => (r.k === "gap" ? POS[F2.pos].gapNbr : r.nbr);
+  function surv(s10, t) { return Math.pow(s10, t / 10); }
+
+  const fig2 = TC.canvas("crn-opt", function (ctx, w, h) {
+    bg(ctx, w, h);
+    const narrow = w < 780;
+    const P = narrow
+      ? { x0: w * 0.15, x1: w * 0.96, y0: h * 0.09, y1: h * 0.37 }
+      : { x0: w * 0.075, x1: w * 0.50, y0: h * 0.15, y1: h * 0.72 };
+    const M = narrow
+      ? { x: w * 0.035, y: h * 0.47, w: w * 0.93 }
+      : { x: w * 0.545, y: h * 0.15, w: w * 0.435 };
+    const N = narrow
+      ? { x: w * 0.045, y: h * 0.78, w: w * 0.91 }
+      : { x: w * 0.075, y: h * 0.80, w: w * 0.90 };
+
+    lab(ctx, POS[F2.pos].nm.toUpperCase(), w * 0.045, h * 0.055,
+      { color: C.mint, font: mono(13, true) });
+    lab(ctx, "six routes, twenty years", w * 0.045, h * 0.055 + 16,
+      { color: C.muted, font: mono(10.5) });
+
+    /* ---- survival plot ---- */
+    const X = (t) => P.x0 + (t / 20) * (P.x1 - P.x0);
+    const Y = (s) => P.y1 - ((s - 0.6) / 0.4) * (P.y1 - P.y0);
+    ctx.fillStyle = "rgba(243,241,233,0.028)";
+    ctx.fillRect(X(10), P.y0, X(20) - X(10), P.y1 - P.y0);
+    lab(ctx, "extrapolated", X(10) + 6, P.y0 + 12, { color: "rgba(134,144,154,0.7)", font: mono(9.5) });
+    for (let s = 0.6; s <= 1.001; s += 0.1) {
+      TC.line(ctx, P.x0, Y(s), P.x1, Y(s), C.line2, 1);
+      lab(ctx, Math.round(s * 100) + "%", P.x0 - 6, Y(s) + 4, { align: "right", color: C.muted, font: mono(10) });
+    }
+    for (let t = 0; t <= 20; t += 5) {
+      TC.line(ctx, X(t), P.y1, X(t), P.y1 + 4, C.line, 1);
+      lab(ctx, String(t), X(t), P.y1 + 17, { align: "center", color: C.muted, font: mono(10) });
+    }
+    lab(ctx, "years", (P.x0 + P.x1) / 2, P.y1 + 32, { align: "center", color: C.muted, font: mono(10.5) });
+
+    for (const r of ROUTES) {
+      if (!r.s10 || isNA(r.k)) continue;
+      const on = r.k === F2.route;
+      ctx.save();
+      ctx.beginPath();
+      for (let t = 0; t <= 20.001; t += 0.5) ctx.lineTo(X(t), Y(surv(r.s10[1], t)));
+      for (let t = 20; t >= -0.001; t -= 0.5) ctx.lineTo(X(t), Y(surv(r.s10[0], t)));
+      ctx.closePath();
+      ctx.fillStyle = TC.mix(r.col, r.col, 0, on ? 0.28 : 0.09);
+      ctx.fill();
+      ctx.beginPath();
+      for (let t = 0; t <= 20.001; t += 0.5) {
+        ctx.lineTo(X(t), Y(surv((r.s10[0] + r.s10[1]) / 2, t)));
+      }
+      ctx.strokeStyle = on ? r.col : TC.mix(r.col, r.col, 0, 0.30);
+      ctx.lineWidth = on ? 2.2 : 1;
+      ctx.stroke();
+      ctx.restore();
+      if (on) {
+        lab(ctx, r.sh, X(20) - 4, Y(surv((r.s10[0] + r.s10[1]) / 2, 20)) - 8,
+          { align: "right", color: r.col, font: mono(11, true) });
+      }
+    }
+    TC.line(ctx, X(F2.yr), P.y0 - 4, X(F2.yr), P.y1, C.ink2, 1, [3, 3]);
+    lab(ctx, "year " + F2.yr, X(F2.yr), P.y0 - 9, { align: "center", color: C.ink2, font: mono(10.5, true) });
+
+    /* ---- the matrix ---- */
+    const cw = 42;
+    const c3 = M.x + M.w - cw, c2 = c3 - cw - 16, c1 = c2 - cw - 16;
+    lab(ctx, "INV", c1, M.y, { color: C.muted, font: mono(9.5) });
+    lab(ctx, "COST", c2, M.y, { color: C.muted, font: mono(9.5) });
+    lab(ctx, "MOUTH", c3, M.y, { color: C.muted, font: mono(9.5) });
+    const rowH = narrow ? Math.min(28, h * 0.048) : Math.min(34, (P.y1 - M.y) / 6.4);
+    ROUTES.forEach((r, i) => {
+      const y = M.y + 20 + i * rowH;
+      const on = r.k === F2.route, na = isNA(r.k);
+      if (on) {
+        ctx.fillStyle = "rgba(243,241,233,0.055)";
+        TC.roundRect(ctx, M.x - 6, y - rowH * 0.52, M.w + 12, rowH * 0.92, 5);
+        ctx.fill();
+      }
+      ctx.fillStyle = na ? "rgba(134,144,154,0.35)" : r.col;
+      ctx.fillRect(M.x, y - 8, 8, 8);
+      lab(ctx, r.sh, M.x + 15, y, {
+        color: na ? "rgba(134,144,154,0.65)" : on ? C.ink : C.ink2,
+        font: mono(11.5, on),
+      });
+      if (na) {
+        lab(ctx, "rarely applies here", c1, y, { color: "rgba(134,144,154,0.6)", font: mono(10) });
+      } else {
+        pips(ctx, c1, y, r.inv, 5, on ? C.ink : "rgba(243,241,233,0.45)");
+        pips(ctx, c2, y, r.cost, 5, on ? C.dentineAcc : "rgba(232,185,98,0.45)");
+        pips(ctx, c3, y, nbrOf(r), 5, on ? C.pulpAcc : "rgba(255,107,125,0.45)");
+      }
+    });
+
+    /* ---- the note ---- */
+    const r = routeOf(F2.route);
+    const posNote = (POS[F2.pos].notes || {})[r.k];
+    lab(ctx, r.nm.toUpperCase(), N.x, N.y, { color: r.col, font: mono(11.5, true) });
+    let ny = N.y + 18;
+    ny = para(ctx, r.note, N.x, ny, N.w, 15, { font: mono(11.5), color: C.ink2 });
+    if (posNote) para(ctx, posNote, N.x, ny + 5, N.w, 15, { font: mono(11.5), color: C.muted });
+  });
+
+  function f2Update() {
+    if (fig2) fig2.redraw();
+    const r = routeOf(F2.route);
+    if (isNA(r.k)) {
+      TC.set("crn-opt-ro-s", "rarely applies here");
+    } else if (r.s10) {
+      TC.set("crn-opt-ro-s",
+        Math.round(surv(r.s10[0], F2.yr) * 100) + "–" +
+        Math.round(surv(r.s10[1], F2.yr) * 100) + "% at " + F2.yr + " years");
+    } else {
+      TC.set("crn-opt-ro-s", "no comparable figure");
+    }
+    TC.set("crn-opt-ro-i", INVW[r.inv]);
+    TC.set("crn-opt-ro-n", NBRW[nbrOf(r)]);
+  }
+  TC.seg("crn-opt-pos", (v) => { F2.pos = v; f2Update(); });
+  TC.seg("crn-opt-route", (v) => { F2.route = v; f2Update(); });
+  TC.slider("crn-opt-yr", (v) => v.toFixed(0) + " years", (v) => { F2.yr = v; f2Update(); });
+
+  /* =====================================================================
+     FIGURE 3 — the gap simulator
+     Ridge width follows Schropp et al. (2003): about half the width lost
+     over twelve months, two-thirds of that inside the first three.
+     ===================================================================== */
+  const F3 = { site: "mid", act: "leave", yr: 0 };
+
+  function ridgeFrac(years) {
+    const m = years * 12;
+    const loss = 0.50 * (1 - Math.exp(-m / 2.7)) + 0.004 * years;
+    return clamp(1 - loss, 0.40, 1);
+  }
+  function f3Drift(years) {
+    const t = F3.act === "keep" ? Math.min(years, 0.5) : years;
+    return (1 - Math.exp(-t / 3.0)) * (F3.site === "mid" ? 1 : 0.30);
+  }
+  function f3Erupt(years) {
+    const t = F3.act === "keep" ? Math.min(years, 0.5) : years;
+    return 1 - Math.exp(-t / 2.6);
+  }
+
+  function archTooth(ctx, cx, cervY, lower, Hc, Hr, hw, tilt, ext, opts) {
+    opts = opts || {};
+    ctx.save();
+    ctx.translate(cx, cervY);
+    ctx.scale(1, lower ? 1 : -1);
+    ctx.translate(0, Hr * 0.42);
+    ctx.rotate(tilt);
+    ctx.translate(0, -Hr * 0.42 - ext);
+    ctx.beginPath();
+    ctx.moveTo(-hw, 0);
+    ctx.lineTo(-hw * 1.02, -Hc * 0.46);
+    ctx.quadraticCurveTo(-hw * 1.00, -Hc * 0.90, -hw * 0.52, -Hc);
+    ctx.quadraticCurveTo(-hw * 0.18, -Hc * 0.86, 0, -Hc * 0.94);
+    ctx.quadraticCurveTo(hw * 0.18, -Hc * 0.86, hw * 0.52, -Hc);
+    ctx.quadraticCurveTo(hw * 1.00, -Hc * 0.90, hw * 1.02, -Hc * 0.46);
+    ctx.lineTo(hw, 0);
+    ctx.lineTo(hw * 0.66, Hr * 0.58);
+    ctx.quadraticCurveTo(hw * 0.44, Hr, 0, Hr);
+    ctx.quadraticCurveTo(-hw * 0.44, Hr, -hw * 0.66, Hr * 0.58);
+    ctx.closePath();
+    if (opts.ghost) {
+      ctx.strokeStyle = "rgba(243,241,233,0.22)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    ctx.fillStyle = opts.replacement ? "#9aa0a8" : C.dentine;
+    ctx.fill();
+    ctx.save();
+    ctx.clip();
+    ctx.fillStyle = opts.replacement ? "#c2c6c8" : C.enamel;
+    ctx.fillRect(-hw * 1.1, -Hc * 1.1, hw * 2.2, Hc * 0.82);
+    ctx.restore();
+    ctx.strokeStyle = "rgba(30,26,20,0.6)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  const fig3 = TC.canvas("crn-gap", function (ctx, w, h) {
+    bg(ctx, w, h);
+    const years = F3.yr;
+    const rf = ridgeFrac(years), drift = f3Drift(years), ext = f3Erupt(years);
+    const gapIdx = F3.site === "mid" ? 2 : 4;
+    const narrow = w < 700;
+
+    /* the arch (and the bone block behind it) has to stop short of the
+       cross-section inset, so the inset's caption lands on the background */
+    const aX = w * 0.035, aW = w * 0.66;
+    const step = aW / 5, hw = step * 0.36;
+    const Hc = h * 0.135, Hr = h * 0.20;
+    const yUpOcc = h * 0.40, yLoOcc = h * 0.48;
+    const yCervUp = yUpOcc - Hc, yCervLo = yLoOcc + Hc;
+    const cxOf = (i) => aX + (i + 0.5) * step;
+
+    /* ---- upper bone + gum ---- */
+    ctx.fillStyle = C.bone;
+    ctx.fillRect(aX - step * 0.4, h * 0.02, aW + step * 0.8, yCervUp - Hr * 0.02 - h * 0.02);
+    TC.grain(ctx, aX, h * 0.02, aW, yCervUp - h * 0.02, 240, 12, "#efe8d0", 0.08);
+    ctx.fillStyle = C.gum;
+    ctx.fillRect(aX - step * 0.4, yCervUp - h * 0.028, aW + step * 0.8, h * 0.036);
+
+    /* ---- upper teeth ---- */
+    for (let i = 0; i < 5; i++) {
+      const over = (i === gapIdx) ? ext * Hc * 0.42 : 0;
+      archTooth(ctx, cxOf(i), yCervUp, false, Hc, Hr, hw, 0, over, {});
+    }
+    if (ext > 0.08) {
+      const cx = cxOf(gapIdx);
+      TC.leader(ctx, cx + step * 0.52, yUpOcc - Hc * 1.5, cx + hw * 0.4, yUpOcc + ext * Hc * 0.42,
+        "over-erupting", { color: C.dentineAcc, font: mono(10.5, true), align: "left" });
+    }
+
+    /* ---- lower bone crest, dipping at the socket ---- */
+    const dip = (1 - rf) * 0.85 * Hc;
+    const crestY = (x) => {
+      const d = (x - cxOf(gapIdx)) / (step * 0.62);
+      return yCervLo + h * 0.012 + dip * Math.exp(-d * d);
+    };
+    ctx.beginPath();
+    ctx.moveTo(aX - step * 0.4, crestY(aX - step * 0.4));
+    for (let x = aX - step * 0.4; x <= aX + aW + step * 0.4; x += 4) ctx.lineTo(x, crestY(x));
+    ctx.lineTo(aX + aW + step * 0.4, h);
+    ctx.lineTo(aX - step * 0.4, h);
+    ctx.closePath();
+    ctx.fillStyle = C.bone;
+    ctx.fill();
+    TC.grain(ctx, aX, yCervLo, aW, h - yCervLo, 240, 19, "#efe8d0", 0.08);
+    ctx.strokeStyle = C.gum;
+    ctx.lineWidth = Math.max(4, h * 0.016);
+    ctx.beginPath();
+    ctx.moveTo(aX - step * 0.4, crestY(aX - step * 0.4));
+    for (let x = aX - step * 0.4; x <= aX + aW + step * 0.4; x += 4) ctx.lineTo(x, crestY(x));
+    ctx.stroke();
+
+    /* ---- lower teeth, with the socket where one used to be ---- */
+    for (let i = 0; i < 5; i++) {
+      if (i === gapIdx) continue;
+      let tilt = 0;
+      if (F3.site === "mid") {
+        if (i === gapIdx - 1) tilt = drift * 0.16;
+        if (i === gapIdx + 1) tilt = -drift * 0.16;
+      } else if (i === gapIdx - 1) {
+        tilt = drift * 0.16;
+      }
+      archTooth(ctx, cxOf(i), yCervLo, true, Hc, Hr, hw, tilt, 0, {});
+    }
+    /* the socket itself: a void that fills in, then a shrinking ridge */
+    const fill = 1 - Math.exp(-(years * 12) / 2.2);
+    if (fill < 0.98) {
+      ctx.save();
+      ctx.globalAlpha = 1 - fill;
+      ctx.fillStyle = "#221d18";
+      ctx.beginPath();
+      ctx.ellipse(cxOf(gapIdx), crestY(cxOf(gapIdx)) + Hr * 0.42, hw * 0.72, Hr * 0.46, 0, 0, TC.TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+    archTooth(ctx, cxOf(gapIdx), yCervLo, true, Hc, Hr, hw, 0, 0, { ghost: true });
+    if (F3.act === "keep" && years >= 0.5) {
+      archTooth(ctx, cxOf(gapIdx), yCervLo - dip * 0.5, true, Hc, Hr * 0.7, hw * 0.92, 0, 0,
+        { replacement: true });
+      lab(ctx, "space maintained", cxOf(gapIdx), yLoOcc - Hc * 1.4,
+        { align: "center", color: C.ink2, font: mono(10.5, true) });
+    }
+
+    if (F3.site === "term") {
+      const bx = aX + aW * 0.90;
+      TC.line(ctx, bx, h * 0.30, bx, h * 0.86, "rgba(243,241,233,0.16)", 1, [4, 4]);
+      lab(ctx, "end of the arch — nothing behind", bx - 8, h * 0.94,
+        { align: "right", color: onBone, font: mono(10.5) });
+    } else {
+      lab(ctx, "teeth on both sides — a corridor for drift", cxOf(gapIdx), h * 0.94,
+        { align: "center", color: onBone, font: mono(10.5) });
+    }
+
+    /* the elapsed-time readout sits over the bone block, so it gets a dark
+       plate to read against rather than the page's background colours */
+    const yrTxt = years < 1 ? Math.round(years * 12) + " MONTHS" : years.toFixed(1) + " YEARS";
+    const yrFont = mono(narrow ? 13 : 16, true);
+    const subFont = mono(10);
+    ctx.save();
+    ctx.font = yrFont;
+    let plateW = ctx.measureText(yrTxt).width;
+    ctx.font = subFont;
+    plateW = Math.max(plateW, ctx.measureText("since the extraction").width) + 18;
+    ctx.restore();
+    ctx.fillStyle = "rgba(10,10,14,0.85)";
+    TC.roundRect(ctx, aX - 9, h * 0.075 - 16, plateW, 37, 5);
+    ctx.fill();
+    lab(ctx, yrTxt, aX, h * 0.075, { color: C.mint, font: yrFont });
+    lab(ctx, "since the extraction", aX, h * 0.075 + 16, { color: C.muted, font: subFont });
+
+    /* ---- inset: the ridge in cross-section ---- */
+    const ix = w * 0.775, iw = w * 0.205;
+    const base = h * 0.62, W0 = iw * 0.66, Ht = h * 0.16;
+    lab(ctx, "RIDGE IN CROSS-SECTION", ix, h * 0.30, { color: C.mint, font: mono(narrow ? 9 : 10.5, true) });
+    const icx = ix + iw * 0.5;
+    ctx.save();
+    ctx.strokeStyle = "rgba(243,241,233,0.25)";
+    ctx.setLineDash([3, 3]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(icx - W0 / 2, base);
+    ctx.quadraticCurveTo(icx - W0 * 0.42, base - Ht * 1.12, icx, base - Ht);
+    ctx.quadraticCurveTo(icx + W0 * 0.42, base - Ht * 1.12, icx + W0 / 2, base);
+    ctx.stroke();
+    ctx.restore();
+    const Wn = W0 * rf, Hn = Ht * (1 - (1 - rf) * 0.42);
+    ctx.beginPath();
+    ctx.moveTo(icx - Wn / 2, base);
+    ctx.quadraticCurveTo(icx - Wn * 0.42, base - Hn * 1.12, icx, base - Hn);
+    ctx.quadraticCurveTo(icx + Wn * 0.42, base - Hn * 1.12, icx + Wn / 2, base);
+    ctx.closePath();
+    ctx.fillStyle = C.bone;
+    ctx.fill();
+    ctx.strokeStyle = "rgba(30,26,20,0.5)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    TC.line(ctx, ix, base, ix + iw, base, C.line, 1);
+    lab(ctx, Math.round(rf * 100) + "% of original width", ix, base + 18,
+      { color: rf < 0.7 ? C.dentineAcc : C.ink2, font: mono(narrow ? 9.5 : 11, true) });
+    para(ctx, "Dashed: the ridge on the day the tooth came out. Most of the change happens in the first three months.",
+      ix, base + 36, iw, 13, { font: mono(narrow ? 9 : 9.5), color: C.muted });
+  });
+
+  function f3Update() {
+    if (fig3) fig3.redraw();
+    const years = F3.yr;
+    const held = F3.act === "keep" && years >= 0.5;
+    TC.set("crn-gap-ro-r", Math.round(ridgeFrac(years) * 100) + "% of original");
+    const d = f3Drift(years);
+    TC.set("crn-gap-ro-d",
+      held ? "held — space maintained"
+        : F3.site === "term" ? "nothing behind to drift in"
+        : d < 0.06 ? "no movement"
+        : d < 0.35 ? "beginning to tilt"
+        : d < 0.70 ? "tilting into the space"
+        : "marked tilting, contacts open");
+    const e = f3Erupt(years);
+    TC.set("crn-gap-ro-o",
+      held ? "held — space maintained"
+        : e < 0.06 ? "no over-eruption"
+        : e < 0.35 ? "slight"
+        : e < 0.70 ? "clearly over-erupted"
+        : "marked over-eruption");
+  }
+  TC.seg("crn-gap-site", (v) => { F3.site = v; f3Update(); });
+  TC.seg("crn-gap-act", (v) => { F3.act = v; f3Update(); });
+  TC.slider("crn-gap-yr",
+    (v) => (v < 1 ? Math.round(v * 12) + " months" : v.toFixed(1) + " years"),
+    (v) => { F3.yr = v; f3Update(); });
+
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

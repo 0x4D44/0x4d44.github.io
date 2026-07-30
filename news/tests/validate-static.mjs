@@ -21,6 +21,21 @@ assert.ok(Array.isArray(articles) && articles.length > 0, "article corpus should
 const ids = articles.map((article) => article.id);
 assert.equal(new Set(ids).size, ids.length, "article ids must be unique");
 
+const restoredDeskCounts = {
+  Buses: 50,
+  Flanging: 50,
+  "Middle Management": 50,
+  Motorsport: 50,
+  "Sparks fly": 201,
+};
+for (const [category, expectedCount] of Object.entries(restoredDeskCounts)) {
+  assert.equal(
+    articles.filter((article) => article.category === category).length,
+    expectedCount,
+    `${category} should survive whole-corpus article updates`,
+  );
+}
+
 function validateLongForm({ id, minimumWords, inlineImages, noticePattern }) {
   const article = articles.find((item) => item.id === id);
   assert.ok(article, `${id} should be present`);
@@ -258,7 +273,7 @@ assert.match(managementNav, />Business <span class="chev"/);
 assert.match(managementNav, /search\.html\?cat=Business[^>]*>All Business<\/a>/);
 assert.match(managementNav, /search\.html\?cat=Middle%20Management/);
 
-assert.equal(articles.length, 903, "catalog copy and article corpus count should stay in lockstep");
+assert.equal(articles.length, 1104, "catalog copy and article corpus count should stay in lockstep");
 
 // ALM-BUG-KILN-00020: a stray/truncated percent-escape in ?id= or ?q= must degrade to
 // the graceful path, not throw URIError and blank the page.

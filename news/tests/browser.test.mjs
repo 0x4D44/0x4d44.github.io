@@ -12,6 +12,10 @@ const ROOT = resolve(import.meta.dirname, "../..");
 const CHROME = process.env.CHROME_PATH ?? [
   "C:/Program Files/Google/Chrome/Application/chrome.exe",
   "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+  "/usr/bin/google-chrome",
+  "/usr/bin/chromium",
+  "/usr/bin/chromium-browser",
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
 ].find((path) => existsSync(path)) ?? "chrome";
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css" };
 const delay = (ms) => new Promise((resolveDelay) => setTimeout(resolveDelay, ms));
@@ -24,8 +28,14 @@ function cleanup() {
   if (cleaned) return;
   cleaned = true;
   try { ws?.close(); } catch { /* already closed */ }
-  if (chrome?.pid && process.platform === "win32") {
-    spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore" });
+  if (chrome?.pid) {
+    try {
+      if (process.platform === "win32") {
+        spawnSync("taskkill", ["/PID", String(chrome.pid), "/T", "/F"], { stdio: "ignore" });
+      } else {
+        process.kill(-chrome.pid, "SIGKILL");
+      }
+    } catch { /* Chrome already exited */ }
   }
   try { server?.closeAllConnections?.(); server?.close(); } catch { /* already closed */ }
 }
@@ -72,7 +82,10 @@ try {
     "--headless=new", `--remote-debugging-port=${debugPort}`, `--user-data-dir=${profile}`,
     "--no-first-run", "--no-default-browser-check", "--disable-background-networking",
     "--mute-audio", "about:blank",
-  ], { stdio: ["ignore", "ignore", "ignore"] });
+  ], {
+    detached: process.platform !== "win32",
+    stdio: ["ignore", "ignore", "ignore"],
+  });
   const wsUrl = await poll("Chrome debug endpoint", async () => {
     try { return (await (await fetch(`http://127.0.0.1:${debugPort}/json/version`)).json()).webSocketDebuggerUrl; }
     catch { return null; }

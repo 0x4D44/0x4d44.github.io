@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00023 — Seven articles quote their own byline correspondent as the independent expert source
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Could
 - **Severity:** Low
 - **Area:** news
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — all seven named articles clean, bylines intact; an independent attribution oracle finds 0 remaining among based-on-truth)
 
 ## Observation
 In seven of the new articles the bylined correspondent is also quoted in the body as the independent expert -- the reporter interviews themselves.
@@ -39,3 +40,31 @@ RadiThor/smoke-enema's Dr Miriam Aldous quotes Dr Harriet Vole / Dr Edmund Race;
 Piltdown's Dr Eleanor Vance quotes Dr Priya Anand / Dr Laurence Kidd; the Great Smog's Dr Ada
 Fernsby quotes Dr Colin Hale. Regression: news/tests/validate-static.mjs asserts each byline is
 intact and the correspondent's surname no longer appears in the body/pull-quote.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `f72b445`.
+
+**Original observation re-checked — resolved for all seven named ids.**
+
+```
+biz-gerald-ratner-total-crap-speech-1991: byline="By Delia Cornish, Retail Correspondent" surnameInBody=false
+biz-leonard-pepsi-harrier-jet-lawsuit:    byline="By Delia Cornish, …"                   surnameInBody=false
+hea-radithor-radium-tonic-eben-byers:     byline="By Dr Miriam Aldous, …"                surnameInBody=false
+hea-tobacco-smoke-enema-resuscitation:    byline="By Dr Miriam Aldous, …"                surnameInBody=false
+sci-mars-climate-orbiter-metric-mixup-1999: byline="By Dr Eleanor Vance, …"              surnameInBody=false
+sci-piltdown-man-hoax-1912:               byline="By Dr Eleanor Vance, …"                surnameInBody=false
+wea-great-smog-of-london-1952:            byline="By Dr Ada Fernsby, …"                  surnameInBody=false
+```
+
+Bylines are intact, so the fix did not "solve" the problem by deleting the attribution. An independent, broader oracle (attribution verbs within 60 characters of the byline surname) run over both corpora:
+
+```
+PRE-FIX  (903 articles):  117 total, 7 tagged based-on-truth  -> exactly the 7 named
+CURRENT (1104 articles):  110 total, 0 tagged based-on-truth
+newly present after the 2026-07-30 restore: 0 articles
+```
+
+The remaining 110 all predate the bug, are untagged, and are overwhelmingly deliberate (the `biz-homily-*` columnist series and the running `master-flanger-*` gag). Regression coverage `news/tests/validate-static.mjs:436-456` pins all seven byline/surname pairs and passes.
+
+**Adjacent finding, outside this bug's recorded scope:** `eng-m25-found-slightly-braided` has the same shape (byline "By Dr Fiona Mersh, Highways Correspondent", body *"said surveyor Dr Fiona Mersh, who led the study"*). It predates the bug and is untagged; the original report scoped the finding to the based-on-truth drop.

@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00009 — Authored exercises are shared curriculum objects -- transient play-state leaks into replays
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** darmok
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — replay session no longer shares curriculum objects; measured clean)
 
 ## Observation
 Replaying a completed lesson (or abandoning one and re-entering) shows exercises pre-solved: a "build the sentence" card renders already filled with the previous correct answer and an enabled SUBMIT (auto-pass); a multiple-choice card shows two wrong options already greyed out.
@@ -41,3 +42,17 @@ play-state that app.js writes onto the exercise object (`_placed`/`_bank`/`_hidd
 `_hints`/`_assisted`/`_matchMistakes`/`_typed`) therefore lands on the session copy and
 never leaks into a replay, and the secondary `_assisted`-forever score depression is gone
 with it. Regression: darmok/engine-state.test.mjs (fails on the pre-fix `.slice()`).
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `1ed1545`.
+
+**Original observation re-checked — resolved, measured.** `darmok/engine.js:459` now copies each authored exercise (`.map((e) => Object.assign({}, e))`) instead of `.slice()`. Driving the real `buildSession` on lesson 1.1, polluting session 1's build exercise, then building a replay session:
+
+```
+curriculum object polluted? _placed = undefined  _assisted = undefined
+replay session sees        _placed = undefined  _assisted = undefined
+identity: session ex === curriculum ex ? false
+```
+
+**Refutation attempt that held.** The copy is shallow, so nested `pairs`/`tokens`/`choices` are still shared — but every exercise mutation in `app.js` targets a `_`-prefixed field, and `_bank` (`app.js:523`) builds fresh objects from `tokens.concat()`, so nothing writes through the shared references. `buildSession` has exactly one call site (`app.js:375`) and `startLesson` (`app.js:295-306`) resets `queue: null` per play, so a replay always rebuilds. Shallow is sufficient here. Regression coverage `darmok/engine-state.test.mjs` passes 4/4 including the KILN-00009 case.

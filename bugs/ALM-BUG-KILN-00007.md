@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00007 — Kanji breakdown modal close (X) button is dead -- no close-kanji handler
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Must
 - **Severity:** Medium
 - **Area:** darmok
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — close-kanji handler present; dead-data-act oracle reports [close-kanji] pre-fix and [] now)
 
 ## Observation
 Tapping the X in the corner of a kanji breakdown modal does nothing; the modal stays open.
@@ -40,3 +41,13 @@ kanji modal can open outside a live lesson. Regression: darmok/handlers.test.mjs
 static oracle asserting every emitted `data-act` has a matching `act === ` handler
 (close-kanji was the only orphan) plus the Escape path; fails on the pre-fix app.js,
 passes after. Wired into `npm run build`/`npm test`.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `636972b`.
+
+**Original observation re-checked — resolved.** The handler now exists at `darmok/app.js:1174-1175` (`if (act === "close-kanji") { closeKanji(); }`), with an Escape path at `app.js:1270` placed before the queue guard at `:1272`. The full delegated path was traced: the ✕ emits `data-act="close-kanji"` (`app.js:814`), matches the delegated selector (`app.js:1089`), passes no earlier branch, reaches the `act` dispatch at `:1170` and hits `:1174`; `closeKanji()` (`app.js:833-837`) removes `.kanji-scrim`, so the modal is genuinely torn down. Regression coverage `darmok/handlers.test.mjs` passes 6/6, and the oracle discriminates: its dead-`data-act` list reports `["close-kanji"]` against pre-fix `app.js` (`c152a6c`) and `[]` against current.
+
+**Limit of this verification:** no browser click was performed; the DOM path was read, not exercised.
+
+**Residual noted, not separately tracked.** The keydown listener returns early when focus is inside an `INPUT` (`app.js:1267`) *before* the Escape branch at `:1270`, so Escape is inert if a learner opens a kanji breakdown from a live typeback while focus sits in `#type-in`. The ✕ still works, so the recorded symptom is unaffected.

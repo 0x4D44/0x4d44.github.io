@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Hardest Thing You Own — Root and Crown</title>
+<meta name="description" content="The anatomy of a tooth: enamel at 96% mineral with no repair mechanism, living tubular dentine, the crack-arresting junction between them, and the ligament that suspends the whole thing in bone.">
+<link rel="stylesheet" href="tooth.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">ROOT&nbsp;AND&nbsp;CROWN</a></div>
+    <div class="strap">how teeth work, how they fail, and how they are repaired</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html" aria-current="page">1 · Anatomy</a>
+    <a href="nerve.html">2 · The Nerve</a>
+    <a href="decay.html">3 · Decay</a>
+    <a href="ageing.html">4 · Ageing</a>
+    <a href="pulpitis.html">5 · Death of a Pulp</a>
+    <a href="fillings.html">6 · Fillings</a>
+    <a href="root-canal.html">7 · Root Canal</a>
+    <a href="crowns.html">8 · Crowns &amp; After</a>
+    <a href="lexicon.html">9 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page" id="main">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 1</p>
+  <h1>The Hardest Thing You Own</h1>
+  <p class="standfirst">Enamel is the hardest substance your body makes and the only one it can
+  never make again. Under it lies dentine: softer, wetter and drilled through with tens of
+  thousands of microscopic pipes per square millimetre, each one a line to the nerve. Four tissues,
+  one junction that stops the whole thing shattering, and a ligament fine enough to feel a hair.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">The tooth, labelled</span>
+    <span class="hint">pick a tissue to isolate it · everything else dims</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="an-map" style="aspect-ratio: 2.15 / 1; min-height: 360px;"
+            role="img" aria-label="A cut-away section through a lower molar in its socket, labelled: enamel cap, dentino-enamel junction, dentine body, pulp chamber and root canals, cementum on the root, the periodontal ligament, alveolar bone and gum. Selecting a tissue dims the rest of the picture."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <span class="ctl-lbl" id="an-map-layer-lbl">isolate</span>
+      <span class="seg" id="an-map-layer" role="group" aria-labelledby="an-map-layer-lbl">
+        <button data-v="all" class="on">whole tooth</button><button data-v="enamel">enamel</button><button data-v="dentine">dentine</button><button data-v="pulp">pulp</button><button data-v="perio">attachment</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl" id="an-map-lab-lbl">labels</span>
+      <span class="seg" id="an-map-lab" role="group" aria-labelledby="an-map-lab-lbl">
+        <button data-v="on" class="on">on</button><button data-v="off">off</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">mineral <b id="an-map-ro-min">96% → 0%, outside in</b></span>
+    <span class="ro">hardness <b id="an-map-ro-hard">falls with every layer</b></span>
+    <span class="ro">living <b id="an-map-ro-live">three of the four</b></span>
+    <span class="ro">after damage <b id="an-map-ro-fix">one of them never returns</b></span>
+  </div>
+  <div class="fig-note">The section is a mesio-distal cut through a lower molar — the same
+  drawing used throughout this guide, so the anatomy stays put from chapter to chapter. Notice
+  how thin the enamel is at the neck compared with the cusps, and that the pulp is not a dot in
+  the middle but a branching space reaching almost to the surface under each cusp.</div>
+</figure>
+
+<div class="prose">
+
+<p class="lead">A tooth is a ceramic cap bonded to a shock absorber, hung in bone on a sling of
+collagen and wired to a nerve with a vocabulary of one word. Every clause in that sentence is
+load-bearing, and this guide is what happens when one of them fails.</p>
+
+<h2>Four tissues and a suspension</h2>
+
+<p>The part you can see is the <strong>crown</strong>, the part in the jaw is the
+<strong>root</strong>, and the line where they meet is the <strong>cervical margin</strong> — the
+neck. Almost everything interesting in dentistry happens near it, because that is where the
+armour runs out.</p>
+
+<p>The tooth proper is four tissues. Three are hard: <strong>enamel</strong> over the crown,
+<strong>cementum</strong> over the root, and <strong>dentine</strong> forming the bulk of both.
+One is soft — the <strong>pulp</strong>, a small volume of vessels and nerves in a chamber inside
+the crown, draining down a canal in each root.</p>
+
+<p>The tooth is not fixed to the jaw. The root hangs in its socket on the
+<strong>periodontal ligament</strong>, a sheet of collagen bundles anchored in cementum at one end
+and bone at the other, with the gum sealing the join. Cementum, ligament, alveolar bone and gum
+are the <strong>periodontium</strong>: a separate organ from the tooth it holds, with its own
+diseases.</p>
+
+<div class="tryit">Set the figure above to <b>attachment</b> and the tooth vanishes, leaving only
+what holds it in.</div>
+
+<h2>Enamel: ninety-six per cent mineral, nought per cent repair</h2>
+
+<p>Clench on a back tooth and you generate several hundred newtons — adult maximum bite force in
+the molar region is usually measured between 300 and 800 N. You do that thousands of times a day,
+on a surface that is warm, wet, coated in bacteria and periodically soaked in acid. The material
+that takes it is barely biological.</p>
+
+<p>By weight, enamel is about <strong>96% mineral</strong> — 95 to 97% in the standard histology
+texts — with roughly 1% protein and the rest water. Bone is about 65% mineral and full of living
+cells. Enamel has no cells, no blood supply and no nerves: a crystal, grown biologically and then
+abandoned.</p>
+
+<p>The crystal is hydroxyapatite, laid down as needle-like crystallites tens of nanometres across
+and bundled into <strong>rods</strong>, or prisms, each 4 to 8 micrometres wide, running from the
+junction with the dentine out to the surface. Near the cusps neighbouring bundles weave past one
+another — decussation — which makes any crack that tries to cross them take an expensive route.</p>
+
+<p>The result is the hardest tissue in the body: Knoop microhardness around 270 to 350, against
+roughly 50 to 70 for dentine. Over a molar cusp the cap is up to 2.5 mm thick. At the neck it
+thins to a knife edge and stops.</p>
+
+<p>And it is finished. The cells that build enamel — <strong>ameloblasts</strong> — form a single
+layer over the developing crown, secrete the matrix, mineralise it, and are then lost as the tooth
+erupts. There is no reserve population and no second run. From the day a tooth appears in your
+mouth, the enamel you have is the enamel you will ever have.</p>
+
+<div class="axiom">
+  <span class="tag">The rule everything else follows from</span>
+  <p>Enamel <strong>remineralises</strong>: where the lattice is still standing, mineral can move
+  back into it from saliva, which is how an early white-spot lesion is arrested and what fluoride
+  helps with. Enamel does not <strong>regenerate</strong>: once the lattice has collapsed into a
+  cavity, there is no scaffold to rebuild onto and no cell left that knows how.</p>
+</div>
+
+<h2>Dentine: the living part, and the part that hurts</h2>
+
+<p>Under the enamel is a tissue with completely different manners. Dentine is about
+<strong>70% mineral</strong> by weight, with roughly 20% collagen and 10% water, and the collagen
+is the difference. Dentine is not as hard as enamel and does not try to be. It is <em>tough</em>:
+it absorbs energy and resists cracking rather than indentation.</p>
+
+<p>It is also perforated. Dentine is a dense field of parallel tubes, the
+<strong>dentinal tubules</strong>, each running from the pulp outwards. Garberoglio and Brännström
+counted them under the electron microscope in 1976, and their figures are still the ones quoted:
+near the pulp roughly <strong>45,000 tubules per square millimetre</strong>, about 2.5 micrometres
+across; at the junction with the enamel roughly 20,000 per square millimetre and under a
+micrometre wide. Near the pulp they take up about a fifth of the surface area. At the junction,
+about one per cent.</p>
+
+<p>So the floor of a deep cavity is not a solid barrier. It is a sieve pointing at the nerve, and
+it gets coarser the deeper you go — which is why "how deep is it?" is the first question a dentist
+asks about a hole, and what <a href="fillings.html">Chapter&nbsp;6</a> turns on.</p>
+
+<p>Dentine is also alive, at second hand. The <strong>odontoblasts</strong> that make it line the
+outer edge of the pulp and leave a cellular process trailing in each tubule as they retreat
+inwards. How far that process extends is genuinely argued over — the inner third, or the full
+thickness. What is not argued is that the tubules carry fluid, that the fluid moves when the
+surface is disturbed, and that the pulp notices. That mechanism is
+<a href="nerve.html">Chapter&nbsp;2</a>.</p>
+
+<p>Being alive, dentine can also respond. Under a slow threat the odontoblasts thicken the tubule
+walls until they close, and lay down fresh tertiary dentine on the pulp side of the damage. A
+tooth losing a slow race against decay is quietly building a new wall behind the old one. Against
+fast decay it loses: the wall goes up at the pace of biology and the acid does not wait.</p>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">A probe through the layers</span>
+    <span class="hint">drag from the surface to the pulp · read off what changes</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="an-probe" style="aspect-ratio: 1.9 / 1; min-height: 330px;"
+            role="img" aria-label="A magnified core through a molar cusp from the biting surface inwards: about two and a half millimetres of enamel, then the dentino-enamel junction, then about three millimetres of dentine whose tubules converge towards the pulp, then the odontoblast layer and the pulp itself. A movable probe reads off hardness, mineral content and tubule density at any depth."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="an-probe-d">depth from the surface</label>
+      <input type="range" id="an-probe-d" min="0" max="6" step="0.05" value="1.2">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl" id="an-probe-tr-lbl">plot</span>
+      <span class="seg" id="an-probe-tr" role="group" aria-labelledby="an-probe-tr-lbl">
+        <button data-v="hard" class="on">hardness</button><button data-v="tub">tubules</button><button data-v="min">mineral</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">tissue <b id="an-probe-ro-layer">enamel</b></span>
+    <span class="ro">hardness <b id="an-probe-ro-hard">≈320 KHN</b></span>
+    <span class="ro">mineral <b id="an-probe-ro-min">≈96%</b></span>
+    <span class="ro">tubules <b id="an-probe-ro-tub">none</b></span>
+    <span class="ro">alive <b id="an-probe-ro-live">no</b></span>
+    <span class="ro alert">felt <b id="an-probe-ro-feel">nothing</b></span>
+  </div>
+  <div class="fig-note">Distances are typical for a molar cusp — roughly 2.5 mm of enamel over
+  roughly 3 mm of dentine — and vary a lot between teeth and between points on the same tooth.
+  Watch the hardness trace fall off a cliff at the junction, and the tubules crowd together as they
+  converge on the pulp.</div>
+</figure>
+
+<div class="prose">
+
+<h2>The junction that stops it shattering</h2>
+
+<p>Now the elegant part. A very hard, very brittle ceramic sits on a soft, wet, tough substrate,
+and the two have to stay married for eighty years. Bond a ceramic to a compliant backing in
+engineering and the interface is usually the first thing to go.</p>
+
+<p>The <strong>dentino-enamel junction</strong> does not. It is not a flat glue line but a
+scalloped field of interlocking domes tens of micrometres across, deepest under the cusps where
+the loads are highest, and the transition from one tissue to the other is graded rather than
+abrupt.</p>
+
+<p>Imbeni and colleagues measured the consequence directly, driving cracks through the enamel of
+extracted human teeth (<em>Nature Materials</em>, 2005). The cracks did not run along the interface
+and lift the cap off. They crossed it and were arrested almost immediately in the soft mantle
+dentine beyond, which blunted them and stopped them dead.</p>
+
+<div class="callout gold">
+  <span class="tag">A natural composite</span>
+  <p>That is why teeth chip rather than explode, and why craze lines in old enamel are usually
+  harmless. Enamel is allowed to be brittle because it never works alone: it is a wear surface
+  bonded to an energy-absorbing core through an interface that turns a running crack into a stopped
+  one.</p>
+  <p>It also sets the bar for every filling ever placed: a restoration has to reproduce, with glue
+  and a few minutes of chairside time, a bond the tooth took years to grow. It never quite manages,
+  and the margin is where fillings fail.</p>
+</div>
+
+<h2>The suspension: cementum, ligament, bone and gum</h2>
+
+<p>Below the neck, enamel gives way to <strong>cementum</strong>: a thin layer about 45 to 50%
+mineral by weight, softer than dentine, let alone enamel. It is not armour. Its job is anchorage —
+collagen fibres are embedded in it as it forms, so the tooth has something a ligament can be tied
+to.</p>
+
+<p>Between cementum and bone lies the <strong>periodontal ligament</strong>, a layer of collagen
+bundles only about <strong>0.15 to 0.38 mm</strong> wide — the range Coolidge measured in 1937 and
+the one still quoted. The bundles run obliquely, embedded at one end in cementum and at the other
+in the socket wall, so a bite pulls them into tension instead of crushing the tooth into the bone.
+Your teeth hang. They do not sit.</p>
+
+<p>The ligament suspends and cushions, carries the blood supply that keeps bone and cementum
+remodelling — which is what makes orthodontic movement possible — and it is packed with
+<strong>mechanoreceptors</strong>.</p>
+
+<div class="callout story">
+  <span class="tag">Why you can feel a hair between your teeth</span>
+  <p>Bite on a hair — 50 to 100 micrometres of keratin — and you know instantly that it is there
+  and which tooth it is under. Studies of interocclusal thickness discrimination, notably Jacobs
+  and van Steenberghe's work on oral tactile function, put the detection threshold for natural
+  teeth at a few tens of micrometres, commonly quoted around 10 to 20 µm. Implant-supported teeth,
+  which have no ligament, are several times coarser.</p>
+  <p>That sensitivity is not in the tooth. It is in the ligament around it. The ligament localises
+  superbly; the pulp cannot localise at all. When a patient can point straight at the offending
+  tooth, the trouble has usually spread out of the pulp and into the ligament — a change of address
+  <a href="pulpitis.html">Chapter&nbsp;5</a> depends on.</p>
+</div>
+
+</div>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">The ligament, to scale</span>
+    <span class="hint">set the gap · load the tooth · watch the fibres take it</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="an-pdl" style="aspect-ratio: 2.1 / 1; min-height: 300px;"
+            role="img" aria-label="A magnified cross-section through the socket wall: alveolar bone on the left, then the periodontal ligament with its oblique collagen fibre bundles and mechanoreceptors, then the thin cementum layer, then the dentine of the root. A width slider sets the ligament gap between 0.15 and 0.38 millimetres, shown beside a human hair drawn to the same scale."></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="an-pdl-w">ligament width</label>
+      <input type="range" id="an-pdl-w" min="0.15" max="0.38" step="0.01" value="0.24">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <span class="ctl-lbl" id="an-pdl-load-lbl">state</span>
+      <span class="seg" id="an-pdl-load" role="group" aria-labelledby="an-pdl-load-lbl">
+        <button data-v="rest" class="on">at rest</button><button data-v="bite">under a bite</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">gap <b id="an-pdl-ro-w">240 µm</b></span>
+    <span class="ro">that is <b id="an-pdl-ro-hair">≈3 hairs wide</b></span>
+    <span class="ro good">fibres <b id="an-pdl-ro-note">slack — the tooth is resting</b></span>
+  </div>
+  <div class="fig-note">Under load the fibres go taut and the tooth hangs from the socket wall
+  instead of pressing into it. The gap itself barely changes, which is why a healthy tooth feels
+  solid but not rigid — and why a widened ligament space on a radiograph is a signal that something
+  has gone wrong at the root tip.</div>
+</figure>
+
+<div class="prose">
+
+<p>Above the bone sits the <strong>gingiva</strong>, and its dimensions are surprisingly
+consistent: Gargiulo, Wentz and Orban measured a sulcus about 0.69 mm deep, a junctional
+epithelium of about 0.97 mm and a connective tissue attachment of about 1.07 mm — roughly two
+millimetres of attachment above the crest of the bone.</p>
+
+<p>Where enamel meets cementum at the neck, the two do not always meet cleanly. The classic survey
+reproduced in every oral histology text finds cementum overlapping enamel in around 60% of cases,
+an edge-to-edge join in around 30%, and in the remaining 10% a gap that leaves bare dentine
+exposed. Those teeth start life with a strip of unprotected, tubule-riddled dentine at the gum
+line.</p>
+
+<h2>The pulp, briefly</h2>
+
+<p>At the centre is the only soft tissue in the tooth: loose connective tissue, blood vessels,
+nerve fibres and, around its edge, the odontoblasts. Everything enters and leaves through the
+<strong>apical foramen</strong>, an opening a fraction of a millimetre across at the root tip. Two
+facts about it drive the rest of this guide. The pulp is enclosed by rigid dentine, so when it
+inflames it cannot swell — only pressurise. And its nerves report one thing: a tooth cannot feel
+warmth or touch or texture. It feels pain, and decides for itself what counts.</p>
+
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float" aria-hidden="true" focusable="false"><use href="#char-molar"/></svg>
+    <svg class="char sm" aria-hidden="true" focusable="false"><use href="#char-nerve"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Molar, on the layout</p>
+    <p class="say">"Ceramic on the outside, cable ducting in the middle, one small tenant at the
+    centre who complains about everything. The ligament does the feeling. I do the chewing.
+    <b>Nerv</b> here does the screaming, and only ever gets the one line."</p>
+  </div>
+</div>
+
+<div class="prose">
+
+<h2>Thirty-two of them, and how to name one</h2>
+
+<p>An adult set is 32 teeth in four quadrants of eight, replacing the 20 of the child's set, and
+each shape is a tool. <strong>Incisors</strong> are chisels for shearing. <strong>Canines</strong>
+have the longest roots in the mouth and guide the jaw as it slides sideways.
+<strong>Premolars</strong> are the transition. <strong>Molars</strong> are millstones: broad,
+multi-cusped, multi-rooted, and collecting most of the damage in this guide.</p>
+
+<p>The third molars are the least reliable members of the set. Pooled estimates put congenital
+absence of at least one at roughly a fifth of people, with reported figures running from a few per
+cent to more than a third depending on population. They are the only teeth that are routinely
+optional.</p>
+
+<p>Naming one needs a notation. Teeth are counted outwards from the midline in each quadrant, 1
+for a central incisor to 8 for a third molar. FDI notation prefixes the quadrant, so the upper
+left second molar is tooth 27; Palmer notation brackets it instead, which is why a British dentist
+says "upper left seven" out loud. The chart is in <a href="lexicon.html">Chapter&nbsp;9</a>.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">where the numbers on this page come from</span></summary>
+  <p><b>Composition, rod diameters and the scalloped junction</b> — the reference histology texts:
+  Ten Cate's <em>Oral Histology</em> and Orban's <em>Oral Histology and Embryology</em>.
+  <b>Hardness</b> — Craig and Peyton's microhardness
+  measurements (<em>Journal of Dental Research</em>, 1958). <b>Tubules</b> — Garberoglio and
+  Brännström, "Scanning electron microscopic investigation of human dentinal tubules",
+  <em>Archives of Oral Biology</em>, 1976. <b>Crack arrest at the junction</b> — Imbeni, Kruzic,
+  Marshall, Marshall and Ritchie, <em>Nature Materials</em>, 2005.</p>
+  <p><b>Ligament width</b> — Coolidge, 1937. <b>Gingival dimensions</b> — Gargiulo, Wentz and
+  Orban, <em>Journal of Periodontology</em>, 1961. <b>Tactile thresholds</b> — interocclusal
+  thickness discrimination in natural versus implant-supported teeth, in particular the oral
+  tactile function work of Jacobs and van Steenberghe.</p>
+  <p>Every figure here is a published range, because a range is what the literature contains.
+  Individual teeth vary enormously, and none of it says anything about a particular tooth.</p>
+</details>
+
+<h2>Why the layers explain the rest of the guide</h2>
+
+<p>Read a tooth from the outside in and you are reading a gradient. Hardness falls, mineral falls,
+water rises, cells appear, and sensitivity climbs from nothing to unbearable. Decay works down
+that gradient; every restoration works back up it, trying to re-establish a seal the tooth grew
+for itself and cannot grow again.</p>
+
+<p>Which leaves one question. If enamel has no nerves and dentine's nerves are in the pulp, why
+does cold air on a tooth feel like a needle? The answer is not the one most people assume, and it
+is the next chapter.</p>
+
+</div>
+
+<nav class="chapnav" aria-label="Previous and next chapter">
+  <a class="next" href="nerve.html"><span class="dir">Next</span><span class="title">2 · The Nerve</span></a>
+</nav>
+
+</main>
+
+<script src="tooth-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp } = TC;
+
+  /* ==================================================================
+     FIGURE 1 — the labelled tooth, with one tissue isolated at a time.
+     The tooth is drawn once by TC.drawTooth, dimmed, then redrawn inside
+     a clip built from the same geometry so the chosen tissue comes back
+     at full brightness. The clip paths below mirror drawTooth's internal
+     landmarks for wear = 0 and secondary = 0.
+     ================================================================== */
+  let mapLayer = "all";
+  let mapLabels = true;
+  let mapFig = null;
+
+  const TOOTH = { seed: 4242 };
+
+  function enamelSub(ctx, x, y, w, h) {
+    const cx = x + w / 2;
+    const crownTop = y + h * 0.02;
+    const neck = y + h * 0.46;
+    const eT = h * 0.075;
+    ctx.moveTo(cx - w, crownTop - h * 0.2);
+    ctx.lineTo(cx + w, crownTop - h * 0.2);
+    ctx.lineTo(cx + w, neck - h * 0.005);
+    ctx.bezierCurveTo(cx + w * 0.30, neck - h * 0.02, cx + w * 0.34, y + h * 0.18, cx + w * 0.20, crownTop + eT);
+    ctx.quadraticCurveTo(cx, crownTop + eT * 2.1, cx - w * 0.20, crownTop + eT);
+    ctx.bezierCurveTo(cx - w * 0.34, y + h * 0.18, cx - w * 0.30, neck - h * 0.02, cx - w, neck - h * 0.005);
+    ctx.closePath();
+  }
+
+  function pulpSub(ctx, x, y, w, h) {
+    const cx = x + w / 2;
+    const apex = y + h * 0.98;
+    const chTop = y + h * 0.145;
+    const chH = h * 0.105, chW = w * 0.34, hornH = h * 0.052;
+    ctx.moveTo(cx - chW / 2, chTop + chH);
+    ctx.lineTo(cx - chW / 2, chTop + chH * 0.32);
+    ctx.lineTo(cx - chW * 0.31, chTop - hornH);
+    ctx.lineTo(cx - chW * 0.10, chTop + chH * 0.20);
+    ctx.lineTo(cx + chW * 0.10, chTop + chH * 0.20);
+    ctx.lineTo(cx + chW * 0.31, chTop - hornH);
+    ctx.lineTo(cx + chW / 2, chTop + chH * 0.32);
+    ctx.lineTo(cx + chW / 2, chTop + chH);
+    ctx.quadraticCurveTo(cx, chTop + chH * 1.22, cx - chW / 2, chTop + chH);
+    ctx.closePath();
+    const canalW = w * 0.055;
+    for (const s of [-1, 1]) {
+      ctx.moveTo(cx + s * chW * 0.34 - canalW / 2, chTop + chH * 0.9);
+      ctx.bezierCurveTo(cx + s * w * 0.10, y + h * 0.66, cx + s * w * 0.17, y + h * 0.80,
+        cx + s * w * 0.185 - canalW * 0.18, apex - h * 0.022);
+      ctx.lineTo(cx + s * w * 0.185 + canalW * 0.18, apex - h * 0.022);
+      ctx.bezierCurveTo(cx + s * w * 0.17 + s * canalW, y + h * 0.80,
+        cx + s * w * 0.10 + s * canalW, y + h * 0.66,
+        cx + s * chW * 0.34 + canalW / 2, chTop + chH * 0.9);
+      ctx.closePath();
+    }
+  }
+
+  function clipLayer(ctx, layer, x, y, w, h, W, H, g) {
+    if (layer === "enamel") {
+      TC.toothPath(ctx, x, y, w, h, 0); ctx.clip();
+      ctx.beginPath(); enamelSub(ctx, x, y, w, h); ctx.clip();
+    } else if (layer === "pulp") {
+      TC.toothPath(ctx, x, y, w, h, 0); ctx.clip();
+      ctx.beginPath(); pulpSub(ctx, x, y, w, h); ctx.clip();
+    } else if (layer === "dentine") {
+      TC.toothPath(ctx, x, y, w, h, 0); ctx.clip();
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      enamelSub(ctx, x, y, w, h);
+      pulpSub(ctx, x, y, w, h);
+      ctx.clip("evenodd");
+    } else {                                     /* the attachment apparatus */
+      const top = g.neck - h * 0.03;
+      ctx.beginPath(); ctx.rect(0, top, W, H - top); ctx.clip();
+      TC.toothPath(ctx, x, y, w, h, 0);
+      ctx.rect(0, 0, W, H);
+      ctx.clip("evenodd");
+    }
+  }
+
+  /* label key, side, anchor as a fraction of the tooth box, and whether it
+     survives on a narrow canvas */
+  const MAP_LAB = [
+    { k: "enamel",  side: "L", ax: 0.28,  ay: 0.050, t: "ENAMEL", t2: "ENAMEL", s: "96% mineral · no cells", c: true },
+    { k: "enamel",  side: "L", ax: 0.40,  ay: 0.118, t: "DENTINO-ENAMEL JUNCTION", t2: "JUNCTION", s: "scalloped · arrests cracks", c: true },
+    { k: "dentine", side: "L", ax: 0.24,  ay: 0.300, t: "DENTINE", t2: "DENTINE", s: "70% mineral · tubular · alive", c: true },
+    { k: "perio",   side: "L", ax: 0.235, ay: 0.620, t: "CEMENTUM", t2: "CEMENTUM", s: "thin · holds the fibres", c: false },
+    { k: "pulp",    side: "L", ax: 0.350, ay: 0.740, t: "ROOT CANAL", t2: "CANAL", s: "the pulp, continued", c: false },
+    { k: "pulp",    side: "R", ax: 0.560, ay: 0.190, t: "PULP CHAMBER", t2: "PULP", s: "nerve · vessels · odontoblasts", c: true },
+    { k: "all",     side: "R", ax: 0.790, ay: 0.460, t: "CERVICAL MARGIN", t2: "NECK", s: "crown above · root below", c: false },
+    { k: "perio",   side: "R", ax: 1.050, ay: 0.520, t: "GINGIVA", t2: "GUM", s: "seals the join", c: false },
+    { k: "perio",   side: "R", ax: 0.800, ay: 0.700, t: "PERIODONTAL LIGAMENT", t2: "LIGAMENT", s: "0.15–0.38 mm of collagen", c: true },
+    { k: "perio",   side: "R", ax: 1.200, ay: 0.830, t: "ALVEOLAR BONE", t2: "BONE", s: "remodels · resorbs if unused", c: true },
+    { k: "pulp",    side: "R", ax: 0.685, ay: 0.955, t: "APICAL FORAMEN", t2: "FORAMEN", s: "the only way in or out", c: false },
+  ];
+
+  const LAYER_COL = {
+    enamel: C.enamel, dentine: C.dentineAcc, pulp: C.pulpAcc, perio: C.ice, all: C.ink2,
+  };
+
+  mapFig = TC.canvas("an-map", function (ctx, W, H) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+    if (W < 40) return;
+
+    const compact = W < 660;
+    /* The tooth is drawn a little smaller than the box allows so the caption
+       gutters on either side clear the bone and gum bands, which drawTooth
+       spreads from -0.34 to +1.34 of the tooth width. */
+    const th = Math.min(H * 0.88, W * (compact ? 0.28 : 0.37));
+    const tw = th * 0.78;
+    const tx = W * 0.5 - tw / 2;
+    const ty = (H - th) / 2;
+
+    const g = TC.drawTooth(ctx, tx, ty, tw, th, TOOTH);
+
+    /* the ligament space: drawTooth does not draw it, so annotate it here */
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, g.neck + th * 0.01, W, H);
+    ctx.clip();
+    TC.toothPath(ctx, tx, ty, tw, th, 0);
+    ctx.strokeStyle = C.pdl;
+    ctx.globalAlpha = mapLayer === "perio" ? 0.95 : 0.5;
+    ctx.lineWidth = mapLayer === "perio" ? 4 : 2.5;
+    ctx.stroke();
+    ctx.restore();
+
+    if (mapLayer !== "all") {
+      ctx.save();
+      ctx.fillStyle = "rgba(10,13,15,0.74)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+      ctx.save();
+      clipLayer(ctx, mapLayer, tx, ty, tw, th, W, H, g);
+      TC.drawTooth(ctx, tx, ty, tw, th, TOOTH);
+      if (mapLayer === "perio") {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, g.neck + th * 0.01, W, H);
+        ctx.clip();
+        TC.toothPath(ctx, tx, ty, tw, th, 0);
+        ctx.strokeStyle = C.pdl;
+        ctx.lineWidth = 5;
+        ctx.stroke();
+        ctx.restore();
+      }
+      ctx.restore();
+    }
+
+    /* the cervical margin, dashed straight across the tooth */
+    TC.line(ctx, tx - tw * 0.16, g.neck, tx + tw * 1.16, g.neck,
+      mapLayer === "all" ? "rgba(243,241,233,0.35)" : "rgba(243,241,233,0.16)", 1, [4, 4]);
+
+    if (!mapLabels) return;
+
+    const fs = compact ? 9 : Math.max(10, Math.min(12, W / 82));
+    /* outside the bone/gum extents (±0.34 tw), so no caption sits on artwork */
+    const leftX = Math.max(4, tx - tw * 0.40);
+    const rightX = Math.min(W - 4, tx + tw * 1.40);
+    const shown = MAP_LAB.filter((l) => !compact || l.c);
+
+    for (const side of ["L", "R"]) {
+      const rows = shown.filter((l) => l.side === side);
+      rows.forEach((l, i) => {
+        const ly = ty + th * (0.05 + (rows.length > 1 ? (i / (rows.length - 1)) * 0.90 : 0.45));
+        const lx = side === "L" ? leftX : rightX;
+        const hot = mapLayer === "all" ? l.k !== "none" : l.k === mapLayer;
+        const col = hot ? LAYER_COL[l.k] : "rgba(134,144,154,0.40)";
+        TC.leader(ctx, lx, ly, tx + l.ax * tw, ty + l.ay * th, compact ? l.t2 : l.t, {
+          color: hot ? col : "rgba(134,144,154,0.28)",
+          textColor: col,
+          align: side === "L" ? "right" : "left",
+          font: TC.mono(fs, true),
+          dash: [3, 3],
+          dy: -5,
+        });
+        if (!compact) {
+          TC.label(ctx, l.s, lx, ly + fs + 2, {
+            color: hot ? "rgba(194,198,200,0.85)" : "rgba(134,144,154,0.30)",
+            align: side === "L" ? "right" : "left",
+            font: TC.mono(fs - 1),
+          });
+        }
+      });
+    }
+  });
+
+  const MAP_RO = {
+    all: ["96% → 0%, outside in", "falls with every layer", "three of the four", "one of them never returns"],
+    enamel: ["≈96% by weight", "Knoop ≈270–350", "no — no cells at all", "remineralises, never regrows"],
+    dentine: ["≈70% by weight", "Knoop ≈50–70", "yes — through the pulp", "walls itself off with new dentine"],
+    pulp: ["≈0% — soft tissue", "not applicable", "yes — vessels and nerves", "inflames, but cannot swell"],
+    perio: ["bone ≈65%, cementum 45–50%", "bone hard, ligament not", "yes — and it senses", "remodels; lost bone rarely returns"],
+  };
+
+  TC.seg("an-map-layer", function (v) {
+    mapLayer = v;
+    const r = MAP_RO[v] || MAP_RO.all;
+    TC.set("an-map-ro-min", r[0]);
+    TC.set("an-map-ro-hard", r[1]);
+    TC.set("an-map-ro-live", r[2]);
+    TC.set("an-map-ro-fix", r[3]);
+    if (mapFig) mapFig.redraw();
+  });
+  TC.seg("an-map-lab", function (v) {
+    mapLabels = v === "on";
+    if (mapFig) mapFig.redraw();
+  });
+
+  /* ==================================================================
+     FIGURE 2 — a probe driven from the biting surface to the pulp.
+     Depths are typical for a molar cusp. Hardness, tubule density and
+     mineral content follow the published profiles (see the sources
+     panel in the prose).
+     ================================================================== */
+  const D_DEJ = 2.5, D_PULP = 5.7, D_MAX = 6.0;
+  let probeD = 1.2;
+  let probeTrace = "hard";
+  let probeFig = null;
+
+  function profile(d) {
+    const o = { d: d };
+    if (d < D_DEJ) {
+      o.layer = "enamel";
+      o.hard = lerp(350, 270, d / D_DEJ);
+      o.min = 96;
+      o.tub = 0;
+      o.live = "no — no cells at all";
+      o.feel = "nothing";
+      o.feelHot = false;
+    } else if (d < D_PULP) {
+      const u = (d - D_DEJ) / (D_PULP - D_DEJ);
+      o.layer = u > 0.978 ? "predentine" : "dentine";
+      o.hard = lerp(70, 25, u);
+      o.min = u > 0.978 ? 0 : 70;
+      o.tub = lerp(20000, 45000, u);
+      o.dia = lerp(0.9, 2.5, u);
+      o.live = "yes — odontoblast processes";
+      o.feel = u < 0.25 ? "faint, slow" : u < 0.62 ? "sharp on cold" : "sharp and immediate";
+      o.feelHot = u >= 0.25;
+    } else {
+      o.layer = "pulp";
+      o.hard = 0;
+      o.min = 0;
+      o.tub = 0;
+      o.live = "yes — vessels and nerves";
+      o.feel = "pain, and only pain";
+      o.feelHot = true;
+    }
+    return o;
+  }
+
+  const TRACE = {
+    hard: { name: "Knoop hardness", max: 400, get: (p) => p.hard, col: C.mint,
+      fmt: (v) => String(Math.round(v)) },
+    tub: { name: "tubules per mm²", max: 50000, get: (p) => p.tub, col: C.ice,
+      fmt: (v) => TC.fmtNum(v) },
+    min: { name: "mineral, % by weight", max: 100, get: (p) => p.min, col: C.dentineAcc,
+      fmt: (v) => Math.round(v) + "%" },
+  };
+
+  probeFig = TC.canvas("an-probe", function (ctx, W, H) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+    if (W < 40) return;
+
+    const padL = Math.max(38, W * 0.075), padR = Math.max(14, W * 0.03);
+    const X = (d) => padL + (d / D_MAX) * (W - padL - padR);
+    const plotTop = H * 0.10, plotBot = H * 0.46;
+    const slabTop = H * 0.54, slabBot = H * 0.80;
+    const slabMid = (slabTop + slabBot) / 2, slabH = slabBot - slabTop;
+    const rulerY = H * 0.90;
+    const fs = Math.max(9, Math.min(11, W / 62));
+
+    /* ---- the slab: enamel | junction | dentine | pulp ---- */
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(X(0), slabTop, X(D_MAX) - X(0), slabH);
+    ctx.clip();
+
+    ctx.fillStyle = C.enamel;
+    ctx.fillRect(X(0), slabTop, X(D_DEJ) - X(0), slabH);
+    TC.grain(ctx, X(0), slabTop, X(D_DEJ) - X(0), slabH, 220, 4242, "#ffffff", 0.18);
+    ctx.strokeStyle = "rgba(120,112,92,0.35)";
+    ctx.lineWidth = 0.8;
+    for (let i = 0; i <= 26; i++) {
+      const yy = slabTop + (i / 26) * slabH;
+      ctx.beginPath();
+      ctx.moveTo(X(0), yy);
+      ctx.lineTo(X(D_DEJ), yy + (yy - slabMid) * 0.10);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = C.dentine;
+    ctx.fillRect(X(D_DEJ), slabTop, X(D_PULP) - X(D_DEJ), slabH);
+    TC.grain(ctx, X(D_DEJ), slabTop, X(D_PULP) - X(D_DEJ), slabH, 200, 77, "#fff6dd", 0.13);
+    /* tubules: the same tubes, crowding together as they converge on the pulp */
+    ctx.strokeStyle = "rgba(120,86,40,0.55)";
+    ctx.lineWidth = 0.9;
+    for (let i = 0; i <= 22; i++) {
+      const f = i / 22 - 0.5;
+      ctx.beginPath();
+      ctx.moveTo(X(D_DEJ), slabMid + f * slabH * 1.02);
+      ctx.lineTo(X(D_PULP), slabMid + f * slabH * 0.46);
+      ctx.stroke();
+    }
+    /* predentine: the unmineralised inner rim */
+    ctx.fillStyle = "rgba(245,232,205,0.55)";
+    ctx.fillRect(X(D_PULP) - (X(D_MAX) - X(0)) * 0.012, slabTop, (X(D_MAX) - X(0)) * 0.012, slabH);
+
+    ctx.fillStyle = C.pulp;
+    ctx.fillRect(X(D_PULP), slabTop, X(D_MAX) - X(D_PULP), slabH);
+    ctx.restore();
+
+    /* odontoblasts along the pulp edge */
+    ctx.save();
+    ctx.fillStyle = "#f4dfe4";
+    for (let i = 0; i < 9; i++) {
+      const yy = slabTop + slabH * (0.06 + i * 0.11);
+      ctx.beginPath();
+      ctx.ellipse(X(D_PULP) + 3, yy, 2.4, 3.6, 0, 0, TC.TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    /* the scalloped junction */
+    ctx.save();
+    ctx.strokeStyle = "#8c8168";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    for (let i = 0; i <= 40; i++) {
+      const yy = slabTop + (i / 40) * slabH;
+      const xx = X(D_DEJ) + Math.sin((i / 40) * Math.PI * 9) * Math.max(2.5, slabH * 0.035);
+      if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.strokeStyle = "rgba(243,241,233,0.16)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(X(0), slabTop, X(D_MAX) - X(0), slabH);
+
+    TC.label(ctx, "ENAMEL", X(D_DEJ / 2), slabBot + fs + 4, { align: "center", color: C.enamelDeep, font: TC.mono(fs, true) });
+    TC.label(ctx, "DENTINE", (X(D_DEJ) + X(D_PULP)) / 2, slabBot + fs + 4, { align: "center", color: C.dentineAcc, font: TC.mono(fs, true) });
+    if (W > 520) {
+      TC.label(ctx, "PULP", X(D_MAX), slabTop - 6, { align: "right", color: C.pulpAcc, font: TC.mono(fs, true) });
+      TC.label(ctx, "junction", X(D_DEJ), slabTop - 6, { align: "center", color: C.muted, font: TC.mono(fs) });
+      TC.label(ctx, "surface", X(0), slabTop - 6, { align: "left", color: C.muted, font: TC.mono(fs) });
+    }
+
+    /* ---- the trace ---- */
+    const tr = TRACE[probeTrace];
+    const Y = (v) => plotBot - clamp(v / tr.max, 0, 1) * (plotBot - plotTop);
+    TC.line(ctx, X(0), plotBot, X(D_MAX), plotBot, C.line, 1);
+    for (let i = 1; i <= 4; i++) {
+      const v = (tr.max / 4) * i;
+      TC.line(ctx, X(0), Y(v), X(D_MAX), Y(v), C.line2, 1);
+      TC.label(ctx, tr.fmt(v), X(0) - 6, Y(v) + 3, { align: "right", color: C.muted, font: TC.mono(fs - 1) });
+    }
+    TC.label(ctx, tr.name, X(0), plotTop - 6, { color: tr.col, font: TC.mono(fs, true) });
+
+    ctx.save();
+    ctx.strokeStyle = tr.col;
+    ctx.lineWidth = 2;
+    for (const seg of [[0, D_DEJ - 0.001], [D_DEJ, D_PULP - 0.001], [D_PULP, D_MAX]]) {
+      ctx.beginPath();
+      for (let d = seg[0]; d <= seg[1] + 1e-6; d += 0.04) {
+        const v = tr.get(profile(Math.min(d, seg[1])));
+        const px = X(d), py = Y(v);
+        if (d === seg[0]) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+    TC.line(ctx, X(D_DEJ), Y(tr.get(profile(D_DEJ - 0.01))), X(D_DEJ), Y(tr.get(profile(D_DEJ + 0.01))),
+      "rgba(243,241,233,0.30)", 1, [3, 3]);
+
+    /* ---- ruler ---- */
+    TC.line(ctx, X(0), rulerY, X(D_MAX), rulerY, C.line, 1);
+    for (let d = 0; d <= D_MAX + 1e-6; d += 0.5) {
+      const major = Math.abs(d - Math.round(d)) < 1e-6;
+      TC.line(ctx, X(d), rulerY - (major ? 5 : 3), X(d), rulerY + (major ? 5 : 3), C.line, 1);
+      if (major) TC.label(ctx, String(Math.round(d)), X(d), rulerY + fs + 8, { align: "center", color: C.muted, font: TC.mono(fs - 1) });
+    }
+    TC.label(ctx, "mm from the biting surface", X(D_MAX), rulerY - 9, { align: "right", color: C.muted, font: TC.mono(fs - 1) });
+
+    /* ---- the probe ---- */
+    const p = profile(probeD);
+    const px = X(probeD);
+    TC.line(ctx, px, plotTop - 2, px, rulerY, C.mint, 1.4);
+    ctx.fillStyle = C.mint;
+    ctx.beginPath();
+    ctx.moveTo(px, plotTop - 3);
+    ctx.lineTo(px - 5, plotTop - 11);
+    ctx.lineTo(px + 5, plotTop - 11);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(px, Y(tr.get(p)), 4, 0, TC.TAU);
+    ctx.fill();
+    /* Both readouts sit inside the slab, on near-white enamel or tan dentine,
+       where the dark-theme palette is unreadable. Set each on a dark plate so
+       the mint and coral keep their meaning and the text stays legible. */
+    const flip = probeD > D_MAX * 0.72;
+    const lx = px + (flip ? -8 : 8);
+    function plated(txt, y, col, font) {
+      ctx.save();
+      ctx.font = font;
+      const tw = ctx.measureText(txt).width;
+      TC.roundRect(ctx, flip ? lx - tw - 5 : lx - 5, y - fs - 2, tw + 10, fs + 8, 3);
+      ctx.fillStyle = "rgba(10,13,15,0.86)";
+      ctx.fill();
+      ctx.restore();
+      TC.label(ctx, txt, lx, y, { align: flip ? "right" : "left", color: col, font: font });
+    }
+    plated(probeD.toFixed(2) + " mm", slabTop + 14, C.mint, TC.mono(fs, true));
+    plated(p.feel, slabTop + 14 + fs + 4, p.feelHot ? C.pulpAcc : C.ink2, TC.mono(fs));
+  });
+
+  function probeRead() {
+    const p = profile(probeD);
+    TC.set("an-probe-ro-layer", p.layer);
+    TC.set("an-probe-ro-hard", p.hard > 0 ? "≈" + Math.round(p.hard) + " KHN" : "soft tissue");
+    TC.set("an-probe-ro-min", p.min > 0 ? "≈" + p.min + "%" : "≈0%");
+    TC.set("an-probe-ro-tub", p.tub > 0
+      ? "≈" + TC.fmtNum(Math.round(p.tub / 1000) * 1000) + "/mm², " + p.dia.toFixed(1) + " µm"
+      : "none");
+    TC.set("an-probe-ro-live", p.live);
+    TC.set("an-probe-ro-feel", p.feel);
+  }
+
+  TC.slider("an-probe-d", (v) => v.toFixed(2) + " mm", function (v) {
+    probeD = v;
+    probeRead();
+    if (probeFig) probeFig.redraw();
+  });
+  TC.seg("an-probe-tr", function (v) {
+    probeTrace = v;
+    if (probeFig) probeFig.redraw();
+  });
+
+  /* ==================================================================
+     FIGURE 3 — the periodontal ligament, magnified and to scale.
+     ================================================================== */
+  const SPAN_MM = 1.7, BONE_MM = 0.58, CEM_MM = 0.06, HAIR_MM = 0.07;
+  let pdlW = 0.24;
+  let pdlLoad = "rest";
+  let pdlFig = null;
+
+  pdlFig = TC.canvas("an-pdl", function (ctx, W, H) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = C.bg;
+    ctx.fillRect(0, 0, W, H);
+    if (W < 40) return;
+
+    const fs = Math.max(9, Math.min(11, W / 64));
+    const xL = Math.max(20, W * 0.045), xR = W - Math.max(20, W * 0.045);
+    const mm = (xR - xL) / SPAN_MM;
+    const top = H * 0.20, bot = H * 0.74, mid = (top + bot) / 2;
+    const x0 = xL + BONE_MM * mm;                       /* bone → ligament   */
+    const x1 = x0 + pdlW * mm;                          /* ligament → cementum */
+    const x2 = x1 + CEM_MM * mm;                        /* cementum → dentine  */
+    const drop = pdlLoad === "bite" ? Math.max(3, H * 0.018) : 0;
+
+    /* alveolar bone */
+    ctx.fillStyle = C.bone;
+    ctx.fillRect(xL, top, x0 - xL, bot - top);
+    TC.grain(ctx, xL, top, x0 - xL, bot - top, 220, 91, "#efe8d0", 0.10);
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+    const r = TC.rng(31);
+    for (let i = 0; i < 16; i++) {
+      const bx = xL + r() * (x0 - xL), by = top + r() * (bot - top);
+      ctx.beginPath();
+      ctx.moveTo(bx, by);
+      ctx.lineTo(bx + (r() - 0.5) * 40, by + (r() - 0.5) * 24);
+      ctx.stroke();
+    }
+    /* the lamina dura: the dense socket lining */
+    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.fillRect(x0 - 4, top, 4, bot - top);
+
+    /* the tooth side, displaced apically under load */
+    ctx.save();
+    ctx.translate(0, drop);
+    ctx.fillStyle = C.cementum;
+    ctx.fillRect(x1, top - drop, x2 - x1, bot - top);
+    ctx.fillStyle = C.dentine;
+    ctx.fillRect(x2, top - drop, xR - x2, bot - top);
+    TC.grain(ctx, x2, top - drop, xR - x2, bot - top, 160, 12, "#fff6dd", 0.12);
+    ctx.strokeStyle = "rgba(120,86,40,0.40)";
+    ctx.lineWidth = 0.9;
+    for (let i = 0; i <= 12; i++) {
+      const yy = top - drop + ((bot - top) * i) / 12;
+      ctx.beginPath();
+      ctx.moveTo(x2, yy);
+      ctx.lineTo(xR, yy);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    /* ligament fibre bundles, oblique from bone up to cementum */
+    const taut = pdlLoad === "bite";
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x0, top - 2, x1 - x0, bot - top + 4);
+    ctx.clip();
+    const n = 13;
+    for (let i = 0; i < n; i++) {
+      const yb = top + ((bot - top) * (i + 0.5)) / n;
+      const yt = yb - (x1 - x0) * 0.58 + drop;
+      ctx.strokeStyle = taut ? "rgba(232,222,206,0.92)" : "rgba(232,222,206,0.55)";
+      ctx.lineWidth = taut ? 2.2 : 1.6;
+      ctx.beginPath();
+      ctx.moveTo(x0, yb);
+      if (taut) {
+        ctx.lineTo(x1, yt);
+      } else {
+        const mx = (x0 + x1) / 2;
+        ctx.quadraticCurveTo(mx, (yb + yt) / 2 + (x1 - x0) * 0.18, x1, yt);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    /* Sharpey's fibre stubs, embedded either side */
+    ctx.strokeStyle = "rgba(232,222,206,0.45)";
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < n; i++) {
+      const yb = top + ((bot - top) * (i + 0.5)) / n;
+      TC.line(ctx, x0 - 6, yb + 2, x0, yb, "rgba(232,222,206,0.45)", 1.2);
+    }
+
+    /* mechanoreceptors */
+    ctx.fillStyle = C.violet;
+    for (const f of [0.24, 0.52, 0.78]) {
+      const yy = top + (bot - top) * f;
+      ctx.beginPath();
+      ctx.arc((x0 + x1) / 2, yy, 3.2, 0, TC.TAU);
+      ctx.fill();
+    }
+
+    /* labels */
+    TC.label(ctx, "ALVEOLAR BONE", (xL + x0) / 2, top - 10, { align: "center", color: C.ink2, font: TC.mono(fs, true) });
+    TC.label(ctx, "LIGAMENT", (x0 + x1) / 2, bot + fs + 8, { align: "center", color: C.ice, font: TC.mono(fs, true) });
+    if (W > 520) {
+      TC.label(ctx, "cementum", x2 + 4, top - 10, { color: C.muted, font: TC.mono(fs) });
+      TC.label(ctx, "DENTINE — the root", xR, top - 10, { align: "right", color: C.dentineAcc, font: TC.mono(fs, true) });
+      TC.label(ctx, "mechanoreceptors", (x0 + x1) / 2, top + (bot - top) * 0.24 - 9,
+        { align: "center", color: C.violet, font: TC.mono(fs - 1) });
+    }
+
+    /* scale bracket across the gap */
+    const by = bot + 4;
+    TC.line(ctx, x0, by, x1, by, C.ice, 1.4);
+    TC.line(ctx, x0, by - 4, x0, by + 4, C.ice, 1.4);
+    TC.line(ctx, x1, by - 4, x1, by + 4, C.ice, 1.4);
+
+    /* a hair, drawn to the same scale. On a narrow canvas the caption is
+       shortened and the hair slid left, so the text cannot run off the edge. */
+    const hairTxt = W < 620 ? "a hair, same scale" : "a hair (50–100 µm), same scale";
+    ctx.save();
+    ctx.font = TC.mono(fs - 1);
+    const htw = ctx.measureText(hairTxt).width;
+    ctx.restore();
+    const hw = HAIR_MM * mm;
+    const hx = Math.max(x2 + 4, Math.min(x2 + (xR - x2) * 0.42, W - 6 - htw - 6 - hw));
+    ctx.fillStyle = "rgba(243,241,233,0.85)";
+    ctx.fillRect(hx, bot + 16, Math.max(1, hw), 12);
+    TC.label(ctx, hairTxt, hx + hw + 6, bot + 26,
+      { color: C.muted, font: TC.mono(fs - 1) });
+
+    if (drop > 0) {
+      ctx.fillStyle = C.pulpAcc;
+      const ax = x2 + (xR - x2) * 0.82;
+      ctx.beginPath();
+      ctx.moveTo(ax, top - 26);
+      ctx.lineTo(ax - 5, top - 34);
+      ctx.lineTo(ax + 5, top - 34);
+      ctx.closePath();
+      ctx.fill();
+      TC.line(ctx, ax, top - 34, ax, top - 44, C.pulpAcc, 2);
+      TC.label(ctx, "bite", ax + 8, top - 32, { color: C.pulpAcc, font: TC.mono(fs, true) });
+    }
+  });
+
+  function pdlRead() {
+    const um = Math.round(pdlW * 1000);
+    TC.set("an-pdl-ro-w", um + " µm (" + pdlW.toFixed(2) + " mm)");
+    TC.set("an-pdl-ro-hair", "≈" + (um / 70).toFixed(1) + " hairs wide");
+    TC.set("an-pdl-ro-note", pdlLoad === "bite"
+      ? "taut — the tooth hangs from the socket wall"
+      : "slack — the tooth is resting");
+  }
+
+  TC.slider("an-pdl-w", (v) => v.toFixed(2) + " mm", function (v) {
+    pdlW = v;
+    pdlRead();
+    if (pdlFig) pdlFig.redraw();
+  });
+  TC.seg("an-pdl-load", function (v) {
+    pdlLoad = v;
+    pdlRead();
+    if (pdlFig) pdlFig.redraw();
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

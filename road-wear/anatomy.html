@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomy of a Road — The Road to Ruin</title>
+<meta name="description" content="A road is a load-spreading sandwich of surface course, binder, base, sub-base and subgrade. What each layer does, flexible asphalt versus rigid concrete, and what bitumen and aggregate really are — with a live cross-section that spreads a wheel load down to the soil.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html" aria-current="page">1 · Anatomy</a>
+    <a href="loads.html">2 · The Weight of Traffic</a>
+    <a href="water.html">3 · Water &amp; Frost</a>
+    <a href="materials.html">4 · Ageing</a>
+    <a href="distress.html">5 · The Distress Catalogue</a>
+    <a href="repair.html">6 · Looking After Roads</a>
+    <a href="roadworks.html">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 1 — Anatomy of a Road</p>
+  <h1>A load-spreading sandwich</h1>
+  <p class="standfirst">The black ribbon you drive on is the thinnest slice of a much deeper
+  structure — a stack of engineered layers whose entire job is to take the fierce, concentrated
+  pressure under a tyre and spread it, layer by layer, until it is gentle enough for ordinary
+  soil to bear without rutting. Understand the sandwich and you understand almost everything
+  about how a road fails.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">A road does not "hold up" traffic the way a bridge does. It has no beams and no
+foundations reaching down to rock. It works by <strong>distributing load</strong>: taking the
+half-tonne pressing down through one tyre and passing it down through progressively stiffer,
+cheaper, thicker layers until, at the bottom, it is a soft, wide push that the ground can take.</p>
+
+<p>Get this idea and the rest of the guide falls into place. Every distress in
+<a href="distress.html">Chapter&nbsp;5</a> is the load-spreading system failing somewhere: too
+much stress at the bottom of the asphalt (fatigue cracking), too much at the top of the soil
+(rutting), water destroying a layer's stiffness, or the tar that binds it all growing brittle
+with <a href="materials.html">age</a>.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Spread the load</span>
+    <span class="hint">Boussinesq stress under a tyre · drag the load · change the build</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="bulb" style="aspect-ratio: 2 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="bulb-load">wheel load</label>
+      <input type="range" id="bulb-load" min="2" max="60" step="1" value="20">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="bulb-build">build</label>
+      <span class="seg" id="bulb-build">
+        <button data-v="thin">thin (estate road)</button>
+        <button data-v="std" class="on">standard</button>
+        <button data-v="thick">thick (motorway)</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">contact patch radius <b id="ro-a">—</b></span>
+    <span class="ro">surface contact pressure <b id="ro-p">—</b></span>
+    <span class="ro" id="ro-sub-wrap">stress on subgrade <b id="ro-sub">—</b></span>
+    <span class="ro" id="ro-verdict-wrap">verdict <b id="ro-verdict">—</b></span>
+  </div>
+  <div class="fig-note">The bright region is the classic Boussinesq "pressure bulb" — how far down
+  the load is still meaningfully felt. Notice two things. First, heavier wheels barely raise the
+  <b>surface</b> pressure at all (that is set by tyre inflation, not weight) — they spread it over
+  a bigger contact patch. Second, that bigger patch pushes the bulb <b>deeper</b>, so the stress
+  arriving at the subgrade rises roughly <b>in proportion</b> to wheel load, and a thicker build
+  cuts it sharply. Note what this does <em>not</em> say: the fourth-power law of
+  <a href="loads.html">Chapter&nbsp;2</a> does not come from this stress field — it comes from
+  <em>fatigue</em> under repeated bending, which is a different mechanism. On-axis stresses use the
+  Boussinesq solution for a uniform circular load; the shading is a schematic of the full field.</div>
+</figure>
+
+<div class="prose">
+
+<h2>The five layers, top to bottom</h2>
+
+<p>From the tyre down, a typical flexible (asphalt) pavement is built like this. Thicknesses
+vary hugely with traffic — a farm lane and a motorway share the anatomy but not the scale.</p>
+
+<table class="data">
+  <caption>A typical flexible pavement, surface to soil</caption>
+  <tr><th>Layer</th><th>Typical thickness</th><th>What it is</th><th>Its job</th></tr>
+  <tr><td class="k">Surface course</td><td class="num">20–50 mm</td>
+    <td>Fine, dense or textured asphalt</td>
+    <td>The wearing surface: grip, quiet, waterproof, takes tyre abrasion.</td></tr>
+  <tr><td class="k">Binder course</td><td class="num">50–80 mm</td>
+    <td>Coarser asphalt</td>
+    <td>Regulates the shape and carries the surface; adds structural depth.</td></tr>
+  <tr><td class="k">Base course</td><td class="num">100–250 mm</td>
+    <td>Asphalt or cement-bound stone</td>
+    <td>The main structural layer — the "beam" that spreads load and resists bending.</td></tr>
+  <tr><td class="k">Sub-base</td><td class="num">150–300 mm</td>
+    <td>Compacted crushed rock (granular)</td>
+    <td>Spreads load further; a working platform; drains water away.</td></tr>
+  <tr><td class="k">Subgrade</td><td class="num">the ground itself</td>
+    <td>Native soil, sometimes improved</td>
+    <td>The foundation. Everything above exists to protect this from overload.</td></tr>
+</table>
+
+<p>The guiding principle is <strong>stiff-over-soft, expensive-over-cheap</strong>: strong,
+costly, thin layers on top; weak, cheap, thick layers below. Each layer only has to be strong
+enough for the (already spread-out) stress that reaches it, so the dear asphalt can be thin and
+the cheap stone can do the bulk of the spreading. It is the most economical way yet found to
+carry a wheel over soft ground.</p>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float"><use href="#char-prof"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Professor Camber</p>
+    <p class="say">"Run the numbers on the figure above and you'll see the trick. A lorry tyre
+    presses at about 800&nbsp;kilopascals — eight atmospheres, concentrated on a patch the size of
+    a dinner plate. Ordinary clay subgrade starts rutting somewhere around a tenth of that."</p>
+    <p class="say">"So the entire job of half a metre of stone is to take that eight-atmosphere
+    stamp and hand the ground below a gentle push it can live with. Every layer is just a device
+    for spreading a number until it stops being dangerous."</p>
+  </div>
+</div>
+
+<div class="callout gold">
+  <span class="tag">Where roads crack from</span>
+  <p>Because the bound layers <em>bend</em> under each wheel, the most-stretched fibre is at
+  the <strong>bottom</strong> of the asphalt, not the top. Fatigue cracks therefore usually
+  begin unseen at the base of the asphalt and grow <em>upward</em>, only reaching daylight as
+  the "crocodile" cracking of a tired road. By the time you can see fatigue cracking, the
+  damage is old. (Some cracking is top-down too — from ageing and thermal stress — which is
+  why <a href="distress.html">Chapter&nbsp;5</a> is careful about telling them apart.)</p>
+</div>
+
+<h2>What is asphalt, really?</h2>
+
+<p>The black material is a deliberate mix of two things:</p>
+
+<ul>
+  <li><strong>Aggregate</strong> — crushed rock, gravel and sand, carefully graded from
+  coarse stones down to fine dust so the particles interlock and pack tightly. This is about
+  <em>95% of the mix by weight</em> and carries the load through stone-on-stone contact.</li>
+  <li><strong>Bitumen</strong> — the thick, black, sticky residue left at the bottom of the
+  crude-oil barrel after the petrol, diesel and everything lighter has been distilled off.
+  It is the glue: roughly <em>5% by weight</em>, it coats every stone and holds the skeleton
+  together. (In American English the whole mix is "asphalt" and the glue is "asphalt cement";
+  in British English the glue is "bitumen" and the mix is "asphalt". Same stuff.)</li>
+</ul>
+
+<p>Bitumen is what makes a road a road and not just gravel, and it is the source of nearly all
+the interesting failure. It is <strong>viscoelastic</strong>: on a hot day, or under a slow,
+heavy, standing load, it flows like a very thick liquid (roads rut in heatwaves and at bus
+stops); on a cold day, or under a fast wheel, it behaves like a brittle solid (roads crack in
+frost). It is also chemically alive — it oxidises and hardens over years, the subject of
+<a href="materials.html">Chapter&nbsp;4</a>. Hold that thought: most of this guide is really
+about what happens to 5% of the road.</p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-tarmac"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Tarmac says</p>
+    <p class="say">"People think I'm solid rock. I'm mostly stone I'll grant you — but the bit
+    that makes me <em>me</em> is a five-percent skin of oil-barrel tar gluing it together.
+    Warm me up and I'll spread; freeze me and I'll snap. Everything that goes wrong with me
+    starts there."</p>
+  </div>
+</div>
+
+<h2>The other kind: rigid concrete</h2>
+
+<p>A minority of heavy-duty roads — some motorways, ports, bus lanes and airfield pavements —
+are built rigid, from Portland-cement concrete slabs. A rigid pavement doesn't spread load by
+bending through layers; it is stiff enough to act as a <strong>beam</strong>, bridging over
+the ground and carrying the wheel almost regardless of the soil beneath. That makes it
+long-lived (30–40+ years) but unforgiving: concrete can't flex, so it is cast in slabs with
+joints to let it expand, and it fails at those joints and in cracked slabs rather than by
+rutting. It is dearer to lay and much dearer to repair, which is why the world mostly chose
+flexible asphalt. Concrete's failure modes get their own entries in the
+<a href="lexicon.html">Lexicon</a>.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the Boussinesq bulb and why it matters</span></summary>
+  <p>The interactive uses Boussinesq's 1885 solution for the stress in an elastic half-space
+  under a uniform circular load of pressure <span class="m">p</span> over a circle of radius
+  <span class="m">a</span>. On the centre-line, the vertical stress at depth
+  <span class="m">z</span> is exactly:</p>
+  <div class="eq"><span class="m">σ<sub>z</sub> = <b>p</b> · [ 1 − ( 1 / (1 + (a/z)²) )<sup>3/2</sup> ]</span></div>
+  <p>The contact radius comes from the load and the tyre pressure — a wheel carrying force
+  <span class="m">Q</span> at inflation pressure <span class="m">p</span> presses over
+  area <span class="m">Q/p</span>, so <span class="m">a = √(Q/πp)</span>. Because
+  <span class="m">σ<sub>z</sub></span> depends on the ratio <span class="m">a/z</span>, a
+  bigger contact patch (heavier wheel) pushes the same fraction of pressure to a greater depth
+  — which is why the surface pressure hardly moves with load while the deep, subgrade-level
+  stress keeps rising. Deep enough that <span class="m">z ≫ a</span>, the expression collapses to
+  <span class="m">σ<sub>z</sub> ≈ 1.5 Q / (π z²)</span>: at depth the stress depends only on the
+  <em>total</em> load <span class="m">Q</span>, not on how it is spread — so it grows
+  <strong>linearly</strong> with wheel load, and no faster. Keep that firmly separate from the
+  fourth-power law: <em>stress</em> is linear in load; <em>damage</em> goes as the fourth power,
+  because fatigue life falls very steeply with the strain each pass imposes. Real pavements are
+  layered, not a uniform half-space, so engineers use multi-layer elastic theory (Burmister) or
+  finite elements; but the single-bulb picture captures the essential economics of why we build in
+  layers at all.</p>
+</details>
+
+</div>
+
+<nav class="chapnav">
+  <a class="prev" href="./"><span class="dir">← Back</span><span class="title">Overview</span></a>
+  <a class="next" href="loads.html"><span class="dir">Next →</span><span class="title">2 · The Weight of Traffic</span></a>
+</nav>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, mix, C } = RW;
+
+  let load = 20;      // wheel load, kN
+  const P_TYRE = 800; // tyre contact pressure, kPa (constant)
+  let build = "std";
+
+  // subgrade depth (mm of bound + granular above the soil) for each build
+  const DEPTH = { thin: 250, std: 475, thick: 800 };
+
+  let fig;
+
+  function contactRadius_mm(load_kN) {
+    const Q = load_kN * 1000;           // N
+    const p = P_TYRE * 1000;            // Pa
+    const area = Q / p;                 // m²
+    return Math.sqrt(area / Math.PI) * 1000; // mm
+  }
+  function sigmaZ(p, a, z) {            // Boussinesq on-axis, uniform circular load
+    return p * (1 - Math.pow(1 / (1 + (a / z) * (a / z)), 1.5));
+  }
+
+  function update() {
+    const a = contactRadius_mm(load);
+    const zs = DEPTH[build];
+    const sub = sigmaZ(P_TYRE, a, zs);
+    RW.set("ro-a", a.toFixed(0) + " mm");
+    RW.set("ro-p", P_TYRE + " kPa");
+    RW.set("ro-sub", sub.toFixed(0) + " kPa");
+    const wrap = document.getElementById("ro-sub-wrap");
+    wrap.classList.toggle("alert", sub > 120);
+    wrap.classList.toggle("good", sub < 60);
+    let verdict, vc;
+    if (sub > 140) { verdict = "over-stressed soil"; vc = "alert"; }
+    else if (sub > 90) { verdict = "working hard"; vc = "amber"; }
+    else { verdict = "comfortable"; vc = "good"; }
+    RW.set("ro-verdict", verdict);
+    const vw = document.getElementById("ro-verdict-wrap");
+    vw.classList.remove("alert", "amber", "good"); vw.classList.add(vc);
+    if (fig) fig.redraw();
+  }
+
+  fig = RW.canvas("bulb", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const surfaceY = h * 0.30;
+    const a_mm = contactRadius_mm(load);
+    const zs_mm = DEPTH[build];
+
+    // Vertical scale follows the build, showing the layers plus a useful depth
+    // of subgrade below them. A fixed 1000 mm scale would leave the thin build
+    // as a sliver of road above half a frame of undifferentiated soil.
+    const maxDepth = Math.round(zs_mm * 1.7);
+    const y0 = surfaceY, y1 = h;
+    const mm2y = (mm) => y0 + (mm / maxDepth) * (y1 - y0);
+    const cx = w * 0.5;
+    // horizontal scale: 1 mm depth == same px as vertical, centre on cx
+    const pxPerMm = (y1 - y0) / maxDepth;
+
+    // ---- layers (as fractions of the build depth) ----
+    const layers = build === "thin"
+      ? [["surf", 0, 30], ["base", 30, 130], ["subbase", 130, 250]]
+      : build === "thick"
+        ? [["surf", 0, 50], ["binder", 50, 130], ["base", 130, 380], ["subbase", 380, 800]]
+        : [["surf", 0, 40], ["binder", 40, 100], ["base", 100, 280], ["subbase", 280, 475]];
+    const names = { surf: "surface", binder: "binder", base: "base", subbase: "sub-base" };
+    // subgrade fill
+    ctx.fillStyle = C.subgrade; ctx.fillRect(0, mm2y(zs_mm), w, y1 - mm2y(zs_mm));
+    for (const [k, a, b] of layers) {
+      ctx.fillStyle = C[k];
+      ctx.fillRect(0, mm2y(a), w, mm2y(b) - mm2y(a));
+    }
+    // faint hatch for granular sub-base
+    RW.speckle(ctx, 0, mm2y(build === "thin" ? 130 : build === "thick" ? 380 : 280), w, mm2y(zs_mm) - mm2y(build === "thin" ? 130 : build === "thick" ? 380 : 280), 260, 3, "#c9bd9a");
+
+    // ---- stress bulb (point-load field, schematic) ----
+    const Q = load * 1000;
+    const cell = 6;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    for (let py = y0; py < y1; py += cell) {
+      const z = (py - y0) / pxPerMm + 1;     // mm depth (+1 avoid /0)
+      for (let px = 0; px < w; px += cell) {
+        const rmm = (px - cx) / pxPerMm;
+        const Rm = Math.sqrt(rmm * rmm + z * z);
+        // Boussinesq point-load vertical stress σz = 3Q/(2π) · z³/R⁵.
+        // With Q in N and lengths in mm this is in MPa; ×1000 → kPa, then
+        // normalise to the tyre contact pressure so the bulb reads 0..1.
+        let s = (3 * Q / (2 * Math.PI)) * Math.pow(z, 3) / Math.pow(Rm, 5); // MPa
+        s = clamp(s * 1000 / P_TYRE, 0, 1);
+        if (s < 0.005) continue;
+        // gamma-curve the intensity so the bulb reads as a graded field, and let
+        // alpha fall to zero at the edge so it fades out instead of ending in a disc
+        const g = Math.pow(s, 0.75);
+        ctx.fillStyle = mix("#ff9d3c", "#ffe6a0", g, 0.5 * g);
+        ctx.fillRect(px, py, cell, cell);
+      }
+    }
+    ctx.restore();
+
+    // ---- layer boundary lines + labels ----
+    ctx.textBaseline = "middle";
+    for (const [k, aa, bb] of layers) {
+      ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, mm2y(bb)); ctx.lineTo(w, mm2y(bb)); ctx.stroke();
+      RW.label(ctx, names[k], 8, (mm2y(aa) + mm2y(bb)) / 2, { color: "rgba(255,255,255,0.75)", font: RW.mono(11, true) });
+    }
+    // subgrade label + level marker
+    ctx.strokeStyle = "rgba(255,93,108,0.8)"; ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(0, mm2y(zs_mm)); ctx.lineTo(w, mm2y(zs_mm)); ctx.stroke(); ctx.setLineDash([]);
+    RW.label(ctx, "subgrade (soil)", 8, mm2y(zs_mm) + 14, { color: "rgba(255,180,185,0.9)", font: RW.mono(11, true) });
+
+    // ---- the wheel / tyre ----
+    const aPx = a_mm * pxPerMm;
+    ctx.fillStyle = "#e7e7ee";
+    ctx.fillRect(cx - aPx, y0 - 4, aPx * 2, 4);         // contact patch (true to scale)
+    // The tyre above it keeps a constant, tyre-like proportion: only the contact
+    // patch is to scale, so a heavier wheel widens its footprint without the
+    // tyre itself morphing from a sliver into a slab.
+    // Capped to the sky available above the road, so a wide contact patch can
+    // never push the tyre (and its load arrow) off the top of the frame.
+    const tyreH = Math.min(Math.max(aPx * 1.8, 34) * 1.15, y0 - 46);
+    const tyreW = tyreH / 1.15;
+    ctx.fillStyle = "#1c1c22";
+    RW.roundRect(ctx, cx - tyreW / 2, y0 - tyreH - 2, tyreW, tyreH, tyreW * 0.22); ctx.fill();
+    ctx.fillStyle = "#3a3a44";
+    RW.roundRect(ctx, cx - tyreW * 0.28, y0 - tyreH * 0.78, tyreW * 0.56, tyreH * 0.5, tyreW * 0.12); ctx.fill();
+    // load arrow, sitting just above whatever height the tyre reached
+    const arrTip = y0 - tyreH - 6, arrTail = arrTip - 24;
+    ctx.strokeStyle = C.amber; ctx.fillStyle = C.amber; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(cx, arrTail); ctx.lineTo(cx, arrTip); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx - 5, arrTip - 8); ctx.lineTo(cx, arrTip); ctx.lineTo(cx + 5, arrTip - 8); ctx.fill();
+    RW.label(ctx, load.toFixed(0) + " kN", cx + 10, arrTail + 10, { color: C.amber, font: RW.mono(12, true) });
+  }, { animate: false });
+
+  RW.slider("bulb-load", (v) => v.toFixed(0) + " kN", (v) => { load = v; update(); });
+  RW.seg("bulb-build", (v) => { build = v; update(); });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

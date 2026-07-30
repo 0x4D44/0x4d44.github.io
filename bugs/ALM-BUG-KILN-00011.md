@@ -1,6 +1,6 @@
 # ALM-BUG-KILN-00011 — SRS keys embed the mutable English gloss -- a content edit inflates the drill badge and can make BEGIN DRILL inert
 
-- **State:** Fixed
+- **State:** Closed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** darmok
@@ -20,6 +20,7 @@
 - **Attempts:** fix=1, doubt=0, indeterminate=0
 - **State history:** Open (2026-07-13, raised by Claude (overnight CR pass))
 - **State history:** Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification)
+- **State history:** Closed (2026-07-30, independently verified and closed by Claude (verifier, not the fixer), on origin/main 46c1859 — the bug's own gloss-edit repro measured clean; badge now equals drillable)
 
 ## Observation
 After any edit to a word's English gloss, a returning user's "Drills Due" tile and DRILLS badge over-count, and if the due keys are all orphaned the BEGIN DRILL button does nothing when tapped.
@@ -40,3 +41,20 @@ orphan — leaving BEGIN DRILL inert. Filtering at the source fixes the count, t
 sampling together, so the badge now equals what a drill can actually build. Regression:
 darmok/engine-state.test.mjs asserts an orphaned key is not reported due and that
 `buildDrill(...).length === srsDue(...).length`.
+
+## Independent verification (2026-07-30)
+
+Verified on `origin/main` 46c1859 by a verifier who did not author the fix. Fix commit: `573d0ca`.
+
+**Original observation re-checked — resolved.** `darmok/engine.js:314` now filters `srsDue` through `DK.vocabByKey(k)`, dropping keys no live vocab entry resolves. Running the bug's own repro (edit `"I, me"` → `"I / me"` with stored progress under the old key):
+
+```
+orphaned (post-edit) key: 私|I / me -> resolves? false
+srsDue -> ["日本語|Japanese (language)"]  length: 1
+buildDrill length: 1   (equals srsDue — badge == drillable)
+all-orphan case -> srsDue: 0   buildDrill: 0
+```
+
+Since `dueCount()` is `srsDue(P).length` (`app.js:79-81`), the all-orphan case now renders "NOTHING DUE — CONTINUE THE COURSE" (`app.js:780`) instead of a dead BEGIN DRILL, so the inert-button path is unreachable. Regression coverage `darmok/engine-state.test.mjs` passes and asserts the right invariant, `buildDrill.length === srsDue.length`. Cost objection checked: `vocabByKey` is memoised into `DK._byKey` (`engine.js:334-340`), so the added lookup is O(1).
+
+**Residual noted, not separately tracked.** Orphaned keys are no longer counted but are never pruned from `P.srs`, so they accumulate in localStorage indefinitely. The Notes suggested pruning in `startDrill`; that was not done. Storage-only, since nothing reads them any more.

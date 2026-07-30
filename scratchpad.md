@@ -3,6 +3,32 @@
 Out-of-scope observations spotted while working on something else. A separate,
 human-invoked review triages these — don't fix them inline.
 
+- [ ] 2026-07-30 — `wifi-cartographer/index.html` is the one document in the repo with no
+  `<script defer src="/almanac-back.js"></script>` (126 of 127 carry it, checked by grep over
+  `*/index.html`). Catalog links open in the same tab, so a reader who opens it has no way
+  back to `/` short of the browser's back button. Spotted while wiring `arran-deep-time`;
+  it is a one-line add before `</body>`, but check first whether anything of its own sits
+  under the pill's top-left box (roughly x 10..112, y 10..39) — that was
+  ALM-BUG-KILN-00039's whole failure mode.
+
+- [ ] 2026-07-30 — `lessons_learnt.md` is over its 20-entry cap and the SessionStart hook
+  now truncates it, so the oldest entries no longer reach any agent. Worth a
+  `prune-lessons-learnt` pass.
+
+- [ ] 2026-07-25 — `npm test` is RED on `origin/main`, and has nothing to do with the
+  branch that found it. `tidecall/validate-static.test.js:136` fails its
+  "a modal moves focus to its first VISIBLE control" assertion with
+  `openModal function should be found`. That test is the regression guard for
+  `bugs/ALM-BUG-KILN-00028.md`, which the ledger records as **Fixed** (2026-07-21,
+  branch `claude/bugs-queue-2q-drain-0sv3oa`) and **awaiting independent
+  verification** — so either the fix regressed, or it restructured `openModal` in a
+  way the guard no longer recognises. Either way the ledger's state is currently
+  wrong, and because the `test` script is a single `&&` chain this failure aborts the
+  run, so every suite after `tidecall` is going unexercised. Confirmed pre-existing:
+  `tidecall/validate-static.test.js` and `tidecall/index.html` are byte-identical
+  between `origin/main` and the branch. Needs the bug-tracking two-eyes route, not an
+  inline fix.
+
 - [x] 2026-06-20 — `app.js:146` (also `:135-136` grid, `:169` focus) builds the
   listing meta line as `` `${essay.readingMin}m · ${(essay.words/1000).toFixed(1)}k` ``
   with no guard for entries that omit `readingMin`/`words`. Every stat-less card —
