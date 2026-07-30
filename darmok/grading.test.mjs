@@ -66,14 +66,10 @@ test('ALM-BUG-KILN-00014: every entry\'s furigana folds to its kana reading', ()
   assert.deepEqual(fails, [], `${fails.length} furigana/kana mismatch(es): ${fails.join(' | ')}`);
 });
 
-test('corpus round-trip: typing a card rōmaji is accepted (bar known authored-data typos)', () => {
-  // The "-fun/-pun" counter card carries a slash-alternated rōmaji form that is not a
-  // single typeable answer; every other vocab entry must round-trip. (kinyoubi was fixed
-  // to kin'youbi in KILN-00015 and now round-trips.)
-  const known = new Set(['-fun/-pun']);
+test('corpus round-trip: typing every card rōmaji is accepted', () => {
   const fails = [];
   for (const v of DK.allVocab().map((e) => e.v)) {
-    if (!v[1] || !v[2] || known.has(v[2])) continue;
+    if (!v[1] || !v[2]) continue;
     if (!DK.answersMatch(v[2], accepts(v))) fails.push(`${v[2]} vs ${v[1]} (${v[3]})`);
   }
   assert.deepEqual(fails, [], `${fails.length} word(s) reject their own card rōmaji: ${fails.join(' | ')}`);
