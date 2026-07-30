@@ -246,7 +246,7 @@ button:focus-visible, input:focus-visible, summary:focus-visible, [tabindex]:foc
 .night-log li:first-child { color: #fff0bd; }
 
 /* Dialogs */
-.modal { width: min(920px, calc(100vw - 24px)); max-height: min(88svh, 900px); padding: 0; color: #271b36; background: transparent; border: 0; overflow: visible; }
+.modal { width: min(920px, calc(100vw - 24px - var(--safe-left) - var(--safe-right))); max-height: min(88svh, 900px); padding: 0; color: #271b36; background: transparent; border: 0; overflow: visible; transform: translateX(calc((var(--safe-left) - var(--safe-right)) / 2)); }
 .modal::backdrop { background: rgba(8,5,25,.8); backdrop-filter: blur(8px); }
 .modal-shell { max-height: min(88svh, 900px); overflow: auto; border-radius: 22px; background: #f8edca; border: 7px solid #161225; box-shadow: 0 30px 90px rgba(0,0,0,.58), inset 0 0 0 3px #d84443; }
 .modal-shell.compact { width: min(560px, 100%); margin: auto; }
