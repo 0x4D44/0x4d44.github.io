@@ -3,6 +3,26 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-30 — CSS `transform` on an SVG shape scales about the whole viewBox, not the shape,
+  until you set `transform-box:fill-box` (`arran-deep-time/arran.css:.route-pin circle`). An
+  SVG element's default `transform-box` is `view-box`, so the familiar
+  `transform-origin:center;transform:scale(1.15)` resolves "center" against the map, not the
+  circle: Arran's selected route pin flung its disc 49.5px (desktop) / 53.0px (tablet) /
+  40.9px (mobile) away from its own number — further than the pin's 31px radius, so the digit
+  landed outside the disc, and every pin did the same on hover and focus. Nothing catches this
+  but a real browser measuring the two rects, and the sibling trap is that the *unselected*
+  pins measure perfectly, so eyeballing "do the pins look right" passes. Grep any SVG-heavy
+  document here for `transform:` in CSS and check each one sets `transform-box`. Two more
+  from the same pass: **a new document is not integrated just because `data.js` has an
+  entry** — this one arrived green, shelved twice and tagged correctly, yet shipped no
+  `/almanac-back.js` include (126 of 127 documents carry it), put its own duplicate back link
+  *and* its skip link under where that pill lands (ALM-BUG-KILN-00039 again), and claimed 18
+  minutes against 3000 words when the catalog runs at ~220 wpm;
+  `arran-deep-time/tests/validate-static.mjs` asserts all of it and is the cheap thing to
+  copy for the next document. And when a `words` figure is in doubt, don't estimate it from
+  source — render the page, walk every interactive state and take the union of distinct
+  `innerText` lines; naive string-literal extraction from the same app.js gave 2222 or 3838
+  depending purely on how strict the filter was, against a rendered 2931.
 - 2026-07-30 — A penalty square 3 stones from HOME made being bitten a 72% win — measure
   outcome rates (`game-of-dracula/engine.js:EDGE_LIST`). The rule text said "victims are
   carried to the vault" and the code did exactly that; the defect was purely the board

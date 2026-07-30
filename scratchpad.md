@@ -3,6 +3,18 @@
 Out-of-scope observations spotted while working on something else. A separate,
 human-invoked review triages these — don't fix them inline.
 
+- [ ] 2026-07-30 — `wifi-cartographer/index.html` is the one document in the repo with no
+  `<script defer src="/almanac-back.js"></script>` (126 of 127 carry it, checked by grep over
+  `*/index.html`). Catalog links open in the same tab, so a reader who opens it has no way
+  back to `/` short of the browser's back button. Spotted while wiring `arran-deep-time`;
+  it is a one-line add before `</body>`, but check first whether anything of its own sits
+  under the pill's top-left box (roughly x 10..112, y 10..39) — that was
+  ALM-BUG-KILN-00039's whole failure mode.
+
+- [ ] 2026-07-30 — `lessons_learnt.md` is over its 20-entry cap and the SessionStart hook
+  now truncates it, so the oldest entries no longer reach any agent. Worth a
+  `prune-lessons-learnt` pass.
+
 - [ ] 2026-07-25 — `npm test` is RED on `origin/main`, and has nothing to do with the
   branch that found it. `tidecall/validate-static.test.js:136` fails its
   "a modal moves focus to its first VISIBLE control" assertion with
