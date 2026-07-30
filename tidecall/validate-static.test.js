@@ -6,7 +6,8 @@ const path = require('node:path');
 
 const ROOT = __dirname;
 const REPO_ROOT = path.join(ROOT, '..');
-const read = (name) => fs.readFileSync(path.join(ROOT, name), 'utf8');
+const normaliseSource = (source) => source.replace(/\r\n/g, '\n');
+const read = (name) => normaliseSource(fs.readFileSync(path.join(ROOT, name), 'utf8'));
 const html = read('index.html');
 const app = read('app.js');
 const worker = read('sw.js');
@@ -21,6 +22,10 @@ function test(name, fn) {
     process.exitCode = 1;
   }
 }
+
+test('source reads normalise Windows CRLF before source-level checks', () => {
+  assert.equal(normaliseSource('first\r\nsecond\r\n'), 'first\nsecond\n');
+});
 
 function matches(source, expression) {
   return Array.from(source.matchAll(expression), (match) => match[1]);
