@@ -152,11 +152,13 @@
       "max_scan": 65000,
       "oversample": 10,
       "shuffle_buffer": 25000,
+      "interleave_shards": true,
       "date_field": "created",
       "author_fields": [
         "metadata.authors"
       ],
-      "stratum_transform": "stackexchange_host",
+      "stratum_field": "metadata.site",
+      "stratum_transform": "lower",
       "licence_allow": [
         "Creative Commons - Attribution Share-Alike"
       ],

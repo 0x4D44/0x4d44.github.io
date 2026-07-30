@@ -203,6 +203,7 @@ class BenchmarkSourceSpec(BaseModel):
     max_scan: int = Field(gt=0)
     oversample: int = Field(default=8, ge=1, le=50)
     shuffle_buffer: int = Field(default=20_000, ge=100)
+    interleave_shards: bool = False
 
     text_field: str = "text"
     id_field: str = "id"

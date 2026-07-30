@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "scribeprint/model/benchmark/**"
+      - "!scribeprint/model/benchmark/locks/**"
       - "scribeprint/model/src/scribeprint_model/human_*.py"
       - "scribeprint/model/tests/test_human_*.py"
       - "scribeprint/model/pyproject.toml"

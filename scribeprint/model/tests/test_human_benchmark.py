@@ -9,6 +9,7 @@ from scribeprint_model.human_benchmark import (
     BenchmarkSourceSpec,
     _candidate_from_row,
     _iter_fce_xml,
+    _prepare_huggingface_stream,
     audit_records,
     build_benchmark,
     near_duplicate_pairs,
@@ -300,3 +301,47 @@ def test_fce_adapter_uses_head_sortkey_and_redacts_local_path(tmp_path, monkeypa
     assert row["text"] == "I go home yesterday."
     assert str(tmp_path) not in result.source_reference
     assert result.source_reference == "environment variable FCE_FIXTURE_DIR"
+
+def test_huggingface_shards_are_interleaved_before_bounded_scan():
+    class FakeShard:
+        def __init__(self, index):
+            self.index = index
+            self.shuffle_args = None
+
+        def shuffle(self, **kwargs):
+            self.shuffle_args = kwargs
+            return self
+
+    class FakeStream:
+        n_shards = 3
+
+        def __init__(self):
+            self.shard_args = []
+            self.shards = []
+
+        def shard(self, **kwargs):
+            self.shard_args.append(kwargs)
+            shard = FakeShard(kwargs["index"])
+            self.shards.append(shard)
+            return shard
+
+    spec = local_profile().sources[0].model_copy(
+        update={"interleave_shards": True, "shuffle_buffer": 900}
+    )
+    stream = FakeStream()
+    observed = {}
+
+    def fake_interleave(shards, **kwargs):
+        observed["shards"] = shards
+        observed["kwargs"] = kwargs
+        return "interleaved"
+
+    result = _prepare_huggingface_stream(stream, spec, 17, fake_interleave)
+
+    assert result == "interleaved"
+    assert [args["index"] for args in stream.shard_args] == [0, 1, 2]
+    assert all(args["num_shards"] == 3 and args["contiguous"] for args in stream.shard_args)
+    assert all(shard.shuffle_args["buffer_size"] == 300 for shard in stream.shards)
+    assert len({shard.shuffle_args["seed"] for shard in stream.shards}) == 3
+    assert observed["kwargs"] == {"stopping_strategy": "first_exhausted"}
+

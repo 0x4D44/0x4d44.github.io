@@ -265,9 +265,39 @@ def _candidate_from_row(
     ), None
 
 
+def _prepare_huggingface_stream(
+    stream: Any,
+    spec: BenchmarkSourceSpec,
+    seed: int,
+    interleave_datasets: Any,
+) -> Any:
+    """Shuffle a stream without letting physical shard order defeat strata caps."""
+
+    shard_count = int(getattr(stream, "n_shards", 1) or 1)
+    if not spec.interleave_shards or shard_count <= 1:
+        return stream.shuffle(
+            seed=_stable_int(seed, spec.id, "shuffle") % (2**31 - 1),
+            buffer_size=spec.shuffle_buffer,
+        )
+
+    # Some large corpora group strata by physical shard. A single global streaming
+    # shuffle only sees one buffer at a time, so a bounded scan can exhaust a
+    # stratum cap before reaching later shards. Shuffle each shard independently,
+    # then consume them round-robin while preserving all selection caps.
+    per_shard_buffer = max(100, spec.shuffle_buffer // shard_count)
+    shards = [
+        stream.shard(num_shards=shard_count, index=index, contiguous=True).shuffle(
+            seed=_stable_int(seed, spec.id, "shuffle", index) % (2**31 - 1),
+            buffer_size=per_shard_buffer,
+        )
+        for index in range(shard_count)
+    ]
+    return interleave_datasets(shards, stopping_strategy="first_exhausted")
+
+
 def _iter_huggingface(spec: BenchmarkSourceSpec, seed: int) -> AdapterResult:
     try:
-        from datasets import load_dataset  # type: ignore
+        from datasets import interleave_datasets, load_dataset  # type: ignore
         from huggingface_hub import HfApi  # type: ignore
     except ImportError as exc:  # pragma: no cover - integration path
         raise RuntimeError(
@@ -282,10 +312,7 @@ def _iter_huggingface(spec: BenchmarkSourceSpec, seed: int) -> AdapterResult:
         revision=revision,
         streaming=True,
     )
-    stream = stream.shuffle(
-        seed=_stable_int(seed, spec.id, "shuffle") % (2**31 - 1),
-        buffer_size=spec.shuffle_buffer,
-    )
+    stream = _prepare_huggingface_stream(stream, spec, seed, interleave_datasets)
     return AdapterResult(
         rows=(dict(row) for row in stream),
         resolved_revision=revision,
