@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00038 — Installed on a notched iPhone, the topbar sits under the status bar (no safe-area insets)
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T170001Z-p74152-n932726000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00038-run-fix-20260730T170001Z-p74152-n932726000-c1
-- **Owner base:** 15b634243752d66338c101e2402f1dbb20731d5e
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T17:00:01Z
-- **Owner until:** 2026-07-30T19:00:01Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T170001Z-p74152-n932726000-c1 branch=task/bug-ALM-BUG-KILN-00038-run-fix-20260730T170001Z-p74152-n932726000-c1 code=e31cec6018f7d6febe0de6b8c212bb3e920d6214 gate=manual)
 
 ## Observation
 
