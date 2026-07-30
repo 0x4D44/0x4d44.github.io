@@ -387,6 +387,69 @@ try {
   const narrow = await evaluate("({ innerWidth, documentWidth: document.documentElement.scrollWidth })");
   assert.ok(narrow.documentWidth <= narrow.innerWidth + 1, `360px must not scroll sideways (${narrow.documentWidth} > ${narrow.innerWidth})`);
 
+  stage = "checking maximum-length player names stay inside their cards";
+  const longNameLayout = await evaluate(`(async () => {
+    const longName = "W".repeat(28);
+    const waitFor = async (probe, timeout = 8_000) => {
+      const deadline = Date.now() + timeout;
+      while (Date.now() < deadline) {
+        if (probe()) return true;
+        await new Promise((resolveWait) => setTimeout(resolveWait, 25));
+      }
+      return false;
+    };
+    const measure = (selector, containerSelector) => {
+      const element = document.querySelector(selector);
+      const container = document.querySelector(containerSelector);
+      const box = element.getBoundingClientRect();
+      const containerBox = container.getBoundingClientRect();
+      return {
+        contained: box.left >= containerBox.left - 1 && box.right <= containerBox.right + 1,
+        containerContained: containerBox.left >= -1 && containerBox.right <= innerWidth + 1,
+        scrollWidth: element.scrollWidth,
+        clientWidth: element.clientWidth,
+      };
+    };
+
+    for (const input of document.querySelectorAll("#seat-list input")) {
+      input.value = longName;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    document.querySelectorAll("#seat-list .seat-row")[1]
+      .querySelector("[data-human='true']").click();
+    document.querySelector("#start-game").click();
+    if (!await waitFor(() => !document.querySelector("#handoff-overlay").hidden)) {
+      return { handoffOpened: false };
+    }
+    const handoff = measure("#handoff-title", ".handoff-card");
+    document.querySelector("#handoff-ready").click();
+    if (!await waitFor(() => document.querySelector("#handoff-overlay").hidden)) {
+      return { handoffOpened: true, handoffClosed: false };
+    }
+    const turn = measure("#turn-name", "#turn-card");
+    const victoryDialog = document.querySelector("#victory-modal");
+    document.querySelector("#victory-title").textContent = longName + " escapes";
+    victoryDialog.showModal();
+    await new Promise((resolveFrame) => requestAnimationFrame(resolveFrame));
+    const victory = measure("#victory-title", ".victory-shell");
+    victoryDialog.close();
+    return { handoffOpened: true, handoffClosed: true, handoff, turn, victory };
+  })()`);
+  assert.equal(longNameLayout.handoffOpened, true, "the long-name fixture must open the privacy hand-off");
+  assert.equal(longNameLayout.handoffClosed, true, "the long-name fixture must enter the table");
+  for (const [label, measurement] of Object.entries({
+    "hand-off title": longNameLayout.handoff,
+    "turn title": longNameLayout.turn,
+    "victory title": longNameLayout.victory,
+  })) {
+    assert.equal(measurement.contained, true,
+      `the ${label} must stay inside its card, got ${JSON.stringify(measurement)}`);
+    assert.equal(measurement.containerContained, true,
+      `the ${label} card must stay inside the viewport, got ${JSON.stringify(measurement)}`);
+    assert.ok(measurement.scrollWidth <= measurement.clientWidth + 1,
+      `the ${label} text must wrap inside its own box, got ${JSON.stringify(measurement)}`);
+  }
+
   stage = "checking an abandoned animation cannot resume into a new game";
   await loadAt(appUrl, 1440, 1000, APP_READY);
   await evaluate(`(() => {
