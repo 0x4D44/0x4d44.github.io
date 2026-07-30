@@ -306,16 +306,23 @@ for (const search of ["?id=%", "?q=100%", "?id=%E0%A4%A", "?cat=%"]) {
   assert.equal(m[1], weekday, `masthead weekday ${m[1]} must match its date ${m[2]} ${m[3]} ${m[4]} (${weekday})`);
 }
 
-// ALM-BUG-KILN-00019: if articles.js/ads.js fail to load (coerced to []), the page must
-// degrade to a friendly notice, not throw on the unguarded head reads and blank #app.
-{
-  const emptyCtx = { window: { NEWS_ARTICLES: [], NEWS_ADS: [] } };
-  vm.runInNewContext(rendererSource, emptyCtx, { filename: "news.js" });
+// ALM-BUG-KILN-00019 / 00047: if filtering leaves fewer than the nine stories used by the
+// homepage head, degrade to a friendly notice rather than throwing and blanking #app.
+for (let size = 0; size < 9; size += 1) {
+  const sparseCtx = { window: { NEWS_ARTICLES: articles.slice(0, size), NEWS_ADS: [] } };
+  vm.runInNewContext(rendererSource, sparseCtx, { filename: "news.js" });
   const mount = { innerHTML: "" };
-  emptyCtx.location = { search: "" };
-  emptyCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
-  assert.doesNotThrow(() => emptyCtx.window.NEWS.renderHome("app"), "renderHome should survive an empty corpus");
-  assert.match(mount.innerHTML, /Nothing to show/, "an empty corpus should degrade to a friendly notice");
+  sparseCtx.location = { search: "" };
+  sparseCtx.document = { title: "", getElementById: () => mount, querySelector: () => null };
+  assert.doesNotThrow(
+    () => sparseCtx.window.NEWS.renderHome("app"),
+    `renderHome should survive a ${size}-article corpus`
+  );
+  assert.match(
+    mount.innerHTML,
+    /Nothing to show/,
+    `a ${size}-article corpus should degrade to a friendly notice`
+  );
 }
 
 // ALM-BUG-KILN-00027: a shape-invalid article must be skipped, not blank whole pages.
@@ -326,11 +333,16 @@ for (const a of articles) {
       `article ${a.id || "(no id)"} needs a non-empty string ${field}`);
   }
   assert.ok(Array.isArray(a.body) && a.body.length > 0, `article ${a.id} needs a non-empty body`);
+  assert.ok(Array.isArray(a.tags), `article ${a.id} needs an array of tags`);
 }
-// (b) a fat-fingered append (missing category/headline/standfirst) is skipped at load and
-// the search/about pages still render.
+// (b) fat-fingered appends with missing fields or non-array body/tags are skipped at load,
+// and the search/about pages still render.
 {
-  const badArticles = articles.concat([{ id: "x-malformed", body: ["only a body, no category/headline/standfirst"] }]);
+  const badArticles = articles.concat([
+    { id: "x-malformed", body: ["only a body, no category/headline/standfirst"] },
+    { id: "x-body", category: "Science", headline: "Bad body", standfirst: "n", body: "not an array", tags: [] },
+    { id: "x-tags", category: "Science", headline: "Bad tags", standfirst: "n", body: ["valid body"], tags: "not an array" },
+  ]);
   const badCtx = { window: { NEWS_ARTICLES: badArticles, NEWS_ADS: context.window.NEWS_ADS } };
   vm.runInNewContext(rendererSource, badCtx, { filename: "news.js" });
   assert.equal(badCtx.window.NEWS.count(), articles.length, "the malformed article should be dropped at load");
@@ -376,8 +388,8 @@ for (const a of articles) {
 // <mark> tags. Highlighting on the raw text (escaping each span) fixes both.
 {
   const probeArticles = [
-    { id: "t-amp", category: "Science", headline: "Fish & Chips amp-hour", standfirst: "n", body: ["b"], published: "2026-01-01" },
-    { id: "t-mark", category: "Science", headline: "a market opens", standfirst: "n", body: ["b"], published: "2026-01-01" },
+    { id: "t-amp", category: "Science", headline: "Fish & Chips amp-hour", standfirst: "n", body: ["b"], tags: [], published: "2026-01-01" },
+    { id: "t-mark", category: "Science", headline: "a market opens", standfirst: "n", body: ["b"], tags: [], published: "2026-01-01" },
   ];
   const probeCtx = { window: { NEWS_ARTICLES: probeArticles, NEWS_ADS: [] } };
   vm.runInNewContext(rendererSource, probeCtx, { filename: "news.js" });
