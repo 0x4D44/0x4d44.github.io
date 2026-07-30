@@ -532,6 +532,7 @@
 
   async function handleSpin() {
     if (busy || game.state.phase !== "await-spin") return;
+    const activeGame = game;
     const actor = game.currentPlayer();
     if (actor.human) audio.ensure();
     busy = true; renderControls();
@@ -544,32 +545,40 @@
     dom.spinnerPointer.style.transform = `rotate(${spinRotation}deg)`;
     audio.spin();
     await sleep(settings.fastAI ? 380 : 930);
+    if (game !== activeGame) return;
     renderAll();
     const dracEvent = result.events.find((event) => event.type === "dracula-move");
     if (dracEvent) await animateDracula(beforeIndex, dracEvent.path);
-    await playEvents(result.events);
+    if (game !== activeGame) return;
+    await playEvents(result.events, activeGame);
+    if (game !== activeGame) return;
     busy = false; renderAll(); saveGame();
     await maybeContinue();
   }
 
   async function handleMove(destination) {
     if (busy || game.state.phase !== "await-move") return;
+    const activeGame = game;
     const pending = game.state.pending;
     const option = pending.options.find((entry) => entry.destination === destination); if (!option) return;
     const actor = game.state.players[pending.playerId];
     busy = true; renderControls();
     const result = game.chooseMove(destination); saveGame(); renderAll();
     await animateMove(option.path, actor, pending.green);
-    await playEvents(result.events);
+    if (game !== activeGame) return;
+    await playEvents(result.events, activeGame);
+    if (game !== activeGame) return;
     busy = false; renderAll(); saveGame();
     await maybeContinue();
   }
 
   async function handleVictim(victimId) {
     if (busy || game.state.phase !== "await-victim") return;
+    const activeGame = game;
     busy = true; renderControls();
     const result = game.chooseVictim(victimId); saveGame(); renderAll();
-    await playEvents(result.events);
+    await playEvents(result.events, activeGame);
+    if (game !== activeGame) return;
     busy = false; renderAll(); saveGame();
     await maybeContinue();
   }
@@ -606,14 +615,15 @@
     token.remove(); if (target) target.style.opacity = "1";
   }
 
-  async function playEvents(events) {
+  async function playEvents(events, activeGame) {
     for (const event of events) {
+      if (game !== activeGame) return;
       if (event.type === "vampire-flight") { audio.wings(); pulsePiece(`${event.menace}-vampire-piece`); await sleep(settings.fastAI?90:230); }
       if (event.type === "first-bite") { audio.bite(); await showCurse(event.playerId, true); }
       if (event.type === "dracula-bite") { audio.bite(); toast(`${game.state.players[event.playerId].name} is carried back to the vault.`); pulsePiece("dracula-piece"); await sleep(settings.fastAI?120:360); }
       if (event.type === "blue-bite") { audio.bite(); toast(`The Blue Vampire catches ${game.state.players[event.playerId].name}.`); pulsePiece("blue-vampire-piece"); await sleep(settings.fastAI?120:360); }
       if (event.type === "curse-pass") { audio.curse(); await showCurse(event.to, false, event.from); }
-      if (event.type === "escape") { audio.win(); await sleep(250); showVictory(); }
+      if (event.type === "escape") { audio.win(); await sleep(250); if (game === activeGame) showVictory(); }
     }
   }
 
