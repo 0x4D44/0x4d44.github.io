@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Hemisphere in 24K — A World in 640K</title>
+<meta name="description" content="Colonization's whole New World is a 25,311-byte save that decomposes to the byte; Civilization's is 37,856 bytes — and its resources are conjured from a 16-bit seed.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="w640.css">
+<style>
+  .btn[aria-pressed="true"] { background: var(--surface-3); border-color: var(--amber); color: var(--amber-hi); }
+  .srcline { font-family: var(--mono); font-size: 11px; line-height: 1.7; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">A WORLD IN 640K</a></div>
+    <div class="strap">how Civilization &amp; Colonization ran a planet in real-mode DOS</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="code.html">1 · Code in Flight</a>
+    <a href="memory.html">2 · The Division Dance</a>
+    <a href="art.html">3 · Art on Demand</a>
+    <a href="world.html" aria-current="page">4 · A Hemisphere in 24K</a>
+    <a href="time.html">5 · The Heartbeat</a>
+    <a href="mapgen.html">6 · Growing a World</a>
+    <a href="how.html">7 · How We Know</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 4 · WORLD STATE</p>
+  <h1>A HEMISPHERE IN <span class="amber">24K</span></h1>
+  <p class="standfirst">Strip away the paged code of Chapter&nbsp;1 and the streamed art of
+  Chapter&nbsp;3, and what remains is the thing the machine was actually for. In Colonization,
+  the entire New World — every unit, colony, tribe, market price and tile — is a
+  25,311-byte file. Call it 24K. The simulation itself never needed more than 4% of the
+  machine; the other 96% was spent making it visible.</p>
+</section>
+
+<div class="statgrid">
+  <div class="stat"><div class="v">25,311 B</div><div class="l">colony09.sav — the whole New World, decomposed to the byte</div></div>
+  <div class="stat"><div class="v">37,856 B</div><div class="l">every Civ save — fixed layout, byte-identical size, all ten checked</div></div>
+  <div class="stat"><div class="v">28 B</div><div class="l">one Colonization unit record</div></div>
+  <div class="stat"><div class="v">12 B</div><div class="l">one Civilization unit record</div></div>
+  <div class="stat"><div class="v">16 bit</div><div class="l">the seed that places every special resource and hut</div></div>
+  <div class="stat"><div class="v">6 B</div><div class="l">a Civ leader's whole personality — three signed words</div></div>
+</div>
+
+<section class="prose">
+
+<h2>A save that adds up — to the byte</h2>
+
+<p>Modern save files are serialised object graphs: tags, lengths, versions, slack.
+Colonization's save is none of those things. It is a memory image of fixed-size records,
+laid end to end, in a fixed order. <code>colony09.sav</code> — a save written by the game
+running under <a href="/mddosem/">mddosem</a>, year 1495, no colonies founded yet — is
+25,311 bytes long, and every one of them is accounted for:</p>
+
+<pre><code>390 (header) + 0×202 (colonies) + 95×28 (units) + 4×316 (powers)
++ 80×18 (villages) + 8×78 (tribes) + 727 (reports) + 4×4,176 (map planes)
++ 270 (sea routes) + 270 (land routes) + 74 (unknown) + 888 (trade routes)
+= 25,311 = EOF      — zero bytes unaccounted</code></pre>
+
+<p>The header is the schema's own witness. It opens with the magic <code>COLONIZE</code>;
+the map dimensions 58×72 sit at <span class="addr">0x0C</span>/<span class="addr">0x0E</span>;
+the year 1495 at <span class="addr">0x1A</span>; and the record counts at
+<span class="addr">0x2A</span>–<span class="addr">0x2E</span> read 80, 95, 0 — precisely
+the multipliers (80 villages, 95 units, 0 colonies) that make the arithmetic above close.
+There is no compression and no framing: the offsets <em>are</em> the format.</p>
+
+<p>The header also carries the whole transatlantic economy: a sixteen-good market price
+table at <span class="addr">0x7A</span> (values 611–937 in this save), followed by four
+52-byte player blocks — 24 bytes of leader, 24 of country, 4 unidentified: “Walter Raleigh /
+New England”, “Jacques Cartier / New France”, “Christopher Columbus / New Spain”, and a
+renamed “Jah / New Netherlands”. Deeper in, each European power's 316-byte record keeps
+its gold in a single word at record offset +0x2A — still zero for all four in 1495.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">colony09.sav, assembling</span>
+    <span class="hint">▶ assemble builds the file section by section — hover any section for its arithmetic</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-sav" style="aspect-ratio: 2.5 / 1; min-height: 250px; touch-action: pan-y;"
+      role="img" aria-label="Animated diagram: the sections of colony09.sav stacking left to right into a single 25,311-byte bar"></canvas>
+  </div>
+  <div class="evlog" id="sav-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#f0a132"></span>header 390 B</span>
+    <span class="key"><span class="sw" style="background:#4f8fe0"></span>units 95×28</span>
+    <span class="key"><span class="sw" style="background:#bd8b16"></span>powers 4×316</span>
+    <span class="key"><span class="sw" style="background:#22916b"></span>villages 80×18</span>
+    <span class="key"><span class="sw" style="background:#7d86ef"></span>tribes 8×78</span>
+    <span class="key"><span class="sw" style="background:#d466a8"></span>reports 727</span>
+    <span class="key"><span class="sw" style="background:#3399ba"></span>map planes 4×4,176</span>
+    <span class="key"><span class="sw" style="background:#d47c2e"></span>route caches 2×270</span>
+    <span class="key"><span class="sw" style="background:#7d8794"></span>unknown 74</span>
+    <span class="key"><span class="sw" style="background:#4cc26e"></span>trade routes 888</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="sav-play">▶ assemble</button>
+    <button class="btn" id="sav-step">⏭ step</button>
+  </div>
+  <div class="fig-note">Measured decomposition of colony09.sav (2026 fresh analysis), record sizes
+  cross-checked against the community SAV format documentation (nawagers). The colonies section is
+  present but zero bytes long — none founded yet in 1495.</div>
+</figure>
+
+<table class="data">
+  <caption>colony09.sav — 25,311 bytes, no remainder</caption>
+  <tr><th>Section</th><th>Offset</th><th>Arithmetic</th><th class="num">Bytes</th><th>Observed in this save</th></tr>
+  <tr><td>Header</td><td class="num">0x0000</td><td>390</td><td class="num">390</td><td>magic <code>COLONIZE</code>, 58×72, year 1495, market table, 4 player blocks</td></tr>
+  <tr><td>Colonies</td><td class="num">0x0186</td><td>0 × 202</td><td class="num">0</td><td>none founded yet</td></tr>
+  <tr><td>Units</td><td class="num">0x0186</td><td>95 × 28</td><td class="num">2,660</td><td>90/95 records with plausible x&lt;58, y&lt;72; one dead slot marked x=0xF0</td></tr>
+  <tr><td>Powers</td><td class="num">0x0BEA</td><td>4 × 316</td><td class="num">1,264</td><td>gold word at +0x2A = 0 for all four</td></tr>
+  <tr><td>Indian villages</td><td class="num">0x10DA</td><td>80 × 18</td><td class="num">1,440</td><td>80/80 plausible coordinates; tribe byte at +2 spans 8 values</td></tr>
+  <tr><td>Tribes</td><td class="num">0x167A</td><td>8 × 78</td><td class="num">624</td><td>one 78-byte record per nation</td></tr>
+  <tr><td>Reports</td><td class="num">0x18EA</td><td>727</td><td class="num">727</td><td>precomputed report data</td></tr>
+  <tr><td>Map planes</td><td class="num">0x1BC1</td><td>4 × 4,176</td><td class="num">16,704</td><td>terrain plane dominant byte 0x19 — ocean, 2,329 of 4,176 tiles</td></tr>
+  <tr><td>Sea routes</td><td class="num">0x5D01</td><td>270</td><td class="num">270</td><td>4×4-chunked routing plane (15×18 chunks)</td></tr>
+  <tr><td>Land routes</td><td class="num">0x5E0F</td><td>270</td><td class="num">270</td><td>ditto</td></tr>
+  <tr><td>Unknown</td><td class="num">0x5F1D</td><td>74</td><td class="num">74</td><td>unidentified</td></tr>
+  <tr><td>Trade routes</td><td class="num">0x5F67</td><td>12 × 74</td><td class="num">888</td><td></td></tr>
+  <tr class="total"><td>Total</td><td class="num"></td><td>= EOF</td><td class="num">25,311</td><td>zero bytes unaccounted</td></tr>
+</table>
+
+<p>Sum the mutable world itself — header, colonies, units, powers, villages, tribes and the
+four map planes — and you get 23,082 bytes. Add the precomputed report and route caches and
+the whole file is still 25,311 bytes: <strong>3.9% of the 640 KB arena</strong>. The RAM
+problem this site keeps describing was never the simulation. It was presentation.</p>
+
+<h2>Twenty-eight bytes of conquistador</h2>
+
+<p>A Colonization unit — a galleon, a wagon train, a dragoon — is a 28-byte record. Our
+byte-level pass verified the first two fields directly: 90 of the 95 records in this save
+carry a plausible x&nbsp;&lt;&nbsp;58 at offset +0 and y&nbsp;&lt;&nbsp;72 at +1, and one
+dead slot is flagged in place by the sentinel x&nbsp;=&nbsp;0xF0 — suggesting records are
+retired by marker, not by shuffling the array. An Indian village is 18 bytes, with its tribe
+in a single byte at +2; an entire tribal nation is one 78-byte record. Civilization is
+leaner still: its unit record is 12 bytes.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">Anatomy of a unit record</span>
+    <span class="hint">hover a byte for its field and provenance — [measured] marks byte-verified fields</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-unit" style="aspect-ratio: 4.4 / 1; min-height: 150px; touch-action: pan-y;"
+      role="img" aria-label="Byte grid of a unit record with documented fields highlighted"></canvas>
+  </div>
+  <div class="evlog" id="unit-log">hover a byte…</div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>record</label>
+      <div class="seg" id="unit-seg">
+        <button data-v="col" aria-pressed="true">Colonization · 28 B</button>
+        <button data-v="civ" aria-pressed="false">Civilization · 12 B</button>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Colonization: x/y fields measured in colony09.sav (2026 analysis); the rest
+  per the community SAV format (nawagers), not independently re-verified. Civilization: field list
+  per darkpanda's SVE thread — order as documented there, three bytes undocumented.</div>
+</figure>
+
+<p>The terrain under those units is stored the same way: as four parallel byte planes of
+58×72 = 4,176 bytes each. Every tile of the hemisphere owns exactly four bytes — one per
+plane. In this save the terrain plane's dominant byte is 0x19, ocean, filling 2,329 of its
+4,176 tiles. The fixed America map ships in the same shape: <code>amer2.mp</code> is
+12,534 bytes — a 6-byte header reading 58, 72, 4, then three uncompressed 4,176-byte
+planes. Our save's terrain agrees with amer2.mp's first plane in only 30.8% of bytes,
+which is the arithmetic way of saying: this game was played on a <em>generated</em> random
+New World, not the canned America.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">One tile, four bytes</span>
+    <span class="hint">the map is four parallel 58×72 byte planes — hover one</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-planes" style="aspect-ratio: 2.3 / 1; min-height: 240px; touch-action: pan-y;"
+      role="img" aria-label="Four side-by-side 58 by 72 byte planes forming the Colonization map, with one tile highlighted in each"></canvas>
+  </div>
+  <div class="evlog" id="planes-log">hover a plane…</div>
+  <div class="fig-note">Terrain plane content measured (2026 analysis); the names of the three
+  companion planes — flags, region, value — follow the community SAV documentation. amer2.mp, the
+  shipped America map, carries the same 4,176-byte planes uncompressed.</div>
+</figure>
+
+<h2>A planet in 37,856 bytes</h2>
+
+<p>Civilization, three years earlier, made an even blunter choice: <strong>every save is
+exactly 37,856 bytes</strong>. All ten saves in our install match to the byte — a
+fixed-layout memory dump with no compression at all. (The one known variant is the French
+474.05 release at 37,912 bytes: unit-type names grow from 12 to 14 characters, and
+28&nbsp;types × 2 characters is exactly the 56-byte delta.) The size is constant because the
+world's limits are compiled in: 128 cities world-total, 8 civilisations × 128 units, 28 unit
+types, 20 workable squares per city. Nothing grows; everything is an array.</p>
+
+<table class="data">
+  <caption>CIVIL#.SVE — selected blocks of the fixed layout</caption>
+  <tr><th>Offset</th><th>Block</th><th>Arithmetic</th><th class="num">Bytes</th></tr>
+  <tr><td class="num">0x0000</td><td>header — turn, human civ, <strong>map seed at 0x6</strong>, year, difficulty</td><td>16</td><td class="num">16</td></tr>
+  <tr><td class="num">0x0010</td><td>leader names</td><td>8 × 14</td><td class="num">112</td></tr>
+  <tr><td class="num">0x0138</td><td>treasury per civ</td><td>—</td><td class="num">32</td></tr>
+  <tr><td class="num">0x1508</td><td>cities</td><td>128 × 28</td><td class="num">3,584</td></tr>
+  <tr><td class="num">0x2308</td><td>unit-type table — the rules, inside the save</td><td>28 × 34</td><td class="num">952</td></tr>
+  <tr><td class="num">0x26C0</td><td>units</td><td>8 × 128 × 12</td><td class="num">12,288</td></tr>
+  <tr><td class="num">0x56C0</td><td>visibility mask — bit per civ, byte per tile</td><td>80 × 50</td><td class="num">4,000</td></tr>
+  <tr><td class="num">0x76F0±</td><td>end-of-game replay log</td><td>variable records</td><td class="num">~4,100</td></tr>
+  <tr><td class="num">0x8AA0</td><td>land-pathfinding helper data</td><td>—</td><td class="num">260</td></tr>
+  <tr class="total"><td class="num"></td><td>whole file, every English 475.01 save</td><td></td><td class="num">37,856</td></tr>
+</table>
+
+<p class="srcline">Offsets and block sizes per darkpanda's SVE thread; the turn counter at 0x0000,
+the leader names at 0x0010 and the unit-type table at 0x2308 were byte-verified in our install —
+the remaining offsets are not independently re-verified.</p>
+
+<p>Two details deserve a pause. First, the 28-entry unit-type table — <code>Settlers</code>,
+<code>Militia</code>, <code>Phalanx</code> … <code>Nuclear</code>, <code>Diplomat</code>,
+<code>Caravan</code>, 34 bytes each — lives <em>inside the save</em>. Unit definitions are
+savegame state, which is precisely what made the community's later “hack the save” editors
+possible. Second, the 28-byte city record packs a city's whole existence — four bytes of
+building bit-flags, coordinates, status bits, production, food and shields stored, six bytes
+of worked-square and specialist bitfields — with population as a single byte: the community's
+field map reads 0x01 as 10,000 people and 0x7F as 81,280,000.</p>
+
+<p>And the terrain? It is not in the .SVE at all. Each save carries a companion
+<code>CIVIL#.MAP</code> whose payload is <strong>a single X0 image block in the game's own
+picture codec</strong> (Chapter&nbsp;3): a “320×200” 8-bit image, LZW+RLE compressed, which
+decodes to 64,000 bytes = <strong>16 stacked 80×50 byte planes</strong>. That 16-plane
+structure is the binary fact; the community's format work describes about ten of the planes
+as semantically used — terrain, occupation, continent IDs, land value, visibility,
+improvements. All ten .MAP files in our install decode cleanly with the from-scratch decoder
+we wrote for the art. The map is stored, quite literally, as a screenshot of itself —
+MicroProse reused its image compressor as a general-purpose map compressor.</p>
+
+<h2>The world that was never stored</h2>
+
+<p>Here is the chapter's best trick. Civilization's special resources — the fish, oases,
+coal and gems that decide where cities thrive — and its tribal huts appear on every map,
+on every tile they should, game after game. <strong>None of them is stored anywhere.</strong>
+They are pure functions of the coordinates and one 16-bit word — the map seed the community
+calls the TerrainMasterWord, saved at offset <span class="addr">0x6</span> of the .SVE header
+(and sitting in memory at <span class="addr">ds:6E00</span> while the game runs):</p>
+
+<pre><code>special(x,y) :=  y&gt;1 &amp;&amp; y&lt;48
+             &amp;&amp;  (x%4)*4 + (y%4)  ==  ((x/4)*13 + (y/4)*11 + seed) % 16
+
+hut(x,y)     :=  y&gt;1 &amp;&amp; y&lt;48  &amp;&amp;  no city here  &amp;&amp;  not seen by barbarians
+             &amp;&amp;  (x%4)*4 + (y%4)  ==  ((x/4)*13 + (y/4)*11 + seed + 8) % 32
+
+shielded grassland :=  (x+y) % 4 == 0  ||  (x+y) % 4 == 3     // no seed at all</code></pre>
+
+<p>The left-hand side indexes the sixteen cells of the 4×4 block a tile sits in; the
+right-hand side hashes the block's coordinates (<code>x/4</code>, <code>y/4</code> —
+integer division) with the primes 13 and 11, plus the seed.
+Exactly one cell per 4×4 block matches mod 16 — one special per block — while the hut
+variant's mod 32 can only land in half the blocks. The primes stop the pattern visibly
+repeating inside an 80×50 world. It is a procedural texture for game content: 4,000 tiles
+of riches, at a storage cost of two bytes.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The seed formula, running</span>
+    <span class="hint">drag the seed — the world's riches rearrange; hover a tile for the arithmetic</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-seed" style="aspect-ratio: 8 / 5; min-height: 340px; touch-action: pan-y;"
+      role="img" aria-label="An 80 by 50 tile grid where special resources and huts light up according to the seed formula"></canvas>
+  </div>
+  <div class="evlog" id="seed-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#f0a132"></span>special resource</span>
+    <span class="key"><span class="sw" style="background:#5ad7e6"></span>hut</span>
+    <span class="key"><span class="sw" style="background:rgba(76,194,110,.5)"></span>shielded-grassland stripe</span>
+    <span class="key"><span class="sw" style="background:#0d1119"></span>polar rows (excluded)</span>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl" style="flex:1 1 260px">
+      <label for="seed-sl">seed</label>
+      <input type="range" id="seed-sl" min="0" max="65535" step="1" value="1991" style="flex:1">
+      <output>1991</output>
+    </div>
+    <button class="btn" id="seed-rand">🎲 random seed</button>
+    <button class="btn" id="tg-spec" aria-pressed="true">specials</button>
+    <button class="btn" id="tg-hut" aria-pressed="true">huts</button>
+    <button class="btn" id="tg-shield" aria-pressed="false">shield stripes</button>
+  </div>
+  <div class="fig-note">This is the published formula executing live — zero bytes of stored
+  placement. Constants 13 / 11 / +8 / mod 32 as independently documented by darkpanda (2013)
+  and Gowron &amp; Dack (2009). The real hut rule also checks game state (no city, not seen by
+  barbarians), which a static demo cannot model; shield stripes are the separate seedless
+  grassland rule.</div>
+</figure>
+
+<h2>Intelligence in bytes</h2>
+
+<p>The same economy governs the AI. A Civilization leader's personality is
+<strong>three signed words, each restricted to −1, 0 or +1</strong>, at offsets +0x30, +0x32
+and +0x34 of a 58-byte leader record: attitude (friendly…aggressive), expansion
+(perfectionist…expansionistic), style (militaristic…civilised). Two tables of seven records
+serve fourteen civilisations. Six bytes of soul.</p>
+
+<p>Movement is a compass, not a planner. The community's disassembly found <strong>no
+pathfinding at all</strong>: each turn, the AI scores a unit's eight neighbouring squares by
+desirability — role, terrain, combat odds — and stores the chosen heading in a single byte
+of the 12-byte unit record (the field the threads called “unknown9” for years). The routine
+doing this scoring is the third-largest function in CIV.EXE. Its special cases are period
+comedy: pillaging requires, verbatim,
+<code>if(UnitTypes[unit.typeID].totalMoves &lt; 2)</code> plus an enemy city within 4 squares,
+a state of war and an improvement to destroy;
+AI diplomats reaching one code path are simply disbanded — as the thread paraphrases,
+“useless, just get rid of him already”.</p>
+
+<p>Research strategy is a lookup: the 72-advance tech tree carries a parallel table of
+72 × 2 bytes — a base priority and a modifier, the modifier <em>added</em> for civilised
+leaders and <em>subtracted</em> for militaristic ones. That personality-signed static table
+is the entire tech-choice AI.</p>
+
+<div class="aside">
+  <span class="tag">THE RENAME EXPLOIT</span>
+  <p>Civilization's RNG is not bespoke: its constants — multiplier <code>0x343FD</code>
+  (214,013), increment <code>0x269EC3</code> (2,531,011), state in two 16-bit words at
+  <span class="addr">ds:5BDA</span>/<span class="addr">5BDC</span> — are Microsoft C's stock
+  <code>rand()</code>. And the community found the leak: “when displaying a City View, the
+  random seed is re-initialized to the total sum of the city name's ASCII character codes” —
+  a determinism trick so every visit draws the same procedural street layout. Players learnt
+  to rename a city, open its view, and replay a now-fixed random sequence to force combat
+  results and hut outcomes. The street-art optimisation became a combat cheat.</p>
+</div>
+
+<div class="aside danger">
+  <span class="tag">MYTH CHECK · NUCLEAR GANDHI</span>
+  <p>The famous story — Gandhi's aggression of 1 underflowing an unsigned byte to 255 when
+  India adopts Democracy — never happened. The aggression field has three values (−1/0/+1,
+  above); roughly a third of leaders share Gandhi's lowest setting; government changes never
+  modified it; and Sid Meier's 2020 memoir states the C variables were signed anyway. Brian
+  Reynolds put it at “99.99% certain” apocryphal: a leader with aggression 255 “would act the
+  same way as a leader with an aggression level of 3”. The tale traces to an unsourced 2012
+  TV&nbsp;Tropes edit, went viral through 2014, and was only run to ground in 2019–20. Firaxis
+  then implemented it deliberately in Civ&nbsp;V and VI as an Easter egg — the joke became
+  real after the fact. The fabricated byte-underflow has even been used to teach integer
+  overflow at Harvard; the truth — six bytes of personality — is better engineering and a
+  better story.</p>
+</div>
+
+<h2>Twenty kilobytes of truth</h2>
+
+<p>Put the two answers side by side. Colonization: a 25,311-byte record file whose header
+counts prove its own decomposition. Civilization: a 37,856-byte fixed dump, a map stored as
+a screenshot of itself, and a resource economy conjured from sixteen bits. Every screen the
+player ever saw was a rendering of roughly twenty kilobytes of truth.</p>
+
+<div class="shotrow">
+  <figure class="shot">
+    <img src="img/col-map.png" alt="Colonization's mainland map view, with units and terrain" loading="lazy">
+    <figcaption>Colonization's mainland view, captured running under
+    <a href="/mddosem/">mddosem</a>. Every unit, village and tile on this screen is a read of
+    the 25,311-byte save.</figcaption>
+  </figure>
+  <figure class="shot">
+    <img src="img/civ-map.png" alt="Civilization's map screen with cities and units" loading="lazy">
+    <figcaption>Civilization at the same job, under mddosem: an 80×50 world whose truth is a
+    37,856-byte .SVE plus a .MAP compressed by the art codec.</figcaption>
+  </figure>
+</div>
+
+<p class="srcline">Sources for this chapter — byte-level: colony09.sav exact-fit decomposition,
+CIVILx.SVE / CIVILx.MAP walk and amer2.mp parse (2026 fresh analysis); community: darkpanda's
+SVE / MAP / RNG / pattern threads, Gowron &amp; Dack's EXE tables, nawagers' Colonization SAV
+format, lateblt's city-record notes; myth-check: the Nuclear Gandhi record and <em>Sid Meier's
+Memoir!</em> (2020). Full credits in <a href="how.html">How We Know</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="art.html"><span class="dir">◀ previous</span>3 · Art on Demand</a>
+  <a class="next" href="time.html"><span class="dir">next ▶</span>5 · The Heartbeat</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. Evidence: fresh byte-level analysis of the
+  original installs, live instrumented runs under
+  <a href="/mddosem/">mddosem</a> — a hardware-accurate PC emulator built in Rust —
+  and the community reverse-engineering record; full credits in
+  <a href="how.html">How We Know</a>. Screenshots © MicroProse, shown for technical
+  commentary. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w640-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  if (!window.W640) return;
+  var W = window.W640, C = W.C, S = C.series;
+  var mono = W.mono, dos = W.dos, fmtInt = W.fmtInt, hex = W.hex, ease = W.ease;
+
+  function setLog(el, html) { if (el) el.innerHTML = html; }
+
+  function tip(ctx, w, h, x, y, lines) {
+    ctx.save();
+    ctx.font = mono(11);
+    var tw = 0, i;
+    for (i = 0; i < lines.length; i++) tw = Math.max(tw, ctx.measureText(lines[i]).width);
+    var bw = tw + 20, bh = lines.length * 16 + 12;
+    var bx = Math.min(Math.max(8, x + 14), w - bw - 8);
+    var by = y - bh - 12; if (by < 8) by = Math.min(y + 18, h - bh - 8);
+    ctx.fillStyle = "rgba(11,14,20,0.95)";
+    W.rrect(ctx, bx, by, bw, bh, 5); ctx.fill();
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1; ctx.stroke();
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    for (i = 0; i < lines.length; i++) {
+      ctx.fillStyle = i === 0 ? C.amber : C.ink2;
+      ctx.fillText(lines[i], bx + 10, by + 20 + i * 16);
+    }
+    ctx.restore();
+  }
+
+  /* ============================================================
+     1 · colony09.sav assembling (animated centrepiece)
+     ============================================================ */
+  var PLSHADES = ["#3399ba", "#2d86a8", "#276f8f", "#215d78"];
+  var SAV = [
+    { name: "Header",        label: "hdr",      off: 0x0000, bytes: 390,  comp: "390 B — magic, dims, year, market, players", color: C.amber },
+    { name: "Colonies",      label: "",         off: 0x0186, bytes: 0,    comp: "0 × 202 B — none founded yet",               color: C.muted },
+    { name: "Units",         label: "units",    off: 0x0186, bytes: 2660, comp: "95 × 28 B",                                  color: S[0] },
+    { name: "Powers",        label: "powers",   off: 0x0BEA, bytes: 1264, comp: "4 × 316 B",                                  color: S[1] },
+    { name: "Villages",      label: "villages", off: 0x10DA, bytes: 1440, comp: "80 × 18 B",                                  color: S[2] },
+    { name: "Tribes",        label: "tribes",   off: 0x167A, bytes: 624,  comp: "8 × 78 B",                                   color: S[3] },
+    { name: "Reports",       label: "reports",  off: 0x18EA, bytes: 727,  comp: "727 B precomputed",                          color: S[4] },
+    { name: "Map plane 0 · terrain", label: "terrain", off: 0x1BC1, bytes: 4176, comp: "58 × 72 B — dominant byte 0x19 (ocean)", color: PLSHADES[0] },
+    { name: "Map plane 1",   label: "plane 1",  off: 0x2C11, bytes: 4176, comp: "58 × 72 B",                                  color: PLSHADES[1] },
+    { name: "Map plane 2",   label: "plane 2",  off: 0x3C61, bytes: 4176, comp: "58 × 72 B",                                  color: PLSHADES[2] },
+    { name: "Map plane 3",   label: "plane 3",  off: 0x4CB1, bytes: 4176, comp: "58 × 72 B",                                  color: PLSHADES[3] },
+    { name: "Sea routes",    label: "sea",      off: 0x5D01, bytes: 270,  comp: "4×4-chunked routing plane",                  color: S[5] },
+    { name: "Land routes",   label: "land",     off: 0x5E0F, bytes: 270,  comp: "4×4-chunked routing plane",                  color: S[5] },
+    { name: "Unknown",       label: "",         off: 0x5F1D, bytes: 74,   comp: "74 B unidentified",                          color: C.muted },
+    { name: "Trade routes",  label: "trade",    off: 0x5F67, bytes: 888,  comp: "12 × 74 B",                                  color: C.good }
+  ];
+  var SAVTOT = 25311, SECDUR = 0.55, NSEC = SAV.length;
+  var savCount = NSEC, savLastIdx = -1, savMouse = null;
+  var savLog = document.getElementById("sav-log");
+  var savPlayBtn = document.getElementById("sav-play");
+  var savStepBtn = document.getElementById("sav-step");
+  var SAV_IDLE = '<span class="t">25,311 bytes</span> · hover a section — ▶ assemble to watch it build';
+  var SAV_DONE = '<span class="t">= 25,311 B</span> — EOF · zero bytes unaccounted';
+  setLog(savLog, SAV_IDLE);
+
+  function savSecLog(s) {
+    setLog(savLog, '<span class="t">+' + "0x" + hex(s.off, 4) + "</span> " + s.name.toLowerCase() +
+      " — " + s.comp + (s.bytes ? " = " + fmtInt(s.bytes) + " B" : ""));
+  }
+
+  var savFig = W.makeFig("fig-sav", function (ctx, w, h, fig) {
+    ctx.clearRect(0, 0, w, h);
+    var mx = 16, barW = w - mx * 2;
+    var barH = Math.min(64, h * 0.30), barY = h * 0.44;
+    var segs, partial = null, i;
+
+    if (fig.playing) {
+      var idx = Math.floor(fig.t / SECDUR);
+      if (idx >= NSEC) {
+        savCount = NSEC;
+        fig.stop();
+        if (savPlayBtn) savPlayBtn.textContent = "▶ assemble";
+        setLog(savLog, SAV_DONE);
+      } else {
+        savCount = idx;
+        if (idx !== savLastIdx) { savLastIdx = idx; savSecLog(SAV[idx]); }
+        var frac = ease((fig.t % SECDUR) / SECDUR);
+        partial = { name: SAV[idx].name, off: SAV[idx].off, bytes: SAV[idx].bytes * frac,
+                    fullBytes: SAV[idx].bytes, comp: SAV[idx].comp, color: SAV[idx].color };
+      }
+    }
+
+    segs = SAV.slice(0, savCount).map(function (s) {
+      return { name: s.name, label: s.label, off: s.off, bytes: s.bytes, fullBytes: s.bytes, comp: s.comp, color: s.color };
+    });
+    if (partial) partial.label = "";
+    var drawSegs = partial ? segs.concat([partial]) : segs;
+
+    var placed = 0;
+    for (i = 0; i < drawSegs.length; i++) placed += drawSegs[i].bytes;
+
+    // byte counter
+    var counterText = fmtInt(placed) + " B";
+    ctx.font = dos(40);
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = C.amber;
+    ctx.fillText(counterText, mx, 46);
+    var counterW = ctx.measureText(counterText).width;
+    var complete = (savCount === NSEC && !fig.playing);
+    ctx.font = mono(11);
+    ctx.fillStyle = complete ? C.good : C.muted;
+    ctx.fillText(complete ? "= EOF — zero bytes unaccounted" : "of 25,311 B", mx + counterW + 12, 44);
+
+    // empty track
+    ctx.fillStyle = "rgba(230,226,214,0.045)";
+    W.rrect(ctx, mx, barY, barW, barH, 4); ctx.fill();
+
+    if (drawSegs.length) W.drawByteBar(ctx, mx, barY, barW, barH, drawSegs, { total: SAVTOT });
+
+    // highlight the section currently assembling
+    if (partial && partial._w > 2) {
+      ctx.strokeStyle = C.amberHi; ctx.lineWidth = 1.5;
+      ctx.strokeRect(partial._x + 1, barY - 1, Math.max(1, partial._w - 2), barH + 2);
+    }
+
+    // labels under wide segments
+    for (i = 0; i < drawSegs.length; i++) {
+      if (drawSegs[i].label) W.segLabel(ctx, drawSegs[i], barY + barH + 16, 40);
+    }
+
+    // scale ends
+    ctx.font = mono(10); ctx.fillStyle = C.muted;
+    ctx.textAlign = "left"; ctx.fillText("offset 0", mx, barY + barH + 32);
+    ctx.textAlign = "right"; ctx.fillText("25,311 B (EOF)", mx + barW, barY + barH + 32);
+
+    // hover tooltip
+    if (savMouse) {
+      var mxp = savMouse.x, myp = savMouse.y;
+      if (myp > barY - 8 && myp < barY + barH + 8) {
+        for (i = 0; i < drawSegs.length; i++) {
+          var s = drawSegs[i];
+          if (s._w > 0 && mxp >= s._x && mxp <= s._x + s._w) {
+            tip(ctx, w, h, mxp, barY - 2, [
+              s.name,
+              "file offset 0x" + hex(s.off, 4),
+              s.comp,
+              fmtInt(s.fullBytes) + " B · " + (s.fullBytes / SAVTOT * 100).toFixed(1) + "% of file"
+            ]);
+            break;
+          }
+        }
+      }
+    }
+  });
+
+  if (savFig) {
+    W.onHover(savFig.canvas, function (x, y) {
+      savMouse = (x == null) ? null : { x: x, y: y };
+      if (!savFig.playing) savFig.redraw();
+    });
+    if (savPlayBtn) savPlayBtn.addEventListener("click", function () {
+      if (savFig.playing) {
+        savFig.stop(); savPlayBtn.textContent = "▶ assemble";
+      } else if (W.reducedMotion) {
+        savCount = NSEC; savFig.redraw(); setLog(savLog, SAV_DONE);
+      } else {
+        savCount = 0; savLastIdx = -1; savFig.t = 0;
+        savPlayBtn.textContent = "❚❚ pause";
+        savFig.start();
+      }
+    });
+    if (savStepBtn) savStepBtn.addEventListener("click", function () {
+      if (savFig.playing) { savFig.stop(); savPlayBtn.textContent = "▶ assemble"; }
+      savCount = (savCount >= NSEC) ? 1 : savCount + 1;
+      savSecLog(SAV[savCount - 1]);
+      if (savCount === NSEC) setLog(savLog, SAV_DONE);
+      savFig.redraw();
+    });
+  }
+
+  /* ============================================================
+     2 · unit-record byte grid
+     ============================================================ */
+  var UNITV = {
+    col: {
+      n: 28, perRow: 14,
+      caption: "bytes +02…+1B — community-documented: type, owner, condition, cargo & orders",
+      fields: [
+        { a: 0, b: 0, label: "x", name: "x tile coordinate", tag: "measured",
+          note: "90 of 95 live records have x < 58; a dead slot is marked x = 0xF0", color: S[0] },
+        { a: 1, b: 1, label: "y", name: "y tile coordinate", tag: "measured",
+          note: "y < 72 on the 58×72 grid", color: S[2] },
+        { a: 2, b: 27, label: "", name: "type, owner, condition, cargo & orders", tag: "community",
+          note: "per the nawagers SAV format documentation — not independently re-verified in our byte pass", color: C.muted, dim: true }
+      ]
+    },
+    civ: {
+      n: 12, perRow: 12,
+      caption: "field order per the community SVE thread (confidence: probable) — three bytes undocumented",
+      fields: [
+        { a: 0, b: 0, label: "flg", name: "status flags", tag: "community",
+          note: "sentry 0x01 · fortify 0x04 · fortified 0x08 · aboard ship 0x10 · veteran 0x20 + terraforming-order bits", color: S[3] },
+        { a: 1, b: 1, label: "x", name: "x tile coordinate", tag: "community", note: "0–79 on the 80×50 grid", color: S[0] },
+        { a: 2, b: 2, label: "y", name: "y tile coordinate", tag: "community", note: "0–49 on the 80×50 grid", color: S[2] },
+        { a: 3, b: 3, label: "typ", name: "unit type 0–27", tag: "community",
+          note: "an index into the 28-entry unit-type table stored in the save", color: S[1] },
+        { a: 4, b: 4, label: "mv", name: "remaining moves, stored ×3", tag: "community",
+          note: "moves are kept in thirds — a road move can cost 1 of 3", color: S[4] },
+        { a: 5, b: 5, label: "gx", name: "GoTo destination x", tag: "community", note: "GoTo order target", color: S[6] },
+        { a: 6, b: 6, label: "gy", name: "GoTo destination y", tag: "community", note: "GoTo order target", color: S[6] },
+        { a: 7, b: 7, label: "hc", name: "home-city ID", tag: "community", note: "which city supports this unit", color: S[5] },
+        { a: 8, b: 8, label: "·", name: "undocumented", tag: "community", note: "not documented in the community thread", color: C.muted, dim: true },
+        { a: 9, b: 9, label: "dir", name: "AI heading byte", tag: "community",
+          note: "the field the threads long called “unknown9” — the AI's entire route memory (no pathfinding, just a compass)", color: C.amber },
+        { a: 10, b: 11, label: "·", name: "undocumented", tag: "community", note: "not documented in the community thread", color: C.muted, dim: true }
+      ]
+    }
+  };
+  var unitView = "col", unitMouse = null;
+  var unitLog = document.getElementById("unit-log");
+  var UNIT_IDLE = "hover a byte for its field and provenance — [measured] marks byte-verified fields";
+  setLog(unitLog, UNIT_IDLE);
+
+  function unitFieldOf(V, i) {
+    for (var k = 0; k < V.fields.length; k++)
+      if (i >= V.fields[k].a && i <= V.fields[k].b) return V.fields[k];
+    return null;
+  }
+
+  var unitFig = W.makeFig("fig-unit", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    var V = UNITV[unitView];
+    var rows = Math.ceil(V.n / V.perRow);
+    var gx = 14, gw = w - gx * 2;
+    var cw = gw / V.perRow;
+    var chh = Math.min(64, (h - 44) / rows);
+    var top = (h - rows * chh - 22) / 2;
+    var hovered = -1;
+    if (unitMouse) {
+      var c = Math.floor((unitMouse.x - gx) / cw), r = Math.floor((unitMouse.y - top) / chh);
+      if (c >= 0 && c < V.perRow && r >= 0 && r < rows) {
+        var idx = r * V.perRow + c;
+        if (idx < V.n) hovered = idx;
+      }
+    }
+    for (var i = 0; i < V.n; i++) {
+      var r2 = Math.floor(i / V.perRow), c2 = i % V.perRow;
+      var x = gx + c2 * cw, y = top + r2 * chh;
+      var f = unitFieldOf(V, i);
+      ctx.globalAlpha = f && f.dim ? 0.22 : 0.62;
+      ctx.fillStyle = f ? f.color : C.muted;
+      W.rrect(ctx, x + 1.5, y + 1.5, cw - 3, chh - 3, 3);
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = (i === hovered) ? C.amberHi : C.line;
+      ctx.lineWidth = (i === hovered) ? 2 : 1;
+      W.rrect(ctx, x + 1.5, y + 1.5, cw - 3, chh - 3, 3);
+      ctx.stroke();
+      ctx.font = mono(10);
+      ctx.fillStyle = C.muted;
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      if (cw > 30) ctx.fillText("+" + hex(i, 2), x + 5, y + 14);
+      if (f && f.label && cw > 24) {
+        ctx.font = dos(Math.min(20, chh * 0.42));
+        ctx.fillStyle = C.ink;
+        ctx.textAlign = "center";
+        ctx.fillText(f.label, x + cw / 2, y + chh * 0.72);
+      }
+    }
+    ctx.font = mono(10.5);
+    ctx.fillStyle = C.muted;
+    ctx.textAlign = "center";
+    ctx.fillText(V.caption, w / 2, top + rows * chh + 17);
+    if (hovered >= 0) {
+      var hf = unitFieldOf(V, hovered);
+      if (hf) setLog(unitLog, '<span class="t">+' + hex(hovered, 2) + "</span> · " + hf.name +
+        " — " + hf.note + " <span style='color:" + (hf.tag === "measured" ? C.good : C.muted) + "'>[" + hf.tag + "]</span>");
+    }
+  });
+
+  if (unitFig) {
+    W.onHover(unitFig.canvas, function (x, y) {
+      unitMouse = (x == null) ? null : { x: x, y: y };
+      if (x == null) setLog(unitLog, UNIT_IDLE);
+      unitFig.redraw();
+    });
+    W.bindSeg("unit-seg", function (v) {
+      unitView = v;
+      setLog(unitLog, UNIT_IDLE);
+      unitFig.redraw();
+    });
+  }
+
+  /* ============================================================
+     3 · the four map planes (one tile = four bytes)
+     ============================================================ */
+  var PLANES = [
+    { name: "terrain", note: "measured: dominant byte 0x19 = ocean — 2,329 of 4,176 tiles in colony09.sav" },
+    { name: "flags",   note: "companion plane, name per the community SAV documentation" },
+    { name: "region",  note: "companion plane, name per the community SAV documentation" },
+    { name: "value",   note: "companion plane, name per the community SAV documentation" }
+  ];
+  var planesMouse = null;
+  var planesLog = document.getElementById("planes-log");
+  var PLANES_IDLE = "hover a plane · a map tile owns one byte in each of the four planes — 4 B of geography per tile";
+  setLog(planesLog, PLANES_IDLE);
+
+  var planesFig = W.makeFig("fig-planes", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    var gap = Math.max(18, w * 0.03);
+    var cardH = h - 74;
+    var cardW = cardH * 58 / 72;
+    var totW = 4 * cardW + 3 * gap;
+    if (totW > w - 30) {
+      var sc = (w - 30) / totW;
+      cardW *= sc; cardH *= sc; gap *= sc;
+      totW = 4 * cardW + 3 * gap;
+    }
+    var x0 = (w - totW) / 2, top = 16;
+    var fx = 23 / 58, fy = 41 / 72;
+    var hoveredP = -1, pts = [], i;
+    for (i = 0; i < 4; i++) {
+      var x = x0 + i * (cardW + gap);
+      if (planesMouse && planesMouse.x >= x && planesMouse.x <= x + cardW &&
+          planesMouse.y >= top && planesMouse.y <= top + cardH) hoveredP = i;
+      // card
+      ctx.fillStyle = PLSHADES[i];
+      ctx.globalAlpha = 0.34;
+      W.rrect(ctx, x, top, cardW, cardH, 4); ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = (i === hoveredP) ? C.amberHi : C.line;
+      ctx.lineWidth = (i === hoveredP) ? 2 : 1;
+      W.rrect(ctx, x, top, cardW, cardH, 4); ctx.stroke();
+      // faint tile grid
+      ctx.strokeStyle = C.line2; ctx.lineWidth = 1;
+      var gxs;
+      for (gxs = 1; gxs < 8; gxs++) {
+        ctx.beginPath();
+        ctx.moveTo(x + cardW * gxs / 8, top); ctx.lineTo(x + cardW * gxs / 8, top + cardH);
+        ctx.stroke();
+      }
+      for (gxs = 1; gxs < 9; gxs++) {
+        ctx.beginPath();
+        ctx.moveTo(x, top + cardH * gxs / 9); ctx.lineTo(x + cardW, top + cardH * gxs / 9);
+        ctx.stroke();
+      }
+      // the highlighted tile
+      var tx = x + fx * cardW, ty = top + fy * cardH;
+      var ts = Math.max(4, cardW / 29);
+      ctx.fillStyle = C.amber;
+      ctx.fillRect(tx - ts / 2, ty - ts / 2, ts, ts);
+      pts.push([tx, ty]);
+      // labels
+      ctx.font = dos(17); ctx.fillStyle = C.ink2; ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.fillText(i + " · " + PLANES[i].name, x + cardW / 2, top + cardH + 22);
+      ctx.font = mono(10); ctx.fillStyle = C.muted;
+      ctx.fillText("4,176 B · 58×72", x + cardW / 2, top + cardH + 38);
+    }
+    // dashed connector through the four tiles
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    for (i = 0; i < 4; i++) { if (i) ctx.lineTo(pts[i][0], pts[i][1]); else ctx.moveTo(pts[i][0], pts[i][1]); }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.font = mono(10.5); ctx.fillStyle = C.amberHi; ctx.textAlign = "left";
+    ctx.fillText("tile (23, 41) → 4 bytes, one per plane", Math.max(10, pts[0][0] - 40), Math.max(12, top + fy * cardH - 12));
+    if (hoveredP >= 0) {
+      setLog(planesLog, '<span class="t">plane ' + hoveredP + " · " + PLANES[hoveredP].name + "</span> — " +
+        PLANES[hoveredP].note + " · 4,176 B (58×72)");
+    }
+  });
+
+  if (planesFig) {
+    W.onHover(planesFig.canvas, function (x, y) {
+      planesMouse = (x == null) ? null : { x: x, y: y };
+      if (x == null) setLog(planesLog, PLANES_IDLE);
+      planesFig.redraw();
+    });
+  }
+
+  /* ============================================================
+     4 · the seed formula, running (80×50 interactive grid)
+     ============================================================ */
+  var seed = 1991, showSpec = true, showHut = true, showShield = false;
+  var seedMouse = null;
+  var seedLog = document.getElementById("seed-log");
+
+  function blockHash(bx, by) { return (bx * 13 + by * 11 + seed) % 16; }
+  function hutTarget(bx, by) { return (bx * 13 + by * 11 + seed + 8) % 32; }
+
+  function seedCounts() {
+    var ns = 0, nh = 0, x, y;
+    for (y = 2; y < 48; y++) for (x = 0; x < 80; x++) {
+      var cell = (x % 4) * 4 + (y % 4), bx = x >> 2, by = y >> 2;
+      if (cell === blockHash(bx, by)) ns++;
+      else { var ht = hutTarget(bx, by); if (ht < 16 && cell === ht) nh++; }
+    }
+    return [ns, nh];
+  }
+
+  function seedIdleLog() {
+    var c = seedCounts();
+    setLog(seedLog, '<span class="t">seed ' + fmtInt(seed) + "</span> → " + c[0] + " specials · " +
+      c[1] + " huts — every one recomputed from the 16-bit seed; zero bytes stored");
+  }
+  seedIdleLog();
+
+  var seedFig = W.makeFig("fig-seed", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    var cw = w / 80, ch = h / 50, x, y;
+    for (y = 0; y < 50; y++) {
+      var excluded = (y < 2 || y > 47);
+      for (x = 0; x < 80; x++) {
+        var px = x * cw, py = y * ch;
+        ctx.fillStyle = (((x >> 2) + (y >> 2)) % 2) ? "#161f33" : "#121826";
+        ctx.fillRect(px, py, cw + 0.5, ch + 0.5);
+        if (excluded) {
+          ctx.fillStyle = "#0d1119";
+          ctx.fillRect(px, py, cw + 0.5, ch + 0.5);
+          continue;
+        }
+        if (showShield) {
+          var m = (x + y) % 4;
+          if (m === 0 || m === 3) {
+            ctx.fillStyle = "rgba(76,194,110,0.16)";
+            ctx.fillRect(px, py, cw + 0.5, ch + 0.5);
+          }
+        }
+        var cell = (x % 4) * 4 + (y % 4), bx = x >> 2, by = y >> 2;
+        if (showSpec && cell === blockHash(bx, by)) {
+          ctx.fillStyle = C.amber;
+          ctx.fillRect(px + 1, py + 1, cw - 2, ch - 2);
+        } else if (showHut) {
+          var ht = hutTarget(bx, by);
+          if (ht < 16 && cell === ht) {
+            ctx.fillStyle = C.cyan;
+            ctx.fillRect(px + 1, py + 1, cw - 2, ch - 2);
+          }
+        }
+      }
+    }
+    // block boundaries, very faint
+    ctx.strokeStyle = "rgba(230,226,214,0.06)"; ctx.lineWidth = 1;
+    for (x = 4; x < 80; x += 4) { ctx.beginPath(); ctx.moveTo(x * cw, 0); ctx.lineTo(x * cw, h); ctx.stroke(); }
+    for (y = 4; y < 50; y += 4) { ctx.beginPath(); ctx.moveTo(0, y * ch); ctx.lineTo(w, y * ch); ctx.stroke(); }
+    // hovered cell
+    if (seedMouse) {
+      var hx = Math.min(79, Math.max(0, Math.floor(seedMouse.x / cw)));
+      var hy = Math.min(49, Math.max(0, Math.floor(seedMouse.y / ch)));
+      ctx.strokeStyle = C.amberHi; ctx.lineWidth = 2;
+      ctx.strokeRect(hx * cw + 0.5, hy * ch + 0.5, cw - 1, ch - 1);
+    }
+  });
+
+  if (seedFig) {
+    W.onHover(seedFig.canvas, function (mx, my) {
+      if (mx == null) { seedMouse = null; seedIdleLog(); seedFig.redraw(); return; }
+      seedMouse = { x: mx, y: my };
+      var r = seedFig.canvas.getBoundingClientRect();
+      var cw = r.width / 80, ch = r.height / 50;
+      var x = Math.min(79, Math.max(0, Math.floor(mx / cw)));
+      var y = Math.min(49, Math.max(0, Math.floor(my / ch)));
+      if (y < 2 || y > 47) {
+        setLog(seedLog, '<span class="t">tile (' + x + ", " + y + ")</span> — polar rows are excluded: specials and huts need 2 ≤ y ≤ 47");
+      } else {
+        var cell = (x % 4) * 4 + (y % 4), bx = x >> 2, by = y >> 2;
+        var k = blockHash(bx, by), ht = hutTarget(bx, by);
+        var msg = '<span class="t">tile (' + x + ", " + y + ")</span> · cell (" + x + "%4)·4+(" + y + "%4) = " + cell +
+          " · block (" + bx + "," + by + ") hash = " + k +
+          (cell === k ? " → <b style='color:" + C.amber + "'>SPECIAL ✦</b>" : " → no special") +
+          " · hut target = " + ht +
+          (ht >= 16 ? " (≥16: block has no hut)" : (cell === ht ? " → <b style='color:" + C.cyan + "'>HUT</b>" : " → no hut"));
+        setLog(seedLog, msg);
+      }
+      seedFig.redraw();
+    });
+
+    W.bindSlider("seed-sl", function (v) {
+      seed = v | 0;
+      seedIdleLog();
+      seedFig.redraw();
+    }, fmtInt);
+
+    var randBtn = document.getElementById("seed-rand");
+    var seedSl = document.getElementById("seed-sl");
+    if (randBtn && seedSl) randBtn.addEventListener("click", function () {
+      seedSl.value = String(Math.floor(Math.random() * 65536));
+      seedSl.dispatchEvent(new Event("input"));
+    });
+
+    function bindToggle(id, set) {
+      var b = document.getElementById(id);
+      if (!b) return;
+      b.addEventListener("click", function () {
+        var on = b.getAttribute("aria-pressed") !== "true";
+        b.setAttribute("aria-pressed", on ? "true" : "false");
+        set(on);
+        seedFig.redraw();
+      });
+    }
+    bindToggle("tg-spec", function (v) { showSpec = v; });
+    bindToggle("tg-hut", function (v) { showHut = v; });
+    bindToggle("tg-shield", function (v) { showShield = v; });
+  }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

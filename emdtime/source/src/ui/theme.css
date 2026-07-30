@@ -1,0 +1,149 @@
+/* ============================================================================
+   Decet — visual system. Precision-instrument / observatory aesthetic.
+   Theme-aware (dark default, light override). No external assets.
+   ============================================================================ */
+
+:root {
+  /* palette — dark (default) */
+  --bg: #0a0e14;
+  --bg-panel: #121821;
+  --bg-panel-2: #0d131b;
+  --bg-inset: #070a0f;
+  --border: #232c39;
+  --border-strong: #35435a;
+  --text: #e6edf3;
+  --text-dim: #9aa7b6;
+  --text-faint: #5d6b7d;
+  --accent: #f2b705; /* warm amber — the "sun" */
+  --accent-2: #35c4dc; /* cyan — the "orbit" */
+  --accent-warm: #ff7a45;
+  --good: #3fb950;
+  --bad: #f85149;
+  --grid: rgba(255, 255, 255, 0.04);
+
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", "Cascadia Code", ui-monospace, monospace;
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 10px 40px -12px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 40px -8px var(--accent);
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #f4f1ea;
+  --bg-panel: #ffffff;
+  --bg-panel-2: #faf8f3;
+  --bg-inset: #ece8df;
+  --border: #ddd6c9;
+  --border-strong: #c6bda9;
+  --text: #1c2530;
+  --text-dim: #566372;
+  --text-faint: #8a94a1;
+  --accent: #c8860a;
+  --accent-2: #0e8fa6;
+  --accent-warm: #d9542b;
+  --good: #1a7f37;
+  --bad: #cf222e;
+  --grid: rgba(0, 0, 0, 0.04);
+  --shadow: 0 10px 40px -18px rgba(0, 0, 0, 0.25);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* subtle starfield / grid backdrop */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(242, 183, 5, 0.06), transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(53, 196, 220, 0.05), transparent 40%),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+  z-index: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+a {
+  color: var(--accent-2);
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* panel primitive */
+.panel {
+  background: linear-gradient(180deg, var(--bg-panel), var(--bg-panel-2));
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-strong);
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--bg-inset);
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+::selection {
+  background: var(--accent);
+  color: #0a0e14;
+}

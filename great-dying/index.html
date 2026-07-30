@@ -1,0 +1,1225 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Great Dying — the End-Permian extinction, interactive</title>
+<meta name="description" content="About 252 million years ago the Siberian Traps set off the worst mass extinction Earth has ever known — 96% of marine species gone. An interactive almanac: run a calibrated carbon–climate simulator, scrub the crisis across deep time, watch the ocean suffocate, read the carbon-isotope story in the Meishan boundary rock, and meet the survivors that inherited the world.">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8C%8B%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg:      #06040a;
+    --bg2:     #0b0710;
+    --panel:   rgba(20,12,16,0.66);
+    --panel-solid: #140c10;
+    --ink:     #d9cbc2;
+    --bright:  #f7efe7;
+    --muted:   #9a8578;
+    --faint:   #62514a;
+    --hair:    rgba(220,170,140,0.14);
+    --hair-2:  rgba(220,170,140,0.30);
+
+    --fire:    #ff5a24;
+    --ember:   #ff8a3c;
+    --gold:    #ffc861;
+    --ash:     #736d78;
+    --sulfur:  #e9d84a;
+    --toxic:   #b7d24a;
+    --blood:   #d8362a;
+    --ocean:   #3f9fce;
+    --deep:    #2c6f8f;
+    --green:   #6fc36b;
+    --violet:  #b98bff;
+
+    --accent:  var(--ember);
+
+    --font-display: "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", Georgia, serif;
+    --font-body: system-ui, "Segoe UI", Roboto, -apple-system, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+    --maxw: 1180px;
+    --prose: 67ch;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: radial-gradient(1200px 820px at 68% -12%, #241016 0%, var(--bg) 55%, #030205 100%);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  #space {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+    z-index: 0; pointer-events: none;
+    display: block;
+  }
+
+  .wrap { position: relative; z-index: 1; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    position: relative;
+    min-height: 100svh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+    padding: 4rem 1.2rem 3rem;
+    overflow: hidden;
+  }
+  #hero-canvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; }
+  .hero-inner { position: relative; z-index: 2; max-width: 940px; }
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 0.72rem; letter-spacing: 0.42em; text-transform: uppercase;
+    color: var(--ember); margin-bottom: 1.4rem;
+    text-shadow: 0 0 22px rgba(255,90,36,0.5);
+  }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(2.6rem, 8.5vw, 6.2rem);
+    line-height: 0.98; margin: 0 0 1.1rem;
+    color: var(--bright);
+    letter-spacing: -0.01em;
+    text-shadow: 0 4px 60px rgba(0,0,0,0.75);
+  }
+  .hero h1 em { font-style: italic; color: var(--gold); }
+  .hero .sub {
+    font-size: clamp(1.02rem, 2.4vw, 1.36rem);
+    color: var(--ink); max-width: 42ch; margin: 0 auto 2rem;
+    line-height: 1.5;
+  }
+  .hero .sub b { color: var(--bright); font-weight: 600; }
+  .scroll-cue {
+    font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.32em;
+    text-transform: uppercase; color: var(--muted);
+    display: inline-flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  }
+  .scroll-cue span.arrow { font-size: 1.1rem; animation: bob 2.2s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(6px);opacity:1} }
+  @media (prefers-reduced-motion: reduce){ .scroll-cue span.arrow{animation:none} }
+
+  .hero-facts {
+    display: flex; flex-wrap: wrap; gap: 0 2.4rem; justify-content: center;
+    margin: 2.2rem auto 0; max-width: 760px;
+  }
+  .hero-facts .f { text-align: center; padding: 0.3rem 0; }
+  .hero-facts .fn {
+    font-family: var(--font-mono); font-size: clamp(1.3rem,3.6vw,1.9rem);
+    color: var(--gold); font-weight: 600; line-height: 1;
+  }
+  .hero-facts .fl {
+    font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--muted); margin-top: 0.35rem;
+  }
+
+  /* ---------- layout / prose ---------- */
+  .chapter { position: relative; padding: 5.5rem 1.4rem; }
+  .chapter.tight { padding-top: 2.5rem; }
+  .inner { max-width: var(--maxw); margin: 0 auto; }
+  .prose { max-width: var(--prose); margin-left: auto; margin-right: auto; }
+  .prose.wide { max-width: 80ch; }
+
+  .chap-tag {
+    font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.34em;
+    text-transform: uppercase; color: var(--ember); margin-bottom: 0.9rem;
+    display: flex; align-items: center; gap: 0.8rem;
+  }
+  .chap-tag::before { content: ""; width: 26px; height: 1px; background: var(--ember); opacity: 0.7; }
+  h2 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(1.9rem, 4.6vw, 3rem); line-height: 1.06;
+    color: var(--bright); margin: 0 0 1.2rem; letter-spacing: -0.01em;
+  }
+  h3 {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: 1.32rem; color: var(--bright); margin: 2.4rem 0 0.6rem;
+  }
+  p { margin: 0 0 1.15rem; }
+  .prose p, .prose li { color: var(--ink); }
+  .lead { font-size: 1.14rem; color: var(--bright); }
+  a { color: var(--ember); text-decoration: none; border-bottom: 1px solid rgba(255,138,60,0.35); }
+  a:hover { color: var(--gold); border-color: var(--gold); }
+  strong { color: var(--bright); font-weight: 600; }
+  em.term { font-style: normal; color: var(--gold); }
+  .dropcap::first-letter {
+    font-family: var(--font-display); float: left; font-size: 3.6rem;
+    line-height: 0.78; padding: 0.3rem 0.6rem 0 0; color: var(--ember);
+    font-weight: 700;
+  }
+  .aside {
+    border-left: 2px solid var(--hair-2); padding: 0.2rem 0 0.2rem 1.2rem;
+    margin: 1.6rem 0; color: var(--muted); font-size: 0.96rem;
+  }
+  hr.rule { border: none; border-top: 1px solid var(--hair); margin: 3.4rem auto; max-width: var(--prose); }
+
+  /* ---------- generic panel + controls ---------- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--hair);
+    border-radius: 14px;
+    backdrop-filter: blur(7px);
+    -webkit-backdrop-filter: blur(7px);
+    box-shadow: 0 24px 60px -30px rgba(0,0,0,0.9);
+  }
+  .lab { margin: 2rem auto; overflow: hidden; }
+  .lab-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 1rem; padding: 1rem 1.3rem; border-bottom: 1px solid var(--hair);
+    flex-wrap: wrap;
+  }
+  .lab-title { font-family: var(--font-mono); font-size: 0.82rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+  .lab-note { font-size: 0.8rem; color: var(--muted); }
+  .lab-body { padding: 1.3rem; }
+
+  .controls { display: grid; gap: 1.1rem 1.6rem; }
+  @media (min-width: 620px){ .controls.two { grid-template-columns: 1fr 1fr; } }
+  .ctl { display: flex; flex-direction: column; gap: 0.4rem; }
+  .ctl label {
+    font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted); display: flex; justify-content: space-between;
+  }
+  .ctl label b { color: var(--gold); font-weight: 600; font-size: 0.86rem; letter-spacing: 0; text-transform: none; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+    background: linear-gradient(90deg, var(--ember), var(--fire)); border-radius: 3px; outline: none;
+    cursor: pointer; margin: 0.4rem 0;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none; width: 18px; height: 18px; border-radius: 50%;
+    background: var(--bright); border: 3px solid var(--fire); cursor: pointer;
+    box-shadow: 0 0 12px rgba(255,90,36,0.7);
+  }
+  input[type=range]::-moz-range-thumb {
+    width: 16px; height: 16px; border-radius: 50%; background: var(--bright);
+    border: 3px solid var(--fire); cursor: pointer;
+  }
+  .seg { display: inline-flex; border: 1px solid var(--hair-2); border-radius: 8px; overflow: hidden; flex-wrap: wrap; }
+  .seg button {
+    background: transparent; border: none; color: var(--muted); cursor: pointer;
+    font-family: var(--font-mono); font-size: 0.74rem; padding: 0.42rem 0.7rem; letter-spacing: 0.04em;
+    transition: background 0.15s, color 0.15s;
+  }
+  .seg button[aria-pressed=true] { background: rgba(255,90,36,0.18); color: var(--gold); }
+  .seg button:not(:last-child) { border-right: 1px solid var(--hair); }
+
+  .btn {
+    background: rgba(255,90,36,0.12); color: var(--ember); cursor: pointer;
+    border: 1px solid var(--hair-2); border-radius: 8px; padding: 0.5rem 0.95rem;
+    font-family: var(--font-mono); font-size: 0.76rem; letter-spacing: 0.05em; transition: all 0.15s;
+  }
+  .btn:hover { background: rgba(255,90,36,0.24); color: var(--gold); border-color: var(--gold); }
+
+  /* readouts */
+  .readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.9rem; margin-top: 1.3rem; }
+  .ro { background: rgba(0,0,0,0.28); border: 1px solid var(--hair); border-radius: 10px; padding: 0.85rem 0.95rem; }
+  .ro .v { font-family: var(--font-mono); font-size: 1.3rem; color: var(--gold); line-height: 1.1; word-break: break-word; }
+  .ro .l { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-top: 0.3rem; }
+  .ro .s { font-size: 0.78rem; color: var(--ink); margin-top: 0.28rem; }
+
+  canvas.draw { display: block; width: 100%; border-radius: 10px; background: rgba(0,0,0,0.25); }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; margin-top: 0.9rem; font-size: 0.8rem; color: var(--muted); }
+  .legend span { display: inline-flex; align-items: center; gap: 0.4rem; }
+  .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+  /* timeline scrubber */
+  .tl-track { position: relative; margin: 1rem 0 0.4rem; }
+  .tl-stops { display: flex; justify-content: space-between; gap: 0.3rem; margin-bottom: 0.6rem; flex-wrap: wrap; }
+  .tl-stop {
+    background: transparent; border: 1px solid var(--hair); border-radius: 999px; color: var(--muted);
+    cursor: pointer; font-family: var(--font-mono); font-size: 0.68rem; padding: 0.28rem 0.62rem;
+    letter-spacing: 0.03em; transition: all 0.15s; white-space: nowrap;
+  }
+  .tl-stop[aria-pressed=true] { background: var(--fire); color: #140905; border-color: var(--fire); font-weight: 700; }
+  .tl-panel { margin-top: 1.2rem; display: grid; gap: 1.2rem; }
+  @media (min-width: 720px){ .tl-panel { grid-template-columns: 1.1fr 1fr; align-items: start; } }
+  .tl-when { font-family: var(--font-mono); color: var(--ember); font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; }
+  .tl-h { font-family: var(--font-display); font-size: 1.5rem; color: var(--bright); margin: 0.3rem 0 0.7rem; }
+
+  /* magnitude scale bar */
+  .escale { position: relative; height: 78px; margin: 1.6rem 0 2.6rem; }
+  .escale .axis { position: absolute; left: 0; right: 0; top: 40px; height: 6px; border-radius: 3px;
+    background: linear-gradient(90deg, #2a3348, #6b4a2a, var(--fire), var(--gold)); }
+  .escale .mk { position: absolute; top: 0; transform: translateX(-50%); text-align: center; width: 94px; }
+  .escale .mk .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin: 32px auto 0; border: 2px solid var(--bg); position: relative; z-index:2;}
+  .escale .mk.hi .dot { background: var(--fire); box-shadow: 0 0 12px var(--fire); }
+  .escale .mk .cap { font-size: 0.62rem; color: var(--muted); margin-top: 4px; line-height: 1.15; }
+  .escale .mk.hi .cap { color: var(--gold); }
+  .escale .mk.up .cap { position: absolute; bottom: 46px; left: 0; right: 0; }
+  .escale .mk.up .dot { margin-top: 32px; }
+
+  /* survivors grid */
+  .taxa { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; margin-top: 1.4rem; }
+  .taxon {
+    text-align: left; cursor: pointer; border-radius: 11px; padding: 0.85rem 0.9rem;
+    border: 1px solid var(--hair); background: rgba(0,0,0,0.25); transition: all 0.15s;
+    display: flex; flex-direction: column; gap: 0.4rem; min-height: 96px;
+  }
+  .taxon:hover { border-color: var(--hair-2); transform: translateY(-2px); }
+  .taxon .ico { width: 40px; height: 30px; color: var(--ink); }
+  .taxon .nm { font-family: var(--font-display); font-size: 1rem; color: var(--bright); line-height: 1.1; }
+  .taxon .vd { font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; }
+  .taxon.died { border-color: rgba(216,54,42,0.4); }
+  .taxon.died .vd { color: var(--blood); }
+  .taxon.lived { border-color: rgba(111,195,107,0.4); }
+  .taxon.lived .vd { color: var(--green); }
+  .taxon .why { font-size: 0.82rem; color: var(--muted); line-height: 1.4; display: none; }
+  .taxon[aria-expanded=true] .why { display: block; }
+  .taxon[aria-expanded=true] { background: rgba(0,0,0,0.42); }
+
+  /* boundary column */
+  .kpg { display: grid; gap: 1.2rem; }
+  @media (min-width: 720px){ .kpg { grid-template-columns: 210px 1fr; align-items: stretch; } }
+  .kpg-col { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--hair); min-height: 380px; cursor: crosshair; }
+  .kpg-read { display: flex; flex-direction: column; justify-content: center; }
+  .kpg-layer-name { font-family: var(--font-display); font-size: 1.4rem; color: var(--bright); }
+  .kpg-layer-sub { font-family: var(--font-mono); font-size: 0.74rem; color: var(--ember); letter-spacing: 0.1em; text-transform: uppercase; margin: 0.2rem 0 0.9rem; }
+
+  .callout {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;
+    margin: 2rem auto; max-width: var(--maxw);
+  }
+  .callout .c { padding: 1.1rem 1.2rem; border-radius: 12px; border: 1px solid var(--hair); background: var(--panel); }
+  .callout .c .cn { font-family: var(--font-mono); font-size: 1.7rem; color: var(--gold); line-height: 1; }
+  .callout .c .cl { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.4; }
+
+  .footer { padding: 4rem 1.4rem 6rem; text-align: center; color: var(--muted); font-size: 0.9rem; }
+  .footer .src { max-width: 64ch; margin: 1.4rem auto 0; font-size: 0.8rem; line-height: 1.6; color: var(--faint); }
+  .footer .src b { color: var(--muted); }
+  .nextlink {
+    display: inline-flex; align-items: center; gap: 0.7rem; margin: 1.2rem auto 0;
+    border: 1px solid var(--hair-2); border-radius: 999px; padding: 0.6rem 1.2rem;
+    font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.06em; color: var(--gold);
+    background: rgba(255,90,36,0.08);
+  }
+  .nextlink:hover { border-color: var(--gold); color: var(--bright); background: rgba(255,90,36,0.16); }
+
+  .progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--fire), var(--gold)); z-index: 40; width: 0; transition: width 0.1s linear; }
+
+  ::selection { background: rgba(255,90,36,0.3); color: var(--bright); }
+  .nowrap { white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+<canvas id="space" aria-hidden="true"></canvas>
+
+<div class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <canvas id="hero-canvas" aria-hidden="true"></canvas>
+    <div class="hero-inner">
+      <div class="kicker">🌋 251,900,000 years ago · Siberia</div>
+      <h1>The <em>Great</em> Dying</h1>
+      <p class="sub">Not an asteroid. A slow, planetary poisoning. The worst extinction in Earth's history killed <b>nine in ten</b> species in the sea — and it took a volcano the size of a continent to do it.</p>
+      <div class="hero-facts">
+        <div class="f"><div class="fn">~96%</div><div class="fl">Marine species lost</div></div>
+        <div class="f"><div class="fn">~70%</div><div class="fl">Land vertebrates lost</div></div>
+        <div class="f"><div class="fn">+10 °C</div><div class="fl">Global warming</div></div>
+        <div class="f"><div class="fn">4 M km³</div><div class="fl">Lava erupted</div></div>
+      </div>
+      <div style="margin-top:2.6rem">
+        <div class="scroll-cue">scroll to begin<span class="arrow">▼</span></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ INTRO ============ -->
+  <section class="chapter" id="intro">
+    <div class="prose">
+      <div class="chap-tag">The end of the Palaeozoic</div>
+      <h2>The day the world nearly ended for good</h2>
+      <p class="dropcap">There have been five great mass extinctions in the last half-billion years. The one everybody knows — the asteroid that ended the dinosaurs — is only the most <em>recent</em>. It is not the worst. The worst happened 186 million years earlier, at the close of the Permian period, and it came so close to sterilising the planet that biologists call it, without much exaggeration, <strong>the Great Dying</strong>.</p>
+      <p>Around <strong>251.9 million years ago</strong>, something erased roughly <strong>96% of all marine species</strong> and about <strong>70% of land vertebrates</strong>. Whole branches of the tree of life that had thrived for a quarter of a billion years — the trilobites, the sea scorpions, the great rugose corals — simply stopped. It is the only event in the entire fossil record that came close to killing off <em class="term">insects</em>. Nothing else in Earth's history erased so much.</p>
+      <p>And there was no asteroid. No single moment. The killing took tens of thousands of years, and the murder weapon was the planet's own chemistry, turned against everything living in it. This page is about how a volcano in Siberia cooked the atmosphere, boiled the tropics, suffocated the oceans, and left a scar in the rock you can still put a finger on today.</p>
+      <div class="callout">
+        <div class="c"><div class="cn">252 Ma</div><div class="cl">The Permian–Triassic boundary — the deep-time line this whole story sits on.</div></div>
+        <div class="c"><div class="cn">&lt;60 kyr</div><div class="cl">How fast the main pulse of killing happened, from high-precision zircon dating.</div></div>
+        <div class="c"><div class="cn">~10 Myr</div><div class="cl">How long life took to fully recover — the longest recovery on record.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SCALE OF THE VOLCANISM ============ -->
+  <section class="chapter tight" id="scale">
+    <div class="inner">
+      <div class="prose">
+        <div class="chap-tag">The murder weapon · a continent of fire</div>
+        <h2>The Siberian Traps</h2>
+        <p>The trigger was the largest volcanic event of the last 500 million years: the <em class="term">Siberian Traps</em>, a <em>flood basalt</em> province that buried an area the size of Australia under sheet after sheet of lava. Not a single eruption — a million years of them. Here is that volume against eruptions you may have heard of. Watch the familiar ones vanish.</p>
+      </div>
+
+      <div class="escale" id="vscale" aria-label="Logarithmic scale of erupted volume, from Mount St Helens to the Siberian Traps"></div>
+
+      <div class="prose">
+        <p>But the lava itself was almost a side-effect. The real catastrophe was <em>what the magma passed through on its way up</em>. The Traps erupted through the Tunguska Basin — thousands of metres of coal, oil shale, limestone and salt. The rising heat cooked those rocks like a kiln, baking out carbon dioxide, methane and toxic halocarbons on a scale no ordinary volcano could manage. The eruption didn't just add lava to the world. It added <strong>carbon</strong> — and that is what did the killing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THE CARBON–CLIMATE SIMULATOR ============ -->
+  <section class="chapter tight" id="sim">
+    <div class="inner">
+      <div class="prose">
+        <div class="chap-tag">The centrepiece · run it yourself</div>
+        <h2>The carbon–climate engine</h2>
+        <p>This is the machine that ran the extinction. Pour carbon into the Permian atmosphere and watch it warm the planet, heat the tropical sea, and acidify the ocean. The relations are the real ones climate science uses — radiative forcing, climate sensitivity, carbonate chemistry — calibrated so the defaults land on what the rocks actually record.</p>
+      </div>
+
+      <div class="lab panel">
+        <div class="lab-head">
+          <span class="lab-title">Carbon in → a poisoned world out</span>
+          <button class="btn" id="sim-reset">↺ reset to the Great Dying</button>
+        </div>
+        <div class="lab-body">
+          <div class="controls two">
+            <div class="ctl">
+              <label>Carbon released <b><span id="sd-c">9,000</span> Gt C</b></label>
+              <input type="range" id="s-c" min="1000" max="40000" step="500" value="9000">
+            </div>
+            <div class="ctl">
+              <label>Released over <b><span id="sd-t">60</span> kyr</b></label>
+              <input type="range" id="s-t" min="2" max="1000" step="2" value="60">
+            </div>
+            <div class="ctl">
+              <label>Earth-system sensitivity <b><span id="sd-s">3.6</span> °C / CO₂ doubling</b></label>
+              <input type="range" id="s-s" min="2" max="6" step="0.1" value="3.6">
+            </div>
+            <div class="ctl">
+              <label>Carbon source <b id="sd-src">basalt + baked coal</b></label>
+              <div class="seg" id="s-src" role="group" aria-label="Carbon source">
+                <button data-v="0" aria-pressed="false">basalt only</button>
+                <button data-v="1" aria-pressed="true">+ baked coal</button>
+                <button data-v="2" aria-pressed="false">+ methane</button>
+              </div>
+            </div>
+          </div>
+
+          <canvas id="sim-canvas" class="draw" height="300" aria-label="Bars showing atmospheric CO2, global temperature and ocean pH for the current settings"></canvas>
+
+          <div class="readouts">
+            <div class="ro"><div class="v" id="r-co2">—</div><div class="l">Peak atmospheric CO₂</div><div class="s" id="r-co2b"></div></div>
+            <div class="ro"><div class="v" id="r-force">—</div><div class="l">Radiative forcing</div><div class="s">extra W/m² trapped</div></div>
+            <div class="ro"><div class="v" id="r-warm">—</div><div class="l">Global mean warming</div><div class="s" id="r-warmb"></div></div>
+            <div class="ro"><div class="v" id="r-sst">—</div><div class="l">Tropical sea temp</div><div class="s" id="r-sstb"></div></div>
+            <div class="ro"><div class="v" id="r-ph">—</div><div class="l">Surface ocean pH</div><div class="s" id="r-phb"></div></div>
+            <div class="ro"><div class="v" id="r-ratio">—</div><div class="l">CO₂ vs today</div><div class="s">today ≈ 420 ppm</div></div>
+          </div>
+          <p class="lab-note" style="margin-top:1.1rem" id="sim-verdict"></p>
+        </div>
+      </div>
+
+      <div class="prose">
+        <p class="aside">Under the hood: added CO₂ from your carbon minus a rate-dependent amount taken up by the ocean and rock weathering; radiative forcing <span class="nowrap">ΔF = 5.35·ln(C/C₀)</span> W/m²; warming ΔT scaled by the Earth-system sensitivity; ocean pH from the <span class="nowrap">log</span> of the CO₂ rise. Simplified, but the shape and the numbers are honest — the defaults reproduce the ~2,500 ppm, ~+10 °C and ~0.6-unit pH drop the Permian rocks record.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TIMELINE ============ -->
+  <section class="chapter tight" id="theday">
+    <div class="inner">
+      <div class="prose">
+        <div class="chap-tag">The crisis in deep time</div>
+        <h2>How to end a world, step by step</h2>
+        <p>The asteroid that killed the dinosaurs did its work in an afternoon. The Great Dying took tens of thousands of years — an eyeblink in geology, an eternity in a lifetime. Scrub through it.</p>
+      </div>
+
+      <div class="lab panel">
+        <div class="lab-head">
+          <span class="lab-title">Timeline · the end-Permian crisis</span>
+          <span class="lab-note" id="tl-index">1 / 8</span>
+        </div>
+        <div class="lab-body">
+          <div class="tl-stops" id="tl-stops"></div>
+          <div class="tl-panel">
+            <canvas id="tl-canvas" class="draw" height="300" aria-label="Illustration of the current stage of the extinction"></canvas>
+            <div>
+              <div class="tl-when" id="tl-when"></div>
+              <div class="tl-h" id="tl-title"></div>
+              <div id="tl-body" style="color:var(--ink)"></div>
+            </div>
+          </div>
+          <div class="controls" style="margin-top:1.4rem">
+            <div class="ctl">
+              <label>Scrub the crisis <b id="tl-label"></b></label>
+              <input type="range" id="tl-slider" min="0" max="7" step="1" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ THE SUFFOCATING OCEAN ============ -->
+  <section class="chapter tight" id="ocean">
+    <div class="inner">
+      <div class="prose">
+        <div class="chap-tag">The killing floor · a sea with no air</div>
+        <h2>The ocean stopped breathing</h2>
+        <p>Warm water holds less oxygen — every diver and aquarium keeper knows it. Heat the whole ocean by ten degrees, stop the currents that stir it, and the deep sea goes stale. Then bacteria that breathe sulfur instead of oxygen take over, filling the water with poisonous <em class="term">hydrogen sulfide</em>. This is where most of the 96% actually died. Drag the slider and watch the breathable layer collapse.</p>
+      </div>
+
+      <div class="lab panel">
+        <div class="lab-head">
+          <span class="lab-title">A slice through the Permian sea</span>
+          <span class="lab-note" id="ocean-note"></span>
+        </div>
+        <div class="lab-body">
+          <canvas id="ocean-canvas" class="draw" height="360" aria-label="Cross-section of the ocean showing the oxygenated layer shrinking over time"></canvas>
+          <div class="legend">
+            <span><span class="swatch" style="background:#3f9fce"></span>oxygen-rich (life)</span>
+            <span><span class="swatch" style="background:#4a5a52"></span>dead / no oxygen</span>
+            <span><span class="swatch" style="background:#b7d24a"></span>euxinic — H₂S poison</span>
+          </div>
+          <div class="controls" style="margin-top:1.3rem">
+            <div class="ctl">
+              <label>Thousand years from eruption onset <b><span id="ocean-t">0</span> kyr</b></label>
+              <input type="range" id="ocean-slider" min="0" max="400" step="2" value="0">
+            </div>
+          </div>
+          <div class="readouts">
+            <div class="ro"><div class="v" id="o-sst">—</div><div class="l">Tropical sea surface</div></div>
+            <div class="ro"><div class="v" id="o-oxy">—</div><div class="l">Breathable depth</div><div class="s">below this: no oxygen</div></div>
+            <div class="ro"><div class="v" id="o-anox">—</div><div class="l">Seafloor without oxygen</div></div>
+            <div class="ro"><div class="v" id="o-hab">—</div><div class="l">Ocean still habitable</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ EVIDENCE / BOUNDARY COLUMN ============ -->
+  <section class="chapter tight" id="evidence">
+    <div class="inner">
+      <div class="prose">
+        <div class="chap-tag">How we know · reading the rock</div>
+        <h2>The line at Meishan</h2>
+        <p>Everything above is reconstructed from a few metres of grey rock in a quarry in Zhejiang, China — the <em class="term">Meishan</em> section, the global reference point for the Permian–Triassic boundary. Move your pointer up the column. Watch the fossils vanish, the carbon-isotope line lurch, and the volcanic ash beds that let us date the whole thing to the tens of thousands of years.</p>
+      </div>
+
+      <div class="lab panel">
+        <div class="lab-head">
+          <span class="lab-title">A core through the Permian–Triassic boundary</span>
+          <span class="lab-note">hover / drag the column</span>
+        </div>
+        <div class="lab-body">
+          <div class="kpg">
+            <div class="kpg-col"><canvas id="kpg-canvas" style="display:block;width:100%;height:100%"></canvas></div>
+            <div class="kpg-read">
+              <div class="kpg-layer-name" id="kpg-name">—</div>
+              <div class="kpg-layer-sub" id="kpg-age">—</div>
+              <div id="kpg-body" style="color:var(--ink)"></div>
+              <div class="readouts" style="grid-template-columns:1fr 1fr">
+                <div class="ro"><div class="v" id="kpg-d13c">—</div><div class="l">δ¹³C (‰)</div><div class="s">carbon-cycle tracer</div></div>
+                <div class="ro"><div class="v" id="kpg-life">—</div><div class="l">Marine diversity</div><div class="s">vs pre-crisis</div></div>
+              </div>
+            </div>
+          </div>
+          <p class="lab-note" style="margin-top:1.1rem">The sharp fall in δ¹³C — about 5 parts per thousand — is the fingerprint of a colossal injection of light, biological carbon: the baked coal of Siberia, released into the air and sea.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SURVIVORS ============ -->
+  <section class="chapter tight" id="survivors">
+    <div class="inner">
+      <div class="prose">
+        <div class="chap-tag">The reckoning · who died, who lived</div>
+        <h2>The sorting</h2>
+        <p>Extinction is not random. It favours the tolerant, the buried, the metabolically thrifty — and it is merciless to specialists that had thrived for hundreds of millions of years in a stable world. Tap a group to see why it fell on one side of the line.</p>
+      </div>
+      <div class="taxa" id="taxa"></div>
+    </div>
+  </section>
+
+  <!-- ============ AFTER ============ -->
+  <section class="chapter" id="after">
+    <div class="prose">
+      <div class="chap-tag">What grew back</div>
+      <h2>The empty world, and the door it opened</h2>
+      <p class="dropcap">For millions of years afterwards the world stayed broken. There is a <em class="term">coal gap</em> in the rock — no coal forms anywhere on Earth for some five million years, because the peat-forming forests were simply gone. There is a <em>reef gap</em>, a <em>chert gap</em>. In the earliest Triassic, a single stubby, tusked, burrowing herbivore called <strong>Lystrosaurus</strong> — pig-sized, unglamorous, tough — accounted for as much as nine in ten of all land vertebrate fossils. The world had been sorted down to the survivors, and for a while the survivors had it almost entirely to themselves.</p>
+      <p>But an emptied world is an opportunity. Among the scattered reptile lineages that scraped through were the <em class="term">archosaurs</em> — and in the recovering Triassic, freed from the competitors the Permian had piled up, one branch of them grew larger, faster and stranger until it became the dinosaurs. The Great Dying did not just end the Palaeozoic. By clearing the board, it wrote the opening move of the age of dinosaurs.</p>
+      <p>Which is the strange symmetry of this story. The catastrophe that <em>made</em> the dinosaurs possible was a slow one — carbon, heat and a suffocating sea, over tens of thousands of years. The catastrophe that <em>ended</em> them, 186 million years later, was the opposite: a single rock from space, and an afternoon.</p>
+      <a class="nextlink" href="https://0x4d44.github.io/chicxulub/">Read how that one ended → The Day the Dinosaurs Died</a>
+      <hr class="rule">
+      <p class="aside">Everything on this page — the carbon engine, the timeline scenes, the suffocating ocean, the Meishan column — is computed and drawn live in vanilla JavaScript on <code>&lt;canvas&gt;</code>, no libraries and no build step. The models are simplified published relations, tuned to convey the scale and the story rather than to reproduce any one dataset to the decimal.</p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div>🌋 &nbsp; The Great Dying · the end-Permian extinction · ~252 million years ago · an interactive almanac</div>
+    <div class="src">
+      <b>Sources &amp; further reading:</b> Burgess, Bowring &amp; Shen (2014), <i>PNAS</i>, the high-precision zircon geochronology dating the extinction to &lt;60 kyr; Sun et&nbsp;al. (2012), <i>Science</i>, "Lethally Hot Temperatures During the Early Triassic Greenhouse"; Clarkson et&nbsp;al. (2015), <i>Science</i>, ocean acidification across the boundary; Kump, Pavlov &amp; Arthur (2005) on euxinia and hydrogen-sulfide poisoning; Svensen et&nbsp;al. (2009) on the Siberian Traps cooking the Tunguska Basin sediments; Payne &amp; Clapham (2012) review; and the Meishan GSSP. Figures for carbon, temperature, pH and volume follow the published literature; this is a work of science communication.
+    </div>
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+(function () {
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const DPR = () => Math.min(window.devicePixelRatio || 1, 2);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const smooth = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+
+  function fit(cv, cssH) {
+    const dpr = DPR();
+    const w = cv.clientWidth || cv.parentElement.clientWidth;
+    const h = cssH || cv.clientHeight || 300;
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    const ctx = cv.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w, h, ctx };
+  }
+  const CSS = getComputedStyle(document.documentElement);
+  const cvar = n => (CSS.getPropertyValue(n) || "").trim() || "#fff";
+
+  /* ============ progress bar ============ */
+  const prog = $("#progress");
+  window.addEventListener("scroll", () => {
+    const st = window.scrollY || document.documentElement.scrollTop;
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    prog.style.width = (max > 0 ? (st / max) * 100 : 0) + "%";
+  }, { passive: true });
+
+  /* ============ background: drifting ash / embers ============ */
+  (function () {
+    const cv = $("#space");
+    let W, H, motes = [];
+    function reset() {
+      const dpr = DPR();
+      W = cv.width = Math.round(innerWidth * dpr);
+      H = cv.height = Math.round(innerHeight * dpr);
+      const n = Math.round((innerWidth * innerHeight) / 11000);
+      motes = [];
+      for (let i = 0; i < n; i++) {
+        const ember = Math.random() < 0.22;
+        motes.push({
+          x: Math.random() * W, y: Math.random() * H,
+          r: ((ember ? 1.1 : 0.7) * Math.random() + 0.3) * dpr,
+          tw: Math.random() * Math.PI * 2, sp: Math.random() * 0.02 + 0.004,
+          dx: (Math.random() - 0.5) * 0.12 * dpr, dy: (Math.random() * 0.14 + 0.03) * dpr,
+          ember
+        });
+      }
+    }
+    reset();
+    addEventListener("resize", reset);
+    const ctx = cv.getContext("2d");
+    function draw(t) {
+      ctx.clearRect(0, 0, W, H);
+      for (const s of motes) {
+        if (!reduceMotion) { s.x += s.dx; s.y += s.dy; if (s.y > H + 4) { s.y = -4; s.x = Math.random() * W; } }
+        const a = reduceMotion ? 0.5 : 0.28 + 0.4 * (0.5 + 0.5 * Math.sin(s.tw + t * s.sp));
+        ctx.globalAlpha = a * (s.ember ? 0.9 : 0.55);
+        ctx.fillStyle = s.ember ? "#ff8a3c" : "#c9b7a5";
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (!reduceMotion) requestAnimationFrame(draw);
+    }
+    if (reduceMotion) draw(0); else requestAnimationFrame(draw);
+  })();
+
+  /* ============ HERO — Siberian Traps eruption ============ */
+  (function () {
+    const cv = $("#hero-canvas");
+    let W, H, ctx, dpr, parts = [], fountains = [], t0 = performance.now();
+    function reset() {
+      dpr = DPR();
+      W = cv.clientWidth; H = cv.clientHeight;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      fountains = [];
+      const n = Math.max(3, Math.round(W / 260));
+      for (let i = 0; i < n; i++) fountains.push({ x: W * (0.12 + 0.76 * (i + 0.5) / n) + (Math.random() - 0.5) * 40, rate: 0.4 + Math.random() * 0.9, h: 0.14 + Math.random() * 0.16 });
+    }
+    reset();
+    addEventListener("resize", reset);
+    function spawn(dt) {
+      for (const f of fountains) {
+        const nn = reduceMotion ? 0 : Math.random() < f.rate * dt / 40 ? 1 + (Math.random() * 2 | 0) : 0;
+        for (let k = 0; k < nn; k++) {
+          const groundY = H * 0.82;
+          const v = (f.h + Math.random() * 0.12) * H * 0.05;
+          parts.push({ x: f.x + (Math.random() - 0.5) * 24, y: groundY, vx: (Math.random() - 0.5) * 1.2, vy: -v, life: 0, max: 900 + Math.random() * 900, r: 1 + Math.random() * 2.4 });
+        }
+      }
+    }
+    function frame(now) {
+      const dt = Math.min(48, now - t0); t0 = now;
+      ctx.clearRect(0, 0, W, H);
+      const groundY = H * 0.82;
+      // sky glow
+      const sky = ctx.createLinearGradient(0, 0, 0, groundY);
+      sky.addColorStop(0, "rgba(20,8,12,0)"); sky.addColorStop(0.6, "rgba(60,16,10,0.10)"); sky.addColorStop(1, "rgba(150,40,14,0.30)");
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, W, groundY);
+      // basalt ground
+      const gnd = ctx.createLinearGradient(0, groundY, 0, H);
+      gnd.addColorStop(0, "#3a1508"); gnd.addColorStop(0.5, "#1c0c08"); gnd.addColorStop(1, "#0a0605");
+      ctx.fillStyle = gnd; ctx.fillRect(0, groundY, W, H - groundY);
+      // lava seams
+      ctx.globalAlpha = 0.9;
+      for (const f of fountains) {
+        const g = ctx.createRadialGradient(f.x, groundY, 2, f.x, groundY, 60);
+        g.addColorStop(0, "rgba(255,180,80,0.5)"); g.addColorStop(1, "rgba(255,90,30,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(f.x, groundY, 60, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      spawn(dt);
+      // embers
+      for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.life += dt;
+        if (!reduceMotion) { p.vy += 0.012 * dt; p.x += p.vx * dt / 16; p.y += p.vy * dt / 16; }
+        if (p.life > p.max || p.y > H) { parts.splice(i, 1); continue; }
+        const k = 1 - p.life / p.max;
+        ctx.globalAlpha = k * 0.9;
+        ctx.fillStyle = k > 0.6 ? "#ffe08a" : k > 0.3 ? "#ff8a3c" : "#d8362a";
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r * (0.5 + k), 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      if (parts.length > 1400) parts.splice(0, parts.length - 1400);
+      if (!reduceMotion) requestAnimationFrame(frame);
+    }
+    if (reduceMotion) { spawn(40); frame(performance.now()); } else requestAnimationFrame(frame);
+  })();
+
+  /* ============ VOLUME SCALE BAR ============ */
+  (function () {
+    const host = $("#vscale"); if (!host) return;
+    // volumes in km^3 (dense-rock equivalent, order-of-magnitude)
+    const items = [
+      { v: 1, cap: "Mt St Helens 1980", up: true },
+      { v: 10, cap: "Pinatubo 1991", up: false },
+      { v: 160, cap: "Tambora 1815", up: true },
+      { v: 1000, cap: "Toba supereruption", up: false },
+      { v: 2500, cap: "Yellowstone (largest)", up: true },
+      { v: 1000000, cap: "Deccan Traps", up: false },
+      { v: 4000000, cap: "Siberian Traps", up: true, hi: true },
+    ];
+    const LO = 0, HI = Math.log10(4000000);
+    const axis = document.createElement("div"); axis.className = "axis"; host.appendChild(axis);
+    for (const it of items) {
+      const x = clamp((Math.log10(it.v) - LO) / (HI - LO), 0, 1) * 100;
+      const mk = document.createElement("div");
+      mk.className = "mk" + (it.up ? " up" : "") + (it.hi ? " hi" : "");
+      mk.style.left = x + "%";
+      mk.innerHTML = '<div class="dot"></div><div class="cap">' + it.cap + '<br>' + (it.v >= 1000 ? (it.v / 1000).toLocaleString() + "k" : it.v) + ' km³</div>';
+      host.appendChild(mk);
+    }
+  })();
+
+  /* ============ CARBON–CLIMATE SIMULATOR ============ */
+  (function () {
+    const sc = $("#s-c"), st = $("#s-t"), ss = $("#s-s"), srcWrap = $("#s-src");
+    if (!sc) return;
+    let src = 1;
+    const SRC = [
+      { name: "basalt CO₂ only", carbon: 1.0, extraF: 0.0 },
+      { name: "basalt + baked coal", carbon: 1.35, extraF: 0.5 },
+      { name: "+ methane release", carbon: 1.6, extraF: 2.4 },
+    ];
+    const C0 = 400, GtC_per_ppm = 2.13, TODAY = 420;
+
+    function model() {
+      const Cgt = +sc.value, dur = +st.value, ess = +ss.value, s = SRC[src];
+      const af = clamp(0.12 + 0.33 * Math.exp(-dur / 200), 0.11, 0.5);
+      const addedPpm = (Cgt * s.carbon * af) / GtC_per_ppm;
+      const Cpeak = C0 + addedPpm;
+      const forcing = 5.35 * Math.log(Cpeak / C0) + s.extraF;
+      const dT = (ess / (5.35 * Math.LN2)) * forcing;
+      const sst = 28 + dT * 0.9;
+      const pH = 8.2 - 0.85 * Math.log10(Cpeak / C0);
+      return { Cgt, dur, ess, Cpeak, forcing, dT, sst, pH, ratio: Cpeak / TODAY };
+    }
+    function fmt(n, d) { return (+n).toLocaleString(undefined, { maximumFractionDigits: d == null ? 0 : d }); }
+
+    const cv = $("#sim-canvas");
+    function draw(m) {
+      const { w, h, ctx } = fit(cv, 300);
+      ctx.clearRect(0, 0, w, h);
+      const pad = 16, cols = 3, gap = 20;
+      const colW = (w - pad * 2 - gap * (cols - 1)) / cols;
+      const baseY = h - 40, topY = 26;
+      function bar(i, frac, color, label, val) {
+        const x = pad + i * (colW + gap);
+        frac = clamp(frac, 0, 1);
+        // track
+        ctx.fillStyle = "rgba(255,255,255,0.05)";
+        roundRect(ctx, x, topY, colW, baseY - topY, 8); ctx.fill();
+        const bh = (baseY - topY) * frac;
+        const g = ctx.createLinearGradient(0, baseY, 0, baseY - bh);
+        g.addColorStop(0, color[0]); g.addColorStop(1, color[1]);
+        ctx.fillStyle = g;
+        roundRect(ctx, x, baseY - bh, colW, bh, 8); ctx.fill();
+        ctx.fillStyle = cvar("--bright"); ctx.font = "600 15px " + cvar("--font-mono"); ctx.textAlign = "center";
+        ctx.fillText(val, x + colW / 2, baseY - bh - 8 < topY + 12 ? topY + 14 : baseY - bh - 8);
+        ctx.fillStyle = cvar("--muted"); ctx.font = "10px " + cvar("--font-mono");
+        ctx.fillText(label.toUpperCase(), x + colW / 2, baseY + 18);
+      }
+      bar(0, (m.Cpeak - 300) / (7000 - 300), ["#7a3a12", "#ffb44a"], "CO₂ ppm", fmt(m.Cpeak));
+      bar(1, m.dT / 16, ["#5a1810", "#ff5a24"], "warming °C", "+" + fmt(m.dT, 1));
+      // pH bar drawn inverted (lower pH = more acid = taller/redder)
+      bar(2, (8.3 - m.pH) / (8.3 - 7.2), ["#244b2a", "#b7d24a"], "acidity", "pH " + fmt(m.pH, 2));
+    }
+    function roundRect(ctx, x, y, w, h, r) {
+      r = Math.min(r, w / 2, h / 2); if (h <= 0) { ctx.beginPath(); return; }
+      ctx.beginPath(); ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+    }
+
+    function verdict(m) {
+      if (m.dT < 3) return "A serious warming — but life shrugs off events like this. Not an extinction; the world adjusts.";
+      if (m.dT < 6) return "Reefs collapse and the tropics empty, but the poles are a refuge. A major crisis, short of the Great Dying.";
+      if (m.dT < 9) return "Now the tropical sea is nearly too hot for animals and the deep ocean is going anoxic. This is a genuine mass extinction.";
+      if (m.dT < 12) return "This is the Great Dying: a lethally hot ocean, widespread euxinia, ~96% of marine species gone. The worst day the biosphere has known.";
+      return "Beyond even the end-Permian — a near-sterilising hothouse. Little complex life survives a world pushed this far.";
+    }
+
+    function update() {
+      const m = model();
+      $("#sd-c").textContent = fmt(m.Cgt);
+      $("#sd-t").textContent = fmt(m.dur);
+      $("#sd-s").textContent = fmt(m.ess, 1);
+      $("#sd-src").textContent = SRC[src].name;
+      $("#r-co2").textContent = fmt(m.Cpeak) + " ppm";
+      $("#r-co2b").textContent = "from ~400 ppm baseline";
+      $("#r-force").textContent = "+" + fmt(m.forcing, 1) + " W/m²";
+      $("#r-warm").textContent = "+" + fmt(m.dT, 1) + " °C";
+      $("#r-warmb").textContent = m.dT > 8 ? "lethal greenhouse" : m.dT > 4 ? "severe" : "moderate";
+      $("#r-sst").textContent = fmt(m.sst, 1) + " °C";
+      $("#r-sstb").textContent = m.sst >= 38 ? "above animal tolerance" : "warm";
+      $("#r-ph").textContent = fmt(m.pH, 2);
+      $("#r-phb").textContent = "−" + fmt(8.2 - m.pH, 2) + " units; shells dissolve";
+      $("#r-ratio").textContent = "×" + fmt(m.ratio, 1);
+      $("#sim-verdict").textContent = verdict(m);
+      draw(m);
+    }
+    [sc, st, ss].forEach(el => el.addEventListener("input", update));
+    $$("button", srcWrap).forEach(b => b.addEventListener("click", () => {
+      src = +b.dataset.v;
+      $$("button", srcWrap).forEach(x => x.setAttribute("aria-pressed", x === b));
+      update();
+    }));
+    $("#sim-reset").addEventListener("click", () => {
+      sc.value = 9000; st.value = 60; ss.value = 3.6; src = 1;
+      $$("button", srcWrap).forEach(x => x.setAttribute("aria-pressed", +x.dataset.v === 1));
+      update();
+    });
+    addEventListener("resize", update);
+    update();
+  })();
+
+  /* ============ TIMELINE ============ */
+  (function () {
+    const stopsWrap = $("#tl-stops"), slider = $("#tl-slider"), cv = $("#tl-canvas");
+    if (!cv) return;
+    const stops = [
+      { tag: "252.3 Ma · before", label: "The Permian world", scene: "before",
+        body: "A single supercontinent, Pangaea, straddles the equator. Warm shallow seas are packed with reefs, sea lilies and swimming ammonoids; on land, sail-backed reptiles and tusked dicynodonts. It has been like this, more or less, for a hundred million years." },
+      { tag: "252.0 Ma · onset", label: "The first fissures", scene: "onset",
+        body: "In what is now Siberia, the crust splits and floods of basalt begin to pour out — not from a cone, but from long cracks in the ground. The first eruptions are almost survivable. The problem is that they will not stop for a million years." },
+      { tag: "251.96 Ma · the oven", label: "The magma finds the coal", scene: "cook",
+        body: "The rising magma punches through the Tunguska Basin: thousands of metres of coal, oil shale and salt. It bakes them like a kiln, and out comes carbon dioxide, methane and toxic organohalogens — far more climate poison than the lava alone could ever supply." },
+      { tag: "251.94 Ma · greenhouse", label: "The runaway greenhouse", scene: "warm",
+        body: "Carbon dioxide roughly sextuples. The δ¹³C of the whole ocean lurches downward. Global temperatures climb eight to ten degrees. The tropics approach temperatures at which large animals simply cannot survive." },
+      { tag: "251.93 Ma · the dead sea", label: "The oceans suffocate", scene: "anoxia",
+        body: "Hot water holds little oxygen, and the warming has stalled the currents that stir the deep. The ocean goes anoxic. Sulfur-breathing bacteria bloom and belch hydrogen sulfide up through the water column — and, some think, into the air itself." },
+      { tag: "251.9 Ma · the pulse", label: "The killing", scene: "kill",
+        body: "In under sixty thousand years, 96% of marine species vanish. Trilobites — survivors of a quarter-billion years — end here. So do the sea scorpions and the great rugose corals. On land, most vertebrate families are wiped out. This is the narrow doorway the whole biosphere must squeeze through." },
+      { tag: "251.88 Ma · the nadir", label: "The dead world", scene: "nadir",
+        body: "The aftermath is a stripped, silent planet. No coal forms anywhere on Earth for five million years — the peat forests are gone. Reefs vanish from the record. Where forests stood, a worldwide spike of fungal spores marks a landscape of rot." },
+      { tag: "~247 Ma · after", label: "The long climb back", scene: "after",
+        body: "Recovery takes some ten million years — the slowest on record. A tough, tusked survivor, Lystrosaurus, briefly dominates the land. Among the reptiles that scrape through are the archosaurs, and from them, in the emptied Triassic world, will eventually come the dinosaurs." },
+    ];
+    let idx = 0, raf = 0;
+    stops.forEach((s, i) => {
+      const b = document.createElement("button");
+      b.className = "tl-stop"; b.textContent = s.label; b.setAttribute("aria-pressed", i === 0);
+      b.addEventListener("click", () => { idx = i; slider.value = i; render(); });
+      stopsWrap.appendChild(b);
+    });
+
+    function bg(ctx, w, h, top, bot) {
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, top); g.addColorStop(1, bot);
+      ctx.fillStyle = g; ctx.fillRect(0, 0, w, h);
+    }
+    function sun(ctx, x, y, r, color) {
+      const g = ctx.createRadialGradient(x, y, 1, x, y, r * 3);
+      g.addColorStop(0, color); g.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 3, 0, 7); ctx.fill();
+      ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    }
+    function creatures(ctx, w, seaY, n, color) {
+      ctx.fillStyle = color; ctx.globalAlpha = 0.9;
+      for (let i = 0; i < n; i++) {
+        const x = (i * 97 % (w - 40)) + 20, y = seaY + 24 + (i * 53 % 90);
+        ctx.beginPath(); ctx.ellipse(x, y, 6, 2.6, Math.sin(i) * 0.6, 0, 7); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+    function drawScene(scene, tphase) {
+      const { w, h, ctx } = fit(cv, 300);
+      ctx.clearRect(0, 0, w, h);
+      const seaY = h * 0.5, groundY = h * 0.5;
+      if (scene === "before") {
+        bg(ctx, w, h, "#3a6c8f", "#0a1a26"); sun(ctx, w * 0.8, h * 0.22, 16, "rgba(255,240,200,0.9)");
+        ctx.fillStyle = "#0d2a3a"; ctx.fillRect(0, seaY, w, h - seaY);
+        // sea life
+        creatures(ctx, w, seaY, 12, "#6fc36b");
+        // reef
+        ctx.strokeStyle = "#e0a24a"; ctx.lineWidth = 3;
+        for (let i = 0; i < 6; i++) { const x = 30 + i * (w - 60) / 6; ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x + Math.sin(i) * 6, h - 26 - (i % 3) * 8); ctx.stroke(); }
+        label(ctx, w, "a living Permian sea", "#cfe6ff");
+      } else if (scene === "onset") {
+        bg(ctx, w, h, "#5a3218", "#160a08");
+        ground(ctx, w, h, groundY);
+        // fissures glowing
+        for (let i = 0; i < 4; i++) { const x = w * (0.2 + 0.6 * i / 3); fissure(ctx, x, groundY, h, 0.5 + 0.3 * Math.sin(tphase + i)); }
+        label(ctx, w, "the first flood basalts", "#ffb47a");
+      } else if (scene === "cook") {
+        bg(ctx, w, h, "#4a2410", "#120806");
+        ground(ctx, w, h, groundY);
+        // coal seams under ground
+        ctx.fillStyle = "#000"; for (let i = 0; i < 3; i++) ctx.fillRect(0, groundY + 26 + i * 22, w, 8);
+        ctx.fillStyle = "rgba(120,120,120,0.25)"; ctx.fillRect(0, groundY, w, h - groundY);
+        for (let i = 0; i < 5; i++) { const x = w * (0.12 + 0.76 * i / 4); fissure(ctx, x, groundY, h, 0.8); plume(ctx, x, groundY, h, "#8a8a8a"); }
+        label(ctx, w, "carbon cooking out of the crust", "#d8d8d8");
+      } else if (scene === "warm") {
+        bg(ctx, w, h, "#7a4a1c", "#2a1206"); sun(ctx, w * 0.78, h * 0.24, 22, "rgba(255,150,60,0.95)");
+        ctx.fillStyle = "#1e2e2a"; ctx.fillRect(0, seaY, w, h - seaY);
+        // heat shimmer bands
+        ctx.strokeStyle = "rgba(255,180,90,0.25)"; ctx.lineWidth = 2;
+        for (let i = 0; i < 6; i++) { ctx.beginPath(); const y = h * 0.1 + i * 10; for (let x = 0; x <= w; x += 8) ctx.lineTo(x, y + Math.sin(x * 0.05 + tphase + i) * 3); ctx.stroke(); }
+        label(ctx, w, "+10 °C — a runaway greenhouse", "#ffd07a");
+      } else if (scene === "anoxia") {
+        bg(ctx, w, h, "#3a3a20", "#0e120a");
+        ctx.fillStyle = "#20281a"; ctx.fillRect(0, seaY, w, h - seaY);
+        // euxinic green rising
+        const rise = 0.4 + 0.35 * (0.5 + 0.5 * Math.sin(tphase));
+        const g = ctx.createLinearGradient(0, h, 0, seaY);
+        g.addColorStop(0, "#b7d24a"); g.addColorStop(rise, "rgba(120,150,50,0.5)"); g.addColorStop(1, "rgba(60,80,40,0)");
+        ctx.fillStyle = g; ctx.fillRect(0, seaY, w, h - seaY);
+        // bubbles
+        ctx.fillStyle = "rgba(200,230,120,0.7)";
+        for (let i = 0; i < 14; i++) { const x = (i * 71) % w, y = h - ((tphase * 30 + i * 40) % (h - seaY)); ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 7); ctx.fill(); }
+        label(ctx, w, "a sea filling with hydrogen sulfide", "#d6e98a");
+      } else if (scene === "kill") {
+        bg(ctx, w, h, "#5a1810", "#180605");
+        ctx.fillStyle = "#1a0e0c"; ctx.fillRect(0, seaY, w, h - seaY);
+        // fading creatures
+        ctx.fillStyle = "#d8362a"; ctx.globalAlpha = 0.8;
+        for (let i = 0; i < 16; i++) { const x = (i * 97 % (w - 40)) + 20, y = seaY + 20 + (i * 53 % 100); ctx.globalAlpha = 0.15 + 0.5 * ((i % 5) / 5); ctx.beginPath(); ctx.ellipse(x, y, 6, 2.6, 0.6, 0, 7); ctx.fill(); }
+        ctx.globalAlpha = 1;
+        label(ctx, w, "96% of marine species — gone", "#ff7a5a");
+      } else if (scene === "nadir") {
+        bg(ctx, w, h, "#3a352e", "#0e0c0a");
+        ground(ctx, w, h, groundY, "#2a2622", "#100d0b");
+        // fungal spores dots
+        ctx.fillStyle = "rgba(180,150,90,0.7)";
+        for (let i = 0; i < 60; i++) { const x = (i * 53) % w, y = groundY + ((i * 37) % (h - groundY)); ctx.beginPath(); ctx.arc(x, y, 1.4, 0, 7); ctx.fill(); }
+        label(ctx, w, "a stripped, silent world", "#c9bfa5");
+      } else if (scene === "after") {
+        bg(ctx, w, h, "#4a6a5a", "#0e1a14"); sun(ctx, w * 0.8, h * 0.22, 14, "rgba(255,235,190,0.85)");
+        ground(ctx, w, h, groundY, "#33402f", "#111a12");
+        // Lystrosaurus silhouette
+        ctx.fillStyle = "#1a130e";
+        const bx = w * 0.5, by = groundY + 40;
+        ctx.beginPath(); ctx.ellipse(bx, by, 30, 14, 0, 0, 7); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(bx - 28, by - 6, 12, 9, 0, 0, 7); ctx.fill();
+        ctx.fillRect(bx - 12, by + 8, 5, 16); ctx.fillRect(bx + 14, by + 8, 5, 16);
+        // sprouts
+        ctx.strokeStyle = "#6fc36b"; ctx.lineWidth = 2;
+        for (let i = 0; i < 8; i++) { const x = 20 + i * (w - 40) / 7; ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x, h - 14 - (i % 3) * 6); ctx.stroke(); }
+        label(ctx, w, "the survivors inherit the Earth", "#bfe6c9");
+      }
+    }
+    function ground(ctx, w, h, gy, a, b) {
+      const g = ctx.createLinearGradient(0, gy, 0, h);
+      g.addColorStop(0, a || "#3a1508"); g.addColorStop(1, b || "#0a0605");
+      ctx.fillStyle = g; ctx.fillRect(0, gy, w, h - gy);
+    }
+    function fissure(ctx, x, gy, h, glow) {
+      const g = ctx.createLinearGradient(x, gy, x, h);
+      g.addColorStop(0, "rgba(255,200,90," + (0.5 + glow * 0.4) + ")"); g.addColorStop(1, "rgba(255,80,20,0)");
+      ctx.fillStyle = g; ctx.fillRect(x - 6, gy, 12, h - gy);
+      ctx.fillStyle = "rgba(255,180,80,0.9)"; ctx.fillRect(x - 3, gy - 2, 6, 4);
+    }
+    function plume(ctx, x, gy, h, color) {
+      const g = ctx.createRadialGradient(x, gy - h * 0.2, 4, x, gy - h * 0.2, h * 0.35);
+      g.addColorStop(0, "rgba(150,150,150,0.5)"); g.addColorStop(1, "rgba(80,80,80,0)");
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, gy - h * 0.22, h * 0.3, 0, 7); ctx.fill();
+    }
+    function label(ctx, w, txt, color) {
+      ctx.fillStyle = color; ctx.font = "italic 15px " + cvar("--font-display"); ctx.textAlign = "center";
+      ctx.fillText(txt, w / 2, 26);
+    }
+
+    function render() {
+      const s = stops[idx];
+      $("#tl-index").textContent = (idx + 1) + " / " + stops.length;
+      $("#tl-when").textContent = s.tag;
+      $("#tl-title").textContent = s.label;
+      $("#tl-body").innerHTML = s.body;
+      $("#tl-label").textContent = s.label;
+      $$(".tl-stop", stopsWrap).forEach((b, i) => b.setAttribute("aria-pressed", i === idx));
+    }
+    let phase = 0;
+    function loop() { phase += 0.03; drawScene(stops[idx].scene, phase); raf = requestAnimationFrame(loop); }
+    slider.addEventListener("input", () => { idx = +slider.value; render(); });
+    render();
+    if (reduceMotion) drawScene(stops[0].scene, 0); else loop();
+    // redraw static on resize even if animating handles it
+    addEventListener("resize", () => { if (reduceMotion) drawScene(stops[idx].scene, phase); });
+  })();
+
+  /* ============ SUFFOCATING OCEAN ============ */
+  (function () {
+    const slider = $("#ocean-slider"), cv = $("#ocean-canvas");
+    if (!cv) return;
+    // model of the crisis over t (kyr): warming ramps 0..120, plateaus, eases after 300
+    function state(t) {
+      const warm = smooth(0, 110, t) * (1 - 0.25 * smooth(320, 400, t));
+      const sst = 28 + 11 * warm;
+      // oxygenated fraction of water column depth (1 = fully oxic surface only near 0.06)
+      const oxyDepth = lerp(1.0, 0.10, warm);       // fraction of column that is breathable, top-down
+      const euxinic = smooth(60, 200, t) * (1 - 0.3 * smooth(340, 400, t)); // fraction of column that is H2S, bottom-up
+      const anoxSeafloor = clamp(smooth(40, 160, t) * (1 - 0.25 * smooth(330, 400, t)), 0, 0.85);
+      const hab = clamp(oxyDepth * (1 - 0.4 * euxinic), 0, 1);
+      return { warm, sst, oxyDepth, euxinic, anoxSeafloor, hab };
+    }
+    function draw(t) {
+      const { w, h, ctx } = fit(cv, 360);
+      const s = state(t);
+      ctx.clearRect(0, 0, w, h);
+      const surf = 40, floor = h - 26;
+      const colH = floor - surf;
+      // sky
+      const sky = ctx.createLinearGradient(0, 0, 0, surf);
+      const heat = s.warm;
+      sky.addColorStop(0, "#1a1420"); sky.addColorStop(1, `rgba(${120 + 100 * heat | 0},${60 - 20 * heat | 0},30,0.5)`);
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, w, surf);
+      // water: oxic band top, dead middle, euxinic bottom
+      const oxicBot = surf + colH * clamp(s.oxyDepth, 0.06, 1);
+      const euxTop = floor - colH * s.euxinic;
+      // oxic
+      const gO = ctx.createLinearGradient(0, surf, 0, oxicBot);
+      gO.addColorStop(0, "#4fb0d8"); gO.addColorStop(1, "#2c6f8f");
+      ctx.fillStyle = gO; ctx.fillRect(0, surf, w, oxicBot - surf);
+      // dead zone
+      ctx.fillStyle = "#404a44"; ctx.fillRect(0, oxicBot, w, floor - oxicBot);
+      // euxinic
+      if (s.euxinic > 0.001) {
+        const gE = ctx.createLinearGradient(0, euxTop, 0, floor);
+        gE.addColorStop(0, "rgba(183,210,74,0)"); gE.addColorStop(1, "#b7d24a");
+        ctx.fillStyle = gE; ctx.fillRect(0, Math.min(euxTop, floor), w, floor - Math.min(euxTop, floor));
+      }
+      // seafloor
+      ctx.fillStyle = "#241a14"; ctx.fillRect(0, floor, w, h - floor);
+      // chemocline line
+      ctx.strokeStyle = "rgba(255,255,255,0.5)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(0, oxicBot); ctx.lineTo(w, oxicBot); ctx.stroke(); ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(255,255,255,0.75)"; ctx.font = "11px " + cvar("--font-mono"); ctx.textAlign = "left";
+      ctx.fillText("oxygen minimum — life ends below", 8, oxicBot - 6 < surf + 12 ? surf + 14 : oxicBot - 6);
+      // fish in oxic layer, fading as it shrinks
+      const nFish = Math.round(14 * clamp(s.oxyDepth, 0, 1));
+      ctx.fillStyle = "rgba(230,245,255,0.85)";
+      for (let i = 0; i < nFish; i++) {
+        const x = (i * 89 + (reduceMotion ? 0 : t * 6)) % (w - 20) + 10;
+        const y = surf + 12 + ((i * 41) % Math.max(8, (oxicBot - surf - 20)));
+        ctx.beginPath(); ctx.ellipse(x, y, 5, 2, 0.5, 0, 7); ctx.fill();
+      }
+      // sun/heat
+      ctx.fillStyle = `rgba(255,${200 - 120 * heat | 0},80,0.9)`;
+      ctx.beginPath(); ctx.arc(w - 34, 22, 12, 0, 7); ctx.fill();
+
+      $("#ocean-t").textContent = Math.round(t);
+      $("#o-sst").textContent = s.sst.toFixed(1) + " °C";
+      $("#o-oxy").textContent = Math.round(clamp(s.oxyDepth, 0.06, 1) * 100) + "% of depth";
+      $("#o-anox").textContent = Math.round(s.anoxSeafloor * 100) + "%";
+      $("#o-hab").textContent = Math.round(s.hab * 100) + "%";
+      $("#ocean-note").textContent = t < 20 ? "a healthy, oxygenated sea" : t < 120 ? "the deep is going stale" : t < 320 ? "poisoned from the bottom up" : "slow, partial recovery";
+    }
+    slider.addEventListener("input", () => draw(+slider.value));
+    addEventListener("resize", () => draw(+slider.value));
+    draw(0);
+  })();
+
+  /* ============ MEISHAN BOUNDARY COLUMN ============ */
+  (function () {
+    const cv = $("#kpg-canvas"), col = cv.parentElement;
+    if (!cv) return;
+    // beds from bottom (older, Permian) to top (younger, Triassic). h = fraction of column height.
+    // d13c in per-mil, life = marine diversity vs pre-crisis (0..1)
+    const beds = [
+      { name: "Changxing Limestone", sub: "Bed 24 · Late Permian · ~252.1 Ma", col: "#5f6b74", h: 0.30, d13c: 3.0, life: 1.0,
+        body: "Clean grey limestone, packed with the fossils of a mature Permian sea — brachiopods, corals, fusulinid foraminifera, crinoids. This is the world at full diversity, moments before the fall." },
+      { name: "The boundary clay", sub: "Bed 25 · the extinction horizon · ~251.94 Ma", col: "#d8c9a8", h: 0.06, d13c: 1.0, life: 0.45,
+        body: "A thin white-to-grey clay — altered volcanic ash from the eruptions. The main extinction horizon sits at its base: below it, a rich fauna; above it, almost nothing. Zircon crystals in this ash carry the clock that dates the whole event." },
+      { name: "Black boundary bed", sub: "Bed 26 · earliest Triassic", col: "#26221f", h: 0.05, d13c: -1.5, life: 0.12,
+        body: "Dark, organic-rich, oxygen-starved mud — the signature of a suffocating sea. The carbon-isotope curve is now in free-fall, recording the flood of light volcanic carbon into the ocean and air." },
+      { name: "Dated ash bed", sub: "Bed 28 · ~251.9 Ma · the clock", col: "#c7b48f", h: 0.05, d13c: -2.0, life: 0.10,
+        body: "Another ash. Uranium–lead dating of its zircons, matched against Bed 25, brackets the main extinction pulse to under 60,000 years — the measurement that turned the Great Dying from 'slow' into 'terrifyingly fast'." },
+      { name: "Yinkeng Formation", sub: "Early Triassic · the aftermath", col: "#3a4650", h: 0.30, d13c: -0.5, life: 0.15,
+        body: "Thin-bedded 'disaster' mudstones with a stunted, low-diversity fauna — tiny bivalves and microbial mounds where reefs once stood. The recovery from here will take millions of years." },
+      { name: "Recovery beds", sub: "Middle Triassic · life returns", col: "#4a5a54", h: 0.18, d13c: 1.5, life: 0.45,
+        body: "Higher up and later, diversity slowly climbs and the carbon cycle steadies. Complex ecosystems rebuild — the longest recovery in the fossil record, and the ground floor of the age of dinosaurs." },
+    ];
+    // build cumulative from bottom
+    let acc = 0; beds.forEach(b => { b.y0 = acc; acc += b.h; b.y1 = acc; });
+    const total = acc;
+    let hoverF = 0.30; // fraction from bottom
+
+    function draw() {
+      const dpr = DPR();
+      const w = col.clientWidth, h = col.clientHeight || 380;
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      const ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const colW = w * 0.46;
+      // draw beds (bottom = older at bottom of canvas)
+      for (const b of beds) {
+        const yTop = h * (1 - b.y1 / total), yBot = h * (1 - b.y0 / total);
+        ctx.fillStyle = b.col; ctx.fillRect(0, yTop, colW, yBot - yTop);
+        // texture speckle
+        ctx.fillStyle = "rgba(0,0,0,0.18)";
+        for (let i = 0; i < 30; i++) ctx.fillRect((i * 53) % colW, yTop + ((i * 29) % Math.max(2, yBot - yTop)), 1.5, 1.5);
+        ctx.strokeStyle = "rgba(0,0,0,0.4)"; ctx.lineWidth = 1; ctx.strokeRect(0.5, yTop + 0.5, colW - 1, yBot - yTop - 1);
+      }
+      // extinction horizon line (base of Bed 25)
+      const exY = h * (1 - beds[1].y0 / total);
+      ctx.strokeStyle = "#ff5a24"; ctx.lineWidth = 2; ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(0, exY); ctx.lineTo(colW, exY); ctx.stroke();
+      ctx.fillStyle = "#ff8a3c"; ctx.font = "bold 10px " + cvar("--font-mono"); ctx.textAlign = "left";
+      ctx.fillText("EXTINCTION", 4, exY - 4);
+      // d13c curve on right side
+      const cx0 = colW + 14, cxW = w - cx0 - 6;
+      const d13Range = [-3, 4];
+      ctx.strokeStyle = "rgba(255,255,255,0.15)"; ctx.lineWidth = 1;
+      ctx.strokeRect(cx0, 0, cxW, h);
+      // zero axis
+      const zx = cx0 + cxW * (0 - d13Range[0]) / (d13Range[1] - d13Range[0]);
+      ctx.strokeStyle = "rgba(255,255,255,0.2)"; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(zx, 0); ctx.lineTo(zx, h); ctx.stroke(); ctx.setLineDash([]);
+      // sample curve across beds using their d13c at bed centres, interpolate
+      ctx.strokeStyle = "#ffc861"; ctx.lineWidth = 2; ctx.beginPath();
+      const N = 80;
+      for (let i = 0; i <= N; i++) {
+        const f = i / N; // 0..1 bottom..top
+        const d = d13cAt(f);
+        const x = cx0 + cxW * (d - d13Range[0]) / (d13Range[1] - d13Range[0]);
+        const y = h * (1 - f);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.fillStyle = cvar("--muted"); ctx.font = "9px " + cvar("--font-mono"); ctx.textAlign = "center";
+      ctx.fillText("δ¹³C", cx0 + cxW / 2, h - 4);
+      // hover marker
+      const hy = h * (1 - hoverF);
+      ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(0, hy); ctx.lineTo(w, hy); ctx.stroke();
+      ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(colW, hy, 3.5, 0, 7); ctx.fill();
+    }
+    function d13cAt(f) {
+      // interpolate between bed centres
+      const pts = beds.map(b => ({ c: (b.y0 + b.y1) / 2 / total, v: b.d13c }));
+      if (f <= pts[0].c) return pts[0].v;
+      if (f >= pts[pts.length - 1].c) return pts[pts.length - 1].v;
+      for (let i = 0; i < pts.length - 1; i++) {
+        if (f >= pts[i].c && f <= pts[i + 1].c) {
+          const t = (f - pts[i].c) / (pts[i + 1].c - pts[i].c);
+          return lerp(pts[i].v, pts[i + 1].v, t);
+        }
+      }
+      return 0;
+    }
+    function bedAt(f) { for (const b of beds) if (f >= b.y0 && f < b.y1) return b; return beds[beds.length - 1]; }
+    function readout() {
+      const b = bedAt(hoverF);
+      $("#kpg-name").textContent = b.name;
+      $("#kpg-age").textContent = b.sub;
+      $("#kpg-body").innerHTML = "<p style='margin:.4rem 0 0'>" + b.body + "</p>";
+      $("#kpg-d13c").textContent = (d13cAt(hoverF) >= 0 ? "+" : "") + d13cAt(hoverF).toFixed(1);
+      $("#kpg-life").textContent = Math.round(b.life * 100) + "%";
+      draw();
+    }
+    function pick(clientY) {
+      const r = col.getBoundingClientRect();
+      hoverF = clamp(1 - (clientY - r.top) / r.height, 0, 0.999);
+      readout();
+    }
+    col.addEventListener("mousemove", e => pick(e.clientY));
+    col.addEventListener("touchmove", e => { if (e.touches[0]) { pick(e.touches[0].clientY); e.preventDefault(); } }, { passive: false });
+    col.addEventListener("touchstart", e => { if (e.touches[0]) pick(e.touches[0].clientY); }, { passive: true });
+    addEventListener("resize", draw);
+    readout();
+  })();
+
+  /* ============ SURVIVORS / TAXA ============ */
+  (function () {
+    const wrap = $("#taxa"); if (!wrap) return;
+    const taxa = [
+      { nm: "Trilobites", v: "died", ic: "trilobite", why: "A quarter-billion-year dynasty ends here. Already dwindling, these iconic arthropods could not survive the anoxic, acidifying sea. Their final species vanish at the boundary." },
+      { nm: "Rugose &amp; tabulate corals", v: "died", ic: "coral", why: "The Palaeozoic reef-builders. Acidifying water dissolves their calcite skeletons faster than they can grow them; both groups are wiped out entirely." },
+      { nm: "Sea scorpions", v: "died", ic: "eurypterid", why: "The eurypterids — some over two metres long — had prowled the seas since the Ordovician. The end-Permian is their last appearance anywhere." },
+      { nm: "Fusulinid forams", v: "died", ic: "foram", why: "Rice-grain single-celled shells that had built entire limestones. Their calcareous tests and warm-shallow lifestyle left them fatally exposed." },
+      { nm: "Blastoids", v: "died", ic: "blastoid", why: "Stalked, budlike echinoderms — cousins of the sea lilies. A whole class of animals disappears from the Earth at the boundary and never returns." },
+      { nm: "Gorgonopsians", v: "died", ic: "gorgon", why: "The sabre-toothed top predators of the Permian land — mammal relatives, not reptiles. The dominant carnivores of their world; gone in the pulse." },
+      { nm: "Lystrosaurus", v: "lived", ic: "lystro", why: "A stubby, tusked, burrowing dicynodont. Burrowing buffered it from heat, and a generalist diet carried it through — it briefly made up ~90% of land-vertebrate fossils in the earliest Triassic." },
+      { nm: "Bivalves &amp; gastropods", v: "lived", ic: "bivalve", why: "Clams and snails: tolerant, mobile generalists, some able to endure low oxygen. They pull through and inherit the empty seafloor niches the brachiopods vacated." },
+      { nm: "Archosaurs", v: "lived", ic: "archosaur", why: "A modest reptile group that scraped through — and in the emptied Triassic diversified spectacularly. From this lineage come the crocodilians, the pterosaurs and, eventually, the dinosaurs." },
+      { nm: "Ammonoids", v: "lived", ic: "ammonoid", why: "Nearly annihilated — but a few lineages survive and then explode in diversity in the Triassic. A textbook 'bottleneck then boom' after a mass extinction." },
+    ];
+    const ICON = {
+      trilobite: '<path d="M20 6 C33 6 40 14 40 20 C40 26 33 34 20 34 C7 34 0 26 0 20 C0 14 7 6 20 6 Z" transform="translate(0,0)"/><line x1="12" y1="8" x2="12" y2="32"/><line x1="28" y1="8" x2="28" y2="32"/>',
+      coral: '<path d="M20 34 V18 M20 22 C20 14 12 12 10 6 M20 20 C20 12 28 12 30 6 M20 24 C20 18 16 16 6 14 M20 24 C20 18 24 16 34 14"/>',
+      eurypterid: '<path d="M20 4 C24 12 24 28 20 36 C16 28 16 12 20 4 Z"/><line x1="10" y1="12" x2="20" y2="16"/><line x1="30" y1="12" x2="20" y2="16"/><line x1="8" y1="20" x2="20" y2="22"/><line x1="32" y1="20" x2="20" y2="22"/>',
+      foram: '<circle cx="14" cy="24" r="8"/><circle cx="24" cy="18" r="6"/><circle cx="31" cy="13" r="4"/>',
+      blastoid: '<path d="M20 6 C28 12 28 26 20 34 C12 26 12 12 20 6 Z"/><line x1="20" y1="6" x2="20" y2="34"/><path d="M13 14 Q20 20 27 14 M13 26 Q20 20 27 26"/>',
+      gorgon: '<path d="M6 24 L28 24 L34 18 L34 26 L28 22"/><path d="M28 24 L30 30 M10 24 L8 32 M18 24 L18 32"/><line x1="32" y1="20" x2="33" y2="26"/>',
+      lystro: '<path d="M4 26 Q10 18 22 18 L32 20 Q36 22 34 26 L32 30 L8 30 Q4 30 4 26 Z"/><line x1="31" y1="26" x2="31" y2="32"/><line x1="12" y1="30" x2="12" y2="34"/><line x1="26" y1="30" x2="26" y2="34"/>',
+      bivalve: '<path d="M20 30 C6 30 4 16 20 8 C36 16 34 30 20 30 Z"/><path d="M20 8 V30 M12 14 L20 12 M28 14 L20 12"/>',
+      archosaur: '<path d="M2 28 Q14 26 18 20 Q22 12 32 10 L38 8 L34 14 Q30 18 30 24 L28 30"/><line x1="18" y1="24" x2="16" y2="32"/><line x1="26" y1="26" x2="26" y2="33"/>',
+      ammonoid: '<path d="M32 20 A12 12 0 1 1 20 8 A9 9 0 1 0 26 20 A5 5 0 1 1 22 18"/>',
+    };
+    wrap.innerHTML = taxa.map(t =>
+      '<button class="taxon ' + t.v + '" aria-expanded="false">' +
+      '<svg class="ico" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">' + (ICON[t.ic] || "") + '</svg>' +
+      '<div class="nm">' + t.nm + '</div>' +
+      '<div class="vd">' + (t.v === "died" ? "✕ extinct" : "✓ survived") + '</div>' +
+      '<div class="why">' + t.why + '</div>' +
+      '</button>'
+    ).join("");
+    $$(".taxon", wrap).forEach(b => b.addEventListener("click", () => {
+      const open = b.getAttribute("aria-expanded") === "true";
+      b.setAttribute("aria-expanded", !open);
+    }));
+  })();
+
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

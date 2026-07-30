@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wavefunctions at Work — Quanta</title>
+<meta name="description" content="The Schrödinger equation solved: wave packets, the particle in a box, the harmonic oscillator and its ladder operators, quantum tunnelling, and the hydrogen atom with its orbitals drawn live.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="origins.html">1 · The Crisis</a>
+    <a href="machinery.html">2 · The Machinery</a>
+    <a href="wavefunction.html" aria-current="page">3 · Wavefunctions</a>
+    <a href="spin.html">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html">5 · Entanglement</a>
+    <a href="fields.html">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 3</p>
+  <h1>Wavefunctions at Work</h1>
+  <p class="standfirst">The abstract machinery becomes concrete the moment you choose a
+  Hilbert space: functions on space, evolving under one equation. This chapter solves
+  that equation in the handful of settings where it yields exactly — the box, the
+  oscillator, the barrier, the atom — because those four solutions, between them, run
+  most of the visible universe and everything in Chapter&nbsp;7.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="psi"><span class="no">3.1</span>The wavefunction: a particle smeared into a shape</h2>
+
+<p class="lead">Chapter&nbsp;2's arrow, for a particle that can be anywhere along a line,
+becomes a <strong>shape</strong> — a curve spread over space called the
+<strong>wavefunction</strong>, written ψ(<i>x</i>).</p>
+
+<p>Think of ψ(<i>x</i>) as the particle's &ldquo;amplitude for being here&rdquo; at every point
+<i>x</i>. It's the same arrow from Chapter&nbsp;2, just with one component for every
+possible position — so it's a whole curve rather than a short list. Square its height
+and you get the odds: |ψ(<i>x</i>)|² tells you how likely the particle is to turn up near
+<i>x</i>, and the probabilities over all positions add to one. (Formally
+ψ(<i>x</i>)&nbsp;=&nbsp;⟨<i>x</i>|ψ⟩ — the overlap of the state with the &ldquo;definitely at
+<i>x</i>&rdquo; state.) Feed this into Postulate&nbsp;V and you get the equation Erwin
+Schrödinger wrote down in 1926, the <i>F</i>&nbsp;=&nbsp;<i>ma</i> of the quantum world:</p>
+
+<p class="eq"><span class="m"><i>i</i>ħ&thinsp;<span class="frac"><span>∂ψ</span><span>∂<i>t</i></span></span> =
+−&thinsp;<span class="frac"><span>ħ<sup>2</sup></span><span>2<i>m</i></span></span>
+<span class="frac"><span>∂<sup>2</sup>ψ</span><span>∂<i>x</i><sup>2</sup></span></span> + <i>V</i>(<i>x</i>)&thinsp;ψ</span>
+<span class="eqno">TDSE</span></p>
+
+<p>Since energy eigenstates carry all the dynamics as mere phase (§2.6), the
+working problem is the <strong>time-independent</strong> equation
+<i>Ĥ</i>ψ&nbsp;=&nbsp;<i>E</i>ψ: find the shapes ψ<sub>n</sub> and the energies <i>E</i><sub>n</sub> the
+potential permits. Three general truths are worth carrying in:</p>
+
+<ul>
+  <li><strong>Curvature is kinetic energy.</strong> The equation says
+  ψ″&nbsp;∝&nbsp;(<i>V</i>&nbsp;−&nbsp;<i>E</i>)ψ: where the particle is classically allowed
+  (<i>E</i>&nbsp;&gt;&nbsp;<i>V</i>) the wavefunction oscillates, and the more surplus energy, the
+  faster; where it is classically forbidden it bends the other way — decaying
+  exponentially rather than vanishing. That leak is tunnelling (§3.5).</li>
+  <li><strong>Confinement quantises.</strong> A wave pinned by boundary conditions fits
+  only certain shapes, like a violin string. Discrete energies are not an extra
+  postulate; they are resonance.</li>
+  <li><strong>Nodes count.</strong> The ground state has none; each rung up adds exactly
+  one. More nodes, more curvature, more energy — a rule of thumb that reads off
+  energy ordering at a glance.</li>
+</ul>
+
+<p>These three habits — oscillate where allowed, decay where forbidden, count the
+nodes — let you sketch the answer to almost any one-dimensional problem before
+solving a thing. The rest of this chapter is four cases where you can solve it
+exactly.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">momentum space, and why wave packets spread</span></summary>
+  <p>Momentum has its own wavefunction, φ(<i>p</i>) — the same state written in the
+  momentum basis (the momentum operator is <i>p̂</i>&nbsp;=&nbsp;−<i>i</i>ħ&thinsp;∂/∂<i>x</i>, the unique
+  choice giving [<i>x̂</i>,<i>p̂</i>]&nbsp;=&nbsp;<i>i</i>ħ). It is the <strong>Fourier transform</strong> of
+  ψ(<i>x</i>), and Fourier analysis proves a function and its transform can't both be
+  narrow — which <em>is</em> Δ<i>x</i>Δ<i>p</i>&nbsp;≥&nbsp;ħ/2, the uncertainty principle wearing
+  analysis instead of algebra. A localised bump — a <strong>wave packet</strong> — is built
+  from a band of momenta; it glides at the classical speed but also <em>spreads</em>,
+  because its faster momentum components outrun the slow ones. A free electron pinned
+  to an ångström doubles its width in about 10<sup>−16</sup>&nbsp;s, which is why picturing
+  the electron as a tiny ball fails almost instantly.</p>
+</details>
+
+<h2 id="box"><span class="no">3.2</span>The particle in a box</h2>
+
+<p>The simplest confining potential — and, since it is the engine of Chapter&nbsp;7,
+the most important twenty lines of algebra in this almanac. Let <i>V</i>&nbsp;=&nbsp;0 inside
+a well of width <i>L</i> and infinite outside. The wavefunction must vanish at the
+walls, so the interior solutions are standing waves with a whole number of
+half-wavelengths:</p>
+
+<p class="eq"><span class="m">ψ<sub>n</sub>(<i>x</i>) = √<span class="ol">2/<i>L</i></span>&thinsp;
+sin&thinsp;(<i>n</i>π<i>x</i>/<i>L</i>),&emsp;
+<i>E</i><sub>n</sub> = <span class="frac"><span><i>n</i><sup>2</sup>π<sup>2</sup>ħ<sup>2</sup></span><span>2<i>mL</i><sup>2</sup></span></span>,&emsp;
+<i>n</i> = 1, 2, 3…</span>
+<span class="eqno">THE BOX</span></p>
+
+<p>Read the formula like an engineer, because Chapter&nbsp;7 will:</p>
+
+<ul>
+  <li><strong>1/<i>L</i>² — the lever.</strong> Halve the box and every level quadruples.
+  Confinement energy is the knob that a quantum dot's radius turns.</li>
+  <li><strong>No zero rung.</strong> The lowest state has <i>E</i><sub>1</sub>&nbsp;&gt;&nbsp;0:
+  zero-point energy, the uncertainty principle made visible — a confined particle
+  cannot sit still.</li>
+  <li><strong>Scale test.</strong> An electron in a 1&nbsp;nm box: <i>E</i><sub>1</sub>&nbsp;≈&nbsp;0.38&nbsp;eV,
+  optical territory. A 1&nbsp;g bead in a 1&nbsp;cm groove: <i>E</i><sub>1</sub>&nbsp;≈&nbsp;10<sup>−58</sup>&nbsp;J,
+  with levels so dense the ladder is a ramp — the classical world, recovered.</li>
+</ul>
+
+<p>The box is less of a toy than it looks. π-electrons delocalised along a
+conjugated dye molecule are particles in a box the length of the molecule — extend
+the chain and the absorption marches from ultraviolet into the visible, which is
+why carrot orange and jeans indigo are, quite literally, box lengths. Semiconductor
+quantum wells (a nanometre-thin sandwich of one crystal in another) are boxes in
+one dimension and power laser pointers; a quantum dot is the same idea in all
+three.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The box — eigenstates and a superposition that sloshes</span>
+    <span class="hint">stationary states stand still; a sum of two moves — at the beat of their energy gap</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-box" style="aspect-ratio: 2.3 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="box-mode">state</label>
+      <span class="seg" id="box-mode">
+        <button data-v="eigen" class="on">eigenstate ψₙ</button>
+        <button data-v="super">(ψ₁+ψ₂)/√2</button>
+      </span>
+    </div>
+    <div class="ctl">
+      <label for="box-n">n</label>
+      <input type="range" id="box-n" min="1" max="6" step="1" value="2">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="box-L">box width L</label>
+      <input type="range" id="box-L" min="0.5" max="3" step="0.05" value="1">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">Eₙ for an electron <b id="box-E">—</b></span>
+    <span class="ro" id="box-note" style="color:var(--ink-2)"></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p class="tryit">Switch to &ldquo;eigenstate&rdquo; and step <b>n</b> up: each rung adds one more
+bump and one more <b>node</b> (a point of zero chance), and the energy climbs as n². Now
+narrow the box with the width slider — every level <b>leaps</b> higher. That 1/L² kick is
+the exact knob a quantum dot turns to pick its colour (Chapter&nbsp;7). Flip to the
+superposition and watch the blob <b>slosh</b> — that's what &ldquo;motion&rdquo; looks like here.</p>
+
+<h2 id="oscillator"><span class="no">3.3</span>The harmonic oscillator: physics' favourite problem</h2>
+
+<p>Almost any potential looks like a parabola at the bottom of a valley, so the
+harmonic oscillator <i>V</i>&nbsp;=&nbsp;½<i>m</i>ω²<i>x</i>² is the universal small-vibration
+problem: molecular bonds, crystal lattices, and — decisively for Chapter&nbsp;6 — each
+mode of the electromagnetic field. Its solution is the prettiest shortcut in physics.
+Instead of grinding through a differential equation, Paul Dirac noticed you can build
+a <strong>ladder</strong>: one operation nudges any state up by exactly one rung, a partner
+operation nudges it down, and there is a bottom rung you cannot fall below. That alone
+— no calculus — forces the energies to be a perfectly even ladder of steps ħω:</p>
+
+<p class="eq"><span class="m"><i>E</i><sub>n</sub> = (<i>n</i> + ½)&thinsp;ħω,&emsp;<i>n</i> = 0, 1, 2…</span>
+<span class="eqno">AN EVENLY SPACED LADDER, FOREVER</span></p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the ladder operators, in symbols</span></summary>
+  <p>The two rungs-movers are the <strong>ladder operators</strong></p>
+  <p class="eq"><span class="m"><i>â</i> = √<span class="ol"><i>m</i>ω/2ħ</span>&thinsp;
+  (<i>x̂</i> + <i>i</i><i>p̂</i>/<i>m</i>ω),&emsp;[<i>â</i>, <i>â</i><sup>†</sup>] = 1</span></p>
+  <p>with <i>Ĥ</i>&nbsp;=&nbsp;ħω(<i>â</i><sup>†</sup><i>â</i>&nbsp;+&nbsp;½). The single commutation relation
+  does all the work: <i>â</i><sup>†</sup> raises any state by one quantum ħω, <i>â</i> lowers
+  it, and the descent must stop at a ground state with <i>â</i>|0⟩&nbsp;=&nbsp;0 — from which
+  <i>E</i><sub>n</sub>&nbsp;=&nbsp;(<i>n</i>+½)ħω follows with no differential equation ever solved.
+  In quantum field theory (Chapter&nbsp;6) these very operators <em>create and destroy
+  particles</em>.</p>
+</details>
+
+<p>A perfectly even ladder — the only potential with that property, which is why
+&ldquo;a quantum of vibration&rdquo; is a well-defined particle-like thing: the
+<strong>phonon</strong> in a crystal, the <strong>photon</strong> in a field mode. The ground state
+solves a first-order equation and is a Gaussian,
+ψ<sub>0</sub>&nbsp;∝&nbsp;<i>e</i><sup>−<i>m</i>ω<i>x</i>²/2ħ</sup> — the unique state that saturates
+Δ<i>x</i>Δ<i>p</i>&nbsp;=&nbsp;ħ/2. Its zero-point energy ½ħω is no formality: it is why helium
+refuses to freeze at any pressure below 25&nbsp;atmospheres, it is measurable in
+molecular spectra as isotope shifts, and summed over field modes it becomes the
+vacuum energy whose consequences (Casimir, Lamb) open Chapter&nbsp;6.</p>
+
+<h2 id="tunnel"><span class="no">3.4</span>Through the wall: tunnelling</h2>
+
+<p>Point a wave at a barrier taller than its energy. Classically the particle
+bounces, always. Quantum mechanically the wavefunction cannot stop dead at the
+wall — inside the forbidden region it becomes a decaying exponential
+<i>e</i><sup>−κ<i>x</i></sup> with</p>
+
+<p class="eq"><span class="m">κ = √<span class="ol">2<i>m</i>(<i>V</i><sub>0</sub> − <i>E</i>)</span>&thinsp;/&thinsp;ħ</span>
+<span class="eqno">EVANESCENT DECAY</span></p>
+
+<p>and if the barrier's far side arrives before the amplitude has quite died, the
+wave resumes oscillating there — smaller, but alive. For a rectangular barrier of
+width <i>a</i> the exact transmission is
+<i>T</i>&nbsp;=&nbsp;[1&nbsp;+&nbsp;<i>V</i><sub>0</sub>²&thinsp;sinh²(κ<i>a</i>)/4<i>E</i>(<i>V</i><sub>0</sub>−<i>E</i>)]<sup>−1</sup>,
+which in the thick-barrier limit is the number to remember:</p>
+
+<p class="eq"><span class="m"><i>T</i> ≈ <i>e</i><sup>−2κ<i>a</i></sup></span>
+<span class="eqno">EXPONENTIALLY SENSITIVE</span></p>
+
+<p>That exponential is ferocious, and it is the reason tunnelling built three
+industries and one Sun:</p>
+
+<ul>
+  <li><strong>Alpha decay</strong> (Gamow, 1928 — the first triumph of tunnelling): the
+  alpha particle rattles against the nuclear Coulomb wall ~10²¹ times a second with
+  a tunnelling chance so tiny that half-lives range from microseconds to billions of
+  years — a factor of 10²⁴ in lifetime from a modest range of barrier shapes,
+  exactly as the exponential predicts (the Geiger–Nuttall law).</li>
+  <li><strong>The Sun</strong>: at 15&nbsp;million kelvin, protons' thermal energy is ~1&nbsp;keV
+  against a ~1&nbsp;MeV Coulomb summit. Fusion happens only because nuclei tunnel
+  through the last stretch; without it, stars are impossible.</li>
+  <li><strong>The scanning tunnelling microscope</strong> (Binnig &amp; Rohrer, 1981): the
+  vacuum gap between a metal tip and a surface is a barrier; the tunnelling current
+  changes by a factor of ~10 per ångström of gap. Servo the current, raster the
+  tip, and you image individual atoms with a machine that fits on a desk.</li>
+  <li><strong>Flash memory</strong> stores your photographs by tunnelling electrons through
+  ~7&nbsp;nm of oxide onto a floating gate — and the same leak, unwanted, is a hard
+  floor under how small a transistor's insulation can shrink.</li>
+</ul>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The tunnel — a wave against a wall it cannot climb</span>
+    <span class="hint">watch the exponential: a little more width or height, far less gets through</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="tun" style="aspect-ratio: 2.4 / 1; min-height: 280px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="tun-e">particle energy E / V₀</label>
+      <input type="range" id="tun-e" min="0.1" max="0.95" step="0.01" value="0.5">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="tun-a">barrier width</label>
+      <input type="range" id="tun-a" min="0.3" max="3" step="0.05" value="1">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">transmission T <b id="tun-T">—</b></span>
+    <span class="ro">decay constant κ <b id="tun-k">—</b></span>
+    <span class="ro" style="color:var(--ink-2)">Real part of ψ drawn; the barrier interior shows the evanescent tail. The
+    transmitted wave keeps the incident wavelength — only its amplitude pays.</span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p class="tryit">Lower the particle's energy or widen the barrier and watch the transmission
+<b>T</b> collapse — not smoothly, but off a cliff, because it falls exponentially. The
+wave doesn't stop dead at the wall; it <b>leaks</b> through as a shrinking tail and comes
+out the far side, smaller but alive. That thin leak lights the Sun, fires alpha decay,
+and reads atoms one at a time in a scanning tunnelling microscope.</p>
+
+<h2 id="hydrogen"><span class="no">3.5</span>The hydrogen atom, solved honestly</h2>
+
+<p>The problem that broke classical physics yields to the Schrödinger equation
+exactly — one of only a handful of real systems that does. For the Coulomb
+potential <i>V</i>&nbsp;=&nbsp;−<i>e</i>²/4πε₀<i>r</i>, rotational symmetry lets the
+three-dimensional equation separate in spherical coordinates,
+ψ&nbsp;=&nbsp;<i>R</i><sub>nl</sub>(<i>r</i>)&thinsp;<i>Y</i><sub>lm</sub>(θ,φ), and each factor brings its own
+integer:</p>
+
+<table class="data">
+  <caption>The quantum numbers of one electron</caption>
+  <thead><tr><th>symbol</th><th>name</th><th>allowed values</th><th>what it counts</th></tr></thead>
+  <tbody>
+    <tr><td class="k">n</td><td>principal</td><td class="num">1, 2, 3, …</td>
+      <td>the energy rung: <i>E</i><sub>n</sub> = −13.606&thinsp;eV/<i>n</i>², total nodes = <i>n</i>−1</td></tr>
+    <tr><td class="k">l</td><td>orbital</td><td class="num">0 … n−1</td>
+      <td>angular momentum |<b>L</b>| = √<span class="ol">l(l+1)</span>&thinsp;ħ; the letters s, p, d, f are l = 0, 1, 2, 3</td></tr>
+    <tr><td class="k">m</td><td>magnetic</td><td class="num">−l … +l</td>
+      <td>the component <i>L<sub>z</sub></i> = <i>m</i>ħ along a chosen axis — quantised direction</td></tr>
+  </tbody>
+</table>
+
+<p>The energies reproduce Bohr's ladder exactly — same formula, same Rydberg — but
+everything else is transformed. There are no orbits: |ψ|² is a standing cloud of
+probability amplitude, time-independent in any stationary state (the electron in
+hydrogen's ground state has <em>zero</em> orbital angular momentum — nothing circulates
+at all). The 1s cloud peaks in density at the nucleus but the most probable
+<em>radius</em> is exactly the Bohr radius <i>a</i><sub>0</sub> — Bohr's number survives as the
+crest of a distribution. And each level <i>n</i> hides <i>n</i>² degenerate states of
+different shape (2<i>n</i>² once spin doubles the count in Chapter&nbsp;4) — the
+bookkeeping that will build the periodic table.</p>
+
+<p>The equation also quietly fixes its own scale. Balancing Coulomb attraction
+against uncertainty-principle stiffness gives
+<i>a</i><sub>0</sub>&nbsp;=&nbsp;4πε₀ħ²/<i>m</i><sub>e</sub><i>e</i>²&nbsp;=&nbsp;0.0529&nbsp;nm: atoms are the size
+at which those two pressures draw. Small print that matters: the proton is not
+infinitely heavy, and using the reduced mass μ shifts every hydrogen line by one
+part in 1,836 — deuterium was <em>discovered</em> (1931) as a faint twin line displaced
+by exactly this. Relativity and spin then split the levels further (fine structure,
+~10<sup>−4</sup>&nbsp;eV; the Lamb shift, Chapter&nbsp;6, finer still), and each refinement has
+matched experiment for a century. It remains the most accurately understood bound
+system in science.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The orbital gallery — |ψₙₗₘ|² in cross-section</span>
+    <span class="hint">a cut through the probability cloud in the x–z plane; brightness is density</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="orb" style="aspect-ratio: 2.2 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="orb-sel">state</label>
+      <span class="seg" id="orb-sel">
+        <button data-v="100" class="on">1s</button>
+        <button data-v="200">2s</button>
+        <button data-v="210">2p₀</button>
+        <button data-v="211">2p±₁</button>
+        <button data-v="300">3s</button>
+        <button data-v="310">3p₀</button>
+        <button data-v="320">3d₀</button>
+        <button data-v="321">3d±₁</button>
+        <button data-v="322">3d±₂</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">energy <b id="orb-E">—</b></span>
+    <span class="ro">|L| <b id="orb-L">—</b></span>
+    <span class="ro" id="orb-note" style="color:var(--ink-2)"></span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p class="tryit">Click through the orbitals — 1s, 2p, 3d. Each glowing cloud is
+<b>|ψ|²</b>: where the electron is likely to be. There are no orbits and nothing circles;
+the electron is a standing <b>shape</b>. Notice the dark gaps (<b>nodes</b>) multiply as you
+climb, and how s, p and d clouds have their own personalities — the shapes that, stacked
+by Chapter&nbsp;4's rules, become the whole periodic table.</p>
+
+<div class="callout">
+  <span class="tag">What resisted, and what comes next</span>
+  <p>Helium — two electrons — already has no closed-form solution; from there on
+  physics lives by approximation methods (perturbation theory, variational trials,
+  and today numerical machines of great power) built on exactly these four exact
+  solutions as scaffolding. But the deeper novelty of many-particle quantum
+  mechanics is not computational difficulty. It is that identical particles are
+  <em>indistinguishable in principle</em>, and that fact — plus a property of the
+  electron no classical object has — reorganises matter from the bottom up. That is
+  Chapter&nbsp;4.</p>
+</div>
+
+</div>
+
+<nav class="chapnav">
+  <a href="machinery.html"><span class="dir">← Chapter 2</span><span class="title">The Machinery</span></a>
+  <a class="next" href="spin.html"><span class="dir">Chapter 4 →</span><span class="title">Spin &amp; Identity</span></a>
+</nav>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, seg, clamp, label, line, fmtNum } = Q;
+
+  /* ============ particle in a box ============ */
+  let boxMode = "eigen", boxN = 2, boxL = 1; // L in nm
+
+  function boxE(n, Lnm) { // eV, electron
+    return (n * n * Math.PI * Math.PI * 1.054571817e-34 * 1.054571817e-34) /
+      (2 * 9.1093837015e-31 * Math.pow(Lnm * 1e-9, 2)) / 1.602176634e-19;
+  }
+
+  const box = canvas("fig-box", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const L = 70, R = 190, Tp = 20, B = 34;
+    const px = w - L - R, ph = h - Tp - B;
+    const wallL = L + px * (0.5 - boxL / 6), wallR = L + px * (0.5 + boxL / 6);
+    const bw = wallR - wallL;
+
+    // walls
+    ctx.fillStyle = "rgba(236,233,244,0.05)";
+    ctx.fillRect(L - 10, Tp, wallL - L + 10, ph);
+    ctx.fillRect(wallR, Tp, L + px - wallR + 10, ph);
+    line(ctx, wallL, Tp, wallL, Tp + ph, C.line, 1.5);
+    line(ctx, wallR, Tp, wallR, Tp + ph, C.line, 1.5);
+    line(ctx, L - 10, Tp + ph, L + px + 10, Tp + ph, C.line);
+    label(ctx, "0", wallL, Tp + ph + 16, { align: "center" });
+    label(ctx, "L", wallR, Tp + ph + 16, { align: "center" });
+
+    const mid = Tp + ph * 0.55;
+    const A = ph * 0.34;
+
+    if (boxMode === "eigen") {
+      // ψn and |ψn|²
+      ctx.strokeStyle = C.cyan; ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const u = i / 200, x = wallL + u * bw;
+        const y = mid - A * Math.sin(boxN * Math.PI * u);
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.strokeStyle = C.photon; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let i = 0; i <= 200; i++) {
+        const u = i / 200, x = wallL + u * bw;
+        const s = Math.sin(boxN * Math.PI * u);
+        const y = Tp + ph - 6 - (A * 0.8) * s * s;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      label(ctx, "ψₙ", wallL + 8, mid - A - 6, { color: C.cyan, font: Q.MONO_B });
+      label(ctx, "|ψₙ|²", wallL + 8, Tp + ph - 10, { color: C.photon, font: Q.MONO_B });
+    } else {
+      // |Ψ(x,t)|² for (ψ1+ψ2)/√2, beat at ΔE/ħ — animate with scaled time
+      const E1 = boxE(1, boxL), E2 = boxE(2, boxL);
+      const phase = t * 1.6; // radians — schematic clock
+      ctx.strokeStyle = C.photon; ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      for (let i = 0; i <= 240; i++) {
+        const u = i / 240, x = wallL + u * bw;
+        const s1 = Math.sin(Math.PI * u), s2 = Math.sin(2 * Math.PI * u);
+        const dens = 0.5 * (s1 * s1 + s2 * s2) + s1 * s2 * Math.cos(phase);
+        const y = Tp + ph - 6 - (A * 0.75) * dens;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      label(ctx, "|Ψ(x,t)|² — beating at (E₂−E₁)/ħ", wallL + 8, Tp + 16, { color: C.photon, font: Q.MONO_B });
+      // mean position marker
+      let num = 0, den = 0;
+      for (let i = 0; i <= 100; i++) {
+        const u = i / 100;
+        const s1 = Math.sin(Math.PI * u), s2 = Math.sin(2 * Math.PI * u);
+        const dens = 0.5 * (s1 * s1 + s2 * s2) + s1 * s2 * Math.cos(phase);
+        num += u * dens; den += dens;
+      }
+      const xm = wallL + (num / den) * bw;
+      ctx.fillStyle = C.violet;
+      ctx.beginPath(); ctx.arc(xm, Tp + ph - 2, 4, 0, Q.TAU); ctx.fill();
+      label(ctx, "⟨x⟩", xm, Tp + ph + 16, { align: "center", color: C.violet });
+    }
+
+    // energy ladder inset (right)
+    const lx = w - R + 30, lw = R - 70;
+    const Emax = boxE(6, boxL);
+    label(ctx, "Eₙ ∝ n²", lx + lw / 2, Tp + 12, { align: "center", color: C.muted });
+    for (let n = 1; n <= 6; n++) {
+      const y = Tp + 20 + (1 - boxE(n, boxL) / Emax) * (ph - 30);
+      const hot = boxMode === "eigen" ? n === boxN : (n === 1 || n === 2);
+      line(ctx, lx, y, lx + lw, y, hot ? C.violet : C.line, hot ? 2.2 : 1);
+      label(ctx, "n=" + n, lx + lw + 4, y + 4, { color: hot ? C.violet : C.muted });
+    }
+  }, { animate: true });
+
+  function boxRead() {
+    const n = boxMode === "eigen" ? boxN : 1;
+    const E = boxE(boxN, boxL);
+    document.getElementById("box-E").textContent =
+      "E" + boxN + " = " + (E >= 1 ? E.toFixed(2) : E.toFixed(3)) + " eV  (L = " + boxL.toFixed(2) + " nm)";
+    document.getElementById("box-note").textContent = boxMode === "super"
+      ? "A superposition is not stationary: the relative phase e^{−iΔE t/ħ} drifts, and the density sloshes — this is what 'motion' is in quantum mechanics."
+      : (boxN === 1 ? "Ground state: one hump, no nodes, energy strictly positive — confinement forbids rest."
+        : boxN + " half-waves, " + (boxN - 1) + " node" + (boxN > 2 ? "s" : "") + " — each node costs energy.");
+  }
+  seg("box-mode", (v) => { boxMode = v; boxRead(); });
+  slider("box-n", (v) => "n = " + v, (v) => { boxN = v; boxRead(); });
+  slider("box-L", (v) => v.toFixed(2) + " nm", (v) => { boxL = v; boxRead(); });
+
+  /* ============ tunnelling ============ */
+  let eRatio = 0.5, aWidth = 1; // width in nm, V0 fixed at 1 eV
+  const V0 = 1; // eV
+
+  function kappaOf() { // 1/nm for electron, energies in eV
+    const dE = V0 * (1 - eRatio) * 1.602176634e-19;
+    return Math.sqrt(2 * 9.1093837015e-31 * dE) / 1.054571817e-34 / 1e9;
+  }
+  function kOf() {
+    const E = V0 * eRatio * 1.602176634e-19;
+    return Math.sqrt(2 * 9.1093837015e-31 * E) / 1.054571817e-34 / 1e9;
+  }
+  function Tcoef() {
+    const E = V0 * eRatio, k = kappaOf() * aWidth;
+    const sh = Math.sinh(k);
+    return 1 / (1 + (V0 * V0 * sh * sh) / (4 * E * (V0 - E)));
+  }
+
+  const tun = canvas("tun", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    const L = 24, R = 24, Tp = 18, B = 30;
+    const px = w - L - R, ph = h - Tp - B;
+    const bx1 = L + px * 0.44, bx2 = bx1 + px * 0.10 * aWidth; // barrier
+    const eLine = Tp + ph * (1 - eRatio * 0.62);
+    const vTop = Tp + ph * 0.38;
+
+    // potential
+    ctx.fillStyle = "rgba(179,157,252,0.12)";
+    ctx.fillRect(bx1, vTop, bx2 - bx1, Tp + ph - vTop);
+    ctx.strokeStyle = C.violetDim; ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(L, Tp + ph); ctx.lineTo(bx1, Tp + ph); ctx.lineTo(bx1, vTop);
+    ctx.lineTo(bx2, vTop); ctx.lineTo(bx2, Tp + ph); ctx.lineTo(L + px, Tp + ph);
+    ctx.stroke();
+    label(ctx, "V₀ = 1 eV", bx1 + 4, vTop - 8, { color: C.violetDim });
+
+    // energy line
+    line(ctx, L, eLine, L + px, eLine, C.photon, 1, [4, 4]);
+    label(ctx, "E = " + (V0 * eRatio).toFixed(2) + " eV", L + 4, eLine - 6, { color: C.photon });
+
+    // wavefunction: Re ψ — incident+reflected (schematic standing ripple), evanescent, transmitted
+    const k = kOf(), kap = kappaOf();
+    const Tc = Tcoef();
+    const amp = ph * 0.16;
+    const nmPerPx = 6 / px; // 6 nm across
+    const om = t * 3;
+    ctx.strokeStyle = C.cyan; ctx.lineWidth = 2;
+    ctx.beginPath();
+    let psiAtB1 = 1;
+    for (let X = 0; X <= px; X++) {
+      const x = L + X;
+      const nm = X * nmPerPx;
+      let v;
+      if (x < bx1) {
+        v = Math.cos(k * nm * 6 - om);           // travelling incident wave (schematic)
+      } else if (x < bx2) {
+        const d = (x - bx1) * nmPerPx;
+        v = Math.cos(k * ((bx1 - L) * nmPerPx) * 6 - om) * Math.exp(-kap * d * 6);
+      } else {
+        const d0 = (bx2 - bx1) * nmPerPx;
+        const decay = Math.exp(-kap * d0 * 6);
+        const nm2 = (x - bx2) * nmPerPx;
+        v = decay * Math.cos(k * nm2 * 6 - om);
+      }
+      const y = eLine - amp * v - ph * 0.16;
+      X === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    label(ctx, "Re ψ", L + 6, eLine - ph * 0.16 - amp - 8, { color: C.cyan, font: Q.MONO_B });
+    label(ctx, "evanescent", (bx1 + bx2) / 2, Tp + 14, { align: "center", color: C.ink2 });
+  }, { animate: true });
+
+  function tunRead() {
+    const Tc = Tcoef();
+    document.getElementById("tun-T").textContent =
+      Tc > 0.001 ? (100 * Tc).toFixed(1) + " %" : Tc.toExponential(2);
+    document.getElementById("tun-k").textContent = kappaOf().toFixed(2) + " nm⁻¹";
+  }
+  slider("tun-e", (v) => (v * 100).toFixed(0) + " %", (v) => { eRatio = v; tunRead(); });
+  slider("tun-a", (v) => v.toFixed(2) + " nm", (v) => { aWidth = v; tunRead(); });
+
+  /* ============ hydrogen orbitals ============ */
+  // R_nl (a0 units, unnormalised) and |Y_lm|² angular factors
+  const RAD = {
+    "10": (r) => 2 * Math.exp(-r),
+    "20": (r) => (2 - r) * Math.exp(-r / 2),
+    "21": (r) => r * Math.exp(-r / 2),
+    "30": (r) => (27 - 18 * r + 2 * r * r) * Math.exp(-r / 3),
+    "31": (r) => r * (6 - r) * Math.exp(-r / 3),
+    "32": (r) => r * r * Math.exp(-r / 3),
+  };
+  const ANG = {
+    "00": (ct) => 1,
+    "10": (ct) => ct * ct,
+    "11": (ct) => 1 - ct * ct,
+    "20": (ct) => { const v = 3 * ct * ct - 1; return v * v; },
+    "21": (ct) => ct * ct * (1 - ct * ct),
+    "22": (ct) => { const s = 1 - ct * ct; return s * s; },
+  };
+  const NAMES = { "100": "1s", "200": "2s", "210": "2p₀", "211": "2p±₁",
+    "300": "3s", "310": "3p₀", "320": "3d₀", "321": "3d±₁", "322": "3d±₂" };
+  const NOTES = {
+    "100": "Spherical, nodeless; most probable radius exactly a₀. Density peaks at the nucleus.",
+    "200": "One radial node: a spherical shell of zero probability at r = 2a₀.",
+    "210": "The dumbbell along z. Zero density in the xy-plane — an angular node.",
+    "211": "A torus about the z-axis: |m| = 1 circulation, node along the axis itself.",
+    "300": "Two radial nodes — concentric shells of silence inside the cloud.",
+    "310": "Dumbbell with a radial node: each lobe is now two-layered.",
+    "320": "The d 'peanut-and-ring': lobes on the axis plus an equatorial doughnut.",
+    "321": "Four-leaf cross-section — a double torus above and below the equator.",
+    "322": "Flattened onto the equator: maximal |m| hugs the xy-plane.",
+  };
+  let orbState = "100";
+
+  const orb = canvas("orb", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const n = +orbState[0], l = +orbState[1], m = +orbState[2];
+    const Rfun = RAD["" + n + l], Afun = ANG["" + l + m];
+    const rmax = n * n * 3.2 + 4; // a0
+    const size = Math.min(w * 0.5, h) - 8;
+    const cx = w / 2, cy = h / 2;
+    const res = 150;
+    const cell = size / res;
+
+    // find max density for normalisation
+    let dmax = 0;
+    for (let i = 0; i < res; i++) {
+      for (let j = 0; j < res; j++) {
+        const X = (i / res - 0.5) * 2 * rmax, Z = (j / res - 0.5) * 2 * rmax;
+        const r = Math.hypot(X, Z);
+        if (r < 1e-4) continue;
+        const ct = Z / r;
+        const R = Rfun(r), d = R * R * Afun(ct);
+        if (d > dmax) dmax = d;
+      }
+    }
+    // draw
+    for (let i = 0; i < res; i++) {
+      for (let j = 0; j < res; j++) {
+        const X = (i / res - 0.5) * 2 * rmax, Z = (j / res - 0.5) * 2 * rmax;
+        const r = Math.hypot(X, Z);
+        const ct = r < 1e-4 ? 0 : Z / r;
+        const R = Rfun(Math.max(r, 1e-4));
+        let v = (R * R * Afun(ct)) / dmax;
+        v = Math.pow(v, 0.42); // gamma lift so faint structure shows
+        if (v < 0.02) continue;
+        const rr = Math.round(60 + 195 * v);
+        const gg = Math.round(40 + 160 * v);
+        const bb = Math.round(120 + 135 * v);
+        ctx.fillStyle = `rgba(${rr},${gg},${bb},${clamp(v, 0, 1)})`;
+        ctx.fillRect(cx - size / 2 + i * cell, cy - size / 2 + j * cell, cell + 0.5, cell + 0.5);
+      }
+    }
+    // frame + axes
+    ctx.strokeStyle = C.line;
+    ctx.strokeRect(cx - size / 2, cy - size / 2, size, size);
+    label(ctx, "z", cx + size / 2 + 8, cy - size / 2 + 12);
+    label(ctx, "x →", cx + size / 2 - 30, cy + size / 2 + 14);
+    label(ctx, NAMES[orbState] + "   (n=" + n + ", l=" + l + ", |m|=" + m + ")",
+      cx, cy - size / 2 - 8, { align: "center", color: C.ink, font: Q.MONO_B });
+    // scale bar: 5 a0
+    const sb = size / (2 * rmax) * 5;
+    line(ctx, cx - size / 2, cy + size / 2 + 8, cx - size / 2 + sb, cy + size / 2 + 8, C.ink2, 2);
+    label(ctx, "5 a₀", cx - size / 2 + sb + 6, cy + size / 2 + 12);
+  });
+
+  seg("orb-sel", (v) => {
+    orbState = v;
+    const n = +v[0], l = +v[1];
+    document.getElementById("orb-E").textContent = (-13.606 / (n * n)).toFixed(2) + " eV";
+    document.getElementById("orb-L").textContent = l ? "√" + (l * (l + 1)) + " ħ" : "0";
+    document.getElementById("orb-note").textContent = NOTES[v];
+    orb.redraw();
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

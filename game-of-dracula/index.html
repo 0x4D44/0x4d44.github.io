@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#24145f">
+  <meta name="color-scheme" content="dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="A faithful, original browser restoration of Waddingtons' colourful 1977 castle chase, Game of Dracula.">
+  <title>Game of Dracula — 0x4D44 Almanac</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#command-panel">Skip to game controls</a>
+  <div class="paper-grain" aria-hidden="true"></div>
+
+  <main id="app">
+    <section class="setup-screen" id="setup-screen" aria-labelledby="setup-title">
+      <div class="setup-visual" aria-hidden="true">
+        <div class="box-lid">
+          <svg class="box-art" viewBox="0 0 860 590">
+            <defs>
+              <linearGradient id="lidSky" x1="0" y1="0" x2="1" y2="1">
+                <stop stop-color="#17246d"/><stop offset=".5" stop-color="#3d1478"/><stop offset="1" stop-color="#b31c75"/>
+              </linearGradient>
+              <radialGradient id="moonGlow"><stop stop-color="#fffac0"/><stop offset="1" stop-color="#ffe15f" stop-opacity="0"/></radialGradient>
+              <filter id="lidRough"><feTurbulence type="fractalNoise" baseFrequency=".017" numOctaves="3" seed="77" result="n"/><feBlend in="SourceGraphic" in2="n" mode="soft-light"/></filter>
+              <filter id="lidShadow"><feDropShadow dx="0" dy="12" stdDeviation="9" flood-opacity=".5"/></filter>
+            </defs>
+            <rect width="860" height="590" fill="url(#lidSky)"/>
+            <circle cx="660" cy="120" r="125" fill="url(#moonGlow)" opacity=".65"/>
+            <g fill="#110d32" opacity=".75">
+              <path d="M0 345 90 260l58 45 72-91 62 70 95-151 97 145 68-74 63 82 78-53 97 93v264H0Z"/>
+              <path d="M70 590V325h82v-58h46v58h90v265Zm430 0V303h75v-67h42v67h104v287Z"/>
+            </g>
+            <g opacity=".9" fill="#ffd85c"><rect x="108" y="370" width="19" height="36"/><rect x="225" y="354" width="20" height="34"/><rect x="542" y="352" width="20" height="38"/><rect x="656" y="376" width="20" height="35"/></g>
+            <g transform="translate(455 76) rotate(5)" filter="url(#lidShadow)">
+              <path d="M97 88Q147 37 207 67q62 31 74 119l-31-16 22 47-45-20 13 51-49-41-14 83-31-82-44 50 2-62-59 27 35-55-57-8q19-71 74-72Z" fill="#df3f38" stroke="#130d24" stroke-width="12"/>
+              <path d="M89 102q29-58 81-48 48 8 65 61-21 53-70 65-53-5-76-78Z" fill="#d6a15d" stroke="#130d24" stroke-width="10"/>
+              <path d="M97 95q26-79 91-48 38 18 46 69-30-20-54-4-42-30-83-17Z" fill="#171323"/>
+              <ellipse cx="132" cy="119" rx="18" ry="13" fill="#fff"/><ellipse cx="194" cy="125" rx="18" ry="13" fill="#fff"/>
+              <circle cx="137" cy="120" r="7" fill="#d91f36"/><circle cx="190" cy="126" r="7" fill="#d91f36"/>
+              <path d="M129 158q35 29 76 2-9 48-43 47-27-3-33-49Z" fill="#171323"/>
+              <path d="m141 169 12 32 12-30m15 1 10 28 10-35" fill="#fff" stroke="#fff" stroke-width="3"/>
+              <path d="M104 188Q44 221 18 292l87-36 37 104 32-157Zm120 4q79 17 116 83l-101-23-16 108-43-157Z" fill="#161223" stroke="#130d24" stroke-width="10"/>
+              <path d="M105 207Q57 221 24 264M224 211q64 13 99 50" fill="none" stroke="#ef6d47" stroke-width="13"/>
+              <path d="M49 294q-25 2-36 26m34-16q-20 12-22 36m37-28q-14 17-8 38M316 277q27 2 39 27m-35-16q23 12 25 36m-37-27q15 17 10 39" fill="none" stroke="#d6a15d" stroke-width="15" stroke-linecap="round"/>
+            </g>
+            <g transform="translate(110 285)" filter="url(#lidShadow)">
+              <path d="M88 32Q140-8 191 36l-26 6 43 37-45-9 27 44-55-28-5 61-30-57-50 39 20-55-58 12 45-40-33-14q29-31 64 0Z" fill="#28aa68" stroke="#0e2026" stroke-width="9"/>
+              <path d="M68 47q27-21 48 5 24-28 51-4-8 54-49 67-41-10-50-68Z" fill="#92a79a" stroke="#0e2026" stroke-width="8"/>
+              <path d="m76 63 31 4-23 22Zm82 0-31 5 24 22Z" fill="#ff8a2d" stroke="#0e2026" stroke-width="5"/>
+              <path d="M92 99q28 22 54 0l-6 39-18-24-16 24Z" fill="#fff" stroke="#0e2026" stroke-width="5"/>
+              <path d="M49 55 5 21l19 53-48-4 54 31m157-46 44-34-19 53 48-4-54 31" fill="#28aa68" stroke="#0e2026" stroke-width="10" stroke-linejoin="round"/>
+            </g>
+            <g transform="translate(100 430)" fill="#f4ca2e" stroke="#161128" stroke-width="6">
+              <path d="M18 56h44l-8-16q-4-9 2-18 7-11 20-11t20 11q6 9 2 18l-8 16h44v23H18Z"/>
+              <path d="M176 56h44l-8-16q-4-9 2-18 7-11 20-11t20 11q6 9 2 18l-8 16h44v23H176Z" fill="#2d7dd0"/>
+              <path d="M624 56h44l-8-16q-4-9 2-18 7-11 20-11t20 11q6 9 2 18l-8 16h44v23H624Z" fill="#2fa56a"/>
+            </g>
+            <g filter="url(#lidRough)">
+              <text x="430" y="430" text-anchor="middle" class="lid-small">THE FIENDISHLY EXCITING ESCAPE GAME</text>
+              <text x="430" y="500" text-anchor="middle" class="lid-title-shadow">GAME OF DRACULA</text>
+              <text x="430" y="490" text-anchor="middle" class="lid-title">GAME OF DRACULA</text>
+              <text x="430" y="540" text-anchor="middle" class="lid-sub">2–4 GUESTS · ONE MASK · NO SAFE ROOM</text>
+            </g>
+            <rect x="18" y="18" width="824" height="554" rx="6" fill="none" stroke="#f5df6e" stroke-width="8"/>
+            <rect x="31" y="31" width="798" height="528" rx="4" fill="none" stroke="#11112e" stroke-width="7"/>
+          </svg>
+          <div class="box-edge">WATCH OUT FOR VAMPIRES! · BEWARE THE PROWLING DRACULA</div>
+        </div>
+      </div>
+
+      <div class="setup-copy">
+        <p class="eyebrow">0x4D44 TABLETOP ARCHIVE · 1977</p>
+        <h1 id="setup-title">Escape before the mask finds you.</h1>
+        <p class="intro">Spin two fates at once. Dracula circles the castle on his blood-red trail while four guests race across the yellow stones. The first bite creates a player-controlled Green Vampire—and the curse keeps changing hands.</p>
+
+        <section class="setup-card" aria-label="New game setup">
+          <div class="setup-row count-row">
+            <span class="setup-label">Guests</span>
+            <div class="segmented" id="player-count" role="group" aria-label="Number of players">
+              <button type="button" data-count="2" aria-pressed="true">2</button>
+              <button type="button" data-count="3" aria-pressed="false">3</button>
+              <button type="button" data-count="4" aria-pressed="false">4</button>
+            </div>
+          </div>
+          <div class="seat-list" id="seat-list"></div>
+          <div class="setup-row seed-row">
+            <label for="seed-input" class="setup-label">Night no.</label>
+            <input id="seed-input" inputmode="numeric" value="1977" aria-describedby="seed-help">
+            <button type="button" class="small-button" id="random-seed">Shuffle</button>
+            <small id="seed-help">Same number, same spinner.</small>
+          </div>
+          <div class="setup-actions">
+            <button class="primary-button start-button" id="start-game" type="button"><span>Open the castle</span><b aria-hidden="true">→</b></button>
+            <button class="secondary-button" id="resume-game" type="button" hidden>Resume the last night</button>
+          </div>
+        </section>
+
+        <div class="authentic-strip" aria-label="Archive facts">
+          <span><b>18</b> spinner sectors</span><i></i><span><b>6</b> vampire perches</span><i></i><span><b>1</b> wearable curse</span><i></i><span>original SVG art</span>
+        </div>
+        <button class="text-button" id="setup-rules" type="button">Read the restored rules and research notes</button>
+      </div>
+    </section>
+
+    <section class="game-screen" id="game-screen" hidden aria-label="Game of Dracula table">
+      <header class="topbar">
+        <button class="brand-button" id="brand-button" type="button" aria-label="Return to game setup">
+          <span class="brand-kicker">WADDINGTONS · 1977 · RESTORED</span>
+          <span class="brand-title">GAME OF <b>DRACULA</b></span>
+        </button>
+        <div class="night-badge" aria-live="polite"><span>ROUND</span><b id="round-value">1</b></div>
+        <nav class="top-actions" aria-label="Table controls">
+          <button class="icon-button" id="fit-board" type="button" title="Fit board"><span aria-hidden="true">⌂</span><small>Fit</small></button>
+          <button class="icon-button" id="zoom-out" type="button" title="Zoom out"><span aria-hidden="true">−</span><small>Out</small></button>
+          <button class="icon-button" id="zoom-in" type="button" title="Zoom in"><span aria-hidden="true">+</span><small>In</small></button>
+          <button class="icon-button" id="sound-toggle" type="button" aria-pressed="true" title="Sound"><span aria-hidden="true">♪</span><small>Sound</small></button>
+          <button class="icon-button" id="rules-open" type="button" title="Rules"><span aria-hidden="true">?</span><small>Rules</small></button>
+          <button class="icon-button" id="settings-open" type="button" title="Settings"><span aria-hidden="true">⚙</span><small>Setup</small></button>
+        </nav>
+      </header>
+
+      <div class="game-layout">
+        <section class="board-column" aria-label="Castle board">
+          <div class="board-toolbar">
+            <div class="legend" aria-label="Board legend">
+              <span><i class="legend-stone"></i>Yellow stone</span>
+              <span><i class="legend-pool"></i>Blood pool</span>
+              <span><i class="legend-hide">♜</i>Hidey-hole</span>
+              <span><i class="legend-candle">♨</i>Candle barrier</span>
+            </div>
+            <div class="board-location" id="board-location">Castle Dracula</div>
+          </div>
+          <div class="board-frame">
+            <div class="board-viewport" id="board-viewport" tabindex="0" aria-label="Scrollable castle board. Highlighted stones are legal destinations.">
+              <svg id="board" viewBox="0 0 1000 800" role="img" aria-labelledby="board-title board-desc">
+                <title id="board-title">Game of Dracula castle board</title>
+                <desc id="board-desc">A colourful castle maze of yellow stone paths, red blood pools, hiding places, vampire perches and two home exits.</desc>
+                <defs>
+                  <filter id="pieceShadow" x="-80%" y="-80%" width="260%" height="280%"><feDropShadow dx="0" dy="6" stdDeviation="4" flood-color="#0d0920" flood-opacity=".58"/></filter>
+                  <filter id="choiceGlow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                  <filter id="paperWobble"><feTurbulence type="fractalNoise" baseFrequency=".02" numOctaves="2" seed="1977" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="1.2"/></filter>
+                  <pattern id="boardSpeckle" width="41" height="41" patternUnits="userSpaceOnUse"><circle cx="6" cy="9" r="1.2" fill="#111" opacity=".07"/><circle cx="29" cy="14" r=".8" fill="#111" opacity=".06"/><path d="M12 31q5-5 9 1m11-4q4 3 0 7" fill="none" stroke="#fff" stroke-width="1" opacity=".14"/></pattern>
+                  <radialGradient id="redPlastic" cx="35%" cy="20%"><stop stop-color="#ff7b63"/><stop offset=".5" stop-color="#d82f31"/><stop offset="1" stop-color="#79151c"/></radialGradient>
+                  <radialGradient id="greenPlastic" cx="35%" cy="20%"><stop stop-color="#71db8d"/><stop offset=".5" stop-color="#209a5d"/><stop offset="1" stop-color="#0a5035"/></radialGradient>
+                  <radialGradient id="bluePlastic" cx="35%" cy="20%"><stop stop-color="#6cbcf1"/><stop offset=".5" stop-color="#2879c9"/><stop offset="1" stop-color="#153d78"/></radialGradient>
+                </defs>
+                <g id="board-static"></g>
+                <g id="board-choices"></g>
+                <g id="board-pieces"></g>
+              </svg>
+            </div>
+            <div class="board-corner corner-one" aria-hidden="true">BAT</div>
+            <div class="board-corner corner-two" aria-hidden="true">77</div>
+          </div>
+          <div class="player-ribbon" id="player-ribbon" aria-label="Players"></div>
+        </section>
+
+        <aside class="command-panel" id="command-panel" tabindex="-1" aria-label="Turn controls">
+          <section class="turn-card" id="turn-card">
+            <div class="turn-piece" id="turn-piece" aria-hidden="true"></div>
+            <div>
+              <p class="eyebrow">NOW MOVING</p>
+              <h2 id="turn-name">Crimson Guest</h2>
+              <p id="turn-role">Human guest · find a doorway marked HOME</p>
+            </div>
+          </section>
+
+          <section class="spinner-shell" aria-labelledby="spinner-heading">
+            <div class="spinner-heading-row">
+              <div><p class="eyebrow">ONE SPIN · TWO FATES</p><h3 id="spinner-heading">The night spinner</h3></div>
+              <span class="spinner-readout" id="spinner-readout">Ready</span>
+            </div>
+            <button class="spinner-button" id="spinner-button" type="button" aria-label="Spin the night spinner">
+              <svg id="spinner-svg" viewBox="0 0 320 320" aria-hidden="true">
+                <g id="spinner-art"></g>
+                <g class="spinner-pointer" id="spinner-pointer">
+                  <path d="M160 157 276 147q10 0 14 13-4 13-14 13l-116-10Z"/>
+                  <path d="M160 157 70 151q-9 0-12 9 3 9 12 9l90-6Z"/>
+                  <circle cx="160" cy="160" r="16"/>
+                  <circle cx="160" cy="160" r="7" class="pointer-pin"/>
+                </g>
+              </svg>
+              <span class="spinner-cta" id="spinner-cta">SPIN</span>
+            </button>
+            <div class="outcome-card" id="outcome-card" aria-live="polite">
+              <span class="outcome-icon" id="outcome-icon">✦</span>
+              <div><b id="outcome-title">The castle is listening</b><small id="outcome-copy">Red moves Dracula. Yellow moves your piece. A coloured result summons a vampire instead.</small></div>
+            </div>
+          </section>
+
+          <section class="action-shell" aria-live="polite">
+            <p class="eyebrow" id="action-kicker">YOUR TURN</p>
+            <h3 id="action-title">Spin the night</h3>
+            <p id="action-copy">The pointer chooses Dracula's prowl and your yellow-stone move together.</p>
+            <button class="primary-button action-button" id="primary-action" type="button"><span>Spin the night</span><b aria-hidden="true">↻</b></button>
+            <div class="destination-list" id="destination-list" aria-label="Legal destinations"></div>
+            <button class="secondary-button resolve-button" id="resolve-for-me" type="button" hidden>Choose a safe route for me</button>
+          </section>
+
+          <details class="night-log">
+            <summary>Night ledger <span id="log-count">1 entry</span></summary>
+            <ol id="log-list"></ol>
+          </details>
+        </aside>
+      </div>
+    </section>
+  </main>
+
+  <dialog class="modal rules-modal" id="rules-modal">
+    <form method="dialog" class="modal-shell">
+      <header class="modal-header">
+        <div><p class="eyebrow">THE CASTLE HANDBOOK</p><h2>How to survive the night</h2></div>
+        <button class="modal-close" value="close" aria-label="Close rules">×</button>
+      </header>
+      <div class="rules-tabs" role="tablist" aria-label="Rule sections">
+        <button type="button" role="tab" id="rule-tab-escape" aria-controls="rule-page-escape" aria-selected="true" data-rule="escape">Escape</button>
+        <button type="button" role="tab" id="rule-tab-spinner" aria-controls="rule-page-spinner" aria-selected="false" data-rule="spinner">Spinner</button>
+        <button type="button" role="tab" id="rule-tab-menaces" aria-controls="rule-page-menaces" aria-selected="false" data-rule="menaces">Bites</button>
+        <button type="button" role="tab" id="rule-tab-castle" aria-controls="rule-page-castle" aria-selected="false" data-rule="castle">Castle</button>
+        <button type="button" role="tab" id="rule-tab-archive" aria-controls="rule-page-archive" aria-selected="false" data-rule="archive">Archive</button>
+      </div>
+      <div class="rules-pages">
+        <article id="rule-page-escape" role="tabpanel" aria-labelledby="rule-tab-escape" tabindex="0" data-rule-page="escape">
+          <div class="rule-hero"><span>HOME</span><div><h3>Be first through either doorway.</h3><p>Each guest begins on the matching coloured START stone. On a red-and-yellow spin, Dracula prowls first; then the active guest moves exactly the yellow 3 or 4 stones. Paths may fork and double back between turns, but a stone cannot be used twice in one move.</p></div></div>
+          <div class="rule-grid">
+            <section><b>Exact movement</b><p>Choose any highlighted destination. Entering HOME must be the final stone of the move.</p></section>
+            <section><b>Human victory</b><p>The first uncursed guest to reach HOME wins immediately. The Green Vampire must shed the mask before escaping.</p></section>
+            <section><b>Share the path</b><p>Guests may share stones and rooms. Plastic pieces do not block movement.</p></section>
+            <section><b>Turn order</b><p>Highest setup spin starts. The digital table resolves that opening spin automatically from the night number, then proceeds clockwise.</p></section>
+          </div>
+        </article>
+        <article id="rule-page-spinner" role="tabpanel" aria-labelledby="rule-tab-spinner" tabindex="0" data-rule-page="spinner" hidden>
+          <div class="spinner-rule-figure" aria-hidden="true"><span class="disc red">6</span><span class="disc yellow">4</span><span class="arrow">➜</span></div>
+          <h3>One pointer, two concentric instructions.</h3>
+          <p>The surviving Canadian spinner has eighteen equal outer sectors. Twelve are red: move Dracula 1–6 blood pools, then move the active guest 3 or 4 yellow stones as shown by the inner ring. Six coloured sectors align with the word VAMPIRE: move that plastic vampire straight to the numbered perch and do not move the active guest.</p>
+          <div class="reference-table">
+            <div><span>Red 1–6</span><b>Dracula prowls</b></div><div><span>Yellow 3 or 4</span><b>Guest / Green Vampire moves</b></div>
+            <div><span>Green 1–4</span><b>Green Vampire flies</b></div><div><span>Blue 5–6</span><b>Blue Vampire flies</b></div>
+          </div>
+        </article>
+        <article id="rule-page-menaces" role="tabpanel" aria-labelledby="rule-tab-menaces" tabindex="0" data-rule-page="menaces" hidden>
+          <div class="menace-list">
+            <section class="menace red"><span>DR</span><div><h3>Count Dracula</h3><p>He advances counter-clockwise on the separate blood trail. If he finishes in a room with an exposed human, one pawn is swallowed by the red cloak. The first victim becomes the Green Vampire; later victims are carried to the vault.</p></div></section>
+            <section class="menace green"><span>GV</span><div><h3>The Green Vampire</h3><p>The cursed player wears the mask and moves on yellow stones on their own turn. Candle barriers are impassable. Catch an exposed guest in the same room and the mask passes; the released player dives into the nearest hidey-hole.</p></div></section>
+            <section class="menace blue"><span>BV</span><div><h3>The Blue Vampire</h3><p>This neutral bat flies only between perches 5 and 6. An exposed guest in its room is thrown back into the vault. This consequence is a labelled restoration because the surviving first instruction page does not preserve the blue bite paragraph.</p></div></section>
+          </div>
+        </article>
+        <article id="rule-page-castle" role="tabpanel" aria-labelledby="rule-tab-castle" tabindex="0" data-rule-page="castle" hidden>
+          <div class="castle-key">
+            <section><span class="sample-stone"></span><div><b>Yellow stones</b><p>The movement network for human guests and the Green Vampire.</p></div></section>
+            <section><span class="sample-pool"></span><div><b>Blood pools</b><p>Dracula's independent thirty-pool circuit, beginning at the coffin.</p></div></section>
+            <section><span class="sample-hide">♜</span><div><b>Hidey-holes</b><p>A guest ending here is invisible to every room-based bite.</p></div></section>
+            <section><span class="sample-candle">♨</span><div><b>Candle barriers</b><p>Humans cross normally. The Green Vampire cannot cross the marked doorway.</p></div></section>
+            <section><span class="sample-perch">3</span><div><b>Vampire perches</b><p>Green uses 1–4; Blue uses 5–6. A coloured spinner result flies directly here.</p></div></section>
+            <section><span class="sample-home">HOME</span><div><b>Home doorways</b><p>Either exit wins. They are deliberately reached by several competing routes.</p></div></section>
+          </div>
+        </article>
+        <article id="rule-page-archive" role="tabpanel" aria-labelledby="rule-tab-archive" tabindex="0" data-rule-page="archive" hidden>
+          <p class="archive-lead">This is an unofficial digital restoration built from surviving components, a legible first-page instruction sheet and contemporary recollections—not from copied scans.</p>
+          <div class="archive-grid">
+            <section><span>1977</span><b>Original UK release</b><p>Designed by Martin Earl and Steve Curtis II; later Canadian sets are marked 1978.</p></section>
+            <section><span>2–4</span><b>Players · age 7+</b><p>A light family chase usually catalogued at roughly one hour.</p></section>
+            <section><span>7</span><b>Plastic pieces</b><p>Four coloured pawns, red Dracula, Green Vampire and Blue Vampire.</p></section>
+            <section><span>1</span><b>Card mask</b><p>The first bitten player physically wore the large green bat face.</p></section>
+          </div>
+          <h3>Restoration boundaries</h3>
+          <p>The spinner geometry, setup, Dracula/yellow movement, first-bite transformation, vault returns, hidey-holes, candle barriers, mask passing and engulfing pieces are directly evidenced. The precise Blue Vampire penalty, tie-breaking when several exposed guests share a room, the no-revisit movement clarification and the crypt's position on the board are stated openly as restoration decisions. See <code>RESEARCH.md</code> in the source for the evidence ledger.</p>
+          <p>The evidence places the vault in the lower left and sends later victims to it, but does not fix how it connects. It is cut here as a dead-end stair off the vault antechamber: still a hidey-hole, still escapable, but a nine-stone climb back out that no single spin can shortcut — so being carried down costs a guest real time rather than handing them the shortest road to the doorway.</p>
+          <p class="copyright-note">All board, box, mask and piece artwork here is newly drawn SVG. No original scan or trademarked package illustration is shipped with the game.</p>
+        </article>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog class="modal settings-modal" id="settings-modal">
+    <form method="dialog" class="modal-shell compact">
+      <header class="modal-header"><div><p class="eyebrow">TABLE OPTIONS</p><h2>Castle settings</h2></div><button class="modal-close" value="close" aria-label="Close settings">×</button></header>
+      <label class="switch-row"><span><b>Procedural sound</b><small>Spinner clicks, footsteps, bat wings and a very small organ.</small></span><input type="checkbox" id="setting-sound" checked></label>
+      <label class="switch-row"><span><b>First-night hints</b><small>Keep rule reminders beneath the turn prompt.</small></span><input type="checkbox" id="setting-hints" checked></label>
+      <label class="switch-row"><span><b>Fast automata</b><small>Shorter pauses for computer-controlled guests.</small></span><input type="checkbox" id="setting-fast-ai"></label>
+      <label class="switch-row"><span><b>High contrast</b><small>Stronger path and piece outlines.</small></span><input type="checkbox" id="setting-contrast"></label>
+      <div class="settings-actions"><button type="button" class="secondary-button danger" id="abandon-game">Abandon this night</button><button value="close" class="primary-button"><span>Back to the castle</span></button></div>
+    </form>
+  </dialog>
+
+  <dialog class="modal victory-modal" id="victory-modal">
+    <form method="dialog" class="modal-shell compact victory-shell">
+      <div class="victory-bats" aria-hidden="true">⌁ ᴠ ⌁ ᴠ ⌁</div>
+      <p class="eyebrow">THE DOOR BURSTS OPEN</p>
+      <div class="victory-piece" id="victory-piece" aria-hidden="true"></div>
+      <h2 id="victory-title">Crimson Guest escapes</h2>
+      <p id="victory-copy"></p>
+      <div class="victory-stats" id="victory-stats"></div>
+      <div class="settings-actions"><button value="close" class="secondary-button" id="view-final-board">View final board</button><button type="button" class="primary-button" id="new-game"><span>Another night</span><b>→</b></button></div>
+    </form>
+  </dialog>
+
+  <div class="handoff-overlay" id="handoff-overlay" role="dialog" aria-modal="true" aria-labelledby="handoff-title" aria-describedby="handoff-copy" hidden>
+    <div class="handoff-card">
+      <div class="handoff-bat" aria-hidden="true">⌁</div>
+      <p class="eyebrow">PASS THE DEVICE</p>
+      <h2 id="handoff-title">Crimson Guest, the castle awaits</h2>
+      <p id="handoff-copy">Keep the board facing the next guest. Their role is hidden until they open the card.</p>
+      <button class="primary-button" id="handoff-ready" type="button"><span>I'm ready</span><b>→</b></button>
+    </div>
+  </div>
+
+  <div class="curse-overlay" id="curse-overlay" hidden aria-live="assertive">
+    <div class="curse-rays" aria-hidden="true"></div>
+    <svg class="curse-mask" viewBox="0 0 520 390" aria-hidden="true">
+      <path d="M92 90 21 14l26 132-52 44 92 10q35 117 173 145 138-28 173-145l92-10-52-44 26-132-71 76Q332 20 260 20T92 90Z" fill="#29a966" stroke="#0c1720" stroke-width="16"/>
+      <path d="m108 123 118 24-91 72Zm304 0-118 24 91 72Z" fill="#ff7b2d" stroke="#0c1720" stroke-width="12"/>
+      <path d="M169 245q91 64 182 0l-20 92-71-50-71 50Z" fill="#d6d3c4" stroke="#0c1720" stroke-width="12"/>
+      <path d="m190 258 29 74 31-61m80-13-29 74-31-61" fill="#fff" stroke="#0c1720" stroke-width="8"/>
+    </svg>
+    <p class="curse-kicker" id="curse-kicker">THE FIRST BITE</p>
+    <h2 id="curse-title">The mask has chosen.</h2>
+    <p id="curse-copy">You are the Green Vampire now.</p>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Heartbeat — A World in 640K</title>
+<meta name="description" content="Colonization retunes the PC's timer to 608.8 Hz — measured live — and runs a cooperative micro-kernel off it, dividing the beat by 2, 5 and 3 so the 1981 BIOS keeps its heartbeat underneath.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&display=swap">
+<link rel="stylesheet" href="w640.css">
+<style>
+.srcline{font-family:var(--mono);font-size:11px;line-height:1.7;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin-top:38px;}
+.srcline a{color:var(--cyan);}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">A WORLD IN 640K</a></div>
+    <div class="strap">how Civilization &amp; Colonization ran a planet in real-mode DOS</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="code.html">1 · Code in Flight</a>
+    <a href="memory.html">2 · The Division Dance</a>
+    <a href="art.html">3 · Art on Demand</a>
+    <a href="world.html">4 · A Hemisphere in 24K</a>
+    <a href="time.html" aria-current="page">5 · The Heartbeat</a>
+    <a href="mapgen.html">6 · Growing a World</a>
+    <a href="how.html">7 · How We Know</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 5 · TIME</p>
+  <h1>THE <span class="amber">HEARTBEAT</span></h1>
+  <p class="standfirst">The same boxed copy of Colonization had to behave identically on a
+  16&nbsp;MHz 386SX and a Pentium several times faster — with no operating system worth the
+  name to referee. Its answer is a cooperative micro-kernel hanging off the reprogrammed
+  system timer: an interrupt at 608.8&nbsp;Hz, measured live, divided down by 2, by 5, by 3 —
+  and at the bottom of the cascade, the untouched 1981 BIOS, kept on very nearly its
+  ancient 18.2&nbsp;Hz schedule by arithmetic.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">608.8 Hz</div><div class="l">the system timer after Colonization's retune — reload 07A8h = 1,960, captured ~300 ms into boot</div></div>
+  <div class="stat"><div class="v">70.09 Hz</div><div class="l">Civ's retune: reload 4280h = 17,024 — the DOS tick re-pinned to the VGA frame rate</div></div>
+  <div class="stat"><div class="v">÷2·÷5·÷3</div><div class="l">the ISR's divider cascade; the compound ÷30 path hands the BIOS its heartbeat back</div></div>
+  <div class="stat"><div class="v">1169:0010</div><div class="l">Colonization's INT 08h handler, read live from the interrupt vector table mid-game</div></div>
+  <div class="stat"><div class="v">≈55 ms</div><div class="l">the free one-shot both games mine from the BIOS floppy-motor counter at 0040:0040</div></div>
+  <div class="stat"><div class="v">0</div><div class="l">use made of IVT[1C], the polite user tick hook — the timer is seized at the vector itself</div></div>
+</section>
+
+<section class="prose">
+
+<h2>The metronome in every PC</h2>
+
+<p>A real-mode PC has exactly one general-purpose timepiece: the 8253/8254 Programmable
+Interval Timer. Channel 0 counts down from a 16-bit reload value at 1,193,182&nbsp;Hz — a
+clock rate the machine inherited in 1981 and never shook off — and every time the count
+expires it raises IRQ&nbsp;0, reloads, and starts again. At power-up the BIOS leaves the
+reload at its maximum, 65,536 counts, which works out to 18.2065&nbsp;Hz: one interrupt
+roughly every 55&nbsp;ms. The firmware is built around that number. The BIOS's INT&nbsp;08h
+handler advances the time-of-day count in the BIOS Data Area, runs the floppy-motor
+shut-off countdown, and IRETs, 18.2 times a second, forever.</p>
+
+<p>But the divisor is three port writes away from being anything you like. Both games take
+the offer. Here is Colonization doing it, captured by the PIT model inside our emulator
+during an instrumented boot — the only channel-0 reload in the entire run, fired about
+300&nbsp;ms in:</p>
+
+<pre>
+07:58:27.85 DEBUG mddosem_hw::timer: PIT: mode set channel=0 mode=3 access=3 bcd=false
+07:58:27.85 DEBUG mddosem_hw::timer: PIT: counter loaded channel=0 reload=07A8 mode=3
+</pre>
+
+<p>Reload <span class="addr">07A8</span> is 1,960, and 1,193,182&nbsp;÷&nbsp;1,960 =
+<strong>608.8&nbsp;Hz</strong> — the DOS tick retuned thirty-three-fold, in mode&nbsp;3, once,
+at startup, and never touched again through title, load dialog and open gameplay.
+Civilization, three years earlier, plays the same trick to a different beat: it loads
+channel&nbsp;0 with <span class="addr">4280</span> = 17,024 — <strong>70.09&nbsp;Hz, the VGA
+vertical refresh rate</strong> — with a proper mode command before each load, twenty times
+across its boot-and-intro trace. Civ's system tick <em>is</em> its frame clock.</p>
+
+<aside class="aside">
+  <span class="tag">TWO CAPTURES, ONE HONEST NUMBER</span>
+  <p>Our July 2026 reverse-engineering campaign, watching the game's own tick counter over
+  live IPC, saw it advancing at ~268–273&nbsp;Hz and recorded the PIT at 546&nbsp;Hz — a rate
+  whose ÷30 cascade lands on 18.2&nbsp;Hz exactly. The fresh instrumented boot above
+  measured reload 1,960 → 608.8&nbsp;Hz, which puts the cascade's output at
+  ≈20.3&nbsp;Hz. The divider structure is not in dispute; the input rate differs between the
+  two captures, and we cannot yet say why — a different code path, revision or sound
+  configuration are the unconfirmed candidates. We publish the measured number and flag
+  the other.</p>
+</aside>
+
+<h2>One interrupt, four jobs</h2>
+
+<p>What runs 608.8 times a second? Not the game — the game's <em>scheduler</em>. The
+handler Colonization installs at <span class="addr">1169:0010</span> is a cooperative
+micro-kernel in perhaps a hundred bytes, and we disassembled it over IPC while it ran.
+Every interrupt, it switches to a private ISR stack — so whatever stack the interrupted
+code happened to be on cannot overflow — and increments a 32-bit tick counter at
+<span class="addr">2297:82E8</span>. Then the dividing starts. On even ticks it advances
+the engine clock and dispatches <em>worker A</em>: a far call through a pointer held in
+RAM (<span class="addr">1796:0065</span> in our capture), gated by a byte flag at
+<span class="addr">2297:92A4</span>. Swap the pointer and the timer runs your service
+three hundred-odd times a second — the slot cinematics use to install per-tick
+services; in our capture it sat empty (a stale one of these RAM
+vectors stars in one of Chapter&nbsp;7's war stories). Every tenth tick, a countdown byte
+fires <em>worker B</em>, still on the private stack. And every thirtieth tick comes the
+elegant part: instead of calling anything, the handler executes
+<code>jmp far cs:[0Ch]</code> — a tail-jump through the saved BIOS vector, kept at offset
+<span class="addr">0C</span> of its own code segment, straight into the BIOS handler at
+<span class="addr">F000:FEA5</span>.</p>
+
+<p>A tail-jump, not a call: the original interrupt frame is still on the stack, so the
+BIOS services its Data Area — the clock count, the floppy-motor countdown — sends its own
+end-of-interrupt and IRETs on the game's behalf, none the wiser. On the twenty-nine ticks
+in thirty that it keeps, the game's handler acknowledges the interrupt controller itself.
+The BIOS never learns the timer was retuned; it simply gets called at very nearly the rate
+it was built for, reconstructed by division. The hook is installed exactly once — a single
+<code>INT 21h AH=25h</code> call in the whole run — and never unhooked, even though the
+segment it occupies sits inside the image region Chapter&nbsp;1's pager recycles.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE DIVIDER CASCADE — ONE TIMER, FOUR RATES</span>
+    <span class="hint">▶ play · ⏭ step one tick · hover any stage</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="cascade" style="aspect-ratio: 2.35 / 1; min-height: 320px; touch-action: pan-y;" role="img"
+      aria-label="Animated pipeline: PIT interrupts at 608.8 Hz enter Colonization's INT 08h handler and are divided by 2 into worker A, by 5 more into worker B, and by 3 more into a tail-jump to the BIOS handler, which therefore runs near its original 18.2 Hz rate"></canvas>
+  </div>
+  <div class="evlog" id="cascade-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#f0a132"></span>pulse — one PIT interrupt</span>
+    <span class="key"><span class="sw" style="background:#ffc35c"></span>stage fires</span>
+    <span class="key"><span class="sw" style="background:#5ad7e6"></span>BIOS tick serviced</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="cascade-play">▶ play</button>
+    <button class="btn" id="cascade-step">⏭ step</button>
+    <button class="btn" id="cascade-reset">⟲ reset</button>
+  </div>
+  <div class="fig-note">Structure and addresses from live IPC disassembly of the ISR at
+  1169:0010 under <a href="/mddosem/">mddosem</a> (July 2026 campaign, bug ledger
+  MDD-00036); PIT reload measured live 2026-07-18 on v0.148.0. Animation slowed ≈100×.
+  * at the measured 608.8 Hz input the ÷30 output is ≈20.3 Hz; at the earlier campaign's
+  recorded 546 Hz it is 18.2 Hz exactly — see the aside above. The cascade is the same
+  either way.</div>
+</figure>
+
+<p>Why build this? Because a 1994 DOS game needs services at several rates — a fine beat
+for animation and sound pacing, a coarser one for game logic, the BIOS's own for
+compatibility — and DOS offers exactly one timer and no scheduler. The cascade delivers
+all of them from a single interrupt, with priorities implicit in the division order, for
+the cost of a few countdown bytes. It is the smallest possible operating system: one
+input, a dispatch table you can rewire at runtime, and a strict contract with the
+firmware underneath.</p>
+
+<h2>The hook, observed live</h2>
+
+<p>None of the above requires trusting a disassembly listing. The interrupt vector table
+is the bottom kilobyte of guest memory — four bytes per vector — and our emulator's IPC
+debug channel can pause the guest and read it while the game runs. Here is the timer
+vector, watched across one Colonization session and one Civ session:</p>
+
+<table class="data">
+  <caption>IVT and BDA reads, mid-run — mddosem v0.148.0, 2026-07-18</caption>
+  <thead>
+    <tr><th>What we read</th><th class="num">Raw bytes</th><th>Decoded</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Colonization · IVT[8], during load (frame 33)</td><td class="num">A5 FE 00 F0</td><td><span class="addr">F000:FEA5</span></td><td>still the BIOS default handler — no hook yet</td></tr>
+    <tr><td>Colonization · IVT[8], at the title (frame ≈601)</td><td class="num">10 00 69 11</td><td><span class="addr">1169:0010</span></td><td>the game's own INT 08h handler, installed during init</td></tr>
+    <tr><td>Colonization · IVT[8], in-game (frame ≈1568)</td><td class="num">10 00 69 11</td><td><span class="addr">1169:0010</span></td><td>still installed during play</td></tr>
+    <tr><td>Colonization · IVT[1C]</td><td class="num">70 01 00 F0</td><td><span class="addr">F000:0170</span></td><td>the polite user-tick hook, untouched</td></tr>
+    <tr><td>Colonization · BDA 0040:0040</td><td class="num">00</td><td>0</td><td>not in a motor-wait spin — the healthy state</td></tr>
+    <tr><td>Civilization · IVT[8], at the title (frame ≈1514)</td><td class="num">99 01 52 07</td><td><span class="addr">0752:0199</span></td><td>Civ's own INT 08h handler</td></tr>
+  </tbody>
+</table>
+
+<p>(The decode is little-endian offset:segment — <code>A5 FE 00 F0</code> reads back as
+<span class="addr">F000:FEA5</span>.) The polite way to borrow the timer had existed since
+the original PC: the BIOS's INT&nbsp;08h handler calls out through
+<strong>INT&nbsp;1Ch</strong>, a user hook that is a do-nothing stub by default, put there
+precisely so programs could ride the tick without touching the hardware vector. Both
+games ignore it and seize INT&nbsp;08h itself. They differ in manners after that:
+Civilization's handler chains on to the BIOS every interrupt, so the BIOS Data Area keeps
+advancing at Civ's chosen rate; Colonization rations the BIOS to every thirtieth beat,
+reconstructing the old clock by arithmetic. Same vector, two philosophies — and both
+depend utterly on the BIOS side staying alive, which is the next section's subject.</p>
+
+<h2>The cheapest timer in DOS</h2>
+
+<p>Byte <span class="addr">0040:0040</span> of the BIOS Data Area is the floppy-motor
+shut-off counter. The BIOS INT&nbsp;08h handler decrements it once per tick, and when it
+reaches zero, switches the drive motor off — a courtesy so the floppy doesn't spin
+forever after an access. Both games noticed something lovely: that is a free hardware
+countdown timer, armed by a single byte write. Store 1 there, spin until it reads 0, and
+the BIOS itself has just timed you a delay of up to one tick — ≈55&nbsp;ms — for zero
+bytes of timer code. No motor is running; nobody cares; the alarm still fires. We found
+the identical instruction pattern in both binaries by live disassembly — Civ's intro
+delay at <span class="addr">4195:06C1</span>–<span class="addr">06CE</span>, and
+Colonization's post-audience spin at <span class="addr">145D:0032</span>:</p>
+
+<pre>
+; Civ intro delay — live disassembly at 4195:06C1;
+; Colonization's twin spin sits at 145D:0032
+      mov   al, 1
+      mov   es:[0440h], al      ; ES = 0000 → BDA 0040:0040, the motor shut-off count
+spin: cmp   es:[0440h], al      ; has the BIOS INT 08h handler decremented it yet?
+      je    spin                ; still 1 — keep waiting
+</pre>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">A ONE-SHOT TIMER FOR ONE BYTE — BDA 0040:0040</span>
+    <span class="hint">▶ play · ⏭ step the phases · hover the parts</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="motor" style="aspect-ratio: 2.7 / 1; min-height: 250px; touch-action: pan-y;" role="img"
+      aria-label="Animated diagram: game code writes 1 to the BIOS floppy-motor counter at 0040:0040 and spins; the BIOS timer handler decrements the byte to 0 on its next tick, at most 55 milliseconds later, and the spin loop exits"></canvas>
+  </div>
+  <div class="evlog" id="motor-log"></div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#f0a132"></span>the game's write &amp; spin</span>
+    <span class="key"><span class="sw" style="background:#5ad7e6"></span>the BIOS tick side</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn primary" id="motor-play">▶ play</button>
+    <button class="btn" id="motor-step">⏭ step</button>
+  </div>
+  <div class="fig-note">Instruction pattern from live disassembly under mddosem; that
+  0040:0040 is decremented <em>only</em> inside the BIOS INT 08h handler is verified
+  against DOSBox-X source (INT8_Handler, src/ints/bios.cpp). Timing schematic — a real
+  wait lasts anything up to one 18.2 Hz tick, ≈55 ms.</div>
+</figure>
+
+<aside class="aside danger">
+  <span class="tag">WHEN THE HEARTBEAT STOPS</span>
+  <p>The whole idiom rests on the BIOS tick actually running. Kill the chain and every
+  such wait spins forever — which is exactly what we did, twice, by accident. Our
+  emulator's HLE BIOS originally never decremented 0040:0040 at all; Civilization's intro
+  hung on the loop above until we implemented the decrement the way DOSBox-X does
+  (check-before-decrement, saturate at zero, clear the motor bits in 0040:003F). Later,
+  Colonization froze a cinematic on frame&nbsp;1 — <em>worse at higher emulated speeds</em> —
+  because our batched interpreter was starving the game's reconstructed every-30th-tick
+  BIOS chain: byte stuck at 1, black screen, bug MDD-00036. Chapter&nbsp;7
+  <a href="how.html">tells that story properly</a>; the moral here is that Colonization's
+  micro-kernel is a load-bearing reconstruction. The 18.2&nbsp;Hz world underneath must keep
+  turning, or 1994's cleverness becomes 2026's hang.</p>
+</aside>
+
+<h2>Calibration: measure the machine, once</h2>
+
+<p>Neither game ever asks what CPU it is running on — there was no reliable way to ask.
+Instead, both measure. Civilization runs a startup loop at
+<span class="addr">0652:030E</span>–<span class="addr">0314</span> that counts PIT ticks
+across sixteen VGA retrace periods, polling the status port at
+<span class="addr">3DA</span>: two independent crystal-driven references — the timer and
+the display — measured against each other, with the CPU's own speed cancelling out of the
+ratio. Colonization's calibration lives in overlay code and reads PIT channel&nbsp;0
+directly, via the latch command, to time a startup busy-loop. The engine is equally
+unsentimental about where results go: computed parameters get written straight into the
+instruction stream. The FAB decompressor of Chapters&nbsp;2 and&nbsp;3 ships with zeroed
+shift/mask fields at <span class="addr">CS:045E</span>–<span class="addr">0464</span> in
+the on-disk EXE; at runtime the engine patches the operative values into its own code
+segment — self-modifying code as a configuration store.</p>
+
+<p>Calibration loops carry hidden assumptions, and emulation finds them. Colonization's
+startup measurement feeds an <code>IDIV</code> that stays in range only if the measured
+divisor reaches 87,580; on an early build of our emulator crawling at 3.6&nbsp;million
+instructions per second it measured 4,033, the quotient overflowed, and Microsoft&nbsp;C
+announced <em>"run-time error R6003: integer divide by 0"</em> — a misdiagnosis of its own
+overflow, and a crash class we went on to meet in over forty DOS-era programs. Civ's
+sixteen-retrace loop caught us too: our VGA held the vertical-sync status bit for 8% of
+the frame where real hardware holds it for two scanlines in 449 — 0.45% — and Civ's
+measurement came back massively inflated.</p>
+
+<p>The deepest lesson was economic. Civ re-times the tick to 70&nbsp;Hz and then
+busy-waits on tick edges throughout its intro; on real hardware that costs nothing but
+electricity. Our emulator initially ran every guest at a fixed "Pentium" budget of 25,200
+cycles per millisecond — which made each 70&nbsp;Hz wait roughly twenty times the emulated
+work it would be on the 386-class machines the loop was sized for, and the intro crawled
+at 3.4&nbsp;fps, 6% of real time. The A/B that proved it: at <code>--speed 386</code> the
+same intro runs at 70.12&nbsp;fps. The durable fix (bug MDD-00037) was DOSBox-X-style
+adaptive cycles — a 3,000 cycles/ms seed plus ramp — which took it to 64–70&nbsp;fps; and
+"turbo" mode, which decouples CPU cycles from the PIT entirely, <em>hangs</em> these
+intros outright, because a spin counting tick edges never sees one. That is this chapter
+in one sentence: the games' time comes from crystals — the PIT's 1,193,182&nbsp;Hz, the
+VGA's refresh — never from counting CPU. Calibrate the CPU against the crystal and one
+binary is correct on every machine of 1994; emulate the crystal side subtly wrong, and
+the software does not slow down politely. It breaks.</p>
+
+<p class="srcline">Sources for this chapter — byte-level &amp; live disassembly: the
+Colonization ISR at 1169:0010, the 0040:0040 spin sites and the FAB self-modifying
+constants, via mddosem's IPC debugger (bug ledger MDD-00036, MDD-00037); runtime: the
+2026-07-18 instrumented boot (PIT reload capture, mid-run IVT/BDA reads) under
+<a href="/mddosem/">mddosem</a> v0.148.0; oracle: DOSBox-X source (INT8_Handler) for
+BIOS tick semantics — full credits in <a href="how.html">How We Know</a>.</p>
+
+  <nav class="chapnav">
+    <a href="world.html"><span class="dir">◀ previous</span>4 · A Hemisphere in 24K</a>
+    <a class="next" href="mapgen.html"><span class="dir">next ▶</span>6 · Growing a World</a>
+  </nav>
+
+</section>
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. Evidence: fresh byte-level analysis of the
+  original installs, live instrumented runs under
+  <a href="/mddosem/">mddosem</a> — a hardware-accurate PC emulator built in Rust —
+  and the community reverse-engineering record; full credits in
+  <a href="how.html">How We Know</a>. Screenshots © MicroProse, shown for technical
+  commentary. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w640-lib.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  if (!window.W640) return;
+  const W = window.W640, C = W.C, F = W.fmtInt;
+
+  /* shared tooltip */
+  function drawTip(ctx, w, h, mx, my, lines) {
+    ctx.font = W.mono(11);
+    let bw = 0;
+    for (const s of lines) bw = Math.max(bw, ctx.measureText(s).width);
+    bw += 20;
+    const bh = lines.length * 15 + 12;
+    const tx = W.clamp(mx + 14, 6, w - bw - 6);
+    const ty = W.clamp(my - bh - 12, 6, h - bh - 6);
+    ctx.save();
+    ctx.fillStyle = "rgba(24,33,54,0.97)";
+    ctx.strokeStyle = C.line;
+    W.rrect(ctx, tx, ty, bw, bh, 5);
+    ctx.fill(); ctx.stroke();
+    ctx.textAlign = "left";
+    lines.forEach((s, i) => {
+      ctx.fillStyle = i === 0 ? C.amberHi : C.ink2;
+      ctx.fillText(s, tx + 10, ty + 18 + i * 15);
+    });
+    ctx.restore();
+  }
+
+  /* ============================================================
+     FIG 1 · the divider cascade
+     Measured/disassembled: PIT reload 07A8h = 1,960 → 608.8 Hz;
+     ISR 1169:0010; ÷2 worker A (far [1796:0065], gate [92A4]);
+     ÷5 worker B ([36C], counter [9298]); ÷3 → jmp far cs:[0Ch]
+     → F000:FEA5. Visual tick rate 6/s ≈ 100× slowed.
+     ============================================================ */
+  const TPS = 6;
+  const cc = { base: 30, logged: 30, playT0: null, hover: null, regions: [] };
+  const clog = document.getElementById("cascade-log");
+  const cPlay = document.getElementById("cascade-play");
+
+  function depth(n) {
+    if (n <= 0) return 0;
+    if (n % 30 === 0) return 4;
+    if (n % 10 === 0) return 3;
+    if (n % 2 === 0) return 2;
+    return 1;
+  }
+  function setCLog(n) {
+    if (n <= 0) {
+      clog.innerHTML = '<span class="t">reset</span> press ▶ play or ⏭ step — every tick enters the ISR; every 30th reaches the BIOS';
+      return;
+    }
+    const d = depth(n);
+    let s = '<span class="t">tick ' + F(n) + '</span> [2297:82E8]++ (private stack)';
+    if (d === 4) s += ' · ÷2: worker A slot · ÷10: worker B · ÷30: jmp far cs:[0Ch] → F000:FEA5 — the BIOS gets its tick';
+    else if (d === 3) s += ' · ÷2: worker A slot · ÷10: worker B fires · own PIC EOI, IRET';
+    else if (d === 2) s += ' · ÷2: engine clock + worker A slot (gate [92A4]) · own PIC EOI, IRET';
+    else s += ' · odd tick — nothing else this beat: own PIC EOI, IRET';
+    clog.innerHTML = s;
+  }
+
+  const CMETA = [
+    { t: "8253 PIT · CH0", ts: "PIT", sub: ["reload 07A8h = 1,960", "mode 3 · square wave"], rate: "measured live" },
+    { t: "INT 08h ISR", ts: "ISR", sub: ["1169:0010", "[2297:82E8]++"], rate: "608.8 Hz" },
+    { t: "÷2 · WORKER A", ts: "÷2", sub: ["far [1796:0065]", "gate [2297:92A4]"], rate: "304.4 Hz" },
+    { t: "÷5 · WORKER B", ts: "÷5", sub: ["countdown [36C]", "private stack"], rate: "60.9 Hz" },
+    { t: "÷3 · BIOS CHAIN", ts: "÷3", sub: ["jmp far cs:[0Ch]", "→ F000:FEA5"], rate: "≈20.3 Hz*" },
+  ];
+  const CTIPS = [
+    ["8253/8254 PIT · channel 0", "reload 07A8h = 1,960 · mode 3 (square wave)", "1,193,182 Hz ÷ 1,960 = 608.8 Hz — measured", "live ~300 ms into boot; the only channel-0", "reload in the whole run"],
+    ["the game's INT 08h handler · 1169:0010", "installed once via INT 21h AH=25h, never", "unhooked; every tick: 32-bit counter at", "[2297:82E8]++, switch to a private ISR stack,", "own PIC EOI on non-chaining ticks"],
+    ["÷2 — engine clock + worker A", "even ticks: a far call through a RAM vector", "(1796:0065), gated by byte [2297:92A4] —", "the slot cinematics use for per-tick services;", "empty in our capture"],
+    ["÷5 — worker B (every 10th tick)", "countdown byte [36C]; bumps counter [9298];", "runs on the private stack the ISR switched to"],
+    ["÷3 — the BIOS chain (every 30th tick)", "jmp far cs:[0Ch] → F000:FEA5 — a tail-jump", "through the saved vector, reusing the original", "interrupt frame; the BIOS services its BDA clock", "and the floppy-motor counter, then IRETs"],
+  ];
+
+  const cfig = W.makeFig("cascade", function (ctx, w, h, fg) {
+    let n = cc.base, ph = 1;
+    if (fg.playing) {
+      if (cc.playT0 === null) cc.playT0 = fg.t;
+      const prog = (fg.t - cc.playT0) * TPS;
+      n = cc.base + Math.floor(prog);
+      ph = prog - Math.floor(prog);
+      if (n !== cc.logged) { cc.logged = n; setCLog(n); }
+    }
+    const d = depth(n);
+    const s = d > 0 ? Math.min(ph / 0.85, 1) * d : 0;
+    const compact = w < 720;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, w, h);
+    cc.regions = [];
+
+    const yMid = h * 0.42;
+    const bh = Math.min(120, Math.max(78, h * 0.36));
+    const yB = yMid - bh / 2;
+    const fr = compact
+      ? [[0.010, 0.16], [0.215, 0.17], [0.425, 0.17], [0.635, 0.17], [0.845, 0.15]]
+      : [[0.012, 0.13], [0.191, 0.16], [0.400, 0.16], [0.609, 0.16], [0.818, 0.17]];
+    const B = fr.map((f) => ({ x: f[0] * w, w: f[1] * w }));
+
+    /* wires (highlight those on today's path) */
+    for (let i = 0; i < 4; i++) {
+      const x1 = B[i].x + B[i].w, x2 = B[i + 1].x;
+      const active = i < d;
+      ctx.strokeStyle = active ? C.amberDim : "rgba(125,135,148,0.45)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x1, yMid);
+      ctx.lineTo(x2 - 7, yMid);
+      ctx.stroke();
+      ctx.fillStyle = active ? C.amberDim : "rgba(125,135,148,0.45)";
+      ctx.beginPath();
+      ctx.moveTo(x2 - 1, yMid);
+      ctx.lineTo(x2 - 8, yMid - 4.5);
+      ctx.lineTo(x2 - 8, yMid + 4.5);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    /* boxes */
+    const counts = [n, n, Math.floor(n / 2), Math.floor(n / 10), Math.floor(n / 30)];
+    const nxt = [0, 0,
+      n <= 0 ? 2 : (n % 2 === 0 ? 2 : 1),
+      n <= 0 ? 10 : 10 - (n % 10),
+      n <= 0 ? 30 : 30 - (n % 30)];
+    for (let i = 0; i < 5; i++) {
+      const b = B[i], m = CMETA[i];
+      let glow = 0;
+      if (i === 0) glow = fg.playing ? (d > 0 && ph < 0.18 ? 0.9 : 0.12) : 0.35;
+      else if (i <= d) glow = fg.playing ? (s >= i ? W.clamp(1 - (s - i) * 1.2, 0.25, 1) : 0) : 0.5;
+      ctx.fillStyle = i === 4 ? C.surface3 : C.surface2;
+      W.rrect(ctx, b.x, yB, b.w, bh, 5);
+      ctx.fill();
+      ctx.strokeStyle = C.line;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      if (glow > 0.01) {
+        ctx.save();
+        ctx.globalAlpha = glow;
+        ctx.strokeStyle = C.amberHi;
+        ctx.lineWidth = 2;
+        W.rrect(ctx, b.x, yB, b.w, bh, 5);
+        ctx.stroke();
+        ctx.restore();
+      }
+      const cx = b.x + b.w / 2;
+      ctx.textAlign = "center";
+      ctx.fillStyle = C.amber;
+      ctx.font = W.dos(compact ? 15 : 16);
+      ctx.fillText(compact ? m.ts : m.t, cx, yB + 18);
+      if (!compact) {
+        ctx.fillStyle = C.ink2;
+        ctx.font = W.mono(10);
+        m.sub.forEach((s2, j) => ctx.fillText(s2, cx, yB + 35 + j * 13));
+      }
+      /* counter line */
+      ctx.font = W.mono(11, true);
+      ctx.fillStyle = C.amberHi;
+      if (i === 0) {
+        ctx.font = W.dos(compact ? 16 : 19);
+        ctx.fillStyle = C.amber;
+        ctx.fillText("608.8 Hz", cx, yB + bh - 10);
+      } else if (i === 1) {
+        ctx.fillText("tick " + F(n), cx, yB + bh - 10);
+      } else {
+        ctx.fillText("fired " + F(counts[i]), cx, yB + bh - 10);
+      }
+      /* rate + next chips under boxes */
+      ctx.font = W.mono(10);
+      ctx.fillStyle = C.muted;
+      ctx.fillText(m.rate, cx, yB + bh + 15);
+      if (i >= 2 && !compact) ctx.fillText("next in " + nxt[i], cx, yB + bh + 28);
+      cc.regions.push({ x0: b.x, x1: b.x + b.w, y0: yB - 6, y1: yB + bh + 30, lines: CTIPS[i] });
+    }
+
+    /* BIOS lamp (top-right of the ÷3 box) */
+    const lampOn = fg.playing ? (d === 4 && s >= 4 ? 1 : 0.12) : (d === 4 ? 0.9 : 0.12);
+    const lx = B[4].x + B[4].w - 13, ly = yB + 12;
+    ctx.save();
+    ctx.globalAlpha = lampOn;
+    ctx.fillStyle = C.cyan;
+    ctx.beginPath();
+    ctx.arc(lx, ly, 5, 0, W.TAU);
+    ctx.fill();
+    if (lampOn > 0.5) {
+      ctx.globalAlpha = lampOn * 0.35;
+      ctx.beginPath();
+      ctx.arc(lx, ly, 9, 0, W.TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+
+    /* travelling pulse */
+    if (fg.playing && d > 0) {
+      let px, py = yMid, alpha = 1;
+      if (s < d) {
+        const seg = Math.min(Math.floor(s), d - 1);
+        const local = s - seg;
+        const x1 = B[seg].x + B[seg].w, x2 = B[seg + 1].x;
+        px = W.lerp(x1, x2, local);
+      } else {
+        px = B[d].x + B[d].w / 2;
+        py = yMid;
+        alpha = W.clamp(1 - (ph - 0.85) / 0.15, 0, 1);
+      }
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = C.amber;
+      ctx.beginPath();
+      ctx.arc(px, py, 4.5, 0, W.TAU);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    /* captions */
+    ctx.font = W.mono(10);
+    ctx.fillStyle = C.muted;
+    ctx.textAlign = "right";
+    ctx.fillText("animation slowed ≈100×", w - 10, 16);
+    if (!compact) {
+      ctx.textAlign = "center";
+      ctx.fillText("ticks the game keeps: private ISR stack · own PIC EOI · IRET      every 30th: the original interrupt frame is handed to the BIOS", w / 2, h - 10);
+    }
+
+    /* tooltip */
+    if (cc.hover) {
+      for (const r of cc.regions) {
+        if (cc.hover.x >= r.x0 && cc.hover.x <= r.x1 && cc.hover.y >= r.y0 && cc.hover.y <= r.y1) {
+          drawTip(ctx, w, h, cc.hover.x, cc.hover.y, r.lines);
+          break;
+        }
+      }
+    }
+  });
+
+  W.onHover(cfig.canvas, (x, y) => {
+    cc.hover = x == null ? null : { x: x, y: y };
+    if (!cfig.playing) cfig.redraw();
+  });
+
+  cPlay.addEventListener("click", () => {
+    if (cfig.playing) {
+      cfig.stop();
+      cPlay.textContent = "▶ play";
+      cc.base = cc.logged;
+      cc.playT0 = null;
+      cfig.redraw();
+      return;
+    }
+    cc.playT0 = null;
+    cPlay.textContent = "❚❚ pause";
+    cfig.start();
+  });
+  document.getElementById("cascade-step").addEventListener("click", () => {
+    cfig.stop();
+    cPlay.textContent = "▶ play";
+    cc.base = cc.logged = cc.logged + 1;
+    cc.playT0 = null;
+    setCLog(cc.base);
+    cfig.redraw();
+  });
+  document.getElementById("cascade-reset").addEventListener("click", () => {
+    cfig.stop();
+    cPlay.textContent = "▶ play";
+    cc.base = cc.logged = 0;
+    cc.playT0 = null;
+    setCLog(0);
+    cfig.redraw();
+  });
+  if (W.reducedMotion) cPlay.style.display = "none";
+  setCLog(30);
+
+  /* ============================================================
+     FIG 2 · the 0040:0040 one-shot
+     Pattern from live disassembly: Civ 4195:06C1–06CE,
+     Colonization 145D:0032. Decrement only in the BIOS INT 08h
+     handler (DOSBox-X INT8_Handler as oracle).
+     ============================================================ */
+  const CYC = 5.6, PH = [1.0, 3.4, 4.0, 5.6];
+  const mo = { phase: 3, logged: 3, playT0: null, hover: null, regions: [] };
+  const mlog = document.getElementById("motor-log");
+  const mPlay = document.getElementById("motor-play");
+  const MLOGS = [
+    '<span class="t">arm</span> mov es:[0440h], al — the BIOS floppy-motor shut-off counter is loaded with 1',
+    '<span class="t">spin</span> cmp es:[0440h], al / je — still 1; burning cycles until the next BIOS tick',
+    '<span class="t">tick</span> BIOS INT 08h fires: 0040:0040 decrements 1 → 0 — the only code that ever decrements it',
+    '<span class="t">done</span> je falls through — up to ≈55 ms have passed; the BIOS would now stop a floppy motor nobody was running',
+  ];
+  const MCODE = [
+    "      mov   al, 1",
+    "      mov   es:[0440h], al",
+    "spin:",
+    "      cmp   es:[0440h], al",
+    "      je    spin",
+    "      ; …resume — wait over",
+  ];
+  function phaseAt(T) {
+    for (let i = 0; i < 4; i++) if (T < PH[i]) return i;
+    return 3;
+  }
+
+  const mfig = W.makeFig("motor", function (ctx, w, h, fg) {
+    let phz = mo.phase, local = 1, T = null;
+    if (fg.playing) {
+      if (mo.playT0 === null) mo.playT0 = fg.t;
+      T = (fg.t - mo.playT0) % CYC;
+      phz = phaseAt(T);
+      const t0 = phz === 0 ? 0 : PH[phz - 1];
+      local = (T - t0) / (PH[phz] - t0);
+      if (phz !== mo.logged) { mo.logged = phz; mlog.innerHTML = MLOGS[phz]; }
+    }
+    const compact = w < 640;
+    const val = phz === 0 ? (local > 0.65 ? 1 : 0)
+      : phz === 1 ? 1
+      : phz === 2 ? (local > 0.5 ? 0 : 1)
+      : 0;
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.surface;
+    ctx.fillRect(0, 0, w, h);
+    mo.regions = [];
+
+    /* --- game code box (left) --- */
+    const gx = w * 0.03, gw = w * 0.36, gy = h * 0.12, gh = h * 0.62;
+    ctx.fillStyle = C.surface2;
+    W.rrect(ctx, gx, gy, gw, gh, 5);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.stroke();
+    ctx.textAlign = "left";
+    ctx.fillStyle = C.amber;
+    ctx.font = W.dos(15);
+    ctx.fillText(compact ? "GAME CODE" : "GAME CODE · 4195:06C1 (live disasm)", gx + 10, gy + 17);
+    const lineH = Math.min(16, (gh - 30) / 6.2);
+    const codeY0 = gy + 32;
+    /* active-line highlight */
+    let hl = 5;
+    if (phz === 0) hl = local < 0.5 ? 0 : 1;
+    else if (phz === 1) hl = (Math.floor((T || 0) * 8) % 2) ? 4 : 3;
+    else if (phz === 2) hl = 3;
+    ctx.save();
+    ctx.globalAlpha = 0.28;
+    ctx.fillStyle = phz >= 2 && hl >= 4 ? C.cyan : C.amber;
+    ctx.fillRect(gx + 5, codeY0 + hl * lineH - lineH * 0.72, gw - 10, lineH);
+    ctx.restore();
+    ctx.font = W.mono(compact ? 10 : 11);
+    MCODE.forEach((ln, i) => {
+      ctx.fillStyle = i === hl ? C.ink : C.ink2;
+      ctx.fillText(ln, gx + 12, codeY0 + i * lineH);
+    });
+    mo.regions.push({ x0: gx, x1: gx + gw, y0: gy, y1: gy + gh, lines: ["the whole timer API", "write 1, spin till 0 — a ≈55 ms one-shot for", "zero bytes of timer code; Civ intro delay at", "4195:06C1–06CE · Colonization at 145D:0032"] });
+
+    /* --- byte cell (middle) --- */
+    const cw2 = Math.min(112, Math.max(76, w * 0.13));
+    const cx0 = w * 0.475 - cw2 / 2, cy0 = h * 0.26, ch2 = Math.min(72, h * 0.30);
+    ctx.fillStyle = C.surface3;
+    W.rrect(ctx, cx0, cy0, cw2, ch2, 5);
+    ctx.fill();
+    ctx.strokeStyle = val === 1 ? C.amber : C.line;
+    ctx.lineWidth = val === 1 ? 2 : 1;
+    ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.textAlign = "center";
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10);
+    ctx.fillText("BDA 0040:0040", cx0 + cw2 / 2, cy0 - 8);
+    ctx.fillStyle = val === 1 ? C.amberHi : C.ink2;
+    ctx.font = W.dos(30);
+    ctx.fillText(val === 1 ? "01" : "00", cx0 + cw2 / 2, cy0 + ch2 / 2 + 10);
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10);
+    ctx.fillText("motor shut-off", cx0 + cw2 / 2, cy0 + ch2 + 14);
+    ctx.fillText("count", cx0 + cw2 / 2, cy0 + ch2 + 26);
+    mo.regions.push({ x0: cx0 - 6, x1: cx0 + cw2 + 6, y0: cy0 - 18, y1: cy0 + ch2 + 30, lines: ["BDA 0040:0040 — one byte", "the BIOS floppy-motor shut-off counter:", "decremented once per tick, only inside the", "BIOS INT 08h handler (verified in DOSBox-X", "source); motor off when it reaches zero"] });
+
+    /* --- BIOS box (right) --- */
+    const bx = w * 0.62, bw2 = w * 0.35, by = h * 0.12, bh2 = h * 0.52;
+    ctx.fillStyle = C.surface2;
+    W.rrect(ctx, bx, by, bw2, bh2, 5);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.stroke();
+    ctx.textAlign = "left";
+    ctx.fillStyle = C.amber;
+    ctx.font = W.dos(15);
+    ctx.fillText(compact ? "BIOS INT 08h" : "BIOS INT 08h · F000:FEA5", bx + 10, by + 17);
+    ctx.fillStyle = C.ink2;
+    ctx.font = W.mono(10);
+    ctx.fillText("18.2 Hz — one tick ≈ 55 ms", bx + 10, by + 33);
+    if (!compact) {
+      ctx.fillStyle = C.muted;
+      ctx.fillText("each tick: if [0040:0040] ≠ 0 →", bx + 10, by + bh2 - 22);
+      ctx.fillText("decrement; at 0 → motor off", bx + 10, by + bh2 - 9);
+    }
+    /* lamp + countdown ring */
+    const lx2 = bx + bw2 - 24, ly2 = by + 24;
+    if (fg.playing && phz === 1) {
+      ctx.strokeStyle = C.cyan;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(lx2, ly2, 9, -Math.PI / 2, -Math.PI / 2 + local * W.TAU);
+      ctx.stroke();
+    }
+    const lit = phz === 2 ? 1 : 0.14;
+    ctx.save();
+    ctx.globalAlpha = lit;
+    ctx.fillStyle = C.cyan;
+    ctx.beginPath();
+    ctx.arc(lx2, ly2, 5.5, 0, W.TAU);
+    ctx.fill();
+    if (lit > 0.5) {
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.arc(lx2, ly2, 10, 0, W.TAU);
+      ctx.fill();
+    }
+    ctx.restore();
+    mo.regions.push({ x0: bx, x1: bx + bw2, y0: by, y1: by + bh2, lines: ["the BIOS side of the bargain", "Civ chains to it every tick; Colonization", "rations it to every 30th — either way the", "BDA keeps advancing, so the idiom works"] });
+
+    /* arrows */
+    const midY = cy0 + ch2 / 2;
+    if (phz === 0 && local > 0.3) {
+      W.drawArrow(ctx, gx + gw + 4, midY, cx0 - 6, midY, C.amber);
+      ctx.fillStyle = C.amber;
+      ctx.font = W.mono(10, true);
+      ctx.textAlign = "center";
+      ctx.fillText("write 1", (gx + gw + cx0) / 2, midY - 10);
+    }
+    if (phz === 2) {
+      W.drawArrow(ctx, bx - 4, midY, cx0 + cw2 + 6, midY, C.cyan);
+      ctx.fillStyle = C.cyan;
+      ctx.font = W.mono(10, true);
+      ctx.textAlign = "center";
+      ctx.fillText("−1", (bx + cx0 + cw2) / 2, midY - 10);
+    }
+
+    /* elapsed bar */
+    const bar0 = w * 0.03, bar1 = w * 0.97, barY2 = h * 0.90, barH2 = 8;
+    let frac = 0;
+    if (phz === 1) frac = local * 0.9;
+    else if (phz === 2) frac = 0.9 + local * 0.1;
+    else if (phz === 3) frac = 1;
+    ctx.fillStyle = C.surface3;
+    W.rrect(ctx, bar0, barY2, bar1 - bar0, barH2, 4);
+    ctx.fill();
+    ctx.strokeStyle = C.line;
+    ctx.stroke();
+    if (frac > 0.01) {
+      ctx.fillStyle = frac >= 1 ? C.good : C.amber;
+      W.rrect(ctx, bar0 + 1, barY2 + 1, Math.max(2, (bar1 - bar0) * frac - 2), barH2 - 2, 3);
+      ctx.fill();
+    }
+    ctx.fillStyle = C.muted;
+    ctx.font = W.mono(10);
+    ctx.textAlign = "left";
+    ctx.fillText("0 ms", bar0, barY2 - 6);
+    ctx.textAlign = "right";
+    ctx.fillText("≈55 ms — one BIOS tick", bar1, barY2 - 6);
+    mo.regions.push({ x0: bar0, x1: bar1, y0: barY2 - 16, y1: barY2 + barH2 + 6, lines: ["≈55 ms worst case", "the counter drops on the NEXT tick edge,", "so the wait lasts anything from ~0 up to", "one 18.2 Hz period (54.9 ms)"] });
+
+    /* tooltip */
+    if (mo.hover) {
+      for (const r of mo.regions) {
+        if (mo.hover.x >= r.x0 && mo.hover.x <= r.x1 && mo.hover.y >= r.y0 && mo.hover.y <= r.y1) {
+          drawTip(ctx, w, h, mo.hover.x, mo.hover.y, r.lines);
+          break;
+        }
+      }
+    }
+  });
+
+  W.onHover(mfig.canvas, (x, y) => {
+    mo.hover = x == null ? null : { x: x, y: y };
+    if (!mfig.playing) mfig.redraw();
+  });
+
+  mPlay.addEventListener("click", () => {
+    if (mfig.playing) {
+      mfig.stop();
+      mo.phase = mo.logged;
+      mo.playT0 = null;
+      mPlay.textContent = "▶ play";
+      mfig.redraw();
+      return;
+    }
+    mo.playT0 = null;
+    mPlay.textContent = "❚❚ pause";
+    mfig.start();
+  });
+  document.getElementById("motor-step").addEventListener("click", () => {
+    mfig.stop();
+    mPlay.textContent = "▶ play";
+    mo.phase = mo.logged = (mo.logged + 1) % 4;
+    mo.playT0 = null;
+    mlog.innerHTML = MLOGS[mo.phase];
+    mfig.redraw();
+  });
+  if (W.reducedMotion) mPlay.style.display = "none";
+  mlog.innerHTML = MLOGS[3];
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

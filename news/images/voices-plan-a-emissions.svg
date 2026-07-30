@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">M&amp;S direct and supply-chain emissions move in opposite directions</title>
+  <desc id="desc">Indexed bar chart. Scope 1 and 2 emissions fell from an index of 100 to 62, while Scope 3 emissions rose from 100 to 114. Scope 3 represents 96 per cent of the reported total footprint.</desc>
+  <rect width="1200" height="675" fill="#f7f4ed"/>
+  <rect x="0" y="0" width="1200" height="14" fill="#b80000"/>
+  <g font-family="Arial, Helvetica, sans-serif" fill="#171717">
+    <text x="72" y="78" font-size="18" font-weight="700" letter-spacing="2" fill="#b80000">THE CARBON PARADOX</text>
+    <text x="72" y="124" font-family="Georgia, 'Times New Roman', serif" font-size="38" font-weight="700">The shop shrinks. The supply chain grows.</text>
+    <text x="72" y="158" font-size="18" fill="#555">Change from each category's own baseline (baseline = 100)</text>
+    <line x1="72" y1="215" x2="918" y2="215" stroke="#d7d1c4" stroke-width="2"/>
+    <line x1="72" y1="403" x2="918" y2="403" stroke="#d7d1c4" stroke-width="2"/>
+    <text x="72" y="257" font-size="22" font-weight="700">Direct operations</text>
+    <text x="72" y="284" font-size="16" fill="#666">Scope 1 &amp; 2 · baseline 2016/17</text>
+    <rect x="330" y="238" width="500" height="42" rx="4" fill="#d6d2c9"/>
+    <rect x="330" y="296" width="310" height="42" rx="4" fill="#287a57"/>
+    <text x="846" y="266" font-size="17" font-weight="700">536.9kt</text>
+    <text x="656" y="324" font-size="17" font-weight="700" fill="#287a57">335.1kt</text>
+    <text x="930" y="311" font-size="42" font-weight="700" fill="#287a57">−38%</text>
+    <text x="330" y="362" font-size="14" fill="#666">Baseline</text>
+    <text x="545" y="362" font-size="14" fill="#666">2025/26</text>
+    <text x="72" y="445" font-size="22" font-weight="700">Value chain</text>
+    <text x="72" y="468" font-size="15" fill="#666">Scope 3 · baseline 2022/23</text>
+    <text x="72" y="492" font-size="15" fill="#666">Reported one year in arrears</text>
+    <rect x="330" y="426" width="500" height="42" rx="4" fill="#d6d2c9"/>
+    <rect x="330" y="484" width="570" height="42" rx="4" fill="#b80000"/>
+    <text x="846" y="454" font-size="17" font-weight="700">6.678m</text>
+    <text x="882" y="512" text-anchor="end" font-size="17" font-weight="700" fill="#fff">7.615m</text>
+    <text x="930" y="499" font-size="42" font-weight="700" fill="#b80000">+14%</text>
+    <text x="330" y="550" font-size="14" fill="#666">Baseline</text>
+    <text x="734" y="550" font-size="14" fill="#666">2024/25</text>
+    <rect x="72" y="584" width="1056" height="52" rx="5" fill="#171717"/>
+    <text x="95" y="617" font-size="19" font-weight="700" fill="#fff">96% of the reported 2024/25 footprint sits in Scope 3.</text>
+    <text x="1128" y="658" text-anchor="end" font-size="13" fill="#666">Source: M&amp;S ESG Report 2026, pp. 6 and 38</text>
+  </g>
+</svg>

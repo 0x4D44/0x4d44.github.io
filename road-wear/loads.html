@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Weight of Traffic — The Road to Ruin</title>
+<meta name="description" content="Road damage rises with roughly the fourth power of axle load, so a loaded lorry does the structural work of tens of thousands of cars and cars barely count. The AASHO Road Test, load equivalency factors, ESALs and the arithmetic of who really wears out a road — with a live damage-law curve.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="loads.html" aria-current="page">2 · The Weight of Traffic</a>
+    <a href="water.html">3 · Water &amp; Frost</a>
+    <a href="materials.html">4 · Ageing</a>
+    <a href="distress.html">5 · The Distress Catalogue</a>
+    <a href="repair.html">6 · Looking After Roads</a>
+    <a href="roadworks.html">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 2 — The Weight of Traffic</p>
+  <h1>Why one lorry beats sixty-five thousand cars</h1>
+  <p class="standfirst">If you remember one thing from this entire guide, make it this: road
+  damage does not rise in step with weight. It rises with roughly the <em>fourth power</em> of
+  axle load. That single, well-measured fact means the wear on a road is almost entirely the
+  work of heavy goods vehicles, that cars are nearly irrelevant to structural decay, and that a
+  little overloading is startlingly destructive.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">In 1958 the American road authorities spent two years and a fortune deliberately
+destroying roads to answer one question: how much damage does a given load actually do?</p>
+
+<p>The <strong>AASHO Road Test</strong> in Ottawa, Illinois built special loops of pavement
+and ran fleets of trucks around them, axle after identical axle, until the roads failed —
+recording exactly how many passes of each weight it took. The result was one of the most
+consequential findings in civil engineering, and it was not what anyone expected. Damage per
+pass rose not linearly with load, not with its square, but with something close to its
+<strong>fourth power</strong>.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The fourth-power law</span>
+    <span class="hint">damage of one axle, relative to the 8-tonne standard · drag the load</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="law" style="aspect-ratio: 2 / 1; min-height: 320px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="law-load">axle load</label>
+      <input type="range" id="law-load" min="2" max="130" step="1" value="20">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="law-n">power n</label>
+      <span class="seg" id="law-n">
+        <button data-v="3">3</button>
+        <button data-v="4" class="on">4</button>
+        <button data-v="5">5</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">this axle = <b id="ro-lef">—</b> standard axles</span>
+    <span class="ro">= the damage of <b id="ro-cars">—</b> cars</span>
+    <span class="ro" id="ro-cls-wrap">nearest class <b id="ro-cls">—</b></span>
+  </div>
+  <div class="fig-note">The vertical scale is logarithmic — each gridline is ten times the last —
+  because the numbers span many orders of magnitude. The 8.16-tonne (80 kN) standard axle sits at
+  exactly&nbsp;1 by definition. Note where the <b>car</b> lands, far below everything else: that
+  gulf is the whole point of this chapter. The AASHO exponent is about 4 for flexible pavements,
+  but it is genuinely uncertain (roughly 3–5, depending on the pavement and the failure mode), so
+  the toggle lets you see how sharp the effect is either way — watch the car fall further with
+  every step up in <b>n</b>, and note that the scale restretches to keep it on the chart.</div>
+</figure>
+
+<div class="prose">
+
+<h2>The arithmetic that runs the roads</h2>
+
+<p>Engineers turn this into a single accounting unit: the <strong>ESAL</strong>, or Equivalent
+Single Axle Load. Every axle that passes is converted, via its fourth-power
+<em>load equivalency factor</em>, into some number of "standard 8-tonne axles," and a road is
+designed to survive a certain total number of ESALs before it needs rebuilding. Count the ESALs
+and you have counted the damage. Here is what that does to a mixed stream of traffic:</p>
+
+<table class="data">
+  <caption>Damage per axle pass, relative to one standard axle (n = 4)</caption>
+  <tr><th>Vehicle</th><th>Typical axle load</th><th>Load equivalency (ESAL)</th><th>Passes to equal one lorry axle</th></tr>
+  <tr><td class="k">Family car</td><td class="num">~5 kN (0.5 t)</td><td class="num">0.000015</td><td class="num">~65,000</td></tr>
+  <tr><td class="k">Loaded van</td><td class="num">~15 kN (1.5 t)</td><td class="num">0.001</td><td class="num">~800</td></tr>
+  <tr><td class="k">Bus / coach axle</td><td class="num">~65 kN (6.6 t)</td><td class="num">0.44</td><td class="num">~2</td></tr>
+  <tr><td class="k">Standard axle</td><td class="num">80 kN (8.16 t)</td><td class="num">1.00</td><td class="num">1</td></tr>
+  <tr><td class="k">Overloaded axle</td><td class="num">100 kN (10.2 t)</td><td class="num">2.4</td><td class="num">—</td></tr>
+</table>
+
+<div class="callout warn">
+  <span class="tag">Cars do not wear out roads</span>
+  <p>Run the numbers and the conclusion is stark. A single loaded-lorry axle can do the
+  structural damage of roughly <strong>65,000 car axles</strong>. On a typical road, heavy
+  goods vehicles are a small minority of the traffic but cause the <strong>great majority</strong>
+  of the structural wear — often cited as HGVs being a few per cent of vehicles yet ~80–90% of
+  the damage. The potholes you swerve round were, to a first approximation, <em>not</em> made by
+  cars. They were made by lorries — and by the water and frost that finish the job
+  (<a href="water.html">Chapter&nbsp;3</a>).</p>
+</div>
+
+<h2>The overloading trap</h2>
+
+<p>The fourth power has a nasty corollary for anyone tempted to squeeze an extra tonne onto a
+truck. Because damage goes as <span class="u">L⁴</span>, overloading an axle by just
+<strong>20%</strong> raises its damage by <span class="u">1.2⁴ ≈ 2.07</span> — it does
+<strong>more than double</strong> the harm. A 25% overload roughly <em>2.4×</em>-es it. This is
+why weighbridges, axle-load limits and enforcement matter so much to a highways budget: a
+handful of illegally overloaded lorries can quietly consume a road's design life years early.
+It is also why buses and bin lorries, forever running the same routes at high axle loads, chew
+visible ruts and cracks into bus lanes and turning circles.</p>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-lorry"/></svg>
+    <svg class="char sm"><use href="#char-tarmac"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Hauler &amp; Tarmac</p>
+    <p class="say"><b>Hauler:</b> "Forty-four tonnes, coming through! I pay road tax same as
+    everyone."</p>
+    <p class="say"><b>Tarmac:</b> "Sure — but every one of your axles does what sixty-odd thousand
+    cars do to me. The bloke in the hatchback behind you? I barely feel him."</p>
+  </div>
+</div>
+
+<h2>Where the damage actually happens</h2>
+
+<p>The fourth-power law is about how many passes it takes to <em>fatigue</em> the pavement —
+to crack it from the bottom up, as we saw in <a href="anatomy.html">Chapter&nbsp;1</a>. But
+heavy repeated loads do two distinct kinds of harm, and it helps to keep them apart:</p>
+
+<ul>
+  <li><strong>Fatigue cracking.</strong> Each wheel bends the asphalt; each bend stretches the
+  underside a little. Like flexing a paperclip, enough cycles snap it. This is what the ESAL
+  count is really tracking.</li>
+  <li><strong>Rutting.</strong> The two parallel troughs worn into each lane's wheelpaths.
+  Part of it is the asphalt itself creeping sideways under hot, heavy, slow loads (plastic
+  flow of the bitumen); part is the layers below being pushed down and densified. Ruts are
+  ugly and dangerous — they hold water, causing spray and aquaplaning.</li>
+</ul>
+
+<p>Speed and temperature matter too. A slow or stationary heavy wheel (a bus at a stop, a lorry
+in a jam) rests its load on the viscoelastic bitumen for longer, letting it flow — which is why
+rutting concentrates at junctions, bus stops and climbing lanes, and why a heatwave, softening
+the tar, is a rutting event. The load is only half the story; the material's mood on the day is
+the other half (<a href="materials.html">Chapter&nbsp;4</a>).</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">where the exponent comes from</span></summary>
+  <p>The load equivalency factor between an axle of load <span class="m">L</span> and the
+  standard axle <span class="m">L<sub>std</sub></span> is modelled as a power law:</p>
+  <div class="eq"><span class="m">LEF = ( <b>L</b> / <b>L</b><sub>std</sub> )<sup>n</sup></span></div>
+  <p>The AASHO Road Test data are fitted well by <span class="m">n ≈ 4</span> for flexible
+  pavements failing by fatigue, and this "fourth power law" became the design convention. But
+  <span class="m">n</span> is not a law of nature: it depends on the pavement's structure, the
+  distress mode (rutting fits a lower power, fatigue a higher one), the layer that governs
+  failure, and even how "failure" is defined. Reported values span roughly 3 to 5, with some
+  thin pavements and specific modes falling outside even that. The headline conclusion is robust
+  to all of this: because the exponent is large, damage is dominated by the heaviest axles, and
+  light vehicles contribute negligibly. When you double a load, you multiply its damage by
+  <span class="m">2<sup>n</sup></span> — between 8 and 32 times. Nothing about a car comes close.</p>
+</details>
+
+</div>
+
+<nav class="chapnav">
+  <a class="prev" href="anatomy.html"><span class="dir">← Previous</span><span class="title">1 · Anatomy</span></a>
+  <a class="next" href="water.html"><span class="dir">Next →</span><span class="title">3 · Water &amp; Frost</span></a>
+</nav>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, C } = RW;
+  const STD = RW.PAVE.stdAxle_kN; // 80
+
+  let load = 20, n = 4;
+  let fig;
+
+  const CLASSES = [
+    { name: "car", kN: 5, col: C.cyan },
+    { name: "van", kN: 15, col: C.good },
+    { name: "bus", kN: 65, col: C.violet },
+    { name: "lorry (standard)", kN: 80, col: C.amber },
+    { name: "overloaded", kN: 100, col: C.red },
+  ];
+  const carLEF = () => Math.pow(5 / STD, n);
+
+  function nearest(kN) {
+    let best = CLASSES[0], bd = 1e9;
+    for (const c of CLASSES) { const d = Math.abs(c.kN - kN); if (d < bd) { bd = d; best = c; } }
+    return best.name;
+  }
+
+  function update() {
+    const lef = RW.LEF(load, n);
+    RW.set("ro-lef", lef >= 0.01 ? lef.toFixed(2) : RW.fmtSci(lef));
+    const cars = lef / carLEF();
+    RW.set("ro-cars", RW.fmtSci(cars));
+    RW.set("ro-cls", nearest(load));
+    if (fig) fig.redraw();
+  }
+
+  fig = RW.canvas("law", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
+    const L = 46, Rp = 16, T = 30, B = h - 34;
+    const xLo = 0, xHi = 130;
+    const lg = (kN) => Math.log10(RW.LEF(kN, n));
+    // The vertical scale follows the exponent: at n = 5 the lightest axle on the
+    // slider is nearly nine decades below the standard, so a fixed floor would
+    // clamp the curve, the marker and the readout into disagreement.
+    const yHi = 2, yLo = Math.floor(lg(2));
+    const X = (kN) => L + (kN - xLo) / (xHi - xLo) * (w - L - Rp);
+    const Y = (log) => T + (yHi - log) / (yHi - yLo) * (B - T);
+
+    // gridlines (decades)
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    for (let e = yLo; e <= yHi; e++) {
+      const y = Y(e);
+      ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(w - Rp, y); ctx.stroke();
+      RW.label(ctx, e === 0 ? "1" : "10" + RW.sup(e), L - 6, y, { align: "right", baseline: "middle", color: C.muted });
+    }
+    for (let kN = 0; kN <= xHi; kN += 20) {
+      const x = X(kN);
+      ctx.strokeStyle = C.line2; ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, B); ctx.stroke();
+      RW.label(ctx, kN + "", x, B + 14, { align: "center", color: C.muted });
+    }
+    RW.label(ctx, "axle load (kN)", (L + w - Rp) / 2, h - 6, { align: "center", color: C.ink2, font: RW.mono(11, true) });
+    RW.label(ctx, "damage × (standard axles)", L - 34, T - 12, { align: "left", color: C.ink2, font: RW.mono(11, true) });
+
+    // standard-axle reference line at LEF=1
+    ctx.strokeStyle = "rgba(255,157,60,0.5)"; ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(L, Y(0)); ctx.lineTo(w - Rp, Y(0)); ctx.stroke(); ctx.setLineDash([]);
+
+    // the power-law curve — drawn only where it is on scale, so it can never
+    // run out over the axis labels
+    ctx.save();
+    ctx.beginPath(); ctx.rect(L, T, w - L - Rp, B - T); ctx.clip();
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.4; ctx.beginPath();
+    let first = true;
+    for (let kN = 1; kN <= xHi; kN += 1) {
+      const y = Y(lg(kN));
+      if (first) { ctx.moveTo(X(kN), y); first = false; } else ctx.lineTo(X(kN), y);
+    }
+    ctx.stroke();
+    ctx.restore();
+
+    // class markers
+    for (const c of CLASSES) {
+      if (c.kN > xHi) continue;
+      const lv = clamp(lg(c.kN), yLo, yHi);
+      const x = X(c.kN), y = Y(lv);
+      ctx.fillStyle = c.col;
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, 6.28); ctx.fill();
+      RW.label(ctx, c.name, x + 7, y - 7, { color: c.col, font: RW.mono(10.5, true) });
+    }
+
+    // the moving dot
+    const lv = clamp(lg(load), yLo, yHi);
+    const x = X(load), y = Y(lv);
+    ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(x, B); ctx.lineTo(x, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(L, y); ctx.lineTo(x, y); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2; ctx.stroke();
+  }, { animate: false });
+
+  RW.slider("law-load", (v) => v.toFixed(0) + " kN", (v) => { load = v; update(); });
+  RW.seg("law-n", (v) => { n = parseInt(v, 10); update(); });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

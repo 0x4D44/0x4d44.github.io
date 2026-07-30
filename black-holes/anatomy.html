@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anatomy of a Black Hole — Event Horizon</title>
+<meta name="description" content="A guided cross-section of a black hole: event horizon, photon sphere, innermost stable orbit and ergosphere — plus a calculator that sizes any black hole from a grain of dust to a galactic monster.">
+<link rel="stylesheet" href="bh.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">EVENT&nbsp;HORIZON</a></div>
+    <div class="strap">a field guide to black holes &amp; singularities</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="gravity.html">1 · Escape &amp; Collapse</a>
+    <a href="spacetime.html">2 · Curved Spacetime</a>
+    <a href="anatomy.html" aria-current="page">3 · Anatomy</a>
+    <a href="singularity.html">4 · The Singularity</a>
+    <a href="falling.html">5 · Falling In</a>
+    <a href="hawking.html">6 · Hawking Radiation</a>
+    <a href="observing.html">7 · Seeing the Unseeable</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 3</p>
+  <h1>Anatomy of a Black Hole</h1>
+  <p class="standfirst">A black hole looks featureless from far away — just a dark sphere. But
+  its neighbourhood has a precise, layered structure, each shell a threshold where something
+  becomes impossible: the last stable orbit, the surface where light circles forever, the edge
+  of no return, and — if the hole spins — a zone where space itself is dragged bodily around.
+  Here is the guided tour, from the outside in.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">Remarkably, a black hole is one of the <em>simplest</em> objects in the
+universe. You need just three numbers to describe it completely.</p>
+
+<p>A star is fantastically complicated — temperature, composition, magnetic fields, spots,
+rotation, a whole churning interior. But when matter collapses into a black hole, almost all
+of that detail is erased. Whatever falls in, the result is described entirely by three
+quantities: its <strong>mass</strong>, its <strong>spin</strong> (angular momentum), and its
+<strong>electric charge</strong> (which is essentially always zero in nature). Two black holes
+with the same mass, spin and charge are <em>identical</em> — there is no other property to
+tell them apart, no memory of what built them.</p>
+
+<div class="callout gold">
+  <span class="tag">The no-hair theorem</span>
+  <p>This is the famous <strong>"no-hair" theorem</strong>: a black hole has "no hair," no
+  extra features. John Wheeler's phrase captured a deep truth — a black hole is the most
+  perfectly bald object there is, wiping away every characteristic of its origin except the
+  three that are protected by conservation laws. Real astrophysical holes have essentially
+  zero charge, so in practice it comes down to just <strong>two</strong> numbers: how heavy,
+  and how fast it spins.</p>
+</div>
+
+<h2><span class="no">§3.1</span> The layers, from the outside in</h2>
+
+<p>Below is a cross-section you can dissect. Start with a non-spinning (Schwarzschild) hole,
+then flip on spin to watch the layers rearrange — the horizon shrinks, and a whole new region,
+the ergosphere, bulges into existence. Toggle each label to see what it means.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Cross-section of a black hole</span>
+    <span class="hint">every shell is a threshold where something becomes impossible</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="anat" style="aspect-ratio: 2.2 / 1; min-height: 340px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="an-spin">spin a★</label>
+      <input type="range" id="an-spin" min="0" max="98" step="1" value="0">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="an-show">highlight</label>
+      <span class="seg" id="an-show">
+        <button data-v="all" class="on">all</button>
+        <button data-v="horizon">horizon</button>
+        <button data-v="photon">photon sphere</button>
+        <button data-v="isco">ISCO</button>
+        <button data-v="ergo">ergosphere</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro" id="an-cap" style="font-size:13px; color:var(--ink-2)">
+      Drag <b>spin</b> from 0 up toward 1. The <b>event horizon</b> (the black edge) shrinks;
+      an <b>ergosphere</b> (amber) swells outside it, flattened at the poles. At maximum spin
+      the horizon is half its non-spinning size — a spinning hole is a smaller, stranger beast.
+    </span>
+  </div>
+</figure>
+
+<h3>What each shell is</h3>
+
+<dl class="gloss">
+  <dt>Event horizon <span class="also">r = r<sub>s</sub> = 2GM/c²</span></dt>
+  <dd>The point of no return — the defining surface of the black hole. Cross it inward and you
+  cannot send anything back out, ever. It is not a physical membrane; you would notice nothing
+  special crossing it (for a big hole). It is simply the last place from which a light ray can
+  still, in principle, escape to infinity.</dd>
+
+  <dt>Photon sphere <span class="also">r = 1.5 r<sub>s</sub></span></dt>
+  <dd>The radius at which gravity bends light into a <em>circle</em>. A photon here orbits the
+  hole forever (unstably). Stand on an impossible platform at this radius, look sideways, and
+  you would see the back of your own head — light doing a full loop. This is the shell that
+  makes the bright photon ring in the images.</dd>
+
+  <dt>Innermost stable circular orbit <span class="also">ISCO · r = 3 r<sub>s</sub> (non-spinning)</span></dt>
+  <dd>The closest a massive object — a star, a blob of gas — can orbit and stay in a stable
+  circle. Inside the ISCO there are no stable orbits at all: anything drifts inward and plunges.
+  The ISCO sets the inner edge of an accretion disk, and how much energy the hole can extract
+  from infalling matter (up to 6% for a non-spinning hole, 42% for a maximal one — far beyond
+  the ~0.7% of nuclear fusion).</dd>
+
+  <dt>Ergosphere <span class="also">spinning holes only</span></dt>
+  <dd>Outside the horizon of a <em>rotating</em> hole lies a region where spacetime itself is
+  dragged around so violently that nothing can stand still — you are forced to co-rotate, even
+  travelling at light speed against the spin. You can still escape (you are outside the
+  horizon), and remarkably you can leave carrying <em>more</em> energy than you brought, stolen
+  from the hole's rotation. That is the Penrose process, and it is real
+  (<a href="singularity.html">Chapter&nbsp;4</a> revisits the spinning case).</dd>
+</dl>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-pip"/></svg>
+    <svg class="char sm"><use href="#char-prof"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Pip</p>
+    <p class="say">If I could hover at the photon sphere and look to the side, I'd see the
+    <i>back of my own head</i>?</p>
+    <p class="say" style="color:var(--amber)"><b>Professor Nova:</b> You would — light leaving
+    the back of your head can circle right around and return to your eyes. Though "hover" is
+    doing heroic work in that sentence. The thrust required is… considerable.</p>
+  </div>
+</div>
+
+<h2><span class="no">§3.2</span> Size any black hole</h2>
+
+<p>Because mass alone sets the scale, you can size <em>any</em> black hole with one slider.
+Drag it from a speck to a galactic titan and watch every quantity change. Notice the two facts
+that surprise everyone: supermassive black holes are barely denser than air, and small black
+holes are blisteringly hot while big ones are colder than deep space.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Black-hole sizer</span>
+    <span class="hint">mass sets everything else</span>
+  </div>
+  <div class="fig-body" style="background:var(--surface); padding: 18px 16px;">
+    <div class="fig-controls" style="border:none; background:none; padding:0 0 8px;">
+      <div class="ctl" style="flex:1 1 100%">
+        <label for="calc-m">mass</label>
+        <input type="range" id="calc-m" min="0" max="1000" step="1" value="500" style="flex:1 1 240px; max-width:420px;">
+        <output style="min-width:120px"></output>
+      </div>
+    </div>
+    <div class="ctl" style="flex-wrap:wrap; gap:6px;">
+      <span class="seg" id="calc-preset">
+        <button data-v="earth">Earth</button>
+        <button data-v="sun">Sun</button>
+        <button data-v="cyg" class="on">Cygnus X-1</button>
+        <button data-v="sgr">Sgr A*</button>
+        <button data-v="m87">M87*</button>
+        <button data-v="ton">TON 618</button>
+      </span>
+    </div>
+  </div>
+  <div class="readouts" style="gap:12px 26px; padding:14px 16px;">
+    <span class="ro">horizon radius <b id="c-rs">—</b></span>
+    <span class="ro">diameter vs. <b id="c-cmp">—</b></span>
+    <span class="ro">mean density <b id="c-rho">—</b></span>
+    <span class="ro amber">Hawking temp <b id="c-temp">—</b></span>
+    <span class="ro">surface gravity <b id="c-g">—</b></span>
+    <span class="ro">ISCO orbit period <b id="c-t">—</b></span>
+  </div>
+  <div class="fig-note" id="c-note">A stellar-mass black hole: a few tens of kilometres across,
+    denser than an atomic nucleus, and — like all real black holes — far colder than the
+    universe around it.</div>
+</figure>
+
+<p class="tryit">Drag to <b>Sgr A*</b>, the four-million-Sun hole at our own galaxy's centre:
+its horizon is about the size of Mercury's orbit, yet its mean density is only a few thousand
+kg/m³. Now drag to <b>TON 618</b>, one of the largest known — 66 <i>billion</i> Suns — and its
+"density" drops below that of <b>air</b>. <b>Big black holes are mostly empty geometry.</b></p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper — why density falls as mass rises</span><span class="tag2">a scaling argument</span></summary>
+  <p>Define a black hole's mean density as its mass divided by the volume inside the horizon,
+  <span class="m">ρ = M / (⁴⁄₃ π r<sub>s</sub>³)</span>. But <span class="m">r</span><sub>s</sub>
+  is itself proportional to <span class="m">M</span>, so the volume grows like
+  <span class="m">M³</span> while the mass grows like <span class="m">M</span>:</p>
+  <div class="eq"><span class="m">ρ ∝ <frac><span><b>M</b></span><span><b>r</b><sub>s</sub>³</span></frac> ∝ <frac><span><b>M</b></span><span><b>M</b>³</span></frac> = <frac><span>1</span><span><b>M</b>²</span></frac></span></div>
+  <p>Density falls as the <em>square</em> of the mass. A hole ten times heavier is a thousand
+  times bigger in volume but only ten times more massive — a hundred times less dense.
+  Supermassive holes are the emptiest dense-sounding things in physics.</p>
+</details>
+
+<p>You now have the map and the scale. But we have been circling the strangest part of the
+territory — the place all this geometry points toward, at the very centre. What actually lies
+at <span class="m">r</span> = 0? That is the singularity, and it is where our theories stop
+speaking. Next chapter.</p>
+
+<div class="chapnav">
+  <a class="prev" href="spacetime.html"><span class="dir">← Previous</span><span class="title">2 · Curved Spacetime</span></a>
+  <a class="next" href="singularity.html"><span class="dir">Next →</span><span class="title">4 · The Singularity</span></a>
+</div>
+
+<p class="colophon">EVENT HORIZON · Chapter 3 · No-hair theorem; Schwarzschild &amp; Kerr
+structure — horizon r₊ = (GM/c²)(1+√(1−a★²)), photon sphere, ISCO, ergosphere; masses of
+Cygnus X-1, Sgr A*, M87* and TON 618 from the literature. Part of the
+<a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="bh-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, clamp, lerp, TAU } = BH;
+  const { G, c, Msun, Rsun, Rearth, AU, yr } = BH.PHYS;
+
+  /* ---------- anatomy cross-section ---------- */
+  (function () {
+    let aStar = 0, show = "all";
+    const CAPS = {
+      all: "Drag spin from 0 up toward 1. The event horizon (the black edge) shrinks; an ergosphere (amber) swells outside it, flattened at the poles. At maximum spin the horizon is half its non-spinning size — a spinning hole is a smaller, stranger beast.",
+      horizon: "The EVENT HORIZON at r₊. For a spinning (Kerr) hole its radius is (GM/c²)(1+√(1−a★²)): it shrinks as spin rises, from 2GM/c² at a★=0 down to GM/c² at maximal spin a★=1. Cross it inward and no signal ever returns.",
+      photon: "The PHOTON SPHERE (dashed gold) at 1.5 rₛ for a non-spinning hole: the radius where light orbits in a circle. Spin splits it into two — one radius for light co-rotating with the hole, a larger one for light going against the spin.",
+      isco: "The INNERMOST STABLE CIRCULAR ORBIT (cyan): the inner edge of any accretion disk. At 3 rₛ for a non-spinning hole, it moves inward for co-rotating orbits around a spinning hole — down to just 0.5 rₛ at maximal spin, releasing far more energy.",
+      ergo: "The ERGOSPHERE (amber shell): only spinning holes have one. Inside it, frame-dragging is so severe that nothing can remain still — space itself sweeps you around. You can still escape, and you can steal rotational energy on the way out (the Penrose process).",
+    };
+
+    const fig = BH.canvas("anat", function (ctx, w, h) {
+      ctx.fillStyle = "#05050a"; ctx.fillRect(0, 0, w, h);
+      BH.stars(ctx, w, h, Math.round(w * h / 2600), 33);
+      const cx = w * 0.5, cy = h * 0.54;
+      const unit = Math.min(w, h) * 0.16;   // pixels per (GM/c²)  = rs/2
+      const rs = 2 * unit;
+      const a = aStar / 100;                // 0..0.98
+      const rHor = unit * (1 + Math.sqrt(Math.max(0, 1 - a * a)));  // r+ in GM/c^2
+      const rPhoton = 1.5 * rs;
+      const rIsco = 3 * rs * lerp(1, 0.38, a); // schematic shrink with spin
+      const rErgoEq = 2 * unit;             // ergosphere equatorial radius (static limit) = 2GM/c^2
+
+      function dim(key) { return (show === "all" || show === key) ? 1 : 0.25; }
+
+      // ISCO (as an orbit ring)
+      ctx.globalAlpha = dim("isco");
+      ctx.strokeStyle = C.cyan; ctx.setLineDash([2, 5]); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(cx, cy, rIsco, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+      BH.label(ctx, "ISCO", cx + rIsco * 0.71, cy - rIsco * 0.71, { color: C.cyan });
+
+      // photon sphere
+      ctx.globalAlpha = dim("photon");
+      ctx.strokeStyle = C.gold; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.4;
+      ctx.beginPath(); ctx.arc(cx, cy, rPhoton, 0, TAU); ctx.stroke(); ctx.setLineDash([]);
+      BH.label(ctx, "photon sphere", cx - rPhoton, cy - rPhoton - 6, { color: C.gold });
+
+      // ergosphere (oblate: equatorial rErgoEq, polar = rHor)
+      if (a > 0.02) {
+        ctx.globalAlpha = dim("ergo");
+        const grad = ctx.createRadialGradient(cx, cy, rHor, cx, cy, rErgoEq);
+        grad.addColorStop(0, "rgba(255,157,60,0.10)"); grad.addColorStop(1, "rgba(255,157,60,0.34)");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.ellipse(cx, cy, rErgoEq, rHor, 0, 0, TAU); ctx.fill();
+        ctx.strokeStyle = "rgba(255,157,60,0.8)"; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.ellipse(cx, cy, rErgoEq, rHor, 0, 0, TAU); ctx.stroke();
+        BH.label(ctx, "ergosphere", cx + rErgoEq + 8, cy, { color: C.amber });
+      }
+
+      // event horizon (black disk)
+      ctx.globalAlpha = dim("horizon");
+      const halo = ctx.createRadialGradient(cx, cy, rHor * 0.8, cx, cy, rHor * 1.25);
+      halo.addColorStop(0, "#000"); halo.addColorStop(0.8, "#000"); halo.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, cy, rHor * 1.25, 0, TAU); ctx.fill();
+      ctx.fillStyle = "#000"; ctx.beginPath(); ctx.arc(cx, cy, rHor, 0, TAU); ctx.fill();
+      ctx.strokeStyle = "rgba(255,80,80,0.85)"; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(cx, cy, rHor, 0, TAU); ctx.stroke();
+      BH.label(ctx, "event horizon", cx, cy + rHor + 16, { color: "#ff8a8a", align: "center" });
+
+      // singularity marker
+      ctx.globalAlpha = 1;
+      if (a < 0.02) {
+        ctx.fillStyle = C.violet;
+        ctx.beginPath(); ctx.arc(cx, cy, 2.2, 0, TAU); ctx.fill();
+      } else {
+        ctx.strokeStyle = C.violet; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.ellipse(cx, cy, rHor * 0.9, 1.5, 0, 0, TAU); ctx.stroke();
+      }
+      BH.label(ctx, a < 0.02 ? "singularity (point)" : "ring singularity", cx, cy - 8, { color: C.violet, align: "center" });
+      ctx.globalAlpha = 1;
+    }, { animate: false });
+
+    BH.slider("an-spin", (v) => "a★ = " + (v / 100).toFixed(2), (v) => { aStar = v; if (fig) fig.redraw(); });
+    BH.seg("an-show", (v) => { show = v; document.getElementById("an-cap").innerHTML = CAPS[v]; if (fig) fig.redraw(); });
+  })();
+
+  /* ---------- black-hole sizer calculator ---------- */
+  (function () {
+    // log slider 0..1000 → mass 1e-7 .. 1e11 solar masses
+    const LO = -7, HI = 11;
+    function massSolar(v) { return Math.pow(10, lerp(LO, HI, v / 1000)); }
+    function sliderFor(ms) { return clamp((Math.log10(ms) - LO) / (HI - LO) * 1000, 0, 1000); }
+
+    const PRESETS = {
+      earth: 3.003e-6, sun: 1, cyg: 21.2, sgr: 4.297e6, m87: 6.5e9, ton: 6.6e10,
+    };
+    const NAMES = {
+      earth: "if the Earth were a black hole", sun: "if the Sun were a black hole",
+      cyg: "Cygnus X-1 — a nearby stellar black hole", sgr: "Sgr A* — our galaxy's central hole",
+      m87: "M87* — the first ever photographed", ton: "TON 618 — an ultramassive quasar",
+    };
+
+    function cmp(rs_m) {
+      const d = 2 * rs_m;
+      if (d < 1) return (d * 100).toFixed(1) + " cm";
+      if (d < 1e4) return (d / 1000).toFixed(2) + " km";
+      if (d < 3 * Rsun) return (d / 1000).toFixed(0) + " km (" + (d / Rearth).toFixed(1) + "× Earth)";
+      if (d < 0.3 * AU) return (d / Rsun).toFixed(1) + "× the Sun's width";
+      if (d < 300 * AU) return (d / AU).toFixed(1) + " AU (" + (d / AU / 0.39).toFixed(1) + "× Mercury's orbit)";
+      return (d / BH.PHYS.ly).toExponential(1) + " light-years";
+    }
+    function rhoStr(rho) {
+      if (rho > 1e9) return BH.fmtSci(rho, "kg/m³") + " (nuclear)";
+      if (rho > 1200) return rho.toExponential(1) + " kg/m³ (>water)";
+      if (rho > 1.2) return rho.toFixed(0) + " kg/m³ (~water/rock)";
+      return rho.toFixed(3) + " kg/m³ (< air!)";
+    }
+
+    let noteEl = document.getElementById("c-note");
+    function update(ms, presetKey) {
+      const M = ms * Msun;
+      const rs = 2 * G * M / (c * c);
+      const rho = M / (4 / 3 * Math.PI * rs * rs * rs);
+      const T = BH.hawkingT(M);
+      const g = G * M / (rs * rs);                 // surface gravity ~ c^4/4GM
+      const rIsco = 3 * rs;
+      const Tisco = 2 * Math.PI * Math.sqrt(rIsco * rIsco * rIsco / (G * M)); // Kepler (approx)
+      BH.set("c-rs", BH.fmtSci(rs, "m"));
+      BH.set("c-cmp", cmp(rs));
+      BH.set("c-rho", rhoStr(rho));
+      BH.set("c-temp", T < 1e-6 ? BH.fmtSci(T, "K") : T.toExponential(1) + " K");
+      BH.set("c-g", BH.fmtSci(g, "m/s²"));
+      BH.set("c-t", BH.fmtTime(Tisco));
+      let note = "";
+      if (ms < 1e-3) note = "A micro black hole: smaller than an atom, hotter than anything, and evaporating almost instantly (see Chapter 6).";
+      else if (ms < 1e3) note = "A stellar-mass black hole: a few tens of kilometres across, denser than an atomic nucleus, and — like all real black holes — far colder than the universe around it.";
+      else if (ms < 1e6) note = "An intermediate-mass black hole: the long-missing middle class, now being caught by gravitational-wave detectors.";
+      else note = "A supermassive black hole: horizon spanning a solar system, mean density near or below water — the anchor at the heart of a galaxy.";
+      if (presetKey) note = NAMES[presetKey] + ". " + note;
+      noteEl.textContent = note;
+    }
+
+    const s = BH.slider("calc-m", (v) => massSolar(v).toExponential(1) + " M☉",
+      (v) => update(massSolar(v), null));
+    BH.seg("calc-preset", (v) => {
+      const ms = PRESETS[v];
+      s.set(sliderFor(ms));
+      update(ms, v);
+    });
+    // initialise from default preset
+    update(PRESETS.cyg, "cyg");
+  })();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

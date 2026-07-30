@@ -1,0 +1,1384 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070b0f">
+<title>Silicon on Sterling — transistor packages at coin scale</title>
+<meta name="description" content="An interactive, dimensionally accurate atlas of transistor packages compared with every current UK coin — from a 0.63 mm DFN to the iconic TO-3.">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #070b0f;
+    --bg-2: #0b1117;
+    --panel: rgba(15, 23, 31, .88);
+    --panel-solid: #101820;
+    --panel-2: #141f29;
+    --ink: #edf4f7;
+    --muted: #93a8b5;
+    --faint: #5f7582;
+    --line: rgba(181, 215, 229, .18);
+    --line-bright: rgba(181, 215, 229, .36);
+    --amber: #ffbd59;
+    --amber-soft: rgba(255, 189, 89, .16);
+    --cyan: #67e8f9;
+    --cyan-soft: rgba(103, 232, 249, .12);
+    --green: #78f0a8;
+    --red: #ff7d78;
+    --copper: #c87943;
+    --silver: #c8d0d3;
+    --gold: #d7aa4a;
+    --radius: 18px;
+    --shadow: 0 28px 80px rgba(0, 0, 0, .34);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-width: 320px;
+    background:
+      radial-gradient(circle at 18% -10%, rgba(103, 232, 249, .09), transparent 34rem),
+      radial-gradient(circle at 86% 8%, rgba(255, 189, 89, .075), transparent 28rem),
+      linear-gradient(180deg, var(--bg), #081018 48%, #06090d 100%);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.55;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .12;
+    z-index: 20;
+    background-image:
+      linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px);
+    background-size: 5px 5px, 7px 7px;
+    mix-blend-mode: soft-light;
+  }
+
+  a { color: var(--cyan); }
+  button, input { font: inherit; }
+  button { color: inherit; }
+  .shell { width: min(1240px, calc(100% - 32px)); margin: 0 auto; }
+  .mono { font-family: var(--mono); }
+  .eyebrow {
+    margin: 0 0 12px;
+    color: var(--amber);
+    font: 700 .76rem/1.2 var(--mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .eyebrow::before { content: "// "; color: var(--faint); }
+
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 15;
+    border-bottom: 1px solid var(--line);
+    background: rgba(7, 11, 15, .78);
+    backdrop-filter: blur(18px) saturate(1.2);
+  }
+  .topbar-inner {
+    min-height: 62px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    text-decoration: none;
+    color: var(--ink);
+    font: 800 .88rem/1 var(--mono);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .brand-mark {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--line-bright);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    color: var(--amber);
+    background: linear-gradient(145deg, rgba(255,255,255,.06), transparent);
+    box-shadow: inset 0 0 18px rgba(103,232,249,.06);
+  }
+  .topnav { display: flex; gap: 6px; }
+  .topnav a {
+    padding: 8px 10px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--muted);
+    font: 600 .72rem/1 var(--mono);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .topnav a:hover, .topnav a:focus-visible { color: var(--ink); background: rgba(255,255,255,.055); }
+
+  .hero {
+    position: relative;
+    min-height: 640px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(380px, .88fr);
+    align-items: center;
+    gap: clamp(34px, 6vw, 88px);
+    padding: clamp(70px, 10vw, 138px) 0 78px;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 100vw;
+    height: 1px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, transparent, var(--line-bright), transparent);
+  }
+  h1 {
+    margin: 0;
+    max-width: 800px;
+    font-size: clamp(3.6rem, 8.5vw, 8rem);
+    line-height: .86;
+    letter-spacing: -.065em;
+    text-transform: uppercase;
+  }
+  h1 span { display: block; }
+  h1 .outline {
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(237, 244, 247, .6);
+    text-stroke: 1px rgba(237, 244, 247, .6);
+  }
+  .lede {
+    max-width: 680px;
+    margin: 28px 0 0;
+    color: #bed0d8;
+    font-size: clamp(1.05rem, 2vw, 1.28rem);
+  }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+  .cta, .ghost-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 10px;
+    text-decoration: none;
+    font: 700 .78rem/1 var(--mono);
+    letter-spacing: .04em;
+  }
+  .cta { background: var(--amber); color: #171006; border: 1px solid var(--amber); }
+  .cta:hover { filter: brightness(1.06); transform: translateY(-1px); }
+  .ghost-link { color: var(--ink); border: 1px solid var(--line-bright); background: rgba(255,255,255,.025); }
+  .ghost-link:hover { background: rgba(255,255,255,.06); }
+
+  .hero-object {
+    position: relative;
+    min-height: 430px;
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+  }
+  .hero-halo {
+    position: absolute;
+    width: min(100%, 440px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(103,232,249,.15);
+    background: radial-gradient(circle, rgba(103,232,249,.11), rgba(103,232,249,.025) 45%, transparent 70%);
+    box-shadow: 0 0 100px rgba(103,232,249,.08);
+  }
+  .hero-coin {
+    position: absolute;
+    width: min(66%, 292px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 33% 25%, #f5f7f5 0, #b7c1c4 18%, #7f8c91 54%, #d4dadb 71%, #657278 100%);
+    border: 2px solid rgba(255,255,255,.48);
+    box-shadow: 0 32px 55px rgba(0,0,0,.5), inset 0 0 0 8px rgba(32,40,45,.22), inset 0 0 0 10px rgba(255,255,255,.18);
+    transform: rotateX(59deg) rotateZ(-12deg);
+  }
+  .hero-coin::before {
+    content: "£2";
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: rgba(28,36,40,.48);
+    font: 800 4.7rem/1 var(--mono);
+    text-shadow: 0 1px rgba(255,255,255,.45);
+  }
+  .hero-to3 {
+    position: relative;
+    z-index: 2;
+    width: min(92%, 420px);
+    filter: drop-shadow(0 36px 34px rgba(0,0,0,.55));
+    animation: float-part 6.5s ease-in-out infinite;
+  }
+  .hero-scale {
+    position: absolute;
+    right: 0;
+    bottom: 6px;
+    width: 196px;
+    padding: 14px 15px;
+    border: 1px solid var(--line-bright);
+    border-radius: 12px;
+    background: rgba(8,14,19,.84);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
+  }
+  .hero-scale strong { display: block; font: 800 1.65rem/1 var(--mono); color: var(--amber); }
+  .hero-scale span { display: block; margin-top: 8px; color: var(--muted); font: .72rem/1.45 var(--mono); }
+  @keyframes float-part { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-12px) rotate(1.5deg); } }
+
+  section { padding: 86px 0; }
+  .section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, .62fr);
+    gap: 32px;
+    align-items: end;
+    margin-bottom: 34px;
+  }
+  .section-head h2 {
+    margin: 0;
+    font-size: clamp(2.25rem, 5vw, 4.6rem);
+    line-height: .94;
+    letter-spacing: -.05em;
+  }
+  .section-head p:last-child { margin: 0; color: var(--muted); }
+
+  .workbench { padding-top: 96px; }
+  .control-deck {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(18,28,37,.94), rgba(11,17,23,.94));
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .deck-strip {
+    min-height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line);
+    color: var(--faint);
+    font: 700 .67rem/1 var(--mono);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    background: rgba(0,0,0,.16);
+  }
+  .deck-strip .status { color: var(--green); }
+  .deck-controls { display: grid; gap: 18px; padding: 18px; }
+  fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+  legend, .control-label {
+    display: block;
+    margin-bottom: 9px;
+    color: var(--muted);
+    font: 700 .67rem/1 var(--mono);
+    letter-spacing: .09em;
+    text-transform: uppercase;
+  }
+  .chip-rail {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-bright) transparent;
+  }
+  .chip {
+    flex: 0 0 auto;
+    min-height: 39px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: rgba(255,255,255,.025);
+    color: #b9c9d1;
+    cursor: pointer;
+    font: 700 .73rem/1 var(--mono);
+  }
+  .chip:hover { border-color: var(--line-bright); color: var(--ink); background: rgba(255,255,255,.05); }
+  .chip[aria-pressed="true"] {
+    color: #171006;
+    border-color: var(--amber);
+    background: var(--amber);
+    box-shadow: 0 0 0 3px var(--amber-soft);
+  }
+  .chip.coin-chip[aria-pressed="true"] { color: #071015; border-color: var(--cyan); background: var(--cyan); box-shadow: 0 0 0 3px var(--cyan-soft); }
+
+  .mini-controls {
+    display: grid;
+    grid-template-columns: minmax(250px, 1fr) minmax(240px, .8fr) minmax(230px, .7fr);
+    gap: 18px;
+    align-items: end;
+  }
+  .segmented { display: flex; gap: 6px; }
+  .segmented button, .tool-button {
+    min-height: 38px;
+    padding: 0 11px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255,255,255,.025);
+    color: var(--muted);
+    cursor: pointer;
+    font: 700 .7rem/1 var(--mono);
+  }
+  .segmented button[aria-pressed="true"], .tool-button[aria-pressed="true"] { color: var(--cyan); border-color: rgba(103,232,249,.5); background: var(--cyan-soft); }
+  .segmented button:hover, .tool-button:hover { color: var(--ink); border-color: var(--line-bright); }
+  .zoom-control { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+  .zoom-control input { width: 100%; accent-color: var(--amber); }
+  .zoom-control output { min-width: 46px; color: var(--amber); font: 700 .72rem/1 var(--mono); text-align: right; }
+  .tool-row { display: flex; flex-wrap: wrap; gap: 7px; }
+
+  .bench-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, .68fr);
+    gap: 18px;
+    margin-top: 18px;
+  }
+  .stage-card, .readout-card, .cal-card, .sweep-card, .lineup-shell, .method-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: var(--shadow);
+  }
+  .stage-card { min-width: 0; overflow: hidden; }
+  .stage-topline {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .stage-topline strong { font: 800 .76rem/1 var(--mono); letter-spacing: .04em; }
+  .stage-topline span { color: var(--faint); font: .68rem/1 var(--mono); }
+  .stage-wrap {
+    position: relative;
+    min-height: 560px;
+    background:
+      radial-gradient(circle at 50% 45%, rgba(103,232,249,.06), transparent 45%),
+      linear-gradient(180deg, rgba(3,7,10,.45), rgba(7,12,17,.65));
+  }
+  #compareStage {
+    width: 100%;
+    height: 560px;
+    display: block;
+    touch-action: none;
+    cursor: grab;
+  }
+  #compareStage.dragging { cursor: grabbing; }
+  .stage-caption {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 13px 16px 15px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font: .68rem/1.45 var(--mono);
+  }
+  .stage-caption span:last-child { text-align: right; color: var(--faint); }
+
+  .readout-card { padding: 23px; display: flex; flex-direction: column; }
+  .readout-kicker { color: var(--cyan); font: 800 .7rem/1 var(--mono); letter-spacing: .11em; text-transform: uppercase; }
+  .readout-card h3 { margin: 12px 0 4px; font-size: clamp(1.8rem, 3vw, 2.65rem); line-height: .95; letter-spacing: -.045em; }
+  .part-example { color: var(--amber); font: 700 .76rem/1.4 var(--mono); }
+  .part-blurb { margin: 18px 0 22px; color: #b8cad2; }
+  .metric-stack { display: grid; border-top: 1px solid var(--line); }
+  .metric {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+    align-items: baseline;
+  }
+  .metric span { color: var(--muted); font-size: .83rem; }
+  .metric strong { color: var(--ink); font: 800 .9rem/1 var(--mono); text-align: right; }
+  .metric strong.amber { color: var(--amber); }
+  .verdict {
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid rgba(255,189,89,.28);
+    border-radius: 12px;
+    background: var(--amber-soft);
+    color: #f7dfb7;
+  }
+  .verdict-label { display: block; margin-bottom: 6px; color: var(--amber); font: 800 .65rem/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; }
+  .readout-note { margin-top: auto; padding-top: 20px; color: var(--faint); font: .66rem/1.45 var(--mono); }
+
+  /* SVG artwork */
+  .stage-grid-minor { stroke: rgba(170,205,219,.055); stroke-width: .08; }
+  .stage-grid-major { stroke: rgba(170,205,219,.12); stroke-width: .11; }
+  .stage-axis { stroke: rgba(103,232,249,.2); stroke-width: .12; stroke-dasharray: .45 .55; }
+  .coin-shadow { fill: rgba(0,0,0,.42); filter: blur(.55px); }
+  .coin-face { stroke: rgba(255,255,255,.62); stroke-width: .15; }
+  .coin-ring { fill: none; stroke: rgba(255,255,255,.26); stroke-width: .22; }
+  .coin-mark { fill: rgba(18,27,32,.42); stroke: rgba(255,255,255,.16); stroke-width: .08; }
+  .coin-text { fill: rgba(24,31,34,.52); font-family: var(--mono); font-weight: 800; text-anchor: middle; dominant-baseline: middle; }
+  .coin-microtext { fill: rgba(24,31,34,.42); font-family: var(--mono); font-weight: 700; text-anchor: middle; letter-spacing: .08em; }
+  .coin-copper { fill: url(#coinCopper); }
+  .coin-silver { fill: url(#coinSilver); }
+  .coin-gold { fill: url(#coinGold); }
+  .coin-inner-silver { fill: url(#coinSilver); }
+  .coin-inner-gold { fill: url(#coinGold); }
+  .pkg-shadow { fill: rgba(0,0,0,.52); filter: url(#softShadow); }
+  .pkg-plastic { fill: url(#blackPlastic); stroke: rgba(255,255,255,.34); stroke-width: .12; }
+  .pkg-plastic-edge { fill: #10161a; stroke: rgba(255,255,255,.17); stroke-width: .1; }
+  .pkg-metal { fill: url(#brushedMetal); stroke: rgba(255,255,255,.62); stroke-width: .13; }
+  .pkg-metal-dark { fill: url(#darkMetal); stroke: rgba(255,255,255,.4); stroke-width: .12; }
+  .pkg-lead, .pkg-pad { fill: url(#leadMetal); stroke: rgba(255,255,255,.5); stroke-width: .09; }
+  .pkg-hole { fill: #071018; stroke: rgba(255,255,255,.5); stroke-width: .12; }
+  .pkg-print { fill: rgba(240,247,249,.68); font-family: var(--mono); font-weight: 700; text-anchor: middle; }
+  .pkg-glint { fill: rgba(255,255,255,.18); }
+  .drag-hit { fill: transparent; pointer-events: all; }
+  .dimension-line { fill: none; stroke: var(--cyan); stroke-width: .13; vector-effect: non-scaling-stroke; }
+  .dimension-ext { fill: none; stroke: rgba(103,232,249,.5); stroke-width: .09; stroke-dasharray: .28 .24; }
+  .dimension-text { fill: var(--cyan); font-family: var(--mono); font-size: 1.05px; font-weight: 800; paint-order: stroke; stroke: #071018; stroke-width: .35px; stroke-linejoin: round; }
+  .coin-dim { fill: rgba(237,244,247,.68); font-family: var(--mono); font-size: .95px; font-weight: 700; paint-order: stroke; stroke: #071018; stroke-width: .3px; }
+  .stage-label { fill: rgba(237,244,247,.56); font-family: var(--mono); font-size: .8px; font-weight: 700; letter-spacing: .04em; }
+  #compareStage[data-mode="blueprint"] .coin-face,
+  #compareStage[data-mode="blueprint"] .coin-inner-silver,
+  #compareStage[data-mode="blueprint"] .coin-inner-gold { fill: rgba(103,232,249,.035); stroke: rgba(103,232,249,.6); }
+  #compareStage[data-mode="blueprint"] .coin-ring,
+  #compareStage[data-mode="blueprint"] .coin-mark { fill: none; stroke: rgba(103,232,249,.38); }
+  #compareStage[data-mode="blueprint"] .coin-text,
+  #compareStage[data-mode="blueprint"] .coin-microtext { fill: rgba(103,232,249,.52); }
+  #compareStage[data-mode="blueprint"] .pkg-plastic,
+  #compareStage[data-mode="blueprint"] .pkg-plastic-edge,
+  #compareStage[data-mode="blueprint"] .pkg-metal,
+  #compareStage[data-mode="blueprint"] .pkg-metal-dark,
+  #compareStage[data-mode="blueprint"] .pkg-lead,
+  #compareStage[data-mode="blueprint"] .pkg-pad {
+    fill: rgba(255,189,89,.035);
+    stroke: rgba(255,189,89,.9);
+    stroke-width: .14;
+  }
+  #compareStage[data-mode="blueprint"] .pkg-print { fill: rgba(255,189,89,.72); }
+  #compareStage[data-mode="blueprint"] .pkg-shadow,
+  #compareStage[data-mode="blueprint"] .coin-shadow,
+  #compareStage[data-mode="blueprint"] .pkg-glint { display: none; }
+  #compareStage[data-mode="ghost"] #coinLayer { opacity: .28; }
+  #compareStage[data-mode="ghost"] #packageLayer { opacity: .94; }
+  #compareStage[data-mode="studio"] #coinLayer { opacity: .78; }
+
+  .calibration {
+    background: linear-gradient(180deg, rgba(255,255,255,.015), transparent);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+  }
+  .cal-grid { display: grid; grid-template-columns: minmax(0, .82fr) minmax(420px, 1.18fr); gap: 22px; }
+  .cal-card { padding: 24px; }
+  .cal-card h3 { margin: 0 0 8px; font-size: 1.5rem; }
+  .cal-card p { color: var(--muted); margin: 0; }
+  .cal-controls { margin-top: 22px; }
+  .cal-controls input { width: 100%; accent-color: var(--cyan); }
+  .cal-readout { display: flex; justify-content: space-between; margin-top: 7px; color: var(--faint); font: .68rem/1 var(--mono); }
+  .cal-readout strong { color: var(--cyan); }
+  .actual-stage {
+    position: relative;
+    min-height: 322px;
+    display: grid;
+    place-items: center;
+    overflow: auto;
+    background:
+      linear-gradient(rgba(103,232,249,.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(103,232,249,.055) 1px, transparent 1px),
+      #091017;
+    background-size: 10px 10px;
+  }
+  #actualSizeSvg { display: block; overflow: visible; }
+  .actual-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(5,9,12,.82);
+    border: 1px solid var(--line);
+    color: var(--muted);
+    font: 700 .66rem/1 var(--mono);
+  }
+  .actual-badge strong { color: var(--green); }
+
+  .sweep-intro { padding-bottom: 30px; }
+  .coin-sweep {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .sweep-card {
+    position: relative;
+    padding: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .18s ease, border-color .18s ease, background .18s ease;
+  }
+  .sweep-card:hover { transform: translateY(-4px); border-color: var(--line-bright); background: var(--panel-2); }
+  .sweep-card[aria-current="true"] { border-color: rgba(103,232,249,.55); box-shadow: 0 0 0 3px var(--cyan-soft), var(--shadow); }
+  .sweep-card button { position: absolute; inset: 0; width: 100%; border: 0; background: transparent; cursor: pointer; color: transparent; }
+  .sweep-graphic { height: 190px; display: grid; place-items: center; border-radius: 12px; background: radial-gradient(circle, rgba(103,232,249,.055), transparent 65%); }
+  .sweep-graphic svg { width: 100%; height: 100%; display: block; }
+  .sweep-meta { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-top: 13px; }
+  .sweep-meta strong { font-size: 1.05rem; }
+  .sweep-meta span { color: var(--cyan); font: 800 .75rem/1 var(--mono); }
+  .sweep-copy { min-height: 42px; margin: 7px 0 0; color: var(--muted); font-size: .8rem; }
+  .ratio-track { height: 5px; margin-top: 12px; border-radius: 999px; background: rgba(255,255,255,.07); overflow: hidden; }
+  .ratio-track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--amber), var(--cyan)); }
+
+  .lineup { border-top: 1px solid var(--line); }
+  .lineup-shell { overflow-x: auto; overflow-y: hidden; padding: 18px; scrollbar-width: thin; scrollbar-color: var(--line-bright) transparent; }
+  #lineupSvg { min-width: 1080px; width: 100%; height: 430px; display: block; }
+  .lineup-baseline { stroke: rgba(237,244,247,.24); stroke-width: .7; }
+  .lineup-tick { stroke: rgba(237,244,247,.16); stroke-width: .5; }
+  .lineup-name { fill: var(--ink); font-family: var(--mono); font-size: 11px; font-weight: 800; text-anchor: middle; }
+  .lineup-size { fill: var(--amber); font-family: var(--mono); font-size: 9px; font-weight: 700; text-anchor: middle; }
+  .lineup-hint { color: var(--faint); margin: 12px 2px 0; font: .68rem/1.45 var(--mono); }
+
+  .story-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .story-card {
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+  }
+  .story-no { color: var(--amber); font: 800 .7rem/1 var(--mono); }
+  .story-card h3 { margin: 15px 0 9px; font-size: 1.35rem; }
+  .story-card p { margin: 0; color: var(--muted); }
+
+  .method { padding-top: 44px; }
+  .method-card { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; padding: 28px; }
+  .method-card h2 { margin: 0 0 12px; font-size: 1.7rem; }
+  .method-card p, .method-card li { color: var(--muted); font-size: .88rem; }
+  .method-card ul { margin: 0; padding-left: 19px; }
+  .method-card li + li { margin-top: 8px; }
+  .source-list { display: grid; gap: 7px; margin-top: 16px; }
+  .source-list a { font: 700 .72rem/1.35 var(--mono); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+
+  footer {
+    padding: 48px 0 78px;
+    color: var(--faint);
+    font: .7rem/1.6 var(--mono);
+  }
+  .footer-inner { display: flex; justify-content: space-between; gap: 24px; border-top: 1px solid var(--line); padding-top: 22px; }
+  .footer-inner strong { color: var(--muted); }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 980px) {
+    .hero { grid-template-columns: 1fr; padding-top: 86px; }
+    .hero-object { min-height: 370px; }
+    .hero-to3 { width: min(84%, 420px); }
+    .hero-scale { right: 7%; }
+    .section-head { grid-template-columns: 1fr; }
+    .mini-controls { grid-template-columns: 1fr 1fr; }
+    .mini-controls > :last-child { grid-column: 1 / -1; }
+    .bench-grid { grid-template-columns: 1fr; }
+    .readout-card { min-height: 0; }
+    .readout-note { margin-top: 4px; }
+    .cal-grid { grid-template-columns: 1fr; }
+    .coin-sweep { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .story-grid { grid-template-columns: 1fr; }
+  }
+
+  @media (max-width: 680px) {
+    .shell { width: min(100% - 20px, 1240px); }
+    .topbar-inner { min-height: 56px; }
+    .brand span:last-child { display: none; }
+    .topnav a { padding: 8px 7px; font-size: .65rem; }
+    .hero { min-height: 0; padding: 68px 0 60px; }
+    h1 { font-size: clamp(3.25rem, 18vw, 5.5rem); }
+    .hero-object { min-height: 300px; }
+    .hero-scale { width: 160px; right: 2%; }
+    section { padding: 66px 0; }
+    .deck-controls { padding: 14px; }
+    .mini-controls { grid-template-columns: 1fr; }
+    .mini-controls > :last-child { grid-column: auto; }
+    .segmented { flex-wrap: wrap; }
+    .stage-wrap, #compareStage { min-height: 430px; height: 430px; }
+    .stage-caption { flex-direction: column; gap: 5px; }
+    .stage-caption span:last-child { text-align: left; }
+    .coin-sweep { grid-template-columns: 1fr; }
+    .sweep-graphic { height: 220px; }
+    .method-card { grid-template-columns: 1fr; padding: 22px; }
+    .footer-inner { flex-direction: column; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .hero-to3 { animation: none; }
+    *, *::before, *::after { transition-duration: .001ms !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="shell topbar-inner">
+    <a class="brand" href="#top" aria-label="Silicon on Sterling, back to top">
+      <span class="brand-mark" aria-hidden="true">Q</span>
+      <span>Silicon on Sterling</span>
+    </a>
+    <nav class="topnav" aria-label="Page sections">
+      <a href="#compare">Compare</a>
+      <a href="#actual">Actual size</a>
+      <a href="#family">Family</a>
+      <a href="#method">Method</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="shell">
+    <section class="hero" aria-labelledby="hero-title">
+      <div>
+        <p class="eyebrow">A field guide to transistor packages</p>
+        <h1 id="hero-title"><span>Silicon</span><span class="outline">on Sterling</span></h1>
+        <p class="lede">How big is a BC107? Could a TO-220 hide on a 50p? And how many modern transistors fit across a pound coin? Put eleven classic and modern packages directly over every current UK coin and see the answer at one consistent scale.</p>
+        <div class="hero-actions">
+          <a class="cta" href="#compare">Open the comparison bench <span aria-hidden="true">↓</span></a>
+          <a class="ghost-link" href="#actual">Calibrate to actual size</a>
+        </div>
+      </div>
+      <div class="hero-object" aria-hidden="true">
+        <div class="hero-halo"></div>
+        <div class="hero-coin"></div>
+        <svg class="hero-to3" viewBox="0 0 520 330" role="img" aria-label="A stylised TO-3 transistor package floating over a two pound coin">
+          <defs>
+            <linearGradient id="heroMetal" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f5f7f7"/><stop offset=".22" stop-color="#aab4b7"/><stop offset=".5" stop-color="#e9eeee"/><stop offset=".73" stop-color="#6d7a80"/><stop offset="1" stop-color="#c6d0d3"/>
+            </linearGradient>
+            <radialGradient id="heroCan" cx="34%" cy="25%" r="82%">
+              <stop offset="0" stop-color="#ffffff"/><stop offset=".24" stop-color="#c9d1d4"/><stop offset=".62" stop-color="#7a868b"/><stop offset="1" stop-color="#e2e7e8"/>
+            </radialGradient>
+          </defs>
+          <ellipse cx="260" cy="264" rx="210" ry="40" fill="rgba(0,0,0,.36)"/>
+          <path d="M55 95 Q55 62 90 62 H430 Q465 62 465 95 V238 Q465 270 430 270 H90 Q55 270 55 238 Z" fill="url(#heroMetal)" stroke="rgba(255,255,255,.7)" stroke-width="2"/>
+          <ellipse cx="260" cy="162" rx="127" ry="97" fill="url(#heroCan)" stroke="rgba(255,255,255,.75)" stroke-width="3"/>
+          <ellipse cx="260" cy="162" rx="107" ry="78" fill="none" stroke="rgba(44,55,60,.22)" stroke-width="3"/>
+          <circle cx="93" cy="166" r="25" fill="#10161a" stroke="rgba(255,255,255,.68)" stroke-width="3"/>
+          <circle cx="427" cy="166" r="25" fill="#10161a" stroke="rgba(255,255,255,.68)" stroke-width="3"/>
+          <circle cx="214" cy="210" r="13" fill="#11181c" stroke="rgba(255,255,255,.65)" stroke-width="2"/>
+          <circle cx="306" cy="210" r="13" fill="#11181c" stroke="rgba(255,255,255,.65)" stroke-width="2"/>
+          <path d="M169 103 Q260 54 351 103" fill="none" stroke="rgba(255,255,255,.42)" stroke-width="5" stroke-linecap="round"/>
+          <text x="260" y="148" fill="rgba(25,34,38,.56)" font-family="ui-monospace,monospace" font-weight="800" font-size="37" text-anchor="middle">2N3055</text>
+          <text x="260" y="182" fill="rgba(25,34,38,.48)" font-family="ui-monospace,monospace" font-weight="700" font-size="21" text-anchor="middle">TO-3</text>
+        </svg>
+        <div class="hero-scale"><strong>63×</strong><span>difference between the smallest and largest body span in this atlas</span></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="workbench" id="compare" aria-labelledby="compare-title">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">The comparison bench</p>
+          <h2 id="compare-title">Put the part in your pocket.</h2>
+        </div>
+        <p>Choose a package and a coin. The two drawings share one coordinate system, so their relative dimensions remain exact while you zoom, drag and switch views. Leads are shown for recognition; the quoted measurements are the package body envelope.</p>
+      </div>
+
+      <div class="control-deck">
+        <div class="deck-strip"><span>instrument 01 · optical comparator</span><span class="status">● dimensional lock</span></div>
+        <div class="deck-controls">
+          <fieldset>
+            <legend>Transistor package</legend>
+            <div class="chip-rail" id="packageRail"></div>
+          </fieldset>
+          <fieldset>
+            <legend>UK coin</legend>
+            <div class="chip-rail" id="coinRail"></div>
+          </fieldset>
+          <div class="mini-controls">
+            <fieldset>
+              <legend>View</legend>
+              <div class="segmented" id="viewModes">
+                <button type="button" data-mode="studio" aria-pressed="true">studio</button>
+                <button type="button" data-mode="blueprint" aria-pressed="false">blueprint</button>
+                <button type="button" data-mode="ghost" aria-pressed="false">ghost coin</button>
+              </div>
+            </fieldset>
+            <label>
+              <span class="control-label">Magnification</span>
+              <span class="zoom-control"><span aria-hidden="true">−</span><input id="zoomRange" type="range" min="70" max="220" value="100" step="5"><output id="zoomOutput" for="zoomRange">100%</output></span>
+            </label>
+            <div>
+              <span class="control-label">Tools</span>
+              <div class="tool-row">
+                <button type="button" class="tool-button" id="dimensionsButton" aria-pressed="true">dimensions</button>
+                <button type="button" class="tool-button" id="resetButton">centre part</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bench-grid">
+        <div class="stage-card">
+          <div class="stage-topline"><strong id="stageTitle">TO-18 over a 5p</strong><span>drag the package · ratio stays locked</span></div>
+          <div class="stage-wrap">
+            <svg id="compareStage" data-mode="studio" viewBox="-20 -20 40 40" role="img" aria-labelledby="stageSvgTitle stageSvgDesc">
+              <title id="stageSvgTitle">Transistor package and UK coin size comparison</title>
+              <desc id="stageSvgDesc">A dimensionally scaled transistor package laid over a UK coin. Choose controls above to change either object.</desc>
+              <defs>
+                <linearGradient id="coinCopper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f0b17e"/><stop offset=".2" stop-color="#bb6b3a"/><stop offset=".52" stop-color="#de9360"/><stop offset=".76" stop-color="#8e4728"/><stop offset="1" stop-color="#d58b59"/></linearGradient>
+                <linearGradient id="coinSilver" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f8f8"/><stop offset=".18" stop-color="#aeb9bd"/><stop offset=".48" stop-color="#e3e8e9"/><stop offset=".72" stop-color="#7c898f"/><stop offset="1" stop-color="#c8d0d3"/></linearGradient>
+                <linearGradient id="coinGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f1d487"/><stop offset=".2" stop-color="#c58c2f"/><stop offset=".48" stop-color="#e7c464"/><stop offset=".75" stop-color="#a86f20"/><stop offset="1" stop-color="#d9ae4f"/></linearGradient>
+                <linearGradient id="blackPlastic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3a454a"/><stop offset=".18" stop-color="#171f23"/><stop offset=".62" stop-color="#080d10"/><stop offset="1" stop-color="#273137"/></linearGradient>
+                <linearGradient id="brushedMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".16" stop-color="#aeb8bc"/><stop offset=".48" stop-color="#e7ecee"/><stop offset=".7" stop-color="#6e7a80"/><stop offset="1" stop-color="#cbd4d6"/></linearGradient>
+                <linearGradient id="darkMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#aab4b8"/><stop offset=".45" stop-color="#4d5a60"/><stop offset="1" stop-color="#899499"/></linearGradient>
+                <linearGradient id="leadMetal" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#66747a"/><stop offset=".45" stop-color="#eef2f2"/><stop offset="1" stop-color="#77858b"/></linearGradient>
+                <filter id="softShadow" x="-40%" y="-40%" width="180%" height="190%"><feGaussianBlur stdDeviation=".38"/></filter>
+                <marker id="dimArrow" markerWidth="4" markerHeight="4" refX="2" refY="2" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L4,2 L0,4 Z" fill="#67e8f9"/></marker>
+              </defs>
+              <g id="gridLayer" aria-hidden="true"></g>
+              <g id="coinLayer"></g>
+              <g id="packageLayer"></g>
+              <g id="dimensionLayer" aria-hidden="true"></g>
+            </svg>
+          </div>
+          <div class="stage-caption"><span id="stageScale">same scale · 1 SVG unit = 1 mm</span><span>screen size is illustrative until calibrated below</span></div>
+        </div>
+
+        <aside class="readout-card" aria-live="polite" aria-atomic="true">
+          <span class="readout-kicker" id="packageEra">metal can · through-hole</span>
+          <h3 id="packageName">TO-18</h3>
+          <span class="part-example" id="packageExample">famous passenger: BC107</span>
+          <p class="part-blurb" id="packageBlurb">The silver hat of 1960s audio and laboratory gear.</p>
+          <div class="metric-stack">
+            <div class="metric"><span>body envelope</span><strong id="bodyMetric">Ø 5.84 mm</strong></div>
+            <div class="metric"><span>coin diameter</span><strong id="coinMetric">18.00 mm</strong></div>
+            <div class="metric"><span>largest-span ratio</span><strong class="amber" id="ratioMetric">32%</strong></div>
+            <div class="metric"><span>nearest UK coin</span><strong id="nearestMetric">5p</strong></div>
+            <div class="metric"><span>fit across coin</span><strong id="fitMetric">3.1 bodies</strong></div>
+          </div>
+          <div class="verdict"><span class="verdict-label">Pocket verdict</span><span id="verdictText">The BC107 can spans about one third of a 5p.</span></div>
+          <p class="readout-note">Package dimensions vary by manufacturer and lead forming. The atlas uses representative nominal or maximum body dimensions; always use the chosen part’s mechanical drawing for PCB or enclosure work.</p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="calibration" id="actual" aria-labelledby="actual-title">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Turn the display into a measuring instrument</p>
+          <h2 id="actual-title">Make it actual size.</h2>
+        </div>
+        <p>CSS millimetres are not guaranteed to equal physical millimetres. Place a real 1p over the calibration ring and move the slider until the edge disappears beneath it. The selected package and coin then render at your display’s measured scale.</p>
+      </div>
+      <div class="cal-grid">
+        <div class="cal-card">
+          <h3>1p calibration target</h3>
+          <p>The target is exactly 20.32 mm in the model. Adjust only until a real one-pence coin covers the cyan outline.</p>
+          <div class="cal-controls">
+            <label for="calibrationRange" class="control-label">pixels per millimetre</label>
+            <input id="calibrationRange" type="range" min="2.5" max="9" value="3.78" step=".01">
+            <div class="cal-readout"><span>smaller</span><strong id="calibrationOutput">3.78 px/mm</strong><span>larger</span></div>
+          </div>
+          <div class="tool-row" style="margin-top:18px">
+            <button type="button" class="tool-button" id="calReset">reset to CSS 96 dpi</button>
+          </div>
+        </div>
+        <div class="cal-card actual-stage">
+          <div class="actual-badge"><strong>● calibrated view</strong> · package + selected coin</div>
+          <svg id="actualSizeSvg" role="img" aria-label="Actual-size view of the selected package and coin after screen calibration"></svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="coins" aria-labelledby="coins-title">
+    <div class="shell">
+      <div class="section-head sweep-intro">
+        <div>
+          <p class="eyebrow">The whole pocket at once</p>
+          <h2 id="coins-title">One package. Eight coins.</h2>
+        </div>
+        <p>Every card below uses the same scale, including between cards. Click any coin to send it back to the comparison bench. The bar shows the selected package’s largest body dimension as a fraction of that coin’s diameter.</p>
+      </div>
+      <div class="coin-sweep" id="coinSweep"></div>
+    </div>
+  </section>
+
+  <section class="lineup" id="family" aria-labelledby="family-title">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Sixty-three to one</p>
+          <h2 id="family-title">The family portrait.</h2>
+        </div>
+        <p>All eleven bodies share one linear scale here. The apparently empty space around the tiny packages is the point: miniaturisation did not merely halve the transistor—it crossed two orders of magnitude in footprint.</p>
+      </div>
+      <div class="lineup-shell">
+        <svg id="lineupSvg" viewBox="0 0 1080 430" role="img" aria-label="Eleven transistor packages shown side by side at one common scale"></svg>
+        <p class="lineup-hint">Scroll horizontally on a narrow screen. Leads are shortened to keep the family legible; package bodies are dimensionally scaled.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="story" aria-labelledby="story-title">
+    <div class="shell">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">Why the shells changed</p>
+          <h2 id="story-title">A package is a thermal argument.</h2>
+        </div>
+        <p>The silicon die is only part of the story. The package has to make electrical contact, survive assembly, shed heat and sometimes bolt itself to several kilograms of aluminium.</p>
+      </div>
+      <div class="story-grid">
+        <article class="story-card"><span class="story-no">01 · seal</span><h3>Metal cans kept the world out.</h3><p>TO-18 and TO-39 packages enclosed the die in a welded metal shell. They were expensive but robust, easy to identify and well suited to early low-volume electronics.</p></article>
+        <article class="story-card"><span class="story-no">02 · mould</span><h3>Plastic made transistors ordinary.</h3><p>The TO-92 and SOT-23 use moulded epoxy. Once automatic assembly took over, the package became cheap enough to vanish inside almost everything.</p></article>
+        <article class="story-card"><span class="story-no">03 · heat</span><h3>Power puts the metal back.</h3><p>TO-220, TO-247 and TO-3 expose a tab or case to a heatsink. Their apparent bulk is not wasted space: it is a low-resistance path from a hot die to the outside world.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="method" id="method" aria-labelledby="method-title">
+    <div class="shell">
+      <div class="method-card">
+        <div>
+          <p class="eyebrow">Method and limits</p>
+          <h2 id="method-title">What “to scale” means here</h2>
+          <p>Inside each interactive SVG, one coordinate unit equals one millimetre. Coin diameters and package bodies therefore preserve their mathematical ratio at every zoom level. The physical size on your monitor is unknown until you calibrate it.</p>
+          <ul>
+            <li>Coin faces are schematic original illustrations, not reproductions of Royal Mint artwork.</li>
+            <li>For non-round coins, “diameter” is the specified constant maximum diameter.</li>
+            <li>Package drawings use representative body dimensions; formed leads and manufacturer tolerances differ.</li>
+            <li>The TO-3 comparison includes its flange, because that flange is the package’s defining envelope.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="eyebrow">Primary references</p>
+          <h2>Dimensions, not guesswork</h2>
+          <p>Current coin diameters come from The Royal Mint. Modern package dimensions come from manufacturer package pages and product tables; legacy outlines are representative industry dimensions and are deliberately labelled as such.</p>
+          <div class="source-list">
+            <a href="https://www.royalmint.com/annual-sets/2025-annual-sets/the-2025-united-kingdom-brilliant-uncirculated-definitive-coin-set/">The Royal Mint · 2025 definitive coin specifications</a>
+            <a href="https://www.royalmint.com/annual-sets/2023/definitives/king-charles-iii-definitives-2023-base-proof-coin-set/">The Royal Mint · complete 1p–£2 diameter table</a>
+            <a href="https://www.nexperia.com/packages/SOT8013">Nexperia · DFN0603-3 (0.63 × 0.33 mm)</a>
+            <a href="https://www.nexperia.com/packages/SOT23.html">Nexperia · SOT-23 (2.9 × 1.3 mm)</a>
+            <a href="https://www.nexperia.com/packages/SOT8017.html">Nexperia · DPAK body envelope</a>
+            <a href="https://www.ti.com/product/TLV431">Texas Instruments · SOT-23 and TO-92 package table</a>
+            <a href="https://www.ti.com/product/LM2941">Texas Instruments · TO-220 package table</a>
+            <a href="https://www.infineon.com/ja/package/PG-TO247-4-17">Infineon · TO-247 body dimensions</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="shell footer-inner">
+    <span><strong>Silicon on Sterling</strong> · an original interactive transistor-package atlas</span>
+    <span>vanilla HTML + CSS + SVG + JavaScript · no build step</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  "use strict";
+
+  const COINS = [
+    { id: "1p", label: "1p", name: "one penny", diameter: 20.32, shape: "round", metal: "copper" },
+    { id: "2p", label: "2p", name: "two pence", diameter: 25.91, shape: "round", metal: "copper" },
+    { id: "5p", label: "5p", name: "five pence", diameter: 18.00, shape: "round", metal: "silver" },
+    { id: "10p", label: "10p", name: "ten pence", diameter: 24.50, shape: "round", metal: "silver" },
+    { id: "20p", label: "20p", name: "twenty pence", diameter: 21.40, shape: "hept", metal: "silver" },
+    { id: "50p", label: "50p", name: "fifty pence", diameter: 27.30, shape: "hept", metal: "silver" },
+    { id: "1gbp", label: "£1", name: "one pound", diameter: 23.03, shape: "dodec", metal: "bimetal-gold" },
+    { id: "2gbp", label: "£2", name: "two pounds", diameter: 28.40, shape: "round", metal: "bimetal-silver" }
+  ];
+
+  const PACKAGES = [
+    { id: "dfn0603", short: "DFN0603", name: "DFN0603-3", example: "PMX700EN MOSFET", w: .63, h: .33, envelope: "0.63 × 0.33 × 0.25 mm", family: "leadless · surface-mount", kind: "dfn", blurb: "A complete 60-volt MOSFET smaller than a printed full stop." },
+    { id: "sot23", short: "SOT-23", name: "SOT-23", example: "BC817 / MMBT3904", w: 2.90, h: 1.30, envelope: "2.90 × 1.30 × 1.00 mm", family: "moulded plastic · surface-mount", kind: "sot", blurb: "The three-terminal surface-mount workhorse: tiny, cheap and everywhere." },
+    { id: "to92", short: "TO-92", name: "TO-92", example: "BC547 / 2N3904", w: 5.20, h: 4.20, envelope: "5.20 × 4.20 mm body", family: "moulded plastic · through-hole", kind: "to92", blurb: "The black plastic jellybean familiar from breadboards and school electronics." },
+    { id: "to18", short: "TO-18", name: "TO-18", example: "BC107 / 2N2222A", w: 5.84, h: 5.84, envelope: "Ø 5.84 mm can", family: "metal can · through-hole", kind: "can", blurb: "The silver hat of 1960s audio and laboratory gear." },
+    { id: "dpak", short: "DPAK", name: "DPAK / TO-252", example: "surface-mount power MOSFET", w: 6.54, h: 6.16, envelope: "6.54 × 6.16 × 2.29 mm", family: "power tab · surface-mount", kind: "dpak", blurb: "A power transistor flattened for reflow soldering, with a broad thermal pad underneath." },
+    { id: "to126", short: "TO-126", name: "TO-126 / SOT-32", example: "BD139 / BD140", w: 8.00, h: 11.10, envelope: "8.00 × 11.10 mm body", family: "slim power · through-hole", kind: "power", blurb: "A compact driver package, often clipped to a modest heatsink." },
+    { id: "to39", short: "TO-39", name: "TO-39", example: "2N2219A", w: 9.40, h: 9.40, envelope: "Ø 9.40 mm max can", family: "metal can · through-hole", kind: "can", blurb: "A larger hermetic can for devices that need more die area and more heat path." },
+    { id: "to220", short: "TO-220", name: "TO-220", example: "TIP41C / IRF540", w: 10.16, h: 15.50, envelope: "10.16 × 15.50 mm body", family: "power tab · through-hole", kind: "power", blurb: "The familiar bolted-tab package of bench supplies, amplifiers and motor drives." },
+    { id: "to247", short: "TO-247", name: "TO-247", example: "high-current MOSFET / IGBT", w: 15.80, h: 23.30, envelope: "15.80 × 23.30 mm body", family: "high-power · through-hole", kind: "power", blurb: "A TO-220 grown for larger dies, heavier current and a more serious heatsink." },
+    { id: "to264", short: "TO-264", name: "TO-264", example: "very-high-power MOSFET / IGBT", w: 20.00, h: 26.00, envelope: "20.00 × 26.00 mm representative", family: "very-high-power · through-hole", kind: "power", blurb: "One step below a power module: a broad tab, long creepage paths and plenty of silicon." },
+    { id: "to3", short: "TO-3", name: "TO-3", example: "2N3055 / MJ2955", w: 39.70, h: 26.70, envelope: "39.70 × 26.70 mm flange", family: "metal chassis package · through-hole", kind: "to3", blurb: "The iconic flying saucer. Its flange bolts straight to the chassis and dominates every coin here." }
+  ];
+
+  const storage = {
+    getItem(key) { try { return window.localStorage.getItem(key); } catch (_) { return null; } },
+    setItem(key, value) { try { window.localStorage.setItem(key, value); } catch (_) {} },
+    removeItem(key) { try { window.localStorage.removeItem(key); } catch (_) {} }
+  };
+
+  const state = {
+    packageId: "to18",
+    coinId: "5p",
+    mode: "studio",
+    zoom: 1,
+    dimensions: true,
+    dx: 0,
+    dy: 0,
+    calibration: Number(storage.getItem("silicon-sterling.ppm")) || 3.78
+  };
+
+  const $ = (selector, root = document) => root.querySelector(selector);
+  const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  const svgNS = "http://www.w3.org/2000/svg";
+  const fmt = n => n < 1 ? n.toFixed(2) : n < 10 ? n.toFixed(2).replace(/0$/, "") : n.toFixed(2).replace(/\.00$/, "");
+  const pkgById = id => PACKAGES.find(p => p.id === id) || PACKAGES[0];
+  const coinById = id => COINS.find(c => c.id === id) || COINS[0];
+  const spanOf = p => Math.max(p.w, p.h);
+
+  function polygonPoints(sides, radius, rotation = -Math.PI / 2) {
+    return Array.from({ length: sides }, (_, i) => {
+      const a = rotation + i * Math.PI * 2 / sides;
+      return `${(Math.cos(a) * radius).toFixed(3)},${(Math.sin(a) * radius).toFixed(3)}`;
+    }).join(" ");
+  }
+
+  function coinMarkup(coin, x = 0, y = 0, opacity = 1, idPrefix = "") {
+    const d = coin.diameter;
+    const r = d / 2;
+    const faceClass = coin.metal === "copper" ? "coin-copper" : coin.metal.startsWith("bimetal") ? "coin-gold" : "coin-silver";
+    const shape = coin.shape === "round"
+      ? `<circle class="coin-face ${faceClass}" r="${r}"/>`
+      : `<polygon class="coin-face ${faceClass}" points="${polygonPoints(coin.shape === "hept" ? 7 : 12, r, coin.shape === "hept" ? -Math.PI/2 : -Math.PI/12)}"/>`;
+    const inner = coin.metal === "bimetal-gold"
+      ? `<circle class="coin-face coin-inner-silver" r="${(r * .64).toFixed(3)}"/>`
+      : coin.metal === "bimetal-silver"
+        ? `<circle class="coin-face coin-inner-silver" r="${(r * .60).toFixed(3)}"/>`
+        : "";
+    const ringR = r * (coin.metal.startsWith("bimetal") ? .76 : .80);
+    const textSize = Math.max(2.1, d * .18);
+    return `<g id="${idPrefix}coin" transform="translate(${x} ${y})" opacity="${opacity}">
+      <ellipse class="coin-shadow" cx="${(r*.09).toFixed(2)}" cy="${(r*.16).toFixed(2)}" rx="${(r*1.02).toFixed(2)}" ry="${(r*.98).toFixed(2)}"/>
+      ${shape}${inner}
+      <circle class="coin-ring" r="${ringR.toFixed(3)}"/>
+      <path class="coin-mark" d="M ${(-r*.42).toFixed(2)} ${(r*.18).toFixed(2)} Q 0 ${(-r*.38).toFixed(2)} ${(r*.42).toFixed(2)} ${(r*.18).toFixed(2)} Q 0 ${(r*.44).toFixed(2)} ${(-r*.42).toFixed(2)} ${(r*.18).toFixed(2)} Z"/>
+      <text class="coin-text" y="${(-r*.04).toFixed(2)}" font-size="${textSize.toFixed(2)}">${coin.label}</text>
+      <text class="coin-microtext" y="${(r*.47).toFixed(2)}" font-size="${Math.max(.7, d*.055).toFixed(2)}">UK · ${coin.diameter.toFixed(2)} mm</text>
+    </g>`;
+  }
+
+  function leadRects(width, bodyH, count = 3, leadLength = null) {
+    const len = leadLength || Math.max(1.2, bodyH * .45);
+    const leadW = Math.max(.18, width * .07);
+    const gap = count === 1 ? 0 : width * .56 / (count - 1);
+    let out = "";
+    for (let i = 0; i < count; i++) {
+      const x = count === 1 ? 0 : -width*.28 + gap*i;
+      out += `<rect class="pkg-lead" x="${(x-leadW/2).toFixed(3)}" y="${(bodyH/2-.08).toFixed(3)}" width="${leadW.toFixed(3)}" height="${len.toFixed(3)}" rx="${(leadW*.22).toFixed(3)}"/>`;
+    }
+    return out;
+  }
+
+  function packageMarkup(pkg, x = 0, y = 0, scale = 1, compact = false, idPrefix = "") {
+    const w = pkg.w, h = pkg.h;
+    const shadow = `<ellipse class="pkg-shadow" cx="${(w*.06).toFixed(3)}" cy="${(h*.17).toFixed(3)}" rx="${(w*.54).toFixed(3)}" ry="${(h*.48).toFixed(3)}"/>`;
+    let art = "";
+
+    if (pkg.kind === "dfn") {
+      art = `${shadow}<rect class="pkg-plastic" x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx=".045"/>
+        <rect class="pkg-pad" x="${(-w/2-.03).toFixed(3)}" y="${(-h*.32).toFixed(3)}" width=".12" height="${(h*.25).toFixed(3)}" rx=".015"/>
+        <rect class="pkg-pad" x="${(-w/2-.03).toFixed(3)}" y="${(h*.07).toFixed(3)}" width=".12" height="${(h*.25).toFixed(3)}" rx=".015"/>
+        <rect class="pkg-pad" x="${(w/2-.09).toFixed(3)}" y="${(-h*.20).toFixed(3)}" width=".12" height="${(h*.40).toFixed(3)}" rx=".015"/>
+        <circle class="pkg-glint" cx="${(-w*.27).toFixed(3)}" cy="${(-h*.20).toFixed(3)}" r=".035"/>`;
+    } else if (pkg.kind === "sot") {
+      const leadW = .28;
+      art = `${shadow}
+        <path class="pkg-lead" d="M ${-w*.33} ${h*.38} h ${-leadW} v ${h*.34} h ${leadW*.62} v ${-h*.16} h ${leadW*.38} Z"/>
+        <path class="pkg-lead" d="M ${w*.33} ${h*.38} h ${leadW} v ${h*.34} h ${-leadW*.62} v ${-h*.16} h ${-leadW*.38} Z"/>
+        <path class="pkg-lead" d="M 0 ${-h*.38} h ${leadW} v ${-h*.34} h ${-leadW*.62} v ${h*.16} h ${-leadW*.38} Z"/>
+        <rect class="pkg-plastic" x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx=".16"/>
+        <path class="pkg-glint" d="M ${-w*.36} ${-h*.35} H ${w*.15} Q ${w*.34} ${-h*.35} ${w*.38} ${-h*.16} H ${-w*.36} Z"/>
+        <circle class="pkg-print" cx="${-w*.28}" cy="${-h*.12}" r=".09"/>`;
+    } else if (pkg.kind === "to92") {
+      const bodyTop = -h/2;
+      art = `${shadow}${leadRects(w, h, 3, compact ? 1.3 : 2.2)}
+        <path class="pkg-plastic" d="M ${-w/2} ${h/2} V ${(-h*.08).toFixed(2)} A ${w/2} ${h*.56} 0 0 1 ${w/2} ${(-h*.08).toFixed(2)} V ${h/2} Z"/>
+        <path class="pkg-glint" d="M ${-w*.34} ${bodyTop+h*.18} Q 0 ${bodyTop-h*.02} ${w*.25} ${bodyTop+h*.18} L ${w*.25} ${bodyTop+h*.38} Q 0 ${bodyTop+h*.22} ${-w*.34} ${bodyTop+h*.42} Z"/>
+        <text class="pkg-print" x="0" y="${(h*.18).toFixed(2)}" font-size="${Math.max(.48,w*.12).toFixed(2)}">${compact ? "TO92" : "BC547"}</text>`;
+    } else if (pkg.kind === "can") {
+      const r = w/2;
+      const pinR = Math.max(.22, w*.045);
+      art = `${shadow}
+        <circle class="pkg-lead" cx="${-w*.16}" cy="${h*.33}" r="${pinR}"/><circle class="pkg-lead" cx="${w*.18}" cy="${h*.31}" r="${pinR}"/><circle class="pkg-lead" cx="0" cy="${h*.38}" r="${pinR}"/>
+        <circle class="pkg-metal-dark" r="${r}"/>
+        <circle class="pkg-metal" r="${(r*.87).toFixed(3)}"/>
+        <path class="pkg-glint" d="M ${-r*.55} ${-r*.28} A ${r*.68} ${r*.68} 0 0 1 ${r*.28} ${-r*.60} A ${r*.78} ${r*.78} 0 0 0 ${-r*.44} ${-r*.06} Z"/>
+        <path class="pkg-metal-dark" d="M ${(-r*.17).toFixed(2)} ${(-r*.98).toFixed(2)} L ${(r*.17).toFixed(2)} ${(-r*.98).toFixed(2)} L ${(r*.11).toFixed(2)} ${(-r*.80).toFixed(2)} L ${(-r*.11).toFixed(2)} ${(-r*.80).toFixed(2)} Z"/>
+        <text class="pkg-print" x="0" y="${(-r*.04).toFixed(2)}" font-size="${Math.max(.55,w*.12).toFixed(2)}">${pkg.id === "to18" ? "BC107" : "2N2219"}</text>
+        <text class="pkg-print" x="0" y="${(r*.20).toFixed(2)}" font-size="${Math.max(.38,w*.075).toFixed(2)}">${pkg.short}</text>`;
+    } else if (pkg.kind === "dpak") {
+      art = `${shadow}
+        <rect class="pkg-metal" x="${-w*.34}" y="${-h*.58}" width="${w*.68}" height="${h*.30}" rx=".12"/>
+        <rect class="pkg-lead" x="${-w*.38}" y="${h*.30}" width="${w*.18}" height="${h*.42}" rx=".08"/>
+        <rect class="pkg-lead" x="${w*.20}" y="${h*.30}" width="${w*.18}" height="${h*.42}" rx=".08"/>
+        <rect class="pkg-plastic" x="${-w/2}" y="${-h*.30}" width="${w}" height="${h*.72}" rx=".20"/>
+        <path class="pkg-glint" d="M ${-w*.37} ${-h*.20} H ${w*.24} Q ${w*.39} ${-h*.20} ${w*.41} ${-h*.05} H ${-w*.37} Z"/>
+        <text class="pkg-print" x="0" y="${h*.09}" font-size="${Math.max(.62,w*.11).toFixed(2)}">DPAK</text>`;
+    } else if (pkg.kind === "power") {
+      const hole = Math.min(w,h)*.11;
+      const tabH = h*.35;
+      const plasticTop = -h/2 + tabH*.72;
+      const plasticH = h*.63;
+      art = `${shadow}${leadRects(w, h*.72, 3, compact ? Math.min(4,h*.23) : Math.min(6,h*.31))}
+        <rect class="pkg-metal" x="${-w/2}" y="${-h/2}" width="${w}" height="${tabH}" rx="${Math.min(.55,w*.05)}"/>
+        <circle class="pkg-hole" cx="0" cy="${(-h/2+tabH*.48).toFixed(2)}" r="${hole.toFixed(2)}"/>
+        <rect class="pkg-plastic" x="${-w/2}" y="${plasticTop.toFixed(2)}" width="${w}" height="${plasticH.toFixed(2)}" rx="${Math.min(.55,w*.045)}"/>
+        <path class="pkg-glint" d="M ${-w*.38} ${plasticTop+h*.08} H ${w*.25} Q ${w*.39} ${plasticTop+h*.08} ${w*.40} ${plasticTop+h*.16} H ${-w*.38} Z"/>
+        <text class="pkg-print" x="0" y="${(h*.13).toFixed(2)}" font-size="${Math.max(.65,Math.min(w*.12,1.45)).toFixed(2)}">${pkg.short}</text>`;
+    } else if (pkg.kind === "to3") {
+      const canW = w*.58, canH = h*.73;
+      art = `${shadow}
+        <rect class="pkg-metal" x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="${(h*.24).toFixed(2)}"/>
+        <ellipse class="pkg-metal" cx="0" cy="0" rx="${(canW/2).toFixed(2)}" ry="${(canH/2).toFixed(2)}"/>
+        <ellipse class="pkg-metal-dark" cx="0" cy="${(h*.03).toFixed(2)}" rx="${(canW*.42).toFixed(2)}" ry="${(canH*.39).toFixed(2)}" opacity=".24"/>
+        <circle class="pkg-hole" cx="${(-w*.40).toFixed(2)}" cy="0" r="${(h*.105).toFixed(2)}"/>
+        <circle class="pkg-hole" cx="${(w*.40).toFixed(2)}" cy="0" r="${(h*.105).toFixed(2)}"/>
+        <circle class="pkg-hole" cx="${(-w*.10).toFixed(2)}" cy="${(h*.24).toFixed(2)}" r="${(h*.055).toFixed(2)}"/>
+        <circle class="pkg-hole" cx="${(w*.11).toFixed(2)}" cy="${(h*.24).toFixed(2)}" r="${(h*.055).toFixed(2)}"/>
+        <path class="pkg-glint" d="M ${(-canW*.34).toFixed(2)} ${(-canH*.24).toFixed(2)} Q 0 ${(-canH*.47).toFixed(2)} ${(canW*.28).toFixed(2)} ${(-canH*.23).toFixed(2)}"/>
+        <text class="pkg-print" x="0" y="${(-h*.03).toFixed(2)}" font-size="${(h*.12).toFixed(2)}">2N3055</text>
+        <text class="pkg-print" x="0" y="${(h*.13).toFixed(2)}" font-size="${(h*.075).toFixed(2)}">TO-3</text>`;
+    }
+
+    return `<g id="${idPrefix}package" transform="translate(${x} ${y}) scale(${scale})">${art}<rect class="drag-hit" x="${-w*.62}" y="${-h*.68}" width="${w*1.24}" height="${h*1.55}" rx="${Math.min(w,h)*.08}"/></g>`;
+  }
+
+  function dimensionMarkup(pkg, coin, dx, dy) {
+    if (!state.dimensions) return "";
+    const w = pkg.w, h = pkg.h;
+    const margin = Math.max(.8, Math.min(w,h)*.16);
+    const topY = dy - h/2 - margin;
+    const rightX = dx + w/2 + margin;
+    const labelW = `${fmt(w)} mm`;
+    const labelH = Math.abs(w-h) < .01 ? "" : `${fmt(h)} mm`;
+    return `<g>
+      <line class="dimension-ext" x1="${dx-w/2}" y1="${dy-h/2}" x2="${dx-w/2}" y2="${topY-.18}"/>
+      <line class="dimension-ext" x1="${dx+w/2}" y1="${dy-h/2}" x2="${dx+w/2}" y2="${topY-.18}"/>
+      <line class="dimension-line" x1="${dx-w/2}" y1="${topY}" x2="${dx+w/2}" y2="${topY}" marker-start="url(#dimArrow)" marker-end="url(#dimArrow)"/>
+      <text class="dimension-text" x="${dx}" y="${topY-.42}" text-anchor="middle">${labelW}</text>
+      ${labelH ? `<line class="dimension-ext" x1="${dx+w/2}" y1="${dy-h/2}" x2="${rightX+.18}" y2="${dy-h/2}"/><line class="dimension-ext" x1="${dx+w/2}" y1="${dy+h/2}" x2="${rightX+.18}" y2="${dy+h/2}"/><line class="dimension-line" x1="${rightX}" y1="${dy-h/2}" x2="${rightX}" y2="${dy+h/2}" marker-start="url(#dimArrow)" marker-end="url(#dimArrow)"/><text class="dimension-text" x="${rightX+.55}" y="${dy}" transform="rotate(90 ${rightX+.55} ${dy})" text-anchor="middle">${labelH}</text>` : ""}
+      <text class="coin-dim" x="0" y="${coin.diameter/2 + Math.max(1.4,coin.diameter*.08)}" text-anchor="middle">${coin.label} · Ø ${coin.diameter.toFixed(2)} mm</text>
+    </g>`;
+  }
+
+  function renderGrid(view) {
+    const grid = $("#gridLayer");
+    const half = view/2;
+    const step = view > 55 ? 5 : view > 24 ? 2 : view > 10 ? 1 : .5;
+    let html = "";
+    const start = Math.floor(-half/step)*step;
+    for (let v = start; v <= half; v += step) {
+      const major = Math.abs((v/step) % 5) < .001;
+      html += `<line class="${major ? "stage-grid-major" : "stage-grid-minor"}" x1="${v}" y1="${-half}" x2="${v}" y2="${half}"/>`;
+      html += `<line class="${major ? "stage-grid-major" : "stage-grid-minor"}" x1="${-half}" y1="${v}" x2="${half}" y2="${v}"/>`;
+    }
+    html += `<line class="stage-axis" x1="${-half}" y1="0" x2="${half}" y2="0"/><line class="stage-axis" x1="0" y1="${-half}" x2="0" y2="${half}"/>`;
+    grid.innerHTML = html;
+  }
+
+  function nearestCoin(pkg) {
+    const span = spanOf(pkg);
+    return COINS.reduce((best, coin) => Math.abs(Math.log(span/coin.diameter)) < Math.abs(Math.log(span/best.diameter)) ? coin : best, COINS[0]);
+  }
+
+  function verdict(pkg, coin) {
+    const ratio = spanOf(pkg)/coin.diameter;
+    const name = pkg.id === "to18" ? "The BC107 can" : pkg.id === "to3" ? "The TO-3 flange" : `The ${pkg.short} body`;
+    if (ratio < .06) return `${name} is almost lost on the ${coin.label}: roughly one ${Math.round(1/ratio)}th of its diameter.`;
+    if (ratio < .18) return `${name} spans only ${Math.round(ratio*100)}% of the ${coin.label}—several fit side by side.`;
+    if (ratio < .42) return `${name} spans about ${ratio < .29 ? "one quarter" : "one third"} of the ${coin.label}.`;
+    if (ratio < .72) return `${name} takes up a little over half the ${coin.label}'s diameter.`;
+    if (ratio < .94) return `${name} nearly fills the ${coin.label}, with just a narrow rim to spare.`;
+    if (ratio <= 1.08) return `${name} and the ${coin.label} are remarkably close in their largest dimension.`;
+    if (ratio < 1.5) return `${name} overhangs the ${coin.label}: it is ${ratio.toFixed(1)} times the coin's diameter.`;
+    return `${name} dwarfs the ${coin.label}, stretching ${ratio.toFixed(1)} times across it.`;
+  }
+
+  function renderStage() {
+    const pkg = pkgById(state.packageId);
+    const coin = coinById(state.coinId);
+    const leadAllowance = pkg.kind === "power" || pkg.kind === "to92" ? pkg.h*.28 : 0;
+    const baseExtent = Math.max(coin.diameter, pkg.w, pkg.h + leadAllowance) * 1.52 + 5;
+    const view = baseExtent / state.zoom;
+    const stage = $("#compareStage");
+    stage.setAttribute("viewBox", `${-view/2} ${-view/2} ${view} ${view}`);
+    stage.dataset.mode = state.mode;
+    renderGrid(view);
+    $("#coinLayer").innerHTML = coinMarkup(coin);
+    $("#packageLayer").innerHTML = packageMarkup(pkg, state.dx, state.dy);
+    $("#dimensionLayer").innerHTML = dimensionMarkup(pkg, coin, state.dx, state.dy);
+
+    $("#stageTitle").textContent = `${pkg.short} over a ${coin.label}`;
+    $("#stageScale").textContent = `same scale · 1 SVG unit = 1 mm · view width ${view.toFixed(1)} mm`;
+    $("#stageSvgTitle").textContent = `${pkg.name} compared with a ${coin.label} coin`;
+    $("#stageSvgDesc").textContent = `${pkg.name}, body ${pkg.envelope}, over a ${coin.name} coin ${coin.diameter.toFixed(2)} millimetres in diameter.`;
+
+    const span = spanOf(pkg);
+    const ratio = span / coin.diameter;
+    const nearest = nearestCoin(pkg);
+    $("#packageEra").textContent = pkg.family;
+    $("#packageName").textContent = pkg.name;
+    $("#packageExample").textContent = `famous passenger: ${pkg.example}`;
+    $("#packageBlurb").textContent = pkg.blurb;
+    $("#bodyMetric").textContent = pkg.envelope;
+    $("#coinMetric").textContent = `${coin.diameter.toFixed(2)} mm`;
+    $("#ratioMetric").textContent = ratio < 1 ? `${Math.round(ratio*100)}%` : `${ratio.toFixed(2)}×`;
+    $("#nearestMetric").textContent = `${nearest.label} (${nearest.diameter.toFixed(2)} mm)`;
+    $("#fitMetric").textContent = ratio < 1 ? `${(1/ratio).toFixed(1)} bodies` : `over by ${Math.round((ratio-1)*100)}%`;
+    $("#verdictText").textContent = verdict(pkg, coin);
+
+    $$("#packageRail .chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.id === state.packageId)));
+    $$("#coinRail .chip").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.id === state.coinId)));
+    $$("#viewModes button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === state.mode)));
+    $("#dimensionsButton").setAttribute("aria-pressed", String(state.dimensions));
+    renderCoinSweep();
+    renderActualSize();
+  }
+
+  function renderCoinSweep() {
+    const pkg = pkgById(state.packageId);
+    const fixedView = 48;
+    const cards = COINS.map(coin => {
+      const ratio = spanOf(pkg)/coin.diameter;
+      const pct = Math.min(100, ratio*100);
+      return `<article class="sweep-card" aria-current="${coin.id === state.coinId}">
+        <button type="button" data-coin="${coin.id}" aria-label="Compare ${pkg.name} with ${coin.name}">${coin.label}</button>
+        <div class="sweep-graphic" aria-hidden="true"><svg viewBox="-24 -24 ${fixedView} ${fixedView}">
+          <defs>
+            <linearGradient id="sweepCopper-${coin.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#efb17f"/><stop offset=".55" stop-color="#a65330"/><stop offset="1" stop-color="#dc8c58"/></linearGradient>
+            <linearGradient id="sweepSilver-${coin.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f8f8"/><stop offset=".5" stop-color="#88969c"/><stop offset="1" stop-color="#d8dfe0"/></linearGradient>
+            <linearGradient id="sweepGold-${coin.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2d78a"/><stop offset=".55" stop-color="#ad7424"/><stop offset="1" stop-color="#e0b958"/></linearGradient>
+            <linearGradient id="sweepPlastic-${coin.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#435057"/><stop offset=".4" stop-color="#0c1215"/><stop offset="1" stop-color="#252f34"/></linearGradient>
+            <linearGradient id="sweepMetal-${coin.id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".4" stop-color="#879399"/><stop offset="1" stop-color="#dce2e3"/></linearGradient>
+          </defs>
+          <g style="--dummy:0">${simpleCoinMarkup(coin, `sweep${coin.id}`)}${simplePackageMarkup(pkg)}</g>
+        </svg></div>
+        <div class="sweep-meta"><strong>${coin.label} · ${coin.diameter.toFixed(2)} mm</strong><span>${ratio < 1 ? Math.round(ratio*100)+"%" : ratio.toFixed(1)+"×"}</span></div>
+        <p class="sweep-copy">${verdict(pkg, coin)}</p>
+        <div class="ratio-track" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></div>
+      </article>`;
+    }).join("");
+    $("#coinSweep").innerHTML = cards;
+  }
+
+  function simpleCoinMarkup(coin) {
+    const d = coin.diameter, r = d/2;
+    const fill = coin.metal === "copper" ? "#bd6e43" : coin.metal.startsWith("bimetal") ? "#d4aa4c" : "#b8c2c5";
+    const points = coin.shape === "round" ? "" : polygonPoints(coin.shape === "hept" ? 7 : 12, r, coin.shape === "hept" ? -Math.PI/2 : -Math.PI/12);
+    const outer = coin.shape === "round" ? `<circle r="${r}" fill="${fill}" stroke="rgba(255,255,255,.45)" stroke-width=".22"/>` : `<polygon points="${points}" fill="${fill}" stroke="rgba(255,255,255,.45)" stroke-width=".22"/>`;
+    const inner = coin.metal.startsWith("bimetal") ? `<circle r="${r*.61}" fill="#c5ced0" stroke="rgba(255,255,255,.36)" stroke-width=".16"/>` : "";
+    return `<g opacity=".72"><ellipse cx=".8" cy="1.1" rx="${r}" ry="${r*.96}" fill="rgba(0,0,0,.35)"/>${outer}${inner}<circle r="${r*.79}" fill="none" stroke="rgba(255,255,255,.2)" stroke-width=".18"/><text x="0" y="1" fill="rgba(20,29,33,.5)" font-family="ui-monospace,monospace" font-size="${Math.max(2.3,d*.17)}" font-weight="800" text-anchor="middle">${coin.label}</text></g>`;
+  }
+
+  function simplePackageMarkup(pkg) {
+    // Re-use the full art, but drop the stage-only group id in miniature views.
+    return packageMarkup(pkg).replace(' id="package"', '').replace(/url\(#(?:blackPlastic|brushedMetal|darkMetal|leadMetal)\)/g, m => {
+      if (m.includes("blackPlastic")) return "#11191d";
+      if (m.includes("darkMetal")) return "#758187";
+      if (m.includes("leadMetal")) return "#b8c2c5";
+      return "#c9d1d3";
+    }).replace(/filter="url\(#softShadow\)"/g, "");
+  }
+
+  function renderActualSize() {
+    const pkg = pkgById(state.packageId);
+    const coin = coinById(state.coinId);
+    const ppm = state.calibration;
+    const padding = 22;
+    const gap = 42;
+    const targetPx = 20.32*ppm;
+    const coinPx = coin.diameter*ppm;
+    const pkgW = pkg.w*ppm;
+    const pkgH = pkg.h*ppm;
+    const width = Math.max(430, targetPx + coinPx + pkgW + gap*2 + padding*2);
+    const height = Math.max(230, Math.max(targetPx, coinPx, pkgH*1.42) + padding*2 + 34);
+    const svg = $("#actualSizeSvg");
+    svg.setAttribute("width", width);
+    svg.setAttribute("height", height);
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    const targetX = padding + targetPx/2;
+    const coinX = padding + targetPx + gap + coinPx/2;
+    const pkgX = padding + targetPx + gap + coinPx + gap + pkgW/2;
+    const cy = height/2 + 2;
+    svg.innerHTML = `<defs>
+      <linearGradient id="actualCoin" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f5f7f7"/><stop offset=".5" stop-color="#829097"/><stop offset="1" stop-color="#d8dfe0"/></linearGradient>
+      <linearGradient id="actualCopper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ecae7c"/><stop offset=".5" stop-color="#9d4f2d"/><stop offset="1" stop-color="#dc8e5b"/></linearGradient>
+      <linearGradient id="actualGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#efd183"/><stop offset=".5" stop-color="#a86c1e"/><stop offset="1" stop-color="#deb656"/></linearGradient>
+      <linearGradient id="actualPlastic" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#465258"/><stop offset=".35" stop-color="#10171b"/><stop offset="1" stop-color="#263136"/></linearGradient>
+      <linearGradient id="actualMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".45" stop-color="#7d898e"/><stop offset="1" stop-color="#d9e0e2"/></linearGradient>
+    </defs>
+    <circle cx="${targetX}" cy="${cy}" r="${targetPx/2}" fill="none" stroke="#67e8f9" stroke-width="2" stroke-dasharray="4 4"/>
+    <text x="${targetX}" y="${cy+4}" text-anchor="middle" fill="#67e8f9" font-family="ui-monospace,monospace" font-size="11" font-weight="800">1p target</text>
+    <g transform="translate(${coinX} ${cy}) scale(${ppm})">${simpleCoinMarkup(coin)}</g>
+    <g transform="translate(${pkgX} ${cy}) scale(${ppm})">${simplePackageMarkup(pkg)}</g>
+    <text x="${targetX}" y="${height-13}" text-anchor="middle" fill="#67e8f9" font-family="ui-monospace,monospace" font-size="10">calibration · Ø 20.32 mm</text>
+    <text x="${coinX}" y="${height-13}" text-anchor="middle" fill="#93a8b5" font-family="ui-monospace,monospace" font-size="10">${coin.label} · ${coin.diameter.toFixed(2)} mm</text>
+    <text x="${pkgX}" y="${height-13}" text-anchor="middle" fill="#ffbd59" font-family="ui-monospace,monospace" font-size="10">${pkg.short} · ${pkg.envelope}</text>`;
+  }
+
+  function renderLineup() {
+    const svg = $("#lineupSvg");
+    const baseY = 320;
+    const ppm = 7.1;
+    const positions = [55, 130, 215, 305, 395, 485, 580, 680, 790, 905, 1015];
+    // The lineup reuses the document-level package paint servers already defined
+    // in the comparison stage; duplicating SVG ids makes fragment references
+    // ambiguous for assistive technology and DOM tooling.
+    let html = ``;
+    html += `<line class="lineup-baseline" x1="20" y1="${baseY}" x2="1060" y2="${baseY}"/>`;
+    for (let mm = 0; mm <= 40; mm += 5) {
+      const x = 25 + mm*ppm;
+      html += `<line class="lineup-tick" x1="${x}" y1="${baseY+45}" x2="${x}" y2="${baseY+53}"/><text x="${x}" y="${baseY+68}" fill="#5f7582" font-family="ui-monospace,monospace" font-size="8" text-anchor="middle">${mm}</text>`;
+    }
+    html += `<text x="25" y="${baseY+88}" fill="#5f7582" font-family="ui-monospace,monospace" font-size="8">reference ruler · millimetres</text>`;
+    PACKAGES.forEach((pkg, i) => {
+      const x = positions[i];
+      const scale = ppm;
+      const artY = baseY - pkg.h*scale/2 - (pkg.kind === "power" || pkg.kind === "to92" ? Math.min(pkg.h*.17*scale, 24) : 0);
+      html += `<g transform="translate(${x} ${artY}) scale(${scale})">${packageMarkup(pkg, 0, 0, 1, true, `line-${pkg.id}-`)}</g>
+        <text class="lineup-name" x="${x}" y="${baseY+22}">${pkg.short}</text>
+        <text class="lineup-size" x="${x}" y="${baseY+35}">${fmt(spanOf(pkg))} mm</text>`;
+    });
+    svg.innerHTML = html;
+  }
+
+  function buildControls() {
+    $("#packageRail").innerHTML = PACKAGES.map(p => `<button type="button" class="chip" data-id="${p.id}" aria-pressed="${p.id === state.packageId}">${p.short}</button>`).join("");
+    $("#coinRail").innerHTML = COINS.map(c => `<button type="button" class="chip coin-chip" data-id="${c.id}" aria-pressed="${c.id === state.coinId}">${c.label} · ${c.diameter.toFixed(2)} mm</button>`).join("");
+    $("#calibrationRange").value = state.calibration.toFixed(2);
+    $("#calibrationOutput").textContent = `${state.calibration.toFixed(2)} px/mm`;
+  }
+
+  function setPackage(id) {
+    state.packageId = id;
+    state.dx = 0;
+    state.dy = 0;
+    renderStage();
+  }
+  function setCoin(id, scroll = false) {
+    state.coinId = id;
+    renderStage();
+    if (scroll) $("#compare").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  }
+
+  buildControls();
+  renderLineup();
+  renderStage();
+
+  $("#packageRail").addEventListener("click", event => {
+    const button = event.target.closest("button[data-id]");
+    if (button) setPackage(button.dataset.id);
+  });
+  $("#coinRail").addEventListener("click", event => {
+    const button = event.target.closest("button[data-id]");
+    if (button) setCoin(button.dataset.id);
+  });
+  $("#viewModes").addEventListener("click", event => {
+    const button = event.target.closest("button[data-mode]");
+    if (!button) return;
+    state.mode = button.dataset.mode;
+    renderStage();
+  });
+  $("#zoomRange").addEventListener("input", event => {
+    state.zoom = Number(event.target.value)/100;
+    $("#zoomOutput").textContent = `${event.target.value}%`;
+    renderStage();
+  });
+  $("#dimensionsButton").addEventListener("click", () => {
+    state.dimensions = !state.dimensions;
+    renderStage();
+  });
+  $("#resetButton").addEventListener("click", () => {
+    state.dx = 0; state.dy = 0; renderStage();
+  });
+  $("#coinSweep").addEventListener("click", event => {
+    const button = event.target.closest("button[data-coin]");
+    if (button) setCoin(button.dataset.coin, true);
+  });
+
+  $("#calibrationRange").addEventListener("input", event => {
+    state.calibration = Number(event.target.value);
+    storage.setItem("silicon-sterling.ppm", String(state.calibration));
+    $("#calibrationOutput").textContent = `${state.calibration.toFixed(2)} px/mm`;
+    renderActualSize();
+  });
+  $("#calReset").addEventListener("click", () => {
+    state.calibration = 96/25.4;
+    storage.removeItem("silicon-sterling.ppm");
+    $("#calibrationRange").value = state.calibration.toFixed(2);
+    $("#calibrationOutput").textContent = `${state.calibration.toFixed(2)} px/mm`;
+    renderActualSize();
+  });
+
+  const stage = $("#compareStage");
+  let dragging = false;
+  let grabOffset = { x: 0, y: 0 };
+  function svgPoint(event) {
+    const point = stage.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+    return point.matrixTransform(stage.getScreenCTM().inverse());
+  }
+  stage.addEventListener("pointerdown", event => {
+    if (!event.target.closest("#packageLayer")) return;
+    const p = svgPoint(event);
+    dragging = true;
+    grabOffset = { x: p.x - state.dx, y: p.y - state.dy };
+    stage.setPointerCapture(event.pointerId);
+    stage.classList.add("dragging");
+  });
+  stage.addEventListener("pointermove", event => {
+    if (!dragging) return;
+    const p = svgPoint(event);
+    state.dx = p.x - grabOffset.x;
+    state.dy = p.y - grabOffset.y;
+    $("#packageLayer").innerHTML = packageMarkup(pkgById(state.packageId), state.dx, state.dy);
+    $("#dimensionLayer").innerHTML = dimensionMarkup(pkgById(state.packageId), coinById(state.coinId), state.dx, state.dy);
+  });
+  function stopDrag(event) {
+    if (!dragging) return;
+    dragging = false;
+    if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
+    stage.classList.remove("dragging");
+  }
+  stage.addEventListener("pointerup", stopDrag);
+  stage.addEventListener("pointercancel", stopDrag);
+
+  window.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      state.dx = 0; state.dy = 0; renderStage();
+    }
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

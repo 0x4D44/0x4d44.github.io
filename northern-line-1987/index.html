@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#070b0d">
+  <meta name="description" content="Drive a 1959 Stock-inspired Northern line cab through a compressed 1987 working timetable.">
+  <title>Northern Line 1987 — Cab Simulator</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div id="world" aria-hidden="true"></div>
+
+  <div id="vignette" aria-hidden="true"></div>
+  <div id="scanlines" aria-hidden="true"></div>
+
+  <header id="hud" class="hidden" aria-live="polite">
+    <section class="hud-cluster hud-left">
+      <div class="hud-label">SPEED</div>
+      <div class="speed-wrap"><span id="speedValue">0</span><small>mph</small></div>
+      <div class="limit-row"><span>LIMIT</span><b id="limitValue">30</b></div>
+    </section>
+
+    <section class="hud-cluster hud-centre">
+      <div class="service-line"><span id="serviceCode">137</span> <b>NORTHERN</b> <span id="destination">EDGWARE</span></div>
+      <div id="nextStation" class="next-station">KENNINGTON</div>
+      <div class="distance-line"><span id="distanceValue">AT PLATFORM</span><span class="separator">•</span><span id="sideValue">DOORS RIGHT</span></div>
+      <div id="statusRibbon" class="status-ribbon status-neutral">BOOK ON</div>
+    </section>
+
+    <section class="hud-cluster hud-right">
+      <div class="clock-row"><span id="clockValue">07:42:00</span><small id="deltaValue">RIGHT TIME</small></div>
+      <div class="score-row"><span>SCORE</span><b id="scoreValue">00000</b></div>
+      <div class="safety-row"><span id="signalValue" class="aspect aspect-green">●</span><span id="safetyValue">TRAINSTOP CLEAR</span></div>
+    </section>
+  </header>
+
+  <aside id="schedulePanel" class="panel hidden" aria-label="Working timetable">
+    <div class="panel-header">
+      <div>
+        <small>LONDON UNDERGROUND</small>
+        <h2>WORKING TIMETABLE 27</h2>
+      </div>
+      <button class="icon-button" data-action="toggle-schedule" aria-label="Close timetable">×</button>
+    </div>
+    <div class="schedule-meta">
+      <span id="scheduleDuty">DUTY 137</span><span id="scheduleRoute">KENNINGTON → CAMDEN TOWN</span>
+    </div>
+    <div class="schedule-columns"><span>LOCATION</span><span>BOOKED</span><span>ACTUAL</span></div>
+    <div id="scheduleRows" class="schedule-rows"></div>
+    <p class="schedule-note">Times are compressed for play. Stop mark is the white diamond. Two bells from the guard means ready to start.</p>
+  </aside>
+
+  <aside id="cabStatus" class="panel compact hidden" aria-label="Cab status">
+    <div class="cab-grid">
+      <div><small>MASTER</small><b id="powerReadout">OFF</b></div>
+      <div><small>BRAKE</small><b id="brakeReadout">STEP 3</b></div>
+      <div><small>REVERSER</small><b id="reverserReadout">FORWARD</b></div>
+      <div><small>DOORS</small><b id="doorsReadout" class="lamp-text lamp-amber">OPEN</b></div>
+    </div>
+  </aside>
+
+  <div id="toastStack" aria-live="assertive"></div>
+
+  <div id="controls" class="hidden">
+    <button class="control-button control-power-down" data-hold="power-down"><span>POWER</span><b>−</b><kbd>S</kbd></button>
+    <button class="control-button control-power-up" data-hold="power-up"><span>POWER</span><b>+</b><kbd>W</kbd></button>
+    <button class="control-button control-ack" data-action="ack"><span>GUARD / VIG</span><b>ACK</b><kbd>↵</kbd></button>
+    <button class="control-button control-brake-release" data-hold="brake-release"><span>BRAKE</span><b>−</b><kbd>A</kbd></button>
+    <button class="control-button control-brake-apply" data-hold="brake-apply"><span>BRAKE</span><b>+</b><kbd>D</kbd></button>
+  </div>
+
+  <nav id="utilityBar" class="hidden" aria-label="Simulator tools">
+    <button data-action="toggle-schedule"><kbd>M</kbd> Timetable</button>
+    <button data-action="headlights"><kbd>H</kbd> Headlights</button>
+    <button data-action="cab-light"><kbd>L</kbd> Cab light</button>
+    <button data-action="wiper"><kbd>V</kbd> Wiper</button>
+    <button data-action="horn"><kbd>B</kbd> Whistle</button>
+    <button data-action="pause"><kbd>Esc</kbd> Pause</button>
+  </nav>
+
+  <main id="startScreen" class="screen active">
+    <div class="start-backdrop" aria-hidden="true">
+      <div class="roundel"><span>NORTHERN</span></div>
+    </div>
+    <section class="start-card">
+      <div class="eyebrow">LONDON · AUTUMN 1987</div>
+      <h1><span>NORTHERN LINE</span><strong>DRIVER</strong></h1>
+      <p class="lead">Seven cars. Two hundred tonnes. One wet railway under London. Take a 1959 Stock-inspired cab over the Charing Cross route, keep the guard with you, and put every stop on the diamond.</p>
+
+      <div class="scenario-grid" role="radiogroup" aria-label="Choose a duty">
+        <button class="scenario selected" data-scenario="central" role="radio" aria-checked="true">
+          <small>DUTY 137 · 07:42</small>
+          <b>THE CENTRAL</b>
+          <span>Kennington → Camden Town</span>
+          <em>11 stops · 14 min</em>
+        </button>
+        <button class="scenario" data-scenario="north" role="radio" aria-checked="false">
+          <small>DUTY 204 · 16:18</small>
+          <b>THE EDGWARE ROAD</b>
+          <span>Camden Town → Edgware</span>
+          <em>10 stops · surface finish</em>
+        </button>
+        <button class="scenario" data-scenario="full" role="radio" aria-checked="false">
+          <small>DUTY 311 · 05:36</small>
+          <b>THE WHOLE LINE</b>
+          <span>Morden → Edgware</span>
+          <em>31 stops · full shift</em>
+        </button>
+      </div>
+
+      <div class="mode-row">
+        <label><input id="expertMode" type="checkbox"><span><b>Driver’s mode</b><small>Hold Shift for the deadman; no driving aids.</small></span></label>
+        <label><input id="reducedMotion" type="checkbox"><span><b>Steady cab</b><small>Reduce sway, vibration and camera roll.</small></span></label>
+      </div>
+
+      <button id="startButton" class="primary-button"><span>BOOK ON</span><small>ENTER THE CAB</small></button>
+      <p class="accuracy-note">An atmospheric operating reconstruction, not a training product. Route geometry and timings are compressed; the cab and sounds are original procedural work inspired by late-1980s Northern line practice.</p>
+    </section>
+  </main>
+
+  <section id="pauseScreen" class="screen" aria-label="Pause menu">
+    <div class="modal-card wide">
+      <div class="eyebrow">DRIVER’S NOTICE</div>
+      <h2>Cab paused</h2>
+      <div class="help-grid">
+        <div><kbd>W / S</kbd><b>Master controller</b><span>Off · Shunt · Series · Parallel</span></div>
+        <div><kbd>A / D</kbd><b>Westinghouse brake</b><span>Release · Lap · Steps 1–3 · Emergency</span></div>
+        <div><kbd>Enter</kbd><b>Acknowledge</b><span>Return the guard’s two bells; cancel vigilance</span></div>
+        <div><kbd>Shift</kbd><b>Deadman</b><span>Hold while taking power in Driver’s mode</span></div>
+        <div><kbd>H / L / V</kbd><b>Equipment</b><span>Headlights · cab light · wiper</span></div>
+        <div><kbd>Drag</kbd><b>Look around</b><span>Drag the cab view; press C to centre</span></div>
+      </div>
+      <div class="notice-box">
+        <b>How to make a station stop</b>
+        <p>Brake early, arrive below 1 mph and place the cab on the white diamond. The guard controls the doors. When they close, wait for two bells, acknowledge with Enter, release the brake, then take power.</p>
+      </div>
+      <div class="button-row">
+        <button class="secondary-button" data-action="restart">Restart duty</button>
+        <button class="primary-button" data-action="resume">Return to cab</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="incidentScreen" class="screen" aria-label="Operating incident">
+    <div class="modal-card incident-card">
+      <div class="incident-stripe"></div>
+      <div id="incidentCode" class="eyebrow">TRAINSTOP</div>
+      <h2 id="incidentTitle">Tripcock operated</h2>
+      <p id="incidentText">The train has been tripped. Put the master to OFF, place the brake in EMERGENCY, and wait for the reset timer.</p>
+      <div id="incidentTimer" class="incident-timer">8.0</div>
+      <button id="incidentButton" class="primary-button" disabled>RESET TRIPCOCK</button>
+    </div>
+  </section>
+
+  <section id="reportScreen" class="screen" aria-label="Duty report">
+    <div class="modal-card report-card">
+      <div class="eyebrow">MORDEN CONTROL · DRIVER’S REPORT</div>
+      <h2 id="reportTitle">Duty complete</h2>
+      <div class="grade-ring"><span id="reportGrade">A</span></div>
+      <div id="reportStats" class="report-stats"></div>
+      <div id="reportLedger" class="report-ledger"></div>
+      <div class="button-row">
+        <button class="secondary-button" data-action="home">Choose another duty</button>
+        <button class="primary-button" data-action="restart">Drive it again</button>
+      </div>
+    </div>
+  </section>
+
+  <noscript>This simulator requires JavaScript.</noscript>
+  <script type="module" src="./game.js"></script>
+  <script defer src="/almanac-back.js"></script>
+</body>
+</html>

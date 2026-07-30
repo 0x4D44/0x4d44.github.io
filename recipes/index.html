@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Kitchen Almanac — Family Recipes</title>
+<meta name="description" content="The family recipe book: the rescued classics, kept properly. Tick off ingredients, work through the method, switch between metric and imperial.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='.9em'%20font-size='90'%3E%F0%9F%A5%A7%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="app" aria-live="polite"></div>
+
+<footer class="colophon">
+  <div class="orn" aria-hidden="true">❧</div>
+  <p>Set down so nothing gets lost. To add a recipe, append one object to <code>recipes.js</code> — the shelf, chips and search all follow.</p>
+</footer>
+
+<!-- ============================================================
+     Line-art sprite. Each recipe names one of these via its `art`
+     field; "art-pot" is the fallback. Add a new <symbol> here when
+     a new recipe wants its own drawing.
+     ============================================================ -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <defs>
+
+    <symbol id="art-crumble" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- steam -->
+      <path d="M84 30 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <path d="M102 32 q-5 -8 0 -15 q4 -6 0 -12" opacity=".75"/>
+      <path d="M120 30 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <!-- crumble topping: a scatter of dots over the dish -->
+      <path d="M52 58 q10 -12 26 -10 q8 -8 22 -6 q14 -2 22 6 q16 -2 26 10" />
+      <g fill="currentColor" stroke="none" opacity=".8">
+        <circle cx="66" cy="53" r="1.7"/><circle cx="80" cy="48" r="1.7"/>
+        <circle cx="95" cy="46" r="1.7"/><circle cx="112" cy="47" r="1.7"/>
+        <circle cx="128" cy="50" r="1.7"/><circle cx="140" cy="55" r="1.7"/>
+        <circle cx="88" cy="54" r="1.4"/><circle cx="104" cy="52" r="1.4"/>
+        <circle cx="120" cy="55" r="1.4"/><circle cx="73" cy="58" r="1.4"/>
+        <circle cx="134" cy="59" r="1.4"/>
+      </g>
+      <!-- dish -->
+      <path d="M46 60 h108 l-7 30 q-2 8 -10 8 h-74 q-8 0 -10 -8 z"/>
+      <path d="M46 60 h-10 m118 0 h10" stroke-width="2"/>
+      <!-- fruit bubbling at the rim -->
+      <circle cx="60" cy="66" r="2.4" opacity=".5"/>
+      <circle cx="144" cy="67" r="2" opacity=".5"/>
+      <!-- an apple alongside -->
+      <path d="M170 92 q-8 2 -10 -7 q-2 -9 6 -11 q5 -1 8 2 q3 -3 8 -2 q8 2 6 11 q-2 9 -10 7 q-2 -1 -4 -1 q-2 0 -4 1 z" opacity=".85"/>
+      <path d="M174 76 q0 -6 5 -9" opacity=".85"/>
+      <path d="M179 70 q6 -2 8 3 q-6 2 -8 -3 z" opacity=".7"/>
+    </symbol>
+
+    <symbol id="art-coconut" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- tin of slices, cut into squares -->
+      <rect x="38" y="52" width="92" height="44" rx="4"/>
+      <line x1="69" y1="52" x2="69" y2="96" opacity=".6"/>
+      <line x1="100" y1="52" x2="100" y2="96" opacity=".6"/>
+      <line x1="38" y1="74" x2="130" y2="74" opacity=".6"/>
+      <!-- icing-sugar dusting -->
+      <g fill="currentColor" stroke="none" opacity=".7">
+        <circle cx="54" cy="62" r="1.2"/><circle cx="61" cy="68" r="1"/>
+        <circle cx="84" cy="60" r="1.2"/><circle cx="90" cy="67" r="1"/>
+        <circle cx="115" cy="62" r="1.2"/><circle cx="108" cy="68" r="1"/>
+        <circle cx="55" cy="84" r="1"/><circle cx="86" cy="86" r="1.2"/>
+        <circle cx="117" cy="84" r="1"/>
+      </g>
+      <!-- sifter above, mid-dust -->
+      <circle cx="84" cy="26" r="11" opacity=".9"/>
+      <path d="M95 26 h16" stroke-width="2"/>
+      <g fill="currentColor" stroke="none" opacity=".5">
+        <circle cx="80" cy="42" r="1"/><circle cx="86" cy="45" r="1"/>
+        <circle cx="90" cy="41" r="1"/><circle cx="84" cy="48" r="1"/>
+      </g>
+      <!-- halved coconut alongside -->
+      <circle cx="160" cy="82" r="15"/>
+      <circle cx="160" cy="82" r="9" opacity=".6"/>
+      <path d="M150 60 q4 -8 12 -9 m-6 9 q2 -5 8 -7" opacity=".7"/>
+    </symbol>
+
+    <symbol id="art-pot" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- fallback: a stockpot with steam -->
+      <path d="M90 30 q-5 -8 0 -14 m22 14 q-5 -8 0 -14" opacity=".6"/>
+      <path d="M60 48 h80 v34 q0 12 -12 12 h-56 q-12 0 -12 -12 z"/>
+      <path d="M60 56 h-12 m92 0 h12" stroke-width="2"/>
+      <line x1="60" y1="48" x2="140" y2="48"/>
+    </symbol>
+
+    <symbol id="art-risotto" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- steam -->
+      <path d="M90 34 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <path d="M108 34 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <!-- bowl -->
+      <ellipse cx="100" cy="60" rx="56" ry="15"/>
+      <path d="M46 62 q54 42 108 0"/>
+      <!-- rice grains -->
+      <g fill="currentColor" stroke="none" opacity=".7">
+        <ellipse cx="72" cy="60" rx="2.6" ry="1.2" transform="rotate(18 72 60)"/>
+        <ellipse cx="88" cy="57" rx="2.6" ry="1.2" transform="rotate(-14 88 57)"/>
+        <ellipse cx="104" cy="59" rx="2.6" ry="1.2" transform="rotate(24 104 59)"/>
+        <ellipse cx="120" cy="57" rx="2.6" ry="1.2" transform="rotate(-8 120 57)"/>
+        <ellipse cx="132" cy="61" rx="2.6" ry="1.2" transform="rotate(30 132 61)"/>
+        <ellipse cx="82" cy="64" rx="2.6" ry="1.2" transform="rotate(-20 82 64)"/>
+        <ellipse cx="112" cy="64" rx="2.6" ry="1.2" transform="rotate(12 112 64)"/>
+      </g>
+      <!-- a mushroom cap tucked in the rice -->
+      <path d="M118 58 q9 -11 20 0 z"/>
+      <path d="M126 58 v5 m6 -5 v5" opacity=".8"/>
+    </symbol>
+
+    <symbol id="art-choccake" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- round cake, one wedge cut and drawn out -->
+      <ellipse cx="88" cy="44" rx="46" ry="13"/>
+      <path d="M42 44 v34 q0 13 46 13 q46 0 46 -13 v-34"/>
+      <path d="M42 62 q46 14 92 0" opacity=".55"/>
+      <!-- chocolate chips on top -->
+      <g fill="currentColor" stroke="none" opacity=".8">
+        <circle cx="72" cy="42" r="1.7"/><circle cx="92" cy="40" r="1.7"/>
+        <circle cx="108" cy="44" r="1.7"/><circle cx="82" cy="47" r="1.4"/>
+        <circle cx="100" cy="47" r="1.4"/>
+      </g>
+      <!-- the cut slice, alongside -->
+      <path d="M150 84 l24 -8 v18 q-12 6 -24 0 z"/>
+      <path d="M150 84 l24 -8"/>
+      <path d="M150 91 q12 6 24 0" opacity=".55"/>
+    </symbol>
+
+    <symbol id="art-macaroni" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- steam -->
+      <path d="M92 24 q-5 -8 0 -14 m20 14 q-5 -8 0 -14" opacity=".55"/>
+      <!-- baking dish -->
+      <path d="M40 46 h120 v30 q0 12 -14 12 h-92 q-14 0 -14 -12 z"/>
+      <path d="M40 46 h-10 m130 0 h10" stroke-width="2"/>
+      <!-- macaroni tubes as little arcs -->
+      <g opacity=".8">
+        <path d="M58 60 q4 -6 9 0"/><path d="M74 58 q4 -6 9 0"/>
+        <path d="M90 61 q4 -6 9 0"/><path d="M106 58 q4 -6 9 0"/>
+        <path d="M122 60 q4 -6 9 0"/><path d="M66 70 q4 -6 9 0"/>
+        <path d="M82 71 q4 -6 9 0"/><path d="M98 70 q4 -6 9 0"/>
+        <path d="M114 71 q4 -6 9 0"/>
+      </g>
+    </symbol>
+
+    <symbol id="art-pasta" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- steam -->
+      <path d="M92 30 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <path d="M108 30 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <!-- plate -->
+      <ellipse cx="100" cy="72" rx="58" ry="16"/>
+      <ellipse cx="100" cy="70" rx="42" ry="11" opacity=".5"/>
+      <!-- a nest of spaghetti -->
+      <g opacity=".85">
+        <path d="M70 68 q14 -14 30 -6 q14 -12 30 4"/>
+        <path d="M68 71 q16 -10 32 -2 q12 -10 32 2"/>
+        <path d="M74 74 q12 -8 26 -2 q14 -8 26 2"/>
+      </g>
+      <!-- a fork resting on the rim -->
+      <path d="M150 52 v30 m-4 -30 v10 m8 -10 v10" opacity=".7"/>
+    </symbol>
+
+    <symbol id="art-curry" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- steam -->
+      <path d="M88 32 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <path d="M104 32 q-5 -8 0 -15 q4 -6 0 -12" opacity=".55"/>
+      <!-- bowl of curry -->
+      <ellipse cx="94" cy="60" rx="50" ry="13"/>
+      <path d="M44 62 q50 38 100 0"/>
+      <!-- chunks (potato) surfacing -->
+      <g opacity=".8">
+        <path d="M70 58 q6 -6 12 0 q-6 6 -12 0 z"/>
+        <path d="M96 60 q6 -6 12 0 q-6 6 -12 0 z"/>
+        <path d="M118 57 q5 -5 10 0 q-5 5 -10 0 z"/>
+      </g>
+      <!-- a spoon -->
+      <path d="M156 46 q10 2 8 12 q-2 8 -8 6 z"/>
+      <path d="M158 64 l6 26" opacity=".7"/>
+    </symbol>
+
+    <symbol id="art-stirfry" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- flames of the wok flip -->
+      <path d="M78 34 q-4 -8 2 -14 m14 14 q-4 -8 2 -14" opacity=".5"/>
+      <!-- wok -->
+      <path d="M40 54 q60 46 120 0"/>
+      <path d="M40 54 h120" opacity=".5"/>
+      <!-- long handle -->
+      <path d="M160 54 l30 -8" stroke-width="2"/>
+      <!-- tumbling veg -->
+      <g opacity=".85">
+        <path d="M72 52 l8 6 m0 -6 l-8 6"/>
+        <circle cx="98" cy="55" r="4"/>
+        <path d="M116 50 q6 3 4 9"/>
+        <path d="M84 44 q6 -4 10 2"/>
+      </g>
+    </symbol>
+
+    <symbol id="art-cookies" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- three cookies -->
+      <circle cx="70" cy="70" r="22"/>
+      <circle cx="112" cy="74" r="22"/>
+      <circle cx="140" cy="52" r="18"/>
+      <!-- chocolate chips -->
+      <g fill="currentColor" stroke="none" opacity=".8">
+        <circle cx="64" cy="64" r="2"/><circle cx="78" cy="70" r="2"/>
+        <circle cx="68" cy="78" r="2"/><circle cx="60" cy="72" r="1.6"/>
+        <circle cx="106" cy="68" r="2"/><circle cx="120" cy="74" r="2"/>
+        <circle cx="110" cy="82" r="2"/><circle cx="118" cy="62" r="1.6"/>
+        <circle cx="136" cy="48" r="1.8"/><circle cx="146" cy="55" r="1.8"/>
+        <circle cx="138" cy="60" r="1.4"/>
+      </g>
+    </symbol>
+
+    <symbol id="art-mexican" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- folded tortilla / taco shell -->
+      <path d="M44 90 q40 -66 96 0"/>
+      <path d="M44 90 q48 -20 96 0"/>
+      <!-- filling: beans -->
+      <g fill="currentColor" stroke="none" opacity=".8">
+        <ellipse cx="72" cy="82" rx="3" ry="2" transform="rotate(20 72 82)"/>
+        <ellipse cx="88" cy="86" rx="3" ry="2" transform="rotate(-15 88 86)"/>
+        <ellipse cx="104" cy="84" rx="3" ry="2" transform="rotate(25 104 84)"/>
+        <ellipse cx="118" cy="82" rx="3" ry="2" transform="rotate(-10 118 82)"/>
+      </g>
+      <!-- a chilli pepper alongside -->
+      <path d="M156 44 q14 4 12 22 q-2 14 -12 16" opacity=".85"/>
+      <path d="M156 44 q-2 -6 4 -8 q4 4 2 8" opacity=".7"/>
+    </symbol>
+
+    <symbol id="art-winesauce" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- wine glass -->
+      <path d="M48 30 h34 q-2 20 -17 22 q-15 -2 -17 -22 z"/>
+      <path d="M48 30 q4 8 17 8 q13 0 17 -8" opacity=".5"/>
+      <path d="M65 52 v30 m-12 0 h24"/>
+      <!-- nest of tagliatelle -->
+      <ellipse cx="130" cy="80" rx="40" ry="13"/>
+      <g opacity=".85">
+        <path d="M104 78 q14 -12 28 -5 q12 -10 26 3"/>
+        <path d="M102 82 q16 -8 28 -2 q12 -8 28 2"/>
+      </g>
+    </symbol>
+
+    <symbol id="art-loaf" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- bread-machine white loaf: domed crown overhanging its tin -->
+      <path d="M92 24 q-5 -8 0 -14 m18 14 q-5 -8 0 -14" opacity=".55"/>
+      <path d="M66 56 q-6 -26 36 -26 q42 0 36 26 q3 2 0 5 h-72 q-3 -3 0 -5 z"/>
+      <path d="M72 61 v24 q0 7 7 7 h44 q7 0 7 -7 v-24"/>
+      <!-- flour dusting on the crown -->
+      <g fill="currentColor" stroke="none" opacity=".7">
+        <circle cx="86" cy="42" r="1.3"/><circle cx="97" cy="38" r="1.3"/>
+        <circle cx="109" cy="40" r="1.3"/><circle cx="118" cy="45" r="1.3"/>
+        <circle cx="92" cy="48" r="1"/><circle cx="112" cy="50" r="1"/>
+      </g>
+      <!-- wire cooling rack -->
+      <line x1="56" y1="98" x2="146" y2="98" opacity=".6"/>
+      <line x1="64" y1="98" x2="64" y2="104" opacity=".4"/>
+      <line x1="101" y1="98" x2="101" y2="104" opacity=".4"/>
+      <line x1="138" y1="98" x2="138" y2="104" opacity=".4"/>
+      <!-- the dusting spoon alongside -->
+      <path d="M160 90 l16 -22" opacity=".85"/>
+      <ellipse cx="179" cy="64" rx="5" ry="7" transform="rotate(36 179 64)" opacity=".85"/>
+    </symbol>
+
+    <symbol id="art-granary" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+      <!-- round granary cob, scored, with a wheat ear alongside -->
+      <path d="M58 90 q-2 -38 44 -38 q46 0 44 38 q0 3 -3 3 h-82 q-3 0 -3 -3 z"/>
+      <path d="M82 62 q20 -10 40 0" opacity=".5"/>
+      <path d="M74 74 q28 -14 56 0" opacity=".5"/>
+      <!-- kibbled grains on the crust -->
+      <g fill="currentColor" stroke="none" opacity=".7">
+        <ellipse cx="92" cy="68" rx="1.5" ry="2.2" transform="rotate(20 92 68)"/>
+        <ellipse cx="114" cy="66" rx="1.5" ry="2.2" transform="rotate(-15 114 66)"/>
+        <ellipse cx="103" cy="80" rx="1.5" ry="2.2" transform="rotate(10 103 80)"/>
+        <ellipse cx="126" cy="82" rx="1.5" ry="2.2" transform="rotate(-25 126 82)"/>
+        <ellipse cx="80" cy="84" rx="1.5" ry="2.2" transform="rotate(30 80 84)"/>
+      </g>
+      <!-- breadboard -->
+      <line x1="44" y1="99" x2="158" y2="99" opacity=".5"/>
+      <!-- wheat ear -->
+      <path d="M170 96 q2 -18 -2 -32" opacity=".9"/>
+      <g opacity=".8">
+        <ellipse cx="164" cy="70" rx="2.2" ry="4.5" transform="rotate(28 164 70)"/>
+        <ellipse cx="172" cy="66" rx="2.2" ry="4.5" transform="rotate(-24 172 66)"/>
+        <ellipse cx="163" cy="78" rx="2.2" ry="4.5" transform="rotate(30 163 78)"/>
+        <ellipse cx="173" cy="75" rx="2.2" ry="4.5" transform="rotate(-22 173 75)"/>
+        <ellipse cx="168" cy="59" rx="2" ry="4" transform="rotate(3 168 59)"/>
+      </g>
+    </symbol>
+
+    <!-- small UI glyphs -->
+    <symbol id="ic-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.5"/><path d="M12 7.5 V12 l3 2.4"/>
+    </symbol>
+    <symbol id="ic-oven" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="4" width="16" height="16" rx="2"/><line x1="4" y1="9" x2="20" y2="9"/><circle cx="7.5" cy="6.5" r=".4" fill="currentColor"/><circle cx="10.5" cy="6.5" r=".4" fill="currentColor"/><rect x="7" y="12" width="10" height="5" rx="1"/>
+    </symbol>
+    <symbol id="ic-serves" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 13 a8 8 0 0 0 16 0 z"/><path d="M12 13 V8 m0 0 a2.2 2.2 0 1 1 .1 -4.4"/>
+    </symbol>
+
+  </defs>
+</svg>
+
+<script src="recipes.js"></script>
+<script src="app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

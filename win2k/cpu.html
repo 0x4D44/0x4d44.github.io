@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One Instruction at a Time — Boot to Desktop</title>
+<meta name="description" content="The four hardware-truth fixes that unlocked Windows 2000 in mddosem: the STI interrupt shadow, a parked PIT channel, a status bit latched at assertion, and a four-megabyte page honoured in the IOPM walk.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* ---- instruction tapes (shadow stepper) ---- */
+.tapegrp { margin: 14px 0 4px; }
+.tlabel { font-family: var(--mono); font-size: 11px; color: var(--muted); margin: 0 0 7px; }
+.tape { display: flex; align-items: stretch; overflow-x: auto; padding-bottom: 4px; }
+.tcell {
+  flex: 0 0 auto; min-width: 112px; text-align: center; padding: 9px 10px 8px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px;
+  opacity: .5;
+}
+.tcell .m { display: block; font-family: var(--mono); font-size: 14.5px; color: var(--ink); letter-spacing: .02em; }
+.tcell .s { display: block; font-family: var(--mono); font-size: 9.5px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+.tcell.done { opacity: 1; border-color: var(--cobalt-dim); }
+.tcell.act  { opacity: 1; border-color: var(--cobalt); box-shadow: 0 0 0 1px var(--cobalt), 0 0 14px rgba(108,177,242,.22); }
+.tcell.isr { background: var(--surface-3); border-style: dashed; }
+.tcell.isr.act { border-style: solid; border-color: var(--good); box-shadow: 0 0 0 1px var(--good), 0 0 14px rgba(76,194,110,.22); }
+.tbound { flex: 0 0 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.tbound i { display: block; width: 2px; height: 26px; background: var(--surface-3); border-radius: 1px; }
+.tbound .bl { font-family: var(--mono); font-size: 8.5px; letter-spacing: .03em; color: transparent; white-space: nowrap; min-height: 11px; }
+.tbound.window i { background: var(--good); box-shadow: 0 0 8px rgba(76,194,110,.5); }
+.tbound.window .bl { color: var(--good); }
+.tbound.missed i { background: var(--danger); box-shadow: 0 0 8px rgba(224,82,82,.4); }
+.tbound.missed .bl { color: var(--danger); }
+.tbound.hit i { background: var(--good); }
+.tbound.hit .bl { color: var(--good); }
+.lamprow { display: flex; align-items: center; gap: 10px; margin: 16px 2px 2px; font-family: var(--mono); font-size: 11.5px; color: var(--ink-2); flex-wrap: wrap; }
+.lamp { width: 13px; height: 13px; border-radius: 50%; background: var(--surface-3); border: 1px solid var(--line); flex: 0 0 auto; }
+.lamp.pending { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 10px rgba(224,166,60,.6); }
+.lamp.lost { background: var(--danger); border-color: var(--danger); box-shadow: 0 0 10px rgba(224,82,82,.6); }
+.lamp.ok { background: var(--good); border-color: var(--good); box-shadow: 0 0 10px rgba(76,194,110,.6); }
+.ifchip { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--teal); }
+/* ---- page-walk SVG ---- */
+.pw text { font-size: 11px; fill: var(--ink-2); }
+.pw text.ttl { fill: var(--cobalt); font-size: 11.5px; letter-spacing: .06em; }
+.pw text.sm { font-size: 9.5px; fill: var(--muted); }
+.pw text.em { fill: var(--cobalt-hi); font-size: 12px; }
+.pw text.frm { fill: var(--teal); font-size: 10.5px; }
+.pw rect.bx { fill: var(--surface-2); stroke: var(--line); }
+.pw rect.inner { fill: var(--surface-3); stroke: var(--line); }
+.pw rect.pde { fill: var(--ntblue); stroke: var(--cobalt-dim); }
+.pw g { opacity: .34; transition: opacity 200ms ease; }
+.pw g.on { opacity: 1; }
+.pw g.bad rect.bx { stroke: var(--danger); }
+.pw g.bad text.em { fill: var(--danger); }
+.pw g.ok rect.bx { stroke: var(--good); }
+.pw g.ok rect.inner { stroke: var(--good); }
+.pw g.ok text.em { fill: var(--good); }
+.pw path.wire { stroke: var(--muted); stroke-width: 2; fill: none; }
+.pw polygon.ah { fill: var(--muted); }
+.pw g.on path.wire { stroke: var(--cobalt); }
+.pw g.on polygon.ah { fill: var(--cobalt); }
+.pw g.on.bad path.wire { stroke: var(--danger); }
+.pw g.on.bad polygon.ah { fill: var(--danger); }
+.pw g.on.ok path.wire { stroke: var(--good); }
+.pw g.on.ok polygon.ah { fill: var(--good); }
+/* ---- misc page bits ---- */
+.fixcard .ffix { margin-top: 7px; }
+.term.pre { white-space: pre; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="machine.html">1 · The Machine</a>
+    <a href="loop.html">2 · The Restart Loop</a>
+    <a href="wires.html">3 · Edges &amp; Wires</a>
+    <a href="forensics.html">4 · Kernel Forensics</a>
+    <a href="dialog.html">5 · The Invisible Dialog</a>
+    <a href="cpu.html" aria-current="page">6 · One Instruction at a Time</a>
+    <a href="desktop.html">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 6 · THE CPU</p>
+  <h1>ONE INSTRUCTION AT A <span class="accent">TIME</span></h1>
+  <p class="standfirst">Chapters 2 to 5 cleared away everything that was not a bug — the
+  red herrings, a census read perfectly and misread completely, a dialog nobody could see.
+  What remained were four places where the emulator’s idea of an Intel PC differed from
+  silicon by one bit or one instruction. This chapter is those four mechanisms: an
+  interrupt shadow flattened by batching, a timer parked for a caller that never comes, a
+  status bit that never latched, and a four-megabyte page mistaken for a table of smaller
+  ones.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">1</div><div class="l">instruction — the exact length of the STI shadow; after the fix, the scheduler owns exactly one protected successor</div></div>
+  <div class="stat"><div class="v">16</div><div class="l">instructions — the whole grant — a single batch retired through a POPFD-opened recognition window; the legal count is 1</div></div>
+  <div class="stat"><div class="v">0xE3</div><div class="l">the live PDE value: Present + PS — a 4 MiB page the I/O-bitmap walker misread as a page-table pointer</div></div>
+  <div class="stat"><div class="v">22 min</div><div class="l">from Fix 4 landing (03:05, 19 July) to boot-to-desktop acceptance being recorded (03:27)</div></div>
+</section>
+
+<section class="prose">
+
+<h2>Four defects, one desktop</h2>
+
+<p>When the invisible dialogs of <a href="dialog.html">chapter&nbsp;5</a> were finally
+answered — CD in the drive, the product key entered properly — native Windows&nbsp;2000
+setup ran its full course inside <a href="/mddosem/">mddosem</a> for the first time. That
+it could was down to four corrections the acceptance record credits by name — three of
+them landed with fail-first regressions, the fourth under adversarial review — each a
+statement about what real hardware does rather than
+what Windows wants. None is Windows-specific; all four were in the interpreter-only
+binary that finally booted (the dynamic recompiler sat this campaign out). Three landed
+in one night, 15–16 July; the fourth at five past three in the morning of the 19th,
+twenty-two minutes before acceptance was recorded.</p>
+
+<p>The four wear the panes of the flag <span class="flag" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+throughout this site. Fixes 1, 2 and 4 are this chapter’s subject in depth. Fix&nbsp;3
+belongs to the interrupt wiring of <a href="wires.html">chapter&nbsp;3</a> and gets a
+summary here.</p>
+
+</section>
+
+<div class="fixgrid" id="fixgrid"></div>
+
+<section class="prose">
+
+<h2>Fix 1 — the one-instruction shadow</h2>
+
+<p>An x86 processor checks for pending interrupts at every instruction boundary — that is
+the contract. The <code>IF</code> flag gates it: <code>CLI</code> closes the door,
+<code>STI</code> opens it. But <code>STI</code> has a peculiar clause, present since the
+8086: interrupts become recognisable not after <code>STI</code> itself, but after the
+instruction that <em>follows</em> it. That one-instruction “shadow” exists so software can
+compose two instructions atomically. <code>STI;&nbsp;HLT</code> — enable interrupts and
+halt, with no gap between them into which a wake-up could fall and be consumed, leaving
+the machine asleep forever. <code>STI;&nbsp;RET</code> — re-enable and return before the
+next interrupt piles a frame onto the same stack. The same one-instruction grace covers
+<code>MOV SS</code>, <code>POP SS</code> and <code>LSS</code>, so a stack switch — segment
+then pointer — cannot be split down the middle. And one instruction restores
+<code>IF</code> with <em>no</em> shadow at all: <code>POPF</code>/<code>POPFD</code>, which
+makes recognition legal at the very next boundary.</p>
+
+<p>mddosem’s interpreter, for speed, runs the guest in grants of up to sixteen
+instructions between visits to the scheduler — and the grant machinery had flattened the
+shadow’s edges. The regression suite caught three failure shapes red-handed:
+<code>STI; DEC ECX; CLI</code> retired three instructions when silicon would deliver the
+pending interrupt after two; <code>POPFD; CLI</code> retired the entire sixteen-instruction
+grant when the legal count is one; and <code>STI</code> applied its shadow <em>twice</em>,
+protecting a second successor no manual describes. Each shape has the same lethal
+consequence: a following <code>CLI</code> could close the only boundary at which a pending
+interrupt was ever allowed to be recognised.</p>
+
+<div class="term pre" role="img" aria-label="Stylised regression output: three pre-fix failing shapes. STI, DEC ECX, CLI retired three instructions where two is the legal maximum before delivery. POPFD, CLI retired sixteen instructions, the whole grant, where one is legal. MOV SS protected two successor instructions where the shadow is exactly one."><span class="dim"># pre-fix red witnesses — the failing shapes, as the regressions saw them</span>
+STI; DEC ECX; CLI    <span class="bad">retired 3 instructions</span>   — silicon delivers the pending IRQ after 2
+POPFD; CLI           <span class="bad">retired 16 — the grant</span>   — POPFD has no shadow; the legal count is 1
+MOV SS, AX           <span class="bad">2 successors protected</span>   — the shadow is one instruction, never two</div>
+
+<p>Why did Windows&nbsp;2000, of all guests, die of this? Because NT’s ubiquitous
+critical-section shape is <code>PUSHFD; CLI; …; POPFD</code> — save the flags, close
+interrupts, do the work, restore. Kernel, HAL and drivers execute it constantly. If the
+interpreter never opens a poll window between the <code>IF</code>-restoring
+<code>POPFD</code> and the next <code>CLI</code>, completion interrupts die in the gap —
+and a lost completion is a lost wake-up for exactly the machinery
+<a href="forensics.html">chapter&nbsp;4</a>’s census stared at: the kernel-stack inswap
+that would have brought setup’s threads back from their long sleep. A DOS game polls;
+NT <em>waits</em>. Invent an interrupt-free window no silicon ever had, and NT is the
+guest that will park in it.</p>
+
+<p>The fix gives the boundary a name. The interpreter now returns an explicit result,
+<code>RunResult::InterruptPollBoundary</code>, after <code>STI</code>, <code>MOV SS</code>,
+<code>POP SS</code>, <code>LSS</code>, or any <code>POPF</code>/<code>POPFD</code> that
+turns <code>IF</code> on — and the scheduler owns exactly one shadow-protected successor,
+run under a budget of one, never two. Inner and outer scheduling share a single readiness
+predicate, <code>pending_interrupt_delivery_ready()</code>, which also counts a byte
+already sitting in the keyboard controller’s output buffer as deliverable — visible 8042
+state matters even before IRQ1 materialises in the PIC. At landing, 2,511
+<code>mddosem-interp</code> tests were green; by acceptance, 2,512.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE SHADOW STEPPER — WHERE RECOGNITION IS LEGAL</span>
+    <span class="hint">⏮ ⏭ step · ← → keys · toggle before/after</span>
+  </div>
+  <div class="fig-body">
+    <div class="stage" id="shadow-stage" role="img" aria-label="Instruction-tape diagram. Tape one runs STI, DEC ECX, CLI and then an interrupt-service-routine cell; tape two runs POPFD, CLI and an ISR cell. An amber lamp shows a disk-completion interrupt latched in the 8259. Before the fix, the interpreter batches through the boundary after the shadowed instruction: the CLI retires, the only legal recognition window closes, and the lamp turns red — the interrupt is stranded. After the fix, the interpreter stops at an interrupt-poll boundary after STI's single protected successor, and immediately after POPFD, which has no shadow; the pending interrupt is delivered before the CLI runs and the lamp turns green.">
+      <div class="tapegrp">
+        <div class="tlabel">tape 1 — the shadowed shape: <span style="color:var(--ink-2)">STI; DEC ECX; CLI</span></div>
+        <div class="tape">
+          <div class="tcell" id="sa0"><span class="m">STI</span><span class="s">IF←1 · shadow arms</span></div>
+          <div class="tbound" id="sab1"><i></i><span class="bl"></span></div>
+          <div class="tcell" id="sa1"><span class="m">DEC ECX</span><span class="s">the shadowed successor</span></div>
+          <div class="tbound" id="sab2"><i></i><span class="bl"></span></div>
+          <div class="tcell" id="sa2"><span class="m">CLI</span><span class="s">IF←0 · window shut</span></div>
+          <div class="tbound" id="sab3"><i></i><span class="bl"></span></div>
+          <div class="tcell isr" id="saI"><span class="m">⇢ ISR</span><span class="s">the completion handler</span></div>
+        </div>
+      </div>
+      <div class="tapegrp">
+        <div class="tlabel">tape 2 — the shadowless shape: <span style="color:var(--ink-2)">POPFD; CLI</span> (NT’s critical-section exit)</div>
+        <div class="tape">
+          <div class="tcell" id="sb0"><span class="m">POPFD</span><span class="s">IF←1 · no shadow</span></div>
+          <div class="tbound" id="sbb1"><i></i><span class="bl"></span></div>
+          <div class="tcell" id="sb1"><span class="m">CLI</span><span class="s">IF←0</span></div>
+          <div class="tbound" id="sbb2"><i></i><span class="bl"></span></div>
+          <div class="tcell isr" id="sbI"><span class="m">⇢ ISR</span><span class="s">the completion handler</span></div>
+        </div>
+      </div>
+      <div class="lamprow">
+        <span class="lamp" id="shadow-lamp"></span>
+        <span id="shadow-lamptext">IRQ14 completion — latched in the 8259</span>
+        <span class="ifchip" id="shadow-if">IF=0</span>
+      </div>
+    </div>
+  </div>
+  <div class="evlog" id="shadow-log"></div>
+  <div class="fig-controls">
+    <div class="seg" id="shadow-mode" role="group" aria-label="Interpreter behaviour">
+      <button data-v="bug" aria-pressed="true">before fix</button>
+      <button data-v="fix" aria-pressed="false">after fix</button>
+    </div>
+    <button class="btn" id="shadow-prev">◀ back</button>
+    <button class="btn primary" id="shadow-next">step ▶</button>
+    <span class="ctl"><output id="shadow-out"></output></span>
+  </div>
+  <div class="fig-note">Mechanism, red witnesses and fix from the interrupt-recognition
+  commit (399d34b3b, 15 July 23:04): <code>RunResult::InterruptPollBoundary</code>, one
+  protected successor, one shared <code>pending_interrupt_delivery_ready()</code>
+  predicate including visible 8042 output. Validation at landing: 2,511 mddosem-interp
+  tests. Ledger: MDD-BUG-KILN-00004.</div>
+</figure>
+
+<aside class="aside">
+  <span class="tag">HARDWARE TRUTH</span>
+  <p>A real x86 recognises pending interrupts at every instruction boundary.
+  <code>STI</code>, <code>MOV SS</code>, <code>POP SS</code> and <code>LSS</code> delay
+  recognition by exactly one instruction; a <code>POPF</code> that sets <code>IF</code>
+  delays it by zero. A batching interpreter that rolls through those boundaries invents
+  interrupt-free windows no silicon ever had — and NT, which sleeps on interrupts rather
+  than polling, is the guest that finds them.</p>
+</aside>
+
+<h2>Fix 2 — the parked timer</h2>
+
+<p>The second defect was quieter. In its default configuration mddosem services BIOS
+interrupts in Rust — high-level emulation, HLE — and one of its optimisations defers the
+bookkeeping of the 8254 timer’s channel-0 counter, leaving the HLE timer path to commit
+the deferred track when it next runs. Under <code>--real-boot</code>
+(<a href="machine.html">chapter&nbsp;1</a>), there is no “next runs”: hardware interrupts
+vector through the guest’s own IDT, the HLE timer path never executes, and the deferred
+commit never comes. The 8254’s counter simply froze between interrupts.</p>
+
+<p>Windows&nbsp;2000 noticed because it reads that counter. On the Standard PC HAL —
+the one this machine’s ACPI-less firmware selects — <code>QueryPerformanceCounter</code>
+<em>is</em> the 8254, frequency 1,193,182&nbsp;Hz. The kernel’s timekeeping and the
+scheduler’s wake path consult PIT state; a counter that only moves at interrupt time
+starves everything paced between ticks. The fix is a one-condition answer:
+<code>can_defer_pit_channel0_track()</code> returns <em>no</em> under native boot, so
+channel&nbsp;0 advances immediately, while the DOS and DPMI HLE paths keep their deferral
+untouched. The fail-first regression caught the parked state in the act:</p>
+
+<div class="term pre" role="img" aria-label="Stylised test output. Before the fix, after a deliverable IRQ0 under real boot, pending channel-zero track cycle equalled Some of 1000 — the counter was parked awaiting an HLE commit that never comes. After the fix the value is None: the counter advances immediately."><span class="dim"># fail-first — the parked track, caught red (real boot, deliverable IRQ0)</span>
+before   pending_ch0_track_cycle == <span class="bad">Some(1000)</span>   — parked for an HLE commit that never comes
+after    pending_ch0_track_cycle == <span class="ok">None</span>         — the 8254 advances immediately</div>
+
+<p>Nine focused channel-0 regressions pin the behaviour
+(<code>test_on_pit_channel0_event_real_boot_never_defers_hle_counter_track</code> among
+them). A real 8254 decrements on every input clock no matter who handles the interrupt;
+there is no “defer until the BIOS looks at me” mode on any board ever soldered.</p>
+
+<h2>Fix 3 — the silent status bit</h2>
+
+<p>The third correction lives on the wires, and <a href="wires.html">chapter&nbsp;3</a>
+owns its mechanism; here is its shape. A real PIIX3 IDE controller latches its
+per-channel BMISTA Interrupt status bit the moment the drive raises INTRQ — during DMA
+or not. mddosem raised IRQ14 with BMISTA reading zero (and the secondary channel’s
+status register hardwired to zero), so a PCI IDE interrupt handler could look down at
+the controller, see “no channel interrupt”, and dismiss its own IRQ as not-mine. The fix
+latches the bit at assertion time — independent review proved that latching at the end
+of the scheduling quantum was still too late, because the guest can execute another I/O
+instruction in the same batch and observe stale status; the latch must be visible before
+the I/O instruction returns. Landed 16 July at 01:09 (e0e9fe9a5), with 5,544
+<code>mddosem-hw</code> tests green.</p>
+
+<h2>Fix 4 — the four-megabyte page</h2>
+
+<p>The last fix needs three pieces of background, each brief. First, paging: a 386-class
+processor translates addresses through two levels of tables. <span class="addr">CR3</span>
+points at a page directory; the top ten bits of a linear address select a page-directory
+entry (PDE), which points at a page table; the next ten bits select a page-table entry,
+which names a 4&nbsp;KiB page. Second, PSE: later processors added page-size extension —
+set the PS bit in a PDE (with CR4.PSE enabled) and there is no second level at all; that
+one entry <em>is</em> a 4&nbsp;MiB page. Windows&nbsp;2000 maps its kernel — and with it
+the TSS — through exactly one such page. Third, the I/O-permission bitmap: when the HAL
+needs the VGA BIOS (a real-mode citizen) it runs it in V86 mode, and every port
+instruction executed in V86 mode is checked against a bitmap held in the TSS — one bit
+per port, fetched by the CPU itself mid-instruction. The interpreter performs that fetch
+with a hand-rolled supervisor page walk (<code>iopm_walk_supervisor</code>), because it
+cannot take the ordinary fault path halfway through a permission check.</p>
+
+<p>That hand-rolled walker checked the PDE’s Present bit — and ignored PS. Confronted
+with W2K’s kernel mapping, a PDE whose live value was
+<span class="addr">0xE3</span> (Present, writable, PS=1), it treated the 4&nbsp;MiB
+page’s base address as a page-table pointer, fetched a “PTE” from whatever bytes
+happened to live inside the mapped frame, read it as not-present, and folded to “port
+denied”. The port in question, <span class="addr">0x402</span>, was one the guest’s
+bitmap explicitly allows (io_map_base <span class="addr">0x88</span>, bitmap byte 0x00,
+TSS limit <span class="addr">0x20AB</span>). The result was a spurious #GP(0) on the
+HAL’s own V86 <code>OUT</code> — and the Standard PC HAL’s V86 monitor handles
+INT-reflection only; anything else it treats as impossible and asserts. Bluescreen:
+<strong>STOP 0x1E KMODE_EXCEPTION_NOT_HANDLED</strong>. One ignored bit, in one implicit
+walk, ends the boot.</p>
+
+<p>The fix is a single masked OR, mirroring what the real translator had done all along:
+if CR4.PSE and the PDE’s PS bit are set, <code>physical = (pde &amp; 0xFFC0_0000) |
+(linear &amp; 0x003F_FFFF)</code> — walk over. The bug had sat latent for years because
+DOS extenders map everything with 4&nbsp;KiB pages; Windows&nbsp;2000’s large kernel page
+was the first workload in the emulator’s life to send the IOPM walker through a PSE
+mapping.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE PAGE WALK — ONE BIT, TWO WORLDS</span>
+    <span class="hint">⏮ ⏭ step · ← → keys · toggle the walker</span>
+  </div>
+  <div class="fig-body">
+    <div class="stage" id="pw-stage" role="img" aria-label="Page-walk diagram. From CR3 to the page directory, whose highlighted entry reads 0xE3 with Present and PS set — a four-megabyte page. The upper route shows the buggy walk with PSE ignored: the entry is treated as a page-table pointer, a garbage not-present PTE is fetched from inside the mapped frame, port 0x402 is denied, a spurious general-protection fault fires on the HAL's V86 OUT, the INT-only monitor asserts, and the machine stops with STOP 0x1E. The lower route shows the corrected walk with PSE honoured: the walk stops at the PDE, the physical address is the PDE's top ten bits combined with the linear address's low twenty-two bits, landing inside the single four-megabyte frame holding the TSS and I/O-permission bitmap, whose byte for port 0x402 is zero — so the OUT instruction is permitted and the monitor never fires.">
+      <svg class="pw" viewBox="0 0 960 430" style="min-width:760px" aria-hidden="true">
+        <!-- CR3 -->
+        <g id="pw-cr3">
+          <rect class="bx" x="20" y="185" width="120" height="64" rx="5"/>
+          <text class="ttl" x="32" y="207">CR3</text>
+          <text class="sm" x="32" y="224">page-directory</text>
+          <text class="sm" x="32" y="236">base register</text>
+        </g>
+        <!-- CR3 -> PD -->
+        <g id="pw-a1">
+          <path class="wire" d="M140,217 L188,217"/>
+          <polygon class="ah" points="186,211 196,217 186,223"/>
+        </g>
+        <!-- page directory -->
+        <g id="pw-pd">
+          <rect class="bx" x="200" y="120" width="200" height="190" rx="5"/>
+          <text class="ttl" x="212" y="140">PAGE DIRECTORY</text>
+          <text class="sm" x="212" y="156">indexed by linear bits 31:22</text>
+          <rect class="inner" x="210" y="166" width="180" height="10" rx="2"/>
+          <rect class="pde" x="210" y="186" width="180" height="56" rx="3"/>
+          <text class="em" x="222" y="206">PDE = 0xE3</text>
+          <text class="sm" x="222" y="220">P=1 · PS=1 — this entry</text>
+          <text class="sm" x="222" y="232">IS a 4 MiB page</text>
+          <rect class="inner" x="210" y="254" width="180" height="10" rx="2"/>
+          <rect class="inner" x="210" y="272" width="180" height="10" rx="2"/>
+        </g>
+        <!-- bug route: PDE -> phantom PT -->
+        <g id="pw-abug1">
+          <path class="wire" d="M400,209 L432,209 L432,80 L460,80"/>
+          <polygon class="ah" points="458,74 468,80 458,86"/>
+        </g>
+        <g id="pw-pt">
+          <rect class="bx" x="470" y="40" width="180" height="80" rx="5"/>
+          <text class="ttl" x="482" y="60">PAGE TABLE?</text>
+          <text class="sm" x="482" y="76">the 4 MiB frame’s base,</text>
+          <text class="sm" x="482" y="88">misread as a PT pointer</text>
+          <text class="em" x="482" y="108">→ garbage PTE · not present</text>
+          <text class="sm" x="470" y="140">(a genuine 4 KiB walk goes PD → PT → page —</text>
+          <text class="sm" x="470" y="152">right for DOS extenders; wrong when PS=1)</text>
+        </g>
+        <!-- bug route: PT -> deny -->
+        <g id="pw-abug2">
+          <path class="wire" d="M650,80 L692,80"/>
+          <polygon class="ah" points="690,74 700,80 690,86"/>
+        </g>
+        <g id="pw-deny">
+          <rect class="bx" x="700" y="28" width="240" height="112" rx="5"/>
+          <text class="em" x="712" y="50">port 0x402 denied</text>
+          <text class="sm" x="712" y="68">spurious #GP(0) on the HAL’s V86 OUT</text>
+          <text class="sm" x="712" y="82">the INT-only monitor int3-asserts</text>
+          <text class="em" x="712" y="106">STOP 0x1E KMODE_</text>
+          <text class="em" x="712" y="122">EXCEPTION_NOT_HANDLED</text>
+        </g>
+        <!-- fix route: PDE -> 4 MiB frame -->
+        <g id="pw-afix1">
+          <path class="wire" d="M400,227 L432,227 L432,300 L460,300"/>
+          <polygon class="ah" points="458,294 468,300 458,306"/>
+        </g>
+        <g id="pw-frame">
+          <rect class="bx" x="470" y="250" width="270" height="140" rx="5"/>
+          <text class="ttl" x="482" y="270">ONE 4 MiB FRAME</text>
+        </g>
+        <g id="pw-tss">
+          <rect class="inner" x="482" y="280" width="246" height="38" rx="3"/>
+          <text class="em" x="492" y="297">TSS</text>
+          <text class="sm" x="530" y="297">io_map_base 0x88 · limit 0x20AB</text>
+        </g>
+        <g id="pw-iopm">
+          <rect class="inner" x="482" y="326" width="246" height="52" rx="3"/>
+          <text class="em" x="492" y="346">IOPM byte for port 0x402 = 0x00</text>
+          <text class="sm" x="492" y="362">every bit clear — port permitted</text>
+        </g>
+        <g id="pw-formula">
+          <text class="frm" x="470" y="414">physical = (pde &amp; 0xFFC0_0000) | (linear &amp; 0x003F_FFFF)</text>
+        </g>
+        <!-- fix route: frame -> allowed -->
+        <g id="pw-afix2">
+          <path class="wire" d="M740,320 L782,320"/>
+          <polygon class="ah" points="780,314 790,320 780,326"/>
+        </g>
+        <g id="pw-allow">
+          <rect class="bx" x="790" y="278" width="150" height="84" rx="5"/>
+          <text class="em" x="800" y="300">OUT retires</text>
+          <text class="sm" x="800" y="316">port I/O permitted</text>
+          <text class="sm" x="800" y="330">the monitor never</text>
+          <text class="sm" x="800" y="342">hears a thing</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+  <div class="evlog" id="pw-log"></div>
+  <div class="fig-controls">
+    <div class="seg" id="pw-mode" role="group" aria-label="Walker behaviour">
+      <button data-v="bug" aria-pressed="true">PSE ignored (bug)</button>
+      <button data-v="fix" aria-pressed="false">PSE honoured (fix)</button>
+    </div>
+    <button class="btn" id="pw-prev">◀ back</button>
+    <button class="btn primary" id="pw-next">step ▶</button>
+    <span class="ctl"><output id="pw-out"></output></span>
+  </div>
+  <div class="fig-note">PDE value 0xE3, io_map_base 0x88, TSS limit 0x20AB and the
+  port-0x402 fault chain from the live diagnosis; the fix mirrors the real translator
+  (<code>translate_paging_checked</code>). Landed 13 July (Claude, HUM lineage) and
+  independently re-derived 19 July 03:05 (Codex, fe28f3aa0) — 22 minutes before
+  acceptance.</div>
+</figure>
+
+<aside class="aside">
+  <span class="tag">THE PORT 0x402 SUB-PLOT</span>
+  <p>The port being probed was the Bochs debug console — a port that exists on no real
+  board. The 13 July commit also made it read as open bus, <code>0xFF</code>, by default (matching
+  real hardware and QEMU’s stock pc machine) instead of the <code>0xE9</code> sentinel that
+  advertises the debug console, which is now presented only during debug-capture
+  sessions. So a booting firmware never enables its debug writes in the first place — and
+  when it legitimately does, the IOPM walk now tells the truth about it. Two corrections,
+  both toward the silicon.</p>
+</aside>
+
+<aside class="aside good">
+  <span class="tag">LANDED TWICE</span>
+  <p>The PSE fix has the distinction of being found twice. Claude landed it on the HUM
+  lineage on 13 July — 51 minutes after the bus-master IDE commit, in the same overnight
+  session — where it took Windows&nbsp;2000 from a frozen splash to its first honest
+  bluescreen. The endgame branch had diverged before that commit was shared, and in the
+  small hours of 19 July Codex re-derived the identical one-line fix independently
+  (fe28f3aa0), adding an end-to-end regression driving a real <code>OUT DX,AX</code>
+  through a PSE-mapped bitmap. Two model families, six days apart, one line of
+  arithmetic — which is roughly what “hardware truth” ought to look like.</p>
+</aside>
+
+<h2>Necessary, not sufficient</h2>
+
+<p>The fixes did not land into applause; they landed into walls. Fix&nbsp;1 went in at
+23:04 on 15 July; capture&nbsp;08b, running a release binary carrying it, hit the
+identical black terminal state — setup flipping from resident to fully out-swapped
+between one watcher sample and the next. Fix&nbsp;2 went in at 23:30; capture&nbsp;09,
+on a binary that identified itself as 26915729b, walled the same way — while proving,
+via 2,789 protected-mode stack transitions in a 150-second “zero-runnable” window, that
+the machine was awake the whole time (<a href="forensics.html">chapter&nbsp;4</a>).
+Fix&nbsp;3 went in at 01:09; capture&nbsp;11 walled again. Three fixes, each provably
+real, each apparently insufficient — a drumbeat that would demoralise any lab.</p>
+
+<p>Then <a href="dialog.html">chapter&nbsp;5</a> happened, and the drumbeat was recast:
+captures 03 through 19 had been running with no CD in the drive. Those retests were never
+going to finish setup, however correct the CPU became — Windows was standing at an
+invisible dialog, politely asking for media the harness had removed. So the “failed
+retests” decided nothing about sufficiency. What stands is this: the fixes
+carry fail-first red witnesses or review-proven latch timing, refusing to pass on the old
+code; and the clean
+end-to-end install — media in, key in, all four corrections in the binary — exercised
+every one of them. The acceptance record credits exactly these four, none sufficient
+alone. There was no single ribbon-cutting bug at the bottom of Windows&nbsp;2000; there
+was a machine that had to be right in four unrelated places at once.</p>
+
+<p>Which is, in the end, the argument of the whole project: emulate the hardware, not
+the guest. Not one of the four fixes mentions Windows. An interrupt shadow honoured to
+the instruction, a timer that counts whether or not anyone is watching, a status bit
+latched the moment the wire rises, a page walk that believes the PS bit — every one is a
+statement about silicon, checkable against datasheets and rival emulators, useful to
+every future guest. Windows&nbsp;2000 was simply the first tenant demanding enough to
+notice. What happened when the last of the four landed — the final night, minute by
+minute — is <a href="desktop.html">chapter&nbsp;7</a>.</p>
+
+<p class="srcline">Sources for this chapter — the four corrections as credited by the
+acceptance record (399d34b3b, 26915729b, e0e9fe9a5, fe28f3aa0) and their commit
+messages; the goal journal (wrk_journals, 2026.07.15) for the red witnesses and capture
+verdicts; bug ledger MDD-BUG-KILN-00004. Full evidence table:
+<a href="desktop.html#evidence">how we know</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="dialog.html"><span class="dir">◀ previous</span>5 · The Invisible Dialog</a>
+  <a class="next" href="desktop.html"><span class="dir">next ▶</span>7 · Boot to Desktop</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W = window.W2K, D = window.W2K_DATA;
+  if (!W) return;
+  function $(id) { return document.getElementById(id); }
+
+  /* ============================================================
+     the fixgrid — rendered from W2K_DATA.fixes (flag panes)
+     ============================================================ */
+  var grid = $("fixgrid");
+  if (grid && D && D.fixes) {
+    var frag = document.createDocumentFragment();
+    D.fixes.forEach(function (f) {
+      var el = document.createElement("article");
+      el.className = "fixcard fix-" + f.n;
+      el.innerHTML =
+        '<div class="fnum">FIX ' + f.n + " · " + String(f.pane || "").toUpperCase() +
+        " PANE · " + f.when + "</div>" +
+        '<div class="fname">' + f.name + "</div>" +
+        '<div class="fdesc">' + f.what + "</div>" +
+        '<div class="fdesc ffix"><strong>The fix</strong> — ' + f.fix + "</div>" +
+        '<div class="fsha">' + f.sha + " · " + f.tests + "</div>";
+      frag.appendChild(el);
+    });
+    grid.appendChild(frag);
+  }
+
+  /* ============================================================
+     FIG 1 · the shadow stepper
+     Red witnesses from commit 399d34b3b: STI; DEC ECX; CLI retired
+     3 not 2; POPFD; CLI retired the whole 16-instruction grant.
+     ============================================================ */
+  (function () {
+    var stage = $("shadow-stage");
+    if (!stage) return;
+    var lamp = $("shadow-lamp"), lampText = $("shadow-lamptext"),
+        ifchip = $("shadow-if"), log = $("shadow-log");
+    var mode = "bug", lastIdx = 0;
+
+    /* step schema: cap (evlog HTML), ifv, lamp [cls,text],
+       cells {id: "done"|"act"}, bounds {id: [cls,label]} */
+    var SH = {
+      bug: [
+        { cap: '<span class="t">reset</span> a disk completion is latched in the 8259 — IF=0 from an earlier CLI; the interpreter opens a 16-instruction grant',
+          ifv: "IF=0", lamp: ["pending", "IRQ14 completion — latched, undelivered"], cells: {}, bounds: {} },
+        { cap: '<span class="t">STI</span> retires — IF←1, but the one-instruction shadow defers recognition past the next instruction',
+          ifv: "IF=1 · shadow", lamp: ["pending", "IRQ14 completion — latched, undelivered"], cells: { sa0: "act" }, bounds: {} },
+        { cap: '<span class="t">DEC ECX</span> retires — the shadow expires: the boundary after this instruction is the one legal recognition point. The batch rolls on without polling.',
+          ifv: "IF=1", lamp: ["pending", "IRQ14 completion — latched, undelivered"], cells: { sa0: "done", sa1: "act" }, bounds: { sab2: ["window", "the legal window"] } },
+        { cap: '<span class="t">CLI</span> retires — IF←0. The window closed with nobody looking.',
+          ifv: "IF=0", lamp: ["pending", "IRQ14 completion — still latched"], cells: { sa0: "done", sa1: "done", sa2: "act" }, bounds: { sab2: ["missed", "missed"] } },
+        { cap: '<span class="t">grant ends</span> the emulator polls only now — IF=0, nothing deliverable. Three instructions retired; silicon delivers after two.',
+          ifv: "IF=0", lamp: ["lost", "stranded — a lost wake-up"], cells: { sa0: "done", sa1: "done", sa2: "done" }, bounds: { sab2: ["missed", "missed"] } },
+        { cap: '<span class="t">the other shape</span> POPFD restores IF=1 — and POPF has NO shadow: recognition is legal immediately at the next boundary',
+          ifv: "IF=1", lamp: ["pending", "next completion — latched, undelivered"], cells: { sb0: "act" }, bounds: { sbb1: ["window", "legal now"] } },
+        { cap: '<span class="t">CLI</span> the grant kept batching — all 16 retired, the window shut instantly. This is NT’s PUSHFD; CLI; …; POPFD critical-section exit.',
+          ifv: "IF=0", lamp: ["lost", "stranded again"], cells: { sb0: "done", sb1: "act" }, bounds: { sbb1: ["missed", "missed"] } }
+      ],
+      fix: [
+        { cap: '<span class="t">reset</span> same setup: a latched completion, IF=0, a fresh grant',
+          ifv: "IF=0", lamp: ["pending", "IRQ14 completion — latched, undelivered"], cells: {}, bounds: {} },
+        { cap: '<span class="t">STI</span> retires — and the run stops: <code>RunResult::InterruptPollBoundary</code>. The scheduler now owns exactly one protected successor.',
+          ifv: "IF=1 · shadow", lamp: ["pending", "IRQ14 completion — latched, undelivered"], cells: { sa0: "act" }, bounds: {} },
+        { cap: '<span class="t">DEC ECX</span> runs under a budget of exactly one instruction — the shadow honoured once, never twice',
+          ifv: "IF=1", lamp: ["pending", "IRQ14 completion — latched, undelivered"], cells: { sa0: "done", sa1: "act" }, bounds: {} },
+        { cap: '<span class="t">boundary</span> the shared predicate <code>pending_interrupt_delivery_ready()</code> answers yes — the latched edge is delivered before CLI can run',
+          ifv: "IF=1 → entry", lamp: ["ok", "delivered"], cells: { sa0: "done", sa1: "done" }, bounds: { sab2: ["hit", "IRQ delivered"] } },
+        { cap: '<span class="t">ISR</span> the completion handler runs; the CLI is still there, waiting its turn — the schedule real silicon keeps',
+          ifv: "IF=0 · in ISR", lamp: ["ok", "delivered"], cells: { sa0: "done", sa1: "done", saI: "act" }, bounds: { sab2: ["hit", "IRQ delivered"] } },
+        { cap: '<span class="t">POPFD</span> IF 0→1 returns a poll boundary at once — zero protected successors',
+          ifv: "IF=1", lamp: ["pending", "next completion — latched, undelivered"], cells: { sb0: "act" }, bounds: { sbb1: ["window", "legal now"] } },
+        { cap: '<span class="t">delivered</span> the IRQ lands before the CLI. Two shapes, one rule: recognition at every boundary, delayed by at most one instruction.',
+          ifv: "IF=0 · in ISR", lamp: ["ok", "delivered"], cells: { sb0: "done", sbI: "act" }, bounds: { sbb1: ["hit", "IRQ delivered"] } }
+      ]
+    };
+
+    var CELLS = ["sa0", "sa1", "sa2", "saI", "sb0", "sb1", "sbI"];
+    var BOUNDS = ["sab1", "sab2", "sab3", "sbb1", "sbb2"];
+
+    function applyShadow(i) {
+      lastIdx = i;
+      var s = SH[mode][i];
+      if (!s) return;
+      CELLS.forEach(function (id) {
+        var el = $(id);
+        if (!el) return;
+        var base = (id === "saI" || id === "sbI") ? "tcell isr" : "tcell";
+        var extra = s.cells[id];
+        el.className = extra ? base + " " + extra : base;
+      });
+      BOUNDS.forEach(function (id) {
+        var el = $(id);
+        if (!el) return;
+        var b = s.bounds[id];
+        el.className = b ? "tbound " + b[0] : "tbound";
+        var bl = el.querySelector(".bl");
+        if (bl) bl.textContent = b ? b[1] : "";
+      });
+      if (lamp) lamp.className = "lamp " + s.lamp[0];
+      if (lampText) lampText.textContent = s.lamp[1];
+      if (ifchip) ifchip.textContent = s.ifv;
+      if (log) log.innerHTML = s.cap;
+    }
+
+    W.makeStepper({
+      prev: "shadow-prev", next: "shadow-next", out: "shadow-out",
+      stage: "shadow-stage",
+      steps: ["", "", "", "", "", "", ""],
+      apply: function (i) { applyShadow(i); }
+    });
+
+    W.bindSeg("shadow-mode", function (v) {
+      mode = v === "fix" ? "fix" : "bug";
+      applyShadow(lastIdx);
+    });
+
+    /* reduced motion: no animation here — the stepper is manual; CSS
+       already suppresses transitions. Nothing further to hide. */
+  })();
+
+  /* ============================================================
+     FIG 2 · the page walk (Fix 4 — CR4.PSE in the IOPM walk)
+     PDE 0xE3; io_map_base 0x88; TSS limit 0x20AB; port 0x402;
+     physical = (pde & 0xFFC0_0000) | (linear & 0x003F_FFFF).
+     ============================================================ */
+  (function () {
+    var stage = $("pw-stage");
+    if (!stage) return;
+    var log = $("pw-log");
+    var mode = "bug", lastIdx = 0;
+
+    var CAPS = {
+      bug: [
+        '<span class="t">the setting</span> a V86 VGA BIOS call — every port instruction must pass the TSS I/O-permission bitmap, and the interpreter translates the bitmap’s address by hand',
+        '<span class="t">CR3 → PD</span> linear bits 31:22 index the page directory. The entry reads 0xE3: Present — and PS=1. This entry IS the page.',
+        '<span class="t">PSE ignored</span> the walker treats the 4 MiB page’s base as a page-table pointer and fetches a “PTE” from whatever lives inside the mapped frame',
+        '<span class="t">garbage</span> the phantom PTE reads not-present; the walk folds to “port denied” — though the guest’s IOPM allows port 0x402 (byte 0x00, limit 0x20AB)',
+        '<span class="t">#GP(0)</span> a spurious fault on the HAL’s V86 <code>OUT</code> — and the INT-only V86 monitor asserts on any non-INT trap',
+        '<span class="t">STOP 0x1E</span> KMODE_EXCEPTION_NOT_HANDLED (STATUS_BREAKPOINT). One ignored bit; one bluescreen.'
+      ],
+      fix: [
+        '<span class="t">the setting</span> a V86 VGA BIOS call — every port instruction must pass the TSS I/O-permission bitmap, and the interpreter translates the bitmap’s address by hand',
+        '<span class="t">CR3 → PD</span> linear bits 31:22 index the page directory. The entry reads 0xE3: Present — and PS=1. This entry IS the page.',
+        '<span class="t">PSE honoured</span> the walk stops at the PDE: physical = (pde &amp; 0xFFC0_0000) | (linear &amp; 0x003F_FFFF) — the low 22 bits carry straight through',
+        '<span class="t">the fetch</span> the IOPM byte for port 0x402 comes straight out of the 4 MiB frame — io_map_base 0x88, byte 0x00: every bit clear, port permitted',
+        '<span class="t">OUT retires</span> the port I/O is permitted; the HAL’s monitor never hears a thing',
+        '<span class="t">the mirror</span> the same masked OR already lived in the real translator — the hand-rolled IOPM walk had simply never been taught it'
+      ]
+    };
+
+    var PW = ["pw-cr3", "pw-a1", "pw-pd", "pw-abug1", "pw-pt", "pw-abug2",
+              "pw-deny", "pw-afix1", "pw-frame", "pw-tss", "pw-iopm",
+              "pw-formula", "pw-afix2", "pw-allow"];
+
+    function applyPw(i) {
+      lastIdx = i;
+      var m = { "pw-cr3": "on" };
+      if (i >= 1) { m["pw-a1"] = "on"; m["pw-pd"] = "on"; }
+      if (mode === "bug") {
+        if (i >= 2) { m["pw-abug1"] = "on bad"; m["pw-pt"] = "on bad"; }
+        if (i >= 4) { m["pw-abug2"] = "on bad"; m["pw-deny"] = "on bad"; }
+      } else {
+        if (i >= 2) { m["pw-afix1"] = "on ok"; m["pw-frame"] = "on ok"; m["pw-formula"] = "on"; }
+        if (i >= 3) { m["pw-tss"] = "on"; m["pw-iopm"] = "on ok"; }
+        if (i >= 4) { m["pw-afix2"] = "on ok"; m["pw-allow"] = "on ok"; }
+      }
+      PW.forEach(function (id) {
+        var el = $(id);
+        if (el) el.setAttribute("class", m[id] || "");
+      });
+      var cap = CAPS[mode][i];
+      if (log && cap) log.innerHTML = cap;
+    }
+
+    W.makeStepper({
+      prev: "pw-prev", next: "pw-next", out: "pw-out",
+      stage: "pw-stage",
+      steps: ["", "", "", "", "", ""],
+      apply: function (i) { applyPw(i); }
+    });
+
+    W.bindSeg("pw-mode", function (v) {
+      mode = v === "fix" ? "fix" : "bug";
+      applyPw(lastIdx);
+    });
+  })();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

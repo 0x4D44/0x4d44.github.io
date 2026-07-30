@@ -5,6 +5,9 @@
 // even without a connection.
 
 const VERSION = 'quixo-v1';
+// Cache Storage is per-origin — scope cleanup to this app's own keys so activating
+// this SW never wipes sibling almanac PWAs' offline caches.
+const PREFIX = 'quixo-';
 const SHELL = [
   './',
   './index.html',
@@ -24,7 +27,7 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then(keys => Promise.all(
-      keys.filter(k => k !== VERSION).map(k => caches.delete(k))
+      keys.filter(k => k.startsWith(PREFIX) && k !== VERSION).map(k => caches.delete(k))
     ))
   );
   self.clients.claim();

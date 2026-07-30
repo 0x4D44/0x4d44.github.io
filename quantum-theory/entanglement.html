@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Measurement &amp; Entanglement — Quanta</title>
+<meta name="description" content="The measurement problem, density matrices, EPR and Bell's theorem with a live CHSH experiment, decoherence, no-cloning, and an honest tour of the interpretations of quantum mechanics.">
+<link rel="stylesheet" href="quantum.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">QUANTA</a></div>
+    <div class="strap">a technical almanac of quantum theory</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="origins.html">1 · The Crisis</a>
+    <a href="machinery.html">2 · The Machinery</a>
+    <a href="wavefunction.html">3 · Wavefunctions</a>
+    <a href="spin.html">4 · Spin &amp; Identity</a>
+    <a href="entanglement.html" aria-current="page">5 · Entanglement</a>
+    <a href="fields.html">6 · Fields &amp; Light</a>
+    <a href="quantum-dots.html">7 · Quantum Dots</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 5</p>
+  <h1>Measurement &amp; Entanglement</h1>
+  <p class="standfirst">Here the theory turns and looks at itself. Its dynamics are
+  smooth, deterministic and linear; its measurements are abrupt, random and unique.
+  Its states for two particles can encode correlations that no story of pre-existing
+  local facts can reproduce — a claim that stopped being philosophy in 1964 and became
+  an experiment, run in this chapter, live. This is where quantum mechanics is
+  strangest, and where it has been tested hardest.</p>
+</section>
+
+<div class="prose">
+
+<h2 id="problem"><span class="no">5.1</span>The seam in the theory</h2>
+
+<p>Chapter&nbsp;2 left a seam showing. Postulate&nbsp;V says states evolve unitarily —
+smoothly, reversibly, superpositions preserved. Postulate&nbsp;IV says that when a
+measurement happens the state jumps, once, irreversibly, to a single outcome. But a
+measuring device is itself a swarm of atoms obeying Postulate&nbsp;V; run the unitary
+rules on system-plus-apparatus and you get no jump at all — only an apparatus
+steered into superposition along with the system it measured:
+&ldquo;pointer left&rdquo;&thinsp;+&thinsp;&ldquo;pointer right&rdquo;. Where, then, is the line past which
+one outcome becomes <em>the</em> outcome? This is the <strong>measurement problem</strong>,
+and it is not a student's confusion: it is an open structural question about which
+serious physicists still disagree (§5.7).</p>
+
+<p>Schrödinger dramatised the seam in 1935 with his notorious cat — sealed with a
+radioactive trigger so that the unitary rules, applied all the way up, produce a
+superposition of dead-and-alive. His point, usually mangled: not that cats
+<em>are</em> half-dead — he called the case &ldquo;ridiculous&rdquo; — but that the formalism,
+unamended, refuses to stop the superposition anywhere on the way from atom to cat.
+The same 1935 paper coined the word for this chapter's real subject:
+<i>Verschränkung</i> — <strong>entanglement</strong> — which Schrödinger judged
+&ldquo;<em>the</em> characteristic trait of quantum mechanics, the one that enforces its
+entire departure from classical lines of thought.&rdquo;</p>
+
+<h2 id="density"><span class="no">5.2</span>&ldquo;Both at once&rdquo; is not &ldquo;one but I forgot which&rdquo;</h2>
+
+<p>Before the strangeness, one distinction you must have, because everything hinges on
+it. Compare two situations:</p>
+<ul>
+  <li>A qubit <strong>genuinely in</strong> the superposition (|0⟩+|1⟩)/√2 — really both, at
+  once.</li>
+  <li>A qubit that is secretly <strong>either</strong> |0⟩ <strong>or</strong> |1⟩, a coin already
+  landed, you just haven't looked — a <strong>mixture</strong>.</li>
+</ul>
+<p>Ask the straight &ldquo;0 or 1?&rdquo; question and they're identical: 50/50 either way.
+They part company the instant you ask a <em>sideways</em> question. The true
+superposition still interferes — those relative phases are real and do things; the
+mixture is just a tossed coin and interferes with nothing. Superposition is emphatically
+<strong>not</strong> ignorance of a hidden fact. Keep that blade sharp: half the confusion about
+quantum mechanics is mixing these two up, and the rest of this chapter depends on
+telling them apart.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the density matrix, coherences, partial trace</span></summary>
+  <p>The tool that makes the distinction exact is the <strong>density matrix</strong>
+  ρ&nbsp;=&nbsp;Σ<sub>k</sub><i>p</i><sub>k</sub>|ψ<sub>k</sub>⟩⟨ψ<sub>k</sub>|. Superposition versus
+  mixture lives entirely in its off-diagonal entries, the <strong>coherences</strong>:</p>
+  <p class="eq"><span class="m">ρ<sub>super</sub> = ½
+  <span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;1<br>1&nbsp;&nbsp;1</span><span class="up">)</span>
+  &emsp;<span class="up">vs</span>&emsp;
+  ρ<sub>mixture</sub> = ½
+  <span class="up">(</span><span style="display:inline-block;text-align:center;vertical-align:middle;line-height:1.2">1&nbsp;&nbsp;0<br>0&nbsp;&nbsp;1</span><span class="up">)</span></span></p>
+  <p>Same diagonal (same 50/50 odds), different off-diagonal (the left interferes, the
+  right doesn't). Two facts earn their keep below: a subsystem of an entangled pair,
+  described on its own (via the <strong>partial trace</strong>), is a <em>mixture</em> — all
+  correlation, no local content of its own; and &ldquo;losing coherence to the
+  environment&rdquo; means precisely that those off-diagonals decay to zero. That is
+  decoherence (§5.6).</p>
+</details>
+
+<h2 id="epr"><span class="no">5.3</span>EPR: Einstein's best shot</h2>
+
+<p>Einstein's discomfort, honed for years after Solvay, landed in May 1935 as the
+Einstein–Podolsky–Rosen paper. In Bohm's sharper spin version: prepare two
+electrons in the singlet state of Chapter&nbsp;4,</p>
+
+<p class="eq"><span class="m">|Ψ⁻⟩ = (|↑↓⟩ − |↓↑⟩)/√2</span>
+<span class="eqno">THE SINGLET</span></p>
+
+<p>and fly them to laboratories a light-hour apart. Measure either spin along
+<em>any</em> axis: the results are perfectly anticorrelated, always. Now, says
+Einstein: measuring particle&nbsp;1 cannot physically disturb distant particle&nbsp;2
+(<strong>locality</strong>). Yet by choosing my axis at station&nbsp;1, I can predict with
+certainty either the <i>z</i>-spin or the <i>x</i>-spin of particle&nbsp;2 without touching
+it. Anything predictable-with-certainty without disturbance must correspond to
+something real already at particle&nbsp;2 — an &ldquo;element of reality&rdquo;. But quantum
+mechanics says no state carries definite <i>z</i>-spin and <i>x</i>-spin at once
+(§4.2). Therefore, EPR concluded, the quantum description is
+<em>incomplete</em> — there must be deeper variables the theory omits, and the spooky
+correlations (&ldquo;<i>spukhafte Fernwirkung</i>&rdquo;) are no spookier than finding one
+glove in each of two parcels: determined at the source, revealed at the bench.</p>
+
+<p>It is a beautiful argument, and for thirty years it read like untestable
+metaphysics: hidden determinism versus irreducible chance, matter of taste. The
+plot twist is that it is testable — the gloves picture makes a <em>quantitative</em>
+commitment, and the quantum singlet breaks it.</p>
+
+<h2 id="bell"><span class="no">5.4</span>Bell's theorem: the universe takes sides</h2>
+
+<p>John Bell's 1964 insight: any theory of the EPR type — outcomes fixed by local
+variables λ carried from the source, each station's result depending only on its
+own setting and λ — obeys strict bounds on how strongly the two stations'
+statistics can correlate <em>across several setting choices at once</em>. In the CHSH
+form (Clauser–Horne–Shimony–Holt, 1969): each station picks between two analyser
+angles (<i>a</i> or <i>a′</i> here; <i>b</i> or <i>b′</i> there); outcomes are ±1;
+<i>E</i> denotes the average product. Local realism demands, for <em>every</em> such
+theory,</p>
+
+<p class="eq"><span class="m"><i>S</i> = <i>E</i>(<i>a</i>,<i>b</i>) + <i>E</i>(<i>a′</i>,<i>b</i>) +
+<i>E</i>(<i>a′</i>,<i>b′</i>) − <i>E</i>(<i>a</i>,<i>b′</i>)&emsp;
+|<i>S</i>| ≤ 2</span>
+<span class="eqno">CHSH BOUND</span></p>
+
+<p>Quantum mechanics flatly disagrees. For entangled photons it predicts stronger
+correlations, and at four cannily chosen angles they stack up to</p>
+
+<p class="eq"><span class="m"><i>S</i><sub>QM</sub> = 2√2 ≈ 2.828</span>
+<span class="eqno">MORE THAN LOCAL REALISM ALLOWS</span></p>
+
+<p>2.828 is bigger than 2. So this isn't a philosopher's paradox with no resolution —
+it's a <strong>fork in the road you can settle by counting</strong>. Either the world obeys
+Bell's ≤&nbsp;2 (Einstein wins: hidden pre-set values) or it reaches 2√2 (quantum
+mechanics wins: no such values exist). Run the experiment below and watch which way
+the universe actually votes.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the two-line CHSH proof, and cos 2θ</span></summary>
+  <p>For a fixed hidden variable λ, each station's two possible outcomes are ±1. Then
+  <i>B</i>&nbsp;+&nbsp;<i>B′</i> and <i>B</i>&nbsp;−&nbsp;<i>B′</i> are ±2 and 0 in some order, so
+  <i>A</i>(<i>B</i>+<i>B′</i>)&nbsp;+&nbsp;<i>A′</i>(<i>B</i>−<i>B′</i>)&nbsp;=&nbsp;±2 always; averaging over λ
+  can't exceed what every single case already respects, giving |<i>S</i>|&nbsp;≤&nbsp;2.
+  Quantum mechanics instead gives <i>E</i>&nbsp;=&nbsp;cos&thinsp;2(<i>a</i>−<i>b</i>) for the
+  correlation between analyser angles <i>a</i> and <i>b</i>; feed in
+  0°, 45°, 22.5°, 67.5° and the four terms sum to 2√2 — Tsirelson's maximum, the most
+  any quantum state can manage.</p>
+</details>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The Bell bench — CHSH, live</span>
+    <span class="hint">run pairs; the classical wall is at S = 2. Then switch the source and see a local world fail to keep up</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="fig-bell" style="aspect-ratio: 2.4 / 1; min-height: 300px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label>source</label>
+      <span class="seg" id="bell-src">
+        <button data-v="q" class="on">entangled photons</button>
+        <button data-v="c">local hidden variables</button>
+      </span>
+    </div>
+    <div class="ctl"><button class="btn primary" id="bell-run">run 1,000 pairs</button></div>
+    <div class="ctl"><button class="btn" id="bell-run10">run 10,000</button></div>
+    <div class="ctl"><button class="btn" id="bell-clr">clear</button></div>
+  </div>
+  <div class="readouts">
+    <span class="ro">pairs <b id="bell-n">0</b></span>
+    <span class="ro">S <b id="bell-s">—</b></span>
+    <span class="ro" id="bell-verdict" style="color:var(--ink-2)">Angles fixed at the optimum: a=0°, a′=45°, b=22.5°, b′=67.5°. Each pair, both stations pick a setting at random.</span>
+  </div>
+</figure>
+
+<div class="prose">
+
+<p class="tryit">With &ldquo;entangled photons&rdquo; selected, hit <b>run 10,000</b>. The needle
+sails past the classical wall at S&nbsp;=&nbsp;2 and parks near <b>2.828</b>. Now switch the
+source to &ldquo;local hidden variables&rdquo; — a pre-agreed cheat sheet, Einstein's gloves —
+and run again: it <b>can't get past 2</b>, no matter how clever the cheat sheet. You've
+just run, in miniature, the experiment that won the 2022 Nobel Prize.</p>
+
+<p>The laboratory verdict is unambiguous and now spans half a century: Freedman
+and Clauser (1972, calcium cascade photons), Aspect and colleagues (1982, settings
+switched while the photons were in flight, closing the locality loophole in
+spirit), and in 2015 three <strong>loophole-free</strong> tests at once — Delft
+(entangled electron spins 1.3&nbsp;km apart), NIST and Vienna (photons, with
+detection efficiency high enough to close the fair-sampling loophole, and setting
+choices by independent fast random-number generators). All violate Bell's bound by
+dozens of standard deviations, in exquisite agreement with 2√2's predictions at
+the chosen angles. The 2022 Nobel Prize went to Clauser, Aspect and Zeilinger for
+precisely this programme. The conclusion is not &ldquo;quantum mechanics is weird&rdquo;
+but a theorem about the world, independent of quantum theory: <em>no</em> theory in
+which measurement outcomes are fixed by local pre-existing facts can reproduce the
+observed counts. Einstein's gloves do not exist. Something in locality, or in
+pre-existing values, or in our notions of inference itself, has to give.</p>
+
+<h2 id="nogo"><span class="no">5.5</span>What the magic cannot do</h2>
+
+<p>Entanglement looks like a telegraph and is not one. The
+<strong>no-signalling theorem</strong>: nothing Alice chooses to do alters Bob's
+<em>local</em> statistics — his ρ is untouched by her choice of measurement (the
+correlations are visible only when the two records are brought together, at light
+speed or slower, and compared). Relativity and quantum mechanics dovetail exactly
+where they seem to grind. The <strong>no-cloning theorem</strong> (Wootters–Żurek, 1982;
+provable in three lines from linearity) forbids copying an unknown quantum state —
+which is why quantum information behaves like nothing classical: it cannot be
+backed up, eavesdropping necessarily leaves fingerprints (the basis of quantum key
+distribution, deployed commercially today), and &ldquo;reading&rdquo; a state generally
+destroys it. What entanglement <em>does</em> enable, with a classical side-channel:
+teleportation of an unknown state (Bennett et al. 1993, demonstrated from ground
+to satellite in 2017), dense coding, and the correlation fuel of quantum
+computing. Entanglement is a resource — a strictly non-classical one — not a
+telephone.</p>
+
+<h2 id="decoherence"><span class="no">5.6</span>Decoherence: why the world looks classical</h2>
+
+<p>Why do we never meet a cat in two states, if the linear rules allow it? The
+modern answer is quantitative. A macroscopic superposition does not live in a
+vacuum: air molecules, thermal photons, cosmic microwaves scatter off it, and every
+scattering event carries away which-branch information — the environment is a
+which-path detector nobody installed (Zeh, Żurek, from 1970 on). Trace the
+environment out and the system's off-diagonal terms are multiplied by overlap
+factors that crash toward zero at astonishing speed:</p>
+
+<table class="data">
+  <caption>Illustrative decoherence timescales for a superposition separated by the object's own size (order of magnitude, after Joos–Zeh)</caption>
+  <thead><tr><th>object</th><th>environment</th><th>coherence survives ~</th></tr></thead>
+  <tbody>
+    <tr><td class="k">electron</td><td>laboratory ultra-high vacuum</td><td class="num">seconds — hence working interferometers</td></tr>
+    <tr><td class="k">large molecule (C₇₀)</td><td>beam apparatus</td><td class="num">ms — fringes shown in 1999, dying as gas is admitted</td></tr>
+    <tr><td class="k">10 µm dust grain</td><td>sunlight &amp; air</td><td class="num">10⁻³¹ s</td></tr>
+    <tr><td class="k">cat</td><td>anything at all</td><td class="num">≪ any physical timescale — never observable</td></tr>
+  </tbody>
+</table>
+
+<p>Decoherence also picks out <em>which</em> basis survives — the
+<strong>pointer states</strong>, selected by what the environment couples to (usually
+position: that is why the classical world is a world of <em>places</em>). This
+explains with full quantitative success why interference between macroscopically
+distinct alternatives is unobservable, why bigger is more classical, and where the
+quantum/classical boundary sits in practice: it is not a boundary but an
+exponential gradient. What decoherence does <em>not</em> do, by itself, is choose an
+outcome — it converts &ldquo;coherent both&rdquo; into &ldquo;statistical either&rdquo; with perfect
+grace, and leaves the final &ldquo;this one, in fact&rdquo; exactly where Postulate&nbsp;IV left
+it. The seam is narrowed, relocated, illuminated — not sewn.</p>
+
+<h2 id="interp"><span class="no">5.7</span>The interpretations, priced honestly</h2>
+
+<p>All of the following reproduce every confirmed experiment above. They differ in
+what they charge you for it. (Bell's theorem is the menu's fine print: each must
+give up locality, definite pre-existing values, a single outcome, or observer-independence
+of facts — something.)</p>
+
+<table class="data">
+  <caption>Rival readings of the same formalism</caption>
+  <thead><tr><th>interpretation</th><th>the story</th><th>the price</th></tr></thead>
+  <tbody>
+    <tr><td class="k">Copenhagen<br>(operational)</td>
+      <td>The formalism predicts outcomes of measurements; collapse is the update of
+      the description. Ask nothing further.</td>
+      <td>&ldquo;Measurement&rdquo; is primitive and undefined; the seam is policy.</td></tr>
+    <tr><td class="k">Everett<br>(many-worlds)</td>
+      <td>Unitary evolution is all there is. Every outcome happens; decoherence splits
+      observers along with everything else.</td>
+      <td>A stupendous ontology; deriving <em>why</em> the Born rule's probabilities, still argued.</td></tr>
+    <tr><td class="k">de Broglie–Bohm<br>(pilot wave)</td>
+      <td>Particles always have positions, guided by ψ. Randomness is ignorance of
+      initial positions; fully deterministic.</td>
+      <td>Explicit non-locality — the guidance couples distant particles instantly (kept
+      un-signalable); awkward fit with relativity and field theory.</td></tr>
+    <tr><td class="k">Objective collapse<br>(GRW / Penrose)</td>
+      <td>Collapse is a real physical process — spontaneous, rare per particle, fast for
+      aggregates. Modifies quantum mechanics slightly.</td>
+      <td>New constants of nature; predicts tiny testable deviations — being hunted now,
+      so far absent.</td></tr>
+    <tr><td class="k">QBism / relational</td>
+      <td>ψ is an agent's coherent betting book (or a relation between systems), not a
+      thing in the world. Collapse is learning.</td>
+      <td>&ldquo;What is actually there?&rdquo; is answered reluctantly or relationally, which
+      many find a non-answer.</td></tr>
+  </tbody>
+</table>
+
+<div class="callout gold">
+  <span class="tag">Where this leaves the reader</span>
+  <p>Nothing in the rest of this almanac depends on the choice. The formalism's
+  predictions — including every device in Chapters&nbsp;6 and&nbsp;7 — are interpretation-proof.
+  That a theory can be this precise about experience and this contested about
+  reality is itself the deepest datum we have about the world; hold the question
+  open, and hold the calculations tight.</p>
+</div>
+
+</div>
+
+<nav class="chapnav">
+  <a href="spin.html"><span class="dir">← Chapter 4</span><span class="title">Spin &amp; Identity</span></a>
+  <a class="next" href="fields.html"><span class="dir">Chapter 6 →</span><span class="title">Fields &amp; Light</span></a>
+</nav>
+
+</main>
+
+<script src="q-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, seg, label, line, fmtNum } = Q;
+
+  /* CHSH bench. Angles fixed at optimum (degrees). */
+  const A = 0, Ap = 45, B = 22.5, Bp = 67.5;
+  const SETS = [[A, B, 1], [Ap, B, 1], [Ap, Bp, 1], [A, Bp, -1]]; // [a, b, sign in S]
+  let src = "q";
+  // per-combination tallies: n, sum(product)
+  let tal = [[0, 0], [0, 0], [0, 0], [0, 0]];
+  const rnd = Q.rng(2015);
+
+  function corrQ(a, b) { const d = (a - b) * Math.PI / 180; return Math.cos(2 * d); }
+
+  function runPairs(N) {
+    for (let i = 0; i < N; i++) {
+      const s = Math.floor(rnd() * 4);
+      const [a, b] = SETS[s];
+      let prod;
+      if (src === "q") {
+        const E = corrQ(a, b);
+        const o1 = rnd() < 0.5 ? 1 : -1;
+        const o2 = rnd() < (1 + E) / 2 ? o1 : -o1;
+        prod = o1 * o2;
+      } else {
+        // deterministic local model: photon pair carries polarisation λ;
+        // each station answers sign(cos 2(λ − setting)).
+        const lam = rnd() * 180;
+        const o1 = Math.cos(2 * (lam - a) * Math.PI / 180) >= 0 ? 1 : -1;
+        const o2 = Math.cos(2 * (lam - b) * Math.PI / 180) >= 0 ? 1 : -1;
+        prod = o1 * o2;
+      }
+      tal[s][0]++; tal[s][1] += prod;
+    }
+    update();
+  }
+
+  function stats() {
+    const E = tal.map(([n, s]) => n ? s / n : 0);
+    const S = SETS.reduce((acc, [, , sg], i) => acc + sg * E[i], 0);
+    const N = tal.reduce((a, [n]) => a + n, 0);
+    return { E, S, N };
+  }
+
+  const bell = canvas("fig-bell", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const { E, S, N } = stats();
+
+    // stations + source sketch (top strip)
+    const sy = h * 0.16;
+    ctx.fillStyle = C.surface3; ctx.strokeStyle = C.line;
+    ctx.beginPath(); ctx.roundRect(w * 0.46, sy - 12, w * 0.08, 24, 5); ctx.fill(); ctx.stroke();
+    label(ctx, "source", w * 0.5, sy + 28, { align: "center", color: C.muted });
+    for (const [x, name, angs] of [[w * 0.13, "Alice", "a=0°  a′=45°"], [w * 0.79, "Bob", "b=22.5°  b′=67.5°"]]) {
+      ctx.beginPath(); ctx.roundRect(x, sy - 16, w * 0.10, 32, 5); ctx.fill(); ctx.stroke();
+      label(ctx, name, x + w * 0.05, sy + 32, { align: "center", color: C.ink2 });
+      label(ctx, angs, x + w * 0.05, sy + 46, { align: "center", color: C.muted });
+    }
+    line(ctx, w * 0.23, sy, w * 0.46, sy, C.photon, 1.2);
+    line(ctx, w * 0.54, sy, w * 0.79, sy, C.photon, 1.2);
+
+    // E bars
+    const names = ["E(a,b)", "E(a′,b)", "E(a′,b′)", "−E(a,b′)"];
+    const by = h * 0.78, bh = h * 0.34, bw = w * 0.07;
+    for (let i = 0; i < 4; i++) {
+      const x = w * 0.08 + i * w * 0.12;
+      const v = SETS[i][2] * E[i]; // signed contribution
+      ctx.fillStyle = "rgba(236,233,244,0.07)";
+      ctx.fillRect(x, by - bh, bw, bh);
+      ctx.fillStyle = v >= 0 ? C.cyan : C.danger;
+      const hh = Math.abs(v) * bh * 0.9;
+      ctx.fillRect(x, by - hh, bw, hh);
+      label(ctx, names[i], x + bw / 2, by + 14, { align: "center" });
+      label(ctx, (SETS[i][2] * E[i]).toFixed(3), x + bw / 2, by - hh - 6, { align: "center", color: C.ink });
+      // quantum prediction ticks
+      const pred = SETS[i][2] * corrQ(SETS[i][0], SETS[i][1]);
+      ctx.strokeStyle = C.violet; ctx.setLineDash([3, 3]);
+      ctx.beginPath(); ctx.moveTo(x - 3, by - Math.abs(pred) * bh * 0.9);
+      ctx.lineTo(x + bw + 3, by - Math.abs(pred) * bh * 0.9); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    label(ctx, "signed contributions to S (dashes: quantum prediction 0.707)", w * 0.08, by + 30, {});
+
+    // S meter
+    const mx = w * 0.62, mw = w * 0.32, my = h * 0.62;
+    ctx.fillStyle = "rgba(236,233,244,0.06)";
+    ctx.fillRect(mx, my - 12, mw, 24);
+    const X = (v) => mx + (v / 3) * mw;
+    // zones
+    ctx.fillStyle = "rgba(70,192,122,0.15)"; ctx.fillRect(X(0), my - 12, X(2) - X(0), 24);
+    ctx.fillStyle = "rgba(224,96,112,0.18)"; ctx.fillRect(X(2), my - 12, X(2.828) - X(2), 24);
+    line(ctx, X(2), my - 20, X(2), my + 20, C.ink2, 1.4);
+    label(ctx, "classical wall S=2", X(2), my - 26, { align: "center", color: C.ink2 });
+    line(ctx, X(2.828), my - 18, X(2.828), my + 18, C.violet, 1.4);
+    label(ctx, "2√2", X(2.828), my + 32, { align: "center", color: C.violet });
+    if (N > 0) {
+      const sx = X(Math.max(0, Math.min(3, S)));
+      ctx.fillStyle = C.photon;
+      ctx.beginPath(); ctx.moveTo(sx, my - 16); ctx.lineTo(sx - 6, my - 28); ctx.lineTo(sx + 6, my - 28); ctx.fill();
+      label(ctx, "S = " + S.toFixed(3), sx, my - 34, { align: "center", color: C.photon, font: Q.mono(13, true) });
+    }
+    label(ctx, "0", X(0), my + 32, { align: "center" });
+    label(ctx, "3", X(3), my + 32, { align: "center" });
+  });
+
+  function update() {
+    const { S, N } = stats();
+    document.getElementById("bell-n").textContent = fmtNum(N);
+    document.getElementById("bell-s").textContent = N ? S.toFixed(3) : "—";
+    const v = document.getElementById("bell-verdict");
+    if (!N) v.textContent = "Angles fixed at the optimum: a=0°, a′=45°, b=22.5°, b′=67.5°. Each pair, both stations pick a setting at random.";
+    else if (src === "q" && S > 2.05 && N > 3000)
+      v.textContent = "Over the wall: no local hidden-variable account survives these counts. This is the observed physics.";
+    else if (src === "c" && N > 3000)
+      v.textContent = "The local model tops out at S ≈ 2 — hidden variables obey Bell. The universe, measurably, does not.";
+    else v.textContent = "";
+    bell.redraw();
+  }
+  seg("bell-src", (v) => { src = v; tal = [[0, 0], [0, 0], [0, 0], [0, 0]]; update(); });
+  document.getElementById("bell-run").addEventListener("click", () => runPairs(1000));
+  document.getElementById("bell-run10").addEventListener("click", () => runPairs(10000));
+  document.getElementById("bell-clr").addEventListener("click", () => {
+    tal = [[0, 0], [0, 0], [0, 0], [0, 0]]; update();
+  });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

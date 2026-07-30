@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boot to Desktop — the final night</title>
+<meta name="description" content="The final night of the Windows 2000 boot campaign, minute by minute — a false-alarm STOP 0x7B, a desktop settling at 03:02, the acceptance checklist as recorded, and what two clean boots actually prove.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* ---- final-night stepper ---- */
+#fn-stage { outline: none; }
+#fn-stage:focus-visible { box-shadow: inset 0 0 0 2px var(--cobalt-dim); border-radius: 6px; }
+.fn-dot { fill: var(--surface-3); stroke: rgba(232,230,223,0.3); stroke-width: 1; }
+.fn-dot.past { fill: var(--cobalt-dim); }
+.fn-dot.cur { fill: var(--cobalt); stroke: var(--cobalt-hi); }
+.fn-card { margin: 10px 2px 2px; padding: 12px 16px 11px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; }
+.fn-card .ft { font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; color: var(--teal); }
+.fn-card .fh { font-family: var(--disp); font-weight: 700; font-size: 17px; color: var(--ink); margin: 2px 0 6px; }
+.fn-card .fb { font-size: 14.5px; line-height: 1.6; color: var(--ink-2); }
+
+/* ---- acceptance checklist ---- */
+.accept { list-style: none; padding: 0; margin: 18px 0 22px; max-width: 720px; }
+.accept li { position: relative; padding-left: 30px; margin: 0 0 10px; }
+.accept li::before { content: "✓"; position: absolute; left: 4px; top: -1px; color: var(--good); font-family: var(--disp); font-weight: 800; }
+
+/* ---- recreated Windows 2000 scenes ---- */
+.scene-pad { padding: 16px 14px; }
+.scene { position: relative; aspect-ratio: 4 / 3; max-width: 680px; margin: 0 auto; font-size: clamp(6.5px, 1.6vw, 11px); overflow: hidden; }
+@media (min-width: 1120px) { .scene { font-size: 11px; } }
+.scene .w2k-titlebar { font-size: 1em; padding: 0.28em 0.4em 0.28em 0.6em; }
+.scene .w2k-cap { width: 1.5em; height: 1.3em; font-size: 0.85em; }
+.scene .w2k-push { font-size: 1em; padding: 0.25em 1.3em; }
+.desk-scene, .fc-scene { background: #3a8a8a; }
+.fc-scene { max-width: 560px; }
+
+.w2k-taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 2.5em; display: flex; align-items: center; gap: 0.4em; padding: 0 0.35em; background: var(--w2k-face); border-top: 1px solid var(--w2k-hilite); box-shadow: 0 -1px 0 var(--w2k-shade); }
+.tb-btn { display: inline-flex; align-items: center; gap: 0.4em; max-width: 11em; overflow: hidden; white-space: nowrap; padding: 0.18em 0.8em; background: var(--w2k-face); border: 1px solid var(--w2k-dark); box-shadow: inset 1px 1px 0 var(--w2k-hilite), inset -1px -1px 0 var(--w2k-shade); }
+.tb-btn.active { box-shadow: inset 1px 1px 0 var(--w2k-shade), inset -1px -1px 0 var(--w2k-hilite); background: #e8e5de; }
+.tb-clock { margin-left: auto; padding: 0.18em 0.7em; border: 1px solid var(--w2k-shade); box-shadow: inset 1px 1px 0 var(--w2k-shade), inset -1px -1px 0 var(--w2k-hilite); white-space: nowrap; }
+.flag.mini { width: 1.1em; height: 1.1em; gap: 1px; vertical-align: -0.15em; }
+
+.srwin { position: absolute; inset: 0 0 2.5em 0; display: flex; flex-direction: column; }
+.sr-menu { display: flex; gap: 1.2em; padding: 0.3em 0.8em; border-bottom: 1px solid var(--w2k-shade); }
+.sr-body { flex: 1; display: flex; min-height: 0; background: #fff; }
+.sr-left { width: 30%; border-right: 1px solid var(--w2k-shade); background: #f0eee8; padding: 0.7em; }
+.sr-left .h { font-weight: 700; margin-bottom: 0.6em; }
+.sr-left .bar { height: 1.2em; background: #fff; border: 1px solid var(--w2k-shade); box-shadow: inset 1px 1px 0 var(--w2k-dark); margin-bottom: 0.5em; max-width: 92%; }
+.sr-status { padding: 0.2em 0.7em; border-top: 1px solid var(--w2k-shade); }
+
+.gswin { position: absolute; left: 12%; top: 9%; width: 76%; z-index: 3; }
+.gs-banner { display: flex; align-items: center; gap: 0.6em; background: #fff; padding: 0.7em 0.9em; }
+.gs-banner .name { font-size: 1.25em; }
+.gs-divide { height: 0.25em; background: var(--w2k-title1); }
+.gs-cols { display: flex; min-height: 11em; }
+.gs-menu { width: 34%; background: #cfe0f4; padding: 1em 0.9em; display: flex; flex-direction: column; gap: 0.8em; }
+.gs-menu .dis, .gs-foot .dis { color: var(--w2k-shade); }
+.gs-main { flex: 1; background: #fff; padding: 0.9em 1em; display: flex; flex-direction: column; gap: 0.5em; }
+.gs-main .head { font-family: Georgia, serif; color: #23807c; font-size: 1.5em; }
+.gs-main p { margin: 0; line-height: 1.45; }
+.gs-mouse { width: 3.4em; height: auto; margin: 0.3em auto 0; display: block; }
+.gs-foot { display: flex; align-items: center; justify-content: space-between; gap: 1em; padding: 0.55em 0.9em; border-top: 1px solid var(--w2k-shade); background: var(--w2k-face); }
+.cb { display: inline-block; width: 1.1em; height: 1.1em; background: #fff; border: 1px solid var(--w2k-shade); box-shadow: inset 1px 1px 0 var(--w2k-dark); text-align: center; line-height: 1.1em; font-size: 0.9em; margin-right: 0.4em; }
+
+.fcwin { position: absolute; inset: 0 0 2.5em 0; display: flex; flex-direction: column; }
+.fc-menu { display: flex; gap: 1.2em; padding: 0.3em 0.8em; border-bottom: 1px solid var(--w2k-shade); background: var(--w2k-face); }
+.fc-menu .stat { margin-left: auto; }
+.fc-felt { flex: 1; background: var(--w2k-felt); padding: 0.8em; min-height: 0; }
+.fc-cells { display: flex; gap: 0.45em; }
+.fc-cells i { display: block; width: 9.5%; aspect-ratio: 3 / 4; border: 1px solid rgba(0,0,0,0.55); box-shadow: inset 1px 1px 0 rgba(255,255,255,0.35); border-radius: 2px; }
+.fc-cells i:nth-child(4) { margin-right: 8%; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="machine.html">1 · The Machine</a>
+    <a href="loop.html">2 · The Restart Loop</a>
+    <a href="wires.html">3 · Edges &amp; Wires</a>
+    <a href="forensics.html">4 · Kernel Forensics</a>
+    <a href="dialog.html">5 · The Invisible Dialog</a>
+    <a href="cpu.html">6 · One Instruction at a Time</a>
+    <a href="desktop.html" aria-current="page">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 7 · 19 JULY 2026, 03:02</p>
+  <h1>THE FINAL <span class="accent">NIGHT</span></h1>
+  <p class="standfirst">By the evening of 18 July the CD was attached, the product key was in,
+  and — for the first time in fifty-two days — Windows 2000&rsquo;s setup was simply allowed to run.
+  What follows is the last night of the campaign, minute by minute: three hours and forty minutes
+  of &ldquo;Performing Final Tasks&rdquo; watched through video-plane memory, one final blue screen
+  that was not what it seemed, and a desktop that settled at 03:02 with the taskbar clock reading
+  2:04&nbsp;AM. Then the sober part: what two clean boots actually prove.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">3h 40m</div><div class="l">“Performing Final Tasks”, watched through 21 VGA-plane snapshots on the evening of 18 July</div></div>
+  <div class="stat"><div class="v warn">73 min</div><div class="l">from the STOP 0x7B at 01:49 to desktop-settled.png at 03:02</div></div>
+  <div class="stat"><div class="v">2×</div><div class="l">the release binary rebuilt in the final hour — 02:36 and 02:54, both interpreter-only</div></div>
+  <div class="stat"><div class="v">2</div><div class="l">independent fresh-copy acceptance boots — captures 46 and 47</div></div>
+  <div class="stat"><div class="v good">2,512</div><div class="l">mddosem-interp tests green on the final source, 0 failed</div></div>
+  <div class="stat"><div class="v">2:04 AM</div><div class="l">the guest taskbar clock in the success shot, host time 03:02</div></div>
+</section>
+
+<section class="prose">
+
+<h2>Setup runs its course</h2>
+
+<p>By 18 July there was, at last, nothing left to diagnose. The Service Pack&nbsp;4 CD was attached;
+the product key had been entered by the corrected, statically verified procedure of
+<a href="dialog.html">chapter&nbsp;5</a>; the hardware corrections of
+<a href="cpu.html">chapter&nbsp;6</a> were landing. Capture&nbsp;26 cold-booted a hash-verified
+copy of the capture-24 disk and typed the key properly into the five auto-advancing fields.
+Capture&nbsp;28 then did something no run had managed in the fifty-two days since the first
+checkpoint: it let <a href="/mddosem/">mddosem</a> carry a native Windows 2000 Professional SP4 GUI
+setup, begun from blank media, all the way to the end — with nobody stepping in.</p>
+
+<p>The phase that had eaten seven weeks — <em>Performing Final Tasks</em> — took three hours and
+forty minutes. It was watched, characteristically, through the side door: twenty-one 1-bit
+reconstructions of VGA plane memory (the X-ray technique of <a href="dialog.html">chapter&nbsp;5</a>),
+one roughly every ten minutes from 20:16 to 23:56, each showing the hidden progress dialog a
+little further along.</p>
+
+<p>And then the guest reset itself. Every previous reset at the end of setup had been the bad kind —
+the pulse through the keyboard controller that fed the restart loop of
+<a href="loop.html">chapter&nbsp;2</a>. This one was the good kind: the scheduled final reboot with
+which every healthy install hands over to the operating system it has just written. The journal
+records that capture&nbsp;28 performed its final guest reset <em>instead of returning to the former
+all-Waiting wall</em>, and the campaign moved into its last night.</p>
+
+<h2>The final night, minute by minute</h2>
+
+<p>Everything from here happened between seven minutes past midnight and half past three in the
+morning of Sunday 19 July. The record is unusually exact — every capture booted a hash-verified
+fresh copy of the disk, and every binary printed its build stamp — so the night can be replayed.</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE FINAL NIGHT — 00:07 → 03:27, 19 JULY 2026</span>
+    <span class="hint">◀ ▶ step · ← → keys</span>
+  </div>
+  <div class="fig-body">
+    <div class="stage" id="fn-stage">
+      <div class="fn-card">
+        <div class="ft" id="fn-card-t">00:07</div>
+        <div class="fh" id="fn-card-h">First boot of the installed disk</div>
+        <div class="fb" id="fn-card-b">Capture 29: the freshly-installed system boots. First FreeCell
+        attempt renders a black frame (ipc-freecell-black.png, 5,757 bytes — the same size as four
+        days of wall screenshots).</div>
+      </div>
+    </div>
+  </div>
+  <div class="evlog" id="fn-log"><span class="t">00:07</span> First boot of the installed disk</div>
+  <div class="legend">
+    <span class="key"><span class="sw" style="background:#6cb1f2"></span>event on the rail</span>
+    <span class="key"><span class="sw" style="background:#e05252"></span>the STOP 0x7B false alarm</span>
+    <span class="key"><span class="sw" style="background:#4cc26e"></span>acceptance recorded</span>
+  </div>
+  <div class="fig-controls">
+    <button class="btn" id="fn-prev">◀ earlier</button>
+    <button class="btn primary" id="fn-next">later ▶</button>
+    <span class="ctl"><output id="fn-out">1 / 10</output></span>
+  </div>
+  <div class="fig-note">Events transcribed in w2k-data.js from the branch journal
+  (wrk_journals 2026.07.15, the Win2K boot-to-desktop goal) and the run artifacts&rsquo; file
+  timestamps; times are host wall-clock. STOP 0x7B parameters from capture-38/bugcheck.png.</div>
+</figure>
+
+<p>At 00:07 the installed disk booted (capture&nbsp;29). Setup did not resume: the
+<code>RestartSetup</code> flag that had driven the wizard&rsquo;s eternal return was finally clear.
+The first wrinkle came from the games menu instead — FreeCell&rsquo;s first frame rendered pure
+black, a PNG of exactly 5,757 bytes, byte-for-byte the size of the wall screenshot that had
+recurred across four days of captures (<a href="forensics.html">chapter&nbsp;4</a>). Old ghosts. At
+00:45 an eleven-megabyte VGA-register trace was pulled from the QEMU reference machine to compare
+rendering behaviour; what changed between the black frame and the good one is not spelled out in
+the record, but by 02:23 FreeCell was drawing its green felt correctly.</p>
+
+<h3>One last blue screen</h3>
+
+<p>At 01:49 the night produced its scare. Capture&nbsp;38 bugchecked with
+<span class="addr">STOP 0x0000007B</span> — <code>INACCESSIBLE_BOOT_DEVICE</code>, the stop an NT
+kernel raises when it cannot reach the volume it booted from. Seventy-three minutes before the
+finish line, the emulator appeared to have lost the hard disk.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">01:49 — THE FALSE ALARM</span>
+    <span class="hint">recreation — abridged</span>
+  </div>
+  <div class="bsod" role="img" aria-label="Recreation, abridged, of the STOP 0x7B blue screen from capture 38: white text on royal blue reading STOP 0x0000007B with four parameters, the name INACCESSIBLE_BOOT_DEVICE, and the standard advice to check for viruses, check the hard drive configuration and run CHKDSK /F.">
+    <span class="stop">*** STOP: 0x0000007B (0xF741B84C,0xC0000034,0x00000000,0x00000000)</span><br>
+    INACCESSIBLE_BOOT_DEVICE<br>
+    <br>
+    Check for viruses &hellip; Check your hard drive to make sure it is properly<br>
+    configured and terminated. Run CHKDSK /F &hellip;<br>
+    <br>
+    Refer to your Getting Started manual for more information on<br>
+    troubleshooting Stop errors.
+  </div>
+  <div class="fig-note">Recreation (abridged); the original is capture-38/bugcheck.png in the run
+  archive — 32,694 bytes, written 01:49 host time on 19 July 2026, SHA-256
+  a00fdae727611e1ddc33b4d491617db12a8ba5f928a5621dea06c017d44f8f80.</div>
+</figure>
+
+<p>The run-down was brisk and, by this stage of the campaign, well drilled. The bugcheck was not a
+fair experiment: the runs that hit it were carrying the campaign&rsquo;s own diagnostic rig —
+capture&nbsp;43 reproduced it while paused under a kernel breakpoint at
+<span class="addr">DbgBreakPointWithStatus</span> — and clean, production-style runs with the ISO
+attached never reproduced it at all. Capture&nbsp;45&rsquo;s temporary packet-level ATAPI trace then
+showed a perfectly healthy drive conversation — inquiry, capacity, table of contents, READ(10) —
+with Windows meeting the drive&rsquo;s unsupported mode pages through ordinary sense-and-retry
+recovery. The journal&rsquo;s verdict: &ldquo;No ATAPI workaround or disabled device was needed, and
+all temporary diagnostics were removed.&rdquo; The last blue screen of the campaign was
+self-inflicted — the instruments, not the machine.</p>
+
+<div class="term"><span class="dim">capture-45 stderr —</span> [WIN2K_ATAPI] ata cmd=A1 state=Idle media=true ua=true &hellip;</div>
+
+<p>That <span class="addr">A1</span> is IDENTIFY PACKET DEVICE: the probe was still chattering in
+the stderr of the victory-adjacent runs, a reminder of how thin the line between instrument and
+subject had become. The rest of the night is the good kind of uneventful. At 02:22 the
+<em>Log On to Windows</em> dialog appeared — Administrator, blank password (capture&nbsp;42). At
+02:23, green felt: &ldquo;Cards Left: 0&rdquo;. The release binary was rebuilt twice in the final
+hour, at 02:36 and 02:54 — mddosem v0.156.3, build <code>669806963</code>, interpreter-only, as
+every run of the campaign had been. Capture&nbsp;45 — the instrumented run, ATAPI probe still
+attached — ran the full sequence between 02:43 and 02:46: splash at 02:43, first desktop at
+02:45, FreeCell at 02:46. Capture&nbsp;46, from a fresh hash-verified copy with the ISO attached
+and a fixed diagnostic clock epoch, followed the 02:54 rebuild and ran Winlogon → Administrator
+login → Explorer → FreeCell → clean guest restart; its duration went unrecorded.
+Capture&nbsp;47, from a second fresh copy with no fixed
+epoch, reached Winlogon and a responsive desktop between 03:00 and 03:02, and wrote
+<code>desktop-settled.png</code>. The last of the four fixes had been committed at 03:05
+(<a href="cpu.html">chapter&nbsp;6</a> tells that story); at 03:27 the acceptance was recorded, and
+MDD-BUG-KILN-00004 — raised on 30 June as &ldquo;Windows 2000 GUI setup restart-loops at &lsquo;set
+system security&rsquo;&rdquo; — was flipped to Fixed.</p>
+
+<h2>The desktop, settled</h2>
+
+<p>What does a fifty-three-day desktop look like? Unremarkable — which is the point. A maximised
+Search Results window idles behind (&ldquo;0 object(s)&rdquo;); in front, the <em>Getting Started
+with Windows 2000</em> wizard offers to register, to discover, to connect; a line drawing of a
+two-button mouse explains double-clicking. A grey taskbar. A Start button. A clock.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">03:02 — DESKTOP-SETTLED.PNG, RECREATED</span>
+    <span class="hint">HTML/CSS recreation — not a screenshot</span>
+  </div>
+  <div class="fig-body scene-pad">
+    <div class="w2k-scene scene desk-scene" role="img" aria-label="Recreation of desktop-settled.png: a teal Windows 2000 desktop. A maximised Search Results window sits behind, its status bar reading 0 objects. In front is the Getting Started with Windows 2000 wizard: a white banner with the four-pane Windows flag, a pale-blue menu listing Register Now, Discover Windows and Connect to the Internet, a Getting Started heading with the instruction to click an icon twice quickly (double-click) to open a file, folder, program, or drive, and a line drawing of a two-button mouse; below, a ticked Show this screen at startup checkbox and a greyed Exit button. The grey taskbar has a Start button, task buttons for Search Results and Getting Started, and a clock reading 2:04 AM.">
+      <div class="w2k-window srwin">
+        <div class="w2k-titlebar">Search Results<span class="sp"></span><span class="w2k-cap">_</span><span class="w2k-cap">□</span><span class="w2k-cap">×</span></div>
+        <div class="sr-menu"><span>File</span><span>Edit</span><span>View</span><span>Favorites</span><span>Tools</span><span>Help</span></div>
+        <div class="sr-body">
+          <div class="sr-left">
+            <div class="h">Search</div>
+            <div class="bar"></div>
+            <div class="bar" style="max-width:70%"></div>
+          </div>
+          <div style="flex:1"></div>
+        </div>
+        <div class="sr-status">0 object(s)</div>
+      </div>
+      <div class="w2k-window gswin">
+        <div class="w2k-titlebar">Getting Started with Windows 2000<span class="sp"></span><span class="w2k-cap">×</span></div>
+        <div class="gs-banner">
+          <span class="flag mini"><i></i><i></i><i></i><i></i></span>
+          <span class="name">Microsoft <b>Windows 2000</b> Professional</span>
+        </div>
+        <div class="gs-divide"></div>
+        <div class="gs-cols">
+          <div class="gs-menu">
+            <div class="dis">Register Now</div>
+            <div>Discover Windows</div>
+            <div>Connect to the Internet</div>
+          </div>
+          <div class="gs-main">
+            <div class="head">Getting Started</div>
+            <p>Click an icon twice quickly (double-click) to open a file, folder, program, or drive.</p>
+            <svg class="gs-mouse" viewBox="0 0 40 52" aria-hidden="true">
+              <rect x="3" y="3" width="34" height="46" rx="14" fill="none" stroke="#404040" stroke-width="2"/>
+              <line x1="20" y1="3" x2="20" y2="22" stroke="#404040" stroke-width="2"/>
+              <line x1="3" y1="22" x2="37" y2="22" stroke="#404040" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+        <div class="gs-foot">
+          <span><span class="cb">✓</span>Show this screen at startup</span>
+          <button class="w2k-push dis" type="button">Exit</button>
+        </div>
+      </div>
+      <div class="w2k-taskbar">
+        <span class="tb-btn"><span class="flag mini"><i></i><i></i><i></i><i></i></span><b>Start</b></span>
+        <span class="tb-btn">Search Results</span>
+        <span class="tb-btn active">Getting Started with&hellip;</span>
+        <span class="tb-clock">2:04 AM</span>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Recreation, simplified; the original is capture-47/desktop-settled.png in
+  the run archive — 640 × 480, 286,234 bytes, written 03:02 host time on 19 July 2026, SHA-256
+  27e81cce208a302b9a223071c6003a1bd296cdec661a969016d787a82c36e337.</div>
+</figure>
+
+<p>The clocks are the human detail. The host filesystem stamped <code>desktop-settled.png</code> at
+03:02; the guest&rsquo;s taskbar says 2:04&nbsp;AM. In the FreeCell frame the gap yawns wider still:
+green felt written at 02:46 host time, 12:04&nbsp;AM on the guest taskbar. An emulated machine keeps
+whatever time it is told to — one acceptance run pinned the real-time clock to a fixed diagnostic
+epoch, the other ran with none — and neither guest quite agreed with the host about the hour.
+Windows, for its part, kept both clocks with perfect composure.</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">GREEN FELT, CARDS LEFT: 0</span>
+    <span class="hint">HTML/CSS recreation — not a screenshot</span>
+  </div>
+  <div class="fig-body scene-pad">
+    <div class="w2k-scene scene fc-scene" role="img" aria-label="Recreation of the FreeCell frame: the FreeCell window with a Game and Help menu, the status Cards Left: 0 at the right, and a full green felt playfield with the faint outlines of four free cells and four home cells along the top; the taskbar below shows Start, Search Results, Getting Started and an active FreeCell button, with the guest clock reading 12:04 AM.">
+      <div class="w2k-window fcwin">
+        <div class="w2k-titlebar">FreeCell<span class="sp"></span><span class="w2k-cap">_</span><span class="w2k-cap">□</span><span class="w2k-cap">×</span></div>
+        <div class="fc-menu"><span>Game</span><span>Help</span><span class="stat">Cards Left: 0</span></div>
+        <div class="fc-felt">
+          <div class="fc-cells"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        </div>
+      </div>
+      <div class="w2k-taskbar">
+        <span class="tb-btn"><span class="flag mini"><i></i><i></i><i></i><i></i></span><b>Start</b></span>
+        <span class="tb-btn">Search Results</span>
+        <span class="tb-btn">Getting Started wi&hellip;</span>
+        <span class="tb-btn active">FreeCell</span>
+        <span class="tb-clock">12:04 AM</span>
+      </div>
+    </div>
+  </div>
+  <div class="fig-note">Recreation, simplified; the original is capture-45/freecell.png — 271,599
+  bytes, written 02:46 host time on 19 July 2026, SHA-256
+  3afc41d729b02095f192f344048deb7dac3b034324b21a91ba2f717e211d35b9. In the original the Getting
+  Started wizard overlaps the felt, its fat red arrow frozen mid-animation over the mouse
+  illustration; the guest taskbar clock reads 12:04 AM.</div>
+</figure>
+
+<h2>The acceptance checklist, as recorded</h2>
+
+<p>The acceptance was a checklist, not a feeling. As recorded in the bug ledger and the branch
+journal:</p>
+
+<ul class="accept">
+  <li>A fresh, <strong>native</strong> GUI setup completed from blank media under the default
+  interpreter (capture 28) — no transplanted install, no bypass, no disabled component.</li>
+  <li>The installed disk boots without setup resuming: <code>RestartSetup</code> and
+  <code>SystemSetupInProgress</code> cleared (captures 29–32).</li>
+  <li>Administrator logs in with the blank password; Explorer is responsive.</li>
+  <li>FreeCell launches and renders.</li>
+  <li>The guest restarts cleanly.</li>
+  <li>Two independent fresh-copy acceptance runs — capture 46 with a fixed diagnostic RTC epoch,
+  capture 47 with none.</li>
+  <li>Focused regressions green: the fail-first PSE regression, all 2,512 mddosem-interp tests
+  (0 failed), formatting, clippy with warnings-as-errors, and a warning-free release build.</li>
+</ul>
+
+<p>The validation claims are scoped, and the record is explicit about it. A broader
+<code>full_test</code> quick run was bounded at 900 seconds and timed out after sixteen per-crate
+suites had passed — and was deliberately <em>not</em> claimed as a full gate. The exact-tree final
+gate belongs to the integration step, and the journal says so in as many words.</p>
+
+<h2>What two clean boots prove — and what they don&rsquo;t</h2>
+
+<p>They prove that the default interpreter, presented with unmodified retail media and a product
+key, completes a native Windows 2000 Professional SP4 installation and reaches a repeatably usable
+desktop — twice, from independent hash-verified fresh copies, one of them with no diagnostic clock
+at all. And they prove it on the campaign&rsquo;s own strict terms:</p>
+
+<aside class="aside good">
+  <span class="tag">DOCTRINE-CLEAN</span>
+  <p>The ledger&rsquo;s closing entry stresses that the win came &ldquo;without a transplanted
+  install, Windows-specific bypass, disabled component, or omitted CD-ROM.&rdquo; Every word earned
+  its place: the transplant end-run was tried and rejected as doctrine-violating
+  (<a href="machine.html">chapter&nbsp;1</a>), no gate was ever patched around, no device was ever
+  switched off to get past a hang — and the omitted CD-ROM, well,
+  <a href="dialog.html">chapter&nbsp;5</a>.</p>
+</aside>
+
+<p>What they don&rsquo;t prove is just as carefully recorded. The ledger entry is
+<strong>Fixed, not Closed</strong>: &ldquo;Codex authored the final Open-to-Fixed transition and
+therefore must not close it&rdquo; — the two-eyes rule holds, and a different verifier must
+reproduce the result before the bug may be closed. MDD-BUG-KILN-00005 — whether the dynamic
+recompiler can carry Windows 2000 — remains open; every banner of the campaign reads
+<code>interpreter-only</code>, and the recompiler sat this story out entirely. And two boots on one
+machine measure repeatability, not breadth: the wider compatibility matrix is a different
+campaign.</p>
+
+<h2>The method, in four habits</h2>
+
+<p>If the fifty-three days have a transferable lesson, it is not about Windows.</p>
+
+<ul>
+  <li><strong>A standing controlled experiment.</strong> The QEMU reference install — same ISO,
+  same key, same Standard PC HAL — completed with a zero-byte error log
+  (<a href="machine.html">chapter&nbsp;1</a>), so every divergence was, by construction, a real
+  emulation bug. Most of the red herrings of <a href="loop.html">chapter&nbsp;2</a> died against
+  that single fact.</li>
+  <li><strong>Falsifiable hypotheses, or no new tracer.</strong> After a diagnostic-dominated
+  month, the June goal document imposed a rule — &ldquo;Diagnostics serve a falsifiable hypothesis
+  or they don&rsquo;t ship&rdquo; — and every slice thereafter had to end in a behavioural fix or a
+  definitively ruled-out layer, not another trace log.</li>
+  <li><strong>Instrument honesty.</strong> The census misreads were retracted by the tool&rsquo;s
+  own authors (<a href="forensics.html">chapter&nbsp;4</a>); the &ldquo;key accepted&rdquo; claim
+  was formally withdrawn and the experiment redone (<a href="dialog.html">chapter&nbsp;5</a>); the
+  PIC conformance oracle was required to re-find already-fixed bugs before its word counted
+  (<a href="wires.html">chapter&nbsp;3</a>). An instrument you are not willing to indict is not an
+  instrument.</li>
+  <li><strong>Hardware truth over convenience.</strong> All four unlocking fixes are statements
+  about real silicon — what an 8254 keeps counting, what a PIIX3 reports, what STI&rsquo;s shadow
+  protects, how a four-megabyte page translates — not about Windows. That is why they were worth
+  seven weeks: every other guest crosses the same wires.</li>
+</ul>
+
+<p>mddosem&rsquo;s own engineering rule says that when an application works, it is because the
+emulation is right — never the other way round. On 19 July, at 03:02, Windows 2000 agreed.</p>
+
+<h2 id="evidence">How we know</h2>
+
+<p>Every number on this page traces to a preserved artifact, a ledger entry, or a journal line.
+The anchors, as transcribed in <code>w2k-data.js</code>:</p>
+
+<table class="data">
+  <caption>Evidence anchors of the Windows 2000 boot campaign</caption>
+  <thead>
+    <tr><th>Artifact</th><th>Record</th></tr>
+  </thead>
+  <tbody id="ev-body"></tbody>
+</table>
+
+<p class="srcline">Sources for this chapter — the bug ledger MDD-BUG-KILN-00004 (raised
+2026-06-30, Fixed 2026-07-19, closure pending under the two-eyes rule); the engineering journals,
+wrk_journals 2026.06.23 → 2026.07.15; the preserved run archive (47 hash-verified captures,
+≈85&nbsp;GiB, 15 July 16:08 → 19 July 03:02). All Windows imagery on this page is HTML/CSS
+recreation — the originals stay in the archive. The emulator&rsquo;s own page:
+<a href="/mddosem/">mddosem</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="cpu.html"><span class="dir">◀ previous</span>6 · One Instruction at a Time</a>
+  <a class="next" href="./"><span class="dir">overview ▸</span>Start the story again</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W = window.W2K, D = window.W2K_DATA;
+  if (!W || !D) return;
+
+  /* ============================================================
+     FIG 1 · THE FINAL NIGHT — stepper over W2K_DATA.finalNight.
+     A horizontal wall-clock rail 00:07 → 03:27 (19 Jul 2026);
+     each step highlights one event dot and fills the card below.
+     ============================================================ */
+  (function () {
+    var FN = D.finalNight;
+    var stage = document.getElementById("fn-stage");
+    if (!stage || !FN || !FN.length) return;
+
+    var NS = "http://www.w3.org/2000/svg";
+    var VW = 860, VH = 92, PL = 40, PR = 40, RY = 46;
+    var T0 = 7, T1 = 207; /* minutes past midnight: 00:07 … 03:27 */
+
+    function mins(t) {
+      var m = /(\d{1,2}):(\d{2})/.exec(t || "");
+      return m ? (+m[1]) * 60 + (+m[2]) : T0;
+    }
+    function xAt(mn) {
+      return PL + ((mn - T0) / (T1 - T0)) * (VW - PL - PR);
+    }
+    function el(name, attrs, text) {
+      var n = document.createElementNS(NS, name), k;
+      for (k in attrs) {
+        if (Object.prototype.hasOwnProperty.call(attrs, k)) n.setAttribute(k, attrs[k]);
+      }
+      if (text != null) n.textContent = text;
+      return n;
+    }
+
+    var svg = el("svg", {
+      viewBox: "0 0 " + VW + " " + VH,
+      role: "img",
+      "aria-label": "Timeline rail of the final night, 19 July 2026, running from 00:07 to " +
+        "03:27. Ten plotted events: 00:07 first boot of the installed disk; 00:45 a QEMU VGA " +
+        "trace pulled; 01:49 a STOP 0x7B bugcheck, marked in red, later traced to the run's own " +
+        "breakpoint instrumentation; 02:22 the Log On to Windows dialog; 02:23 the first good " +
+        "FreeCell frame; 02:36 and 02:54 the release binary rebuilt; 02:43 to 02:46 capture 45's " +
+        "instrumented full sequence; before 03:00 capture 46, acceptance run one, duration " +
+        "unrecorded; 03:00 to 03:02 capture 47, acceptance run two, ending with " +
+        "desktop-settled.png; and at 03:27, marked in green, the acceptance recorded in the " +
+        "bug ledger."
+    });
+
+    /* rail + hour ticks */
+    svg.appendChild(el("line", {
+      x1: xAt(T0), y1: RY, x2: xAt(T1), y2: RY,
+      stroke: "var(--surface-3)", "stroke-width": 3, "stroke-linecap": "round"
+    }));
+    [60, 120, 180].forEach(function (mn) {
+      svg.appendChild(el("line", {
+        x1: xAt(mn), y1: RY - 6, x2: xAt(mn), y2: RY + 6,
+        stroke: "var(--line)", "stroke-width": 1
+      }));
+      svg.appendChild(el("text", {
+        x: xAt(mn), y: RY + 24, "text-anchor": "middle",
+        "font-size": 10, fill: "var(--muted)"
+      }, "0" + (mn / 60) + ":00"));
+    });
+    svg.appendChild(el("text", {
+      x: xAt(T0), y: RY - 14, "text-anchor": "start", "font-size": 10, fill: "var(--muted)"
+    }, "00:07"));
+    svg.appendChild(el("text", {
+      x: xAt(T1), y: RY - 14, "text-anchor": "end", "font-size": 10, fill: "var(--muted)"
+    }, "03:27"));
+
+    /* marker rings: the STOP scare (danger) + the acceptance (good) */
+    var rings = {};
+    rings[2] = "var(--danger)";
+    rings[FN.length - 1] = "var(--good)";
+
+    var halo = el("circle", {
+      cx: xAt(T0), cy: RY, r: 11, fill: "none",
+      stroke: "var(--cobalt)", "stroke-width": 1.5, opacity: 0.55
+    });
+    svg.appendChild(halo);
+
+    var dots = FN.map(function (ev, i) {
+      var cx = xAt(mins(ev.t));
+      if (rings[i]) {
+        svg.appendChild(el("circle", {
+          cx: cx, cy: RY, r: 9, fill: "none",
+          stroke: rings[i], "stroke-width": 1.5, opacity: 0.9
+        }));
+      }
+      var c = el("circle", { cx: cx, cy: RY, r: 5, "class": "fn-dot" });
+      svg.appendChild(c);
+      return c;
+    });
+
+    var tlabel = el("text", {
+      x: xAt(T0), y: 14, "text-anchor": "middle",
+      "font-size": 11, "font-weight": "bold", fill: "var(--cobalt-hi)"
+    }, "");
+    svg.appendChild(tlabel);
+
+    stage.insertBefore(svg, stage.firstChild);
+
+    var cT = document.getElementById("fn-card-t");
+    var cH = document.getElementById("fn-card-h");
+    var cB = document.getElementById("fn-card-b");
+
+    var steps = FN.map(function (ev) {
+      return { cap: '<span class="t">' + ev.t + "</span> " + ev.h, ev: ev };
+    });
+
+    W.makeStepper({
+      prev: "fn-prev", next: "fn-next", out: "fn-out", log: "fn-log", stage: "fn-stage",
+      steps: steps,
+      start: W.reducedMotion ? FN.length - 1 : 0,
+      apply: function (i, step) {
+        dots.forEach(function (d, j) {
+          d.setAttribute("class",
+            "fn-dot" + (j < i ? " past" : "") + (j === i ? " cur" : ""));
+        });
+        var cx = +dots[i].getAttribute("cx");
+        halo.setAttribute("cx", cx);
+        tlabel.setAttribute("x", Math.max(56, Math.min(VW - 56, cx)));
+        tlabel.textContent = step.ev.t;
+        if (cT) cT.textContent = step.ev.t;
+        if (cH) cH.textContent = step.ev.h;
+        if (cB) cB.textContent = step.ev.b;
+      }
+    });
+  })();
+
+  /* ============================================================
+     FIG 2 · the evidence table — rendered from W2K_DATA.evidence
+     so the anchors live in one transcribed place.
+     ============================================================ */
+  (function () {
+    var tb = document.getElementById("ev-body");
+    if (!tb || !D.evidence) return;
+    D.evidence.forEach(function (row) {
+      var tr = document.createElement("tr");
+      var k = document.createElement("td");
+      k.textContent = row.k;
+      var v = document.createElement("td");
+      v.textContent = row.v;
+      tr.appendChild(k);
+      tr.appendChild(v);
+      tb.appendChild(tr);
+    });
+  })();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

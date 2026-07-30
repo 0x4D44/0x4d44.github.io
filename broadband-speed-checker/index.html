@@ -1,134 +1,579 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Line Rate — Broadband Speed Checker</title>
-<meta name="description" content="A private, browser-local broadband speed checker: download, upload, ping, GPS and stored history." />
-<meta name="theme-color" content="#07131f" />
-<link rel="stylesheet" href="style.css" />
-
+<meta name="description" content="A private, browser-local broadband speed checker with M-Lab NDT7 tests, GPS, export, and local history.">
+<meta name="theme-color" content="#080B10">
+<script src="./support.js"></script>
 </head>
 <body>
-  <main class="shell">
-    <div class="topbar">
-      <a class="back" href="../">← 0x4D44 almanac</a>
-      <span><span class="live-dot">●</span> HTTPS only · local history · M-Lab NDT7</span>
+<x-dc>
+<helmet>
+<link href="./fonts/fonts.css" rel="stylesheet">
+<style>
+  html,body{margin:0;background:#080B10;}
+  a{color:#5B8CFF;text-decoration:none;}
+  a:hover{color:#86a9ff;}
+  ::selection{background:#2B54F5;color:#fff;}
+  @keyframes lr-bars{0%,100%{transform:scaleY(.28)}50%{transform:scaleY(1)}}
+  @keyframes lr-pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  @keyframes lr-rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes lr-hint{0%,100%{opacity:.4}50%{opacity:.85}}
+</style>
+</helmet>
+<div style="min-height:100vh;padding:clamp(16px,3vw,40px) clamp(14px,3vw,40px) 48px;box-sizing:border-box;font-family:'Space Grotesk',system-ui,sans-serif;color:var(--text);background:{{ pageBg }};-webkit-font-smoothing:antialiased;--text:{{ p.text }};--muted:{{ p.muted }};--faint:{{ p.faint }};--dim:{{ p.dim }};--panel:{{ p.panel }};--line:{{ p.line }};--line-soft:{{ p.lineSoft }};--track:{{ p.track }};--track2:{{ p.track2 }};--hub:{{ p.hub }};--chip:{{ p.chip }};--logbg:{{ p.logbg }};--selbg:{{ p.selbg }};--tick:{{ p.tick }};--up:{{ p.up }};--ping:{{ p.ping }};">
+<div style="max-width:620px;margin:0 auto;">
+
+  <!-- ===== TOPBAR ===== -->
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;margin-bottom:clamp(10px,2vw,20px);">
+    <div style="display:flex;align-items:center;gap:11px;">
+      <div style="display:flex;align-items:flex-end;gap:2.5px;height:17px;width:20px;">
+        <span style="flex:1;background:{{ accent }};border-radius:2px;transform-origin:bottom;height:100%;animation:lr-bars .9s ease-in-out infinite;animation-play-state:{{ barsPlay }};"></span>
+        <span style="flex:1;background:{{ accent }};border-radius:2px;transform-origin:bottom;height:100%;animation:lr-bars .9s ease-in-out .15s infinite;animation-play-state:{{ barsPlay }};"></span>
+        <span style="flex:1;background:{{ accent }};border-radius:2px;transform-origin:bottom;height:100%;animation:lr-bars .9s ease-in-out .3s infinite;animation-play-state:{{ barsPlay }};"></span>
+        <span style="flex:1;background:{{ accent }};border-radius:2px;transform-origin:bottom;height:100%;animation:lr-bars .9s ease-in-out .45s infinite;animation-play-state:{{ barsPlay }};"></span>
+      </div>
+      <a href="../" aria-label="Back to 0x4D44 almanac" style="font-family:'JetBrains Mono',monospace;font-weight:700;letter-spacing:.16em;font-size:13px;color:inherit;text-decoration:none;">LINE&nbsp;RATE</a>
     </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel);font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);">
+      <span style="width:7px;height:7px;border-radius:50%;background:{{ chipDot }};box-shadow:0 0 0 3px {{ chipHalo }};"></span>{{ chipText }}
+    </div>
+  </div>
 
-    <section class="hero" aria-labelledby="title">
-      <div>
-        <div class="kicker">broadband / telemetry / local recorder</div>
-        <h1 id="title">Line Rate</h1>
-        <p class="lede">A polished speed check for real connections: nearby test-server discovery, download and upload throughput, repeated ping samples, optional GPS fix, and a durable browser-local log.</p>
-        <div class="hero-actions">
-          <button class="btn primary" id="startBtn" type="button">Start full test</button>
-          <button class="btn" id="stopBtn" type="button" disabled>Stop</button>
-          <button class="btn" id="copyBtn" type="button">Copy latest</button>
-        </div>
-        <div class="notice" role="note">
-          <span>⚠</span>
-          <span>The network test sends temporary traffic to public Measurement Lab NDT7 servers. GPS coordinates and saved results stay in this browser unless you copy or export them.</span>
-        </div>
+  <!-- ===== GAUGE (single ring, dual needle) ===== -->
+  <div style="position:relative;width:min(460px,94vw);margin:0 auto;">
+    <svg viewBox="0 0 320 288" style="width:100%;display:block;overflow:visible;">
+      <path d="{{ trackRing }}" fill="none" style="stroke:var(--track);stroke-width:10;" stroke-linecap="round"></path>
+      <path d="{{ activeArc }}" fill="none" style="stroke:{{ activeArcColor }};stroke-width:10;" stroke-linecap="round"></path>
+      <sc-for list="{{ ticks }}" as="t" hint-placeholder-count="8">
+        <line x1="{{ t.x1 }}" y1="{{ t.y1 }}" x2="{{ t.x2 }}" y2="{{ t.y2 }}" style="stroke:var(--tick);" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>
+        <text x="{{ t.lx }}" y="{{ t.ly }}" style="fill:var(--faint);" font-size="10" font-family="'JetBrains Mono',monospace" text-anchor="middle" dominant-baseline="middle">{{ t.label }}</text>
+      </sc-for>
+      <g transform="rotate({{ downNeedle }} 160 160)">
+        <line x1="160" y1="160" x2="160" y2="44" style="stroke:{{ accent }};stroke-width:3.4;" stroke-linecap="round"></line>
+        <circle cx="160" cy="44" r="4.6" style="fill:{{ accent }};"></circle>
+      </g>
+      <g transform="rotate({{ upNeedle }} 160 160)">
+        <line x1="160" y1="160" x2="160" y2="60" style="stroke:var(--up);stroke-width:3;" stroke-linecap="round"></line>
+        <circle cx="160" cy="60" r="4" style="fill:var(--up);"></circle>
+      </g>
+      <circle cx="160" cy="160" r="8" style="fill:var(--hub);stroke:var(--line);stroke-width:1.5;"></circle>
+    </svg>
+    <!-- readout sits in the lower open wedge so needles never cross it -->
+    <div style="position:absolute;left:50%;top:64%;transform:translate(-50%,-50%);text-align:center;width:74%;pointer-events:none;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.22em;color:{{ center.color }};margin-bottom:3px;">{{ center.label }}</div>
+      <div style="font-size:clamp(38px,3.5rem,56px);font-weight:600;letter-spacing:0;font-variant-numeric:tabular-nums;line-height:1;">{{ center.val }}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:3px;">{{ center.unit }}</div>
+      <sc-if value="{{ showHint }}" hint-placeholder-val="{{ true }}">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--faint);margin-top:8px;animation:lr-hint 2.2s ease-in-out infinite;">press Run to start</div>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- legend -->
+  <div style="display:flex;justify-content:center;gap:20px;margin-top:2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--muted);">
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:15px;height:3px;border-radius:2px;background:{{ accent }};"></span>Download</span>
+    <span style="display:flex;align-items:center;gap:6px;"><span style="width:15px;height:3px;border-radius:2px;background:var(--up);"></span>Upload</span>
+  </div>
+
+  <!-- ===== RESULTS STRIP ===== -->
+  <div style="display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:clamp(8px,1.6vw,14px);">
+    <div style="flex:1 1 150px;max-width:200px;background:{{ down.bg }};border:1px solid {{ down.border }};border-radius:16px;padding:13px 15px;transition:border-color .3s,background .3s;">
+      <div style="display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;"><span style="color:{{ accent }};font-size:12px;">▼</span>Download</div>
+      <div style="display:flex;align-items:baseline;gap:5px;"><span style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;">{{ down.val }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">Mbps</span></div>
+    </div>
+    <div style="flex:1 1 150px;max-width:200px;background:{{ up.bg }};border:1px solid {{ up.border }};border-radius:16px;padding:13px 15px;transition:border-color .3s,background .3s;">
+      <div style="display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;"><span style="color:var(--up);font-size:12px;">▲</span>Upload</div>
+      <div style="display:flex;align-items:baseline;gap:5px;"><span style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;">{{ up.val }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">Mbps</span></div>
+    </div>
+    <div style="flex:1 1 150px;max-width:200px;background:{{ ping.bg }};border:1px solid {{ ping.border }};border-radius:16px;padding:13px 15px;transition:border-color .3s,background .3s;">
+      <div style="display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;"><span style="color:var(--ping);font-size:12px;">◆</span>Ping</div>
+      <div style="display:flex;align-items:baseline;gap:5px;"><span style="font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;">{{ ping.val }}</span><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);">ms</span></div>
+      <svg viewBox="0 0 100 34" preserveAspectRatio="none" style="width:100%;height:24px;margin-top:6px;display:block;"><polyline points="{{ ping.pts }}" style="fill:none;stroke:var(--ping);stroke-width:1.8;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round;"></polyline></svg>
+    </div>
+  </div>
+
+  <!-- ===== PHASE / VERDICT ===== -->
+  <sc-if value="{{ isRunning }}" hint-placeholder-val="{{ false }}">
+    <div style="text-align:center;margin-top:16px;animation:lr-rise .3s ease both;">
+      <div style="font-size:15px;color:var(--text);">{{ live.stage }}<span style="color:var(--muted);">&nbsp;·&nbsp;{{ live.step }}</span></div>
+      <div style="display:flex;justify-content:center;gap:6px;margin-top:12px;">
+        <sc-for list="{{ railSteps }}" as="s" hint-placeholder-count="6">
+          <span style="width:24px;height:4px;border-radius:2px;background:{{ s.bar }};transition:background .3s;"></span>
+        </sc-for>
       </div>
-      <div class="radar" aria-hidden="true">
-        <div class="radar-pips"><span class="pip"></span><span class="pip"></span><span class="pip"></span><span class="pip"></span></div>
-        <div class="radar-label"><strong id="statusLine">Idle — ready to run</strong><span id="statusDetail">Press Start. Allow location access to attach a GPS fix.</span></div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ showVerdict }}" hint-placeholder-val="{{ false }}">
+    <p style="text-align:center;max-width:440px;margin:16px auto 0;color:var(--text);opacity:.82;font-size:15.5px;line-height:1.45;">{{ verdictText }}</p>
+  </sc-if>
+
+  <!-- ===== RUN / STOP ===== -->
+  <div style="display:flex;justify-content:center;margin-top:20px;">
+    <sc-if value="{{ isRunning }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ onStop }}" style="font-family:'Space Grotesk',sans-serif;font-size:16px;font-weight:600;color:#e0574f;background:rgba(224,87,79,.10);border:1px solid rgba(224,87,79,.45);border-radius:999px;padding:14px 44px;cursor:pointer;">Stop</button>
+    </sc-if>
+    <sc-if value="{{ notRunning }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ onStart }}" style="font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;color:#fff;background:{{ accent }};border:none;border-radius:999px;padding:15px 52px;cursor:pointer;box-shadow:0 10px 30px {{ accentShadow }};">{{ startLabel }}</button>
+    </sc-if>
+  </div>
+
+  <!-- ===== UTILITY CHIPS ===== -->
+  <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-top:16px;">
+    <button onClick="{{ onTabHistory }}" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer;">History</button>
+    <button onClick="{{ onTabServer }}" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer;">Server</button>
+    <button onClick="{{ onTabLog }}" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer;">Log</button>
+    <button onClick="{{ onTabSettings }}" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer;">Settings</button>
+    <button onClick="{{ onCopy }}" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);background:var(--chip);border:1px solid var(--line);border-radius:999px;padding:8px 15px;cursor:pointer;">Copy</button>
+  </div>
+
+  <!-- ===== DETAIL PANEL ===== -->
+  <sc-if value="{{ detailsOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:20px;overflow:hidden;animation:lr-rise .25s ease both;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line);">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);">{{ panelTitle }}</span>
+        <button onClick="{{ onToggleDetails }}" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;line-height:1;">✕</button>
       </div>
-    </section>
-
-    <section class="grid" aria-label="Current test results">
-      <article class="card download" aria-live="polite">
-        <div class="card-title"><span>downlink</span><span id="downloadPhase">waiting</span></div>
-        <div class="metric"><span class="value" id="downloadValue">—</span><span class="unit">Mbps</span></div>
-        <div class="submetric" id="downloadMeta">0 MB received</div>
-        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
-          <path class="gridline" d="M0 20H320M0 45H320" />
-          <polyline id="downloadSpark" points="" />
-        </svg>
-        <div class="dial" id="downloadDial" style="--pct:0"></div>
-      </article>
-
-      <article class="card upload" aria-live="polite">
-        <div class="card-title"><span>uplink</span><span id="uploadPhase">waiting</span></div>
-        <div class="metric"><span class="value" id="uploadValue">—</span><span class="unit">Mbps</span></div>
-        <div class="submetric" id="uploadMeta">0 MB sent</div>
-        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
-          <path class="gridline" d="M0 20H320M0 45H320" />
-          <polyline id="uploadSpark" points="" />
-        </svg>
-        <div class="dial" id="uploadDial" style="--pct:0"></div>
-      </article>
-
-      <article class="card latency" aria-live="polite">
-        <div class="card-title"><span>ping</span><span id="pingPhase">waiting</span></div>
-        <div class="metric"><span class="value" id="pingValue">—</span><span class="unit">ms</span></div>
-        <div class="submetric" id="pingMeta">median of WebSocket setup samples</div>
-        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
-          <path class="gridline" d="M0 20H320M0 45H320" />
-          <polyline id="pingSpark" points="" />
-        </svg>
-        <div class="dial" id="pingDial" style="--pct:0"></div>
-      </article>
-
-      <article class="card location" aria-live="polite">
-        <div class="card-title"><span>GPS fix</span><span id="locationPhase">optional</span></div>
-        <div class="metric"><span class="value" id="locationValue">—</span><span class="unit">m</span></div>
-        <div class="submetric" id="locationMeta">accuracy after permission</div>
-        <svg class="spark" viewBox="0 0 320 70" preserveAspectRatio="none" aria-hidden="true">
-          <path class="gridline" d="M0 35H320M160 0V70" />
-          <polyline id="locationSpark" points="160,35" />
-        </svg>
-        <div class="dial" id="locationDial" style="--pct:0"></div>
-      </article>
-    </section>
-
-    <section class="grid" aria-label="Controls and test status">
-      <div class="steps" id="steps">
-        <div class="step" data-step="location"><span class="num">01</span><span>GPS location</span><span class="state">idle</span></div>
-        <div class="step" data-step="server"><span class="num">02</span><span>Find NDT7 server</span><span class="state">idle</span></div>
-        <div class="step" data-step="ping"><span class="num">03</span><span>Ping samples</span><span class="state">idle</span></div>
-        <div class="step" data-step="download"><span class="num">04</span><span>Download throughput</span><span class="state">idle</span></div>
-        <div class="step" data-step="upload"><span class="num">05</span><span>Upload throughput</span><span class="state">idle</span></div>
-        <div class="step" data-step="save"><span class="num">06</span><span>Store result</span><span class="state">idle</span></div>
-      </div>
-
-      <article class="card controls">
-        <div class="card-title"><span>control panel</span><span id="runId">no run</span></div>
-        <div class="control-row">
-          <label class="toggle"><input type="checkbox" id="gpsToggle" checked /> include GPS</label>
-          <label class="toggle"><input type="checkbox" id="serverToggle" checked /> use public M-Lab</label>
-          <label class="toggle">upload seconds <select id="durationSelect"><option value="6">6</option><option value="10" selected>10</option><option value="15">15</option></select></label>
-        </div>
-        <div class="server-box" aria-label="Selected test server">
-          <div class="kv"><div class="k">server</div><div class="v" id="serverName">—</div></div>
-          <div class="kv"><div class="k">location</div><div class="v" id="serverLocation">—</div></div>
-          <div class="kv"><div class="k">protocol</div><div class="v" id="serverProtocol">NDT7 WebSocket</div></div>
-        </div>
-        <div class="log-box" id="logBox" aria-live="polite">// waiting for operator</div>
-      </article>
-    </section>
-
-    <section class="grid" aria-label="Saved test history">
-      <article class="card full">
-        <div class="history-head">
+      <div style="padding:20px;">
+        <sc-if value="{{ tabServer }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;">
+            <div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">test server</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;word-break:break-all;color:var(--text);">{{ server.name }}</div></div>
+            <div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">location</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);">{{ server.loc }}</div></div>
+            <div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">protocol</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);">{{ server.proto }}</div></div>
+            <div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">run id</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);">{{ server.run }}</div></div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ tabLocation }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:16px;">
+            <div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">latitude</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);">{{ loc.lat }}</div></div>
+            <div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">longitude</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);">{{ loc.lng }}</div></div>
+            <div><div style="font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;">accuracy</div><div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);">{{ loc.acc }}</div></div>
+            <div style="grid-column:1/-1;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);">{{ loc.text }}</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ tabLog }}" hint-placeholder-val="{{ false }}">
+          <div style="background:var(--logbg);border:1px solid var(--line-soft);border-radius:14px;padding:16px;height:220px;overflow:auto;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.7;color:#8fdcae;white-space:pre-wrap;word-break:break-word;">{{ logText }}</div>
+        </sc-if>
+        <sc-if value="{{ tabHistory }}" hint-placeholder-val="{{ true }}">
           <div>
-            <div class="card-title" style="margin-bottom:8px"><span>stored measurements</span><span id="historyCount">0 rows</span></div>
-            <div class="submetric">Saved in localStorage under <code>0x4d44.broadband.v1</code>.</div>
+            <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);">{{ histCount }} · stored locally</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <button onClick="{{ onExportJson }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;">Export JSON</button>
+                <button onClick="{{ onExportCsv }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text);background:var(--chip);border:1px solid var(--line);border-radius:10px;padding:7px 12px;cursor:pointer;">Export CSV</button>
+                <button onClick="{{ onClear }}" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#e0574f;background:rgba(224,87,79,.08);border:1px solid rgba(224,87,79,.3);border-radius:10px;padding:7px 12px;cursor:pointer;">Clear</button>
+              </div>
+            </div>
+            <sc-if value="{{ histEmpty }}" hint-placeholder-val="{{ true }}">
+              <div style="padding:26px;border:1px dashed var(--line);border-radius:14px;font-family:'JetBrains Mono',monospace;font-size:12.5px;color:var(--muted);text-align:center;">No measurements yet — run a test and it will be saved here.</div>
+            </sc-if>
+            <sc-if value="{{ histHasRows }}" hint-placeholder-val="{{ false }}">
+              <div style="overflow-x:auto;">
+                <div style="display:grid;grid-template-columns:1.5fr 1fr .7fr 1.3fr;gap:8px;font-family:'JetBrains Mono',monospace;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:0 4px 10px;border-bottom:1px solid var(--line);min-width:420px;">
+                  <span>time</span><span>down / up</span><span>ping</span><span>server</span>
+                </div>
+                <sc-for list="{{ hist }}" as="row" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:1.5fr 1fr .7fr 1.3fr;gap:8px;font-family:'JetBrains Mono',monospace;font-size:12px;padding:11px 4px;border-bottom:1px solid var(--line-soft);min-width:420px;color:var(--muted);">
+                    <span>{{ row.time }}</span><span style="color:var(--text);">{{ row.du }}</span><span>{{ row.ping }}</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ row.server }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
           </div>
-          <div class="history-actions">
-            <button class="btn small" id="exportJsonBtn" type="button">Export JSON</button>
-            <button class="btn small" id="exportCsvBtn" type="button">Export CSV</button>
-            <button class="btn small warn" id="clearBtn" type="button">Clear</button>
+        </sc-if>
+        <sc-if value="{{ tabSettings }}" hint-placeholder-val="{{ false }}">
+          <div style="display:grid;gap:12px;">
+            <label style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;cursor:pointer;">
+              <span><span style="font-weight:500;font-size:14px;">Include GPS location</span><br><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);">Attach a coordinate fix to each result</span></span>
+              <input type="checkbox" checked="{{ gpsChecked }}" onChange="{{ onGps }}" style="width:18px;height:18px;accent-color:{{ accent }};cursor:pointer;">
+            </label>
+            <label style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;cursor:pointer;">
+              <span><span style="font-weight:500;font-size:14px;">Live network test</span><br><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);">On: real Measurement Lab test · Off: demo run</span></span>
+              <input type="checkbox" checked="{{ liveChecked }}" onChange="{{ onLive }}" style="width:18px;height:18px;accent-color:{{ accent }};cursor:pointer;">
+            </label>
+            <label style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;">
+              <span><span style="font-weight:500;font-size:14px;">Upload duration</span><br><span style="font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);">Seconds of upload sampling</span></span>
+              <select value="{{ uploadSeconds }}" onChange="{{ onUploadSeconds }}" style="font-family:'JetBrains Mono',monospace;font-size:13px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--selbg);color:var(--text);cursor:pointer;"><option value="6">6s</option><option value="10">10s</option><option value="15">15s</option></select>
+            </label>
           </div>
-        </div>
-        <div id="historyMount"></div>
-      </article>
-    </section>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
 
-    <p class="footer">Built as a single static HTML app. No account, no backend, no build step.</p>
-  </main>
+  <p style="margin:26px 0 0;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--dim);text-align:center;">HTTPS only · Measurement Lab NDT7 · results never leave your device</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:720,&quot;height&quot;:900},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#2B54F5&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#2B54F5&quot;,&quot;#2DD98A&quot;,&quot;#E8830C&quot;,&quot;#6E56CF&quot;],&quot;section&quot;:&quot;Style&quot;},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;dark&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Style&quot;},&quot;verdictTone&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;plain&quot;,&quot;options&quot;:[&quot;plain&quot;,&quot;technical&quot;,&quot;casual&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Copy&quot;},&quot;fastDemo&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behaviour&quot;}}">
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    const steps = [
+      { id:'location', num:'01', label:'GPS location', short:'GPS' },
+      { id:'server',   num:'02', label:'Find server',  short:'Server' },
+      { id:'ping',     num:'03', label:'Ping samples', short:'Ping' },
+      { id:'download', num:'04', label:'Download',      short:'Down' },
+      { id:'upload',   num:'05', label:'Upload',        short:'Up' },
+      { id:'save',     num:'06', label:'Save result',   short:'Save' },
+    ].map(s => ({ ...s, state:'', stateLabel:'idle' }));
+    this.state = {
+      phase:'idle', detailsOpen:false, tab:'history',
+      down:{ val:'—', sub:'ready', tag:'waiting', pts:'', area:'', active:false },
+      up:{   val:'—', sub:'ready', tag:'waiting', pts:'', area:'', active:false },
+      ping:{ val:'—', sub:'ready', tag:'waiting', pts:'', area:'', active:false },
+      nums:{ down:0, up:0 },
+      live:{ stage:'Starting…', step:'INITIALISING', val:'0', unit:'', label:'', color:'#5B8CFF', pts:'', area:'', log:'' },
+      steps,
+      server:{ name:'—', loc:'—', proto:'NDT7 · WebSocket', run:'—' },
+      loc:{ lat:'—', lng:'—', acc:'—', text:'Location fix appears here after a run.' },
+      log:[], history:[], latest:null,
+      verdict:null,
+      settings:{ gps:true, live:true, uploadSeconds:10 },
+    };
+    this.STORE = '0x4d44.broadband.v1';
+    this.LOCATE_URL = 'https://locate.measurementlab.net/v2/nearest/ndt/ndt7?client_name=0x4d44-line-rate';
+    this.NDT7 = 'net.measurementlab.ndt.v7';
+    this._series = { down:[], up:[], ping:[] };
+    this._ab = null; this._lastRender = 0;
+  }
+  componentDidMount(){
+    try { const p = JSON.parse(localStorage.getItem(this.STORE) || '[]'); if (Array.isArray(p)&&p.length){ const r=p[0]; this.setState({ history:p, latest:r, verdict:this.verdict(r.downloadMbps), nums:{down:r.downloadMbps||0, up:r.uploadMbps||0}, down:{...this.state.down,val:this.fmt(r.downloadMbps),tag:'done'}, up:{...this.state.up,val:this.fmt(r.uploadMbps),tag:'done'}, ping:{...this.state.ping,val:this.fmt(r.pingMedianMs,0),tag:'done'} }); } } catch(_){}
+  }
 
-<script src="app.js"></script>
+  /* ---------- helpers ---------- */
+  A(){ return this.props.accent ?? '#2B54F5'; }
+  fast(){ return this.props.fastDemo ?? true; }
+  fmt(n,d=1){ return Number.isFinite(n) ? n.toFixed(d) : '—'; }
+  abErr(){ return new DOMException('stopped','AbortError'); }
+  rgba(hex,a){ const h=hex.replace('#',''); const n=parseInt(h.length===3?h.split('').map(c=>c+c).join(''):h,16); return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`; }
+  bytes(n){ if(!Number.isFinite(n)||n<=0)return '0 MB'; const u=['B','KB','MB','GB']; let v=n,i=0; while(v>=1024&&i<3){v/=1024;i++;} return `${v.toFixed(i<2?0:1)} ${u[i]}`; }
+  median(xs){ const a=xs.filter(Number.isFinite).sort((p,q)=>p-q); if(!a.length)return NaN; const m=a.length>>1; return a.length%2?a[m]:(a[m-1]+a[m])/2; }
+  jitter(xs){ const d=[]; for(let i=1;i<xs.length;i++)d.push(Math.abs(xs[i]-xs[i-1])); return d.length? d.reduce((a,b)=>a+b,0)/d.length : 0; }
+  mbps(b,ms){ return b*8/Math.max(1,ms)/1000; }
+  windowRate(marks, now, totalBytes, windowMs){
+    marks.push([now,totalBytes]);
+    while(marks.length>3 && now-marks[0][0]>windowMs*1.5) marks.shift();
+    let ref=marks[0];
+    for(let k=marks.length-1;k>=0;k--){ if(now-marks[k][0]>=windowMs){ ref=marks[k]; break; } }
+    const dt=now-ref[0], db=totalBytes-ref[1];
+    return dt>=windowMs*.5 && db>=0 ? this.mbps(db,dt) : NaN;
+  }
+  chart(series, ping, h){
+    const H=h||34;
+    if(!series.length) return { pts:'', area:'' };
+    const max=Math.max(...series,1), min=Math.min(...series,0), span=Math.max(1,max-min);
+    const P=series.map((v,i)=>{ const x=series.length===1?0:(i/(series.length-1))*100; const y=H-((v-min)/span)*(H-3)-1.5; return x.toFixed(1)+','+y.toFixed(1); });
+    return { pts:P.join(' '), area:`0,${H} ${P.join(' ')} 100,${H}` };
+  }
+  gScale(v){ return v<=0?0:Math.min(1, Math.log10(v+1)/Math.log10(1001)); }
+  gAng(f){ return -135 + f*270; }
+  gPolar(r,d){ const t=d*Math.PI/180; return [160+r*Math.sin(t), 160-r*Math.cos(t)]; }
+  gArc(f0,f1,r){ if(f1<=f0) return ''; const a0=this.gAng(f0),a1=this.gAng(f1); const [x0,y0]=this.gPolar(r,a0),[x1,y1]=this.gPolar(r,a1); const large=(a1-a0)>180?1:0; return `M ${x0.toFixed(1)} ${y0.toFixed(1)} A ${r} ${r} 0 ${large} 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; }
+
+  log(msg){ const line=`[${new Date().toLocaleTimeString()}] ${msg}`; this.setState(s=>({ log:[...s.log,line].slice(-200), live:{...s.live, log:line} })); }
+  setStep(id, st, label){ this.setState(s=>({ steps: s.steps.map(x=> x.id===id? {...x, state:st, stateLabel: label||st||'idle'} : x) })); }
+  resetSteps(){ this.setState(s=>({ steps: s.steps.map(x=>({...x, state:'', stateLabel:'idle'})) })); }
+  setActive(name, stage, step, unit, color){
+    const labels={ down:'DOWNLOAD', up:'UPLOAD', ping:'PING', location:'LOCATING', server:'SERVER' };
+    this.setState(s=>({
+      live:{ ...s.live, stage, step, unit, color, label:labels[name]||'', pts:'', area:'' },
+      down:{...s.down, active:name==='down'}, up:{...s.up, active:name==='up'}, ping:{...s.ping, active:name==='ping'},
+    }));
+  }
+  paint(name, series, tileVal, liveVal, sub, ping){
+    const { pts, area } = this.chart(series, ping);
+    this.setState(s=>{
+      const patch = { live:{ ...s.live, val:liveVal, pts, area }, [name]:{ ...s[name], val:tileVal, sub, pts, area, tag:'measuring' } };
+      if(name==='down'||name==='up'){ const n=parseFloat(liveVal); patch.nums={...s.nums, [name]:Number.isFinite(n)?n:0}; }
+      return patch;
+    });
+  }
+  finishTile(name, val, sub){ const {pts,area}=this.chart(this._series[name], name==='ping'); this.setState(s=>{ const patch={ [name]:{...s[name], val, sub, tag:'done', active:false, pts, area} }; if(name==='down'||name==='up'){ const n=parseFloat(val); patch.nums={...s.nums,[name]:Number.isFinite(n)?n:0}; } return patch; }); }
+
+  animate(ms, onFrame){
+    return new Promise((res,rej)=>{
+      const start=performance.now();
+      const tick=()=>{ if(this._ab&&this._ab.aborted){rej(this.abErr());return;} const t=Math.min(1,(performance.now()-start)/ms); try{onFrame(t);}catch(e){rej(e);return;} if(t>=1){res();return;} setTimeout(tick,33); };
+      tick();
+    });
+  }
+  sleep(ms){ return new Promise((res,rej)=>{ const s=performance.now(); const c=()=>{ if(this._ab&&this._ab.aborted){rej(this.abErr());return;} if(performance.now()-s>=ms){res();return;} setTimeout(c,Math.min(50,ms)); }; c(); }); }
+
+  /* ---------- simulated engine ---------- */
+  async simLocation(allowDemo=true){
+    this.setStep('location','active','asking');
+    if(!this.state.settings.gps){ this.setStep('location','done','skipped'); this.setState(s=>({loc:{...s.loc, text:'GPS skipped in settings.'}})); this.log('GPS skipped'); return null; }
+    let fix=null;
+    try{ fix = await this.realLocation(); }catch(_){}
+    if(!fix && !allowDemo){
+      this.setStep('location','fail','no fix');
+      this.setState(s=>({loc:{...s.loc, lat:'—', lng:'—', acc:'—', text:'No GPS fix captured for this live run.'}}));
+      this.log('GPS unavailable');
+      return null;
+    }
+    if(!fix){
+      await this.sleep(this.fast()?500:900);
+      fix = { latitude:55.9533+(Math.random()-.5)*.02, longitude:-3.1883+(Math.random()-.5)*.02, accuracy:12+Math.random()*22, capturedAt:new Date().toISOString() };
+      this.log('GPS (demo fix)');
+    }
+    this.applyFix(fix);
+    this.setStep('location','done','fixed');
+    return fix;
+  }
+  applyFix(c){ this.setState(s=>({ loc:{ lat:c.latitude.toFixed(5), lng:c.longitude.toFixed(5), acc:`±${Math.round(c.accuracy)} m`, text:`Fix captured ${new Date(c.capturedAt||Date.now()).toLocaleTimeString()}.` } })); }
+  realLocation(){ return new Promise((res,rej)=>{ if(!navigator.geolocation||!window.isSecureContext){rej(new Error('no geo'));return;} const t=setTimeout(()=>rej(new Error('timeout')),3000); navigator.geolocation.getCurrentPosition(p=>{clearTimeout(t); const c=p.coords; res({latitude:c.latitude,longitude:c.longitude,accuracy:c.accuracy,capturedAt:new Date(p.timestamp).toISOString()});}, e=>{clearTimeout(t);rej(e);}, {enableHighAccuracy:true,maximumAge:30000,timeout:2800}); }); }
+
+  async simServer(){
+    this.setStep('server','active','locating'); this.setActive('server','Finding nearby server','STEP 02 / 06 · SERVER','',this.A()); await this.sleep(this.fast()?600:1100);
+    const pool=[
+      { name:'mlab1-lhr07.mlab-oti.measurement-lab.org', city:'London', country:'GB' },
+      { name:'mlab2-lhr06.mlab-oti.measurement-lab.org', city:'London', country:'GB' },
+      { name:'mlab1-ams08.mlab-oti.measurement-lab.org', city:'Amsterdam', country:'NL' },
+      { name:'mlab3-par06.mlab-oti.measurement-lab.org', city:'Paris', country:'FR' },
+    ];
+    const srv=pool[Math.floor(Math.random()*pool.length)];
+    this.setState(s=>({ server:{...s.server, name:srv.name, loc:`${srv.city}, ${srv.country}` } }));
+    this.setStep('server','done','selected'); this.log(`Server ${srv.name}`);
+    return srv;
+  }
+  async simPing(){
+    this.setActive('ping','Measuring latency','STEP 03 / 06 · PING','ms','#FFB020'); this.setStep('ping','active','sampling');
+    this._series.ping=[]; const base=6+Math.random()*24, samples=[];
+    for(let i=0;i<7;i++){ const v=Math.max(1,base+(Math.random()-.4)*base*.5); samples.push(v); this._series.ping.push(v); const med=this.median(samples); this.paint('ping', this._series.ping, this.fmt(med,0), this.fmt(v,0), `${samples.length} samples · min ${this.fmt(Math.min(...samples),0)} ms`, true); await this.sleep(this.fast()?170:240); }
+    const med=this.median(samples);
+    this.finishTile('ping', this.fmt(med,0), `min ${this.fmt(Math.min(...samples),0)} ms · jitter ${this.fmt(this.jitter(samples),0)} ms`);
+    this.setStep('ping','done','done'); this.log(`Ping median ${this.fmt(med,0)} ms`);
+    return { medianMs:med, minMs:Math.min(...samples), jitterMs:this.jitter(samples), samples };
+  }
+  async simThroughput(name, unit, color, targetLo, targetHi){
+    const target=targetLo+Math.random()*(targetHi-targetLo);
+    this._series[name]=[]; let last=0;
+    await this.animate(this.fast()?4400:8000, (t)=>{
+      const rate=target*(1-Math.exp(-t*3.2))*(0.9+Math.random()*0.13);
+      const now=performance.now();
+      if(now-last>110){ last=now; this._series[name].push(rate); if(this._series[name].length>72)this._series[name].shift(); }
+      if(now-this._lastRender>50){ this._lastRender=now; this.paint(name, this._series[name], this.fmt(rate), this.fmt(rate), `live`, false); }
+    });
+    const final=target*(0.95+Math.random()*0.05);
+    this.finishTile(name, this.fmt(final), `peak ${this.fmt(final)} ${unit} · avg ${this.fmt(final*0.86)} ${unit}`);
+    return { mbps:final };
+  }
+
+  /* ---------- real engine ---------- */
+  ndtUrl(urls, dir){ const e=Object.entries(urls||{}); const m=e.find(([k,v])=>`${k} ${Array.isArray(v)?v.join(' '):v}`.includes(`/ndt/v7/${dir}`)&&`${v}`.includes('wss')); if(!m)return ''; return Array.isArray(m[1])?m[1][0]:m[1]; }
+  async realLocate(signal){
+    this.setStep('server','active','locating');
+    const res=await fetch(`${this.LOCATE_URL}&cb=${Date.now()}`,{cache:'no-store',signal});
+    if(!res.ok) throw new Error(`Locate HTTP ${res.status}`);
+    const data=await res.json();
+    const servers=(data.results||[]).map(it=>{ const d=this.ndtUrl(it.urls,'download'), u=this.ndtUrl(it.urls,'upload'); if(!d||!u)return null; return { name:it.machine||new URL(d).hostname, city:it.location&&it.location.city, country:it.location&&it.location.country, downloadUrl:d, uploadUrl:u }; }).filter(Boolean);
+    if(!servers.length) throw new Error('No NDT7 server');
+    this.setState(s=>({ server:{...s.server, name:servers[0].name, loc:[servers[0].city,servers[0].country].filter(Boolean).join(', ')||'nearby'} }));
+    this.setStep('server','done','selected'); this.log(`Locate returned ${servers.length} servers`);
+    return servers;
+  }
+  timeWs(url,signal){ return new Promise((res,rej)=>{ const t0=performance.now(); const ws=new WebSocket(url,this.NDT7); const to=setTimeout(()=>fin(new Error('timeout')),6000); const oa=()=>fin(this.abErr()); if(signal)signal.addEventListener('abort',oa,{once:true}); function fin(v){clearTimeout(to); if(signal)signal.removeEventListener('abort',oa); try{ws.close();}catch(_){} (v instanceof Error)?rej(v):res(v);} ws.onopen=()=>fin(performance.now()-t0); ws.onerror=()=>fin(new Error('ping ws failed')); }); }
+  async realPing(server,signal){
+    this.setActive('ping','Measuring latency','STEP 03 / 06 · PING','ms','#FFB020'); this.setStep('ping','active','sampling');
+    this._series.ping=[]; const samples=[];
+    for(let i=0;i<7;i++){ if(signal.aborted)throw this.abErr(); try{ const ms=await this.timeWs(server.downloadUrl,signal); samples.push(ms); this._series.ping.push(ms); const med=this.median(samples); this.paint('ping',this._series.ping,this.fmt(med,0),this.fmt(ms,0),`${samples.length} samples`,true);}catch(e){ if(e.name==='AbortError')throw e; } await this.sleep(240); }
+    if(!samples.length) throw new Error('ping failed');
+    const med=this.median(samples); this.finishTile('ping',this.fmt(med,0),`min ${this.fmt(Math.min(...samples),0)} ms · jitter ${this.fmt(this.jitter(samples),0)} ms`); this.setStep('ping','done','done'); this.log(`Ping median ${this.fmt(med,0)} ms`);
+    return { medianMs:med, minMs:Math.min(...samples), jitterMs:this.jitter(samples), samples };
+  }
+  realDownload(url,signal){
+    this.setActive('down','Measuring download','STEP 04 / 06 · DOWNLOAD','Mbps',this.A()); this.setStep('download','active','running');
+    this._series.down=[];
+    return new Promise((res,rej)=>{ const ws=new WebSocket(url,this.NDT7); ws.binaryType='arraybuffer'; let opened=0,received=0,frames=0,texts=0,last=0,closed=false,peak=0; const marks=[]; const hard=setTimeout(()=>fin(null),17000); const oa=()=>fin(this.abErr()); if(signal)signal.addEventListener('abort',oa,{once:true}); const self=this;
+      function samp(){ const now=performance.now(); if(now-last<160)return; last=now; const wr=self.windowRate(marks,now,received,1000); const r=Number.isFinite(wr)?wr:self.mbps(received,now-opened); if(Number.isFinite(wr)&&wr>peak)peak=wr; self._series.down.push(r); if(self._series.down.length>72)self._series.down.shift(); self.paint('down',self._series.down,self.fmt(r),self.fmt(r),`${self.bytes(received)} received · ${frames} frames`,false); }
+      function fin(v){ if(closed)return; closed=true; clearTimeout(hard); if(signal)signal.removeEventListener('abort',oa); try{ws.close();}catch(_){} if(v instanceof Error){rej(v);return;} const ms=Math.max(1,performance.now()-opened); const avg=self.mbps(received,ms); const r=peak>0?peak:avg; self.finishTile('down',self.fmt(r),`${self.bytes(received)} · peak ${self.fmt(r)} · avg ${self.fmt(avg)} Mbps · ${self.fmt(ms/1000,1)}s`); self.setStep('download','done','done'); self.log(`Download ${self.fmt(r)} Mbps peak · ${self.fmt(avg)} avg over ${self.fmt(ms/1000,1)}s`); res({mbps:r,avgMbps:avg,bytes:received,durationSec:ms/1000,frames,serverMessages:texts}); }
+      ws.onopen=()=>{opened=performance.now();last=opened;}; ws.onmessage=(e)=>{ if(typeof e.data==='string'){texts++;return;} received+=e.data.byteLength||0; frames++; samp(); }; ws.onerror=()=>fin(new Error('download ws failed')); ws.onclose=()=>fin(null);
+    });
+  }
+  realUpload(url,seconds,signal){
+    this.setActive('up','Measuring upload','STEP 05 / 06 · UPLOAD','Mbps','#2DD98A'); this.setStep('upload','active','running');
+    this._series.up=[];
+    return new Promise((res,rej)=>{ const ws=new WebSocket(url,this.NDT7); const chunk=new Uint8Array(64*1024); const targetMs=Math.max(3000,seconds*1000); const maxBuf=8*1024*1024; let opened=0,sent=0,texts=0,last=0,draining=0,closed=false,srv=0,srvMs=0,peak=0; const marks=[]; const hard=setTimeout(()=>fin(null),targetMs+9000); const oa=()=>fin(this.abErr()); crypto.getRandomValues(chunk.subarray(0,1024)); if(signal)signal.addEventListener('abort',oa,{once:true}); const self=this;
+      function samp(){ const now=performance.now(); if(now-last<200)return; last=now; const c=srv>0?srv:sent; const wr=self.windowRate(marks,now,c,1000); const r=Number.isFinite(wr)?wr:self.mbps(c,now-opened); if(Number.isFinite(wr)&&wr>peak)peak=wr; self._series.up.push(r); if(self._series.up.length>72)self._series.up.shift(); self.paint('up',self._series.up,self.fmt(r),self.fmt(r),`${self.bytes(c)} ${srv>0?'received':'sent'} · buffer ${self.bytes(ws.bufferedAmount||0)}`,false); }
+      function pump(){ if(closed||ws.readyState!==1)return; const el=performance.now()-opened; if(el>=targetMs){ if(!draining)draining=performance.now(); if((ws.bufferedAmount||0)<=chunk.byteLength||performance.now()-draining>3500){ try{ws.close();}catch(_){} return; } samp(); setTimeout(pump,40); return; } while(ws.readyState===1&&(ws.bufferedAmount||0)<maxBuf&&performance.now()-opened<targetMs){ ws.send(chunk); sent+=chunk.byteLength; } samp(); requestAnimationFrame(pump); }
+      function fin(v){ if(closed)return; closed=true; clearTimeout(hard); if(signal)signal.removeEventListener('abort',oa); try{ws.close();}catch(_){} if(v instanceof Error){rej(v);return;} const ms=Math.max(1,performance.now()-opened); const c=srv>0?srv:sent; const avg=self.mbps(c,srv>0?(srvMs||ms):ms); const r=peak>0?peak:avg; self.finishTile('up',self.fmt(r),`${self.bytes(c)} ${srv>0?'received':'sent'} · peak ${self.fmt(r)} · avg ${self.fmt(avg)} Mbps · ${self.fmt(ms/1000,1)}s`); self.setStep('upload','done','done'); self.log(`Upload ${self.fmt(r)} Mbps peak${srv>0?' (server-measured)':''} · ${self.fmt(avg)} avg over ${self.fmt(ms/1000,1)}s`); res({mbps:r,avgMbps:avg,bytes:c,durationSec:ms/1000,serverMessages:texts}); }
+      ws.onopen=()=>{opened=performance.now();last=opened;pump();}; ws.onmessage=(e)=>{ if(typeof e.data!=='string')return; texts++; try{ const m=JSON.parse(e.data); const ai=m.AppInfo||(m.TCPInfo?{NumBytes:m.TCPInfo.BytesReceived,ElapsedTime:m.TCPInfo.ElapsedTime}:null); if(ai&&Number.isFinite(ai.NumBytes)&&ai.NumBytes>srv){ if(srv===0){marks.length=0;peak=0;} srv=ai.NumBytes; srvMs=Number.isFinite(ai.ElapsedTime)?ai.ElapsedTime/1000:(performance.now()-opened); } }catch(_){} }; ws.onerror=()=>fin(new Error('upload ws failed')); ws.onclose=()=>fin(null);
+    });
+  }
+
+  /* ---------- orchestrator ---------- */
+  async run(){
+    if(this.state.phase==='running') return;
+    this._ab={aborted:false};
+    const ac = ('AbortController' in window) ? new AbortController() : null;
+    this._ac = ac;
+    this._series={down:[],up:[],ping:[]};
+    this.setState({ phase:'running', log:[], nums:{down:0,up:0},
+      down:{val:'—',sub:'…',tag:'waiting',pts:'',area:'',active:false},
+      up:{val:'—',sub:'…',tag:'waiting',pts:'',area:'',active:false},
+      ping:{val:'—',sub:'…',tag:'waiting',pts:'',area:'',active:false},
+      server:{name:'—',loc:'—',proto:'NDT7 · WebSocket',run:'running'},
+      live:{stage:'Getting ready',step:'STEP 01 / 06 · LOCATION',val:'0',unit:'',label:'LOCATING',color:this.A(),pts:'',area:'',log:''},
+    });
+    this.resetSteps();
+    const live = this.state.settings.live && ac;
+    const sig = ac ? ac.signal : null;
+    const started=new Date().toISOString();
+    const parts={};
+    try{
+      this.log(live?'Starting live Measurement Lab test':'Starting demo run');
+      this.setActive('location','Finding your location','STEP 01 / 06 · LOCATION','',this.A());
+      parts.location = await this.simLocation(!live);
+      if(live){
+        const servers=await this.realLocate(sig);
+        let ok=null,pingErr=null;
+        for(const c of servers){ this.setState(s=>({server:{...s.server,name:c.name,loc:[c.city,c.country].filter(Boolean).join(', ')||'nearby'}})); try{ parts.ping=await this.realPing(c,sig); parts.server=c; ok=c; break; }catch(e){ if(e.name==='AbortError')throw e; pingErr=e; this.log(`No response from ${c.name}, next…`); } }
+        if(!ok) throw new Error('No server accepted a connection'+(pingErr?` (${pingErr.message})`:''));
+        parts.download=await this.realDownload(ok.downloadUrl,sig);
+        parts.upload=await this.realUpload(ok.uploadUrl,this.state.settings.uploadSeconds,sig);
+      } else {
+        const srv=await this.simServer(); parts.server=srv;
+        parts.ping=await this.simPing();
+        this.setActive('down','Measuring download','STEP 04 / 06 · DOWNLOAD','Mbps',this.A());
+        parts.download=await this.simThroughput('down','Mbps',this.A(),80,470);
+        this.setStep('download','done','done'); this.log(`Download ${this.fmt(parts.download.mbps)} Mbps`);
+        this.setActive('up','Measuring upload','STEP 05 / 06 · UPLOAD','Mbps','#2DD98A');
+        parts.upload=await this.simThroughput('up','Mbps','#2DD98A',15,70);
+        this.setStep('upload','done','done'); this.log(`Upload ${this.fmt(parts.upload.mbps)} Mbps`);
+      }
+      this.setStep('save','active','saving');
+      const rec={ id:`lr-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`, startedAt:started, finishedAt:new Date().toISOString(), downloadMbps:parts.download.mbps, uploadMbps:parts.upload.mbps, pingMedianMs:parts.ping.medianMs, pingMinMs:parts.ping.minMs, pingJitterMs:parts.ping.jitterMs, pingSamplesMs:parts.ping.samples, downloadBytes:parts.download.bytes, uploadBytes:parts.upload.bytes, downloadDurationSec:parts.download.durationSec, uploadDurationSec:parts.upload.durationSec, location:parts.location, server:{ machine:parts.server.name||parts.server.machine, city:parts.server.city||null, country:parts.server.country||null }, mode: live?'live':'demo', userAgent:navigator.userAgent };
+      const hist=[rec, ...this.state.history].slice(0,100);
+      try{ localStorage.setItem(this.STORE, JSON.stringify(hist)); }catch(_){}
+      this.setStep('save','done','saved');
+      const v=this.verdict(rec.downloadMbps);
+      this.setState(s=>({ phase:'done', latest:rec, history:hist, verdict:v, server:{...s.server, run:rec.id.slice(-6)} }));
+      this.log('Result saved locally');
+    }catch(err){
+      const stopped = err && err.name==='AbortError';
+      this.log(stopped?'Run stopped':`Error: ${err.message||err}`);
+      this.setState(s=>({ phase: s.latest? 'done':'idle',
+        steps: s.steps.map(x=> x.state==='active'? {...x,state:'fail',stateLabel:stopped?'stopped':'fail'} : x) }));
+    }finally{ this._ab=null; this._ac=null; }
+  }
+  stop(){ if(this._ab)this._ab.aborted=true; if(this._ac)try{this._ac.abort();}catch(_){} }
+  verdict(dl){
+    const tone=this.props.verdictTone ?? 'plain';
+    const G='#2DD98A', Y='#FFB020';
+    const sets={
+      plain:[
+        [200,'Excellent — 4K streams, big downloads and video calls all at once.',G],
+        [50,'Great — smooth 4K streaming and crisp video calls.',G],
+        [25,'Good — comfortable HD streaming and video calls.',G],
+        [10,'OK — fine for browsing and HD video, one device at a time.',Y],
+        [0,'Basic — best for browsing and standard-definition video.',Y],
+      ],
+      technical:[
+        [200,'Excellent link — >200 Mbps down, ample headroom for concurrent 4K and large transfers.',G],
+        [50,'Strong link — 50–200 Mbps, comfortable for 4K and multi-device use.',G],
+        [25,'Adequate — 25–50 Mbps, fine for HD and standard video calls.',G],
+        [10,'Marginal — 10–25 Mbps, single-stream HD only.',Y],
+        [0,'Constrained — <10 Mbps, browsing and SD video only.',Y],
+      ],
+      casual:[
+        [200,'Blazing fast — binge, game and download all at once, no problem.',G],
+        [50,'Really solid — 4K and video calls feel effortless.',G],
+        [25,'Pretty good — HD streaming and calls run smooth.',G],
+        [10,"It'll do — fine for browsing and a bit of HD video.",Y],
+        [0,'A bit slow — best for browsing and light video.',Y],
+      ],
+    };
+    const rows=sets[tone]||sets.plain;
+    for(const [th,text,color] of rows){ if(dl>=th) return { text, color }; }
+    return { text:rows[rows.length-1][1], color:Y };
+  }
+
+  copy(){ const r=this.state.latest||this.state.history[0]; if(!r){this.log('Nothing to copy yet');this.setState({tab:'log',detailsOpen:true});return;} const t=JSON.stringify(r,null,2); const fallback=()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();this.log('Result copied to clipboard');}; if(navigator.clipboard) navigator.clipboard.writeText(t).then(()=>this.log('Result copied to clipboard'),fallback); else fallback(); }
+  dl(name,type,content){ const b=new Blob([content],{type}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(u),1000); }
+  csvCell(v){ const s=v==null?'':String(v); return /[",\n]/.test(s)?`"${s.replace(/"/g,'""')}"`:s; }
+  exportJson(){ this.dl(`line-rate-${new Date().toISOString().slice(0,10)}.json`,'application/json',JSON.stringify(this.state.history,null,2)); }
+  exportCsv(){ const head=['id','startedAt','downloadMbps','uploadMbps','pingMedianMs','pingMinMs','pingJitterMs','latitude','longitude','accuracy','serverMachine','serverCity','serverCountry','mode']; const rows=this.state.history.map(r=>[r.id,r.startedAt,r.downloadMbps,r.uploadMbps,r.pingMedianMs,r.pingMinMs,r.pingJitterMs,r.location&&r.location.latitude,r.location&&r.location.longitude,r.location&&r.location.accuracy,r.server&&r.server.machine,r.server&&r.server.city,r.server&&r.server.country,r.mode].map(v=>this.csvCell(v)).join(',')); this.dl(`line-rate-${new Date().toISOString().slice(0,10)}.csv`,'text/csv',[head.join(','),...rows].join('\n')); }
+  clear(){ if(!confirm('Clear all stored results from this browser?'))return; try{localStorage.removeItem(this.STORE);}catch(_){} this.setState({history:[],latest:null,verdict:null,phase:'idle',nums:{down:0,up:0}, down:{val:'—',sub:'ready',tag:'waiting',pts:'',area:'',active:false}, up:{val:'—',sub:'ready',tag:'waiting',pts:'',area:'',active:false}, ping:{val:'—',sub:'ready',tag:'waiting',pts:'',area:'',active:false}}); this.log('History cleared'); }
+
+  /* ---------- render ---------- */
+  railColors(st){
+    if(st==='done') return { bar:'#2DD98A' };
+    if(st==='active') return { bar:this.A() };
+    if(st==='fail') return { bar:'#e0574f' };
+    return { bar:'var(--line)' };
+  }
+  metric(m, color){
+    return { val:m.val, active:m.active,
+      bg: m.active ? this.rgba(color,.09) : 'var(--panel)',
+      border: m.active ? color : 'var(--line)' };
+  }
+  palette(dark, A){
+    if(dark) return { text:'#EDF2F6', muted:'#8494A2', faint:'#6b7783', dim:'#4d5762', panel:'rgba(255,255,255,.035)', line:'rgba(255,255,255,.09)', lineSoft:'rgba(255,255,255,.06)', track:'rgba(255,255,255,.07)', track2:'rgba(255,255,255,.055)', hub:'#080B10', chip:'rgba(255,255,255,.04)', logbg:'#05070A', selbg:'#0E141C', tick:'rgba(255,255,255,.30)', up:'#2DD98A', ping:'#FFB020' };
+    return { text:'#0C1116', muted:'#59626E', faint:'#8A929C', dim:'#98a0aa', panel:'#FFFFFF', line:'rgba(12,17,22,.10)', lineSoft:'rgba(12,17,22,.07)', track:'rgba(12,17,22,.09)', track2:'rgba(12,17,22,.06)', hub:'#FFFFFF', chip:'#FFFFFF', logbg:'#0A0E13', selbg:'#FFFFFF', tick:'rgba(12,17,22,.35)', up:'#12A866', ping:'#E8830C' };
+  }
+  renderVals(){
+    const s=this.state, A=this.A();
+    const isRunning = s.phase==='running';
+    const hasResult = !!s.latest;
+    const dark = (this.props.theme ?? 'dark') !== 'light';
+    const P = this.palette(dark, A);
+    const pageBg = dark
+      ? `radial-gradient(120% 80% at 50% -8%, ${this.rgba(A,.14)}, transparent 60%),#080B10`
+      : `radial-gradient(120% 80% at 50% -8%, ${this.rgba(A,.10)}, transparent 55%),#EDEFF2`;
+    const chip = isRunning ? { text:'live', dot:P.up, halo:this.rgba(P.up,.2) } : hasResult ? { text:'done', dot:P.up, halo:this.rgba(P.up,.16) } : { text:'idle', dot:P.muted, halo:this.rgba('#8494A2',.14) };
+    // gauge
+    const fD=this.gScale(s.nums.down), fU=this.gScale(s.nums.up), R=118;
+    const ticks=[0,5,25,50,100,250,500,1000].map(v=>{ const d=this.gAng(this.gScale(v)); const [x1,y1]=this.gPolar(R+7,d); const [x2,y2]=this.gPolar(R+14,d); const [lx,ly]=this.gPolar(R+27,d); return { x1:x1.toFixed(1),y1:y1.toFixed(1),x2:x2.toFixed(1),y2:y2.toFixed(1),lx:lx.toFixed(1),ly:ly.toFixed(1),label:String(v) }; });
+    let activeArc='', activeArcColor=A;
+    if(isRunning){ if(s.down.active){ activeArc=this.gArc(0,fD,R); activeArcColor=A; } else if(s.up.active){ activeArc=this.gArc(0,fU,R); activeArcColor=P.up; } }
+    else if(hasResult){ activeArc=this.gArc(0,fD,R); activeArcColor=A; }
+    // center readout
+    let center;
+    if(isRunning) center={ val:s.live.val, unit:s.live.unit||'', label:s.live.label||'', color:s.live.color };
+    else if(hasResult) center={ val:s.down.val, unit:'Mbps', label:'DOWNLOAD', color:A };
+    else center={ val:'0', unit:'Mbps', label:'READY', color:P.faint };
+    const rail = s.steps.map(x=>({ ...this.railColors(x.state) }));
+    const titles={ server:'Test server', location:'Location fix', log:'Activity log', history:'Saved history', settings:'Settings' };
+    const hist = s.history.slice(0,25).map(r=>({
+      time:new Date(r.startedAt).toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),
+      du:`${this.fmt(r.downloadMbps)} / ${this.fmt(r.uploadMbps)}`,
+      ping:`${this.fmt(r.pingMedianMs,0)}ms`,
+      server:[r.server&&r.server.city,r.server&&r.server.country].filter(Boolean).join(', ')||(r.server&&r.server.machine)||'—',
+    }));
+    return {
+      p:P, pageBg,
+      accent:A, accentShadow:this.rgba(A,.4),
+      barsPlay: isRunning ? 'running':'paused',
+      chipText:chip.text, chipDot:chip.dot, chipHalo:chip.halo,
+      isRunning, notRunning:!isRunning, hasResult, showVerdict: hasResult && !isRunning, showHint: !isRunning && !hasResult,
+      startLabel: hasResult ? 'Run again' : 'Start test',
+      verdictText: s.verdict? s.verdict.text : '',
+      trackRing:this.gArc(0,1,R), activeArc, activeArcColor,
+      downNeedle:this.gAng(fD).toFixed(2), upNeedle:this.gAng(fU).toFixed(2),
+      ticks, center,
+      down:this.metric(s.down,A), up:this.metric(s.up,P.up), ping:{...this.metric(s.ping,P.ping), pts:s.ping.pts},
+      live:s.live, railSteps:rail,
+      server:s.server, loc:s.loc,
+      logText: s.log.length? s.log.join('\n') : '// waiting for a run',
+      hist, histCount:`${s.history.length} run${s.history.length===1?'':'s'}`,
+      histEmpty:s.history.length===0, histHasRows:s.history.length>0,
+      detailsOpen:s.detailsOpen, panelTitle: titles[s.tab]||'Details',
+      tabServer:s.tab==='server', tabLocation:s.tab==='location', tabLog:s.tab==='log', tabHistory:s.tab==='history', tabSettings:s.tab==='settings',
+      gpsChecked:s.settings.gps, liveChecked:s.settings.live, uploadSeconds:String(s.settings.uploadSeconds),
+      onStart:()=>this.run(), onStop:()=>this.stop(), onCopy:()=>this.copy(),
+      onExportJson:()=>this.exportJson(), onExportCsv:()=>this.exportCsv(), onClear:()=>this.clear(),
+      onToggleDetails:()=>this.setState(st=>({detailsOpen:!st.detailsOpen})),
+      onTabServer:()=>this.setState({tab:'server',detailsOpen:true}), onTabLocation:()=>this.setState({tab:'location',detailsOpen:true}), onTabLog:()=>this.setState({tab:'log',detailsOpen:true}), onTabHistory:()=>this.setState({tab:'history',detailsOpen:true}), onTabSettings:()=>this.setState({tab:'settings',detailsOpen:true}),
+      onGps:(e)=>this.setState(st=>({settings:{...st.settings,gps:e.target.checked}})),
+      onLive:(e)=>this.setState(st=>({settings:{...st.settings,live:e.target.checked}})),
+      onUploadSeconds:(e)=>this.setState(st=>({settings:{...st.settings,uploadSeconds:Number(e.target.value)}})),
+    };
+  }
+}
+</script>
+<script defer src="/almanac-back.js"></script>
 </body>
 </html>

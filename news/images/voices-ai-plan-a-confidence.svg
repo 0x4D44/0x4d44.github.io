@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">The Plan A authors rate political feasibility much lower than conditional safety</title>
+  <desc id="desc">For five authors, estimates that Plan A happens range from 3 to 15 per cent. Their estimates that it avoids a misaligned takeover if it happens range from 70 to 81 per cent. These are two separate questions.</desc>
+  <rect width="1200" height="675" rx="18" fill="#f4efe5"/>
+  <text x="70" y="70" fill="#151515" font-family="Georgia, serif" font-size="37" font-weight="700">Even its authors think Plan A is unlikely to happen</text>
+  <text x="70" y="105" fill="#5d5951" font-family="Arial, sans-serif" font-size="18">Individual estimates, per cent · the two measures answer different questions</text>
+
+  <g transform="translate(625 134)" font-family="Arial, sans-serif" font-size="15">
+    <circle cx="0" cy="0" r="7" fill="#315f75"/>
+    <text x="15" y="5" fill="#315f75" font-weight="700">Plan A happens</text>
+    <circle cx="188" cy="0" r="7" fill="#b54136"/>
+    <text x="203" y="5" fill="#9f3028" font-weight="700">Avoids takeover if it happens</text>
+  </g>
+
+  <g font-family="Arial, sans-serif" font-size="14" fill="#706b63" text-anchor="middle">
+    <line x1="300" y1="171" x2="1050" y2="171" stroke="#c8c0b3"/>
+    <line x1="300" y1="171" x2="300" y2="530" stroke="#c8c0b3"/>
+    <line x1="450" y1="171" x2="450" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/>
+    <line x1="600" y1="171" x2="600" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/>
+    <line x1="750" y1="171" x2="750" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/>
+    <line x1="900" y1="171" x2="900" y2="530" stroke="#d8d1c6" stroke-dasharray="4 6"/>
+    <line x1="1050" y1="171" x2="1050" y2="530" stroke="#c8c0b3"/>
+    <text x="300" y="559">0%</text><text x="450" y="559">20%</text><text x="600" y="559">40%</text>
+    <text x="750" y="559">60%</text><text x="900" y="559">80%</text><text x="1050" y="559">100%</text>
+  </g>
+
+  <g font-family="Arial, sans-serif">
+    <g>
+      <text x="270" y="220" text-anchor="end" fill="#151515" font-size="18" font-weight="700">Eli Lifland</text>
+      <line x1="337.5" y1="215" x2="825" y2="215" stroke="#bdb5a8" stroke-width="3"/>
+      <circle cx="337.5" cy="215" r="10" fill="#315f75"/><circle cx="825" cy="215" r="10" fill="#b54136"/>
+      <text x="337.5" y="196" text-anchor="middle" fill="#315f75" font-size="15" font-weight="700">5</text>
+      <text x="825" y="196" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">70</text>
+    </g>
+    <g>
+      <text x="270" y="290" text-anchor="end" fill="#151515" font-size="18" font-weight="700">Daniel Kokotajlo</text>
+      <line x1="412.5" y1="285" x2="900" y2="285" stroke="#bdb5a8" stroke-width="3"/>
+      <circle cx="412.5" cy="285" r="10" fill="#315f75"/><circle cx="900" cy="285" r="10" fill="#b54136"/>
+      <text x="412.5" y="266" text-anchor="middle" fill="#315f75" font-size="15" font-weight="700">15</text>
+      <text x="900" y="266" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">80</text>
+    </g>
+    <g>
+      <text x="270" y="360" text-anchor="end" fill="#151515" font-size="18" font-weight="700">Thomas Larsen</text>
+      <line x1="322.5" y1="355" x2="900" y2="355" stroke="#bdb5a8" stroke-width="3"/>
+      <circle cx="322.5" cy="355" r="10" fill="#315f75"/><circle cx="900" cy="355" r="10" fill="#b54136"/>
+      <text x="322.5" y="336" text-anchor="middle" fill="#315f75" font-size="15" font-weight="700">3</text>
+      <text x="900" y="336" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">80</text>
+    </g>
+    <g>
+      <text x="270" y="430" text-anchor="end" fill="#151515" font-size="18" font-weight="700">Romeo Dean</text>
+      <line x1="360" y1="425" x2="900" y2="425" stroke="#bdb5a8" stroke-width="3"/>
+      <circle cx="360" cy="425" r="10" fill="#315f75"/><circle cx="900" cy="425" r="10" fill="#b54136"/>
+      <text x="360" y="406" text-anchor="middle" fill="#315f75" font-size="15" font-weight="700">8</text>
+      <text x="900" y="406" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">80</text>
+    </g>
+    <g>
+      <text x="270" y="500" text-anchor="end" fill="#151515" font-size="18" font-weight="700">Ryan Greenblatt</text>
+      <line x1="330" y1="495" x2="907.5" y2="495" stroke="#bdb5a8" stroke-width="3"/>
+      <circle cx="330" cy="495" r="10" fill="#315f75"/><circle cx="907.5" cy="495" r="10" fill="#b54136"/>
+      <text x="330" y="476" text-anchor="middle" fill="#315f75" font-size="15" font-weight="700">4</text>
+      <text x="907.5" y="476" text-anchor="middle" fill="#9f3028" font-size="15" font-weight="700">81</text>
+    </g>
+  </g>
+
+  <rect x="70" y="578" width="1060" height="40" rx="8" fill="#e7dfd2"/>
+  <text x="600" y="604" text-anchor="middle" fill="#4e4942" font-family="Arial, sans-serif" font-size="15" font-weight="700">Do not multiply or directly compare these dots: feasibility and conditional safety are separate judgements.</text>
+  <text x="70" y="650" fill="#777168" font-family="Arial, sans-serif" font-size="14">Source: AI Futures Project, “Comparing Possible Plans” supplement, July 2026.</text>
+</svg>

@@ -29,7 +29,11 @@ assert.match(index, /<script type="module" src="app\.js"><\/script>/, "index loa
 for (const match of index.matchAll(/(?:href|src)="([^"]+)"/g)) {
   const ref = match[1];
   if (/^(https?:)?\/\//.test(ref) || ref.startsWith("data:")) continue;
-  assert.ok(existsSync(join(appDir, ref)), `index reference exists: ${ref}`);
+  // A root-absolute ref (the shared "/almanac-back.js" back button) resolves from
+  // the repo root, not this document's directory. Resolve it rather than skip it,
+  // so a typo'd root-absolute path is still caught.
+  const target = ref.startsWith("/") ? join(root, ref.slice(1)) : join(appDir, ref);
+  assert.ok(existsSync(target), `index reference exists: ${ref}`);
 }
 
 const manifest = JSON.parse(readFileSync(join(appDir, "manifest.webmanifest"), "utf8"));

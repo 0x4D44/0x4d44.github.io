@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brilliancy — an evening of impossible chess</title>
+<meta name="description" content="A chess power-fantasy: eight rounds, eight immortal brilliancies, and you never need to know how the horse moves. A game about feeling like a grandmaster.">
+<meta name="theme-color" content="#14170f">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2314170f'/><text x='50' y='76' font-size='68' text-anchor='middle' fill='%23c9a95c'>&#9822;</text></svg>">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+<!-- ======================================================================
+     SVG defs: the piece set (drawn by hand for this game), plus ornaments.
+     Pieces fill with currentColor; --cut is the contrast colour for details.
+     ====================================================================== -->
+<svg id="defs" width="0" height="0" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="pc-P" viewBox="0 0 45 45">
+      <circle cx="22.5" cy="11.5" r="5"/>
+      <path d="M22.5 16c-3.8 0-6.4 2.7-6.4 5.8 0 1.9.9 3.6 2.4 4.7C15 29 12.5 32.8 12.5 36.5h20C32.5 32.8 30 29 26.5 26.5c1.5-1.1 2.4-2.8 2.4-4.7 0-3.1-2.6-5.8-6.4-5.8z"/>
+      <rect x="11" y="35.8" width="23" height="4" rx="1.6"/>
+    </symbol>
+    <symbol id="pc-R" viewBox="0 0 45 45">
+      <path d="M12.5 11h5.4v3.6h3.3V11h4.6v3.6h3.3V11h5.4v7.4l-2.6 2.6v10.4l2.2 3.1H12.9l2.2-3.1V21l-2.6-2.6z"/>
+      <rect x="10" y="35.8" width="25" height="4" rx="1.6"/>
+    </symbol>
+    <symbol id="pc-N" viewBox="0 0 45 45">
+      <path d="M14.5 36.5C14.8 28.7 16.6 23.3 20.7 19.6 19.4 18.5 18.8 16.9 19.1 15.3L15.7 16.8C14.7 14.9 15.9 12.6 17.8 11.5L21.1 9.6 21.6 6 24.2 8.6C30.9 9.6 35.4 14.7 36.2 22.7 36.8 28.7 35.4 33.3 34.6 36.5Z"/>
+      <circle class="pc-cut" cx="20.9" cy="14.7" r="1" style="fill:var(--cut,#453023);stroke:none"/>
+      <rect x="10" y="35.8" width="25" height="4" rx="1.6"/>
+    </symbol>
+    <symbol id="pc-B" viewBox="0 0 45 45">
+      <circle cx="22.5" cy="8" r="2.4"/>
+      <path d="M22.5 11.5c-4.6 2.7-7.2 6.2-7.2 9.9 0 2.5 1.1 4.6 2.9 5.9-2.9 2.2-4.7 5.2-4.7 8.2h18C31.5 32.5 29.7 29.5 26.8 27.3c1.8-1.3 2.9-3.4 2.9-5.9 0-3.7-2.6-7.2-7.2-9.9z"/>
+      <path class="pc-cut pc-line" d="M22.5 15.6v6.6M19.5 18.9h6" style="fill:none;stroke:var(--cut,#453023);stroke-width:1.6;stroke-linecap:round"/>
+      <rect x="11" y="35.8" width="23" height="4" rx="1.6"/>
+    </symbol>
+    <symbol id="pc-Q" viewBox="0 0 45 45">
+      <circle cx="9.3" cy="12" r="2"/><circle cx="16" cy="9.6" r="2"/><circle cx="22.5" cy="8.7" r="2"/><circle cx="29" cy="9.6" r="2"/><circle cx="35.7" cy="12" r="2"/>
+      <path d="M9.5 14.5l2.4 13.5h21.2l2.4-13.5-5.3 9-1.7-12-6 11.5-6-11.5-1.7 12z"/>
+      <path d="M11.5 28.6h22l1.6 4.9H9.9z"/>
+      <rect x="10" y="35.8" width="25" height="4" rx="1.6"/>
+    </symbol>
+    <symbol id="pc-K" viewBox="0 0 45 45">
+      <path d="M21.2 4.5h2.6v3.2h3v2.6h-3v3.2h-2.6v-3.2h-3V7.7h3z"/>
+      <path d="M22.5 14c-2.3 3.6-7.8 4.1-9.6 8-1.3 2.9 0 6 2.6 7.3h14c2.6-1.3 3.9-4.4 2.6-7.3-1.8-3.9-7.3-4.4-9.6-8z"/>
+      <path d="M13.6 30.6h17.8l1.3 4.9H12.3z"/>
+      <rect x="10" y="35.8" width="25" height="4" rx="1.6"/>
+    </symbol>
+    <symbol id="orn-coin" viewBox="0 0 20 20">
+      <circle cx="10" cy="10" r="9"/>
+      <circle cx="10" cy="10" r="6.4" fill="none" class="coin-ring" style="stroke:#8a7339;stroke-width:1.4"/>
+    </symbol>
+  </defs>
+</svg>
+
+<div id="stage">
+  <header id="topbar">
+    <div id="event-plate">
+      <span id="round-label" class="smallcaps">&nbsp;</span>
+      <h1 id="event-title">The Aurelia Invitational</h1>
+      <span id="event-sub" class="smallcaps">&nbsp;</span>
+    </div>
+    <div id="top-controls">
+      <button id="btn-sound" class="ctl" type="button" aria-label="Toggle sound" aria-pressed="false" title="Sound">♪</button>
+      <button id="btn-ff" class="ctl" type="button" aria-label="Hurry the moves" title="Hurry">≫</button>
+    </div>
+  </header>
+
+  <main id="table">
+    <section id="arena" aria-label="The board">
+      <div id="opp-plate" class="plate">
+        <div class="plate-portrait" id="opp-portrait" aria-hidden="true"></div>
+        <div class="plate-id">
+          <span class="plate-name" id="opp-name">&nbsp;</span>
+          <span class="plate-sub smallcaps" id="opp-sub">&nbsp;</span>
+        </div>
+        <div class="plate-clock" id="opp-clock">0:00</div>
+      </div>
+
+      <div id="board-row">
+        <div id="evalbar" title="What the machine thinks" aria-hidden="true">
+          <div id="evalbar-you"></div>
+        </div>
+        <div id="board-frame">
+          <div id="board" aria-label="Chessboard"></div>
+          <div id="board-fx" aria-hidden="true">
+            <div id="stamp"></div>
+            <div id="coins"></div>
+            <div id="whisper"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="you-plate" class="plate you">
+        <div class="plate-portrait you-portrait" aria-hidden="true"></div>
+        <div class="plate-id">
+          <span class="plate-name" id="you-name">You</span>
+          <span class="plate-sub smallcaps" id="you-sub">Unrated</span>
+        </div>
+        <div class="plate-clock" id="you-clock">0:00</div>
+      </div>
+    </section>
+
+    <aside id="booth" aria-label="Commentary">
+      <div id="feed" role="log" aria-live="polite"></div>
+      <div id="scoresheet-wrap">
+        <div class="smallcaps sheet-title">Score sheet</div>
+        <ol id="scoresheet"></ol>
+      </div>
+    </aside>
+  </main>
+
+  <div id="choices" hidden></div>
+  <div id="overlay" hidden></div>
+</div>
+
+<noscript>
+  <p style="padding:2rem;font-family:Georgia,serif">
+    Brilliancy is a small game and needs JavaScript — there is, regrettably,
+    no way to feel like a grandmaster in plain HTML.
+  </p>
+</noscript>
+
+<script type="module" src="./game.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "name": "Span of Control — a middle management simulator",
+  "short_name": "Span of Control",
+  "description": "A wry card game about middle management: too senior for the coal-face, too junior for the direction, measured only by the size of your team.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#aca591",
+  "theme_color": "#1f3557",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

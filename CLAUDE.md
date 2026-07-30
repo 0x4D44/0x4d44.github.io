@@ -39,6 +39,27 @@ served verbatim (`.nojekyll` disables Jekyll processing).
   `<script type="text/babel" src="*.jsx">`. **The `.jsx` is transpiled in the
   browser at load time — there is no bundler and no build step.**
 
+**Site navigation — same tab, one back button.** The catalog links open each
+document in the **same tab** (no `target="_blank"` in `app.js`), and every
+document page carries a shared "← Almanac" button that returns to `/`. The
+button is defined **once** in **`/almanac-back.js`** (repo root): it injects a
+fixed, shadow-DOM-isolated pill (top-left), so its styles can neither clash with
+nor leak into the page's own CSS, and it re-mounts itself via a `MutationObserver`
+if a self-bootstrapping page rebuilds the document (several "bundler" pages
+`replaceWith` the whole `<body>` on load). Each document's `index.html` opts in
+with a single line before `</body>`:
+
+```
+<script defer src="/almanac-back.js"></script>
+```
+
+The script skips the almanac index itself (it detects `window.ESSAYS` + the
+`#listing` element), so never add it to the root `index.html`. **For the
+pre-built Vite bundles and the imported-from-upstream docs, this include lives in
+the committed `index.html` but is regenerated on rebuild/re-import** — re-add it
+after copying `dist/*` in (better: add it to the source project's `index.html`)
+so those pages keep the button.
+
 Many document directories also contain a `*.zip` source archive and sometimes a
 print `*.pdf`. These are downloadable artifacts; the site does not reference them.
 
@@ -99,6 +120,13 @@ undo it.
    Reuse an existing tag where it fits (a piece may carry one from each axis).
    Only extend the vocabulary for a genuinely new category — add it to the
    right group in `TAG_GROUPS`; a `tag` not listed there gets no filter chip.
+5. Add the shared back button: include `<script defer src="/almanac-back.js"></script>`
+   just before `</body>` in the document's `index.html` (see "Site navigation"
+   above). Catalog links open in the same tab, so this is a reader's way back.
+6. Put it on a shelf: add the slug to the appropriate `window.COLLECTIONS`
+   entry in `data.js` (a piece may sit on more than one). The shelf view is the
+   landing; anything left off every shelf falls into a trailing "Unshelved"
+   group (and `app.js` warns in the console), so it won't silently vanish.
 
 ## Do not publish
 
@@ -113,6 +141,15 @@ real origin for Babel:
 
 ```
 python -m http.server 8000      # then open http://localhost:8000/
+```
+
+Native ES-module documents (`*.mjs`, currently `cruise-line`) also require a
+JavaScript MIME type. Python 3.14 on Windows serves `.mjs` as `text/plain`, which
+Chrome refuses for a module script. Register the type before starting that
+preview:
+
+```
+python -c "import http.server,mimetypes; mimetypes.add_type('text/javascript','.mjs'); http.server.test(HandlerClass=http.server.SimpleHTTPRequestHandler,port=8000,bind='127.0.0.1')"
 ```
 
 ## Deployment

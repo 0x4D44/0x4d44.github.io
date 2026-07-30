@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roadworks — The Road to Ruin</title>
+<meta name="description" content="How a road is actually rebuilt: the milling machine that grinds off the old surface, the paver that lays the new, and the rollers that must compact it before it cools out of the compaction window. The paving train, the temperature race, recycling, and why roadworks take as long as they do — with a live paving simulator.">
+<link rel="stylesheet" href="rw.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;ROAD&nbsp;TO&nbsp;RUIN</a></div>
+    <div class="strap">why roads fall apart, and how we keep them alive</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="anatomy.html">1 · Anatomy</a>
+    <a href="loads.html">2 · The Weight of Traffic</a>
+    <a href="water.html">3 · Water &amp; Frost</a>
+    <a href="materials.html">4 · Ageing</a>
+    <a href="distress.html">5 · The Distress Catalogue</a>
+    <a href="repair.html">6 · Looking After Roads</a>
+    <a href="roadworks.html" aria-current="page">7 · Roadworks</a>
+    <a href="lexicon.html">8 · The Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 7 — Roadworks</p>
+  <h1>The paving train</h1>
+  <p class="standfirst">A resurfacing is a moving factory. In one continuous pass a convoy grinds
+  off the worn-out surface, sweeps and tacks the bared layer, lays a fresh ribbon of asphalt at
+  around 150&nbsp;°C, and rolls it dense and smooth — all against a clock that starts the moment
+  the hot mat hits the road, because asphalt can only be compacted while it is hot. Here is the
+  choreography, and the race against cooling that governs it.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">The orange cones and the queue hide a genuinely elegant piece of industrial
+choreography — a train of machines each doing one job, in sequence, on the move.</p>
+
+</div>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Run the paving train</span>
+    <span class="hint">mill · lay · compact — beat the cooling clock</span>
+  </div>
+  <div class="fig-body">
+    <canvas id="pave" style="aspect-ratio: 2 / 1; min-height: 340px;"></canvas>
+  </div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="pv-air">air temperature</label>
+      <input type="range" id="pv-air" min="0" max="30" step="1" value="12">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="pv-thick">mat thickness</label>
+      <input type="range" id="pv-thick" min="25" max="120" step="5" value="50">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro">laydown temp <b id="pv-lay">150 °C</b></span>
+    <span class="ro" id="pv-avail-wrap">compaction window <b id="pv-avail">—</b></span>
+    <span class="ro" id="pv-roll-wrap">temp at last roller <b id="pv-roll">—</b></span>
+    <span class="ro" id="pv-win-wrap">result <b id="pv-win">—</b></span>
+  </div>
+  <div class="fig-note">The lower panel is the mat's temperature as it cools behind the paver.
+  Compaction only works inside a <b>window</b> — roughly 150&nbsp;°C down to about 85&nbsp;°C for a
+  typical mix — so the rollers must finish before the mat cools below it. A <b>thin</b> mat on a
+  <b>cold</b> day cools in minutes and the rollers run out of window; a thick mat on a warm day
+  gives them time. This single constraint explains paving seasons, night-shift working in summer,
+  and why roadworks stop in the depths of winter.</div>
+</figure>
+
+<div class="prose">
+
+<h2>The convoy, front to back</h2>
+
+<ol>
+  <li><strong>The planer (milling machine).</strong> A large, water-cooled drum studded with
+  hundreds of tungsten-carbide teeth spins against the road and grinds the old surface off to a
+  set depth, throwing the millings up a conveyor into a waiting lorry. It leaves a rough, grooved,
+  clean surface ready to receive new asphalt — and the removed millings are almost all
+  <em>recycled</em> (see below).</li>
+  <li><strong>Sweep and tack.</strong> The milled surface is swept clean and sprayed with a thin
+  <em>tack coat</em> of bitumen emulsion, the glue that bonds the new layer to the old so they act
+  as one and don't slip apart under traffic.</li>
+  <li><strong>The paver (finisher).</strong> Fed hot mix from tipper lorries (or a separate
+  material-transfer vehicle), the paver spreads it through a floating, heated <em>screed</em> that
+  strikes off the mat to a precise thickness and profile, giving it its initial shape and a first
+  light compaction. The screed "floats" on the fresh mat, which is why paving evenness depends on a
+  steady, unbroken supply — every time a paver stops and starts, it risks a bump.</li>
+  <li><strong>The rollers.</strong> One or more steel-drum and rubber-tyred rollers follow closely,
+  compacting the mat to remove air voids and lock the stone skeleton together. This is the step the
+  whole operation is timed around, because it must happen while the asphalt is hot.</li>
+</ol>
+
+<div class="callout gold">
+  <span class="tag">Why the rollers are always hurrying</span>
+  <p>Compaction is not cosmetic — it is the single biggest control on how long the new surface
+  lasts. Fresh asphalt from the paver is full of air voids; the rollers squeeze them out, and every
+  extra 1% of air left in the mat can cut its life by roughly 10%. Under-compacted asphalt is
+  permeable (water gets in — <a href="water.html">Chapter&nbsp;3</a>), weak and quick to ravel and
+  rut. But you can only compact it while the bitumen is soft enough to let the stones move — above
+  roughly <strong>85&nbsp;°C</strong> for a typical mix. Below that the mat has effectively set, and
+  rolling it does nothing but polish a surface that is now the wrong density forever. So the rollers
+  race the cooling front, and on a cold day with a thin mat they can lose.</p>
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float"><use href="#char-roller"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Rolla</p>
+    <p class="say">"Everybody sees the paver and thinks that's the clever bit. But a badly-rolled
+    road is a short road. I've got maybe ten minutes from when that mat lands before it's too cold
+    to move the stones — so no, I can't slow down, and no, you can't drive on it yet. Give me my
+    window and I'll give you twenty years."</p>
+  </div>
+</div>
+
+<h2>The road that eats itself: recycling</h2>
+
+<p>One of the quiet triumphs of modern road engineering is that asphalt is almost endlessly
+<strong>recyclable</strong>. The millings ground off an old surface — <em>reclaimed asphalt
+pavement</em>, or RAP — are still made of perfectly good stone and bitumen; they can be reheated,
+topped up with a little fresh binder and rejuvenator to undo some of the
+<a href="materials.html">ageing</a>, and laid again. Asphalt is one of the most-recycled materials
+by weight in the world, with high proportions of RAP now routine and some processes recycling the
+existing road <em>in place</em> (cold in-situ recycling), pulverising and re-stabilising it without
+ever carting it away. It saves the stone, the bitumen (an oil product), the haulage and the
+landfill all at once.</p>
+
+<h2>Why roadworks take so long</h2>
+
+<p>The convoy itself moves at a walking pace, and that is rarely the delay. Roadworks are slow
+because of everything around the paving: the road must be closed and made safe (the single biggest
+cause of works taking "forever" is traffic management, not laying); each layer must be laid, rolled
+and allowed to cool before the next; the weather has to cooperate (you cannot lay asphalt onto a
+wet or frozen surface, or in heavy rain that chills the mat); utility diversions and drainage often
+have to be done first; and the new surface needs time to cool and cure before traffic returns. A
+resurfacing you pass in ten seconds at 50&nbsp;mph took a crew a shift, a tight temperature window,
+and a lot of standing about waiting for the right conditions — which is also why it is done at
+night in summer and not at all in a hard winter.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">Go deeper</span><span class="tag2">the cooling model behind the window</span></summary>
+  <p>The interactive models the mat cooling roughly as Newton's law of cooling — an exponential
+  decay from the laydown temperature toward the air temperature:</p>
+  <div class="eq"><span class="m">T(t) = T<sub>air</sub> + ( T<sub>lay</sub> − T<sub>air</sub> ) · e<sup>−t/τ</sup></span></div>
+  <p>The time constant <span class="m">τ</span> depends chiefly on the mat's <strong>thickness</strong>
+  (a thick mat holds heat far longer — surface area to volume falls), and on the air temperature,
+  wind and the temperature of the surface it is laid on. Real cooling is more complex — radiation,
+  convection and conduction into the base each dominate at different moments, and practitioners use
+  charts or software (the classic being the "PaveCool" model) rather than a single exponential — but
+  the essential lesson holds: <strong>available compaction time collapses for thin mats in cold, windy
+  conditions</strong>. That is why minimum laying temperatures, minimum layer thicknesses and
+  material-transfer vehicles (which keep the mix hot and uniform) all exist, and why the humble
+  question "will it be warm enough on Tuesday?" quietly governs the whole national resurfacing
+  programme.</p>
+</details>
+
+</div>
+
+<nav class="chapnav">
+  <a class="prev" href="repair.html"><span class="dir">← Previous</span><span class="title">6 · Looking After Roads</span></a>
+  <a class="next" href="lexicon.html"><span class="dir">Next →</span><span class="title">8 · The Lexicon</span></a>
+</nav>
+
+</main>
+
+<script src="rw-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { clamp, mix, C } = RW;
+
+  let air = 12, thick = 50;
+  const T_LAY = 150, T_MIN = 85; // compaction window
+
+  // Cooling time constant, in minutes. Calibrated so a 50 mm mat laid at 12 °C
+  // stays above the 85 °C compaction limit for roughly 12 minutes — the order of
+  // magnitude practitioners plan around. It grows with thickness (a thick mat
+  // holds its heat far longer) and with air temperature (a cold day pulls heat
+  // out faster), so thin-and-cold is the losing combination.
+  function tau() {
+    return thick * 0.448 * (1 + (air - 20) * 0.02);
+  }
+  // rollers finish this many minutes after laydown (fixed operation pace)
+  const ROLL_TIME = 7;
+
+  function tempAt(minutes) {
+    return air + (T_LAY - air) * Math.exp(-minutes / tau());
+  }
+
+  // minutes of usable compaction time before the mat falls below T_MIN
+  function windowMinutes() {
+    return tau() * Math.log((T_LAY - air) / (T_MIN - air));
+  }
+
+  function update() {
+    const tRoll = tempAt(ROLL_TIME);
+    RW.set("pv-roll", tRoll.toFixed(0) + " °C");
+    const avail = windowMinutes();
+    RW.set("pv-avail", avail.toFixed(1) + " min");
+    const ok = tRoll >= T_MIN;
+    document.getElementById("pv-avail-wrap").classList.toggle("alert", avail < ROLL_TIME);
+    document.getElementById("pv-avail-wrap").classList.toggle("good", avail >= ROLL_TIME);
+    RW.set("pv-win", ok ? "compacted ✓" : "TOO COLD ✗");
+    const rw = document.getElementById("pv-roll-wrap"), ww = document.getElementById("pv-win-wrap");
+    rw.classList.toggle("alert", !ok); rw.classList.toggle("good", ok);
+    ww.classList.toggle("alert", !ok); ww.classList.toggle("good", ok);
+  }
+
+  RW.canvas("pave", function (ctx, w, h, t) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = C.bg; ctx.fillRect(0, 0, w, h);
+    // The scene needs only enough sky to clear the machines' roofs and captions;
+    // the rest of the frame is better spent on the temperature chart below.
+    const sceneH = h * 0.46;
+    const roadY = sceneH * 0.82;
+    const phase = RW.reducedMotion ? 0 : (t * 40) % (w * 0.08);
+
+    // ---- SCENE: old → milled → fresh across x (right to left) ----
+    // regions: right third old cracked, middle milled, left fresh
+    const xMill = w * 0.62, xPave = w * 0.36, xRoll = w * 0.16;
+    // old surface (right)
+    ctx.fillStyle = mix("#3a3a42", "#2a2a30", 0.4); ctx.fillRect(xMill, roadY, w - xMill, sceneH - roadY);
+    RW.speckle(ctx, xMill, roadY, w - xMill, sceneH - roadY, 120, 5, "#8d897f");
+    // cracks on old
+    ctx.strokeStyle = "rgba(6,6,10,0.8)"; ctx.lineWidth = 1.2;
+    for (let i = 0; i < 6; i++) { const x = xMill + 20 + i * (w - xMill) / 6; ctx.beginPath();
+      ctx.moveTo(x, roadY); ctx.lineTo(x + 6, roadY + (sceneH - roadY) * 0.6); ctx.stroke(); }
+    // milled surface (middle) — dark grooved
+    ctx.fillStyle = "#1a1a1f"; ctx.fillRect(xPave, roadY, xMill - xPave, sceneH - roadY);
+    ctx.strokeStyle = "rgba(255,255,255,0.05)"; ctx.lineWidth = 1;
+    for (let x = xPave - phase; x < xMill; x += 6) { ctx.beginPath(); ctx.moveTo(x, roadY); ctx.lineTo(x, sceneH); ctx.stroke(); }
+    // fresh hot mat (left) — glowing dark, hottest near paver
+    for (let x = 0; x < xPave; x += 4) {
+      const frac = x / xPave;             // 0 at left edge .. 1 at paver
+      const glow = clamp(frac, 0, 1);
+      ctx.fillStyle = mix("#141416", "#4a2418", glow);
+      ctx.fillRect(x, roadY, 4, sceneH - roadY);
+    }
+    // heat shimmer near paver
+    ctx.fillStyle = "rgba(255,120,50,0.10)"; ctx.fillRect(xRoll, roadY - 6, xPave - xRoll, 6);
+
+    // ---- machines ----
+    // milling machine
+    machine(ctx, xMill, roadY, "#f4b800", "PLANER", true);
+    // The cutting drum, biting into the road just ahead of the tracks. Clipped
+    // to the pavement so only the half doing the work shows.
+    ctx.save();
+    ctx.beginPath(); ctx.rect(0, roadY - 10, w, sceneH - roadY + 10); ctx.clip();
+    ctx.translate(xMill + 34, roadY + 2); const dr = 11;
+    ctx.fillStyle = "#15151a"; ctx.beginPath(); ctx.arc(0, 0, dr + 4, 0, 6.28); ctx.fill();
+    ctx.strokeStyle = "#8a8698"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, dr, 0, 6.28); ctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = t * 6 + i / 8 * 6.28; ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * dr, Math.sin(a) * dr);
+      ctx.lineTo(Math.cos(a) * (dr + 4), Math.sin(a) * (dr + 4)); ctx.stroke();
+    }
+    ctx.restore();
+    // paver
+    machine(ctx, xPave, roadY, "#ff9d3c", "PAVER", false);
+    // rollers (two drums)
+    roller(ctx, xRoll + 14, roadY, t);
+    roller(ctx, xRoll - 18, roadY, t);
+    RW.label(ctx, "ROLLERS", xRoll - 2, roadY - 40, { align: "center", color: C.ink2, font: RW.mono(9.5, true) });
+
+    // direction arrow
+    ctx.strokeStyle = C.muted; ctx.fillStyle = C.muted; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(w * 0.5, 16); ctx.lineTo(w * 0.5 - 30, 16); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(w * 0.5 - 30, 16); ctx.lineTo(w * 0.5 - 24, 13); ctx.lineTo(w * 0.5 - 24, 19); ctx.closePath(); ctx.fill();
+    RW.label(ctx, "direction of work", w * 0.5 + 6, 20, { color: C.muted });
+
+    // ---- LOWER PANEL: temperature vs time behind paver ----
+    const T = sceneH + 18, B = h - 26, L = 44, Rp = 14;
+    const maxMin = 16;
+    const X = (min) => L + min / maxMin * (w - L - Rp);
+    // Clip the axis a little below the compaction floor rather than running it
+    // all the way down to air temperature: everything that matters happens
+    // between 150 °C and 85 °C, and the tail below it is just dead space.
+    const T_FLOOR = T_MIN - 25;
+    const Y = (temp) => T + (T_LAY + 10 - temp) / (T_LAY + 10 - T_FLOOR) * (B - T);
+
+    // window band
+    ctx.fillStyle = "rgba(70,192,122,0.10)"; ctx.fillRect(L, Y(T_LAY), w - L - Rp, Y(T_MIN) - Y(T_LAY));
+    ctx.strokeStyle = "rgba(70,192,122,0.5)"; ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(L, Y(T_MIN)); ctx.lineTo(w - Rp, Y(T_MIN)); ctx.stroke(); ctx.setLineDash([]);
+    RW.label(ctx, "min compaction temp " + T_MIN + " °C", w - Rp - 6, Y(T_MIN) - 6,
+      { align: "right", color: C.good, font: RW.mono(10, true) });
+
+    // axes
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1;
+    for (let tt = 0; tt <= maxMin; tt += 4) { const x = X(tt); ctx.beginPath(); ctx.moveTo(x, T); ctx.lineTo(x, B); ctx.stroke();
+      RW.label(ctx, tt + "m", x, B + 12, { align: "center", color: C.muted }); }
+    for (const tv of [T_FLOOR, T_MIN, T_LAY]) { RW.label(ctx, tv.toFixed(0) + "°", L - 6, Y(tv), { align: "right", baseline: "middle", color: C.muted }); }
+    RW.label(ctx, "minutes after laydown", w - Rp, h - 4, { align: "right", color: C.ink2, font: RW.mono(10.5, true) });
+
+    // cooling curve, clipped to the panel so the tail below the floor is cut off
+    ctx.save();
+    ctx.beginPath(); ctx.rect(L, T, w - L - Rp, B - T); ctx.clip();
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let m = 0; m <= maxMin; m += 0.25) { const x = X(m), y = Y(tempAt(m)); m === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+    ctx.stroke();
+    ctx.restore();
+
+    // roller-finish marker
+    const tR = tempAt(ROLL_TIME), okR = tR >= T_MIN;
+    ctx.strokeStyle = okR ? C.good : C.red; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(X(ROLL_TIME), T); ctx.lineTo(X(ROLL_TIME), B); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = okR ? C.good : C.red;
+    const markY = Math.min(Y(tR), B - 6);
+    ctx.beginPath(); ctx.arc(X(ROLL_TIME), markY, 5, 0, 6.28); ctx.fill();
+    RW.label(ctx, "rollers finish", X(ROLL_TIME) + 8, markY - 9, { color: okR ? C.good : C.red, font: RW.mono(10, true) });
+
+    // `tracked` gives the planer crawler tracks (as real milling machines have),
+    // which also keeps its running gear clear of the cutting drum below it.
+    function machine(c, x, ry, col, name, tracked) {
+      c.fillStyle = "#2a2a35"; RW.roundRect(c, x - 30, ry - 38, 60, 32, 4); c.fill();
+      c.fillStyle = col; RW.roundRect(c, x - 30, ry - 38, 60, 8, 3); c.fill();
+      c.fillStyle = "#161a26"; RW.roundRect(c, x - 6, ry - 32, 22, 12, 2); c.fill();  // cab glass
+      if (tracked) {
+        c.fillStyle = "#1c1c22"; RW.roundRect(c, x - 30, ry - 8, 60, 8, 4); c.fill();
+        c.strokeStyle = "#4a4a56"; c.lineWidth = 1;
+        for (let i = -26; i < 28; i += 7) { c.beginPath(); c.moveTo(x + i, ry - 8); c.lineTo(x + i, ry); c.stroke(); }
+      } else {
+        c.fillStyle = "#1c1c22";
+        c.beginPath(); c.arc(x - 16, ry - 4, 7, 0, 6.28); c.fill();
+        c.beginPath(); c.arc(x + 18, ry - 4, 7, 0, 6.28); c.fill();
+      }
+      RW.label(c, name, x, ry - 46, { align: "center", color: C.ink2, font: RW.mono(9.5, true) });
+    }
+    function roller(c, x, ry, tt) {
+      c.fillStyle = "#ffd43b"; RW.roundRect(c, x - 12, ry - 30, 24, 20, 3); c.fill();
+      c.fillStyle = "#3a3a44"; c.beginPath(); c.arc(x, ry - 2, 10, 0, 6.28); c.fill();
+      c.strokeStyle = "#55555f"; c.lineWidth = 1.5;
+      const a = tt * 4; c.beginPath(); c.moveTo(x, ry - 2); c.lineTo(x + Math.cos(a) * 8, ry - 2 + Math.sin(a) * 8); c.stroke();
+    }
+  }, { animate: true });
+
+  RW.slider("pv-air", (v) => v.toFixed(0) + " °C", (v) => { air = v; update(); });
+  RW.slider("pv-thick", (v) => v.toFixed(0) + " mm", (v) => { thick = v; update(); });
+  update();
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

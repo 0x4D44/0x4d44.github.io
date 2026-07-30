@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#071a22">
+  <meta name="description" content="Tidecall — estimation whist where Slack Water scores zero and High Tide scores double. Predict not only how many tricks you will win, but when.">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tidecall">
+  <meta property="og:title" content="Tidecall">
+  <meta property="og:description" content="An estimation-whist game of ebb, surge and exact calls.">
+  <meta property="og:type" content="website">
+  <title>Tidecall — estimation whist on a moving sea</title>
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="sea-canvas" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="beam" aria-hidden="true"></div>
+
+  <div id="app" class="app-shell">
+    <header class="topbar" id="topbar">
+      <a class="brand" href="../" aria-label="Back to 0x4D44 Almanac">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+          <circle cx="32" cy="32" r="25"></circle>
+          <path d="M11 34c7-7 13-7 20 0s13 7 22 0"></path>
+          <path d="M17 25c5-4 10-4 15 0s10 4 15 0" class="mark-faint"></path>
+          <path d="M32 8v8M32 48v8M8 32h8M48 32h8"></path>
+        </svg>
+        <span>
+          <b>TIDECALL</b>
+          <small>ebb · estimate · outplay</small>
+        </span>
+      </a>
+
+      <div class="voyage-readout" id="voyage-readout" hidden>
+        <span id="round-readout">ROUND 1 / 11</span>
+        <i aria-hidden="true"></i>
+        <span id="trump-readout">WIND ♠</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="icon-button" id="score-button" type="button" aria-label="Open scorecard" title="Scorecard" hidden>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V3"></path></svg>
+        </button>
+        <button class="icon-button" id="rules-button" type="button" aria-label="How to play" title="How to play">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M9.8 9a2.4 2.4 0 1 1 3.3 2.2c-.8.4-1.1.9-1.1 1.8M12 17h.01"></path></svg>
+        </button>
+        <button class="icon-button" id="sound-button" type="button" aria-label="Mute sound" title="Sound on">
+          <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h3l4 4V6L8 10H5zM15 9c1.3 1.7 1.3 4.3 0 6M18 6c3 3.3 3 8.7 0 12"></path></svg>
+          <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 10v4h3l4 4V6L8 10H5zM16 10l5 5m0-5-5 5"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="home-screen" id="home-screen" aria-labelledby="home-title">
+        <div class="home-copy">
+          <p class="eyebrow">AN ESTIMATION-WHIST VARIANT</p>
+          <h1 id="home-title">Read the hand.<br><em>Read the tide.</em></h1>
+          <p class="home-lede">Every round announces one trick worth <strong>nothing</strong> and one worth <strong>double</strong>. Call the exact number of marks you will take, then save your nerve—and your best card—for the moment the sea turns.</p>
+
+          <div class="home-actions">
+            <button class="primary-button" id="new-game-button" type="button">
+              <span>BEGIN A VOYAGE</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13m-5-5 5 5-5 5"></path></svg>
+            </button>
+            <button class="secondary-button" id="continue-button" type="button" hidden>CONTINUE VOYAGE</button>
+          </div>
+
+          <fieldset class="difficulty-picker" aria-label="Opponent strength">
+            <legend>SEA STATE</legend>
+            <label><input type="radio" name="difficulty" value="drift"><span><b>DRIFT</b><small>for learning the currents</small></span></label>
+            <label><input type="radio" name="difficulty" value="current" checked><span><b>CURRENT</b><small>canny, readable rivals</small></span></label>
+            <label><input type="radio" name="difficulty" value="gale"><span><b>GALE</b><small>tighter bids, colder play</small></span></label>
+          </fieldset>
+
+          <button class="text-button" id="home-rules-button" type="button">Learn the rules in 60 seconds <span aria-hidden="true">↗</span></button>
+        </div>
+
+        <div class="hero-instrument" aria-hidden="true">
+          <div class="hero-orbit orbit-one"></div>
+          <div class="hero-orbit orbit-two"></div>
+          <div class="hero-compass">
+            <span class="north">N</span><span class="east">E</span><span class="south">S</span><span class="west">W</span>
+            <div class="compass-needle"></div>
+          </div>
+          <div class="hero-card hero-card-back"></div>
+          <div class="hero-card hero-card-front">
+            <span class="hero-rank">A</span>
+            <span class="hero-suit">♠</span>
+            <svg viewBox="0 0 120 180"><path d="M18 118c18-25 32-25 50 0s32 25 49 0"></path><path d="M15 132c20-18 34-18 52 0s33 18 50 0"></path></svg>
+          </div>
+          <div class="hero-tide hero-slack"><b>0</b><span>SLACK</span></div>
+          <div class="hero-tide hero-surge"><b>2</b><span>HIGH TIDE</span></div>
+          <div class="hero-glow"></div>
+        </div>
+
+        <div class="rule-ribbon" aria-label="The core rule">
+          <div><span class="ribbon-symbol slack-symbol">0</span><p><b>SLACK WATER</b><br>Win the trick. Gain no marks.</p></div>
+          <span class="ribbon-arrow" aria-hidden="true">→</span>
+          <div><span class="ribbon-symbol normal-symbol">1</span><p><b>THE CURRENT</b><br>Most tricks count as one.</p></div>
+          <span class="ribbon-arrow" aria-hidden="true">→</span>
+          <div><span class="ribbon-symbol surge-symbol">2</span><p><b>HIGH TIDE</b><br>The winning trick counts double.</p></div>
+        </div>
+      </section>
+
+      <section class="game-screen" id="game-screen" hidden aria-label="Tidecall table">
+        <div class="game-layout">
+          <aside class="left-rail panel-glass" aria-label="Voyage status">
+            <div class="rail-heading"><span>CHART</span><b id="rail-round">01</b></div>
+            <div class="score-orbit" id="score-orbit">
+              <svg viewBox="0 0 120 120" aria-hidden="true">
+                <circle cx="60" cy="60" r="49" class="orbit-track"></circle>
+                <circle cx="60" cy="60" r="49" class="orbit-progress" id="score-progress"></circle>
+              </svg>
+              <div><span>YOUR SCORE</span><b id="you-score">0</b><small id="you-place">1ST</small></div>
+            </div>
+            <div class="contract-card">
+              <span>YOUR CALL</span>
+              <strong id="you-contract">—</strong>
+              <small id="you-progress">Awaiting bid</small>
+            </div>
+            <div class="rail-stat"><span>WIND</span><b id="rail-trump">♠</b></div>
+            <div class="rail-stat"><span>DEALER</span><b id="rail-dealer">NIX</b></div>
+            <button class="rail-button" id="new-match-button" type="button">NEW VOYAGE</button>
+          </aside>
+
+          <div class="table-column">
+            <div class="tide-track-wrap panel-glass" aria-label="Tide chart for this round">
+              <div class="tide-track-labels"><span>TIDE TABLE</span><b id="current-tide-label">TRICK 1 · 1 MARK</b></div>
+              <div class="tide-track" id="tide-track"></div>
+            </div>
+
+            <div class="opponents" id="opponents" aria-label="Opponents">
+              <article class="opponent opponent-west" data-seat="1">
+                <div class="avatar avatar-mara"><span>M</span><i></i></div>
+                <div class="opponent-copy"><b>MARA</b><small>charts every current</small><span class="opponent-call">CALL —</span></div>
+                <div class="mini-hand" aria-hidden="true"></div>
+              </article>
+              <article class="opponent opponent-north" data-seat="2">
+                <div class="avatar avatar-brine"><span>B</span><i></i></div>
+                <div class="opponent-copy"><b>BRINE</b><small>hunts the high tide</small><span class="opponent-call">CALL —</span></div>
+                <div class="mini-hand" aria-hidden="true"></div>
+              </article>
+              <article class="opponent opponent-east" data-seat="3">
+                <div class="avatar avatar-nix"><span>N</span><i></i></div>
+                <div class="opponent-copy"><b>NIX</b><small>waits for the safe light</small><span class="opponent-call">CALL —</span></div>
+                <div class="mini-hand" aria-hidden="true"></div>
+              </article>
+            </div>
+
+            <section class="card-table" id="card-table" aria-label="Current trick">
+              <div class="table-rings" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="table-wave" aria-hidden="true">
+                <svg viewBox="0 0 500 220" preserveAspectRatio="none"><path d="M-20 116C58 56 108 178 184 116s126-62 202 0 125 62 191 0"></path><path d="M-20 134c78-48 128 48 204 0s126-48 202 0 125 48 191 0"></path></svg>
+              </div>
+              <div class="trump-watermark" id="trump-watermark" aria-hidden="true">♠</div>
+              <div class="trick-slot slot-north" data-seat="2"></div>
+              <div class="trick-slot slot-west" data-seat="1"></div>
+              <div class="trick-slot slot-east" data-seat="3"></div>
+              <div class="trick-slot slot-south" data-seat="0"></div>
+              <div class="table-callout" id="table-callout">
+                <span id="table-kicker">THE CURRENT</span>
+                <strong id="table-value">1</strong>
+                <small id="table-message">Mara leads</small>
+              </div>
+            </section>
+
+            <div class="status-line" id="status-line" role="status" aria-live="polite">Reading the tide…</div>
+
+            <section class="player-dock panel-glass" aria-label="Your hand">
+              <div class="player-strip">
+                <div class="player-name"><span class="you-dot"></span><b>YOU</b><small id="player-state">NAVIGATOR</small></div>
+                <div class="player-marks"><span>MARKS</span><b id="you-marks">0</b><i>/</i><strong id="you-bid-mini">—</strong></div>
+                <button class="hint-button" id="hint-button" type="button">SOUNDING</button>
+              </div>
+              <div class="hand" id="hand" role="group" aria-label="Your cards"></div>
+            </section>
+          </div>
+
+          <aside class="right-rail panel-glass" aria-label="Score standings">
+            <div class="rail-heading"><span>FLEET</span><b>PTS</b></div>
+            <ol class="standings-list" id="standings-list"></ol>
+            <div class="tide-legend">
+              <p><i class="legend-slack">0</i><span><b>SLACK</b>Control the lead, score nothing.</span></p>
+              <p><i class="legend-surge">2</i><span><b>HIGH TIDE</b>Two marks ride on one card.</span></p>
+            </div>
+            <div class="match-progress"><span>VOYAGE</span><div><i id="match-progress-bar"></i></div><b id="match-progress-label">1 / 11</b></div>
+          </aside>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-layer" id="modal-layer" hidden>
+    <div class="modal-scrim" data-close-modal></div>
+    <section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <button class="modal-close" type="button" data-close-modal aria-label="Close dialog">×</button>
+      <div id="modal-content"></div>
+    </section>
+  </div>
+
+  <div class="bid-sheet" id="bid-sheet" hidden aria-labelledby="bid-title">
+    <div class="bid-scrim"></div>
+    <section class="bid-panel" role="dialog" aria-modal="true">
+      <p class="eyebrow">SET YOUR COURSE</p>
+      <h2 id="bid-title">How many marks will you take?</h2>
+      <p id="bid-description">Remember: one trick scores 0 and one scores 2. The total still equals the number of cards.</p>
+      <div class="bid-hand-glimpse" id="bid-hand-glimpse"></div>
+      <div class="bid-options" id="bid-options"></div>
+      <div class="bid-footer">
+        <span id="bid-order-note">You call first.</span>
+        <button type="button" id="bid-hint-button">TAKE A SOUNDING</button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <canvas id="celebration-canvas" aria-hidden="true"></canvas>
+
+  <template id="card-template">
+    <button class="playing-card" type="button">
+      <span class="card-corner top"><b></b><i></i></span>
+      <span class="card-art"><i class="pip-main"></i><svg viewBox="0 0 100 140" aria-hidden="true"><path d="M8 100c15-18 28-18 43 0s27 18 42 0"></path><path d="M10 113c13-12 25-12 40 0s27 12 41 0"></path></svg></span>
+      <span class="card-corner bottom"><b></b><i></i></span>
+    </button>
+  </template>
+
+  <script src="engine.js"></script>
+  <script src="app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

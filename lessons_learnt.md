@@ -3,6 +3,130 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-30 — A penalty square 3 stones from HOME made being bitten a 72% win — measure
+  outcome rates (`game-of-dracula/engine.js:EDGE_LIST`). The rule text said "victims are
+  carried to the vault" and the code did exactly that; the defect was purely the board
+  graph, which wired the vault into the left HOME run three stones from escape while the
+  START stones sat 11–13 away. Since every red sector moves a guest exactly 3 or 4, both
+  counts landed on the doorway. No unit test could see it — all 18 passed, and the shipped
+  5000-game simulation reported zero stalls — because "did the game finish" is not "is the
+  game fair". What found it was a *differential* measurement: win rate conditioned on
+  having been penalised (72.3% vs 14.3%; now 23.3% vs 25.2%). For any game doc, assert on
+  graph distances between the special squares and the win condition, and on conditional
+  win rates, not just on completion. Two related traps in the same pass: a residual
+  "seat 3 wins more" signal is worth decomposing into wins-by-seat vs
+  wins-by-offset-from-opener before calling it bias — here the real effect was a 32.6%
+  vs 19.0% first-mover advantage inherent to a race, plus a *documented* seat-order
+  tie-break; and seeding xorshift32 with a raw small "night number" makes the very first
+  draw degenerate (every seed <1000 opened seat 1, seat 4 never opened under 10000), so
+  avalanche the seed — but note that mixing breaks `new RNG(rng.state)` as a way to
+  round-trip a generator, which is exactly what the test helpers used to predict the next
+  spin (`RNG.fromState` now exists for that, and `Game.restore` was already hand-rolling
+  the overwrite).
+- 2026-07-26 — Edit y after arc-length resampling → uneven spacing → curvature ÷ nominal
+  ds overstates g ~3x (`iron-vertex/track.js:relaxProfile`); re-resample after. This one
+  defect masqueraded as three unrelated ones — a spacing-uniformity failure, wrong g
+  readings, and "generation is too timid" (loops kept being rejected as too violent by a
+  budget fed with inflated numbers). General rule for these procedural-geometry docs: any
+  pass that MOVES sample positions invalidates every quantity derived from the sample
+  spacing, so re-establish the invariant before measuring anything. More broadly, the split
+  that made all of this findable was keeping the generator and physics in a pure ESM module
+  (no Three.js, no DOM) with the renderer as a thin consumer: eight substantive defects —
+  a role/parameterisation mismatch across a geometry splice, a lift released while still
+  climbing, a 30g pull-out, a loop pinched by pouring the base gradient into its forward
+  axis, a 140°-in-3m snap roll — were all caught by `node --test` in milliseconds. Verify
+  by simulation, not by heuristic: `buildTrack` rides its own finished track and retries
+  until the train demonstrably completes the circuit.
+- 2026-07-13 — The `/deep-review` workflow is **diff-oriented**: run from a fresh
+  worktree off `origin/main` (empty diff), it silently retargets to the most recent
+  *commit* instead of erroring. A darmok area-review launched this way reviewed the
+  latest `news` article-drop commit instead — all 37 agents, wrong slice. For an
+  AREA review (a first-ever pass over existing code, not a change review), don't use
+  the diff path: hand-roll the fan-out and pass the **explicit file slice** (absolute
+  paths + "ignore git history") as args, or the lenses review whatever the last commit
+  touched. The misfire's findings can still be real — verify and file them, but don't
+  log that area as reviewed. Separately: for the pure engines in these vanilla-JS docs
+  (`darmok/engine.js`), stop *guessing* at bugs (my unanswerable-typeback / timer-leak
+  guesses were all refuted) and instead run **differential oracles** over the whole
+  corpus with `node` — that is what surfaced that 20/513 words reject the exact rōmaji
+  the card teaches (asymmetric `ー`/apostrophe/`づ` folding in `normalizeAnswer`).
+- 2026-07-11 — Headless drives that "play" a document with synthetic `el.click()` /
+  `dispatchEvent` bypass browser hit-testing entirely, so they cannot catch the whole
+  class of "invisible thing eats real taps" bugs. `brilliancy` shipped its full 8-round
+  auto-play green while `#overlay { display: grid }` was silently defeating the
+  `hidden` attribute (an author `display` beats the UA `[hidden]` rule) — a transparent
+  `position:fixed; inset:0; z-index:50` layer that would have softlocked every real
+  user at the first tap. Two rules: any element you hide via the `hidden` attribute but
+  style with `display:` needs an explicit `#el[hidden]{display:none}`; and every drive
+  script should assert `getComputedStyle(overlay).display === "none"` plus
+  `document.elementFromPoint(...)` actually returning the control it aims at — that
+  probe is cheap and catches what synthetic clicks never will. (Related: CSS selectors
+  can't reach inside `<use>` shadow clones either — style symbol innards with inline
+  `style="fill:var(--cut)"`, custom properties do inherit through the boundary.)
+- 2026-07-11 — In the hand-built vanilla-JS games (`tidecall`, and the same shape
+  elsewhere), a monolithic `render()` that `replaceChildren()`s each subtree on every
+  state tick is the flicker engine: every rebuilt node with an `animation:` (e.g.
+  `.playing-card { animation: card-in }`) *restarts* that animation, so the player's
+  hand re-deals itself every time an opponent bids or plays — and, conversely, any
+  `transition:` written to animate a state change (the tide marker advancing, a card's
+  hover lift) is *dead*, because a freshly-inserted node has no prior computed style to
+  transition from. Fix by reconciling: keep a `Map` of id→node, reuse nodes and only
+  toggle their classes/attributes, and `replaceChildren()` only when a stable key
+  changes. Gotcha: card ids repeat across rounds (`S14` is the ace every deal), so key
+  the hand cache by round index too, or round N+1 silently reuses round N's nodes.
+  Switch per-node click handlers to one delegated listener on the container once nodes
+  outlive a render, or they stack up. Card *size* is best driven the same structural
+  way — `.hand{container-type:inline-size}` + a JS-set `--hand-count`, so a 3-card round
+  deals big cards and an 8-card round packs down, and put the card's internal glyphs in
+  `em` against `font-size:var(--card-w)` so a bigger card is genuinely more legible, not
+  the same small print enlarged. None of this is caught by `validate-static.test.js`
+  (CSS and renderHand are unguarded) — verify in a real browser at 360×640 and 390×844,
+  and bump the cache-first `sw.js` `CACHE` version or returning visitors never see it.
+- 2026-07-11 — Design-Canvas (DC) export documents (inline `style=""` on every
+  element, `support.js` runtime) frequently ship with **no responsive media
+  queries at all** — desktop-only. On a real phone the asymmetric grids collapse
+  their flexible column to near-0px (cruise-propulsion's hero prose set one word
+  per line; its simulator form column was 13px wide). Fix with an added `<style>`
+  block of `@media (max-width: …)` rules: inline styles outrank any selector, so
+  the reflow rules **must** use `!important`, and add class hooks to the grid
+  divs rather than editing their inline styles (keeps desktop bit-for-bit
+  identical, since the hooks only bite inside the query). Also watch content-box
+  overflow — an element sized `width:min(100%,Npx)` with padding+border measures
+  `100% + padding + border`, invisible on desktop (gap absorbs it) but a sideways
+  scroll on a phone; `box-sizing:border-box` fixes it.
+- 2026-07-11 — Auditing these DC docs headless is booby-trapped twice over.
+  (1) `chrome.kill()` on Windows leaves the renderer children alive holding the
+  debug port; a *derived* debug port then attaches to a stale browser and results
+  go non-deterministic — use an OS-assigned free port and `taskkill /T /F` on
+  your own pid tree ONLY (dev boxes routinely have dozens of the user's real
+  Chrome processes; never blanket-kill chrome.exe). (2) The page pulls React from
+  unpkg (blocked in-sandbox) and compiles a large template, so a boot check at a
+  fixed delay races the compiler and cries "blank page" under load — inject the
+  vendored React UMD (`broadband-speed-checker/vendor/*.js`; `loadReactUmd()`
+  short-circuits on `window.React`) and *poll* for the ready condition, don't
+  sample once. A flaky oracle invents phantom root causes — twice I wrongly
+  blamed CSS for what was harness flake.
+- 2026-07-10 — Service-worker `CacheStorage` is shared across the whole
+  `0x4d44.github.io` origin, not isolated by the worker's `/slug/` scope. Each
+  document PWA must namespace its cache and delete only stale keys with its own
+  prefix during activation; filtering every key except the current cache wipes
+  the offline assets of sibling almanac apps. Its fetch handler should likewise
+  reject URLs outside `self.registration.scope`, query only its named cache,
+  and reserve the app-shell fallback for in-scope navigations. Add per-document
+  regression assertions whenever a new service worker ships.
+- 2026-07-09 — A Workflow lens agent that dies mid-run (account session
+  limit, auth drop) surfaces in the tool result's `<failures>` list, but the
+  script's own aggregation happily returns its stage as an EMPTY findings
+  array — indistinguishable from a clean pass. Never treat an empty lens
+  result as "no findings" without checking `<failures>`/journal.jsonl first;
+  re-run the dead lenses (by hand if limits persist).
+- 2026-07-08 — `Line Rate UI Overhaul.zip` is a Design Canvas export
+  (`Line Rate.dc.html` + `support.js` + `.thumbnail`), not a vanilla app
+  patch. Ship the `.dc.html` as `broadband-speed-checker/index.html`, skip the
+  thumbnail, self-host the DC runtime's React/Babel and Google-font assets, and
+  keep production-specific behavior that the export resets for preview:
+  `settings.live` should default true and the storage key remains
+  `0x4d44.broadband.v1` so existing browser-local history survives.
 - 2026-07-07 — Replacing or removing a document that shipped a
   `tests/validate-static.mjs` (or any per-doc test) silently breaks
   `npm test` / `npm run build`: the **root `package.json`** hard-codes each

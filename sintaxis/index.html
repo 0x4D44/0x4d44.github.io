@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0a0e14">
+<meta name="description" content="sintaxis — the Spanish language toolchain. Spanish taught like a systems language: compiler diagnostics, a real conjugation engine, a dependency-graph curriculum and a spaced-repetition build queue.">
+<title>sintaxis — the Spanish toolchain</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230a0e14'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='16' fill='%2333d17a' text-anchor='middle'%3E%C3%B1%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<noscript><p style="padding:2rem;font-family:monospace">sintaxis requires JavaScript — it is an interactive toolchain, not a document.</p></noscript>
+
+<header id="topbar">
+  <a class="brand" href="#/">
+    <span class="brand-prompt">$</span> sintaxis<span class="brand-ver">v1.0.0</span>
+  </a>
+  <nav id="nav">
+    <a href="#/" data-nav="dash">~/dashboard</a>
+    <a href="#/graph" data-nav="graph">deps</a>
+    <a href="#/review" data-nav="review" id="nav-review">build <span class="due-badge" id="due-badge" hidden></span></a>
+    <a href="#/conj" data-nav="conj">conjugator</a>
+    <a href="#/man" data-nav="man">man</a>
+    <a href="#/errors" data-nav="errors">errors</a>
+  </nav>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<footer id="statusbar">
+  <span id="sb-left">main*</span>
+  <span id="sb-mid"></span>
+  <span id="sb-right">UTF-8 · es-ES · <span title="type a` for á, e` for é … and n~ for ñ">a`→á n~→ñ</span></span>
+</footer>
+
+<script src="engine.js"></script>
+<script src="srs.js"></script>
+<script src="curriculum.js"></script>
+<script src="curriculum2.js"></script>
+<script src="curriculum3.js"></script>
+<script src="curriculum4.js"></script>
+<script src="app.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

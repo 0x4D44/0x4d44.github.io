@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Invisible Dialog — Boot to Desktop</title>
+<meta name="description" content="The Windows 2000 “deadlock” that woke when someone pressed Enter: an invisible modal dialog, a one-bit X-ray of VGA plane memory, and the install CD the harness itself had forgotten to insert.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
+<link rel="stylesheet" href="w2k.css">
+<style>
+/* ---------- the X-ray figure ---------- */
+.xrwrap { display:flex; justify-content:center; padding:18px 14px; background:#05070c; }
+.xray {
+  position:relative; width:min(640px,100%); aspect-ratio:4/3;
+  background:#000; border:1px solid var(--line); overflow:hidden;
+  container-type:inline-size; font-family:var(--mono);
+}
+.xray .hid { position:absolute; inset:0; color:#e8e6df; }
+/* faint dither grain over the whole 1-bpp reconstruction */
+.xray .hid::after {
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:0.05;
+  background-image:repeating-conic-gradient(#e8e6df 0% 25%, transparent 0% 50%);
+  background-size:3px 3px;
+}
+/* wizard window */
+.xw { position:absolute; left:5%; top:6%; width:90%; height:76%; border:1px solid #e8e6df; background:#000; }
+.xtb {
+  height:9.5%; display:flex; align-items:center; padding:0 2.5%;
+  background-image:
+    linear-gradient(90deg,#000 0 22%, transparent 55%, #e8e6df 88%),
+    repeating-conic-gradient(#e8e6df 0% 25%, #000 0% 50%);
+  background-size:100% 100%, 4px 4px;
+}
+.xtb span { font-size:2.1cqw; font-weight:700; color:#e8e6df; letter-spacing:0.02em; text-shadow:1px 1px 0 #000; }
+.xhead { position:absolute; left:5%; top:15%; font-size:3.1cqw; font-weight:700; }
+.xrule { position:absolute; left:5%; right:5%; top:22.5%; border-top:1px solid #e8e6df; opacity:0.7; }
+/* CD-case illustration — generic placeholder art only */
+.xart { position:absolute; right:7%; top:27%; width:21%; height:20%; border:1px solid #e8e6df; }
+.xart .cd { position:absolute; left:8%; top:14%; width:44%; aspect-ratio:1/1; border:1px solid #e8e6df; border-radius:50%; }
+.xart .cd::after { content:""; position:absolute; inset:36%; border:1px solid #e8e6df; border-radius:50%; }
+.xart .stk { position:absolute; right:6%; bottom:8%; width:38%; height:34%; border:1px solid #e8e6df; }
+.xart .stk i { position:absolute; left:12%; right:12%; border-top:1px solid #e8e6df; opacity:0.85; }
+.xart .stk i:nth-child(1){ top:28%; } .xart .stk i:nth-child(2){ top:52%; } .xart .stk i:nth-child(3){ top:76%; right:38%; }
+.xtext { position:absolute; left:5%; top:27%; width:60%; font-size:2.0cqw; line-height:1.55; }
+/* five auto-advancing entry fields, empty */
+.xfields { position:absolute; left:5%; top:56%; display:flex; align-items:center; gap:1.2%; width:90%; }
+.xf { width:11.5%; height:5.2cqw; border:1px solid #e8e6df; background:#000; }
+.xfields b { font-weight:400; font-size:2.4cqw; }
+.xbtns { position:absolute; right:4%; bottom:5%; display:flex; gap:3%; width:44%; justify-content:flex-end; }
+.xbtn { border:1px solid #e8e6df; padding:0.8cqw 2.4cqw; font-size:2.0cqw; white-space:nowrap; }
+/* the overlapping error box */
+.xe {
+  position:absolute; left:21%; top:33%; width:56%; border:1px solid #e8e6df; background:#000;
+  box-shadow:0 0 0 3px #000, 0 0 0 4px #e8e6df;
+}
+.xetb { height:3.4cqw;
+  background-image:repeating-conic-gradient(#e8e6df 0% 25%, #000 0% 50%);
+  background-size:4px 4px; border-bottom:1px solid #e8e6df; }
+.xebody { display:flex; align-items:center; gap:4%; padding:3% 5% 1%; }
+.xei { flex:none; width:5cqw; height:5cqw; border:1px solid #e8e6df; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-size:2.8cqw; }
+.xemsg { font-size:2.2cqw; line-height:1.5; }
+.xeok { text-align:center; padding:2% 0 3.5%; }
+.xeok span { border:1px solid #e8e6df; padding:0.7cqw 4cqw; font-size:2.0cqw; }
+/* the veil — what the monitor showed */
+.veil { position:absolute; inset:0; background:#000; transition:opacity 140ms linear; }
+
+/* ---------- the paper-trail stepper ---------- */
+.steprail { list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:8px; }
+.steprail li {
+  border:1px solid var(--line); border-left:3px solid var(--surface-3);
+  border-radius:0 6px 6px 0; padding:10px 14px; background:var(--surface);
+  opacity:0.5; transition:opacity 150ms ease, border-color 150ms ease, background 150ms ease;
+}
+.steprail li.done { opacity:0.72; border-left-color:var(--cobalt-dim); }
+.steprail li.on { opacity:1; border-left-color:var(--cobalt); background:var(--surface-2); }
+.steprail .sd { display:block; font-family:var(--mono); font-size:10.5px; letter-spacing:0.1em; color:var(--teal); }
+.steprail .sh { display:block; font-family:var(--disp); font-weight:700; font-size:15px; color:var(--ink); margin:2px 0 3px; }
+.steprail .sb { display:block; font-size:13.5px; line-height:1.5; color:var(--ink-2); }
+#hunt-stage:focus { outline:1px solid var(--cobalt-dim); outline-offset:-1px; }
+
+.term pre { margin:0; padding:0; background:none; border:none; font:inherit; color:inherit; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">BOOT TO DESKTOP</a></div>
+    <div class="strap">how a from-scratch PC emulator learned to boot Windows 2000</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="machine.html">1 · The Machine</a>
+    <a href="loop.html">2 · The Restart Loop</a>
+    <a href="wires.html">3 · Edges &amp; Wires</a>
+    <a href="forensics.html">4 · Kernel Forensics</a>
+    <a href="dialog.html" aria-current="page">5 · The Invisible Dialog</a>
+    <a href="cpu.html">6 · One Instruction at a Time</a>
+    <a href="desktop.html">7 · Boot to Desktop</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">CHAPTER 5 · THE TWIST</p>
+  <h1>THE INVISIBLE <span class="accent">DIALOG</span></h1>
+  <p class="standfirst">Chapter 4 ended with a machine that was provably waiting and demonstrably
+  not asleep. The resolution was not another fix. It was a single injected Enter key, a
+  one-bit X-ray of video memory, and a confession: the world's most heavily instrumented
+  Windows install had been running without the install CD.</p>
+</section>
+
+<section class="statgrid">
+  <div class="stat"><div class="v">1</div><div class="l">Enter key, injected at capture 15 — “deadlocked” setup woke instantly</div></div>
+  <div class="stat"><div class="v">5,757 B</div><div class="l">the byte-identical black PNG that every screenshot of the wall recorded</div></div>
+  <div class="stat"><div class="v">A000:0000</div><div class="l">VGA plane memory — where the hidden wizard page was still drawn</div></div>
+  <div class="stat"><div class="v">778CF4FB</div><div class="l">the only instruction trigger that fired in capture 18 — SetupPromptForDiskW</div></div>
+  <div class="stat"><div class="v">03–19</div><div class="l">the captures run with no CD attached — both PIIX3 “verdict” runs among them</div></div>
+  <div class="stat"><div class="v">0xEA76</div><div class="l">the SP4 message resource naming the second prompt: “The CD Key you entered is not valid.”</div></div>
+</section>
+
+<section class="prose">
+
+<h2>Where things stood</h2>
+
+<p>By the small hours of 16 July the census (<a href="forensics.html">chapter 4</a>) had said
+everything it could say: eight processes, seventy-one threads, every one of them Waiting,
+zero runnable, kernel stacks paged out, the CPU parked in
+<a href="/mddosem/">mddosem</a>'s emulation of the idle loop — while the guest went on making
+protected-mode stack transitions at about eighteen a second, so the machine was demonstrably
+not asleep. Three real emulation fixes had landed in a single night — the interrupt shadow,
+the parked timer (both <a href="cpu.html">chapter 6</a>), and the PIIX3 status latch
+(<a href="wires.html">chapter 3</a>) — and capture 11 proved the wall had survived all three.
+The screen showed what every capture since the campaign began had recorded: the same
+byte-identical 5,757-byte black PNG — a frame that would go on recurring for four days.
+Nothing was crashing. Nothing was lost. Everything, everywhere, was waiting.</p>
+
+<h2>One keystroke</h2>
+
+<p>Capture 15 was the experiment nobody had thought to run. Wait for setup to reach the fully
+out-swapped terminal state — threads parked, kernel stacks paged out, the census signature
+stable — then inject a single Enter key through the emulator's control pipe. Setup
+immediately became active. The journal draws the conclusion in one line: <em>the wait was a
+modal dialog, not a lost kernel wakeup.</em></p>
+
+<p>A modal dialog is Windows at its most patient. The thread that owns it stops doing work
+and sits in a message loop, blocked until input arrives; from the kernel's side that is an
+ordinary event wait, indistinguishable from a deadlock — because the producer that will
+eventually signal it is a human being with a keyboard. The census had been perfectly correct:
+everyone really was waiting, and nothing really was going to wake them. It had misread only
+one thing — <em>who they were waiting for</em>. Three weeks of kernel-level forensics, ended
+by a keystroke.</p>
+
+<h2>The X-ray</h2>
+
+<p>But a dialog for whom? The screen was black — had been black in every capture that reached the wall. The way past
+that contradiction was to stop trusting the screen. In the VGA's 16-colour graphics modes the
+picture does not live in a tidy byte-per-pixel framebuffer: it lives in four parallel
+bit-planes, overlaid at the same guest addresses starting at
+<span class="addr">A000:0000</span>, one bit of each pixel in each plane. Whatever the
+emulator's renderer was putting on the visible display, the plane memory underneath could
+still be read directly — and reconstructed at one bit per pixel into a crude black-and-white
+image of whatever had been <em>drawn</em>, whether or not it was being <em>shown</em>.</p>
+
+<p>The decode was startling. Behind the darkness, GUI Setup was alive and mid-conversation:
+a wizard page titled <strong>Your Product Key</strong>, the CD-case illustration with
+Microsoft's generic placeholder sticker art, the instruction about the 25-character key on
+the yellow sticker, <code>&lt; Back</code> and <code>Next &gt;</code> buttons — and, overlapping
+it, an error box reading <em>“The CD Key you entered is not valid.”</em> The frame
+recreated below dates from the following evening, after the campaign had learned where to
+look, and it portrays the <em>second</em> of the two prompts this chapter uncovers — but it
+is the definitive portrait of the wall: Setup politely asking questions into a void.</p>
+
+<aside class="aside">
+  <span class="tag">AN HONEST GAP</span>
+  <p>Why the visible framebuffer stayed black while a fully-drawn wizard page sat in plane
+  memory is not settled in the journals. The forensic record establishes <em>what</em> was in
+  the planes and <em>what</em> the screen showed; it does not establish why the two disagreed.
+  We flag the gap rather than guess at it.</p>
+</aside>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">THE X-RAY — WHAT THE MONITOR SHOWED vs WHAT MEMORY HELD</span>
+    <span class="hint">drag the slider · 0% framebuffer · 100% plane memory</span>
+  </div>
+  <div class="fig-body xrwrap">
+    <div class="xray" id="xray-scene" role="img"
+      aria-label="Recreation of the emulator's black screen which, as the X-ray slider advances, fades into a monochrome one-bit-per-pixel rendering of the hidden Windows 2000 Professional Setup wizard page titled Your Product Key: a CD-case illustration with generic placeholder sticker art, the instruction that the 25-character Product Key appears on the yellow sticker on the back of the Windows 2000 CD case, five empty entry fields, Back and Next buttons, and an overlapping error box reading: The CD Key you entered is not valid.">
+      <div class="hid" aria-hidden="true">
+        <div class="xw">
+          <div class="xtb"><span>Windows 2000 Professional Setup</span></div>
+          <div class="xhead">Your Product Key</div>
+          <div class="xrule"></div>
+          <div class="xart"><i class="cd"></i><i class="stk"><i></i><i></i><i></i></i></div>
+          <div class="xtext">The 25-character Product Key appears on the yellow sticker
+          on the back of your Windows&nbsp;2000 CD&nbsp;case.</div>
+          <div class="xfields">
+            <span class="xf"></span><b>-</b><span class="xf"></span><b>-</b><span class="xf"></span><b>-</b><span class="xf"></span><b>-</b><span class="xf"></span>
+          </div>
+          <div class="xbtns"><span class="xbtn">&lt; Back</span><span class="xbtn">Next &gt;</span></div>
+        </div>
+        <div class="xe">
+          <div class="xetb"></div>
+          <div class="xebody">
+            <span class="xei">✕</span>
+            <span class="xemsg">The CD Key you entered is not valid.</span>
+          </div>
+          <div class="xeok"><span>OK</span></div>
+        </div>
+      </div>
+      <div class="veil" id="xray-veil"></div>
+    </div>
+  </div>
+  <div class="evlog" id="xray-log"></div>
+  <div class="fig-controls">
+    <span class="ctl">framebuffer
+      <input type="range" id="xray-slider" min="0" max="100" value="0" step="1"
+        aria-label="X-ray reveal: 0 is the visible framebuffer, 100 is the decoded plane memory">
+      plane memory <output>0%</output></span>
+    <button class="btn" id="xray-full">⚡ full X-ray</button>
+  </div>
+  <div class="fig-note">Recreation in HTML/CSS; the original is capture-24/a000-1bpp.png
+  (18,729 bytes, 16 July 21:35) in the run archive — a 1-bit-per-pixel decode of VGA plane
+  memory at A000:0000, taken while the visible screen was black. No product key appears in
+  the original or here: the illustration on the real page is Microsoft's generic placeholder
+  art.</div>
+</figure>
+
+<h2>Naming the dialog</h2>
+
+<p>A keystroke proves <em>a</em> dialog; forensics demands to know <em>which</em>. Two
+instrument repairs made that possible. mddosem's time-travel debugger can arm instruction
+triggers — watchpoints that fire when execution reaches a chosen
+<code>CS:EIP</code> — but one interpreter path compared only the low sixteen bits of the
+instruction pointer, so a trigger set on an NT kernel-mode address like
+<span class="addr">0x804xxxxx</span> could never match. The fix,
+<code>Cpu::instruction_offset()</code>, selects the full 32-bit EIP whenever the code segment
+is 32-bit and the truncated IP only for genuine 16-bit segments. And trigger logging was made
+side-effect-free: on firing, it records the registers and the stack frame, and where a frame
+slot points at readable UTF-16 it logs an escaped preview of the string — all through a debug
+translation path that sets no Accessed bits and pollutes no TLB. A debugger should read guest
+memory the way a bus analyser would: without leaving fingerprints.</p>
+
+<p>Static cross-references in the exact SP4 build of <code>setupapi.dll</code> suggested
+three code paths that could raise a blocking dialog — a failed-verification prompt, a
+copy-error dialog, and a missing-media prompt. Triggers went on all three; capture 18 ran to
+the wall. Exactly one fired: <span class="addr">001B:778CF4FB</span>, the internal
+implementation of the exported <code>SetupPromptForDiskW</code>. The other two never executed.
+Capture 19 then logged the live call frame — the decisive evidence of the whole campaign:</p>
+
+<div class="term"><pre><span class="dim">capture 19 · time-machine log trigger @ </span><span class="p">001B:778CF4FB</span><span class="dim"> · setupapi!SetupPromptForDiskW (internal)</span>
+  DiskName         <span class="hl">"Service Pack 4 CD"</span>
+  PathToSource     <span class="hl">"D:\I386"</span>
+  FileSought       <span class="hl">"NT5INF.CAT"</span>
+  TagFile          NULL
+  DiskPromptStyle  <span class="hl">0x105</span></pre></div>
+
+<p>Field values as recorded in the capture-19 trigger log; layout stylised. The journal's
+reading of the frame: a normal request for missing installation media — not a signature
+failure, not a copy error. Windows was not crashing, not corrupting,
+not deadlocked. It wanted its CD back, and it had asked in the politest way it knew: a dialog
+box, on a screen nobody could see.</p>
+
+<h2>The confession</h2>
+
+<p>Why was there no CD? Because the harness had removed it. The original install driver,
+<code>drive-install.sh</code>, always attached the SP4 ISO to the emulated CD-ROM drive. The
+capture harness — rebuilt for the forensic campaign, with its hash-verified fresh disk copies
+and its census watchers — did not: <strong>captures 03 through 19 omitted
+<code>--cdrom</code></strong>. The guest was never stuck. It was waiting, politely and
+invisibly, for a disc that nobody had inserted, on hardware that faithfully reported an empty
+drive.</p>
+
+<p>The sting in the tail: both post-PIIX3 “verdict” runs were among the CD-less captures. The
+journal is unsparing — those runs <em>“cannot decide whether the CPU/PIT/IDE fixes complete
+setup; Windows correctly prompted for the absent source.”</em> Every retest since capture 03
+had been answering a different question from the one being asked.</p>
+
+<aside class="aside danger">
+  <span class="tag">THE HARNESS IS PART OF THE EXPERIMENT</span>
+  <p>Weeks had gone into making the <em>guest</em> deterministic — hash-verified disk copies,
+  fixed clock epochs, a census tool that refuses to run against the wrong kernel build. The
+  one component nobody audited to the same standard was the command line that launched the
+  runs. The control that finally caught it was the oldest one in the book: compare what the
+  failing setup was told against what the working install had been given.</p>
+</aside>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">THE PAPER TRAIL — FROM KEYSTROKE TO CONFESSION</span>
+    <span class="hint">step with the buttons, or ← → when the list has focus</span>
+  </div>
+  <div class="stage" id="hunt-stage" aria-label="Seven-step sequence from the wall surviving fix three to the CD being restored">
+    <ol class="steprail" id="hunt-list">
+      <li><span class="sd">16 JUL · CAPTURE 11</span><span class="sh">The wall survives fix three</span>
+        <span class="sb">With the reviewed PIIX3 latch landed, setup still parks: black screen, three threads Waiting, kernel stacks out-swapped.</span></li>
+      <li><span class="sd">16 JUL · CAPTURE 15</span><span class="sh">One Enter key</span>
+        <span class="sb">Injected at the fully out-swapped state — setup wakes instantly. A modal dialog, not a lost kernel wakeup.</span></li>
+      <li><span class="sd">16 JUL · INSTRUMENTS</span><span class="sh">The triggers learn 32-bit addresses</span>
+        <span class="sb">Full-EIP trigger matching (<code>Cpu::instruction_offset()</code>) and side-effect-free frame logging with escaped UTF-16 previews.</span></li>
+      <li><span class="sd">16 JUL · CAPTURE 18</span><span class="sh">One trigger fires</span>
+        <span class="sb">Of three candidate dialog paths in setupapi.dll, only 001B:778CF4FB executes — SetupPromptForDiskW's internal implementation.</span></li>
+      <li><span class="sd">16 JUL · CAPTURE 19</span><span class="sh">The frame decoded</span>
+        <span class="sb">DiskName “Service Pack 4 CD” · PathToSource D:\I386 · FileSought NT5INF.CAT · DiskPromptStyle 0x105 — routine missing media.</span></li>
+      <li><span class="sd">16 JUL · THE AUDIT</span><span class="sh">The confession</span>
+        <span class="sb">drive-install.sh had always attached the ISO; captures 03–19 omitted --cdrom. Windows was right all along.</span></li>
+      <li><span class="sd">16 JUL · CAPTURE 20</span><span class="sh">The CD returns</span>
+        <span class="sb">Straight past the three-thread wall; setup grows from four threads to eight; real progress — until a second invisible page.</span></li>
+    </ol>
+  </div>
+  <div class="evlog" id="hunt-log"></div>
+  <div class="fig-controls">
+    <button class="btn" id="hunt-prev">◀ back</button>
+    <button class="btn primary" id="hunt-next">step ▶</button>
+    <span class="ctl"><output id="hunt-out"></output></span>
+  </div>
+  <div class="fig-note">Sequence and quoted field values from the 15–16 July engineering
+  journals and capture logs (bug ledger MDD-BUG-KILN-00004). Evidence pointers:
+  <a href="desktop.html#evidence">how we know</a>.</div>
+</figure>
+
+<h2>The second invisible page</h2>
+
+<p>Capture 20 restored the ISO as drive D:. Setup went straight past the old three-thread
+wall, grew from four threads to eight, and alternated between installer work and
+service-control traffic — the first real forward progress at this phase in weeks. Then it
+parked again, black again: nine processes now, eighty-four threads, setup holding six Waiting
+threads with their stacks paged out. Capture 21 repeated the keystroke experiment, and once
+again a single Enter made setup runnable. Another invisible modal — but this time the media
+prompt stayed silent: <code>SetupPromptForDiskW</code>'s fire count was zero.</p>
+
+<p>So the probes went generic: triggers on USER32's own dialog machinery, the functions any
+Windows program must call to put a box on screen. <code>MessageBoxW</code> at
+<span class="addr">0x77E36AB3</span> fired, called from a return address inside
+<code>syssetup.dll</code> at <span class="addr">0x67015998</span>; static disassembly just
+above the call site showed it raising message resource <span class="addr">0xEA76</span> with
+the error icon, and the SP4 message table decodes 0xEA76 to <em>“The CD Key you entered is
+not valid.”</em> <code>EndDialog</code> fired once as the injected Enter dismissed the error.
+The guest was sitting at an invisible Product Key wizard page — the page the X-ray above
+portrays — rejecting what it had been given and asking, unseen, for another try.</p>
+
+<h2>Entering a secret politely</h2>
+
+<p>The next problem was not emulation at all. Someone had to type a product key into a
+machine that could not display its own key page — through tooling that logs everything it
+touches. The existing remote-keystroke command, <code>ctl key TEXT</code>, put its payload in
+the client's process command line and shell history: unusable for a secret. So the emulator
+gained <code>ctl key --stdin</code>, which reads the keystroke text from standard input and
+feeds the unchanged keyboard-injection path. Arthur typed the key into a hidden PowerShell
+secure prompt (<code>Read-Host -AsSecureString</code>) that piped it through stdin and zeroed
+the temporary buffer. The journal states the boundary plainly: the agent <em>“must not read,
+print, log, or transmit the key.”</em> No key value entered a command line, a log file, a
+journal, or a chat transcript — and none enters this site.</p>
+
+<h2>The correction of 18 July</h2>
+
+<p>The first key-entry experiment was recorded as a success — setup, the journal initially
+said, rejected one candidate key and accepted another. Two days later that claim was formally
+withdrawn, and the withdrawal is worth telling with the same respect as the fixes. Three
+faults were found in the procedure, none in the emulator. The <code>ctl scancodes</code>
+command parsed digit-only tokens as decimal, so chord sequences written as hex had never sent
+the intended keystrokes — explicit <code>0x</code> prefixes were required. The SP4 Product
+Key dialog turned out to own five edit controls, each limited to five characters and
+auto-advancing to the next — so the procedure's deliberate Tab between groups had silently
+skipped every other field. And the key the successful QEMU reference install had actually
+used matched neither key that had been tried. An experiment whose input procedure is broken
+proves nothing, and the journal says so in plain terms: claim withdrawn.</p>
+
+<p>Capture 26 redid the entry properly — a cold boot of a hash-verified copy of the
+capture-24 disk, the QEMU-proven key, explicit-hex chords, five clean five-character groups,
+no hyphens, no Tabs, Enter. Instrument
+honesty is a running theme of this story: the same campaign that retracted its own census
+(<a href="forensics.html">chapter 4</a>) also retracted its own success.</p>
+
+<p>With the CD in the drive and the key entered by a procedure proven against the oracle,
+native setup ran its full course for the first time —
+<a href="desktop.html">chapter 7</a> tells that night minute by minute. But none of this
+motion was free. For the machine to reach these dialogs at all — and to survive what came
+after them — four instruction-level truths had to hold, and
+<a href="cpu.html">chapter 6</a> is about those.</p>
+
+<p class="srcline">Sources for this chapter — the 15 July master journal for the boot-to-desktop
+goal (section: “the terminal wait was an invisible media prompt”) and the 16–18 July entries,
+bug ledger MDD-BUG-KILN-00004; the capture archive (captures 11–26), including
+capture-24/a000-1bpp.png and the byte-identical 5,757-byte wall frame; the commit record for
+the time-machine trigger fixes and <code>ctl key --stdin</code>. Full evidence table:
+<a href="desktop.html#evidence">how we know</a>, under <a href="/mddosem/">mddosem</a>.</p>
+
+</section>
+
+<nav class="chapnav">
+  <a href="forensics.html"><span class="dir">◀ previous</span>4 · Kernel Forensics</a>
+  <a class="next" href="cpu.html"><span class="dir">next ▶</span>6 · One Instruction at a Time</a>
+</nav>
+
+</main>
+
+<footer class="sitefoot">
+  Part of <a href="/">the almanac</a>. The Windows 2000 boot campaign ran
+  28 May – 19 July 2026 inside <a href="/mddosem/">mddosem</a>, a hardware-accurate
+  PC emulator written in Rust. Evidence: <a href="desktop.html#evidence">how we
+  know</a>. Errors are ours; corrections welcome.
+</footer>
+
+<script src="w2k-lib.js"></script>
+<script src="w2k-data.js"></script>
+<script>
+/* page figures — plain vanilla JS, no dependencies */
+(function () {
+  "use strict";
+  var W = window.W2K;
+  if (!W) return;
+
+  /* ============================================================
+     FIG 1 · THE X-RAY
+     A recreated black frame (the 5,757-byte wall) over a stylised
+     1-bpp recreation of capture-24/a000-1bpp.png. The slider sets
+     the veil's opacity; no autonomous animation, so it is safe
+     under reduced motion (we simply start fully revealed there).
+     ============================================================ */
+  var veil = document.getElementById("xray-veil");
+  var xlog = document.getElementById("xray-log");
+  var slider = document.getElementById("xray-slider");
+  var fullBtn = document.getElementById("xray-full");
+
+  function xrayCaption(v) {
+    if (v <= 0) {
+      return '<span class="t">0%</span> the visible framebuffer — the 5,757-byte black frame every screenshot of the wall recorded';
+    }
+    if (v < 40) {
+      return '<span class="t">' + v + '%</span> reading the planes — the picture was in memory all along';
+    }
+    if (v < 85) {
+      return '<span class="t">' + v + '%</span> one bit per pixel, thresholded — a wizard page takes shape';
+    }
+    return '<span class="t">' + v + '%</span> A000:0000 decoded — Setup alive and mid-complaint behind an unlit screen';
+  }
+
+  function setReveal(v) {
+    if (veil) veil.style.opacity = String(1 - v / 100);
+    if (xlog) xlog.innerHTML = xrayCaption(Math.round(v));
+    if (fullBtn) fullBtn.textContent = v >= 100 ? "◼ back to black" : "⚡ full X-ray";
+  }
+
+  if (slider && W.reducedMotion) slider.value = "100"; /* show final state */
+  W.bindSlider("xray-slider", setReveal, function (v) { return Math.round(v) + "%"; });
+
+  if (fullBtn && slider) {
+    fullBtn.addEventListener("click", function () {
+      var target = +slider.value >= 100 ? 0 : 100;
+      slider.value = String(target);
+      slider.dispatchEvent(new Event("input"));
+    });
+  }
+
+  /* ============================================================
+     FIG 2 · THE PAPER TRAIL
+     A DOM stepper over the seven beats from capture 11 to
+     capture 20. makeStepper binds prev/next, the n/N readout,
+     the evlog caption, and ← → keys on the focused stage.
+     ============================================================ */
+  var list = document.getElementById("hunt-list");
+  if (list && document.getElementById("hunt-prev") && document.getElementById("hunt-next")) {
+    var items = list.querySelectorAll("li");
+    var steps = [
+      '<span class="t">capture 11</span> three real fixes down — and the terminal wait reproduces byte-for-byte',
+      '<span class="t">capture 15</span> one injected Enter: setup wakes instantly — “a modal dialog, not a lost kernel wakeup”',
+      '<span class="t">instruments</span> triggers gain full 32-bit EIP matching; logging reads memory without fingerprints',
+      '<span class="t">capture 18</span> exactly one of three armed dialog paths fires: SetupPromptForDiskW',
+      '<span class="t">capture 19</span> the call frame names it: “Service Pack 4 CD”, D:\\I386, NT5INF.CAT, style 0x105',
+      '<span class="t">the audit</span> captures 03–19 ran without --cdrom — including both PIIX3 verdict runs',
+      '<span class="t">capture 20</span> ISO restored: past the wall, four threads become eight… then a second invisible page'
+    ];
+    W.makeStepper({
+      prev: "hunt-prev",
+      next: "hunt-next",
+      out: "hunt-out",
+      log: "hunt-log",
+      stage: "hunt-stage",
+      steps: steps,
+      apply: function (i) {
+        for (var k = 0; k < items.length; k++) {
+          items[k].classList.toggle("on", k === i);
+          items[k].classList.toggle("done", k < i);
+        }
+      },
+      start: 0
+    });
+  }
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

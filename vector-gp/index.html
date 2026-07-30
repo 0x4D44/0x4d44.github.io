@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Vector GP — World Circuit 1991</title>
+<meta name="description" content="A flat-shaded polygon grand prix racing homage to the early-90s sims: 16 circuits, 13 teams, 26 drivers, FM sound, six driver aids.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%2304041a'/%3E%3Cpolygon points='1,11 6,9 12,9 15,11 15,13 1,13' fill='%23f03040'/%3E%3Ccircle cx='4' cy='13' r='2' fill='%23181818'/%3E%3Ccircle cx='12' cy='13' r='2' fill='%23181818'/%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: dark; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; background: #04041a; overflow: hidden; }
+  body {
+    font-family: "Lucida Console", Monaco, monospace;
+    color: #d8d8e8;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #stage {
+    position: relative;
+    width: min(100vw, calc(100vh * 1.6));
+    height: min(100vh, calc(100vw / 1.6));
+  }
+  canvas#game {
+    width: 100%; height: 100%;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    display: block;
+    background: #04041a;
+  }
+  #menu {
+    position: absolute; inset: 0; display: none;
+    align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, #101048 0%, #04041a 75%);
+    z-index: 5;
+  }
+  .frame {
+    width: 86%; max-width: 760px; max-height: 92%;
+    border: 3px double #4858c8;
+    background: #080830;
+    box-shadow: 0 0 0 3px #04041a, 0 0 40px #202080 inset;
+    padding: 14px 18px 12px;
+    display: flex; flex-direction: column;
+    font-size: clamp(11px, 1.6vmin, 15px);
+  }
+  .mtitle {
+    color: #f0d048; text-align: center; letter-spacing: 2px;
+    border-bottom: 1px solid #3040a0; padding-bottom: 8px; margin-bottom: 10px;
+    font-weight: bold;
+  }
+  .mbody { overflow-y: auto; white-space: pre-wrap; }
+  .mfoot {
+    color: #6878c8; text-align: center; border-top: 1px solid #3040a0;
+    padding-top: 7px; margin-top: 10px; font-size: 0.85em; letter-spacing: 1px;
+  }
+  .mi {
+    padding: 5px 10px; cursor: pointer; color: #b8c0e8;
+    white-space: pre; letter-spacing: 1px;
+  }
+  .mi.sel { background: #2838a0; color: #ffffff; }
+  .mi.sel::before { content: "\25B8 "; color: #f0d048; }
+  .mi:not(.sel)::before { content: "  "; }
+  .cols { display: flex; gap: 18px; }
+  .cols > * { flex: 1; min-width: 0; }
+  .list { max-height: 46vh; overflow-y: auto; }
+  .list.tall { max-height: 60vh; }
+  .preview { text-align: center; color: #98a8e0; font-size: 0.85em; line-height: 1.5; }
+  .preview canvas { border: 1px solid #3040a0; background: #0a0a2a; image-rendering: pixelated; }
+  .gridlist { columns: 2; column-gap: 24px; max-height: 56vh; overflow-y: auto; }
+  .gr { white-space: pre; color: #a8b0d8; padding: 1px 0; font-size: 0.92em; }
+  .gr.you { color: #f0d048; font-weight: bold; }
+  .colh { color: #f0d048; margin: 4px 0 6px; letter-spacing: 2px; }
+  .fl { color: #d060d0; margin: 8px 0; text-align: center; }
+  .ctrl div { padding: 4px 0; letter-spacing: 1px; }
+  .dim { color: #6878c8; }
+  .swatch {
+    display: inline-block; width: 0.9em; height: 0.9em; margin-right: 8px;
+    border: 2px solid; vertical-align: -0.1em;
+  }
+  /* title screen */
+  .frame.title { text-align: center; align-items: center; border-color: #c83848; }
+  .biglogo {
+    font-size: clamp(34px, 8vmin, 72px); font-weight: bold; letter-spacing: 6px;
+    color: #f03040;
+    text-shadow: 3px 3px 0 #700818, 6px 6px 0 #300410;
+    margin-top: 12px;
+  }
+  .sub { color: #f0d048; letter-spacing: 4px; margin: 8px 0 4px; }
+  .carart { margin: 4px 0; }
+  .press { color: #ffffff; letter-spacing: 3px; margin: 8px 0; font-weight: bold; }
+  .blink { animation: blink 1.1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .credits { color: #5868b8; font-size: 0.75em; letter-spacing: 1px; margin-bottom: 10px; }
+  #note {
+    position: absolute; left: 0; right: 0; bottom: 4px; text-align: center;
+    color: #384888; font-size: 10px; z-index: 6; pointer-events: none;
+  }
+  /* ---- on-screen touch controls (mobile) ---------------------------- */
+  :root { --tb: min(17vmin, 96px); --tbs: min(11vmin, 60px); --tg: 2.2vmin; }
+  #touch {
+    position: fixed; inset: 0; z-index: 8; display: none; pointer-events: none;
+  }
+  body.touch.driving #touch { display: block; }
+  .tbtn {
+    position: absolute; pointer-events: auto;
+    width: var(--tb); height: var(--tb);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 2px solid #4858c8; border-radius: 16px;
+    background: rgba(16,20,64,0.40);
+    box-shadow: 0 0 0 2px rgba(4,4,26,0.55), 0 0 16px rgba(32,32,128,0.45) inset;
+    color: #c8d0f8; font-family: inherit; letter-spacing: 1px; opacity: 0.9;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none; -webkit-tap-highlight-color: transparent;
+    transition: background 0.04s linear, border-color 0.04s linear;
+  }
+  .tbtn.on { background: rgba(56,72,190,0.80); border-color: #9aa8ff; color: #fff; opacity: 1; }
+  .tbtn .glyph { font-size: min(7.5vmin, 42px); line-height: 1; }
+  .tbtn .lbl { font-size: min(2.6vmin, 12px); margin-top: 3px; opacity: 0.82; }
+  .tbtn.steer { border-radius: 50%; }
+  #t-left  { left: 3.5vmin;  bottom: 4vmin; }
+  #t-right { left: calc(3.5vmin + var(--tb) + var(--tg)); bottom: 4vmin; }
+  #t-brake { right: calc(3.5vmin + var(--tb) + var(--tg)); bottom: 4vmin; color: #f0a4a4; border-color: #9a4a4a; }
+  #t-gas   { right: 3.5vmin; bottom: 4vmin; color: #8ef0a8; border-color: #3a8a54; }
+  #t-brake.on { background: rgba(176,54,54,0.82); border-color: #ffb0b0; color: #fff; }
+  #t-gas.on   { background: rgba(46,150,72,0.82); border-color: #a0ffbe; color: #fff; }
+  .gearbtn { width: var(--tbs); height: var(--tbs); border-radius: 12px; display: none; }
+  body.touch.driving.manual .gearbtn { display: flex; }
+  #t-gearup { right: 3.5vmin; bottom: calc(4vmin + var(--tb) + var(--tg)); }
+  #t-geardn { right: calc(3.5vmin + var(--tbs) + var(--tg)); bottom: calc(4vmin + var(--tb) + var(--tg)); }
+  .gearbtn .glyph { font-size: min(5vmin, 26px); }
+  #t-pause { top: 2vmin; right: 2vmin; width: min(11vmin, 46px); height: min(11vmin, 46px); border-radius: 10px; }
+  #t-pause .glyph { font-size: min(4.6vmin, 20px); letter-spacing: -3px; }
+  #tback {
+    position: fixed; top: 2vmin; left: 2vmin; z-index: 9; display: none;
+    align-items: center; gap: 6px; pointer-events: auto; cursor: pointer;
+    padding: 8px 14px; border: 2px solid #4858c8; border-radius: 10px;
+    background: rgba(8,8,48,0.88); color: #c8d0f8;
+    font-family: inherit; font-size: min(3.2vmin, 14px); letter-spacing: 2px;
+    user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  #tback .glyph { font-size: 0.9em; }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" width="640" height="400"></canvas>
+    <div id="menu"></div>
+    <div id="note"></div>
+  </div>
+  <!-- on-screen driving controls, shown automatically on touch devices -->
+  <div id="touch" aria-hidden="true">
+    <div class="tbtn steer" id="t-left"  data-hold="left"><span class="glyph">&#9664;</span></div>
+    <div class="tbtn steer" id="t-right" data-hold="right"><span class="glyph">&#9654;</span></div>
+    <div class="tbtn pedal" id="t-brake" data-hold="brk"><span class="glyph">&#9660;</span><span class="lbl">BRAKE</span></div>
+    <div class="tbtn pedal" id="t-gas"   data-hold="thr"><span class="glyph">&#9650;</span><span class="lbl">GAS</span></div>
+    <div class="tbtn gearbtn" id="t-gearup" data-tap="gearup"><span class="glyph">&#9650;</span><span class="lbl">GEAR</span></div>
+    <div class="tbtn gearbtn" id="t-geardn" data-tap="geardn"><span class="glyph">&#9660;</span><span class="lbl">GEAR</span></div>
+    <div class="tbtn" id="t-pause" data-tap="pause"><span class="glyph">&#10073;&#10073;</span></div>
+  </div>
+  <div id="tback" data-back="1"><span class="glyph">&#9664;</span>BACK</div>
+  <script src="teams.js"></script>
+  <script src="tracks.js"></script>
+  <script src="game.js"></script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
