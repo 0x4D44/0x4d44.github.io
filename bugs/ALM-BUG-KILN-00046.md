@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00046 — Tidecall board-constant and morning-run regression guards are still source regexes, not behavioural oracles
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** tests
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T231417Z-p83989-n290267000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00046-run-fix-20260730T231417Z-p83989-n290267000-c1
-- **Owner base:** bb36d1d609f45ee33bcb49b46f3e7f853c1995c0
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T23:14:17Z
-- **Owner until:** 2026-07-31T01:14:17Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T231417Z-p83989-n290267000-c1 branch=task/bug-ALM-BUG-KILN-00046-run-fix-20260730T231417Z-p83989-n290267000-c1 code=6bcda3e5294506c5ee219c60598c14d78fac7d65 gate=manual)
 
 ## Observation
 
