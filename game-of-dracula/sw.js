@@ -1,5 +1,5 @@
 const PREFIX = "game-of-dracula-";
-const CACHE = `${PREFIX}v7`;
+const CACHE = `${PREFIX}v8`;
 const CORE = [
   "./",
   "./index.html",

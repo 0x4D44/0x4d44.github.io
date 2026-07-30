@@ -21,7 +21,7 @@
     commandPanel: $("#command-panel"), actionKicker: $("#action-kicker"), actionTitle: $("#action-title"), actionCopy: $("#action-copy"), primary: $("#primary-action"), destinationList: $("#destination-list"), resolve: $("#resolve-for-me"),
     logList: $("#log-list"), logCount: $("#log-count"),
     rules: $("#rules-modal"), settings: $("#settings-modal"), victory: $("#victory-modal"),
-    settingSound: $("#setting-sound"), settingHints: $("#setting-hints"), settingFastAI: $("#setting-fast-ai"), settingContrast: $("#setting-contrast"), abandon: $("#abandon-game"),
+    settingSound: $("#setting-sound"), settingHints: $("#setting-hints"), settingKeyboardShortcuts: $("#setting-keyboard-shortcuts"), settingFastAI: $("#setting-fast-ai"), settingContrast: $("#setting-contrast"), abandon: $("#abandon-game"),
     victoryPiece: $("#victory-piece"), victoryTitle: $("#victory-title"), victoryCopy: $("#victory-copy"), victoryStats: $("#victory-stats"), newGame: $("#new-game"),
     handoff: $("#handoff-overlay"), handoffTitle: $("#handoff-title"), handoffCopy: $("#handoff-copy"), handoffReady: $("#handoff-ready"),
     curse: $("#curse-overlay"), curseKicker: $("#curse-kicker"), curseTitle: $("#curse-title"), curseCopy: $("#curse-copy"),
@@ -45,7 +45,7 @@
     north: [500, 118], west: [195, 190], hall: [500, 208], east: [805, 190], rose: [225, 455], gallery: [775, 455], court: [500, 520], vault: [165, 650], chapel: [500, 735], gate: [835, 650],
   };
 
-  const settings = Object.assign({ sound: true, hints: true, fastAI: false, contrast: false }, loadJSON(SETTINGS_KEY, {}));
+  const settings = Object.assign({ sound: true, hints: true, keyboardShortcuts: true, fastAI: false, contrast: false }, loadJSON(SETTINGS_KEY, {}));
   let playerCount = 2;
   let seatConfig = E.DEFAULT_NAMES.map((name, id) => ({ name, human: id === 0 }));
   let game = null;
@@ -138,6 +138,7 @@
   function applySettings() {
     dom.settingSound.checked = settings.sound;
     dom.settingHints.checked = settings.hints;
+    dom.settingKeyboardShortcuts.checked = settings.keyboardShortcuts;
     dom.settingFastAI.checked = settings.fastAI;
     dom.settingContrast.checked = settings.contrast;
     dom.soundToggle.setAttribute("aria-pressed", String(settings.sound));
@@ -775,7 +776,7 @@
     });
     dom.fit.addEventListener("click",fitBoard); dom.zoomIn.addEventListener("click",()=>zoom(.8)); dom.zoomOut.addEventListener("click",()=>zoom(1.25));
     dom.soundToggle.addEventListener("click",()=>{settings.sound=!settings.sound;saveSettings();if(settings.sound)audio.ensure();});
-    dom.settingSound.addEventListener("change",()=>{settings.sound=dom.settingSound.checked;saveSettings();}); dom.settingHints.addEventListener("change",()=>{settings.hints=dom.settingHints.checked;saveSettings();renderControls();}); dom.settingFastAI.addEventListener("change",()=>{settings.fastAI=dom.settingFastAI.checked;saveSettings();}); dom.settingContrast.addEventListener("change",()=>{settings.contrast=dom.settingContrast.checked;saveSettings();});
+    dom.settingSound.addEventListener("change",()=>{settings.sound=dom.settingSound.checked;saveSettings();}); dom.settingHints.addEventListener("change",()=>{settings.hints=dom.settingHints.checked;saveSettings();renderControls();}); dom.settingKeyboardShortcuts.addEventListener("change",()=>{settings.keyboardShortcuts=dom.settingKeyboardShortcuts.checked;saveSettings();}); dom.settingFastAI.addEventListener("change",()=>{settings.fastAI=dom.settingFastAI.checked;saveSettings();}); dom.settingContrast.addEventListener("change",()=>{settings.contrast=dom.settingContrast.checked;saveSettings();});
     dom.abandon.addEventListener("click",()=>{if(confirmAction("Abandon this night and erase its save?")){clearSave();closeDialog(dom.settings);returnToSetup(true);}});
     dom.newGame.addEventListener("click",()=>{closeDialog(dom.victory);clearSave();returnToSetup(true);});
     dom.handoffReady.addEventListener("click", finishHandoff);
@@ -809,7 +810,8 @@
         return;
       }
       if ($("dialog[open]")) return;
-      if(event.key.toLowerCase()==="r"&&!event.metaKey&&!event.ctrlKey&&game&&game.state.phase==="await-spin"&&!busy&&displayedActor().human){event.preventDefault();handleSpin();}
+      const editable = event.target instanceof HTMLElement && (event.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(event.target.tagName));
+      if(settings.keyboardShortcuts&&!editable&&event.key.toLowerCase()==="r"&&!event.metaKey&&!event.ctrlKey&&game&&game.state.phase==="await-spin"&&!busy&&displayedActor().human){event.preventDefault();handleSpin();}
     });
     setupPanZoom();
   }
