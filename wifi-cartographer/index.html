@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f1e9d0" />
+  <meta name="description" content="Wi‑Fi Cartographer is a native Android field-survey app for locally mapping Wi‑Fi signal observations with GPS, maps, charts, diagnostics and redacted exports." />
+  <link rel="stylesheet" href="styles.css" />
+  <title>Wi‑Fi Cartographer — 0x4D44 Almanac</title>
+</head>
+<body>
+  <div class="paper-bg" aria-hidden="true"></div>
+  <main class="wrap">
+    <nav class="topline" aria-label="Breadcrumb"><a href="../">← 0x4D44 Almanac</a><span>native android field survey</span></nav>
+
+    <header class="hero frame">
+      <div>
+        <p class="kicker">LOCAL-FIRST RADIO CARTOGRAPHY</p>
+        <h1>Wi‑Fi Cartographer</h1>
+        <p class="lede">A native Android app for walking a house, hotel, office, ship, station or street while recording visible Wi‑Fi access points, GPS samples, RSSI, SSID/BSSID, channel/frequency and timestamps into a private local database.</p>
+        <div class="cta-row">
+          <a class="button primary" href="https://github.com/0x4D44/0x4d44.github.io/tree/wifi-cartographer-android-source/wifi-cartographer-android">Android source branch</a>
+          <a class="button" href="https://github.com/0x4D44/0x4d44.github.io/actions">APK build artifacts</a>
+          <a class="button ghost" href="#privacy">Privacy model</a>
+        </div>
+      </div>
+      <div class="device-card" aria-label="Wi‑Fi Cartographer app mockup">
+        <div class="phone">
+          <div class="phone-bar"></div>
+          <div class="screen-title">Live survey</div>
+          <div class="status good">scanning · GPS ±7 m · 38 APs</div>
+          <div class="mini-map">
+            <svg viewBox="0 0 260 170" role="img" aria-label="Mock offline map with signal observations">
+              <defs>
+                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M20 0H0V20" fill="none" stroke="currentColor" stroke-opacity=".12"/></pattern>
+                <radialGradient id="heat" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="currentColor" stop-opacity=".65"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></radialGradient>
+              </defs>
+              <rect width="260" height="170" fill="url(#grid)"/>
+              <path d="M24 138 C58 105 78 120 104 84 S160 56 236 34" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-opacity=".7"/>
+              <g class="heatdots"><circle cx="72" cy="108" r="34" fill="url(#heat)"/><circle cx="130" cy="72" r="42" fill="url(#heat)"/><circle cx="204" cy="44" r="26" fill="url(#heat)"/></g>
+              <g fill="currentColor"><circle cx="72" cy="108" r="4"/><circle cx="130" cy="72" r="5"/><circle cx="204" cy="44" r="4"/></g>
+              <circle cx="154" cy="66" r="20" fill="none" stroke="currentColor" stroke-dasharray="4 4" stroke-opacity=".75"/>
+            </svg>
+          </div>
+          <div class="network-row"><b>FieldNotebook</b><span>−42 dBm</span></div>
+          <div class="network-row"><b>HarbourDeck</b><span>−58 dBm</span></div>
+          <div class="network-row"><b>OfficeMesh</b><span>−71 dBm</span></div>
+        </div>
+      </div>
+    </header>
+
+    <section class="notice"><b>Not a PWA.</b> The web page is only the public discovery, download and documentation surface. The survey tool is native Android because it needs Wi‑Fi scan APIs, GPS association, foreground services and local device storage.</section>
+
+    <section class="grid two" id="why-native">
+      <article class="panel"><h2>Why native Android?</h2><p>Browsers cannot reliably enumerate all visible Wi‑Fi access points with BSSID, RSSI, frequency/channel and scan timestamps. Wi‑Fi Cartographer uses Android’s native Wi‑Fi and location APIs, then stores the resulting survey locally.</p><ul><li>Visible AP scan results from <code>WifiManager</code>.</li><li>GPS/network location samples associated with each scan.</li><li>Foreground service for explicit background passive monitoring.</li><li>Room/SQLite local database and Android file exports.</li></ul></article>
+      <article class="panel"><h2>Field uses</h2><p>Designed for practical surveys: walking a room, deck, corridor, hotel, cruise ship, office, port, train station or street, with vehicle/transit caveats for cars, buses, trains, taxis and ships.</p><p>The app separates factual observations from inferred AP estimates. “Observed here at −67 dBm” is data. “The AP may be around here” is a weighted estimate with uncertainty.</p></article>
+    </section>
+
+    <section id="features"><h2>Tooling in the Android app</h2><div class="cards">
+      <article><h3>Live survey</h3><p>Start/stop survey, strongest-network list, GPS accuracy, scan age, AP counts, keep-screen-awake mode and session notes.</p></article>
+      <article><h3>Background monitor</h3><p>Explicit foreground service with persistent notification, stop action and reliability log for requested, completed, degraded and empty scans.</p></article>
+      <article><h3>Maps and heat</h3><p>Offline privacy grid, GPS trail, observation dots, selected SSID/BSSID layers, weak zones and inferred AP uncertainty circles.</p></article>
+      <article><h3>Charts</h3><p>RSSI over time, visible APs over time, strongest networks, frequent BSSIDs, channel/frequency distribution and background reliability.</p></article>
+      <article><h3>Exports</h3><p>JSONL, CSV, GeoJSON and Markdown reports. Export raw, hash BSSID/SSID, omit GPS, clip by bounding box or export summaries.</p></article>
+      <article><h3>Diagnostics</h3><p>Permissions, Android version, Wi‑Fi/location state, scan throttling notes, service status and last scan errors.</p></article>
+    </div></section>
+
+    <section class="grid two" id="privacy">
+      <article class="panel local"><h2>Private by default</h2><p>Wi‑Fi SSIDs and BSSIDs are broadcast, but when stored with GPS they can reveal physical access-point locations. The app treats this as sensitive survey data.</p><ul><li>No cloud backend.</li><li>No accounts.</li><li>No telemetry or analytics. That means no telemetry, no analytics SDK and no hidden usage reporting.</li><li>No hidden uploads.</li><li>Android backup disabled.</li><li>Data leaves only through user-triggered export/share.</li></ul></article>
+      <article class="panel"><h2>Permissions, in context</h2><table><tr><th>Permission</th><th>Why</th></tr><tr><td>Nearby Wi‑Fi Devices</td><td>Android 13+ Wi‑Fi scan access.</td></tr><tr><td>Fine Location</td><td>GPS and Wi‑Fi scan association.</td></tr><tr><td>Background Location</td><td>Only for explicit background monitoring.</td></tr><tr><td>Notifications</td><td>Persistent monitor notification and stop action.</td></tr></table></article>
+    </section>
+
+    <section class="panel" id="limitations"><h2>Android limitations the app reports honestly</h2><div class="limitation-list"><span>scan throttling</span><span>background scan uncertainty</span><span>location services off</span><span>Wi‑Fi disabled</span><span>permission revoked</span><span>no GPS fix</span><span>moving platform uncertainty</span><span>OEM battery kills</span><span>empty scan results</span><span>AP estimates are inferred</span></div></section>
+
+    <section class="grid two" id="exports"><article class="panel"><h2>Export examples</h2><pre><code>{"timestamp":"2026-07-07T12:04:18.000Z","ssid":"FieldNotebook","bssid":"02:11:22:33:44:55","rssi_dbm":-42,"frequency_mhz":2412,"channel":1,"latitude":55.9441,"longitude":-3.1890}</code></pre><pre><code>timestamp,ssid,bssid,rssi_dbm,frequency_mhz,channel,latitude,longitude
+2026-07-07T12:04:18Z,FieldNotebook,02:11:22:33:44:55,-42,2412,1,55.9441,-3.1890</code></pre></article><article class="panel"><h2>Demo visualisation</h2><canvas id="demoChart" width="640" height="280" aria-label="Demo RSSI chart"></canvas><p class="caption">Placeholder demo data for the discovery page. Real app screenshots can replace these mockups after an APK is installed on a device.</p></article></section>
+
+    <section class="panel install" id="install"><h2>Install / build</h2><p>The Android source is prepared for a standalone <code>wifi-cartographer-android</code> repository. Until that repo is created, the source branch and Actions artifacts are linked here.</p><ol><li>Open the Android source branch.</li><li>Run <code>./gradlew test assembleDebug</code>.</li><li>Sideload <code>app/build/outputs/apk/debug/app-debug.apk</code> with <code>adb install -r</code>.</li></ol><div class="cta-row"><a class="button primary" href="https://github.com/0x4D44/0x4d44.github.io/tree/wifi-cartographer-android-source/wifi-cartographer-android">Source branch</a><a class="button" href="https://github.com/0x4D44/0x4d44.github.io/actions">Actions / APK artifacts</a><a class="button ghost" href="https://github.com/0x4D44/wifi-cartographer-android/releases">Future standalone releases</a></div></section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
