@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00039 — The shared almanac pill covers the topbar brand button and the skip link
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T170609Z-p94489-n715077000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00039-run-fix-20260730T170609Z-p94489-n715077000-c1
-- **Owner base:** dbed92944796d9b8c2cfb88ae69cbaade1b95cf5
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T17:06:09Z
-- **Owner until:** 2026-07-30T19:06:09Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T170609Z-p94489-n715077000-c1 branch=task/bug-ALM-BUG-KILN-00039-run-fix-20260730T170609Z-p94489-n715077000-c1 code=61c91b7623d281e6696df856d27ccd6fd682eb73 gate=manual)
 
 ## Observation
 
