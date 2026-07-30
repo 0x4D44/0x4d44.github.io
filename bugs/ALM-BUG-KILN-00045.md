@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00045 — Tidecall KILN-00028 focus guard uses an LF-only regex, so npm test and npm run build fail on every Windows checkout
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Must
 - **Severity:** High
 - **Area:** tests
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T230957Z-p71804-n342386000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00045-run-fix-20260730T230957Z-p71804-n342386000-c1
-- **Owner base:** 50523ff00c00b5a8211aa00c7c5cd7971e128924
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T23:09:57Z
-- **Owner until:** 2026-07-31T01:09:57Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T230957Z-p71804-n342386000-c1 branch=task/bug-ALM-BUG-KILN-00045-run-fix-20260730T230957Z-p71804-n342386000-c1 code=f2dd9d653a73ea23bfbd2b5d38b35cfc040942d2 gate=manual)
 
 ## Observation
 
