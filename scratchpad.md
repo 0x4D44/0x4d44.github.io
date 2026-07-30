@@ -3,13 +3,27 @@
 Out-of-scope observations spotted while working on something else. A separate,
 human-invoked review triages these — don't fix them inline.
 
-- [ ] 2026-07-30 — `wifi-cartographer/index.html` is the one document in the repo with no
+- [x] 2026-07-30 — `wifi-cartographer/index.html` is the one document in the repo with no
   `<script defer src="/almanac-back.js"></script>` (126 of 127 carry it, checked by grep over
   `*/index.html`). Catalog links open in the same tab, so a reader who opens it has no way
   back to `/` short of the browser's back button. Spotted while wiring `arran-deep-time`;
   it is a one-line add before `</body>`, but check first whether anything of its own sits
   under the pill's top-left box (roughly x 10..112, y 10..39) — that was
   ALM-BUG-KILN-00039's whole failure mode.
+  **Done 2026-07-31** — include added, its duplicate breadcrumb back link removed.
+
+- [ ] 2026-07-31 — `wifi-cartographer` scrolls sideways by **655px** in any window at or
+  below 840px wide (measured at 768x1024: `scrollWidth` 1423 vs `innerWidth` 768). Root
+  cause is one dropped guard: the base rule is
+  `.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}` but the `@media (max-width:840px)`
+  override is `.hero,.grid.two,.cards{grid-template-columns:1fr}` (`wifi-cartographer/styles.css`),
+  and bare `1fr` means `minmax(auto,1fr)` — so the track takes its *min-content* floor from
+  the long unbreakable CSV sample in the `<pre><code>` (measured `CODE` at 1320px inside a
+  481px `PRE`) and blows the column out to 1392px. The desktop layout hides it because
+  `pre{overflow:auto}` scrolls internally there. Fix is `minmax(0,1fr)` in the media query
+  too. Confirmed pre-existing: identical 655px on unmodified `origin/main`, so it is not
+  from the back-button change. Worth a browser check of the other `@media` grid overrides
+  in this repo for the same dropped-`minmax(0,…)` pattern.
 
 - [ ] 2026-07-30 — `lessons_learnt.md` is over its 20-entry cap and the SessionStart hook
   now truncates it, so the oldest entries no longer reach any agent. Worth a
