@@ -343,6 +343,45 @@ try {
     },
   });
 
+  stage = "checking the Almanac pill clears the game controls";
+  await loadAt(appUrl, 360, 640, APP_READY);
+  const almanacClearance = await evaluate(`(async () => {
+    document.querySelector("#start-game").click();
+    await new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame)));
+    const pill = document.querySelector("#almanac-back-host")?.shadowRoot?.querySelector("a");
+    const brand = document.querySelector("#brand-button");
+    const skip = document.querySelector(".skip-link");
+    const rect = (element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, top: box.top, right: box.right, bottom: box.bottom, width: box.width, height: box.height };
+    };
+    const overlaps = (a, b) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+    const pillRect = rect(pill);
+    const brandRect = rect(brand);
+    const brandPoint = document.elementFromPoint(brandRect.left + 5, brandRect.top + brandRect.height / 2);
+    skip.focus();
+    await new Promise((resolveFrame) => requestAnimationFrame(resolveFrame));
+    const skipRect = rect(skip);
+    const skipPoint = document.elementFromPoint(skipRect.left + 5, skipRect.top + skipRect.height / 2);
+    return {
+      pill: pillRect,
+      brand: brandRect,
+      skip: skipRect,
+      brandOverlap: overlaps(pillRect, brandRect),
+      skipOverlap: overlaps(pillRect, skipRect),
+      brandReached: Boolean(brandPoint && (brandPoint === brand || brand.contains(brandPoint))),
+      skipReached: Boolean(skipPoint && (skipPoint === skip || skip.contains(skipPoint))),
+    };
+  })()`);
+  assert.equal(almanacClearance.brandOverlap, false,
+    `the Almanac pill must not cover the game brand, got ${JSON.stringify(almanacClearance)}`);
+  assert.equal(almanacClearance.brandReached, true,
+    `the brand's leading edge must receive its own tap, got ${JSON.stringify(almanacClearance)}`);
+  assert.equal(almanacClearance.skipOverlap, false,
+    `the Almanac pill must not cover the focused skip link, got ${JSON.stringify(almanacClearance)}`);
+  assert.equal(almanacClearance.skipReached, true,
+    `the skip link's leading edge must receive its own tap, got ${JSON.stringify(almanacClearance)}`);
+
   stage = "checking the narrow phone viewport";
   await loadAt(appUrl, 360, 640, APP_READY);
   const narrow = await evaluate("({ innerWidth, documentWidth: document.documentElement.scrollWidth })");
