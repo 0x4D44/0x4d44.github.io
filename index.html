@@ -196,6 +196,32 @@
       <line x1="60" y1="14" x2="64" y2="22"/>
       <line x1="140" y1="14" x2="136" y2="22"/>
     </symbol>
+    <!-- unconformity (Arran) — steeply-dipping Dalradian schist truncated by an
+         erosion surface, flat-lying Old Red Sandstone resting on it, sea below:
+         the outcrop at Newton Point that showed Hutton the missing interval -->
+    <symbol id="ill-unconformity" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+      <!-- the drawing spans x 4..176, y 20..116; nudge it to sit centred in the
+           200x120 box like the rest of the sprite -->
+      <g transform="translate(10 -4)">
+        <!-- older beds, tilted on end and cut off at the surface -->
+        <g stroke-width="0.9" opacity=".85">
+          <path d="M30 100 L54 60"/><path d="M44 102 L68 58"/><path d="M58 104 L82 57"/>
+          <path d="M72 105 L96 56"/><path d="M86 106 L110 55"/><path d="M100 106 L124 54"/>
+          <path d="M114 106 L138 53"/>
+        </g>
+        <!-- the unconformity itself: the erosion surface, drawn heavy -->
+        <path d="M22 62 Q56 50 96 54 T170 46" stroke-width="2"/>
+        <!-- younger beds lying flat across it -->
+        <g stroke-width="0.9" opacity=".85">
+          <path d="M30 52 Q62 41 98 45 T172 37"/>
+          <path d="M38 42 Q66 32 102 36 T174 28"/>
+          <path d="M50 32 Q74 24 106 27 T176 20"/>
+        </g>
+        <!-- shoreline -->
+        <path d="M4 108 Q26 102 46 106 T90 105" stroke-width="0.9"/>
+        <path d="M4 116 Q28 110 50 114 T96 113" stroke-width="0.9"/>
+      </g>
+    </symbol>
     <!-- map (ECML) -->
     <symbol id="ill-map" viewBox="0 0 200 120" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
       <path d="M10 90 Q40 70 60 80 T110 60 T160 50 T192 30"/>
