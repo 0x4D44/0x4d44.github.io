@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00037 — Abandoning a game mid-animation crashes on a null `game` in playEvents
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T165343Z-p57295-n449158000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00037-run-fix-20260730T165343Z-p57295-n449158000-c1
-- **Owner base:** 1fa525013e097fd1e67c2bb1d991bcf75ac05d72
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T16:53:43Z
-- **Owner until:** 2026-07-30T18:53:43Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T165343Z-p57295-n449158000-c1 branch=task/bug-ALM-BUG-KILN-00037-run-fix-20260730T165343Z-p57295-n449158000-c1 code=0941558f66bf828ad4d1c82a5e2cc8b495821b8d gate=manual)
 
 ## Observation
 
