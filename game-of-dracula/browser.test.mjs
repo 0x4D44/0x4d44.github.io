@@ -305,6 +305,74 @@ try {
   const narrow = await evaluate("({ innerWidth, documentWidth: document.documentElement.scrollWidth })");
   assert.ok(narrow.documentWidth <= narrow.innerWidth + 1, `360px must not scroll sideways (${narrow.documentWidth} > ${narrow.innerWidth})`);
 
+  stage = "checking an abandoned animation cannot resume into a new game";
+  await loadAt(appUrl, 1440, 1000, APP_READY);
+  await evaluate(`(() => {
+    const players = Array.from({ length: 4 }, (_, id) => ({
+      name: "Old player " + (id + 1),
+      human: true,
+    }));
+    const fixture = new DraculaEngine.Game({ playerCount: 4, players, hints: true }, 1);
+    fixture.state.draculaIndex = 6;
+    localStorage.setItem("0x4d44.game-of-dracula.save.v1", fixture.serialize());
+    location.reload();
+  })()`);
+  await poll("the saved four-player game", async () => evaluate(
+    "document.readyState === 'complete' && !document.querySelector('#resume-game')?.hidden"
+  ));
+  const errorsBeforeAbandon = pageErrors.length;
+  const abandonFixture = await evaluate(`(async () => {
+    const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+    const waitFor = async (probe, timeout = 8_000) => {
+      const deadline = Date.now() + timeout;
+      while (Date.now() < deadline) {
+        if (probe()) return true;
+        await sleep(25);
+      }
+      return false;
+    };
+
+    document.querySelector("#resume-game").click();
+    if (!await waitFor(() => !document.querySelector("#handoff-overlay").hidden)) {
+      return { initialHandoff: false };
+    }
+    document.querySelector("#handoff-ready").click();
+    if (!await waitFor(() => document.querySelector("#handoff-overlay").hidden)) {
+      return { initialHandoff: true, initialGateClosed: false };
+    }
+
+    // Seed 1 spins red 2/4. Starting Dracula at track index 6 lands him in
+    // the north room and emits a first-bite event for old player 4.
+    document.querySelector("#spinner-button").click();
+    window.confirm = () => true;
+    document.querySelector("#brand-button").click();
+
+    document.querySelector("[data-count='2']").click();
+    document.querySelectorAll("#seat-list .seat-row")[1]
+      .querySelector("[data-human='true']").click();
+    document.querySelector("#seed-input").value = "7";
+    document.querySelector("#start-game").click();
+    return {
+      initialHandoff: true,
+      initialGateClosed: true,
+      newGameStarted: document.querySelector("#setup-screen").hidden,
+    };
+  })()`);
+  assert.equal(abandonFixture.initialHandoff, true, "the saved four-player game must start at a privacy hand-off");
+  assert.equal(abandonFixture.initialGateClosed, true, "the old player must be able to accept the privacy hand-off");
+  assert.equal(abandonFixture.newGameStarted, true, "the replacement two-player game must start before the old animation resumes");
+  await delay(1_800);
+  const abandonedResolution = await evaluate(`({
+    newGameOpen: !document.querySelector("#game-screen").hidden,
+    curseOpen: !document.querySelector("#curse-overlay").hidden,
+    handoffOpen: !document.querySelector("#handoff-overlay").hidden,
+  })`);
+  assert.equal(abandonedResolution.newGameOpen, true, "the replacement game must remain open");
+  assert.equal(abandonedResolution.curseOpen, false, "the abandoned game's bite must not open a curse cinematic in the replacement game");
+  assert.equal(abandonedResolution.handoffOpen, true, "the replacement game's privacy hand-off must remain intact");
+  assert.deepEqual(pageErrors.slice(errorsBeforeAbandon), [],
+    `abandoning mid-animation must not resume against the replacement game, got ${JSON.stringify(pageErrors.slice(errorsBeforeAbandon))}`);
+
   stage = "checking the spin shortcut cannot advance play behind a modal";
   await loadAt(appUrl, 1440, 1000, APP_READY);
   const modalShortcutSetup = await evaluate(`(async () => {
