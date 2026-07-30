@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00042 — No static or service-worker regression assertions for game-of-dracula, so two recorded lessons are unguarded
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Low
 - **Area:** tooling
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T171126Z-p6174-n120393000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00042-run-fix-20260730T171126Z-p6174-n120393000-c1
-- **Owner base:** 083b2ff15b1ff3429190052bbd592832583dee64
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T17:11:26Z
-- **Owner until:** 2026-07-30T19:11:26Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T171126Z-p6174-n120393000-c1 branch=task/bug-ALM-BUG-KILN-00042-run-fix-20260730T171126Z-p6174-n120393000-c1 code=0d12aba66ef809818d08cfbf31d18b894ff50cab gate=manual)
 
 ## Observation
 
