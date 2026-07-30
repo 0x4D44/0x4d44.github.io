@@ -16,6 +16,17 @@
 
 window.ESSAYS = [
   {
+    slug: "wifi-cartographer",
+    title: "Wi‑Fi Cartographer",
+    tagline: "A native Android field-survey companion for mapping visible Wi‑Fi access points as you walk: record signal strength, channel, GPS and timestamps locally; chart the route, inspect coverage, diagnose Android scan limits, and export redacted JSONL, CSV or GeoJSON. Private by default, with no account, cloud backend or telemetry.",
+    url: "https://0x4d44.github.io/wifi-cartographer/",
+    illustration: "ill-map",
+    date: "2026-07-07T19:11:31",
+    year: 2026,
+    tags: ["software", "engineering"],
+    real: true,
+  },
+  {
     slug: "game-of-dracula",
     title: "Game of Dracula",
     tagline: "A vivid browser restoration of Waddingtons’ 1977 castle chase: spin Dracula around his blood-red trail, race the yellow stones, hide from two vampires, and pass the Green Vampire mask from victim to victim. Original SVG table art, hot-seat and automata, deterministic offline vanilla JavaScript; no build step.",
@@ -1576,7 +1587,7 @@ window.COLLECTIONS = [
     slugs: ["recipes"] },
   { id: "tools", name: "Tools", icon: "ill-caliper",
     blurb: "Small practical instruments that run in the browser.",
-    slugs: ["transistor-packages", "broadband-speed-checker", "opus-verdict",
+    slugs: ["wifi-cartographer", "transistor-packages", "broadband-speed-checker", "opus-verdict",
       "token-predictor", "midi-observatory", "cowork"] },
   { id: "games", name: "The Games Room", icon: "ill-cards",
     blurb: "Games you play to win — cards, boards, racers, a flight sim and a rollercoaster.",
