@@ -22,22 +22,21 @@ test("lap controls stay above the growing lap history", () => {
 });
 
 test("automatic lap counting is opt-in", () => {
-  assert.match(app, /const \[autoCount, setAutoCount\] = useState\(false\);/);
-  assert.match(app, /const cAutoRef = useRef\(false\);/);
+  assert.equal(L.cruiseDefaults().autoCount, false);
+  assert.notEqual(
+    L.cruiseDefaults(),
+    L.cruiseDefaults(),
+    "callers receive independent defaults"
+  );
 });
 
 test("average lap cards show elapsed lap time", () => {
-  assert.match(
-    app,
-    /cAvgLapMs > 0 \? L\.fmtDuration\(cAvgLapMs \/ 1000\) : "—"/,
-    "live average card formats the mean lap duration"
+  assert.equal(L.formatAverageLap([]), "—");
+  assert.equal(L.formatAverageLap([{ ms: 240000 }]), "4:00");
+  assert.equal(
+    L.formatAverageLap([{ ms: 240000 }, { ms: 250000 }, { ms: 245000 }]),
+    "4:05"
   );
-  assert.match(
-    app,
-    /const avgLap = avg > 0 \? L\.fmtDuration\(avg \/ 1000\) : "—";/,
-    "summary computes a formatted mean lap duration"
-  );
-  assert.match(app, /<Stat label="avg \/ lap" value=\{avgLap\} \/>/);
 });
 
 test("average lap arithmetic preserves four-minute lap times", () => {

@@ -39,6 +39,7 @@ const MAP_STYLE = {
 
 const ROUTE_COLORS = ["#22c55e", "#3b82f6", "#f59e0b"];
 const DIST_CHOICES = { km: [3, 5, 8, 10], mi: [2, 3, 5, 6] };
+const CRUISE_DEFAULTS = L.cruiseDefaults();
 
 function nowMs() { return Date.now(); }
 
@@ -91,7 +92,7 @@ function App() {
   const [lengthUnit, setLengthUnit] = useState("m"); // m|ft
   const [lapsPer, setLapsPer] = useState("4");
   const [goalM, setGoalM] = useState(() => Math.round((localStorage.getItem(LS_UNITS) === "mi" ? 3 : 5) * (localStorage.getItem(LS_UNITS) === "mi" ? 1609.344 : 1000)));
-  const [autoCount, setAutoCount] = useState(false);
+  const [autoCount, setAutoCount] = useState(CRUISE_DEFAULTS.autoCount);
   const [laps, setLaps] = useState([]);          // [{ms, auto}]
   const [cBegun, setCBegun] = useState(false);   // ship run: first LAP press (start line) done?
   const [holding, setHolding] = useState(false); // LAP button hold-to-log in progress
@@ -126,7 +127,7 @@ function App() {
   const cLapsRef = useRef([]);
   const cStartedAtRef = useRef(0);
   const cBegunRef = useRef(false);    // mirror of cBegun for the interval/handlers
-  const cAutoRef = useRef(false);     // mirror of autoCount, read live by the tick
+  const cAutoRef = useRef(CRUISE_DEFAULTS.autoCount); // mirror of autoCount, read live by the tick
   const holdRef = useRef(null);       // hold-to-log timer
   const detTimersRef = useRef([]);
   const flashTimerRef = useRef(null);
@@ -726,6 +727,7 @@ function App() {
   const cCompleted = cCompletedMs();
   const cCurMs = cTotalMs - cCompleted;
   const cAvgLapMs = L.meanMs(laps.map((l) => l.ms));
+  const cAvgLap = L.formatAverageLap(laps);
   // Estimate how far into the current lap we are (needs ≥1 completed lap for a
   // lap-time estimate). Fractional laps make the big number tick 1.1, 1.2, …
   // and give a smoother distance/ring than whole laps alone.
@@ -985,7 +987,7 @@ function App() {
             <div className="mr-lapgrid">
               <div className="mr-cell"><div className="mr-cell-v">{L.fmtDistance(cDistanceM, units)}</div><div className="mr-cell-l">distance</div></div>
               <div className="mr-cell"><div className="mr-cell-v">{L.fmtDuration(cTotalMs / 1000)}</div><div className="mr-cell-l">total time</div></div>
-              <div className="mr-cell"><div className="mr-cell-v">{cAvgLapMs > 0 ? L.fmtDuration(cAvgLapMs / 1000) : "—"}</div><div className="mr-cell-l">avg / lap</div></div>
+              <div className="mr-cell"><div className="mr-cell-v">{cAvgLap}</div><div className="mr-cell-l">avg / lap</div></div>
             </div>
             <div className="mr-lapgrid mr-lapgrid-2">
               <div className="mr-cell"><div className="mr-cell-v">{laps.length ? L.fmtDuration(laps[laps.length - 1].ms / 1000) : "—"}</div><div className="mr-cell-l">last lap</div></div>
@@ -1112,8 +1114,7 @@ function SummarySheet({ run, units, onSave, onExport, onDone }) {
   const u = run.units || units;
   if (run.ship) {
     const laps = run.laps || [];
-    const avg = L.meanMs(laps.map((l) => l.ms));
-    const avgLap = avg > 0 ? L.fmtDuration(avg / 1000) : "—";
+    const avgLap = L.formatAverageLap(laps);
     const lpm = run.lapLenM < 1000 ? Math.round(run.lapLenM) + " m" : (run.lapLenM / 1000).toFixed(2) + " km";
     let cum = 0;
     return (
