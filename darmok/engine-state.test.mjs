@@ -21,6 +21,11 @@ function lessonWithExercises() {
   throw new Error('no authored-exercise lesson found');
 }
 
+function loadProgress(obj) {
+  globalThis.localStorage = { getItem: () => JSON.stringify(obj), setItem() {}, removeItem() {} };
+  try { return DK.load(); } finally { globalThis.localStorage = undefined; }
+}
+
 test('ALM-BUG-KILN-00009: each session gets its own authored-exercise instances', () => {
   const { w, l } = lessonWithExercises();
   const s1 = DK.buildSession(w, l);
@@ -58,28 +63,53 @@ test('ALM-BUG-KILN-00011: srsDue drops keys orphaned by a gloss edit (badge == d
 });
 
 test('ALM-BUG-KILN-00013: DK.load sanitizes null containers and non-numeric fields', () => {
-  const withPayload = (obj) => {
-    globalThis.localStorage = { getItem: () => JSON.stringify(obj), setItem() {}, removeItem() {} };
-    try { return DK.load(); } finally { globalThis.localStorage = undefined; }
-  };
   // null containers must NOT survive to the next render (they threw / blanked #app).
-  const a = withPayload({ xp: 5, srs: null, done: null, medals: null });
+  const a = loadProgress({ xp: 5, srs: null, done: null, medals: null });
   assert.deepEqual(a.srs, {}, 'null srs coerced to {}');
   assert.deepEqual(a.done, {}, 'null done coerced to {}');
   assert.deepEqual(a.medals, [], 'null medals coerced to []');
   assert.equal(a.xp, 5);
   // an HTML string where a number is expected must be coerced away (no live injection).
-  const b = withPayload({ xp: '<img src=x onerror=alert(document.domain)>', reviews: '<script>' });
+  const b = loadProgress({ xp: '<img src=x onerror=alert(document.domain)>', reviews: '<script>' });
   assert.equal(b.xp, 0, 'non-numeric xp -> 0');
   assert.equal(b.reviews, 0, 'non-numeric reviews -> 0');
   assert.equal(typeof b.xp, 'number');
   // settings values are coerced to their declared types.
-  const c = withPayload({ settings: { sound: '<img>', rate: 'x' } });
+  const c = loadProgress({ settings: { sound: '<img>', rate: 'x' } });
   assert.equal(c.settings.sound, true, 'boolean setting coerced');
   assert.equal(typeof c.settings.rate, 'number', 'numeric setting coerced');
   // a well-formed payload still round-trips.
-  const d = withPayload({ xp: 42, name: 'Deanna', medals: ['ok'] });
+  const d = loadProgress({ xp: 42, name: 'Deanna', medals: ['ok'] });
   assert.equal(d.xp, 42); assert.equal(d.name, 'Deanna'); assert.deepEqual(d.medals, ['ok']);
+});
+
+test('ALM-BUG-KILN-00049: DK.load discards malformed nested progress records', () => {
+  const key = DK.vocabKey(DK.allVocab()[0].v);
+  const validSrs = { s: 2, due: Date.now() - 1000, seen: 3, lapses: 1 };
+  const validDone = { best: 92, times: 2, last: 123456 };
+  const progress = loadProgress({
+    xp: 5,
+    srs: {
+      [key]: validSrs,
+      nullEntry: null,
+      stringDue: { due: 'now' },
+    },
+    done: {
+      '1.1': validDone,
+      nullEntry: null,
+      missingTimes: { best: 80, last: 123456 },
+    },
+  });
+
+  assert.deepEqual(progress.srs, { [key]: validSrs });
+  assert.deepEqual(progress.done, { '1.1': validDone });
+  assert.doesNotThrow(() => DK.srsDue(progress));
+  assert.deepEqual(DK.srsDue(progress), [key]);
+  assert.deepEqual(
+    DK.srsDue({ srs: { [key]: null } }),
+    [],
+    'the due selector is defensive if corrupt in-memory state bypasses DK.load'
+  );
 });
 
 test('ALM-BUG-KILN-00013: the score interpolation escapes progress-derived best', () => {

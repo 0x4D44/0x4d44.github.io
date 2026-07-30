@@ -224,6 +224,10 @@
     };
   };
   const isPlainObj = (x) => x && typeof x === "object" && !Array.isArray(x);
+  const hasFiniteNumbers = (record, fields) =>
+    isPlainObj(record) && fields.every((field) => Number.isFinite(record[field]));
+  const filterRecord = (record, predicate) =>
+    Object.fromEntries(Object.entries(record).filter(([, value]) => predicate(value)));
   DK.load = function () {
     try {
       const raw = localStorage.getItem(KEY);
@@ -241,7 +245,15 @@
       merged.reviews = Number(merged.reviews) || 0;
       merged.name = typeof merged.name === "string" ? merged.name : "";
       if (!isPlainObj(merged.done)) merged.done = {};
+      else merged.done = filterRecord(
+        merged.done,
+        (record) => hasFiniteNumbers(record, ["best", "times", "last"])
+      );
       if (!isPlainObj(merged.srs)) merged.srs = {};
+      else merged.srs = filterRecord(
+        merged.srs,
+        (record) => hasFiniteNumbers(record, ["s", "due", "seen", "lapses"])
+      );
       if (!Array.isArray(merged.medals)) merged.medals = [];
       if (Array.isArray(merged.days)) merged.days = merged.days.filter((x) => typeof x === "string");
       else if (merged.days != null) merged.days = [];
@@ -306,12 +318,17 @@
   };
   DK.srsDue = function (progress) {
     const now = Date.now();
+    const srs = isPlainObj(progress && progress.srs) ? progress.srs : {};
     // Only surface keys that still resolve to a vocab entry. vocabKey embeds the
     // (mutable) English gloss, so editing a gloss orphans that word's stored SRS key;
     // an orphaned key can never be drilled (buildDrill/vocabByKey drop it), so counting
     // it inflates the "Drills Due" badge and can leave BEGIN DRILL inert. Filtering here
     // fixes the badge, the tile, and drill sampling at once.
-    return Object.keys(progress.srs).filter((k) => progress.srs[k].due <= now && DK.vocabByKey(k));
+    return Object.keys(srs).filter((k) =>
+      hasFiniteNumbers(srs[k], ["s", "due", "seen", "lapses"]) &&
+      srs[k].due <= now &&
+      DK.vocabByKey(k)
+    );
   };
 
   /* ----------------------------------------------------------
