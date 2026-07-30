@@ -334,6 +334,42 @@ try {
     `the setup controls must clear the notched viewport, got ${JSON.stringify(safeArea.setup)}`);
   assert.ok(safeArea.gameLayout.left >= 25 && safeArea.gameLayout.right >= 25 && safeArea.gameLayout.bottom >= 50,
     `the board must clear side and home-indicator insets, got ${JSON.stringify(safeArea.gameLayout)}`);
+
+  const measureLandscapeDialog = async (left, right) => {
+    await session("Emulation.setSafeAreaInsetsOverride", {
+      insets: {
+        top: 0, topMax: 0,
+        left, leftMax: left,
+        bottom: 21, bottomMax: 21,
+        right, rightMax: right,
+      },
+    });
+    await loadAt(appUrl, 844, 390, APP_READY);
+    return evaluate(`(async () => {
+      document.querySelector("#setup-rules").click();
+      await new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame)));
+      const dialog = document.querySelector("#rules-modal").getBoundingClientRect();
+      const firstTab = document.querySelector("#rule-tab-escape").getBoundingClientRect();
+      const close = document.querySelector("#rules-modal .modal-close").getBoundingClientRect();
+      return {
+        dialog: { left: dialog.left, right: dialog.right },
+        firstTab: { left: firstTab.left, right: firstTab.right },
+        close: { left: close.left, right: close.right },
+        innerWidth,
+      };
+    })()`);
+  };
+  for (const [label, left, right] of [["left notch", 59, 0], ["right notch", 0, 59]]) {
+    const modalSafeArea = await measureLandscapeDialog(left, right);
+    assert.ok(
+      modalSafeArea.dialog.left >= left && modalSafeArea.dialog.right <= modalSafeArea.innerWidth - right,
+      `${label}: the rules dialog must stay inside the safe viewport, got ${JSON.stringify(modalSafeArea)}`
+    );
+    assert.ok(
+      modalSafeArea.firstTab.left >= left && modalSafeArea.close.right <= modalSafeArea.innerWidth - right,
+      `${label}: dialog controls must clear the notch, got ${JSON.stringify(modalSafeArea)}`
+    );
+  }
   await session("Emulation.setSafeAreaInsetsOverride", {
     insets: {
       top: 0, topMax: 0,
