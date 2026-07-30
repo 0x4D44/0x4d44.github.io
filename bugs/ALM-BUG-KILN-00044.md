@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00044 — wifi-cartographer static validator mis-resolves its own directory on Windows, reddening the root npm gate
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Must
 - **Severity:** High
 - **Area:** tests
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T230154Z-p56499-n092135000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00044-run-fix-20260730T230154Z-p56499-n092135000-c1
-- **Owner base:** bbf556ca3eaeddd80d61bf70ec737425e237672d
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T23:01:54Z
-- **Owner until:** 2026-07-31T01:01:54Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T230154Z-p56499-n092135000-c1 branch=task/bug-ALM-BUG-KILN-00044-run-fix-20260730T230154Z-p56499-n092135000-c1 code=eb9d5895cdee4752ec0a34cf528977250d8938e1 gate=manual)
 
 ## Observation
 
