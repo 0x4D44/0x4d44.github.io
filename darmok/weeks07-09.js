@@ -154,7 +154,8 @@ DK.week({
       ],
       vocab: [
         ["〜時[じ]", "じ", "-ji", "o'clock", "counter"],
-        ["〜分[ふん]", "ふん", "-fun/-pun", "minute", "counter"],
+        ["〜分[ふん]", "ふん", "-fun", "minute (-fun reading)", "counter"],
+        ["〜分[ぷん]", "ぷん", "-pun", "minute (-pun reading)", "counter"],
         ["半[はん]", "はん", "han", "half (past)", "noun"],
         ["午前[ごぜん]", "ごぜん", "gozen", "a.m.", "noun"],
         ["午後[ごご]", "ごご", "gogo", "p.m.", "noun"],
