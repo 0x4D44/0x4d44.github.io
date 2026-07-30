@@ -224,7 +224,7 @@
       "writer_population": "business_regulatory",
       "target": 1000,
       "max_scan": 80000,
-      "oversample": 10,
+      "oversample": 15,
       "shuffle_buffer": 25000,
       "date_field": "posted_date",
       "author_fields": [],
