@@ -387,7 +387,58 @@ try {
   const narrow = await evaluate("({ innerWidth, documentWidth: document.documentElement.scrollWidth })");
   assert.ok(narrow.documentWidth <= narrow.innerWidth + 1, `360px must not scroll sideways (${narrow.documentWidth} > ${narrow.innerWidth})`);
 
+  stage = "checking action announcements are concise and stable";
+  const liveRegionShape = await evaluate(`(() => {
+    const status = document.querySelector("#action-status");
+    const controls = ["#primary-action", "#destination-list", "#resolve-for-me"]
+      .map((selector) => document.querySelector(selector));
+    return {
+      actionShellLive: document.querySelector(".action-shell").hasAttribute("aria-live"),
+      statusPresent: Boolean(status),
+      statusLive: status?.getAttribute("aria-live"),
+      statusAtomic: status?.getAttribute("aria-atomic"),
+      controlsInsideLiveRegion: controls.some((control) => control.closest("[aria-live]")),
+    };
+  })()`);
+  assert.equal(liveRegionShape.actionShellLive, false,
+    "the action shell must not announce its interactive controls");
+  assert.equal(liveRegionShape.statusPresent, true,
+    "the action shell must expose a dedicated concise status");
+  assert.equal(liveRegionShape.statusLive, "polite");
+  assert.equal(liveRegionShape.statusAtomic, "true");
+  assert.equal(liveRegionShape.controlsInsideLiveRegion, false,
+    "action buttons and destination lists must sit outside every live region");
+
+  const actionAnnouncementProbe = await evaluate(`(async () => {
+    const status = document.querySelector("#action-status");
+    const announcements = [];
+    const observer = new MutationObserver(() => announcements.push(status.textContent));
+    observer.observe(status, { childList: true, characterData: true, subtree: true });
+    document.querySelectorAll("#seat-list .seat-row")[1]
+      .querySelector("[data-human='true']").click();
+    document.querySelector("#start-game").click();
+    const deadline = Date.now() + 8_000;
+    while (document.querySelector("#handoff-overlay").hidden && Date.now() < deadline) {
+      await new Promise((resolveWait) => setTimeout(resolveWait, 25));
+    }
+    if (document.querySelector("#handoff-overlay").hidden) {
+      observer.disconnect();
+      return { handoffOpened: false, announcements };
+    }
+    document.querySelector("#handoff-ready").click();
+    await new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame)));
+    observer.disconnect();
+    return { handoffOpened: true, announcements };
+  })()`);
+  assert.equal(actionAnnouncementProbe.handoffOpened, true,
+    "the announcement fixture must cross a privacy hand-off");
+  assert.equal(actionAnnouncementProbe.announcements.length, 1,
+    `the same turn prompt must be announced once across duplicate renders, got ${JSON.stringify(actionAnnouncementProbe.announcements)}`);
+  assert.match(actionAnnouncementProbe.announcements[0], /spin the night/i,
+    `the concise status must name the available action, got ${JSON.stringify(actionAnnouncementProbe.announcements)}`);
+
   stage = "checking maximum-length player names stay inside their cards";
+  await loadAt(appUrl, 360, 640, APP_READY);
   const longNameLayout = await evaluate(`(async () => {
     const longName = "W".repeat(28);
     const waitFor = async (probe, timeout = 8_000) => {
