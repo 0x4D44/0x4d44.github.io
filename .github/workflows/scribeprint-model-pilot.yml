@@ -1,0 +1,126 @@
+name: Scribeprint model pilot
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scribeprint/model/**"
+      - ".github/workflows/scribeprint-model-pilot.yml"
+  push:
+    branches:
+      - "agent/scribeprint-m4-pilot"
+    paths:
+      - "scribeprint/model/**"
+      - ".github/workflows/scribeprint-model-pilot.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scribeprint-model-pilot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scribeprint/model/pyproject.toml
+      - name: Install model tools
+        run: python -m pip install -e './scribeprint/model[dev]'
+      - name: Run model tests
+        run: pytest -q scribeprint/model/tests
+      - name: Compile package
+        run: python -m compileall -q scribeprint/model/src
+
+  m4-arxiv-generator-holdout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: tests
+    env:
+      M4_REVISION: 628bf0fcb2e8c6b7ffa71fd1af6be413aced8f7d
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scribeprint/model/pyproject.toml
+      - name: Install model tools
+        run: python -m pip install -e './scribeprint/model[dev]'
+      - name: Fetch pinned M4 arXiv files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init /tmp/M4
+          git -C /tmp/M4 remote add origin https://github.com/mbzuai-nlp/M4.git
+          git -C /tmp/M4 config core.sparseCheckout true
+          cat > /tmp/M4/.git/info/sparse-checkout <<'EOF'
+          /data/arxiv_bloomz.jsonl
+          /data/arxiv_chatGPT.jsonl
+          /data/arxiv_cohere.jsonl
+          /data/arxiv_davinci.jsonl
+          /data/arxiv_dolly.jsonl
+          /data/arxiv_flant5.jsonl
+          EOF
+          git -C /tmp/M4 fetch --depth 1 --filter=blob:none origin "$M4_REVISION"
+          git -C /tmp/M4 checkout --detach FETCH_HEAD
+          test "$(git -C /tmp/M4 rev-parse HEAD)" = "$M4_REVISION"
+      - name: Build source-disjoint held-out-generator corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/scribeprint-run
+          scribeprint-import-m4 \
+            --input /tmp/M4/data/arxiv_bloomz.jsonl \
+            --input /tmp/M4/data/arxiv_chatGPT.jsonl \
+            --input /tmp/M4/data/arxiv_cohere.jsonl \
+            --input /tmp/M4/data/arxiv_davinci.jsonl \
+            --input /tmp/M4/data/arxiv_dolly.jsonl \
+            --input /tmp/M4/data/arxiv_flant5.jsonl \
+            --dataset-revision "$M4_REVISION" \
+            --holdout-generator gpt-3.5-turbo \
+            --max-sources 2500 \
+            --min-words 50 \
+            --output /tmp/scribeprint-run/m4-arxiv.jsonl \
+            --manifest /tmp/scribeprint-run/m4-arxiv.manifest.json
+      - name: Audit source and near-duplicate leakage
+        run: >-
+          scribeprint-audit
+          --input /tmp/scribeprint-run/m4-arxiv.jsonl
+          --threshold 0.995
+          --neighbours 3
+          --max-rows 20000
+          --output /tmp/scribeprint-run/audit.json
+      - name: Train calibrated phase-0 baseline
+        run: >-
+          scribeprint-baseline train
+          --input /tmp/scribeprint-run/m4-arxiv.jsonl
+          --output /tmp/scribeprint-run/scribeprint-m4-phase0.joblib
+          --target-fpr 0.005
+          --target-fnr 0.05
+          --max-features 80000
+      - name: Evaluate frozen held-out-generator test
+        run: >-
+          scribeprint-evaluate
+          --model /tmp/scribeprint-run/scribeprint-m4-phase0.joblib
+          --input /tmp/scribeprint-run/m4-arxiv.jsonl
+          --split test
+          --bootstrap 300
+          --output /tmp/scribeprint-run/evaluation.json
+      - name: Remove source text before artifact upload
+        if: always()
+        run: rm -f /tmp/scribeprint-run/m4-arxiv.jsonl
+      - name: Upload research artifact and reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scribeprint-m4-arxiv-phase0
+          path: /tmp/scribeprint-run/
+          if-no-files-found: error
+          retention-days: 30
