@@ -1,6 +1,7 @@
 # Vendored runtime files are loaded with SRI hashes; keep checkout bytes stable.
 broadband-speed-checker/vendor/*.js -text
 broadband-speed-checker/fonts/*.woff2 -text
+japanese-travel-rpg/vendor/*.js -text
 
 # Opus 4.8 Verdict: vendored ML runtime + model weights are binary — no EOL munging.
 opus-verdict/vendor/* -text
