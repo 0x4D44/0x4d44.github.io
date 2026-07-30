@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tone &amp; the Soundboard — The Well-Tempered Machine</title>
+<meta name="description" content="Why a piano sounds like a piano: the soft felt hammer, the strike point at a seventh to a ninth of the string that mutes the harsh overtones, the great spruce soundboard, the unison string choirs, and the honest inharmonicity of stiff strings that forces tuners to stretch the scale. With a strike-point spectrum explorer and a Railsback-curve figure.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="strings.html">1 · Strings &amp; Frequency</a>
+    <a href="action.html">2 · The Action</a>
+    <a href="tone.html" aria-current="page">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html">4 · Temperament</a>
+    <a href="anatomy.html">5 · Anatomy</a>
+    <a href="family.html">6 · The Family</a>
+    <a href="lexicon.html">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 3</p>
+  <h1>Tone &amp; the Soundboard</h1>
+  <p class="standfirst">Two pianos can play the identical note — the same frequency, from Chapter&nbsp;1 —
+  and sound completely different. The difference is <em>timbre</em>: which of the note's overtones are loud,
+  which are missing, and how they fade. A piano's makers control that recipe with three quiet decisions —
+  how soft the hammer is, exactly <em>where</em> it hits the string, and what the board behind it does with the
+  vibration. This chapter is those three decisions.</p>
+</section>
+
+<div class="prose">
+
+<p class="lead">A bare string, plucked in mid-air, is almost silent. Nearly everything you hear is the wood.</p>
+
+<p>A vibrating string is a poor loudspeaker: it is thin, so it slices through the air instead of pushing it.
+Left to itself it would ring for a long time but barely be audible. The piano's job is to steal that energy
+and hand it to something broad enough to move real air — the <strong>soundboard</strong>, a panel of
+quarter-sawn spruce only about 8&nbsp;millimetres thick and nearly two metres wide. The strings press down on a
+wooden <em>bridge</em> glued to that board; every time they vibrate, they rock the bridge, and the bridge
+flexes the whole board, which shoves the air and becomes the sound. The board is why a piano is loud, and
+its size and stiffness colour everything you hear. Trade a little of that loudness away — the string gives up
+its energy faster — and you get the piano's signature: a bright attack that decays, because unlike a bowed or
+blown instrument, nothing keeps feeding it.</p>
+
+<h2><span class="no">§ 3.1</span>Where the hammer lands</h2>
+
+<p>Recall from Chapter&nbsp;1 that a string vibrates in many modes at once — whole, halves, thirds — and that a
+mode has still points, <em>nodes</em>, where the string doesn't move. Here is a lovely consequence: if you strike
+the string exactly at a point that <em>is</em> a node for some harmonic, you cannot set that harmonic going at all.
+Strike at the midpoint and the 2nd, 4th, 6th… harmonics (all of which have a node in the middle) vanish, leaving a
+hollow, clarinet-ish tone of odd harmonics only. Strike near one end and you get everything, harsh and bright.</p>
+
+<p>Piano makers exploit this deliberately. The hammer is set to strike at roughly <strong>one-seventh to
+one-ninth</strong> of the speaking length from the end — the exact fraction shifting from note to note — which
+drops a node of the 7th harmonic (and its multiples, the 14th and 21st) right under the hammer and <em>mutes</em>
+it. Because the felt has real width, the cancellation is strong rather than total. That matters because the 7th
+harmonic is badly out of tune with the scale (a flat, sour minor seventh — you saw it flagged red in
+Chapter&nbsp;1), and the very high partials just sound
+like clang. Killing them is how the piano avoids a metallic edge. Move the hammer yourself and watch the spectrum,
+and the tone, change:</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">The strike-point explorer</span>
+    <span class="hint">move the hammer along the string · soften or harden the felt · play the result</span>
+  </div>
+  <div class="fig-body"><canvas id="strike" style="aspect-ratio: 2.4 / 1; min-height: 300px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="sp-pos">strike point</label>
+      <input type="range" id="sp-pos" min="2" max="20" step="0.1" value="8">
+      <output></output>
+    </div>
+    <div class="ctl">
+      <label for="sp-hard">felt</label>
+      <input type="range" id="sp-hard" min="0" max="100" step="1" value="35">
+      <output></output>
+    </div>
+    <div class="ctl"><button class="btn primary" id="sp-play">▶ strike</button></div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="sp-frac"><b>1/8.0</b> of the length</span>
+    <span class="ro" id="sp-mute">mutes harmonics <b>—</b></span>
+    <span class="ro" id="sp-bright">brightness <b>—</b></span>
+  </div>
+  <div class="fig-note">Bars are the harmonics and their loudness; <b>red</b> ones are suppressed because the
+  hammer sits on their node. Slide to <b>1/2</b> for the hollow odd-harmonic tone; to the real piano zone around
+  <b>1/8</b> for a warm voice with the harsh 7th–8th killed; toward <b>1/20</b> (near the end) for a bright,
+  nasal twang. The <b>felt</b> slider trades a soft, mellow blow for a hard, brilliant one — exactly what
+  "voicing" a hammer adjusts, and what a harder <em>fortissimo</em> blow does on its own.</div>
+</figure>
+
+<div class="toon right">
+  <div class="cast">
+    <svg class="char float" aria-hidden="true"><use href="#char-mallet"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Mallet</p>
+    <p class="say">"I'm not a hard mallet — I'm graded wool felt over a wooden core, deliberately soft. Hit
+    gently and I stay soft and mellow; hit hard and I compress on impact and turn bright. That's why a piano
+    doesn't just get louder as you dig in — it changes <em>colour</em>. A technician can 'voice' me sharper with a
+    needle, or softer with a little ironing."</p>
+  </div>
+</div>
+
+<details class="deeper">
+  <summary><span class="lbl">The mode that dies at the node</span><span class="tag2">why 1/n mutes harmonic n</span></summary>
+  <p>Mode <span class="m">n</span> of a string has the shape <span class="m">sin(nπx/<b>L</b>)</span>, with
+  nodes wherever that is zero — at <span class="m">x = <b>L</b>/n, 2<b>L</b>/n, …</span>. Striking the string at
+  position <span class="m">a·<b>L</b></span> excites each mode in proportion to how much that mode is moving there,
+  roughly <span class="m">|sin(nπa)|</span> (times a factor for the hammer's softness and width). Set
+  <span class="m">a = 1/7</span> and the 7th mode's factor is <span class="m">sin(π) = 0</span> — dead — along with
+  the 14th, 21st and so on. That is the whole reason for the strike point. A softer, wider hammer additionally
+  rolls off the high partials (it can't turn on a wavelength shorter than itself), which is the second slider.</p>
+</details>
+
+<h2><span class="no">§ 3.2</span>Choirs, and the two-part decay</h2>
+
+<p>Look inside a piano and you'll see that most notes have not one string but <strong>two or three</strong>, tuned
+to the same pitch and struck together by one wide hammer. This is not for loudness so much as for tone and sustain.
+The strings of a <em>unison</em> are never tuned to a perfect match; a hair's-width difference makes them drift very
+slowly in and out of step, giving the note a gentle shimmer — a natural chorus. It also produces the piano's famous
+<strong>two-stage decay</strong>: at first the three strings, moving together, dump their energy into the bridge
+quickly and loudly (the <em>immediate sound</em>); then, as they fall out of phase, they start to fight each other at
+the bridge, the energy transfer slows, and a quieter, longer <em>aftersound</em> takes over. It is why a held piano
+note seems to bloom and then sing on.</p>
+
+<div class="callout">
+  <span class="tag">What the soft pedal really does</span>
+  <p>The left pedal on a grand — <em>una corda</em>, "one string" — physically shifts the entire action sideways by a
+  few millimetres so the hammers strike only two of each three strings (and hit them with a less-used part of the felt).
+  The result isn't just quieter: the untouched string still resonates sympathetically, and the tone goes softer and more
+  veiled — a genuine change of colour, which is why composers write <em>una corda</em> as an expressive mark, not a volume
+  knob. On most uprights the same pedal merely moves the hammers closer to the strings, which only softens the blow.</p>
+</div>
+
+<h2><span class="no">§ 3.3</span>The honest lie: inharmonicity and the stretched scale</h2>
+
+<p>Chapter&nbsp;1 told a small idealisation. A real piano string is not perfectly floppy — it is a stiff steel wire,
+and stiffness makes the higher modes vibrate slightly <strong>faster</strong> than the perfect 2×, 3×, 4× of the ideal.
+The overtones are stretched sharp. The effect is tiny for any one partial but it grows with the harmonic number and
+with the string's stiffness, so it is worst in the short, stiff <em>treble</em> strings — the long bass strings are
+kept comparatively tame precisely because they are wound over a thin, flexible core rather than being solid rods.
+This is <strong>inharmonicity</strong>, and it is measured by a coefficient <span class="m">B</span>: the <span class="m">n</span>-th
+partial sits not at <span class="m">n·f</span> but at <span class="m">n·f·√(1 + B n²)</span>. Turn it up and watch the
+ladder lean:</p>
+
+<figure class="fig wide">
+  <div class="fig-head">
+    <span class="t">Stiff strings sharpen</span>
+    <span class="hint">raise the inharmonicity and the upper partials drift sharp</span>
+  </div>
+  <div class="fig-body"><canvas id="inharm" style="aspect-ratio: 2.6 / 1; min-height: 240px;"></canvas></div>
+  <div class="fig-controls">
+    <div class="ctl">
+      <label for="ih-B">inharmonicity B</label>
+      <input type="range" id="ih-B" min="0" max="120" step="1" value="30">
+      <output></output>
+    </div>
+  </div>
+  <div class="readouts">
+    <span class="ro amber" id="ih-8">8th partial <b>—</b></span>
+    <span class="ro" id="ih-oct">apparent octave stretch <b>—</b></span>
+  </div>
+  <div class="fig-note">Each dot is a partial; the higher it climbs, the sharper it is of the pure harmonic
+  (dashed line). Because a piano's octaves are tuned to make partials <em>beatless</em> rather than frequencies exact,
+  this sharpening forces tuners to <b>stretch</b> the whole scale — the treble tuned progressively sharp, the bass
+  progressively flat.</div>
+</figure>
+
+<p>The consequence is one of the loveliest facts about the instrument. A piano tuner does <em>not</em> tune the keyboard
+to the mathematically exact frequencies of Chapter&nbsp;1. To make octaves sound clean — beat-free — they must widen
+them slightly, so the top of the keyboard ends up as much as <strong>30&nbsp;cents sharp</strong> and the bottom
+comparably flat of "textbook" pitch. Plotted across the 88 keys, that deliberate deviation traces a gentle stretched-S
+called the <strong>Railsback curve</strong>, after the physicist who measured it on real, well-tuned pianos in 1938:</p>
+
+<figure class="fig">
+  <div class="fig-head">
+    <span class="t">The Railsback stretch</span>
+    <span class="hint">how a well-tuned piano deviates from equal temperament — illustrative</span>
+  </div>
+  <div class="fig-body"><canvas id="rails" style="aspect-ratio: 3 / 1; min-height: 190px;"></canvas></div>
+  <div class="fig-note">A real, well-tuned piano runs sharp at the top and flat at the bottom by design — not error,
+  but the price of clean-sounding octaves on stiff strings. Curve schematic, in the spirit of Railsback's 1938 measurements.</div>
+</figure>
+
+<p>So the piano is tuned to sound right rather than to be right — a theme that becomes the whole of the next chapter.
+Inharmonicity is not a defect to be engineered away; a completely inharmonic-free piano sounds thin and lifeless. The
+slight stretch is part of what we <em>mean</em> by a rich piano tone. Which brings us to the question the stretch is a
+response to: what does "in tune" even mean, when the numbers refuse to cooperate? That is <a href="temperament.html">temperament</a>.</p>
+
+<div class="chapnav">
+  <a class="prev" href="action.html"><span class="dir">← Previous</span><span class="title">2 · The Action</span></a>
+  <a class="next" href="temperament.html"><span class="dir">Next →</span><span class="title">4 · Temperament &amp; Tuning</span></a>
+</div>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · Chapter 3 · Strike point and mode suppression; hammer felt and voicing;
+unison choirs and the double decay; string stiffness, inharmonicity (partial <span class="m">n·f·√(1+Bn²)</span>) and
+the Railsback (1938) stretch. Physics after Fletcher &amp; Rossing. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { C, canvas, slider, on, TAU, clamp, lerp, playSine, html } = PZ;
+
+  /* ---------- 3.1 strike-point explorer ---------- */
+  let a = 1 / 8;      // strike fraction
+  let hard = 0.35;    // 0 soft .. 1 hard
+  let figS, figI;
+  const NP = 16;
+  function amps() {
+    const out = [];
+    // hammer width narrows with hardness; softer = stronger high-partial rolloff
+    const rolloff = lerp(2.0, 0.9, hard);
+    let peak = 0;
+    for (let n = 1; n <= NP; n++) {
+      const excite = Math.abs(Math.sin(n * Math.PI * a));
+      const amp = excite / Math.pow(n, rolloff);
+      out[n] = amp; peak = Math.max(peak, amp);
+    }
+    for (let n = 1; n <= NP; n++) out[n] /= (peak || 1);
+    return out;
+  }
+  function mutedList() {
+    const m = [];
+    for (let n = 2; n <= NP; n++) if (Math.abs(Math.sin(n * Math.PI * a)) < 0.12) m.push(n);
+    return m;
+  }
+  function refreshSP() {
+    const frac = 1 / a;
+    html("sp-frac", "<b>1/" + frac.toFixed(1) + "</b> of the length");
+    const m = mutedList();
+    html("sp-mute", "mutes harmonics <b>" + (m.length ? m.join(", ") : "none") + "</b>");
+    const b = Math.round(lerp(20, 95, hard));
+    html("sp-bright", "brightness <b>" + b + "%</b>");
+  }
+  slider("sp-pos", (v) => "1/" + v.toFixed(1), (v) => { a = 1 / v; refreshSP(); figS && figS.redraw(); });
+  slider("sp-hard", (v) => v < 33 ? "soft" : v < 66 ? "medium" : "hard",
+    (v) => { hard = v / 100; refreshSP(); figS && figS.redraw(); });
+
+  figS = canvas("strike", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const padX = 30;
+    // ---- string with strike marker (top ~28%) ----
+    const sy = h * 0.16, x0 = padX, x1 = w - padX, span = x1 - x0;
+    PZ.line(ctx, x0, sy, x1, sy, C.line, 1);
+    // draw the struck shape: a bump at a
+    ctx.strokeStyle = C.cyan; ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i <= 120; i++) {
+      const fx = i / 120; const x = x0 + fx * span;
+      // superpose first 12 modes with these amps to show the initial shape
+      let y = 0; const A = amps();
+      for (let n = 1; n <= 12; n++) y += A[n] * Math.sin(n * Math.PI * fx) * (Math.sin(n * Math.PI * a) >= 0 ? 1 : 1);
+      i === 0 ? ctx.moveTo(x, sy - y * 16) : ctx.lineTo(x, sy - y * 16);
+    }
+    ctx.stroke();
+    // hammer marker
+    const hx = x0 + a * span;
+    ctx.fillStyle = "#efe2d2"; PZ.roundRect(ctx, hx - 7, sy + 8, 14, 16, 5); ctx.fill();
+    PZ.line(ctx, hx, sy, hx, sy + 8, "#b98a52", 3);
+    PZ.label(ctx, "hammer strikes here", hx, sy + 40, { align: "center", color: "#c9975f", font: PZ.mono(10) });
+    ctx.fillStyle = C.surface3; ctx.fillRect(x0 - 5, sy - 12, 5, 24); ctx.fillRect(x1, sy - 12, 5, 24);
+
+    // ---- spectrum (bottom) ----
+    const A = amps();
+    const by1 = h - 40, byTop = h * 0.42, bw = span / NP;
+    for (let n = 1; n <= NP; n++) {
+      const cx = x0 + (n - 0.5) * bw;
+      const bh = A[n] * (by1 - byTop);
+      const muted = Math.abs(Math.sin(n * Math.PI * a)) < 0.12;
+      ctx.fillStyle = muted ? C.felt : (n === 7 ? C.copper : C.amber);
+      if (muted && bh < 2) { // draw a small stub to show it's suppressed
+        ctx.fillRect(cx - bw * 0.3, by1 - 3, bw * 0.6, 3);
+      } else {
+        PZ.roundRect(ctx, cx - bw * 0.3, by1 - bh, bw * 0.6, bh, 2); ctx.fill();
+      }
+      PZ.label(ctx, String(n), cx, by1 + 15, { align: "center", color: muted ? C.felt : C.muted, font: PZ.mono(10) });
+    }
+    PZ.line(ctx, x0, by1, x1, by1, C.line, 1);
+    PZ.label(ctx, "harmonic loudness →", x0 + 2, byTop - 4, { color: C.ink2, font: PZ.mono(11) });
+  });
+
+  on("sp-play", "click", () => {
+    const A = amps(); const f0 = 220;
+    for (let n = 1; n <= NP; n++) if (A[n] > 0.02) playSine(f0 * n, 1.6, 0.22 * A[n]);
+  });
+  refreshSP();
+
+  /* ---------- 3.2 inharmonicity ---------- */
+  let B = 0.0003;
+  function partialCents(n) { return 1200 * Math.log2(Math.sqrt(1 + B * n * n)); }
+  function refreshIH() {
+    html("ih-8", "8th partial <b>" + PZ.fmtCents(partialCents(8)) + "</b> sharp");
+    // apparent 2:1 octave stretch ~ deviation of 2nd partial
+    html("ih-oct", "apparent octave stretch <b>+" + partialCents(2).toFixed(1) + "¢</b>");
+  }
+  slider("ih-B", (v) => (v / 100000).toExponential(1),
+    (v) => { B = v / 100000; refreshIH(); figI && figI.redraw(); });
+
+  figI = canvas("inharm", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const padL = 44, padR = 20, padT = 20, padB = 34;
+    const x0 = padL, x1 = w - padR, y0 = padT, y1 = h - padB;
+    const N = 16, maxC = 60;
+    // axes
+    PZ.line(ctx, x0, y1, x1, y1, C.line, 1);
+    // pure-harmonic reference (0 cents)
+    PZ.line(ctx, x0, y1, x1, y1, C.cyan, 1);
+    for (let c = 0; c <= maxC; c += 20) {
+      const yy = y1 - (c / maxC) * (y1 - y0);
+      PZ.line(ctx, x0, yy, x1, yy, C.line2, 1);
+      PZ.label(ctx, "+" + c + "¢", x0 - 6, yy + 3, { align: "right", color: C.muted, font: PZ.mono(9.5) });
+    }
+    PZ.label(ctx, "pure harmonic", x1 - 4, y1 - 5, { align: "right", color: C.cyan, font: PZ.mono(10) });
+    // partial dots
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 1.5; ctx.beginPath();
+    for (let n = 1; n <= N; n++) {
+      const cx = lerp(x0, x1, (n - 1) / (N - 1));
+      const cy = clamp(y1 - (partialCents(n) / maxC) * (y1 - y0), y0, y1);
+      n === 1 ? ctx.moveTo(cx, cy) : ctx.lineTo(cx, cy);
+    }
+    ctx.stroke();
+    for (let n = 1; n <= N; n++) {
+      const cx = lerp(x0, x1, (n - 1) / (N - 1));
+      const cy = clamp(y1 - (partialCents(n) / maxC) * (y1 - y0), y0, y1);
+      ctx.fillStyle = C.gold; ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, TAU); ctx.fill();
+      if (n === 1 || n % 4 === 0) PZ.label(ctx, String(n), cx, y1 + 14, { align: "center", color: C.muted, font: PZ.mono(9.5) });
+    }
+    PZ.label(ctx, "partial number →", x1, y1 + 14, { align: "right", color: C.ink2, font: PZ.mono(10) });
+    PZ.label(ctx, "sharpness", x0 - 34, y0 + 8, { color: C.ink2, font: PZ.mono(10), angle: -Math.PI / 2 });
+  });
+  refreshIH();
+
+  /* ---------- 3.3 Railsback curve (illustrative) ---------- */
+  canvas("rails", function (ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    const padL = 44, padR = 16, padT = 16, padB = 30;
+    const x0 = padL, x1 = w - padR, y0 = padT, y1 = h - padB, midY = (y0 + y1) / 2;
+    const range = 36; // ±cents
+    // grid
+    PZ.line(ctx, x0, midY, x1, midY, C.line, 1);
+    [-30, -15, 0, 15, 30].forEach((c) => {
+      const yy = midY - (c / range) * (midY - y0);
+      if (c !== 0) PZ.line(ctx, x0, yy, x1, yy, C.line2, 1);
+      PZ.label(ctx, (c > 0 ? "+" : "") + c + "¢", x0 - 6, yy + 3, { align: "right", color: C.muted, font: PZ.mono(9.5) });
+    });
+    // curve
+    ctx.strokeStyle = C.amber; ctx.lineWidth = 2.4; ctx.beginPath();
+    for (let key = 1; key <= 88; key++) {
+      const xf = (key - 44) / 44;               // -1 .. +1
+      const dev = 30 * xf * Math.abs(xf) * (xf > 0 ? 1.12 : 1.0);
+      const x = lerp(x0, x1, (key - 1) / 87);
+      const y = midY - (dev / range) * (midY - y0);
+      key === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    PZ.label(ctx, "bass (flat)", x0 + 4, y1 + 12, { color: C.muted, font: PZ.mono(10) });
+    PZ.label(ctx, "treble (sharp)", x1 - 4, y1 + 12, { align: "right", color: C.muted, font: PZ.mono(10) });
+    PZ.label(ctx, "deviation from equal temperament", x0 - 34, y0 + 6, { color: C.ink2, font: PZ.mono(10), angle: -Math.PI / 2 });
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

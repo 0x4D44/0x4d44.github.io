@@ -16,6 +16,19 @@
 
 window.ESSAYS = [
   {
+    slug: "instruments",
+    title: "The Well-Tempered Machine",
+    tagline: "A deep, interactive field guide to how instruments work, beginning with the piano: the physics of a vibrating string, the escapement that throws a free-flying hammer, tone and the soundboard, the two-thousand-year tuning compromise, and the twenty-ton frame. Seven chapters with a playable keyboard and live, audible acoustics. Vanilla JS, canvas + Web Audio; no build step.",
+    url: "https://0x4d44.github.io/instruments/",
+    illustration: "ill-piano",
+    date: "2026-07-30T12:00:00",
+    year: 1700,
+    readingMin: 54,
+    words: 10800,
+    tags: ["software", "music", "science", "engineering", "history"],
+    real: true,
+  },
+  {
     slug: "arran-deep-time",
     title: "Arran: Island of Deep Time",
     tagline: "A living geological atlas of the Isle of Arran: ocean-floor mud, colliding continents, red deserts, a buried volcano, Ice Age sculpture and the shoreline outcrop that helped James Hutton reveal deep time. Build the island, read its rocks and open six field routes. Original SVG and canvas, vanilla JavaScript; no build step.",
@@ -1561,7 +1574,7 @@ window.ESSAYS = [
 // and technical write-ups (including code walkthroughs *about* games/sims).
 window.TAG_GROUPS = [
   { label: "form",    tags: ["software", "games", "simulation", "fiction", "comic"] },
-  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "work", "food"] },
+  { label: "subject", tags: ["rail", "history", "engineering", "transport", "science", "maritime", "math", "finance", "music", "work", "food"] },
 ];
 // Flat list ("all" first), derived from the groups, for any consumer that
 // just wants the plain vocabulary.
@@ -1617,6 +1630,9 @@ window.COLLECTIONS = [
     blurb: "AI, language models and the writing around them.",
     slugs: ["model-welfare", "j-space", "benchmarks", "ai-history", "mdtoken",
       "claude-workflows", "the-ai-who-watched"] },
+  { id: "music", name: "Music & Instruments", icon: "ill-piano",
+    blurb: "How instruments work — the physics of the string, the mechanism, the tuning and the craft.",
+    slugs: ["instruments"] },
   { id: "science", name: "The Science Bench", icon: "ill-supernova",
     blurb: "Space, life, chaos and number.",
     slugs: ["arran-deep-time", "root-and-crown", "teenage-brain", "thermal-mind", "animal-defenses", "transistor-packages", "great-dying", "chicxulub", "starforged", "black-holes", "quantum-theory", "quantum", "randomness", "supernova", "hyperbolic", "strange-attractors",

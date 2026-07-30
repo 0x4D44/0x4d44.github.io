@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Well-Tempered Machine — How the Piano Works</title>
+<meta name="description" content="A deep, interactive field guide to how musical instruments work, beginning with the piano: the physics of a vibrating string, the escapement action that throws a free-flying hammer, tone and the soundboard, temperament and tuning, construction and the twenty tons of tension, and the whole family from fortepiano to concert grand — with a playable keyboard and a cast of cartoon guides.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./" aria-current="page">Overview</a>
+    <a href="strings.html">1 · Strings &amp; Frequency</a>
+    <a href="action.html">2 · The Action</a>
+    <a href="tone.html">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html">4 · Temperament</a>
+    <a href="anatomy.html">5 · Anatomy</a>
+    <a href="family.html">6 · The Family</a>
+    <a href="lexicon.html">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">An interactive field guide to how instruments work</p>
+  <h1>The Well-Tempered Machine</h1>
+  <p class="standfirst">A piano is the most complicated machine most people keep in
+  their living room: some ten thousand moving parts whose only job is to throw a
+  felt-covered hammer at a steel string and then instantly get out of its way. This
+  guide takes one apart — the physics of the string, the mechanism of the throw, the
+  wood that turns a faint buzz into a concert, and the two-thousand-year argument about
+  tuning that the keyboard finally had to settle. Play it as you read.</p>
+</section>
+
+<figure class="fig wide" style="margin-top:38px">
+  <div class="fig-head">
+    <span class="t">Play me</span>
+    <span class="hint">click / tap the keys · drag to glissando · your device makes the sound</span>
+  </div>
+  <div id="kbd"></div>
+  <div class="readouts">
+    <span class="ro amber" id="ro-note"><b>—</b> the note you played</span>
+    <span class="ro" id="ro-freq">frequency <b>—</b></span>
+    <span class="ro" id="ro-midi">MIDI <b>—</b></span>
+  </div>
+  <div class="fig-note">Every note here is synthesised live from its <b>frequency</b> — a bank of
+  sine tones tuned to the harmonic series, struck with a decaying envelope. It is not a recording
+  of a Steinway; it is the physics of Chapter&nbsp;1, made audible.</div>
+</figure>
+
+<div class="prose">
+
+<p class="lead">There are three ways to get a taut string to sing, and pianos are the third —
+the strangest and the youngest of them.</p>
+
+<p>You can <em>pluck</em> it, as a harpsichord does with a quill, or a guitar with a
+fingertip: a clean, bright attack, but always the same loudness however hard you press the
+key. You can <em>bow</em> it, as a violin does, feeding energy in continuously so the note
+sustains as long as you like. Or you can <em>strike</em> it with a hammer — and here is the
+trick that took until about the year 1700 to solve. A hammer that stays pressed against the
+string, as a clavichord's little brass tangent does, deadens the very note it just made. To
+get a loud, ringing tone you must hit the string and let the hammer <strong>bounce free</strong>
+in the same thousandth of a second, so the string is left to vibrate on its own.</p>
+
+<p>Building a mechanism that does that — reliably, 88 times over, ten notes a second under a
+virtuoso's hands, hard when you play hard and soft when you play soft — is the whole engineering
+story of the piano. Its inventor was the Florentine harpsichord-keeper Bartolomeo Cristofori; his instrument
+was written up in 1711 as a <em>gravicembalo col piano e forte</em>, a harpsichord with soft and loud. We kept
+the last two words.</p>
+
+<details class="deeper">
+  <summary><span class="lbl">How this guide is built</span><span class="tag2">plain story, optional maths</span></summary>
+  <p>The main text assumes no physics and no music theory — every symbol and term is explained the
+  first time it appears. Where the honest mathematics earns its place (the frequency of a string, the
+  cents of a comma, the curve of a tuning), it lives in a fold-away panel like this one; open it or
+  skip it, the story reads either way.</p>
+  <p>And everything is playable. This is a static web page — vanilla JavaScript, canvas and SVG, and the
+  Web Audio synthesiser built into your browser, with no libraries and no build step — so the diagrams
+  are live instruments, not pictures of instruments. Pull a slider and the sound changes with it.</p>
+</details>
+
+</div>
+
+<div class="toon">
+  <div class="cast">
+    <svg class="char float" aria-hidden="true"><use href="#char-mallet"/></svg>
+    <svg class="char sm" aria-hidden="true"><use href="#char-ivory"/></svg>
+    <svg class="char sm" aria-hidden="true"><use href="#char-wire"/></svg>
+  </div>
+  <div class="lines">
+    <p class="who">Your guides</p>
+    <p class="say"><b>Mallet</b> the felt hammer does the actual work and asks the obvious
+    questions. <b>Ivory</b> the key passes the message on. <b>Miss&nbsp;Wire</b> is the string that
+    sings — and complains when she's out of tune. <b>Maestro</b>, the tuner, turns up with a
+    fork and the equations whenever real numbers are needed.</p>
+    <p class="say">You'll meet them properly along the way.</p>
+  </div>
+</div>
+
+<div class="cards">
+  <a class="card" href="strings.html">
+    <span class="no">CHAPTER 1</span>
+    <h3>Strings &amp; Frequency</h3>
+    <p>What actually makes a pitch: a vibrating string, its length, tension and weight, and the
+    harmonic series hiding inside every note. Pluck a live string and dial its three controls.</p>
+  </a>
+  <a class="card" href="action.html">
+    <span class="no">CHAPTER 2</span>
+    <h3>The Action</h3>
+    <p>The mechanism itself — the double-escapement that throws a free-flying hammer and catches it
+    on the rebound. Drive an animated grand action one key-press at a time, fast or slow.</p>
+  </a>
+  <a class="card" href="tone.html">
+    <span class="no">CHAPTER 3</span>
+    <h3>Tone &amp; the Soundboard</h3>
+    <p>Why a piano sounds like a piano: the felt hammer's soft blow, the strike point that mutes the
+    harsh overtones, the great spruce soundboard, unison choirs, and the strings' honest inharmonicity.</p>
+  </a>
+  <a class="card" href="temperament.html">
+    <span class="no">CHAPTER 4</span>
+    <h3>Temperament &amp; Tuning</h3>
+    <p>The oldest problem in music: you cannot make every interval pure at once. Hear a fifth beat,
+    watch the Pythagorean comma refuse to close, and see why the modern keyboard is deliberately, evenly wrong.</p>
+  </a>
+  <a class="card" href="anatomy.html">
+    <span class="no">CHAPTER 5</span>
+    <h3>Anatomy &amp; Construction</h3>
+    <p>A guided cutaway: the cast-iron plate holding back twenty tons, the bent maple rim, the
+    graduated scale of strings, the pinblock and the 88 keys — and why exactly 88.</p>
+  </a>
+  <a class="card" href="family.html">
+    <span class="no">CHAPTER 6</span>
+    <h3>The Piano Family</h3>
+    <p>Three centuries of the instrument: Cristofori's fragile first try, the fortepiano Mozart knew,
+    the iron-framed Romantic giant, the upright in the parlour, and the digital stage piano. Compare their sizes.</p>
+  </a>
+  <a class="card" href="lexicon.html">
+    <span class="no">CHAPTER 7</span>
+    <h3>The Lexicon</h3>
+    <p>The working vocabulary A–Z; the frequency of all 88 keys to the tenth of a hertz; the constants
+    of the instrument; and a timeline from Cristofori's workshop to the sampled grand in your phone.</p>
+  </a>
+</div>
+
+<div class="prose">
+
+<h2>What actually is a piano?</h2>
+
+<p>Here is the shortest honest definition. A piano is a <strong>keyboard that converts the speed of
+a finger into the speed of a hammer</strong>, throws that hammer at a tuned string, lets it fall
+away so the string can ring, and pours the result into a large thin panel of wood that couples the
+string's tiny vibration to the air. Everything else — the black lacquer, the three pedals, the
+gold-framed harp of strings — is in service of those four steps.</p>
+
+<p>Strip the cabinet away and you are left with a surprisingly small set of physical ideas, and this
+guide is organised around them:</p>
+
+<ul>
+  <li><strong>A pitch is a frequency</strong>, and a string's frequency is fixed by just three things —
+  how long it is, how tight it is, and how heavy it is (<a href="strings.html">Chapter&nbsp;1</a>).</li>
+  <li><strong>Loudness is hammer speed</strong>, and delivering a controllable, free-flying blow is a
+  genuinely hard mechanical problem — the one Cristofori solved and Sébastien Érard perfected
+  (<a href="action.html">Chapter&nbsp;2</a>).</li>
+  <li><strong>Timbre is which overtones survive</strong> — set by the softness of the felt, where along
+  the string it strikes, and the resonance of the board (<a href="tone.html">Chapter&nbsp;3</a>).</li>
+  <li><strong>Tuning is a compromise</strong> forced by arithmetic: the pure intervals simply do not fit
+  into an octave, so the piano spreads the error evenly across all twelve keys
+  (<a href="temperament.html">Chapter&nbsp;4</a>).</li>
+</ul>
+
+<div class="callout gold">
+  <span class="tag">The one number to remember</span>
+  <p>Pitch doubles every octave, and the octave is split into twelve equal steps, so each semitone
+  multiplies the frequency by the twelfth root of two:</p>
+  <div class="eq"><span class="m">f(<b>n</b>) = 440 × 2<sup>(<b>n</b> − 69)/12</sup> Hz</span></div>
+  <p>Here <span class="m"><b>n</b></span> is the key's MIDI number (the A above middle C is 69, and sounds
+  at the reference <strong>440&nbsp;Hz</strong>). That single formula tunes the entire keyboard, from the
+  bottom A at <strong>27.5&nbsp;Hz</strong> to the top C at about <strong>4,186&nbsp;Hz</strong> — a range
+  of a little over seven octaves. It is also, as Chapter&nbsp;4 shows, a two-thousand-year-old surrender.</p>
+</div>
+
+<h2>A machine of ten thousand parts</h2>
+
+<p>The numbers are worth pausing on. A modern concert grand contains on the order of <strong>ten
+thousand individual parts</strong>, most of them in the 88 near-identical actions — a little tower of
+levers, felts, springs and pivots repeated once per key. It carries about <strong>230 strings</strong>
+(most notes have three, the tenor two, the deepest bass one apiece), and their combined pull on the
+frame is on the order of <strong>twenty tons</strong> — as much as thirty on a full concert grand — which is
+why, since the 1820s, that frame has been a single casting of iron. The soundboard behind them is a panel of
+quarter-sawn spruce only about <strong>8&nbsp;millimetres</strong> thick and nearly two metres across, deliberately built with a slight crown so it can
+push against the air.</p>
+
+<p>None of it is arbitrary. Every measurement — the length of each string, the mass of its winding, the
+exact point the hammer strikes, the thickness of the board — is the settled answer to a physical
+question. Over the next chapters we ask those questions one at a time, and let you turn the answers up
+and down yourself.</p>
+
+<div class="callout story">
+  <span class="tag">A very short history</span>
+  <p>Cristofori built the first pianos in Florence around 1700; three of his instruments survive. For a
+  century it was a delicate salon curiosity, its light wooden frame able to hold only slack strings and a
+  thin tone — this is the <em>fortepiano</em> that Haydn, Mozart and the young Beethoven wrote for. The
+  nineteenth century then rebuilt it into a machine: Érard's double-escapement action (1821) let a note
+  repeat before the key had fully risen; the American full cast-iron plate (Alpheus Babcock's 1825 patent,
+  perfected by Steinway) let the strings be pulled to enormous tension; and cross-stringing fanned the long
+  bass strings over the treble for a richer, more even voice. By about 1880 the instrument had reached
+  essentially the form it keeps today.</p>
+</div>
+
+<h2>How to read this guide</h2>
+
+<p>Start here and go in order — each chapter leans gently on the one before — or jump to whatever pulled
+you in. Play every interactive; the sliders explain what sentences cannot. And a promise about honesty:
+writing about pianos tends to drift into either mystique ("the soul of the wood") or dry cataloguing of
+model numbers. This guide keeps to the physics, names the real people and dates, and flags clearly the
+few places where taste, not acoustics, has the final say.</p>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · how instruments work, beginning with the piano · written and
+built as a self-contained static site: vanilla JavaScript, canvas, SVG and Web Audio, no frameworks, no
+build step. Facts checked against Fletcher &amp; Rossing (<i>The Physics of Musical Instruments</i>), the
+standard piano-technology literature and the primary sources cited in-chapter, and reviewed by a
+multi-agent research pass. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { buildKeyboard, mtof, noteName, fmtHz, html } = PZ;
+
+  buildKeyboard(document.getElementById("kbd"), {
+    from: 48, to: 74, labels: "c", root: 60,
+    noteOpts: { dur: 2.4, gain: 0.5, partials: 12, B: 0.0004, noise: 0.3 },
+    onDown: (m, f) => {
+      html("ro-note", "<b>" + noteName(m) + "</b> the note you played");
+      html("ro-freq", "frequency <b>" + fmtHz(f) + "</b>");
+      html("ro-midi", "MIDI <b>" + m + "</b>");
+    },
+  });
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>

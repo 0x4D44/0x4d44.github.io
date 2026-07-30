@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Lexicon — The Well-Tempered Machine</title>
+<meta name="description" content="The working vocabulary of the piano A–Z, the constants of the instrument, the frequency of all 88 keys to a tenth of a hertz (generated live), and a timeline from Cristofori's Florentine workshop to the modelled digital grand.">
+<link rel="stylesheet" href="piano.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand"><a href="./">THE&nbsp;WELL-TEMPERED&nbsp;MACHINE</a></div>
+    <div class="strap">how instruments work · i. the piano</div>
+  </div>
+  <nav class="tabs" aria-label="Chapters">
+    <a href="./">Overview</a>
+    <a href="strings.html">1 · Strings &amp; Frequency</a>
+    <a href="action.html">2 · The Action</a>
+    <a href="tone.html">3 · Tone &amp; Soundboard</a>
+    <a href="temperament.html">4 · Temperament</a>
+    <a href="anatomy.html">5 · Anatomy</a>
+    <a href="family.html">6 · The Family</a>
+    <a href="lexicon.html" aria-current="page">7 · Lexicon</a>
+  </nav>
+</header>
+
+<main class="page">
+
+<section class="hero">
+  <p class="kicker">Chapter 7</p>
+  <h1>The Lexicon</h1>
+  <p class="standfirst">A reference to keep. The vocabulary of the instrument, defined in one line each; the
+  constants worth remembering; the frequency of every one of the 88 keys, computed live from the equal-tempered
+  formula of Chapter&nbsp;1; and a timeline of the whole three-hundred-year argument.</p>
+</section>
+
+<div class="prose">
+
+<h2><span class="no">A–Z</span>The working vocabulary</h2>
+
+<dl class="gloss">
+  <dt>Action</dt><dd>The whole mechanism, per key, that turns a finger's push into a hammer's free blow — key,
+  wippen, jack, repetition lever, hammer, back-check and damper. See Chapter&nbsp;2.</dd>
+
+  <dt>Back-check</dt><dd>A felted block that catches the hammer as it rebounds off the string, stopping it bouncing
+  back for an unwanted second strike.</dd>
+
+  <dt>Bridge</dt><dd>A wooden ridge glued to the soundboard, over which the strings press; it carries their vibration
+  into the board. A grand has a long treble bridge and a separate bass bridge.</dd>
+
+  <dt>Cents</dt><dd>A logarithmic unit of pitch interval: 1200 to the octave, 100 to an equal-tempered semitone.
+  <span class="u">cents = 1200·log₂(f₂/f₁)</span>. The measuring stick of tuning.</dd>
+
+  <dt>Damper</dt><dd>A felt block resting on a string to silence it; lifted by its key (or by the sustain pedal) so
+  the string can ring, and dropped again on release.</dd>
+
+  <dt>Equal temperament</dt><dd>The modern tuning: the octave split into twelve identical ratios of
+  <span class="u">2^(1/12)</span>. Only the octave is pure; every key is equally, slightly out of tune. Chapter&nbsp;4.</dd>
+
+  <dt>Escapement <span class="also">let-off</span></dt><dd>The instant the jack is tripped out from under the hammer,
+  leaving it to fly the last few millimetres to the string under its own momentum. Cristofori's key invention.</dd>
+
+  <dt>Fortepiano</dt><dd>The early piano (c.1700–1830): light wooden frame, low string tension, a clear but slender
+  tone. The instrument of Mozart and the young Beethoven.</dd>
+
+  <dt>Fundamental</dt><dd>The lowest, strongest mode of a vibrating string — the pitch you name. Everything above it
+  is a harmonic. Chapter&nbsp;1.</dd>
+
+  <dt>Hammer</dt><dd>A wooden core wrapped in graded wool felt, thrown at the string by the action. Its softness and
+  strike point set the tone; a technician adjusts (<em>voices</em>) the felt. Chapter&nbsp;3.</dd>
+
+  <dt>Harmonic series</dt><dd>The ladder of overtones at 1×, 2×, 3×… the fundamental frequency, present in every
+  string tone. The source of both timbre and the intervals of harmony. Chapter&nbsp;1.</dd>
+
+  <dt>Hertz <span class="also">Hz</span></dt><dd>Cycles per second — the unit of frequency, and therefore of pitch.
+  A4 = 440&nbsp;Hz.</dd>
+
+  <dt>Inharmonicity</dt><dd>The slight sharpening of a real string's upper partials caused by its stiffness: the
+  <span class="u">n</span>-th partial sits at <span class="u">n·f·√(1+Bn²)</span>. It forces the stretched tuning of
+  Chapter&nbsp;3.</dd>
+
+  <dt>Jack <span class="also">hopper</span></dt><dd>The spring-loaded lever on the wippen that drives the hammer up
+  and then escapes from under it at let-off.</dd>
+
+  <dt>Just intonation</dt><dd>Tuning by pure whole-number frequency ratios (3:2, 5:4…). Beautiful in one key,
+  unusable across all — the problem equal temperament solves.</dd>
+
+  <dt>MIDI number</dt><dd>An integer naming each semitone; A4 = 69. Frequency is
+  <span class="u">440·2^((n−69)/12)</span>. Used throughout this guide.</dd>
+
+  <dt>Node</dt><dd>A point on a vibrating string that stays still. Striking the string at a mode's node fails to
+  excite that mode — the basis of the strike-point trick. Chapter&nbsp;3.</dd>
+
+  <dt>Overstringing <span class="also">cross-stringing</span></dt><dd>Fanning the long bass strings diagonally over
+  the treble, so they can be longer and load the soundboard centrally. Steinway, 1859.</dd>
+
+  <dt>Pinblock <span class="also">wrest plank</span></dt><dd>The block of cross-laminated hardwood that grips the
+  tuning pins. Its hold is what keeps a piano in tune.</dd>
+
+  <dt>Plate <span class="also">frame, harp</span></dt><dd>The one-piece cast-iron casting that carries the ~20-ton
+  string load. The enabling invention of the modern piano. Chapter&nbsp;5.</dd>
+
+  <dt>Pythagorean comma</dt><dd>The gap by which twelve pure fifths overshoot seven octaves:
+  <span class="u">531441/524288 ≈ 23.46¢</span>. The reason tuning is a compromise. Chapter&nbsp;4.</dd>
+
+  <dt>Railsback curve</dt><dd>The characteristic stretch of a well-tuned piano — sharp at the top, flat at the
+  bottom — measured by O.&nbsp;Railsback in 1938. A response to inharmonicity, not an error.</dd>
+
+  <dt>Repetition lever</dt><dd>The sprung lever of Érard's 1821 double-escapement action that catches the falling
+  hammer part-way, letting a note repeat before the key has fully risen.</dd>
+
+  <dt>Soundboard</dt><dd>The large, thin, crowned spruce panel beneath the strings that actually radiates the sound.
+  Chapter&nbsp;3.</dd>
+
+  <dt>Sostenuto</dt><dd>The middle pedal on a grand: a selective sustain that holds only the notes already down when
+  it is pressed.</dd>
+
+  <dt>Temperament</dt><dd>Any systematic adjustment of pure intervals to make a fixed keyboard usable in many keys.
+  Chapter&nbsp;4.</dd>
+
+  <dt>Timbre <span class="also">tone colour</span></dt><dd>What distinguishes two instruments playing the same
+  pitch — the mix and decay of their harmonics.</dd>
+
+  <dt>Una corda</dt><dd>The soft pedal: on a grand it shifts the action so hammers strike fewer strings and softer
+  felt, changing colour as much as volume.</dd>
+
+  <dt>Unison <span class="also">choir</span></dt><dd>The two or three strings tuned to one note and struck together;
+  their slight mistuning gives the piano its shimmer and two-stage decay.</dd>
+
+  <dt>Wippen</dt><dd>The rocking sub-assembly the key's capstan lifts, carrying the jack and repetition lever.</dd>
+
+  <dt>Wolf</dt><dd>A badly out-of-tune interval (howling like a wolf) that appears in unequal temperaments when the
+  comma is dumped in one place.</dd>
+</dl>
+
+<h2><span class="no">§</span>Constants of the instrument</h2>
+
+<table class="data">
+  <caption>Numbers worth remembering</caption>
+  <tr><th>Quantity</th><th>Value</th><th>Note</th></tr>
+  <tr><td class="k">Reference pitch A4</td><td class="num">440.00 Hz</td><td>MIDI 69; the tuning standard (ISO 16).</td></tr>
+  <tr><td class="k">Semitone ratio</td><td class="num">2^(1/12) ≈ 1.059463</td><td>Every equal-tempered half-step.</td></tr>
+  <tr><td class="k">Cents per octave</td><td class="num">1200</td><td>100 per equal semitone.</td></tr>
+  <tr><td class="k">Lowest key A0</td><td class="num">27.50 Hz</td><td>MIDI 21; near the floor of pitched hearing.</td></tr>
+  <tr><td class="k">Highest key C8</td><td class="num">4186.01 Hz</td><td>MIDI 108.</td></tr>
+  <tr><td class="k">Middle C (C4)</td><td class="num">261.63 Hz</td><td>MIDI 60.</td></tr>
+  <tr><td class="k">Pythagorean comma</td><td class="num">531441/524288 ≈ 23.46¢</td><td>12 pure fifths vs 7 octaves.</td></tr>
+  <tr><td class="k">Syntonic comma</td><td class="num">81/80 ≈ 21.51¢</td><td>4 pure fifths vs a pure major third.</td></tr>
+  <tr><td class="k">Keys</td><td class="num">88 (A0–C8)</td><td>7¼ octaves; Bösendorfer Imperial 97.</td></tr>
+  <tr><td class="k">Strings</td><td class="num">≈ 230</td><td>1 (bass) / 2 / 3 (treble) per note.</td></tr>
+  <tr><td class="k">Total string tension</td><td class="num">≈ 20 tons</td><td>Up to ~30 on a concert grand; held by the cast-iron plate.</td></tr>
+  <tr><td class="k">Concert grand length</td><td class="num">≈ 2.74 m (9 ft)</td><td>Soundboard ~9 mm spruce.</td></tr>
+</table>
+
+<h2><span class="no">§</span>Every key, to a tenth of a hertz</h2>
+
+<p>The 88 frequencies of the equal-tempered piano at A4&nbsp;=&nbsp;440&nbsp;Hz, generated live from
+<span class="u">f = 440·2^((n−69)/12)</span>. Middle&nbsp;C and concert&nbsp;A are highlighted.</p>
+
+<div style="max-height: 460px; overflow-y: auto; border: 1px solid var(--line); border-radius: 8px; margin: 18px 0;">
+  <table class="data" id="freqtable" style="margin: 0; padding: 0 14px;">
+    <thead><tr><th>Key</th><th>Note</th><th>MIDI</th><th>Frequency</th><th>Period</th></tr></thead>
+    <tbody id="freqbody"></tbody>
+  </table>
+</div>
+
+<h2><span class="no">§</span>A timeline</h2>
+
+<table class="data">
+  <caption>Three centuries of the well-tempered machine</caption>
+  <tr><th>Year</th><th>Event</th></tr>
+  <tr><td class="num">c. 1700</td><td>Bartolomeo Cristofori builds the first pianos in Florence — a harpsichord "with soft and loud," the escapement action born.</td></tr>
+  <tr><td class="num">1722</td><td>J.&nbsp;S. Bach completes Book&nbsp;I of <em>Das Wohltemperirte Clavier</em>, music for a keyboard tuned so every key is playable.</td></tr>
+  <tr><td class="num">1730s</td><td>Gottfried Silbermann builds the piano in Germany; his later instruments reportedly win Bach's approval.</td></tr>
+  <tr><td class="num">c. 1780</td><td>The light Viennese fortepiano (Stein, Walter) reaches its classic five-octave form — Mozart's instrument.</td></tr>
+  <tr><td class="num">1821</td><td>Sébastien Érard patents the double-escapement repetition action, still used in every grand.</td></tr>
+  <tr><td class="num">1825</td><td>Alpheus Babcock patents a one-piece cast-iron frame (for square pianos) in Boston.</td></tr>
+  <tr><td class="num">1853</td><td>Steinway &amp; Sons founded in New York.</td></tr>
+  <tr><td class="num">1859</td><td>Steinway patents the overstrung scale with a full iron plate in a grand — the modern grand's decisive form.</td></tr>
+  <tr><td class="num">c. 1880</td><td>The 88-key compass (A0–C8) settles as the standard.</td></tr>
+  <tr><td class="num">1900</td><td>The pneumatic player piano arrives; Yamaha begins building pianos in Japan.</td></tr>
+  <tr><td class="num">1938</td><td>Railsback measures the stretched tuning of real pianos; John Cage begins writing for the prepared piano.</td></tr>
+  <tr><td class="num">1955</td><td>A440 fixed as the international pitch standard (ISO 16, reaffirmed 1975).</td></tr>
+  <tr><td class="num">1980s</td><td>The weighted-key digital piano arrives; sampled and, later, physically-modelled tone follow.</td></tr>
+</table>
+
+<p class="colophon">THE WELL-TEMPERED MACHINE · Chapter 7 · Reference. Frequencies computed at A4 = 440 Hz in 12-tone equal
+temperament. A field guide to how instruments work, beginning with the piano — vanilla JavaScript, canvas, SVG and
+Web Audio, no build step. Part of the <a href="/">0x4D44 almanac</a>.</p>
+
+<div class="chapnav">
+  <a class="prev" href="family.html"><span class="dir">← Previous</span><span class="title">6 · The Piano Family</span></a>
+  <a class="next" href="./"><span class="dir">Back to →</span><span class="title">Overview</span></a>
+</div>
+
+</div>
+
+</main>
+
+<script src="piano-lib.js"></script>
+<script>
+(function () {
+  "use strict";
+  const { KEYS88, mtof, noteName, NAMES, FLATS, isBlack, fmtHz } = PZ;
+  const body = document.getElementById("freqbody");
+  let rows = "";
+  KEYS88.forEach((m, i) => {
+    const f = mtof(m);
+    const pc = ((m % 12) + 12) % 12;
+    const oct = Math.floor(m / 12) - 1;
+    let nm = noteName(m);
+    if (isBlack(m)) nm = NAMES[pc] + oct + " / " + FLATS[pc] + oct;
+    const period = (1000 / f).toFixed(f < 100 ? 2 : 3) + " ms";
+    const hi = (m === 60 || m === 69) ? ' class="hi"' : "";
+    const tag = m === 60 ? " · middle C" : m === 69 ? " · concert A" : "";
+    rows += `<tr${hi}><td class="num">${i + 1}</td><td class="k">${nm}${tag}</td><td class="num">${m}</td>`
+         + `<td class="num">${f.toFixed(2)} Hz</td><td class="num">${period}</td></tr>`;
+  });
+  body.innerHTML = rows;
+})();
+</script>
+<script defer src="/almanac-back.js"></script>
+</body>
+</html>
