@@ -1,7 +1,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
-const root = new URL('..', import.meta.url).pathname;
+import { validatorRoot } from './path.mjs';
+const root = validatorRoot(import.meta.url);
 const required = ['index.html', 'styles.css', 'app.js'];
 for (const file of required) {
   if (!existsSync(join(root, file))) throw new Error(`missing ${file}`);
