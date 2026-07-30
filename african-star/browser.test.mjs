@@ -132,6 +132,9 @@ try {
   let commandId = 0;
   const pending = new Map();
   const pageErrors = [];
+  const failedRequests = [];
+  const BENIGN_MISSING = [/\/favicon\.ico$/];
+  const isGenericLoadFailure = (text) => /Failed to load resource/i.test(text);
   websocket.onmessage = (event) => {
     const message = JSON.parse(event.data);
     if (message.id && pending.has(message.id)) {
@@ -141,15 +144,24 @@ try {
       else resolveCommand(message.result);
       return;
     }
-    if (message.method === "Runtime.exceptionThrown") {
+    if (message.method === "Network.responseReceived") {
+      const { status, url } = message.params.response;
+      if (status >= 400) failedRequests.push({ status, url });
+    } else if (message.method === "Network.loadingFailed") {
+      failedRequests.push({ status: "failed", url: message.params.requestId });
+    } else if (message.method === "Runtime.exceptionThrown") {
       const detail = message.params.exceptionDetails;
       pageErrors.push(detail.exception?.description ?? detail.text);
     } else if (message.method === "Runtime.consoleAPICalled" && message.params.type === "error") {
-      pageErrors.push(message.params.args.map((argument) => argument.description ?? argument.value).join(" "));
+      const text = message.params.args.map((argument) => argument.description ?? argument.value).join(" ");
+      if (!isGenericLoadFailure(text)) pageErrors.push(text);
     } else if (message.method === "Log.entryAdded" && message.params.entry.level === "error") {
-      pageErrors.push(message.params.entry.text);
+      if (!isGenericLoadFailure(message.params.entry.text)) pageErrors.push(message.params.entry.text);
     }
   };
+
+  const unexpectedMissing = () => failedRequests
+    .filter(({ url }) => !BENIGN_MISSING.some((pattern) => pattern.test(url)));
 
   const send = (method, params = {}, sessionId) => new Promise((resolveCommand, rejectCommand) => {
     const id = ++commandId;
@@ -163,6 +175,7 @@ try {
   await session("Page.enable");
   await session("Runtime.enable");
   await session("Log.enable");
+  await session("Network.enable");
 
   async function evaluate(expression) {
     const result = await session("Runtime.evaluate", {
@@ -255,6 +268,8 @@ try {
   assert.equal(catalog.onGamesShelf, true);
   assert.equal(catalog.illustrationExists, true);
   assert.deepEqual(pageErrors, []);
+  assert.deepEqual(unexpectedMissing(), [],
+    `the game and catalog must not request missing assets, got ${JSON.stringify(unexpectedMissing())}`);
 
   console.log("✓ phone and desktop setup layouts fit their viewports");
   console.log("✓ shared Almanac navigation mounts");
