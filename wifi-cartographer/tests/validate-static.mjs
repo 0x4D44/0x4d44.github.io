@@ -24,9 +24,27 @@ const checks = [
 for (const text of checks) {
   if (!html.includes(text)) throw new Error(`missing required copy: ${text}`);
 }
+// A ref starting with "/" is site-absolute — it resolves against the repo root
+// (which is what GitHub Pages serves), not against this document's directory.
 const localRefs = [...html.matchAll(/(?:href|src)="([^"]+)"/g)].map(m => m[1]).filter(h => !h.startsWith('http') && !h.startsWith('#') && !h.startsWith('../'));
 for (const ref of localRefs) {
-  if (!existsSync(join(root, ref))) throw new Error(`broken local ref: ${ref}`);
+  const resolved = ref.startsWith('/') ? join(root, '..', ref.slice(1)) : join(root, ref);
+  if (!existsSync(resolved)) throw new Error(`broken local ref: ${ref}`);
+}
+
+// The shared back button. Catalog links open in the same tab, so this pill is
+// the reader's only way back to "/". It is defined once at the repo root and
+// every document opts in with this one line — see CLAUDE.md, "Site navigation".
+if (!/<script defer src="\/almanac-back\.js"><\/script>/.test(html)) {
+  throw new Error('missing the shared /almanac-back.js include before </body>');
+}
+// ...and nothing of our own may sit under it. The pill is fixed at the top-left
+// (roughly x max(10px,safe-area-left)..+102px, y 10..39) at a z-index nothing on
+// the page can beat, so a control placed there is not merely obscured — it is
+// untappable, and the tap navigates to the catalog instead (ALM-BUG-KILN-00039).
+// This document's own duplicate "0x4D44 Almanac" breadcrumb link sat exactly there.
+if (/<a[^>]+href="\.\.\/"/.test(html)) {
+  throw new Error('the document must not ship its own back link: it duplicates the shared pill and sits under it');
 }
 
 const catalog = {};
