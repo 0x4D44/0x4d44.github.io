@@ -5,15 +5,15 @@
 - **Severity:** Medium
 - **Area:** tests
 - **Raised:** 2026-07-30
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20260730T231417Z-p83989-n290267000-c1
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-KILN-00046-run-fix-20260730T231417Z-p83989-n290267000-c1
+- **Owner base:** bb36d1d609f45ee33bcb49b46f3e7f853c1995c0
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-07-30T23:14:17Z
+- **Owner until:** 2026-07-31T01:14:17Z
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
