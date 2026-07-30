@@ -305,6 +305,85 @@ try {
   const narrow = await evaluate("({ innerWidth, documentWidth: document.documentElement.scrollWidth })");
   assert.ok(narrow.documentWidth <= narrow.innerWidth + 1, `360px must not scroll sideways (${narrow.documentWidth} > ${narrow.innerWidth})`);
 
+  stage = "checking the hand-off gate cannot trap an open modal";
+  await loadAt(appUrl, 1440, 1000, APP_READY);
+  const handoffModalRace = await evaluate(`(async () => {
+    const sleep = (ms) => new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+    const waitFor = async (probe, timeout = 8_000) => {
+      const deadline = Date.now() + timeout;
+      while (Date.now() < deadline) {
+        if (probe()) return true;
+        await sleep(25);
+      }
+      return false;
+    };
+
+    // Seed 7 opens on seat one and produces a vampire flight, so the spin
+    // completes the turn without requiring a destination choice.
+    document.querySelectorAll("#seat-list .seat-row")[1]
+      .querySelector("[data-human='true']").click();
+    document.querySelector("#seed-input").value = "7";
+    document.querySelector("#start-game").click();
+    if (!await waitFor(() => !document.querySelector("#handoff-overlay").hidden)) {
+      return { initialHandoff: false };
+    }
+    document.querySelector("#handoff-ready").click();
+    if (!await waitFor(() => document.querySelector("#handoff-overlay").hidden)) {
+      return { initialHandoff: true, initialGateClosed: false };
+    }
+
+    document.querySelector("#spinner-button").click();
+    document.querySelector("#rules-open").click();
+    const turnFinished = await waitFor(() => !document.querySelector("#handoff-overlay").hidden);
+    await new Promise((resolveFrame) => requestAnimationFrame(() => requestAnimationFrame(resolveFrame)));
+    const rules = document.querySelector("#rules-modal");
+    const ready = document.querySelector("#handoff-ready");
+    return {
+      initialHandoff: true,
+      initialGateClosed: true,
+      turnFinished,
+      rulesOpen: rules.open,
+      handoffOpen: !document.querySelector("#handoff-overlay").hidden,
+      focusOnHandoff: document.activeElement === ready,
+      focusInRules: rules.contains(document.activeElement),
+    };
+  })()`);
+  assert.equal(handoffModalRace.initialHandoff, true, "a two-human game must begin with the privacy hand-off");
+  assert.equal(handoffModalRace.initialGateClosed, true, "the first player must be able to accept the privacy hand-off");
+  assert.equal(handoffModalRace.turnFinished, true, "the deterministic vampire spin must advance to the next player's hand-off");
+  assert.equal(handoffModalRace.rulesOpen, false,
+    `the rules dialog must retire before the hand-off gate opens, got ${JSON.stringify(handoffModalRace)}`);
+  assert.equal(handoffModalRace.handoffOpen, true, "the next player's privacy hand-off must remain visible");
+  assert.equal(handoffModalRace.focusOnHandoff, true,
+    `the hand-off action must receive keyboard focus, got ${JSON.stringify(handoffModalRace)}`);
+
+  const dialogOverHandoff = await evaluate(`(() => {
+    const rules = document.querySelector("#rules-modal");
+    rules.showModal();
+    window.__handoffKeyEvents = [];
+    window.addEventListener("keydown", (event) => {
+      window.__handoffKeyEvents.push({ key: event.key, prevented: event.defaultPrevented });
+    });
+    return {
+      rulesOpen: rules.open,
+      focusInRules: rules.contains(document.activeElement),
+    };
+  })()`);
+  assert.equal(dialogOverHandoff.rulesOpen, true, "the defensive key-scope check requires an open native dialog");
+  assert.equal(dialogOverHandoff.focusInRules, true, "the native dialog must own focus for the defensive key-scope check");
+  await session("Input.dispatchKeyEvent", { type: "keyDown", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  await session("Input.dispatchKeyEvent", { type: "keyUp", key: "Tab", code: "Tab", windowsVirtualKeyCode: 9 });
+  await session("Input.dispatchKeyEvent", { type: "keyDown", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+  await session("Input.dispatchKeyEvent", { type: "keyUp", key: "Escape", code: "Escape", windowsVirtualKeyCode: 27 });
+  await delay(100);
+  const dialogKeys = await evaluate(`({
+    rulesOpen: document.querySelector("#rules-modal").open,
+    events: window.__handoffKeyEvents,
+  })`);
+  assert.deepEqual(dialogKeys.events.map((event) => event.prevented), [false, false],
+    `the hand-off trap must not cancel keys owned by a native dialog, got ${JSON.stringify(dialogKeys.events)}`);
+  assert.equal(dialogKeys.rulesOpen, false, "Escape must dismiss a native dialog opened over the hand-off gate");
+
   stage = "playing a real game on the desktop viewport";
   await loadAt(appUrl, 1440, 1000, APP_READY);
 

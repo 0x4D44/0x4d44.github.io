@@ -684,6 +684,7 @@
   function showHandoff(actor, copy) {
     dom.handoffTitle.textContent = `${actor.name}, the castle awaits`;
     dom.handoffCopy.textContent = copy;
+    $$("dialog[open]").forEach(closeDialog);
     setHandoffOpen(true);
     return new Promise((resolve) => { handoffResolve = resolve; });
   }
@@ -792,6 +793,7 @@
     activateRuleTab(ruleTabs[0]);
     document.addEventListener("keydown",(event)=>{
       if (dom.handoff.hidden === false) {
+        if ($("dialog[open]")) return;
         if (event.key === "Tab") { event.preventDefault(); dom.handoffReady.focus({ preventScroll: true }); }
         if (event.key === "Escape" || event.key.toLowerCase() === "r") event.preventDefault();
         return;
