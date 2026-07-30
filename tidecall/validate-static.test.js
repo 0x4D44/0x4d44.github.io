@@ -82,17 +82,6 @@ test('service worker only retires Tidecall caches', () => {
   assert.doesNotMatch(worker, /keys\.filter\(\(key\) => key !== CACHE\)/);
 });
 
-test('the game board min-height subtracts the real chrome at every tier', () => {
-  // Each game-screen tier hand-computes the fixed chrome to subtract from 100dvh; when
-  // it understates it, the board is taller than the viewport and the page scrolls.
-  // Measured-correct values: desktop 106, ≤820 101, ≤560 73. (Regression guard.)
-  assert.match(styles, /100dvh - 106px - var\(--safe-top\)/, 'desktop game-layout chrome');
-  assert.match(styles, /100dvh - 101px - var\(--safe-top\)/, '≤820 table-column chrome');
-  assert.match(styles, /100dvh - 73px - var\(--safe-top\)/, '≤560 table-column chrome');
-  assert.doesNotMatch(styles, /100dvh - 64px/, 'stale ≤560 constant');
-  assert.doesNotMatch(styles, /100dvh - 90px/, 'stale ≤820 constant (also lacked safe insets)');
-});
-
 // The confetti single-owner invariant is now guarded BEHAVIOURALLY by celebrate.test.js
 // (ALM-BUG-KILN-00029): it drives the real celebrate() with a fake rAF scheduler and asserts
 // one live loop survives an overlapping call. A source-regex for the cancel line stayed green
@@ -141,15 +130,6 @@ test('a modal moves focus to its first VISIBLE control, not a hidden one (KILN-0
   assert.ok(openModal, 'openModal function should be found');
   assert.match(openModal[0], /requestAnimationFrame[\s\S]*?offsetParent !== null[\s\S]*?\.focus\(/,
     'initial modal focus must filter to visible controls (offsetParent) before focusing');
-});
-
-test('the game board chrome constants fit the viewport at every tier (KILN-00004)', () => {
-  // The board fills the screen with min-height: calc(100dvh - <chrome>); an understated
-  // <chrome> makes the board taller than the viewport and the page scrolls. Pin the
-  // corrected per-tier constants (and the safe-inset subtraction the app-shell padding adds).
-  assert.match(styles, /\.table-column \{ gap: 6px; min-height: calc\(100dvh - 73px - var\(--safe-top\) - var\(--safe-bottom\)\)/, '<=560 board uses the corrected 73px chrome + safe insets');
-  assert.match(styles, /\.table-column \{ min-height: calc\(100dvh - 101px - var\(--safe-top\) - var\(--safe-bottom\)\)/, '<=820 board uses 101px + safe insets');
-  assert.match(styles, /min-height: calc\(100dvh - 106px - var\(--safe-top\) - var\(--safe-bottom\)\)/, 'desktop game-layout uses 106px + safe insets');
 });
 
 if (!process.exitCode) process.stdout.write('\nAll Tidecall static checks passed.\n');

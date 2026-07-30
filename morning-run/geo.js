@@ -439,6 +439,13 @@
     if (!list || !list.length) return 0;
     return list.reduce(function (sum, value) { return sum + value; }, 0) / list.length;
   }
+  function cruiseDefaults() {
+    return { autoCount: false };
+  }
+  function formatAverageLap(laps) {
+    var average = meanMs((laps || []).map(function (lap) { return lap.ms; }));
+    return average > 0 ? fmtDuration(average / 1000) : "—";
+  }
   // Fraction (0..cap) of the way through the current lap, from its elapsed ms
   // and the expected lap ms. Capped just below 1 so the count never shows the
   // next whole lap before it is actually logged.
@@ -563,6 +570,8 @@
     minLapSeconds: minLapSeconds,
     medianMs: medianMs,
     meanMs: meanMs,
+    cruiseDefaults: cruiseDefaults,
+    formatAverageLap: formatAverageLap,
     lapFraction: lapFraction,
     // history
     saveRun: saveRun,
