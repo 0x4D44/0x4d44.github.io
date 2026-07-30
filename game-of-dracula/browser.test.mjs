@@ -517,6 +517,50 @@ try {
   assert.equal(modalShortcutResult.logSize, modalShortcutSetup.logSize,
     "a modal-owned key must not write a hidden game event");
 
+  stage = "checking the spin shortcut can be disabled";
+  const disabledShortcutSetup = await evaluate(`(() => {
+    document.querySelector("#rules-modal").close();
+    document.querySelector("#settings-open").click();
+    const toggle = document.querySelector("#setting-keyboard-shortcuts");
+    if (!toggle) return { togglePresent: false };
+    toggle.checked = false;
+    toggle.dispatchEvent(new Event("change", { bubbles: true }));
+    document.querySelector("#settings-modal").close();
+    window.__disabledShortcutEvents = [];
+    window.addEventListener("keydown", (event) => {
+      if (event.key.toLowerCase() === "r") {
+        window.__disabledShortcutEvents.push({ prevented: event.defaultPrevented });
+      }
+    });
+    return {
+      togglePresent: true,
+      spinnerDisabled: document.querySelector("#spinner-button").disabled,
+      logSize: document.querySelector("#log-list").children.length,
+    };
+  })()`);
+  assert.equal(disabledShortcutSetup.togglePresent, true,
+    "settings must provide a control for disabling single-character shortcuts");
+  await session("Input.dispatchKeyEvent", { type: "keyDown", key: "r", code: "KeyR", windowsVirtualKeyCode: 82 });
+  await session("Input.dispatchKeyEvent", { type: "keyUp", key: "r", code: "KeyR", windowsVirtualKeyCode: 82 });
+  await delay(100);
+  const disabledShortcutResult = await evaluate(`({
+    events: window.__disabledShortcutEvents,
+    spinnerDisabled: document.querySelector("#spinner-button").disabled,
+    logSize: document.querySelector("#log-list").children.length,
+    saved: JSON.parse(localStorage.getItem("0x4d44.game-of-dracula.settings.v1")),
+  })`);
+  assert.deepEqual(disabledShortcutResult.events, [{ prevented: false }],
+    `a disabled "r" shortcut must not consume the key, got ${JSON.stringify(disabledShortcutResult.events)}`);
+  assert.equal(disabledShortcutResult.spinnerDisabled, disabledShortcutSetup.spinnerDisabled,
+    "a disabled shortcut must not start the spinner");
+  assert.equal(disabledShortcutResult.logSize, disabledShortcutSetup.logSize,
+    "a disabled shortcut must not write a game event");
+  assert.equal(disabledShortcutResult.saved.keyboardShortcuts, false,
+    "the disabled shortcut preference must persist");
+  await loadAt(appUrl, 1440, 1000, APP_READY);
+  assert.equal(await evaluate(`document.querySelector("#setting-keyboard-shortcuts")?.checked`), false,
+    "the disabled shortcut preference must survive a reload");
+
   stage = "checking the hand-off gate cannot trap an open modal";
   await loadAt(appUrl, 1440, 1000, APP_READY);
   const handoffModalRace = await evaluate(`(async () => {
