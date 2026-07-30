@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00035 — The "r" spin shortcut fires while a modal dialog is open, consuming a turn invisibly
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** game-of-dracula
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T164235Z-p58443-n367224000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00035-run-fix-20260730T164235Z-p58443-n367224000-c1
-- **Owner base:** 39e66f531d80b8c3cad474d02b004c354e45732a
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T16:42:35Z
-- **Owner until:** 2026-07-30T18:42:35Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review)
+- **State history:** Open (2026-07-30, raised by Claude from the pre-publication adversarial review) -> Fixed (2026-07-30, deltic:auto role=fix run=fix-20260730T164235Z-p58443-n367224000-c1 branch=task/bug-ALM-BUG-KILN-00035-run-fix-20260730T164235Z-p58443-n367224000-c1 code=0e989be43f89619ead16df3928ea160ddfd3a214 gate=manual)
 
 ## Observation
 
