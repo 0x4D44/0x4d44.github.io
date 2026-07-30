@@ -5,15 +5,15 @@
 - **Severity:** Medium
 - **Area:** darmok
 - **Raised:** 2026-07-30
-- **Owner:** -
-- **Owner role:** -
-- **Owner run:** -
-- **Owner host:** -
-- **Owner branch:** -
-- **Owner base:** -
+- **Owner:** deltic:manual
+- **Owner role:** fix
+- **Owner run:** fix-20260730T232543Z-p11889-n874144000-c1
+- **Owner host:** flux
+- **Owner branch:** task/bug-ALM-BUG-KILN-00049-run-fix-20260730T232543Z-p11889-n874144000-c1
+- **Owner base:** f1666ad4da4c2dcee0a60dba8c7590123cf49cc5
 - **Owner fingerprint:** -
-- **Owner since:** -
-- **Owner until:** -
+- **Owner since:** 2026-07-30T23:25:43Z
+- **Owner until:** 2026-07-31T01:25:43Z
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
