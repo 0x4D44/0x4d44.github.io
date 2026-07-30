@@ -150,6 +150,12 @@ jobs:
       - name: Delete benchmark prose before upload
         if: always()
         run: rm -f /tmp/scribeprint-human/open-core.benchmark.jsonl
+      - name: Save pinned dataset cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: /tmp/huggingface
+          key: ${{ runner.os }}-scribeprint-human-${{ hashFiles('scribeprint/model/benchmark/profiles/open-core-v0.1.json') }}
       - name: Upload manifest, lock and audit only
         if: always()
         uses: actions/upload-artifact@v4

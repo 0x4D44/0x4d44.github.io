@@ -151,7 +151,7 @@
       "writer_population": "technical_community",
       "target": 560,
       "max_scan": 65000,
-      "oversample": 10,
+      "oversample": 30,
       "shuffle_buffer": 25000,
       "interleave_shards": true,
       "date_field": "created",
