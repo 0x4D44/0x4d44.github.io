@@ -8,11 +8,11 @@
   "near_duplicate_threshold": 0.9,
   "required_domains": {
     "business": 1000,
-    "creative": 3250,
+    "creative": 4190,
     "informal": 2000,
     "news": 800,
     "professional": 1000,
-    "technical": 1950
+    "technical": 1010
   },
   "production_required_writer_populations": {
     "learner_english": 1000,
@@ -27,7 +27,7 @@
       "domain": "creative",
       "subdomain": "books",
       "writer_population": "published_general",
-      "target": 3250,
+      "target": 4190,
       "max_scan": 20000,
       "oversample": 6,
       "shuffle_buffer": 12000,
@@ -148,7 +148,7 @@
       "domain": "technical",
       "subdomain": "technical-qa",
       "writer_population": "technical_community",
-      "target": 1500,
+      "target": 560,
       "max_scan": 65000,
       "oversample": 10,
       "shuffle_buffer": 25000,
