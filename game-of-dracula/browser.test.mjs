@@ -300,6 +300,49 @@ try {
   assert.equal(phone.backButton, true, "shared Almanac back button must mount");
   assert.equal(phone.gameHidden, true, "the table starts hidden behind setup");
 
+  stage = "checking notched-device safe areas";
+  await session("Emulation.setSafeAreaInsetsOverride", {
+    insets: {
+      top: 47, topMax: 47,
+      left: 18, leftMax: 18,
+      bottom: 34, bottomMax: 34,
+      right: 18, rightMax: 18,
+    },
+  });
+  await loadAt(appUrl, 390, 844, APP_READY);
+  const safeArea = await evaluate(`(() => {
+    const box = (selector) => {
+      const style = getComputedStyle(document.querySelector(selector));
+      return {
+        top: parseFloat(style.paddingTop),
+        right: parseFloat(style.paddingRight),
+        bottom: parseFloat(style.paddingBottom),
+        left: parseFloat(style.paddingLeft),
+      };
+    };
+    return {
+      topbar: box(".topbar"),
+      setup: box(".setup-screen"),
+      gameLayout: box(".game-layout"),
+    };
+  })()`);
+  assert.ok(safeArea.topbar.top >= 55,
+    `the phone topbar must clear the 47px status area plus its base padding, got ${JSON.stringify(safeArea.topbar)}`);
+  assert.ok(safeArea.topbar.left >= 28 && safeArea.topbar.right >= 28,
+    `the phone topbar controls must clear both 18px side insets, got ${JSON.stringify(safeArea.topbar)}`);
+  assert.ok(safeArea.setup.top >= 61 && safeArea.setup.left >= 30 && safeArea.setup.right >= 30,
+    `the setup controls must clear the notched viewport, got ${JSON.stringify(safeArea.setup)}`);
+  assert.ok(safeArea.gameLayout.left >= 25 && safeArea.gameLayout.right >= 25 && safeArea.gameLayout.bottom >= 50,
+    `the board must clear side and home-indicator insets, got ${JSON.stringify(safeArea.gameLayout)}`);
+  await session("Emulation.setSafeAreaInsetsOverride", {
+    insets: {
+      top: 0, topMax: 0,
+      left: 0, leftMax: 0,
+      bottom: 0, bottomMax: 0,
+      right: 0, rightMax: 0,
+    },
+  });
+
   stage = "checking the narrow phone viewport";
   await loadAt(appUrl, 360, 640, APP_READY);
   const narrow = await evaluate("({ innerWidth, documentWidth: document.documentElement.scrollWidth })");
