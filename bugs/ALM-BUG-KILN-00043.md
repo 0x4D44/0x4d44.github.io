@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00043 — Nihon Quest same-origin vendoring left the document's own build and self-check gates red on Windows
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Must
 - **Severity:** High
 - **Area:** japanese-travel-rpg
 - **Raised:** 2026-07-30
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260730T225253Z-p30268-n693916000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00043-run-fix-20260730T225253Z-p30268-n693916000-c1
-- **Owner base:** 0f8c5a6faf150b5ee07fcc45f0574090f525c2e1
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-30T22:52:53Z
-- **Owner until:** 2026-07-31T00:52:53Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
 - **Attempts:** fix=0, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5)
+- **State history:** Open (2026-07-30, raised via `deltic bugs new` model=claude-opus-5) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260730T225253Z-p30268-n693916000-c1 branch=task/bug-ALM-BUG-KILN-00043-run-fix-20260730T225253Z-p30268-n693916000-c1 code=06784158c0ec02b469fe7d60dc6641e241e87201 gate=manual)
 
 ## Observation
 
