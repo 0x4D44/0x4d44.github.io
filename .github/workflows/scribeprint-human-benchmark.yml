@@ -1,0 +1,156 @@
+name: Scribeprint human false-positive benchmark
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scribeprint/model/benchmark/**"
+      - "scribeprint/model/src/scribeprint_model/human_*.py"
+      - "scribeprint/model/tests/test_human_*.py"
+      - "scribeprint/model/pyproject.toml"
+      - ".github/workflows/scribeprint-human-benchmark.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: scribeprint-human-benchmark-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scribeprint/model/pyproject.toml
+      - name: Install model laboratory
+        run: python -m pip install -e './scribeprint/model[dev]'
+      - name: Run model and benchmark tests
+        run: pytest -q scribeprint/model/tests
+      - name: Compile package
+        run: python -m compileall -q scribeprint/model/src
+      - name: Validate frozen profiles
+        run: |
+          python - <<'PY'
+          from scribeprint_model.human_benchmark import load_profile
+          for path in (
+              "scribeprint/model/benchmark/profiles/open-core-v0.1.json",
+              "scribeprint/model/benchmark/profiles/full-v0.1.json",
+          ):
+              profile, digest = load_profile(path)
+              print(profile.benchmark_id, sum(source.target for source in profile.sources), digest)
+          PY
+
+  build-open-core:
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      HF_HOME: /tmp/huggingface
+      HF_DATASETS_CACHE: /tmp/huggingface/datasets
+      HF_HUB_DISABLE_TELEMETRY: "1"
+      DATASETS_VERBOSITY: warning
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: scribeprint/model/pyproject.toml
+      - name: Install benchmark dependencies
+        run: python -m pip install -e './scribeprint/model[benchmark,dev]'
+      - name: Construct 10,000-document open core
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/scribeprint-human
+          scribeprint-human-benchmark build \
+            --profile scribeprint/model/benchmark/profiles/open-core-v0.1.json \
+            --output /tmp/scribeprint-human/open-core.benchmark.jsonl \
+            --manifest /tmp/scribeprint-human/open-core.manifest.json \
+            --lock /tmp/scribeprint-human/open-core.lock.jsonl \
+            --audit /tmp/scribeprint-human/open-core.audit.json
+      - name: Verify text-free retained artifacts
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("/tmp/scribeprint-human")
+          manifest = json.loads((root / "open-core.manifest.json").read_text())
+          audit = json.loads((root / "open-core.audit.json").read_text())
+          assert manifest["rows"] == 10_000, manifest["rows"]
+          assert manifest["construction_ready"] is True
+          assert audit["production_checks"]["construction_ready"] is True
+          for line in (root / "open-core.lock.jsonl").read_text().splitlines():
+              row = json.loads(line)
+              assert "text" not in row
+              assert "text_sha256" in row
+          print(json.dumps({
+              "rows": manifest["rows"],
+              "counts": manifest["counts"],
+              "source_revisions": {
+                  source["id"]: source.get("resolved_revision")
+                  for source in manifest["source_reports"]
+              },
+              "production_coverage_ready": manifest["production_coverage_ready"],
+          }, indent=2))
+          PY
+      - name: Write text-free run summary
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          root = Path("/tmp/scribeprint-human")
+          manifest = json.loads((root / "open-core.manifest.json").read_text())
+          audit = json.loads((root / "open-core.audit.json").read_text())
+          lines = [
+              "# Scribeprint human benchmark open-core build",
+              "",
+              f"Rows: **{manifest['rows']:,}**",
+              f"Construction ready: **{manifest['construction_ready']}**",
+              f"Production population coverage ready: **{manifest['production_coverage_ready']}**",
+              "",
+              "## Domains",
+              "",
+          ]
+          for name, count in manifest["counts"]["domains"].items():
+              lines.append(f"- {name}: {count:,}")
+          lines.extend(["", "## Sources", ""])
+          for source in manifest["source_reports"]:
+              lines.append(
+                  f"- {source['id']}: {source['selected']:,} rows; revision `{source.get('resolved_revision')}`"
+              )
+          lines.extend([
+              "",
+              "## Audit",
+              "",
+              f"- Near-duplicate pairs: {len(audit['violations']['near_duplicates'])}",
+              f"- Post-cutoff rows: {len(audit['violations']['post_cutoff'])}",
+              f"- Missing licences: {len(audit['violations']['licence_missing'])}",
+              "",
+              "The source text was deleted before artifact upload. The artifact contains only the manifest, selection lock, audit and this summary.",
+          ])
+          (root / "RUN_SUMMARY.md").write_text("\n".join(lines) + "\n")
+          PY
+      - name: Delete benchmark prose before upload
+        if: always()
+        run: rm -f /tmp/scribeprint-human/open-core.benchmark.jsonl
+      - name: Upload manifest, lock and audit only
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scribeprint-human-fpr-open-core-v0.1
+          path: |
+            /tmp/scribeprint-human/open-core.manifest.json
+            /tmp/scribeprint-human/open-core.lock.jsonl
+            /tmp/scribeprint-human/open-core.audit.json
+            /tmp/scribeprint-human/RUN_SUMMARY.md
+          if-no-files-found: error
+          retention-days: 30

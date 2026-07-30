@@ -1,0 +1,250 @@
+{
+  "schema": "scribeprint.human-benchmark-profile.v1",
+  "benchmark_id": "scribeprint-human-fpr-open-core-v0.1",
+  "description": "Ten thousand independently selected, source-disjoint, pre-2022 human documents for measuring Scribeprint false positives. Raw text is rebuilt locally and is never committed or uploaded by CI.",
+  "seed": 4433,
+  "pre_llm_cutoff": "2021-12-31T23:59:59Z",
+  "minimum_total": 10000,
+  "near_duplicate_threshold": 0.9,
+  "required_domains": {
+    "business": 1000,
+    "creative": 3200,
+    "informal": 2000,
+    "news": 800,
+    "professional": 1000,
+    "technical": 2000
+  },
+  "production_required_writer_populations": {
+    "learner_english": 1000,
+    "native_student": 1000
+  },
+  "sources": [
+    {
+      "id": "gutenberg-creative",
+      "adapter": "huggingface",
+      "dataset": "common-pile/project_gutenberg_filtered",
+      "revision": "3cdf687",
+      "domain": "creative",
+      "subdomain": "books",
+      "writer_population": "published_general",
+      "target": 3200,
+      "max_scan": 20000,
+      "oversample": 6,
+      "shuffle_buffer": 12000,
+      "date_field": null,
+      "licence_allow": [
+        "Public Domain"
+      ],
+      "historic_pre_llm": true,
+      "pre_llm_basis": "Project Gutenberg public-domain or PG-19 work, written long before contemporary generative language models",
+      "max_per_author": 0,
+      "max_per_stratum": 0,
+      "min_words": 180,
+      "max_words": 700,
+      "target_words_min": 350,
+      "target_words_max": 680,
+      "redistributable": true
+    },
+    {
+      "id": "open-news",
+      "adapter": "huggingface",
+      "dataset": "common-pile/news_filtered",
+      "revision": "59aaa8f104e189e6fb8033f0ed319c5c343a03b1",
+      "domain": "news",
+      "subdomain": "journalism",
+      "writer_population": "professional_journalist",
+      "target": 800,
+      "max_scan": 60000,
+      "oversample": 16,
+      "shuffle_buffer": 20000,
+      "date_field": "created",
+      "author_fields": [
+        "metadata.author",
+        "metadata.authors"
+      ],
+      "stratum_field": "source",
+      "stratum_transform": "lower",
+      "licence_allow": [
+        "Creative Commons",
+        "Public Domain"
+      ],
+      "max_per_author": 10,
+      "max_per_stratum": 220,
+      "min_words": 180,
+      "max_words": 700,
+      "target_words_min": 300,
+      "target_words_max": 650,
+      "redistributable": false
+    },
+    {
+      "id": "ubuntu-irc",
+      "adapter": "huggingface",
+      "dataset": "common-pile/ubuntu_irc_filtered",
+      "revision": "84f88c9",
+      "domain": "informal",
+      "subdomain": "online-chat",
+      "writer_population": "informal_online",
+      "target": 2000,
+      "max_scan": 35000,
+      "oversample": 8,
+      "shuffle_buffer": 18000,
+      "date_field": "created",
+      "author_fields": [],
+      "stratum_field": "metadata.channel",
+      "stratum_transform": "lower",
+      "licence_allow": [
+        "Public Domain"
+      ],
+      "transforms": [
+        "normalise",
+        "irc_dialogue"
+      ],
+      "max_per_author": 0,
+      "max_per_stratum": 35,
+      "min_words": 120,
+      "max_words": 650,
+      "target_words_min": 250,
+      "target_words_max": 600,
+      "maximum_url_density": 0.07,
+      "redistributable": true
+    },
+    {
+      "id": "python-peps",
+      "adapter": "huggingface",
+      "dataset": "common-pile/python_enhancement_proposals_filtered",
+      "revision": "582170907dd303c207770fceacd38e6abf133edc",
+      "domain": "technical",
+      "subdomain": "software-design",
+      "writer_population": "technical_professional",
+      "target": 500,
+      "max_scan": 655,
+      "oversample": 2,
+      "shuffle_buffer": 655,
+      "date_field": "created",
+      "author_fields": [
+        "metadata.authors"
+      ],
+      "licence_allow": [
+        "Public Domain"
+      ],
+      "transforms": [
+        "normalise",
+        "pep_body"
+      ],
+      "max_per_author": 10,
+      "max_per_stratum": 0,
+      "min_words": 180,
+      "max_words": 700,
+      "target_words_min": 350,
+      "target_words_max": 680,
+      "maximum_url_density": 0.08,
+      "redistributable": true
+    },
+    {
+      "id": "stackexchange-technical",
+      "adapter": "huggingface",
+      "dataset": "common-pile/stackexchange_filtered",
+      "revision": "c0ac737",
+      "domain": "technical",
+      "subdomain": "technical-qa",
+      "writer_population": "technical_community",
+      "target": 1500,
+      "max_scan": 65000,
+      "oversample": 10,
+      "shuffle_buffer": 25000,
+      "date_field": "created",
+      "author_fields": [
+        "metadata.authors"
+      ],
+      "stratum_transform": "stackexchange_host",
+      "licence_allow": [
+        "Creative Commons - Attribution Share-Alike"
+      ],
+      "filters": [
+        {
+          "field": "$stratum",
+          "op": "regex",
+          "value": "^(?:stackoverflow\\.com|serverfault\\.com|superuser\\.com|askubuntu\\.com|mathoverflow\\.net|(?:ai|cs|datascience|dba|electronics|engineering|gis|math|physics|quant|scicomp|security|softwareengineering|stats|tex|unix)\\.stackexchange\\.com)$"
+        }
+      ],
+      "max_per_author": 4,
+      "max_per_stratum": 140,
+      "min_words": 150,
+      "max_words": 700,
+      "target_words_min": 280,
+      "target_words_max": 650,
+      "maximum_url_density": 0.08,
+      "redistributable": false
+    },
+    {
+      "id": "regulations-professional",
+      "adapter": "huggingface",
+      "dataset": "common-pile/regulations_filtered",
+      "revision": "3327364",
+      "domain": "professional",
+      "subdomain": "government-regulatory",
+      "writer_population": "government_professional",
+      "target": 1000,
+      "max_scan": 50000,
+      "oversample": 8,
+      "shuffle_buffer": 18000,
+      "date_field": "posted_date",
+      "author_fields": [],
+      "stratum_field": "agency",
+      "stratum_transform": "lower",
+      "licence_allow": [
+        "Public Domain"
+      ],
+      "filters": [
+        {
+          "field": "agency",
+          "op": "neq",
+          "value": "sec"
+        }
+      ],
+      "max_per_author": 0,
+      "max_per_stratum": 150,
+      "min_words": 180,
+      "max_words": 700,
+      "target_words_min": 350,
+      "target_words_max": 680,
+      "maximum_url_density": 0.04,
+      "redistributable": true
+    },
+    {
+      "id": "regulations-sec-business",
+      "adapter": "huggingface",
+      "dataset": "common-pile/regulations_filtered",
+      "revision": "3327364",
+      "domain": "business",
+      "subdomain": "securities-regulatory",
+      "writer_population": "business_regulatory",
+      "target": 1000,
+      "max_scan": 80000,
+      "oversample": 10,
+      "shuffle_buffer": 25000,
+      "date_field": "posted_date",
+      "author_fields": [],
+      "stratum_field": "document_type",
+      "stratum_transform": "lower",
+      "licence_allow": [
+        "Public Domain"
+      ],
+      "filters": [
+        {
+          "field": "agency",
+          "op": "eq",
+          "value": "sec"
+        }
+      ],
+      "max_per_author": 0,
+      "max_per_stratum": 650,
+      "min_words": 180,
+      "max_words": 700,
+      "target_words_min": 350,
+      "target_words_max": 680,
+      "maximum_url_density": 0.04,
+      "redistributable": true
+    }
+  ]
+}
