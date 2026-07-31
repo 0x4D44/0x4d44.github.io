@@ -1206,10 +1206,11 @@ export function tunnelSite(track, groundHeight, wantLength = 46) {
       const i = (start + k) % n;
       const p = track.points[i];
       const above = p.y - groundHeight(p.x, p.z);
-      // Free-running, close to the ground, upright, and not on its side:
+      // Free-running, close to the ground but with room for a bore
+      // UNDER the rails, upright, and not on its side:
       // a tunnel around banked or inverted track would be a tube around a
       // corkscrew, which is neither buildable nor legible.
-      if (track.roles[i] !== "free" || track.ups[i].y < 0.7 || above < 1.0 || above > 20.0) {
+      if (track.roles[i] !== "free" || track.ups[i].y < 0.7 || above < 4.6 || above > 20.0) {
         usable = false;
         break;
       }
