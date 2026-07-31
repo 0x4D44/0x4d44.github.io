@@ -11,7 +11,7 @@
 
 import * as THREE from "./three.module.min.js";
 import { mergeParts, part } from "./mesh.js";
-import { supportColumns } from "./track.js";
+import { supportColumns, tunnelSite } from "./track.js";
 
 export const GAUGE = 1.05;      // spacing between the running rails, metres
 const RAIL_RADIUS = 0.13;
@@ -37,7 +37,7 @@ export function liveryFor(seed) {
 // A tube of fixed cross-section swept along a centreline, built by hand
 // so the frame (and therefore the banking) is exactly the one the physics
 // used.
-function sweptTube(centres, ups, tangents, radius, radialSegments) {
+function sweptTube(centres, ups, tangents, radius, radialSegments, closed = true) {
   const n = centres.length;
   const verts = new Float32Array(n * radialSegments * 3);
   const indices = [];
@@ -60,7 +60,7 @@ function sweptTube(centres, ups, tangents, radius, radialSegments) {
     }
   }
 
-  for (let i = 0; i < n; i++) {
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
     const i2 = (i + 1) % n;
     for (let j = 0; j < radialSegments; j++) {
       const j2 = (j + 1) % radialSegments;
@@ -134,6 +134,20 @@ function instancedSpans(spans, material, thickness, geo = memberGeo) {
   }
   mesh.instanceMatrix.needsUpdate = true;
   return mesh;
+}
+
+// Contiguous runs of samples carrying one role, as arrays of indices.
+// The circuit is closed, so a run may wrap past the start line.
+function roleSpans(track, role) {
+  const n = track.roles.length;
+  const spans = [];
+  for (let i = 0; i < n; i++) {
+    if (track.roles[i] !== role || track.roles[(i - 1 + n) % n] === role) continue;
+    const span = [];
+    for (let k = 0; k < n && track.roles[(i + k) % n] === role; k++) span.push((i + k) % n);
+    if (span.length > 4) spans.push(span);
+  }
+  return spans;
 }
 
 // ------------------------------------------------------------
@@ -250,13 +264,14 @@ export function buildTrackMesh(track, groundHeight) {
     }
   }
 
-  // ---- the chain, running under the lift ----
-  {
-    const lift = [];
-    for (let i = 0; i < track.points.length; i++) {
-      if (track.roles[i] === "lift") lift.push(i);
-    }
-    if (lift.length > 4) {
+  // ---- the chain, running under each lift ----
+  //
+  // A circuit can carry a second chain halfway round, so the strip is
+  // built once per CONTIGUOUS run of lift samples. One strip over every
+  // lift sample would lace the two together with a ribbon straight across
+  // the park.
+  for (const lift of roleSpans(track, "lift")) {
+    {
       const centre = offsetLine(track, 0, -0.16);
       const positions = [];
       const uvs = [];
@@ -303,6 +318,164 @@ export function buildTrackMesh(track, groundHeight) {
       group.add(chain);
       // The chain is always running, whether or not a train is on it.
       updaters.push((t) => { texture.offset.x = -t * 1.6; });
+    }
+  }
+
+  // ---- the launch: stator fins down both sides of the spine ----
+  //
+  // A linear synchronous motor is a pair of stator beams the train's fins
+  // run between, so it reads as a corridor of steel rather than a chain.
+  {
+    const stators = [];
+    const lat = new THREE.Vector3();
+    const up = new THREE.Vector3();
+    const tan = new THREE.Vector3();
+    for (const launch of roleSpans(track, "launch")) {
+      for (let k = 0; k < launch.length; k += 2) {
+        const i = launch[k];
+        const p = track.points[i];
+        up.set(track.ups[i].x, track.ups[i].y, track.ups[i].z);
+        tan.set(track.tangents[i].x, track.tangents[i].y, track.tangents[i].z);
+        lat.crossVectors(tan, up).normalize();
+        for (const side of [-1, 1]) {
+          const base = {
+            x: p.x + lat.x * side * 0.62 - up.x * 0.95,
+            y: p.y + lat.y * side * 0.62 - up.y * 0.95,
+            z: p.z + lat.z * side * 0.62 - up.z * 0.95,
+          };
+          stators.push([base, {
+            x: base.x + up.x * 0.75, y: base.y + up.y * 0.75, z: base.z + up.z * 0.75,
+          }, 0.3]);
+        }
+      }
+    }
+    if (stators.length) {
+      group.add(instancedSpans(stators, new THREE.MeshStandardMaterial({
+        color: 0x3f7fbf, roughness: 0.35, metalness: 0.75,
+      }), 0.3, plateGeo));
+    }
+  }
+
+  // ---- a tunnel, bored through a hillside ----
+  //
+  // track.js picks the site (see tunnelSite); everything here is just
+  // building what it decided.
+  const keepOuts = [];
+  {
+    const site = tunnelSite(track, groundHeight);
+    if (site) {
+      const { span, mid, radius: hillRadius, top: hillTop } = site;
+      const centres = span.map((i) => track.points[i]);
+      const ups = span.map((i) => track.ups[i]);
+      const tangents = span.map((i) => track.tangents[i]);
+
+      const bore = new THREE.Mesh(
+        sweptTube(centres, ups, tangents, 3.6, 10, false),
+        new THREE.MeshStandardMaterial({
+          color: 0x35302c, roughness: 0.96, side: THREE.DoubleSide,
+        }),
+      );
+      bore.receiveShadow = true;
+      group.add(bore);
+
+      // Portals, and a string of lamps so the bore is lit rather than
+      // simply black.
+      // A chunky stone arch at each mouth, so the entrance reads as a
+      // portal rather than as a pipe poking out of a lawn.
+      const portalMat = new THREE.MeshStandardMaterial({ color: 0x8c8377, roughness: 0.92 });
+      for (const end of [0, span.length - 1]) {
+        const portal = new THREE.Mesh(new THREE.TorusGeometry(4.15, 1.15, 5, 14), portalMat);
+        const p = centres[end];
+        const tan = tangents[end];
+        portal.position.set(p.x, p.y, p.z);
+        portal.lookAt(p.x + tan.x, p.y + tan.y, p.z + tan.z);
+        portal.castShadow = true;
+        portal.receiveShadow = true;
+        group.add(portal);
+        // A keystone lintel over it.
+        const lintel = new THREE.Mesh(new THREE.BoxGeometry(3.2, 1.1, 1.6), portalMat);
+        lintel.position.set(p.x, p.y + 5.1, p.z);
+        lintel.lookAt(p.x + tan.x, p.y + 5.1 + tan.y, p.z + tan.z);
+        lintel.castShadow = true;
+        group.add(lintel);
+      }
+      const lampMesh = new THREE.InstancedMesh(
+        new THREE.SphereGeometry(0.26, 6, 5),
+        new THREE.MeshStandardMaterial({
+          color: 0xffe7b0, emissive: 0xffca6a, emissiveIntensity: 1.5,
+        }),
+        Math.ceil(span.length / 6) + 1,
+      );
+      let placed = 0;
+      const lampMatrix = new THREE.Matrix4();
+      for (let k = 3; k < span.length - 2; k += 6) {
+        const i = span[k];
+        const p = track.points[i];
+        const up = track.ups[i];
+        lampMatrix.makeTranslation(p.x + up.x * 3.0, p.y + up.y * 3.0, p.z + up.z * 3.0);
+        lampMesh.setMatrixAt(placed++, lampMatrix);
+      }
+      lampMesh.count = placed;
+      if (placed) group.add(lampMesh);
+
+      // The hill itself. A third of it is below ground, which is what
+      // gives it a shoulder rather than a dome sitting on the grass.
+      const base = groundHeight(mid.x, mid.z);
+      // Lumpy, not spherical: a smooth dome reads as a balloon.
+      const hillGeo = new THREE.IcosahedronGeometry(1, 3);
+      const hp = hillGeo.attributes.position;
+      for (let i = 0; i < hp.count; i++) {
+        const x = hp.getX(i);
+        const y = hp.getY(i);
+        const z = hp.getZ(i);
+        const bump = 1
+          + Math.sin(x * 5.1 + z * 3.7) * 0.05
+          + Math.sin(y * 4.3 - x * 2.9) * 0.045
+          + Math.sin(z * 7.7 + y * 5.3) * 0.03;
+        hp.setXYZ(i, x * bump, y * bump, z * bump);
+      }
+      hillGeo.computeVertexNormals();
+      const hill = new THREE.Mesh(
+        hillGeo,
+        new THREE.MeshLambertMaterial({ color: 0x6f8f4c, flatShading: true }),
+      );
+      hill.position.set(mid.x, base - (hillTop - base) * 0.34, mid.z);
+      hill.scale.set(hillRadius, (hillTop - base) * 1.34, hillRadius * 0.92);
+      hill.rotation.y = (track.seed % 628) * 0.01;
+      hill.castShadow = true;
+      hill.receiveShadow = true;
+      group.add(hill);
+      // A scatter of boulders round each mouth, where the rock was cut.
+      const boulders = [];
+      const boulderMatrix = new THREE.Matrix4();
+      for (const end of [0, span.length - 1]) {
+        const p = centres[end];
+        const tan = tangents[end];
+        for (let b = 0; b < 5; b++) {
+          const a = (b / 5) * Math.PI * 2 + end;
+          boulders.push({
+            x: p.x + Math.cos(a) * 6.5 + tan.x * 2,
+            y: groundHeight(p.x, p.z) + 0.4,
+            z: p.z + Math.sin(a) * 6.5 + tan.z * 2,
+            s: 0.9 + (b % 3) * 0.5,
+          });
+        }
+      }
+      const rocks = new THREE.InstancedMesh(
+        new THREE.IcosahedronGeometry(1, 0),
+        new THREE.MeshLambertMaterial({ color: 0x8a8073, flatShading: true }),
+        boulders.length,
+      );
+      rocks.castShadow = true;
+      rocks.receiveShadow = true;
+      boulders.forEach((b, i) => {
+        boulderMatrix.makeScale(b.s, b.s * 0.75, b.s);
+        boulderMatrix.setPosition(b.x, b.y, b.z);
+        rocks.setMatrixAt(i, boulderMatrix);
+      });
+      group.add(rocks);
+
+      keepOuts.push({ x: mid.x, z: mid.z, radius: hillRadius + 3 });
     }
   }
 
@@ -372,7 +545,7 @@ export function buildTrackMesh(track, groundHeight) {
     group.add(station);
   }
 
-  return { group, updaters, livery, stationIdx };
+  return { group, updaters, livery, stationIdx, keepOuts };
 }
 
 // A painted board with the coaster's name on it, drawn to a canvas.
@@ -478,7 +651,126 @@ function carParts(livery, lead) {
   return parts;
 }
 
-export function buildTrain(carCount, seed = 1) {
+// ------------------------------------------------------------
+// Lost property.
+//
+// Once in a while, at the exact moment the floor drops away, somebody's
+// wig or somebody's glasses leave the train. From there they are on their
+// own: thrown forward at the speed the train was doing, tumbling, and
+// falling under gravity until they hit the grass, where they stay for a
+// while as evidence. The rider gets their wig back at the station and is
+// visibly bare-headed until then.
+//
+// Rare on purpose. It should be a thing you eventually notice, not a
+// thing that happens every lap.
+// ------------------------------------------------------------
+const LOST_CHANCE = 0.05;       // per frame of a qualifying moment
+const LOST_COOLDOWN = 40;       // seconds before it can happen again
+const LOST_LINGER = 14;         // seconds it lies on the grass
+
+function makeLostProperty(group, groundHeight) {
+  const wig = new THREE.Mesh(
+    mergeParts([
+      part(new THREE.SphereGeometry(0.17, 9, 6, 0, Math.PI * 2, 0, Math.PI * 0.6), 0xffffff),
+      part(new THREE.TorusGeometry(0.16, 0.035, 5, 10), 0xffffff, [0, 0.02, 0], [1, 1, 1], [Math.PI / 2, 0, 0]),
+    ]),
+    new THREE.MeshLambertMaterial({ vertexColors: true }),
+  );
+  const glasses = new THREE.Mesh(
+    mergeParts([
+      part(new THREE.TorusGeometry(0.075, 0.018, 5, 10), 0x2a2d33, [0.085, 0, 0]),
+      part(new THREE.TorusGeometry(0.075, 0.018, 5, 10), 0x2a2d33, [-0.085, 0, 0]),
+      part(new THREE.BoxGeometry(0.06, 0.016, 0.016), 0x2a2d33),
+      part(new THREE.BoxGeometry(0.016, 0.016, 0.2), 0x2a2d33, [0.15, 0, -0.1]),
+      part(new THREE.BoxGeometry(0.016, 0.016, 0.2), 0x2a2d33, [-0.15, 0, -0.1]),
+    ]),
+    new THREE.MeshLambertMaterial({ vertexColors: true }),
+  );
+  for (const item of [wig, glasses]) {
+    item.visible = false;
+    item.castShadow = true;
+    group.add(item);
+  }
+
+  const flying = { item: null, resting: 0 };
+  const velocity = new THREE.Vector3();
+  const spin = new THREE.Vector3();
+  const world = new THREE.Vector3();
+  let cooldown = LOST_COOLDOWN * 0.5;
+  let previous = -1;
+
+  return {
+    update(riderList, carMatrices, ride, elapsed) {
+      const dt = previous < 0 ? 0 : Math.min(0.2, Math.max(0, elapsed - previous));
+      previous = elapsed;
+      if (dt === 0) return;
+
+      if (flying.item) {
+        if (flying.resting > 0) {
+          flying.resting -= dt;
+          if (flying.resting <= 0) {
+            flying.item.visible = false;
+            flying.item = null;
+          }
+        } else {
+          velocity.y -= 9.81 * dt;
+          flying.item.position.addScaledVector(velocity, dt);
+          flying.item.rotation.x += spin.x * dt;
+          flying.item.rotation.y += spin.y * dt;
+          flying.item.rotation.z += spin.z * dt;
+          const floor = groundHeight(flying.item.position.x, flying.item.position.z) + 0.12;
+          if (flying.item.position.y <= floor) {
+            flying.item.position.y = floor;
+            flying.item.rotation.set(Math.PI / 2, flying.item.rotation.y, 0);
+            flying.resting = LOST_LINGER;
+          }
+        }
+        return;
+      }
+
+      cooldown -= dt;
+      if (cooldown > 0) return;
+      // The moment the restraints go light, at speed.
+      const airborne = ride.mode === "free" && (ride.gForce ?? 1) < 0.25 && (ride.v ?? 0) > 17;
+      if (!airborne || Math.random() > LOST_CHANCE * dt * 60) return;
+
+      const wearing = riderList.filter((r) => r.hat);
+      if (!wearing.length) return;
+      const rider = wearing[Math.floor(Math.random() * wearing.length)];
+      const takeWig = Math.random() < 0.5;
+      const item = takeWig ? wig : glasses;
+      const car = carMatrices[rider.car];
+
+      world.set(rider.seat.x, SEAT_Y + (takeWig ? 0.62 : 0.58), rider.seat.z).applyMatrix4(car);
+      item.position.copy(world);
+      item.rotation.set(0, 0, 0);
+      item.visible = true;
+      if (takeWig) {
+        item.material.color.setHex(rider.hairColor);
+        rider.hat = false;
+      }
+      // Thrown along the train's heading — the third column of the car's
+      // basis — with a kick upwards and a bit of sideways luck.
+      velocity.set(car.elements[8], car.elements[9], car.elements[10])
+        .multiplyScalar((ride.v ?? 0) * 0.92)
+        .add(new THREE.Vector3(
+          (Math.random() - 0.5) * 3,
+          2.5 + Math.random() * 2.5,
+          (Math.random() - 0.5) * 3,
+        ));
+      spin.set(
+        (Math.random() - 0.5) * 12,
+        (Math.random() - 0.5) * 12,
+        (Math.random() - 0.5) * 12,
+      );
+      flying.item = item;
+      flying.resting = 0;
+      cooldown = LOST_COOLDOWN;
+    },
+  };
+}
+
+export function buildTrain(carCount, seed = 1, groundHeight = () => 0) {
   const livery = liveryFor(seed);
   const group = new THREE.Group();
   const bodyMaterial = new THREE.MeshStandardMaterial({
@@ -539,12 +831,18 @@ export function buildTrain(carCount, seed = 1) {
   }
   for (let i = 0; i < riderCount; i++) {
     const skin = SKINS[Math.floor(random() * SKINS.length)];
+    const hair = HAIRS[Math.floor(random() * HAIRS.length)];
     meshes.torso.setColorAt(i, tint.set(SHIRTS[Math.floor(random() * SHIRTS.length)]));
     meshes.head.setColorAt(i, tint.set(skin));
     meshes.arms.setColorAt(i, tint.set(skin));
-    meshes.hair.setColorAt(i, tint.set(HAIRS[Math.floor(random() * HAIRS.length)]));
+    meshes.hair.setColorAt(i, tint.set(hair));
     riders.push({
       seat: SEATS[i % SEATS.length],
+      hairColor: hair,
+      // Still wearing it. See makeLostProperty.
+      hat: true,
+      // How keen they are to wave at the crowd on the way up.
+      waves: random() < 0.55 ? 0.6 + random() * 0.6 : 0,
       // Deliberately back to front: the lead car's four passengers are the
       // LAST instances, so hiding them in the front-seat view is a matter
       // of drawing four fewer.
@@ -563,11 +861,13 @@ export function buildTrain(carCount, seed = 1) {
   const scratch = {
     matrix: new THREE.Matrix4(),
     local: new THREE.Matrix4(),
+    arm: new THREE.Matrix4(),
     lat: new THREE.Vector3(),
     up: new THREE.Vector3(),
     fwd: new THREE.Vector3(),
     pos: new THREE.Vector3(),
   };
+  const lostProperty = makeLostProperty(group, groundHeight);
 
   return {
     group,
@@ -593,19 +893,36 @@ export function buildTrain(carCount, seed = 1) {
       lead.visible = !hideLead;
       trailing.instanceMatrix.needsUpdate = true;
 
-      // Airtime puts hands in the air; heavy positive g presses everyone
-      // down into the seat.
+      // What the riders are doing depends on what the ride is doing:
+      //
+      //   airtime      hands up, hard
+      //   heavy g      pressed down into the seat, arms in
+      //   the chain    bored, so they wave at the people below
+      //   the launch   braced, then hands up as it lets go
+      //   the station  waving at whoever is waiting on the platform
+      //
+      // The wave is a roll of the shoulders rather than a raise, which is
+      // what makes it read as waving rather than as more airtime.
       const gForce = ride.gForce ?? 1;
-      const excited = ride.mode === "free"
+      const speed = ride.v ?? 0;
+      const mode = ride.mode;
+      const excited = mode === "free"
         ? Math.min(1, Math.max(0, (1.15 - gForce) / 1.3)) : 0;
       const pressed = Math.min(1, Math.max(0, (gForce - 2.2) / 2.4));
-      const jitter = Math.min(1, (ride.v ?? 0) / 26);
+      const jitter = Math.min(1, speed / 26);
+      // Slow and safe: a good moment to wave at the crowd.
+      const waving = (mode === "lift" || mode === "station") ? 1
+        : mode === "launch" ? 0
+          : Math.max(0, 1 - speed / 12) * 0.5;
 
       for (let i = 0; i < riders.length; i++) {
         const rider = riders[i];
         const car = carMatrices[rider.car];
         const raise = Math.min(1, excited * rider.bravery);
         const wobble = Math.sin(elapsed * 9 + rider.phase) * 0.11 * jitter;
+        // Not everyone waves, and never quite together.
+        const wave = waving * rider.waves;
+        const swing = Math.sin(elapsed * 5.2 + rider.phase * 2) * wave;
         const y = SEAT_Y - pressed * 0.05;
         // Riders sit facing forwards, so a per-seat yaw is not needed:
         // the only articulation is the lean and the arms.
@@ -614,13 +931,27 @@ export function buildTrain(carCount, seed = 1) {
         scratch.matrix.multiplyMatrices(car, scratch.local);
         meshes.torso.setMatrixAt(i, scratch.matrix);
         meshes.head.setMatrixAt(i, scratch.matrix);
-        meshes.hair.setMatrixAt(i, scratch.matrix);
+        if (rider.hat) meshes.hair.setMatrixAt(i, scratch.matrix);
 
-        scratch.local.makeRotationX(-raise * 2.75 + wobble * raise);
+        const lift = Math.max(raise, wave * 0.8);
+        scratch.local.makeRotationX(-lift * 2.75 + wobble * raise);
+        scratch.arm.makeRotationZ(swing * 0.55);
+        scratch.local.multiply(scratch.arm);
         scratch.local.setPosition(rider.seat.x, y + SHOULDER_Y, rider.seat.z);
         scratch.matrix.multiplyMatrices(car, scratch.local);
         meshes.arms.setMatrixAt(i, scratch.matrix);
+
+        // A rider who has lost their hat keeps it off until the train
+        // gets back to the station, where they sheepishly retrieve it.
+        if (!rider.hat) {
+          scratch.local.makeScale(0, 0, 0);
+          scratch.local.setPosition(rider.seat.x, y, rider.seat.z);
+          scratch.matrix.multiplyMatrices(car, scratch.local);
+          meshes.hair.setMatrixAt(i, scratch.matrix);
+          if (mode === "station") rider.hat = true;
+        }
       }
+      lostProperty.update(riders, carMatrices, ride, elapsed);
       // In the front seat the rider's own car is hidden so it does not
       // fill the lens — and so are the four people in it. The riders are
       // laid out car by car, so the lead car's four are simply the first

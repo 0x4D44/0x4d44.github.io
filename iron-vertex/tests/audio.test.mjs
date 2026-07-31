@@ -80,6 +80,37 @@ test("riders react to airtime and to being pressed into the seat", () => {
   assert.equal(rideMix({ v: 5, gForce: -0.4, mode: "lift" }).excitement, 0);
 });
 
+test("riders also shout at the drop itself, and at being upside down", () => {
+  // A nose-down plunge at speed earns a scream on its own: the car is at
+  // a perfectly ordinary 1g on the way down a steep drop, and that is the
+  // single most screamed-at moment on any coaster.
+  const level = rideMix({ v: 26, gForce: 1.0, mode: "free", riding: true, pitch: 0 });
+  const plunging = rideMix({ v: 26, gForce: 1.0, mode: "free", riding: true, pitch: -0.75 });
+  assert.ok(level.excitement < 0.05, `level track got a reaction (${level.excitement})`);
+  assert.ok(plunging.excitement > 0.3, `no reaction to a 50-degree plunge (${plunging.excitement})`);
+  // But not at a crawl: the same gradient on the way out of the station
+  // is not a scream.
+  assert.ok(rideMix({ v: 5, gForce: 1, mode: "free", pitch: -0.75 }).excitement < 0.05);
+
+  const upright = rideMix({ v: 20, gForce: 2.0, mode: "free", riding: true });
+  const upsideDown = rideMix({ v: 20, gForce: 2.0, mode: "free", riding: true, inverted: true });
+  assert.ok(upsideDown.excitement > upright.excitement + 0.2, "an inversion went unremarked");
+});
+
+test("a magnetic launch hums, and only on the launch", () => {
+  const launching = rideMix({ v: 22, mode: "launch", riding: true });
+  assert.ok(launching.launch > 0.2, `no launch hum (${launching.launch})`);
+  assert.ok(launching.launchHz > 200, `launch hum too low (${launching.launchHz}Hz)`);
+  assert.ok(launching.excitement > 0.3, "nobody reacted to being fired out of the station");
+  // It rises with speed, the way a stator bank does.
+  assert.ok(rideMix({ v: 30, mode: "launch" }).launchHz > rideMix({ v: 10, mode: "launch" }).launchHz);
+  for (const mode of ["free", "lift", "brake", "station"]) {
+    assert.equal(rideMix({ v: 22, mode }).launch, 0, `launch hum audible in ${mode}`);
+  }
+  // Chain circuits never produce one at all.
+  assert.equal(rideMix({ v: 5, mode: "lift" }).launch, 0);
+});
+
 test("RideAudio degrades to silence rather than throwing", () => {
   // No window, no AudioContext — importing and driving it under node must
   // still be safe, because that is exactly what a browser without Web
