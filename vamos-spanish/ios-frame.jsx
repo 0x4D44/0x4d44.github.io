@@ -204,9 +204,13 @@ function IOSDevice({
 }) {
   return (
     <div style={{
-      // maxWidth so the 402px frame does not push a 390px phone sideways; the
-      // frame already clips its own contents, so nothing escapes when it narrows
-      width, maxWidth: '100%', height, borderRadius: 48, overflow: 'hidden',
+      // The 402px frame is wider than a 390px phone and pushed the page
+      // sideways. Cap it against the viewport, not against the parent: body is
+      // a centred grid, so #dc-root is a shrink-to-fit item whose width is just
+      // this frame's max-content -- a percentage cap would be circular and
+      // resolve back to 402px. 40px is the body's 20px padding on each side.
+      // The frame already clips its own contents, so nothing escapes as it narrows.
+      width, maxWidth: 'calc(100vw - 40px)', height, borderRadius: 48, overflow: 'hidden',
       position: 'relative', background: dark ? '#000' : '#F2F2F7',
       boxShadow: '0 40px 80px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.12)',
       fontFamily: '-apple-system, system-ui, sans-serif',

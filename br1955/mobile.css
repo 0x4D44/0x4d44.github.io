@@ -1,0 +1,24 @@
+/* Narrow-screen corrections for this document.
+
+   The page bootstraps itself from a JSON-escaped template inside index.html, so
+   its own CSS is not hand-editable; index.html links this file from the
+   template <head> instead.
+
+   Every selector is prefixed with `html` and every declaration is !important.
+   Both are needed: several of the rules being corrected are themselves
+   !important, and this link is injected at the START of <head>, so on an equal
+   footing the document own rules would win on order. The extra element in the
+   selector raises specificity, which is decided before order.
+
+   The recurring bug is a collapse written as a bare 1fr. 1fr means
+   minmax(auto, 1fr), and that auto floor is the item min-content width -- so
+   the "collapsed" single column inflates straight back out to whatever the
+   widest unbreakable thing inside it happens to be. */
+
+@media (max-width: 900px) {
+  /* The audio bar is an inline-styled width:100% box with 16px of side padding
+     and no border-box reset in this document, so it lays out 32px wider than
+     its container. Scope the reset to that one box rather than restyling every
+     padded element on the page. */
+  html #root div[style*="max-width: 680px"] { box-sizing: border-box !important; }
+}
