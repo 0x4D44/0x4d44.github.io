@@ -75,9 +75,10 @@ export function rideMix({
   const heavy = clamp01((gForce - 2.9) / 2.0);
   const plunge = clamp01((-pitch - 0.28) / 0.5) * clamp01((Math.abs(v) - 9) / 12);
   const upside = inverted ? 0.8 : 0;
-  const excitement = mode === "free"
+  const carries = riding ? 1 : 0.45 + 0.55 * near;
+  const excitement = (mode === "free"
     ? clamp01(Math.max(airtime, heavy * 0.75, plunge, upside) * (0.35 + speed))
-    : mode === "launch" ? clamp01(speed * 0.9) : 0;
+    : mode === "launch" ? clamp01(speed * 0.9) : 0) * carries;
 
   return {
     rumble, rumbleHz, roar, roarHz, wind, windHz,
@@ -117,14 +118,24 @@ export class RideAudio {
       const now = ctx.currentTime;
 
       this.master = ctx.createGain();
-      this.master.gain.value = this.muted ? 0 : 0.9;
+      this.master.gain.value = this.muted ? 0 : 0.62;
       // A limiter keeps a loop entry from clipping when every voice
-      // happens to peak together.
+      // happens to peak together. Gentle: at ratio 8 it flattened the
+      // riders into the wheel noise instead of merely catching peaks.
       const limiter = ctx.createDynamicsCompressor();
-      limiter.threshold.value = -9;
-      limiter.knee.value = 12;
-      limiter.ratio.value = 8;
+      limiter.threshold.value = -4;
+      limiter.knee.value = 6;
+      limiter.ratio.value = 6;
+      limiter.attack.value = 0.002;
+      limiter.release.value = 0.16;
       this.master.connect(limiter).connect(ctx.destination);
+
+      // Everything mechanical goes through one bus so the riders can duck
+      // it. Without that the wheels and the wind simply sit on top of the
+      // voices — measured at 25dB over them — and nobody hears a thing.
+      this.trainBus = ctx.createGain();
+      this.trainBus.gain.value = 1;
+      this.trainBus.connect(this.master);
 
       // One long noise buffer feeds every noise voice. Generating it once
       // costs a few milliseconds and saves an oscillator per sound.
@@ -144,10 +155,10 @@ export class RideAudio {
       this.trainOut = ctx.createBiquadFilter();
       this.trainOut.type = "lowpass";
       this.trainOut.frequency.value = 16000;
-      this.trainOut.connect(this.master);
+      this.trainOut.connect(this.trainBus);
 
       this.rumbleGain = this._noiseVoice("bandpass", 320, 0.7, this.trainOut);
-      this.windGain = this._noiseVoice("highpass", 900, 0.6, this.master);
+      this.windGain = this._noiseVoice("highpass", 900, 0.6, this.trainBus);
       this.brakeGain = this._noiseVoice("bandpass", 3200, 2.4, this.trainOut);
 
       this.roarOsc = ctx.createOscillator();
@@ -220,7 +231,7 @@ export class RideAudio {
     if (!this.ready) return;
     const now = this.ctx.currentTime;
     this.master.gain.cancelScheduledValues(now);
-    this.master.gain.setTargetAtTime(muted ? 0 : 0.9, now, 0.05);
+    this.master.gain.setTargetAtTime(muted ? 0 : 0.62, now, 0.05);
   }
 
   // Smoothed parameter writes: stepping a gain instantly puts a click in
@@ -293,21 +304,41 @@ export class RideAudio {
 
   // A handful of detuned voices reads as several people rather than one
   // synthesiser, which is the whole trick.
+  //
+  // Two things had to be right before any of it could be HEARD. The
+  // shaping filter was a bandpass at 900-1600Hz, which is above where
+  // these voices actually sing — it removed the fundamentals and left a
+  // thin whistle. And the wheels and the wind are simply louder than
+  // people, so the mechanical bus ducks under a scream the way a mixing
+  // desk would do it.
   scream(intensity) {
     const ctx = this.ctx;
     const now = ctx.currentTime;
-    const level = Math.min(0.34, 0.1 + intensity * 0.3);
+    const level = Math.min(0.85, 0.35 + intensity * 0.5);
     const bus = ctx.createGain();
     bus.gain.setValueAtTime(0.0001, now);
-    bus.gain.exponentialRampToValueAtTime(level, now + 0.16);
-    bus.gain.exponentialRampToValueAtTime(0.0001, now + 1.25);
-    const shape = ctx.createBiquadFilter();
-    shape.type = "bandpass";
-    shape.frequency.value = 900 + intensity * 700;
-    shape.Q.value = 1.4;
-    bus.connect(shape).connect(this.master);
+    bus.gain.exponentialRampToValueAtTime(level, now + 0.14);
+    bus.gain.exponentialRampToValueAtTime(0.0001, now + 1.3);
 
-    for (let i = 0; i < 4; i++) {
+    // Keep the fundamentals, lift the presence region where a shout
+    // lives, and drop the rumble the noise layer would otherwise add.
+    const shape = ctx.createBiquadFilter();
+    shape.type = "peaking";
+    shape.frequency.value = 1100 + intensity * 600;
+    shape.Q.value = 0.9;
+    shape.gain.value = 6;
+    const cut = ctx.createBiquadFilter();
+    cut.type = "highpass";
+    cut.frequency.value = 190;
+    bus.connect(shape).connect(cut).connect(this.master);
+
+    // Get out of their way.
+    const duck = this.trainBus.gain;
+    duck.cancelScheduledValues(now);
+    duck.setTargetAtTime(0.4, now, 0.05);
+    duck.setTargetAtTime(1, now + 0.85, 0.35);
+
+    for (let i = 0; i < 5; i++) {
       const osc = ctx.createOscillator();
       osc.type = i % 2 ? "sawtooth" : "triangle";
       const base = 300 + Math.random() * 340;
@@ -320,7 +351,7 @@ export class RideAudio {
       vibDepth.gain.value = 12 + Math.random() * 14;
       vib.connect(vibDepth).connect(osc.frequency);
       const voice = ctx.createGain();
-      voice.gain.value = 0.25;
+      voice.gain.value = 0.3;
       osc.connect(voice).connect(bus);
       osc.start(now + i * 0.03);
       vib.start(now);
@@ -333,7 +364,7 @@ export class RideAudio {
     air.loop = true;
     const airGain = ctx.createGain();
     airGain.gain.setValueAtTime(0.0001, now);
-    airGain.gain.exponentialRampToValueAtTime(level * 0.5, now + 0.2);
+    airGain.gain.exponentialRampToValueAtTime(level * 0.35, now + 0.2);
     airGain.gain.exponentialRampToValueAtTime(0.0001, now + 1.1);
     air.connect(airGain).connect(shape);
     air.start(now, Math.random() * 2);
