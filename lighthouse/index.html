@@ -690,11 +690,11 @@
 
   /* Responsive */
   @media (max-width: 960px) {
-    .hero-grid, .twocol, .vm-grid, .games-body .grid2, .pipeline-detail { grid-template-columns: 1fr; }
-    .stepper-body { grid-template-columns: 1fr; }
+    .hero-grid, .twocol, .vm-grid, .games-body .grid2, .pipeline-detail { grid-template-columns: minmax(0, 1fr); }
+    .stepper-body { grid-template-columns: minmax(0, 1fr); }
     .stepper-col { border-right: none; border-bottom: 1px solid var(--line); }
     h1 { font-size: 44px; }
-    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .stat { border-bottom: 1px solid var(--line); }
   }
 </style>

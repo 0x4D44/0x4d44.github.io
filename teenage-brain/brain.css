@@ -723,3 +723,12 @@ input[type="range"]:focus-visible { outline: 2px solid var(--teal); outline-offs
   .card { transition: none; }
   .char.float { animation: none; }
 }
+
+
+/* Clear the fixed "← Almanac" pill. /almanac-back.js pins it to the viewport's
+   top-left, [0,0 109x41], with a z-index no document can beat, so a control
+   underneath is not merely obscured -- it is untappable, and the tap navigates
+   to the catalog instead (ALM-BUG-KILN-00039). A masthead wordmark lands there
+   naturally. Unconditional, because the pill sits in the same place at every
+   width. Guarded by tests/responsive.test.mjs. */
+.masthead-inner { padding-left: 112px; }

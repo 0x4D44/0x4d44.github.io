@@ -33,6 +33,24 @@ test('every generated MC/listen exercise glosses each wrong option', () => {
   assert.deepEqual(problems.slice(0, 20), [], `${problems.length} problem(s): ${problems.slice(0, 20).join(' | ')}`);
 });
 
+test('ALM-BUG-KILN-00017: generated answer hints use exercise language metadata', () => {
+  const problems = [];
+  for (const { v } of DK.allVocab()) {
+    for (const kind of ['meaning', 'listen']) {
+      const ex = DK.genExercise(v, kind);
+      const hint = DK.answerHint(ex);
+      if (hint !== `The correct answer is 「${DK.esc(v[3])}」.`)
+        problems.push(`${kind} for ${v[3]}: ${hint}`);
+    }
+
+    const reverse = DK.genExercise(v, 'reverse');
+    const reverseHint = DK.answerHint(reverse);
+    if (!reverseHint.startsWith('The correct entry reads 「'))
+      problems.push(`reverse for ${v[3]}: ${reverseHint}`);
+  }
+  assert.deepEqual(problems.slice(0, 20), [], `${problems.length} problem(s): ${problems.slice(0, 20).join(' | ')}`);
+});
+
 test('authored whyWrong keys name a real wrong choice, never the answer', () => {
   const problems = [];
   let authored = 0;

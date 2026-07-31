@@ -1,0 +1,35 @@
+/* Narrow-screen corrections for this document.
+
+   The page bootstraps itself from a JSON-escaped template inside index.html, so
+   its own CSS is not hand-editable; index.html links this file from the
+   template <head> instead.
+
+   Every selector is prefixed with `html` and every declaration is !important.
+   Both are needed: several of the rules being corrected are themselves
+   !important, and this link is injected at the START of <head>, so on an equal
+   footing the document own rules would win on order. The extra element in the
+   selector raises specificity, which is decided before order.
+
+   The recurring bug is a collapse written as a bare 1fr. 1fr means
+   minmax(auto, 1fr), and that auto floor is the item min-content width -- so
+   the "collapsed" single column inflates straight back out to whatever the
+   widest unbreakable thing inside it happens to be. */
+
+@media (max-width: 900px) {
+  html .hero, html .two-col, html .rules-grid, html .loop-diagram, html .pros-cons,
+  html .bug-list, html .sim-grid, html .meta-grid, html .filemgr .body-row,
+  html .ai-pane.active, html .scorer-readout, html .game-buttons, html .sim-stats,
+  html .game-count-row, html .trivia, html .class-tree
+    { grid-template-columns: minmax(0, 1fr) !important; }
+  html .timeline { grid-template-columns: repeat(5, minmax(0, 1fr)) !important; }
+
+  /* Pascal source listings are white-space:pre, so they keep their full line
+     width however narrow the box is, and with overflow visible the text simply
+     hangs outside it -- invisibly, because the <pre> border box does fit. */
+  html pre.code { overflow-x: auto !important; }
+
+  /* The Turbo Pascal program mock is fixed-geometry skeuomorphic chrome; its
+     card felt and status bar only read correctly at full size, so it scrolls
+     inside its own box rather than being squeezed. */
+  html .program-mock { overflow-x: auto !important; }
+}

@@ -406,10 +406,12 @@ header{
 <body>
 <div id="app">
   <header>
-    <a id="logo" href="https://0x4d44.github.io/" title="Back to the almanac">
+    <!-- Not a link: /almanac-back.js already provides the one back button, and
+         a second one here sat under that fixed pill, unclickable. -->
+    <div id="logo">
       <span class="tiles"><span class="tile">O</span><span class="tile">N</span><span class="tile">U</span></span>
       <small>BY&nbsp;THE&nbsp;BOOK</small>
-    </a>
+    </div>
     <div id="scores"></div>
     <button class="hbtn" id="rulesBtn" aria-label="Open the rules">📖</button>
     <button class="hbtn" id="sndBtn" aria-label="Toggle sound">🔊</button>

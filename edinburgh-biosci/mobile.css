@@ -1,0 +1,11 @@
+/* Narrow-screen and overlay corrections for this document.
+   The page bootstraps itself from a JSON-escaped template inside index.html, so
+   its own CSS is not hand-editable; index.html links this file from the template
+   <head> instead. Selectors are prefixed with `html` and marked !important
+   because the link lands first in <head>, and specificity is settled before
+   source order. */
+
+/* Clear the fixed "← Almanac" pill at the viewport top-left ([0,0 109x41]):
+   the masthead brand sits under it, obscured and untappable, because the tap
+   navigates to the catalog instead (ALM-BUG-KILN-00039). */
+html .nav { padding-left: 112px !important; }

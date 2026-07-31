@@ -29,7 +29,10 @@
   .mono{font-family:var(--font-mono)}
   a{color:var(--cyan)}
   h1,h2,h3{line-height:1.12;letter-spacing:.4px;font-weight:800;margin:0}
-  .topnav{display:flex;justify-content:space-between;align-items:center;
+/* Only one back button: /almanac-back.js injects the shared "← Almanac" pill
+   fixed at the top-left, so the document's own back link both duplicated it and
+   sat underneath it, unclickable. flex-end keeps what remains clear of the pill. */
+  .topnav{display:flex;justify-content:flex-end;align-items:center;
     padding:16px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
   .topnav a{color:var(--ink-soft);text-decoration:none}
   .topnav .who{color:var(--ink-faint);font-family:var(--font-mono);letter-spacing:1px}
@@ -114,7 +117,6 @@
 <div class="wrap">
 
   <nav class="topnav">
-    <a href="https://0x4d44.github.io/">&larr; 0x4D44 almanac</a>
     <span class="who">RAIL · ENGINEERING · HISTORY</span>
   </nav>
 

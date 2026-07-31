@@ -454,3 +454,14 @@ input[type="range"] {
   .content { padding: 0 22px 90px; }
   body { font-size: 17.5px; }
 }
+
+/* A slider row is label(150) + range + readout(70) on one flex line, which
+   needs ~377px of minimum -- more than the 288px a phone leaves inside a
+   widget, so the readouts hung off the right of the page. Put the label on
+   its own line and let the range shrink. */
+@media (max-width: 640px) {
+  .slider-row { flex-wrap: wrap; gap: 8px 12px; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .slider-row input[type="range"] { flex: 1 1 auto; min-width: 0; }
+  .slider-row output { min-width: 56px; }
+}

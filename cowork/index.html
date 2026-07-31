@@ -84,7 +84,10 @@
   ::selection{background:var(--claude);color:#0d0e11}
 
   /* ---------- top bar ---------- */
-  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+/* Only one back button: /almanac-back.js injects the shared "← Almanac" pill
+   fixed at the top-left, so the document's own back link both duplicated it and
+   sat underneath it, unclickable. flex-end keeps what remains clear of the pill. */
+  .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:flex-end;
     gap:16px;padding:12px 20px;background:color-mix(in srgb,var(--bg) 72%,transparent);
     backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);border-bottom:1px solid var(--hair)}
   .brand{font-family:var(--mono);font-size:12.5px;letter-spacing:.14em;color:var(--ink-dim);
@@ -321,7 +324,6 @@
 <body>
 
 <div class="topbar">
-  <a class="brand" href="https://0x4d44.github.io/"><span class="tk"></span>0x4D44 · Almanac</a>
   <button class="toggle" id="themeBtn" type="button" aria-label="Toggle colour theme">Theme</button>
 </div>
 

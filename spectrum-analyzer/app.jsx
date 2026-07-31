@@ -644,7 +644,7 @@ function UserDefinedCmap() {
         <div className="nm">User-defined polynomial</div>
         <div className="sub">CUserFnColourMap — live</div>
       </div>
-      <div style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start"}}>
+      <div className="fft-split" style={{display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, alignItems: "start"}}>
         <div>
           <div className="slider-row">
             <div className="lbl"><span className="name">Red exponent</span><span className="val">{rPow.toFixed(2)}</span></div>

@@ -3,6 +3,17 @@
 Distilled, non-obvious gotchas for this repo. Newest first. Keep it short
 (hard cap 20) — promote anything durable into `CLAUDE.md` instead.
 
+- 2026-07-31 — Horizontal overflow is invisible to both `innerWidth` and a DOM scan; measure
+  `documentElement.scrollWidth - clientWidth` and bisect (`tests/responsive.test.mjs`). Under
+  Chrome's mobile emulation `innerWidth` is the scaled *visual* viewport, so a page 1020px too
+  wide measures as **0** — that is how 30 of 129 documents stayed broken on phones while
+  looking fine at 768px. Scanning element rects is no better: a `<pre>` with `white-space:pre`
+  and `overflow:visible` has a border box that fits while its text hangs outside; an
+  absolutely-positioned child escapes an `overflow:hidden` ancestor that isn't its containing
+  block; and a decorative `::before{inset:-40px -80px 0}` has no element to measure at all
+  (`win2k/w2k.css:.hero`). Find the real culprit by hiding one subtree at a time and watching
+  `scrollWidth` — it names the box in seconds and never lies about clipped descendants.
+
 - 2026-07-30 — CSS `transform` on an SVG shape scales about the whole viewBox, not the shape,
   until you set `transform-box:fill-box` (`arran-deep-time/arran.css:.route-pin circle`). An
   SVG element's default `transform-box` is `view-box`, so the familiar

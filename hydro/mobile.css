@@ -1,0 +1,32 @@
+/* Narrow-screen corrections for this document.
+
+   The page bootstraps itself from a JSON-escaped template inside index.html, so
+   its own CSS is not hand-editable; index.html links this file from the
+   template <head> instead.
+
+   Every selector is prefixed with `html` and every declaration is !important.
+   Both are needed: several of the rules being corrected are themselves
+   !important, and this link is injected at the START of <head>, so on an equal
+   footing the document own rules would win on order. The extra element in the
+   selector raises specificity, which is decided before order.
+
+   The recurring bug is a collapse written as a bare 1fr. 1fr means
+   minmax(auto, 1fr), and that auto floor is the item min-content width -- so
+   the "collapsed" single column inflates straight back out to whatever the
+   widest unbreakable thing inside it happens to be. */
+
+@media (max-width: 1024px) {
+  html .hero-grid, html .map-wrap, html .scheme-card, html .events-grid,
+  html .running-tally, html .hero-stats, html .scheme-specs
+    { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* Each .tt is a nowrap label centred on its timeline dot, so the dots near
+     the right-hand end hang their label past the axis. Clipping the wrapper
+     trims the outermost label rather than letting it drag the page sideways;
+     clip, not hidden, so no scroll container is created. */
+  html .timeline-wrap { overflow-x: clip !important; }
+}
+@media (max-width: 900px) {
+  html .trans-diagram-row { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  html .trans-row { grid-template-columns: 80px 20px minmax(0, 1fr) !important; }
+}

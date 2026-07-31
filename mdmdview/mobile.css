@@ -1,0 +1,42 @@
+/* Narrow-screen corrections for this document.
+
+   The page bootstraps itself from a JSON-escaped template inside index.html, so
+   its own CSS is not hand-editable; index.html links this file from the
+   template <head> instead.
+
+   Every selector is prefixed with `html` and every declaration is !important.
+   Both are needed: several of the rules being corrected are themselves
+   !important, and this link is injected at the START of <head>, so on an equal
+   footing the document own rules would win on order. The extra element in the
+   selector raises specificity, which is decided before order.
+
+   The recurring bug is a collapse written as a bare 1fr. 1fr means
+   minmax(auto, 1fr), and that auto floor is the item min-content width -- so
+   the "collapsed" single column inflates straight back out to whatever the
+   widest unbreakable thing inside it happens to be. */
+
+@media (max-width: 1020px) {
+  html .hero-grid, html .arch, html .pipeline, html .feature-grid, html .test-grid,
+  html .install-grid, html .community, html .invariants
+    { grid-template-columns: minmax(0, 1fr) !important; }
+  html .stats, html .kb-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+  /* the testing section is a three-column card row built by the page script */
+  html #testing > .wrap > div { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* the viewer section is a three-column browser mock, likewise script-built */
+  html #viewer > .wrap > div > div { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* the architecture diagram rows are 1..5 fixed columns of labelled nodes;
+     keep the shape and scroll rather than crushing five nodes into 358px */
+  html .arch-diagram { overflow-x: auto !important; }
+}
+
+/* Clear the fixed "← Almanac" pill that /almanac-back.js injects at the
+   viewport's top-left ([0,0 109x41], z-index nothing here can beat): a
+   masthead wordmark lands exactly under it, obscured and -- where it is a
+   link -- untappable, because the tap navigates to the catalog instead
+   (ALM-BUG-KILN-00039). Outside the media query above: the pill sits in the
+   same place at every width, and these headers were measured covered at
+   1200px as well as on a phone. */
+html .nav-inner { padding-left: 112px !important; }
