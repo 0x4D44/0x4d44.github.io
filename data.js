@@ -77,7 +77,7 @@ window.ESSAYS = [
   {
     slug: "iron-vertex",
     title: "Iron Vertex",
-    tagline: "A rollercoaster that designs itself. Press one button and a fresh circuit is drawn, propped up and handed over to gravity — chain lift, first drop, a vertical loop, then home to the brakes. Ride it from the front seat or watch from the air. Three.js, and a physics core that proves every track it builds is actually rideable.",
+    tagline: "A rollercoaster that designs itself. One button draws a fresh circuit, props it up and hands it to gravity — chain lift, first drop, a splayed vertical loop that provably never runs through itself, then home to the brakes. Ride it from the front seat, with passengers and a park around you. Three.js, synthesised sound, no build step.",
     url: "https://0x4d44.github.io/iron-vertex/",
     illustration: "ill-coaster",
     date: "2026-07-26T09:30:00",

@@ -37,6 +37,15 @@ const MAX_RIDEABLE_G = 6.2; // max g anywhere on the assembled circuit
 const MIN_PLAN_RADIUS = 26; // m, tightest horizontal turn the plan curve may draw
 const MAX_ROLL_RATE = 0.055; // rad per metre of track (~3 degrees/m)
 
+// Clearance between stretches of track that are far apart along the
+// circuit but close together in space. Two rails, a spine and a train
+// occupy roughly 3 m of envelope, so anything under this is either a
+// collision or close enough to look like one.
+export const MIN_SELF_CLEARANCE = 3.4; // m
+const CLEARANCE_IGNORE_ALONG = 16; // m of track either side that cannot collide with itself
+const LOOP_SPLAY = 2.6; // m the loop's legs are pushed apart sideways
+const LOOP_RAMP = 34; // m over which the approach eases into that offset
+
 // ------------------------------------------------------------
 // Small vector helpers. Points are plain {x, y, z} objects.
 // ------------------------------------------------------------
@@ -164,6 +173,74 @@ function minPlanRadius(pts) {
     if (radius < smallest) smallest = radius;
   }
   return smallest;
+}
+
+// ------------------------------------------------------------
+// Self-collision.
+//
+// A vertical loop is the one element that deliberately brings the track
+// back over itself, so it is also the one element that can put two
+// stretches of steel through each other. Nothing in the profile or the
+// frames would notice: both legs are perfectly valid track, they just
+// happen to occupy the same cubic metre.
+//
+// So measure it. For every pair of samples that are far apart ALONG the
+// circuit but close together in SPACE, report the smallest gap. Points
+// within CLEARANCE_IGNORE_ALONG metres of each other along the track are
+// skipped — those are neighbours, and of course they are close.
+//
+// The samples are ~1.2 m apart, so a point-to-point measure understates
+// a segment-to-segment gap by at most half that; the threshold it feeds
+// carries enough margin to absorb it.
+// ------------------------------------------------------------
+
+export function selfClearance(points, ds, ignoreAlong = CLEARANCE_IGNORE_ALONG) {
+  const n = points.length;
+  const skip = Math.max(2, Math.ceil(ignoreAlong / Math.max(1e-6, ds)));
+  if (n < skip * 2 + 4) return { distance: Infinity, i: -1, j: -1 };
+
+  // Uniform spatial hash: only pairs inside the same or a neighbouring
+  // cell can possibly be the closest, which keeps this linear in n
+  // rather than quadratic (it runs once per loop candidate).
+  const cell = Math.max(4, ignoreAlong * 0.5);
+  const grid = new Map();
+  const keyOf = (x, y, z) => `${x}|${y}|${z}`;
+  for (let i = 0; i < n; i++) {
+    const p = points[i];
+    const key = keyOf(Math.floor(p.x / cell), Math.floor(p.y / cell), Math.floor(p.z / cell));
+    const bucket = grid.get(key);
+    if (bucket) bucket.push(i);
+    else grid.set(key, [i]);
+  }
+
+  let best = Infinity;
+  let bi = -1;
+  let bj = -1;
+  for (let i = 0; i < n; i++) {
+    const p = points[i];
+    const cx = Math.floor(p.x / cell);
+    const cy = Math.floor(p.y / cell);
+    const cz = Math.floor(p.z / cell);
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dz = -1; dz <= 1; dz++) {
+          const bucket = grid.get(keyOf(cx + dx, cy + dy, cz + dz));
+          if (!bucket) continue;
+          for (const j of bucket) {
+            if (j <= i) continue;
+            const gap = j - i;
+            // The circuit is closed: separation along it is the shorter
+            // way round, or the pair either side of the start line would
+            // look like a collision.
+            if (Math.min(gap, n - gap) <= skip) continue;
+            const d = vlen(vsub(p, points[j]));
+            if (d < best) { best = d; bi = i; bj = j; }
+          }
+        }
+      }
+    }
+  }
+  return { distance: best, i: bi, j: bj };
 }
 
 // Cumulative arc length of a closed polyline, plus its total length.
@@ -329,6 +406,9 @@ function heightKeyframes(rng, length, scale) {
 // the top, so `a` is widened by exactly that much to keep the intended
 // shape. Returns null when no size in the window works, in which case
 // the circuit simply gets no loop.
+//
+// Every loop also carries a `splay`: see spliceLoop for why a loop drawn
+// in a single vertical plane necessarily runs through itself.
 function chooseLoop(vIn, maxHeight) {
   const u = (vIn * vIn) / G; // available height-equivalent, in metres
   const c = 0.70;
@@ -352,16 +432,56 @@ function chooseLoop(vIn, maxHeight) {
     // The rails are drawn from discrete samples: too tight a top reads as
     // a crease rather than a curve.
     if (rTop < RESAMPLE_DS * 3.0) continue;
-    return { a, b, advance, radius: b, gTop, gBottom };
+    return { a, b, advance, radius: b, gTop, gBottom, splay: LOOP_SPLAY };
   }
   return null;
 }
 
+// Ease that starts and stops with zero first AND second derivative, so a
+// section blended in with it joins the track without a curvature step.
+function smootherstep(t) {
+  const x = Math.min(1, Math.max(0, t));
+  return x * x * x * (x * (x * 6 - 15) + 10);
+}
+
+// Splay: why a flat loop cannot be built.
+//
+// Along the loop the train's position advances with θ as
+// `advance·θ/2π + a·sin θ`, whose derivative goes negative over the top —
+// it has to, because a rider only inverts if the track's heading swings
+// through a full turn, and that needs the along-track motion to reverse.
+// Reversal means the ascending and descending legs cross, and since the
+// two legs sit at identical heights at θ and 2π−θ, a loop drawn in one
+// vertical plane passes exactly through itself near the bottom. Real
+// loops solve it the same way this one does: the legs splay apart
+// sideways at the bottom and converge at the top, so they pass beside
+// each other. `−splay·cos(θ/2)` runs from −splay at entry through 0 at
+// the top to +splay at exit, with zero slope at both ends, and the base
+// path either side is eased across by the same amount so the join stays
+// straight.
 function spliceLoop(points, roles, startIdx, spec) {
   const n = points.length;
-  const { a, b, advance } = spec;
+  const { a, b, advance, splay } = spec;
   const removeCount = Math.max(4, Math.round(advance / RESAMPLE_DS));
+  const rampCount = Math.max(4, Math.round(LOOP_RAMP / RESAMPLE_DS));
+  if (removeCount + rampCount * 2 + 12 > n) return null;
   const worldUp = v3(0, 1, 0);
+  const at = (i) => ((i % n) + n) % n;
+
+  // The splay moves real track either side of the loop, so the whole
+  // modified span has to be free-running: easing the chain lift or the
+  // station platform sideways would drag structures off their footings.
+  for (let k = -rampCount - 1; k <= removeCount + rampCount + 1; k++) {
+    if (roles[at(startIdx + k)] !== "free") return null;
+  }
+
+  // Horizontal normal of the base path — the direction the splay pushes.
+  const lateralAt = (idx) => {
+    const t = vnorm(vsub(points[at(idx + 1)], points[at(idx - 1)]));
+    const flat = v3(t.x, 0, t.z);
+    const fwd = vlen(flat) > 1e-6 ? vnorm(flat) : t;
+    return vnorm(vcross(worldUp, fwd));
+  };
 
   const steps = Math.max(32, Math.round((2 * Math.PI * b * 1.15) / RESAMPLE_DS));
   const arc = [];
@@ -386,7 +506,12 @@ function spliceLoop(points, roles, startIdx, spec) {
     // was sized for and its top pinches to a couple of metres' radius.
     let fwd = v3(tangent.x, 0, tangent.z);
     fwd = vlen(fwd) > 1e-6 ? vnorm(fwd) : tangent;
-    arc.push(vadd(vadd(base, vmul(fwd, a * Math.sin(th))), vmul(worldUp, b * (1 - Math.cos(th)))));
+    const lat = vnorm(vcross(worldUp, fwd));
+    const side = -splay * Math.cos(th / 2);
+    arc.push(vadd(
+      vadd(vadd(base, vmul(fwd, a * Math.sin(th))), vmul(worldUp, b * (1 - Math.cos(th)))),
+      vmul(lat, side),
+    ));
   }
 
   // Replace [startIdx, startIdx + removeCount) with the loop arc. The
@@ -394,9 +519,28 @@ function spliceLoop(points, roles, startIdx, spec) {
   // the remainder back on.
   const rotated = points.slice(startIdx).concat(points.slice(0, startIdx));
   const rotatedRoles = roles.slice(startIdx).concat(roles.slice(0, startIdx));
+  const tail = rotated.slice(removeCount);
+  const tailRoles = rotatedRoles.slice(removeCount);
+
+  // Ease the base path across to meet each leg. The exit ramp runs
+  // forward from the join; the entry ramp runs backwards from the far end
+  // of the array, which is the track immediately before the loop.
+  for (let j = 0; j < rampCount && j < tail.length; j++) {
+    const w = smootherstep(1 - j / rampCount);
+    const lat = lateralAt(startIdx + removeCount + j);
+    tail[j] = vadd(tail[j], vmul(lat, splay * w));
+  }
+  for (let j = 0; j < rampCount && j < tail.length; j++) {
+    const idx = tail.length - 1 - j;
+    if (idx <= rampCount) break;
+    const w = smootherstep(1 - (j + 1) / rampCount);
+    const lat = lateralAt(startIdx - 1 - j);
+    tail[idx] = vadd(tail[idx], vmul(lat, -splay * w));
+  }
+
   return {
-    points: arc.concat(rotated.slice(removeCount)),
-    roles: new Array(steps).fill("free").concat(rotatedRoles.slice(removeCount)),
+    points: arc.concat(tail),
+    roles: new Array(steps).fill("free").concat(tailRoles),
   };
 }
 
@@ -716,35 +860,44 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
   }
   candidates.sort((p, q) => p.score - q.score || p.i - q.i);
 
-  let spec = null;
-  let loopIdx = -1;
+  // A candidate is only accepted once the FINISHED circuit has been
+  // measured for self-collision. The splay keeps a loop clear of its own
+  // legs, but nothing stops a 25 m loop from being thrown up through the
+  // airtime hill next door — that depends on where the plan curve
+  // happens to fold back on itself, which is only knowable after the
+  // splice. When a placement collides, move on to the next one; the
+  // circuit having no loop at all is a better outcome than one that
+  // passes through solid steel.
+  let loop = null;
+  let clearance = selfClearance(points, ds).distance;
   if (loopAllowance > 0) {
-    for (const candidate of candidates.slice(0, 60)) {
+    let tried = 0;
+    for (const candidate of candidates.slice(0, 80)) {
+      if (tried >= 14) break;
       // Keep the loop no taller than the lift that feeds it. This is a
       // LOOKS-right bound, not a physics one: whether the circuit can
       // afford the loop is settled by simulating the finished track and
       // retrying, which is honest about the energy.
       const headroom = (apexShaped - points[candidate.i].y) * loopAllowance;
-      const found = chooseLoop(preSpeeds[candidate.i], headroom);
-      if (found) {
-        spec = found;
-        loopIdx = candidate.i;
-        break;
-      }
+      const spec = chooseLoop(preSpeeds[candidate.i], headroom);
+      if (!spec) continue;
+      const spliced = spliceLoop(points, roles, candidate.i, spec);
+      if (!spliced) continue;
+      tried += 1;
+      // Splicing changed the arc length and moved the origin to the loop
+      // entry; re-resample, then re-index from the station.
+      const resampled = resampleClosed(spliced.points, RESAMPLE_DS, spliced.roles);
+      const gap = selfClearance(resampled.points, resampled.ds).distance;
+      if (gap < MIN_SELF_CLEARANCE) continue;
+      const rotated = rotateToStation(resampled.points, resampled.roles);
+      points = rotated.points;
+      roles = rotated.roles;
+      ds = resampled.ds;
+      preSpeeds = designSpeeds(points, ds, roles);
+      loop = spec;
+      clearance = gap;
+      break;
     }
-  }
-  let loop = null;
-  if (spec) {
-    const spliced = spliceLoop(points, roles, loopIdx, spec);
-    loop = spec;
-    // Splicing changed the arc length and moved the origin to the loop
-    // entry; re-resample, then re-index from the station.
-    re = resampleClosed(spliced.points, RESAMPLE_DS, spliced.roles);
-    const rotated = rotateToStation(re.points, re.roles);
-    points = rotated.points;
-    roles = rotated.roles;
-    ds = re.ds;
-    preSpeeds = designSpeeds(points, ds, roles);
   }
 
   const { tangents, ups, curvature, banks } = computeFrames(points, ds, preSpeeds);
@@ -758,7 +911,7 @@ function assemble(plan, planLength, profileSeed, scale, seed, name, loopAllowanc
 
   return {
     seed, name, points, tangents, ups, curvature, banks, roles,
-    speeds: preSpeeds, ds, length, apex, lowest, loop, profileG,
+    speeds: preSpeeds, ds, length, apex, lowest, loop, profileG, clearance,
     stationY: STATION_Y,
   };
 }
@@ -855,8 +1008,11 @@ export class CoasterSim {
 
   step(dt) {
     // Fixed sub-steps keep the physics frame-rate independent; a browser
-    // tab that drops to 20fps must not fling the train off the lift.
-    const clamped = Math.min(0.1, Math.max(0, dt));
+    // tab that drops to 20fps must not fling the train off the lift. The
+    // cap bounds how much a single long frame can advance — at 0.2s and
+    // 4ms sub-steps that is fifty integration steps, which is still exact,
+    // while a tighter cap would put a slow machine into slow motion.
+    const clamped = Math.min(0.2, Math.max(0, dt));
     const steps = Math.max(1, Math.ceil(clamped / 0.004));
     const h = clamped / steps;
     for (let k = 0; k < steps; k++) this.substep(h);
@@ -938,7 +1094,13 @@ export function supportColumns(track, spacing = 9) {
     // Skip columns inside an inverted section: a loop is held by its own
     // structure, not by a post through the middle of the rider.
     if (track.ups[i].y < 0.35) continue;
-    out.push({ x: p.x, z: p.z, top: p.y, height });
+    // The horizontal normal of the track here, so a renderer can splay a
+    // pair of legs ACROSS the track rather than along it.
+    const t = track.tangents[i];
+    const flat = Math.hypot(t.x, t.z);
+    const dirX = flat > 1e-6 ? -t.z / flat : 1;
+    const dirZ = flat > 1e-6 ? t.x / flat : 0;
+    out.push({ x: p.x, z: p.z, top: p.y, height, dirX, dirZ });
   }
   return out;
 }

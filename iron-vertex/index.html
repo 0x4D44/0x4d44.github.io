@@ -1,7 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Iron Vertex — procedural coaster lab</title>
-<meta name="description" content="A rollercoaster that designs itself: a fresh closed circuit every time, ridden on gravity alone. Three.js in the browser, no build step.">
+<meta name="description" content="A rollercoaster that designs itself: a fresh closed circuit every time, ridden on gravity alone, with a park around it and passengers in the cars. Three.js in the browser, no build step.">
 
 <style>
   :root {
@@ -119,6 +119,7 @@
   #nameplate {
     top: 14px;
     right: 14px;
+    max-width: calc(100vw - 300px);
     padding: 8px 14px;
     text-align: right;
     background: none;
@@ -142,6 +143,16 @@
     font-size: 19px;
     font-weight: 700;
     letter-spacing: 0.03em;
+  }
+
+  #nameplate .facts {
+    margin-top: 2px;
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: rgba(232, 237, 246, 0.78);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* ---- stat tiles ---- */
@@ -194,6 +205,11 @@
     margin-left: 2px;
   }
 
+  /* A red pulse when the riders leave the seat, so airtime is something
+     you can see on the panel as well as feel in the camera. */
+  .tile.airtime { border-color: rgba(255, 190, 120, 0.75); }
+  .tile.heavy { border-color: rgba(255, 130, 110, 0.8); }
+
   /* ---- boot / failure notice ---- */
   #notice {
     position: fixed;
@@ -220,7 +236,9 @@
     #controls h1 { font-size: 13px; }
     #controls .hint { display: none; }
     button.act { padding: 8px 10px; font-size: 11px; }
+    #nameplate { max-width: calc(100vw - 230px); }
     #nameplate .value { font-size: 15px; }
+    #nameplate .facts { font-size: 9px; letter-spacing: 0.02em; }
     #stats { gap: 5px; bottom: 12px; }
     .tile { min-width: 0; padding: 5px 9px 6px; }
     .tile .v { font-size: 16px; }
@@ -241,20 +259,24 @@
   <button class="act primary" id="btn-ride" type="button" aria-label="Ride the coaster">&#9654; Ride (R)</button>
   <button class="act" id="btn-new" type="button" aria-label="Generate a new track">&#9711; New track (N)</button>
   <button class="act" id="btn-cam" type="button" aria-label="Change camera">&#9678; Cam: orbit (C)</button>
+  <button class="act" id="btn-sound" type="button" aria-label="Turn the sound on or off">&#9834; Sound: off (M)</button>
   <p class="hint">
     Drag to orbit &middot; scroll to zoom<br>
-    Physics: gravity energy model with chain lift, brakes, drag &amp; banked turns.
+    Gravity energy model with chain lift, brakes, drag and banked turns.
+    Loops are splayed and clearance-checked, so no two stretches of track
+    ever occupy the same steel.
   </p>
 </div>
 
 <div class="panel" id="nameplate">
   <div class="label">Track</div>
   <div class="value" id="track-name">&nbsp;</div>
+  <div class="facts" id="track-facts">&nbsp;</div>
 </div>
 
 <div class="panel" id="stats">
   <div class="tile"><div class="k">Speed</div><div class="v"><span id="stat-speed">0</span><span class="u">km/h</span></div></div>
-  <div class="tile"><div class="k">G-force</div><div class="v"><span id="stat-g">0.0</span><span class="u">g</span></div></div>
+  <div class="tile" id="tile-g"><div class="k">G-force</div><div class="v"><span id="stat-g">0.0</span><span class="u">g</span></div></div>
   <div class="tile"><div class="k">Height</div><div class="v"><span id="stat-height">0</span><span class="u">m</span></div></div>
   <div class="tile"><div class="k">Length</div><div class="v"><span id="stat-length">0</span><span class="u">m</span></div></div>
 </div>
@@ -284,33 +306,10 @@
 
 <script type="module">
 import * as THREE from "./three.module.min.js";
-import { CoasterSim, buildTrack, supportColumns } from "./track.js";
-
-// ============================================================
-// Palette
-// ============================================================
-const COLOR = {
-  skyTop: new THREE.Color("#2f6ab4"),
-  skyLow: new THREE.Color("#bcd8ee"),
-  fog: new THREE.Color("#b3d0e6"),
-  grass: new THREE.Color("#7fae4e"),
-  grassFar: new THREE.Color("#9dc267"),
-  rail: new THREE.Color("#b8412a"),
-  tie: new THREE.Color("#39414c"),
-  spine: new THREE.Color("#59636f"),
-  support: new THREE.Color("#9aa3ac"),
-  trunk: new THREE.Color("#6b4a32"),
-  leafA: new THREE.Color("#2f6b34"),
-  leafB: new THREE.Color("#3f8340"),
-  building: new THREE.Color("#c3cbd4"),
-  cloud: new THREE.Color("#f4f8fb"),
-  car: new THREE.Color("#c0452c"),
-  carDark: new THREE.Color("#2b3038"),
-};
-
-const GAUGE = 1.05;      // spacing between the running rails, metres
-const RAIL_RADIUS = 0.13;
-const PARK_RADIUS = 420;
+import { CoasterSim, buildTrack } from "./track.js";
+import { buildWorld, groundHeight } from "./scenery.js";
+import { buildTrackMesh, buildTrain } from "./coaster.js";
+import { RideAudio, rideMix } from "./audio.js";
 
 // ============================================================
 // Renderer, scene, camera
@@ -320,438 +319,82 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPrefere
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// Filmic tone mapping keeps the sun's highlights off the clipping point,
+// which is what stops a bright sky from flattening the paintwork.
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.18;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog(COLOR.fog, 260, 720);
+scene.fog = new THREE.Fog(new THREE.Color("#c3d9ea"), 340, 1300);
 
-const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 2000);
+const BASE_FOV = 62;
+const camera = new THREE.PerspectiveCamera(BASE_FOV, 1, 0.1, 3000);
 
-// ---- sky dome: a plain vertical gradient, cheap and stable ----
-const skyGeo = new THREE.SphereGeometry(900, 32, 16);
-const skyMat = new THREE.ShaderMaterial({
-  side: THREE.BackSide,
-  depthWrite: false,
-  uniforms: {
-    top: { value: COLOR.skyTop },
-    bottom: { value: COLOR.skyLow },
-  },
-  vertexShader: `
-    varying float vH;
-    void main() {
-      vec4 world = modelMatrix * vec4(position, 1.0);
-      vH = normalize(world.xyz).y;
-      gl_Position = projectionMatrix * viewMatrix * world;
-    }`,
-  fragmentShader: `
-    uniform vec3 top;
-    uniform vec3 bottom;
-    varying float vH;
-    void main() {
-      float t = clamp(vH * 1.35 + 0.18, 0.0, 1.0);
-      gl_FragColor = vec4(mix(bottom, top, t), 1.0);
-    }`,
-});
-scene.add(new THREE.Mesh(skyGeo, skyMat));
-
-// ---- light ----
-const sun = new THREE.DirectionalLight(0xfff3dd, 2.05);
-sun.position.set(-125, 190, 95);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.near = 20;
-sun.shadow.camera.far = 560;
-sun.shadow.camera.left = -190;
-sun.shadow.camera.right = 190;
-sun.shadow.camera.top = 190;
-sun.shadow.camera.bottom = -190;
-sun.shadow.bias = -0.0012;
-sun.shadow.normalBias = 0.5;
-scene.add(sun);
-scene.add(new THREE.HemisphereLight(0xdcecff, 0x5c7a44, 1.15));
+const world = buildWorld();
+scene.add(world.group);
 
 // ============================================================
-// Static landscape (built once; the track is rebuilt on demand)
+// Adaptive quality
+//
+// The park is drawn at full quality on anything with a real GPU. On a
+// software renderer or a tired phone it would crawl, and a coaster in
+// slow motion is not a coaster — so watch the frame time and give up the
+// expensive things in order: first the shadow resolution, then the
+// shadows, then the resolution the scene is drawn at. It only ever steps
+// down; hunting between two levels would be worse than either.
 // ============================================================
+const QUALITY = [
+  { shadows: false, shadowMap: 512, scale: 0.6 },
+  { shadows: true, shadowMap: 1024, scale: 0.85 },
+  { shadows: true, shadowMap: 2048, scale: 1 },
+];
+let qualityLevel = QUALITY.length - 1;
+let qualityHold = 2.5;   // seconds before the next judgement
+let frameCost = 1 / 60;  // smoothed seconds per frame
 
-// Deterministic-enough scatter for the scenery.
-function scatterRng(seed) {
-  let a = seed >>> 0;
-  return function () {
-    a = (a + 0x9e3779b9) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 16), 0x21f0aaad);
-    t = Math.imul(t ^ (t >>> 15), 0x735a2d97);
-    return ((t ^ (t >>> 15)) >>> 0) / 4294967296;
-  };
+function applyQuality() {
+  const level = QUALITY[qualityLevel];
+  renderer.shadowMap.enabled = level.shadows;
+  if (world.sun.shadow.map && world.sun.shadow.mapSize.x !== level.shadowMap) {
+    world.sun.shadow.map.dispose();
+    world.sun.shadow.map = null;
+  }
+  world.sun.shadow.mapSize.set(level.shadowMap, level.shadowMap);
+  world.sun.castShadow = level.shadows;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2) * level.scale);
+  renderer.shadowMap.needsUpdate = true;
+  resize();
 }
 
-function groundHeight(x, z) {
-  // Flat where the coaster stands, gently rolling further out, so the
-  // horizon has shape without the track ever burying itself.
-  const d = Math.hypot(x, z);
-  const rise = Math.min(1, Math.max(0, (d - 150) / 220));
-  return (
-    Math.sin(x * 0.0075) * Math.cos(z * 0.0061) * 13 +
-    Math.sin(x * 0.019 + 1.7) * Math.cos(z * 0.017 - 0.6) * 4
-  ) * rise;
-}
-
-function buildGround() {
-  const size = PARK_RADIUS * 2.4;
-  const seg = 150;
-  const geo = new THREE.PlaneGeometry(size, size, seg, seg);
-  geo.rotateX(-Math.PI / 2);
-  const pos = geo.attributes.position;
-  const colors = new Float32Array(pos.count * 3);
-  const near = new THREE.Color();
-  for (let i = 0; i < pos.count; i++) {
-    const x = pos.getX(i);
-    const z = pos.getZ(i);
-    pos.setY(i, groundHeight(x, z));
-    const t = Math.min(1, Math.hypot(x, z) / PARK_RADIUS);
-    near.copy(COLOR.grass).lerp(COLOR.grassFar, t * 0.85);
-    colors[i * 3] = near.r;
-    colors[i * 3 + 1] = near.g;
-    colors[i * 3 + 2] = near.b;
+function reviewQuality(dt) {
+  frameCost += (dt - frameCost) * 0.08;
+  if (qualityHold > 0) {
+    qualityHold -= dt;
+    return;
   }
-  geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-  const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ vertexColors: true }));
-  mesh.receiveShadow = true;
-  return mesh;
-}
-scene.add(buildGround());
-
-function buildTrees(count) {
-  const rng = scatterRng(0x5eed17);
-  const trunkGeo = new THREE.CylinderGeometry(0.28, 0.42, 3.2, 5);
-  trunkGeo.translate(0, 1.6, 0);
-  const leafGeo = new THREE.ConeGeometry(2.5, 8.4, 7);
-  leafGeo.translate(0, 6.6, 0);
-
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: COLOR.trunk }), count);
-  const leaves = new THREE.InstancedMesh(leafGeo, new THREE.MeshLambertMaterial({ color: 0xffffff, vertexColors: false }), count);
-  leaves.castShadow = true;
-  leaves.receiveShadow = true;
-  trunks.castShadow = true;
-
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const pos = new THREE.Vector3();
-  const scl = new THREE.Vector3();
-  const tint = new THREE.Color();
-  let placed = 0;
-  let guard = 0;
-  while (placed < count && guard++ < count * 40) {
-    const ang = rng() * Math.PI * 2;
-    const rad = 26 + Math.sqrt(rng()) * (PARK_RADIUS - 26);
-    const x = Math.cos(ang) * rad;
-    const z = Math.sin(ang) * rad;
-    const s = 0.55 + rng() * 0.95;
-    pos.set(x, groundHeight(x, z) - 0.2, z);
-    scl.set(s, s * (0.85 + rng() * 0.5), s);
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng() * Math.PI * 2);
-    m.compose(pos, q, scl);
-    trunks.setMatrixAt(placed, m);
-    leaves.setMatrixAt(placed, m);
-    tint.copy(COLOR.leafA).lerp(COLOR.leafB, rng());
-    leaves.setColorAt(placed, tint);
-    placed++;
-  }
-  trunks.count = placed;
-  leaves.count = placed;
-  if (leaves.instanceColor) leaves.instanceColor.needsUpdate = true;
-  return [trunks, leaves];
-}
-// Trees are placed on a fixed scatter and the track is generated inside
-// them; a clearing is carved per track further down.
-const [treeTrunks, treeLeaves] = buildTrees(950);
-scene.add(treeTrunks);
-scene.add(treeLeaves);
-
-function buildBuildings(count) {
-  const rng = scatterRng(0xb01dface);
-  const geo = new THREE.BoxGeometry(1, 1, 1);
-  geo.translate(0, 0.5, 0);
-  const mesh = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: COLOR.building }), count);
-  const m = new THREE.Matrix4();
-  const q = new THREE.Quaternion();
-  const pos = new THREE.Vector3();
-  const scl = new THREE.Vector3();
-  const tint = new THREE.Color();
-  for (let i = 0; i < count; i++) {
-    const ang = rng() * Math.PI * 2;
-    const rad = 210 + rng() * 330;
-    const x = Math.cos(ang) * rad;
-    const z = Math.sin(ang) * rad;
-    pos.set(x, groundHeight(x, z), z);
-    scl.set(9 + rng() * 22, 9 + rng() * 42, 9 + rng() * 22);
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), rng() * Math.PI * 2);
-    m.compose(pos, q, scl);
-    mesh.setMatrixAt(i, m);
-    tint.copy(COLOR.building).offsetHSL(0, 0, (rng() - 0.5) * 0.12);
-    mesh.setColorAt(i, tint);
-  }
-  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  return mesh;
-}
-scene.add(buildBuildings(90));
-
-function buildClouds(count) {
-  const rng = scatterRng(0xc10bd5);
-  const group = new THREE.Group();
-  const mat = new THREE.MeshLambertMaterial({ color: COLOR.cloud, transparent: true, opacity: 0.94 });
-  const geo = new THREE.SphereGeometry(1, 9, 7);
-  for (let i = 0; i < count; i++) {
-    const puff = new THREE.Group();
-    const lumps = 3 + Math.floor(rng() * 4);
-    for (let j = 0; j < lumps; j++) {
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set((rng() - 0.5) * 34, (rng() - 0.5) * 6, (rng() - 0.5) * 16);
-      const s = 7 + rng() * 12;
-      mesh.scale.set(s, s * (0.45 + rng() * 0.25), s * 0.8);
-      puff.add(mesh);
-    }
-    const ang = rng() * Math.PI * 2;
-    const rad = 90 + rng() * 460;
-    puff.position.set(Math.cos(ang) * rad, 105 + rng() * 85, Math.sin(ang) * rad);
-    group.add(puff);
-  }
-  return group;
-}
-scene.add(buildClouds(20));
-
-// ============================================================
-// Track geometry
-// ============================================================
-
-// A tube of square-ish cross-section swept along a centreline, built by
-// hand so the frame (and therefore the banking) is exactly the one the
-// physics used.
-function sweptTube(centres, ups, tangents, radius, radialSegments) {
-  const n = centres.length;
-  const verts = new Float32Array(n * radialSegments * 3);
-  const indices = [];
-  const lateral = new THREE.Vector3();
-  const up = new THREE.Vector3();
-  const tan = new THREE.Vector3();
-  const p = new THREE.Vector3();
-
-  for (let i = 0; i < n; i++) {
-    up.set(ups[i].x, ups[i].y, ups[i].z);
-    tan.set(tangents[i].x, tangents[i].y, tangents[i].z);
-    lateral.crossVectors(tan, up).normalize();
-    for (let j = 0; j < radialSegments; j++) {
-      const a = (j / radialSegments) * Math.PI * 2;
-      const ca = Math.cos(a) * radius;
-      const sa = Math.sin(a) * radius;
-      p.set(
-        centres[i].x + lateral.x * ca + up.x * sa,
-        centres[i].y + lateral.y * ca + up.y * sa,
-        centres[i].z + lateral.z * ca + up.z * sa,
-      );
-      const o = (i * radialSegments + j) * 3;
-      verts[o] = p.x;
-      verts[o + 1] = p.y;
-      verts[o + 2] = p.z;
-    }
-  }
-
-  for (let i = 0; i < n; i++) {
-    const i2 = (i + 1) % n;
-    for (let j = 0; j < radialSegments; j++) {
-      const j2 = (j + 1) % radialSegments;
-      const a = i * radialSegments + j;
-      const b = i * radialSegments + j2;
-      const c = i2 * radialSegments + j2;
-      const d = i2 * radialSegments + j;
-      indices.push(a, b, c, a, c, d);
-    }
-  }
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute("position", new THREE.BufferAttribute(verts, 3));
-  geo.setIndex(indices);
-  geo.computeVertexNormals();
-  return geo;
-}
-
-function offsetLine(track, lateralOffset, upOffset) {
-  const out = [];
-  const lat = new THREE.Vector3();
-  const up = new THREE.Vector3();
-  const tan = new THREE.Vector3();
-  for (let i = 0; i < track.points.length; i++) {
-    up.set(track.ups[i].x, track.ups[i].y, track.ups[i].z);
-    tan.set(track.tangents[i].x, track.tangents[i].y, track.tangents[i].z);
-    lat.crossVectors(tan, up).normalize();
-    out.push({
-      x: track.points[i].x + lat.x * lateralOffset + up.x * upOffset,
-      y: track.points[i].y + lat.y * lateralOffset + up.y * upOffset,
-      z: track.points[i].z + lat.z * lateralOffset + up.z * upOffset,
-    });
-  }
-  return out;
-}
-
-function buildTrackMesh(track) {
-  const group = new THREE.Group();
-  const railMat = new THREE.MeshStandardMaterial({ color: COLOR.rail, roughness: 0.55, metalness: 0.25 });
-  const tieMat = new THREE.MeshStandardMaterial({ color: COLOR.tie, roughness: 0.85, metalness: 0.15 });
-  const spineMat = new THREE.MeshStandardMaterial({ color: COLOR.spine, roughness: 0.7, metalness: 0.3 });
-
-  // Two running rails.
-  for (const side of [-1, 1]) {
-    const line = offsetLine(track, side * GAUGE * 0.5, 0);
-    const geo = sweptTube(line, track.ups, track.tangents, RAIL_RADIUS, 6);
-    const mesh = new THREE.Mesh(geo, railMat);
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    group.add(mesh);
-  }
-
-  // Spine below the rails.
-  const spineLine = offsetLine(track, 0, -0.62);
-  const spineGeo = sweptTube(spineLine, track.ups, track.tangents, 0.3, 4);
-  const spine = new THREE.Mesh(spineGeo, spineMat);
-  spine.castShadow = true;
-  group.add(spine);
-
-  // Cross ties every few samples.
-  const step = 2;
-  const tieCount = Math.floor(track.points.length / step);
-  const tieGeo = new THREE.BoxGeometry(GAUGE * 2.0, 0.1, 0.28);
-  const ties = new THREE.InstancedMesh(tieGeo, tieMat, tieCount);
-  ties.castShadow = true;
-  const m = new THREE.Matrix4();
-  const lat = new THREE.Vector3();
-  const up = new THREE.Vector3();
-  const tan = new THREE.Vector3();
-  const pos = new THREE.Vector3();
-  for (let k = 0; k < tieCount; k++) {
-    const i = k * step;
-    up.set(track.ups[i].x, track.ups[i].y, track.ups[i].z);
-    tan.set(track.tangents[i].x, track.tangents[i].y, track.tangents[i].z);
-    lat.crossVectors(tan, up).normalize();
-    pos.set(
-      track.points[i].x - up.x * 0.34,
-      track.points[i].y - up.y * 0.34,
-      track.points[i].z - up.z * 0.34,
-    );
-    m.makeBasis(lat, up, tan);
-    m.setPosition(pos);
-    ties.setMatrixAt(k, m);
-  }
-  group.add(ties);
-
-  // Support columns down to the ground.
-  const columns = supportColumns(track, 8.5);
-  if (columns.length) {
-    const colGeo = new THREE.CylinderGeometry(0.24, 0.32, 1, 6);
-    colGeo.translate(0, 0.5, 0);
-    const colMat = new THREE.MeshStandardMaterial({ color: COLOR.support, roughness: 0.75, metalness: 0.35 });
-    const posts = new THREE.InstancedMesh(colGeo, colMat, columns.length);
-    posts.castShadow = true;
-    posts.receiveShadow = true;
-    const q = new THREE.Quaternion();
-    const p = new THREE.Vector3();
-    const s = new THREE.Vector3();
-    for (let i = 0; i < columns.length; i++) {
-      const col = columns[i];
-      const base = groundHeight(col.x, col.z);
-      p.set(col.x, base, col.z);
-      s.set(1, Math.max(0.5, col.top - base - 0.35), 1);
-      m.compose(p, q, s);
-      posts.setMatrixAt(i, m);
-    }
-    group.add(posts);
-  }
-
-  // Station canopy over the boarding straight.
-  const stationIdx = track.roles.indexOf("station");
-  if (stationIdx >= 0) {
-    const p = track.points[Math.max(0, stationIdx)];
-    const deck = new THREE.Mesh(
-      new THREE.BoxGeometry(9, 0.5, 16),
-      new THREE.MeshStandardMaterial({ color: 0x8b7a63, roughness: 0.9 }),
-    );
-    const tan = track.tangents[Math.max(0, stationIdx)];
-    deck.position.set(p.x, p.y - 1.5, p.z);
-    deck.rotation.y = Math.atan2(tan.x, tan.z);
-    deck.receiveShadow = true;
-    deck.castShadow = true;
-    group.add(deck);
-  }
-
-  return group;
-}
-
-function buildTrain(cars) {
-  const group = new THREE.Group();
-  const bodyMat = new THREE.MeshStandardMaterial({ color: COLOR.car, roughness: 0.45, metalness: 0.3 });
-  const trimMat = new THREE.MeshStandardMaterial({ color: COLOR.carDark, roughness: 0.7 });
-  for (let i = 0; i < cars; i++) {
-    const car = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.85, 3.1), bodyMat);
-    body.position.y = 0.62;
-    body.castShadow = true;
-    car.add(body);
-    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.62, 1.15, 4), bodyMat);
-    nose.rotation.x = Math.PI / 2;
-    nose.rotation.y = Math.PI / 4;
-    nose.position.set(0, 0.62, 2.05);
-    nose.castShadow = true;
-    car.add(nose);
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.16, 0.16), trimMat);
-    bar.position.set(0, 1.12, 0.35);
-    car.add(bar);
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.4, 2.6), trimMat);
-    chassis.position.y = 0.2;
-    car.add(chassis);
-    group.add(car);
-  }
-  return group;
-}
-
-// Clear the trees that the track would otherwise grow through.
-function carveClearing(track) {
-  const m = new THREE.Matrix4();
-  const pos = new THREE.Vector3();
-  const q = new THREE.Quaternion();
-  const scl = new THREE.Vector3();
-  for (const mesh of [treeTrunks, treeLeaves]) {
-    for (let i = 0; i < mesh.count; i++) {
-      mesh.getMatrixAt(i, m);
-      m.decompose(pos, q, scl);
-      let clash = false;
-      for (let k = 0; k < track.points.length; k += 2) {
-        const p = track.points[k];
-        if ((p.x - pos.x) * (p.x - pos.x) + (p.z - pos.z) * (p.z - pos.z) < 64) { clash = true; break; }
-      }
-      // Sink offenders below the ground rather than reshuffling the
-      // whole scatter: keeps every other tree exactly where it was.
-      const wanted = clash ? -40 : groundHeight(pos.x, pos.z) - 0.2;
-      if (Math.abs(pos.y - wanted) > 0.01) {
-        pos.y = wanted;
-        m.compose(pos, q, scl);
-        mesh.setMatrixAt(i, m);
-      }
-    }
-    mesh.instanceMatrix.needsUpdate = true;
+  // Below about eighteen frames a second, drop a notch.
+  if (frameCost > 0.055 && qualityLevel > 0) {
+    qualityLevel -= 1;
+    qualityHold = 2.5;
+    applyQuality();
   }
 }
 
 // ============================================================
 // Ride state
 // ============================================================
-const CAM_MODES = ["orbit", "chase", "pov"];
+const CAM_MODES = ["orbit", "chase", "pov", "wing"];
+const CARS = 4;
+const TRAIN_LENGTH = CARS * 3.45;
 const state = {
   track: null,
   sim: null,
   trackGroup: null,
+  trackUpdaters: [],
   train: null,
   camMode: "orbit",
   riding: false,
+  fov: BASE_FOV,
   orbit: { yaw: 0.7, pitch: 0.42, dist: 250, target: new THREE.Vector3(0, 18, 0) },
 };
 
@@ -761,7 +404,10 @@ function disposeGroup(group) {
     if (obj.geometry) obj.geometry.dispose();
     if (obj.material) {
       const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-      for (const mat of mats) mat.dispose();
+      for (const mat of mats) {
+        if (mat.map) mat.map.dispose();
+        mat.dispose();
+      }
     }
   });
   scene.remove(group);
@@ -770,24 +416,38 @@ function disposeGroup(group) {
 function loadTrack(seed) {
   const track = buildTrack(seed >>> 0);
   disposeGroup(state.trackGroup);
-  disposeGroup(state.train);
+  disposeGroup(state.train ? state.train.group : null);
 
   state.track = track;
   state.sim = new CoasterSim(track);
-  state.trackGroup = buildTrackMesh(track);
-  state.train = buildTrain(3);
-  scene.add(state.trackGroup);
-  scene.add(state.train);
-  carveClearing(track);
+  const built = buildTrackMesh(track, groundHeight);
+  state.trackGroup = built.group;
+  state.trackUpdaters = built.updaters;
+  state.train = buildTrain(CARS, track.seed);
+  scene.add(built.group);
+  scene.add(state.train.group);
+  world.carve(track);
 
   let cx = 0;
   let cz = 0;
   for (const p of track.points) { cx += p.x; cz += p.z; }
   state.orbit.target.set(cx / track.points.length, track.apex * 0.42, cz / track.points.length);
-  state.orbit.dist = Math.min(420, Math.max(170, track.length * 0.34));
+  state.orbit.dist = Math.min(430, Math.max(180, track.length * 0.34));
 
   document.getElementById("track-name").textContent = track.name;
   setText("stat-length", Math.round(track.length));
+
+  // What the generator actually built, in the language a park would use.
+  let top = 0;
+  for (const v of track.speeds) top = Math.max(top, v);
+  const facts = [
+    `${Math.round(track.apex - track.stationY)} m drop`,
+    `${Math.round(top * 3.6)} km/h`,
+    `${(track.maxG ?? 0).toFixed(1)} g`,
+    track.loop ? "1 inversion" : "no inversions",
+    `${track.clearance === Infinity ? "∞" : track.clearance.toFixed(1)} m clearance`,
+  ];
+  setText("track-facts", facts.join(" · "));
 }
 
 // ============================================================
@@ -796,9 +456,22 @@ function loadTrack(seed) {
 const tmpPos = new THREE.Vector3();
 const tmpUp = new THREE.Vector3();
 const tmpFwd = new THREE.Vector3();
+const tmpLat = new THREE.Vector3();
 const smoothUp = new THREE.Vector3(0, 1, 0);
+const shake = new THREE.Vector3();
 
 function updateCamera(ride, dt) {
+  // A rider's field of view opens up with speed. It is a cheat, and it is
+  // the single most effective one available without post-processing.
+  const wantFov = state.camMode === "pov"
+    ? BASE_FOV + Math.min(20, ride.speedKmh * 0.16)
+    : BASE_FOV;
+  state.fov += (wantFov - state.fov) * Math.min(1, dt * 3.5);
+  if (Math.abs(camera.fov - state.fov) > 0.05) {
+    camera.fov = state.fov;
+    camera.updateProjectionMatrix();
+  }
+
   if (state.camMode === "orbit") {
     const o = state.orbit;
     const cp = Math.cos(o.pitch);
@@ -815,51 +488,95 @@ function updateCamera(ride, dt) {
   tmpPos.set(ride.pos.x, ride.pos.y, ride.pos.z);
   tmpUp.set(ride.up.x, ride.up.y, ride.up.z);
   tmpFwd.set(ride.fwd.x, ride.fwd.y, ride.fwd.z);
+  tmpLat.crossVectors(tmpFwd, tmpUp).normalize();
   // Ease the roll a touch so the horizon does not judder sample to
   // sample, but keep it fast enough to read as a real inversion.
   smoothUp.lerp(tmpUp, Math.min(1, dt * 14)).normalize();
+
+  // Track noise, scaled by speed. Enough to feel the rails; not enough to
+  // make the readouts hard to read.
+  const rattle = Math.min(1, ride.v / 26) * (state.camMode === "pov" ? 0.055 : 0.02);
+  shake.set(
+    (Math.random() - 0.5) * rattle,
+    (Math.random() - 0.5) * rattle,
+    (Math.random() - 0.5) * rattle,
+  );
 
   if (state.camMode === "pov") {
     camera.up.copy(smoothUp);
     camera.position.copy(tmpPos)
       .addScaledVector(smoothUp, 1.32)
-      .addScaledVector(tmpFwd, 0.55);
+      .addScaledVector(tmpFwd, 0.55)
+      .add(shake);
     camera.lookAt(
       tmpPos.x + tmpFwd.x * 30 + smoothUp.x * 1.3,
       tmpPos.y + tmpFwd.y * 30 + smoothUp.y * 1.3,
       tmpPos.z + tmpFwd.z * 30 + smoothUp.z * 1.3,
     );
-  } else {
+  } else if (state.camMode === "wing") {
+    // Flying alongside: the one view that shows the train, the structure
+    // and the ground it is about to meet, all at once. Framed on the
+    // middle of the train rather than its nose, so all four cars fit.
+    //
+    // It has to stay inside the strip carve() clears of trees, or the
+    // camera spends half the lap inside a conifer.
     camera.up.set(0, 1, 0);
     camera.position.copy(tmpPos)
-      .addScaledVector(tmpFwd, -13)
-      .addScaledVector(smoothUp, 4.6);
+      .addScaledVector(tmpLat, 7.6)
+      .addScaledVector(tmpFwd, -TRAIN_LENGTH * 0.5)
+      .add(shake);
+    camera.position.y += 3.6;
+    camera.lookAt(
+      tmpPos.x - tmpFwd.x * TRAIN_LENGTH * 0.45,
+      tmpPos.y - tmpFwd.y * TRAIN_LENGTH * 0.45 + 1.0,
+      tmpPos.z - tmpFwd.z * TRAIN_LENGTH * 0.45,
+    );
+  } else {
+    // Chase: behind the LAST car, not inside it.
+    camera.up.set(0, 1, 0);
+    camera.position.copy(tmpPos)
+      .addScaledVector(tmpFwd, -(TRAIN_LENGTH + 9))
+      .addScaledVector(smoothUp, 5.2)
+      .add(shake);
     camera.lookAt(tmpPos.x, tmpPos.y + 1.2, tmpPos.z);
   }
 }
 
-function updateTrain(ride) {
+function updateTrain(ride, elapsed) {
   if (!state.train) return;
-  const spacing = 3.4;
-  const m = new THREE.Matrix4();
-  const lat = new THREE.Vector3();
-  const up = new THREE.Vector3();
-  const fwd = new THREE.Vector3();
-  const pos = new THREE.Vector3();
-  for (let i = 0; i < state.train.children.length; i++) {
-    const sample = state.sim.sample(ride.s - i * spacing);
-    up.set(sample.up.x, sample.up.y, sample.up.z);
-    fwd.set(sample.fwd.x, sample.fwd.y, sample.fwd.z);
-    lat.crossVectors(fwd, up).normalize();
-    pos.set(sample.pos.x, sample.pos.y, sample.pos.z).addScaledVector(up, 0.18);
-    m.makeBasis(lat, up, fwd);
-    m.setPosition(pos);
-    state.train.children[i].matrix.copy(m);
-    state.train.children[i].matrixAutoUpdate = false;
-    state.train.children[i].matrixWorldNeedsUpdate = true;
+  // The train walks itself back along the centreline and poses its own
+  // passengers; the lead car is dropped in the front-seat view so it does
+  // not fill the lens.
+  state.train.update(state.sim, ride.s, ride, elapsed, state.camMode === "pov");
+}
+
+// ============================================================
+// Sound
+// ============================================================
+const SOUND_KEY = "0x4d44.iron-vertex.sound";
+const audio = new RideAudio();
+let soundOn = false;
+try {
+  soundOn = window.localStorage.getItem(SOUND_KEY) === "on";
+} catch { /* private mode: just start quiet */ }
+audio.setMuted(!soundOn);
+
+// Browsers will not start an audio context outside a user gesture, so
+// every gesture nudges it. The calls are cheap once it is running.
+function armAudio() {
+  if (!soundOn) return;
+  audio.resume();
+}
+
+function setSound(on) {
+  soundOn = on;
+  audio.setMuted(!on);
+  if (on) {
+    audio.resume();
+    audio.blip(true);
   }
-  // The rider's own car is hidden in POV so it does not fill the lens.
-  state.train.children[0].visible = state.camMode !== "pov";
+  try { window.localStorage.setItem(SOUND_KEY, on ? "on" : "off"); } catch { /* ignore */ }
+  syncButtons();
 }
 
 // ============================================================
@@ -874,18 +591,27 @@ function setText(id, value) {
   if (el) el.textContent = text;
 }
 
+const gTile = document.getElementById("tile-g");
+let gClass = "";
 function updateHud(ride) {
   setText("stat-speed", Math.round(ride.speedKmh));
   setText("stat-g", ride.gForce.toFixed(1));
   setText("stat-height", Math.round(Math.max(0, ride.height)));
+  const wanted = ride.gForce < 0.35 ? "tile airtime" : ride.gForce > 3.2 ? "tile heavy" : "tile";
+  if (wanted !== gClass) {
+    gClass = wanted;
+    gTile.className = wanted;
+  }
 }
 
 function syncButtons() {
   const rideBtn = document.getElementById("btn-ride");
   rideBtn.innerHTML = state.riding ? "&#9632; Exit ride (R)" : "&#9654; Ride (R)";
   rideBtn.setAttribute("aria-label", state.riding ? "Leave the ride" : "Ride the coaster");
-  const camBtn = document.getElementById("btn-cam");
-  camBtn.innerHTML = "&#9678; Cam: " + state.camMode + " (C)";
+  document.getElementById("btn-cam").innerHTML = "&#9678; Cam: " + state.camMode + " (C)";
+  const soundBtn = document.getElementById("btn-sound");
+  soundBtn.innerHTML = (soundOn ? "&#9834;" : "&#9835;") + " Sound: " + (soundOn ? "on" : "off") + " (M)";
+  soundBtn.setAttribute("aria-label", soundOn ? "Turn the sound off" : "Turn the sound on");
 }
 
 function setRiding(riding) {
@@ -908,20 +634,24 @@ function newTrack() {
 // ============================================================
 // Input
 // ============================================================
-document.getElementById("btn-ride").addEventListener("click", () => setRiding(!state.riding));
-document.getElementById("btn-new").addEventListener("click", newTrack);
-document.getElementById("btn-cam").addEventListener("click", cycleCamera);
+document.getElementById("btn-ride").addEventListener("click", () => { armAudio(); setRiding(!state.riding); });
+document.getElementById("btn-new").addEventListener("click", () => { armAudio(); newTrack(); });
+document.getElementById("btn-cam").addEventListener("click", () => { armAudio(); cycleCamera(); });
+document.getElementById("btn-sound").addEventListener("click", () => setSound(!soundOn));
 
 window.addEventListener("keydown", (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const key = e.key.toLowerCase();
+  armAudio();
   if (key === "r") { setRiding(!state.riding); e.preventDefault(); }
   else if (key === "n") { newTrack(); e.preventDefault(); }
   else if (key === "c") { cycleCamera(); e.preventDefault(); }
+  else if (key === "m") { setSound(!soundOn); e.preventDefault(); }
 });
 
 const drag = { active: false, x: 0, y: 0, id: null };
 canvas.addEventListener("pointerdown", (e) => {
+  armAudio();
   drag.active = true;
   drag.x = e.clientX;
   drag.y = e.clientY;
@@ -950,7 +680,7 @@ canvas.addEventListener("pointercancel", endDrag);
 canvas.addEventListener("wheel", (e) => {
   if (state.camMode !== "orbit") return;
   e.preventDefault();
-  state.orbit.dist = Math.min(600, Math.max(45, state.orbit.dist * (1 + Math.sign(e.deltaY) * 0.11)));
+  state.orbit.dist = Math.min(650, Math.max(45, state.orbit.dist * (1 + Math.sign(e.deltaY) * 0.11)));
 }, { passive: false });
 
 // Pinch to zoom.
@@ -966,7 +696,7 @@ canvas.addEventListener("pointermove", (e) => {
   const [a, b] = [...touches.values()];
   const d = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
   if (pinchDist && state.camMode === "orbit") {
-    state.orbit.dist = Math.min(600, Math.max(45, state.orbit.dist * (pinchDist / d)));
+    state.orbit.dist = Math.min(650, Math.max(45, state.orbit.dist * (pinchDist / d)));
   }
   pinchDist = d;
 });
@@ -989,14 +719,36 @@ loadTrack(Number.isFinite(seedParam) ? seedParam : (Math.random() * 0xffffffff) 
 syncButtons();
 resize();
 
+const trainPos = new THREE.Vector3();
 let last = performance.now();
+let elapsed = 0;
 function frame(now) {
-  const dt = Math.min(0.1, (now - last) / 1000);
+  // Capped so a backgrounded tab cannot resume with a ten-second step.
+  // The cap is generous enough that a slow machine still runs the ride at
+  // a recognisable speed rather than in treacle.
+  const dt = Math.min(0.2, (now - last) / 1000);
   last = now;
+  elapsed += dt;
+  reviewQuality(dt);
+
   const ride = state.sim.step(dt);
-  updateTrain(ride);
+  updateTrain(ride, elapsed);
   updateCamera(ride, dt);
   updateHud(ride);
+  world.update(elapsed, dt);
+  for (const fn of state.trackUpdaters) fn(elapsed, dt);
+
+  if (soundOn) {
+    trainPos.set(ride.pos.x, ride.pos.y, ride.pos.z);
+    audio.update(rideMix({
+      v: ride.v,
+      gForce: ride.gForce,
+      mode: ride.mode,
+      riding: state.camMode === "pov" || state.camMode === "chase",
+      distance: camera.position.distanceTo(trainPos),
+    }), dt);
+  }
+
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }

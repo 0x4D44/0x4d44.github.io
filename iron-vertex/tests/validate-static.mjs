@@ -14,8 +14,10 @@ const appDir = normalize(join(here, ".."));
 const root = normalize(join(appDir, ".."));
 const htmlPath = join(appDir, "index.html");
 const trackPath = join(appDir, "track.js");
+const audioPath = join(appDir, "audio.js");
 const vendorPath = join(appDir, "three.module.min.js");
 const licensePath = join(appDir, "THREE-LICENSE.txt");
+const MODULES = ["track.js", "audio.js", "mesh.js", "scenery.js", "coaster.js"];
 const dataPath = join(root, "data.js");
 const indexPath = join(root, "index.html");
 
@@ -28,7 +30,9 @@ function check(condition, message) {
 }
 
 check(existsSync(htmlPath), "iron-vertex/index.html exists");
-check(existsSync(trackPath), "iron-vertex/track.js exists");
+for (const module of MODULES) {
+  check(existsSync(join(appDir, module)), `iron-vertex/${module} exists`);
+}
 check(existsSync(vendorPath), "three.js is vendored beside the document");
 check(existsSync(licensePath), "the vendored three.js keeps its MIT licence alongside it");
 
@@ -59,10 +63,22 @@ check(
   /from\s+["']\.\/three\.module\.min\.js["']/.test(html),
   "three.js is imported from the vendored copy, not a CDN",
 );
-check(
-  /from\s+["']\.\/track\.js["']/.test(html),
-  "the page imports the track engine as a module",
-);
+// mesh.js is shared plumbing pulled in by scenery.js and coaster.js rather
+// than by the page itself.
+for (const module of MODULES.filter((name) => name !== "mesh.js")) {
+  check(
+    new RegExp(`from\\s+["']\\./${module.replace(".", "\\.")}["']`).test(html),
+    `the page imports ./${module} as a module`,
+  );
+}
+
+// Every module is fetched with a relative path from this directory, so the
+// document stays a self-contained folder that can be copied anywhere.
+for (const module of MODULES) {
+  const source = readFileSync(join(appDir, module), "utf8");
+  const remote = [...source.matchAll(/from\s+["'](https?:)?\/\/[^"']+["']/g)].map((m) => m[0]);
+  check(remote.length === 0, `${module} imports nothing from another origin (${remote.join(", ")})`);
+}
 
 // ---- the engine stays free of the browser, so node can test it ----
 // Comments are stripped first: prose about "the window in which a loop
@@ -76,22 +92,40 @@ check(
   browserGlobals.length === 0,
   `track.js touches no browser globals — it must stay testable under node (found: ${browserGlobals.join(", ")})`,
 );
-for (const name of ["buildTrack", "CoasterSim", "supportColumns"]) {
+for (const name of ["buildTrack", "CoasterSim", "supportColumns", "selfClearance"]) {
   check(
     new RegExp(`export\\s+(?:function|class)\\s+${name}\\b`).test(track),
     `track.js exports ${name}`,
   );
 }
 
+// The sound is synthesised, not sampled: no audio file is fetched, and the
+// mixing decisions stay testable under node.
+const audio = existsSync(audioPath) ? readFileSync(audioPath, "utf8") : "";
+check(
+  !/\.(mp3|ogg|wav|m4a)\b/i.test(audio),
+  "audio.js loads no sound files — every voice is synthesised",
+);
+check(
+  /export\s+function\s+rideMix\b/.test(audio),
+  "audio.js exports the pure rideMix() the tests drive",
+);
+// An AudioContext may only be built inside a user gesture, so it must not
+// be constructed while the module is being evaluated.
+check(
+  !/^\s*(?:const|let|var)\s+\w+\s*=\s*new\s+(?:window\.)?(?:webkit)?AudioContext/m.test(audio),
+  "audio.js does not open an AudioContext at import time",
+);
+
 // ---- the controls the browser test drives ----
-for (const id of ["scene", "btn-ride", "btn-new", "btn-cam", "track-name", "notice",
-  "stat-speed", "stat-g", "stat-height", "stat-length"]) {
+for (const id of ["scene", "btn-ride", "btn-new", "btn-cam", "btn-sound", "track-name",
+  "track-facts", "notice", "stat-speed", "stat-g", "stat-height", "stat-length"]) {
   check(
     new RegExp(`id=["']${id}["']`).test(html),
     `#${id} exists in the page`,
   );
 }
-for (const id of ["btn-ride", "btn-new", "btn-cam"]) {
+for (const id of ["btn-ride", "btn-new", "btn-cam", "btn-sound"]) {
   const tag = html.match(new RegExp(`<([a-z]+)\\b(?=[^>]*id=["']${id}["'])[^>]*>`, "i"));
   check(tag?.[1]?.toLowerCase() === "button", `#${id} is a real <button>`);
   check(/aria-label=/.test(tag?.[0] ?? ""), `#${id} carries an accessible name`);
