@@ -467,6 +467,16 @@
     };
   };
 
+  DK.answerHint = function (ex) {
+    const ans = ex && Array.isArray(ex.choices) ? ex.choices[ex.a] || "" : "";
+    if (!ans) return "";
+    if (ex.choicesJp) {
+      const reading = DK.plain(DK.readingForm(ans));
+      return reading ? `The correct entry reads 「${DK.esc(reading)}」.` : "";
+    }
+    return `The correct answer is 「${DK.esc(ans)}」.`;
+  };
+
   // Exercises for a lesson session: authored first, then vocab drills.
   DK.buildSession = function (week, lesson) {
     // Per-session COPIES of the authored exercises: app.js writes transient play-state

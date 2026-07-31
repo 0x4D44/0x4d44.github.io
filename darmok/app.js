@@ -416,15 +416,8 @@
       if (ex.show) out.push(`In writing: ${DK.ruby(ex.show)}`);
     } else if (ex.t === "mc" || ex.t === "listen") {
       out.push("I have eliminated two incorrect options for you.");
-      const ans = ex.choices[ex.a] || "";
-      // Only the "reverse" MC has a Japanese answer that has a reading; "meaning" and
-      // "listen" answers are the English gloss, so don't mislabel English as a reading.
-      if (JP_RE.test(ans)) {
-        const rd = DK.plain(DK.readingForm(ans));
-        if (rd) out.push(`The correct entry reads 「${DK.esc(rd)}」.`);
-      } else if (ans) {
-        out.push(`The correct answer is 「${DK.esc(ans)}」.`);
-      }
+      const answerHint = DK.answerHint(ex);
+      if (answerHint) out.push(answerHint);
     } else if (ex.t === "build") {
       if (ex.tokens && ex.tokens[0]) out.push(`Begin with 「${DK.esc(ex.tokens[0])}」.`);
       if (ex.tokens && ex.tokens[1]) out.push(`Then 「${DK.esc(ex.tokens[1])}」 comes next.`);
