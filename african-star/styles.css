@@ -994,3 +994,12 @@ dialog::backdrop { background: rgba(5,25,26,.73); backdrop-filter: blur(7px); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; }
 }
+
+
+/* Clear the fixed "← Almanac" pill. /almanac-back.js pins it to the viewport's
+   top-left, [0,0 109x41], with a z-index no document can beat, so a control
+   underneath is not merely obscured -- it is untappable, and the tap navigates
+   to the catalog instead (ALM-BUG-KILN-00039). A masthead wordmark lands there
+   naturally. Unconditional, because the pill sits in the same place at every
+   width. Guarded by tests/responsive.test.mjs. */
+.topbar { padding-left: 112px; }

@@ -468,3 +468,12 @@ h1,h2,h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.04
 .reveal-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s cubic-bezier(.2,.8,.2,1); }
 .reveal-up.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce){ .reveal-up { opacity:1; transform:none; } }
+
+
+/* Clear the fixed "← Almanac" pill. /almanac-back.js pins it to the viewport's
+   top-left, [0,0 109x41], with a z-index no document can beat, so a control
+   underneath is not merely obscured -- it is untappable, and the tap navigates
+   to the catalog instead (ALM-BUG-KILN-00039). A masthead wordmark lands there
+   naturally. Unconditional, because the pill sits in the same place at every
+   width. Guarded by tests/responsive.test.mjs. */
+.topbar .wrap { padding-left: 112px; }

@@ -40,8 +40,11 @@
   }
 
   /* ---- title block (no panel; floats on space) ---- */
+  /* top: 52px clears the fixed "← Almanac" pill (viewport [0,0 109x41]);
+     dropping the block is less disruptive here than indenting it, because
+     the masthead floats over the canvas rather than sitting in a bar. */
   .masthead {
-    position: absolute; top: 22px; left: 26px;
+    position: absolute; top: 52px; left: 26px;
     max-width: 380px;
     text-shadow: 0 1px 12px rgba(5, 8, 15, 0.9);
     pointer-events: none;
