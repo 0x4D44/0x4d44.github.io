@@ -9,9 +9,11 @@ import assert from "node:assert/strict";
 
 import {
   G,
+  MIN_SELF_CLEARANCE,
   CoasterSim,
   buildTrack,
   mulberry32,
+  selfClearance,
   supportColumns,
   trackName,
   verifyCircuit,
@@ -240,6 +242,92 @@ test("loops are inverted, and never propped up by a column", () => {
   }
   assert.ok(inverted > SEEDS.length * 0.3,
     `only ${inverted}/${SEEDS.length} circuits got a loop — generation is too timid`);
+});
+
+test("selfClearance ignores neighbours but sees a real crossing", () => {
+  // A flat figure-of-eight: consecutive samples are millimetres apart and
+  // must be ignored, but the two arms genuinely cross at the origin.
+  const n = 400;
+  const eight = Array.from({ length: n }, (_, i) => {
+    const t = (i / n) * Math.PI * 2;
+    return { x: Math.sin(t) * 60, y: 0, z: Math.sin(t * 2) * 30 };
+  });
+  const ds = vlen(vsub(eight[1], eight[0]));
+  assert.ok(selfClearance(eight, ds).distance < 1.0, "the crossing at the origin was missed");
+
+  // A stadium: two straights 8m apart, joined by tight turns. The
+  // straights are far apart along the circuit and must be measured; the
+  // turns double back inside the ignore window and must not be.
+  const stadium = [];
+  for (let i = 0; i < 120; i++) stadium.push({ x: -50 + i, y: 0, z: 4 });
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI;
+    stadium.push({ x: 70 + Math.sin(a) * 4, y: 0, z: Math.cos(a) * 4 });
+  }
+  for (let i = 0; i < 120; i++) stadium.push({ x: 70 - i, y: 0, z: -4 });
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI;
+    stadium.push({ x: -50 - Math.sin(a) * 4, y: 0, z: -Math.cos(a) * 4 });
+  }
+  const straightGap = selfClearance(stadium, 1).distance;
+  assert.ok(Math.abs(straightGap - 8) < 0.5, `parallel straights measured ${straightGap.toFixed(2)}m apart, expected 8`);
+
+  // A plain convex circuit never doubles back, so the only pairs left
+  // once neighbours are ignored are a full ignore-window apart — nothing
+  // spurious, however finely it is sampled.
+  const circle = Array.from({ length: 500 }, (_, i) => {
+    const t = (i / 500) * Math.PI * 2;
+    return { x: Math.cos(t) * 80, y: 0, z: Math.sin(t) * 80 };
+  });
+  assert.ok(
+    selfClearance(circle, vlen(vsub(circle[1], circle[0]))).distance > 15,
+    "a circle was reported as colliding with itself",
+  );
+});
+
+test("no stretch of track ever passes through another", () => {
+  // The loop is the one element that brings the track back over itself.
+  // Drawn in a single vertical plane its two legs occupy the same space
+  // at the bottom — which is exactly what the splay in spliceLoop, and
+  // the clearance gate in assemble(), exist to prevent.
+  for (const seed of SEEDS) {
+    const t = buildTrack(seed);
+    const near = selfClearance(t.points, t.ds);
+    assert.ok(
+      near.distance >= MIN_SELF_CLEARANCE,
+      `seed ${seed}: track passes within ${near.distance.toFixed(2)}m of itself `
+        + `(samples ${near.i}/${near.j} of ${t.points.length})`,
+    );
+    assert.ok(
+      t.clearance >= MIN_SELF_CLEARANCE,
+      `seed ${seed}: reported clearance ${t.clearance} disagrees with the measurement`,
+    );
+  }
+});
+
+test("a loop's legs pass beside each other, not through", () => {
+  let checked = 0;
+  for (const seed of SEEDS.slice(0, 60)) {
+    const t = buildTrack(seed);
+    if (!t.loop) continue;
+    checked += 1;
+    // On a looping circuit the tightest approach is always the loop's own
+    // two legs at the crossing point, where they sit at the same height
+    // by construction. So the gap between them has to be a SIDEWAYS one:
+    // if the clearance came from a height difference the loop would be
+    // planar again, and a planar loop is one that runs through itself.
+    const near = selfClearance(t.points, t.ds);
+    const a = t.points[near.i];
+    const b = t.points[near.j];
+    const dy = Math.abs(a.y - b.y);
+    const horizontal = Math.hypot(a.x - b.x, a.z - b.z);
+    assert.ok(dy < 2.5, `seed ${seed}: closest pair differs in height by ${dy.toFixed(2)}m`);
+    assert.ok(
+      horizontal >= MIN_SELF_CLEARANCE,
+      `seed ${seed}: the legs are only ${horizontal.toFixed(2)}m apart sideways`,
+    );
+  }
+  assert.ok(checked > 10, `only ${checked} looping circuits to check`);
 });
 
 test("support columns reach the ground and skip inverted track", () => {

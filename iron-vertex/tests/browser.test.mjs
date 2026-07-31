@@ -254,8 +254,20 @@ try {
     }, 60_000);
     assert.ok(climbed > 5, `${width}x${height}: the train never left the ground`);
 
+    // ---- the ride card says what the generator actually built ----
+    const facts = await evaluate(`document.getElementById("track-facts").textContent.trim()`);
+    assert.match(facts, /\d+\s*m drop/, `${width}x${height}: no drop height on the ride card (${facts})`);
+    assert.match(facts, /\d+\s*km\/h/, `${width}x${height}: no top speed on the ride card (${facts})`);
+    assert.match(facts, /inversion/, `${width}x${height}: no inversion count on the ride card (${facts})`);
+    // The clearance figure is the whole point of the collision check: it
+    // must be a real measurement, and it must be a safe one.
+    const clearance = facts.match(/([\d.]+)\s*m clearance/);
+    assert.ok(clearance, `${width}x${height}: no clearance figure on the ride card (${facts})`);
+    assert.ok(Number(clearance[1]) >= 3.4,
+      `${width}x${height}: track passes within ${clearance[1]}m of itself`);
+
     // ---- every control is where it looks, and hittable ----
-    for (const id of ["btn-ride", "btn-new", "btn-cam"]) {
+    for (const id of ["btn-ride", "btn-new", "btn-cam", "btn-sound"]) {
       const reachable = await evaluate(`(() => {
         const el = document.getElementById(${JSON.stringify(id)});
         const r = el.getBoundingClientRect();
@@ -282,6 +294,32 @@ try {
       modes.push(await evaluate(`document.getElementById("btn-cam").textContent.trim()`));
     }
     assert.equal(new Set(modes).size, 3, `${width}x${height}: camera did not cycle (${modes.join(", ")})`);
+
+    // ---- sound toggles, says so, and is remembered ----
+    //
+    // Web Audio will not start outside a user gesture, so this is also the
+    // check that the page asks for it from inside a click rather than at
+    // boot — an AudioContext opened at load time would sit suspended and
+    // the ride would be silent.
+    const before = await evaluate(`document.getElementById("btn-sound").textContent.trim()`);
+    assert.match(before, /off/i, `${width}x${height}: sound did not start off (${before})`);
+    await evaluate(`document.getElementById("btn-sound").click()`);
+    await delay(300);
+    const after = await evaluate(`document.getElementById("btn-sound").textContent.trim()`);
+    assert.match(after, /on/i, `${width}x${height}: sound did not turn on (${after})`);
+    assert.equal(
+      await evaluate(`localStorage.getItem("0x4d44.iron-vertex.sound")`), "on",
+      `${width}x${height}: the sound preference was not remembered`,
+    );
+    // Let a couple of seconds of audio run: a bad node graph throws here,
+    // not at the click.
+    await delay(1200);
+    await evaluate(`document.getElementById("btn-sound").click()`);
+    await delay(200);
+    assert.match(
+      await evaluate(`document.getElementById("btn-sound").textContent.trim()`), /off/i,
+      `${width}x${height}: sound did not turn back off`,
+    );
 
     // ---- a new track really is a different track ----
     const firstName = built.name;
