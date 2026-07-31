@@ -336,6 +336,54 @@ try {
     }
     assert.ok(changed, `${width}x${height}: six new tracks all came out named "${firstName}"`);
 
+    // ---- the riders can actually be HEARD ----
+    //
+    // The first version of this synthesised its screams perfectly and
+    // buried them 25dB under the wheels and the wind, which no test
+    // noticed because every test asked whether the voices FIRED. So
+    // render the real graph into an OfflineAudioContext and measure it:
+    // a scream has to be at least as loud as the train it is competing
+    // with, and the two together must not clip.
+    if (width > 500) {
+      const levels = await evaluate(`(async () => {
+        const mod = await import("/iron-vertex/audio.js");
+        const SR = 44100;
+        async function render(drive) {
+          const offline = new OfflineAudioContext(1, SR * 3, SR);
+          const saved = window.AudioContext;
+          window.AudioContext = function () { return offline; };
+          const audio = new mod.RideAudio();
+          audio.start();
+          window.AudioContext = saved;
+          Object.defineProperty(offline, "state", { value: "running", configurable: true });
+          drive(audio);
+          const data = (await offline.startRendering()).getChannelData(0);
+          let peak = 0;
+          for (let i = 0; i < data.length; i++) peak = Math.max(peak, Math.abs(data[i]));
+          return peak;
+        }
+        // Flat out but level, so update() drives the wheels and the wind
+        // without triggering a scream of its own — otherwise "the train"
+        // would include the very thing it is being compared against.
+        const cruise = mod.rideMix({ v: 28, gForce: 1, mode: "free", riding: true, pitch: 0 });
+        return {
+          excitement: cruise.excitement,
+          train: await render((a) => a.update(cruise, 1 / 60)),
+          scream: await render((a) => a.scream(1)),
+          both: await render((a) => { a.update(cruise, 1 / 60); a.scream(1); }),
+        };
+      })()`);
+      assert.equal(levels.excitement, 0,
+        `${width}x${height}: the reference "train only" mix screams too, so the comparison is void`);
+      assert.ok(levels.train > 0.05,
+        `${width}x${height}: the train makes no sound at all (peak ${levels.train})`);
+      assert.ok(levels.scream > levels.train,
+        `${width}x${height}: a scream (peak ${levels.scream.toFixed(3)}) is quieter than the `
+          + `wheels and wind it has to cut through (${levels.train.toFixed(3)})`);
+      assert.ok(levels.both < 1,
+        `${width}x${height}: train and screams together clip at ${levels.both.toFixed(3)}`);
+    }
+
     // ---- the page never scrolls sideways ----
     const overflow = await evaluate(
       `document.documentElement.scrollWidth - document.documentElement.clientWidth`,

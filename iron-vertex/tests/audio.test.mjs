@@ -9,6 +9,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { FAST, RideAudio, rideMix } from "../audio.js";
+import { CoasterSim, buildTrack } from "../track.js";
 
 test("silence when nothing is moving", () => {
   const mix = rideMix({ v: 0, gForce: 1, mode: "station", riding: false, distance: 0 });
@@ -109,6 +110,87 @@ test("a magnetic launch hums, and only on the launch", () => {
   }
   // Chain circuits never produce one at all.
   assert.equal(rideMix({ v: 5, mode: "lift" }).launch, 0);
+});
+
+// A stand-in AudioContext, so the scheduling half of RideAudio can be
+// driven under node. It records nothing about SOUND — that needs a real
+// browser, and browser.test.mjs renders the graph offline and measures it
+// — but it does prove the voices are triggered, which is the half that
+// silently stopped happening would be hardest to notice.
+function stubAudioContext() {
+  const param = () => ({
+    value: 0,
+    setValueAtTime() { return this; },
+    setTargetAtTime() { return this; },
+    exponentialRampToValueAtTime() { return this; },
+    linearRampToValueAtTime() { return this; },
+    cancelScheduledValues() { return this; },
+  });
+  const node = () => ({
+    connect(next) { return next; },
+    disconnect() {},
+    start() {}, stop() {},
+    type: "", buffer: null, loop: false,
+    frequency: param(), Q: param(), gain: param(), detune: param(),
+    playbackRate: param(), threshold: param(), knee: param(), ratio: param(),
+    attack: param(), release: param(),
+  });
+  return class {
+    constructor() {
+      this.state = "running";
+      this.currentTime = 0;
+      this.sampleRate = 48000;
+      this.destination = node();
+    }
+    createGain() { return node(); }
+    createOscillator() { return node(); }
+    createBufferSource() { return node(); }
+    createBiquadFilter() { return node(); }
+    createDynamicsCompressor() { return node(); }
+    createBuffer(channels, length) { return { getChannelData: () => new Float32Array(length) }; }
+    resume() { return Promise.resolve(); }
+  };
+}
+
+test("a real lap makes the riders shout, more than once and not constantly", () => {
+  const saved = globalThis.window;
+  globalThis.window = { AudioContext: stubAudioContext() };
+  try {
+    const audio = new RideAudio();
+    assert.ok(audio.start(), "the stub context was refused");
+    audio.setMuted(false);
+
+    const screams = [];
+    const inner = audio.scream.bind(audio);
+    audio.scream = (intensity) => { screams.push(intensity); inner(intensity); };
+
+    // Two laps of a real circuit, driven by the real sim.
+    const track = buildTrack(20260726);
+    const sim = new CoasterSim(track);
+    const dt = 1 / 60;
+    let laps = 0;
+    for (let i = 0; i < 60 * 150 && laps < 2; i++) {
+      const ride = sim.step(dt);
+      audio.ctx.currentTime += dt;
+      audio.update(rideMix({
+        v: ride.v, gForce: ride.gForce, mode: ride.mode,
+        pitch: ride.fwd.y, inverted: ride.up.y < -0.2, riding: true,
+      }), dt);
+      laps = sim.laps;
+    }
+
+    assert.ok(screams.length >= 4,
+      `only ${screams.length} screams in two laps — the riders have gone quiet`);
+    assert.ok(screams.length < 120,
+      `${screams.length} screams in two laps is a continuous howl, not a reaction`);
+    for (const intensity of screams) {
+      assert.ok(intensity > 0.3 && intensity <= 1,
+        `a scream fired at intensity ${intensity}`);
+    }
+  } finally {
+    if (saved === undefined) delete globalThis.window;
+    else globalThis.window = saved;
+  }
 });
 
 test("RideAudio degrades to silence rather than throwing", () => {
