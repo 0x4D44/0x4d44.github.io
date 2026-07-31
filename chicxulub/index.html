@@ -181,7 +181,7 @@
   .lab-body { padding: 1.3rem; }
 
   .controls { display: grid; gap: 1.1rem 1.6rem; }
-  @media (min-width: 620px){ .controls.two { grid-template-columns: 1fr 1fr; } }
+  @media (min-width: 620px){ .controls.two { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
   .ctl { display: flex; flex-direction: column; gap: 0.4rem; }
   .ctl label {
     font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em;
@@ -241,7 +241,7 @@
   }
   .tl-stop[aria-pressed=true] { background: var(--fire); color: #120a06; border-color: var(--fire); font-weight: 700; }
   .tl-panel { margin-top: 1.2rem; display: grid; gap: 1.2rem; }
-  @media (min-width: 720px){ .tl-panel { grid-template-columns: 1.1fr 1fr; align-items: start; } }
+  @media (min-width: 720px){ .tl-panel { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); align-items: start; } }
   .tl-when { font-family: var(--font-mono); color: var(--ember); font-size: 0.82rem; letter-spacing: 0.14em; text-transform: uppercase; }
   .tl-h { font-family: var(--font-display); font-size: 1.5rem; color: var(--bright); margin: 0.3rem 0 0.7rem; }
 
@@ -256,6 +256,16 @@
   .escale .mk.hi .cap { color: var(--gold); }
   .escale .mk.up .cap { position: absolute; bottom: 44px; left: 0; right: 0; }
   .escale .mk.up .dot { margin-top: 30px; }
+  /* Each marker is a 90px box centred on its point, so the one at left:100%
+     hangs 45px past the scale and, on a phone, past the page. Pull the two
+     outermost captions back inside; the dots stay on their true positions.
+     The clip is the backstop -- caption shifts depend on the outermost marker
+     really being first/last in document order. */
+  @media (max-width: 900px) {
+    .escale { overflow-x: clip; }
+    .escale .mk:last-child  .cap { transform: translateX(-24px); }
+    .escale .mk:first-child .cap { transform: translateX(24px); }
+  }
 
   /* survivors grid */
   .taxa { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 0.7rem; margin-top: 1.4rem; }
@@ -278,7 +288,7 @@
 
   /* K-Pg column */
   .kpg { display: grid; gap: 1.2rem; }
-  @media (min-width: 720px){ .kpg { grid-template-columns: 200px 1fr; align-items: stretch; } }
+  @media (min-width: 720px){ .kpg { grid-template-columns: 200px minmax(0, 1fr); align-items: stretch; } }
   .kpg-col { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid var(--hair); min-height: 360px; cursor: crosshair; }
   .kpg-read { display: flex; flex-direction: column; justify-content: center; }
   .kpg-layer-name { font-family: var(--font-display); font-size: 1.4rem; color: var(--bright); }

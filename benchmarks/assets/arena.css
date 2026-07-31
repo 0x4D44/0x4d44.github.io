@@ -116,6 +116,13 @@ em { color: var(--ink-bright); }
 .grn { color: var(--green); }
 .small { font-size: 13px; }
 
+/* The BIOS boot log is white-space:pre, so its lines keep their full width no
+   matter how narrow the box is. With overflow visible that content spilled out
+   of the header and dragged the whole page sideways ~110px on a phone -- and
+   invisibly, because the <pre>'s own border box still measured 358px. Let the
+   log scroll inside itself instead. */
+pre { overflow-x: auto; }
+
 .cursor::after {
   content: "█"; margin-left: 2px; color: var(--green);
   animation: blink 1.05s steps(1) infinite;
@@ -282,7 +289,7 @@ input[type="range"].tslider::-moz-range-thumb {
 .footnote { font-size: 12.5px; color: var(--ink-dim); border-top: 1px dotted var(--green-faint); padding-top: 10px; margin-top: 26px; max-width: 80ch; }
 
 @media (max-width: 720px) {
-  a.chapter-card { grid-template-columns: 56px 1fr; }
+  a.chapter-card { grid-template-columns: 56px minmax(0, 1fr); }
   a.chapter-card .ch-go { display: none; }
   a.chapter-card .ch-num { font-size: 40px; }
   .wrap { padding: 0 16px 70px 16px; }

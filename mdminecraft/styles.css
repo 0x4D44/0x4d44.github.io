@@ -1206,23 +1206,23 @@ body {
 
 /* responsive */
 @media (max-width: 1080px) {
-  .biome-grid { grid-template-columns: repeat(4, 1fr); }
+  .biome-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 880px) {
   .hero-grid, .world-demo, .det-grid, .tools, .testing, .net, .footer-grid, .status-grid, .hero-stats {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
-  .section-header { grid-template-columns: 1fr; gap: 12px; }
-  .biome-grid { grid-template-columns: repeat(2, 1fr); }
-  .perf-row { grid-template-columns: 1fr; gap: 8px; padding: 16px; }
+  .section-header { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .biome-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .perf-row { grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 16px; }
   .perf-row.header { display: none; }
   .hero { padding: 56px 0 40px; }
   .section { padding: 64px 0; }
   .section-title { font-size: 32px; }
-  .arch-layer { grid-template-columns: 1fr; gap: 10px; }
+  .arch-layer { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .arch-layer-label { border: 0; padding: 0; }
-  .phase { grid-template-columns: 1fr; gap: 10px; }
+  .phase { grid-template-columns: minmax(0, 1fr); gap: 10px; }
   .nav-links { display: none; }
-  .harness-body { grid-template-columns: 1fr; }
+  .harness-body { grid-template-columns: minmax(0, 1fr); }
   .harness-pane:first-child { border-right: 0; border-bottom: 1px solid var(--rule); }
 }

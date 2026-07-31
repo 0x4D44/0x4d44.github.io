@@ -151,6 +151,12 @@ p{line-height:1.62;color:var(--ink-2);}
 .nav-links a.cur::after{content:"";position:absolute;left:13px;right:13px;bottom:3px;height:1px;background:var(--cyan);box-shadow:0 0 8px var(--cyan);}
 .nav-coord{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);letter-spacing:.08em;display:flex;gap:14px;}
 @media(max-width:760px){.nav-coord{display:none;}.nav-links a{padding:9px 9px;font-size:10.5px;letter-spacing:.08em;}}
+/* Six section links plus the wordmark need ~570px in one row; below that the
+   bar has to wrap or it pushes the page sideways. */
+@media(max-width:900px){
+  .nav-in{flex-wrap:wrap;height:auto;padding:10px 16px;gap:8px 14px;}
+  .nav-links{flex-wrap:wrap;margin-left:0;}
+}
 
 /* ---- stat readout ---- */
 .stat-val{font-family:var(--display);font-weight:600;line-height:1;letter-spacing:-0.02em;}

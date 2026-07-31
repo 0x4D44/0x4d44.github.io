@@ -979,7 +979,7 @@ footer .meta { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: 
 /* Phones. The block above stops at tablet width, so every fixed-px track
    below still sat at its desktop size on a 390px screen and pushed the page
    sideways by ~430px. Each rule here drops a track that cannot shrink. */
-@media (max-width: 720px) {
+@media (max-width: 900px) {
   /* seven mono links will not sit beside the wordmark */
   .masthead { flex-wrap: wrap; gap: 12px; }
   .mast-nav { flex-wrap: wrap; gap: 12px 16px; }
