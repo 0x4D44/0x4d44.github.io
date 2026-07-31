@@ -56,7 +56,7 @@ human-invoked review triages these — don't fix them inline.
   thing" — several fixes needed their breakpoint raised from ~700-760px to 900px before
   768 was clean, so the tablet cases are the same layouts, not a separate set.
 
-- [ ] 2026-07-31 — **16 documents put content under the fixed "← Almanac" pill** at 390px,
+- [x] 2026-07-31 — **16 documents put content under the fixed "← Almanac" pill** at 390px,
   and in 7 of them the covered element is a link, so it is untappable and the tap navigates
   to the catalog instead (the ALM-BUG-KILN-00039 failure mode). Measured against the pill's
   real box, `[0,0,109,41]`: `mddosem`, `rci-fleet`, `benchmarks`, `picoem`, `win2k`,
@@ -67,6 +67,16 @@ human-invoked review triages these — don't fix them inline.
   work — measured identical before and after, bar `rust-field-guide` improving 2→1 and
   `ropus` gaining one non-interactive span. The established fix is the one in
   `instruments/piano.css`: a left inset on the masthead that clears the pill.
+  **Done 2026-07-31 — and it was 49 documents, not 16.** The count above came from a
+  hand-rolled probe that skipped any element wider than 300px, which is exactly the shape
+  of a masthead link; a proper assertion in `tests/responsive.test.mjs` found 33 more.
+  Fixed two ways: 11 documents were shipping their *own* back link to the almanac, which
+  both duplicated the shared pill and sat under it, so those are gone (CLAUDE.md: "same
+  tab, one back button"); the rest are the document's own title or controls and take a
+  112px inset. `onu` showed why the inset is not universal — 112px of header padding
+  pushed its own 360px browser test 31px over, and its logo turned out to be a link to
+  the almanac, so unwrapping it cost no layout at all. Now guarded at 390 and 768 on
+  every document.
 
 - [ ] 2026-07-30 — `lessons_learnt.md` is over its 20-entry cap and the SessionStart hook
   now truncates it, so the oldest entries no longer reach any agent. Worth a
