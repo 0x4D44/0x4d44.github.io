@@ -1,24 +1,24 @@
 # ALM-BUG-KILN-00004 — Tidecall game board overflows the viewport and scrolls (all responsive tiers)
 
-- **State:** Open
+- **State:** Fixed
 - **Priority:** Should
 - **Severity:** Medium
 - **Area:** tidecall
 - **Raised:** 2026-07-11
-- **Owner:** deltic:manual
-- **Owner role:** fix
-- **Owner run:** fix-20260731T175817Z-p33922-n748114000-c1
-- **Owner host:** flux
-- **Owner branch:** task/bug-ALM-BUG-KILN-00004-run-fix-20260731T175817Z-p33922-n748114000-c1
-- **Owner base:** f1f2bcb66aed7dbb8fad6bf9cd5d1364f6393d0a
+- **Owner:** -
+- **Owner role:** -
+- **Owner run:** -
+- **Owner host:** -
+- **Owner branch:** -
+- **Owner base:** -
 - **Owner fingerprint:** -
-- **Owner since:** 2026-07-31T17:58:17Z
-- **Owner until:** 2026-07-31T19:58:17Z
+- **Owner since:** -
+- **Owner until:** -
 - **Verify retry after:** -
 - **Held branch:** -
 - **Legacy fixed run:** -
-- **Attempts:** fix=1, doubt=0, indeterminate=0
-- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification) -> Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the 2026-07-21 pass added a regression guard but changed NO shipped code, so the cause recorded at the 2026-07-13 reopen is untouched)
+- **Attempts:** fix=0, doubt=0, indeterminate=0
+- **State history:** Open (2026-07-11, raised by Claude — found during the mobile-cards/flicker work) -> Fixed (2026-07-11, fixed by Claude in e593362; awaiting independent verification) -> Open (2026-07-13, REOPENED by Claude on independent verification — the original symptom still reproduces; the ledger's "0/0/0" was a single lucky sample) -> Fixed (2026-07-21, fixed by Claude on branch claude/bugs-queue-2q-drain-0sv3oa; awaiting independent verification) -> Open (2026-07-30, REOPENED by Claude on independent verification — the 2026-07-21 pass added a regression guard but changed NO shipped code, so the cause recorded at the 2026-07-13 reopen is untouched) -> Fixed (2026-07-31, deltic:auto role=fix run=fix-20260731T175817Z-p33922-n748114000-c1 branch=task/bug-ALM-BUG-KILN-00004-run-fix-20260731T175817Z-p33922-n748114000-c1 code=6bcda3e5294506c5ee219c60598c14d78fac7d65 gate=manual)
 
 ## Observation
 Repro over `http://localhost:8000/tidecall/`: start a voyage and view the game board.
