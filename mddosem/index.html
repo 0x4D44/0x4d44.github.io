@@ -69,6 +69,16 @@
   #app { position: relative; z-index: 1; }
   /* Reusable */
   .container { max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+  /* Clear the fixed "← Almanac" pill. /almanac-back.js injects it at the
+     viewport's top-left, occupying [0,0 109x41] with a z-index nothing here can
+     beat, so whatever sits under it is obscured -- and if interactive, it is
+     untappable: the tap navigates to the catalog instead (ALM-BUG-KILN-00039).
+     A masthead wordmark naturally lands exactly there. Unconditional, not
+     phone-scoped: the pill is at the same place at every width, and this header
+     was measured covered at 1200px too. */
+  /* the inset goes on the wordmark, not the row: the row wraps on narrow
+     screens, and padding it would indent the section links too */
+  .nav-row > a:first-child { margin-left: 96px; }
   .eyebrow {
     font-family: var(--mono);
     font-size: 11px;

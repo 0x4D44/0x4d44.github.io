@@ -60,7 +60,7 @@ body {
 /* ---- top nav ---- */
 .arena-nav {
   display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
-  padding: 16px 0 12px 0;
+  padding: 16px 0 12px 96px;
   border-bottom: 1px dashed var(--green-soft);
   margin-bottom: 36px;
   font-size: 13px; letter-spacing: 0.06em; line-height: 1.2;

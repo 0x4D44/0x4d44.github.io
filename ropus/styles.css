@@ -63,7 +63,7 @@ code, pre, .mono { font-family: var(--font-mono); }
 .nav {
   position: sticky; top: 0; z-index: 50;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 32px;
+  padding: 16px 32px 16px 112px;
   background: color-mix(in oklch, var(--bg) 80%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -692,7 +692,9 @@ code, pre, .mono { font-family: var(--font-mono); }
   .perf-row { grid-template-columns: minmax(0, 1fr) 56px; gap: 6px 12px; }
   .perf-row .label { grid-column: 1 / -1; }
   /* the nowrap logo plus the links needs every pixel of a 390px bar */
-  .nav { padding: 16px 16px; }
+  /* wrap, because the 112px pill clearance plus a nowrap logo and the CTA
+     need ~440px in one row and a phone has 390px */
+  .nav { padding: 16px 16px 16px 112px; flex-wrap: wrap; row-gap: 10px; }
 }
 .footer h4 { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 14px; }
 .footer ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
