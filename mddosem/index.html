@@ -123,6 +123,30 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 0; }
   ::-webkit-scrollbar-thumb:hover { background: var(--amber); }
+
+  /* ---- Narrow screens --------------------------------------------------
+     The sections are laid out with inline React styles, so a stylesheet rule
+     can only reach them with !important — an inline style attribute outranks
+     any selector. The classes exist purely as hooks for this block.
+
+     Two shapes of fix, picked per element:
+       - editorial two-column splits collapse to one column;
+       - the five-column data tables keep their columns and scroll inside
+         their own box, because squeezing an address/opcode table into 358px
+         makes it unreadable rather than responsive.                      */
+  @media (max-width: 760px) {
+    .container { padding: 0 16px; }
+
+    /* the seven section links no longer fit beside the wordmark */
+    .nav-row { flex-wrap: wrap; height: auto !important; padding: 10px 0; gap: 8px; }
+    .nav-links { flex-wrap: wrap; }
+
+    .two-col { grid-template-columns: minmax(0, 1fr) !important; gap: 24px !important; }
+    .stat4 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+    .tablewrap { overflow-x: auto !important; overflow-y: hidden; }
+    .row5 { min-width: 620px; }
+  }
 </style>
 </head>
 <body>

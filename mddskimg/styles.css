@@ -961,13 +961,73 @@ footer .meta { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: 
   font-family: "IBM Plex Mono", monospace;
 }
 
-/* responsive-ish */
+/* responsive-ish.
+   minmax(0, 1fr) throughout, not a bare 1fr: 1fr means minmax(auto, 1fr), and
+   that `auto` floor is the item's min-content width. The install cards hold
+   shell commands, so a bare 1fr inflates the single column back past the
+   viewport instead of collapsing it. */
 @media (max-width: 1080px) {
-  .hero { grid-template-columns: 1fr; }
-  .pipeline { grid-template-columns: repeat(2, 1fr); }
-  .grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
-  .fs-matrix { grid-template-columns: 1fr; }
-  .fuzz-wrap { grid-template-columns: 1fr; }
-  .install { grid-template-columns: 1fr; }
-  footer { grid-template-columns: 1fr 1fr; }
+  .hero { grid-template-columns: minmax(0, 1fr); }
+  .pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid.cols-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fs-matrix { grid-template-columns: minmax(0, 1fr); }
+  .fuzz-wrap { grid-template-columns: minmax(0, 1fr); }
+  .install { grid-template-columns: minmax(0, 1fr); }
+  footer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Phones. The block above stops at tablet width, so every fixed-px track
+   below still sat at its desktop size on a 390px screen and pushed the page
+   sideways by ~430px. Each rule here drops a track that cannot shrink. */
+@media (max-width: 720px) {
+  /* seven mono links will not sit beside the wordmark */
+  .masthead { flex-wrap: wrap; gap: 12px; }
+  .mast-nav { flex-wrap: wrap; gap: 12px 16px; }
+  .term-chrome .tabs { flex-wrap: wrap; gap: 10px; }
+
+  /* every multi-column layout becomes a single column */
+  .hero-stats,
+  .pipeline,
+  .fs-detail .caps-grid,
+  .fs-detail .meta,
+  .txn-wrap,
+  .grid.cols-2,
+  .grid.cols-3,
+  .grid.cols-4,
+  .callouts,
+  .split-2,
+  .cvf-stack,
+  footer { grid-template-columns: minmax(0, 1fr); }
+
+  /* 280px 1fr — the filesystem list stacks above its detail pane */
+  .fs-matrix { grid-template-columns: minmax(0, 1fr); }
+
+  /* 1.2fr 1fr — the code sample on the right has no room to be a column */
+  .pipe-detail { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 22px 18px; }
+  .pipe-detail .right { padding-left: 0; border-left: none; }
+
+  /* 200px 1fr 200px */
+  .tier { grid-template-columns: minmax(0, 1fr); }
+  .tier .col { border-right: none; border-bottom: 1px solid var(--rule); }
+  .tier .col:last-child { border-bottom: none; }
+
+  /* 60px 1fr 220px — the requirement chip moves under the description */
+  .phase { grid-template-columns: 44px minmax(0, 1fr); }
+  .phase .req { grid-column: 2; padding-top: 0; border-left: none; }
+
+  /* Row grids with a header strip: one field per line, so the header stops
+     meaning anything and is dropped rather than squeezed to nothing. */
+  .backlog .head,
+  .platform-table .head { display: none; }
+  .backlog .item,
+  .platform-table .row { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+
+  /* six fuzz-target names per row need ~490px of min-content; three fit */
+  .fuzz-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .fuzz-cell { overflow-wrap: anywhere; }
+
+  /* flex:1 still floors each state at its min-content ("COMMITTED" ≈ 102px),
+     so four abreast need ~410px. Two rows of two. */
+  .txn-states { flex-wrap: wrap; }
+  .txn-state { flex: 1 1 50%; min-width: 0; }
 }

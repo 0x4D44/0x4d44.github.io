@@ -5,7 +5,7 @@ function Hero() {
   return (
     <section id="top" style={{ borderTop: "none", paddingTop: 56, paddingBottom: 56 }}>
       <Container>
-        <div style={{
+        <div className="two-col" style={{
           display: "grid", gridTemplateColumns: "minmax(0, 1.05fr) minmax(0, 1fr)",
           gap: 56, alignItems: "center",
         }}>
@@ -41,7 +41,7 @@ function Hero() {
               <a href="#purpose" className="btn">Why it exists</a>
             </div>
 
-            <div style={{
+            <div className="stat4" style={{
               marginTop: 48,
               display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12,
             }}>
@@ -191,7 +191,7 @@ function HardwareSection() {
           display: "grid",
           gridTemplateColumns: "minmax(220px, 0.9fr) 1fr",
           gap: 24, alignItems: "center",
-        }}>
+        }} className="two-col">
           <div>
             <Eyebrow>JIT design</Eyebrow>
             <div style={{ marginTop: 8, fontSize: 17, fontWeight: 600 }}>x86-16/32 → x86-64, on demand.</div>
@@ -210,7 +210,7 @@ function HardwareSection() {
           display: "grid",
           gridTemplateColumns: "minmax(220px, 0.9fr) 1fr",
           gap: 24, alignItems: "center",
-        }}>
+        }} className="two-col">
           <div>
             <Eyebrow>FPU design</Eyebrow>
             <div style={{ marginTop: 8, fontSize: 17, fontWeight: 600 }}>80387 stored in f64, with caveats.</div>
@@ -229,7 +229,7 @@ function HardwareSection() {
           display: "grid",
           gridTemplateColumns: "minmax(220px, 0.9fr) 1fr",
           gap: 24, alignItems: "center",
-        }}>
+        }} className="two-col">
           <div>
             <Eyebrow>HLE interrupts</Eyebrow>
             <div style={{ marginTop: 8, fontSize: 17, fontWeight: 600 }}>F000 stubs that escape into Rust.</div>
@@ -257,7 +257,7 @@ function UsageSection() {
 
         <hr className="divider" style={{ margin: "56px 0 28px" }} />
 
-        <div style={{
+        <div className="two-col" style={{
           display: "grid", gridTemplateColumns: "minmax(0, 1.3fr) minmax(0, 1fr)", gap: 36,
         }}>
           <div>
@@ -457,7 +457,7 @@ function CommunitySection() {
           borderRadius: 3, overflow: "hidden", marginBottom: 24,
         }}>
           {D.ORACLES.map(([name, desc], i) => (
-            <div key={name} style={{
+            <div key={name} className="two-col" style={{
               display: "grid", gridTemplateColumns: "minmax(180px, 220px) 1fr",
               gap: 16, padding: "14px 22px",
               borderBottom: i === D.ORACLES.length - 1 ? "none" : "1px solid var(--border)",

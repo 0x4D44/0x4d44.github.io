@@ -48,7 +48,7 @@ function Nav() {
       }}
     >
       <Container>
-        <div style={{
+        <div className="nav-row" style={{
           display: "flex", alignItems: "center", justifyContent: "space-between",
           height: 64,
         }}>
@@ -60,7 +60,7 @@ function Nav() {
             <span style={{ fontFamily: "var(--mono)", fontSize: 15, letterSpacing: "0.04em" }}>mddosem</span>
             <span className="chip" style={{ marginLeft: 4 }}>v0.13.0</span>
           </a>
-          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <div className="nav-links" style={{ display: "flex", gap: 4, alignItems: "center" }}>
             {links.map(([id, label]) => (
               <a key={id} href={`#${id}`} style={{
                 color: "var(--text-dim)", fontSize: 13, padding: "8px 12px",
@@ -202,7 +202,7 @@ function ArchitectureStack({ layers }) {
   const active = layers.find(l => l.id === activeId) || layers[0];
 
   return (
-    <div style={{
+    <div className="two-col" style={{
       display: "grid", gridTemplateColumns: "minmax(320px, 1fr) minmax(0, 1.1fr)",
       gap: 36, alignItems: "stretch",
     }}>
@@ -335,7 +335,7 @@ function CliPlayground({ scenarios }) {
   }, [idx, s.cmd]);
 
   return (
-    <div style={{
+    <div className="two-col" style={{
       display: "grid", gridTemplateColumns: "minmax(260px, 320px) 1fr", gap: 24,
     }}>
       {/* Scenario list */}
@@ -440,11 +440,11 @@ function FuzzGrid({ targets }) {
     BIOS: "var(--cyan)", Audio: "var(--magenta)",
   }[c] || "var(--text)");
   return (
-    <div style={{
+    <div className="tablewrap" style={{
       background: "var(--bg-card)", border: "1px solid var(--border)",
       borderRadius: 3, overflow: "hidden",
     }}>
-      <div style={{
+      <div className="row5" style={{
         display: "grid", gridTemplateColumns: "auto 1fr auto 1.4fr auto",
         gap: 14, padding: "10px 18px",
         background: "var(--bg-elev)", borderBottom: "1px solid var(--border)",
@@ -458,7 +458,7 @@ function FuzzGrid({ targets }) {
         <span style={{ width: 110, textAlign: "right" }}>Priority</span>
       </div>
       {sorted.map(([name, cat, pri, desc], i) => (
-        <div key={name} style={{
+        <div key={name} className="row5" style={{
           display: "grid", gridTemplateColumns: "auto 1fr auto 1.4fr auto",
           gap: 14, padding: "10px 18px",
           borderBottom: i === sorted.length - 1 ? "none" : "1px solid var(--border)",
@@ -550,11 +550,11 @@ function MemoryMap() {
     { from: "0x100000", to: "...",    size: "  + ∞",  name: "HMA · XMS · EMS",  note: "extended memory",        c: "cyan" },
   ];
   return (
-    <div style={{
+    <div className="tablewrap" style={{
       background: "var(--bg-card)", border: "1px solid var(--border)",
       borderRadius: 3, overflow: "hidden",
     }}>
-      <div style={{
+      <div className="row5" style={{
         display: "grid", gridTemplateColumns: "auto auto auto 1fr 1.5fr",
         gap: 14, padding: "10px 18px",
         background: "var(--bg-elev)", borderBottom: "1px solid var(--border)",
@@ -563,7 +563,7 @@ function MemoryMap() {
         <span>From</span><span>To</span><span>Size</span><span>Region</span><span>Notes</span>
       </div>
       {regions.map((r, i) => (
-        <div key={i} style={{
+        <div key={i} className="row5" style={{
           display: "grid", gridTemplateColumns: "auto auto auto 1fr 1.5fr",
           gap: 14, padding: "11px 18px",
           borderBottom: i === regions.length - 1 ? "none" : "1px solid var(--border)",
